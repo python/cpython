@@ -192,6 +192,26 @@ class TestBasic(unittest.TestCase):
         d.extend(d)
         self.assertEqual(list(d), list('abcdabcd'))
 
+    def test_add(self):
+        d = deque()
+        e = deque('abc')
+        f = deque('def')
+        self.assertEqual(d + d, deque())
+        self.assertEqual(e + f, deque('abcdef'))
+        self.assertEqual(e + e, deque('abcabc'))
+        self.assertEqual(e + d, deque('abc'))
+        self.assertEqual(d + e, deque('abc'))
+        self.assertIsNot(d + d, deque())
+        self.assertIsNot(e + d, deque('abc'))
+        self.assertIsNot(d + e, deque('abc'))
+
+        g = deque('abcdef', maxlen=4)
+        h = deque('gh')
+        self.assertEqual(g + h, deque('efgh'))
+
+        with self.assertRaises(TypeError):
+            deque('abc') + 'def'
+
     def test_iadd(self):
         d = deque('a')
         d += 'bcd'
@@ -278,6 +298,63 @@ class TestBasic(unittest.TestCase):
             d.insert(i, 'Z')
             s.insert(i, 'Z')
             self.assertEqual(list(d), s)
+
+    def test_imul(self):
+        for n in (-10, -1, 0, 1, 2, 10, 1000):
+            d = deque()
+            d *= n
+            self.assertEqual(d, deque())
+            self.assertIsNone(d.maxlen)
+
+        for n in (-10, -1, 0, 1, 2, 10, 1000):
+            d = deque('a')
+            d *= n
+            self.assertEqual(d, deque('a' * n))
+            self.assertIsNone(d.maxlen)
+
+        for n in (-10, -1, 0, 1, 2, 10, 499, 500, 501, 1000):
+            d = deque('a', 500)
+            d *= n
+            self.assertEqual(d, deque('a' * min(n, 500)))
+            self.assertEqual(d.maxlen, 500)
+
+        for n in (-10, -1, 0, 1, 2, 10, 1000):
+            d = deque('abcdef')
+            d *= n
+            self.assertEqual(d, deque('abcdef' * n))
+            self.assertIsNone(d.maxlen)
+
+        for n in (-10, -1, 0, 1, 2, 10, 499, 500, 501, 1000):
+            d = deque('abcdef', 500)
+            d *= n
+            self.assertEqual(d, deque(('abcdef' * n)[-500:]))
+            self.assertEqual(d.maxlen, 500)
+
+    def test_mul(self):
+        d = deque('abc')
+        self.assertEqual(d * -5, deque())
+        self.assertEqual(d * 0, deque())
+        self.assertEqual(d * 1, deque('abc'))
+        self.assertEqual(d * 2, deque('abcabc'))
+        self.assertEqual(d * 3, deque('abcabcabc'))
+        self.assertIsNot(d * 1, d)
+
+        self.assertEqual(deque() * 0, deque())
+        self.assertEqual(deque() * 1, deque())
+        self.assertEqual(deque() * 5, deque())
+
+        self.assertEqual(-5 * d, deque())
+        self.assertEqual(0 * d, deque())
+        self.assertEqual(1 * d, deque('abc'))
+        self.assertEqual(2 * d, deque('abcabc'))
+        self.assertEqual(3 * d, deque('abcabcabc'))
+
+        d = deque('abc', maxlen=5)
+        self.assertEqual(d * -5, deque())
+        self.assertEqual(d * 0, deque())
+        self.assertEqual(d * 1, deque('abc'))
+        self.assertEqual(d * 2, deque('bcabc'))
+        self.assertEqual(d * 30, deque('bcabc'))
 
     def test_setitem(self):
         n = 200

@@ -110,6 +110,12 @@ static PyTypeObject deque_type;
 #define CHECK_NOT_END(link)
 #endif
 
+/* To prevent len from overflowing PY_SSIZE_T_MAX, we refuse to
+   allocate new blocks if the current len is nearing overflow.
+*/
+
+#define MAX_DEQUE_LEN (PY_SSIZE_T_MAX - 3*BLOCKLEN)
+
 /* A simple freelisting scheme is used to minimize calls to the memory
    allocator.  It accommodates common use cases where new blocks are being
    added at about the same rate as old blocks are being freed.
@@ -122,9 +128,7 @@ static block *freeblocks[MAXFREEBLOCKS];
 static block *
 newblock(Py_ssize_t len) {
     block *b;
-    /* To prevent len from overflowing PY_SSIZE_T_MAX, we refuse to
-     * allocate new blocks if the current len is nearing overflow. */
-    if (len >= PY_SSIZE_T_MAX - 2*BLOCKLEN) {
+    if (len >= MAX_DEQUE_LEN) {
         PyErr_SetString(PyExc_OverflowError,
                         "cannot add more blocks to the deque");
         return NULL;
@@ -495,6 +499,115 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
         return result;
     Py_DECREF(result);
     Py_INCREF(deque);
+    return (PyObject *)deque;
+}
+
+static PyObject *deque_copy(PyObject *deque);
+
+static PyObject *
+deque_concat(dequeobject *deque, PyObject *other)
+{
+    PyObject *new_deque;
+    int rv;
+
+    rv = PyObject_IsInstance(other, (PyObject *)&deque_type);
+    if (rv <= 0) {
+        if (rv == 0) {
+            PyErr_Format(PyExc_TypeError,
+                         "can only concatenate deque (not \"%.200s\") to deque",
+                         other->ob_type->tp_name);
+        }
+        return NULL;
+    }
+
+    new_deque = deque_copy((PyObject *)deque);
+    if (new_deque == NULL)
+        return NULL;
+    return deque_inplace_concat((dequeobject *)new_deque, other);
+}
+
+static void deque_clear(dequeobject *deque);
+
+static PyObject *
+deque_repeat(dequeobject *deque, Py_ssize_t n)
+{
+    dequeobject *new_deque;
+    PyObject *result;
+
+    /* XXX add a special case for when maxlen is defined */
+    if (n < 0)
+        n = 0;
+    else if (n > 0 && Py_SIZE(deque) > MAX_DEQUE_LEN / n)
+        return PyErr_NoMemory();
+
+    new_deque = (dequeobject *)deque_new(&deque_type, (PyObject *)NULL, (PyObject *)NULL);
+    new_deque->maxlen = deque->maxlen;
+
+    for ( ; n ; n--) {
+        result = deque_extend(new_deque, (PyObject *)deque);
+        if (result == NULL) {
+            Py_DECREF(new_deque);
+            return NULL;
+        }
+        Py_DECREF(result);
+    }
+    return (PyObject *)new_deque;
+}
+
+static PyObject *
+deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
+{
+    Py_ssize_t i, size;
+    PyObject *seq;
+    PyObject *rv;
+
+    size = Py_SIZE(deque);
+    if (size == 0 || n == 1) {
+        Py_INCREF(deque);
+        return (PyObject *)deque;
+    }
+
+    if (n <= 0) {
+        deque_clear(deque);
+        Py_INCREF(deque);
+        return (PyObject *)deque;
+    }
+
+    if (size > MAX_DEQUE_LEN / n) {
+        return PyErr_NoMemory();
+    }
+
+    if (size == 1) {
+        /* common case, repeating a single element */
+        PyObject *item = deque->leftblock->data[deque->leftindex];
+
+        if (deque->maxlen != -1 && n > deque->maxlen)
+            n = deque->maxlen;
+
+        for (i = 0 ; i < n-1 ; i++) {
+            rv = deque_append(deque, item);
+            if (rv == NULL)
+                return NULL;
+            Py_DECREF(rv);
+        }
+        Py_INCREF(deque);
+        return (PyObject *)deque;
+    }
+
+    seq = PySequence_List((PyObject *)deque);
+    if (seq == NULL)
+        return seq;
+
+    for (i = 0 ; i < n-1 ; i++) {
+        rv = deque_extend(deque, seq);
+        if (rv == NULL) {
+            Py_DECREF(seq);
+            return NULL;
+        }
+        Py_DECREF(rv);
+    }
+    Py_INCREF(deque);
+    Py_DECREF(seq);
     return (PyObject *)deque;
 }
 
@@ -1283,6 +1396,9 @@ deque_get_maxlen(dequeobject *deque)
     return PyLong_FromSsize_t(deque->maxlen);
 }
 
+
+/* deque object ********************************************************/
+
 static PyGetSetDef deque_getset[] = {
     {"maxlen", (getter)deque_get_maxlen, (setter)NULL,
      "maximum size of a deque or None if unbounded"},
@@ -1291,15 +1407,15 @@ static PyGetSetDef deque_getset[] = {
 
 static PySequenceMethods deque_as_sequence = {
     (lenfunc)deque_len,                 /* sq_length */
-    0,                                  /* sq_concat */
-    0,                                  /* sq_repeat */
+    (binaryfunc)deque_concat,           /* sq_concat */
+    (ssizeargfunc)deque_repeat,         /* sq_repeat */
     (ssizeargfunc)deque_item,           /* sq_item */
     0,                                  /* sq_slice */
     (ssizeobjargproc)deque_ass_item,    /* sq_ass_item */
     0,                                  /* sq_ass_slice */
     (objobjproc)deque_contains,         /* sq_contains */
     (binaryfunc)deque_inplace_concat,   /* sq_inplace_concat */
-    0,                                  /* sq_inplace_repeat */
+    (ssizeargfunc)deque_inplace_repeat, /* sq_inplace_repeat */
 };
 
 static PyNumberMethods deque_as_number = {
@@ -1315,9 +1431,6 @@ static PyNumberMethods deque_as_number = {
     (inquiry)deque_bool,                /* nb_bool */
     0,                                  /* nb_invert */
  };
-
-
-/* deque object ********************************************************/
 
 static PyObject *deque_iter(dequeobject *deque);
 static PyObject *deque_reviter(dequeobject *deque);
@@ -1367,7 +1480,7 @@ static PyMethodDef deque_methods[] = {
 PyDoc_STRVAR(deque_doc,
 "deque([iterable[, maxlen]]) --> deque object\n\
 \n\
-Build an ordered collection with optimized access from its endpoints.");
+A list-like sequence optimized for data accesses near its endpoints.");
 
 static PyTypeObject deque_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
