@@ -147,7 +147,7 @@ PEP 465 - A dedicated infix operator for matrix multiplication
 --------------------------------------------------------------
 
 This PEP proposes a new binary operator to be used for matrix multiplication,
-called ``@``. (Mnemonic: ``@`` is ``*`` for mATrices.)
+called ``@``. (Mnemonic: ``@`` is ``*`` for matrices.)
 
 .. seealso::
 
