@@ -2450,7 +2450,7 @@ static int
 internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
                  int *timeoutp)
 {
-    int res, timeout;
+    int err, res, timeout;
 
     timeout = 0;
 
@@ -2460,9 +2460,12 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 
 #ifdef MS_WINDOWS
 
-    if (s->sock_timeout > 0
-        && res < 0 && WSAGetLastError() == WSAEWOULDBLOCK
-        && IS_SELECTABLE(s)) {
+    if (res < 0)
+        err = WSAGetLastError();
+    else
+        err = res;
+
+    if (s->sock_timeout > 0 && err == WSAEWOULDBLOCK && IS_SELECTABLE(s)) {
         /* This is a mess.  Best solution: trust select */
         fd_set fds;
         fd_set fds_exc;
@@ -2481,38 +2484,46 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
         Py_END_ALLOW_THREADS
 
         if (res == 0) {
-            res = WSAEWOULDBLOCK;
+            err = WSAEWOULDBLOCK;
             timeout = 1;
-        } else if (res > 0) {
-            if (FD_ISSET(s->sock_fd, &fds))
+        }
+        else if (res > 0) {
+            if (FD_ISSET(s->sock_fd, &fds)) {
                 /* The socket is in the writable set - this
                    means connected */
-                res = 0;
+                err = 0;
+            }
             else {
                 /* As per MS docs, we need to call getsockopt()
                    to get the underlying error */
-                int res_size = sizeof res;
+                int res_size;
+
                 /* It must be in the exception set */
                 assert(FD_ISSET(s->sock_fd, &fds_exc));
-                if (0 == getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR,
-                                    (char *)&res, &res_size))
-                    /* getsockopt also clears WSAGetLastError,
-                       so reset it back. */
-                    WSASetLastError(res);
-                else
-                    res = WSAGetLastError();
+
+                res_size = sizeof res;
+                if (!getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR,
+                                    (char *)&res, &res_size)) {
+                    err = res;
+                }
+                else {
+                    err = WSAGetLastError();
+                }
             }
         }
-        /* else if (res < 0) an error occurred */
+        else {
+            /* select() failed */
+            err = WSAGetLastError();
+        }
     }
 
-    if (res < 0)
-        res = WSAGetLastError();
-
 #else
+    if (res < 0)
+        err = errno;
+    else
+        err = 0;
 
-    if (s->sock_timeout > 0
-        && res < 0 && errno == EINPROGRESS && IS_SELECTABLE(s)) {
+    if (s->sock_timeout > 0 && err == EINPROGRESS && IS_SELECTABLE(s)) {
 
         timeout = internal_connect_select(s);
 
@@ -2521,27 +2532,31 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
                use getsockopt(SO_ERROR) to get the real
                error. */
             socklen_t res_size = sizeof res;
-            (void)getsockopt(s->sock_fd, SOL_SOCKET,
-                             SO_ERROR, &res, &res_size);
-            if (res == EISCONN)
-                res = 0;
-            errno = res;
+            if (!getsockopt(s->sock_fd, SOL_SOCKET,
+                            SO_ERROR, &res, &res_size)) {
+                if (res == EISCONN)
+                    res = 0;
+                err = res;
+            }
+            else {
+                /* getsockopt() failed */
+                err = errno;
+            }
         }
         else if (timeout == -1) {
-            res = errno;            /* had error */
+            /* select failed */
+            err = errno;
         }
-        else
-            res = EWOULDBLOCK;                      /* timed out */
+        else {
+            err = EWOULDBLOCK;                      /* timed out */
+        }
     }
-
-    if (res < 0)
-        res = errno;
 
 #endif
     *timeoutp = timeout;
 
-    assert(res >= 0);
-    return res;
+    assert(err >= 0);
+    return err;
 }
 
 /* s.connect(sockaddr) method */
@@ -2566,6 +2581,13 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
     if (res < 0)
         return NULL;
     if (res != 0) {
+#ifdef MS_WINDOWS
+        /* getsockopt also clears WSAGetLastError,
+           so reset it back. */
+        WSASetLastError(res);
+#else
+        errno = res;
+#endif
         return s->errorhandler();
     }
     Py_INCREF(Py_None);
