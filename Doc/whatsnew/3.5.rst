@@ -619,10 +619,10 @@ Changes in the Python API
   instead of raising :exc:`InterruptedError` if the signal handler does not
   raise an exception:
 
-  - :func:`os.open`, :func:`open`
+  - :func:`open`, :func:`os.open`, :func:`io.open`
   - :func:`os.read`, :func:`os.write`
   - :func:`select.select`, :func:`select.poll.poll`, :func:`select.epoll.poll`,
-    :func:`select.kqueue.control`
+    :func:`select.kqueue.control`, :func:`select.devpoll.poll`
   - :func:`time.sleep`
 
 * Before Python 3.5, a :class:`datetime.time` object was considered to be false

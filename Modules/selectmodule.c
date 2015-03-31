@@ -876,40 +876,38 @@ static PyObject *
 devpoll_poll(devpollObject *self, PyObject *args)
 {
     struct dvpoll dvp;
-    PyObject *result_list = NULL, *tout = NULL;
+    PyObject *result_list = NULL, *timeout_obj = NULL;
     int poll_result, i;
-    long timeout;
     PyObject *value, *num1, *num2;
+    _PyTime_t timeout, ms, deadline = 0;
 
     if (self->fd_devpoll < 0)
         return devpoll_err_closed();
 
-    if (!PyArg_UnpackTuple(args, "poll", 0, 1, &tout)) {
+    if (!PyArg_ParseTuple(args, "|O:poll", &timeout_obj)) {
         return NULL;
     }
 
     /* Check values for timeout */
-    if (tout == NULL || tout == Py_None)
+    if (timeout_obj == NULL || timeout_obj == Py_None) {
         timeout = -1;
-    else if (!PyNumber_Check(tout)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "timeout must be an integer or None");
-        return NULL;
+        ms = -1;
     }
     else {
-        tout = PyNumber_Long(tout);
-        if (!tout)
+        if (_PyTime_FromMillisecondsObject(&timeout, timeout_obj,
+                                           _PyTime_ROUND_CEILING) < 0) {
+            if (PyErr_ExceptionMatches(PyExc_TypeError)) {
+                PyErr_SetString(PyExc_TypeError,
+                                "timeout must be an integer or None");
+            }
             return NULL;
-        timeout = PyLong_AsLong(tout);
-        Py_DECREF(tout);
-        if (timeout == -1 && PyErr_Occurred())
-            return NULL;
-    }
+        }
 
-    if ((timeout < -1) || (timeout > INT_MAX)) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "timeout is out of range");
-        return NULL;
+        ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+        if (ms < -1 || ms > INT_MAX) {
+            PyErr_SetString(PyExc_OverflowError, "timeout is too large");
+            return NULL;
+        }
     }
 
     if (devpoll_flush(self))
@@ -917,12 +915,36 @@ devpoll_poll(devpollObject *self, PyObject *args)
 
     dvp.dp_fds = self->fds;
     dvp.dp_nfds = self->max_n_fds;
-    dvp.dp_timeout = timeout;
+    dvp.dp_timeout = (int)ms;
 
-    /* call devpoll() */
-    Py_BEGIN_ALLOW_THREADS
-    poll_result = ioctl(self->fd_devpoll, DP_POLL, &dvp);
-    Py_END_ALLOW_THREADS
+    if (timeout >= 0)
+        deadline = _PyTime_GetMonotonicClock() + timeout;
+
+    do {
+        /* call devpoll() */
+        Py_BEGIN_ALLOW_THREADS
+        errno = 0;
+        poll_result = ioctl(self->fd_devpoll, DP_POLL, &dvp);
+        Py_END_ALLOW_THREADS
+
+        if (errno != EINTR)
+            break;
+
+        /* devpoll() was interrupted by a signal */
+        if (PyErr_CheckSignals())
+            return NULL;
+
+        if (timeout >= 0) {
+            timeout = deadline - _PyTime_GetMonotonicClock();
+            if (timeout < 0) {
+                poll_result = 0;
+                break;
+            }
+            ms = _PyTime_AsMilliseconds(timeout, _PyTime_ROUND_CEILING);
+            dvp.dp_timeout = (int)ms;
+            /* retry devpoll() with the recomputed timeout */
+        }
+    } while (1);
 
     if (poll_result < 0) {
         PyErr_SetFromErrno(PyExc_IOError);
@@ -930,28 +952,26 @@ devpoll_poll(devpollObject *self, PyObject *args)
     }
 
     /* build the result list */
-
     result_list = PyList_New(poll_result);
     if (!result_list)
         return NULL;
-    else {
-        for (i = 0; i < poll_result; i++) {
-            num1 = PyLong_FromLong(self->fds[i].fd);
-            num2 = PyLong_FromLong(self->fds[i].revents);
-            if ((num1 == NULL) || (num2 == NULL)) {
-                Py_XDECREF(num1);
-                Py_XDECREF(num2);
-                goto error;
-            }
-            value = PyTuple_Pack(2, num1, num2);
-            Py_DECREF(num1);
-            Py_DECREF(num2);
-            if (value == NULL)
-                goto error;
-            if ((PyList_SetItem(result_list, i, value)) == -1) {
-                Py_DECREF(value);
-                goto error;
-            }
+
+    for (i = 0; i < poll_result; i++) {
+        num1 = PyLong_FromLong(self->fds[i].fd);
+        num2 = PyLong_FromLong(self->fds[i].revents);
+        if ((num1 == NULL) || (num2 == NULL)) {
+            Py_XDECREF(num1);
+            Py_XDECREF(num2);
+            goto error;
+        }
+        value = PyTuple_Pack(2, num1, num2);
+        Py_DECREF(num1);
+        Py_DECREF(num2);
+        if (value == NULL)
+            goto error;
+        if ((PyList_SetItem(result_list, i, value)) == -1) {
+            Py_DECREF(value);
+            goto error;
         }
     }
 
