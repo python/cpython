@@ -2083,8 +2083,9 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
     PyObject *result = NULL;
     struct kevent *evl = NULL;
     struct kevent *chl = NULL;
-    struct timespec timeout;
+    struct timespec timeoutspec;
     struct timespec *ptimeoutspec;
+    _PyTime_t timeout, deadline = 0;
 
     if (self->kqfd < 0)
         return kqueue_queue_err_closed();
@@ -2103,9 +2104,7 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
         ptimeoutspec = NULL;
     }
     else {
-        _PyTime_t ts;
-
-        if (_PyTime_FromSecondsObject(&ts,
+        if (_PyTime_FromSecondsObject(&timeout,
                                       otimeout, _PyTime_ROUND_CEILING) < 0) {
             PyErr_Format(PyExc_TypeError,
                 "timeout argument must be an number "
@@ -2114,15 +2113,15 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
             return NULL;
         }
 
-        if (_PyTime_AsTimespec(ts, &timeout) == -1)
+        if (_PyTime_AsTimespec(timeout, &timeoutspec) == -1)
             return NULL;
 
-        if (timeout.tv_sec < 0) {
+        if (timeoutspec.tv_sec < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "timeout must be positive or None");
             return NULL;
         }
-        ptimeoutspec = &timeout;
+        ptimeoutspec = &timeoutspec;
     }
 
     if (ch != NULL && ch != Py_None) {
@@ -2167,10 +2166,34 @@ kqueue_queue_control(kqueue_queue_Object *self, PyObject *args)
         }
     }
 
-    Py_BEGIN_ALLOW_THREADS
-    gotevents = kevent(self->kqfd, chl, nchanges,
-                       evl, nevents, ptimeoutspec);
-    Py_END_ALLOW_THREADS
+    if (ptimeoutspec)
+        deadline = _PyTime_GetMonotonicClock() + timeout;
+
+    do {
+        Py_BEGIN_ALLOW_THREADS
+        errno = 0;
+        gotevents = kevent(self->kqfd, chl, nchanges,
+                           evl, nevents, ptimeoutspec);
+        Py_END_ALLOW_THREADS
+
+        if (errno != EINTR)
+            break;
+
+        /* kevent() was interrupted by a signal */
+        if (PyErr_CheckSignals())
+            goto error;
+
+        if (ptimeoutspec) {
+            timeout = deadline - _PyTime_GetMonotonicClock();
+            if (timeout < 0) {
+                gotevents = 0;
+                break;
+            }
+            if (_PyTime_AsTimespec(timeout, &timeoutspec) == -1)
+                goto error;
+            /* retry kevent() with the recomputed timeout */
+        }
+    } while (1);
 
     if (gotevents == -1) {
         PyErr_SetFromErrno(PyExc_OSError);

@@ -315,8 +315,8 @@ class SelectEINTRTest(EINTRBaseTest):
     def test_select(self):
         t0 = time.monotonic()
         select.select([], [], [], self.sleep_time)
-        self.stop_alarm()
         dt = time.monotonic() - t0
+        self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
 
     @unittest.skipUnless(hasattr(select, 'poll'), 'need select.poll')
@@ -325,8 +325,8 @@ class SelectEINTRTest(EINTRBaseTest):
 
         t0 = time.monotonic()
         poller.poll(self.sleep_time * 1e3)
-        self.stop_alarm()
         dt = time.monotonic() - t0
+        self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
 
     @unittest.skipUnless(hasattr(select, 'epoll'), 'need select.epoll')
@@ -336,8 +336,19 @@ class SelectEINTRTest(EINTRBaseTest):
 
         t0 = time.monotonic()
         poller.poll(self.sleep_time)
-        self.stop_alarm()
         dt = time.monotonic() - t0
+        self.stop_alarm()
+        self.assertGreaterEqual(dt, self.sleep_time)
+
+    @unittest.skipUnless(hasattr(select, 'kqueue'), 'need select.kqueue')
+    def test_kqueue(self):
+        kqueue = select.kqueue()
+        self.addCleanup(kqueue.close)
+
+        t0 = time.monotonic()
+        kqueue.control(None, 1, self.sleep_time)
+        dt = time.monotonic() - t0
+        self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
 
 
