@@ -454,6 +454,12 @@ Kqueue Objects
    - max_events must be 0 or a positive integer
    - timeout in seconds (floats possible)
 
+   .. versionchanged:: 3.5
+      The function is now retried with a recomputed timeout when interrupted by
+      a signal, except if the signal handler raises an exception (see
+      :pep:`475` for the rationale), instead of raising
+      :exc:`InterruptedError`.
+
 
 .. _kevent-objects:
 

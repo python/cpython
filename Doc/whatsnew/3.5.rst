@@ -621,7 +621,8 @@ Changes in the Python API
 
   - :func:`os.open`, :func:`open`
   - :func:`os.read`, :func:`os.write`
-  - :func:`select.select`, :func:`select.poll.poll`, :func:`select.epoll.poll`
+  - :func:`select.select`, :func:`select.poll.poll`, :func:`select.epoll.poll`,
+    :func:`select.kqueue.control`
   - :func:`time.sleep`
 
 * Before Python 3.5, a :class:`datetime.time` object was considered to be false
