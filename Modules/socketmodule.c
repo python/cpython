@@ -2502,6 +2502,9 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
     }
     *timeoutp = timeout;
 
+    if (err == EINTR && PyErr_CheckSignals())
+        return -1;
+
     assert(err >= 0);
     return err;
 
@@ -2524,13 +2527,14 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
         return NULL;
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, &timeout);
+    if (res < 0)
+        return NULL;
 
     if (timeout == 1) {
         PyErr_SetString(socket_timeout, "timed out");
         return NULL;
     }
-    if (res < 0)
-        return NULL;
+
     if (res != 0) {
 #ifdef MS_WINDOWS
         WSASetLastError(res);
@@ -2539,8 +2543,8 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
 #endif
         return s->errorhandler();
     }
-    Py_INCREF(Py_None);
-    return Py_None;
+
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(connect_doc,
@@ -2564,13 +2568,7 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
         return NULL;
 
     res = internal_connect(s, SAS2SA(&addrbuf), addrlen, &timeout);
-
     if (res < 0)
-        return NULL;
-
-    /* Signals are not errors (though they may raise exceptions).  Adapted
-       from PyErr_SetFromErrnoWithFilenameObject(). */
-    if (res == EINTR && PyErr_CheckSignals())
         return NULL;
 
     return PyLong_FromLong((long) res);
