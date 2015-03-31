@@ -2299,7 +2299,8 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
 
     if (PyArg_ParseTuple(args, "iii:setsockopt",
                          &level, &optname, &flag)) {
-        res = setsockopt(s->sock_fd, level, optname, &flag, sizeof flag);
+        res = setsockopt(s->sock_fd, level, optname,
+                         (char*)&flag, sizeof flag);
     }
     else {
         PyErr_Clear();
@@ -2450,7 +2451,17 @@ static int
 internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
                  int *timeoutp)
 {
-    int err, res, timeout;
+#ifdef MS_WINDOWS
+#  define GET_ERROR WSAGetLastError()
+#  define IN_PROGRESS_ERR WSAEWOULDBLOCK
+#  define TIMEOUT_ERR WSAEWOULDBLOCK
+#else
+#  define GET_ERROR errno
+#  define IN_PROGRESS_ERR EINPROGRESS
+#  define TIMEOUT_ERR EWOULDBLOCK
+#endif
+
+    int res, err, in_progress, timeout;
 
     timeout = 0;
 
@@ -2458,105 +2469,45 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
     res = connect(s->sock_fd, addr, addrlen);
     Py_END_ALLOW_THREADS
 
-#ifdef MS_WINDOWS
-
     if (res < 0)
-        err = WSAGetLastError();
+        err = GET_ERROR;
     else
         err = res;
+    in_progress = (err == IN_PROGRESS_ERR);
 
-    if (s->sock_timeout > 0 && err == WSAEWOULDBLOCK && IS_SELECTABLE(s)) {
-        /* This is a mess.  Best solution: trust select */
-        fd_set fds;
-        fd_set fds_exc;
-        struct timeval tv;
-        int conv;
-
-        _PyTime_AsTimeval_noraise(s->sock_timeout, &tv, _PyTime_ROUND_CEILING);
-
-        Py_BEGIN_ALLOW_THREADS
-        FD_ZERO(&fds);
-        FD_SET(s->sock_fd, &fds);
-        FD_ZERO(&fds_exc);
-        FD_SET(s->sock_fd, &fds_exc);
-        res = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
-                     NULL, &fds, &fds_exc, &tv);
-        Py_END_ALLOW_THREADS
-
-        if (res == 0) {
-            err = WSAEWOULDBLOCK;
-            timeout = 1;
-        }
-        else if (res > 0) {
-            if (FD_ISSET(s->sock_fd, &fds)) {
-                /* The socket is in the writable set - this
-                   means connected */
-                err = 0;
-            }
-            else {
-                /* As per MS docs, we need to call getsockopt()
-                   to get the underlying error */
-                int res_size;
-
-                /* It must be in the exception set */
-                assert(FD_ISSET(s->sock_fd, &fds_exc));
-
-                res_size = sizeof res;
-                if (!getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR,
-                                    (char *)&res, &res_size)) {
-                    err = res;
-                }
-                else {
-                    err = WSAGetLastError();
-                }
-            }
-        }
-        else {
-            /* select() failed */
-            err = WSAGetLastError();
-        }
-    }
-
-#else
-    if (res < 0)
-        err = errno;
-    else
-        err = 0;
-
-    if (s->sock_timeout > 0 && err == EINPROGRESS && IS_SELECTABLE(s)) {
-
+    if (s->sock_timeout > 0 && in_progress && IS_SELECTABLE(s)) {
         timeout = internal_connect_select(s);
 
-        if (timeout == 0) {
-            /* Bug #1019808: in case of an EINPROGRESS,
-               use getsockopt(SO_ERROR) to get the real
-               error. */
+        if (timeout == 1) {
+            /* timed out */
+            err = TIMEOUT_ERR;
+        }
+        else if (timeout == 0) {
             socklen_t res_size = sizeof res;
-            if (!getsockopt(s->sock_fd, SOL_SOCKET,
-                            SO_ERROR, &res, &res_size)) {
+            if (!getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR,
+                            (char*)&res, &res_size)) {
                 if (res == EISCONN)
                     res = 0;
                 err = res;
             }
             else {
                 /* getsockopt() failed */
-                err = errno;
+                err = GET_ERROR;
             }
         }
-        else if (timeout == -1) {
-            /* select failed */
-            err = errno;
-        }
         else {
-            err = EWOULDBLOCK;                      /* timed out */
+            /* select() failed */
+            err = GET_ERROR;
         }
     }
-
-#endif
     *timeoutp = timeout;
 
     assert(err >= 0);
     return err;
+
+#undef GET_ERROR
+#undef IN_PROGRESS_ERR
+#undef TIMEOUT_ERR
 }
 
 /* s.connect(sockaddr) method */
