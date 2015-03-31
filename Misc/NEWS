@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13583: sqlite3.Row now supports slice indexing.
+
 - Issue #18473: Fixed 2to3 and 3to2 compatible pickle mappings.  Fixed
   ambigious reverse mappings.  Added many new mappings.  Import mapping is no
   longer applied to modules already mapped with full name mapping.
