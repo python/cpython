@@ -370,6 +370,13 @@ os
 * :class:`os.stat_result` now has a :attr:`~os.stat_result.st_file_attributes`
   attribute on Windows.  (Contributed by Ben Hoyt in :issue:`21719`.)
 
+pickle
+------
+
+* Serializing more "lookupable" objects (such as unbound methods or nested
+  classes) now are supported with pickle protocols < 4.
+  (Contributed by Serhiy Storchaka in :issue:`23611`.)
+
 re
 --
 

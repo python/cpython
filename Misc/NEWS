@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23611: Serializing more "lookupable" objects (such as unbound methods
+  or nested classes) now are supported with pickle protocols < 4.
+
 - Issue #13583: sqlite3.Row now supports slice indexing.
 
 - Issue #18473: Fixed 2to3 and 3to2 compatible pickle mappings.  Fixed
