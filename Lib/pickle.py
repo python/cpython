@@ -944,7 +944,7 @@ class _Pickler:
                 r_import_mapping = _compat_pickle.REVERSE_IMPORT_MAPPING
                 if (module_name, name) in r_name_mapping:
                     module_name, name = r_name_mapping[(module_name, name)]
-                if module_name in r_import_mapping:
+                elif module_name in r_import_mapping:
                     module_name = r_import_mapping[module_name]
             try:
                 write(GLOBAL + bytes(module_name, "ascii") + b'\n' +
@@ -1370,7 +1370,7 @@ class _Unpickler:
         if self.proto < 3 and self.fix_imports:
             if (module, name) in _compat_pickle.NAME_MAPPING:
                 module, name = _compat_pickle.NAME_MAPPING[(module, name)]
-            if module in _compat_pickle.IMPORT_MAPPING:
+            elif module in _compat_pickle.IMPORT_MAPPING:
                 module = _compat_pickle.IMPORT_MAPPING[module]
         __import__(module, level=0)
         return _getattribute(sys.modules[module], name,
