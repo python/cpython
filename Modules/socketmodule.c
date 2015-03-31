@@ -597,7 +597,7 @@ internal_setblocking(PySocketSockObject *s, int block)
    after they've reacquired the interpreter lock.
    Returns 1 on timeout, -1 on error, 0 otherwise. */
 static int
-internal_select_ex(PySocketSockObject *s, int writing, _PyTime_t interval)
+internal_select(PySocketSockObject *s, int writing, _PyTime_t interval)
 {
     int n;
 #ifdef HAVE_POLL
@@ -664,12 +664,6 @@ internal_select_ex(PySocketSockObject *s, int writing, _PyTime_t interval)
     return 0;
 }
 
-static int
-internal_select(PySocketSockObject *s, int writing)
-{
-    return internal_select_ex(s, writing, s->sock_timeout);
-}
-
 /*
    Two macros for automatic retry of select() in case of false positives
    (for example, select() could indicate a socket is ready for reading
@@ -678,7 +672,7 @@ internal_select(PySocketSockObject *s, int writing)
 
     BEGIN_SELECT_LOOP(s)
 
-    timeout = internal_select_ex(s, 0, interval);
+    timeout = internal_select(s, 0, interval);
 
     if (!timeout) {
         Py_BEGIN_ALLOW_THREADS
@@ -2075,7 +2069,7 @@ sock_accept(PySocketSockObject *s)
 
     BEGIN_SELECT_LOOP(s)
     do {
-        timeout = internal_select_ex(s, 0, interval);
+        timeout = internal_select(s, 0, interval);
 
         if (!timeout) {
             Py_BEGIN_ALLOW_THREADS
@@ -2498,7 +2492,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
     if (s->sock_timeout > 0
         && res < 0 && errno == EINPROGRESS && IS_SELECTABLE(s)) {
 
-        timeout = internal_select(s, 1);
+        timeout = internal_select(s, 1, s->sock_timeout);
 
         if (timeout == 0) {
             /* Bug #1019808: in case of an EINPROGRESS,
@@ -2731,7 +2725,7 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags)
 
     BEGIN_SELECT_LOOP(s)
     do {
-        timeout = internal_select_ex(s, 0, interval);
+        timeout = internal_select(s, 0, interval);
 
         if (!timeout) {
             Py_BEGIN_ALLOW_THREADS
@@ -2907,7 +2901,7 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags,
     BEGIN_SELECT_LOOP(s)
     do {
         memset(&addrbuf, 0, addrlen);
-        timeout = internal_select_ex(s, 0, interval);
+        timeout = internal_select(s, 0, interval);
 
         if (!timeout) {
             Py_BEGIN_ALLOW_THREADS
@@ -3114,7 +3108,7 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
         msg.msg_iovlen = iovlen;
         msg.msg_control = controlbuf;
         msg.msg_controllen = controllen;
-        timeout = internal_select_ex(s, 0, interval);
+        timeout = internal_select(s, 0, interval);
 
         if (timeout == 1) {
             PyErr_SetString(socket_timeout, "timed out");
@@ -3407,7 +3401,7 @@ sock_send(PySocketSockObject *s, PyObject *args)
 
     BEGIN_SELECT_LOOP(s)
     do {
-        timeout = internal_select_ex(s, 1, interval);
+        timeout = internal_select(s, 1, interval);
 
         if (!timeout) {
             Py_BEGIN_ALLOW_THREADS
@@ -3464,7 +3458,7 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     }
 
     do {
-        timeout = internal_select(s, 1);
+        timeout = internal_select(s, 1, s->sock_timeout);
 
         n = -1;
         if (!timeout) {
@@ -3554,7 +3548,7 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 
     BEGIN_SELECT_LOOP(s)
     do {
-        timeout = internal_select_ex(s, 1, interval);
+        timeout = internal_select(s, 1, interval);
 
         if (!timeout) {
             Py_BEGIN_ALLOW_THREADS
@@ -3770,7 +3764,7 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
 
     BEGIN_SELECT_LOOP(s)
     do {
-        timeout = internal_select_ex(s, 1, interval);
+        timeout = internal_select(s, 1, interval);
 
         if (!timeout) {
             Py_BEGIN_ALLOW_THREADS;
