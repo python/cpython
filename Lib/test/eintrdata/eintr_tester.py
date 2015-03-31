@@ -351,6 +351,17 @@ class SelectEINTRTest(EINTRBaseTest):
         self.stop_alarm()
         self.assertGreaterEqual(dt, self.sleep_time)
 
+    @unittest.skipUnless(hasattr(select, 'devpoll'), 'need select.devpoll')
+    def test_devpoll(self):
+        poller = select.devpoll()
+        self.addCleanup(poller.close)
+
+        t0 = time.monotonic()
+        poller.poll(self.sleep_time * 1e3)
+        dt = time.monotonic() - t0
+        self.stop_alarm()
+        self.assertGreaterEqual(dt, self.sleep_time)
+
 
 def test_main():
     support.run_unittest(
