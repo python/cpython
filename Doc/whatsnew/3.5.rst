@@ -370,6 +370,13 @@ os
 * :class:`os.stat_result` now has a :attr:`~os.stat_result.st_file_attributes`
   attribute on Windows.  (Contributed by Ben Hoyt in :issue:`21719`.)
 
+os.path
+-------
+
+* New :func:`~os.path.commonpath` function that extracts common path prefix.
+  Unlike the :func:`~os.path.commonprefix` function, it always returns a valid
+  patch.  (Contributed by Rafik Draoui and Serhiy Storchaka in :issue:`10395`.)
+
 pickle
 ------
 

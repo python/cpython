@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #10395: Added os.path.commonpath(). Implemented in posixpath and ntpath.
+  Based on patch by Rafik Draoui.
+
 - Issue #23611: Serializing more "lookupable" objects (such as unbound methods
   or nested classes) now are supported with pickle protocols < 4.
 
