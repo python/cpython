@@ -2485,7 +2485,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
         else if (timeout == 0) {
             socklen_t res_size = sizeof res;
             if (!getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR,
-                            (char*)&res, &res_size)) {
+                            (void *)&res, &res_size)) {
                 if (res == EISCONN)
                     res = 0;
                 err = res;
@@ -2533,8 +2533,6 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
         return NULL;
     if (res != 0) {
 #ifdef MS_WINDOWS
-        /* getsockopt also clears WSAGetLastError,
-           so reset it back. */
         WSASetLastError(res);
 #else
         errno = res;
