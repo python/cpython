@@ -592,14 +592,15 @@ internal_setblocking(PySocketSockObject *s, int block)
 }
 
 static int
-internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval)
+internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval,
+                     int error)
 {
     int n;
 #ifdef HAVE_POLL
     struct pollfd pollfd;
     _PyTime_t ms;
 #else
-    fd_set fds;
+    fd_set fds, efds;
     struct timeval tv;
 #endif
 
@@ -607,6 +608,9 @@ internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval)
     /* must be called with the GIL held */
     assert(PyGILState_Check());
 #endif
+
+    /* Error condition is for output only */
+    assert(!(error && !writing));
 
     /* Nothing to do unless we're in timeout mode (not non-blocking) */
     if (s->sock_timeout <= 0)
@@ -625,6 +629,8 @@ internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval)
 #ifdef HAVE_POLL
     pollfd.fd = s->sock_fd;
     pollfd.events = writing ? POLLOUT : POLLIN;
+    if (error)
+        pollfd.events |= POLLERR;
 
     /* s->sock_timeout is in seconds, timeout in ms */
     ms = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
@@ -638,15 +644,18 @@ internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval)
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
+    FD_ZERO(&efds);
+    if (error)
+        FD_SET(s->sock_fd, &efds);
 
     /* See if the socket is ready */
     Py_BEGIN_ALLOW_THREADS;
     if (writing)
         n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
-                   NULL, &fds, NULL, &tv);
+                   NULL, &fds, &efds, &tv);
     else
         n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
-                   &fds, NULL, NULL, &tv);
+                   &fds, NULL, &efds, &tv);
     Py_END_ALLOW_THREADS;
 #endif
 
@@ -665,13 +674,13 @@ internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval)
 static int
 internal_select(PySocketSockObject *s, int writing, _PyTime_t interval)
 {
-    return internal_select_impl(s, writing, interval);
+    return internal_select_impl(s, writing, interval, 0);
 }
 
 static int
 internal_connect_select(PySocketSockObject *s)
 {
-    return internal_select(s, 1, s->sock_timeout);
+    return internal_select(s, 1, s->sock_timeout, 1);
 }
 
 /*
