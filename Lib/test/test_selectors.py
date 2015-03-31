@@ -357,7 +357,35 @@ class BaseSelectorTestCase(unittest.TestCase):
 
     @unittest.skipUnless(hasattr(signal, "alarm"),
                          "signal.alarm() required for this test")
-    def test_select_interrupt(self):
+    def test_select_interrupt_exc(self):
+        s = self.SELECTOR()
+        self.addCleanup(s.close)
+
+        rd, wr = self.make_socketpair()
+
+        class InterruptSelect(Exception):
+            pass
+
+        def handler(*args):
+            raise InterruptSelect
+
+        orig_alrm_handler = signal.signal(signal.SIGALRM, handler)
+        self.addCleanup(signal.signal, signal.SIGALRM, orig_alrm_handler)
+        self.addCleanup(signal.alarm, 0)
+
+        signal.alarm(1)
+
+        s.register(rd, selectors.EVENT_READ)
+        t = time()
+        # select() is interrupted by a signal which raises an exception
+        with self.assertRaises(InterruptSelect):
+            s.select(30)
+        # select() was interrupted before the timeout of 30 seconds
+        self.assertLess(time() - t, 5.0)
+
+    @unittest.skipUnless(hasattr(signal, "alarm"),
+                         "signal.alarm() required for this test")
+    def test_select_interrupt_noraise(self):
         s = self.SELECTOR()
         self.addCleanup(s.close)
 
@@ -371,8 +399,11 @@ class BaseSelectorTestCase(unittest.TestCase):
 
         s.register(rd, selectors.EVENT_READ)
         t = time()
-        self.assertFalse(s.select(2))
-        self.assertLess(time() - t, 2.5)
+        # select() is interrupted by a signal, but the signal handler doesn't
+        # raise an exception, so select() should by retries with a recomputed
+        # timeout
+        self.assertFalse(s.select(1.5))
+        self.assertGreaterEqual(time() - t, 1.0)
 
 
 class ScalableSelectorMixIn:
