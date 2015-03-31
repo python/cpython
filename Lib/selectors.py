@@ -549,11 +549,9 @@ if hasattr(select, 'kqueue'):
         def select(self, timeout=None):
             timeout = None if timeout is None else max(timeout, 0)
             max_ev = len(self._fd_to_key)
+            kev_list = self._kqueue.control(None, max_ev, timeout)
+
             ready = []
-            try:
-                kev_list = self._kqueue.control(None, max_ev, timeout)
-            except InterruptedError:
-                return ready
             for kev in kev_list:
                 fd = kev.ident
                 flag = kev.filter
