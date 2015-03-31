@@ -630,6 +630,7 @@ Changes in the Python API
   - :func:`os.read`, :func:`os.write`
   - :func:`select.select`, :func:`select.poll.poll`, :func:`select.epoll.poll`,
     :func:`select.kqueue.control`, :func:`select.devpoll.poll`
+  - :func:`signal.sigtimedwait`, :func:`signal.sigwaitinfo`
   - :func:`time.sleep`
 
 * Before Python 3.5, a :class:`datetime.time` object was considered to be false
