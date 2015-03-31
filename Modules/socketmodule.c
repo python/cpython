@@ -2461,52 +2461,54 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 #  define TIMEOUT_ERR EWOULDBLOCK
 #endif
 
-    int res, err, in_progress, timeout;
+    int res, err, wait_connect, timeout;
+    socklen_t res_size;
 
-    timeout = 0;
+    *timeoutp = 0;
 
     Py_BEGIN_ALLOW_THREADS
     res = connect(s->sock_fd, addr, addrlen);
     Py_END_ALLOW_THREADS
 
-    if (res < 0)
-        err = GET_ERROR;
-    else
-        err = res;
-    in_progress = (err == IN_PROGRESS_ERR);
-
-    if (s->sock_timeout > 0 && in_progress && IS_SELECTABLE(s)) {
-        timeout = internal_connect_select(s);
-
-        if (timeout == 1) {
-            /* timed out */
-            err = TIMEOUT_ERR;
-        }
-        else if (timeout == 0) {
-            socklen_t res_size = sizeof res;
-            if (!getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR,
-                            (void *)&res, &res_size)) {
-                if (res == EISCONN)
-                    res = 0;
-                err = res;
-            }
-            else {
-                /* getsockopt() failed */
-                err = GET_ERROR;
-            }
-        }
-        else {
-            /* select() failed */
-            err = GET_ERROR;
-        }
+    if (!res) {
+        /* connect() succeeded, the socket is connected */
+        return 0;
     }
-    *timeoutp = timeout;
 
+    err = GET_ERROR;
     if (err == EINTR && PyErr_CheckSignals())
         return -1;
 
-    assert(err >= 0);
-    return err;
+    wait_connect = (s->sock_timeout > 0 && err == IN_PROGRESS_ERR
+                    && IS_SELECTABLE(s));
+    if (!wait_connect)
+        return err;
+
+    timeout = internal_connect_select(s);
+    if (timeout == -1) {
+        /* select() failed */
+        err = GET_ERROR;
+        if (err == EINTR && PyErr_CheckSignals())
+            return -1;
+        return err;
+    }
+
+    if (timeout == 1) {
+        /* select() timed out */
+        *timeoutp = 1;
+        return TIMEOUT_ERR;
+    }
+
+    res_size = sizeof res;
+    if (getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR,
+                    (void *)&res, &res_size)) {
+        /* getsockopt() failed */
+        return GET_ERROR;
+    }
+
+    if (res == EISCONN)
+        return 0;
+    return res;
 
 #undef GET_ERROR
 #undef IN_PROGRESS_ERR
