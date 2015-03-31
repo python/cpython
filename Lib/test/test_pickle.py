@@ -240,7 +240,16 @@ def getmodule(module):
     try:
         return sys.modules[module]
     except KeyError:
-        __import__(module)
+        try:
+            __import__(module)
+        except AttributeError as exc:
+            if support.verbose:
+                print("Can't import module %r: %s" % (module, exc))
+            raise ImportError
+        except ImportError as exc:
+            if support.verbose:
+                print(exc)
+            raise
         return sys.modules[module]
 
 def getattribute(module, name):
@@ -264,18 +273,16 @@ class CompatPickleTests(unittest.TestCase):
         for module in modules:
             try:
                 getmodule(module)
-            except ImportError as exc:
-                if support.verbose:
-                    print(exc)
+            except ImportError:
+                pass
 
     def test_import_mapping(self):
         for module3, module2 in REVERSE_IMPORT_MAPPING.items():
             with self.subTest((module3, module2)):
                 try:
                     getmodule(module3)
-                except ImportError as exc:
-                    if support.verbose:
-                        print(exc)
+                except ImportError:
+                    pass
                 if module3[:1] != '_':
                     self.assertIn(module2, IMPORT_MAPPING)
                     self.assertEqual(IMPORT_MAPPING[module2], module3)
@@ -283,14 +290,19 @@ class CompatPickleTests(unittest.TestCase):
     def test_name_mapping(self):
         for (module3, name3), (module2, name2) in REVERSE_NAME_MAPPING.items():
             with self.subTest(((module3, name3), (module2, name2))):
-                attr = getattribute(module3, name3)
                 if (module2, name2) == ('exceptions', 'OSError'):
+                    attr = getattribute(module3, name3)
                     self.assertTrue(issubclass(attr, OSError))
                 else:
                     module, name = mapping(module2, name2)
                     if module3[:1] != '_':
                         self.assertEqual((module, name), (module3, name3))
-                    self.assertEqual(getattribute(module, name), attr)
+                    try:
+                        attr = getattribute(module3, name3)
+                    except ImportError:
+                        pass
+                    else:
+                        self.assertEqual(getattribute(module, name), attr)
 
     def test_reverse_import_mapping(self):
         for module2, module3 in IMPORT_MAPPING.items():
@@ -315,7 +327,10 @@ class CompatPickleTests(unittest.TestCase):
     def test_reverse_name_mapping(self):
         for (module2, name2), (module3, name3) in NAME_MAPPING.items():
             with self.subTest(((module2, name2), (module3, name3))):
-                attr = getattribute(module3, name3)
+                try:
+                    attr = getattribute(module3, name3)
+                except ImportError:
+                    pass
                 module, name = reverse_mapping(module3, name3)
                 if (module2, name2, module3, name3) not in ALT_NAME_MAPPING:
                     self.assertEqual((module, name), (module2, name2))
