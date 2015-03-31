@@ -428,8 +428,8 @@ The :mod:`signal` module defines the following functions:
    .. versionadded:: 3.3
 
    .. versionchanged:: 3.5
-      The function is now retried with the recomputed timeout if interrupted by
-      a signal not in *sigset* and the signal handler does not raise an
+      The function is now retried with the recomputed *timeout* if interrupted
+      by a signal not in *sigset* and the signal handler does not raise an
       exception (see :pep:`475` for the rationale).
 
 
