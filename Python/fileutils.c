@@ -1124,18 +1124,18 @@ _Py_fopen_obj(PyObject *path, const char *mode)
 }
 
 /* Read count bytes from fd into buf.
- *
- * On success, return the number of read bytes, it can be lower than count.
- * If the current file offset is at or past the end of file, no bytes are read,
- * and read() returns zero.
- *
- * On error, raise an exception, set errno and return -1.
- *
- * When interrupted by a signal (read() fails with EINTR), retry the syscall.
- * If the Python signal handler raises an exception, the function returns -1
- * (the syscall is not retried).
- *
- * The GIL must be held. */
+
+   On success, return the number of read bytes, it can be lower than count.
+   If the current file offset is at or past the end of file, no bytes are read,
+   and read() returns zero.
+
+   On error, raise an exception, set errno and return -1.
+
+   When interrupted by a signal (read() fails with EINTR), retry the syscall.
+   If the Python signal handler raises an exception, the function returns -1
+   (the syscall is not retried).
+
+   Release the GIL to call read(). The caller must hold the GIL. */
 Py_ssize_t
 _Py_read(int fd, void *buf, size_t count)
 {
@@ -1200,34 +1200,20 @@ _Py_read(int fd, void *buf, size_t count)
     return n;
 }
 
-/* Write count bytes of buf into fd.
- *
- * -On success, return the number of written bytes, it can be lower than count
- *   including 0
- * - On error, raise an exception, set errno and return -1.
- *
- * When interrupted by a signal (write() fails with EINTR), retry the syscall.
- * If the Python signal handler raises an exception, the function returns -1
- * (the syscall is not retried).
- *
- * The GIL must be held. */
-Py_ssize_t
-_Py_write(int fd, const void *buf, size_t count)
+static Py_ssize_t
+_Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
 {
     Py_ssize_t n;
     int err;
     int async_err = 0;
 
-    /* _Py_write() must not be called with an exception set, otherwise the
-     * caller may think that write() was interrupted by a signal and the signal
-     * handler raised an exception. */
-    assert(!PyErr_Occurred());
-
     if (!_PyVerify_fd(fd)) {
-        /* save/restore errno because PyErr_SetFromErrno() can modify it */
-        err = errno;
-        PyErr_SetFromErrno(PyExc_OSError);
-        errno = err;
+        if (gil_held) {
+            /* save/restore errno because PyErr_SetFromErrno() can modify it */
+            err = errno;
+            PyErr_SetFromErrno(PyExc_OSError);
+            errno = err;
+        }
         return -1;
     }
 
@@ -1249,35 +1235,84 @@ _Py_write(int fd, const void *buf, size_t count)
     }
 #endif
 
-    do {
-        Py_BEGIN_ALLOW_THREADS
-        errno = 0;
+    if (gil_held) {
+        do {
+            Py_BEGIN_ALLOW_THREADS
+            errno = 0;
 #ifdef MS_WINDOWS
-        n = write(fd, buf, (int)count);
+            n = write(fd, buf, (int)count);
 #else
-        n = write(fd, buf, count);
+            n = write(fd, buf, count);
 #endif
-        /* save/restore errno because PyErr_CheckSignals()
-         * and PyErr_SetFromErrno() can modify it */
-        err = errno;
-        Py_END_ALLOW_THREADS
-    } while (n < 0 && errno == EINTR &&
-            !(async_err = PyErr_CheckSignals()));
+            /* save/restore errno because PyErr_CheckSignals()
+             * and PyErr_SetFromErrno() can modify it */
+            err = errno;
+            Py_END_ALLOW_THREADS
+        } while (n < 0 && err == EINTR &&
+                !(async_err = PyErr_CheckSignals()));
+    }
+    else {
+        do {
+            errno = 0;
+#ifdef MS_WINDOWS
+            n = write(fd, buf, (int)count);
+#else
+            n = write(fd, buf, count);
+#endif
+            err = errno;
+        } while (n < 0 && err == EINTR);
+    }
 
     if (async_err) {
         /* write() was interrupted by a signal (failed with EINTR)
-         * and the Python signal handler raised an exception */
+           and the Python signal handler raised an exception (if gil_held is
+           nonzero). */
         errno = err;
-        assert(errno == EINTR && PyErr_Occurred());
+        assert(errno == EINTR && (!gil_held || PyErr_Occurred()));
         return -1;
     }
     if (n < 0) {
-        PyErr_SetFromErrno(PyExc_OSError);
+        if (gil_held)
+            PyErr_SetFromErrno(PyExc_OSError);
         errno = err;
         return -1;
     }
 
     return n;
+}
+
+/* Write count bytes of buf into fd.
+
+   On success, return the number of written bytes, it can be lower than count
+   including 0. On error, raise an exception, set errno and return -1.
+
+   When interrupted by a signal (write() fails with EINTR), retry the syscall.
+   If the Python signal handler raises an exception, the function returns -1
+   (the syscall is not retried).
+
+   Release the GIL to call write(). The caller must hold the GIL. */
+Py_ssize_t
+_Py_write(int fd, const void *buf, size_t count)
+{
+    /* _Py_write() must not be called with an exception set, otherwise the
+     * caller may think that write() was interrupted by a signal and the signal
+     * handler raised an exception. */
+    assert(!PyErr_Occurred());
+
+    return _Py_write_impl(fd, buf, count, 1);
+}
+
+/* Write count bytes of buf into fd.
+ *
+ * On success, return the number of written bytes, it can be lower than count
+ * including 0. On error, set errno and return -1.
+ *
+ * When interrupted by a signal (write() fails with EINTR), retry the syscall
+ * without calling the Python signal handler. */
+Py_ssize_t
+_Py_write_noraise(int fd, const void *buf, size_t count)
+{
+    return _Py_write_impl(fd, buf, count, 0);
 }
 
 #ifdef HAVE_READLINK
