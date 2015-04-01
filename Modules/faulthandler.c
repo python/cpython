@@ -28,9 +28,7 @@
 #  define FAULTHANDLER_USER
 #endif
 
-/* cast size_t to int because write() takes an int on Windows
-   (anyway, the length is smaller than 30 characters) */
-#define PUTS(fd, str) write(fd, str, (int)strlen(str))
+#define PUTS(fd, str) _Py_write_noraise(fd, str, strlen(str))
 
 _Py_IDENTIFIER(enable);
 _Py_IDENTIFIER(fileno);
@@ -213,6 +211,42 @@ get_thread_state(void)
     return tstate;
 }
 
+static void
+faulthandler_dump_traceback(int fd, int all_threads,
+                            PyInterpreterState *interp)
+{
+    static volatile int reentrant = 0;
+    PyThreadState *tstate;
+
+    if (reentrant)
+        return;
+
+    reentrant = 1;
+
+#ifdef WITH_THREAD
+    /* SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals and
+       are thus delivered to the thread that caused the fault. Get the Python
+       thread state of the current thread.
+
+       PyThreadState_Get() doesn't give the state of the thread that caused the
+       fault if the thread released the GIL, and so this function cannot be
+       used. Read the thread local storage (TLS) instead: call
+       PyGILState_GetThisThreadState(). */
+    tstate = PyGILState_GetThisThreadState();
+#else
+    tstate = PyThreadState_Get();
+#endif
+
+    if (all_threads)
+        _Py_DumpTracebackThreads(fd, interp, tstate);
+    else {
+        if (tstate != NULL)
+            _Py_DumpTraceback(fd, tstate);
+    }
+
+    reentrant = 0;
+}
+
 static PyObject*
 faulthandler_dump_traceback_py(PyObject *self,
                                PyObject *args, PyObject *kwargs)
@@ -247,6 +281,10 @@ faulthandler_dump_traceback_py(PyObject *self,
     else {
         _Py_DumpTraceback(fd, tstate);
     }
+
+    if (PyErr_CheckSignals())
+        return NULL;
+
     Py_RETURN_NONE;
 }
 
@@ -270,7 +308,6 @@ faulthandler_fatal_error(int signum)
     const int fd = fatal_error.fd;
     unsigned int i;
     fault_handler_t *handler = NULL;
-    PyThreadState *tstate;
     int save_errno = errno;
 
     if (!fatal_error.enabled)
@@ -298,26 +335,8 @@ faulthandler_fatal_error(int signum)
     PUTS(fd, handler->name);
     PUTS(fd, "\n\n");
 
-#ifdef WITH_THREAD
-    /* SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals and
-       are thus delivered to the thread that caused the fault. Get the Python
-       thread state of the current thread.
-
-       PyThreadState_Get() doesn't give the state of the thread that caused the
-       fault if the thread released the GIL, and so this function cannot be
-       used. Read the thread local storage (TLS) instead: call
-       PyGILState_GetThisThreadState(). */
-    tstate = PyGILState_GetThisThreadState();
-#else
-    tstate = PyThreadState_Get();
-#endif
-
-    if (fatal_error.all_threads)
-        _Py_DumpTracebackThreads(fd, fatal_error.interp, tstate);
-    else {
-        if (tstate != NULL)
-            _Py_DumpTraceback(fd, tstate);
-    }
+    faulthandler_dump_traceback(fd, fatal_error.all_threads,
+                                fatal_error.interp);
 
     errno = save_errno;
 #ifdef MS_WINDOWS
@@ -474,7 +493,7 @@ faulthandler_thread(void *unused)
         /* get the thread holding the GIL, NULL if no thread hold the GIL */
         current = (PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current);
 
-        write(thread.fd, thread.header, (int)thread.header_len);
+        _Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
 
         errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, current);
         ok = (errmsg == NULL);
@@ -660,28 +679,14 @@ static void
 faulthandler_user(int signum)
 {
     user_signal_t *user;
-    PyThreadState *tstate;
     int save_errno = errno;
 
     user = &user_signals[signum];
     if (!user->enabled)
         return;
 
-#ifdef WITH_THREAD
-    /* PyThreadState_Get() doesn't give the state of the current thread if
-       the thread doesn't hold the GIL. Read the thread local storage (TLS)
-       instead: call PyGILState_GetThisThreadState(). */
-    tstate = PyGILState_GetThisThreadState();
-#else
-    tstate = PyThreadState_Get();
-#endif
+    faulthandler_dump_traceback(user->fd, user->all_threads, user->interp);
 
-    if (user->all_threads)
-        _Py_DumpTracebackThreads(user->fd, user->interp, tstate);
-    else {
-        if (tstate != NULL)
-            _Py_DumpTraceback(user->fd, tstate);
-    }
 #ifdef HAVE_SIGACTION
     if (user->chain) {
         (void)sigaction(signum, &user->previous, NULL);
