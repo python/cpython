@@ -37,7 +37,7 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "captured_stdout", "TransientResource", "transient_internet",
            "run_with_locale", "set_memlimit", "bigmemtest", "bigaddrspacetest",
            "BasicTestRunner", "run_unittest", "run_doctest", "threading_setup",
-           "threading_cleanup", "reap_children", "cpython_only",
+           "threading_cleanup", "reap_threads", "start_threads", "cpython_only",
            "check_impl_detail", "get_attribute", "py3k_bytes",
            "import_fresh_module", "threading_cleanup", "reap_children",
            "strip_python_stderr", "IPV6_ENABLED"]
@@ -1507,6 +1507,39 @@ def reap_children():
                     break
             except:
                 break
+
+@contextlib.contextmanager
+def start_threads(threads, unlock=None):
+    threads = list(threads)
+    started = []
+    try:
+        try:
+            for t in threads:
+                t.start()
+                started.append(t)
+        except:
+            if verbose:
+                print("Can't start %d threads, only %d threads started" %
+                      (len(threads), len(started)))
+            raise
+        yield
+    finally:
+        if unlock:
+            unlock()
+        endtime = starttime = time.time()
+        for timeout in range(1, 16):
+            endtime += 60
+            for t in started:
+                t.join(max(endtime - time.time(), 0.01))
+            started = [t for t in started if t.isAlive()]
+            if not started:
+                break
+            if verbose:
+                print('Unable to join %d threads during a period of '
+                      '%d minutes' % (len(started), timeout))
+    started = [t for t in started if t.isAlive()]
+    if started:
+        raise AssertionError('Unable to join %d threads' % len(started))
 
 @contextlib.contextmanager
 def swap_attr(obj, attr, new_val):

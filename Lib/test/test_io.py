@@ -985,11 +985,8 @@ class BufferedReaderTest(unittest.TestCase, CommonBufferedTests):
                         errors.append(e)
                         raise
                 threads = [threading.Thread(target=f) for x in range(20)]
-                for t in threads:
-                    t.start()
-                time.sleep(0.02) # yield
-                for t in threads:
-                    t.join()
+                with support.start_threads(threads):
+                    time.sleep(0.02) # yield
                 self.assertFalse(errors,
                     "the following exceptions were caught: %r" % errors)
                 s = b''.join(results)
@@ -1299,11 +1296,8 @@ class BufferedWriterTest(unittest.TestCase, CommonBufferedTests):
                         errors.append(e)
                         raise
                 threads = [threading.Thread(target=f) for x in range(20)]
-                for t in threads:
-                    t.start()
-                time.sleep(0.02) # yield
-                for t in threads:
-                    t.join()
+                with support.start_threads(threads):
+                    time.sleep(0.02) # yield
                 self.assertFalse(errors,
                     "the following exceptions were caught: %r" % errors)
                 bufio.close()
@@ -2555,14 +2549,10 @@ class TextIOWrapperTest(unittest.TestCase):
                 text = "Thread%03d\n" % n
                 event.wait()
                 f.write(text)
-            threads = [threading.Thread(target=lambda n=x: run(n))
+            threads = [threading.Thread(target=run, args=(x,))
                        for x in range(20)]
-            for t in threads:
-                t.start()
-            time.sleep(0.02)
-            event.set()
-            for t in threads:
-                t.join()
+            with support.start_threads(threads, event.set):
+                time.sleep(0.02)
         with self.open(support.TESTFN) as f:
             content = f.read()
             for n in range(20):
@@ -3042,9 +3032,11 @@ class SignalsTest(unittest.TestCase):
             # return with a successful (partial) result rather than an EINTR.
             # The buffered IO layer must check for pending signal
             # handlers, which in this case will invoke alarm_interrupt().
-            self.assertRaises(ZeroDivisionError,
-                        wio.write, item * (support.PIPE_MAX_SIZE // len(item) + 1))
-            t.join()
+            try:
+                with self.assertRaises(ZeroDivisionError):
+                    wio.write(item * (support.PIPE_MAX_SIZE // len(item) + 1))
+            finally:
+                t.join()
             # We got one byte, get another one and check that it isn't a
             # repeat of the first one.
             read_results.append(os.read(r, 1))

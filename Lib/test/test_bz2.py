@@ -1,4 +1,4 @@
-from test import test_support
+from test import test_support as support
 from test.test_support import TESTFN, _4G, bigmemtest, import_module, findfile
 
 import unittest
@@ -306,10 +306,8 @@ class BZ2FileTest(BaseTest):
                 for i in range(5):
                     f.write(data)
             threads = [threading.Thread(target=comp) for i in range(nthreads)]
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
+            with support.start_threads(threads):
+                pass
 
     def testMixedIterationReads(self):
         # Issue #8397: mixed iteration and reads should be forbidden.
@@ -482,13 +480,13 @@ class FuncTest(BaseTest):
         self.assertEqual(text.strip("a"), "")
 
 def test_main():
-    test_support.run_unittest(
+    support.run_unittest(
         BZ2FileTest,
         BZ2CompressorTest,
         BZ2DecompressorTest,
         FuncTest
     )
-    test_support.reap_children()
+    support.reap_children()
 
 if __name__ == '__main__':
     test_main()
