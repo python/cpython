@@ -382,7 +382,7 @@ child_exec(char *const exec_array[],
            PyObject *preexec_fn,
            PyObject *preexec_fn_args_tuple)
 {
-    int i, saved_errno, unused, reached_preexec = 0;
+    int i, saved_errno, reached_preexec = 0;
     PyObject *result;
     const char* err_msg = "";
     /* Buffer large enough to hold a hex integer.  We can't malloc. */
@@ -496,28 +496,29 @@ error:
     saved_errno = errno;
     /* Report the posix error to our parent process. */
     /* We ignore all write() return values as the total size of our writes is
-     * less than PIPEBUF and we cannot do anything about an error anyways. */
+       less than PIPEBUF and we cannot do anything about an error anyways.
+       Use _Py_write_noraise() to retry write() if it is interrupted by a
+       signal (fails with EINTR). */
     if (saved_errno) {
         char *cur;
-        unused = write(errpipe_write, "OSError:", 8);
+        _Py_write_noraise(errpipe_write, "OSError:", 8);
         cur = hex_errno + sizeof(hex_errno);
         while (saved_errno != 0 && cur > hex_errno) {
             *--cur = "0123456789ABCDEF"[saved_errno % 16];
             saved_errno /= 16;
         }
-        unused = write(errpipe_write, cur, hex_errno + sizeof(hex_errno) - cur);
-        unused = write(errpipe_write, ":", 1);
+        _Py_write_noraise(errpipe_write, cur, hex_errno + sizeof(hex_errno) - cur);
+        _Py_write_noraise(errpipe_write, ":", 1);
         if (!reached_preexec) {
             /* Indicate to the parent that the error happened before exec(). */
-            unused = write(errpipe_write, "noexec", 6);
+            _Py_write_noraise(errpipe_write, "noexec", 6);
         }
         /* We can't call strerror(saved_errno).  It is not async signal safe.
          * The parent process will look the error message up. */
     } else {
-        unused = write(errpipe_write, "SubprocessError:0:", 18);
-        unused = write(errpipe_write, err_msg, strlen(err_msg));
+        _Py_write_noraise(errpipe_write, "SubprocessError:0:", 18);
+        _Py_write_noraise(errpipe_write, err_msg, strlen(err_msg));
     }
-    if (unused) return;  /* silly? yes! avoids gcc compiler warning. */
 }
 
 
