@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23838: linecache now clears the cache and returns an empty result on
+  MemoryError.
+
 - Issue #23742: ntpath.expandvars() no longer loses unbalanced single quotes.
 
 - Issue #21802: The reader in BufferedRWPair now is closed even when closing

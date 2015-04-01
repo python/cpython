@@ -124,6 +124,22 @@ class LineCacheTests(unittest.TestCase):
                 self.assertEqual(line, getline(source_name, index + 1))
                 source_list.append(line)
 
+    def test_memoryerror(self):
+        lines = linecache.getlines(FILENAME)
+        self.assertTrue(lines)
+        def raise_memoryerror(*args, **kwargs):
+            raise MemoryError
+        with support.swap_attr(linecache, 'updatecache', raise_memoryerror):
+            lines2 = linecache.getlines(FILENAME)
+        self.assertEqual(lines2, lines)
+
+        linecache.clearcache()
+        with support.swap_attr(linecache, 'updatecache', raise_memoryerror):
+            lines3 = linecache.getlines(FILENAME)
+        self.assertEqual(lines3, [])
+        self.assertEqual(linecache.getlines(FILENAME), lines)
+
+
 def test_main():
     support.run_unittest(LineCacheTests)
 
