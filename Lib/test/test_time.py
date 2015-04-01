@@ -21,6 +21,8 @@ SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
 TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
 TIME_MINYEAR = -TIME_MAXYEAR - 1
 
+US_TO_NS = 10 ** 3
+MS_TO_NS = 10 ** 6
 SEC_TO_NS = 10 ** 9
 
 class _PyTime(enum.IntEnum):
@@ -867,10 +869,6 @@ class TestPyTime_t(unittest.TestCase):
                 # seconds
                 (2 * SEC_TO_NS, (2, 0)),
                 (-3 * SEC_TO_NS, (-3, 0)),
-
-                # seconds + nanoseconds
-                (1234567000, (1, 234567)),
-                (-1234567000, (-2, 765433)),
             ):
                 with self.subTest(nanoseconds=ns, timeval=tv, round=rnd):
                     self.assertEqual(PyTime_AsTimeval(ns, rnd), tv)
@@ -913,6 +911,76 @@ class TestPyTime_t(unittest.TestCase):
         ):
             with self.subTest(nanoseconds=ns, timespec=ts):
                 self.assertEqual(PyTime_AsTimespec(ns), ts)
+
+    def test_milliseconds(self):
+        from _testcapi import PyTime_AsMilliseconds
+        for rnd in ALL_ROUNDING_METHODS:
+            for ns, tv in (
+                # milliseconds
+                (1 * MS_TO_NS, 1),
+                (-2 * MS_TO_NS, -2),
+
+                # seconds
+                (2 * SEC_TO_NS, 2000),
+                (-3 * SEC_TO_NS, -3000),
+            ):
+                with self.subTest(nanoseconds=ns, timeval=tv, round=rnd):
+                    self.assertEqual(PyTime_AsMilliseconds(ns, rnd), tv)
+
+        FLOOR = _PyTime.ROUND_FLOOR
+        CEILING = _PyTime.ROUND_CEILING
+        for ns, ms, rnd in (
+            # nanoseconds
+            (1, 0, FLOOR),
+            (1, 1, CEILING),
+            (-1, 0, FLOOR),
+            (-1, -1, CEILING),
+
+            # seconds + nanoseconds
+            (1234 * MS_TO_NS + 1, 1234, FLOOR),
+            (1234 * MS_TO_NS + 1, 1235, CEILING),
+            (-1234 * MS_TO_NS - 1, -1234, FLOOR),
+            (-1234 * MS_TO_NS - 1, -1235, CEILING),
+        ):
+            with self.subTest(nanoseconds=ns, milliseconds=ms, round=rnd):
+                self.assertEqual(PyTime_AsMilliseconds(ns, rnd), ms)
+
+    def test_microseconds(self):
+        from _testcapi import PyTime_AsMicroseconds
+        for rnd in ALL_ROUNDING_METHODS:
+            for ns, tv in (
+                # microseconds
+                (1 * US_TO_NS, 1),
+                (-2 * US_TO_NS, -2),
+
+                # milliseconds
+                (1 * MS_TO_NS, 1000),
+                (-2 * MS_TO_NS, -2000),
+
+                # seconds
+                (2 * SEC_TO_NS, 2000000),
+                (-3 * SEC_TO_NS, -3000000),
+            ):
+                with self.subTest(nanoseconds=ns, timeval=tv, round=rnd):
+                    self.assertEqual(PyTime_AsMicroseconds(ns, rnd), tv)
+
+        FLOOR = _PyTime.ROUND_FLOOR
+        CEILING = _PyTime.ROUND_CEILING
+        for ns, ms, rnd in (
+            # nanoseconds
+            (1, 0, FLOOR),
+            (1, 1, CEILING),
+            (-1, 0, FLOOR),
+            (-1, -1, CEILING),
+
+            # seconds + nanoseconds
+            (1234 * US_TO_NS + 1, 1234, FLOOR),
+            (1234 * US_TO_NS + 1, 1235, CEILING),
+            (-1234 * US_TO_NS - 1, -1234, FLOOR),
+            (-1234 * US_TO_NS - 1, -1235, CEILING),
+        ):
+            with self.subTest(nanoseconds=ns, milliseconds=ms, round=rnd):
+                self.assertEqual(PyTime_AsMicroseconds(ns, rnd), ms)
 
 
 if __name__ == "__main__":

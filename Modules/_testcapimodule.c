@@ -3452,6 +3452,42 @@ test_PyTime_AsTimespec(PyObject *self, PyObject *args)
 }
 #endif
 
+static PyObject *
+test_PyTime_AsMilliseconds(PyObject *self, PyObject *args)
+{
+    PY_LONG_LONG ns;
+    int round;
+    _PyTime_t t, ms;
+
+    if (!PyArg_ParseTuple(args, "Li", &ns, &round))
+        return NULL;
+    if (check_time_rounding(round) < 0)
+        return NULL;
+    t = _PyTime_FromNanoseconds(ns);
+    ms = _PyTime_AsMilliseconds(t, round);
+    /* This conversion rely on the fact that _PyTime_t is a number of
+       nanoseconds */
+    return _PyTime_AsNanosecondsObject(ms);
+}
+
+static PyObject *
+test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
+{
+    PY_LONG_LONG ns;
+    int round;
+    _PyTime_t t, ms;
+
+    if (!PyArg_ParseTuple(args, "Li", &ns, &round))
+        return NULL;
+    if (check_time_rounding(round) < 0)
+        return NULL;
+    t = _PyTime_FromNanoseconds(ns);
+    ms = _PyTime_AsMicroseconds(t, round);
+    /* This conversion rely on the fact that _PyTime_t is a number of
+       nanoseconds */
+    return _PyTime_AsNanosecondsObject(ms);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3621,6 +3657,8 @@ static PyMethodDef TestMethods[] = {
 #ifdef HAVE_CLOCK_GETTIME
     {"PyTime_AsTimespec", test_PyTime_AsTimespec, METH_VARARGS},
 #endif
+    {"PyTime_AsMilliseconds", test_PyTime_AsMilliseconds, METH_VARARGS},
+    {"PyTime_AsMicroseconds", test_PyTime_AsMicroseconds, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
