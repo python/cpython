@@ -14,7 +14,7 @@ import shutil
 import unittest
 from test.support import (
     verbose, import_module, run_unittest, TESTFN, reap_threads,
-    forget, unlink, rmtree)
+    forget, unlink, rmtree, start_threads)
 threading = import_module('threading')
 
 def task(N, done, done_tasks, errors):
@@ -116,10 +116,10 @@ class ThreadedImportTests(unittest.TestCase):
             done_tasks = []
             done.clear()
             t0 = time.monotonic()
-            for i in range(N):
-                t = threading.Thread(target=task,
-                                     args=(N, done, done_tasks, errors,))
-                t.start()
+            with start_threads(threading.Thread(target=task,
+                                                args=(N, done, done_tasks, errors,))
+                               for i in range(N)):
+                pass
             completed = done.wait(10 * 60)
             dt = time.monotonic() - t0
             if verbose:
