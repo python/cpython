@@ -2476,7 +2476,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
     }
 
     err = GET_ERROR;
-    if (err == EINTR && PyErr_CheckSignals())
+    if (CHECK_ERRNO(EINTR) && PyErr_CheckSignals())
         return -1;
 
     wait_connect = (s->sock_timeout > 0 && err == IN_PROGRESS_ERR
@@ -2488,7 +2488,7 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
     if (timeout == -1) {
         /* select() failed */
         err = GET_ERROR;
-        if (err == EINTR && PyErr_CheckSignals())
+        if (CHECK_ERRNO(EINTR) && PyErr_CheckSignals())
             return -1;
         return err;
     }
