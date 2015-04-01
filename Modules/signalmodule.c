@@ -263,9 +263,10 @@ trip_signal(int sig_num)
 #endif
         {
             byte = (unsigned char)sig_num;
-            do {
-                rc = write(fd, &byte, 1);
-            } while (rc < 0 && errno == EINTR);
+
+            /* _Py_write_noraise() retries write() if write() is interrupted by
+               a signal (fails with EINTR). */
+            rc = _Py_write_noraise(fd, &byte, 1);
 
             if (rc < 0) {
                 Py_AddPendingCall(report_wakeup_write_error,
