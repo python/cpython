@@ -13,7 +13,7 @@
 
 #define OFF(x) offsetof(PyTracebackObject, x)
 
-#define PUTS(fd, str) write(fd, str, (int)strlen(str))
+#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
 #define MAX_STRING_LENGTH 500
 #define MAX_FRAME_DEPTH 100
 #define MAX_NTHREADS 100
@@ -512,7 +512,7 @@ dump_decimal(int fd, int value)
         len++;
     } while (value);
     reverse_string(buffer, len);
-    write(fd, buffer, len);
+    _Py_write_noraise(fd, buffer, len);
 }
 
 /* Format an integer in range [0; 0xffffffff] to hexadecimal of 'width' digits,
@@ -532,7 +532,7 @@ dump_hexadecimal(int fd, unsigned long value, int width)
         len++;
     } while (len < width || value);
     reverse_string(buffer, len);
-    write(fd, buffer, len);
+    _Py_write_noraise(fd, buffer, len);
 }
 
 /* Write an unicode object into the file fd using ascii+backslashreplace.
@@ -585,7 +585,7 @@ dump_ascii(int fd, PyObject *text)
         if (' ' <= ch && ch <= 126) {
             /* printable ASCII character */
             char c = (char)ch;
-            write(fd, &c, 1);
+            _Py_write_noraise(fd, &c, 1);
         }
         else if (ch <= 0xff) {
             PUTS(fd, "\\x");
@@ -619,9 +619,9 @@ dump_frame(int fd, PyFrameObject *frame)
     if (code != NULL && code->co_filename != NULL
         && PyUnicode_Check(code->co_filename))
     {
-        write(fd, "\"", 1);
+        PUTS(fd, "\"");
         dump_ascii(fd, code->co_filename);
-        write(fd, "\"", 1);
+        PUTS(fd, "\"");
     } else {
         PUTS(fd, "???");
     }
@@ -638,7 +638,7 @@ dump_frame(int fd, PyFrameObject *frame)
     else
         PUTS(fd, "???");
 
-    write(fd, "\n", 1);
+    PUTS(fd, "\n");
 }
 
 static void
@@ -668,6 +668,12 @@ dump_traceback(int fd, PyThreadState *tstate, int write_header)
     }
 }
 
+/* Dump the traceback of a Python thread into fd. Use write() to write the
+   traceback and retry if write() is interrupted by a signal (failed with
+   EINTR), but don't call the Python signal handler.
+
+   The caller is responsible to call PyErr_CheckSignals() to call Python signal
+   handlers if signals were received. */
 void
 _Py_DumpTraceback(int fd, PyThreadState *tstate)
 {
@@ -690,6 +696,12 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
     PUTS(fd, " (most recent call first):\n");
 }
 
+/* Dump the traceback of all Python threads into fd. Use write() to write the
+   traceback and retry if write() is interrupted by a signal (failed with
+   EINTR), but don't call the Python signal handler.
+
+   The caller is responsible to call PyErr_CheckSignals() to call Python signal
+   handlers if signals were received. */
 const char*
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
                          PyThreadState *current_thread)
@@ -708,7 +720,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     do
     {
         if (nthreads != 0)
-            write(fd, "\n", 1);
+            PUTS(fd, "\n");
         if (nthreads >= MAX_NTHREADS) {
             PUTS(fd, "...\n");
             break;
