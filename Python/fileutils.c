@@ -667,7 +667,8 @@ _Py_fstat_noraise(int fd, struct _Py_stat_struct *status)
    error on error. On POSIX, set errno on error. Fill status and return 0 on
    success.
 
-   The GIL must be held. */
+   Release the GIL to call GetFileType() and GetFileInformationByHandle(), or
+   to call fstat(). The caller must hold the GIL. */
 int
 _Py_fstat(int fd, struct _Py_stat_struct *status)
 {
@@ -968,7 +969,7 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
    When interrupted by a signal (open() fails with EINTR), retry the syscall,
    except if the Python signal handler raises an exception.
 
-   The GIL must be held. */
+   Release the GIL to call open(). The caller must hold the GIL. */
 int
 _Py_open(const char *pathname, int flags)
 {
@@ -1054,7 +1055,8 @@ _Py_fopen(const char *pathname, const char *mode)
    When interrupted by a signal (open() fails with EINTR), retry the syscall,
    except if the Python signal handler raises an exception.
 
-   The GIL must be held. */
+   Release the GIL to call _wfopen() or fopen(). The caller must hold
+   the GIL. */
 FILE*
 _Py_fopen_obj(PyObject *path, const char *mode)
 {
