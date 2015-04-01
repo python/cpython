@@ -1,6 +1,6 @@
 import unittest
 from test.support import (verbose, refcount_test, run_unittest,
-                            strip_python_stderr, cpython_only)
+                            strip_python_stderr, cpython_only, start_threads)
 from test.script_helper import assert_python_ok, make_script, temp_dir
 
 import sys
@@ -397,19 +397,13 @@ class GCTests(unittest.TestCase):
         old_switchinterval = sys.getswitchinterval()
         sys.setswitchinterval(1e-5)
         try:
-            exit = False
+            exit = []
             threads = []
             for i in range(N_THREADS):
                 t = threading.Thread(target=run_thread)
                 threads.append(t)
-            try:
-                for t in threads:
-                    t.start()
-            finally:
+            with start_threads(threads, lambda: exit.append(1)):
                 time.sleep(1.0)
-                exit = True
-            for t in threads:
-                t.join()
         finally:
             sys.setswitchinterval(old_switchinterval)
         gc.collect()
