@@ -410,6 +410,9 @@ shutil
 signal
 ------
 
+* On Windows, :func:`signal.set_wakeup_fd` now also supports socket handles.
+  (Contributed by Victor Stinner in :issue:`22018`.)
+
 * Different constants of :mod:`signal` module are now enumeration values using
   the :mod:`enum` module. This allows meaningful names to be printed during
   debugging, instead of integer “magic numbers”.  (Contributed by Giampaolo
