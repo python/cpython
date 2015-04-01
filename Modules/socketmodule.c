@@ -4207,7 +4207,8 @@ socket_getaddrinfo(PyObject *self, PyObject *args)
         goto err;
     }
 
-    if ((all = PyList_New(0)) == NULL)
+    all = PyList_New(0);
+    if (all == NULL)
         goto err;
     for (res = res0; res; res = res->ai_next) {
         PyObject *addr =
