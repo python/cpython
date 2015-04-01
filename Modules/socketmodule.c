@@ -3501,10 +3501,10 @@ static PyObject *
 sock_sendall(PySocketSockObject *s, PyObject *args)
 {
     char *buf;
-    Py_ssize_t len, n = -1;
-    int async_err = 0;
-    int flags = 0, timeout;
+    Py_ssize_t len, n;
+    int flags = 0;
     Py_buffer pbuf;
+    struct sock_send ctx;
 
     if (!PyArg_ParseTuple(args, "y*|i:sendall", &pbuf, &flags))
         return NULL;
@@ -3517,38 +3517,30 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     }
 
     do {
-        timeout = internal_select(s, 1, s->sock_timeout);
-
-        n = -1;
-        if (!timeout) {
-            Py_BEGIN_ALLOW_THREADS
-#ifdef MS_WINDOWS
-            if (len > INT_MAX)
-                len = INT_MAX;
-            n = send(s->sock_fd, buf, (int)len, flags);
-#else
-            n = send(s->sock_fd, buf, len, flags);
-#endif
-            Py_END_ALLOW_THREADS
-        }
-        if (timeout == 1) {
+        ctx.buf = buf;
+        ctx.len = len;
+        ctx.flags = flags;
+        if (sock_call(s, 1, sock_send_impl, &ctx) < 0) {
             PyBuffer_Release(&pbuf);
-            PyErr_SetString(socket_timeout, "timed out");
             return NULL;
         }
-        if (n >= 0) {
-            buf += n;
-            len -= n;
+        n = ctx.result;
+        assert(n >= 0);
+
+        buf += n;
+        len -= n;
+
+        /* We must run our signal handlers before looping again.
+           send() can return a successful partial write when it is
+           interrupted, so we can't restrict ourselves to EINTR. */
+        if (PyErr_CheckSignals()) {
+            PyBuffer_Release(&pbuf);
+            return NULL;
         }
-    } while (len > 0 && (n >= 0 || errno == EINTR) &&
-             !(async_err = PyErr_CheckSignals()));
+    } while (len > 0);
     PyBuffer_Release(&pbuf);
 
-    if (n < 0 || async_err)
-        return (!async_err) ? s->errorhandler() : NULL;
-
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(sendall_doc,
