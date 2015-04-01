@@ -169,9 +169,21 @@ class LineCacheTests(unittest.TestCase):
             linecache.lazycache(NONEXISTENT_FILENAME, globals()))
         self.assertEqual(4, len(linecache.cache[NONEXISTENT_FILENAME]))
 
+    def test_memoryerror(self):
+        lines = linecache.getlines(FILENAME)
+        self.assertTrue(lines)
+        def raise_memoryerror(*args, **kwargs):
+            raise MemoryError
+        with support.swap_attr(linecache, 'updatecache', raise_memoryerror):
+            lines2 = linecache.getlines(FILENAME)
+        self.assertEqual(lines2, lines)
 
-def test_main():
-    support.run_unittest(LineCacheTests)
+        linecache.clearcache()
+        with support.swap_attr(linecache, 'updatecache', raise_memoryerror):
+            lines3 = linecache.getlines(FILENAME)
+        self.assertEqual(lines3, [])
+        self.assertEqual(linecache.getlines(FILENAME), lines)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
