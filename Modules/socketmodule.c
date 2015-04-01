@@ -683,45 +683,113 @@ internal_connect_select(PySocketSockObject *s)
     return internal_select_impl(s, 1, s->sock_timeout, 1);
 }
 
-/*
-   Two macros for automatic retry of select() in case of false positives
-   (for example, select() could indicate a socket is ready for reading
-    but the data then discarded by the OS because of a wrong checksum).
-   Here is an example of use:
+/* Call a socket function.
 
-    BEGIN_SELECT_LOOP(s)
+   Raise an exception and return -1 on error, return 0 on success.
 
-    timeout = internal_select(s, 0, interval);
+   If the socket has a timeout, wait until the socket is ready before calling
+   the function: wait until the socket is writable if writing is nonzero, wait
+   until the socket received data otherwise.
 
-    if (!timeout) {
-        Py_BEGIN_ALLOW_THREADS
-        outlen = recv(s->sock_fd, cbuf, len, flags);
-        Py_END_ALLOW_THREADS
-    }
-    if (timeout == 1) {
-        PyErr_SetString(socket_timeout, "timed out");
+   If the function func is interrupted by a signal (failed with EINTR): retry
+   the function, except if the signal handler raised an exception (PEP 475).
+
+   When the function is retried, recompute the timeout using a monotonic clock.
+
+   sock_call() must be called with the GIL held. The function func is called
+   with the GIL released. */
+static int
+sock_call(PySocketSockObject *s,
+          int writing,
+          int (*func) (PySocketSockObject *s, void *data),
+          void *data)
+{
+    int has_timeout = (s->sock_timeout > 0);
+    _PyTime_t deadline = 0;
+    int deadline_initialized = 0;
+    int res;
+
+    /* sock_call() must be called with the GIL held. */
+    assert(PyGILState_Check());
+
+    /* outer loop to retry select() when select() is interrupted by a signal
+       or to retry select()+func() on false positive (see above) */
+    while (1) {
+        if (has_timeout) {
+            _PyTime_t interval;
+
+            if (deadline_initialized) {
+                /* recompute the timeout */
+                interval = deadline - _PyTime_GetMonotonicClock();
+            }
+            else {
+                deadline = _PyTime_GetMonotonicClock() + s->sock_timeout;
+                interval = s->sock_timeout;
+            }
+
+            res = internal_select(s, writing, interval);
+            if (res == -1) {
+                if (CHECK_ERRNO(EINTR)) {
+                    /* select() was interrupted by a signal */
+                    if (PyErr_CheckSignals())
+                        return -1;
+
+                    /* retry select() */
+                    continue;
+                }
+
+                /* select() failed */
+                s->errorhandler();
+                return -1;
+            }
+
+            if (res == 1) {
+                PyErr_SetString(socket_timeout, "timed out");
+                return -1;
+            }
+
+            /* the socket is ready */
+        }
+
+        /* inner loop to retry func() when func() is interrupted by a signal */
+        while (1) {
+            Py_BEGIN_ALLOW_THREADS
+            res = func(s, data);
+            Py_END_ALLOW_THREADS
+
+            if (res) {
+                /* func() succeeded */
+                return 0;
+            }
+
+            if (!CHECK_ERRNO(EINTR))
+                break;
+
+            /* func() was interrupted by a signal */
+            if (PyErr_CheckSignals())
+                return -1;
+
+            /* retry func() */
+        }
+
+        if (s->sock_timeout > 0
+            && (CHECK_ERRNO(EWOULDBLOCK) || CHECK_ERRNO(EAGAIN))) {
+            /* False positive: func() failed with EWOULDBLOCK or EAGAIN.
+
+               For example, select() could indicate a socket is ready for
+               reading, but the data then discarded by the OS because of a
+               wrong checksum.
+
+               Loop on select() to recheck for socket readyness. */
+            continue;
+        }
+
+        /* func() failed */
+        s->errorhandler();
         return -1;
     }
-    END_SELECT_LOOP(s)
-*/
+}
 
-#define BEGIN_SELECT_LOOP(s) \
-    { \
-        _PyTime_t deadline = 0; \
-        _PyTime_t interval = s->sock_timeout; \
-        int has_timeout = (s->sock_timeout > 0); \
-        if (has_timeout) \
-            deadline = _PyTime_GetMonotonicClock() + interval; \
-        while (1) { \
-            errno = 0; \
-
-#define END_SELECT_LOOP(s) \
-            if (!has_timeout || \
-                (!CHECK_ERRNO(EWOULDBLOCK) && !CHECK_ERRNO(EAGAIN))) \
-                break; \
-            interval = deadline - _PyTime_GetMonotonicClock(); \
-        } \
-    } \
 
 /* Initialize a new socket object. */
 
@@ -2061,23 +2129,51 @@ get_cmsg_data_len(struct msghdr *msg, struct cmsghdr *cmsgh, size_t *data_len)
 #endif    /* CMSG_LEN */
 
 
+struct sock_accept {
+    socklen_t *addrlen;
+    sock_addr_t *addrbuf;
+    SOCKET_T result;
+};
+
+#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
+/* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
+static int accept4_works = -1;
+#endif
+
+static int
+sock_accept_impl(PySocketSockObject *s, void *data)
+{
+    struct sock_accept *ctx = data;
+
+#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
+    if (accept4_works != 0) {
+        ctx->result = accept4(s->sock_fd, SAS2SA(ctx->addrbuf), ctx->addrlen,
+                              SOCK_CLOEXEC);
+        if (ctx->result == INVALID_SOCKET && accept4_works == -1) {
+            /* On Linux older than 2.6.28, accept4() fails with ENOSYS */
+            accept4_works = (errno != ENOSYS);
+        }
+    }
+    if (accept4_works == 0)
+        ctx->result = accept(s->sock_fd, SAS2SA(ctx->addrbuf), ctx->addrlen);
+#else
+    ctx->result = accept(s->sock_fd, SAS2SA(ctx->addrbuf), ctx->addrlen);
+#endif
+    return (ctx->result >= 0);
+}
+
 /* s._accept() -> (fd, address) */
 
 static PyObject *
 sock_accept(PySocketSockObject *s)
 {
     sock_addr_t addrbuf;
-    SOCKET_T newfd = INVALID_SOCKET;
+    SOCKET_T newfd;
     socklen_t addrlen;
     PyObject *sock = NULL;
     PyObject *addr = NULL;
     PyObject *res = NULL;
-    int timeout;
-    int async_err = 0;
-#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-    /* accept4() is available on Linux 2.6.28+ and glibc 2.10 */
-    static int accept4_works = -1;
-#endif
+    struct sock_accept ctx;
 
     if (!getsockaddrlen(s, &addrlen))
         return NULL;
@@ -2086,37 +2182,11 @@ sock_accept(PySocketSockObject *s)
     if (!IS_SELECTABLE(s))
         return select_error();
 
-    BEGIN_SELECT_LOOP(s)
-    do {
-        timeout = internal_select(s, 0, interval);
-
-        if (!timeout) {
-            Py_BEGIN_ALLOW_THREADS
-#if defined(HAVE_ACCEPT4) && defined(SOCK_CLOEXEC)
-            if (accept4_works != 0) {
-                newfd = accept4(s->sock_fd, SAS2SA(&addrbuf), &addrlen,
-                                SOCK_CLOEXEC);
-                if (newfd == INVALID_SOCKET && accept4_works == -1) {
-                    /* On Linux older than 2.6.28, accept4() fails with ENOSYS */
-                    accept4_works = (errno != ENOSYS);
-                }
-            }
-            if (accept4_works == 0)
-                newfd = accept(s->sock_fd, SAS2SA(&addrbuf), &addrlen);
-#else
-            newfd = accept(s->sock_fd, SAS2SA(&addrbuf), &addrlen);
-#endif
-            Py_END_ALLOW_THREADS
-        }
-    } while (newfd < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    if (timeout == 1) {
-        PyErr_SetString(socket_timeout, "timed out");
+    ctx.addrlen = &addrlen;
+    ctx.addrbuf = &addrbuf;
+    if (sock_call(s, 0, sock_accept_impl, &ctx) < 0)
         return NULL;
-    }
-    END_SELECT_LOOP(s)
-
-    if (newfd == INVALID_SOCKET)
-        return (!async_err) ? s->errorhandler() : NULL;
+    newfd = ctx.result;
 
 #ifdef MS_WINDOWS
     if (!SetHandleInformation((HANDLE)newfd, HANDLE_FLAG_INHERIT, 0)) {
@@ -2690,6 +2760,28 @@ at least 0 (if it is lower, it is set to 0); it specifies the number of\n\
 unaccepted connections that the system will allow before refusing new\n\
 connections. If not specified, a default reasonable value is chosen.");
 
+struct sock_recv {
+    char *cbuf;
+    Py_ssize_t len;
+    int flags;
+    Py_ssize_t result;
+};
+
+static int
+sock_recv_impl(PySocketSockObject *s, void *data)
+{
+    struct sock_recv *ctx = data;
+
+#ifdef MS_WINDOWS
+    if (ctx->len > INT_MAX)
+        ctx->len = INT_MAX;
+    ctx->result = recv(s->sock_fd, ctx->cbuf, (int)ctx->len, ctx->flags);
+#else
+    ctx->result = recv(s->sock_fd, ctx->cbuf, ctx->len, ctx->flags);
+#endif
+    return (ctx->result >= 0);
+}
+
 
 /*
  * This is the guts of the recv() and recv_into() methods, which reads into a
@@ -2703,9 +2795,7 @@ connections. If not specified, a default reasonable value is chosen.");
 static Py_ssize_t
 sock_recv_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags)
 {
-    Py_ssize_t outlen = -1;
-    int timeout;
-    int async_err = 0;
+    struct sock_recv ctx;
 
     if (!IS_SELECTABLE(s)) {
         select_error();
@@ -2716,36 +2806,13 @@ sock_recv_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags)
         return 0;
     }
 
-    BEGIN_SELECT_LOOP(s)
-    do {
-        timeout = internal_select(s, 0, interval);
-
-        if (!timeout) {
-            Py_BEGIN_ALLOW_THREADS
-#ifdef MS_WINDOWS
-            if (len > INT_MAX)
-                len = INT_MAX;
-            outlen = recv(s->sock_fd, cbuf, (int)len, flags);
-#else
-            outlen = recv(s->sock_fd, cbuf, len, flags);
-#endif
-            Py_END_ALLOW_THREADS
-        }
-    } while (outlen < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-
-    if (timeout == 1) {
-        PyErr_SetString(socket_timeout, "timed out");
+    ctx.cbuf = cbuf;
+    ctx.len = len;
+    ctx.flags = flags;
+    if (sock_call(s, 0, sock_recv_impl, &ctx) < 0)
         return -1;
-    }
-    END_SELECT_LOOP(s)
-    if (outlen < 0) {
-        /* Note: the call to errorhandler() ALWAYS indirectly returned
-           NULL, so ignore its return value */
-        if (!async_err)
-            s->errorhandler();
-        return -1;
-    }
-    return outlen;
+
+    return ctx.result;
 }
 
 
@@ -2859,6 +2926,34 @@ is not specified (or 0), receive up to the size available in the given buffer.\n
 \n\
 See recv() for documentation about the flags.");
 
+struct sock_recvfrom {
+    char* cbuf;
+    Py_ssize_t len;
+    int flags;
+    socklen_t *addrlen;
+    sock_addr_t *addrbuf;
+    Py_ssize_t result;
+};
+
+static int
+sock_recvfrom_impl(PySocketSockObject *s, void *data)
+{
+    struct sock_recvfrom *ctx = data;
+
+    memset(ctx->addrbuf, 0, *ctx->addrlen);
+
+#ifdef MS_WINDOWS
+    if (ctx->len > INT_MAX)
+        ctx->len = INT_MAX;
+    ctx->result = recvfrom(s->sock_fd, ctx->cbuf, (int)ctx->len, ctx->flags,
+                           SAS2SA(ctx->addrbuf), ctx->addrlen);
+#else
+    ctx->result = recvfrom(s->sock_fd, ctx->cbuf, ctx->len, ctx->flags,
+                           SAS2SA(ctx->addrbuf), ctx->addrlen);
+#endif
+    return (ctx->result >= 0);
+}
+
 
 /*
  * This is the guts of the recvfrom() and recvfrom_into() methods, which reads
@@ -2876,10 +2971,8 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags,
                    PyObject** addr)
 {
     sock_addr_t addrbuf;
-    int timeout;
-    Py_ssize_t n = -1;
     socklen_t addrlen;
-    int async_err = 0;
+    struct sock_recvfrom ctx;
 
     *addr = NULL;
 
@@ -2891,42 +2984,20 @@ sock_recvfrom_guts(PySocketSockObject *s, char* cbuf, Py_ssize_t len, int flags,
         return -1;
     }
 
-    BEGIN_SELECT_LOOP(s)
-    do {
-        memset(&addrbuf, 0, addrlen);
-        timeout = internal_select(s, 0, interval);
-
-        if (!timeout) {
-            Py_BEGIN_ALLOW_THREADS
-#ifdef MS_WINDOWS
-            if (len > INT_MAX)
-                len = INT_MAX;
-            n = recvfrom(s->sock_fd, cbuf, (int)len, flags,
-                         (void *) &addrbuf, &addrlen);
-#else
-            n = recvfrom(s->sock_fd, cbuf, len, flags,
-                         SAS2SA(&addrbuf), &addrlen);
-#endif
-            Py_END_ALLOW_THREADS
-        }
-    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-
-    if (timeout == 1) {
-        PyErr_SetString(socket_timeout, "timed out");
-        return -1;
-    }
-    END_SELECT_LOOP(s)
-    if (n < 0) {
-        if (!async_err)
-            s->errorhandler();
-        return -1;
-    }
-
-    if (!(*addr = makesockaddr(s->sock_fd, SAS2SA(&addrbuf),
-                               addrlen, s->sock_proto)))
+    ctx.cbuf = cbuf;
+    ctx.len = len;
+    ctx.flags = flags;
+    ctx.addrbuf = &addrbuf;
+    ctx.addrlen = &addrlen;
+    if (sock_call(s, 0, sock_recvfrom_impl, &ctx) < 0)
         return -1;
 
-    return n;
+    *addr = makesockaddr(s->sock_fd, SAS2SA(&addrbuf), addrlen,
+                         s->sock_proto);
+    if (*addr == NULL)
+        return -1;
+
+    return ctx.result;
 }
 
 /* s.recvfrom(nbytes [,flags]) method */
@@ -3037,6 +3108,21 @@ PyDoc_STRVAR(recvfrom_into_doc,
 \n\
 Like recv_into(buffer[, nbytes[, flags]]) but also return the sender's address info.");
 
+struct sock_recvmsg {
+    struct msghdr *msg;
+    int flags;
+    ssize_t result;
+};
+
+static int
+sock_recvmsg_impl(PySocketSockObject *s, void *data)
+{
+    struct sock_recvmsg *ctx = data;
+
+    ctx->result = recvmsg(s->sock_fd, ctx->msg, ctx->flags);
+    return  (ctx->result >= 0);
+}
+
 
 /* The sendmsg() and recvmsg[_into]() methods require a working
    CMSG_LEN().  See the comment near get_CMSG_LEN(). */
@@ -3056,9 +3142,6 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
                   int flags, Py_ssize_t controllen,
                   PyObject *(*makeval)(ssize_t, void *), void *makeval_data)
 {
-    ssize_t bytes_received = -1;
-    int timeout;
-    int async_err = 0;
     sock_addr_t addrbuf;
     socklen_t addrbuflen;
     struct msghdr msg = {0};
@@ -3067,6 +3150,7 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
     struct cmsghdr *cmsgh;
     size_t cmsgdatalen = 0;
     int cmsg_status;
+    struct sock_recvmsg ctx;
 
     /* XXX: POSIX says that msg_name and msg_namelen "shall be
        ignored" when the socket is connected (Linux fills them in
@@ -3093,35 +3177,17 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
         goto finally;
     }
 
-    BEGIN_SELECT_LOOP(s)
-    do {
-        msg.msg_name = SAS2SA(&addrbuf);
-        msg.msg_namelen = addrbuflen;
-        msg.msg_iov = iov;
-        msg.msg_iovlen = iovlen;
-        msg.msg_control = controlbuf;
-        msg.msg_controllen = controllen;
-        timeout = internal_select(s, 0, interval);
+    msg.msg_name = SAS2SA(&addrbuf);
+    msg.msg_namelen = addrbuflen;
+    msg.msg_iov = iov;
+    msg.msg_iovlen = iovlen;
+    msg.msg_control = controlbuf;
+    msg.msg_controllen = controllen;
 
-        if (timeout == 1) {
-            PyErr_SetString(socket_timeout, "timed out");
-            goto finally;
-        }
-
-        if (!timeout) {
-            Py_BEGIN_ALLOW_THREADS;
-            bytes_received = recvmsg(s->sock_fd, &msg, flags);
-            Py_END_ALLOW_THREADS;
-        }
-    } while (bytes_received < 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    END_SELECT_LOOP(s)
-
-    if (bytes_received < 0) {
-        if (!async_err)
-            s->errorhandler();
+    ctx.msg = &msg;
+    ctx.flags = flags;
+    if (sock_call(s, 0, sock_recvmsg_impl, &ctx) < 0)
         goto finally;
-    }
 
     /* Make list of (level, type, data) tuples from control messages. */
     if ((cmsg_list = PyList_New(0)) == NULL)
@@ -3163,7 +3229,7 @@ sock_recvmsg_guts(PySocketSockObject *s, struct iovec *iov, int iovlen,
     }
 
     retval = Py_BuildValue("NOiN",
-                           (*makeval)(bytes_received, makeval_data),
+                           (*makeval)(ctx.result, makeval_data),
                            cmsg_list,
                            (int)msg.msg_flags,
                            makesockaddr(s->sock_fd, SAS2SA(&addrbuf),
@@ -3371,16 +3437,36 @@ SCM_RIGHTS mechanism.");
 #endif    /* CMSG_LEN */
 
 
+struct sock_send {
+    char *buf;
+    Py_ssize_t len;
+    int flags;
+    Py_ssize_t result;
+};
+
+static int
+sock_send_impl(PySocketSockObject *s, void *data)
+{
+    struct sock_send *ctx = data;
+
+#ifdef MS_WINDOWS
+    if (ctx->len > INT_MAX)
+        ctx->len = INT_MAX;
+    ctx->result = send(s->sock_fd, ctx->buf, (int)ctx->len, ctx->flags);
+#else
+    ctx->result = send(s->sock_fd, ctx->buf, ctx->len, ctx->flags);
+#endif
+    return (ctx->result >= 0);
+}
+
 /* s.send(data [,flags]) method */
 
 static PyObject *
 sock_send(PySocketSockObject *s, PyObject *args)
 {
-    char *buf;
-    Py_ssize_t len, n = -1;
-    int async_err = 0;
-    int flags = 0, timeout;
+    int flags = 0;
     Py_buffer pbuf;
+    struct sock_send ctx;
 
     if (!PyArg_ParseTuple(args, "y*|i:send", &pbuf, &flags))
         return NULL;
@@ -3389,36 +3475,16 @@ sock_send(PySocketSockObject *s, PyObject *args)
         PyBuffer_Release(&pbuf);
         return select_error();
     }
-    buf = pbuf.buf;
-    len = pbuf.len;
-
-    BEGIN_SELECT_LOOP(s)
-    do {
-        timeout = internal_select(s, 1, interval);
-
-        if (!timeout) {
-            Py_BEGIN_ALLOW_THREADS
-#ifdef MS_WINDOWS
-            if (len > INT_MAX)
-                len = INT_MAX;
-            n = send(s->sock_fd, buf, (int)len, flags);
-#else
-            n = send(s->sock_fd, buf, len, flags);
-#endif
-            Py_END_ALLOW_THREADS
-        }
-    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    if (timeout == 1) {
+    ctx.buf = pbuf.buf;
+    ctx.len = pbuf.len;
+    ctx.flags = flags;
+    if (sock_call(s, 1, sock_send_impl, &ctx) < 0) {
         PyBuffer_Release(&pbuf);
-        PyErr_SetString(socket_timeout, "timed out");
         return NULL;
     }
-    END_SELECT_LOOP(s)
-
     PyBuffer_Release(&pbuf);
-    if (n < 0)
-        return (!async_err) ? s->errorhandler() : NULL;
-    return PyLong_FromSsize_t(n);
+
+    return PyLong_FromSsize_t(ctx.result);
 }
 
 PyDoc_STRVAR(send_doc,
@@ -3494,6 +3560,32 @@ until all data is sent.  If an error occurs, it's impossible\n\
 to tell how much data has been sent.");
 
 
+struct sock_sendto {
+    char *buf;
+    Py_ssize_t len;
+    int flags;
+    int addrlen;
+    sock_addr_t *addrbuf;
+    Py_ssize_t result;
+};
+
+static int
+sock_sendto_impl(PySocketSockObject *s, void *data)
+{
+    struct sock_sendto *ctx = data;
+
+#ifdef MS_WINDOWS
+    if (ctx->len > INT_MAX)
+        ctx->len = INT_MAX;
+    ctx->result = sendto(s->sock_fd, ctx->buf, (int)ctx->len, ctx->flags,
+                         SAS2SA(ctx->addrbuf), ctx->addrlen);
+#else
+    ctx->result = sendto(s->sock_fd, ctx->buf, ctx->len, ctx->flags,
+                         SAS2SA(ctx->addrbuf), ctx->addrlen);
+#endif
+    return (ctx->result >= 0);
+}
+
 /* s.sendto(data, [flags,] sockaddr) method */
 
 static PyObject *
@@ -3501,11 +3593,10 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
 {
     Py_buffer pbuf;
     PyObject *addro;
-    char *buf;
-    Py_ssize_t len, arglen;
+    Py_ssize_t arglen;
     sock_addr_t addrbuf;
-    int addrlen, n = -1, flags, timeout;
-    int async_err = 0;
+    int addrlen, flags;
+    struct sock_sendto ctx;
 
     flags = 0;
     arglen = PyTuple_Size(args);
@@ -3526,9 +3617,6 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
     if (PyErr_Occurred())
         return NULL;
 
-    buf = pbuf.buf;
-    len = pbuf.len;
-
     if (!IS_SELECTABLE(s)) {
         PyBuffer_Release(&pbuf);
         return select_error();
@@ -3539,35 +3627,18 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
         return NULL;
     }
 
-    BEGIN_SELECT_LOOP(s)
-    do {
-        timeout = internal_select(s, 1, interval);
-
-        if (!timeout) {
-            Py_BEGIN_ALLOW_THREADS
-#ifdef MS_WINDOWS
-            if (len > INT_MAX)
-                len = INT_MAX;
-            n = sendto(s->sock_fd, buf, (int)len, flags,
-                       SAS2SA(&addrbuf), addrlen);
-#else
-            n = sendto(s->sock_fd, buf, len, flags,
-                       SAS2SA(&addrbuf), addrlen);
-#endif
-            Py_END_ALLOW_THREADS
-        }
-    } while (n < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-
-    if (timeout == 1) {
+    ctx.buf = pbuf.buf;
+    ctx.len = pbuf.len;
+    ctx.flags = flags;
+    ctx.addrlen = addrlen;
+    ctx.addrbuf = &addrbuf;
+    if (sock_call(s, 1, sock_sendto_impl, &ctx) < 0) {
         PyBuffer_Release(&pbuf);
-        PyErr_SetString(socket_timeout, "timed out");
         return NULL;
     }
-    END_SELECT_LOOP(s)
     PyBuffer_Release(&pbuf);
-    if (n < 0)
-        return (!async_err) ? s->errorhandler() : NULL;
-    return PyLong_FromSsize_t(n);
+
+    return PyLong_FromSsize_t(ctx.result);
 }
 
 PyDoc_STRVAR(sendto_doc,
@@ -3576,6 +3647,21 @@ PyDoc_STRVAR(sendto_doc,
 Like send(data, flags) but allows specifying the destination address.\n\
 For IP sockets, the address is a pair (hostaddr, port).");
 
+
+struct sock_sendmsg {
+    struct msghdr *msg;
+    int flags;
+    ssize_t result;
+};
+
+static int
+sock_sendmsg_impl(PySocketSockObject *s, void *data)
+{
+    struct sock_sendmsg *ctx = data;
+
+    ctx->result = sendmsg(s->sock_fd, ctx->msg, ctx->flags);
+    return (ctx->result >= 0);
+}
 
 /* The sendmsg() and recvmsg[_into]() methods require a working
    CMSG_LEN().  See the comment near get_CMSG_LEN(). */
@@ -3597,11 +3683,10 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
     } *cmsgs = NULL;
     void *controlbuf = NULL;
     size_t controllen, controllen_last;
-    ssize_t bytes_sent = -1;
-    int async_err = 0;
-    int addrlen, timeout, flags = 0;
+    int addrlen, flags = 0;
     PyObject *data_arg, *cmsg_arg = NULL, *addr_arg = NULL, *data_fast = NULL,
         *cmsg_fast = NULL, *retval = NULL;
+    struct sock_sendmsg ctx;
 
     if (!PyArg_ParseTuple(args, "O|OiO:sendmsg",
                           &data_arg, &cmsg_arg, &flags, &addr_arg))
@@ -3755,30 +3840,12 @@ sock_sendmsg(PySocketSockObject *s, PyObject *args)
         goto finally;
     }
 
-    BEGIN_SELECT_LOOP(s)
-    do {
-        timeout = internal_select(s, 1, interval);
-
-        if (!timeout) {
-            Py_BEGIN_ALLOW_THREADS;
-            bytes_sent = sendmsg(s->sock_fd, &msg, flags);
-            Py_END_ALLOW_THREADS;
-        }
-
-        if (timeout == 1) {
-            PyErr_SetString(socket_timeout, "timed out");
-            goto finally;
-        }
-    } while (bytes_sent < 0 && errno == EINTR &&
-             !(async_err = PyErr_CheckSignals()));
-    END_SELECT_LOOP(s)
-
-    if (bytes_sent < 0) {
-        if (!async_err)
-            s->errorhandler();
+    ctx.msg = &msg;
+    ctx.flags = flags;
+    if (sock_call(s, 1, sock_sendmsg_impl, &ctx) < 0)
         goto finally;
-    }
-    retval = PyLong_FromSsize_t(bytes_sent);
+
+    retval = PyLong_FromSsize_t(ctx.result);
 
 finally:
     PyMem_Free(controlbuf);
