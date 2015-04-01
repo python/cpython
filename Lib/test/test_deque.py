@@ -843,6 +843,21 @@ class TestSubclassWithKwargs(unittest.TestCase):
         # SF bug #1486663 -- this used to erroneously raise a TypeError
         SubclassWithKwargs(newarg=1)
 
+class TestSequence(seq_tests.CommonTest):
+    type2test = deque
+
+    def test_getitem(self):
+        # For now, bypass tests that require slicing
+        pass
+
+    def test_getslice(self):
+        # For now, bypass tests that require slicing
+        pass
+
+    def test_subscript(self):
+        # For now, bypass tests that require slicing
+        pass
+
 #==============================================================================
 
 libreftest = """
@@ -957,6 +972,7 @@ def test_main(verbose=None):
         TestVariousIteratorArgs,
         TestSubclass,
         TestSubclassWithKwargs,
+        TestSequence,
     )
 
     support.run_unittest(*test_classes)
