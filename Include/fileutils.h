@@ -84,6 +84,11 @@ PyAPI_FUNC(Py_ssize_t) _Py_write(
     const void *buf,
     size_t count);
 
+PyAPI_FUNC(Py_ssize_t) _Py_write_noraise(
+    int fd,
+    const void *buf,
+    size_t count);
+
 #ifdef HAVE_READLINK
 PyAPI_FUNC(int) _Py_wreadlink(
     const wchar_t *path,
