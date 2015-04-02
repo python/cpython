@@ -2589,7 +2589,13 @@ sock_connect_impl(PySocketSockObject *s, void* Py_UNUSED(data))
 
     if (err == EISCONN)
         return 1;
-    return (err == 0);
+    if (err != 0) {
+        /* sock_call_ex() uses GET_SOCK_ERROR() to get the error code */
+        SET_SOCK_ERROR(err);
+        abort();
+        return 0;
+    }
+    return 1;
 }
 
 static int
