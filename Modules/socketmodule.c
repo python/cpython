@@ -2901,7 +2901,8 @@ sock_sendto(PySocketSockObject *s, PyObject *args)
     char *buf;
     Py_ssize_t len;
     sock_addr_t addrbuf;
-    int addrlen, n = -1, flags, timeout;
+    int addrlen, flags, timeout;
+    long n = -1;
     int arglen;
 
     flags = 0;
