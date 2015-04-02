@@ -10,6 +10,9 @@ Release date: XXX
 Core and Builtins
 -----------------
 
+- Issue #22977: Fixed formatting Windows error messages on Wine.
+  Patch by Martin Panter.
+
 Library
 -------
 
