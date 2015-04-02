@@ -491,7 +491,7 @@ PyErr_SetFromErrnoWithFilenameObjects(PyObject *exc, PyObject *filenameObject, P
                 /* Only ever seen this in out-of-mem
                    situations */
                 s_buf = NULL;
-                message = PyUnicode_FromFormat("Windows Error 0x%X", i);
+                message = PyUnicode_FromFormat("Windows Error 0x%x", i);
             } else {
                 /* remove trailing cr/lf and dots */
                 while (len > 0 && (s_buf[len-1] <= L' ' || s_buf[len-1] == L'.'))
@@ -600,7 +600,7 @@ PyObject *PyErr_SetExcFromWindowsErrWithFilenameObjects(
         NULL);          /* no args */
     if (len==0) {
         /* Only seen this in out of mem situations */
-        message = PyUnicode_FromFormat("Windows Error 0x%X", err);
+        message = PyUnicode_FromFormat("Windows Error 0x%x", err);
         s_buf = NULL;
     } else {
         /* remove trailing cr/lf and dots */
