@@ -406,6 +406,7 @@ class TclTest(unittest.TestCase):
         if tcl_version >= (8, 5):  # bignum was added in Tcl 8.5
             check('2**64', True)
 
+    @unittest.skipUnless(tcl_version >= (8, 5), 'requires Tcl version >= 8.5')
     def test_booleans(self):
         tcl = self.interp
         def check(expr, expected):
