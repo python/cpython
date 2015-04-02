@@ -723,6 +723,7 @@ sock_call(PySocketSockObject *s,
                 interval = deadline - _PyTime_GetMonotonicClock();
             }
             else {
+                deadline_initialized = 1;
                 deadline = _PyTime_GetMonotonicClock() + s->sock_timeout;
                 interval = s->sock_timeout;
             }
