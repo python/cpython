@@ -3109,6 +3109,9 @@ PyDoc_STRVAR(recvfrom_into_doc,
 \n\
 Like recv_into(buffer[, nbytes[, flags]]) but also return the sender's address info.");
 
+/* The sendmsg() and recvmsg[_into]() methods require a working
+   CMSG_LEN().  See the comment near get_CMSG_LEN(). */
+#ifdef CMSG_LEN
 struct sock_recvmsg {
     struct msghdr *msg;
     int flags;
@@ -3124,10 +3127,6 @@ sock_recvmsg_impl(PySocketSockObject *s, void *data)
     return  (ctx->result >= 0);
 }
 
-
-/* The sendmsg() and recvmsg[_into]() methods require a working
-   CMSG_LEN().  See the comment near get_CMSG_LEN(). */
-#ifdef CMSG_LEN
 /*
  * Call recvmsg() with the supplied iovec structures, flags, and
  * ancillary data buffer size (controllen).  Returns the tuple return
@@ -3641,6 +3640,9 @@ Like send(data, flags) but allows specifying the destination address.\n\
 For IP sockets, the address is a pair (hostaddr, port).");
 
 
+/* The sendmsg() and recvmsg[_into]() methods require a working
+   CMSG_LEN().  See the comment near get_CMSG_LEN(). */
+#ifdef CMSG_LEN
 struct sock_sendmsg {
     struct msghdr *msg;
     int flags;
@@ -3656,9 +3658,6 @@ sock_sendmsg_impl(PySocketSockObject *s, void *data)
     return (ctx->result >= 0);
 }
 
-/* The sendmsg() and recvmsg[_into]() methods require a working
-   CMSG_LEN().  See the comment near get_CMSG_LEN(). */
-#ifdef CMSG_LEN
 /* s.sendmsg(buffers[, ancdata[, flags[, address]]]) method */
 
 static PyObject *
