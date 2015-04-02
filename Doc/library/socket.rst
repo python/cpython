@@ -830,6 +830,19 @@ to sockets.
    Connect to a remote socket at *address*. (The format of *address* depends on the
    address family --- see above.)
 
+   If the connection is interrupted by a signal, the method waits until the
+   connection completes, or raise a :exc:`socket.timeout` on timeout, if the
+   signal handler doesn't raise an exception and the socket is blocking or has
+   a timeout. For non-blocking sockets, the method raises an
+   :exc:`InterruptedError` exception if the connection is interrupted by a
+   signal (or the exception raised by the signal handler).
+
+   .. versionchanged:: 3.5
+      The method now waits until the connection completes instead of raising an
+      :exc:`InterruptedError` exception if the connection is interrupted by a
+      signal, the signal handler doesn't raise an exception and the socket is
+      blocking or has a timeout (see the :pep:`475` for the rationale).
+
 
 .. method:: socket.connect_ex(address)
 
