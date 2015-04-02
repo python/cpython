@@ -482,6 +482,19 @@ select_error(void)
 #endif
 
 #ifdef MS_WINDOWS
+#  define GET_SOCK_ERROR WSAGetLastError()
+#  define SET_SOCK_ERROR(err) WSASetLastError(err)
+#  define SOCK_TIMEOUT_ERR WSAEWOULDBLOCK
+#  define SOCK_INPROGRESS_ERR WSAEWOULDBLOCK
+#else
+#  define GET_SOCK_ERROR errno
+#  define SET_SOCK_ERROR(err) do { errno = err; } while (0)
+#  define SOCK_TIMEOUT_ERR EWOULDBLOCK
+#  define SOCK_INPROGRESS_ERR EINPROGRESS
+#endif
+
+
+#ifdef MS_WINDOWS
 /* Does WSASocket() support the WSA_FLAG_NO_HANDLE_INHERIT flag? */
 static int support_wsa_no_inherit = -1;
 #endif
@@ -592,8 +605,8 @@ internal_setblocking(PySocketSockObject *s, int block)
 }
 
 static int
-internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval,
-                     int error)
+internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
+                int connect)
 {
     int n;
 #ifdef HAVE_POLL
@@ -610,43 +623,64 @@ internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval,
 #endif
 
     /* Error condition is for output only */
-    assert(!(error && !writing));
-
-    /* Nothing to do unless we're in timeout mode (not non-blocking) */
-    if (s->sock_timeout <= 0)
-        return 0;
+    assert(!(connect && !writing));
 
     /* Guard against closed socket */
     if (s->sock_fd < 0)
         return 0;
 
-    /* Handling this condition here simplifies the select loops */
-    if (interval < 0)
-        return 1;
+    /* for connect(), we want to poll even if the socket is blocking */
+    if (!connect) {
+        /* Nothing to do unless we're in timeout mode (not non-blocking) */
+        if (s->sock_timeout <= 0)
+            return 0;
+
+        /* Handling this condition here simplifies the select loops */
+        if (interval < 0)
+            return 1;
+    }
 
     /* Prefer poll, if available, since you can poll() any fd
      * which can't be done with select(). */
 #ifdef HAVE_POLL
     pollfd.fd = s->sock_fd;
     pollfd.events = writing ? POLLOUT : POLLIN;
-    if (error)
+    if (connect) {
+        /* On Windows, the socket becomes writable on connection success,
+           but a connection failure is notified as an error. On POSIX, the
+           socket becomes writable on connection success or on connection
+           failure. */
         pollfd.events |= POLLERR;
+    }
 
     /* s->sock_timeout is in seconds, timeout in ms */
-    ms = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
+    if (interval >= 0)
+        ms = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
+    else
+        ms = -1;
     assert(ms <= INT_MAX);
 
     Py_BEGIN_ALLOW_THREADS;
     n = poll(&pollfd, 1, (int)ms);
     Py_END_ALLOW_THREADS;
 #else
-    _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
+    if (interval >= 0)
+        _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
+    else {
+        tv.tv_sec = -1;
+        tv.tv_sec = 0;
+    }
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
     FD_ZERO(&efds);
-    if (error)
+    if (connect) {
+        /* On Windows, the socket becomes writable on connection success,
+           but a connection failure is notified as an error. On POSIX, the
+           socket becomes writable on connection success or on connection
+           failure. */
         FD_SET(s->sock_fd, &efds);
+    }
 
     /* See if the socket is ready */
     Py_BEGIN_ALLOW_THREADS;
@@ -666,43 +700,32 @@ internal_select_impl(PySocketSockObject *s, int writing, _PyTime_t interval,
     return 0;
 }
 
-/* Do a select()/poll() on the socket, if necessary (sock_timeout > 0).
-   The argument writing indicates the direction.
-   This does not raise an exception; we'll let our caller do that
-   after they've reacquired the interpreter lock.
-   Returns 1 on timeout, -1 on error, 0 otherwise. */
-static int
-internal_select(PySocketSockObject *s, int writing, _PyTime_t interval)
-{
-    return internal_select_impl(s, writing, interval, 0);
-}
-
-static int
-internal_connect_select(PySocketSockObject *s)
-{
-    return internal_select_impl(s, 1, s->sock_timeout, 1);
-}
-
 /* Call a socket function.
 
-   Raise an exception and return -1 on error, return 0 on success.
+   On error, raise an exception and return -1 if err is set, or fill err and
+   return -1 otherwise. If a signal was received and the signal handler raised
+   an exception, return -1, and set err to -1 if err is set.
+
+   On success, return 0, and set err to 0 if err is set.
 
    If the socket has a timeout, wait until the socket is ready before calling
    the function: wait until the socket is writable if writing is nonzero, wait
    until the socket received data otherwise.
 
-   If the function func is interrupted by a signal (failed with EINTR): retry
+   If the socket function is interrupted by a signal (failed with EINTR): retry
    the function, except if the signal handler raised an exception (PEP 475).
 
    When the function is retried, recompute the timeout using a monotonic clock.
 
-   sock_call() must be called with the GIL held. The function func is called
-   with the GIL released. */
+   sock_call_ex() must be called with the GIL held. The socket function is
+   called with the GIL released. */
 static int
-sock_call(PySocketSockObject *s,
-          int writing,
-          int (*func) (PySocketSockObject *s, void *data),
-          void *data)
+sock_call_ex(PySocketSockObject *s,
+             int writing,
+             int (*sock_func) (PySocketSockObject *s, void *data),
+             void *data,
+             int connect,
+             int *err)
 {
     int has_timeout = (s->sock_timeout > 0);
     _PyTime_t deadline = 0;
@@ -713,27 +736,39 @@ sock_call(PySocketSockObject *s,
     assert(PyGILState_Check());
 
     /* outer loop to retry select() when select() is interrupted by a signal
-       or to retry select()+func() on false positive (see above) */
+       or to retry select()+sock_func() on false positive (see above) */
     while (1) {
-        if (has_timeout) {
+        /* For connect(), poll even for blocking socket. The connection
+           runs asynchronously. */
+        if (has_timeout || connect) {
             _PyTime_t interval;
 
-            if (deadline_initialized) {
-                /* recompute the timeout */
-                interval = deadline - _PyTime_GetMonotonicClock();
+            if (has_timeout) {
+                if (deadline_initialized) {
+                    /* recompute the timeout */
+                    interval = deadline - _PyTime_GetMonotonicClock();
+                }
+                else {
+                    deadline_initialized = 1;
+                    deadline = _PyTime_GetMonotonicClock() + s->sock_timeout;
+                    interval = s->sock_timeout;
+                }
             }
-            else {
-                deadline_initialized = 1;
-                deadline = _PyTime_GetMonotonicClock() + s->sock_timeout;
-                interval = s->sock_timeout;
-            }
+            else
+                interval = -1;
 
-            res = internal_select(s, writing, interval);
+            res = internal_select(s, writing, interval, connect);
             if (res == -1) {
+                if (err)
+                    *err = GET_SOCK_ERROR;
+
                 if (CHECK_ERRNO(EINTR)) {
                     /* select() was interrupted by a signal */
-                    if (PyErr_CheckSignals())
+                    if (PyErr_CheckSignals()) {
+                        if (err)
+                            *err = -1;
                         return -1;
+                    }
 
                     /* retry select() */
                     continue;
@@ -745,37 +780,49 @@ sock_call(PySocketSockObject *s,
             }
 
             if (res == 1) {
-                PyErr_SetString(socket_timeout, "timed out");
+                if (err)
+                    *err = SOCK_TIMEOUT_ERR;
+                else
+                    PyErr_SetString(socket_timeout, "timed out");
                 return -1;
             }
 
             /* the socket is ready */
         }
 
-        /* inner loop to retry func() when func() is interrupted by a signal */
+        /* inner loop to retry sock_func() when sock_func() is interrupted
+           by a signal */
         while (1) {
             Py_BEGIN_ALLOW_THREADS
-            res = func(s, data);
+            res = sock_func(s, data);
             Py_END_ALLOW_THREADS
 
             if (res) {
-                /* func() succeeded */
+                /* sock_func() succeeded */
+                if (err)
+                    *err = 0;
                 return 0;
             }
+
+            if (err)
+                *err = GET_SOCK_ERROR;
 
             if (!CHECK_ERRNO(EINTR))
                 break;
 
-            /* func() was interrupted by a signal */
-            if (PyErr_CheckSignals())
+            /* sock_func() was interrupted by a signal */
+            if (PyErr_CheckSignals()) {
+                if (err)
+                    *err = -1;
                 return -1;
+            }
 
-            /* retry func() */
+            /* retry sock_func() */
         }
 
         if (s->sock_timeout > 0
             && (CHECK_ERRNO(EWOULDBLOCK) || CHECK_ERRNO(EAGAIN))) {
-            /* False positive: func() failed with EWOULDBLOCK or EAGAIN.
+            /* False positive: sock_func() failed with EWOULDBLOCK or EAGAIN.
 
                For example, select() could indicate a socket is ready for
                reading, but the data then discarded by the OS because of a
@@ -785,10 +832,21 @@ sock_call(PySocketSockObject *s,
             continue;
         }
 
-        /* func() failed */
-        s->errorhandler();
+        /* sock_func() failed */
+        if (!err)
+            s->errorhandler();
+        /* else: err was already set before */
         return -1;
     }
+}
+
+static int
+sock_call(PySocketSockObject *s,
+          int writing,
+          int (*func) (PySocketSockObject *s, void *data),
+          void *data)
+{
+    return sock_call_ex(s, writing, func, data, 0, NULL);
 }
 
 
@@ -2519,23 +2577,26 @@ The object cannot be used after this call, but the file descriptor\n\
 can be reused for other purposes.  The file descriptor is returned.");
 
 static int
-internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
-                 int *timeoutp)
+sock_connect_impl(PySocketSockObject *s, void* Py_UNUSED(data))
 {
-#ifdef MS_WINDOWS
-#  define GET_ERROR WSAGetLastError()
-#  define IN_PROGRESS_ERR WSAEWOULDBLOCK
-#  define TIMEOUT_ERR WSAEWOULDBLOCK
-#else
-#  define GET_ERROR errno
-#  define IN_PROGRESS_ERR EINPROGRESS
-#  define TIMEOUT_ERR EWOULDBLOCK
-#endif
+    int err;
+    socklen_t size = sizeof err;
 
-    int res, err, wait_connect, timeout;
-    socklen_t res_size;
+    if (getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR, (void *)&err, &size)) {
+        /* getsockopt() failed */
+        return 0;
+    }
 
-    *timeoutp = 0;
+    if (err == EISCONN)
+        return 1;
+    return (err == 0);
+}
+
+static int
+internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
+                 int raise)
+{
+    int res, err, wait_connect;
 
     Py_BEGIN_ALLOW_THREADS
     res = connect(s->sock_fd, addr, addrlen);
@@ -2546,44 +2607,53 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
         return 0;
     }
 
-    err = GET_ERROR;
-    if (CHECK_ERRNO(EINTR) && PyErr_CheckSignals())
-        return -1;
+    /* connect() failed */
 
-    wait_connect = (s->sock_timeout > 0 && err == IN_PROGRESS_ERR
-                    && IS_SELECTABLE(s));
-    if (!wait_connect)
-        return err;
-
-    timeout = internal_connect_select(s);
-    if (timeout == -1) {
-        /* select() failed */
-        err = GET_ERROR;
-        if (CHECK_ERRNO(EINTR) && PyErr_CheckSignals())
+    /* save error, PyErr_CheckSignals() can replace it */
+    err = GET_SOCK_ERROR;
+    if (CHECK_ERRNO(EINTR)) {
+        if (PyErr_CheckSignals())
             return -1;
-        return err;
+
+        /* Issue #23618: when connect() fails with EINTR, the connection is
+           running asynchronously.
+
+           If the socket is blocking or has a timeout, wait until the
+           connection completes, fails or timed out using select(), and then
+           get the connection status using getsockopt(SO_ERROR).
+
+           If the socket is non-blocking, raise InterruptedError. The caller is
+           responsible to wait until the connection completes, fails or timed
+           out (it's the case in asyncio for example). */
+        wait_connect = (s->sock_timeout != 0 && IS_SELECTABLE(s));
+    }
+    else {
+        wait_connect = (s->sock_timeout > 0 && err == SOCK_INPROGRESS_ERR
+                        && IS_SELECTABLE(s));
     }
 
-    if (timeout == 1) {
-        /* select() timed out */
-        *timeoutp = 1;
-        return TIMEOUT_ERR;
+    if (!wait_connect) {
+        if (raise) {
+            /* restore error, maybe replaced by PyErr_CheckSignals() */
+            SET_SOCK_ERROR(err);
+            s->errorhandler();
+            return -1;
+        }
+        else
+            return err;
     }
 
-    res_size = sizeof res;
-    if (getsockopt(s->sock_fd, SOL_SOCKET, SO_ERROR,
-                    (void *)&res, &res_size)) {
-        /* getsockopt() failed */
-        return GET_ERROR;
+    if (raise) {
+        /* socket.connect() raises an exception on error */
+        if (sock_call_ex(s, 1, sock_connect_impl, NULL, 1, NULL) < 0)
+            return -1;
     }
-
-    if (res == EISCONN)
-        return 0;
-    return res;
-
-#undef GET_ERROR
-#undef IN_PROGRESS_ERR
-#undef TIMEOUT_ERR
+    else {
+        /* socket.connect_ex() returns the error code on error */
+        if (sock_call_ex(s, 1, sock_connect_impl, NULL, 1, &err) < 0)
+            return err;
+    }
+    return 0;
 }
 
 /* s.connect(sockaddr) method */
@@ -2594,28 +2664,13 @@ sock_connect(PySocketSockObject *s, PyObject *addro)
     sock_addr_t addrbuf;
     int addrlen;
     int res;
-    int timeout;
 
     if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen))
         return NULL;
 
-    res = internal_connect(s, SAS2SA(&addrbuf), addrlen, &timeout);
+    res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 1);
     if (res < 0)
         return NULL;
-
-    if (timeout == 1) {
-        PyErr_SetString(socket_timeout, "timed out");
-        return NULL;
-    }
-
-    if (res != 0) {
-#ifdef MS_WINDOWS
-        WSASetLastError(res);
-#else
-        errno = res;
-#endif
-        return s->errorhandler();
-    }
 
     Py_RETURN_NONE;
 }
@@ -2635,12 +2690,11 @@ sock_connect_ex(PySocketSockObject *s, PyObject *addro)
     sock_addr_t addrbuf;
     int addrlen;
     int res;
-    int timeout;
 
     if (!getsockaddrarg(s, addro, SAS2SA(&addrbuf), &addrlen))
         return NULL;
 
-    res = internal_connect(s, SAS2SA(&addrbuf), addrlen, &timeout);
+    res = internal_connect(s, SAS2SA(&addrbuf), addrlen, 0);
     if (res < 0)
         return NULL;
 

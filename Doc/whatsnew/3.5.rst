@@ -643,6 +643,7 @@ Changes in the Python API
   - :func:`socket.socket` methods:
 
     * :meth:`~socket.socket.accept`
+    * :meth:`~socket.socket.connect` (except for non-blocking sockets)
     * :meth:`~socket.socket.recv`
     * :meth:`~socket.socket.recvfrom`
     * :meth:`~socket.socket.recvmsg`
