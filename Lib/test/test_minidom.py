@@ -49,8 +49,14 @@ class MinidomTest(unittest.TestCase):
         t = node.wholeText
         self.confirm(t == s, "looking for %r, found %r" % (s, t))
 
-    def testParseFromFile(self):
-        with open(tstfile) as file:
+    def testParseFromBinaryFile(self):
+        with open(tstfile, 'rb') as file:
+            dom = parse(file)
+            dom.unlink()
+            self.confirm(isinstance(dom, Document))
+
+    def testParseFromTextFile(self):
+        with open(tstfile, 'r', encoding='iso-8859-1') as file:
             dom = parse(file)
             dom.unlink()
             self.confirm(isinstance(dom, Document))
