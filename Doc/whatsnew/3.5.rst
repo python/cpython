@@ -499,6 +499,13 @@ xmlrpc
 * :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`.
   (Contributed by Claudiu Popa in :issue:`20627`.)
 
+xml.sax
+-------
+
+* SAX parsers now support a character stream of
+  :class:`~xml.sax.xmlreader.InputSource` object.
+  (Contributed by Serhiy Storchaka in :issue:`2175`.)
+
 faulthandler
 ------------
 
