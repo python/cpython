@@ -144,6 +144,8 @@ class TclTest(unittest.TestCase):
             result = tcl.getint(' %d ' % i)
             self.assertEqual(result, i)
             self.assertIsInstance(result, type(int(result)))
+            if tcl_version >= (8, 5):
+                self.assertEqual(tcl.getint(' {:#o} '.format(i)), i)
             self.assertEqual(tcl.getint(' %#o ' % i), i)
             self.assertEqual(tcl.getint(' %#x ' % i), i)
         if tcl_version < (8, 5):  # bignum was added in Tcl 8.5
@@ -438,9 +440,7 @@ class TclTest(unittest.TestCase):
                 self.assertEqual(result, str(i))
                 self.assertIsInstance(result, str)
         if tcl_version < (8, 5):  # bignum was added in Tcl 8.5
-            result = tcl.call('expr', str(2**1000))
-            self.assertEqual(result, str(2**1000))
-            self.assertIsInstance(result, str)
+            self.assertRaises(TclError, tcl.call, 'expr', str(2**1000))
 
     def test_passing_values(self):
         def passValue(value):
