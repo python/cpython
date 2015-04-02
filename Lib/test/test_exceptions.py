@@ -6,10 +6,11 @@ import unittest
 import pickle
 import weakref
 import errno
+import ctypes
 
 from test.support import (TESTFN, captured_output, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
-                          no_tracing, unlink)
+                          no_tracing, unlink, get_attribute)
 
 class NaiveException(Exception):
     def __init__(self, x):
@@ -244,6 +245,13 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(w.winerror, None)
             self.assertEqual(w.strerror, 'foo')
             self.assertEqual(w.filename, None)
+
+    def test_windows_message(self):
+        """Should fill in unknown error code in Windows error message"""
+        windll = get_attribute(ctypes, "windll")
+        code = int.from_bytes(b"\xE0msc", "big")
+        with self.assertRaisesRegex(OSError, hex(code)):
+            windll.kernel32.RaiseException(code, 0, 0, None)
 
     def testAttributes(self):
         # test that exception attributes are happy

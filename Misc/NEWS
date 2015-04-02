@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #22977: Fixed formatting Windows error messages on Wine.
+  Patch by Martin Panter.
+
 - Issue #23803: Fixed str.partition() and str.rpartition() when a separator
   is wider then partitioned string.
 
