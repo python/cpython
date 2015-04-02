@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21526: Tkinter now supports new boolean type in Tcl 8.5.
+
 - Issue #23836: Fix the faulthandler module to handle reentrant calls to
   its signal handlers.
 
@@ -145,8 +147,6 @@ Library
   Original patch by Wolfgang Maier.
 
 - Issue #23252:  Added support for writing ZIP files to unseekable streams.
-
-- Issue #21526: Tkinter now supports new boolean type in Tcl 8.5.
 
 - Issue #23647: Increase impalib's MAXLINE to accommodate modern mailbox sizes.
 
