@@ -395,8 +395,12 @@ class TclTest(unittest.TestCase):
         tcl = self.interp
         def check(expr, expected):
             result = tcl.call('expr', expr)
-            self.assertEqual(result, expected)
-            self.assertIsInstance(result, int)
+            if tcl.wantobjects():
+                self.assertEqual(result, expected)
+                self.assertIsInstance(result, int)
+            else:
+                self.assertIn(result, (expr, str(int(expected))))
+                self.assertIsInstance(result, str)
         check('true', True)
         check('yes', True)
         check('on', True)
