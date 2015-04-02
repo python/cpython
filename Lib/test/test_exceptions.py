@@ -10,7 +10,7 @@ import ctypes
 
 from test.support import (TESTFN, captured_output, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
-                          no_tracing, unlink, get_attribute)
+                          no_tracing, unlink, import_module)
 
 class NaiveException(Exception):
     def __init__(self, x):
@@ -246,12 +246,15 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(w.strerror, 'foo')
             self.assertEqual(w.filename, None)
 
+    @unittest.skipUnless(sys.platform == 'win32',
+                         'test specific to Windows')
     def test_windows_message(self):
         """Should fill in unknown error code in Windows error message"""
-        windll = get_attribute(ctypes, "windll")
-        code = int.from_bytes(b"\xE0msc", "big")
-        with self.assertRaisesRegex(OSError, hex(code)):
-            windll.kernel32.RaiseException(code, 0, 0, None)
+        ctypes = import_module('ctypes')
+        # this error code has no message, Python formats it as hexadecimal
+        code = 3765269347
+        with self.assertRaisesRegex(OSError, 'Windows Error 0x%x' % code):
+            ctypes.pythonapi.PyErr_SetFromWindowsErr(code)
 
     def testAttributes(self):
         # test that exception attributes are happy
