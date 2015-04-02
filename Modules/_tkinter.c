@@ -96,6 +96,11 @@ Copyright (C) 1994 Steen Lumholt.
 #error "unsupported Tcl configuration"
 #endif
 
+#if TK_VERSION_HEX >= 0x08050000
+#define HAVE_LIBTOMMAMTH
+#include <tclTomMath.h>
+#endif
+
 #if !(defined(MS_WINDOWS) || defined(__CYGWIN__))
 #define HAVE_CREATEFILEHANDLER
 #endif
@@ -262,6 +267,8 @@ typedef struct {
     const Tcl_ObjType *ByteArrayType;
     const Tcl_ObjType *DoubleType;
     const Tcl_ObjType *IntType;
+    const Tcl_ObjType *WideIntType;
+    const Tcl_ObjType *BignumType;
     const Tcl_ObjType *ListType;
     const Tcl_ObjType *ProcBodyType;
     const Tcl_ObjType *StringType;
@@ -739,6 +746,8 @@ Tkapp_New(char *screenName, char *baseName, char *className,
     v->ByteArrayType = Tcl_GetObjType("bytearray");
     v->DoubleType = Tcl_GetObjType("double");
     v->IntType = Tcl_GetObjType("int");
+    v->WideIntType = Tcl_GetObjType("wideInt");
+    v->BignumType = Tcl_GetObjType("bignum");
     v->ListType = Tcl_GetObjType("list");
     v->ProcBodyType = Tcl_GetObjType("procbody");
     v->StringType = Tcl_GetObjType("string");
@@ -1035,6 +1044,45 @@ statichere PyTypeObject PyTclObject_Type = {
 #define CHECK_STRING_LENGTH(s)
 #endif
 
+#ifdef HAVE_LIBTOMMAMTH
+static Tcl_Obj*
+asBignumObj(PyObject *value)
+{
+    Tcl_Obj *result;
+    int neg;
+    PyObject *hexstr;
+    char *hexchars;
+    mp_int bigValue;
+
+    neg = Py_SIZE(value) < 0;
+    hexstr = _PyLong_Format(value, 16, 0, 1);
+    if (hexstr == NULL)
+        return NULL;
+    hexchars = PyString_AsString(hexstr);
+    if (hexchars == NULL) {
+        Py_DECREF(hexstr);
+        return NULL;
+    }
+    hexchars += neg + 2; /* skip sign and "0x" */
+    mp_init(&bigValue);
+    if (mp_read_radix(&bigValue, hexchars, 16) != MP_OKAY) {
+        mp_clear(&bigValue);
+        Py_DECREF(hexstr);
+        PyErr_NoMemory();
+        return NULL;
+    }
+    Py_DECREF(hexstr);
+    bigValue.sign = neg ? MP_NEG : MP_ZPOS;
+    result = Tcl_NewBignumObj(&bigValue);
+    mp_clear(&bigValue);
+    if (result == NULL) {
+        PyErr_NoMemory();
+        return NULL;
+    }
+    return result;
+}
+#endif
+
 static Tcl_Obj*
 AsObj(PyObject *value)
 {
@@ -1043,13 +1091,52 @@ AsObj(PyObject *value)
     if (PyString_Check(value))
         return Tcl_NewStringObj(PyString_AS_STRING(value),
                                 PyString_GET_SIZE(value));
-    else if (PyBool_Check(value))
+
+    if (PyBool_Check(value))
         return Tcl_NewBooleanObj(PyObject_IsTrue(value));
-    else if (PyInt_Check(value))
+
+    if (PyInt_Check(value))
         return Tcl_NewLongObj(PyInt_AS_LONG(value));
-    else if (PyFloat_Check(value))
+
+    if (PyLong_CheckExact(value)) {
+        int overflow;
+        long longValue;
+#ifdef TCL_WIDE_INT_TYPE
+        Tcl_WideInt wideValue;
+#endif
+        longValue = PyLong_AsLongAndOverflow(value, &overflow);
+        if (!overflow) {
+            return Tcl_NewLongObj(longValue);
+        }
+        /* If there is an overflow in the long conversion,
+           fall through to wideInt handling. */
+#ifdef TCL_WIDE_INT_TYPE
+        if (_PyLong_AsByteArray((PyLongObject *)value,
+                                (unsigned char *)(void *)&wideValue,
+                                sizeof(wideValue),
+#ifdef WORDS_BIGENDIAN
+                                0,
+#else
+                                1,
+#endif
+                                /* signed */ 1) == 0) {
+            return Tcl_NewWideIntObj(wideValue);
+        }
+        PyErr_Clear();
+#endif
+        /* If there is an overflow in the wideInt conversion,
+           fall through to bignum handling. */
+#ifdef HAVE_LIBTOMMAMTH
+        return asBignumObj(value);
+#endif
+        /* If there is no wideInt or bignum support,
+           fall through to default object handling. */
+    }
+
+    if (PyFloat_Check(value))
         return Tcl_NewDoubleObj(PyFloat_AS_DOUBLE(value));
-    else if (PyTuple_Check(value)) {
+
+    if (PyTuple_Check(value)) {
         Tcl_Obj **argv;
         Py_ssize_t size, i;
 
@@ -1069,8 +1156,9 @@ AsObj(PyObject *value)
         ckfree(FREECAST argv);
         return result;
     }
+
 #ifdef Py_USING_UNICODE
-    else if (PyUnicode_Check(value)) {
+    if (PyUnicode_Check(value)) {
         Py_UNICODE *inbuf = PyUnicode_AS_UNICODE(value);
         Py_ssize_t size = PyUnicode_GET_SIZE(value);
         /* This #ifdef assumes that Tcl uses UCS-2.
@@ -1113,15 +1201,16 @@ AsObj(PyObject *value)
 #else
         return Tcl_NewUnicodeObj(inbuf, size);
 #endif
-
     }
 #endif
-    else if(PyTclObject_Check(value)) {
+
+    if(PyTclObject_Check(value)) {
         Tcl_Obj *v = ((PyTclObject*)value)->value;
         Tcl_IncrRefCount(v);
         return v;
     }
-    else {
+
+    {
         PyObject *v = PyObject_Str(value);
         if (!v)
             return 0;
@@ -1139,6 +1228,66 @@ fromBoolean(PyObject* tkapp, Tcl_Obj *value)
         return Tkinter_Error(tkapp);
     return PyBool_FromLong(boolValue);
 }
+
+#ifdef TCL_WIDE_INT_TYPE
+static PyObject*
+fromWideIntObj(PyObject* tkapp, Tcl_Obj *value)
+{
+        Tcl_WideInt wideValue;
+        if (Tcl_GetWideIntFromObj(Tkapp_Interp(tkapp), value, &wideValue) == TCL_OK) {
+#ifdef HAVE_LONG_LONG
+            if (sizeof(wideValue) <= SIZEOF_LONG_LONG)
+                return PyLong_FromLongLong(wideValue);
+#endif
+            return _PyLong_FromByteArray((unsigned char *)(void *)&wideValue,
+                                         sizeof(wideValue),
+#ifdef WORDS_BIGENDIAN
+                                         0,
+#else
+                                         1,
+#endif
+                                         /* signed */ 1);
+        }
+        return NULL;
+}
+#endif
+
+#ifdef HAVE_LIBTOMMAMTH
+static PyObject*
+fromBignumObj(PyObject* tkapp, Tcl_Obj *value)
+{
+    mp_int bigValue;
+    unsigned long numBytes;
+    unsigned char *bytes;
+    PyObject *res;
+
+    if (Tcl_GetBignumFromObj(Tkapp_Interp(tkapp), value, &bigValue) != TCL_OK)
+        return Tkinter_Error(tkapp);
+    numBytes = mp_unsigned_bin_size(&bigValue);
+    bytes = PyMem_Malloc(numBytes);
+    if (bytes == NULL) {
+        mp_clear(&bigValue);
+        return PyErr_NoMemory();
+    }
+    if (mp_to_unsigned_bin_n(&bigValue, bytes,
+                                &numBytes) != MP_OKAY) {
+        mp_clear(&bigValue);
+        PyMem_Free(bytes);
+        return PyErr_NoMemory();
+    }
+    res = _PyLong_FromByteArray(bytes, numBytes,
+                                /* big-endian */ 0,
+                                /* unsigned */ 0);
+    PyMem_Free(bytes);
+    if (res != NULL && bigValue.sign == MP_NEG) {
+        PyObject *res2 = PyNumber_Negative(res);
+        Py_DECREF(res);
+        res = res2;
+    }
+    mp_clear(&bigValue);
+    return res;
+}
+#endif
 
 static PyObject*
 FromObj(PyObject* tkapp, Tcl_Obj *value)
@@ -1168,8 +1317,32 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
     }
 
     if (value->typePtr == app->IntType) {
-        return PyInt_FromLong(value->internalRep.longValue);
+        long longValue;
+        if (Tcl_GetLongFromObj(interp, value, &longValue) == TCL_OK)
+            return PyInt_FromLong(longValue);
+        /* If there is an error in the long conversion,
+           fall through to wideInt handling. */
     }
+
+#ifdef TCL_WIDE_INT_TYPE
+    if (value->typePtr == app->IntType ||
+        value->typePtr == app->WideIntType) {
+        result = fromWideIntObj(tkapp, value);
+        if (result != NULL || PyErr_Occurred())
+            return result;
+        Tcl_ResetResult(interp);
+        /* If there is an error in the wideInt conversion,
+           fall through to bignum handling. */
+    }
+#endif
+
+#ifdef HAVE_LIBTOMMAMTH
+    if (value->typePtr == app->IntType ||
+        value->typePtr == app->WideIntType ||
+        value->typePtr == app->BignumType) {
+        return fromBignumObj(tkapp, value);
+    }
+#endif
 
     if (value->typePtr == app->ListType) {
         int size;
@@ -1238,6 +1411,15 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
         /* booleanString type is not registered in Tcl */
         app->BooleanType = value->typePtr;
         return fromBoolean(tkapp, value);
+    }
+#endif
+
+#ifdef HAVE_LIBTOMMAMTH
+    if (app->BignumType == NULL &&
+        strcmp(value->typePtr->name, "bignum") == 0) {
+        /* bignum type is not registered in Tcl */
+        app->BignumType = value->typePtr;
+        return fromBignumObj(tkapp, value);
     }
 #endif
 
@@ -1915,11 +2097,16 @@ static PyObject *
 Tkapp_GetInt(PyObject *self, PyObject *args)
 {
     char *s;
-    int v;
+#if defined(TCL_WIDE_INT_TYPE) || defined(HAVE_LIBTOMMAMTH)
+    Tcl_Obj *value;
+    PyObject *result;
+#else
+    int intValue;
+#endif
 
     if (PyTuple_Size(args) == 1) {
         PyObject* o = PyTuple_GetItem(args, 0);
-        if (PyInt_Check(o)) {
+        if (PyInt_Check(o) || PyLong_Check(o)) {
             Py_INCREF(o);
             return o;
         }
@@ -1927,9 +2114,31 @@ Tkapp_GetInt(PyObject *self, PyObject *args)
     if (!PyArg_ParseTuple(args, "s:getint", &s))
         return NULL;
     CHECK_STRING_LENGTH(s);
-    if (Tcl_GetInt(Tkapp_Interp(self), s, &v) == TCL_ERROR)
+#if defined(TCL_WIDE_INT_TYPE) || defined(HAVE_LIBTOMMAMTH)
+    value = Tcl_NewStringObj(s, -1);
+    if (value == NULL)
         return Tkinter_Error(self);
-    return Py_BuildValue("i", v);
+    /* Don't use Tcl_GetInt() because it returns ambiguous result for value
+       in ranges -2**32..-2**31-1 and 2**31..2**32-1 (on 32-bit platform).
+
+       Prefer bignum because Tcl_GetWideIntFromObj returns ambiguous result for
+       value in ranges -2**64..-2**63-1 and 2**63..2**64-1 (on 32-bit platform).
+     */
+#ifdef HAVE_LIBTOMMAMTH
+    result = fromBignumObj(self, value);
+#else
+    result = fromWideIntObj(self, value);
+#endif
+    Tcl_DecrRefCount(value);
+    if (result != NULL)
+        return PyNumber_Int(result);
+    if (PyErr_Occurred())
+        return NULL;
+#else
+    if (Tcl_GetInt(Tkapp_Interp(self), s, &intValue) == TCL_OK)
+        return PyInt_FromLong(intValue);
+#endif
+    return Tkinter_Error(self);
 }
 
 static PyObject *

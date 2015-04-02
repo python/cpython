@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16840: Tkinter now supports 64-bit integers added in Tcl 8.4 and
+  arbitrary precision integers added in Tcl 8.5.
+
 - Issue #23834: Fix socket.sendto(), use the C long type to store the result of
   sendto() instead of the C int type.
 
