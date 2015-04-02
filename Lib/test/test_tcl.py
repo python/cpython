@@ -378,6 +378,21 @@ class TclTest(unittest.TestCase):
         if tcl_version >= (8, 5):
             check('2**64', True)
 
+    def test_booleans(self):
+        tcl = self.interp
+        def check(expr, expected):
+            result = tcl.call('expr', expr)
+            self.assertEqual(result, expected)
+            self.assertIsInstance(result, int)
+        check('true', True)
+        check('yes', True)
+        check('on', True)
+        check('false', False)
+        check('no', False)
+        check('off', False)
+        check('1 < 2', True)
+        check('1 > 2', False)
+
     def test_passing_values(self):
         def passValue(value):
             return self.interp.call('set', '_', value)
