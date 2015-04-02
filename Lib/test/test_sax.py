@@ -185,11 +185,23 @@ class PrepareInputSourceTest(unittest.TestCase):
     def make_byte_stream(self):
         return BytesIO(b"This is a byte stream.")
 
+    def make_character_stream(self):
+        return StringIO("This is a character stream.")
+
     def checkContent(self, stream, content):
         self.assertIsNotNone(stream)
         self.assertEqual(stream.read(), content)
         stream.close()
 
+
+    def test_character_stream(self):
+        # If the source is an InputSource with a character stream, use it.
+        src = InputSource(self.file)
+        src.setCharacterStream(self.make_character_stream())
+        prep = prepare_input_source(src)
+        self.assertIsNone(prep.getByteStream())
+        self.checkContent(prep.getCharacterStream(),
+                          "This is a character stream.")
 
     def test_byte_stream(self):
         # If the source is an InputSource that does not have a character
@@ -224,6 +236,14 @@ class PrepareInputSourceTest(unittest.TestCase):
         self.assertIsNone(prep.getCharacterStream())
         self.checkContent(prep.getByteStream(),
                           b"This is a byte stream.")
+
+    def test_text_file(self):
+        # If the source is a text file-like object, use it as a character
+        # stream.
+        prep = prepare_input_source(self.make_character_stream())
+        self.assertIsNone(prep.getByteStream())
+        self.checkContent(prep.getCharacterStream(),
+                          "This is a character stream.")
 
 
 # ===== XMLGenerator
@@ -900,6 +920,19 @@ class ExpatReaderTest(XmlTestBase):
         inpsrc = InputSource()
         with open(TEST_XMLFILE, 'rb') as f:
             inpsrc.setByteStream(f)
+            parser.parse(inpsrc)
+
+        self.assertEqual(result.getvalue(), xml_test_out)
+
+    def test_expat_inpsource_character_stream(self):
+        parser = create_parser()
+        result = BytesIO()
+        xmlgen = XMLGenerator(result)
+
+        parser.setContentHandler(xmlgen)
+        inpsrc = InputSource()
+        with open(TEST_XMLFILE, 'rt', encoding='iso-8859-1') as f:
+            inpsrc.setCharacterStream(f)
             parser.parse(inpsrc)
 
         self.assertEqual(result.getvalue(), xml_test_out)

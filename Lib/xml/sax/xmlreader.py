@@ -117,7 +117,9 @@ class IncrementalParser(XMLReader):
         source = saxutils.prepare_input_source(source)
 
         self.prepareParser(source)
-        file = source.getByteStream()
+        file = source.getCharacterStream()
+        if file is None:
+            file = source.getByteStream()
         buffer = file.read(self._bufsize)
         while buffer:
             self.feed(buffer)
