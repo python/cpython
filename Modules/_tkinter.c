@@ -257,13 +257,14 @@ typedef struct {
     int dispatching;
     /* We cannot include tclInt.h, as this is internal.
        So we cache interesting types here. */
-    Tcl_ObjType *BooleanType;
-    Tcl_ObjType *ByteArrayType;
-    Tcl_ObjType *DoubleType;
-    Tcl_ObjType *IntType;
-    Tcl_ObjType *ListType;
-    Tcl_ObjType *ProcBodyType;
-    Tcl_ObjType *StringType;
+    const Tcl_ObjType *OldBooleanType;
+    const Tcl_ObjType *BooleanType;
+    const Tcl_ObjType *ByteArrayType;
+    const Tcl_ObjType *DoubleType;
+    const Tcl_ObjType *IntType;
+    const Tcl_ObjType *ListType;
+    const Tcl_ObjType *ProcBodyType;
+    const Tcl_ObjType *StringType;
 } TkappObject;
 
 #define Tkapp_Check(v) (Py_TYPE(v) == &Tkapp_Type)
@@ -733,7 +734,8 @@ Tkapp_New(char *screenName, char *baseName, char *className,
     }
 #endif
 
-    v->BooleanType = Tcl_GetObjType("boolean");
+    v->OldBooleanType = Tcl_GetObjType("boolean");
+    v->BooleanType = Tcl_GetObjType("booleanString");
     v->ByteArrayType = Tcl_GetObjType("bytearray");
     v->DoubleType = Tcl_GetObjType("double");
     v->IntType = Tcl_GetObjType("int");
@@ -1129,21 +1131,30 @@ AsObj(PyObject *value)
     }
 }
 
+static PyObject *
+fromBoolean(PyObject* tkapp, Tcl_Obj *value)
+{
+    int boolValue;
+    if (Tcl_GetBooleanFromObj(Tkapp_Interp(tkapp), value, &boolValue) == TCL_ERROR)
+        return Tkinter_Error(tkapp);
+    return PyBool_FromLong(boolValue);
+}
+
 static PyObject*
 FromObj(PyObject* tkapp, Tcl_Obj *value)
 {
     PyObject *result = NULL;
     TkappObject *app = (TkappObject*)tkapp;
+    Tcl_Interp *interp = Tkapp_Interp(tkapp);
 
     if (value->typePtr == NULL) {
         result = fromTclStringAndSize(value->bytes, value->length);
         return result;
     }
 
-    if (value->typePtr == app->BooleanType) {
-        result = value->internalRep.longValue ? Py_True : Py_False;
-        Py_INCREF(result);
-        return result;
+    if (value->typePtr == app->BooleanType ||
+        value->typePtr == app->OldBooleanType) {
+        return fromBoolean(tkapp, value);
     }
 
     if (value->typePtr == app->ByteArrayType) {
@@ -1166,15 +1177,14 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
         PyObject *elem;
         Tcl_Obj *tcl_elem;
 
-        status = Tcl_ListObjLength(Tkapp_Interp(tkapp), value, &size);
+        status = Tcl_ListObjLength(interp, value, &size);
         if (status == TCL_ERROR)
             return Tkinter_Error(tkapp);
         result = PyTuple_New(size);
         if (!result)
             return NULL;
         for (i = 0; i < size; i++) {
-            status = Tcl_ListObjIndex(Tkapp_Interp(tkapp),
-                                      value, i, &tcl_elem);
+            status = Tcl_ListObjIndex(interp, value, i, &tcl_elem);
             if (status == TCL_ERROR) {
                 Py_DECREF(result);
                 return Tkinter_Error(tkapp);
@@ -1221,6 +1231,15 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
         return PyString_FromStringAndSize(c, size);
 #endif
     }
+
+#if TK_VERSION_HEX >= 0x08050000
+    if (app->BooleanType == NULL &&
+        strcmp(value->typePtr->name, "booleanString") == 0) {
+        /* booleanString type is not registered in Tcl */
+        app->BooleanType = value->typePtr;
+        return fromBoolean(tkapp, value);
+    }
+#endif
 
     return newPyTclObject(value);
 }

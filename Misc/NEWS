@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21526: Tkinter now supports new boolean type in Tcl 8.5.
+
 - Issue #23838: linecache now clears the cache and returns an empty result on
   MemoryError.
 
