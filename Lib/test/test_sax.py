@@ -9,7 +9,7 @@ except SAXReaderNotAvailable:
     # don't try to test this module if we cannot create a parser
     raise ImportError("no XML parsers available")
 from xml.sax.saxutils import XMLGenerator, escape, unescape, quoteattr, \
-                             XMLFilterBase
+                             XMLFilterBase, prepare_input_source
 from xml.sax.expatreader import create_parser
 from xml.sax.handler import feature_namespaces
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
@@ -165,6 +165,60 @@ class SaxutilsTest(unittest.TestCase):
         # Creating a parser should succeed - it should fall back
         # to the expatreader
         p = make_parser(['xml.parsers.no_such_parser'])
+
+
+class PrepareInputSourceTest(unittest.TestCase):
+
+    def setUp(self):
+        self.file = support.TESTFN
+        with open(self.file, "w") as tmp:
+            tmp.write("This was read from a file.")
+
+    def tearDown(self):
+        support.unlink(self.file)
+
+    def make_byte_stream(self):
+        return io.BytesIO(b"This is a byte stream.")
+
+    def checkContent(self, stream, content):
+        self.assertIsNotNone(stream)
+        self.assertEqual(stream.read(), content)
+        stream.close()
+
+
+    def test_byte_stream(self):
+        # If the source is an InputSource that does not have a character
+        # stream but does have a byte stream, use the byte stream.
+        src = InputSource(self.file)
+        src.setByteStream(self.make_byte_stream())
+        prep = prepare_input_source(src)
+        self.assertIsNone(prep.getCharacterStream())
+        self.checkContent(prep.getByteStream(),
+                          b"This is a byte stream.")
+
+    def test_system_id(self):
+        # If the source is an InputSource that has neither a character
+        # stream nor a byte stream, open the system ID.
+        src = InputSource(self.file)
+        prep = prepare_input_source(src)
+        self.assertIsNone(prep.getCharacterStream())
+        self.checkContent(prep.getByteStream(),
+                          b"This was read from a file.")
+
+    def test_string(self):
+        # If the source is a string, use it as a system ID and open it.
+        prep = prepare_input_source(self.file)
+        self.assertIsNone(prep.getCharacterStream())
+        self.checkContent(prep.getByteStream(),
+                          b"This was read from a file.")
+
+    def test_binary_file(self):
+        # If the source is a binary file-like object, use it as a byte
+        # stream.
+        prep = prepare_input_source(self.make_byte_stream())
+        self.assertIsNone(prep.getCharacterStream())
+        self.checkContent(prep.getByteStream(),
+                          b"This is a byte stream.")
 
 
 # ===== XMLGenerator
@@ -481,7 +535,7 @@ class ExpatReaderTest(XmlTestBase):
 
     # ===== XMLReader support
 
-    def test_expat_file(self):
+    def test_expat_binary_file(self):
         parser = create_parser()
         result = StringIO()
         xmlgen = XMLGenerator(result)
@@ -660,7 +714,7 @@ class ExpatReaderTest(XmlTestBase):
 
         self.assertEqual(result.getvalue(), xml_test_out)
 
-    def test_expat_inpsource_stream(self):
+    def test_expat_inpsource_byte_stream(self):
         parser = create_parser()
         result = StringIO()
         xmlgen = XMLGenerator(result)
@@ -896,6 +950,7 @@ class XmlReaderTest(XmlTestBase):
 def test_main():
     run_unittest(MakeParserTest,
                  SaxutilsTest,
+                 PrepareInputSourceTest,
                  StringXmlgenTest,
                  BytesIOXmlgenTest,
                  WriterXmlgenTest,
