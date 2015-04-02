@@ -793,6 +793,11 @@ to sockets.
    .. versionchanged:: 3.4
       The socket is now non-inheritable.
 
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal handler does not raise
+      an exception, the method now retries the system call instead of raising
+      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+
 
 .. method:: socket.bind(address)
 
@@ -966,6 +971,11 @@ to sockets.
       For best match with hardware and network realities, the value of  *bufsize*
       should be a relatively small power of 2, for example, 4096.
 
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal handler does not raise
+      an exception, the method now retries the system call instead of raising
+      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+
 
 .. method:: socket.recvfrom(bufsize[, flags])
 
@@ -974,6 +984,11 @@ to sockets.
    address of the socket sending the data.  See the Unix manual page
    :manpage:`recv(2)` for the meaning of the optional argument *flags*; it defaults
    to zero. (The format of *address* depends on the address family --- see above.)
+
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal handler does not raise
+      an exception, the method now retries the system call instead of raising
+      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
 .. method:: socket.recvmsg(bufsize[, ancbufsize[, flags]])
@@ -1041,6 +1056,11 @@ to sockets.
 
    .. versionadded:: 3.3
 
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal handler does not raise
+      an exception, the method now retries the system call instead of raising
+      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+
 
 .. method:: socket.recvmsg_into(buffers[, ancbufsize[, flags]])
 
@@ -1107,6 +1127,11 @@ to sockets.
    application needs to attempt delivery of the remaining data. For further
    information on this topic, consult the :ref:`socket-howto`.
 
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal handler does not raise
+      an exception, the method now retries the system call instead of raising
+      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+
 
 .. method:: socket.sendall(bytes[, flags])
 
@@ -1117,6 +1142,11 @@ to sockets.
    success.  On error, an exception is raised, and there is no way to determine how
    much data, if any, was successfully sent.
 
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal handler does not raise
+      an exception, the method now retries the system call instead of raising
+      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
+
 
 .. method:: socket.sendto(bytes, address)
             socket.sendto(bytes, flags, address)
@@ -1126,6 +1156,11 @@ to sockets.
    argument has the same meaning as for :meth:`recv` above.  Return the number of
    bytes sent. (The format of *address* depends on the address family --- see
    above.)
+
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal handler does not raise
+      an exception, the method now retries the system call instead of raising
+      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 
 .. method:: socket.sendmsg(buffers[, ancdata[, flags[, address]]])
@@ -1162,6 +1197,11 @@ to sockets.
    Availability: most Unix platforms, possibly others.
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.5
+      If the system call is interrupted and the signal handler does not raise
+      an exception, the method now retries the system call instead of raising
+      an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
 .. method:: socket.sendfile(file, offset=0, count=None)
 

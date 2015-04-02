@@ -640,6 +640,17 @@ Changes in the Python API
   - :func:`os.read`, :func:`os.write`
   - :func:`select.select`, :func:`select.poll.poll`, :func:`select.epoll.poll`,
     :func:`select.kqueue.control`, :func:`select.devpoll.poll`
+  - :func:`socket.socket` methods:
+
+    * :meth:`~socket.socket.accept`
+    * :meth:`~socket.socket.recv`
+    * :meth:`~socket.socket.recvfrom`
+    * :meth:`~socket.socket.recvmsg`
+    * :meth:`~socket.socket.send`
+    * :meth:`~socket.socket.sendall`
+    * :meth:`~socket.socket.sendmsg`
+    * :meth:`~socket.socket.sendto`
+
   - :func:`signal.sigtimedwait`, :func:`signal.sigwaitinfo`
   - :func:`time.sleep`
 
