@@ -16,10 +16,11 @@ from xml.sax.handler import feature_namespaces
 from xml.sax.xmlreader import InputSource, AttributesImpl, AttributesNSImpl
 from io import BytesIO, StringIO
 import codecs
+import gc
 import os.path
 import shutil
 from test import support
-from test.support import findfile, run_unittest
+from test.support import findfile, run_unittest, TESTFN
 
 TEST_XMLFILE = findfile("test.xml", subdir="xmltestdata")
 TEST_XMLFILE_OUT = findfile("test.xml.out", subdir="xmltestdata")
@@ -94,6 +95,126 @@ class XmlTestBase(unittest.TestCase):
         self.assertEqual(attrs.getNameByQName("attr"), "attr")
         self.assertEqual(attrs["attr"], "val")
         self.assertEqual(attrs.getQNameByName("attr"), "attr")
+
+
+def xml_str(doc, encoding=None):
+    if encoding is None:
+        return doc
+    return '<?xml version="1.0" encoding="%s"?>\n%s' % (encoding, doc)
+
+def xml_bytes(doc, encoding, decl_encoding=...):
+    if decl_encoding is ...:
+        decl_encoding = encoding
+    return xml_str(doc, decl_encoding).encode(encoding, 'xmlcharrefreplace')
+
+def make_xml_file(doc, encoding, decl_encoding=...):
+    if decl_encoding is ...:
+        decl_encoding = encoding
+    with open(TESTFN, 'w', encoding=encoding, errors='xmlcharrefreplace') as f:
+        f.write(xml_str(doc, decl_encoding))
+
+
+class ParseTest(unittest.TestCase):
+    data = '<money value="$\xa3\u20ac\U0001017b">$\xa3\u20ac\U0001017b</money>'
+
+    def tearDown(self):
+        support.unlink(TESTFN)
+
+    def check_parse(self, f):
+        from xml.sax import parse
+        result = StringIO()
+        parse(f, XMLGenerator(result, 'utf-8'))
+        self.assertEqual(result.getvalue(), xml_str(self.data, 'utf-8'))
+
+    def test_parse_text(self):
+        encodings = ('us-ascii', 'iso-8859-1', 'utf-8',
+                     'utf-16', 'utf-16le', 'utf-16be')
+        for encoding in encodings:
+            self.check_parse(StringIO(xml_str(self.data, encoding)))
+            make_xml_file(self.data, encoding)
+            with open(TESTFN, 'r', encoding=encoding) as f:
+                self.check_parse(f)
+            self.check_parse(StringIO(self.data))
+            make_xml_file(self.data, encoding, None)
+            with open(TESTFN, 'r', encoding=encoding) as f:
+                self.check_parse(f)
+
+    def test_parse_bytes(self):
+        # UTF-8 is default encoding, US-ASCII is compatible with UTF-8,
+        # UTF-16 is autodetected
+        encodings = ('us-ascii', 'utf-8', 'utf-16', 'utf-16le', 'utf-16be')
+        for encoding in encodings:
+            self.check_parse(BytesIO(xml_bytes(self.data, encoding)))
+            make_xml_file(self.data, encoding)
+            self.check_parse(TESTFN)
+            with open(TESTFN, 'rb') as f:
+                self.check_parse(f)
+            self.check_parse(BytesIO(xml_bytes(self.data, encoding, None)))
+            make_xml_file(self.data, encoding, None)
+            self.check_parse(TESTFN)
+            with open(TESTFN, 'rb') as f:
+                self.check_parse(f)
+        # accept UTF-8 with BOM
+        self.check_parse(BytesIO(xml_bytes(self.data, 'utf-8-sig', 'utf-8')))
+        make_xml_file(self.data, 'utf-8-sig', 'utf-8')
+        self.check_parse(TESTFN)
+        with open(TESTFN, 'rb') as f:
+            self.check_parse(f)
+        self.check_parse(BytesIO(xml_bytes(self.data, 'utf-8-sig', None)))
+        make_xml_file(self.data, 'utf-8-sig', None)
+        self.check_parse(TESTFN)
+        with open(TESTFN, 'rb') as f:
+            self.check_parse(f)
+        # accept data with declared encoding
+        self.check_parse(BytesIO(xml_bytes(self.data, 'iso-8859-1')))
+        make_xml_file(self.data, 'iso-8859-1')
+        self.check_parse(TESTFN)
+        with open(TESTFN, 'rb') as f:
+            self.check_parse(f)
+        # fail on non-UTF-8 incompatible data without declared encoding
+        with self.assertRaises(SAXException):
+            self.check_parse(BytesIO(xml_bytes(self.data, 'iso-8859-1', None)))
+        make_xml_file(self.data, 'iso-8859-1', None)
+        with support.check_warnings(('unclosed file', ResourceWarning)):
+            # XXX Failed parser leaks an opened file.
+            with self.assertRaises(SAXException):
+                self.check_parse(TESTFN)
+            # Collect leaked file.
+            gc.collect()
+        with open(TESTFN, 'rb') as f:
+            with self.assertRaises(SAXException):
+                self.check_parse(f)
+
+    def test_parse_InputSource(self):
+        # accept data without declared but with explicitly specified encoding
+        make_xml_file(self.data, 'iso-8859-1', None)
+        with open(TESTFN, 'rb') as f:
+            input = InputSource()
+            input.setByteStream(f)
+            input.setEncoding('iso-8859-1')
+            self.check_parse(input)
+
+    def check_parseString(self, s):
+        from xml.sax import parseString
+        result = StringIO()
+        parseString(s, XMLGenerator(result, 'utf-8'))
+        self.assertEqual(result.getvalue(), xml_str(self.data, 'utf-8'))
+
+    def test_parseString_bytes(self):
+        # UTF-8 is default encoding, US-ASCII is compatible with UTF-8,
+        # UTF-16 is autodetected
+        encodings = ('us-ascii', 'utf-8', 'utf-16', 'utf-16le', 'utf-16be')
+        for encoding in encodings:
+            self.check_parseString(xml_bytes(self.data, encoding))
+            self.check_parseString(xml_bytes(self.data, encoding, None))
+        # accept UTF-8 with BOM
+        self.check_parseString(xml_bytes(self.data, 'utf-8-sig', 'utf-8'))
+        self.check_parseString(xml_bytes(self.data, 'utf-8-sig', None))
+        # accept data with declared encoding
+        self.check_parseString(xml_bytes(self.data, 'iso-8859-1'))
+        # fail on non-UTF-8 incompatible data without declared encoding
+        with self.assertRaises(SAXException):
+            self.check_parseString(xml_bytes(self.data, 'iso-8859-1', None))
 
 class MakeParserTest(unittest.TestCase):
     def test_make_parser2(self):
@@ -1082,6 +1203,7 @@ class XmlReaderTest(XmlTestBase):
 
 def test_main():
     run_unittest(MakeParserTest,
+                 ParseTest,
                  SaxutilsTest,
                  PrepareInputSourceTest,
                  StringXmlgenTest,
