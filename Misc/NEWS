@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23834: Fix socket.sendto(), use the C Py_ssize_t type to store the
+  result of sendto() instead of the C int type.
+
 - Issue #23618: :meth:`socket.socket.connect` now waits until the connection
   completes instead of raising :exc:`InterruptedError` if the connection is
   interrupted by signals, signal handlers don't raise an exception and the
