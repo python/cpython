@@ -189,18 +189,18 @@ PyDoc_STRVAR(zlib_Compress_compress__doc__,
 "Call the flush() method to clear these buffers.");
 
 #define ZLIB_COMPRESS_COMPRESS_METHODDEF    \
-    {"compress", (PyCFunction)zlib_Compress_compress, METH_VARARGS, zlib_Compress_compress__doc__},
+    {"compress", (PyCFunction)zlib_Compress_compress, METH_O, zlib_Compress_compress__doc__},
 
 static PyObject *
 zlib_Compress_compress_impl(compobject *self, Py_buffer *data);
 
 static PyObject *
-zlib_Compress_compress(compobject *self, PyObject *args)
+zlib_Compress_compress(compobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:compress",
         &data))
         goto exit;
@@ -446,4 +446,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=901c18189767dc08 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0743b1aa908f0b68 input=a9049054013a1b77]*/

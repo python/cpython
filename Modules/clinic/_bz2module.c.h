@@ -14,18 +14,18 @@ PyDoc_STRVAR(_bz2_BZ2Compressor_compress__doc__,
 "flush() method to finish the compression process.");
 
 #define _BZ2_BZ2COMPRESSOR_COMPRESS_METHODDEF    \
-    {"compress", (PyCFunction)_bz2_BZ2Compressor_compress, METH_VARARGS, _bz2_BZ2Compressor_compress__doc__},
+    {"compress", (PyCFunction)_bz2_BZ2Compressor_compress, METH_O, _bz2_BZ2Compressor_compress__doc__},
 
 static PyObject *
 _bz2_BZ2Compressor_compress_impl(BZ2Compressor *self, Py_buffer *data);
 
 static PyObject *
-_bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *args)
+_bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:compress",
         &data))
         goto exit;
@@ -168,4 +168,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=8e65e3953430bc3d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3565d163a360af01 input=a9049054013a1b77]*/

@@ -267,18 +267,18 @@ PyDoc_STRVAR(array_array_fromstring__doc__,
 "This method is deprecated. Use frombytes instead.");
 
 #define ARRAY_ARRAY_FROMSTRING_METHODDEF    \
-    {"fromstring", (PyCFunction)array_array_fromstring, METH_VARARGS, array_array_fromstring__doc__},
+    {"fromstring", (PyCFunction)array_array_fromstring, METH_O, array_array_fromstring__doc__},
 
 static PyObject *
 array_array_fromstring_impl(arrayobject *self, Py_buffer *buffer);
 
 static PyObject *
-array_array_fromstring(arrayobject *self, PyObject *args)
+array_array_fromstring(arrayobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "s*:fromstring",
         &buffer))
         goto exit;
@@ -299,18 +299,18 @@ PyDoc_STRVAR(array_array_frombytes__doc__,
 "Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).");
 
 #define ARRAY_ARRAY_FROMBYTES_METHODDEF    \
-    {"frombytes", (PyCFunction)array_array_frombytes, METH_VARARGS, array_array_frombytes__doc__},
+    {"frombytes", (PyCFunction)array_array_frombytes, METH_O, array_array_frombytes__doc__},
 
 static PyObject *
 array_array_frombytes_impl(arrayobject *self, Py_buffer *buffer);
 
 static PyObject *
-array_array_frombytes(arrayobject *self, PyObject *args)
+array_array_frombytes(arrayobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:frombytes",
         &buffer))
         goto exit;
@@ -373,19 +373,19 @@ PyDoc_STRVAR(array_array_fromunicode__doc__,
 "some other type.");
 
 #define ARRAY_ARRAY_FROMUNICODE_METHODDEF    \
-    {"fromunicode", (PyCFunction)array_array_fromunicode, METH_VARARGS, array_array_fromunicode__doc__},
+    {"fromunicode", (PyCFunction)array_array_fromunicode, METH_O, array_array_fromunicode__doc__},
 
 static PyObject *
 array_array_fromunicode_impl(arrayobject *self, Py_UNICODE *ustr, Py_ssize_clean_t ustr_length);
 
 static PyObject *
-array_array_fromunicode(arrayobject *self, PyObject *args)
+array_array_fromunicode(arrayobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_UNICODE *ustr;
     Py_ssize_clean_t ustr_length;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "u#:fromunicode",
         &ustr, &ustr_length))
         goto exit;
@@ -502,4 +502,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=e1deb61c6a3bc8c8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a8fbe83c2026fa83 input=a9049054013a1b77]*/

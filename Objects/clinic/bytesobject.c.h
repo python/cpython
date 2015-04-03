@@ -54,18 +54,18 @@ PyDoc_STRVAR(bytes_partition__doc__,
 "object and two empty bytes objects.");
 
 #define BYTES_PARTITION_METHODDEF    \
-    {"partition", (PyCFunction)bytes_partition, METH_VARARGS, bytes_partition__doc__},
+    {"partition", (PyCFunction)bytes_partition, METH_O, bytes_partition__doc__},
 
 static PyObject *
 bytes_partition_impl(PyBytesObject *self, Py_buffer *sep);
 
 static PyObject *
-bytes_partition(PyBytesObject *self, PyObject *args)
+bytes_partition(PyBytesObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer sep = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:partition",
         &sep))
         goto exit;
@@ -93,18 +93,18 @@ PyDoc_STRVAR(bytes_rpartition__doc__,
 "objects and the original bytes object.");
 
 #define BYTES_RPARTITION_METHODDEF    \
-    {"rpartition", (PyCFunction)bytes_rpartition, METH_VARARGS, bytes_rpartition__doc__},
+    {"rpartition", (PyCFunction)bytes_rpartition, METH_O, bytes_rpartition__doc__},
 
 static PyObject *
 bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep);
 
 static PyObject *
-bytes_rpartition(PyBytesObject *self, PyObject *args)
+bytes_rpartition(PyBytesObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer sep = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:rpartition",
         &sep))
         goto exit;
@@ -473,18 +473,18 @@ PyDoc_STRVAR(bytes_fromhex__doc__,
 "Example: bytes.fromhex(\'B9 01EF\') -> b\'\\\\xb9\\\\x01\\\\xef\'.");
 
 #define BYTES_FROMHEX_METHODDEF    \
-    {"fromhex", (PyCFunction)bytes_fromhex, METH_VARARGS|METH_CLASS, bytes_fromhex__doc__},
+    {"fromhex", (PyCFunction)bytes_fromhex, METH_O|METH_CLASS, bytes_fromhex__doc__},
 
 static PyObject *
 bytes_fromhex_impl(PyTypeObject *type, PyObject *string);
 
 static PyObject *
-bytes_fromhex(PyTypeObject *type, PyObject *args)
+bytes_fromhex(PyTypeObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *string;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "U:fromhex",
         &string))
         goto exit;
@@ -493,4 +493,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dfe5c9a317b99f49 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b9e69e1f7c8ccd14 input=a9049054013a1b77]*/
