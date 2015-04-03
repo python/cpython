@@ -152,7 +152,7 @@ def decode(ew):
     then from the resulting bytes into unicode using the specified charset.  If
     the cte-decoded string does not successfully decode using the specified
     character set, a defect is added to the defects list and the unknown octets
-    are replaced by the unicode 'unknown' character \uFDFF.
+    are replaced by the unicode 'unknown' character \\uFDFF.
 
     The specified charset and language are returned.  The default for language,
     which is rarely if ever encountered, is the empty string.
