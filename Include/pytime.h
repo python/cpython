@@ -66,7 +66,10 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
     _PyTime_round_t);
 
 
-/* Create a timestamp from a number of nanoseconds (C long). */
+/* Create a timestamp from a number of seconds. */
+PyAPI_FUNC(_PyTime_t) _PyTime_FromSeconds(int ns);
+
+/* Create a timestamp from a number of nanoseconds. */
 PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(PY_LONG_LONG ns);
 
 /* Convert a number of seconds (Python float or int) to a timetamp.

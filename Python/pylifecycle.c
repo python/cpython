@@ -405,14 +405,14 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     if (!install_importlib)
         return;
 
+    if (_PyTime_Init() < 0)
+        Py_FatalError("Py_Initialize: can't initialize time");
+
     import_init(interp, sysmod);
 
     /* initialize the faulthandler module */
     if (_PyFaulthandler_Init())
         Py_FatalError("Py_Initialize: can't initialize faulthandler");
-
-    if (_PyTime_Init() < 0)
-        Py_FatalError("Py_Initialize: can't initialize time");
 
     if (initfsencoding(interp) < 0)
         Py_FatalError("Py_Initialize: unable to load the file system codec");
