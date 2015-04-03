@@ -518,8 +518,8 @@ class SMTP:
         Raises SMTPDataError if there is an unexpected reply to the
         DATA command; the return value from this method is the final
         response code received when the all data is sent.  If msg
-        is a string, lone '\r' and '\n' characters are converted to
-        '\r\n' characters.  If msg is bytes, it is transmitted as is.
+        is a string, lone '\\r' and '\\n' characters are converted to
+        '\\r\\n' characters.  If msg is bytes, it is transmitted as is.
         """
         self.putcmd("data")
         (code, repl) = self.getreply()

@@ -324,7 +324,7 @@ def a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False):
     instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
     feature is not supported by the "standard" Adobe encoding.
 
-    wrapcol controls whether the output should have newline ('\n') characters
+    wrapcol controls whether the output should have newline ('\\n') characters
     added to it. If this is non-zero, each output line will be at most this
     many characters long.
 
@@ -434,7 +434,7 @@ _b85dec = None
 def b85encode(b, pad=False):
     """Encode an ASCII-encoded byte array in base85 format.
 
-    If pad is true, the input is padded with "\0" so its length is a multiple of
+    If pad is true, the input is padded with "\\0" so its length is a multiple of
     4 characters before encoding.
     """
     global _b85chars, _b85chars2
