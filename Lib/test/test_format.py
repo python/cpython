@@ -358,12 +358,12 @@ class FormatTest(unittest.TestCase):
                  "not all arguments converted during bytes formatting")
         test_exc(b'no format', bytearray(b'1'), TypeError,
                  "not all arguments converted during bytes formatting")
-        test_exc(b"%c", -1, TypeError,
-                "%c requires an integer in range(256) or a single byte")
-        test_exc(b"%c", 256, TypeError,
-                "%c requires an integer in range(256) or a single byte")
-        test_exc(b"%c", 2**128, TypeError,
-                "%c requires an integer in range(256) or a single byte")
+        test_exc(b"%c", -1, OverflowError,
+                "%c arg not in range(256)")
+        test_exc(b"%c", 256, OverflowError,
+                "%c arg not in range(256)")
+        test_exc(b"%c", 2**128, OverflowError,
+                "%c arg not in range(256)")
         test_exc(b"%c", b"Za", TypeError,
                 "%c requires an integer in range(256) or a single byte")
         test_exc(b"%c", "Y", TypeError,

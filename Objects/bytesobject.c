@@ -496,10 +496,15 @@ byte_converter(PyObject *arg, char *p)
             ival = PyLong_AsLongAndOverflow(iobj, &overflow);
             Py_DECREF(iobj);
         }
-        if (!overflow && 0 <= ival && ival <= 255) {
-            *p = (char)ival;
-            return 1;
+        if (!overflow && ival == -1 && PyErr_Occurred())
+            goto onError;
+        if (overflow || !(0 <= ival && ival <= 255)) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "%c arg not in range(256)");
+            return 0;
         }
+        *p = (char)ival;
+        return 1;
     }
   onError:
     PyErr_SetString(PyExc_TypeError,
