@@ -1379,7 +1379,7 @@ def captured_stdout():
 
        with captured_stdout() as stdout:
            print("hello")
-       self.assertEqual(stdout.getvalue(), "hello\n")
+       self.assertEqual(stdout.getvalue(), "hello\\n")
     """
     return captured_output("stdout")
 
@@ -1388,7 +1388,7 @@ def captured_stderr():
 
        with captured_stderr() as stderr:
            print("hello", file=sys.stderr)
-       self.assertEqual(stderr.getvalue(), "hello\n")
+       self.assertEqual(stderr.getvalue(), "hello\\n")
     """
     return captured_output("stderr")
 
@@ -1396,7 +1396,7 @@ def captured_stdin():
     """Capture the input to sys.stdin:
 
        with captured_stdin() as stdin:
-           stdin.write('hello\n')
+           stdin.write('hello\\n')
            stdin.seek(0)
            # call test code that consumes from sys.stdin
            captured = input()
