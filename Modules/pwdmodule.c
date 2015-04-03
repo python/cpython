@@ -8,10 +8,9 @@
 
 #include "clinic/pwdmodule.c.h"
 /*[clinic input]
-output preset file
 module pwd
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bbcf68b1f549f917]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=60f628ef356b97b6]*/
 
 static PyStructSequence_Field struct_pwd_type_fields[] = {
     {"pw_name", "user name"},

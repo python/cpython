@@ -63,6 +63,8 @@ Library
 Build
 -----
 
+- Issue #23501: Argumen Clinic now generates code into separate files by default.
+
 Tests
 -----
 

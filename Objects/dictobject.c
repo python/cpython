@@ -233,6 +233,8 @@ static int dictresize(PyDictObject *mp, Py_ssize_t minused);
 static PyDictObject *free_list[PyDict_MAXFREELIST];
 static int numfree = 0;
 
+#include "clinic/dictobject.c.h"
+
 int
 PyDict_ClearFreeList(void)
 {
@@ -1757,38 +1759,9 @@ dict.fromkeys
 Returns a new dict with keys from iterable and values equal to value.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(dict_fromkeys__doc__,
-"fromkeys($type, iterable, value=None, /)\n"
-"--\n"
-"\n"
-"Returns a new dict with keys from iterable and values equal to value.");
-
-#define DICT_FROMKEYS_METHODDEF    \
-    {"fromkeys", (PyCFunction)dict_fromkeys, METH_VARARGS|METH_CLASS, dict_fromkeys__doc__},
-
-static PyObject *
-dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value);
-
-static PyObject *
-dict_fromkeys(PyTypeObject *type, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *iterable;
-    PyObject *value = Py_None;
-
-    if (!PyArg_UnpackTuple(args, "fromkeys",
-        1, 2,
-        &iterable, &value))
-        goto exit;
-    return_value = dict_fromkeys_impl(type, iterable, value);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
-/*[clinic end generated code: output=55f8dc0ffa87406f input=b85a667f9bf4669d]*/
+/*[clinic end generated code: output=8fb98e4b10384999 input=b85a667f9bf4669d]*/
 {
     PyObject *it;       /* iter(seq) */
     PyObject *key;
@@ -2266,18 +2239,9 @@ dict.__contains__
 True if D has a key k, else False.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(dict___contains____doc__,
-"__contains__($self, key, /)\n"
-"--\n"
-"\n"
-"True if D has a key k, else False.");
-
-#define DICT___CONTAINS___METHODDEF    \
-    {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
-
 static PyObject *
 dict___contains__(PyDictObject *self, PyObject *key)
-/*[clinic end generated code: output=3cf3f8aaf2cc5cc3 input=b852b2a19b51ab24]*/
+/*[clinic end generated code: output=a3d03db709ed6e6b input=b852b2a19b51ab24]*/
 {
     register PyDictObject *mp = self;
     Py_hash_t hash;

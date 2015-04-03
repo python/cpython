@@ -13,10 +13,9 @@
 #include "clinic/spwdmodule.c.h"
 
 /*[clinic input]
-output preset file
 module spwd
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=b3464a3667278fae]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c0b841b90a6a07ce]*/
 
 PyDoc_STRVAR(spwd__doc__,
 "This module provides access to the Unix shadow password database.\n\

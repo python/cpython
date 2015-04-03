@@ -2470,61 +2470,9 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_stat__doc__,
-"stat($module, /, path, *, dir_fd=None, follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Perform a stat system call on the given path.\n"
-"\n"
-"  path\n"
-"    Path to be examined; can be string, bytes, or open-file-descriptor int.\n"
-"  dir_fd\n"
-"    If not None, it should be a file descriptor open to a directory,\n"
-"    and path should be a relative string; path will then be relative to\n"
-"    that directory.\n"
-"  follow_symlinks\n"
-"    If False, and the last element of the path is a symbolic link,\n"
-"    stat will examine the symbolic link itself instead of the file\n"
-"    the link points to.\n"
-"\n"
-"dir_fd and follow_symlinks may not be implemented\n"
-"  on your platform.  If they are unavailable, using them will raise a\n"
-"  NotImplementedError.\n"
-"\n"
-"It\'s an error to use dir_fd or follow_symlinks when specifying path as\n"
-"  an open file descriptor.");
-
-#define OS_STAT_METHODDEF    \
-    {"stat", (PyCFunction)os_stat, METH_VARARGS|METH_KEYWORDS, os_stat__doc__},
-
-static PyObject *
-os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks);
-
-static PyObject *
-os_stat(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("stat", "path", 0, 1);
-    int dir_fd = DEFAULT_DIR_FD;
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|$O&p:stat", _keywords,
-        path_converter, &path, FSTATAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks))
-        goto exit;
-    return_value = os_stat_impl(module, &path, dir_fd, follow_symlinks);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=0e9f9508fa0c0607 input=099d356c306fa24a]*/
+/*[clinic end generated code: output=708c225f94fcfc8e input=099d356c306fa24a]*/
 {
     return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
@@ -2545,45 +2493,9 @@ Like stat(), but do not follow symbolic links.
 Equivalent to stat(path, follow_symlinks=False).
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_lstat__doc__,
-"lstat($module, /, path, *, dir_fd=None)\n"
-"--\n"
-"\n"
-"Perform a stat system call on the given path, without following symbolic links.\n"
-"\n"
-"Like stat(), but do not follow symbolic links.\n"
-"Equivalent to stat(path, follow_symlinks=False).");
-
-#define OS_LSTAT_METHODDEF    \
-    {"lstat", (PyCFunction)os_lstat, METH_VARARGS|METH_KEYWORDS, os_lstat__doc__},
-
-static PyObject *
-os_lstat_impl(PyModuleDef *module, path_t *path, int dir_fd);
-
-static PyObject *
-os_lstat(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", NULL};
-    path_t path = PATH_T_INITIALIZE("lstat", "path", 0, 0);
-    int dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|$O&:lstat", _keywords,
-        path_converter, &path, FSTATAT_DIR_FD_CONVERTER, &dir_fd))
-        goto exit;
-    return_value = os_lstat_impl(module, &path, dir_fd);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_lstat_impl(PyModuleDef *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=85702247224a2b1c input=0b7474765927b925]*/
+/*[clinic end generated code: output=7a748e333fcb39bd input=0b7474765927b925]*/
 {
     int follow_symlinks = 0;
     return posix_do_stat("lstat", path, dir_fd, follow_symlinks);
@@ -2629,75 +2541,9 @@ Note that most operations will use the effective uid/gid, therefore this
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_access__doc__,
-"access($module, /, path, mode, *, dir_fd=None, effective_ids=False,\n"
-"       follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Use the real uid/gid to test for access to a path.\n"
-"\n"
-"  path\n"
-"    Path to be tested; can be string, bytes, or open-file-descriptor int.\n"
-"  mode\n"
-"    Operating-system mode bitfield.  Can be F_OK to test existence,\n"
-"    or the inclusive-OR of R_OK, W_OK, and X_OK.\n"
-"  dir_fd\n"
-"    If not None, it should be a file descriptor open to a directory,\n"
-"    and path should be relative; path will then be relative to that\n"
-"    directory.\n"
-"  effective_ids\n"
-"    If True, access will use the effective uid/gid instead of\n"
-"    the real uid/gid.\n"
-"  follow_symlinks\n"
-"    If False, and the last element of the path is a symbolic link,\n"
-"    access will examine the symbolic link itself instead of the file\n"
-"    the link points to.\n"
-"\n"
-"dir_fd, effective_ids, and follow_symlinks may not be implemented\n"
-"  on your platform.  If they are unavailable, using them will raise a\n"
-"  NotImplementedError.\n"
-"\n"
-"Note that most operations will use the effective uid/gid, therefore this\n"
-"  routine can be used in a suid/sgid environment to test if the invoking user\n"
-"  has the specified access to the path.");
-
-#define OS_ACCESS_METHODDEF    \
-    {"access", (PyCFunction)os_access, METH_VARARGS|METH_KEYWORDS, os_access__doc__},
-
-static int
-os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks);
-
-static PyObject *
-os_access(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "dir_fd", "effective_ids", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("access", "path", 0, 1);
-    int mode;
-    int dir_fd = DEFAULT_DIR_FD;
-    int effective_ids = 0;
-    int follow_symlinks = 1;
-    int _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&i|$O&pp:access", _keywords,
-        path_converter, &path, &mode, FACCESSAT_DIR_FD_CONVERTER, &dir_fd, &effective_ids, &follow_symlinks))
-        goto exit;
-    _return_value = os_access_impl(module, &path, mode, dir_fd, effective_ids, follow_symlinks);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static int
 os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
-/*[clinic end generated code: output=dfd404666906f012 input=b75a756797af45ec]*/
+/*[clinic end generated code: output=f9e734db3d88b767 input=b75a756797af45ec]*/
 {
     int return_value;
 
@@ -2787,44 +2633,9 @@ os.ttyname -> DecodeFSDefault
 Return the name of the terminal device connected to 'fd'.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_ttyname__doc__,
-"ttyname($module, fd, /)\n"
-"--\n"
-"\n"
-"Return the name of the terminal device connected to \'fd\'.\n"
-"\n"
-"  fd\n"
-"    Integer file descriptor handle.");
-
-#define OS_TTYNAME_METHODDEF    \
-    {"ttyname", (PyCFunction)os_ttyname, METH_VARARGS, os_ttyname__doc__},
-
-static char *
-os_ttyname_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_ttyname(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    char *_return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "i:ttyname",
-        &fd))
-        goto exit;
-    _return_value = os_ttyname_impl(module, fd);
-    if (_return_value == NULL)
-        goto exit;
-    return_value = PyUnicode_DecodeFSDefault(_return_value);
-
-exit:
-    return return_value;
-}
-
 static char *
 os_ttyname_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=cee7bc4cffec01a2 input=5f72ca83e76b3b45]*/
+/*[clinic end generated code: output=03ad3d5ccaef75c3 input=5f72ca83e76b3b45]*/
 {
     char *ret;
 
@@ -2842,27 +2653,9 @@ os.ctermid
 Return the name of the controlling terminal for this process.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_ctermid__doc__,
-"ctermid($module, /)\n"
-"--\n"
-"\n"
-"Return the name of the controlling terminal for this process.");
-
-#define OS_CTERMID_METHODDEF    \
-    {"ctermid", (PyCFunction)os_ctermid, METH_NOARGS, os_ctermid__doc__},
-
-static PyObject *
-os_ctermid_impl(PyModuleDef *module);
-
-static PyObject *
-os_ctermid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_ctermid_impl(module);
-}
-
 static PyObject *
 os_ctermid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=277bf7964ec2d782 input=3b87fdd52556382d]*/
+/*[clinic end generated code: output=1b73788201e0aebd input=3b87fdd52556382d]*/
 {
     char *ret;
     char buffer[L_ctermid];
@@ -2891,45 +2684,9 @@ On some platforms, path may also be specified as an open file descriptor.
   If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_chdir__doc__,
-"chdir($module, /, path)\n"
-"--\n"
-"\n"
-"Change the current working directory to the specified path.\n"
-"\n"
-"path may always be specified as a string.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
-
-#define OS_CHDIR_METHODDEF    \
-    {"chdir", (PyCFunction)os_chdir, METH_VARARGS|METH_KEYWORDS, os_chdir__doc__},
-
-static PyObject *
-os_chdir_impl(PyModuleDef *module, path_t *path);
-
-static PyObject *
-os_chdir(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
-    path_t path = PATH_T_INITIALIZE("chdir", "path", 0, PATH_HAVE_FCHDIR);
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&:chdir", _keywords,
-        path_converter, &path))
-        goto exit;
-    return_value = os_chdir_impl(module, &path);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_chdir_impl(PyModuleDef *module, path_t *path)
-/*[clinic end generated code: output=cc07592dd23ca9e0 input=1a4a15b4d12cb15d]*/
+/*[clinic end generated code: output=7358e3a20fb5aa93 input=1a4a15b4d12cb15d]*/
 {
     int result;
 
@@ -2971,41 +2728,9 @@ Equivalent to os.chdir(fd).
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fchdir__doc__,
-"fchdir($module, /, fd)\n"
-"--\n"
-"\n"
-"Change to the directory of the given file descriptor.\n"
-"\n"
-"fd must be opened on a directory, not a file.\n"
-"Equivalent to os.chdir(fd).");
-
-#define OS_FCHDIR_METHODDEF    \
-    {"fchdir", (PyCFunction)os_fchdir, METH_VARARGS|METH_KEYWORDS, os_fchdir__doc__},
-
-static PyObject *
-os_fchdir_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_fchdir(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
-    int fd;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&:fchdir", _keywords,
-        fildes_converter, &fd))
-        goto exit;
-    return_value = os_fchdir_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_fchdir_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=9f6dbc89b2778834 input=18e816479a2fa985]*/
+/*[clinic end generated code: output=361d30df6b2d3418 input=18e816479a2fa985]*/
 {
     return posix_fildes_fd(fd, fchdir);
 }
@@ -3044,64 +2769,9 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_chmod__doc__,
-"chmod($module, /, path, mode, *, dir_fd=None, follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Change the access permissions of a file.\n"
-"\n"
-"  path\n"
-"    Path to be modified.  May always be specified as a str or bytes.\n"
-"    On some platforms, path may also be specified as an open file descriptor.\n"
-"    If this functionality is unavailable, using it raises an exception.\n"
-"  mode\n"
-"    Operating-system mode bitfield.\n"
-"  dir_fd\n"
-"    If not None, it should be a file descriptor open to a directory,\n"
-"    and path should be relative; path will then be relative to that\n"
-"    directory.\n"
-"  follow_symlinks\n"
-"    If False, and the last element of the path is a symbolic link,\n"
-"    chmod will modify the symbolic link itself instead of the file\n"
-"    the link points to.\n"
-"\n"
-"It is an error to use dir_fd or follow_symlinks when specifying path as\n"
-"  an open file descriptor.\n"
-"dir_fd and follow_symlinks may not be implemented on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.");
-
-#define OS_CHMOD_METHODDEF    \
-    {"chmod", (PyCFunction)os_chmod, METH_VARARGS|METH_KEYWORDS, os_chmod__doc__},
-
-static PyObject *
-os_chmod_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int follow_symlinks);
-
-static PyObject *
-os_chmod(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "dir_fd", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("chmod", "path", 0, PATH_HAVE_FCHMOD);
-    int mode;
-    int dir_fd = DEFAULT_DIR_FD;
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&i|$O&p:chmod", _keywords,
-        path_converter, &path, &mode, FCHMODAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks))
-        goto exit;
-    return_value = os_chmod_impl(module, &path, mode, dir_fd, follow_symlinks);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_chmod_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=1e9db031aea46422 input=7f1618e5e15cc196]*/
+/*[clinic end generated code: output=96063c976f23106a input=7f1618e5e15cc196]*/
 {
     int result;
 
@@ -3212,41 +2882,9 @@ Change the access permissions of the file given by file descriptor fd.
 Equivalent to os.chmod(fd, mode).
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fchmod__doc__,
-"fchmod($module, /, fd, mode)\n"
-"--\n"
-"\n"
-"Change the access permissions of the file given by file descriptor fd.\n"
-"\n"
-"Equivalent to os.chmod(fd, mode).");
-
-#define OS_FCHMOD_METHODDEF    \
-    {"fchmod", (PyCFunction)os_fchmod, METH_VARARGS|METH_KEYWORDS, os_fchmod__doc__},
-
-static PyObject *
-os_fchmod_impl(PyModuleDef *module, int fd, int mode);
-
-static PyObject *
-os_fchmod(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", "mode", NULL};
-    int fd;
-    int mode;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "ii:fchmod", _keywords,
-        &fd, &mode))
-        goto exit;
-    return_value = os_fchmod_impl(module, fd, mode);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_fchmod_impl(PyModuleDef *module, int fd, int mode)
-/*[clinic end generated code: output=3c19fbfd724a8e0f input=8ab11975ca01ee5b]*/
+/*[clinic end generated code: output=2ee31ca226d1ed33 input=8ab11975ca01ee5b]*/
 {
     int res;
     int async_err = 0;
@@ -3277,45 +2915,9 @@ If path is a symlink, this affects the link itself rather than the target.
 Equivalent to chmod(path, mode, follow_symlinks=False)."
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_lchmod__doc__,
-"lchmod($module, /, path, mode)\n"
-"--\n"
-"\n"
-"Change the access permissions of a file, without following symbolic links.\n"
-"\n"
-"If path is a symlink, this affects the link itself rather than the target.\n"
-"Equivalent to chmod(path, mode, follow_symlinks=False).\"");
-
-#define OS_LCHMOD_METHODDEF    \
-    {"lchmod", (PyCFunction)os_lchmod, METH_VARARGS|METH_KEYWORDS, os_lchmod__doc__},
-
-static PyObject *
-os_lchmod_impl(PyModuleDef *module, path_t *path, int mode);
-
-static PyObject *
-os_lchmod(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", NULL};
-    path_t path = PATH_T_INITIALIZE("lchmod", "path", 0, 0);
-    int mode;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&i:lchmod", _keywords,
-        path_converter, &path, &mode))
-        goto exit;
-    return_value = os_lchmod_impl(module, &path, mode);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_lchmod_impl(PyModuleDef *module, path_t *path, int mode)
-/*[clinic end generated code: output=2849977d65f8c68c input=90c5663c7465d24f]*/
+/*[clinic end generated code: output=7c0cc46588d89e46 input=90c5663c7465d24f]*/
 {
     int res;
     Py_BEGIN_ALLOW_THREADS
@@ -3348,49 +2950,9 @@ unavailable, using it will raise a NotImplementedError.
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_chflags__doc__,
-"chflags($module, /, path, flags, follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Set file flags.\n"
-"\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, chflags will change flags on the symbolic link itself instead of the\n"
-"  file the link points to.\n"
-"follow_symlinks may not be implemented on your platform.  If it is\n"
-"unavailable, using it will raise a NotImplementedError.");
-
-#define OS_CHFLAGS_METHODDEF    \
-    {"chflags", (PyCFunction)os_chflags, METH_VARARGS|METH_KEYWORDS, os_chflags__doc__},
-
-static PyObject *
-os_chflags_impl(PyModuleDef *module, path_t *path, unsigned long flags, int follow_symlinks);
-
-static PyObject *
-os_chflags(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "flags", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("chflags", "path", 0, 0);
-    unsigned long flags;
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&k|p:chflags", _keywords,
-        path_converter, &path, &flags, &follow_symlinks))
-        goto exit;
-    return_value = os_chflags_impl(module, &path, flags, follow_symlinks);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_chflags_impl(PyModuleDef *module, path_t *path, unsigned long flags, int follow_symlinks)
-/*[clinic end generated code: output=2767927bf071e3cf input=0327e29feb876236]*/
+/*[clinic end generated code: output=9e5f9417afc20c4b input=0327e29feb876236]*/
 {
     int result;
 
@@ -3429,45 +2991,9 @@ This function will not follow symbolic links.
 Equivalent to chflags(path, flags, follow_symlinks=False).
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_lchflags__doc__,
-"lchflags($module, /, path, flags)\n"
-"--\n"
-"\n"
-"Set file flags.\n"
-"\n"
-"This function will not follow symbolic links.\n"
-"Equivalent to chflags(path, flags, follow_symlinks=False).");
-
-#define OS_LCHFLAGS_METHODDEF    \
-    {"lchflags", (PyCFunction)os_lchflags, METH_VARARGS|METH_KEYWORDS, os_lchflags__doc__},
-
-static PyObject *
-os_lchflags_impl(PyModuleDef *module, path_t *path, unsigned long flags);
-
-static PyObject *
-os_lchflags(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "flags", NULL};
-    path_t path = PATH_T_INITIALIZE("lchflags", "path", 0, 0);
-    unsigned long flags;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&k:lchflags", _keywords,
-        path_converter, &path, &flags))
-        goto exit;
-    return_value = os_lchflags_impl(module, &path, flags);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_lchflags_impl(PyModuleDef *module, path_t *path, unsigned long flags)
-/*[clinic end generated code: output=bb93b6b8a5e45aa7 input=f9f82ea8b585ca9d]*/
+/*[clinic end generated code: output=6741322fb949661b input=f9f82ea8b585ca9d]*/
 {
     int res;
     Py_BEGIN_ALLOW_THREADS
@@ -3490,41 +3016,9 @@ Change root directory to path.
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_chroot__doc__,
-"chroot($module, /, path)\n"
-"--\n"
-"\n"
-"Change root directory to path.");
-
-#define OS_CHROOT_METHODDEF    \
-    {"chroot", (PyCFunction)os_chroot, METH_VARARGS|METH_KEYWORDS, os_chroot__doc__},
-
-static PyObject *
-os_chroot_impl(PyModuleDef *module, path_t *path);
-
-static PyObject *
-os_chroot(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
-    path_t path = PATH_T_INITIALIZE("chroot", "path", 0, 0);
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&:chroot", _keywords,
-        path_converter, &path))
-        goto exit;
-    return_value = os_chroot_impl(module, &path);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_chroot_impl(PyModuleDef *module, path_t *path)
-/*[clinic end generated code: output=15b1256cbe4f24a1 input=14822965652c3dc3]*/
+/*[clinic end generated code: output=b6dbfabe74ecaa9d input=14822965652c3dc3]*/
 {
     int res;
     Py_BEGIN_ALLOW_THREADS
@@ -3546,38 +3040,9 @@ os.fsync
 Force write of fd to disk.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fsync__doc__,
-"fsync($module, /, fd)\n"
-"--\n"
-"\n"
-"Force write of fd to disk.");
-
-#define OS_FSYNC_METHODDEF    \
-    {"fsync", (PyCFunction)os_fsync, METH_VARARGS|METH_KEYWORDS, os_fsync__doc__},
-
-static PyObject *
-os_fsync_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_fsync(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
-    int fd;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&:fsync", _keywords,
-        fildes_converter, &fd))
-        goto exit;
-    return_value = os_fsync_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_fsync_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=59f32d3a0b360133 input=21c3645c056967f2]*/
+/*[clinic end generated code: output=83a350851064aea7 input=21c3645c056967f2]*/
 {
     return posix_fildes_fd(fd, fsync);
 }
@@ -3591,27 +3056,9 @@ os.sync
 Force write of everything to disk.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sync__doc__,
-"sync($module, /)\n"
-"--\n"
-"\n"
-"Force write of everything to disk.");
-
-#define OS_SYNC_METHODDEF    \
-    {"sync", (PyCFunction)os_sync, METH_NOARGS, os_sync__doc__},
-
-static PyObject *
-os_sync_impl(PyModuleDef *module);
-
-static PyObject *
-os_sync(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_sync_impl(module);
-}
-
 static PyObject *
 os_sync_impl(PyModuleDef *module)
-/*[clinic end generated code: output=526c495683d0bb38 input=84749fe5e9b404ff]*/
+/*[clinic end generated code: output=ba524f656c201c40 input=84749fe5e9b404ff]*/
 {
     Py_BEGIN_ALLOW_THREADS
     sync();
@@ -3634,38 +3081,9 @@ os.fdatasync
 Force write of fd to disk without forcing update of metadata.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fdatasync__doc__,
-"fdatasync($module, /, fd)\n"
-"--\n"
-"\n"
-"Force write of fd to disk without forcing update of metadata.");
-
-#define OS_FDATASYNC_METHODDEF    \
-    {"fdatasync", (PyCFunction)os_fdatasync, METH_VARARGS|METH_KEYWORDS, os_fdatasync__doc__},
-
-static PyObject *
-os_fdatasync_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_fdatasync(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
-    int fd;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&:fdatasync", _keywords,
-        fildes_converter, &fd))
-        goto exit;
-    return_value = os_fdatasync_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_fdatasync_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=2335fdfd37c92180 input=bc74791ee54dd291]*/
+/*[clinic end generated code: output=e0f04a3aff515b75 input=bc74791ee54dd291]*/
 {
     return posix_fildes_fd(fd, fdatasync);
 }
@@ -3712,69 +3130,9 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_chown__doc__,
-"chown($module, /, path, uid, gid, *, dir_fd=None, follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Change the owner and group id of path to the numeric uid and gid.\\\n"
-"\n"
-"  path\n"
-"    Path to be examined; can be string, bytes, or open-file-descriptor int.\n"
-"  dir_fd\n"
-"    If not None, it should be a file descriptor open to a directory,\n"
-"    and path should be relative; path will then be relative to that\n"
-"    directory.\n"
-"  follow_symlinks\n"
-"    If False, and the last element of the path is a symbolic link,\n"
-"    stat will examine the symbolic link itself instead of the file\n"
-"    the link points to.\n"
-"\n"
-"path may always be specified as a string.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, chown will modify the symbolic link itself instead of the file the\n"
-"  link points to.\n"
-"It is an error to use dir_fd or follow_symlinks when specifying path as\n"
-"  an open file descriptor.\n"
-"dir_fd and follow_symlinks may not be implemented on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.");
-
-#define OS_CHOWN_METHODDEF    \
-    {"chown", (PyCFunction)os_chown, METH_VARARGS|METH_KEYWORDS, os_chown__doc__},
-
-static PyObject *
-os_chown_impl(PyModuleDef *module, path_t *path, uid_t uid, gid_t gid, int dir_fd, int follow_symlinks);
-
-static PyObject *
-os_chown(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "uid", "gid", "dir_fd", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("chown", "path", 0, PATH_HAVE_FCHOWN);
-    uid_t uid;
-    gid_t gid;
-    int dir_fd = DEFAULT_DIR_FD;
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&O&|$O&p:chown", _keywords,
-        path_converter, &path, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid, FCHOWNAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks))
-        goto exit;
-    return_value = os_chown_impl(module, &path, uid, gid, dir_fd, follow_symlinks);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_chown_impl(PyModuleDef *module, path_t *path, uid_t uid, gid_t gid, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=22f011e3b4f9ff49 input=a61cc35574814d5d]*/
+/*[clinic end generated code: output=59a8db91897fb46c input=a61cc35574814d5d]*/
 {
     int result;
 
@@ -3841,42 +3199,9 @@ Equivalent to os.chown(fd, uid, gid).
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fchown__doc__,
-"fchown($module, /, fd, uid, gid)\n"
-"--\n"
-"\n"
-"Change the owner and group id of the file specified by file descriptor.\n"
-"\n"
-"Equivalent to os.chown(fd, uid, gid).");
-
-#define OS_FCHOWN_METHODDEF    \
-    {"fchown", (PyCFunction)os_fchown, METH_VARARGS|METH_KEYWORDS, os_fchown__doc__},
-
-static PyObject *
-os_fchown_impl(PyModuleDef *module, int fd, uid_t uid, gid_t gid);
-
-static PyObject *
-os_fchown(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", "uid", "gid", NULL};
-    int fd;
-    uid_t uid;
-    gid_t gid;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "iO&O&:fchown", _keywords,
-        &fd, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid))
-        goto exit;
-    return_value = os_fchown_impl(module, fd, uid, gid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_fchown_impl(PyModuleDef *module, int fd, uid_t uid, gid_t gid)
-/*[clinic end generated code: output=687781cb7d8974d6 input=3af544ba1b13a0d7]*/
+/*[clinic end generated code: output=7545abf8f6086d76 input=3af544ba1b13a0d7]*/
 {
     int res;
     int async_err = 0;
@@ -3908,46 +3233,9 @@ This function will not follow symbolic links.
 Equivalent to os.chown(path, uid, gid, follow_symlinks=False).
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_lchown__doc__,
-"lchown($module, /, path, uid, gid)\n"
-"--\n"
-"\n"
-"Change the owner and group id of path to the numeric uid and gid.\n"
-"\n"
-"This function will not follow symbolic links.\n"
-"Equivalent to os.chown(path, uid, gid, follow_symlinks=False).");
-
-#define OS_LCHOWN_METHODDEF    \
-    {"lchown", (PyCFunction)os_lchown, METH_VARARGS|METH_KEYWORDS, os_lchown__doc__},
-
-static PyObject *
-os_lchown_impl(PyModuleDef *module, path_t *path, uid_t uid, gid_t gid);
-
-static PyObject *
-os_lchown(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "uid", "gid", NULL};
-    path_t path = PATH_T_INITIALIZE("lchown", "path", 0, 0);
-    uid_t uid;
-    gid_t gid;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&O&:lchown", _keywords,
-        path_converter, &path, _Py_Uid_Converter, &uid, _Py_Gid_Converter, &gid))
-        goto exit;
-    return_value = os_lchown_impl(module, &path, uid, gid);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_lchown_impl(PyModuleDef *module, path_t *path, uid_t uid, gid_t gid)
-/*[clinic end generated code: output=bf25fdb0d25130e2 input=b1c6014d563a7161]*/
+/*[clinic end generated code: output=bb0d2da1579ac275 input=b1c6014d563a7161]*/
 {
     int res;
     Py_BEGIN_ALLOW_THREADS
@@ -4020,27 +3308,9 @@ os.getcwd
 Return a unicode string representing the current working directory.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getcwd__doc__,
-"getcwd($module, /)\n"
-"--\n"
-"\n"
-"Return a unicode string representing the current working directory.");
-
-#define OS_GETCWD_METHODDEF    \
-    {"getcwd", (PyCFunction)os_getcwd, METH_NOARGS, os_getcwd__doc__},
-
-static PyObject *
-os_getcwd_impl(PyModuleDef *module);
-
-static PyObject *
-os_getcwd(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getcwd_impl(module);
-}
-
 static PyObject *
 os_getcwd_impl(PyModuleDef *module)
-/*[clinic end generated code: output=d70b281db5c78ff7 input=f069211bb70e3d39]*/
+/*[clinic end generated code: output=efe3a8c0121525ea input=f069211bb70e3d39]*/
 {
     return posix_getcwd(0);
 }
@@ -4052,27 +3322,9 @@ os.getcwdb
 Return a bytes string representing the current working directory.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getcwdb__doc__,
-"getcwdb($module, /)\n"
-"--\n"
-"\n"
-"Return a bytes string representing the current working directory.");
-
-#define OS_GETCWDB_METHODDEF    \
-    {"getcwdb", (PyCFunction)os_getcwdb, METH_NOARGS, os_getcwdb__doc__},
-
-static PyObject *
-os_getcwdb_impl(PyModuleDef *module);
-
-static PyObject *
-os_getcwdb(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getcwdb_impl(module);
-}
-
 static PyObject *
 os_getcwdb_impl(PyModuleDef *module)
-/*[clinic end generated code: output=75da47f2d75f9166 input=f6f6a378dad3d9cb]*/
+/*[clinic end generated code: output=7fce42ee4b2a296a input=f6f6a378dad3d9cb]*/
 {
     return posix_getcwd(1);
 }
@@ -4107,58 +3359,9 @@ src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your
   NotImplementedError.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_link__doc__,
-"link($module, /, src, dst, *, src_dir_fd=None, dst_dir_fd=None,\n"
-"     follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Create a hard link to a file.\n"
-"\n"
-"If either src_dir_fd or dst_dir_fd is not None, it should be a file\n"
-"  descriptor open to a directory, and the respective path string (src or dst)\n"
-"  should be relative; the path will then be relative to that directory.\n"
-"If follow_symlinks is False, and the last element of src is a symbolic\n"
-"  link, link will create a link to the symbolic link itself instead of the\n"
-"  file the link points to.\n"
-"src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your\n"
-"  platform.  If they are unavailable, using them will raise a\n"
-"  NotImplementedError.");
-
-#define OS_LINK_METHODDEF    \
-    {"link", (PyCFunction)os_link, METH_VARARGS|METH_KEYWORDS, os_link__doc__},
-
-static PyObject *
-os_link_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int follow_symlinks);
-
-static PyObject *
-os_link(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", "follow_symlinks", NULL};
-    path_t src = PATH_T_INITIALIZE("link", "src", 0, 0);
-    path_t dst = PATH_T_INITIALIZE("link", "dst", 0, 0);
-    int src_dir_fd = DEFAULT_DIR_FD;
-    int dst_dir_fd = DEFAULT_DIR_FD;
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&|$O&O&p:link", _keywords,
-        path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd, &follow_symlinks))
-        goto exit;
-    return_value = os_link_impl(module, &src, &dst, src_dir_fd, dst_dir_fd, follow_symlinks);
-
-exit:
-    /* Cleanup for src */
-    path_cleanup(&src);
-    /* Cleanup for dst */
-    path_cleanup(&dst);
-
-    return return_value;
-}
-
 static PyObject *
 os_link_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=53477662fe02e183 input=b0095ebbcbaa7e04]*/
+/*[clinic end generated code: output=c0a9ded8111d2a79 input=b0095ebbcbaa7e04]*/
 {
 #ifdef MS_WINDOWS
     BOOL result;
@@ -4496,52 +3699,9 @@ entries '.' and '..' even if they are present in the directory.
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_listdir__doc__,
-"listdir($module, /, path=None)\n"
-"--\n"
-"\n"
-"Return a list containing the names of the files in the directory.\n"
-"\n"
-"path can be specified as either str or bytes.  If path is bytes,\n"
-"  the filenames returned will also be bytes; in all other circumstances\n"
-"  the filenames returned will be str.\n"
-"If path is None, uses the path=\'.\'.\n"
-"On some platforms, path may also be specified as an open file descriptor;\\\n"
-"  the file descriptor must refer to a directory.\n"
-"  If this functionality is unavailable, using it raises NotImplementedError.\n"
-"\n"
-"The list is in arbitrary order.  It does not include the special\n"
-"entries \'.\' and \'..\' even if they are present in the directory.");
-
-#define OS_LISTDIR_METHODDEF    \
-    {"listdir", (PyCFunction)os_listdir, METH_VARARGS|METH_KEYWORDS, os_listdir__doc__},
-
-static PyObject *
-os_listdir_impl(PyModuleDef *module, path_t *path);
-
-static PyObject *
-os_listdir(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
-    path_t path = PATH_T_INITIALIZE("listdir", "path", 1, PATH_HAVE_FDOPENDIR);
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|O&:listdir", _keywords,
-        path_converter, &path))
-        goto exit;
-    return_value = os_listdir_impl(module, &path);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_listdir_impl(PyModuleDef *module, path_t *path)
-/*[clinic end generated code: output=e159bd9be6909018 input=09e300416e3cd729]*/
+/*[clinic end generated code: output=1fbe67c1f780c8b7 input=09e300416e3cd729]*/
 {
 #if defined(MS_WINDOWS) && !defined(HAVE_OPENDIR)
     return _listdir_windows_no_opendir(path, NULL);
@@ -4620,37 +3780,9 @@ os._getfinalpathname
 A helper function for samepath on windows.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os__getfinalpathname__doc__,
-"_getfinalpathname($module, path, /)\n"
-"--\n"
-"\n"
-"A helper function for samepath on windows.");
-
-#define OS__GETFINALPATHNAME_METHODDEF    \
-    {"_getfinalpathname", (PyCFunction)os__getfinalpathname, METH_VARARGS, os__getfinalpathname__doc__},
-
-static PyObject *
-os__getfinalpathname_impl(PyModuleDef *module, PyObject *path);
-
-static PyObject *
-os__getfinalpathname(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *path;
-
-    if (!PyArg_ParseTuple(args,
-        "U:_getfinalpathname",
-        &path))
-        goto exit;
-    return_value = os__getfinalpathname_impl(module, path);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os__getfinalpathname_impl(PyModuleDef *module, PyObject *path)
-/*[clinic end generated code: output=4563c6eacf1b0881 input=71d5e89334891bf4]*/
+/*[clinic end generated code: output=8be81a5f51a34bcf input=71d5e89334891bf4]*/
 {
     HANDLE hFile;
     int buf_size;
@@ -4750,38 +3882,9 @@ os._getvolumepathname
 A helper function for ismount on Win32.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os__getvolumepathname__doc__,
-"_getvolumepathname($module, /, path)\n"
-"--\n"
-"\n"
-"A helper function for ismount on Win32.");
-
-#define OS__GETVOLUMEPATHNAME_METHODDEF    \
-    {"_getvolumepathname", (PyCFunction)os__getvolumepathname, METH_VARARGS|METH_KEYWORDS, os__getvolumepathname__doc__},
-
-static PyObject *
-os__getvolumepathname_impl(PyModuleDef *module, PyObject *path);
-
-static PyObject *
-os__getvolumepathname(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
-    PyObject *path;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "U:_getvolumepathname", _keywords,
-        &path))
-        goto exit;
-    return_value = os__getvolumepathname_impl(module, path);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os__getvolumepathname_impl(PyModuleDef *module, PyObject *path)
-/*[clinic end generated code: output=ac0833b6d6da7657 input=7eacadc40acbda6b]*/
+/*[clinic end generated code: output=79a0ba729f956dbe input=7eacadc40acbda6b]*/
 {
     PyObject *result;
     wchar_t *path_wchar, *mountpath=NULL;
@@ -4847,50 +3950,9 @@ dir_fd may not be implemented on your platform.
 The mode argument is ignored on Windows.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_mkdir__doc__,
-"mkdir($module, /, path, mode=511, *, dir_fd=None)\n"
-"--\n"
-"\n"
-"Create a directory.\n"
-"\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.\n"
-"\n"
-"The mode argument is ignored on Windows.");
-
-#define OS_MKDIR_METHODDEF    \
-    {"mkdir", (PyCFunction)os_mkdir, METH_VARARGS|METH_KEYWORDS, os_mkdir__doc__},
-
-static PyObject *
-os_mkdir_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd);
-
-static PyObject *
-os_mkdir(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "dir_fd", NULL};
-    path_t path = PATH_T_INITIALIZE("mkdir", "path", 0, 0);
-    int mode = 511;
-    int dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|i$O&:mkdir", _keywords,
-        path_converter, &path, &mode, MKDIRAT_DIR_FD_CONVERTER, &dir_fd))
-        goto exit;
-    return_value = os_mkdir_impl(module, &path, mode, dir_fd);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_mkdir_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd)
-/*[clinic end generated code: output=55c6ef2bc1b207e6 input=e965f68377e9b1ce]*/
+/*[clinic end generated code: output=8bf1f738873ef2c5 input=e965f68377e9b1ce]*/
 {
     int result;
 
@@ -4940,37 +4002,9 @@ os.nice
 Add increment to the priority of process and return the new priority.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_nice__doc__,
-"nice($module, increment, /)\n"
-"--\n"
-"\n"
-"Add increment to the priority of process and return the new priority.");
-
-#define OS_NICE_METHODDEF    \
-    {"nice", (PyCFunction)os_nice, METH_VARARGS, os_nice__doc__},
-
-static PyObject *
-os_nice_impl(PyModuleDef *module, int increment);
-
-static PyObject *
-os_nice(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int increment;
-
-    if (!PyArg_ParseTuple(args,
-        "i:nice",
-        &increment))
-        goto exit;
-    return_value = os_nice_impl(module, increment);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_nice_impl(PyModuleDef *module, int increment)
-/*[clinic end generated code: output=c360dc2a3bd8e3d0 input=864be2d402a21da2]*/
+/*[clinic end generated code: output=8870418a3fc07b51 input=864be2d402a21da2]*/
 {
     int value;
 
@@ -5008,39 +4042,9 @@ os.getpriority
 Return program scheduling priority.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getpriority__doc__,
-"getpriority($module, /, which, who)\n"
-"--\n"
-"\n"
-"Return program scheduling priority.");
-
-#define OS_GETPRIORITY_METHODDEF    \
-    {"getpriority", (PyCFunction)os_getpriority, METH_VARARGS|METH_KEYWORDS, os_getpriority__doc__},
-
-static PyObject *
-os_getpriority_impl(PyModuleDef *module, int which, int who);
-
-static PyObject *
-os_getpriority(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"which", "who", NULL};
-    int which;
-    int who;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "ii:getpriority", _keywords,
-        &which, &who))
-        goto exit;
-    return_value = os_getpriority_impl(module, which, who);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_getpriority_impl(PyModuleDef *module, int which, int who)
-/*[clinic end generated code: output=81639cf765f05dae input=9be615d40e2544ef]*/
+/*[clinic end generated code: output=4759937aa5b67ed6 input=9be615d40e2544ef]*/
 {
     int retval;
 
@@ -5064,40 +4068,9 @@ os.setpriority
 Set program scheduling priority.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setpriority__doc__,
-"setpriority($module, /, which, who, priority)\n"
-"--\n"
-"\n"
-"Set program scheduling priority.");
-
-#define OS_SETPRIORITY_METHODDEF    \
-    {"setpriority", (PyCFunction)os_setpriority, METH_VARARGS|METH_KEYWORDS, os_setpriority__doc__},
-
-static PyObject *
-os_setpriority_impl(PyModuleDef *module, int which, int who, int priority);
-
-static PyObject *
-os_setpriority(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"which", "who", "priority", NULL};
-    int which;
-    int who;
-    int priority;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "iii:setpriority", _keywords,
-        &which, &who, &priority))
-        goto exit;
-    return_value = os_setpriority_impl(module, which, who, priority);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_setpriority_impl(PyModuleDef *module, int which, int who, int priority)
-/*[clinic end generated code: output=ddad62651fb2120c input=710ccbf65b9dc513]*/
+/*[clinic end generated code: output=6497d3301547e7d5 input=710ccbf65b9dc513]*/
 {
     int retval;
 
@@ -5183,52 +4156,9 @@ src_dir_fd and dst_dir_fd, may not be implemented on your platform.
   If they are unavailable, using them will raise a NotImplementedError.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_rename__doc__,
-"rename($module, /, src, dst, *, src_dir_fd=None, dst_dir_fd=None)\n"
-"--\n"
-"\n"
-"Rename a file or directory.\n"
-"\n"
-"If either src_dir_fd or dst_dir_fd is not None, it should be a file\n"
-"  descriptor open to a directory, and the respective path string (src or dst)\n"
-"  should be relative; the path will then be relative to that directory.\n"
-"src_dir_fd and dst_dir_fd, may not be implemented on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.");
-
-#define OS_RENAME_METHODDEF    \
-    {"rename", (PyCFunction)os_rename, METH_VARARGS|METH_KEYWORDS, os_rename__doc__},
-
-static PyObject *
-os_rename_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd);
-
-static PyObject *
-os_rename(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
-    path_t src = PATH_T_INITIALIZE("rename", "src", 0, 0);
-    path_t dst = PATH_T_INITIALIZE("rename", "dst", 0, 0);
-    int src_dir_fd = DEFAULT_DIR_FD;
-    int dst_dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&|$O&O&:rename", _keywords,
-        path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd))
-        goto exit;
-    return_value = os_rename_impl(module, &src, &dst, src_dir_fd, dst_dir_fd);
-
-exit:
-    /* Cleanup for src */
-    path_cleanup(&src);
-    /* Cleanup for dst */
-    path_cleanup(&dst);
-
-    return return_value;
-}
-
 static PyObject *
 os_rename_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd)
-/*[clinic end generated code: output=c936bdc81f460a1e input=faa61c847912c850]*/
+/*[clinic end generated code: output=1bb520bf2fad186d input=faa61c847912c850]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 0);
 }
@@ -5246,52 +4176,9 @@ src_dir_fd and dst_dir_fd, may not be implemented on your platform.
   If they are unavailable, using them will raise a NotImplementedError."
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_replace__doc__,
-"replace($module, /, src, dst, *, src_dir_fd=None, dst_dir_fd=None)\n"
-"--\n"
-"\n"
-"Rename a file or directory, overwriting the destination.\n"
-"\n"
-"If either src_dir_fd or dst_dir_fd is not None, it should be a file\n"
-"  descriptor open to a directory, and the respective path string (src or dst)\n"
-"  should be relative; the path will then be relative to that directory.\n"
-"src_dir_fd and dst_dir_fd, may not be implemented on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.\"");
-
-#define OS_REPLACE_METHODDEF    \
-    {"replace", (PyCFunction)os_replace, METH_VARARGS|METH_KEYWORDS, os_replace__doc__},
-
-static PyObject *
-os_replace_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd);
-
-static PyObject *
-os_replace(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"src", "dst", "src_dir_fd", "dst_dir_fd", NULL};
-    path_t src = PATH_T_INITIALIZE("replace", "src", 0, 0);
-    path_t dst = PATH_T_INITIALIZE("replace", "dst", 0, 0);
-    int src_dir_fd = DEFAULT_DIR_FD;
-    int dst_dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&|$O&O&:replace", _keywords,
-        path_converter, &src, path_converter, &dst, dir_fd_converter, &src_dir_fd, dir_fd_converter, &dst_dir_fd))
-        goto exit;
-    return_value = os_replace_impl(module, &src, &dst, src_dir_fd, dst_dir_fd);
-
-exit:
-    /* Cleanup for src */
-    path_cleanup(&src);
-    /* Cleanup for dst */
-    path_cleanup(&dst);
-
-    return return_value;
-}
-
 static PyObject *
 os_replace_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd)
-/*[clinic end generated code: output=224e4710d290d171 input=25515dfb107c8421]*/
+/*[clinic end generated code: output=aa9ddad55fdef8e3 input=25515dfb107c8421]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 1);
 }
@@ -5312,47 +4199,9 @@ dir_fd may not be implemented on your platform.
   If it is unavailable, using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_rmdir__doc__,
-"rmdir($module, /, path, *, dir_fd=None)\n"
-"--\n"
-"\n"
-"Remove a directory.\n"
-"\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
-
-#define OS_RMDIR_METHODDEF    \
-    {"rmdir", (PyCFunction)os_rmdir, METH_VARARGS|METH_KEYWORDS, os_rmdir__doc__},
-
-static PyObject *
-os_rmdir_impl(PyModuleDef *module, path_t *path, int dir_fd);
-
-static PyObject *
-os_rmdir(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", NULL};
-    path_t path = PATH_T_INITIALIZE("rmdir", "path", 0, 0);
-    int dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|$O&:rmdir", _keywords,
-        path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd))
-        goto exit;
-    return_value = os_rmdir_impl(module, &path, dir_fd);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_rmdir_impl(PyModuleDef *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=70b9fdbe3bee0591 input=38c8b375ca34a7e2]*/
+/*[clinic end generated code: output=cabadec80d5a77c7 input=38c8b375ca34a7e2]*/
 {
     int result;
 
@@ -5390,42 +4239,9 @@ os.system -> long
 Execute the command in a subshell.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_system__doc__,
-"system($module, /, command)\n"
-"--\n"
-"\n"
-"Execute the command in a subshell.");
-
-#define OS_SYSTEM_METHODDEF    \
-    {"system", (PyCFunction)os_system, METH_VARARGS|METH_KEYWORDS, os_system__doc__},
-
-static long
-os_system_impl(PyModuleDef *module, Py_UNICODE *command);
-
-static PyObject *
-os_system(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"command", NULL};
-    Py_UNICODE *command;
-    long _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "u:system", _keywords,
-        &command))
-        goto exit;
-    _return_value = os_system_impl(module, command);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    return return_value;
-}
-
 static long
 os_system_impl(PyModuleDef *module, Py_UNICODE *command)
-/*[clinic end generated code: output=29fe699c0b2e9d38 input=303f5ce97df606b0]*/
+/*[clinic end generated code: output=4c3bd5abcd9c29e7 input=303f5ce97df606b0]*/
 {
     long result;
     Py_BEGIN_ALLOW_THREADS
@@ -5442,45 +4258,9 @@ os.system -> long
 Execute the command in a subshell.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_system__doc__,
-"system($module, /, command)\n"
-"--\n"
-"\n"
-"Execute the command in a subshell.");
-
-#define OS_SYSTEM_METHODDEF    \
-    {"system", (PyCFunction)os_system, METH_VARARGS|METH_KEYWORDS, os_system__doc__},
-
-static long
-os_system_impl(PyModuleDef *module, PyObject *command);
-
-static PyObject *
-os_system(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"command", NULL};
-    PyObject *command = NULL;
-    long _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&:system", _keywords,
-        PyUnicode_FSConverter, &command))
-        goto exit;
-    _return_value = os_system_impl(module, command);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    /* Cleanup for command */
-    Py_XDECREF(command);
-
-    return return_value;
-}
-
 static long
 os_system_impl(PyModuleDef *module, PyObject *command)
-/*[clinic end generated code: output=5be9f3c40ead3bad input=86a58554ba6094af]*/
+/*[clinic end generated code: output=800f775e10b7be55 input=86a58554ba6094af]*/
 {
     long result;
     char *bytes = PyBytes_AsString(command);
@@ -5502,37 +4282,9 @@ os.umask
 Set the current numeric umask and return the previous umask.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_umask__doc__,
-"umask($module, mask, /)\n"
-"--\n"
-"\n"
-"Set the current numeric umask and return the previous umask.");
-
-#define OS_UMASK_METHODDEF    \
-    {"umask", (PyCFunction)os_umask, METH_VARARGS, os_umask__doc__},
-
-static PyObject *
-os_umask_impl(PyModuleDef *module, int mask);
-
-static PyObject *
-os_umask(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int mask;
-
-    if (!PyArg_ParseTuple(args,
-        "i:umask",
-        &mask))
-        goto exit;
-    return_value = os_umask_impl(module, mask);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_umask_impl(PyModuleDef *module, int mask)
-/*[clinic end generated code: output=90048b39d2d4a961 input=ab6bfd9b24d8a7e8]*/
+/*[clinic end generated code: output=9e1fe3c9f14d6a05 input=ab6bfd9b24d8a7e8]*/
 {
     int i = (int)umask(mask);
     if (i < 0)
@@ -5596,47 +4348,9 @@ dir_fd may not be implemented on your platform.
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_unlink__doc__,
-"unlink($module, /, path, *, dir_fd=None)\n"
-"--\n"
-"\n"
-"Remove a file (same as remove()).\n"
-"\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
-
-#define OS_UNLINK_METHODDEF    \
-    {"unlink", (PyCFunction)os_unlink, METH_VARARGS|METH_KEYWORDS, os_unlink__doc__},
-
-static PyObject *
-os_unlink_impl(PyModuleDef *module, path_t *path, int dir_fd);
-
-static PyObject *
-os_unlink(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", NULL};
-    path_t path = PATH_T_INITIALIZE("unlink", "path", 0, 0);
-    int dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|$O&:unlink", _keywords,
-        path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd))
-        goto exit;
-    return_value = os_unlink_impl(module, &path, dir_fd);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_unlink_impl(PyModuleDef *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=59a6e66d67ff2e75 input=d7bcde2b1b2a2552]*/
+/*[clinic end generated code: output=474afd5cd09b237e input=d7bcde2b1b2a2552]*/
 {
     int result;
 
@@ -5675,47 +4389,9 @@ dir_fd may not be implemented on your platform.
   If it is unavailable, using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_remove__doc__,
-"remove($module, /, path, *, dir_fd=None)\n"
-"--\n"
-"\n"
-"Remove a file (same as unlink()).\n"
-"\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
-
-#define OS_REMOVE_METHODDEF    \
-    {"remove", (PyCFunction)os_remove, METH_VARARGS|METH_KEYWORDS, os_remove__doc__},
-
-static PyObject *
-os_remove_impl(PyModuleDef *module, path_t *path, int dir_fd);
-
-static PyObject *
-os_remove(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "dir_fd", NULL};
-    path_t path = PATH_T_INITIALIZE("remove", "path", 0, 0);
-    int dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|$O&:remove", _keywords,
-        path_converter, &path, UNLINKAT_DIR_FD_CONVERTER, &dir_fd))
-        goto exit;
-    return_value = os_remove_impl(module, &path, dir_fd);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_remove_impl(PyModuleDef *module, path_t *path, int dir_fd)
-/*[clinic end generated code: output=cb170cf1e195b8ed input=e05c5ab55cd30983]*/
+/*[clinic end generated code: output=d0d5149e64832b9e input=e05c5ab55cd30983]*/
 {
     return os_unlink_impl(module, path, dir_fd);
 }
@@ -5759,30 +4435,9 @@ The object behaves like a named tuple with the following fields:
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_uname__doc__,
-"uname($module, /)\n"
-"--\n"
-"\n"
-"Return an object identifying the current operating system.\n"
-"\n"
-"The object behaves like a named tuple with the following fields:\n"
-"  (sysname, nodename, release, version, machine)");
-
-#define OS_UNAME_METHODDEF    \
-    {"uname", (PyCFunction)os_uname, METH_NOARGS, os_uname__doc__},
-
-static PyObject *
-os_uname_impl(PyModuleDef *module);
-
-static PyObject *
-os_uname(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_uname_impl(module);
-}
-
 static PyObject *
 os_uname_impl(PyModuleDef *module)
-/*[clinic end generated code: output=459a86521ff5041c input=e68bd246db3043ed]*/
+/*[clinic end generated code: output=01e1421b757e753f input=e68bd246db3043ed]*/
 {
     struct utsname u;
     int res;
@@ -6034,68 +4689,9 @@ dir_fd and follow_symlinks may not be available on your platform.
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_utime__doc__,
-"utime($module, /, path, times=None, *, ns=None, dir_fd=None,\n"
-"      follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Set the access and modified time of path.\n"
-"\n"
-"path may always be specified as a string.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.\n"
-"\n"
-"If times is not None, it must be a tuple (atime, mtime);\n"
-"    atime and mtime should be expressed as float seconds since the epoch.\n"
-"If ns is not None, it must be a tuple (atime_ns, mtime_ns);\n"
-"    atime_ns and mtime_ns should be expressed as integer nanoseconds\n"
-"    since the epoch.\n"
-"If both times and ns are None, utime uses the current time.\n"
-"Specifying tuples for both times and ns is an error.\n"
-"\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, utime will modify the symbolic link itself instead of the file the\n"
-"  link points to.\n"
-"It is an error to use dir_fd or follow_symlinks when specifying path\n"
-"  as an open file descriptor.\n"
-"dir_fd and follow_symlinks may not be available on your platform.\n"
-"  If they are unavailable, using them will raise a NotImplementedError.");
-
-#define OS_UTIME_METHODDEF    \
-    {"utime", (PyCFunction)os_utime, METH_VARARGS|METH_KEYWORDS, os_utime__doc__},
-
-static PyObject *
-os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times, PyObject *ns, int dir_fd, int follow_symlinks);
-
-static PyObject *
-os_utime(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "times", "ns", "dir_fd", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("utime", "path", 0, PATH_UTIME_HAVE_FD);
-    PyObject *times = NULL;
-    PyObject *ns = NULL;
-    int dir_fd = DEFAULT_DIR_FD;
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|O$OO&p:utime", _keywords,
-        path_converter, &path, &times, &ns, FUTIMENSAT_DIR_FD_CONVERTER, &dir_fd, &follow_symlinks))
-        goto exit;
-    return_value = os_utime_impl(module, &path, times, ns, dir_fd, follow_symlinks);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times, PyObject *ns, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=891489c35cc68c5d input=1f18c17d5941aa82]*/
+/*[clinic end generated code: output=c52d8fd0d1067f0b input=1f18c17d5941aa82]*/
 {
 #ifdef MS_WINDOWS
     HANDLE hFile;
@@ -6262,38 +4858,9 @@ os._exit
 Exit to the system with specified status, without normal exit processing.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os__exit__doc__,
-"_exit($module, /, status)\n"
-"--\n"
-"\n"
-"Exit to the system with specified status, without normal exit processing.");
-
-#define OS__EXIT_METHODDEF    \
-    {"_exit", (PyCFunction)os__exit, METH_VARARGS|METH_KEYWORDS, os__exit__doc__},
-
-static PyObject *
-os__exit_impl(PyModuleDef *module, int status);
-
-static PyObject *
-os__exit(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
-    int status;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:_exit", _keywords,
-        &status))
-        goto exit;
-    return_value = os__exit_impl(module, status);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os__exit_impl(PyModuleDef *module, int status)
-/*[clinic end generated code: output=4f9858c4cc2dcb89 input=5e6d57556b0c4a62]*/
+/*[clinic end generated code: output=472a3cbaf68f3621 input=5e6d57556b0c4a62]*/
 {
     _exit(status);
     return NULL; /* Make gcc -Wall happy */
@@ -6447,46 +5014,9 @@ os.execv
 Execute an executable path with arguments, replacing current process.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_execv__doc__,
-"execv($module, path, argv, /)\n"
-"--\n"
-"\n"
-"Execute an executable path with arguments, replacing current process.\n"
-"\n"
-"  path\n"
-"    Path of executable file.\n"
-"  argv\n"
-"    Tuple or list of strings.");
-
-#define OS_EXECV_METHODDEF    \
-    {"execv", (PyCFunction)os_execv, METH_VARARGS, os_execv__doc__},
-
-static PyObject *
-os_execv_impl(PyModuleDef *module, PyObject *path, PyObject *argv);
-
-static PyObject *
-os_execv(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *path = NULL;
-    PyObject *argv;
-
-    if (!PyArg_ParseTuple(args,
-        "O&O:execv",
-        PyUnicode_FSConverter, &path, &argv))
-        goto exit;
-    return_value = os_execv_impl(module, path, argv);
-
-exit:
-    /* Cleanup for path */
-    Py_XDECREF(path);
-
-    return return_value;
-}
-
 static PyObject *
 os_execv_impl(PyModuleDef *module, PyObject *path, PyObject *argv)
-/*[clinic end generated code: output=b0f5f2caa6097edc input=96041559925e5229]*/
+/*[clinic end generated code: output=9221f08143146fff input=96041559925e5229]*/
 {
     char *path_char;
     char **argvlist;
@@ -6534,50 +5064,9 @@ os.execve
 Execute an executable path with arguments, replacing current process.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_execve__doc__,
-"execve($module, /, path, argv, env)\n"
-"--\n"
-"\n"
-"Execute an executable path with arguments, replacing current process.\n"
-"\n"
-"  path\n"
-"    Path of executable file.\n"
-"  argv\n"
-"    Tuple or list of strings.\n"
-"  env\n"
-"    Dictionary of strings mapping to strings.");
-
-#define OS_EXECVE_METHODDEF    \
-    {"execve", (PyCFunction)os_execve, METH_VARARGS|METH_KEYWORDS, os_execve__doc__},
-
-static PyObject *
-os_execve_impl(PyModuleDef *module, path_t *path, PyObject *argv, PyObject *env);
-
-static PyObject *
-os_execve(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "argv", "env", NULL};
-    path_t path = PATH_T_INITIALIZE("execve", "path", 0, PATH_HAVE_FEXECVE);
-    PyObject *argv;
-    PyObject *env;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&OO:execve", _keywords,
-        path_converter, &path, &argv, &env))
-        goto exit;
-    return_value = os_execve_impl(module, &path, argv, env);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_execve_impl(PyModuleDef *module, path_t *path, PyObject *argv, PyObject *env)
-/*[clinic end generated code: output=fb283760f5d15ab7 input=626804fa092606d9]*/
+/*[clinic end generated code: output=7758d4f230d8aac6 input=626804fa092606d9]*/
 {
     char **argvlist = NULL;
     char **envlist;
@@ -6645,49 +5134,9 @@ os.spawnv
 Execute the program specified by path in a new process.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_spawnv__doc__,
-"spawnv($module, mode, path, argv, /)\n"
-"--\n"
-"\n"
-"Execute the program specified by path in a new process.\n"
-"\n"
-"  mode\n"
-"    Mode of process creation.\n"
-"  path\n"
-"    Path of executable file.\n"
-"  argv\n"
-"    Tuple or list of strings.");
-
-#define OS_SPAWNV_METHODDEF    \
-    {"spawnv", (PyCFunction)os_spawnv, METH_VARARGS, os_spawnv__doc__},
-
-static PyObject *
-os_spawnv_impl(PyModuleDef *module, int mode, PyObject *path, PyObject *argv);
-
-static PyObject *
-os_spawnv(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int mode;
-    PyObject *path = NULL;
-    PyObject *argv;
-
-    if (!PyArg_ParseTuple(args,
-        "iO&O:spawnv",
-        &mode, PyUnicode_FSConverter, &path, &argv))
-        goto exit;
-    return_value = os_spawnv_impl(module, mode, path, argv);
-
-exit:
-    /* Cleanup for path */
-    Py_XDECREF(path);
-
-    return return_value;
-}
-
 static PyObject *
 os_spawnv_impl(PyModuleDef *module, int mode, PyObject *path, PyObject *argv)
-/*[clinic end generated code: output=dfee6be062e780e3 input=042c91dfc1e6debc]*/
+/*[clinic end generated code: output=140a7945484c8cc5 input=042c91dfc1e6debc]*/
 {
     char *path_char;
     char **argvlist;
@@ -6762,52 +5211,9 @@ os.spawnve
 Execute the program specified by path in a new process.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_spawnve__doc__,
-"spawnve($module, mode, path, argv, env, /)\n"
-"--\n"
-"\n"
-"Execute the program specified by path in a new process.\n"
-"\n"
-"  mode\n"
-"    Mode of process creation.\n"
-"  path\n"
-"    Path of executable file.\n"
-"  argv\n"
-"    Tuple or list of strings.\n"
-"  env\n"
-"    Dictionary of strings mapping to strings.");
-
-#define OS_SPAWNVE_METHODDEF    \
-    {"spawnve", (PyCFunction)os_spawnve, METH_VARARGS, os_spawnve__doc__},
-
-static PyObject *
-os_spawnve_impl(PyModuleDef *module, int mode, PyObject *path, PyObject *argv, PyObject *env);
-
-static PyObject *
-os_spawnve(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int mode;
-    PyObject *path = NULL;
-    PyObject *argv;
-    PyObject *env;
-
-    if (!PyArg_ParseTuple(args,
-        "iO&OO:spawnve",
-        &mode, PyUnicode_FSConverter, &path, &argv, &env))
-        goto exit;
-    return_value = os_spawnve_impl(module, mode, path, argv, env);
-
-exit:
-    /* Cleanup for path */
-    Py_XDECREF(path);
-
-    return return_value;
-}
-
 static PyObject *
 os_spawnve_impl(PyModuleDef *module, int mode, PyObject *path, PyObject *argv, PyObject *env)
-/*[clinic end generated code: output=6f7df38473f63c7c input=02362fd937963f8f]*/
+/*[clinic end generated code: output=1c52955789461be8 input=02362fd937963f8f]*/
 {
     char *path_char;
     char **argvlist;
@@ -6895,29 +5301,9 @@ Fork a child process with a single multiplexed (i.e., not bound) thread.
 Return 0 to child process and PID of child to parent process.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fork1__doc__,
-"fork1($module, /)\n"
-"--\n"
-"\n"
-"Fork a child process with a single multiplexed (i.e., not bound) thread.\n"
-"\n"
-"Return 0 to child process and PID of child to parent process.");
-
-#define OS_FORK1_METHODDEF    \
-    {"fork1", (PyCFunction)os_fork1, METH_NOARGS, os_fork1__doc__},
-
-static PyObject *
-os_fork1_impl(PyModuleDef *module);
-
-static PyObject *
-os_fork1(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_fork1_impl(module);
-}
-
 static PyObject *
 os_fork1_impl(PyModuleDef *module)
-/*[clinic end generated code: output=fa04088d6bc02efa input=12db02167893926e]*/
+/*[clinic end generated code: output=e27b4f66419c9dcf input=12db02167893926e]*/
 {
     pid_t pid;
     int result = 0;
@@ -6952,29 +5338,9 @@ Fork a child process.
 Return 0 to child process and PID of child to parent process.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fork__doc__,
-"fork($module, /)\n"
-"--\n"
-"\n"
-"Fork a child process.\n"
-"\n"
-"Return 0 to child process and PID of child to parent process.");
-
-#define OS_FORK_METHODDEF    \
-    {"fork", (PyCFunction)os_fork, METH_NOARGS, os_fork__doc__},
-
-static PyObject *
-os_fork_impl(PyModuleDef *module);
-
-static PyObject *
-os_fork(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_fork_impl(module);
-}
-
 static PyObject *
 os_fork_impl(PyModuleDef *module)
-/*[clinic end generated code: output=b3c8e6bdc11eedc6 input=13c956413110eeaa]*/
+/*[clinic end generated code: output=898b1ecd3498ba12 input=13c956413110eeaa]*/
 {
     pid_t pid;
     int result = 0;
@@ -7010,38 +5376,9 @@ os.sched_get_priority_max
 Get the maximum scheduling priority for policy.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_get_priority_max__doc__,
-"sched_get_priority_max($module, /, policy)\n"
-"--\n"
-"\n"
-"Get the maximum scheduling priority for policy.");
-
-#define OS_SCHED_GET_PRIORITY_MAX_METHODDEF    \
-    {"sched_get_priority_max", (PyCFunction)os_sched_get_priority_max, METH_VARARGS|METH_KEYWORDS, os_sched_get_priority_max__doc__},
-
-static PyObject *
-os_sched_get_priority_max_impl(PyModuleDef *module, int policy);
-
-static PyObject *
-os_sched_get_priority_max(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"policy", NULL};
-    int policy;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:sched_get_priority_max", _keywords,
-        &policy))
-        goto exit;
-    return_value = os_sched_get_priority_max_impl(module, policy);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_sched_get_priority_max_impl(PyModuleDef *module, int policy)
-/*[clinic end generated code: output=a580a52f25238c1f input=2097b7998eca6874]*/
+/*[clinic end generated code: output=a6a30fa5071f2d81 input=2097b7998eca6874]*/
 {
     int max;
 
@@ -7060,38 +5397,9 @@ os.sched_get_priority_min
 Get the minimum scheduling priority for policy.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_get_priority_min__doc__,
-"sched_get_priority_min($module, /, policy)\n"
-"--\n"
-"\n"
-"Get the minimum scheduling priority for policy.");
-
-#define OS_SCHED_GET_PRIORITY_MIN_METHODDEF    \
-    {"sched_get_priority_min", (PyCFunction)os_sched_get_priority_min, METH_VARARGS|METH_KEYWORDS, os_sched_get_priority_min__doc__},
-
-static PyObject *
-os_sched_get_priority_min_impl(PyModuleDef *module, int policy);
-
-static PyObject *
-os_sched_get_priority_min(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"policy", NULL};
-    int policy;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:sched_get_priority_min", _keywords,
-        &policy))
-        goto exit;
-    return_value = os_sched_get_priority_min_impl(module, policy);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_sched_get_priority_min_impl(PyModuleDef *module, int policy)
-/*[clinic end generated code: output=bad8ba10e7d0e977 input=21bc8fa0d70983bf]*/
+/*[clinic end generated code: output=5ca3ed6bc43e9b20 input=21bc8fa0d70983bf]*/
 {
     int min = sched_get_priority_min(policy);
     if (min < 0)
@@ -7112,39 +5420,9 @@ Get the scheduling policy for the process identifiedy by pid.
 Passing 0 for pid returns the scheduling policy for the calling process.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_getscheduler__doc__,
-"sched_getscheduler($module, pid, /)\n"
-"--\n"
-"\n"
-"Get the scheduling policy for the process identifiedy by pid.\n"
-"\n"
-"Passing 0 for pid returns the scheduling policy for the calling process.");
-
-#define OS_SCHED_GETSCHEDULER_METHODDEF    \
-    {"sched_getscheduler", (PyCFunction)os_sched_getscheduler, METH_VARARGS, os_sched_getscheduler__doc__},
-
-static PyObject *
-os_sched_getscheduler_impl(PyModuleDef *module, pid_t pid);
-
-static PyObject *
-os_sched_getscheduler(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID ":sched_getscheduler",
-        &pid))
-        goto exit;
-    return_value = os_sched_getscheduler_impl(module, pid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_sched_getscheduler_impl(PyModuleDef *module, pid_t pid)
-/*[clinic end generated code: output=e0d6244207b1d828 input=5f14cfd1f189e1a0]*/
+/*[clinic end generated code: output=8cd63c15caf54fa9 input=5f14cfd1f189e1a0]*/
 {
     int policy;
 
@@ -7169,38 +5447,9 @@ os.sched_param.__new__
 Current has only one field: sched_priority");
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_param__doc__,
-"sched_param(sched_priority)\n"
-"--\n"
-"\n"
-"Current has only one field: sched_priority\");\n"
-"\n"
-"  sched_priority\n"
-"    A scheduling parameter.");
-
-static PyObject *
-os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority);
-
-static PyObject *
-os_sched_param(PyTypeObject *type, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"sched_priority", NULL};
-    PyObject *sched_priority;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O:sched_param", _keywords,
-        &sched_priority))
-        goto exit;
-    return_value = os_sched_param_impl(type, sched_priority);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
-/*[clinic end generated code: output=d3791e345f7fe573 input=73a4c22f7071fc62]*/
+/*[clinic end generated code: output=48f4067d60f48c13 input=73a4c22f7071fc62]*/
 {
     PyObject *res;
 
@@ -7212,6 +5461,8 @@ os_sched_param_impl(PyTypeObject *type, PyObject *sched_priority)
     return res;
 }
 
+
+PyDoc_VAR(os_sched_param__doc__);
 
 static PyStructSequence_Field sched_param_fields[] = {
     {"sched_priority", "the scheduling priority"},
@@ -7262,42 +5513,9 @@ If pid is 0, the calling process is changed.
 param is an instance of sched_param.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_setscheduler__doc__,
-"sched_setscheduler($module, pid, policy, param, /)\n"
-"--\n"
-"\n"
-"Set the scheduling policy for the process identified by pid.\n"
-"\n"
-"If pid is 0, the calling process is changed.\n"
-"param is an instance of sched_param.");
-
-#define OS_SCHED_SETSCHEDULER_METHODDEF    \
-    {"sched_setscheduler", (PyCFunction)os_sched_setscheduler, METH_VARARGS, os_sched_setscheduler__doc__},
-
-static PyObject *
-os_sched_setscheduler_impl(PyModuleDef *module, pid_t pid, int policy, struct sched_param *param);
-
-static PyObject *
-os_sched_setscheduler(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-    int policy;
-    struct sched_param param;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID "iO&:sched_setscheduler",
-        &pid, &policy, convert_sched_param, &param))
-        goto exit;
-    return_value = os_sched_setscheduler_impl(module, pid, policy, &param);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_sched_setscheduler_impl(PyModuleDef *module, pid_t pid, int policy, struct sched_param *param)
-/*[clinic end generated code: output=36abdb73f81c224f input=c581f9469a5327dd]*/
+/*[clinic end generated code: output=97f40f8384e554b0 input=c581f9469a5327dd]*/
 {
     /*
     ** sched_setscheduler() returns 0 in Linux, but the previous
@@ -7323,40 +5541,9 @@ If pid is 0, returns parameters for the calling process.
 Return value is an instance of sched_param.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_getparam__doc__,
-"sched_getparam($module, pid, /)\n"
-"--\n"
-"\n"
-"Returns scheduling parameters for the process identified by pid.\n"
-"\n"
-"If pid is 0, returns parameters for the calling process.\n"
-"Return value is an instance of sched_param.");
-
-#define OS_SCHED_GETPARAM_METHODDEF    \
-    {"sched_getparam", (PyCFunction)os_sched_getparam, METH_VARARGS, os_sched_getparam__doc__},
-
-static PyObject *
-os_sched_getparam_impl(PyModuleDef *module, pid_t pid);
-
-static PyObject *
-os_sched_getparam(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID ":sched_getparam",
-        &pid))
-        goto exit;
-    return_value = os_sched_getparam_impl(module, pid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_sched_getparam_impl(PyModuleDef *module, pid_t pid)
-/*[clinic end generated code: output=b33acc8db004a8c9 input=18a1ef9c2efae296]*/
+/*[clinic end generated code: output=f42c5bd2604ecd08 input=18a1ef9c2efae296]*/
 {
     struct sched_param param;
     PyObject *result;
@@ -7389,41 +5576,9 @@ If pid is 0, sets parameters for the calling process.
 param should be an instance of sched_param.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_setparam__doc__,
-"sched_setparam($module, pid, param, /)\n"
-"--\n"
-"\n"
-"Set scheduling parameters for the process identified by pid.\n"
-"\n"
-"If pid is 0, sets parameters for the calling process.\n"
-"param should be an instance of sched_param.");
-
-#define OS_SCHED_SETPARAM_METHODDEF    \
-    {"sched_setparam", (PyCFunction)os_sched_setparam, METH_VARARGS, os_sched_setparam__doc__},
-
-static PyObject *
-os_sched_setparam_impl(PyModuleDef *module, pid_t pid, struct sched_param *param);
-
-static PyObject *
-os_sched_setparam(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-    struct sched_param param;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID "O&:sched_setparam",
-        &pid, convert_sched_param, &param))
-        goto exit;
-    return_value = os_sched_setparam_impl(module, pid, &param);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_sched_setparam_impl(PyModuleDef *module, pid_t pid, struct sched_param *param)
-/*[clinic end generated code: output=488bdf5bcbe0d4e8 input=6b8d6dfcecdc21bd]*/
+/*[clinic end generated code: output=c6560b34395bb343 input=6b8d6dfcecdc21bd]*/
 {
     if (sched_setparam(pid, param))
         return posix_error();
@@ -7443,43 +5598,9 @@ Return the round-robin quantum for the process identified by pid, in seconds.
 Value returned is a float.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_rr_get_interval__doc__,
-"sched_rr_get_interval($module, pid, /)\n"
-"--\n"
-"\n"
-"Return the round-robin quantum for the process identified by pid, in seconds.\n"
-"\n"
-"Value returned is a float.");
-
-#define OS_SCHED_RR_GET_INTERVAL_METHODDEF    \
-    {"sched_rr_get_interval", (PyCFunction)os_sched_rr_get_interval, METH_VARARGS, os_sched_rr_get_interval__doc__},
-
-static double
-os_sched_rr_get_interval_impl(PyModuleDef *module, pid_t pid);
-
-static PyObject *
-os_sched_rr_get_interval(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-    double _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID ":sched_rr_get_interval",
-        &pid))
-        goto exit;
-    _return_value = os_sched_rr_get_interval_impl(module, pid);
-    if ((_return_value == -1.0) && PyErr_Occurred())
-        goto exit;
-    return_value = PyFloat_FromDouble(_return_value);
-
-exit:
-    return return_value;
-}
-
 static double
 os_sched_rr_get_interval_impl(PyModuleDef *module, pid_t pid)
-/*[clinic end generated code: output=5b3b8d1f27fb2c0a input=2a973da15cca6fae]*/
+/*[clinic end generated code: output=7adc137a86dea581 input=2a973da15cca6fae]*/
 {
     struct timespec interval;
     if (sched_rr_get_interval(pid, &interval)) {
@@ -7497,27 +5618,9 @@ os.sched_yield
 Voluntarily relinquish the CPU.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_yield__doc__,
-"sched_yield($module, /)\n"
-"--\n"
-"\n"
-"Voluntarily relinquish the CPU.");
-
-#define OS_SCHED_YIELD_METHODDEF    \
-    {"sched_yield", (PyCFunction)os_sched_yield, METH_NOARGS, os_sched_yield__doc__},
-
-static PyObject *
-os_sched_yield_impl(PyModuleDef *module);
-
-static PyObject *
-os_sched_yield(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_sched_yield_impl(module);
-}
-
 static PyObject *
 os_sched_yield_impl(PyModuleDef *module)
-/*[clinic end generated code: output=9d2e5f29f1370324 input=e54d6f98189391d4]*/
+/*[clinic end generated code: output=d7bd51869c4cb6a8 input=e54d6f98189391d4]*/
 {
     if (sched_yield())
         return posix_error();
@@ -7539,40 +5642,9 @@ Set the CPU affinity of the process identified by pid to mask.
 mask should be an iterable of integers identifying CPUs.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_setaffinity__doc__,
-"sched_setaffinity($module, pid, mask, /)\n"
-"--\n"
-"\n"
-"Set the CPU affinity of the process identified by pid to mask.\n"
-"\n"
-"mask should be an iterable of integers identifying CPUs.");
-
-#define OS_SCHED_SETAFFINITY_METHODDEF    \
-    {"sched_setaffinity", (PyCFunction)os_sched_setaffinity, METH_VARARGS, os_sched_setaffinity__doc__},
-
-static PyObject *
-os_sched_setaffinity_impl(PyModuleDef *module, pid_t pid, PyObject *mask);
-
-static PyObject *
-os_sched_setaffinity(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-    PyObject *mask;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID "O:sched_setaffinity",
-        &pid, &mask))
-        goto exit;
-    return_value = os_sched_setaffinity_impl(module, pid, mask);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_sched_setaffinity_impl(PyModuleDef *module, pid_t pid, PyObject *mask)
-/*[clinic end generated code: output=5199929738130196 input=a0791a597c7085ba]*/
+/*[clinic end generated code: output=582bcbf40d3253a9 input=a0791a597c7085ba]*/
 {
     int ncpus;
     size_t setsize;
@@ -7666,39 +5738,9 @@ Return the affinity of the process identified by pid.
 The affinity is returned as a set of CPU identifiers.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sched_getaffinity__doc__,
-"sched_getaffinity($module, pid, /)\n"
-"--\n"
-"\n"
-"Return the affinity of the process identified by pid.\n"
-"\n"
-"The affinity is returned as a set of CPU identifiers.");
-
-#define OS_SCHED_GETAFFINITY_METHODDEF    \
-    {"sched_getaffinity", (PyCFunction)os_sched_getaffinity, METH_VARARGS, os_sched_getaffinity__doc__},
-
-static PyObject *
-os_sched_getaffinity_impl(PyModuleDef *module, pid_t pid);
-
-static PyObject *
-os_sched_getaffinity(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID ":sched_getaffinity",
-        &pid))
-        goto exit;
-    return_value = os_sched_getaffinity_impl(module, pid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_sched_getaffinity_impl(PyModuleDef *module, pid_t pid)
-/*[clinic end generated code: output=7b273b0fca9830f0 input=eaf161936874b8a1]*/
+/*[clinic end generated code: output=b431a8f310e369e7 input=eaf161936874b8a1]*/
 {
     int cpu, ncpus, count;
     size_t setsize;
@@ -7754,46 +5796,6 @@ error:
 
 #endif /* HAVE_SCHED_H */
 
-#ifndef OS_SCHED_GET_PRIORITY_MAX_METHODDEF
-#define OS_SCHED_GET_PRIORITY_MAX_METHODDEF
-#endif  /* OS_SCHED_GET_PRIORITY_MAX_METHODDEF */
-
-#ifndef OS_SCHED_GET_PRIORITY_MIN_METHODDEF
-#define OS_SCHED_GET_PRIORITY_MIN_METHODDEF
-#endif  /* OS_SCHED_GET_PRIORITY_MIN_METHODDEF */
-
-#ifndef OS_SCHED_GETSCHEDULER_METHODDEF
-#define OS_SCHED_GETSCHEDULER_METHODDEF
-#endif  /* OS_SCHED_GETSCHEDULER_METHODDEF */
-
-#ifndef OS_SCHED_SETSCHEDULER_METHODDEF
-#define OS_SCHED_SETSCHEDULER_METHODDEF
-#endif  /* OS_SCHED_SETSCHEDULER_METHODDEF */
-
-#ifndef OS_SCHED_GETPARAM_METHODDEF
-#define OS_SCHED_GETPARAM_METHODDEF
-#endif  /* OS_SCHED_GETPARAM_METHODDEF */
-
-#ifndef OS_SCHED_SETPARAM_METHODDEF
-#define OS_SCHED_SETPARAM_METHODDEF
-#endif  /* OS_SCHED_SETPARAM_METHODDEF */
-
-#ifndef OS_SCHED_RR_GET_INTERVAL_METHODDEF
-#define OS_SCHED_RR_GET_INTERVAL_METHODDEF
-#endif  /* OS_SCHED_RR_GET_INTERVAL_METHODDEF */
-
-#ifndef OS_SCHED_YIELD_METHODDEF
-#define OS_SCHED_YIELD_METHODDEF
-#endif  /* OS_SCHED_YIELD_METHODDEF */
-
-#ifndef OS_SCHED_SETAFFINITY_METHODDEF
-#define OS_SCHED_SETAFFINITY_METHODDEF
-#endif  /* OS_SCHED_SETAFFINITY_METHODDEF */
-
-#ifndef OS_SCHED_GETAFFINITY_METHODDEF
-#define OS_SCHED_GETAFFINITY_METHODDEF
-#endif  /* OS_SCHED_GETAFFINITY_METHODDEF */
-
 
 /* AIX uses /dev/ptc but is otherwise the same as /dev/ptmx */
 /* IRIX has both /dev/ptc and /dev/ptmx, use ptmx */
@@ -7832,30 +5834,9 @@ Return a tuple of (master_fd, slave_fd) containing open file descriptors
 for both the master and slave ends.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_openpty__doc__,
-"openpty($module, /)\n"
-"--\n"
-"\n"
-"Open a pseudo-terminal.\n"
-"\n"
-"Return a tuple of (master_fd, slave_fd) containing open file descriptors\n"
-"for both the master and slave ends.");
-
-#define OS_OPENPTY_METHODDEF    \
-    {"openpty", (PyCFunction)os_openpty, METH_NOARGS, os_openpty__doc__},
-
-static PyObject *
-os_openpty_impl(PyModuleDef *module);
-
-static PyObject *
-os_openpty(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_openpty_impl(module);
-}
-
 static PyObject *
 os_openpty_impl(PyModuleDef *module)
-/*[clinic end generated code: output=b12d3c1735468464 input=f3d99fd99e762907]*/
+/*[clinic end generated code: output=358e571c1ba135ee input=f3d99fd99e762907]*/
 {
     int master_fd = -1, slave_fd = -1;
 #ifndef HAVE_OPENPTY
@@ -7955,32 +5936,9 @@ and pid of child to the parent process.
 To both, return fd of newly opened pseudo-terminal.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_forkpty__doc__,
-"forkpty($module, /)\n"
-"--\n"
-"\n"
-"Fork a new process with a new pseudo-terminal as controlling tty.\n"
-"\n"
-"Returns a tuple of (pid, master_fd).\n"
-"Like fork(), return pid of 0 to the child process,\n"
-"and pid of child to the parent process.\n"
-"To both, return fd of newly opened pseudo-terminal.");
-
-#define OS_FORKPTY_METHODDEF    \
-    {"forkpty", (PyCFunction)os_forkpty, METH_NOARGS, os_forkpty__doc__},
-
-static PyObject *
-os_forkpty_impl(PyModuleDef *module);
-
-static PyObject *
-os_forkpty(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_forkpty_impl(module);
-}
-
 static PyObject *
 os_forkpty_impl(PyModuleDef *module)
-/*[clinic end generated code: output=d4f82958d2ed5cad input=f1f7f4bae3966010]*/
+/*[clinic end generated code: output=a11b8391dce3cb57 input=f1f7f4bae3966010]*/
 {
     int master_fd = -1, result = 0;
     pid_t pid;
@@ -8014,27 +5972,9 @@ os.getegid
 Return the current process's effective group id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getegid__doc__,
-"getegid($module, /)\n"
-"--\n"
-"\n"
-"Return the current process\'s effective group id.");
-
-#define OS_GETEGID_METHODDEF    \
-    {"getegid", (PyCFunction)os_getegid, METH_NOARGS, os_getegid__doc__},
-
-static PyObject *
-os_getegid_impl(PyModuleDef *module);
-
-static PyObject *
-os_getegid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getegid_impl(module);
-}
-
 static PyObject *
 os_getegid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=fd12c346fa41cccb input=1596f79ad1107d5d]*/
+/*[clinic end generated code: output=90f433a8c0b1d919 input=1596f79ad1107d5d]*/
 {
     return _PyLong_FromGid(getegid());
 }
@@ -8048,27 +5988,9 @@ os.geteuid
 Return the current process's effective user id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_geteuid__doc__,
-"geteuid($module, /)\n"
-"--\n"
-"\n"
-"Return the current process\'s effective user id.");
-
-#define OS_GETEUID_METHODDEF    \
-    {"geteuid", (PyCFunction)os_geteuid, METH_NOARGS, os_geteuid__doc__},
-
-static PyObject *
-os_geteuid_impl(PyModuleDef *module);
-
-static PyObject *
-os_geteuid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_geteuid_impl(module);
-}
-
 static PyObject *
 os_geteuid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=03d98e07f4bc03d4 input=4644c662d3bd9f19]*/
+/*[clinic end generated code: output=1a532c4a66874357 input=4644c662d3bd9f19]*/
 {
     return _PyLong_FromUid(geteuid());
 }
@@ -8082,27 +6004,9 @@ os.getgid
 Return the current process's group id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getgid__doc__,
-"getgid($module, /)\n"
-"--\n"
-"\n"
-"Return the current process\'s group id.");
-
-#define OS_GETGID_METHODDEF    \
-    {"getgid", (PyCFunction)os_getgid, METH_NOARGS, os_getgid__doc__},
-
-static PyObject *
-os_getgid_impl(PyModuleDef *module);
-
-static PyObject *
-os_getgid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getgid_impl(module);
-}
-
 static PyObject *
 os_getgid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=07b0356121b8098d input=58796344cd87c0f6]*/
+/*[clinic end generated code: output=91a22021b74ea46b input=58796344cd87c0f6]*/
 {
     return _PyLong_FromGid(getgid());
 }
@@ -8115,27 +6019,9 @@ os.getpid
 Return the current process id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getpid__doc__,
-"getpid($module, /)\n"
-"--\n"
-"\n"
-"Return the current process id.");
-
-#define OS_GETPID_METHODDEF    \
-    {"getpid", (PyCFunction)os_getpid, METH_NOARGS, os_getpid__doc__},
-
-static PyObject *
-os_getpid_impl(PyModuleDef *module);
-
-static PyObject *
-os_getpid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getpid_impl(module);
-}
-
 static PyObject *
 os_getpid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=d63a01a3cebc573d input=5a9a00f0ab68aa00]*/
+/*[clinic end generated code: output=8fbf3a934ee09e62 input=5a9a00f0ab68aa00]*/
 {
     return PyLong_FromPid(getpid());
 }
@@ -8225,27 +6111,9 @@ os.getgroups
 Return list of supplemental group IDs for the process.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getgroups__doc__,
-"getgroups($module, /)\n"
-"--\n"
-"\n"
-"Return list of supplemental group IDs for the process.");
-
-#define OS_GETGROUPS_METHODDEF    \
-    {"getgroups", (PyCFunction)os_getgroups, METH_NOARGS, os_getgroups__doc__},
-
-static PyObject *
-os_getgroups_impl(PyModuleDef *module);
-
-static PyObject *
-os_getgroups(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getgroups_impl(module);
-}
-
 static PyObject *
 os_getgroups_impl(PyModuleDef *module)
-/*[clinic end generated code: output=d9a3559b2e6f4ab8 input=d3f109412e6a155c]*/
+/*[clinic end generated code: output=6e7c4fd2db6d5c60 input=d3f109412e6a155c]*/
 {
     PyObject *result = NULL;
 
@@ -8398,38 +6266,9 @@ os.getpgid
 Call the system call getpgid(), and return the result.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getpgid__doc__,
-"getpgid($module, /, pid)\n"
-"--\n"
-"\n"
-"Call the system call getpgid(), and return the result.");
-
-#define OS_GETPGID_METHODDEF    \
-    {"getpgid", (PyCFunction)os_getpgid, METH_VARARGS|METH_KEYWORDS, os_getpgid__doc__},
-
-static PyObject *
-os_getpgid_impl(PyModuleDef *module, pid_t pid);
-
-static PyObject *
-os_getpgid(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"pid", NULL};
-    pid_t pid;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "" _Py_PARSE_PID ":getpgid", _keywords,
-        &pid))
-        goto exit;
-    return_value = os_getpgid_impl(module, pid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_getpgid_impl(PyModuleDef *module, pid_t pid)
-/*[clinic end generated code: output=3db4ed686179160d input=39d710ae3baaf1c7]*/
+/*[clinic end generated code: output=70e713b4d54b7c61 input=39d710ae3baaf1c7]*/
 {
     pid_t pgid = getpgid(pid);
     if (pgid < 0)
@@ -8446,27 +6285,9 @@ os.getpgrp
 Return the current process group id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getpgrp__doc__,
-"getpgrp($module, /)\n"
-"--\n"
-"\n"
-"Return the current process group id.");
-
-#define OS_GETPGRP_METHODDEF    \
-    {"getpgrp", (PyCFunction)os_getpgrp, METH_NOARGS, os_getpgrp__doc__},
-
-static PyObject *
-os_getpgrp_impl(PyModuleDef *module);
-
-static PyObject *
-os_getpgrp(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getpgrp_impl(module);
-}
-
 static PyObject *
 os_getpgrp_impl(PyModuleDef *module)
-/*[clinic end generated code: output=3b0d3663ea054277 input=6846fb2bb9a3705e]*/
+/*[clinic end generated code: output=cf3403585846811f input=6846fb2bb9a3705e]*/
 {
 #ifdef GETPGRP_HAVE_ARG
     return PyLong_FromPid(getpgrp(0));
@@ -8484,27 +6305,9 @@ os.setpgrp
 Make the current process the leader of its process group.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setpgrp__doc__,
-"setpgrp($module, /)\n"
-"--\n"
-"\n"
-"Make the current process the leader of its process group.");
-
-#define OS_SETPGRP_METHODDEF    \
-    {"setpgrp", (PyCFunction)os_setpgrp, METH_NOARGS, os_setpgrp__doc__},
-
-static PyObject *
-os_setpgrp_impl(PyModuleDef *module);
-
-static PyObject *
-os_setpgrp(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_setpgrp_impl(module);
-}
-
 static PyObject *
 os_setpgrp_impl(PyModuleDef *module)
-/*[clinic end generated code: output=8fbb0ee29ef6fb2d input=1f0619fcb5731e7e]*/
+/*[clinic end generated code: output=59650f55a963d7ac input=1f0619fcb5731e7e]*/
 {
 #ifdef SETPGRP_HAVE_ARG
     if (setpgrp(0, 0) < 0)
@@ -8571,30 +6374,9 @@ If the parent process has already exited, Windows machines will still
 return its id; others systems will return the id of the 'init' process (1).
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getppid__doc__,
-"getppid($module, /)\n"
-"--\n"
-"\n"
-"Return the parent\'s process id.\n"
-"\n"
-"If the parent process has already exited, Windows machines will still\n"
-"return its id; others systems will return the id of the \'init\' process (1).");
-
-#define OS_GETPPID_METHODDEF    \
-    {"getppid", (PyCFunction)os_getppid, METH_NOARGS, os_getppid__doc__},
-
-static PyObject *
-os_getppid_impl(PyModuleDef *module);
-
-static PyObject *
-os_getppid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getppid_impl(module);
-}
-
 static PyObject *
 os_getppid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=9ff3b387781edf3a input=e637cb87539c030e]*/
+/*[clinic end generated code: output=4e49c8e7a8738cd2 input=e637cb87539c030e]*/
 {
 #ifdef MS_WINDOWS
     return win32_getppid();
@@ -8612,27 +6394,9 @@ os.getlogin
 Return the actual login name.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getlogin__doc__,
-"getlogin($module, /)\n"
-"--\n"
-"\n"
-"Return the actual login name.");
-
-#define OS_GETLOGIN_METHODDEF    \
-    {"getlogin", (PyCFunction)os_getlogin, METH_NOARGS, os_getlogin__doc__},
-
-static PyObject *
-os_getlogin_impl(PyModuleDef *module);
-
-static PyObject *
-os_getlogin(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getlogin_impl(module);
-}
-
 static PyObject *
 os_getlogin_impl(PyModuleDef *module)
-/*[clinic end generated code: output=ab6211dab104cbb2 input=2a21ab1e917163df]*/
+/*[clinic end generated code: output=037ebdb3e4b5dac1 input=2a21ab1e917163df]*/
 {
     PyObject *result = NULL;
 #ifdef MS_WINDOWS
@@ -8673,27 +6437,9 @@ os.getuid
 Return the current process's user id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getuid__doc__,
-"getuid($module, /)\n"
-"--\n"
-"\n"
-"Return the current process\'s user id.");
-
-#define OS_GETUID_METHODDEF    \
-    {"getuid", (PyCFunction)os_getuid, METH_NOARGS, os_getuid__doc__},
-
-static PyObject *
-os_getuid_impl(PyModuleDef *module);
-
-static PyObject *
-os_getuid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getuid_impl(module);
-}
-
 static PyObject *
 os_getuid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=77e0dcf2e37d1e89 input=b53c8b35f110a516]*/
+/*[clinic end generated code: output=03a8b894cefb3fa5 input=b53c8b35f110a516]*/
 {
     return _PyLong_FromUid(getuid());
 }
@@ -8715,38 +6461,9 @@ os.kill
 Kill a process with a signal.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_kill__doc__,
-"kill($module, pid, signal, /)\n"
-"--\n"
-"\n"
-"Kill a process with a signal.");
-
-#define OS_KILL_METHODDEF    \
-    {"kill", (PyCFunction)os_kill, METH_VARARGS, os_kill__doc__},
-
-static PyObject *
-os_kill_impl(PyModuleDef *module, pid_t pid, Py_ssize_t signal);
-
-static PyObject *
-os_kill(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-    Py_ssize_t signal;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID "n:kill",
-        &pid, &signal))
-        goto exit;
-    return_value = os_kill_impl(module, pid, signal);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_kill_impl(PyModuleDef *module, pid_t pid, Py_ssize_t signal)
-/*[clinic end generated code: output=2f5c77920ed575e6 input=61a36b86ca275ab9]*/
+/*[clinic end generated code: output=74f907dd00a83c26 input=61a36b86ca275ab9]*/
 #ifndef MS_WINDOWS
 {
     if (kill(pid, (int)signal) == -1)
@@ -8805,38 +6522,9 @@ os.killpg
 Kill a process group with a signal.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_killpg__doc__,
-"killpg($module, pgid, signal, /)\n"
-"--\n"
-"\n"
-"Kill a process group with a signal.");
-
-#define OS_KILLPG_METHODDEF    \
-    {"killpg", (PyCFunction)os_killpg, METH_VARARGS, os_killpg__doc__},
-
-static PyObject *
-os_killpg_impl(PyModuleDef *module, pid_t pgid, int signal);
-
-static PyObject *
-os_killpg(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pgid;
-    int signal;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID "i:killpg",
-        &pgid, &signal))
-        goto exit;
-    return_value = os_killpg_impl(module, pgid, signal);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_killpg_impl(PyModuleDef *module, pid_t pgid, int signal)
-/*[clinic end generated code: output=0e05215d1c007e01 input=38b5449eb8faec19]*/
+/*[clinic end generated code: output=3434a766ef945f93 input=38b5449eb8faec19]*/
 {
     /* XXX some man pages make the `pgid` parameter an int, others
        a pid_t. Since getpgrp() returns a pid_t, we assume killpg should
@@ -8862,37 +6550,9 @@ os.plock
 Lock program segments into memory.");
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_plock__doc__,
-"plock($module, op, /)\n"
-"--\n"
-"\n"
-"Lock program segments into memory.\");");
-
-#define OS_PLOCK_METHODDEF    \
-    {"plock", (PyCFunction)os_plock, METH_VARARGS, os_plock__doc__},
-
-static PyObject *
-os_plock_impl(PyModuleDef *module, int op);
-
-static PyObject *
-os_plock(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int op;
-
-    if (!PyArg_ParseTuple(args,
-        "i:plock",
-        &op))
-        goto exit;
-    return_value = os_plock_impl(module, op);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_plock_impl(PyModuleDef *module, int op)
-/*[clinic end generated code: output=2744fe4b6e5f4dbc input=e6e5e348e1525f60]*/
+/*[clinic end generated code: output=5cb851f81b914984 input=e6e5e348e1525f60]*/
 {
     if (plock(op) == -1)
         return posix_error();
@@ -8911,37 +6571,9 @@ os.setuid
 Set the current process's user id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setuid__doc__,
-"setuid($module, uid, /)\n"
-"--\n"
-"\n"
-"Set the current process\'s user id.");
-
-#define OS_SETUID_METHODDEF    \
-    {"setuid", (PyCFunction)os_setuid, METH_VARARGS, os_setuid__doc__},
-
-static PyObject *
-os_setuid_impl(PyModuleDef *module, uid_t uid);
-
-static PyObject *
-os_setuid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    uid_t uid;
-
-    if (!PyArg_ParseTuple(args,
-        "O&:setuid",
-        _Py_Uid_Converter, &uid))
-        goto exit;
-    return_value = os_setuid_impl(module, uid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_setuid_impl(PyModuleDef *module, uid_t uid)
-/*[clinic end generated code: output=aea344bc22ccf400 input=c921a3285aa22256]*/
+/*[clinic end generated code: output=941ea9a8d1e5d565 input=c921a3285aa22256]*/
 {
     if (setuid(uid) < 0)
         return posix_error();
@@ -8960,37 +6592,9 @@ os.seteuid
 Set the current process's effective user id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_seteuid__doc__,
-"seteuid($module, euid, /)\n"
-"--\n"
-"\n"
-"Set the current process\'s effective user id.");
-
-#define OS_SETEUID_METHODDEF    \
-    {"seteuid", (PyCFunction)os_seteuid, METH_VARARGS, os_seteuid__doc__},
-
-static PyObject *
-os_seteuid_impl(PyModuleDef *module, uid_t euid);
-
-static PyObject *
-os_seteuid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    uid_t euid;
-
-    if (!PyArg_ParseTuple(args,
-        "O&:seteuid",
-        _Py_Uid_Converter, &euid))
-        goto exit;
-    return_value = os_seteuid_impl(module, euid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_seteuid_impl(PyModuleDef *module, uid_t euid)
-/*[clinic end generated code: output=6e824cce4f3b8a5d input=ba93d927e4781aa9]*/
+/*[clinic end generated code: output=66f4f6823a648d6d input=ba93d927e4781aa9]*/
 {
     if (seteuid(euid) < 0)
         return posix_error();
@@ -9009,37 +6613,9 @@ os.setegid
 Set the current process's effective group id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setegid__doc__,
-"setegid($module, egid, /)\n"
-"--\n"
-"\n"
-"Set the current process\'s effective group id.");
-
-#define OS_SETEGID_METHODDEF    \
-    {"setegid", (PyCFunction)os_setegid, METH_VARARGS, os_setegid__doc__},
-
-static PyObject *
-os_setegid_impl(PyModuleDef *module, gid_t egid);
-
-static PyObject *
-os_setegid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    gid_t egid;
-
-    if (!PyArg_ParseTuple(args,
-        "O&:setegid",
-        _Py_Gid_Converter, &egid))
-        goto exit;
-    return_value = os_setegid_impl(module, egid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_setegid_impl(PyModuleDef *module, gid_t egid)
-/*[clinic end generated code: output=80a32263a4d56a9c input=4080526d0ccd6ce3]*/
+/*[clinic end generated code: output=ca094a69a081a60f input=4080526d0ccd6ce3]*/
 {
     if (setegid(egid) < 0)
         return posix_error();
@@ -9059,38 +6635,9 @@ os.setreuid
 Set the current process's real and effective user ids.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setreuid__doc__,
-"setreuid($module, ruid, euid, /)\n"
-"--\n"
-"\n"
-"Set the current process\'s real and effective user ids.");
-
-#define OS_SETREUID_METHODDEF    \
-    {"setreuid", (PyCFunction)os_setreuid, METH_VARARGS, os_setreuid__doc__},
-
-static PyObject *
-os_setreuid_impl(PyModuleDef *module, uid_t ruid, uid_t euid);
-
-static PyObject *
-os_setreuid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    uid_t ruid;
-    uid_t euid;
-
-    if (!PyArg_ParseTuple(args,
-        "O&O&:setreuid",
-        _Py_Uid_Converter, &ruid, _Py_Uid_Converter, &euid))
-        goto exit;
-    return_value = os_setreuid_impl(module, ruid, euid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_setreuid_impl(PyModuleDef *module, uid_t ruid, uid_t euid)
-/*[clinic end generated code: output=d7f226f943dad739 input=0ca8978de663880c]*/
+/*[clinic end generated code: output=b2938c3e73d27ec7 input=0ca8978de663880c]*/
 {
     if (setreuid(ruid, euid) < 0) {
         return posix_error();
@@ -9113,38 +6660,9 @@ os.setregid
 Set the current process's real and effective group ids.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setregid__doc__,
-"setregid($module, rgid, egid, /)\n"
-"--\n"
-"\n"
-"Set the current process\'s real and effective group ids.");
-
-#define OS_SETREGID_METHODDEF    \
-    {"setregid", (PyCFunction)os_setregid, METH_VARARGS, os_setregid__doc__},
-
-static PyObject *
-os_setregid_impl(PyModuleDef *module, gid_t rgid, gid_t egid);
-
-static PyObject *
-os_setregid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    gid_t rgid;
-    gid_t egid;
-
-    if (!PyArg_ParseTuple(args,
-        "O&O&:setregid",
-        _Py_Gid_Converter, &rgid, _Py_Gid_Converter, &egid))
-        goto exit;
-    return_value = os_setregid_impl(module, rgid, egid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_setregid_impl(PyModuleDef *module, gid_t rgid, gid_t egid)
-/*[clinic end generated code: output=a82d9ab70f8e6562 input=c59499f72846db78]*/
+/*[clinic end generated code: output=db18f1839ababe3d input=c59499f72846db78]*/
 {
     if (setregid(rgid, egid) < 0)
         return posix_error();
@@ -9162,37 +6680,9 @@ os.setgid
 Set the current process's group id.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setgid__doc__,
-"setgid($module, gid, /)\n"
-"--\n"
-"\n"
-"Set the current process\'s group id.");
-
-#define OS_SETGID_METHODDEF    \
-    {"setgid", (PyCFunction)os_setgid, METH_VARARGS, os_setgid__doc__},
-
-static PyObject *
-os_setgid_impl(PyModuleDef *module, gid_t gid);
-
-static PyObject *
-os_setgid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    gid_t gid;
-
-    if (!PyArg_ParseTuple(args,
-        "O&:setgid",
-        _Py_Gid_Converter, &gid))
-        goto exit;
-    return_value = os_setgid_impl(module, gid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_setgid_impl(PyModuleDef *module, gid_t gid)
-/*[clinic end generated code: output=08287886db435f23 input=27d30c4059045dc6]*/
+/*[clinic end generated code: output=756cb42c6abd9d87 input=27d30c4059045dc6]*/
 {
     if (setgid(gid) < 0)
         return posix_error();
@@ -9211,18 +6701,9 @@ os.setgroups
 Set the groups of the current process to list.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setgroups__doc__,
-"setgroups($module, groups, /)\n"
-"--\n"
-"\n"
-"Set the groups of the current process to list.");
-
-#define OS_SETGROUPS_METHODDEF    \
-    {"setgroups", (PyCFunction)os_setgroups, METH_O, os_setgroups__doc__},
-
 static PyObject *
 os_setgroups(PyModuleDef *module, PyObject *groups)
-/*[clinic end generated code: output=0b8de65d5b3cda94 input=fa742ca3daf85a7e]*/
+/*[clinic end generated code: output=7945c2e3cc817c58 input=fa742ca3daf85a7e]*/
 {
     int i, len;
     gid_t grouplist[MAX_GROUPS];
@@ -9335,41 +6816,9 @@ Returns a tuple of information about the child process:
   (pid, status, rusage)
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_wait3__doc__,
-"wait3($module, /, options)\n"
-"--\n"
-"\n"
-"Wait for completion of a child process.\n"
-"\n"
-"Returns a tuple of information about the child process:\n"
-"  (pid, status, rusage)");
-
-#define OS_WAIT3_METHODDEF    \
-    {"wait3", (PyCFunction)os_wait3, METH_VARARGS|METH_KEYWORDS, os_wait3__doc__},
-
-static PyObject *
-os_wait3_impl(PyModuleDef *module, int options);
-
-static PyObject *
-os_wait3(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"options", NULL};
-    int options;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:wait3", _keywords,
-        &options))
-        goto exit;
-    return_value = os_wait3_impl(module, options);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_wait3_impl(PyModuleDef *module, int options)
-/*[clinic end generated code: output=1f2a63b6a93cbb57 input=8ac4c56956b61710]*/
+/*[clinic end generated code: output=e18af4924dc54945 input=8ac4c56956b61710]*/
 {
     pid_t pid;
     struct rusage ru;
@@ -9404,42 +6853,9 @@ Returns a tuple of information about the child process:
   (pid, status, rusage)
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_wait4__doc__,
-"wait4($module, /, pid, options)\n"
-"--\n"
-"\n"
-"Wait for completion of a specific child process.\n"
-"\n"
-"Returns a tuple of information about the child process:\n"
-"  (pid, status, rusage)");
-
-#define OS_WAIT4_METHODDEF    \
-    {"wait4", (PyCFunction)os_wait4, METH_VARARGS|METH_KEYWORDS, os_wait4__doc__},
-
-static PyObject *
-os_wait4_impl(PyModuleDef *module, pid_t pid, int options);
-
-static PyObject *
-os_wait4(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"pid", "options", NULL};
-    pid_t pid;
-    int options;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "" _Py_PARSE_PID "i:wait4", _keywords,
-        &pid, &options))
-        goto exit;
-    return_value = os_wait4_impl(module, pid, options);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_wait4_impl(PyModuleDef *module, pid_t pid, int options)
-/*[clinic end generated code: output=20dfb05289d37dc6 input=d11deed0750600ba]*/
+/*[clinic end generated code: output=714f19e6ff01e099 input=d11deed0750600ba]*/
 {
     pid_t res;
     struct rusage ru;
@@ -9479,50 +6895,9 @@ Returns either waitid_result or None if WNOHANG is specified and there are
 no children in a waitable state.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_waitid__doc__,
-"waitid($module, idtype, id, options, /)\n"
-"--\n"
-"\n"
-"Returns the result of waiting for a process or processes.\n"
-"\n"
-"  idtype\n"
-"    Must be one of be P_PID, P_PGID or P_ALL.\n"
-"  id\n"
-"    The id to wait on.\n"
-"  options\n"
-"    Constructed from the ORing of one or more of WEXITED, WSTOPPED\n"
-"    or WCONTINUED and additionally may be ORed with WNOHANG or WNOWAIT.\n"
-"\n"
-"Returns either waitid_result or None if WNOHANG is specified and there are\n"
-"no children in a waitable state.");
-
-#define OS_WAITID_METHODDEF    \
-    {"waitid", (PyCFunction)os_waitid, METH_VARARGS, os_waitid__doc__},
-
-static PyObject *
-os_waitid_impl(PyModuleDef *module, idtype_t idtype, id_t id, int options);
-
-static PyObject *
-os_waitid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    idtype_t idtype;
-    id_t id;
-    int options;
-
-    if (!PyArg_ParseTuple(args,
-        "i" _Py_PARSE_PID "i:waitid",
-        &idtype, &id, &options))
-        goto exit;
-    return_value = os_waitid_impl(module, idtype, id, options);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_waitid_impl(PyModuleDef *module, idtype_t idtype, id_t id, int options)
-/*[clinic end generated code: output=fb44bf97f01021b2 input=d8e7f76e052b7920]*/
+/*[clinic end generated code: output=5c0192750e22fa2e input=d8e7f76e052b7920]*/
 {
     PyObject *result;
     int res;
@@ -9575,43 +6950,9 @@ Returns a tuple of information regarding the child process:
 The options argument is ignored on Windows.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_waitpid__doc__,
-"waitpid($module, pid, options, /)\n"
-"--\n"
-"\n"
-"Wait for completion of a given child process.\n"
-"\n"
-"Returns a tuple of information regarding the child process:\n"
-"    (pid, status)\n"
-"\n"
-"The options argument is ignored on Windows.");
-
-#define OS_WAITPID_METHODDEF    \
-    {"waitpid", (PyCFunction)os_waitpid, METH_VARARGS, os_waitpid__doc__},
-
-static PyObject *
-os_waitpid_impl(PyModuleDef *module, pid_t pid, int options);
-
-static PyObject *
-os_waitpid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-    int options;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID "i:waitpid",
-        &pid, &options))
-        goto exit;
-    return_value = os_waitpid_impl(module, pid, options);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_waitpid_impl(PyModuleDef *module, pid_t pid, int options)
-/*[clinic end generated code: output=095a6b00af70b7ac input=0bf1666b8758fda3]*/
+/*[clinic end generated code: output=5e3593353d54b15b input=0bf1666b8758fda3]*/
 {
     pid_t res;
     int async_err = 0;
@@ -9644,43 +6985,9 @@ Returns a tuple of information regarding the process:
 The options argument is ignored on Windows.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_waitpid__doc__,
-"waitpid($module, pid, options, /)\n"
-"--\n"
-"\n"
-"Wait for completion of a given process.\n"
-"\n"
-"Returns a tuple of information regarding the process:\n"
-"    (pid, status << 8)\n"
-"\n"
-"The options argument is ignored on Windows.");
-
-#define OS_WAITPID_METHODDEF    \
-    {"waitpid", (PyCFunction)os_waitpid, METH_VARARGS, os_waitpid__doc__},
-
-static PyObject *
-os_waitpid_impl(PyModuleDef *module, Py_intptr_t pid, int options);
-
-static PyObject *
-os_waitpid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    Py_intptr_t pid;
-    int options;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_INTPTR "i:waitpid",
-        &pid, &options))
-        goto exit;
-    return_value = os_waitpid_impl(module, pid, options);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_waitpid_impl(PyModuleDef *module, Py_intptr_t pid, int options)
-/*[clinic end generated code: output=c20b95b15ad44a3a input=444c8f51cca5b862]*/
+/*[clinic end generated code: output=fc1d520db019625f input=444c8f51cca5b862]*/
 {
     int status;
     Py_intptr_t res;
@@ -9710,30 +7017,9 @@ Returns a tuple of information about the child process:
     (pid, status)
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_wait__doc__,
-"wait($module, /)\n"
-"--\n"
-"\n"
-"Wait for completion of a child process.\n"
-"\n"
-"Returns a tuple of information about the child process:\n"
-"    (pid, status)");
-
-#define OS_WAIT_METHODDEF    \
-    {"wait", (PyCFunction)os_wait, METH_NOARGS, os_wait__doc__},
-
-static PyObject *
-os_wait_impl(PyModuleDef *module);
-
-static PyObject *
-os_wait(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_wait_impl(module);
-}
-
 static PyObject *
 os_wait_impl(PyModuleDef *module)
-/*[clinic end generated code: output=2a83a9d164e7e6a8 input=03b0182d4a4700ce]*/
+/*[clinic end generated code: output=4a7f4978393e0654 input=03b0182d4a4700ce]*/
 {
     pid_t pid;
     int async_err = 0;
@@ -10059,56 +7345,9 @@ dir_fd may not be implemented on your platform.
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_symlink__doc__,
-"symlink($module, /, src, dst, target_is_directory=False, *, dir_fd=None)\n"
-"--\n"
-"\n"
-"Create a symbolic link pointing to src named dst.\n"
-"\n"
-"target_is_directory is required on Windows if the target is to be\n"
-"  interpreted as a directory.  (On Windows, symlink requires\n"
-"  Windows 6.0 or greater, and raises a NotImplementedError otherwise.)\n"
-"  target_is_directory is ignored on non-Windows platforms.\n"
-"\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
-
-#define OS_SYMLINK_METHODDEF    \
-    {"symlink", (PyCFunction)os_symlink, METH_VARARGS|METH_KEYWORDS, os_symlink__doc__},
-
-static PyObject *
-os_symlink_impl(PyModuleDef *module, path_t *src, path_t *dst, int target_is_directory, int dir_fd);
-
-static PyObject *
-os_symlink(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"src", "dst", "target_is_directory", "dir_fd", NULL};
-    path_t src = PATH_T_INITIALIZE("symlink", "src", 0, 0);
-    path_t dst = PATH_T_INITIALIZE("symlink", "dst", 0, 0);
-    int target_is_directory = 0;
-    int dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&|p$O&:symlink", _keywords,
-        path_converter, &src, path_converter, &dst, &target_is_directory, SYMLINKAT_DIR_FD_CONVERTER, &dir_fd))
-        goto exit;
-    return_value = os_symlink_impl(module, &src, &dst, target_is_directory, dir_fd);
-
-exit:
-    /* Cleanup for src */
-    path_cleanup(&src);
-    /* Cleanup for dst */
-    path_cleanup(&dst);
-
-    return return_value;
-}
-
 static PyObject *
 os_symlink_impl(PyModuleDef *module, path_t *src, path_t *dst, int target_is_directory, int dir_fd)
-/*[clinic end generated code: output=1a31e6d88aafe9b6 input=e820ec4472547bc3]*/
+/*[clinic end generated code: output=11aa03f278bb2c8a input=e820ec4472547bc3]*/
 {
 #ifdef MS_WINDOWS
     DWORD result;
@@ -10255,31 +7494,9 @@ The object returned behaves like a named tuple with these fields:
 All fields are floating point numbers.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_times__doc__,
-"times($module, /)\n"
-"--\n"
-"\n"
-"Return a collection containing process timing information.\n"
-"\n"
-"The object returned behaves like a named tuple with these fields:\n"
-"  (utime, stime, cutime, cstime, elapsed_time)\n"
-"All fields are floating point numbers.");
-
-#define OS_TIMES_METHODDEF    \
-    {"times", (PyCFunction)os_times, METH_NOARGS, os_times__doc__},
-
-static PyObject *
-os_times_impl(PyModuleDef *module);
-
-static PyObject *
-os_times(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_times_impl(module);
-}
-
 static PyObject *
 os_times_impl(PyModuleDef *module)
-/*[clinic end generated code: output=b86896d031a9b768 input=2bf9df3d6ab2e48b]*/
+/*[clinic end generated code: output=df0a63ebe6e6f091 input=2bf9df3d6ab2e48b]*/
 #ifdef MS_WINDOWS
 {
     FILETIME create, exit, kernel, user;
@@ -10331,37 +7548,9 @@ os.getsid
 Call the system call getsid(pid) and return the result.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getsid__doc__,
-"getsid($module, pid, /)\n"
-"--\n"
-"\n"
-"Call the system call getsid(pid) and return the result.");
-
-#define OS_GETSID_METHODDEF    \
-    {"getsid", (PyCFunction)os_getsid, METH_VARARGS, os_getsid__doc__},
-
-static PyObject *
-os_getsid_impl(PyModuleDef *module, pid_t pid);
-
-static PyObject *
-os_getsid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID ":getsid",
-        &pid))
-        goto exit;
-    return_value = os_getsid_impl(module, pid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_getsid_impl(PyModuleDef *module, pid_t pid)
-/*[clinic end generated code: output=ea8390f395f4e0e1 input=eeb2b923a30ce04e]*/
+/*[clinic end generated code: output=a074f80c0e6bfb38 input=eeb2b923a30ce04e]*/
 {
     int sid;
     sid = getsid(pid);
@@ -10379,27 +7568,9 @@ os.setsid
 Call the system call setsid().
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setsid__doc__,
-"setsid($module, /)\n"
-"--\n"
-"\n"
-"Call the system call setsid().");
-
-#define OS_SETSID_METHODDEF    \
-    {"setsid", (PyCFunction)os_setsid, METH_NOARGS, os_setsid__doc__},
-
-static PyObject *
-os_setsid_impl(PyModuleDef *module);
-
-static PyObject *
-os_setsid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_setsid_impl(module);
-}
-
 static PyObject *
 os_setsid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=2a9a1435d8d764d5 input=5fff45858e2f0776]*/
+/*[clinic end generated code: output=398fc152ae327330 input=5fff45858e2f0776]*/
 {
     if (setsid() < 0)
         return posix_error();
@@ -10419,38 +7590,9 @@ os.setpgid
 Call the system call setpgid(pid, pgrp).
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setpgid__doc__,
-"setpgid($module, pid, pgrp, /)\n"
-"--\n"
-"\n"
-"Call the system call setpgid(pid, pgrp).");
-
-#define OS_SETPGID_METHODDEF    \
-    {"setpgid", (PyCFunction)os_setpgid, METH_VARARGS, os_setpgid__doc__},
-
-static PyObject *
-os_setpgid_impl(PyModuleDef *module, pid_t pid, pid_t pgrp);
-
-static PyObject *
-os_setpgid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    pid_t pid;
-    pid_t pgrp;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_PID "" _Py_PARSE_PID ":setpgid",
-        &pid, &pgrp))
-        goto exit;
-    return_value = os_setpgid_impl(module, pid, pgrp);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_setpgid_impl(PyModuleDef *module, pid_t pid, pid_t pgrp)
-/*[clinic end generated code: output=7ad79b725f890e1f input=fceb395eca572e1a]*/
+/*[clinic end generated code: output=7079a8e932912841 input=fceb395eca572e1a]*/
 {
     if (setpgid(pid, pgrp) < 0)
         return posix_error();
@@ -10469,37 +7611,9 @@ os.tcgetpgrp
 Return the process group associated with the terminal specified by fd.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_tcgetpgrp__doc__,
-"tcgetpgrp($module, fd, /)\n"
-"--\n"
-"\n"
-"Return the process group associated with the terminal specified by fd.");
-
-#define OS_TCGETPGRP_METHODDEF    \
-    {"tcgetpgrp", (PyCFunction)os_tcgetpgrp, METH_VARARGS, os_tcgetpgrp__doc__},
-
-static PyObject *
-os_tcgetpgrp_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_tcgetpgrp(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-
-    if (!PyArg_ParseTuple(args,
-        "i:tcgetpgrp",
-        &fd))
-        goto exit;
-    return_value = os_tcgetpgrp_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_tcgetpgrp_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=abcf52ed4c8d22cb input=7f6c18eac10ada86]*/
+/*[clinic end generated code: output=ebb6dc5f111c7dc0 input=7f6c18eac10ada86]*/
 {
     pid_t pgid = tcgetpgrp(fd);
     if (pgid < 0)
@@ -10520,38 +7634,9 @@ os.tcsetpgrp
 Set the process group associated with the terminal specified by fd.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_tcsetpgrp__doc__,
-"tcsetpgrp($module, fd, pgid, /)\n"
-"--\n"
-"\n"
-"Set the process group associated with the terminal specified by fd.");
-
-#define OS_TCSETPGRP_METHODDEF    \
-    {"tcsetpgrp", (PyCFunction)os_tcsetpgrp, METH_VARARGS, os_tcsetpgrp__doc__},
-
-static PyObject *
-os_tcsetpgrp_impl(PyModuleDef *module, int fd, pid_t pgid);
-
-static PyObject *
-os_tcsetpgrp(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    pid_t pgid;
-
-    if (!PyArg_ParseTuple(args,
-        "i" _Py_PARSE_PID ":tcsetpgrp",
-        &fd, &pgid))
-        goto exit;
-    return_value = os_tcsetpgrp_impl(module, fd, pgid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_tcsetpgrp_impl(PyModuleDef *module, int fd, pid_t pgid)
-/*[clinic end generated code: output=76f9bb8fd00f20f5 input=5bdc997c6a619020]*/
+/*[clinic end generated code: output=3e4b05177462cd22 input=5bdc997c6a619020]*/
 {
     if (tcsetpgrp(fd, pgid) < 0)
         return posix_error();
@@ -10584,53 +7669,9 @@ dir_fd may not be implemented on your platform.
   If it is unavailable, using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_open__doc__,
-"open($module, /, path, flags, mode=511, *, dir_fd=None)\n"
-"--\n"
-"\n"
-"Open a file for low level IO.  Returns a file descriptor (integer).\n"
-"\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
-
-#define OS_OPEN_METHODDEF    \
-    {"open", (PyCFunction)os_open, METH_VARARGS|METH_KEYWORDS, os_open__doc__},
-
-static int
-os_open_impl(PyModuleDef *module, path_t *path, int flags, int mode, int dir_fd);
-
-static PyObject *
-os_open(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "flags", "mode", "dir_fd", NULL};
-    path_t path = PATH_T_INITIALIZE("open", "path", 0, 0);
-    int flags;
-    int mode = 511;
-    int dir_fd = DEFAULT_DIR_FD;
-    int _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&i|i$O&:open", _keywords,
-        path_converter, &path, &flags, &mode, OPENAT_DIR_FD_CONVERTER, &dir_fd))
-        goto exit;
-    _return_value = os_open_impl(module, &path, flags, mode, dir_fd);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static int
 os_open_impl(PyModuleDef *module, path_t *path, int flags, int mode, int dir_fd)
-/*[clinic end generated code: output=05b68fc4ed5e29c9 input=ad8623b29acd2934]*/
+/*[clinic end generated code: output=c95a64f0e62f199b input=ad8623b29acd2934]*/
 {
     int fd;
     int async_err = 0;
@@ -10688,38 +7729,9 @@ os.close
 Close a file descriptor.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_close__doc__,
-"close($module, /, fd)\n"
-"--\n"
-"\n"
-"Close a file descriptor.");
-
-#define OS_CLOSE_METHODDEF    \
-    {"close", (PyCFunction)os_close, METH_VARARGS|METH_KEYWORDS, os_close__doc__},
-
-static PyObject *
-os_close_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_close(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
-    int fd;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:close", _keywords,
-        &fd))
-        goto exit;
-    return_value = os_close_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_close_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=927004e29ad55808 input=2bc42451ca5c3223]*/
+/*[clinic end generated code: output=47bf2ea536445a26 input=2bc42451ca5c3223]*/
 {
     int res;
     if (!_PyVerify_fd(fd))
@@ -10747,38 +7759,9 @@ os.closerange
 Closes all file descriptors in [fd_low, fd_high), ignoring errors.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_closerange__doc__,
-"closerange($module, fd_low, fd_high, /)\n"
-"--\n"
-"\n"
-"Closes all file descriptors in [fd_low, fd_high), ignoring errors.");
-
-#define OS_CLOSERANGE_METHODDEF    \
-    {"closerange", (PyCFunction)os_closerange, METH_VARARGS, os_closerange__doc__},
-
-static PyObject *
-os_closerange_impl(PyModuleDef *module, int fd_low, int fd_high);
-
-static PyObject *
-os_closerange(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd_low;
-    int fd_high;
-
-    if (!PyArg_ParseTuple(args,
-        "ii:closerange",
-        &fd_low, &fd_high))
-        goto exit;
-    return_value = os_closerange_impl(module, fd_low, fd_high);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_closerange_impl(PyModuleDef *module, int fd_low, int fd_high)
-/*[clinic end generated code: output=0a929ece386811c3 input=5855a3d053ebd4ec]*/
+/*[clinic end generated code: output=70e6adb95220ba96 input=5855a3d053ebd4ec]*/
 {
     int i;
     Py_BEGIN_ALLOW_THREADS
@@ -10799,41 +7782,9 @@ os.dup -> int
 Return a duplicate of a file descriptor.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_dup__doc__,
-"dup($module, fd, /)\n"
-"--\n"
-"\n"
-"Return a duplicate of a file descriptor.");
-
-#define OS_DUP_METHODDEF    \
-    {"dup", (PyCFunction)os_dup, METH_VARARGS, os_dup__doc__},
-
-static int
-os_dup_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_dup(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    int _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "i:dup",
-        &fd))
-        goto exit;
-    _return_value = os_dup_impl(module, fd);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_dup_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=75943e057b25e1bd input=6f10f7ea97f7852a]*/
+/*[clinic end generated code: output=f4bbac8c7652d05e input=6f10f7ea97f7852a]*/
 {
     return _Py_dup(fd);
 }
@@ -10848,40 +7799,9 @@ os.dup2
 Duplicate file descriptor.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_dup2__doc__,
-"dup2($module, /, fd, fd2, inheritable=True)\n"
-"--\n"
-"\n"
-"Duplicate file descriptor.");
-
-#define OS_DUP2_METHODDEF    \
-    {"dup2", (PyCFunction)os_dup2, METH_VARARGS|METH_KEYWORDS, os_dup2__doc__},
-
-static PyObject *
-os_dup2_impl(PyModuleDef *module, int fd, int fd2, int inheritable);
-
-static PyObject *
-os_dup2(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", "fd2", "inheritable", NULL};
-    int fd;
-    int fd2;
-    int inheritable = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "ii|p:dup2", _keywords,
-        &fd, &fd2, &inheritable))
-        goto exit;
-    return_value = os_dup2_impl(module, fd, fd2, inheritable);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_dup2_impl(PyModuleDef *module, int fd, int fd2, int inheritable)
-/*[clinic end generated code: output=531e482dd11a99a0 input=76e96f511be0352f]*/
+/*[clinic end generated code: output=9a099d95881a7923 input=76e96f511be0352f]*/
 {
     int res;
 #if defined(HAVE_DUP3) && \
@@ -10974,46 +7894,9 @@ Apply, test or remove a POSIX lock on an open file descriptor.
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_lockf__doc__,
-"lockf($module, fd, command, length, /)\n"
-"--\n"
-"\n"
-"Apply, test or remove a POSIX lock on an open file descriptor.\n"
-"\n"
-"  fd\n"
-"    An open file descriptor.\n"
-"  command\n"
-"    One of F_LOCK, F_TLOCK, F_ULOCK or F_TEST.\n"
-"  length\n"
-"    The number of bytes to lock, starting at the current position.");
-
-#define OS_LOCKF_METHODDEF    \
-    {"lockf", (PyCFunction)os_lockf, METH_VARARGS, os_lockf__doc__},
-
-static PyObject *
-os_lockf_impl(PyModuleDef *module, int fd, int command, Py_off_t length);
-
-static PyObject *
-os_lockf(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    int command;
-    Py_off_t length;
-
-    if (!PyArg_ParseTuple(args,
-        "iiO&:lockf",
-        &fd, &command, Py_off_t_converter, &length))
-        goto exit;
-    return_value = os_lockf_impl(module, fd, command, length);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_lockf_impl(PyModuleDef *module, int fd, int command, Py_off_t length)
-/*[clinic end generated code: output=1b28346ac7335c0f input=65da41d2106e9b79]*/
+/*[clinic end generated code: output=25ff778f9e2fbf1b input=65da41d2106e9b79]*/
 {
     int res;
 
@@ -11043,46 +7926,9 @@ Return the new cursor position in number of bytes
 relative to the beginning of the file.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_lseek__doc__,
-"lseek($module, fd, position, how, /)\n"
-"--\n"
-"\n"
-"Set the position of a file descriptor.  Return the new position.\n"
-"\n"
-"Return the new cursor position in number of bytes\n"
-"relative to the beginning of the file.");
-
-#define OS_LSEEK_METHODDEF    \
-    {"lseek", (PyCFunction)os_lseek, METH_VARARGS, os_lseek__doc__},
-
-static Py_off_t
-os_lseek_impl(PyModuleDef *module, int fd, Py_off_t position, int how);
-
-static PyObject *
-os_lseek(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    Py_off_t position;
-    int how;
-    Py_off_t _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "iO&i:lseek",
-        &fd, Py_off_t_converter, &position, &how))
-        goto exit;
-    _return_value = os_lseek_impl(module, fd, position, how);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromPy_off_t(_return_value);
-
-exit:
-    return return_value;
-}
-
 static Py_off_t
 os_lseek_impl(PyModuleDef *module, int fd, Py_off_t position, int how)
-/*[clinic end generated code: output=88cfc146f55667af input=902654ad3f96a6d3]*/
+/*[clinic end generated code: output=65d4ab96d664998c input=902654ad3f96a6d3]*/
 {
     Py_off_t result;
 
@@ -11129,38 +7975,9 @@ os.read
 Read from a file descriptor.  Returns a bytes object.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_read__doc__,
-"read($module, fd, length, /)\n"
-"--\n"
-"\n"
-"Read from a file descriptor.  Returns a bytes object.");
-
-#define OS_READ_METHODDEF    \
-    {"read", (PyCFunction)os_read, METH_VARARGS, os_read__doc__},
-
-static PyObject *
-os_read_impl(PyModuleDef *module, int fd, Py_ssize_t length);
-
-static PyObject *
-os_read(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    Py_ssize_t length;
-
-    if (!PyArg_ParseTuple(args,
-        "in:read",
-        &fd, &length))
-        goto exit;
-    return_value = os_read_impl(module, fd, length);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_read_impl(PyModuleDef *module, int fd, Py_ssize_t length)
-/*[clinic end generated code: output=1f3bc27260a24968 input=1df2eaa27c0bf1d3]*/
+/*[clinic end generated code: output=be24f44178455e8b input=1df2eaa27c0bf1d3]*/
 {
     Py_ssize_t n;
     PyObject *buffer;
@@ -11270,50 +8087,9 @@ readv returns the total number of bytes read,
 which may be less than the total capacity of all the buffers.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_readv__doc__,
-"readv($module, fd, buffers, /)\n"
-"--\n"
-"\n"
-"Read from a file descriptor fd into an iterable of buffers.\n"
-"\n"
-"The buffers should be mutable buffers accepting bytes.\n"
-"readv will transfer data into each buffer until it is full\n"
-"and then move on to the next buffer in the sequence to hold\n"
-"the rest of the data.\n"
-"\n"
-"readv returns the total number of bytes read,\n"
-"which may be less than the total capacity of all the buffers.");
-
-#define OS_READV_METHODDEF    \
-    {"readv", (PyCFunction)os_readv, METH_VARARGS, os_readv__doc__},
-
-static Py_ssize_t
-os_readv_impl(PyModuleDef *module, int fd, PyObject *buffers);
-
-static PyObject *
-os_readv(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    PyObject *buffers;
-    Py_ssize_t _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "iO:readv",
-        &fd, &buffers))
-        goto exit;
-    _return_value = os_readv_impl(module, fd, buffers);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromSsize_t(_return_value);
-
-exit:
-    return return_value;
-}
-
 static Py_ssize_t
 os_readv_impl(PyModuleDef *module, int fd, PyObject *buffers)
-/*[clinic end generated code: output=72748b1c32a6e2a1 input=e679eb5dbfa0357d]*/
+/*[clinic end generated code: output=00fc56ff1800059f input=e679eb5dbfa0357d]*/
 {
     int cnt;
     Py_ssize_t n;
@@ -11366,42 +8142,9 @@ Read length bytes from file descriptor fd, starting at offset bytes from
 the beginning of the file.  The file offset remains unchanged.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_pread__doc__,
-"pread($module, fd, length, offset, /)\n"
-"--\n"
-"\n"
-"Read a number of bytes from a file descriptor starting at a particular offset.\n"
-"\n"
-"Read length bytes from file descriptor fd, starting at offset bytes from\n"
-"the beginning of the file.  The file offset remains unchanged.");
-
-#define OS_PREAD_METHODDEF    \
-    {"pread", (PyCFunction)os_pread, METH_VARARGS, os_pread__doc__},
-
-static PyObject *
-os_pread_impl(PyModuleDef *module, int fd, int length, Py_off_t offset);
-
-static PyObject *
-os_pread(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    int length;
-    Py_off_t offset;
-
-    if (!PyArg_ParseTuple(args,
-        "iiO&:pread",
-        &fd, &length, Py_off_t_converter, &offset))
-        goto exit;
-    return_value = os_pread_impl(module, fd, length, offset);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_pread_impl(PyModuleDef *module, int fd, int length, Py_off_t offset)
-/*[clinic end generated code: output=7b62bf6c06e20ae8 input=084948dcbaa35d4c]*/
+/*[clinic end generated code: output=90d1fed87f68fa33 input=084948dcbaa35d4c]*/
 {
     Py_ssize_t n;
     int async_err = 0;
@@ -11446,46 +8189,9 @@ os.write -> Py_ssize_t
 Write a bytes object to a file descriptor.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_write__doc__,
-"write($module, fd, data, /)\n"
-"--\n"
-"\n"
-"Write a bytes object to a file descriptor.");
-
-#define OS_WRITE_METHODDEF    \
-    {"write", (PyCFunction)os_write, METH_VARARGS, os_write__doc__},
-
-static Py_ssize_t
-os_write_impl(PyModuleDef *module, int fd, Py_buffer *data);
-
-static PyObject *
-os_write(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    Py_buffer data = {NULL, NULL};
-    Py_ssize_t _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "iy*:write",
-        &fd, &data))
-        goto exit;
-    _return_value = os_write_impl(module, fd, &data);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromSsize_t(_return_value);
-
-exit:
-    /* Cleanup for data */
-    if (data.obj)
-       PyBuffer_Release(&data);
-
-    return return_value;
-}
-
 static Py_ssize_t
 os_write_impl(PyModuleDef *module, int fd, Py_buffer *data)
-/*[clinic end generated code: output=aeb96acfdd4d5112 input=3207e28963234f3c]*/
+/*[clinic end generated code: output=58845c93c9ee1dda input=3207e28963234f3c]*/
 {
     return _Py_write(fd, data->buf, data->len);
 }
@@ -11651,41 +8357,9 @@ Like stat(), but for an open file descriptor.
 Equivalent to os.stat(fd).
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fstat__doc__,
-"fstat($module, /, fd)\n"
-"--\n"
-"\n"
-"Perform a stat system call on the given file descriptor.\n"
-"\n"
-"Like stat(), but for an open file descriptor.\n"
-"Equivalent to os.stat(fd).");
-
-#define OS_FSTAT_METHODDEF    \
-    {"fstat", (PyCFunction)os_fstat, METH_VARARGS|METH_KEYWORDS, os_fstat__doc__},
-
-static PyObject *
-os_fstat_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_fstat(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
-    int fd;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:fstat", _keywords,
-        &fd))
-        goto exit;
-    return_value = os_fstat_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_fstat_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=dae4a9678c7bd881 input=27e0e0ebbe5600c9]*/
+/*[clinic end generated code: output=d71fe98bf042b626 input=27e0e0ebbe5600c9]*/
 {
     STRUCT_STAT st;
     int res;
@@ -11719,44 +8393,9 @@ Return True if the file descriptor is an open file descriptor
 connected to the slave end of a terminal.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_isatty__doc__,
-"isatty($module, fd, /)\n"
-"--\n"
-"\n"
-"Return True if the fd is connected to a terminal.\n"
-"\n"
-"Return True if the file descriptor is an open file descriptor\n"
-"connected to the slave end of a terminal.");
-
-#define OS_ISATTY_METHODDEF    \
-    {"isatty", (PyCFunction)os_isatty, METH_VARARGS, os_isatty__doc__},
-
-static int
-os_isatty_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_isatty(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    int _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "i:isatty",
-        &fd))
-        goto exit;
-    _return_value = os_isatty_impl(module, fd);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_isatty_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=4bfadbfe22715097 input=08ce94aa1eaf7b5e]*/
+/*[clinic end generated code: output=acec9d3c29d16d33 input=08ce94aa1eaf7b5e]*/
 {
     if (!_PyVerify_fd(fd))
         return 0;
@@ -11774,30 +8413,9 @@ Returns a tuple of two file descriptors:
   (read_fd, write_fd)
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_pipe__doc__,
-"pipe($module, /)\n"
-"--\n"
-"\n"
-"Create a pipe.\n"
-"\n"
-"Returns a tuple of two file descriptors:\n"
-"  (read_fd, write_fd)");
-
-#define OS_PIPE_METHODDEF    \
-    {"pipe", (PyCFunction)os_pipe, METH_NOARGS, os_pipe__doc__},
-
-static PyObject *
-os_pipe_impl(PyModuleDef *module);
-
-static PyObject *
-os_pipe(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_pipe_impl(module);
-}
-
 static PyObject *
 os_pipe_impl(PyModuleDef *module)
-/*[clinic end generated code: output=0da2479f2266e774 input=02535e8c8fa6c4d4]*/
+/*[clinic end generated code: output=6b0cd3f868ec3c40 input=02535e8c8fa6c4d4]*/
 {
     int fds[2];
 #ifdef MS_WINDOWS
@@ -11882,43 +8500,9 @@ flags can be constructed by ORing together one or more of these values:
 O_NONBLOCK, O_CLOEXEC.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_pipe2__doc__,
-"pipe2($module, flags, /)\n"
-"--\n"
-"\n"
-"Create a pipe with flags set atomically.\n"
-"\n"
-"Returns a tuple of two file descriptors:\n"
-"  (read_fd, write_fd)\n"
-"\n"
-"flags can be constructed by ORing together one or more of these values:\n"
-"O_NONBLOCK, O_CLOEXEC.");
-
-#define OS_PIPE2_METHODDEF    \
-    {"pipe2", (PyCFunction)os_pipe2, METH_VARARGS, os_pipe2__doc__},
-
-static PyObject *
-os_pipe2_impl(PyModuleDef *module, int flags);
-
-static PyObject *
-os_pipe2(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int flags;
-
-    if (!PyArg_ParseTuple(args,
-        "i:pipe2",
-        &flags))
-        goto exit;
-    return_value = os_pipe2_impl(module, flags);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_pipe2_impl(PyModuleDef *module, int flags)
-/*[clinic end generated code: output=9e27c799ce19220b input=f261b6e7e63c6817]*/
+/*[clinic end generated code: output=c15b6075d0c6b2e7 input=f261b6e7e63c6817]*/
 {
     int fds[2];
     int res;
@@ -11944,45 +8528,9 @@ Returns the total number of bytes written.
 buffers must be a sequence of bytes-like objects.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_writev__doc__,
-"writev($module, fd, buffers, /)\n"
-"--\n"
-"\n"
-"Iterate over buffers, and write the contents of each to a file descriptor.\n"
-"\n"
-"Returns the total number of bytes written.\n"
-"buffers must be a sequence of bytes-like objects.");
-
-#define OS_WRITEV_METHODDEF    \
-    {"writev", (PyCFunction)os_writev, METH_VARARGS, os_writev__doc__},
-
-static Py_ssize_t
-os_writev_impl(PyModuleDef *module, int fd, PyObject *buffers);
-
-static PyObject *
-os_writev(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    PyObject *buffers;
-    Py_ssize_t _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "iO:writev",
-        &fd, &buffers))
-        goto exit;
-    _return_value = os_writev_impl(module, fd, buffers);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromSsize_t(_return_value);
-
-exit:
-    return return_value;
-}
-
 static Py_ssize_t
 os_writev_impl(PyModuleDef *module, int fd, PyObject *buffers)
-/*[clinic end generated code: output=591c662dccbe4951 input=5b8d17fe4189d2fe]*/
+/*[clinic end generated code: output=a48925dbf2d5c238 input=5b8d17fe4189d2fe]*/
 {
     int cnt;
     Py_ssize_t result;
@@ -12032,51 +8580,9 @@ the file.  Returns the number of bytes writte.  Does not change the
 current file offset.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_pwrite__doc__,
-"pwrite($module, fd, buffer, offset, /)\n"
-"--\n"
-"\n"
-"Write bytes to a file descriptor starting at a particular offset.\n"
-"\n"
-"Write buffer to fd, starting at offset bytes from the beginning of\n"
-"the file.  Returns the number of bytes writte.  Does not change the\n"
-"current file offset.");
-
-#define OS_PWRITE_METHODDEF    \
-    {"pwrite", (PyCFunction)os_pwrite, METH_VARARGS, os_pwrite__doc__},
-
-static Py_ssize_t
-os_pwrite_impl(PyModuleDef *module, int fd, Py_buffer *buffer, Py_off_t offset);
-
-static PyObject *
-os_pwrite(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    Py_buffer buffer = {NULL, NULL};
-    Py_off_t offset;
-    Py_ssize_t _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "iy*O&:pwrite",
-        &fd, &buffer, Py_off_t_converter, &offset))
-        goto exit;
-    _return_value = os_pwrite_impl(module, fd, &buffer, offset);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromSsize_t(_return_value);
-
-exit:
-    /* Cleanup for buffer */
-    if (buffer.obj)
-       PyBuffer_Release(&buffer);
-
-    return return_value;
-}
-
 static Py_ssize_t
 os_pwrite_impl(PyModuleDef *module, int fd, Py_buffer *buffer, Py_off_t offset)
-/*[clinic end generated code: output=ec9cc5b2238e96a7 input=19903f1b3dd26377]*/
+/*[clinic end generated code: output=95225f3b496feaf3 input=19903f1b3dd26377]*/
 {
     Py_ssize_t size;
     int async_err = 0;
@@ -12116,48 +8622,9 @@ dir_fd may not be implemented on your platform.
   If it is unavailable, using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_mkfifo__doc__,
-"mkfifo($module, /, path, mode=438, *, dir_fd=None)\n"
-"--\n"
-"\n"
-"Create a \"fifo\" (a POSIX named pipe).\n"
-"\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
-
-#define OS_MKFIFO_METHODDEF    \
-    {"mkfifo", (PyCFunction)os_mkfifo, METH_VARARGS|METH_KEYWORDS, os_mkfifo__doc__},
-
-static PyObject *
-os_mkfifo_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd);
-
-static PyObject *
-os_mkfifo(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "dir_fd", NULL};
-    path_t path = PATH_T_INITIALIZE("mkfifo", "path", 0, 0);
-    int mode = 438;
-    int dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|i$O&:mkfifo", _keywords,
-        path_converter, &path, &mode, MKFIFOAT_DIR_FD_CONVERTER, &dir_fd))
-        goto exit;
-    return_value = os_mkfifo_impl(module, &path, mode, dir_fd);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_mkfifo_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd)
-/*[clinic end generated code: output=b3321927546893d0 input=73032e98a36e0e19]*/
+/*[clinic end generated code: output=8f5f5e72c630049a input=73032e98a36e0e19]*/
 {
     int result;
     int async_err = 0;
@@ -12206,56 +8673,9 @@ dir_fd may not be implemented on your platform.
   If it is unavailable, using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_mknod__doc__,
-"mknod($module, /, path, mode=384, device=0, *, dir_fd=None)\n"
-"--\n"
-"\n"
-"Create a node in the file system.\n"
-"\n"
-"Create a node in the file system (file, device special file or named pipe)\n"
-"at path.  mode specifies both the permissions to use and the\n"
-"type of node to be created, being combined (bitwise OR) with one of\n"
-"S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO.  If S_IFCHR or S_IFBLK is set on mode,\n"
-"device defines the newly created device special file (probably using\n"
-"os.makedev()).  Otherwise device is ignored.\n"
-"\n"
-"If dir_fd is not None, it should be a file descriptor open to a directory,\n"
-"  and path should be relative; path will then be relative to that directory.\n"
-"dir_fd may not be implemented on your platform.\n"
-"  If it is unavailable, using it will raise a NotImplementedError.");
-
-#define OS_MKNOD_METHODDEF    \
-    {"mknod", (PyCFunction)os_mknod, METH_VARARGS|METH_KEYWORDS, os_mknod__doc__},
-
-static PyObject *
-os_mknod_impl(PyModuleDef *module, path_t *path, int mode, dev_t device, int dir_fd);
-
-static PyObject *
-os_mknod(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "mode", "device", "dir_fd", NULL};
-    path_t path = PATH_T_INITIALIZE("mknod", "path", 0, 0);
-    int mode = 384;
-    dev_t device = 0;
-    int dir_fd = DEFAULT_DIR_FD;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|iO&$O&:mknod", _keywords,
-        path_converter, &path, &mode, _Py_Dev_Converter, &device, MKNODAT_DIR_FD_CONVERTER, &dir_fd))
-        goto exit;
-    return_value = os_mknod_impl(module, &path, mode, device, dir_fd);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_mknod_impl(PyModuleDef *module, path_t *path, int mode, dev_t device, int dir_fd)
-/*[clinic end generated code: output=f71d54eaf9bb6f1a input=ee44531551a4d83b]*/
+/*[clinic end generated code: output=f7f813e8847de12f input=ee44531551a4d83b]*/
 {
     int result;
     int async_err = 0;
@@ -12289,41 +8709,9 @@ os.major -> unsigned_int
 Extracts a device major number from a raw device number.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_major__doc__,
-"major($module, device, /)\n"
-"--\n"
-"\n"
-"Extracts a device major number from a raw device number.");
-
-#define OS_MAJOR_METHODDEF    \
-    {"major", (PyCFunction)os_major, METH_VARARGS, os_major__doc__},
-
-static unsigned int
-os_major_impl(PyModuleDef *module, dev_t device);
-
-static PyObject *
-os_major(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    dev_t device;
-    unsigned int _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "O&:major",
-        _Py_Dev_Converter, &device))
-        goto exit;
-    _return_value = os_major_impl(module, device);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static unsigned int
 os_major_impl(PyModuleDef *module, dev_t device)
-/*[clinic end generated code: output=a2d06e908ebf95b5 input=1e16a4d30c4d4462]*/
+/*[clinic end generated code: output=ba55693ab49bac34 input=1e16a4d30c4d4462]*/
 {
     return major(device);
 }
@@ -12338,41 +8726,9 @@ os.minor -> unsigned_int
 Extracts a device minor number from a raw device number.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_minor__doc__,
-"minor($module, device, /)\n"
-"--\n"
-"\n"
-"Extracts a device minor number from a raw device number.");
-
-#define OS_MINOR_METHODDEF    \
-    {"minor", (PyCFunction)os_minor, METH_VARARGS, os_minor__doc__},
-
-static unsigned int
-os_minor_impl(PyModuleDef *module, dev_t device);
-
-static PyObject *
-os_minor(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    dev_t device;
-    unsigned int _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "O&:minor",
-        _Py_Dev_Converter, &device))
-        goto exit;
-    _return_value = os_minor_impl(module, device);
-    if ((_return_value == (unsigned int)-1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static unsigned int
 os_minor_impl(PyModuleDef *module, dev_t device)
-/*[clinic end generated code: output=6332287ee3f006e2 input=0842c6d23f24c65e]*/
+/*[clinic end generated code: output=2867219ebf274e27 input=0842c6d23f24c65e]*/
 {
     return minor(device);
 }
@@ -12388,42 +8744,9 @@ os.makedev -> dev_t
 Composes a raw device number from the major and minor device numbers.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_makedev__doc__,
-"makedev($module, major, minor, /)\n"
-"--\n"
-"\n"
-"Composes a raw device number from the major and minor device numbers.");
-
-#define OS_MAKEDEV_METHODDEF    \
-    {"makedev", (PyCFunction)os_makedev, METH_VARARGS, os_makedev__doc__},
-
-static dev_t
-os_makedev_impl(PyModuleDef *module, int major, int minor);
-
-static PyObject *
-os_makedev(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int major;
-    int minor;
-    dev_t _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "ii:makedev",
-        &major, &minor))
-        goto exit;
-    _return_value = os_makedev_impl(module, major, minor);
-    if ((_return_value == (dev_t)-1) && PyErr_Occurred())
-        goto exit;
-    return_value = _PyLong_FromDev(_return_value);
-
-exit:
-    return return_value;
-}
-
 static dev_t
 os_makedev_impl(PyModuleDef *module, int major, int minor)
-/*[clinic end generated code: output=38e9a9774c96511a input=4b9fd8fc73cbe48f]*/
+/*[clinic end generated code: output=7cb6264352437660 input=4b9fd8fc73cbe48f]*/
 {
     return makedev(major, minor);
 }
@@ -12441,38 +8764,9 @@ os.ftruncate
 Truncate a file, specified by file descriptor, to a specific length.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_ftruncate__doc__,
-"ftruncate($module, fd, length, /)\n"
-"--\n"
-"\n"
-"Truncate a file, specified by file descriptor, to a specific length.");
-
-#define OS_FTRUNCATE_METHODDEF    \
-    {"ftruncate", (PyCFunction)os_ftruncate, METH_VARARGS, os_ftruncate__doc__},
-
-static PyObject *
-os_ftruncate_impl(PyModuleDef *module, int fd, Py_off_t length);
-
-static PyObject *
-os_ftruncate(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    Py_off_t length;
-
-    if (!PyArg_ParseTuple(args,
-        "iO&:ftruncate",
-        &fd, Py_off_t_converter, &length))
-        goto exit;
-    return_value = os_ftruncate_impl(module, fd, length);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_ftruncate_impl(PyModuleDef *module, int fd, Py_off_t length)
-/*[clinic end generated code: output=62326766cb9b76bf input=63b43641e52818f2]*/
+/*[clinic end generated code: output=3666f401d76bf834 input=63b43641e52818f2]*/
 {
     int result;
     int async_err = 0;
@@ -12502,45 +8796,9 @@ On some platforms, path may also be specified as an open file descriptor.
   If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_truncate__doc__,
-"truncate($module, /, path, length)\n"
-"--\n"
-"\n"
-"Truncate a file, specified by path, to a specific length.\n"
-"\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
-
-#define OS_TRUNCATE_METHODDEF    \
-    {"truncate", (PyCFunction)os_truncate, METH_VARARGS|METH_KEYWORDS, os_truncate__doc__},
-
-static PyObject *
-os_truncate_impl(PyModuleDef *module, path_t *path, Py_off_t length);
-
-static PyObject *
-os_truncate(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "length", NULL};
-    path_t path = PATH_T_INITIALIZE("truncate", "path", 0, PATH_HAVE_FTRUNCATE);
-    Py_off_t length;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&:truncate", _keywords,
-        path_converter, &path, Py_off_t_converter, &length))
-        goto exit;
-    return_value = os_truncate_impl(module, &path, length);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_truncate_impl(PyModuleDef *module, path_t *path, Py_off_t length)
-/*[clinic end generated code: output=6bd76262d2e027c6 input=77229cf0b50a9b77]*/
+/*[clinic end generated code: output=f60a9e08370e9e2e input=77229cf0b50a9b77]*/
 {
     int result;
 
@@ -12584,42 +8842,9 @@ Ensure that the file specified by fd encompasses a range of bytes
 starting at offset bytes from the beginning and continuing for length bytes.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_posix_fallocate__doc__,
-"posix_fallocate($module, fd, offset, length, /)\n"
-"--\n"
-"\n"
-"Ensure a file has allocated at least a particular number of bytes on disk.\n"
-"\n"
-"Ensure that the file specified by fd encompasses a range of bytes\n"
-"starting at offset bytes from the beginning and continuing for length bytes.");
-
-#define OS_POSIX_FALLOCATE_METHODDEF    \
-    {"posix_fallocate", (PyCFunction)os_posix_fallocate, METH_VARARGS, os_posix_fallocate__doc__},
-
-static PyObject *
-os_posix_fallocate_impl(PyModuleDef *module, int fd, Py_off_t offset, Py_off_t length);
-
-static PyObject *
-os_posix_fallocate(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    Py_off_t offset;
-    Py_off_t length;
-
-    if (!PyArg_ParseTuple(args,
-        "iO&O&:posix_fallocate",
-        &fd, Py_off_t_converter, &offset, Py_off_t_converter, &length))
-        goto exit;
-    return_value = os_posix_fallocate_impl(module, fd, offset, length);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_posix_fallocate_impl(PyModuleDef *module, int fd, Py_off_t offset, Py_off_t length)
-/*[clinic end generated code: output=0cd702d2065c79db input=d7a2ef0ab2ca52fb]*/
+/*[clinic end generated code: output=8ae5f7837004d454 input=d7a2ef0ab2ca52fb]*/
 {
     int result;
     int async_err = 0;
@@ -12658,48 +8883,9 @@ POSIX_FADV_RANDOM, POSIX_FADV_NOREUSE, POSIX_FADV_WILLNEED, or
 POSIX_FADV_DONTNEED.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_posix_fadvise__doc__,
-"posix_fadvise($module, fd, offset, length, advice, /)\n"
-"--\n"
-"\n"
-"Announce an intention to access data in a specific pattern.\n"
-"\n"
-"Announce an intention to access data in a specific pattern, thus allowing\n"
-"the kernel to make optimizations.\n"
-"The advice applies to the region of the file specified by fd starting at\n"
-"offset and continuing for length bytes.\n"
-"advice is one of POSIX_FADV_NORMAL, POSIX_FADV_SEQUENTIAL,\n"
-"POSIX_FADV_RANDOM, POSIX_FADV_NOREUSE, POSIX_FADV_WILLNEED, or\n"
-"POSIX_FADV_DONTNEED.");
-
-#define OS_POSIX_FADVISE_METHODDEF    \
-    {"posix_fadvise", (PyCFunction)os_posix_fadvise, METH_VARARGS, os_posix_fadvise__doc__},
-
-static PyObject *
-os_posix_fadvise_impl(PyModuleDef *module, int fd, Py_off_t offset, Py_off_t length, int advice);
-
-static PyObject *
-os_posix_fadvise(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    Py_off_t offset;
-    Py_off_t length;
-    int advice;
-
-    if (!PyArg_ParseTuple(args,
-        "iO&O&i:posix_fadvise",
-        &fd, Py_off_t_converter, &offset, Py_off_t_converter, &length, &advice))
-        goto exit;
-    return_value = os_posix_fadvise_impl(module, fd, offset, length, advice);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_posix_fadvise_impl(PyModuleDef *module, int fd, Py_off_t offset, Py_off_t length, int advice)
-/*[clinic end generated code: output=dad93f32c04dd4f7 input=0fbe554edc2f04b5]*/
+/*[clinic end generated code: output=0e3f09f651661257 input=0fbe554edc2f04b5]*/
 {
     int result;
     int async_err = 0;
@@ -12748,38 +8934,9 @@ os.putenv
 Change or add an environment variable.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_putenv__doc__,
-"putenv($module, name, value, /)\n"
-"--\n"
-"\n"
-"Change or add an environment variable.");
-
-#define OS_PUTENV_METHODDEF    \
-    {"putenv", (PyCFunction)os_putenv, METH_VARARGS, os_putenv__doc__},
-
-static PyObject *
-os_putenv_impl(PyModuleDef *module, PyObject *name, PyObject *value);
-
-static PyObject *
-os_putenv(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-    PyObject *value;
-
-    if (!PyArg_ParseTuple(args,
-        "UU:putenv",
-        &name, &value))
-        goto exit;
-    return_value = os_putenv_impl(module, name, value);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_putenv_impl(PyModuleDef *module, PyObject *name, PyObject *value)
-/*[clinic end generated code: output=5ce9ef9b15606e7e input=ba586581c2e6105f]*/
+/*[clinic end generated code: output=a2438cf95e5a0c1c input=ba586581c2e6105f]*/
 {
     wchar_t *env;
 
@@ -12821,43 +8978,9 @@ os.putenv
 Change or add an environment variable.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_putenv__doc__,
-"putenv($module, name, value, /)\n"
-"--\n"
-"\n"
-"Change or add an environment variable.");
-
-#define OS_PUTENV_METHODDEF    \
-    {"putenv", (PyCFunction)os_putenv, METH_VARARGS, os_putenv__doc__},
-
-static PyObject *
-os_putenv_impl(PyModuleDef *module, PyObject *name, PyObject *value);
-
-static PyObject *
-os_putenv(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name = NULL;
-    PyObject *value = NULL;
-
-    if (!PyArg_ParseTuple(args,
-        "O&O&:putenv",
-        PyUnicode_FSConverter, &name, PyUnicode_FSConverter, &value))
-        goto exit;
-    return_value = os_putenv_impl(module, name, value);
-
-exit:
-    /* Cleanup for name */
-    Py_XDECREF(name);
-    /* Cleanup for value */
-    Py_XDECREF(value);
-
-    return return_value;
-}
-
 static PyObject *
 os_putenv_impl(PyModuleDef *module, PyObject *name, PyObject *value)
-/*[clinic end generated code: output=85ab223393dc7afd input=a97bc6152f688d31]*/
+/*[clinic end generated code: output=a2438cf95e5a0c1c input=a97bc6152f688d31]*/
 {
     PyObject *bytes = NULL;
     char *env;
@@ -12892,40 +9015,9 @@ os.unsetenv
 Delete an environment variable.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_unsetenv__doc__,
-"unsetenv($module, name, /)\n"
-"--\n"
-"\n"
-"Delete an environment variable.");
-
-#define OS_UNSETENV_METHODDEF    \
-    {"unsetenv", (PyCFunction)os_unsetenv, METH_VARARGS, os_unsetenv__doc__},
-
-static PyObject *
-os_unsetenv_impl(PyModuleDef *module, PyObject *name);
-
-static PyObject *
-os_unsetenv(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    PyObject *name = NULL;
-
-    if (!PyArg_ParseTuple(args,
-        "O&:unsetenv",
-        PyUnicode_FSConverter, &name))
-        goto exit;
-    return_value = os_unsetenv_impl(module, name);
-
-exit:
-    /* Cleanup for name */
-    Py_XDECREF(name);
-
-    return return_value;
-}
-
 static PyObject *
 os_unsetenv_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=91318c995f9a0767 input=2bb5288a599c7107]*/
+/*[clinic end generated code: output=25994b57016a2dc9 input=2bb5288a599c7107]*/
 {
 #ifndef HAVE_BROKEN_UNSETENV
     int err;
@@ -12962,37 +9054,9 @@ os.strerror
 Translate an error code to a message string.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_strerror__doc__,
-"strerror($module, code, /)\n"
-"--\n"
-"\n"
-"Translate an error code to a message string.");
-
-#define OS_STRERROR_METHODDEF    \
-    {"strerror", (PyCFunction)os_strerror, METH_VARARGS, os_strerror__doc__},
-
-static PyObject *
-os_strerror_impl(PyModuleDef *module, int code);
-
-static PyObject *
-os_strerror(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int code;
-
-    if (!PyArg_ParseTuple(args,
-        "i:strerror",
-        &code))
-        goto exit;
-    return_value = os_strerror_impl(module, code);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_strerror_impl(PyModuleDef *module, int code)
-/*[clinic end generated code: output=8665c70bb2ca4720 input=75a8673d97915a91]*/
+/*[clinic end generated code: output=0280c6af51e5c9fe input=75a8673d97915a91]*/
 {
     char *message = strerror(code);
     if (message == NULL) {
@@ -13015,41 +9079,9 @@ os.WCOREDUMP -> bool
 Return True if the process returning status was dumped to a core file.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_WCOREDUMP__doc__,
-"WCOREDUMP($module, status, /)\n"
-"--\n"
-"\n"
-"Return True if the process returning status was dumped to a core file.");
-
-#define OS_WCOREDUMP_METHODDEF    \
-    {"WCOREDUMP", (PyCFunction)os_WCOREDUMP, METH_VARARGS, os_WCOREDUMP__doc__},
-
-static int
-os_WCOREDUMP_impl(PyModuleDef *module, int status);
-
-static PyObject *
-os_WCOREDUMP(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int status;
-    int _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "i:WCOREDUMP",
-        &status))
-        goto exit;
-    _return_value = os_WCOREDUMP_impl(module, status);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_WCOREDUMP_impl(PyModuleDef *module, int status)
-/*[clinic end generated code: output=e04d55c09c299828 input=8b05e7ab38528d04]*/
+/*[clinic end generated code: output=134f70bbe63fbf41 input=8b05e7ab38528d04]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13070,45 +9102,9 @@ Return True if the process returning status was continued from a
 job control stop.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_WIFCONTINUED__doc__,
-"WIFCONTINUED($module, /, status)\n"
-"--\n"
-"\n"
-"Return True if a particular process was continued from a job control stop.\n"
-"\n"
-"Return True if the process returning status was continued from a\n"
-"job control stop.");
-
-#define OS_WIFCONTINUED_METHODDEF    \
-    {"WIFCONTINUED", (PyCFunction)os_WIFCONTINUED, METH_VARARGS|METH_KEYWORDS, os_WIFCONTINUED__doc__},
-
-static int
-os_WIFCONTINUED_impl(PyModuleDef *module, int status);
-
-static PyObject *
-os_WIFCONTINUED(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
-    int status;
-    int _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:WIFCONTINUED", _keywords,
-        &status))
-        goto exit;
-    _return_value = os_WIFCONTINUED_impl(module, status);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_WIFCONTINUED_impl(PyModuleDef *module, int status)
-/*[clinic end generated code: output=9c4e6105a4520ab5 input=e777e7d38eb25bd9]*/
+/*[clinic end generated code: output=9cdd26543ebb6dcd input=e777e7d38eb25bd9]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13126,42 +9122,9 @@ os.WIFSTOPPED -> bool
 Return True if the process returning status was stopped.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_WIFSTOPPED__doc__,
-"WIFSTOPPED($module, /, status)\n"
-"--\n"
-"\n"
-"Return True if the process returning status was stopped.");
-
-#define OS_WIFSTOPPED_METHODDEF    \
-    {"WIFSTOPPED", (PyCFunction)os_WIFSTOPPED, METH_VARARGS|METH_KEYWORDS, os_WIFSTOPPED__doc__},
-
-static int
-os_WIFSTOPPED_impl(PyModuleDef *module, int status);
-
-static PyObject *
-os_WIFSTOPPED(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
-    int status;
-    int _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:WIFSTOPPED", _keywords,
-        &status))
-        goto exit;
-    _return_value = os_WIFSTOPPED_impl(module, status);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_WIFSTOPPED_impl(PyModuleDef *module, int status)
-/*[clinic end generated code: output=e0de2da8ec9593ff input=043cb7f1289ef904]*/
+/*[clinic end generated code: output=73bf35e44994a724 input=043cb7f1289ef904]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13179,42 +9142,9 @@ os.WIFSIGNALED -> bool
 Return True if the process returning status was terminated by a signal.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_WIFSIGNALED__doc__,
-"WIFSIGNALED($module, /, status)\n"
-"--\n"
-"\n"
-"Return True if the process returning status was terminated by a signal.");
-
-#define OS_WIFSIGNALED_METHODDEF    \
-    {"WIFSIGNALED", (PyCFunction)os_WIFSIGNALED, METH_VARARGS|METH_KEYWORDS, os_WIFSIGNALED__doc__},
-
-static int
-os_WIFSIGNALED_impl(PyModuleDef *module, int status);
-
-static PyObject *
-os_WIFSIGNALED(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
-    int status;
-    int _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:WIFSIGNALED", _keywords,
-        &status))
-        goto exit;
-    _return_value = os_WIFSIGNALED_impl(module, status);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_WIFSIGNALED_impl(PyModuleDef *module, int status)
-/*[clinic end generated code: output=f14d106558f406be input=d55ba7cc9ce5dc43]*/
+/*[clinic end generated code: output=2697975771872420 input=d55ba7cc9ce5dc43]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13232,42 +9162,9 @@ os.WIFEXITED -> bool
 Return True if the process returning status exited via the exit() system call.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_WIFEXITED__doc__,
-"WIFEXITED($module, /, status)\n"
-"--\n"
-"\n"
-"Return True if the process returning status exited via the exit() system call.");
-
-#define OS_WIFEXITED_METHODDEF    \
-    {"WIFEXITED", (PyCFunction)os_WIFEXITED, METH_VARARGS|METH_KEYWORDS, os_WIFEXITED__doc__},
-
-static int
-os_WIFEXITED_impl(PyModuleDef *module, int status);
-
-static PyObject *
-os_WIFEXITED(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
-    int status;
-    int _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:WIFEXITED", _keywords,
-        &status))
-        goto exit;
-    _return_value = os_WIFEXITED_impl(module, status);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_WIFEXITED_impl(PyModuleDef *module, int status)
-/*[clinic end generated code: output=2f76087d53721255 input=d63775a6791586c0]*/
+/*[clinic end generated code: output=ca8f8c61f0b8532e input=d63775a6791586c0]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13285,42 +9182,9 @@ os.WEXITSTATUS -> int
 Return the process return code from status.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_WEXITSTATUS__doc__,
-"WEXITSTATUS($module, /, status)\n"
-"--\n"
-"\n"
-"Return the process return code from status.");
-
-#define OS_WEXITSTATUS_METHODDEF    \
-    {"WEXITSTATUS", (PyCFunction)os_WEXITSTATUS, METH_VARARGS|METH_KEYWORDS, os_WEXITSTATUS__doc__},
-
-static int
-os_WEXITSTATUS_impl(PyModuleDef *module, int status);
-
-static PyObject *
-os_WEXITSTATUS(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
-    int status;
-    int _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:WEXITSTATUS", _keywords,
-        &status))
-        goto exit;
-    _return_value = os_WEXITSTATUS_impl(module, status);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_WEXITSTATUS_impl(PyModuleDef *module, int status)
-/*[clinic end generated code: output=13b6c270e2a326b1 input=e1fb4944e377585b]*/
+/*[clinic end generated code: output=ea54da23d9e0f6af input=e1fb4944e377585b]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13338,42 +9202,9 @@ os.WTERMSIG -> int
 Return the signal that terminated the process that provided the status value.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_WTERMSIG__doc__,
-"WTERMSIG($module, /, status)\n"
-"--\n"
-"\n"
-"Return the signal that terminated the process that provided the status value.");
-
-#define OS_WTERMSIG_METHODDEF    \
-    {"WTERMSIG", (PyCFunction)os_WTERMSIG, METH_VARARGS|METH_KEYWORDS, os_WTERMSIG__doc__},
-
-static int
-os_WTERMSIG_impl(PyModuleDef *module, int status);
-
-static PyObject *
-os_WTERMSIG(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
-    int status;
-    int _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:WTERMSIG", _keywords,
-        &status))
-        goto exit;
-    _return_value = os_WTERMSIG_impl(module, status);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_WTERMSIG_impl(PyModuleDef *module, int status)
-/*[clinic end generated code: output=bf1fd4b002d0a9ed input=727fd7f84ec3f243]*/
+/*[clinic end generated code: output=4d25367026cb852c input=727fd7f84ec3f243]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13391,42 +9222,9 @@ os.WSTOPSIG -> int
 Return the signal that stopped the process that provided the status value.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_WSTOPSIG__doc__,
-"WSTOPSIG($module, /, status)\n"
-"--\n"
-"\n"
-"Return the signal that stopped the process that provided the status value.");
-
-#define OS_WSTOPSIG_METHODDEF    \
-    {"WSTOPSIG", (PyCFunction)os_WSTOPSIG, METH_VARARGS|METH_KEYWORDS, os_WSTOPSIG__doc__},
-
-static int
-os_WSTOPSIG_impl(PyModuleDef *module, int status);
-
-static PyObject *
-os_WSTOPSIG(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"status", NULL};
-    int status;
-    int _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:WSTOPSIG", _keywords,
-        &status))
-        goto exit;
-    _return_value = os_WSTOPSIG_impl(module, status);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_WSTOPSIG_impl(PyModuleDef *module, int status)
-/*[clinic end generated code: output=92e1647d29ee0549 input=46ebf1d1b293c5c1]*/
+/*[clinic end generated code: output=54eb9c13b001adb4 input=46ebf1d1b293c5c1]*/
 {
     WAIT_TYPE wait_status;
     WAIT_STATUS_INT(wait_status) = status;
@@ -13434,39 +9232,6 @@ os_WSTOPSIG_impl(PyModuleDef *module, int status)
 }
 #endif /* WSTOPSIG */
 #endif /* HAVE_SYS_WAIT_H */
-
-
-#ifndef OS_WCOREDUMP_METHODDEF
-#define OS_WCOREDUMP_METHODDEF
-#endif /* OS_WCOREDUMP_METHODDEF */
-
-#ifndef OS_WIFCONTINUED_METHODDEF
-#define OS_WIFCONTINUED_METHODDEF
-#endif /* OS_WIFCONTINUED_METHODDEF */
-
-#ifndef OS_WIFSTOPPED_METHODDEF
-#define OS_WIFSTOPPED_METHODDEF
-#endif /* OS_WIFSTOPPED_METHODDEF */
-
-#ifndef OS_WIFSIGNALED_METHODDEF
-#define OS_WIFSIGNALED_METHODDEF
-#endif /* OS_WIFSIGNALED_METHODDEF */
-
-#ifndef OS_WIFEXITED_METHODDEF
-#define OS_WIFEXITED_METHODDEF
-#endif /* OS_WIFEXITED_METHODDEF */
-
-#ifndef OS_WEXITSTATUS_METHODDEF
-#define OS_WEXITSTATUS_METHODDEF
-#endif /* OS_WEXITSTATUS_METHODDEF */
-
-#ifndef OS_WTERMSIG_METHODDEF
-#define OS_WTERMSIG_METHODDEF
-#endif /* OS_WTERMSIG_METHODDEF */
-
-#ifndef OS_WSTOPSIG_METHODDEF
-#define OS_WSTOPSIG_METHODDEF
-#endif /* OS_WSTOPSIG_METHODDEF */
 
 
 #if defined(HAVE_FSTATVFS) && defined(HAVE_SYS_STATVFS_H)
@@ -13531,39 +9296,9 @@ Perform an fstatvfs system call on the given fd.
 Equivalent to statvfs(fd).
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fstatvfs__doc__,
-"fstatvfs($module, fd, /)\n"
-"--\n"
-"\n"
-"Perform an fstatvfs system call on the given fd.\n"
-"\n"
-"Equivalent to statvfs(fd).");
-
-#define OS_FSTATVFS_METHODDEF    \
-    {"fstatvfs", (PyCFunction)os_fstatvfs, METH_VARARGS, os_fstatvfs__doc__},
-
-static PyObject *
-os_fstatvfs_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_fstatvfs(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-
-    if (!PyArg_ParseTuple(args,
-        "i:fstatvfs",
-        &fd))
-        goto exit;
-    return_value = os_fstatvfs_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_fstatvfs_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=0e32bf07f946ec0d input=d8122243ac50975e]*/
+/*[clinic end generated code: output=584a94a754497ac0 input=d8122243ac50975e]*/
 {
     int result;
     int async_err = 0;
@@ -13597,45 +9332,9 @@ On some platforms, path may also be specified as an open file descriptor.
   If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_statvfs__doc__,
-"statvfs($module, /, path)\n"
-"--\n"
-"\n"
-"Perform a statvfs system call on the given path.\n"
-"\n"
-"path may always be specified as a string.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
-
-#define OS_STATVFS_METHODDEF    \
-    {"statvfs", (PyCFunction)os_statvfs, METH_VARARGS|METH_KEYWORDS, os_statvfs__doc__},
-
-static PyObject *
-os_statvfs_impl(PyModuleDef *module, path_t *path);
-
-static PyObject *
-os_statvfs(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
-    path_t path = PATH_T_INITIALIZE("statvfs", "path", 0, PATH_HAVE_FSTATVFS);
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&:statvfs", _keywords,
-        path_converter, &path))
-        goto exit;
-    return_value = os_statvfs_impl(module, &path);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_statvfs_impl(PyModuleDef *module, path_t *path)
-/*[clinic end generated code: output=00ff54983360b446 input=3f5c35791c669bd9]*/
+/*[clinic end generated code: output=5ced07a2cf931f41 input=3f5c35791c669bd9]*/
 {
     int result;
     struct statvfs st;
@@ -13675,38 +9374,9 @@ os._getdiskusage
 Return disk usage statistics about the given path as a (total, free) tuple.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os__getdiskusage__doc__,
-"_getdiskusage($module, /, path)\n"
-"--\n"
-"\n"
-"Return disk usage statistics about the given path as a (total, free) tuple.");
-
-#define OS__GETDISKUSAGE_METHODDEF    \
-    {"_getdiskusage", (PyCFunction)os__getdiskusage, METH_VARARGS|METH_KEYWORDS, os__getdiskusage__doc__},
-
-static PyObject *
-os__getdiskusage_impl(PyModuleDef *module, Py_UNICODE *path);
-
-static PyObject *
-os__getdiskusage(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", NULL};
-    Py_UNICODE *path;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "u:_getdiskusage", _keywords,
-        &path))
-        goto exit;
-    return_value = os__getdiskusage_impl(module, path);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os__getdiskusage_impl(PyModuleDef *module, Py_UNICODE *path)
-/*[clinic end generated code: output=054c972179b13708 input=6458133aed893c78]*/
+/*[clinic end generated code: output=60a9cf33449db1dd input=6458133aed893c78]*/
 {
     BOOL retval;
     ULARGE_INTEGER _, total, free;
@@ -13890,44 +9560,9 @@ Return the configuration limit name for the file descriptor fd.
 If there is no limit, return -1.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_fpathconf__doc__,
-"fpathconf($module, fd, name, /)\n"
-"--\n"
-"\n"
-"Return the configuration limit name for the file descriptor fd.\n"
-"\n"
-"If there is no limit, return -1.");
-
-#define OS_FPATHCONF_METHODDEF    \
-    {"fpathconf", (PyCFunction)os_fpathconf, METH_VARARGS, os_fpathconf__doc__},
-
-static long
-os_fpathconf_impl(PyModuleDef *module, int fd, int name);
-
-static PyObject *
-os_fpathconf(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    int name;
-    long _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "iO&:fpathconf",
-        &fd, conv_path_confname, &name))
-        goto exit;
-    _return_value = os_fpathconf_impl(module, fd, name);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    return return_value;
-}
-
 static long
 os_fpathconf_impl(PyModuleDef *module, int fd, int name)
-/*[clinic end generated code: output=3bf04b40e0523a8c input=5942a024d3777810]*/
+/*[clinic end generated code: output=082b2922d4441de7 input=5942a024d3777810]*/
 {
     long limit;
 
@@ -13954,50 +9589,9 @@ On some platforms, path may also be specified as an open file descriptor.
   If this functionality is unavailable, using it raises an exception.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_pathconf__doc__,
-"pathconf($module, /, path, name)\n"
-"--\n"
-"\n"
-"Return the configuration limit name for the file or directory path.\n"
-"\n"
-"If there is no limit, return -1.\n"
-"On some platforms, path may also be specified as an open file descriptor.\n"
-"  If this functionality is unavailable, using it raises an exception.");
-
-#define OS_PATHCONF_METHODDEF    \
-    {"pathconf", (PyCFunction)os_pathconf, METH_VARARGS|METH_KEYWORDS, os_pathconf__doc__},
-
-static long
-os_pathconf_impl(PyModuleDef *module, path_t *path, int name);
-
-static PyObject *
-os_pathconf(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "name", NULL};
-    path_t path = PATH_T_INITIALIZE("pathconf", "path", 0, PATH_HAVE_FPATHCONF);
-    int name;
-    long _return_value;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&:pathconf", _keywords,
-        path_converter, &path, conv_path_confname, &name))
-        goto exit;
-    _return_value = os_pathconf_impl(module, &path, name);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static long
 os_pathconf_impl(PyModuleDef *module, path_t *path, int name)
-/*[clinic end generated code: output=1a53e125b6cf63e4 input=bc3e2a985af27e5e]*/
+/*[clinic end generated code: output=3713029e9501f5ab input=bc3e2a985af27e5e]*/
 {
     long limit;
 
@@ -14192,37 +9786,9 @@ os.confstr
 Return a string-valued system configuration variable.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_confstr__doc__,
-"confstr($module, name, /)\n"
-"--\n"
-"\n"
-"Return a string-valued system configuration variable.");
-
-#define OS_CONFSTR_METHODDEF    \
-    {"confstr", (PyCFunction)os_confstr, METH_VARARGS, os_confstr__doc__},
-
-static PyObject *
-os_confstr_impl(PyModuleDef *module, int name);
-
-static PyObject *
-os_confstr(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int name;
-
-    if (!PyArg_ParseTuple(args,
-        "O&:confstr",
-        conv_confstr_confname, &name))
-        goto exit;
-    return_value = os_confstr_impl(module, name);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_confstr_impl(PyModuleDef *module, int name)
-/*[clinic end generated code: output=3f5e8aba9f8e3174 input=18fb4d0567242e65]*/
+/*[clinic end generated code: output=6ff79c9eed8c2daf input=18fb4d0567242e65]*/
 {
     PyObject *result = NULL;
     char buffer[255];
@@ -14761,6 +10327,8 @@ conv_sysconf_confname(PyObject *arg, int *valuep)
                            / sizeof(struct constdef));
 }
 
+#include "clinic/posixmodule.c.h"
+
 
 /*[clinic input]
 os.sysconf -> long
@@ -14770,41 +10338,9 @@ os.sysconf -> long
 Return an integer-valued system configuration variable.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_sysconf__doc__,
-"sysconf($module, name, /)\n"
-"--\n"
-"\n"
-"Return an integer-valued system configuration variable.");
-
-#define OS_SYSCONF_METHODDEF    \
-    {"sysconf", (PyCFunction)os_sysconf, METH_VARARGS, os_sysconf__doc__},
-
-static long
-os_sysconf_impl(PyModuleDef *module, int name);
-
-static PyObject *
-os_sysconf(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int name;
-    long _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "O&:sysconf",
-        conv_sysconf_confname, &name))
-        goto exit;
-    _return_value = os_sysconf_impl(module, name);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromLong(_return_value);
-
-exit:
-    return return_value;
-}
-
 static long
 os_sysconf_impl(PyModuleDef *module, int name)
-/*[clinic end generated code: output=7b06dfdc472431e4 input=279e3430a33f29e4]*/
+/*[clinic end generated code: output=ed567306f58d69c4 input=279e3430a33f29e4]*/
 {
     long value;
 
@@ -14900,30 +10436,9 @@ This function 'dumps core' or otherwise fails in the hardest way possible
 on the hosting operating system.  This function never returns.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_abort__doc__,
-"abort($module, /)\n"
-"--\n"
-"\n"
-"Abort the interpreter immediately.\n"
-"\n"
-"This function \'dumps core\' or otherwise fails in the hardest way possible\n"
-"on the hosting operating system.  This function never returns.");
-
-#define OS_ABORT_METHODDEF    \
-    {"abort", (PyCFunction)os_abort, METH_NOARGS, os_abort__doc__},
-
-static PyObject *
-os_abort_impl(PyModuleDef *module);
-
-static PyObject *
-os_abort(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_abort_impl(module);
-}
-
 static PyObject *
 os_abort_impl(PyModuleDef *module)
-/*[clinic end generated code: output=cded2cc8c5453d3a input=cf2c7d98bc504047]*/
+/*[clinic end generated code: output=486bb96647c299b3 input=cf2c7d98bc504047]*/
 {
     abort();
     /*NOTREACHED*/
@@ -15079,31 +10594,9 @@ the last 1, 5, and 15 minutes as a tuple of three floats.
 Raises OSError if the load average was unobtainable.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getloadavg__doc__,
-"getloadavg($module, /)\n"
-"--\n"
-"\n"
-"Return average recent system load information.\n"
-"\n"
-"Return the number of processes in the system run queue averaged over\n"
-"the last 1, 5, and 15 minutes as a tuple of three floats.\n"
-"Raises OSError if the load average was unobtainable.");
-
-#define OS_GETLOADAVG_METHODDEF    \
-    {"getloadavg", (PyCFunction)os_getloadavg, METH_NOARGS, os_getloadavg__doc__},
-
-static PyObject *
-os_getloadavg_impl(PyModuleDef *module);
-
-static PyObject *
-os_getloadavg(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getloadavg_impl(module);
-}
-
 static PyObject *
 os_getloadavg_impl(PyModuleDef *module)
-/*[clinic end generated code: output=67593a92457d55af input=3d6d826b76d8a34e]*/
+/*[clinic end generated code: output=2b64c5b675d74c14 input=3d6d826b76d8a34e]*/
 {
     double loadavg[3];
     if (getloadavg(loadavg, 3)!=3) {
@@ -15125,41 +10618,9 @@ The file descriptor must be attached to a terminal.
 If the device is not a terminal, return None.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_device_encoding__doc__,
-"device_encoding($module, /, fd)\n"
-"--\n"
-"\n"
-"Return a string describing the encoding of a terminal\'s file descriptor.\n"
-"\n"
-"The file descriptor must be attached to a terminal.\n"
-"If the device is not a terminal, return None.");
-
-#define OS_DEVICE_ENCODING_METHODDEF    \
-    {"device_encoding", (PyCFunction)os_device_encoding, METH_VARARGS|METH_KEYWORDS, os_device_encoding__doc__},
-
-static PyObject *
-os_device_encoding_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_device_encoding(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"fd", NULL};
-    int fd;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "i:device_encoding", _keywords,
-        &fd))
-        goto exit;
-    return_value = os_device_encoding_impl(module, fd);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_device_encoding_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=e9f8274d42f5cce3 input=9e1d4a42b66df312]*/
+/*[clinic end generated code: output=34f14e33468419c1 input=9e1d4a42b66df312]*/
 {
     return _Py_device_encoding(fd);
 }
@@ -15177,39 +10638,9 @@ os.setresuid
 Set the current process's real, effective, and saved user ids.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setresuid__doc__,
-"setresuid($module, ruid, euid, suid, /)\n"
-"--\n"
-"\n"
-"Set the current process\'s real, effective, and saved user ids.");
-
-#define OS_SETRESUID_METHODDEF    \
-    {"setresuid", (PyCFunction)os_setresuid, METH_VARARGS, os_setresuid__doc__},
-
-static PyObject *
-os_setresuid_impl(PyModuleDef *module, uid_t ruid, uid_t euid, uid_t suid);
-
-static PyObject *
-os_setresuid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    uid_t ruid;
-    uid_t euid;
-    uid_t suid;
-
-    if (!PyArg_ParseTuple(args,
-        "O&O&O&:setresuid",
-        _Py_Uid_Converter, &ruid, _Py_Uid_Converter, &euid, _Py_Uid_Converter, &suid))
-        goto exit;
-    return_value = os_setresuid_impl(module, ruid, euid, suid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_setresuid_impl(PyModuleDef *module, uid_t ruid, uid_t euid, uid_t suid)
-/*[clinic end generated code: output=2e3457cfe7cd1f94 input=9e33cb79a82792f3]*/
+/*[clinic end generated code: output=92cc330812c6ed0f input=9e33cb79a82792f3]*/
 {
     if (setresuid(ruid, euid, suid) < 0)
         return posix_error();
@@ -15230,39 +10661,9 @@ os.setresgid
 Set the current process's real, effective, and saved group ids.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setresgid__doc__,
-"setresgid($module, rgid, egid, sgid, /)\n"
-"--\n"
-"\n"
-"Set the current process\'s real, effective, and saved group ids.");
-
-#define OS_SETRESGID_METHODDEF    \
-    {"setresgid", (PyCFunction)os_setresgid, METH_VARARGS, os_setresgid__doc__},
-
-static PyObject *
-os_setresgid_impl(PyModuleDef *module, gid_t rgid, gid_t egid, gid_t sgid);
-
-static PyObject *
-os_setresgid(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    gid_t rgid;
-    gid_t egid;
-    gid_t sgid;
-
-    if (!PyArg_ParseTuple(args,
-        "O&O&O&:setresgid",
-        _Py_Gid_Converter, &rgid, _Py_Gid_Converter, &egid, _Py_Gid_Converter, &sgid))
-        goto exit;
-    return_value = os_setresgid_impl(module, rgid, egid, sgid);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_setresgid_impl(PyModuleDef *module, gid_t rgid, gid_t egid, gid_t sgid)
-/*[clinic end generated code: output=8a7ee6c1f2482362 input=33e9e0785ef426b1]*/
+/*[clinic end generated code: output=e91dc4842a604429 input=33e9e0785ef426b1]*/
 {
     if (setresgid(rgid, egid, sgid) < 0)
         return posix_error();
@@ -15278,27 +10679,9 @@ os.getresuid
 Return a tuple of the current process's real, effective, and saved user ids.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getresuid__doc__,
-"getresuid($module, /)\n"
-"--\n"
-"\n"
-"Return a tuple of the current process\'s real, effective, and saved user ids.");
-
-#define OS_GETRESUID_METHODDEF    \
-    {"getresuid", (PyCFunction)os_getresuid, METH_NOARGS, os_getresuid__doc__},
-
-static PyObject *
-os_getresuid_impl(PyModuleDef *module);
-
-static PyObject *
-os_getresuid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getresuid_impl(module);
-}
-
 static PyObject *
 os_getresuid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=d0786686a6ef1320 input=41ccfa8e1f6517ad]*/
+/*[clinic end generated code: output=9ddef62faae8e477 input=41ccfa8e1f6517ad]*/
 {
     uid_t ruid, euid, suid;
     if (getresuid(&ruid, &euid, &suid) < 0)
@@ -15317,27 +10700,9 @@ os.getresgid
 Return a tuple of the current process's real, effective, and saved group ids.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getresgid__doc__,
-"getresgid($module, /)\n"
-"--\n"
-"\n"
-"Return a tuple of the current process\'s real, effective, and saved group ids.");
-
-#define OS_GETRESGID_METHODDEF    \
-    {"getresgid", (PyCFunction)os_getresgid, METH_NOARGS, os_getresgid__doc__},
-
-static PyObject *
-os_getresgid_impl(PyModuleDef *module);
-
-static PyObject *
-os_getresgid(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_getresgid_impl(module);
-}
-
 static PyObject *
 os_getresgid_impl(PyModuleDef *module)
-/*[clinic end generated code: output=05249ac795fa759f input=517e68db9ca32df6]*/
+/*[clinic end generated code: output=e1a553cbcf16234c input=517e68db9ca32df6]*/
 {
     gid_t rgid, egid, sgid;
     if (getresgid(&rgid, &egid, &sgid) < 0)
@@ -15367,50 +10732,9 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_getxattr__doc__,
-"getxattr($module, /, path, attribute, *, follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Return the value of extended attribute attribute on path.\n"
-"\n"
-"path may be either a string or an open file descriptor.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, getxattr will examine the symbolic link itself instead of the file\n"
-"  the link points to.");
-
-#define OS_GETXATTR_METHODDEF    \
-    {"getxattr", (PyCFunction)os_getxattr, METH_VARARGS|METH_KEYWORDS, os_getxattr__doc__},
-
-static PyObject *
-os_getxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, int follow_symlinks);
-
-static PyObject *
-os_getxattr(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "attribute", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("getxattr", "path", 0, 1);
-    path_t attribute = PATH_T_INITIALIZE("getxattr", "attribute", 0, 0);
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&|$p:getxattr", _keywords,
-        path_converter, &path, path_converter, &attribute, &follow_symlinks))
-        goto exit;
-    return_value = os_getxattr_impl(module, &path, &attribute, follow_symlinks);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-    /* Cleanup for attribute */
-    path_cleanup(&attribute);
-
-    return return_value;
-}
-
 static PyObject *
 os_getxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, int follow_symlinks)
-/*[clinic end generated code: output=bbc9454fe2b9ea86 input=8c8ea3bab78d89c2]*/
+/*[clinic end generated code: output=d90086b314859f8b input=8c8ea3bab78d89c2]*/
 {
     Py_ssize_t i;
     PyObject *buffer = NULL;
@@ -15479,56 +10803,9 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_setxattr__doc__,
-"setxattr($module, /, path, attribute, value, flags=0, *,\n"
-"         follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Set extended attribute attribute on path to value.\n"
-"\n"
-"path may be either a string or an open file descriptor.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, setxattr will modify the symbolic link itself instead of the file\n"
-"  the link points to.");
-
-#define OS_SETXATTR_METHODDEF    \
-    {"setxattr", (PyCFunction)os_setxattr, METH_VARARGS|METH_KEYWORDS, os_setxattr__doc__},
-
-static PyObject *
-os_setxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, Py_buffer *value, int flags, int follow_symlinks);
-
-static PyObject *
-os_setxattr(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "attribute", "value", "flags", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("setxattr", "path", 0, 1);
-    path_t attribute = PATH_T_INITIALIZE("setxattr", "attribute", 0, 0);
-    Py_buffer value = {NULL, NULL};
-    int flags = 0;
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&y*|i$p:setxattr", _keywords,
-        path_converter, &path, path_converter, &attribute, &value, &flags, &follow_symlinks))
-        goto exit;
-    return_value = os_setxattr_impl(module, &path, &attribute, &value, flags, follow_symlinks);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-    /* Cleanup for attribute */
-    path_cleanup(&attribute);
-    /* Cleanup for value */
-    if (value.obj)
-       PyBuffer_Release(&value);
-
-    return return_value;
-}
-
 static PyObject *
 os_setxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, Py_buffer *value, int flags, int follow_symlinks)
-/*[clinic end generated code: output=2ff845d8e024b218 input=f0d26833992015c2]*/
+/*[clinic end generated code: output=e3defa5c4b1ad0ae input=f0d26833992015c2]*/
 {
     ssize_t result;
 
@@ -15573,50 +10850,9 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_removexattr__doc__,
-"removexattr($module, /, path, attribute, *, follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Remove extended attribute attribute on path.\n"
-"\n"
-"path may be either a string or an open file descriptor.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, removexattr will modify the symbolic link itself instead of the file\n"
-"  the link points to.");
-
-#define OS_REMOVEXATTR_METHODDEF    \
-    {"removexattr", (PyCFunction)os_removexattr, METH_VARARGS|METH_KEYWORDS, os_removexattr__doc__},
-
-static PyObject *
-os_removexattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, int follow_symlinks);
-
-static PyObject *
-os_removexattr(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "attribute", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("removexattr", "path", 0, 1);
-    path_t attribute = PATH_T_INITIALIZE("removexattr", "attribute", 0, 0);
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&O&|$p:removexattr", _keywords,
-        path_converter, &path, path_converter, &attribute, &follow_symlinks))
-        goto exit;
-    return_value = os_removexattr_impl(module, &path, &attribute, follow_symlinks);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-    /* Cleanup for attribute */
-    path_cleanup(&attribute);
-
-    return return_value;
-}
-
 static PyObject *
 os_removexattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, int follow_symlinks)
-/*[clinic end generated code: output=8dfc715bf607c4cf input=cdb54834161e3329]*/
+/*[clinic end generated code: output=4870ec90249af875 input=cdb54834161e3329]*/
 {
     ssize_t result;
 
@@ -15656,48 +10892,9 @@ If follow_symlinks is False, and the last element of the path is a symbolic
   the link points to.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_listxattr__doc__,
-"listxattr($module, /, path=None, *, follow_symlinks=True)\n"
-"--\n"
-"\n"
-"Return a list of extended attributes on path.\n"
-"\n"
-"path may be either None, a string, or an open file descriptor.\n"
-"if path is None, listxattr will examine the current directory.\n"
-"If follow_symlinks is False, and the last element of the path is a symbolic\n"
-"  link, listxattr will examine the symbolic link itself instead of the file\n"
-"  the link points to.");
-
-#define OS_LISTXATTR_METHODDEF    \
-    {"listxattr", (PyCFunction)os_listxattr, METH_VARARGS|METH_KEYWORDS, os_listxattr__doc__},
-
-static PyObject *
-os_listxattr_impl(PyModuleDef *module, path_t *path, int follow_symlinks);
-
-static PyObject *
-os_listxattr(PyModuleDef *module, PyObject *args, PyObject *kwargs)
-{
-    PyObject *return_value = NULL;
-    static char *_keywords[] = {"path", "follow_symlinks", NULL};
-    path_t path = PATH_T_INITIALIZE("listxattr", "path", 1, 1);
-    int follow_symlinks = 1;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|O&$p:listxattr", _keywords,
-        path_converter, &path, &follow_symlinks))
-        goto exit;
-    return_value = os_listxattr_impl(module, &path, follow_symlinks);
-
-exit:
-    /* Cleanup for path */
-    path_cleanup(&path);
-
-    return return_value;
-}
-
 static PyObject *
 os_listxattr_impl(PyModuleDef *module, path_t *path, int follow_symlinks)
-/*[clinic end generated code: output=3104cafda1a3d887 input=08cca53ac0b07c13]*/
+/*[clinic end generated code: output=a87ad6ce56e42a4f input=08cca53ac0b07c13]*/
 {
     Py_ssize_t i;
     PyObject *result = NULL;
@@ -15789,37 +10986,9 @@ os.urandom
 Return a bytes object containing random bytes suitable for cryptographic use.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_urandom__doc__,
-"urandom($module, size, /)\n"
-"--\n"
-"\n"
-"Return a bytes object containing random bytes suitable for cryptographic use.");
-
-#define OS_URANDOM_METHODDEF    \
-    {"urandom", (PyCFunction)os_urandom, METH_VARARGS, os_urandom__doc__},
-
-static PyObject *
-os_urandom_impl(PyModuleDef *module, Py_ssize_t size);
-
-static PyObject *
-os_urandom(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t size;
-
-    if (!PyArg_ParseTuple(args,
-        "n:urandom",
-        &size))
-        goto exit;
-    return_value = os_urandom_impl(module, size);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_urandom_impl(PyModuleDef *module, Py_ssize_t size)
-/*[clinic end generated code: output=5dbff582cab94cb9 input=4067cdb1b6776c29]*/
+/*[clinic end generated code: output=e0011f021501f03b input=4067cdb1b6776c29]*/
 {
     PyObject *bytes;
     int result;
@@ -15954,27 +11123,9 @@ os.cpu_count
 Return the number of CPUs in the system; return None if indeterminable.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_cpu_count__doc__,
-"cpu_count($module, /)\n"
-"--\n"
-"\n"
-"Return the number of CPUs in the system; return None if indeterminable.");
-
-#define OS_CPU_COUNT_METHODDEF    \
-    {"cpu_count", (PyCFunction)os_cpu_count, METH_NOARGS, os_cpu_count__doc__},
-
-static PyObject *
-os_cpu_count_impl(PyModuleDef *module);
-
-static PyObject *
-os_cpu_count(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
-{
-    return os_cpu_count_impl(module);
-}
-
 static PyObject *
 os_cpu_count_impl(PyModuleDef *module)
-/*[clinic end generated code: output=92e2a4a729eb7740 input=d55e2f8f3823a628]*/
+/*[clinic end generated code: output=c59ee7f6bce832b8 input=d55e2f8f3823a628]*/
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
@@ -16013,41 +11164,9 @@ os.get_inheritable -> bool
 Get the close-on-exe flag of the specified file descriptor.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_get_inheritable__doc__,
-"get_inheritable($module, fd, /)\n"
-"--\n"
-"\n"
-"Get the close-on-exe flag of the specified file descriptor.");
-
-#define OS_GET_INHERITABLE_METHODDEF    \
-    {"get_inheritable", (PyCFunction)os_get_inheritable, METH_VARARGS, os_get_inheritable__doc__},
-
-static int
-os_get_inheritable_impl(PyModuleDef *module, int fd);
-
-static PyObject *
-os_get_inheritable(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    int _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "i:get_inheritable",
-        &fd))
-        goto exit;
-    _return_value = os_get_inheritable_impl(module, fd);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_get_inheritable_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=261d1dd2b0dbdc35 input=89ac008dc9ab6b95]*/
+/*[clinic end generated code: output=36110bb36efaa21e input=89ac008dc9ab6b95]*/
 {
     if (!_PyVerify_fd(fd)){
         posix_error();
@@ -16067,38 +11186,9 @@ os.set_inheritable
 Set the inheritable flag of the specified file descriptor.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_set_inheritable__doc__,
-"set_inheritable($module, fd, inheritable, /)\n"
-"--\n"
-"\n"
-"Set the inheritable flag of the specified file descriptor.");
-
-#define OS_SET_INHERITABLE_METHODDEF    \
-    {"set_inheritable", (PyCFunction)os_set_inheritable, METH_VARARGS, os_set_inheritable__doc__},
-
-static PyObject *
-os_set_inheritable_impl(PyModuleDef *module, int fd, int inheritable);
-
-static PyObject *
-os_set_inheritable(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    int fd;
-    int inheritable;
-
-    if (!PyArg_ParseTuple(args,
-        "ii:set_inheritable",
-        &fd, &inheritable))
-        goto exit;
-    return_value = os_set_inheritable_impl(module, fd, inheritable);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_set_inheritable_impl(PyModuleDef *module, int fd, int inheritable)
-/*[clinic end generated code: output=64dfe5e15c906539 input=9ceaead87a1e2402]*/
+/*[clinic end generated code: output=2ac5c6ce8623f045 input=9ceaead87a1e2402]*/
 {
     if (!_PyVerify_fd(fd))
         return posix_error();
@@ -16118,41 +11208,9 @@ os.get_handle_inheritable -> bool
 Get the close-on-exe flag of the specified file descriptor.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_get_handle_inheritable__doc__,
-"get_handle_inheritable($module, handle, /)\n"
-"--\n"
-"\n"
-"Get the close-on-exe flag of the specified file descriptor.");
-
-#define OS_GET_HANDLE_INHERITABLE_METHODDEF    \
-    {"get_handle_inheritable", (PyCFunction)os_get_handle_inheritable, METH_VARARGS, os_get_handle_inheritable__doc__},
-
-static int
-os_get_handle_inheritable_impl(PyModuleDef *module, Py_intptr_t handle);
-
-static PyObject *
-os_get_handle_inheritable(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    Py_intptr_t handle;
-    int _return_value;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_INTPTR ":get_handle_inheritable",
-        &handle))
-        goto exit;
-    _return_value = os_get_handle_inheritable_impl(module, handle);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyBool_FromLong((long)_return_value);
-
-exit:
-    return return_value;
-}
-
 static int
 os_get_handle_inheritable_impl(PyModuleDef *module, Py_intptr_t handle)
-/*[clinic end generated code: output=d5bf9d86900bf457 input=5f7759443aae3dc5]*/
+/*[clinic end generated code: output=3b7b3e1b43f312b6 input=5f7759443aae3dc5]*/
 {
     DWORD flags;
 
@@ -16174,38 +11232,9 @@ os.set_handle_inheritable
 Set the inheritable flag of the specified handle.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(os_set_handle_inheritable__doc__,
-"set_handle_inheritable($module, handle, inheritable, /)\n"
-"--\n"
-"\n"
-"Set the inheritable flag of the specified handle.");
-
-#define OS_SET_HANDLE_INHERITABLE_METHODDEF    \
-    {"set_handle_inheritable", (PyCFunction)os_set_handle_inheritable, METH_VARARGS, os_set_handle_inheritable__doc__},
-
-static PyObject *
-os_set_handle_inheritable_impl(PyModuleDef *module, Py_intptr_t handle, int inheritable);
-
-static PyObject *
-os_set_handle_inheritable(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    Py_intptr_t handle;
-    int inheritable;
-
-    if (!PyArg_ParseTuple(args,
-        "" _Py_PARSE_INTPTR "p:set_handle_inheritable",
-        &handle, &inheritable))
-        goto exit;
-    return_value = os_set_handle_inheritable_impl(module, handle, inheritable);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 os_set_handle_inheritable_impl(PyModuleDef *module, Py_intptr_t handle, int inheritable)
-/*[clinic end generated code: output=ee5fcc6d9f0d4f8b input=e64b2b2730469def]*/
+/*[clinic end generated code: output=627aa5b158b69338 input=e64b2b2730469def]*/
 {
     DWORD flags = inheritable ? HANDLE_FLAG_INHERIT : 0;
     if (!SetHandleInformation((HANDLE)handle, HANDLE_FLAG_INHERIT, flags)) {
@@ -17045,471 +12074,7 @@ error:
 /*[clinic input]
 dump buffer
 [clinic start generated code]*/
-
-#ifndef OS_TTYNAME_METHODDEF
-    #define OS_TTYNAME_METHODDEF
-#endif /* !defined(OS_TTYNAME_METHODDEF) */
-
-#ifndef OS_CTERMID_METHODDEF
-    #define OS_CTERMID_METHODDEF
-#endif /* !defined(OS_CTERMID_METHODDEF) */
-
-#ifndef OS_FCHDIR_METHODDEF
-    #define OS_FCHDIR_METHODDEF
-#endif /* !defined(OS_FCHDIR_METHODDEF) */
-
-#ifndef OS_FCHMOD_METHODDEF
-    #define OS_FCHMOD_METHODDEF
-#endif /* !defined(OS_FCHMOD_METHODDEF) */
-
-#ifndef OS_LCHMOD_METHODDEF
-    #define OS_LCHMOD_METHODDEF
-#endif /* !defined(OS_LCHMOD_METHODDEF) */
-
-#ifndef OS_CHFLAGS_METHODDEF
-    #define OS_CHFLAGS_METHODDEF
-#endif /* !defined(OS_CHFLAGS_METHODDEF) */
-
-#ifndef OS_LCHFLAGS_METHODDEF
-    #define OS_LCHFLAGS_METHODDEF
-#endif /* !defined(OS_LCHFLAGS_METHODDEF) */
-
-#ifndef OS_CHROOT_METHODDEF
-    #define OS_CHROOT_METHODDEF
-#endif /* !defined(OS_CHROOT_METHODDEF) */
-
-#ifndef OS_FSYNC_METHODDEF
-    #define OS_FSYNC_METHODDEF
-#endif /* !defined(OS_FSYNC_METHODDEF) */
-
-#ifndef OS_SYNC_METHODDEF
-    #define OS_SYNC_METHODDEF
-#endif /* !defined(OS_SYNC_METHODDEF) */
-
-#ifndef OS_FDATASYNC_METHODDEF
-    #define OS_FDATASYNC_METHODDEF
-#endif /* !defined(OS_FDATASYNC_METHODDEF) */
-
-#ifndef OS_CHOWN_METHODDEF
-    #define OS_CHOWN_METHODDEF
-#endif /* !defined(OS_CHOWN_METHODDEF) */
-
-#ifndef OS_FCHOWN_METHODDEF
-    #define OS_FCHOWN_METHODDEF
-#endif /* !defined(OS_FCHOWN_METHODDEF) */
-
-#ifndef OS_LCHOWN_METHODDEF
-    #define OS_LCHOWN_METHODDEF
-#endif /* !defined(OS_LCHOWN_METHODDEF) */
-
-#ifndef OS_LINK_METHODDEF
-    #define OS_LINK_METHODDEF
-#endif /* !defined(OS_LINK_METHODDEF) */
-
-#ifndef OS__GETFINALPATHNAME_METHODDEF
-    #define OS__GETFINALPATHNAME_METHODDEF
-#endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
-
-#ifndef OS__GETVOLUMEPATHNAME_METHODDEF
-    #define OS__GETVOLUMEPATHNAME_METHODDEF
-#endif /* !defined(OS__GETVOLUMEPATHNAME_METHODDEF) */
-
-#ifndef OS_NICE_METHODDEF
-    #define OS_NICE_METHODDEF
-#endif /* !defined(OS_NICE_METHODDEF) */
-
-#ifndef OS_GETPRIORITY_METHODDEF
-    #define OS_GETPRIORITY_METHODDEF
-#endif /* !defined(OS_GETPRIORITY_METHODDEF) */
-
-#ifndef OS_SETPRIORITY_METHODDEF
-    #define OS_SETPRIORITY_METHODDEF
-#endif /* !defined(OS_SETPRIORITY_METHODDEF) */
-
-#ifndef OS_SYSTEM_METHODDEF
-    #define OS_SYSTEM_METHODDEF
-#endif /* !defined(OS_SYSTEM_METHODDEF) */
-
-#ifndef OS_UNAME_METHODDEF
-    #define OS_UNAME_METHODDEF
-#endif /* !defined(OS_UNAME_METHODDEF) */
-
-#ifndef OS_EXECV_METHODDEF
-    #define OS_EXECV_METHODDEF
-#endif /* !defined(OS_EXECV_METHODDEF) */
-
-#ifndef OS_EXECVE_METHODDEF
-    #define OS_EXECVE_METHODDEF
-#endif /* !defined(OS_EXECVE_METHODDEF) */
-
-#ifndef OS_SPAWNV_METHODDEF
-    #define OS_SPAWNV_METHODDEF
-#endif /* !defined(OS_SPAWNV_METHODDEF) */
-
-#ifndef OS_SPAWNVE_METHODDEF
-    #define OS_SPAWNVE_METHODDEF
-#endif /* !defined(OS_SPAWNVE_METHODDEF) */
-
-#ifndef OS_FORK1_METHODDEF
-    #define OS_FORK1_METHODDEF
-#endif /* !defined(OS_FORK1_METHODDEF) */
-
-#ifndef OS_FORK_METHODDEF
-    #define OS_FORK_METHODDEF
-#endif /* !defined(OS_FORK_METHODDEF) */
-
-#ifndef OS_SCHED_GET_PRIORITY_MAX_METHODDEF
-    #define OS_SCHED_GET_PRIORITY_MAX_METHODDEF
-#endif /* !defined(OS_SCHED_GET_PRIORITY_MAX_METHODDEF) */
-
-#ifndef OS_SCHED_GET_PRIORITY_MIN_METHODDEF
-    #define OS_SCHED_GET_PRIORITY_MIN_METHODDEF
-#endif /* !defined(OS_SCHED_GET_PRIORITY_MIN_METHODDEF) */
-
-#ifndef OS_SCHED_GETSCHEDULER_METHODDEF
-    #define OS_SCHED_GETSCHEDULER_METHODDEF
-#endif /* !defined(OS_SCHED_GETSCHEDULER_METHODDEF) */
-
-#ifndef OS_SCHED_SETSCHEDULER_METHODDEF
-    #define OS_SCHED_SETSCHEDULER_METHODDEF
-#endif /* !defined(OS_SCHED_SETSCHEDULER_METHODDEF) */
-
-#ifndef OS_SCHED_GETPARAM_METHODDEF
-    #define OS_SCHED_GETPARAM_METHODDEF
-#endif /* !defined(OS_SCHED_GETPARAM_METHODDEF) */
-
-#ifndef OS_SCHED_SETPARAM_METHODDEF
-    #define OS_SCHED_SETPARAM_METHODDEF
-#endif /* !defined(OS_SCHED_SETPARAM_METHODDEF) */
-
-#ifndef OS_SCHED_RR_GET_INTERVAL_METHODDEF
-    #define OS_SCHED_RR_GET_INTERVAL_METHODDEF
-#endif /* !defined(OS_SCHED_RR_GET_INTERVAL_METHODDEF) */
-
-#ifndef OS_SCHED_YIELD_METHODDEF
-    #define OS_SCHED_YIELD_METHODDEF
-#endif /* !defined(OS_SCHED_YIELD_METHODDEF) */
-
-#ifndef OS_SCHED_SETAFFINITY_METHODDEF
-    #define OS_SCHED_SETAFFINITY_METHODDEF
-#endif /* !defined(OS_SCHED_SETAFFINITY_METHODDEF) */
-
-#ifndef OS_SCHED_GETAFFINITY_METHODDEF
-    #define OS_SCHED_GETAFFINITY_METHODDEF
-#endif /* !defined(OS_SCHED_GETAFFINITY_METHODDEF) */
-
-#ifndef OS_OPENPTY_METHODDEF
-    #define OS_OPENPTY_METHODDEF
-#endif /* !defined(OS_OPENPTY_METHODDEF) */
-
-#ifndef OS_FORKPTY_METHODDEF
-    #define OS_FORKPTY_METHODDEF
-#endif /* !defined(OS_FORKPTY_METHODDEF) */
-
-#ifndef OS_GETEGID_METHODDEF
-    #define OS_GETEGID_METHODDEF
-#endif /* !defined(OS_GETEGID_METHODDEF) */
-
-#ifndef OS_GETEUID_METHODDEF
-    #define OS_GETEUID_METHODDEF
-#endif /* !defined(OS_GETEUID_METHODDEF) */
-
-#ifndef OS_GETGID_METHODDEF
-    #define OS_GETGID_METHODDEF
-#endif /* !defined(OS_GETGID_METHODDEF) */
-
-#ifndef OS_GETGROUPS_METHODDEF
-    #define OS_GETGROUPS_METHODDEF
-#endif /* !defined(OS_GETGROUPS_METHODDEF) */
-
-#ifndef OS_GETPGID_METHODDEF
-    #define OS_GETPGID_METHODDEF
-#endif /* !defined(OS_GETPGID_METHODDEF) */
-
-#ifndef OS_GETPGRP_METHODDEF
-    #define OS_GETPGRP_METHODDEF
-#endif /* !defined(OS_GETPGRP_METHODDEF) */
-
-#ifndef OS_SETPGRP_METHODDEF
-    #define OS_SETPGRP_METHODDEF
-#endif /* !defined(OS_SETPGRP_METHODDEF) */
-
-#ifndef OS_GETPPID_METHODDEF
-    #define OS_GETPPID_METHODDEF
-#endif /* !defined(OS_GETPPID_METHODDEF) */
-
-#ifndef OS_GETLOGIN_METHODDEF
-    #define OS_GETLOGIN_METHODDEF
-#endif /* !defined(OS_GETLOGIN_METHODDEF) */
-
-#ifndef OS_GETUID_METHODDEF
-    #define OS_GETUID_METHODDEF
-#endif /* !defined(OS_GETUID_METHODDEF) */
-
-#ifndef OS_KILL_METHODDEF
-    #define OS_KILL_METHODDEF
-#endif /* !defined(OS_KILL_METHODDEF) */
-
-#ifndef OS_KILLPG_METHODDEF
-    #define OS_KILLPG_METHODDEF
-#endif /* !defined(OS_KILLPG_METHODDEF) */
-
-#ifndef OS_PLOCK_METHODDEF
-    #define OS_PLOCK_METHODDEF
-#endif /* !defined(OS_PLOCK_METHODDEF) */
-
-#ifndef OS_SETUID_METHODDEF
-    #define OS_SETUID_METHODDEF
-#endif /* !defined(OS_SETUID_METHODDEF) */
-
-#ifndef OS_SETEUID_METHODDEF
-    #define OS_SETEUID_METHODDEF
-#endif /* !defined(OS_SETEUID_METHODDEF) */
-
-#ifndef OS_SETEGID_METHODDEF
-    #define OS_SETEGID_METHODDEF
-#endif /* !defined(OS_SETEGID_METHODDEF) */
-
-#ifndef OS_SETREUID_METHODDEF
-    #define OS_SETREUID_METHODDEF
-#endif /* !defined(OS_SETREUID_METHODDEF) */
-
-#ifndef OS_SETREGID_METHODDEF
-    #define OS_SETREGID_METHODDEF
-#endif /* !defined(OS_SETREGID_METHODDEF) */
-
-#ifndef OS_SETGID_METHODDEF
-    #define OS_SETGID_METHODDEF
-#endif /* !defined(OS_SETGID_METHODDEF) */
-
-#ifndef OS_SETGROUPS_METHODDEF
-    #define OS_SETGROUPS_METHODDEF
-#endif /* !defined(OS_SETGROUPS_METHODDEF) */
-
-#ifndef OS_WAIT3_METHODDEF
-    #define OS_WAIT3_METHODDEF
-#endif /* !defined(OS_WAIT3_METHODDEF) */
-
-#ifndef OS_WAIT4_METHODDEF
-    #define OS_WAIT4_METHODDEF
-#endif /* !defined(OS_WAIT4_METHODDEF) */
-
-#ifndef OS_WAITID_METHODDEF
-    #define OS_WAITID_METHODDEF
-#endif /* !defined(OS_WAITID_METHODDEF) */
-
-#ifndef OS_WAITPID_METHODDEF
-    #define OS_WAITPID_METHODDEF
-#endif /* !defined(OS_WAITPID_METHODDEF) */
-
-#ifndef OS_WAIT_METHODDEF
-    #define OS_WAIT_METHODDEF
-#endif /* !defined(OS_WAIT_METHODDEF) */
-
-#ifndef OS_SYMLINK_METHODDEF
-    #define OS_SYMLINK_METHODDEF
-#endif /* !defined(OS_SYMLINK_METHODDEF) */
-
-#ifndef OS_TIMES_METHODDEF
-    #define OS_TIMES_METHODDEF
-#endif /* !defined(OS_TIMES_METHODDEF) */
-
-#ifndef OS_GETSID_METHODDEF
-    #define OS_GETSID_METHODDEF
-#endif /* !defined(OS_GETSID_METHODDEF) */
-
-#ifndef OS_SETSID_METHODDEF
-    #define OS_SETSID_METHODDEF
-#endif /* !defined(OS_SETSID_METHODDEF) */
-
-#ifndef OS_SETPGID_METHODDEF
-    #define OS_SETPGID_METHODDEF
-#endif /* !defined(OS_SETPGID_METHODDEF) */
-
-#ifndef OS_TCGETPGRP_METHODDEF
-    #define OS_TCGETPGRP_METHODDEF
-#endif /* !defined(OS_TCGETPGRP_METHODDEF) */
-
-#ifndef OS_TCSETPGRP_METHODDEF
-    #define OS_TCSETPGRP_METHODDEF
-#endif /* !defined(OS_TCSETPGRP_METHODDEF) */
-
-#ifndef OS_LOCKF_METHODDEF
-    #define OS_LOCKF_METHODDEF
-#endif /* !defined(OS_LOCKF_METHODDEF) */
-
-#ifndef OS_READV_METHODDEF
-    #define OS_READV_METHODDEF
-#endif /* !defined(OS_READV_METHODDEF) */
-
-#ifndef OS_PREAD_METHODDEF
-    #define OS_PREAD_METHODDEF
-#endif /* !defined(OS_PREAD_METHODDEF) */
-
-#ifndef OS_PIPE_METHODDEF
-    #define OS_PIPE_METHODDEF
-#endif /* !defined(OS_PIPE_METHODDEF) */
-
-#ifndef OS_PIPE2_METHODDEF
-    #define OS_PIPE2_METHODDEF
-#endif /* !defined(OS_PIPE2_METHODDEF) */
-
-#ifndef OS_WRITEV_METHODDEF
-    #define OS_WRITEV_METHODDEF
-#endif /* !defined(OS_WRITEV_METHODDEF) */
-
-#ifndef OS_PWRITE_METHODDEF
-    #define OS_PWRITE_METHODDEF
-#endif /* !defined(OS_PWRITE_METHODDEF) */
-
-#ifndef OS_MKFIFO_METHODDEF
-    #define OS_MKFIFO_METHODDEF
-#endif /* !defined(OS_MKFIFO_METHODDEF) */
-
-#ifndef OS_MKNOD_METHODDEF
-    #define OS_MKNOD_METHODDEF
-#endif /* !defined(OS_MKNOD_METHODDEF) */
-
-#ifndef OS_MAJOR_METHODDEF
-    #define OS_MAJOR_METHODDEF
-#endif /* !defined(OS_MAJOR_METHODDEF) */
-
-#ifndef OS_MINOR_METHODDEF
-    #define OS_MINOR_METHODDEF
-#endif /* !defined(OS_MINOR_METHODDEF) */
-
-#ifndef OS_MAKEDEV_METHODDEF
-    #define OS_MAKEDEV_METHODDEF
-#endif /* !defined(OS_MAKEDEV_METHODDEF) */
-
-#ifndef OS_FTRUNCATE_METHODDEF
-    #define OS_FTRUNCATE_METHODDEF
-#endif /* !defined(OS_FTRUNCATE_METHODDEF) */
-
-#ifndef OS_TRUNCATE_METHODDEF
-    #define OS_TRUNCATE_METHODDEF
-#endif /* !defined(OS_TRUNCATE_METHODDEF) */
-
-#ifndef OS_POSIX_FALLOCATE_METHODDEF
-    #define OS_POSIX_FALLOCATE_METHODDEF
-#endif /* !defined(OS_POSIX_FALLOCATE_METHODDEF) */
-
-#ifndef OS_POSIX_FADVISE_METHODDEF
-    #define OS_POSIX_FADVISE_METHODDEF
-#endif /* !defined(OS_POSIX_FADVISE_METHODDEF) */
-
-#ifndef OS_PUTENV_METHODDEF
-    #define OS_PUTENV_METHODDEF
-#endif /* !defined(OS_PUTENV_METHODDEF) */
-
-#ifndef OS_UNSETENV_METHODDEF
-    #define OS_UNSETENV_METHODDEF
-#endif /* !defined(OS_UNSETENV_METHODDEF) */
-
-#ifndef OS_WCOREDUMP_METHODDEF
-    #define OS_WCOREDUMP_METHODDEF
-#endif /* !defined(OS_WCOREDUMP_METHODDEF) */
-
-#ifndef OS_WIFCONTINUED_METHODDEF
-    #define OS_WIFCONTINUED_METHODDEF
-#endif /* !defined(OS_WIFCONTINUED_METHODDEF) */
-
-#ifndef OS_WIFSTOPPED_METHODDEF
-    #define OS_WIFSTOPPED_METHODDEF
-#endif /* !defined(OS_WIFSTOPPED_METHODDEF) */
-
-#ifndef OS_WIFSIGNALED_METHODDEF
-    #define OS_WIFSIGNALED_METHODDEF
-#endif /* !defined(OS_WIFSIGNALED_METHODDEF) */
-
-#ifndef OS_WIFEXITED_METHODDEF
-    #define OS_WIFEXITED_METHODDEF
-#endif /* !defined(OS_WIFEXITED_METHODDEF) */
-
-#ifndef OS_WEXITSTATUS_METHODDEF
-    #define OS_WEXITSTATUS_METHODDEF
-#endif /* !defined(OS_WEXITSTATUS_METHODDEF) */
-
-#ifndef OS_WTERMSIG_METHODDEF
-    #define OS_WTERMSIG_METHODDEF
-#endif /* !defined(OS_WTERMSIG_METHODDEF) */
-
-#ifndef OS_WSTOPSIG_METHODDEF
-    #define OS_WSTOPSIG_METHODDEF
-#endif /* !defined(OS_WSTOPSIG_METHODDEF) */
-
-#ifndef OS_FSTATVFS_METHODDEF
-    #define OS_FSTATVFS_METHODDEF
-#endif /* !defined(OS_FSTATVFS_METHODDEF) */
-
-#ifndef OS_STATVFS_METHODDEF
-    #define OS_STATVFS_METHODDEF
-#endif /* !defined(OS_STATVFS_METHODDEF) */
-
-#ifndef OS__GETDISKUSAGE_METHODDEF
-    #define OS__GETDISKUSAGE_METHODDEF
-#endif /* !defined(OS__GETDISKUSAGE_METHODDEF) */
-
-#ifndef OS_FPATHCONF_METHODDEF
-    #define OS_FPATHCONF_METHODDEF
-#endif /* !defined(OS_FPATHCONF_METHODDEF) */
-
-#ifndef OS_PATHCONF_METHODDEF
-    #define OS_PATHCONF_METHODDEF
-#endif /* !defined(OS_PATHCONF_METHODDEF) */
-
-#ifndef OS_CONFSTR_METHODDEF
-    #define OS_CONFSTR_METHODDEF
-#endif /* !defined(OS_CONFSTR_METHODDEF) */
-
-#ifndef OS_SYSCONF_METHODDEF
-    #define OS_SYSCONF_METHODDEF
-#endif /* !defined(OS_SYSCONF_METHODDEF) */
-
-#ifndef OS_GETLOADAVG_METHODDEF
-    #define OS_GETLOADAVG_METHODDEF
-#endif /* !defined(OS_GETLOADAVG_METHODDEF) */
-
-#ifndef OS_SETRESUID_METHODDEF
-    #define OS_SETRESUID_METHODDEF
-#endif /* !defined(OS_SETRESUID_METHODDEF) */
-
-#ifndef OS_SETRESGID_METHODDEF
-    #define OS_SETRESGID_METHODDEF
-#endif /* !defined(OS_SETRESGID_METHODDEF) */
-
-#ifndef OS_GETRESUID_METHODDEF
-    #define OS_GETRESUID_METHODDEF
-#endif /* !defined(OS_GETRESUID_METHODDEF) */
-
-#ifndef OS_GETRESGID_METHODDEF
-    #define OS_GETRESGID_METHODDEF
-#endif /* !defined(OS_GETRESGID_METHODDEF) */
-
-#ifndef OS_GETXATTR_METHODDEF
-    #define OS_GETXATTR_METHODDEF
-#endif /* !defined(OS_GETXATTR_METHODDEF) */
-
-#ifndef OS_SETXATTR_METHODDEF
-    #define OS_SETXATTR_METHODDEF
-#endif /* !defined(OS_SETXATTR_METHODDEF) */
-
-#ifndef OS_REMOVEXATTR_METHODDEF
-    #define OS_REMOVEXATTR_METHODDEF
-#endif /* !defined(OS_REMOVEXATTR_METHODDEF) */
-
-#ifndef OS_LISTXATTR_METHODDEF
-    #define OS_LISTXATTR_METHODDEF
-#endif /* !defined(OS_LISTXATTR_METHODDEF) */
-
-#ifndef OS_GET_HANDLE_INHERITABLE_METHODDEF
-    #define OS_GET_HANDLE_INHERITABLE_METHODDEF
-#endif /* !defined(OS_GET_HANDLE_INHERITABLE_METHODDEF) */
-
-#ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
-    #define OS_SET_HANDLE_INHERITABLE_METHODDEF
-#endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=b788c2d6010113e8 input=524ce2e021e4eba6]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=524ce2e021e4eba6]*/
 
 
 static PyMethodDef posix_methods[] = {

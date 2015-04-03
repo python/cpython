@@ -82,12 +82,11 @@ zlib_error(z_stream zst, int err, char *msg)
 }
 
 /*[clinic input]
-output preset file
 module zlib
 class zlib.Compress "compobject *" "&Comptype"
 class zlib.Decompress "compobject *" "&Decomptype"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=bfd4c340573ba91d]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=093935115c3e3158]*/
 
 static compobject *
 newcompobject(PyTypeObject *type)

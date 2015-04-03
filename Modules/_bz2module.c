@@ -211,12 +211,11 @@ error:
 }
 
 /*[clinic input]
-output preset file
 module _bz2
 class _bz2.BZ2Compressor "BZ2Compressor *" "&BZ2Compressor_Type"
 class _bz2.BZ2Decompressor "BZ2Decompressor *" "&BZ2Decompressor_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e3b139924f5e18cc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=dc7d7992a79f9cb7]*/
 
 #include "clinic/_bz2module.c.h"
 

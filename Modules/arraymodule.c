@@ -16,10 +16,9 @@
 #endif /* !STDC_HEADERS */
 
 /*[clinic input]
-output preset file
 module array
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=0909c1a148c69931]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7d1b8d7f5958fd83]*/
 
 struct arrayobject; /* Forward */
 
