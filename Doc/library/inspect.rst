@@ -356,6 +356,9 @@ Retrieving source code
 .. function:: getdoc(object)
 
    Get the documentation string for an object, cleaned up with :func:`cleandoc`.
+   If the documentation string for an object is not provided and the object is
+   a class, a method, a property or a descriptor, retrieve the documentation
+   string from the inheritance hierarchy.
 
 
 .. function:: getcomments(object)

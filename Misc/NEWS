@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #15582: inspect.getdoc() now follows inheritance chains.
+
 - Issue #2175: SAX parsers now support a character stream of InputSource object.
 
 - Issue #16840: Tkinter now supports 64-bit integers added in Tcl 8.4 and

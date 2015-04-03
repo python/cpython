@@ -468,6 +468,74 @@ def indentsize(line):
     expline = line.expandtabs()
     return len(expline) - len(expline.lstrip())
 
+def _findclass(func):
+    cls = sys.modules.get(func.__module__)
+    if cls is None:
+        return None
+    for name in func.__qualname__.split('.')[:-1]:
+        cls = getattr(cls, name)
+    if not isclass(cls):
+        return None
+    return cls
+
+def _finddoc(obj):
+    if isclass(obj):
+        for base in obj.__mro__:
+            if base is not object:
+                try:
+                    doc = base.__doc__
+                except AttributeError:
+                    continue
+                if doc is not None:
+                    return doc
+        return None
+
+    if ismethod(obj):
+        name = obj.__func__.__name__
+        self = obj.__self__
+        if (isclass(self) and
+            getattr(getattr(self, name, None), '__func__') is obj.__func__):
+            # classmethod
+            cls = self
+        else:
+            cls = self.__class__
+    elif isfunction(obj):
+        name = obj.__name__
+        cls = _findclass(obj)
+        if cls is None or getattr(cls, name) is not obj:
+            return None
+    elif isbuiltin(obj):
+        name = obj.__name__
+        self = obj.__self__
+        if (isclass(self) and
+            self.__qualname__ + '.' + name == obj.__qualname__):
+            # classmethod
+            cls = self
+        else:
+            cls = self.__class__
+    elif ismethoddescriptor(obj) or isdatadescriptor(obj):
+        name = obj.__name__
+        cls = obj.__objclass__
+        if getattr(cls, name) is not obj:
+            return None
+    elif isinstance(obj, property):
+        func = f.fget
+        name = func.__name__
+        cls = _findclass(func)
+        if cls is None or getattr(cls, name) is not obj:
+            return None
+    else:
+        return None
+
+    for base in cls.__mro__:
+        try:
+            doc = getattr(base, name).__doc__
+        except AttributeError:
+            continue
+        if doc is not None:
+            return doc
+    return None
+
 def getdoc(object):
     """Get the documentation string for an object.
 
@@ -478,6 +546,11 @@ def getdoc(object):
         doc = object.__doc__
     except AttributeError:
         return None
+    if doc is None:
+        try:
+            doc = _finddoc(object)
+        except (AttributeError, TypeError):
+            return None
     if not isinstance(doc, str):
         return None
     return cleandoc(doc)
