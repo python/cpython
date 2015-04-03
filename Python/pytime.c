@@ -159,6 +159,19 @@ _PyTime_overflow(void)
 }
 
 _PyTime_t
+_PyTime_FromSeconds(int seconds)
+{
+    _PyTime_t t;
+    /* ensure that integer overflow cannot happen, int type should have 32
+       bits, whereas _PyTime_t type has at least 64 bits (SEC_TO_MS takes 30
+       bits). */
+    assert((seconds >= 0 && seconds <= _PyTime_MAX / SEC_TO_NS)
+           || (seconds < 0 && seconds >= _PyTime_MIN / SEC_TO_NS));
+    t = (_PyTime_t)seconds * SEC_TO_NS;
+    return t;
+}
+
+_PyTime_t
 _PyTime_FromNanoseconds(PY_LONG_LONG ns)
 {
     _PyTime_t t;
@@ -657,5 +670,9 @@ _PyTime_Init(void)
     /* ensure that the operating system provides a monotonic clock */
     if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) < 0)
         return -1;
+
+    /* check that _PyTime_FromSeconds() cannot overflow */
+    assert(INT_MAX <= _PyTime_MAX / SEC_TO_NS);
+    assert(INT_MIN >= _PyTime_MIN / SEC_TO_NS);
     return 0;
 }

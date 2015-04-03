@@ -731,6 +731,13 @@ class TestPytime(unittest.TestCase):
 @unittest.skipUnless(_testcapi is not None,
                      'need the _testcapi module')
 class TestPyTime_t(unittest.TestCase):
+    def test_FromSeconds(self):
+        from _testcapi import PyTime_FromSeconds
+        for seconds in (0, 3, -456, _testcapi.INT_MAX, _testcapi.INT_MIN):
+            with self.subTest(seconds=seconds):
+                self.assertEqual(PyTime_FromSeconds(seconds),
+                                 seconds * SEC_TO_NS)
+
     def test_FromSecondsObject(self):
         from _testcapi import PyTime_FromSecondsObject
 
