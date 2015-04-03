@@ -1509,15 +1509,16 @@ class MockSocketTests(unittest.TestCase):
             Handler, nntplib.NNTPPermanentError, authinfo_response,
             login, password)
 
-@unittest.skipUnless(ssl, 'requires SSL support')
-class MockSslTests(MockSocketTests):
-    class nntp_class(nntplib.NNTP_SSL):
-        def __init__(self, *pos, **kw):
-            class bypass_context:
-                """Bypass encryption and actual SSL module"""
-                def wrap_socket(sock, **args):
-                    return sock
-            return super().__init__(*pos, ssl_context=bypass_context, **kw)
+if ssl is not None:
+    class MockSslTests(MockSocketTests):
+        class nntp_class(nntplib.NNTP_SSL):
+            def __init__(self, *pos, **kw):
+                class bypass_context:
+                    """Bypass encryption and actual SSL module"""
+                    def wrap_socket(sock, **args):
+                        return sock
+                return super().__init__(*pos, ssl_context=bypass_context, **kw)
+
 
 if __name__ == "__main__":
     unittest.main()
