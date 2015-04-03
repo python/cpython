@@ -133,7 +133,7 @@ class TextWrapper:
         """_munge_whitespace(text : string) -> string
 
         Munge whitespace in text: expand tabs and convert all other
-        whitespace characters to spaces.  Eg. " foo\tbar\n\nbaz"
+        whitespace characters to spaces.  Eg. " foo\\tbar\\n\\nbaz"
         becomes " foo    bar  baz".
         """
         if self.expand_tabs:
@@ -169,7 +169,7 @@ class TextWrapper:
         """_fix_sentence_endings(chunks : [string])
 
         Correct for sentence endings buried in 'chunks'.  Eg. when the
-        original text contains "... foo.\nBar ...", munge_whitespace()
+        original text contains "... foo.\\nBar ...", munge_whitespace()
         and split() will convert that to [..., "foo.", " ", "Bar", ...]
         which has one too few spaces; this method simply changes the one
         space to two.
@@ -405,7 +405,7 @@ def dedent(text):
     in indented form.
 
     Note that tabs and spaces are both treated as whitespace, but they
-    are not equal: the lines "  hello" and "\thello" are
+    are not equal: the lines "  hello" and "\\thello" are
     considered to have no common leading whitespace.  (This behaviour is
     new in Python 2.5; older versions of this module incorrectly
     expanded tabs before searching for common leading whitespace.)
