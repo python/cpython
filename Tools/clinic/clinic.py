@@ -67,14 +67,18 @@ class Unknown:
 unknown = Unknown()
 
 
+_text_accumulator_nt = collections.namedtuple("_text_accumulator", "text append output")
+
 def _text_accumulator():
     text = []
     def output():
         s = ''.join(text)
         text.clear()
         return s
-    return text, text.append, output
+    return _text_accumulator_nt(text, text.append, output)
 
+
+text_accumulator_nt = collections.namedtuple("text_accumulator", "text append")
 
 def text_accumulator():
     """
@@ -88,7 +92,7 @@ def text_accumulator():
        empties the accumulator.
     """
     text, append, output = _text_accumulator()
-    return append, output
+    return text_accumulator_nt(append, output)
 
 
 def warn_or_fail(fail=False, *args, filename=None, line_number=None):
@@ -820,7 +824,8 @@ class CLanguage(Language):
             cpp_if = "#if " + conditional
             cpp_endif = "#endif /* " + conditional + " */"
 
-            if methoddef_define:
+            if methoddef_define and f.name not in clinic.ifndef_symbols:
+                clinic.ifndef_symbols.add(f.name)
                 methoddef_ifndef = normalize_snippet("""
                     #ifndef {methoddef_name}
                         #define {methoddef_name}
@@ -1078,7 +1083,8 @@ class CLanguage(Language):
         if has_option_groups:
             self.render_option_group_parsing(f, template_dict)
 
-        for name, destination in clinic.field_destinations.items():
+        # buffers, not destination
+        for name, destination in clinic.destination_buffers.items():
             template = templates[name]
             if has_option_groups:
                 template = linear_format(template,
@@ -1403,12 +1409,48 @@ class BlockPrinter:
         self.f.write(text)
 
 
+class BufferSeries:
+    """
+    Behaves like a "defaultlist".
+    When you ask for an index that doesn't exist yet,
+    the object grows the list until that item exists.
+    So o[n] will always work.
+
+    Supports negative indices for actual items.
+    e.g. o[-1] is an element immediately preceding o[0].
+    """
+
+    def __init__(self):
+        self._start = 0
+        self._array = []
+        self._constructor = _text_accumulator
+
+    def __getitem__(self, i):
+        i -= self._start
+        if i < 0:
+            self._start += i
+            prefix = [self._constructor() for x in range(-i)]
+            self._array = prefix + self._array
+            i = 0
+        while i >= len(self._array):
+            self._array.append(self._constructor())
+        return self._array[i]
+
+    def clear(self):
+        for ta in self._array:
+            ta._text.clear()
+
+    def dump(self):
+        texts = [ta.output() for ta in self._array]
+        return "".join(texts)
+
+
 class Destination:
     def __init__(self, name, type, clinic, *args):
         self.name = name
         self.type = type
         self.clinic = clinic
-        valid_types = ('buffer', 'file', 'suppress', 'two-pass')
+        valid_types = ('buffer', 'file', 'suppress')
         if type not in valid_types:
             fail("Invalid destination type " + repr(type) + " for " + name + " , must be " + ', '.join(valid_types))
         extra_arguments = 1 if type == "file" else 0
@@ -1427,10 +1469,8 @@ class Destination:
             d['basename'] = basename
             d['basename_root'], d['basename_extension'] = os.path.splitext(filename)
             self.filename = args[0].format_map(d)
-        if type == 'two-pass':
-            self.id = None
 
-        self.text, self.append, self._dump = _text_accumulator()
+        self.buffers = BufferSeries()
 
     def __repr__(self):
         if self.type == 'file':
@@ -1442,15 +1482,10 @@ class Destination:
     def clear(self):
         if self.type != 'buffer':
             fail("Can't clear destination" + self.name + " , it's not of type buffer")
-        self.text.clear()
+        self.buffers.clear()
 
     def dump(self):
-        if self.type == 'two-pass':
-            if self.id is None:
-                self.id = str(uuid.uuid4())
-                return self.id
-            fail("You can only dump a two-pass buffer exactly once!")
-        return self._dump()
+        return self.buffers.dump()
 
 
 # maps strings to Language objects.
@@ -1489,47 +1524,42 @@ class Clinic:
     presets_text = """
 preset block
 everything block
+methoddef_ifndef buffer 1
 docstring_prototype suppress
 parser_prototype suppress
 cpp_if suppress
 cpp_endif suppress
-methoddef_ifndef buffer
 
 preset original
 everything block
+methoddef_ifndef buffer 1
 docstring_prototype suppress
 parser_prototype suppress
 cpp_if suppress
 cpp_endif suppress
-methoddef_ifndef buffer
 
 preset file
 everything file
+methoddef_ifndef file 1
 docstring_prototype suppress
 parser_prototype suppress
 impl_definition block
 
 preset buffer
 everything buffer
+methoddef_ifndef buffer 1
+impl_definition block
 docstring_prototype suppress
 impl_prototype suppress
 parser_prototype suppress
-impl_definition block
 
 preset partial-buffer
 everything buffer
+methoddef_ifndef buffer 1
 docstring_prototype block
 impl_prototype suppress
 methoddef_define block
 parser_prototype block
-impl_definition block
-
-preset two-pass
-everything buffer
-docstring_prototype two-pass
-impl_prototype suppress
-methoddef_define two-pass
-parser_prototype two-pass
 impl_definition block
 
 """
@@ -1555,12 +1585,11 @@ impl_definition block
         self.add_destination("block", "buffer")
         self.add_destination("suppress", "suppress")
         self.add_destination("buffer", "buffer")
-        self.add_destination("two-pass", "two-pass")
         if filename:
             self.add_destination("file", "file", "{dirname}/clinic/{basename}.h")
 
-        d = self.destinations.get
-        self.field_destinations = collections.OrderedDict((
+        d = self.get_destination_buffer
+        self.destination_buffers = collections.OrderedDict((
             ('cpp_if', d('suppress')),
             ('docstring_prototype', d('suppress')),
             ('docstring_definition', d('block')),
@@ -1569,11 +1598,12 @@ impl_definition block
             ('parser_prototype', d('suppress')),
             ('parser_definition', d('block')),
             ('cpp_endif', d('suppress')),
-            ('methoddef_ifndef', d('buffer')),
+            ('methoddef_ifndef', d('buffer', 1)),
             ('impl_definition', d('block')),
         ))
 
-        self.field_destinations_stack = []
+        self.destination_buffers_stack = []
+        self.ifndef_symbols = set()
 
         self.presets = {}
         preset = None
@@ -1581,36 +1611,42 @@ impl_definition block
             line = line.strip()
             if not line:
                 continue
-            name, value = line.split()
+            name, value, *options = line.split()
             if name == 'preset':
                 self.presets[value] = preset = collections.OrderedDict()
                 continue
 
-            destination = self.get_destination(value)
+            if len(options):
+                index = int(options[0])
+            else:
+                index = 0
+            buffer = self.get_destination_buffer(value, index)
 
             if name == 'everything':
-                for name in self.field_destinations:
-                    preset[name] = destination
+                for name in self.destination_buffers:
+                    preset[name] = buffer
                 continue
 
-            assert name in self.field_destinations
-            preset[name] = destination
+            assert name in self.destination_buffers
+            preset[name] = buffer
 
         global clinic
         clinic = self
-
-    def get_destination(self, name, default=unspecified):
-        d = self.destinations.get(name)
-        if not d:
-            if default is not unspecified:
-                return default
-            fail("Destination does not exist: " + repr(name))
-        return d
 
     def add_destination(self, name, type, *args):
         if name in self.destinations:
             fail("Destination already exists: " + repr(name))
         self.destinations[name] = Destination(name, type, self, *args)
+
+    def get_destination(self, name):
+        d = self.destinations.get(name)
+        if not d:
+            fail("Destination does not exist: " + repr(name))
+        return d
+
+    def get_destination_buffer(self, name, item=0):
+        d = self.get_destination(name)
+        return d.buffers[item]
 
     def parse(self, input):
         printer = self.printer
@@ -1631,17 +1667,11 @@ impl_definition block
 
         second_pass_replacements = {}
 
+        # these are destinations not buffers
         for name, destination in self.destinations.items():
             if destination.type == 'suppress':
                 continue
-            output = destination._dump()
-
-            if destination.type == 'two-pass':
-                if destination.id:
-                    second_pass_replacements[destination.id] = output
-                elif output:
-                    fail("Two-pass buffer " + repr(name) + " not empty at end of file!")
-                continue
+            output = destination.dump()
 
             if output:
 
@@ -3104,43 +3134,43 @@ class DSLParser:
         fail("unknown destination command", repr(command))
 
 
-    def directive_output(self, field, destination=''):
-        fd = self.clinic.field_destinations
+    def directive_output(self, command_or_name, destination=''):
+        fd = self.clinic.destination_buffers
 
-        if field == "preset":
+        if command_or_name == "preset":
             preset = self.clinic.presets.get(destination)
             if not preset:
                 fail("Unknown preset " + repr(destination) + "!")
             fd.update(preset)
             return
 
-        if field == "push":
-            self.clinic.field_destinations_stack.append(fd.copy())
+        if command_or_name == "push":
+            self.clinic.destination_buffers_stack.append(fd.copy())
             return
 
-        if field == "pop":
-            if not self.clinic.field_destinations_stack:
+        if command_or_name == "pop":
+            if not self.clinic.destination_buffers_stack:
                 fail("Can't 'output pop', stack is empty!")
-            previous_fd = self.clinic.field_destinations_stack.pop()
+            previous_fd = self.clinic.destination_buffers_stack.pop()
             fd.update(previous_fd)
             return
 
         # secret command for debugging!
-        if field == "print":
+        if command_or_name == "print":
             self.block.output.append(pprint.pformat(fd))
             self.block.output.append('\n')
             return
 
         d = self.clinic.get_destination(destination)
 
-        if field == "everything":
+        if command_or_name == "everything":
             for name in list(fd):
                 fd[name] = d
             return
 
-        if field not in fd:
-            fail("Invalid field " + repr(field) + ", must be one of:\n  preset push pop print everything " + " ".join(fd))
-        fd[field] = d
+        if command_or_name not in fd:
+            fail("Invalid command / destination name " + repr(command_or_name) + ", must be one of:\n  preset push pop print everything " + " ".join(fd))
+        fd[command_or_name] = d
 
     def directive_dump(self, name):
         self.block.output.append(self.clinic.get_destination(name).dump())
