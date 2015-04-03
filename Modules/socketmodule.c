@@ -629,17 +629,6 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     if (s->sock_fd < 0)
         return 0;
 
-    /* for connect(), we want to poll even if the socket is blocking */
-    if (!connect) {
-        /* Nothing to do unless we're in timeout mode (not non-blocking) */
-        if (s->sock_timeout <= 0)
-            return 0;
-
-        /* Handling this condition here simplifies the select loops */
-        if (interval < 0)
-            return 1;
-    }
-
     /* Prefer poll, if available, since you can poll() any fd
      * which can't be done with select(). */
 #ifdef HAVE_POLL
@@ -654,22 +643,14 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     }
 
     /* s->sock_timeout is in seconds, timeout in ms */
-    if (interval >= 0)
-        ms = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
-    else
-        ms = -1;
+    ms = _PyTime_AsMilliseconds(interval, _PyTime_ROUND_CEILING);
     assert(ms <= INT_MAX);
 
     Py_BEGIN_ALLOW_THREADS;
     n = poll(&pollfd, 1, (int)ms);
     Py_END_ALLOW_THREADS;
 #else
-    if (interval >= 0)
-        _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
-    else {
-        tv.tv_sec = -1;
-        tv.tv_sec = 0;
-    }
+    _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
@@ -741,9 +722,9 @@ sock_call_ex(PySocketSockObject *s,
         /* For connect(), poll even for blocking socket. The connection
            runs asynchronously. */
         if (has_timeout || connect) {
-            _PyTime_t interval;
-
             if (has_timeout) {
+                _PyTime_t interval;
+
                 if (deadline_initialized) {
                     /* recompute the timeout */
                     interval = deadline - _PyTime_GetMonotonicClock();
@@ -753,11 +734,16 @@ sock_call_ex(PySocketSockObject *s,
                     deadline = _PyTime_GetMonotonicClock() + s->sock_timeout;
                     interval = s->sock_timeout;
                 }
-            }
-            else
-                interval = -1;
 
-            res = internal_select(s, writing, interval, connect);
+                if (interval >= 0)
+                    res = internal_select(s, writing, interval, connect);
+                else
+                    res = 1;
+            }
+            else {
+                res = internal_select(s, writing, -1, connect);
+            }
+
             if (res == -1) {
                 if (err)
                     *err = GET_SOCK_ERROR;
@@ -2332,7 +2318,7 @@ socket_parse_timeout(_PyTime_t *timeout, PyObject *timeout_obj)
     int overflow = 0;
 
     if (timeout_obj == Py_None) {
-        *timeout = -1;
+        *timeout = _PyTime_FromSeconds(-1);
         return 0;
     }
 
