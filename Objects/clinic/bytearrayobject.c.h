@@ -339,18 +339,18 @@ PyDoc_STRVAR(bytearray_append__doc__,
 "    The item to be appended.");
 
 #define BYTEARRAY_APPEND_METHODDEF    \
-    {"append", (PyCFunction)bytearray_append, METH_VARARGS, bytearray_append__doc__},
+    {"append", (PyCFunction)bytearray_append, METH_O, bytearray_append__doc__},
 
 static PyObject *
 bytearray_append_impl(PyByteArrayObject *self, int item);
 
 static PyObject *
-bytearray_append(PyByteArrayObject *self, PyObject *args)
+bytearray_append(PyByteArrayObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int item;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "O&:append",
         _getbytevalue, &item))
         goto exit;
@@ -416,18 +416,18 @@ PyDoc_STRVAR(bytearray_remove__doc__,
 "    The value to remove.");
 
 #define BYTEARRAY_REMOVE_METHODDEF    \
-    {"remove", (PyCFunction)bytearray_remove, METH_VARARGS, bytearray_remove__doc__},
+    {"remove", (PyCFunction)bytearray_remove, METH_O, bytearray_remove__doc__},
 
 static PyObject *
 bytearray_remove_impl(PyByteArrayObject *self, int value);
 
 static PyObject *
-bytearray_remove(PyByteArrayObject *self, PyObject *args)
+bytearray_remove(PyByteArrayObject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int value;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "O&:remove",
         _getbytevalue, &value))
         goto exit;
@@ -621,18 +621,18 @@ PyDoc_STRVAR(bytearray_fromhex__doc__,
 "Example: bytearray.fromhex(\'B9 01EF\') -> bytearray(b\'\\\\xb9\\\\x01\\\\xef\')");
 
 #define BYTEARRAY_FROMHEX_METHODDEF    \
-    {"fromhex", (PyCFunction)bytearray_fromhex, METH_VARARGS|METH_CLASS, bytearray_fromhex__doc__},
+    {"fromhex", (PyCFunction)bytearray_fromhex, METH_O|METH_CLASS, bytearray_fromhex__doc__},
 
 static PyObject *
 bytearray_fromhex_impl(PyObject*cls, PyObject *string);
 
 static PyObject *
-bytearray_fromhex(PyTypeObject *cls, PyObject *args)
+bytearray_fromhex(PyTypeObject *cls, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *string;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "U:fromhex",
         &string))
         goto exit;
@@ -705,4 +705,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=70ea384faeca8d16 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d763876718a66fc3 input=a9049054013a1b77]*/

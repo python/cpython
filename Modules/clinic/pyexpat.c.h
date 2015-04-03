@@ -49,18 +49,18 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetBase__doc__,
 "Set the base URL for the parser.");
 
 #define PYEXPAT_XMLPARSER_SETBASE_METHODDEF    \
-    {"SetBase", (PyCFunction)pyexpat_xmlparser_SetBase, METH_VARARGS, pyexpat_xmlparser_SetBase__doc__},
+    {"SetBase", (PyCFunction)pyexpat_xmlparser_SetBase, METH_O, pyexpat_xmlparser_SetBase__doc__},
 
 static PyObject *
 pyexpat_xmlparser_SetBase_impl(xmlparseobject *self, const char *base);
 
 static PyObject *
-pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *args)
+pyexpat_xmlparser_SetBase(xmlparseobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     const char *base;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "s:SetBase",
         &base))
         goto exit;
@@ -150,18 +150,18 @@ PyDoc_STRVAR(pyexpat_xmlparser_SetParamEntityParsing__doc__,
 "was successful.");
 
 #define PYEXPAT_XMLPARSER_SETPARAMENTITYPARSING_METHODDEF    \
-    {"SetParamEntityParsing", (PyCFunction)pyexpat_xmlparser_SetParamEntityParsing, METH_VARARGS, pyexpat_xmlparser_SetParamEntityParsing__doc__},
+    {"SetParamEntityParsing", (PyCFunction)pyexpat_xmlparser_SetParamEntityParsing, METH_O, pyexpat_xmlparser_SetParamEntityParsing__doc__},
 
 static PyObject *
 pyexpat_xmlparser_SetParamEntityParsing_impl(xmlparseobject *self, int flag);
 
 static PyObject *
-pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *args)
+pyexpat_xmlparser_SetParamEntityParsing(xmlparseobject *self, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int flag;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "i:SetParamEntityParsing",
         &flag))
         goto exit;
@@ -262,18 +262,18 @@ PyDoc_STRVAR(pyexpat_ErrorString__doc__,
 "Returns string error for given number.");
 
 #define PYEXPAT_ERRORSTRING_METHODDEF    \
-    {"ErrorString", (PyCFunction)pyexpat_ErrorString, METH_VARARGS, pyexpat_ErrorString__doc__},
+    {"ErrorString", (PyCFunction)pyexpat_ErrorString, METH_O, pyexpat_ErrorString__doc__},
 
 static PyObject *
 pyexpat_ErrorString_impl(PyModuleDef *module, long code);
 
 static PyObject *
-pyexpat_ErrorString(PyModuleDef *module, PyObject *args)
+pyexpat_ErrorString(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     long code;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "l:ErrorString",
         &code))
         goto exit;
@@ -286,4 +286,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=0198390005e40e1c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9715b916f2d618fa input=a9049054013a1b77]*/

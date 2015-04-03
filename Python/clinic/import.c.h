@@ -122,18 +122,18 @@ PyDoc_STRVAR(_imp_init_builtin__doc__,
 "Initializes a built-in module.");
 
 #define _IMP_INIT_BUILTIN_METHODDEF    \
-    {"init_builtin", (PyCFunction)_imp_init_builtin, METH_VARARGS, _imp_init_builtin__doc__},
+    {"init_builtin", (PyCFunction)_imp_init_builtin, METH_O, _imp_init_builtin__doc__},
 
 static PyObject *
 _imp_init_builtin_impl(PyModuleDef *module, PyObject *name);
 
 static PyObject *
-_imp_init_builtin(PyModuleDef *module, PyObject *args)
+_imp_init_builtin(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "U:init_builtin",
         &name))
         goto exit;
@@ -150,18 +150,18 @@ PyDoc_STRVAR(_imp_init_frozen__doc__,
 "Initializes a frozen module.");
 
 #define _IMP_INIT_FROZEN_METHODDEF    \
-    {"init_frozen", (PyCFunction)_imp_init_frozen, METH_VARARGS, _imp_init_frozen__doc__},
+    {"init_frozen", (PyCFunction)_imp_init_frozen, METH_O, _imp_init_frozen__doc__},
 
 static PyObject *
 _imp_init_frozen_impl(PyModuleDef *module, PyObject *name);
 
 static PyObject *
-_imp_init_frozen(PyModuleDef *module, PyObject *args)
+_imp_init_frozen(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "U:init_frozen",
         &name))
         goto exit;
@@ -178,18 +178,18 @@ PyDoc_STRVAR(_imp_get_frozen_object__doc__,
 "Create a code object for a frozen module.");
 
 #define _IMP_GET_FROZEN_OBJECT_METHODDEF    \
-    {"get_frozen_object", (PyCFunction)_imp_get_frozen_object, METH_VARARGS, _imp_get_frozen_object__doc__},
+    {"get_frozen_object", (PyCFunction)_imp_get_frozen_object, METH_O, _imp_get_frozen_object__doc__},
 
 static PyObject *
 _imp_get_frozen_object_impl(PyModuleDef *module, PyObject *name);
 
 static PyObject *
-_imp_get_frozen_object(PyModuleDef *module, PyObject *args)
+_imp_get_frozen_object(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "U:get_frozen_object",
         &name))
         goto exit;
@@ -206,18 +206,18 @@ PyDoc_STRVAR(_imp_is_frozen_package__doc__,
 "Returns True if the module name is of a frozen package.");
 
 #define _IMP_IS_FROZEN_PACKAGE_METHODDEF    \
-    {"is_frozen_package", (PyCFunction)_imp_is_frozen_package, METH_VARARGS, _imp_is_frozen_package__doc__},
+    {"is_frozen_package", (PyCFunction)_imp_is_frozen_package, METH_O, _imp_is_frozen_package__doc__},
 
 static PyObject *
 _imp_is_frozen_package_impl(PyModuleDef *module, PyObject *name);
 
 static PyObject *
-_imp_is_frozen_package(PyModuleDef *module, PyObject *args)
+_imp_is_frozen_package(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "U:is_frozen_package",
         &name))
         goto exit;
@@ -234,18 +234,18 @@ PyDoc_STRVAR(_imp_is_builtin__doc__,
 "Returns True if the module name corresponds to a built-in module.");
 
 #define _IMP_IS_BUILTIN_METHODDEF    \
-    {"is_builtin", (PyCFunction)_imp_is_builtin, METH_VARARGS, _imp_is_builtin__doc__},
+    {"is_builtin", (PyCFunction)_imp_is_builtin, METH_O, _imp_is_builtin__doc__},
 
 static PyObject *
 _imp_is_builtin_impl(PyModuleDef *module, PyObject *name);
 
 static PyObject *
-_imp_is_builtin(PyModuleDef *module, PyObject *args)
+_imp_is_builtin(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "U:is_builtin",
         &name))
         goto exit;
@@ -262,18 +262,18 @@ PyDoc_STRVAR(_imp_is_frozen__doc__,
 "Returns True if the module name corresponds to a frozen module.");
 
 #define _IMP_IS_FROZEN_METHODDEF    \
-    {"is_frozen", (PyCFunction)_imp_is_frozen, METH_VARARGS, _imp_is_frozen__doc__},
+    {"is_frozen", (PyCFunction)_imp_is_frozen, METH_O, _imp_is_frozen__doc__},
 
 static PyObject *
 _imp_is_frozen_impl(PyModuleDef *module, PyObject *name);
 
 static PyObject *
-_imp_is_frozen(PyModuleDef *module, PyObject *args)
+_imp_is_frozen(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "U:is_frozen",
         &name))
         goto exit;
@@ -320,4 +320,4 @@ exit:
 #ifndef _IMP_LOAD_DYNAMIC_METHODDEF
     #define _IMP_LOAD_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_LOAD_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=087a1f22e9febcc7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d41c392510815c5b input=a9049054013a1b77]*/
