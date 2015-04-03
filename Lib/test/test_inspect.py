@@ -292,6 +292,27 @@ class TestRetrievingSourceCode(GetSourceBase):
         self.assertEqual(inspect.getdoc(git.abuse),
                          'Another\n\ndocstring\n\ncontaining\n\ntabs')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_getdoc_inherited(self):
+        self.assertEqual(inspect.getdoc(mod.FesteringGob),
+                         'A longer,\n\nindented\n\ndocstring.')
+        self.assertEqual(inspect.getdoc(mod.FesteringGob.abuse),
+                         'Another\n\ndocstring\n\ncontaining\n\ntabs')
+        self.assertEqual(inspect.getdoc(mod.FesteringGob().abuse),
+                         'Another\n\ndocstring\n\ncontaining\n\ntabs')
+        self.assertEqual(inspect.getdoc(mod.FesteringGob.contradiction),
+                         'The automatic gainsaying.')
+
+    @unittest.skipIf(MISSING_C_DOCSTRINGS, "test requires docstrings")
+    def test_finddoc(self):
+        finddoc = inspect._finddoc
+        self.assertEqual(finddoc(int), int.__doc__)
+        self.assertEqual(finddoc(int.to_bytes), int.to_bytes.__doc__)
+        self.assertEqual(finddoc(int().to_bytes), int.to_bytes.__doc__)
+        self.assertEqual(finddoc(int.from_bytes), int.from_bytes.__doc__)
+        self.assertEqual(finddoc(int.real), int.real.__doc__)
+
     def test_cleandoc(self):
         self.assertEqual(inspect.cleandoc('An\n    indented\n    docstring.'),
                          'An\nindented\ndocstring.')
@@ -316,7 +337,7 @@ class TestRetrievingSourceCode(GetSourceBase):
 
     def test_getsource(self):
         self.assertSourceEqual(git.abuse, 29, 39)
-        self.assertSourceEqual(mod.StupidGit, 21, 46)
+        self.assertSourceEqual(mod.StupidGit, 21, 50)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)

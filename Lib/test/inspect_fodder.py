@@ -45,9 +45,16 @@ class StupidGit:
             self.ex = sys.exc_info()
             self.tr = inspect.trace()
 
+    def contradiction(self):
+        'The automatic gainsaying.'
+        pass
+
 # line 48
 class MalodorousPervert(StupidGit):
-    pass
+    def abuse(self, a, b, c):
+        pass
+    def contradiction(self):
+        pass
 
 Tit = MalodorousPervert
 
@@ -55,4 +62,7 @@ class ParrotDroppings:
     pass
 
 class FesteringGob(MalodorousPervert, ParrotDroppings):
-    pass
+    def abuse(self, a, b, c):
+        pass
+    def contradiction(self):
+        pass
