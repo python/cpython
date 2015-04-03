@@ -268,6 +268,11 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #23500: Argument Clinic is now smarter about generating the "#ifndef"
+  (empty) definition of the methoddef macro: it's only generated once, even
+  if Argument Clinic processes the same symbol multiple times, and it's emitted
+  at the end of all processing rather than immediately after the first use.
+
 - Issue #22826: The result of open() in Tools/freeze/bkfile.py is now better
   compatible with regular files (in particular it now supports the context
   management protocol).

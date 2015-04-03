@@ -17130,10 +17130,6 @@ dump buffer
     #define OS_SYSTEM_METHODDEF
 #endif /* !defined(OS_SYSTEM_METHODDEF) */
 
-#ifndef OS_SYSTEM_METHODDEF
-    #define OS_SYSTEM_METHODDEF
-#endif /* !defined(OS_SYSTEM_METHODDEF) */
-
 #ifndef OS_UNAME_METHODDEF
     #define OS_UNAME_METHODDEF
 #endif /* !defined(OS_UNAME_METHODDEF) */
@@ -17306,10 +17302,6 @@ dump buffer
     #define OS_WAITPID_METHODDEF
 #endif /* !defined(OS_WAITPID_METHODDEF) */
 
-#ifndef OS_WAITPID_METHODDEF
-    #define OS_WAITPID_METHODDEF
-#endif /* !defined(OS_WAITPID_METHODDEF) */
-
 #ifndef OS_WAIT_METHODDEF
     #define OS_WAIT_METHODDEF
 #endif /* !defined(OS_WAIT_METHODDEF) */
@@ -17405,10 +17397,6 @@ dump buffer
 #ifndef OS_POSIX_FADVISE_METHODDEF
     #define OS_POSIX_FADVISE_METHODDEF
 #endif /* !defined(OS_POSIX_FADVISE_METHODDEF) */
-
-#ifndef OS_PUTENV_METHODDEF
-    #define OS_PUTENV_METHODDEF
-#endif /* !defined(OS_PUTENV_METHODDEF) */
 
 #ifndef OS_PUTENV_METHODDEF
     #define OS_PUTENV_METHODDEF
@@ -17521,7 +17509,7 @@ dump buffer
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=52a6140b0b052ce6 input=524ce2e021e4eba6]*/
+/*[clinic end generated code: output=b788c2d6010113e8 input=524ce2e021e4eba6]*/
 
 
 static PyMethodDef posix_methods[] = {

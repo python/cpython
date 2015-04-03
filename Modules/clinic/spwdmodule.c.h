@@ -36,10 +36,6 @@ exit:
 
 #endif /* defined(HAVE_GETSPNAM) */
 
-#ifndef SPWD_GETSPNAM_METHODDEF
-    #define SPWD_GETSPNAM_METHODDEF
-#endif /* !defined(SPWD_GETSPNAM_METHODDEF) */
-
 #if defined(HAVE_GETSPENT)
 
 PyDoc_STRVAR(spwd_getspall__doc__,
@@ -64,7 +60,11 @@ spwd_getspall(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 
 #endif /* defined(HAVE_GETSPENT) */
 
+#ifndef SPWD_GETSPNAM_METHODDEF
+    #define SPWD_GETSPNAM_METHODDEF
+#endif /* !defined(SPWD_GETSPNAM_METHODDEF) */
+
 #ifndef SPWD_GETSPALL_METHODDEF
     #define SPWD_GETSPALL_METHODDEF
 #endif /* !defined(SPWD_GETSPALL_METHODDEF) */
-/*[clinic end generated code: output=41fec4a15b0cd2a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ab16125c5e5f2b1b input=a9049054013a1b77]*/
