@@ -47,7 +47,7 @@ struct PyMethodDef {
 typedef struct PyMethodDef PyMethodDef;
 
 #define PyCFunction_New(ML, SELF) PyCFunction_NewEx((ML), (SELF), NULL)
-PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *, 
+PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
                                          PyObject *);
 
 /* Flag passed to newmethodobject */
@@ -66,7 +66,7 @@ PyAPI_FUNC(PyObject *) PyCFunction_NewEx(PyMethodDef *, PyObject *,
 
 /* METH_COEXIST allows a method to be entered even though a slot has
    already filled the entry.  When defined, the flag allows a separate
-   method, "__contains__" for example, to coexist with a defined 
+   method, "__contains__" for example, to coexist with a defined
    slot like sq_contains. */
 
 #define METH_COEXIST   0x0040

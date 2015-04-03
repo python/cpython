@@ -5,7 +5,7 @@
 #   TYPE:           executable, uses makexp_aix
 #   SYSTEM:         AIX
 #
-#   DESCRIPTION:    Creates a shareable .o from a set of pre-compiled 
+#   DESCRIPTION:    Creates a shareable .o from a set of pre-compiled
 #                   (unshared) .o files
 #
 #   USAGE:          ld_so_aix [CC] [arguments]
@@ -46,7 +46,7 @@
 #                   4.  Uncommenting the "echo" lines gives detailed output
 #                       about the commands executed in the script.
 #
-#                       
+#
 #   HISTORY:        Oct-1996    -- Support added for multiple .o files --
 #                               -- and optional arguments processing.  --
 #                   Chris Myers (myers@tc.cornell.edu), Keith Kwok
@@ -132,7 +132,7 @@ do
 done
 
 if test "$objfile" = "libpython@VERSION@@ABIFLAGS@.so"; then
-  ldsocoremode="true" 
+  ldsocoremode="true"
 fi
 
 if test -z "$objs"; then

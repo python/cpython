@@ -34,13 +34,13 @@ sometimes it's not worth it.  I actually wrote a C program the other day
 :      |       1 sm.bak
 
 At first I thought I could just keep one local list around
-at once, but this seems inherently recursive.  Which means 
+at once, but this seems inherently recursive.  Which means
 I need an real recursive data structure.  Maybe you could
 do it with one of the %assoc arrays Larry uses in the begat
 programs, but I broke down and got dirty.  I think the hardest
-part was matching Felix's desired output exactly.  It's not 
+part was matching Felix's desired output exactly.  It's not
 blazingly fast: I should probably inline the &childof routine,
-but it *was* faster to write than I could have written the 
+but it *was* faster to write than I could have written the
 equivalent C program.
 
 
