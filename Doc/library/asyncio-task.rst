@@ -644,7 +644,12 @@ Task functions
    cancels the task and raises :exc:`asyncio.TimeoutError`. To avoid the task
    cancellation, wrap it in :func:`shield`.
 
+   If the wait is cancelled, the future *fut* is also cancelled.
+
    This function is a :ref:`coroutine <coroutine>`, usage::
 
        result = yield from asyncio.wait_for(fut, 60.0)
+
+   .. versionchanged:: 3.4.3
+      If the wait is cancelled, the future *fut* is now also cancelled.
 
