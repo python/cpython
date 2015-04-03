@@ -1590,15 +1590,15 @@ impl_definition block
 
         d = self.get_destination_buffer
         self.destination_buffers = collections.OrderedDict((
-            ('cpp_if', d('suppress')),
+            ('cpp_if', d('file')),
             ('docstring_prototype', d('suppress')),
-            ('docstring_definition', d('block')),
-            ('methoddef_define', d('block')),
-            ('impl_prototype', d('block')),
+            ('docstring_definition', d('file')),
+            ('methoddef_define', d('file')),
+            ('impl_prototype', d('file')),
             ('parser_prototype', d('suppress')),
-            ('parser_definition', d('block')),
-            ('cpp_endif', d('suppress')),
-            ('methoddef_ifndef', d('buffer', 1)),
+            ('parser_definition', d('file')),
+            ('cpp_endif', d('file')),
+            ('methoddef_ifndef', d('file', 1)),
             ('impl_definition', d('block')),
         ))
 

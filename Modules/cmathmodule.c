@@ -10,10 +10,9 @@
 
 #include "clinic/cmathmodule.c.h"
 /*[clinic input]
-output preset file
 module cmath
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=ef7e0fdd8a143c03]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=308d6839f4a46333]*/
 
 /*[python input]
 class Py_complex_protected_converter(Py_complex_converter):

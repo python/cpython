@@ -16,10 +16,9 @@
 #endif
 
 /*[clinic input]
-output preset file
 module fcntl
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c7356fdb126a904a]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=124b58387c158179]*/
 
 static int
 conv_descriptor(PyObject *object, int *target)

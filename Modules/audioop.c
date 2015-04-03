@@ -391,10 +391,9 @@ audioop_check_parameters(Py_ssize_t len, int size)
 }
 
 /*[clinic input]
-output preset file
 module audioop
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=5619f935f269199a]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=8fa8f6611be3591a]*/
 
 /*[clinic input]
 audioop.getsample

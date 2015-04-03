@@ -478,12 +478,11 @@ error:
 
 
 /*[clinic input]
-output preset file
 module _lzma
 class _lzma.LZMACompressor "Compressor *" "&Compressor_type"
 class _lzma.LZMADecompressor "Decompressor *" "&Decompressor_type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=f17afc786525d6c2]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=2c14bbe05ff0c147]*/
 
 #include "clinic/_lzmamodule.c.h"
 

@@ -32,10 +32,9 @@ struct _inittab *PyImport_Inittab = _PyImport_Inittab;
 static PyObject *initstr = NULL;
 
 /*[clinic input]
-output preset file
 module _imp
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=98c38221164579d5]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=9c332475d8686284]*/
 
 #include "clinic/import.c.h"
 

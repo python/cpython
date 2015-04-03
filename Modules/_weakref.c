@@ -9,6 +9,8 @@ module _weakref
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ffec73b85846596d]*/
 
+#include "clinic/_weakref.c.h"
+
 /*[clinic input]
 
 _weakref.getweakrefcount -> Py_ssize_t
@@ -19,36 +21,9 @@ _weakref.getweakrefcount -> Py_ssize_t
 Return the number of weak references to 'object'.
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_weakref_getweakrefcount__doc__,
-"getweakrefcount($module, object, /)\n"
-"--\n"
-"\n"
-"Return the number of weak references to \'object\'.");
-
-#define _WEAKREF_GETWEAKREFCOUNT_METHODDEF    \
-    {"getweakrefcount", (PyCFunction)_weakref_getweakrefcount, METH_O, _weakref_getweakrefcount__doc__},
-
-static Py_ssize_t
-_weakref_getweakrefcount_impl(PyModuleDef *module, PyObject *object);
-
-static PyObject *
-_weakref_getweakrefcount(PyModuleDef *module, PyObject *object)
-{
-    PyObject *return_value = NULL;
-    Py_ssize_t _return_value;
-
-    _return_value = _weakref_getweakrefcount_impl(module, object);
-    if ((_return_value == -1) && PyErr_Occurred())
-        goto exit;
-    return_value = PyLong_FromSsize_t(_return_value);
-
-exit:
-    return return_value;
-}
-
 static Py_ssize_t
 _weakref_getweakrefcount_impl(PyModuleDef *module, PyObject *object)
-/*[clinic end generated code: output=032eedbfd7d69e10 input=cedb69711b6a2507]*/
+/*[clinic end generated code: output=6a6ad0b98285e468 input=cedb69711b6a2507]*/
 {
     PyWeakReference **list;
 

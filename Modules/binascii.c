@@ -184,10 +184,9 @@ static unsigned short crctab_hqx[256] = {
 };
 
 /*[clinic input]
-output preset file
 module binascii
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=44c6f840ce708f0c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=de89fb46bcaf3fec]*/
 
 /*[python input]
 
