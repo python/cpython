@@ -191,7 +191,7 @@ def search_reverse(prog, chars, col):
 
     This is done by searching forwards until there is no match.
     Prog: compiled re object with a search method returning a match.
-    Chars: line of text, without \n.
+    Chars: line of text, without \\n.
     Col: stop index for the search; the limit for match.end().
     '''
     m = prog.search(chars)
