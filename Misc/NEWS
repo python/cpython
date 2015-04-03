@@ -63,7 +63,7 @@ Library
 Build
 -----
 
-- Issue #23501: Argumen Clinic now generates code into separate files by default.
+- Issue #23501: Argument Clinic now generates code into separate files by default.
 
 Tests
 -----
@@ -71,6 +71,13 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #23492: Argument Clinic now generates argument parsing code with
+  PyArg_Parse instead of PyArg_ParseTuple if possible.
+
+- Issue #23500: Argument Clinic is now smarter about generating the "#ifndef"
+  (empty) definition of the methoddef macro: it's only generated once, even
+  if Argument Clinic processes the same symbol multiple times, and it's emitted
+  at the end of all processing rather than immediately after the first use.
 
 
 What's New in Python 3.5.0 alpha 3?
@@ -269,11 +276,6 @@ Tests
 
 Tools/Demos
 -----------
-
-- Issue #23500: Argument Clinic is now smarter about generating the "#ifndef"
-  (empty) definition of the methoddef macro: it's only generated once, even
-  if Argument Clinic processes the same symbol multiple times, and it's emitted
-  at the end of all processing rather than immediately after the first use.
 
 - Issue #22826: The result of open() in Tools/freeze/bkfile.py is now better
   compatible with regular files (in particular it now supports the context

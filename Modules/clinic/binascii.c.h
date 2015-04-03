@@ -9,18 +9,18 @@ PyDoc_STRVAR(binascii_a2b_uu__doc__,
 "Decode a line of uuencoded data.");
 
 #define BINASCII_A2B_UU_METHODDEF    \
-    {"a2b_uu", (PyCFunction)binascii_a2b_uu, METH_VARARGS, binascii_a2b_uu__doc__},
+    {"a2b_uu", (PyCFunction)binascii_a2b_uu, METH_O, binascii_a2b_uu__doc__},
 
 static PyObject *
 binascii_a2b_uu_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_a2b_uu(PyModuleDef *module, PyObject *args)
+binascii_a2b_uu(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "O&:a2b_uu",
         ascii_buffer_converter, &data))
         goto exit;
@@ -41,18 +41,18 @@ PyDoc_STRVAR(binascii_b2a_uu__doc__,
 "Uuencode line of data.");
 
 #define BINASCII_B2A_UU_METHODDEF    \
-    {"b2a_uu", (PyCFunction)binascii_b2a_uu, METH_VARARGS, binascii_b2a_uu__doc__},
+    {"b2a_uu", (PyCFunction)binascii_b2a_uu, METH_O, binascii_b2a_uu__doc__},
 
 static PyObject *
 binascii_b2a_uu_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_b2a_uu(PyModuleDef *module, PyObject *args)
+binascii_b2a_uu(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:b2a_uu",
         &data))
         goto exit;
@@ -73,18 +73,18 @@ PyDoc_STRVAR(binascii_a2b_base64__doc__,
 "Decode a line of base64 data.");
 
 #define BINASCII_A2B_BASE64_METHODDEF    \
-    {"a2b_base64", (PyCFunction)binascii_a2b_base64, METH_VARARGS, binascii_a2b_base64__doc__},
+    {"a2b_base64", (PyCFunction)binascii_a2b_base64, METH_O, binascii_a2b_base64__doc__},
 
 static PyObject *
 binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_a2b_base64(PyModuleDef *module, PyObject *args)
+binascii_a2b_base64(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "O&:a2b_base64",
         ascii_buffer_converter, &data))
         goto exit;
@@ -105,18 +105,18 @@ PyDoc_STRVAR(binascii_b2a_base64__doc__,
 "Base64-code line of data.");
 
 #define BINASCII_B2A_BASE64_METHODDEF    \
-    {"b2a_base64", (PyCFunction)binascii_b2a_base64, METH_VARARGS, binascii_b2a_base64__doc__},
+    {"b2a_base64", (PyCFunction)binascii_b2a_base64, METH_O, binascii_b2a_base64__doc__},
 
 static PyObject *
 binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_b2a_base64(PyModuleDef *module, PyObject *args)
+binascii_b2a_base64(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:b2a_base64",
         &data))
         goto exit;
@@ -137,18 +137,18 @@ PyDoc_STRVAR(binascii_a2b_hqx__doc__,
 "Decode .hqx coding.");
 
 #define BINASCII_A2B_HQX_METHODDEF    \
-    {"a2b_hqx", (PyCFunction)binascii_a2b_hqx, METH_VARARGS, binascii_a2b_hqx__doc__},
+    {"a2b_hqx", (PyCFunction)binascii_a2b_hqx, METH_O, binascii_a2b_hqx__doc__},
 
 static PyObject *
 binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_a2b_hqx(PyModuleDef *module, PyObject *args)
+binascii_a2b_hqx(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "O&:a2b_hqx",
         ascii_buffer_converter, &data))
         goto exit;
@@ -169,18 +169,18 @@ PyDoc_STRVAR(binascii_rlecode_hqx__doc__,
 "Binhex RLE-code binary data.");
 
 #define BINASCII_RLECODE_HQX_METHODDEF    \
-    {"rlecode_hqx", (PyCFunction)binascii_rlecode_hqx, METH_VARARGS, binascii_rlecode_hqx__doc__},
+    {"rlecode_hqx", (PyCFunction)binascii_rlecode_hqx, METH_O, binascii_rlecode_hqx__doc__},
 
 static PyObject *
 binascii_rlecode_hqx_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_rlecode_hqx(PyModuleDef *module, PyObject *args)
+binascii_rlecode_hqx(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:rlecode_hqx",
         &data))
         goto exit;
@@ -201,18 +201,18 @@ PyDoc_STRVAR(binascii_b2a_hqx__doc__,
 "Encode .hqx data.");
 
 #define BINASCII_B2A_HQX_METHODDEF    \
-    {"b2a_hqx", (PyCFunction)binascii_b2a_hqx, METH_VARARGS, binascii_b2a_hqx__doc__},
+    {"b2a_hqx", (PyCFunction)binascii_b2a_hqx, METH_O, binascii_b2a_hqx__doc__},
 
 static PyObject *
 binascii_b2a_hqx_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_b2a_hqx(PyModuleDef *module, PyObject *args)
+binascii_b2a_hqx(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:b2a_hqx",
         &data))
         goto exit;
@@ -233,18 +233,18 @@ PyDoc_STRVAR(binascii_rledecode_hqx__doc__,
 "Decode hexbin RLE-coded string.");
 
 #define BINASCII_RLEDECODE_HQX_METHODDEF    \
-    {"rledecode_hqx", (PyCFunction)binascii_rledecode_hqx, METH_VARARGS, binascii_rledecode_hqx__doc__},
+    {"rledecode_hqx", (PyCFunction)binascii_rledecode_hqx, METH_O, binascii_rledecode_hqx__doc__},
 
 static PyObject *
 binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_rledecode_hqx(PyModuleDef *module, PyObject *args)
+binascii_rledecode_hqx(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:rledecode_hqx",
         &data))
         goto exit;
@@ -342,18 +342,18 @@ PyDoc_STRVAR(binascii_b2a_hex__doc__,
 "available as \"hexlify()\".");
 
 #define BINASCII_B2A_HEX_METHODDEF    \
-    {"b2a_hex", (PyCFunction)binascii_b2a_hex, METH_VARARGS, binascii_b2a_hex__doc__},
+    {"b2a_hex", (PyCFunction)binascii_b2a_hex, METH_O, binascii_b2a_hex__doc__},
 
 static PyObject *
 binascii_b2a_hex_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_b2a_hex(PyModuleDef *module, PyObject *args)
+binascii_b2a_hex(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:b2a_hex",
         &data))
         goto exit;
@@ -376,18 +376,18 @@ PyDoc_STRVAR(binascii_hexlify__doc__,
 "The return value is a bytes object.");
 
 #define BINASCII_HEXLIFY_METHODDEF    \
-    {"hexlify", (PyCFunction)binascii_hexlify, METH_VARARGS, binascii_hexlify__doc__},
+    {"hexlify", (PyCFunction)binascii_hexlify, METH_O, binascii_hexlify__doc__},
 
 static PyObject *
 binascii_hexlify_impl(PyModuleDef *module, Py_buffer *data);
 
 static PyObject *
-binascii_hexlify(PyModuleDef *module, PyObject *args)
+binascii_hexlify(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "y*:hexlify",
         &data))
         goto exit;
@@ -411,18 +411,18 @@ PyDoc_STRVAR(binascii_a2b_hex__doc__,
 "This function is also available as \"unhexlify()\".");
 
 #define BINASCII_A2B_HEX_METHODDEF    \
-    {"a2b_hex", (PyCFunction)binascii_a2b_hex, METH_VARARGS, binascii_a2b_hex__doc__},
+    {"a2b_hex", (PyCFunction)binascii_a2b_hex, METH_O, binascii_a2b_hex__doc__},
 
 static PyObject *
 binascii_a2b_hex_impl(PyModuleDef *module, Py_buffer *hexstr);
 
 static PyObject *
-binascii_a2b_hex(PyModuleDef *module, PyObject *args)
+binascii_a2b_hex(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer hexstr = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "O&:a2b_hex",
         ascii_buffer_converter, &hexstr))
         goto exit;
@@ -445,18 +445,18 @@ PyDoc_STRVAR(binascii_unhexlify__doc__,
 "hexstr must contain an even number of hex digits (upper or lower case).");
 
 #define BINASCII_UNHEXLIFY_METHODDEF    \
-    {"unhexlify", (PyCFunction)binascii_unhexlify, METH_VARARGS, binascii_unhexlify__doc__},
+    {"unhexlify", (PyCFunction)binascii_unhexlify, METH_O, binascii_unhexlify__doc__},
 
 static PyObject *
 binascii_unhexlify_impl(PyModuleDef *module, Py_buffer *hexstr);
 
 static PyObject *
-binascii_unhexlify(PyModuleDef *module, PyObject *args)
+binascii_unhexlify(PyModuleDef *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_buffer hexstr = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
+    if (!PyArg_Parse(arg,
         "O&:unhexlify",
         ascii_buffer_converter, &hexstr))
         goto exit;
@@ -543,4 +543,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=771126f8f53e84e7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=31ccbd5fddc8fd75 input=a9049054013a1b77]*/

@@ -593,8 +593,6 @@ class CLanguage(Language):
         meth_o = (len(parameters) == 1 and
               parameters[0].kind == inspect.Parameter.POSITIONAL_ONLY and
               not converters[0].is_optional() and
-              isinstance(converters[0], object_converter) and
-              converters[0].format_unit == 'O' and
               not new_or_init)
 
         # we have to set these things before we're done:
@@ -700,22 +698,40 @@ class CLanguage(Language):
         elif meth_o:
             flags = "METH_O"
 
-            meth_o_prototype = normalize_snippet("""
-                static PyObject *
-                {c_basename}({impl_parameters})
-                """)
+            if (isinstance(converters[0], object_converter) and
+                converters[0].format_unit == 'O'):
+                meth_o_prototype = normalize_snippet("""
+                    static PyObject *
+                    {c_basename}({impl_parameters})
+                    """)
 
-            if default_return_converter:
-                # maps perfectly to METH_O, doesn't need a return converter.
-                # so we skip making a parse function
-                # and call directly into the impl function.
-                impl_prototype = parser_prototype = parser_definition = ''
-                impl_definition = meth_o_prototype
+                if default_return_converter:
+                    # maps perfectly to METH_O, doesn't need a return converter.
+                    # so we skip making a parse function
+                    # and call directly into the impl function.
+                    impl_prototype = parser_prototype = parser_definition = ''
+                    impl_definition = meth_o_prototype
+                else:
+                    # SLIGHT HACK
+                    # use impl_parameters for the parser here!
+                    parser_prototype = meth_o_prototype
+                    parser_definition = parser_body(parser_prototype)
+
             else:
-                # SLIGHT HACK
-                # use impl_parameters for the parser here!
-                parser_prototype = meth_o_prototype
-                parser_definition = parser_body(parser_prototype)
+                argname = 'arg'
+                if parameters[0].name == argname:
+                    argname += '_'
+                parser_prototype = normalize_snippet("""
+                    static PyObject *
+                    {c_basename}({self_type}{self_name}, PyObject *%s)
+                    """ % argname)
+
+                parser_definition = parser_body(parser_prototype, normalize_snippet("""
+                    if (!PyArg_Parse(%s,
+                        "{format_units}:{name}",
+                        {parse_arguments}))
+                        goto exit;
+                    """ % argname, indent=4))
 
         elif has_option_groups:
             # positional parameters with option groups
@@ -1025,7 +1041,7 @@ class CLanguage(Language):
         # METH_O, we have exactly one anyway, so we know exactly
         # where it is.
         if ("METH_O" in templates['methoddef_define'] and
-            not default_return_converter):
+            '{impl_parameters}' in templates['parser_prototype']):
             data.declarations.pop(0)
 
         template_dict = {}
