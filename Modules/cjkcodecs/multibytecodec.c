@@ -11,15 +11,10 @@
 #include "clinic/multibytecodec.c.h"
 
 /*[clinic input]
-output preset file
 module _multibytecodec
-[clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=e0cf1b7f3c472d17]*/
-
-/*[clinic input]
 class _multibytecodec.MultibyteCodec "MultibyteCodecObject *" "&MultibyteCodec_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d5b1fc1fec8eb003]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=6ad689546cbb5450]*/
 
 typedef struct {
     PyObject            *inobj;

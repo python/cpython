@@ -5,14 +5,13 @@ PyDoc_STRVAR(pickle_module_doc,
 "Optimized C implementation for the Python pickle module.");
 
 /*[clinic input]
-output preset file
 module _pickle
 class _pickle.Pickler "PicklerObject *" "&Pickler_Type"
 class _pickle.PicklerMemoProxy "PicklerMemoProxyObject *" "&PicklerMemoProxyType"
 class _pickle.Unpickler "UnpicklerObject *" "&Unpickler_Type"
 class _pickle.UnpicklerMemoProxy "UnpicklerMemoProxyObject *" "&UnpicklerMemoProxyType"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=11c45248a41dd3fc]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4b3e113468a58e6c]*/
 
 /* Bump this when new opcodes are added to the pickle protocol. */
 enum {

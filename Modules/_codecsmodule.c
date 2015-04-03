@@ -47,6 +47,7 @@ module _codecs
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=e1390e3da3cb9deb]*/
 
+#include "clinic/_codecsmodule.c.h"
 
 /* --- Registry ----------------------------------------------------------- */
 
@@ -153,37 +154,9 @@ _codecs._forget_codec
 Purge the named codec from the internal codec lookup cache
 [clinic start generated code]*/
 
-PyDoc_STRVAR(_codecs__forget_codec__doc__,
-"_forget_codec($module, encoding, /)\n"
-"--\n"
-"\n"
-"Purge the named codec from the internal codec lookup cache");
-
-#define _CODECS__FORGET_CODEC_METHODDEF    \
-    {"_forget_codec", (PyCFunction)_codecs__forget_codec, METH_VARARGS, _codecs__forget_codec__doc__},
-
-static PyObject *
-_codecs__forget_codec_impl(PyModuleDef *module, const char *encoding);
-
-static PyObject *
-_codecs__forget_codec(PyModuleDef *module, PyObject *args)
-{
-    PyObject *return_value = NULL;
-    const char *encoding;
-
-    if (!PyArg_ParseTuple(args,
-        "s:_forget_codec",
-        &encoding))
-        goto exit;
-    return_value = _codecs__forget_codec_impl(module, encoding);
-
-exit:
-    return return_value;
-}
-
 static PyObject *
 _codecs__forget_codec_impl(PyModuleDef *module, const char *encoding)
-/*[clinic end generated code: output=a75e631591702a5c input=18d5d92d0e386c38]*/
+/*[clinic end generated code: output=b56a9b99d2d28080 input=18d5d92d0e386c38]*/
 {
     if (_PyCodec_Forget(encoding) < 0) {
         return NULL;

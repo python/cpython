@@ -8,10 +8,9 @@
 
 #include "clinic/grpmodule.c.h"
 /*[clinic input]
-output preset file
 module grp
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=68180a9a9efb8506]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=cade63f2ed1bd9f8]*/
 
 static PyStructSequence_Field struct_group_type_fields[] = {
    {"gr_name", "group name"},
