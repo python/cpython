@@ -9,9 +9,9 @@ module Python
         -- not really an actual node but useful in Jython's typesystem.
         | Suite(stmt* body)
 
-    stmt = FunctionDef(identifier name, arguments args, 
+    stmt = FunctionDef(identifier name, arguments args,
                            stmt* body, expr* decorator_list, expr? returns)
-          | ClassDef(identifier name, 
+          | ClassDef(identifier name,
              expr* bases,
              keyword* keywords,
              expr? starargs,
@@ -77,7 +77,7 @@ module Python
          | Subscript(expr value, slice slice, expr_context ctx)
          | Starred(expr value, expr_context ctx)
          | Name(identifier id, expr_context ctx)
-         | List(expr* elts, expr_context ctx) 
+         | List(expr* elts, expr_context ctx)
          | Tuple(expr* elts, expr_context ctx)
 
           -- col_offset is the byte offset in the utf8 string the parser uses
@@ -85,13 +85,13 @@ module Python
 
     expr_context = Load | Store | Del | AugLoad | AugStore | Param
 
-    slice = Slice(expr? lower, expr? upper, expr? step) 
-          | ExtSlice(slice* dims) 
-          | Index(expr value) 
+    slice = Slice(expr? lower, expr? upper, expr? step)
+          | ExtSlice(slice* dims)
+          | Index(expr value)
 
-    boolop = And | Or 
+    boolop = And | Or
 
-    operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift 
+    operator = Add | Sub | Mult | MatMult | Div | Mod | Pow | LShift
                  | RShift | BitOr | BitXor | BitAnd | FloorDiv
 
     unaryop = Invert | Not | UAdd | USub

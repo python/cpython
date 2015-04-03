@@ -1,5 +1,5 @@
-# This file can be invoked from the various frameworkinstall... targets in the 
-# main Makefile. The next couple of variables are overridden on the 
+# This file can be invoked from the various frameworkinstall... targets in the
+# main Makefile. The next couple of variables are overridden on the
 # commandline in that case.
 
 VERSION=@VERSION@
@@ -53,7 +53,7 @@ compileall=$(srcdir)/../Lib/compileall.py
 installapps: install_Python install_PythonLauncher install_IDLE
 
 #
-# Install unix tools in /usr/local/bin. These are just aliases for the 
+# Install unix tools in /usr/local/bin. These are just aliases for the
 # actual installation inside the framework.
 #
 installunixtools:
