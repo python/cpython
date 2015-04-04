@@ -10327,8 +10327,6 @@ conv_sysconf_confname(PyObject *arg, int *valuep)
                            / sizeof(struct constdef));
 }
 
-#include "clinic/posixmodule.c.h"
-
 
 /*[clinic input]
 os.sysconf -> long
@@ -12070,6 +12068,8 @@ error:
     return NULL;
 }
 
+
+#include "clinic/posixmodule.c.h"
 
 /*[clinic input]
 dump buffer
