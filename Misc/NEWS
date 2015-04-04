@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #22977: Fixed formatting Windows error messages on Wine.
   Patch by Martin Panter.
 
+- Issue #23466: %c, %o, %x, and %X in bytes formatting now raise TypeError on
+  non-integer input.
+
 Library
 -------
 
@@ -60,6 +63,17 @@ Library
   only calls fstat() once. Before fstat() was called twice, which was not
   necessary.
 
+- Issue #23704: collections.deque() objects now support __add__, __mul__, and
+  __imul__().
+
+- Issue #23171: csv.Writer.writerow() now supports arbitrary iterables.
+
+- Issue #23745: The new email header parser now handles duplicate MIME
+  parameter names without error, similar to how get_param behaves.
+
+- Issue #22117: Fix os.utime(), it now rounds the timestamp towards minus
+  infinity (-inf) instead of rounding towards zero.
+
 Build
 -----
 
@@ -67,6 +81,12 @@ Build
 
 Tests
 -----
+
+- Issue #23799: Added test.support.start_threads() for running and
+  cleaning up multiple threads.
+
+- Issue #22390: test.regrtest now emits a warning if temporary files or
+  directories are left after running a test.
 
 Tools/Demos
 -----------
@@ -88,9 +108,6 @@ Release date: 2015-03-28
 Core and Builtins
 -----------------
 
-- Issue #23466: %c, %o, %x, and %X in bytes formatting now raise TypeError on
-  non-integer input.
-
 - Issue #23573: Increased performance of string search operations (str.find,
   str.index, str.count, the in operator, str.split, str.partition) with
   arguments of different kinds (UCS1, UCS2, UCS4).
@@ -110,14 +127,6 @@ Core and Builtins
 
 Library
 -------
-
-- Issue #23171: csv.Writer.writerow() now supports arbitrary iterables.
-
-- Issue #23745: The new email header parser now handles duplicate MIME
-  parameter names without error, similar to how get_param behaves.
-
-- Issue #22117: Fix os.utime(), it now rounds the timestamp towards minus
-  infinity (-inf) instead of rounding towards zero.
 
 - Issue #14260: The groupindex attribute of regular expression pattern object
   now is non-modifiable mapping.
@@ -186,7 +195,6 @@ Library
 - Issue #23704: collections.deque() objects now support methods for index(),
   insert(), and copy().  This allows deques to be registered as a
   MutableSequence and it improves their substitutablity for lists.
-  Deques now also support __add__, __mul__, and __imul__().
 
 - Issue #23715: :func:`signal.sigwaitinfo` and :func:`signal.sigtimedwait` are
   now retried when interrupted by a signal not in the *sigset* parameter, if
@@ -263,12 +271,6 @@ Build
 
 Tests
 -----
-
-- Issue #23799: Added test.support.start_threads() for running and
-  cleaning up multiple threads.
-
-- Issue #22390: test.regrtest now emits a warning if temporary files or
-  directories are left after running a test.
 
 - Issue #23583: Added tests for standard IO streams in IDLE.
 
