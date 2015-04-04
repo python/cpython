@@ -19,6 +19,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15133: _tkinter.tkapp.getboolean() now supports Tcl_Obj and always
+  returns bool.  tkinter.BooleanVar now validates input values (accepted bool,
+  int, str, and Tcl_Obj).  tkinter.BooleanVar.get() now always returns bool.
+
 - Issue #10590: xml.sax.parseString() now supports string argument.
 
 - Issue #23338: Fixed formatting ctypes error messages on Cygwin.
