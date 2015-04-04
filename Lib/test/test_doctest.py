@@ -2580,7 +2580,7 @@ Windows line endings first:
 
     >>> import tempfile, os
     >>> fn = tempfile.mktemp()
-    >>> with open(fn, 'w') as f:
+    >>> with open(fn, 'wb') as f:
     ...     f.write('Test:\r\n\r\n  >>> x = 1 + 1\r\n\r\nDone.\r\n')
     >>> doctest.testfile(fn, False)
     TestResults(failed=0, attempted=1)
@@ -2589,7 +2589,7 @@ Windows line endings first:
 And now *nix line endings:
 
     >>> fn = tempfile.mktemp()
-    >>> with open(fn, 'w') as f:
+    >>> with open(fn, 'wb') as f:
     ...     f.write('Test:\n\n  >>> x = 1 + 1\n\nDone.\n')
     >>> doctest.testfile(fn, False)
     TestResults(failed=0, attempted=1)
