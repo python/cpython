@@ -181,7 +181,8 @@ class TclTest(unittest.TestCase):
         tcl = self.interp.tk
         self.assertIs(tcl.getboolean('on'), True)
         self.assertIs(tcl.getboolean('1'), True)
-        self.assertEqual(tcl.getboolean(42), 42)
+        self.assertIs(tcl.getboolean(42), True)
+        self.assertIs(tcl.getboolean(0), False)
         self.assertRaises(TypeError, tcl.getboolean)
         self.assertRaises(TypeError, tcl.getboolean, 'on', '1')
         self.assertRaises(TypeError, tcl.getboolean, b'on')
