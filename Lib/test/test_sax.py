@@ -200,6 +200,13 @@ class ParseTest(unittest.TestCase):
         parseString(s, XMLGenerator(result, 'utf-8'))
         self.assertEqual(result.getvalue(), xml_str(self.data, 'utf-8'))
 
+    def test_parseString_text(self):
+        encodings = ('us-ascii', 'iso-8859-1', 'utf-8',
+                     'utf-16', 'utf-16le', 'utf-16be')
+        for encoding in encodings:
+            self.check_parseString(xml_str(self.data, encoding))
+        self.check_parseString(self.data)
+
     def test_parseString_bytes(self):
         # UTF-8 is default encoding, US-ASCII is compatible with UTF-8,
         # UTF-16 is autodetected
