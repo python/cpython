@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23338: Fixed formatting ctypes error messages on Cygwin.
+  Patch by Makoto Kato.
+
 - Issue #15582: inspect.getdoc() now follows inheritance chains.
 
 - Issue #2175: SAX parsers now support a character stream of InputSource object.
