@@ -163,40 +163,39 @@ def libc_ver(executable=sys.executable, lib='', version='',
         # here to work around problems with Cygwin not being
         # able to open symlinks for reading
         executable = os.path.realpath(executable)
-    f = open(executable, 'rb')
-    binary = f.read(chunksize)
-    pos = 0
-    while 1:
-        if b'libc' in binary or b'GLIBC' in binary:
-            m = _libc_search.search(binary, pos)
-        else:
-            m = None
-        if not m:
-            binary = f.read(chunksize)
-            if not binary:
-                break
-            pos = 0
-            continue
-        libcinit, glibc, glibcversion, so, threads, soversion = [
-            s.decode('latin1') if s is not None else s
-            for s in m.groups()]
-        if libcinit and not lib:
-            lib = 'libc'
-        elif glibc:
-            if lib != 'glibc':
-                lib = 'glibc'
-                version = glibcversion
-            elif glibcversion > version:
-                version = glibcversion
-        elif so:
-            if lib != 'glibc':
+    with open(executable, 'rb') as f:
+        binary = f.read(chunksize)
+        pos = 0
+        while 1:
+            if b'libc' in binary or b'GLIBC' in binary:
+                m = _libc_search.search(binary, pos)
+            else:
+                m = None
+            if not m:
+                binary = f.read(chunksize)
+                if not binary:
+                    break
+                pos = 0
+                continue
+            libcinit, glibc, glibcversion, so, threads, soversion = [
+                s.decode('latin1') if s is not None else s
+                for s in m.groups()]
+            if libcinit and not lib:
                 lib = 'libc'
-                if soversion and soversion > version:
-                    version = soversion
-                if threads and version[-len(threads):] != threads:
-                    version = version + threads
-        pos = m.end()
-    f.close()
+            elif glibc:
+                if lib != 'glibc':
+                    lib = 'glibc'
+                    version = glibcversion
+                elif glibcversion > version:
+                    version = glibcversion
+            elif so:
+                if lib != 'glibc':
+                    lib = 'libc'
+                    if soversion and soversion > version:
+                        version = soversion
+                    if threads and version[-len(threads):] != threads:
+                        version = version + threads
+            pos = m.end()
     return lib, version
 
 def _dist_try_harder(distname, version, id):

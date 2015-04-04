@@ -1010,12 +1010,9 @@ def gzip_encode(data):
     if not gzip:
         raise NotImplementedError
     f = BytesIO()
-    gzf = gzip.GzipFile(mode="wb", fileobj=f, compresslevel=1)
-    gzf.write(data)
-    gzf.close()
-    encoded = f.getvalue()
-    f.close()
-    return encoded
+    with gzip.GzipFile(mode="wb", fileobj=f, compresslevel=1) as gzf:
+        gzf.write(data)
+    return f.getvalue()
 
 ##
 # Decode a string using the gzip content encoding such as specified by the
@@ -1036,17 +1033,14 @@ def gzip_decode(data, max_decode=20971520):
     """
     if not gzip:
         raise NotImplementedError
-    f = BytesIO(data)
-    gzf = gzip.GzipFile(mode="rb", fileobj=f)
-    try:
-        if max_decode < 0: # no limit
-            decoded = gzf.read()
-        else:
-            decoded = gzf.read(max_decode + 1)
-    except OSError:
-        raise ValueError("invalid data")
-    f.close()
-    gzf.close()
+    with gzip.GzipFile(mode="rb", fileobj=BytesIO(data)) as gzf:
+        try:
+            if max_decode < 0: # no limit
+                decoded = gzf.read()
+            else:
+                decoded = gzf.read(max_decode + 1)
+        except OSError:
+            raise ValueError("invalid data")
     if max_decode >= 0 and len(decoded) > max_decode:
         raise ValueError("max gzipped payload length exceeded")
     return decoded

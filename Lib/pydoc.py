@@ -1639,9 +1639,8 @@ def writedoc(thing, forceload=0):
     try:
         object, name = resolve(thing, forceload)
         page = html.page(describe(object), html.document(object, name))
-        file = open(name + '.html', 'w', encoding='utf-8')
-        file.write(page)
-        file.close()
+        with open(name + '.html', 'w', encoding='utf-8') as file:
+            file.write(page)
         print('wrote', name + '.html')
     except (ImportError, ErrorDuringImport) as value:
         print(value)

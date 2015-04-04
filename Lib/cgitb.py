@@ -294,9 +294,8 @@ class Hook:
             (fd, path) = tempfile.mkstemp(suffix=suffix, dir=self.logdir)
 
             try:
-                file = os.fdopen(fd, 'w')
-                file.write(doc)
-                file.close()
+                with os.fdopen(fd, 'w') as file:
+                    file.write(doc)
                 msg = '%s contains the description of this error.' % path
             except:
                 msg = 'Tried to save traceback to %s, but failed.' % path
