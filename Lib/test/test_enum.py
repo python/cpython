@@ -1560,6 +1560,10 @@ expected_help_output = """
 Help on class Color in module %s:
 
 class Color(enum.Enum)
+ |  Generic enumeration.
+ |\x20\x20
+ |  Derive from this class to define new enumerations.
+ |\x20\x20
  |  Method resolution order:
  |      Color
  |      enum.Enum
