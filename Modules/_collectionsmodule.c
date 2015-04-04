@@ -507,7 +507,7 @@ static PyObject *deque_copy(PyObject *deque);
 static PyObject *
 deque_concat(dequeobject *deque, PyObject *other)
 {
-    PyObject *new_deque;
+    PyObject *new_deque, *result;
     int rv;
 
     rv = PyObject_IsInstance(other, (PyObject *)&deque_type);
@@ -523,7 +523,13 @@ deque_concat(dequeobject *deque, PyObject *other)
     new_deque = deque_copy((PyObject *)deque);
     if (new_deque == NULL)
         return NULL;
-    return deque_inplace_concat((dequeobject *)new_deque, other);
+    result = deque_extend((dequeobject *)new_deque, other);
+    if (result == NULL) {
+        Py_DECREF(new_deque);
+        return NULL;
+    }
+    Py_DECREF(result);
+    return new_deque;
 }
 
 static void deque_clear(dequeobject *deque);
