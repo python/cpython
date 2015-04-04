@@ -642,7 +642,7 @@ CDataType_in_dll(PyObject *type, PyObject *args)
 #ifdef __CYGWIN__
 /* dlerror() isn't very helpful on cygwin */
         PyErr_Format(PyExc_ValueError,
-                     "symbol '%s' not found (%s) ",
+                     "symbol '%s' not found",
                      name);
 #else
         PyErr_SetString(PyExc_ValueError, ctypes_dlerror());
@@ -3393,7 +3393,7 @@ PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #ifdef __CYGWIN__
 /* dlerror() isn't very helpful on cygwin */
         PyErr_Format(PyExc_AttributeError,
-                     "function '%s' not found (%s) ",
+                     "function '%s' not found",
                      name);
 #else
         PyErr_SetString(PyExc_AttributeError, ctypes_dlerror());
