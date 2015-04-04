@@ -1403,7 +1403,7 @@ static PyObject *
 array_array_fromfile_impl(arrayobject *self, PyObject *f, Py_ssize_t n)
 /*[clinic end generated code: output=ec9f600e10f53510 input=e188afe8e58adf40]*/
 {
-    PyObject *args, *b, *res;
+    PyObject *b, *res;
     Py_ssize_t itemsize = self->ob_descr->itemsize;
     Py_ssize_t nbytes;
     _Py_IDENTIFIER(read);
@@ -1432,13 +1432,8 @@ array_array_fromfile_impl(arrayobject *self, PyObject *f, Py_ssize_t n)
 
     not_enough_bytes = (PyBytes_GET_SIZE(b) != nbytes);
 
-    args = Py_BuildValue("(O)", b);
+    res = array_array_frombytes(self, b);
     Py_DECREF(b);
-    if (args == NULL)
-        return NULL;
-
-    res = array_array_frombytes(self, args);
-    Py_DECREF(args);
     if (res == NULL)
         return NULL;
 
@@ -2672,15 +2667,9 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             }
             else if (initial != NULL && (PyByteArray_Check(initial) ||
                                PyBytes_Check(initial))) {
-                PyObject *t_initial, *v;
-                t_initial = PyTuple_Pack(1, initial);
-                if (t_initial == NULL) {
-                    Py_DECREF(a);
-                    return NULL;
-                }
+                PyObject *v;
                 v = array_array_frombytes((arrayobject *)a,
-                                          t_initial);
-                Py_DECREF(t_initial);
+                                          initial);
                 if (v == NULL) {
                     Py_DECREF(a);
                     return NULL;
