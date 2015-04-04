@@ -21,6 +21,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #15133: _tkinter.tkapp.getboolean() now supports long and Tcl_Obj and
+  always returns bool.  tkinter.BooleanVar now validates input values (accepted
+  bool, int, long, str, unicode, and Tcl_Obj).  tkinter.BooleanVar.get() now
+  always returns bool.
+
 - Issue #23338: Fixed formatting ctypes error messages on Cygwin.
   Patch by Makoto Kato.
 

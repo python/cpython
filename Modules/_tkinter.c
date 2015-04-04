@@ -2163,19 +2163,26 @@ Tkapp_GetDouble(PyObject *self, PyObject *args)
 }
 
 static PyObject *
-Tkapp_GetBoolean(PyObject *self, PyObject *args)
+Tkapp_GetBoolean(PyObject *self, PyObject *arg)
 {
     char *s;
     int v;
 
-    if (PyTuple_Size(args) == 1) {
-        PyObject *o = PyTuple_GetItem(args, 0);
-        if (PyInt_Check(o)) {
-            Py_INCREF(o);
-            return o;
-        }
+    if (PyInt_Check(arg)) /* int or bool */
+        return PyBool_FromLong(PyInt_AS_LONG(arg));
+
+    if (PyLong_Check(arg))
+        return PyBool_FromLong(Py_SIZE(arg) != 0);
+
+    if (PyTclObject_Check(arg)) {
+        if (Tcl_GetBooleanFromObj(Tkapp_Interp(self),
+                                  ((PyTclObject*)arg)->value,
+                                  &v) == TCL_ERROR)
+            return Tkinter_Error(self);
+        return PyBool_FromLong(v);
     }
-    if (!PyArg_ParseTuple(args, "s:getboolean", &s))
+
+    if (!PyArg_Parse(arg, "s:getboolean", &s))
         return NULL;
     CHECK_STRING_LENGTH(s);
     if (Tcl_GetBoolean(Tkapp_Interp(self), s, &v) == TCL_ERROR)
@@ -3236,7 +3243,7 @@ static PyMethodDef Tkapp_methods[] =
     {"globalunsetvar",     Tkapp_GlobalUnsetVar, METH_VARARGS},
     {"getint",                 Tkapp_GetInt, METH_VARARGS},
     {"getdouble",              Tkapp_GetDouble, METH_VARARGS},
-    {"getboolean",             Tkapp_GetBoolean, METH_VARARGS},
+    {"getboolean",             Tkapp_GetBoolean, METH_O},
     {"exprstring",             Tkapp_ExprString, METH_VARARGS},
     {"exprlong",               Tkapp_ExprLong, METH_VARARGS},
     {"exprdouble",             Tkapp_ExprDouble, METH_VARARGS},

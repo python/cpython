@@ -1,6 +1,7 @@
 import unittest
 
-from Tkinter import Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl, TclError
+from Tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
+                     TclError)
 
 
 class TestBase(unittest.TestCase):
@@ -139,16 +140,57 @@ class TestBooleanVar(TestBase):
 
     def test_default(self):
         v = BooleanVar(self.root)
-        self.assertEqual(False, v.get())
+        self.assertIs(v.get(), False)
 
     def test_get(self):
         v = BooleanVar(self.root, True, "name")
-        self.assertAlmostEqual(True, v.get())
+        self.assertIs(v.get(), True)
         self.root.globalsetvar("name", "0")
-        self.assertAlmostEqual(False, v.get())
+        self.assertIs(v.get(), False)
+        self.root.globalsetvar("name", 42 if self.root.wantobjects() else 1)
+        self.assertIs(v.get(), True)
+        self.root.globalsetvar("name", 0)
+        self.assertIs(v.get(), False)
+        self.root.globalsetvar("name", 42L if self.root.wantobjects() else 1L)
+        self.assertIs(v.get(), True)
+        self.root.globalsetvar("name", 0L)
+        self.assertIs(v.get(), False)
+        self.root.globalsetvar("name", "on")
+        self.assertIs(v.get(), True)
+        self.root.globalsetvar("name", u"0")
+        self.assertIs(v.get(), False)
+        self.root.globalsetvar("name", u"on")
+        self.assertIs(v.get(), True)
+
+    def test_set(self):
+        true = 1 if self.root.wantobjects() else "1"
+        false = 0 if self.root.wantobjects() else "0"
+        v = BooleanVar(self.root, name="name")
+        v.set(True)
+        self.assertEqual(self.root.globalgetvar("name"), true)
+        v.set("0")
+        self.assertEqual(self.root.globalgetvar("name"), false)
+        v.set(42)
+        self.assertEqual(self.root.globalgetvar("name"), true)
+        v.set(0)
+        self.assertEqual(self.root.globalgetvar("name"), false)
+        v.set(42L)
+        self.assertEqual(self.root.globalgetvar("name"), true)
+        v.set(0L)
+        self.assertEqual(self.root.globalgetvar("name"), false)
+        v.set("on")
+        self.assertEqual(self.root.globalgetvar("name"), true)
+        v.set(u"0")
+        self.assertEqual(self.root.globalgetvar("name"), false)
+        v.set(u"on")
+        self.assertEqual(self.root.globalgetvar("name"), true)
 
     def test_invalid_value_domain(self):
+        false = 0 if self.root.wantobjects() else "0"
         v = BooleanVar(self.root, name="name")
+        with self.assertRaises(TclError):
+            v.set("value")
+        self.assertEqual(self.root.globalgetvar("name"), false)
         self.root.globalsetvar("name", "value")
         with self.assertRaises(TclError):
             v.get()

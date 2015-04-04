@@ -575,7 +575,7 @@ class Widget(Tkinter.Widget):
         if ret and callback:
             return callback(*args, **kw)
 
-        return bool(ret)
+        return ret
 
 
     def state(self, statespec=None):
@@ -683,7 +683,7 @@ class Entry(Widget, Tkinter.Entry):
         """Force revalidation, independent of the conditions specified
         by the validate option. Returns False if validation fails, True
         if it succeeds. Sets or clears the invalid state accordingly."""
-        return bool(self.tk.getboolean(self.tk.call(self._w, "validate")))
+        return self.tk.getboolean(self.tk.call(self._w, "validate"))
 
 
 class Combobox(Entry):
@@ -1233,7 +1233,7 @@ class Treeview(Widget, Tkinter.XView, Tkinter.YView):
     def exists(self, item):
         """Returns True if the specified item is present in the tree,
         False otherwise."""
-        return bool(self.tk.getboolean(self.tk.call(self._w, "exists", item)))
+        return self.tk.getboolean(self.tk.call(self._w, "exists", item))
 
 
     def focus(self, item=None):

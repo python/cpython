@@ -401,6 +401,10 @@ class BooleanVar(Variable):
         """
         Variable.__init__(self, master, value, name)
 
+    def set(self, value):
+        """Set the variable to VALUE."""
+        return self._tk.globalsetvar(self._name, self._tk.getboolean(value))
+
     def get(self):
         """Return the value of the variable as a bool."""
         return self._tk.getboolean(self._tk.globalgetvar(self._name))
