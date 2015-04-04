@@ -1999,7 +1999,6 @@ class MozillaCookieJar(FileCookieJar):
 
         magic = f.readline()
         if not self.magic_re.search(magic):
-            f.close()
             raise LoadError(
                 "%r does not look like a Netscape format cookies file" %
                 filename)

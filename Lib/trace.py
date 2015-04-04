@@ -232,8 +232,8 @@ class CoverageResults:
         if self.infile:
             # Try to merge existing counts file.
             try:
-                counts, calledfuncs, callers = \
-                        pickle.load(open(self.infile, 'rb'))
+                with open(self.infile, 'rb') as f:
+                    counts, calledfuncs, callers = pickle.load(f)
                 self.update(self.__class__(counts, calledfuncs, callers))
             except (OSError, EOFError, ValueError) as err:
                 print(("Skipping counts file %r: %s"
@@ -361,26 +361,26 @@ class CoverageResults:
 
         n_lines = 0
         n_hits = 0
-        for lineno, line in enumerate(lines, 1):
-            # do the blank/comment match to try to mark more lines
-            # (help the reader find stuff that hasn't been covered)
-            if lineno in lines_hit:
-                outfile.write("%5d: " % lines_hit[lineno])
-                n_hits += 1
-                n_lines += 1
-            elif rx_blank.match(line):
-                outfile.write("       ")
-            else:
-                # lines preceded by no marks weren't hit
-                # Highlight them if so indicated, unless the line contains
-                # #pragma: NO COVER
-                if lineno in lnotab and not PRAGMA_NOCOVER in line:
-                    outfile.write(">>>>>> ")
+        with outfile:
+            for lineno, line in enumerate(lines, 1):
+                # do the blank/comment match to try to mark more lines
+                # (help the reader find stuff that hasn't been covered)
+                if lineno in lines_hit:
+                    outfile.write("%5d: " % lines_hit[lineno])
+                    n_hits += 1
                     n_lines += 1
-                else:
+                elif rx_blank.match(line):
                     outfile.write("       ")
-            outfile.write(line.expandtabs(8))
-        outfile.close()
+                else:
+                    # lines preceded by no marks weren't hit
+                    # Highlight them if so indicated, unless the line contains
+                    # #pragma: NO COVER
+                    if lineno in lnotab and not PRAGMA_NOCOVER in line:
+                        outfile.write(">>>>>> ")
+                        n_lines += 1
+                    else:
+                        outfile.write("       ")
+                outfile.write(line.expandtabs(8))
 
         return n_hits, n_lines
 

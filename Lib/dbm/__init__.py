@@ -153,9 +153,9 @@ def whichdb(filename):
     except OSError:
         return None
 
-    # Read the start of the file -- the magic number
-    s16 = f.read(16)
-    f.close()
+    with f:
+        # Read the start of the file -- the magic number
+        s16 = f.read(16)
     s = s16[0:4]
 
     # Return "" if not at least 4 bytes
