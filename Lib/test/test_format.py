@@ -272,7 +272,7 @@ class FormatTest(unittest.TestCase):
         #test_exc(unicode('abc %\u3000','raw-unicode-escape'), 1, ValueError,
         #         "unsupported format character '?' (0x3000) at index 5")
         test_exc('%d', '1', TypeError, "%d format: a number is required, not str")
-        test_exc('%x', '1', TypeError, "%x format: a number is required, not str")
+        test_exc('%x', '1', TypeError, "%x format: an integer is required, not str")
         test_exc('%x', 3.14, TypeError, "%x format: an integer is required, not float")
         test_exc('%g', '1', TypeError, "a float is required")
         test_exc('no format', '1', TypeError,
