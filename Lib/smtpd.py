@@ -413,7 +413,7 @@ class SMTPChannel(asynchat.async_chat):
 
     def smtp_HELP(self, arg):
         if arg:
-            extended = ' [SP <mail parameters]'
+            extended = ' [SP <mail-parameters>]'
             lc_arg = arg.upper()
             if lc_arg == 'EHLO':
                 self.push('250 Syntax: EHLO hostname')
