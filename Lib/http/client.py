@@ -20,10 +20,12 @@ request. This diagram details these state transitions:
       | ( putheader() )*  endheaders()
       v
     Request-sent
-      |
-      | response = getresponse()
-      v
-    Unread-response   [Response-headers-read]
+      |\_____________________________
+      |                              | getresponse() raises
+      | response = getresponse()     | ConnectionError
+      v                              v
+    Unread-response                Idle
+    [Response-headers-read]
       |\____________________
       |                     |
       | response.read()     | putrequest()
@@ -83,7 +85,8 @@ __all__ = ["HTTPResponse", "HTTPConnection",
            "UnknownTransferEncoding", "UnimplementedFileMode",
            "IncompleteRead", "InvalidURL", "ImproperConnectionState",
            "CannotSendRequest", "CannotSendHeader", "ResponseNotReady",
-           "BadStatusLine", "LineTooLong", "error", "responses"]
+           "BadStatusLine", "LineTooLong", "RemoteDisconnected", "error",
+           "responses"]
 
 HTTP_PORT = 80
 HTTPS_PORT = 443
@@ -245,7 +248,8 @@ class HTTPResponse(io.BufferedIOBase):
         if not line:
             # Presumably, the server closed the connection before
             # sending a valid response.
-            raise BadStatusLine(line)
+            raise RemoteDisconnected("Remote end closed connection without"
+                                     " response")
         try:
             version, status, reason = line.split(None, 2)
         except ValueError:
@@ -1160,7 +1164,11 @@ class HTTPConnection:
             response = self.response_class(self.sock, method=self._method)
 
         try:
-            response.begin()
+            try:
+                response.begin()
+            except ConnectionError:
+                self.close()
+                raise
             assert response.will_close != _UNKNOWN
             self.__state = _CS_IDLE
 
@@ -1291,6 +1299,11 @@ class LineTooLong(HTTPException):
     def __init__(self, line_type):
         HTTPException.__init__(self, "got more than %d bytes when reading %s"
                                      % (_MAXLINE, line_type))
+
+class RemoteDisconnected(ConnectionResetError, BadStatusLine):
+    def __init__(self, *pos, **kw):
+        BadStatusLine.__init__(self, "")
+        ConnectionResetError.__init__(self, *pos, **kw)
 
 # for backwards compatibility
 error = HTTPException
