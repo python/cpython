@@ -175,6 +175,17 @@ The following exceptions are raised as appropriate:
    is received in the HTTP protocol from the server.
 
 
+.. exception:: RemoteDisconnected
+
+   A subclass of :exc:`ConnectionResetError` and :exc:`BadStatusLine`.  Raised
+   by :meth:`HTTPConnection.getresponse` when the attempt to read the response
+   results in no data read from the connection, indicating that the remote end
+   has closed the connection.
+
+   .. versionadded:: 3.5
+      Previously, :exc:`BadStatusLine`\ ``('')`` was raised.
+
+
 The constants defined in this module are:
 
 .. data:: HTTP_PORT
@@ -247,6 +258,11 @@ HTTPConnection Objects
       Note that you must have read the whole response before you can send a new
       request to the server.
 
+   .. versionchanged:: 3.5
+      If a :exc:`ConnectionError` or subclass is raised, the
+      :class:`HTTPConnection` object will be ready to reconnect when
+      a new request is sent.
+
 
 .. method:: HTTPConnection.set_debuglevel(level)
 
@@ -285,7 +301,9 @@ HTTPConnection Objects
 
 .. method:: HTTPConnection.connect()
 
-   Connect to the server specified when the object was created.
+   Connect to the server specified when the object was created.  By default,
+   this is called automatically when making a request if the client does not
+   already have a connection.
 
 
 .. method:: HTTPConnection.close()

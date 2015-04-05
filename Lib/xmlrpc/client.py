@@ -1128,7 +1128,7 @@ class Transport:
                 if i or e.errno not in (errno.ECONNRESET, errno.ECONNABORTED,
                                         errno.EPIPE):
                     raise
-            except http.client.BadStatusLine: #close after we sent request
+            except http.client.RemoteDisconnected:
                 if i:
                     raise
 
