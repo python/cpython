@@ -19,6 +19,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23853: :meth:`socket.socket.sendall` does no more reset the socket
+  timeout each time data is sent successfuly. The socket timeout is now the
+  maximum total duration to send all data.
+
 - Issue #22721: An order of multiline pprint output of set or dict containing
   orderable and non-orderable elements no longer depends on iteration order of
   set or dict.
