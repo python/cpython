@@ -38,6 +38,17 @@
         <Error Text="No path for PLINK provided" Condition="'$(PLINK)' == ''" />
     </Target>
     
+    <Target Name="_RunGpg" Condition="'$(GPG)' != ''" Inputs="@(File)" Outputs="$(IntermediateOutputPath)\gpg\%(FileName)%(Extension).asc">
+        <MakeDir Directories="$(IntermediateOutputPath)gpg" />
+        <Delete Files="$(IntermediateOutputPath)\gpg\%(File.FileName)%(File.Extension).asc" Condition="Exists('$(IntermediateOutputPath)\gpg\%(File.FileName)%(File.Extension).asc')" />
+        <Exec Command="&quot;$(GPG)&quot; -ba -o &quot;$(IntermediateOutputPath)\gpg\%(File.FileName)%(File.Extension).asc&quot; &quot;%(File.FullPath)&quot;" />
+        <ItemGroup>
+            <File Include="$(IntermediateOutputPath)\gpg\%(File.FileName)%(File.Extension).asc">
+                <CopyTo>%(File.CopyTo)</CopyTo>
+            </File>
+        </ItemGroup>
+    </Target>
+    
     <Target Name="_Upload" Condition="!$(DryRun)">
         <Exec Command="&quot;$(PLINK)&quot; $(User)@$(Host) mkdir %(File.CopyTo) ^&amp;^&amp; chgrp downloads %(File.CopyTo) ^&amp;^&amp; chmod g-w,o+rx %(File.CopyTo)
 &quot;$(PSCP)&quot; @(File,' ') $(User)@$(Host):%(File.CopyTo)
@@ -53,7 +64,15 @@ echo.
 echo." />
     </Target>
     
-    <Target Name="Upload" DependsOnTargets="_ValidateProperties;_PrintNames;_Upload" />
+    <Target Name="Upload" DependsOnTargets="_ValidateProperties;_RunGpg;_PrintNames;_Upload" />
+    
+    <Target Name="ShowHashes">
+        <ItemGroup>
+            <UserFiles Include="@(File)" Condition="'%(File.CopyTo)' == '$(EXETarget)'" />
+        </ItemGroup>
+        
+        <Exec Command="&quot;$(PythonExe)&quot; generate_md5.py @(UserFiles->'&quot;%(FullPath)&quot;',' ')" />
+    </Target>
     
     <Target Name="Build">
         <Error Text="This script should be invoked using uploadrelease.bat." />
