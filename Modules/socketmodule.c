@@ -706,9 +706,10 @@ sock_call_ex(PySocketSockObject *s,
              int (*sock_func) (PySocketSockObject *s, void *data),
              void *data,
              int connect,
-             int *err)
+             int *err,
+             _PyTime_t timeout)
 {
-    int has_timeout = (s->sock_timeout > 0);
+    int has_timeout = (timeout > 0);
     _PyTime_t deadline = 0;
     int deadline_initialized = 0;
     int res;
@@ -731,8 +732,8 @@ sock_call_ex(PySocketSockObject *s,
                 }
                 else {
                     deadline_initialized = 1;
-                    deadline = _PyTime_GetMonotonicClock() + s->sock_timeout;
-                    interval = s->sock_timeout;
+                    deadline = _PyTime_GetMonotonicClock() + timeout;
+                    interval = timeout;
                 }
 
                 if (interval >= 0)
@@ -832,7 +833,7 @@ sock_call(PySocketSockObject *s,
           int (*func) (PySocketSockObject *s, void *data),
           void *data)
 {
-    return sock_call_ex(s, writing, func, data, 0, NULL);
+    return sock_call_ex(s, writing, func, data, 0, NULL, s->sock_timeout);
 }
 
 
@@ -2636,12 +2637,14 @@ internal_connect(PySocketSockObject *s, struct sockaddr *addr, int addrlen,
 
     if (raise) {
         /* socket.connect() raises an exception on error */
-        if (sock_call_ex(s, 1, sock_connect_impl, NULL, 1, NULL) < 0)
+        if (sock_call_ex(s, 1, sock_connect_impl, NULL,
+                         1, NULL, s->sock_timeout) < 0)
             return -1;
     }
     else {
         /* socket.connect_ex() returns the error code on error */
-        if (sock_call_ex(s, 1, sock_connect_impl, NULL, 1, &err) < 0)
+        if (sock_call_ex(s, 1, sock_connect_impl, NULL,
+                         1, &err, s->sock_timeout) < 0)
             return err;
     }
     return 0;
@@ -3550,6 +3553,11 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     int flags = 0;
     Py_buffer pbuf;
     struct sock_send ctx;
+    int has_timeout = (s->sock_timeout > 0);
+    _PyTime_t interval = s->sock_timeout;
+    _PyTime_t deadline = 0;
+    int deadline_initialized = 0;
+    PyObject *res = NULL;
 
     if (!PyArg_ParseTuple(args, "y*|i:sendall", &pbuf, &flags))
         return NULL;
@@ -3562,13 +3570,27 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
     }
 
     do {
+        if (has_timeout) {
+            if (deadline_initialized) {
+                /* recompute the timeout */
+                interval = deadline - _PyTime_GetMonotonicClock();
+            }
+            else {
+                deadline_initialized = 1;
+                deadline = _PyTime_GetMonotonicClock() + s->sock_timeout;
+            }
+
+            if (interval <= 0) {
+                PyErr_SetString(socket_timeout, "timed out");
+                goto done;
+            }
+        }
+
         ctx.buf = buf;
         ctx.len = len;
         ctx.flags = flags;
-        if (sock_call(s, 1, sock_send_impl, &ctx) < 0) {
-            PyBuffer_Release(&pbuf);
-            return NULL;
-        }
+        if (sock_call_ex(s, 1, sock_send_impl, &ctx, 0, NULL, interval) < 0)
+            goto done;
         n = ctx.result;
         assert(n >= 0);
 
@@ -3578,14 +3600,17 @@ sock_sendall(PySocketSockObject *s, PyObject *args)
         /* We must run our signal handlers before looping again.
            send() can return a successful partial write when it is
            interrupted, so we can't restrict ourselves to EINTR. */
-        if (PyErr_CheckSignals()) {
-            PyBuffer_Release(&pbuf);
-            return NULL;
-        }
+        if (PyErr_CheckSignals())
+            goto done;
     } while (len > 0);
     PyBuffer_Release(&pbuf);
 
-    Py_RETURN_NONE;
+    Py_INCREF(Py_None);
+    res = Py_None;
+
+done:
+    PyBuffer_Release(&pbuf);
+    return res;
 }
 
 PyDoc_STRVAR(sendall_doc,

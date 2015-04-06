@@ -1156,6 +1156,10 @@ to sockets.
    much data, if any, was successfully sent.
 
    .. versionchanged:: 3.5
+      The socket timeout is no more reset each time data is sent successfuly.
+      The socket timeout is now the maximum total duration to send all data.
+
+   .. versionchanged:: 3.5
       If the system call is interrupted and the signal handler does not raise
       an exception, the method now retries the system call instead of raising
       an :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
