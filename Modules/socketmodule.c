@@ -742,7 +742,7 @@ sock_call_ex(PySocketSockObject *s,
                     res = 1;
             }
             else {
-                res = internal_select(s, writing, -1, connect);
+                res = internal_select(s, writing, timeout, connect);
             }
 
             if (res == -1) {
