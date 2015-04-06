@@ -86,14 +86,10 @@ class _safe_key:
 
     def __lt__(self, other):
         try:
-            rv = self.obj.__lt__(other.obj)
+            return self.obj < other.obj
         except TypeError:
-            rv = NotImplemented
-
-        if rv is NotImplemented:
-            rv = (str(type(self.obj)), id(self.obj)) < \
-                 (str(type(other.obj)), id(other.obj))
-        return rv
+            return ((str(type(self.obj)), id(self.obj)) < \
+                    (str(type(other.obj)), id(other.obj)))
 
 def _safe_tuple(t):
     "Helper function for comparing 2-tuples"
