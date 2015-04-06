@@ -50,6 +50,25 @@ class Unorderable:
     def __repr__(self):
         return str(id(self))
 
+# Class Orderable is orderable with any type
+class Orderable:
+    def __init__(self, hash):
+        self._hash = hash
+    def __lt__(self, other):
+        return False
+    def __gt__(self, other):
+        return self != other
+    def __le__(self, other):
+        return self == other
+    def __ge__(self, other):
+        return True
+    def __eq__(self, other):
+        return self is other
+    def __ne__(self, other):
+        return self is not other
+    def __hash__(self):
+        return self._hash
+
 class QueryTestCase(unittest.TestCase):
 
     def setUp(self):
@@ -619,6 +638,26 @@ frozenset2({0,
         keys = [(1,), (None,)]
         self.assertEqual(pprint.pformat(dict.fromkeys(keys, 0)),
                          '{%r: 0, %r: 0}' % tuple(sorted(keys, key=id)))
+
+    def test_sort_orderable_and_unorderable_values(self):
+        # Issue 22721:  sorted pprints is not stable
+        a = Unorderable()
+        b = Orderable(hash(a))  # should have the same hash value
+        # self-test
+        self.assertLess(a, b)
+        self.assertLess(str(type(b)), str(type(a)))
+        self.assertEqual(sorted([b, a]), [a, b])
+        self.assertEqual(sorted([a, b]), [a, b])
+        # set
+        self.assertEqual(pprint.pformat(set([b, a]), width=1),
+                         '{%r,\n %r}' % (a, b))
+        self.assertEqual(pprint.pformat(set([a, b]), width=1),
+                         '{%r,\n %r}' % (a, b))
+        # dict
+        self.assertEqual(pprint.pformat(dict.fromkeys([b, a]), width=1),
+                         '{%r: None,\n %r: None}' % (a, b))
+        self.assertEqual(pprint.pformat(dict.fromkeys([a, b]), width=1),
+                         '{%r: None,\n %r: None}' % (a, b))
 
     def test_str_wrap(self):
         # pprint tries to wrap strings intelligently
