@@ -2292,7 +2292,7 @@ sock_setblocking(PySocketSockObject *s, PyObject *arg)
     if (block == -1 && PyErr_Occurred())
         return NULL;
 
-    s->sock_timeout = block ? -1 : 0;
+    s->sock_timeout = _PyTime_FromSeconds(block ? -1 : 0);
     internal_setblocking(s, block);
 
     Py_INCREF(Py_None);
@@ -4162,7 +4162,7 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     new = type->tp_alloc(type, 0);
     if (new != NULL) {
         ((PySocketSockObject *)new)->sock_fd = -1;
-        ((PySocketSockObject *)new)->sock_timeout = -1;
+        ((PySocketSockObject *)new)->sock_timeout = _PyTime_FromSeconds(-1);
         ((PySocketSockObject *)new)->errorhandler = &set_error;
     }
     return new;
