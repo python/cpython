@@ -830,6 +830,11 @@ SSL Sockets
    .. versionchanged:: 3.5
       The :meth:`sendfile` method was added.
 
+   .. versionchanged:: 3.5
+      The :meth:`shutdown` does not reset the socket timeout each time bytes
+      are received or sent. The socket timeout is now to maximum total duration
+      of the shutdown.
+
 
 SSL sockets also have the following additional methods and attributes:
 
@@ -845,6 +850,11 @@ SSL sockets also have the following additional methods and attributes:
    As at any time a re-negotiation is possible, a call to :meth:`read` can also
    cause write operations.
 
+   .. versionchanged:: 3.5
+      The socket timeout is no more reset each time bytes are received or sent.
+      The socket timeout is now to maximum total duration to read up to *len*
+      bytes.
+
 .. method:: SSLSocket.write(buf)
 
    Write *buf* to the SSL socket and return the number of bytes written. The
@@ -855,6 +865,10 @@ SSL sockets also have the following additional methods and attributes:
 
    As at any time a re-negotiation is possible, a call to :meth:`write` can
    also cause read operations.
+
+   .. versionchanged:: 3.5
+      The socket timeout is no more reset each time bytes are received or sent.
+      The socket timeout is now to maximum total duration to write *buf*.
 
 .. note::
 
@@ -876,6 +890,10 @@ SSL sockets also have the following additional methods and attributes:
       The handshake method also performs :func:`match_hostname` when the
       :attr:`~SSLContext.check_hostname` attribute of the socket's
       :attr:`~SSLSocket.context` is true.
+
+   .. versionchanged:: 3.5
+      The socket timeout is no more reset each time bytes are received or sent.
+      The socket timeout is now to maximum total duration of the handshake.
 
 .. method:: SSLSocket.getpeercert(binary_form=False)
 
