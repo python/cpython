@@ -6,7 +6,6 @@ import unittest
 import pickle
 import weakref
 import errno
-import ctypes
 
 from test.support import (TESTFN, captured_output, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
