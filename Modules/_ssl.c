@@ -4047,7 +4047,7 @@ PySSL_enum_certificates(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *keyusage = NULL, *cert = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|s:enum_certificates",
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s:enum_certificates",
                                      kwlist, &store_name)) {
         return NULL;
     }
@@ -4135,7 +4135,7 @@ PySSL_enum_crls(PyObject *self, PyObject *args, PyObject *kwds)
     PyObject *crl = NULL, *enc = NULL, *tup = NULL;
     PyObject *result = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|s:enum_crls",
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "s:enum_crls",
                                      kwlist, &store_name)) {
         return NULL;
     }
