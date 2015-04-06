@@ -569,37 +569,6 @@ class URandomTests (unittest.TestCase):
         data2 = self.get_urandom_subprocess(16)
         self.assertNotEqual(data1, data2)
 
-    # os.urandom() doesn't use a file descriptor on Windows
-    @unittest.skipIf(sys.platform == "win32", "POSIX specific tests")
-    # FD_CLOEXEC is first supported on OS X 10.5
-    @test_support.requires_mac_ver(10, 5)
-    def test_urandom_fd_non_inheritable(self):
-        # Issue #23458: os.urandom() keeps a file descriptor open, but it
-        # must be non inheritable
-        fd_status = test_support.findfile("fd_status.py", subdir="subprocessdata")
-
-        # Need a two subprocesses because the Python test suite opens other
-        # inheritable file descriptors, whereas the test is specific to
-        # os.urandom() file descriptor
-        code = textwrap.dedent("""
-            import os
-            import subprocess
-            import sys
-
-            # Ensure that the /dev/urandom file descriptor is open
-            os.urandom(1)
-
-            exitcode = subprocess.call([sys.executable, %r],
-                                       close_fds=False)
-            sys.exit(exitcode)
-        """ % fd_status)
-
-        proc = subprocess.Popen([sys.executable, "-c", code],
-                                stdout=subprocess.PIPE, close_fds=True)
-        output, error = proc.communicate()
-        open_fds = set(map(int, output.rstrip().split(',')))
-        self.assertEqual(open_fds - set(range(3)), set())
-
 
 HAVE_GETENTROPY = (sysconfig.get_config_var('HAVE_GETENTROPY') == 1)
 
