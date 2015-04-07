@@ -2420,6 +2420,21 @@ class ProcessTestCaseNoPoll(ProcessTestCase):
         subprocess._PopenSelector = self.orig_selector
         ProcessTestCase.tearDown(self)
 
+    def test__all__(self):
+        """Ensure that __all__ is populated properly."""
+        intentionally_excluded = set(("list2cmdline", "mswindows", "MAXFD"))
+        exported = set(subprocess.__all__)
+        possible_exports = set()
+        import types
+        for name, value in subprocess.__dict__.items():
+            if name.startswith('_'):
+                continue
+            if isinstance(value, (types.ModuleType,)):
+                continue
+            possible_exports.add(name)
+        self.assertEqual(exported, possible_exports - intentionally_excluded)
+
+
 
 @unittest.skipUnless(mswindows, "Windows-specific tests")
 class CommandsWithSpaces (BaseTestCase):
