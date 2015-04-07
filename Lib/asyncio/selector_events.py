@@ -408,14 +408,12 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def _sock_connect(self, fut, sock, address):
         fd = sock.fileno()
         try:
-            while True:
-                try:
-                    sock.connect(address)
-                except InterruptedError:
-                    continue
-                else:
-                    break
-        except BlockingIOError:
+            sock.connect(address)
+        except (BlockingIOError, InterruptedError):
+            # Issue #23618: When the C function connect() fails with EINTR, the
+            # connection runs in background. We have to wait until the socket
+            # becomes writable to be notified when the connection succeed or
+            # fails.
             fut.add_done_callback(functools.partial(self._sock_connect_done,
                                                     fd))
             self.add_writer(fd, self._sock_connect_cb, fut, sock, address)
