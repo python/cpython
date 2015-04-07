@@ -356,7 +356,7 @@ Popen(["/bin/mycmd", "myarg"], env={"PATH": "/usr/bin"})
 """
 
 import sys
-mswindows = (sys.platform == "win32")
+_mswindows = (sys.platform == "win32")
 
 import io
 import os
@@ -399,7 +399,7 @@ class TimeoutExpired(SubprocessError):
                 (self.cmd, self.timeout))
 
 
-if mswindows:
+if _mswindows:
     import threading
     import msvcrt
     import _winapi
@@ -438,7 +438,7 @@ __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
-if mswindows:
+if _mswindows:
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
                          STD_INPUT_HANDLE, STD_OUTPUT_HANDLE,
                          STD_ERROR_HANDLE, SW_HIDE,
@@ -765,7 +765,7 @@ class Popen(object):
         if not isinstance(bufsize, int):
             raise TypeError("bufsize must be an integer")
 
-        if mswindows:
+        if _mswindows:
             if preexec_fn is not None:
                 raise ValueError("preexec_fn is not supported on Windows "
                                  "platforms")
@@ -825,7 +825,7 @@ class Popen(object):
         # quickly terminating child could make our fds unwrappable
         # (see #8458).
 
-        if mswindows:
+        if _mswindows:
             if p2cwrite != -1:
                 p2cwrite = msvcrt.open_osfhandle(p2cwrite.Detach(), 0)
             if c2pread != -1:
@@ -1002,7 +1002,7 @@ class Popen(object):
             raise TimeoutExpired(self.args, orig_timeout)
 
 
-    if mswindows:
+    if _mswindows:
         #
         # Windows methods
         #
