@@ -433,7 +433,10 @@ else:
 
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
-           "getoutput", "check_output", "CalledProcessError", "DEVNULL"]
+           "getoutput", "check_output", "CalledProcessError", "DEVNULL",
+           "SubprocessError", "TimeoutExpired"]
+           # NOTE: We intentionally exclude list2cmdline as it is
+           # considered an internal implementation detail.  issue10838.
 
 if mswindows:
     from _winapi import (CREATE_NEW_CONSOLE, CREATE_NEW_PROCESS_GROUP,
