@@ -2422,7 +2422,7 @@ class ProcessTestCaseNoPoll(ProcessTestCase):
 
     def test__all__(self):
         """Ensure that __all__ is populated properly."""
-        intentionally_excluded = set(("list2cmdline", "mswindows", "MAXFD"))
+        intentionally_excluded = set(("list2cmdline",))
         exported = set(subprocess.__all__)
         possible_exports = set()
         import types
