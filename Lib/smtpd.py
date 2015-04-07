@@ -476,9 +476,6 @@ class SMTPChannel(asynchat.async_chat):
         if not self.extended_smtp and params:
             self.push(syntaxerr)
             return
-        if not address:
-            self.push(syntaxerr)
-            return
         if self.mailfrom:
             self.push('503 Error: nested MAIL command')
             return
@@ -529,14 +526,8 @@ class SMTPChannel(asynchat.async_chat):
             else:
                 self.push(syntaxerr)
                 return
-        if not address:
-            self.push(syntaxerr)
-            return
         if params and len(params.keys()) > 0:
             self.push('555 RCPT TO parameters not recognized or not implemented')
-            return
-        if not address:
-            self.push('501 Syntax: RCPT TO: <address>')
             return
         self.rcpttos.append(address)
         print('recips:', self.rcpttos, file=DEBUGSTREAM)
