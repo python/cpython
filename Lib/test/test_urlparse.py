@@ -840,6 +840,22 @@ class UrlParseTestCase(unittest.TestCase):
         quoter = urllib.parse.Quoter(urllib.parse._ALWAYS_SAFE)
         self.assertIn('Quoter', repr(quoter))
 
+    def test_all(self):
+        expected = []
+        undocumented = {
+            'splitattr', 'splithost', 'splitnport', 'splitpasswd',
+            'splitport', 'splitquery', 'splittag', 'splittype', 'splituser',
+            'splitvalue',
+            'Quoter', 'ResultBase', 'clear_cache', 'to_bytes', 'unwrap',
+        }
+        for name in dir(urllib.parse):
+            if name.startswith('_') or name in undocumented:
+                continue
+            object = getattr(urllib.parse, name)
+            if getattr(object, '__module__', None) == 'urllib.parse':
+                expected.append(name)
+        self.assertCountEqual(urllib.parse.__all__, expected)
+
 
 class Utility_Tests(unittest.TestCase):
     """Testcase to test the various utility functions in the urllib."""
