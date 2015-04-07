@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23881: urllib.ftpwrapper constructor now closes the socket if the FTP
+  connection failed.
+
 - Issue #15133: _tkinter.tkapp.getboolean() now supports long and Tcl_Obj and
   always returns bool.  tkinter.BooleanVar now validates input values (accepted
   bool, int, long, str, unicode, and Tcl_Obj).  tkinter.BooleanVar.get() now
