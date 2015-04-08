@@ -35,7 +35,8 @@ class Queue(object):
 
     def __init__(self, maxsize=0, *, ctx):
         if maxsize <= 0:
-            maxsize = _multiprocessing.SemLock.SEM_VALUE_MAX
+            # Can raise ImportError (see issues #3770 and #23400)
+            from .synchronize import SEM_VALUE_MAX as maxsize
         self._maxsize = maxsize
         self._reader, self._writer = connection.Pipe(duplex=False)
         self._rlock = ctx.Lock()
