@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23400: Raise same exception on both Python 2 and 3 if sem_open is not
+  available.  Patch by Davin Potts.
+
 - Issue #10838: The subprocess now module includes SubprocessError and
   TimeoutError in its list of exported names for the users wild enough
   to use "from subprocess import *".
