@@ -263,13 +263,13 @@ purposes.
 
    .. note::
       If you find that when certain older clients or servers attempt to connect
-      with a :class:`SSLContext` created by this function that they get an
-      error stating "Protocol or cipher suite mismatch", it may be that they
-      only support SSL3.0 which this function excludes using the
-      :data:`OP_NO_SSLv3`. SSL3.0 has problematic security due to a number of
-      poor implementations and it's reliance on MD5 within the protocol. If you
-      wish to continue to use this function but still allow SSL 3.0 connections
-      you can re-enable them using::
+      with a :class:`SSLContext` created by this function that they get an error
+      stating "Protocol or cipher suite mismatch", it may be that they only
+      support SSL3.0 which this function excludes using the
+      :data:`OP_NO_SSLv3`. SSL3.0 is widely considered to be `completely broken
+      <https://en.wikipedia.org/wiki/POODLE>`_. If you still wish to continue to
+      use this function but still allow SSL 3.0 connections you can re-enable
+      them using::
 
          ctx = ssl.create_default_context(Purpose.CLIENT_AUTH)
          ctx.options &= ~ssl.OP_NO_SSLv3
