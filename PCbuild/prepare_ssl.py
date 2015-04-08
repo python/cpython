@@ -132,6 +132,9 @@ def fix_makefile(makefile):
                     if noalgo not in line:
                         line = line + noalgo
                 line = line + '\n'
+            if r'$(SRC_D)\util\copy-if-different.pl' in line:
+                line = line.replace(r'$(SRC_D)\util\copy-if-different.pl',
+                                    'copy /Y')
             fout.write(line)
 
 def run_configure(configure, do_script):
