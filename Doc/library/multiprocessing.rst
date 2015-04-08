@@ -160,14 +160,6 @@ that only one process prints to standard output at a time::
 Without using the lock output from the different processes is liable to get all
 mixed up.
 
-.. warning::
-
-   Some of this package's functionality requires a functioning shared semaphore
-   implementation on the host operating system. Without one, the
-   :mod:`multiprocessing.synchronize` module will be disabled, and attempts to
-   import it will result in an :exc:`ImportError`. See
-   :issue:`3770` for additional information.
-
 
 Sharing state between processes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -659,6 +651,15 @@ For an example of the usage of queues for interprocess communication see
       immediately without waiting to flush enqueued data to the
       underlying pipe, and you don't care about lost data.
 
+   .. note::
+
+      This class's functionality requires a functioning shared semaphore
+      implementation on the host operating system. Without one, the
+      functionality in this class will be disabled, and attempts to
+      instantiate a :class:`Queue` will result in an :exc:`ImportError`. See
+      :issue:`3770` for additional information.  The same holds true for any
+      of the specialized queue types listed below.
+
 
 .. class:: multiprocessing.queues.SimpleQueue()
 
@@ -964,6 +965,14 @@ object -- see :ref:`multiprocessing-managers`.
 
    This differs from the behaviour of :mod:`threading` where SIGINT will be
    ignored while the equivalent blocking calls are in progress.
+
+.. note::
+
+   Some of this package's functionality requires a functioning shared semaphore
+   implementation on the host operating system. Without one, the
+   :mod:`multiprocessing.synchronize` module will be disabled, and attempts to
+   import it will result in an :exc:`ImportError`. See
+   :issue:`3770` for additional information.
 
 
 Shared :mod:`ctypes` Objects
