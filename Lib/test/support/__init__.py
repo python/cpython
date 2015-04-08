@@ -13,6 +13,7 @@ import gc
 import importlib
 import importlib.util
 import logging.handlers
+import nntplib
 import os
 import platform
 import re
@@ -1340,6 +1341,10 @@ def transient_internet(resource_name, *, timeout=30.0, errnos=()):
         if timeout is not None:
             socket.setdefaulttimeout(timeout)
         yield
+    except nntplib.NNTPTemporaryError as err:
+        if verbose:
+            sys.stderr.write(denied.args[0] + "\n")
+        raise denied from err
     except OSError as err:
         # urllib can wrap original socket errors multiple times (!), we must
         # unwrap to get at the original error.
