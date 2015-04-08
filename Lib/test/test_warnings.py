@@ -456,17 +456,20 @@ class WarnTests(BaseTest):
         self.assertIn('category must be a Warning subclass, not ',
                       str(cm.exception))
 
-        with self.assertWarns(MyWarningClass) as cm:
-            self.module.warn('good warning category', MyWarningClass)
-        self.assertEqual('good warning category', str(cm.warning))
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            self.module.filterwarnings('default')
+            with self.assertWarns(MyWarningClass) as cm:
+                self.module.warn('good warning category', MyWarningClass)
+            self.assertEqual('good warning category', str(cm.warning))
 
-        with self.assertWarns(UserWarning) as cm:
-            self.module.warn('good warning category', None)
-        self.assertEqual('good warning category', str(cm.warning))
+            with self.assertWarns(UserWarning) as cm:
+                self.module.warn('good warning category', None)
+            self.assertEqual('good warning category', str(cm.warning))
 
-        with self.assertWarns(MyWarningClass) as cm:
-            self.module.warn('good warning category', MyWarningClass)
-        self.assertIsInstance(cm.warning, Warning)
+            with self.assertWarns(MyWarningClass) as cm:
+                self.module.warn('good warning category', MyWarningClass)
+            self.assertIsInstance(cm.warning, Warning)
 
 class CWarnTests(WarnTests, unittest.TestCase):
     module = c_warnings
