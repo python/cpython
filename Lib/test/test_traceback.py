@@ -6,8 +6,7 @@ import linecache
 import sys
 import unittest
 import re
-from test.support import run_unittest, Error, captured_output
-from test.support import TESTFN, unlink, cpython_only
+from test.support import TESTFN, Error, captured_output, unlink, cpython_only
 from test.script_helper import assert_python_ok
 import textwrap
 
@@ -593,7 +592,7 @@ class TestStack(unittest.TestCase):
                 traceback.walk_stack(None), capture_locals=True, limit=1)
         s = some_inner(3, 4)
         self.assertEqual(
-            ['  File "' + __file__ + '", line 593, '
+            ['  File "' + __file__ + '", line 592, '
              'in some_inner\n'
              '    traceback.walk_stack(None), capture_locals=True, limit=1)\n'
              '    a = 1\n'
@@ -601,7 +600,6 @@ class TestStack(unittest.TestCase):
              '    k = 3\n'
              '    v = 4\n'
             ], s.format())
-
 
 
 class TestTracebackException(unittest.TestCase):
@@ -732,8 +730,19 @@ class TestTracebackException(unittest.TestCase):
         self.assertEqual(exc.stack[0].locals, None)
 
 
-def test_main():
-    run_unittest(__name__)
+class MiscTest(unittest.TestCase):
+
+    def test_all(self):
+        expected = set()
+        blacklist = {'print_list'}
+        for name in dir(traceback):
+            if name.startswith('_') or name in blacklist:
+                continue
+            module_object = getattr(traceback, name)
+            if getattr(module_object, '__module__', None) == 'traceback':
+                expected.add(name)
+        self.assertCountEqual(traceback.__all__, expected)
+
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
