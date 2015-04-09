@@ -14,7 +14,7 @@ cd externals
 @rem if exist tk-8.6.1.0 rd /s/q tk-8.6.1.0
 @rem if exist tix-8.4.3.4 rd /s/q tix-8.4.3.4
 @rem if exist db-4.4.20 rd /s/q db-4.4.20
-@rem if exist openssl-1.0.2a rd /s/q openssl-1.0.2a
+if exist openssl-1.0.2a rd /s/q openssl-1.0.2a
 @rem if exist sqlite-3.7.12 rd /s/q sqlite-3.7.12
 
 @rem bzip
