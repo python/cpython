@@ -29,7 +29,7 @@ cd externals
 @rem if exist openssl-1.0.1i rd /s/q openssl-1.0.1i
 @rem if exist openssl-1.0.1j rd /s/q openssl-1.0.1j
 @rem if exist openssl-1.0.1l rd /s/q openssl-1.0.1l
-if exist openssl-1.0.2a rd /s/q openssl-1.0.2a
+@rem if exist openssl-1.0.2a rd /s/q openssl-1.0.2a
 @rem if exist sqlite-3.6.21 rd /s/q sqlite-3.6.21
 
 @rem bzip
