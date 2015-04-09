@@ -614,7 +614,7 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     _PyTime_t ms;
 #else
     fd_set fds, efds;
-    struct timeval tv;
+    struct timeval tv, *tvp;
 #endif
 
 #ifdef WITH_THREAD
@@ -650,7 +650,12 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     n = poll(&pollfd, 1, (int)ms);
     Py_END_ALLOW_THREADS;
 #else
-    _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
+    if (interval >= 0) {
+        _PyTime_AsTimeval_noraise(interval, &tv, _PyTime_ROUND_CEILING);
+        tvp = &tv;
+    }
+    else
+        tvp = NULL;
 
     FD_ZERO(&fds);
     FD_SET(s->sock_fd, &fds);
@@ -667,10 +672,10 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     Py_BEGIN_ALLOW_THREADS;
     if (writing)
         n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
-                   NULL, &fds, &efds, &tv);
+                   NULL, &fds, &efds, tvp);
     else
         n = select(Py_SAFE_DOWNCAST(s->sock_fd+1, SOCKET_T, int),
-                   &fds, NULL, &efds, &tv);
+                   &fds, NULL, &efds, tvp);
     Py_END_ALLOW_THREADS;
 #endif
 
