@@ -67,7 +67,12 @@ PyAPI_FUNC(int) _PyTime_ObjectToTimespec(
 
 
 /* Create a timestamp from a number of seconds. */
-PyAPI_FUNC(_PyTime_t) _PyTime_FromSeconds(int ns);
+PyAPI_FUNC(_PyTime_t) _PyTime_FromSeconds(int seconds);
+
+/* Macro to create a timestamp from a number of seconds, no integer overflow.
+   Only use the macro for small values, prefer _PyTime_FromSeconds(). */
+#define _PYTIME_FROMSECONDS(seconds) \
+            ((_PyTime_t)(seconds) * (1000 * 1000 * 1000))
 
 /* Create a timestamp from a number of nanoseconds. */
 PyAPI_FUNC(_PyTime_t) _PyTime_FromNanoseconds(PY_LONG_LONG ns);
