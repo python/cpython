@@ -839,7 +839,8 @@ sock_call(PySocketSockObject *s,
 
 /* Initialize a new socket object. */
 
-static _PyTime_t defaulttimeout = -1; /* Default timeout for new sockets */
+/* Default timeout for new sockets */
+static _PyTime_t defaulttimeout = _PYTIME_FROMSECONDS(-1);
 
 static void
 init_sockobject(PySocketSockObject *s,
