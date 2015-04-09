@@ -960,11 +960,6 @@ if test $enable_shared = "yes"; then
 	  LDLIBRARY='libpython$(LDVERSION).so'
 	  BLDLIBRARY='-L. -lpython$(LDVERSION)'
 	  RUNSHARED=LD_LIBRARY_PATH=`pwd`${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
-	  case $ac_sys_system in
-	      FreeBSD*)
-		SOVERSION=`echo $SOVERSION|cut -d "." -f 1`
-		;;
-	  esac
 	  INSTSONAME="$LDLIBRARY".$SOVERSION
 	  if test "$with_pydebug" != yes
           then
