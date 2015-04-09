@@ -258,10 +258,10 @@ bytesio_tell(bytesio *self)
 }
 
 PyDoc_STRVAR(read_doc,
-"read([size]) -> read at most size bytes, returned as a string.\n"
+"read([size]) -> read at most size bytes, returned as a bytes object.\n"
 "\n"
 "If the size argument is negative, read until EOF is reached.\n"
-"Return an empty string at EOF.");
+"Return an empty bytes object at EOF.");
 
 static PyObject *
 bytesio_read(bytesio *self, PyObject *args)
@@ -307,10 +307,10 @@ bytesio_read(bytesio *self, PyObject *args)
 
 
 PyDoc_STRVAR(read1_doc,
-"read1(size) -> read at most size bytes, returned as a string.\n"
+"read1(size) -> read at most size bytes, returned as a bytes object.\n"
 "\n"
 "If the size argument is negative or omitted, read until EOF is reached.\n"
-"Return an empty string at EOF.");
+"Return an empty bytes object at EOF.");
 
 static PyObject *
 bytesio_read1(bytesio *self, PyObject *n)
@@ -326,11 +326,11 @@ bytesio_read1(bytesio *self, PyObject *n)
 }
 
 PyDoc_STRVAR(readline_doc,
-"readline([size]) -> next line from the file, as a string.\n"
+"readline([size]) -> next line from the file, as a bytes object.\n"
 "\n"
 "Retain newline.  A non-negative size argument limits the maximum\n"
 "number of bytes to return (an incomplete line may be returned then).\n"
-"Return an empty string at EOF.\n");
+"Return an empty bytes object at EOF.\n");
 
 static PyObject *
 bytesio_readline(bytesio *self, PyObject *args)
@@ -615,11 +615,11 @@ bytesio_write(bytesio *self, PyObject *obj)
 }
 
 PyDoc_STRVAR(writelines_doc,
-"writelines(sequence_of_strings) -> None.  Write strings to the file.\n"
+"writelines(lines) -> None.  Write bytes objects to the file.\n"
 "\n"
-"Note that newlines are not added.  The sequence can be any iterable\n"
-"object producing strings. This is equivalent to calling write() for\n"
-"each string.");
+"Note that newlines are not added.  The argument can be any iterable\n"
+"object producing bytes objects. This is equivalent to calling write() for\n"
+"each bytes object.");
 
 static PyObject *
 bytesio_writelines(bytesio *self, PyObject *v)
