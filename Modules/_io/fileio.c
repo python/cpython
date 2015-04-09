@@ -667,7 +667,7 @@ fileio_readall(fileio *self)
             if (bufsize > PY_SSIZE_T_MAX || bufsize <= 0) {
                 PyErr_SetString(PyExc_OverflowError,
                                 "unbounded read returned more bytes "
-                                "than a Python string can hold");
+                                "than a Python bytes object can hold");
                 Py_DECREF(result);
                 return NULL;
             }
@@ -1111,13 +1111,13 @@ PyDoc_STRVAR(read_doc,
 "\n"
 "Only makes one system call, so less data may be returned than requested\n"
 "In non-blocking mode, returns None if no data is available.\n"
-"On end-of-file, returns ''.");
+"Return an empty bytes object at EOF.");
 
 PyDoc_STRVAR(readall_doc,
 "readall() -> bytes.  read all data from the file, returned as bytes.\n"
 "\n"
 "In non-blocking mode, returns as much as is immediately available,\n"
-"or None if no data is available.  On end-of-file, returns ''.");
+"or None if no data is available.  Return an empty bytes object at EOF.");
 
 PyDoc_STRVAR(write_doc,
 "write(b: bytes) -> int.  Write bytes b to file, return number written.\n"
