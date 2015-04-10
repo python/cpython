@@ -295,9 +295,11 @@ class Au_read:
         self._soundpos = pos
 
     def close(self):
-        if self._opened and self._file:
-            self._file.close()
-        self._file = None
+        file = self._file
+        if file:
+            self._file = None
+            if self._opened:
+                file.close()
 
 class Au_write:
 
@@ -438,9 +440,10 @@ class Au_write:
                     self._patchheader()
                 self._file.flush()
             finally:
-                if self._opened and self._file:
-                    self._file.close()
+                file = self._file
                 self._file = None
+                if self._opened:
+                    file.close()
 
     #
     # private methods
