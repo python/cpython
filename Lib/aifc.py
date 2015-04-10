@@ -356,7 +356,10 @@ class Aifc_read:
         self._soundpos = 0
 
     def close(self):
-        self._file.close()
+        file = self._file
+        if file is not None:
+            self._file = None
+            file.close()
 
     def tell(self):
         return self._soundpos

@@ -133,9 +133,13 @@ class Queue(object):
 
     def close(self):
         self._closed = True
-        self._reader.close()
-        if self._close:
-            self._close()
+        try:
+            self._reader.close()
+        finally:
+            close = self._close
+            if close:
+                self._close = None
+                close()
 
     def join_thread(self):
         debug('Queue.join_thread()')
