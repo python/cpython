@@ -292,6 +292,8 @@ Random generation
    can be used to check the status of the PRNG and :func:`RAND_add` can be used
    to seed the PRNG.
 
+   For almost all applications :func:`os.urandom` is preferable.
+
    Read the Wikipedia article, `Cryptographically secure pseudorandom number
    generator (CSPRNG)
    <http://en.wikipedia.org/wiki/Cryptographically_secure_pseudorandom_number_generator>`_,
@@ -310,6 +312,8 @@ Random generation
    sufficient length, but are not necessarily unpredictable. They can be used
    for non-cryptographic purposes and for certain purposes in cryptographic
    protocols, but usually not for key generation etc.
+
+   For almost all applications :func:`os.urandom` is preferable.
 
    .. versionadded:: 3.3
 
