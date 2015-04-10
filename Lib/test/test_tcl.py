@@ -440,7 +440,8 @@ class TclTest(unittest.TestCase):
             if self.wantobjects:
                 self.assertEqual(result, i)
                 self.assertIsInstance(result, (int, long))
-                self.assertIsInstance(result, type(int(result)))
+                if abs(result) < 2**31:
+                    self.assertIsInstance(result, int)
             else:
                 self.assertEqual(result, str(i))
                 self.assertIsInstance(result, str)
