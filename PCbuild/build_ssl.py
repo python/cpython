@@ -175,7 +175,8 @@ def main():
         if dir.startswith('nasm'):
             nasm_dir = os.path.join(ssl_dir, os.pardir, dir)
             nasm_dir = os.path.abspath(nasm_dir)
-            os.environ['PATH'] += os.pathsep.join(['', nasm_dir])
+            old_path = os.environ['PATH']
+            os.environ['PATH'] = os.pathsep.join([nasm_dir, old_path])
             break
     else:
         print('NASM was not found, make sure it is on PATH')
