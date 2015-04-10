@@ -880,12 +880,16 @@ class SMTP:
 
     def close(self):
         """Close the connection to the SMTP server."""
-        if self.file:
-            self.file.close()
-        self.file = None
-        if self.sock:
-            self.sock.close()
-        self.sock = None
+        try:
+            file = self.file
+            self.file = None
+            if file:
+                file.close()
+        finally:
+            sock = self.sock
+            self.sock = None
+            if sock:
+                sock.close()
 
     def quit(self):
         """Terminate the SMTP session."""

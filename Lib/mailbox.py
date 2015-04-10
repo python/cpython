@@ -722,10 +722,14 @@ class _singlefileMailbox(Mailbox):
 
     def close(self):
         """Flush and close the mailbox."""
-        self.flush()
-        if self._locked:
-            self.unlock()
-        self._file.close()  # Sync has been done by self.flush() above.
+        try:
+            self.flush()
+        finally:
+            try:
+                if self._locked:
+                    self.unlock()
+            finally:
+                self._file.close()  # Sync has been done by self.flush() above.
 
     def _lookup(self, key=None):
         """Return (start, stop) or raise KeyError."""
@@ -1966,9 +1970,11 @@ class _ProxyFile:
     def close(self):
         """Close the file."""
         if hasattr(self, '_file'):
-            if hasattr(self._file, 'close'):
-                self._file.close()
-            del self._file
+            try:
+                if hasattr(self._file, 'close'):
+                    self._file.close()
+            finally:
+                del self._file
 
     def _read(self, size, read_method):
         """Read size bytes using read_method."""

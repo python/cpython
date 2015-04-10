@@ -258,8 +258,10 @@ class _Database(collections.MutableMapping):
             raise error('DBM object has already been closed') from None
 
     def close(self):
-        self._commit()
-        self._index = self._datfile = self._dirfile = self._bakfile = None
+        try:
+            self._commit()
+        finally:
+            self._index = self._datfile = self._dirfile = self._bakfile = None
 
     __del__ = close
 

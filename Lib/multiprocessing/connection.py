@@ -460,9 +460,10 @@ class Listener(object):
         '''
         Close the bound socket or named pipe of `self`.
         '''
-        if self._listener is not None:
-            self._listener.close()
+        listener = self._listener
+        if listener is not None:
             self._listener = None
+            listener.close()
 
     address = property(lambda self: self._listener._address)
     last_accepted = property(lambda self: self._listener._last_accepted)
@@ -594,9 +595,13 @@ class SocketListener(object):
         return Connection(s.detach())
 
     def close(self):
-        self._socket.close()
-        if self._unlink is not None:
-            self._unlink()
+        try:
+            self._socket.close()
+        finally:
+            unlink = self._unlink
+            if unlink is not None:
+                self._unlink = None
+                unlink()
 
 
 def SocketClient(address):
