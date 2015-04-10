@@ -65,7 +65,7 @@
 
   <Target Name="BuildNasmFiles" BeforeTargets="PreBuildEvent" DependsOnTargets="PrepareForBuild;FindNasm" Inputs="@(NasmCompile)" Outputs="@(NasmCompile->'$(IntDir)%(Filename).obj')">
     <Exec Command='setlocal
-set PATH=%PATH%;$(nasmDir)
+set PATH=$(nasmDir);%PATH%
 $(nasm) -o "$(IntDir)%(NasmCompile.Filename).obj" "%(NasmCompile.FullPath)"' />
     <ItemGroup>
       <Link Include="$(IntDir)%(NasmCompile.Filename).obj" />
