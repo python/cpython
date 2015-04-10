@@ -3852,34 +3852,6 @@ class TestHelpNoHelpOptional(HelpTestCase):
     version = ''
 
 
-class TestHelpVersionOptional(HelpTestCase):
-    """Test that the --version argument can be suppressed help messages"""
-
-    parser_signature = Sig(prog='PROG')
-    argument_signatures = [
-        Sig('-v', '--version', action='version', version='1.0'),
-        Sig('--foo', help='foo help'),
-        Sig('spam', help='spam help'),
-    ]
-    argument_group_signatures = []
-    usage = '''\
-        usage: PROG [-h] [-v] [--foo FOO] spam
-        '''
-    help = usage + '''\
-
-        positional arguments:
-          spam           spam help
-
-        optional arguments:
-          -h, --help     show this help message and exit
-          -v, --version  show program's version number and exit
-          --foo FOO      foo help
-        '''
-    version = '''\
-        1.0
-        '''
-
-
 class TestHelpNone(HelpTestCase):
     """Test that no errors occur if no help is specified"""
 
@@ -4086,6 +4058,32 @@ class TestHelpVersionAction(HelpTestCase):
           -V, --version  show program's version number and exit
         '''
     version = ''
+
+
+class TestHelpVersionActionSuppress(HelpTestCase):
+    """Test that the --version argument can be suppressed in help messages"""
+
+    parser_signature = Sig(prog='PROG')
+    argument_signatures = [
+        Sig('-v', '--version', action='version', version='1.0',
+            help=argparse.SUPPRESS),
+        Sig('--foo', help='foo help'),
+        Sig('spam', help='spam help'),
+    ]
+    argument_group_signatures = []
+    usage = '''\
+        usage: PROG [-h] [--foo FOO] spam
+        '''
+    help = usage + '''\
+
+        positional arguments:
+          spam        spam help
+
+        optional arguments:
+          -h, --help  show this help message and exit
+          --foo FOO   foo help
+        '''
+
 
 class TestHelpSubparsersOrdering(HelpTestCase):
     """Test ordering of subcommands in help matches the code"""
