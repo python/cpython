@@ -449,26 +449,26 @@ class _Stream:
         if self.closed:
             return
 
-        if self.mode == "w" and self.comptype != "tar":
-            self.buf += self.cmp.flush()
-
-        if self.mode == "w" and self.buf:
-            self.fileobj.write(self.buf)
-            self.buf = b""
-            if self.comptype == "gz":
-                # The native zlib crc is an unsigned 32-bit integer, but
-                # the Python wrapper implicitly casts that to a signed C
-                # long.  So, on a 32-bit box self.crc may "look negative",
-                # while the same crc on a 64-bit box may "look positive".
-                # To avoid irksome warnings from the `struct` module, force
-                # it to look positive on all boxes.
-                self.fileobj.write(struct.pack("<L", self.crc & 0xffffffff))
-                self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFF))
-
-        if not self._extfileobj:
-            self.fileobj.close()
-
         self.closed = True
+        try:
+            if self.mode == "w" and self.comptype != "tar":
+                self.buf += self.cmp.flush()
+
+            if self.mode == "w" and self.buf:
+                self.fileobj.write(self.buf)
+                self.buf = b""
+                if self.comptype == "gz":
+                    # The native zlib crc is an unsigned 32-bit integer, but
+                    # the Python wrapper implicitly casts that to a signed C
+                    # long.  So, on a 32-bit box self.crc may "look negative",
+                    # while the same crc on a 64-bit box may "look positive".
+                    # To avoid irksome warnings from the `struct` module, force
+                    # it to look positive on all boxes.
+                    self.fileobj.write(struct.pack("<L", self.crc & 0xffffffff))
+                    self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFF))
+        finally:
+            if not self._extfileobj:
+                self.fileobj.close()
 
     def _init_read_gz(self):
         """Initialize for reading a gzip compressed fileobj.
@@ -1714,18 +1714,19 @@ class TarFile(object):
         if self.closed:
             return
 
-        if self.mode in "aw":
-            self.fileobj.write(NUL * (BLOCKSIZE * 2))
-            self.offset += (BLOCKSIZE * 2)
-            # fill up the end with zero-blocks
-            # (like option -b20 for tar does)
-            blocks, remainder = divmod(self.offset, RECORDSIZE)
-            if remainder > 0:
-                self.fileobj.write(NUL * (RECORDSIZE - remainder))
-
-        if not self._extfileobj:
-            self.fileobj.close()
         self.closed = True
+        try:
+            if self.mode in "aw":
+                self.fileobj.write(NUL * (BLOCKSIZE * 2))
+                self.offset += (BLOCKSIZE * 2)
+                # fill up the end with zero-blocks
+                # (like option -b20 for tar does)
+                blocks, remainder = divmod(self.offset, RECORDSIZE)
+                if remainder > 0:
+                    self.fileobj.write(NUL * (RECORDSIZE - remainder))
+        finally:
+            if not self._extfileobj:
+                self.fileobj.close()
 
     def getmember(self, name):
         """Return a TarInfo object for member `name'. If `name' can not be

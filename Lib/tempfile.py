@@ -357,9 +357,11 @@ class _TemporaryFileCloser:
         def close(self, unlink=_os.unlink):
             if not self.close_called and self.file is not None:
                 self.close_called = True
-                self.file.close()
-                if self.delete:
-                    unlink(self.name)
+                try:
+                    self.file.close()
+                finally:
+                    if self.delete:
+                        unlink(self.name)
 
         # Need to ensure the file is deleted on __del__
         def __del__(self):

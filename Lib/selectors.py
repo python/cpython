@@ -439,8 +439,10 @@ if hasattr(select, 'epoll'):
             return ready
 
         def close(self):
-            self._epoll.close()
-            super().close()
+            try:
+                self._epoll.close()
+            finally:
+                super().close()
 
 
 if hasattr(select, 'devpoll'):
@@ -496,8 +498,10 @@ if hasattr(select, 'devpoll'):
             return ready
 
         def close(self):
-            self._devpoll.close()
-            super().close()
+            try:
+                self._devpoll.close()
+            finally:
+                super().close()
 
 
 if hasattr(select, 'kqueue'):
@@ -566,8 +570,10 @@ if hasattr(select, 'kqueue'):
             return ready
 
         def close(self):
-            self._kqueue.close()
-            super().close()
+            try:
+                self._kqueue.close()
+            finally:
+                super().close()
 
 
 # Choose the best implementation, roughly:
