@@ -211,17 +211,19 @@ class ExpatParser(xmlreader.IncrementalParser, xmlreader.Locator):
             self._err_handler.fatalError(exc)
 
     def close(self):
-        if self._entity_stack:
+        if self._entity_stack or self._parser is None:
             # If we are completing an external entity, do nothing here
             return
-        self.feed("", isFinal = 1)
-        self._cont_handler.endDocument()
-        self._parsing = 0
-        # break cycle created by expat handlers pointing to our methods
-        self._parser = None
-        bs = self._source.getByteStream()
-        if bs is not None:
-            bs.close()
+        try:
+            self.feed("", isFinal = 1)
+            self._cont_handler.endDocument()
+        finally:
+            self._parsing = 0
+            # break cycle created by expat handlers pointing to our methods
+            self._parser = None
+            bs = self._source.getByteStream()
+            if bs is not None:
+                bs.close()
 
     def _reset_cont_handler(self):
         self._parser.ProcessingInstructionHandler = \

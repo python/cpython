@@ -186,10 +186,11 @@ class Wave_read:
         self._soundpos = 0
 
     def close(self):
-        if self._i_opened_the_file:
-            self._i_opened_the_file.close()
-            self._i_opened_the_file = None
         self._file = None
+        file = self._i_opened_the_file
+        if file:
+            self._i_opened_the_file = None
+            file.close()
 
     def tell(self):
         return self._soundpos
@@ -428,17 +429,18 @@ class Wave_write:
             self._patchheader()
 
     def close(self):
-        if self._file:
-            try:
+        try:
+            if self._file:
                 self._ensure_header_written(0)
                 if self._datalength != self._datawritten:
                     self._patchheader()
                 self._file.flush()
-            finally:
-                self._file = None
-        if self._i_opened_the_file:
-            self._i_opened_the_file.close()
-            self._i_opened_the_file = None
+        finally:
+            self._file = None
+            file = self._i_opened_the_file
+            if file:
+                self._i_opened_the_file = None
+                file.close()
 
     #
     # Internal methods.

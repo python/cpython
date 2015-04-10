@@ -1011,14 +1011,19 @@ class FileHandler(StreamHandler):
         """
         self.acquire()
         try:
-            if self.stream:
-                self.flush()
-                if hasattr(self.stream, "close"):
-                    self.stream.close()
-                self.stream = None
-            # Issue #19523: call unconditionally to
-            # prevent a handler leak when delay is set
-            StreamHandler.close(self)
+            try:
+                if self.stream:
+                    try:
+                        self.flush()
+                    finally:
+                        stream = self.stream
+                        self.stream = None
+                        if hasattr(stream, "close"):
+                            stream.close()
+            finally:
+                # Issue #19523: call unconditionally to
+                # prevent a handler leak when delay is set
+                StreamHandler.close(self)
         finally:
             self.release()
 
