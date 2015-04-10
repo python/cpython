@@ -357,10 +357,13 @@ class Aifc_read:
         self._soundpos = 0
 
     def close(self):
-        if self._decomp:
-            self._decomp.CloseDecompressor()
-            self._decomp = None
-        self._file.close()
+        decomp = self._decomp
+        try:
+            if decomp:
+                self._decomp = None
+                decomp.CloseDecompressor()
+        finally:
+            self._file.close()
 
     def tell(self):
         return self._soundpos

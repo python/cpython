@@ -560,9 +560,10 @@ class HTTPResponse:
         return True
 
     def close(self):
-        if self.fp:
-            self.fp.close()
+        fp = self.fp
+        if fp:
             self.fp = None
+            fp.close()
 
     def isclosed(self):
         # NOTE: it is possible that we will not ever call self.close(). This
@@ -835,13 +836,17 @@ class HTTPConnection:
 
     def close(self):
         """Close the connection to the HTTP server."""
-        if self.sock:
-            self.sock.close()   # close it manually... there may be other refs
-            self.sock = None
-        if self.__response:
-            self.__response.close()
-            self.__response = None
         self.__state = _CS_IDLE
+        try:
+            sock = self.sock
+            if sock:
+                self.sock = None
+                sock.close()   # close it manually... there may be other refs
+        finally:
+            response = self.__response
+            if response:
+                self.__response = None
+                response.close()
 
     def send(self, data):
         """Send `data' to the server."""

@@ -32,7 +32,8 @@ class Error(Exception):
     pass
 
 # States (what have we written)
-[_DID_HEADER, _DID_DATA, _DID_RSRC] = range(3)
+_DID_HEADER = 0
+_DID_DATA = 1
 
 # Various constants
 REASONABLY_LARGE=32768  # Minimal amount we pass the rle-coder
@@ -235,17 +236,22 @@ class BinHex:
         self._write(data)
 
     def close(self):
-        if self.state < _DID_DATA:
-            self.close_data()
-        if self.state != _DID_DATA:
-            raise Error, 'Close at the wrong time'
-        if self.rlen != 0:
-            raise Error, \
-                  "Incorrect resource-datasize, diff=%r" % (self.rlen,)
-        self._writecrc()
-        self.ofp.close()
-        self.state = None
-        del self.ofp
+        if self.state is None:
+            return
+        try:
+            if self.state < _DID_DATA:
+                self.close_data()
+            if self.state != _DID_DATA:
+                raise Error, 'Close at the wrong time'
+            if self.rlen != 0:
+                raise Error, \
+                    "Incorrect resource-datasize, diff=%r" % (self.rlen,)
+            self._writecrc()
+        finally:
+            self.state = None
+            ofp = self.ofp
+            del self.ofp
+            ofp.close()
 
 def binhex(inp, out):
     """(infilename, outfilename) - Create binhex-encoded copy of a file"""
@@ -463,11 +469,15 @@ class HexBin:
         return self._read(n)
 
     def close(self):
-        if self.rlen:
-            dummy = self.read_rsrc(self.rlen)
-        self._checkcrc()
-        self.state = _DID_RSRC
-        self.ifp.close()
+        if self.state is None:
+            return
+        try:
+            if self.rlen:
+                dummy = self.read_rsrc(self.rlen)
+            self._checkcrc()
+        finally:
+            self.state = None
+            self.ifp.close()
 
 def hexbin(inp, out):
     """(infilename, outfilename) - Decode binhexed file"""

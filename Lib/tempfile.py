@@ -413,9 +413,11 @@ class _TemporaryFileWrapper:
         def close(self):
             if not self.close_called:
                 self.close_called = True
-                self.file.close()
-                if self.delete:
-                    self.unlink(self.name)
+                try:
+                    self.file.close()
+                finally:
+                    if self.delete:
+                        self.unlink(self.name)
 
         def __del__(self):
             self.close()
