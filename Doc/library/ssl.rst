@@ -315,6 +315,8 @@ Random generation
 
    For almost all applications :func:`os.urandom` is preferable.
 
+   For almost all applications :func:`os.urandom` is preferable.
+
    .. versionadded:: 3.3
 
 .. function:: RAND_status()
