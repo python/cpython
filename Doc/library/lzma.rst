@@ -110,6 +110,10 @@ Reading and writing compressed files
    .. versionchanged:: 3.4
       Added support for the ``"x"`` and ``"xb"`` modes.
 
+   .. versionchanged:: 3.5
+      The :meth:`~io.BufferedIOBase.read` method now accepts an argument of
+      ``None``.
+
 
 Compressing and decompressing data in memory
 --------------------------------------------

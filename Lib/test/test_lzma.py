@@ -1,4 +1,5 @@
-from io import BytesIO, UnsupportedOperation
+import _compression
+from io import BytesIO, UnsupportedOperation, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import random
@@ -772,13 +773,13 @@ class FileTestCase(unittest.TestCase):
     def test_read_multistream_buffer_size_aligned(self):
         # Test the case where a stream boundary coincides with the end
         # of the raw read buffer.
-        saved_buffer_size = lzma._BUFFER_SIZE
-        lzma._BUFFER_SIZE = len(COMPRESSED_XZ)
+        saved_buffer_size = _compression.BUFFER_SIZE
+        _compression.BUFFER_SIZE = len(COMPRESSED_XZ)
         try:
             with LZMAFile(BytesIO(COMPRESSED_XZ *  5)) as f:
                 self.assertEqual(f.read(), INPUT * 5)
         finally:
-            lzma._BUFFER_SIZE = saved_buffer_size
+            _compression.BUFFER_SIZE = saved_buffer_size
 
     def test_read_trailing_junk(self):
         with LZMAFile(BytesIO(COMPRESSED_XZ + COMPRESSED_BOGUS)) as f:
@@ -829,7 +830,7 @@ class FileTestCase(unittest.TestCase):
         with LZMAFile(BytesIO(), "w") as f:
             self.assertRaises(ValueError, f.read)
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
-            self.assertRaises(TypeError, f.read, None)
+            self.assertRaises(TypeError, f.read, float())
 
     def test_read_bad_data(self):
         with LZMAFile(BytesIO(COMPRESSED_BOGUS)) as f:
@@ -924,6 +925,17 @@ class FileTestCase(unittest.TestCase):
             lines = f.readlines()
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             self.assertListEqual(f.readlines(), lines)
+
+    def test_decompress_limited(self):
+        """Decompressed data buffering should be limited"""
+        bomb = lzma.compress(bytes(int(2e6)), preset=6)
+        self.assertLess(len(bomb), _compression.BUFFER_SIZE)
+
+        decomp = LZMAFile(BytesIO(bomb))
+        self.assertEqual(bytes(1), decomp.read(1))
+        max_decomp = 1 + DEFAULT_BUFFER_SIZE
+        self.assertLessEqual(decomp._buffer.raw.tell(), max_decomp,
+            "Excessive amount of data was decompressed")
 
     def test_write(self):
         with BytesIO() as dst:
@@ -1090,7 +1102,8 @@ class FileTestCase(unittest.TestCase):
             self.assertRaises(ValueError, f.seek, 0)
         with LZMAFile(BytesIO(COMPRESSED_XZ)) as f:
             self.assertRaises(ValueError, f.seek, 0, 3)
-            self.assertRaises(ValueError, f.seek, 9, ())
+            # io.BufferedReader raises TypeError instead of ValueError
+            self.assertRaises((TypeError, ValueError), f.seek, 9, ())
             self.assertRaises(TypeError, f.seek, None)
             self.assertRaises(TypeError, f.seek, b"derp")
 

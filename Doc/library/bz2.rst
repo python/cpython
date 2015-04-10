@@ -120,6 +120,10 @@ All of the classes in this module may safely be accessed from multiple threads.
    .. versionchanged:: 3.4
       The ``'x'`` (exclusive creation) mode was added.
 
+   .. versionchanged:: 3.5
+      The :meth:`~io.BufferedIOBase.read` method now accepts an argument of
+      ``None``.
+
 
 Incremental (de)compression
 ---------------------------
