@@ -909,7 +909,7 @@ class GzipUtilTestCase(unittest.TestCase):
         encoded = xmlrpclib.gzip_encode(data)
 
         with self.assertRaisesRegex(ValueError,
-                                     "max gzipped payload length exceeded"):
+                                    "max gzipped payload length exceeded"):
             xmlrpclib.gzip_decode(encoded)
 
         xmlrpclib.gzip_decode(encoded, max_decode=-1)
