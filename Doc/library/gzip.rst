@@ -90,13 +90,9 @@ The module defines the following items:
    is no compression. The default is ``9``.
 
    The *mtime* argument is an optional numeric timestamp to be written to
-   the stream when compressing.  All :program:`gzip` compressed streams are
-   required to contain a timestamp.  If omitted or ``None``, the current
-   time is used.  This module ignores the timestamp when decompressing;
-   however, some programs, such as :program:`gunzip`\ , make use of it.
-   The format of the timestamp is the same as that of the return value of
-   ``time.time()`` and of the ``st_mtime`` attribute of the object returned
-   by ``os.stat()``.
+   the last modification time field in the stream when compressing.  It
+   should only be provided in compression mode.  If omitted or ``None``, the
+   current time is used.  See the :attr:`mtime` attribute for more details.
 
    Calling a :class:`GzipFile` object's :meth:`close` method does not close
    *fileobj*, since you might wish to append more material after the compressed
@@ -108,9 +104,9 @@ The module defines the following items:
    including iteration and the :keyword:`with` statement.  Only the
    :meth:`truncate` method isn't implemented.
 
-   :class:`GzipFile` also provides the following method:
+   :class:`GzipFile` also provides the following method and attribute:
 
-   .. method:: peek([n])
+   .. method:: peek(n)
 
       Read *n* uncompressed bytes without advancing the file position.
       At most one single read on the compressed stream is done to satisfy
@@ -124,9 +120,21 @@ The module defines the following items:
 
       .. versionadded:: 3.2
 
+   .. attribute:: mtime
+
+      When decompressing, the value of the last modification time field in
+      the most recently read header may be read from this attribute, as an
+      integer.  The initial value before reading any headers is ``None``.
+
+      All :program:`gzip` compressed streams are required to contain this
+      timestamp field.  Some programs, such as :program:`gunzip`\ , make use
+      of the timestamp.  The format is the same as the return value of
+      :func:`time.time` and the :attr:`~os.stat_result.st_mtime` attribute of
+      the object returned by :func:`os.stat`.
+
    .. versionchanged:: 3.1
       Support for the :keyword:`with` statement was added, along with the
-      *mtime* argument.
+      *mtime* constructor argument and :attr:`mtime` attribute.
 
    .. versionchanged:: 3.2
       Support for zero-padded and unseekable files was added.
@@ -140,6 +148,8 @@ The module defines the following items:
    .. versionchanged:: 3.5
       Added support for writing arbitrary
       :term:`bytes-like objects <bytes-like object>`.
+      The :meth:`~io.BufferedIOBase.read` method now accepts an argument of
+      ``None``.
 
 
 .. function:: compress(data, compresslevel=9)
