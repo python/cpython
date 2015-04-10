@@ -118,10 +118,11 @@ class TextFile:
     def close(self):
         """Close the current file and forget everything we know about it
            (filename, current line number)."""
-        self.file.close()
+        file = self.file
         self.file = None
         self.filename = None
         self.current_line = None
+        file.close()
 
     def gen_error(self, msg, line=None):
         outmsg = []

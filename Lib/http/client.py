@@ -492,9 +492,11 @@ class HTTPResponse(io.RawIOBase):
         fp.close()
 
     def close(self):
-        super().close() # set "closed" flag
-        if self.fp:
-            self._close_conn()
+        try:
+            super().close() # set "closed" flag
+        finally:
+            if self.fp:
+                self._close_conn()
 
     # These implementations are for the benefit of io.BufferedReader.
 
@@ -873,13 +875,17 @@ class HTTPConnection:
 
     def close(self):
         """Close the connection to the HTTP server."""
-        if self.sock:
-            self.sock.close()   # close it manually... there may be other refs
-            self.sock = None
-        if self.__response:
-            self.__response.close()
-            self.__response = None
         self.__state = _CS_IDLE
+        try:
+            sock = self.sock
+            if sock:
+                self.sock = None
+                sock.close()   # close it manually... there may be other refs
+        finally:
+            response = self.__response
+            if response:
+                self.__response = None
+                response.close()
 
     def send(self, data):
         """Send `data' to the server.
