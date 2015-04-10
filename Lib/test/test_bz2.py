@@ -2,7 +2,7 @@ from test import support
 from test.support import bigmemtest, _4G
 
 import unittest
-from io import BytesIO
+from io import BytesIO, DEFAULT_BUFFER_SIZE
 import os
 import pickle
 import glob
@@ -10,6 +10,7 @@ import random
 import subprocess
 import sys
 from test.support import unlink
+import _compression
 
 try:
     import threading
@@ -110,7 +111,7 @@ class BZ2FileTest(BaseTest):
     def testRead(self):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
-            self.assertRaises(TypeError, bz2f.read, None)
+            self.assertRaises(TypeError, bz2f.read, float())
             self.assertEqual(bz2f.read(), self.TEXT)
 
     def testReadBadFile(self):
@@ -121,21 +122,21 @@ class BZ2FileTest(BaseTest):
     def testReadMultiStream(self):
         self.createTempFile(streams=5)
         with BZ2File(self.filename) as bz2f:
-            self.assertRaises(TypeError, bz2f.read, None)
+            self.assertRaises(TypeError, bz2f.read, float())
             self.assertEqual(bz2f.read(), self.TEXT * 5)
 
     def testReadMonkeyMultiStream(self):
         # Test BZ2File.read() on a multi-stream archive where a stream
         # boundary coincides with the end of the raw read buffer.
-        buffer_size = bz2._BUFFER_SIZE
-        bz2._BUFFER_SIZE = len(self.DATA)
+        buffer_size = _compression.BUFFER_SIZE
+        _compression.BUFFER_SIZE = len(self.DATA)
         try:
             self.createTempFile(streams=5)
             with BZ2File(self.filename) as bz2f:
-                self.assertRaises(TypeError, bz2f.read, None)
+                self.assertRaises(TypeError, bz2f.read, float())
                 self.assertEqual(bz2f.read(), self.TEXT * 5)
         finally:
-            bz2._BUFFER_SIZE = buffer_size
+            _compression.BUFFER_SIZE = buffer_size
 
     def testReadTrailingJunk(self):
         self.createTempFile(suffix=self.BAD_DATA)
@@ -150,7 +151,7 @@ class BZ2FileTest(BaseTest):
     def testRead0(self):
         self.createTempFile()
         with BZ2File(self.filename) as bz2f:
-            self.assertRaises(TypeError, bz2f.read, None)
+            self.assertRaises(TypeError, bz2f.read, float())
             self.assertEqual(bz2f.read(0), b"")
 
     def testReadChunk10(self):
@@ -559,13 +560,24 @@ class BZ2FileTest(BaseTest):
         with BZ2File(str_filename, "rb") as f:
             self.assertEqual(f.read(), self.DATA)
 
+    def testDecompressLimited(self):
+        """Decompressed data buffering should be limited"""
+        bomb = bz2.compress(bytes(int(2e6)), compresslevel=9)
+        self.assertLess(len(bomb), _compression.BUFFER_SIZE)
+
+        decomp = BZ2File(BytesIO(bomb))
+        self.assertEqual(bytes(1), decomp.read(1))
+        max_decomp = 1 + DEFAULT_BUFFER_SIZE
+        self.assertLessEqual(decomp._buffer.raw.tell(), max_decomp,
+            "Excessive amount of data was decompressed")
+
 
     # Tests for a BZ2File wrapping another file object:
 
     def testReadBytesIO(self):
         with BytesIO(self.DATA) as bio:
             with BZ2File(bio) as bz2f:
-                self.assertRaises(TypeError, bz2f.read, None)
+                self.assertRaises(TypeError, bz2f.read, float())
                 self.assertEqual(bz2f.read(), self.TEXT)
             self.assertFalse(bio.closed)
 
