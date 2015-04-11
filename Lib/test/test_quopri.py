@@ -138,6 +138,13 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
             self.assertEqual(quopri.decodestring(e), p)
 
     @withpythonimplementation
+    def test_decodestring_double_equals(self):
+        # Issue 21511 - Ensure that byte string is compared to byte string
+        # instead of int byte value
+        decoded_value, encoded_value = (b"123=four", b"123==four")
+        self.assertEqual(quopri.decodestring(encoded_value), decoded_value)
+
+    @withpythonimplementation
     def test_idempotent_string(self):
         for p, e in self.STRINGS:
             self.assertEqual(quopri.decodestring(quopri.encodestring(e)), e)
