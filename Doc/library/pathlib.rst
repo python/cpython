@@ -106,8 +106,8 @@ we also call *flavours*:
       >>> PurePath('setup.py')      # Running on a Unix machine
       PurePosixPath('setup.py')
 
-   Each element of *pathsegments* can be either a string or bytes object
-   representing a path segment; it can also be another path object::
+   Each element of *pathsegments* can be either a string representing a
+   path segment, or another path object::
 
       >>> PurePath('foo', 'some/path', 'bar')
       PurePosixPath('foo/some/path/bar')
