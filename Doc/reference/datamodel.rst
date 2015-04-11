@@ -2222,9 +2222,9 @@ correctness, implicit special method lookup generally also bypasses the
 :meth:`__getattribute__` method even of the object's metaclass::
 
    >>> class Meta(type):
-   ...    def __getattribute__(*args):
-   ...       print("Metaclass getattribute invoked")
-   ...       return type.__getattribute__(*args)
+   ...     def __getattribute__(*args):
+   ...         print("Metaclass getattribute invoked")
+   ...         return type.__getattribute__(*args)
    ...
    >>> class C(object, metaclass=Meta):
    ...     def __len__(self):
