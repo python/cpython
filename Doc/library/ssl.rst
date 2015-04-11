@@ -286,10 +286,10 @@ Random generation
 
 .. function:: RAND_status()
 
-   Returns ``True`` if the SSL pseudo-random number generator has been seeded with
-   'enough' randomness, and ``False`` otherwise.  You can use :func:`ssl.RAND_egd`
-   and :func:`ssl.RAND_add` to increase the randomness of the pseudo-random
-   number generator.
+   Return ``True`` if the SSL pseudo-random number generator has been seeded
+   with 'enough' randomness, and ``False`` otherwise.  You can use
+   :func:`ssl.RAND_egd` and :func:`ssl.RAND_add` to increase the randomness of
+   the pseudo-random number generator.
 
 .. function:: RAND_egd(path)
 
@@ -306,7 +306,7 @@ Random generation
 
 .. function:: RAND_add(bytes, entropy)
 
-   Mixes the given *bytes* into the SSL pseudo-random number generator.  The
+   Mix the given *bytes* into the SSL pseudo-random number generator.  The
    parameter *entropy* (a float) is a lower bound on the entropy contained in
    string (so you can always use :const:`0.0`).  See :rfc:`1750` for more
    information on sources of entropy.
