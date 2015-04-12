@@ -880,12 +880,14 @@ fileio_truncate(fileio *self, PyObject *args)
     }
 
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
     errno = 0;
 #ifdef MS_WINDOWS
     ret = _chsize_s(fd, pos);
 #else
     ret = ftruncate(fd, pos);
 #endif
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
 
     if (ret != 0) {
