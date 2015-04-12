@@ -53,8 +53,8 @@ Fetching URLs
 The simplest way to use urllib.request is as follows::
 
     import urllib.request
-    response = urllib.request.urlopen('http://python.org/')
-    html = response.read()
+    with urllib.request.urlopen('http://python.org/') as response:
+       html = response.read()
 
 If you wish to retrieve a resource via URL and store it in a temporary location,
 you can do so via the :func:`~urllib.request.urlretrieve` function::
@@ -79,8 +79,8 @@ response::
     import urllib.request
 
     req = urllib.request.Request('http://www.voidspace.org.uk')
-    response = urllib.request.urlopen(req)
-    the_page = response.read()
+    with urllib.request.urlopen(req) as response:
+       the_page = response.read()
 
 Note that urllib.request makes use of the same Request interface to handle all URL
 schemes.  For example, you can make an FTP request like so::
@@ -117,8 +117,8 @@ library. ::
     data = urllib.parse.urlencode(values)
     data = data.encode('utf-8') # data should be bytes
     req = urllib.request.Request(url, data)
-    response = urllib.request.urlopen(req)
-    the_page = response.read()
+    with urllib.request.urlopen(req) as response:
+       the_page = response.read()
 
 Note that other encodings are sometimes required (e.g. for file upload from HTML
 forms - see `HTML Specification, Form Submission
@@ -183,8 +183,8 @@ Explorer [#]_. ::
     data  = urllib.parse.urlencode(values)
     data = data.encode('utf-8')
     req = urllib.request.Request(url, data, headers)
-    response = urllib.request.urlopen(req)
-    the_page = response.read()
+    with urllib.request.urlopen(req) as response:
+       the_page = response.read()
 
 The response also has two useful methods. See the section on `info and geturl`_
 which comes after we have a look at what happens when things go wrong.
