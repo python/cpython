@@ -1560,9 +1560,7 @@ expected_help_output_with_docs = """\
 Help on class Color in module %s:
 
 class Color(enum.Enum)
- |  Generic enumeration.
- |\x20\x20
- |  Derive from this class to define new enumerations.
+ |  An enumeration.
  |\x20\x20
  |  Method resolution order:
  |      Color
@@ -1626,6 +1624,8 @@ class Color(enum.Enum)
 
 class TestStdLib(unittest.TestCase):
 
+    maxDiff = None
+
     class Color(Enum):
         red = 1
         green = 2
@@ -1646,7 +1646,7 @@ class TestStdLib(unittest.TestCase):
     def test_inspect_getmembers(self):
         values = dict((
                 ('__class__', EnumMeta),
-                ('__doc__', None),
+                ('__doc__', 'An enumeration.'),
                 ('__members__', self.Color.__members__),
                 ('__module__', __name__),
                 ('blue', self.Color.blue),
@@ -1674,7 +1674,7 @@ class TestStdLib(unittest.TestCase):
                 Attribute(name='__class__', kind='data',
                     defining_class=object, object=EnumMeta),
                 Attribute(name='__doc__', kind='data',
-                    defining_class=self.Color, object=None),
+                    defining_class=self.Color, object='An enumeration.'),
                 Attribute(name='__members__', kind='property',
                     defining_class=EnumMeta, object=EnumMeta.__members__),
                 Attribute(name='__module__', kind='data',
