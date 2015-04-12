@@ -107,9 +107,11 @@ internal_close(fileio *self)
         /* fd is accessible and someone else may have closed it */
         if (_PyVerify_fd(fd)) {
             Py_BEGIN_ALLOW_THREADS
+            _Py_BEGIN_SUPPRESS_IPH
             err = close(fd);
             if (err < 0)
                 save_errno = errno;
+            _Py_END_SUPPRESS_IPH
             Py_END_ALLOW_THREADS
         } else {
             save_errno = errno;
@@ -599,11 +601,14 @@ fileio_readall(fileio *self)
     if (!_PyVerify_fd(self->fd))
         return PyErr_SetFromErrno(PyExc_IOError);
 
+    _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
     pos = _lseeki64(self->fd, 0L, SEEK_CUR);
 #else
     pos = lseek(self->fd, 0L, SEEK_CUR);
 #endif
+    _Py_END_SUPPRESS_IPH
+
     if (_Py_fstat_noraise(self->fd, &status) == 0)
         end = status.st_size;
     else
@@ -792,11 +797,13 @@ portable_lseek(int fd, PyObject *posobj, int whence)
 
     if (_PyVerify_fd(fd)) {
         Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
         res = _lseeki64(fd, pos, whence);
 #else
         res = lseek(fd, pos, whence);
 #endif
+        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } else
         res = -1;
@@ -951,7 +958,12 @@ fileio_isatty(fileio *self)
     if (self->fd < 0)
         return err_closed();
     Py_BEGIN_ALLOW_THREADS
-    res = isatty(self->fd);
+    _Py_BEGIN_SUPPRESS_IPH
+    if (_PyVerify_fd(self->fd))
+        res = isatty(self->fd);
+    else
+        res = 0;
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     return PyBool_FromLong(res);
 }
