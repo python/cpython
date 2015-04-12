@@ -3989,7 +3989,7 @@ exit:
 
 #endif /* defined(HAVE_DEVICE_MACROS) */
 
-#if defined(HAVE_FTRUNCATE)
+#if (defined HAVE_FTRUNCATE || defined MS_WINDOWS)
 
 PyDoc_STRVAR(os_ftruncate__doc__,
 "ftruncate($module, fd, length, /)\n"
@@ -4020,9 +4020,9 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_FTRUNCATE) */
+#endif /* (defined HAVE_FTRUNCATE || defined MS_WINDOWS) */
 
-#if defined(HAVE_TRUNCATE)
+#if (defined HAVE_TRUNCATE || defined MS_WINDOWS)
 
 PyDoc_STRVAR(os_truncate__doc__,
 "truncate($module, /, path, length)\n"
@@ -4060,7 +4060,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_TRUNCATE) */
+#endif /* (defined HAVE_TRUNCATE || defined MS_WINDOWS) */
 
 #if (defined(HAVE_POSIX_FALLOCATE) && !defined(POSIX_FADVISE_AIX_BUG))
 
@@ -5847,4 +5847,4 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=b15ceac3a8ff0eae input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22f405f79f87ba20 input=a9049054013a1b77]*/
