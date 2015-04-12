@@ -56,8 +56,8 @@
     <ClCompile Include="$(opensslDir)ssl\d1_both.c" />
     <!--
     <ClCompile Include="$(opensslDir)ssl\d1_clnt.c" />
-    -->
     <ClCompile Include="$(opensslDir)ssl\d1_enc.c" />
+    -->
     <ClCompile Include="$(opensslDir)ssl\d1_lib.c" />
     <!--
     <ClCompile Include="$(opensslDir)ssl\d1_meth.c" />

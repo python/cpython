@@ -181,9 +181,7 @@
     <ClCompile Include="$(opensslDir)crypto\bf\bf_skey.c" />
     <ClCompile Include="$(opensslDir)crypto\bio\b_dump.c" />
     <ClCompile Include="$(opensslDir)crypto\bio\b_print.c" />
-    <!--
     <ClCompile Include="$(opensslDir)crypto\bio\b_sock.c" />
-    -->
     <ClCompile Include="$(opensslDir)crypto\bio\bf_buff.c" />
     <!--
     <ClCompile Include="$(opensslDir)crypto\bio\bf_nbio.c" />
@@ -195,7 +193,9 @@
     <!--
     <ClCompile Include="$(opensslDir)crypto\bio\bss_acpt.c" />
     <ClCompile Include="$(opensslDir)crypto\bio\bss_bio.c" />
+    -->
     <ClCompile Include="$(opensslDir)crypto\bio\bss_conn.c" />
+    <!--
     <ClCompile Include="$(opensslDir)crypto\bio\bss_dgram.c" />
     <ClCompile Include="$(opensslDir)crypto\bio\bss_fd.c" />
     -->
@@ -271,6 +271,7 @@
     <ClCompile Include="$(opensslDir)crypto\cms\cms_ess.c" />
     -->
     <ClCompile Include="$(opensslDir)crypto\cms\cms_io.c" />
+    <ClCompile Include="$(opensslDir)crypto\cms\cms_kari.c" />
     <ClCompile Include="$(opensslDir)crypto\cms\cms_lib.c" />
     <ClCompile Include="$(opensslDir)crypto\cms\cms_pwri.c" />
     <ClCompile Include="$(opensslDir)crypto\cms\cms_sd.c" />
@@ -334,12 +335,14 @@
     -->
     <ClCompile Include="$(opensslDir)crypto\dh\dh_err.c" />
     <ClCompile Include="$(opensslDir)crypto\dh\dh_gen.c" />
+    <ClCompile Include="$(opensslDir)crypto\dh\dh_kdf.c" />
     <ClCompile Include="$(opensslDir)crypto\dh\dh_key.c" />
     <ClCompile Include="$(opensslDir)crypto\dh\dh_lib.c" />
     <ClCompile Include="$(opensslDir)crypto\dh\dh_pmeth.c" />
     <!--
     <ClCompile Include="$(opensslDir)crypto\dh\dh_prn.c" />
     -->
+    <ClCompile Include="$(opensslDir)crypto\dh\dh_rfc5114.c" />
     <ClCompile Include="$(opensslDir)crypto\dsa\dsa_ameth.c" />
     <ClCompile Include="$(opensslDir)crypto\dsa\dsa_asn1.c" />
     <!--
@@ -403,6 +406,7 @@
     <ClCompile Include="$(opensslDir)crypto\ec\ecp_oct.c" />
     <ClCompile Include="$(opensslDir)crypto\ec\ecp_smpl.c" />
     <ClCompile Include="$(opensslDir)crypto\ecdh\ech_err.c" />
+    <ClCompile Include="$(opensslDir)crypto\ecdh\ech_kdf.c" />
     <ClCompile Include="$(opensslDir)crypto\ecdh\ech_key.c" />
     <ClCompile Include="$(opensslDir)crypto\ecdh\ech_lib.c" />
     <ClCompile Include="$(opensslDir)crypto\ecdh\ech_ossl.c" />
@@ -461,6 +465,7 @@
     <ClCompile Include="$(opensslDir)crypto\evp\digest.c" />
     <ClCompile Include="$(opensslDir)crypto\evp\e_aes.c" />
     <ClCompile Include="$(opensslDir)crypto\evp\e_aes_cbc_hmac_sha1.c" />
+    <ClCompile Include="$(opensslDir)crypto\evp\e_aes_cbc_hmac_sha256.c" />
     <ClCompile Include="$(opensslDir)crypto\evp\e_bf.c" />
     <ClCompile Include="$(opensslDir)crypto\evp\e_camellia.c" />
     <ClCompile Include="$(opensslDir)crypto\evp\e_cast.c" />
@@ -553,6 +558,7 @@
     <ClCompile Include="$(opensslDir)crypto\modes\cts128.c" />
     <ClCompile Include="$(opensslDir)crypto\modes\gcm128.c" />
     <ClCompile Include="$(opensslDir)crypto\modes\ofb128.c" />
+    <ClCompile Include="$(opensslDir)crypto\modes\wrap128.c" />
     <ClCompile Include="$(opensslDir)crypto\modes\xts128.c" />
     <ClCompile Include="$(opensslDir)crypto\o_dir.c" />
     <!--
@@ -575,8 +581,10 @@
     <ClCompile Include="$(opensslDir)crypto\ocsp\ocsp_err.c" />
     <!--
     <ClCompile Include="$(opensslDir)crypto\ocsp\ocsp_ext.c" />
+    -->
     <ClCompile Include="$(opensslDir)crypto\ocsp\ocsp_ht.c" />
     <ClCompile Include="$(opensslDir)crypto\ocsp\ocsp_lib.c" />
+    <!--
     <ClCompile Include="$(opensslDir)crypto\ocsp\ocsp_prn.c" />
     <ClCompile Include="$(opensslDir)crypto\ocsp\ocsp_srv.c" />
     <ClCompile Include="$(opensslDir)crypto\ocsp\ocsp_vfy.c" />
@@ -740,15 +748,11 @@
     <ClCompile Include="$(opensslDir)crypto\x509\x509_set.c" />
     -->
     <ClCompile Include="$(opensslDir)crypto\x509\x509_trs.c" />
-    <!--
     <ClCompile Include="$(opensslDir)crypto\x509\x509_txt.c" />
-    -->
     <ClCompile Include="$(opensslDir)crypto\x509\x509_v3.c" />
     <ClCompile Include="$(opensslDir)crypto\x509\x509_vfy.c" />
     <ClCompile Include="$(opensslDir)crypto\x509\x509_vpm.c" />
-    <!--
     <ClCompile Include="$(opensslDir)crypto\x509\x509cset.c" />
-    -->
     <ClCompile Include="$(opensslDir)crypto\x509\x509name.c" />
     <ClCompile Include="$(opensslDir)crypto\x509\x509rset.c" />
     <!--
@@ -791,6 +795,7 @@
     <ClCompile Include="$(opensslDir)crypto\x509v3\v3_pmaps.c" />
     <ClCompile Include="$(opensslDir)crypto\x509v3\v3_prn.c" />
     <ClCompile Include="$(opensslDir)crypto\x509v3\v3_purp.c" />
+    <ClCompile Include="$(opensslDir)crypto\x509v3\v3_scts.c" />
     <ClCompile Include="$(opensslDir)crypto\x509v3\v3_skey.c" />
     <ClCompile Include="$(opensslDir)crypto\x509v3\v3_sxnet.c" />
     <ClCompile Include="$(opensslDir)crypto\x509v3\v3_utl.c" />
@@ -822,6 +827,14 @@
     <ClCompile Include="$(opensslDir)engines\e_padlock.c" />
     <ClCompile Include="$(opensslDir)engines\e_sureware.c" />
     <ClCompile Include="$(opensslDir)engines\e_ubsec.c" />
+    <ClCompile Include="$(opensslDir)ssl\d1_clnt.c" />
+    <ClCompile Include="$(opensslDir)ssl\d1_meth.c" />
+    <ClCompile Include="$(opensslDir)ssl\d1_lib.c" />
+    <ClCompile Include="$(opensslDir)ssl\d1_srvr.c" />
+    <ClCompile Include="$(opensslDir)ssl\s2_srvr.c" />
+    <ClCompile Include="$(opensslDir)ssl\t1_clnt.c" />
+    <ClCompile Include="$(opensslDir)ssl\t1_ext.c" />
+    <ClCompile Include="$(opensslDir)ssl\t1_srvr.c" />
   </ItemGroup>
   <ItemGroup Condition="$(Platform) == 'Win32'">
     <ClCompile Include="$(opensslDir)crypto\whrlpool\wp_block.c" />
@@ -861,16 +874,20 @@
   <ItemGroup Condition="$(Platform) == 'x64'">
     <NasmCompile Include="$(opensslDir)tmp64\aesni-sha1-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\aesni-sha1-x86_64.asm" />
+    <NasmCompile Include="$(opensslDir)tmp64\aesni-gcm-x86_64.asm" />
+    <NasmCompile Include="$(opensslDir)tmp64\aesni-mb-x86_64.asm" />
+    <NasmCompile Include="$(opensslDir)tmp64\aesni-sha256-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\aesni-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\aes-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\bsaes-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\cmll-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\ghash-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\md5-x86_64.asm" />
-    <NasmCompile Include="$(opensslDir)tmp64\modexp512-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\rc4-md5-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\rc4-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\sha1-x86_64.asm" />
+    <NasmCompile Include="$(opensslDir)tmp64\sha1-mb-x86_64.asm" />
+    <NasmCompile Include="$(opensslDir)tmp64\sha256-mb-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\sha256-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\sha512-x86_64.asm" />
     <NasmCompile Include="$(opensslDir)tmp64\vpaes-x86_64.asm" />
