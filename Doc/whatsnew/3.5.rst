@@ -630,6 +630,10 @@ removed:
   3.4, and has now been removed.
   (Contributed by Matt Chaput in :issue:`6623`.)
 
+* The JoinableQueue class in the provisional asyncio module was deprecated
+  in 3.4.4 and is now removed (:issue:`23464`).
+
+
 Porting to Python 3.5
 =====================
 
