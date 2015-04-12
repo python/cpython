@@ -877,4 +877,24 @@ extern pid_t forkpty(int *, char *, struct termios *, struct winsize *);
 #define PY_LITTLE_ENDIAN 1
 #endif
 
+#ifdef Py_BUILD_CORE 
+/*
+ * Macros to protect CRT calls against instant termination when passed an
+ * invalid parameter (issue23524).
+ */
+#if defined _MSC_VER && _MSC_VER >= 1900
+
+extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
+#define _Py_BEGIN_SUPPRESS_IPH { _invalid_parameter_handler _Py_old_handler = \
+    _set_thread_local_invalid_parameter_handler(_Py_silent_invalid_parameter_handler);
+#define _Py_END_SUPPRESS_IPH _set_thread_local_invalid_parameter_handler(_Py_old_handler); }
+
+#else
+
+#define _Py_BEGIN_SUPPRESS_IPH
+#define _Py_END_SUPPRESS_IPH
+
+#endif /* _MSC_VER >= 1900 */
+#endif /* Py_BUILD_CORE */
+
 #endif /* Py_PYPORT_H */
