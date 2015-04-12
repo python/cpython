@@ -1068,11 +1068,12 @@ is_valid_fd(int fd)
     int dummy_fd;
     if (fd < 0 || !_PyVerify_fd(fd))
         return 0;
+    _Py_BEGIN_SUPPRESS_IPH
     dummy_fd = dup(fd);
-    if (dummy_fd < 0)
-        return 0;
-    close(dummy_fd);
-    return 1;
+    if (dummy_fd >= 0)
+        close(dummy_fd);
+    _Py_END_SUPPRESS_IPH
+    return dummy_fd >= 0;
 }
 
 /* Initialize sys.stdin, stdout, stderr and builtins.open */

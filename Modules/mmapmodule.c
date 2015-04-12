@@ -1325,11 +1325,13 @@ new_mmap_object(PyTypeObject *type, PyObject *args, PyObject *kwdict)
      */
     if (fileno != -1 && fileno != 0) {
         /* Ensure that fileno is within the CRT's valid range */
-        if (_PyVerify_fd(fileno) == 0) {
+        if (!_PyVerify_fd(fileno)) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;
         }
+        _Py_BEGIN_SUPPRESS_IPH
         fh = (HANDLE)_get_osfhandle(fileno);
+        _Py_END_SUPPRESS_IPH
         if (fh==(HANDLE)-1) {
             PyErr_SetFromErrno(PyExc_OSError);
             return NULL;

@@ -717,6 +717,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     /* Dump the traceback of each thread */
     tstate = PyInterpreterState_ThreadHead(interp);
     nthreads = 0;
+    _Py_BEGIN_SUPPRESS_IPH
     do
     {
         if (nthreads != 0)
@@ -730,6 +731,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
         tstate = PyThreadState_Next(tstate);
         nthreads++;
     } while (tstate != NULL);
+    _Py_END_SUPPRESS_IPH
 
     return NULL;
 }

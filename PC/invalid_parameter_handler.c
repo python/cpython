@@ -15,8 +15,8 @@ static void __cdecl _silent_invalid_parameter_handler(
     unsigned int line,
     uintptr_t pReserved) { }
 
-void *_Py_silent_invalid_parameter_handler =
-    (void*)_silent_invalid_parameter_handler;
+_invalid_parameter_handler _Py_silent_invalid_parameter_handler = _silent_invalid_parameter_handler;
+
 #endif
 
 #endif

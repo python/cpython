@@ -121,7 +121,7 @@ PyAPI_FUNC(int) _Py_get_blocking(int fd);
 PyAPI_FUNC(int) _Py_set_blocking(int fd, int blocking);
 #endif   /* !MS_WINDOWS */
 
-#if defined _MSC_VER && _MSC_VER >= 1400
+#if defined _MSC_VER && _MSC_VER >= 1400 && _MSC_VER < 1900
 /* A routine to check if a file descriptor is valid on Windows.  Returns 0
  * and sets errno to EBADF if it isn't.  This is to avoid Assertions
  * from various functions in the Windows CRT beginning with
