@@ -1060,8 +1060,9 @@ This example gets the python.org main page and displays the first 300 bytes of
 it. ::
 
    >>> import urllib.request
-   >>> f = urllib.request.urlopen('http://www.python.org/')
-   >>> print(f.read(300))
+   >>> with urllib.request.urlopen('http://www.python.org/') as f:
+   ...     print(f.read(300))
+   ...
    b'<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">\n\n\n<html
    xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">\n\n<head>\n
@@ -1103,8 +1104,9 @@ when the Python installation supports SSL. ::
    >>> import urllib.request
    >>> req = urllib.request.Request(url='https://localhost/cgi-bin/test.cgi',
    ...                       data=b'This data is passed to stdin of the CGI')
-   >>> f = urllib.request.urlopen(req)
-   >>> print(f.read().decode('utf-8'))
+   >>> with urllib.request.urlopen(req) as f:
+   ...     print(f.read().decode('utf-8'))
+   ...
    Got Data: "This data is passed to stdin of the CGI"
 
 The code for the sample CGI used in the above example is::
@@ -1119,7 +1121,8 @@ Here is an example of doing a ``PUT`` request using :class:`Request`::
     import urllib.request
     DATA=b'some data'
     req = urllib.request.Request(url='http://localhost:8080', data=DATA,method='PUT')
-    f = urllib.request.urlopen(req)
+    with urllib.request.urlopen(req) as f:
+        pass
     print(f.status)
     print(f.reason)
 
@@ -1185,8 +1188,10 @@ containing parameters::
    >>> import urllib.request
    >>> import urllib.parse
    >>> params = urllib.parse.urlencode({'spam': 1, 'eggs': 2, 'bacon': 0})
-   >>> f = urllib.request.urlopen("http://www.musi-cal.com/cgi-bin/query?%s" % params)
-   >>> print(f.read().decode('utf-8'))
+   >>> url = "http://www.musi-cal.com/cgi-bin/query?%s" % params
+   >>> with urllib.request.urlopen(url) as f:
+   ...     print(f.read().decode('utf-8'))
+   ...
 
 The following example uses the ``POST`` method instead. Note that params output
 from urlencode is encoded to bytes before it is sent to urlopen as data::
@@ -1198,8 +1203,9 @@ from urlencode is encoded to bytes before it is sent to urlopen as data::
    >>> request = urllib.request.Request("http://requestb.in/xrbl82xr")
    >>> # adding charset parameter to the Content-Type header.
    >>> request.add_header("Content-Type","application/x-www-form-urlencoded;charset=utf-8")
-   >>> f = urllib.request.urlopen(request, data)
-   >>> print(f.read().decode('utf-8'))
+   >>> with urllib.request.urlopen(request, data) as f:
+   ...     print(f.read().decode('utf-8'))
+   ...
 
 The following example uses an explicitly specified HTTP proxy, overriding
 environment settings::
@@ -1207,15 +1213,17 @@ environment settings::
    >>> import urllib.request
    >>> proxies = {'http': 'http://proxy.example.com:8080/'}
    >>> opener = urllib.request.FancyURLopener(proxies)
-   >>> f = opener.open("http://www.python.org")
-   >>> f.read().decode('utf-8')
+   >>> with opener.open("http://www.python.org") as f:
+   ...     f.read().decode('utf-8')
+   ...
 
 The following example uses no proxies at all, overriding environment settings::
 
    >>> import urllib.request
    >>> opener = urllib.request.FancyURLopener({})
-   >>> f = opener.open("http://www.python.org/")
-   >>> f.read().decode('utf-8')
+   >>> with opener.open("http://www.python.org/") as f:
+   ...     f.read().decode('utf-8')
+   ...
 
 
 Legacy interface
