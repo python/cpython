@@ -106,6 +106,10 @@ class EnumMeta(type):
             raise ValueError('Invalid enum member name: {0}'.format(
                 ','.join(invalid_names)))
 
+        # create a default docstring if one has not been provided
+        if '__doc__' not in classdict:
+            classdict['__doc__'] = 'An enumeration.'
+
         # create our new Enum type
         enum_class = super().__new__(metacls, cls, bases, classdict)
         enum_class._member_names_ = []               # names in definition order
