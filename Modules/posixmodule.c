@@ -11692,7 +11692,7 @@ static PyMethodDef DirEntry_methods[] = {
     {NULL}
 };
 
-PyTypeObject DirEntryType = {
+static PyTypeObject DirEntryType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     MODNAME ".DirEntry",                    /* tp_name */
     sizeof(DirEntry),                       /* tp_basicsize */
@@ -12024,7 +12024,7 @@ ScandirIterator_dealloc(ScandirIterator *iterator)
     Py_TYPE(iterator)->tp_free((PyObject *)iterator);
 }
 
-PyTypeObject ScandirIteratorType = {
+static PyTypeObject ScandirIteratorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     MODNAME ".ScandirIterator",             /* tp_name */
     sizeof(ScandirIterator),                /* tp_basicsize */
