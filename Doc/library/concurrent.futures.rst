@@ -138,8 +138,8 @@ ThreadPoolExecutor Example
 
    # Retrieve a single page and report the url and contents
    def load_url(url, timeout):
-       conn = urllib.request.urlopen(url, timeout=timeout)
-       return conn.readall()
+       with urllib.request.urlopen(url, timeout=timeout) as conn:
+           return conn.read()
 
    # We can use a with statement to ensure threads are cleaned up promptly
    with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:

@@ -687,7 +687,8 @@ Yes. Here's a simple example that uses urllib.request::
    ### connect and send the server a path
    req = urllib.request.urlopen('http://www.some-server.out-there'
                                 '/cgi-bin/some-cgi-script', data=qs)
-   msg, hdrs = req.read(), req.info()
+   with req:
+       msg, hdrs = req.read(), req.info()
 
 Note that in general for percent-encoded POST operations, query strings must be
 quoted using :func:`urllib.parse.urlencode`.  For example, to send
