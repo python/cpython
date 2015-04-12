@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23464: Removed deprecated asyncio JoinableQueue.
+
 - Issue #23529: Limit the size of decompressed data when reading from
   GzipFile, BZ2File or LZMAFile.  This defeats denial of service attacks
   using compressed bombs (i.e. compressed payloads which decompress to a huge

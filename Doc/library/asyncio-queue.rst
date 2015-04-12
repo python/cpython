@@ -8,7 +8,6 @@ Queues:
 * :class:`Queue`
 * :class:`PriorityQueue`
 * :class:`LifoQueue`
-* :class:`JoinableQueue`
 
 asyncio queue API was designed to be close to classes of the :mod:`queue`
 module (:class:`~queue.Queue`, :class:`~queue.PriorityQueue`,
@@ -142,16 +141,6 @@ LifoQueue
 
     A subclass of :class:`Queue` that retrieves most recently added entries
     first.
-
-
-JoinableQueue
-^^^^^^^^^^^^^
-
-.. class:: JoinableQueue
-
-   Deprecated alias for :class:`Queue`.
-
-   .. deprecated:: 3.4.4
 
 
 Exceptions
