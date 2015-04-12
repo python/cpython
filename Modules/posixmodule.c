@@ -8803,11 +8803,13 @@ os_ftruncate_impl(PyModuleDef *module, int fd, Py_off_t length)
 
     do {
         Py_BEGIN_ALLOW_THREADS
+        _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
         result = _chsize_s(fd, length);
 #else
         result = ftruncate(fd, length);
 #endif
+        _Py_END_SUPPRESS_IPH
         Py_END_ALLOW_THREADS
     } while (result != 0 && errno == EINTR &&
              !(async_err = PyErr_CheckSignals()));
@@ -8843,6 +8845,7 @@ os_truncate_impl(PyModuleDef *module, path_t *path, Py_off_t length)
         return os_ftruncate_impl(module, path->fd, length);
 
     Py_BEGIN_ALLOW_THREADS
+    _Py_BEGIN_SUPPRESS_IPH
 #ifdef MS_WINDOWS
     if (path->wide)
         fd = _wopen(path->wide, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
@@ -8859,6 +8862,7 @@ os_truncate_impl(PyModuleDef *module, path_t *path, Py_off_t length)
 #else
     result = truncate(path->narrow, length);
 #endif
+    _Py_END_SUPPRESS_IPH
     Py_END_ALLOW_THREADS
     if (result < 0)
         return path_error(path);
