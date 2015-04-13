@@ -37,7 +37,7 @@ Library
 
 - Issue #10838: The subprocess now module includes SubprocessError and
   TimeoutError in its list of exported names for the users wild enough
-  to use "from subprocess import *".
+  to use ``from subprocess import *``.
 
 - Issue #23411: Added DefragResult, ParseResult, SplitResult, DefragResultBytes,
   ParseResultBytes, and SplitResultBytes to urllib.parse.__all__.
