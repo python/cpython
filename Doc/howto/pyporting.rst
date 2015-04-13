@@ -207,7 +207,7 @@ that's ``str``/``bytes`` in Python 2 and ``bytes`` in Python 3). The following
 table lists the **unique** methods of each data type across Python 2 & 3
 (e.g., the ``decode()`` method is usable on the equivalent binary data type in
 either Python 2 or 3, but it can't be used by the text data type consistently
-between Python 2 and 3 because ``str`` in Python 3 doesn't have the method). Due
+between Python 2 and 3 because ``str`` in Python 3 doesn't have the method). Do
 note that as of Python 3.5 the ``__mod__`` method was added to the bytes type.
 
 ======================== =====================
