@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17898: Fix exception in gettext.py when parsing certain plural forms.
+
 - Issue #22982: Improve BOM handling when seeking to multiple positions of
   a writable text file.
 

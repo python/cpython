@@ -79,6 +79,12 @@ class GettextBaseTest(unittest.TestCase):
         del self.env
         support.rmtree(os.path.split(LOCALEDIR)[0])
 
+GNU_MO_DATA_ISSUE_17898 = b'''\
+3hIElQAAAAABAAAAHAAAACQAAAAAAAAAAAAAAAAAAAAsAAAAggAAAC0AAAAAUGx1cmFsLUZvcm1z
+OiBucGx1cmFscz0yOyBwbHVyYWw9KG4gIT0gMSk7CiMtIy0jLSMtIyAgbWVzc2FnZXMucG8gKEVk
+WCBTdHVkaW8pICAjLSMtIy0jLSMKQ29udGVudC1UeXBlOiB0ZXh0L3BsYWluOyBjaGFyc2V0PVVU
+Ri04CgA=
+'''
 
 class GettextTestCase1(GettextBaseTest):
     def setUp(self):
@@ -290,6 +296,14 @@ class PluralFormsTestCase(GettextBaseTest):
         # Test for a dangerous expression
         raises(ValueError, gettext.c2py, "os.chmod('/etc/passwd',0777)")
 
+class GNUTranslationParsingTest(GettextBaseTest):
+    def test_plural_form_error_issue17898(self):
+        with open(MOFILE, 'wb') as fp:
+            fp.write(base64.decodebytes(GNU_MO_DATA_ISSUE_17898))
+        with open(MOFILE, 'rb') as fp:
+            # If this runs cleanly, the bug is fixed.
+            t = gettext.GNUTranslations(fp)
+
 
 class UnicodeTranslationsTest(GettextBaseTest):
     def setUp(self):
@@ -464,4 +478,17 @@ msgstr ""
 "Content-Type: text/plain; charset=iso-8859-15\n"
 "Content-Transfer-Encoding: quoted-printable\n"
 "Generated-By: pygettext.py 1.3\n"
+'''
+
+#
+# messages.po, used for bug 17898
+#
+
+'''
+# test file for http://bugs.python.org/issue17898
+msgid ""
+msgstr ""
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"#-#-#-#-#  messages.po (EdX Studio)  #-#-#-#-#\n"
+"Content-Type: text/plain; charset=UTF-8\n"
 '''
