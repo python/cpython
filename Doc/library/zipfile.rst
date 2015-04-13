@@ -253,6 +253,8 @@ ZipFile Objects
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
    *pwd* is the password used for encrypted files.
 
+   Returns the normalized path created (a directory or new file).
+
    .. note::
 
       If a member filename is an absolute path, a drive/UNC sharepoint and
