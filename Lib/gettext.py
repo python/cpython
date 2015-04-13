@@ -52,7 +52,9 @@ from errno import ENOENT
 
 __all__ = ['NullTranslations', 'GNUTranslations', 'Catalog',
            'find', 'translation', 'install', 'textdomain', 'bindtextdomain',
-           'dgettext', 'dngettext', 'gettext', 'ngettext',
+           'bind_textdomain_codeset',
+           'dgettext', 'dngettext', 'gettext', 'lgettext', 'ldgettext',
+           'ldngettext', 'lngettext', 'ngettext',
            ]
 
 _default_localedir = os.path.join(sys.prefix, 'share', 'locale')
