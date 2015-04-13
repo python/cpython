@@ -546,11 +546,31 @@ class GCTests(unittest.TestCase):
 
         class UserClass:
             pass
+
+        class UserInt(int):
+            pass
+
+        # Base class is object; no extra fields.
+        class UserClassSlots:
+            __slots__ = ()
+
+        # Base class is fixed size larger than object; no extra fields.
+        class UserFloatSlots(float):
+            __slots__ = ()
+
+        # Base class is variable size; no extra fields.
+        class UserIntSlots(int):
+            __slots__ = ()
+
         self.assertTrue(gc.is_tracked(gc))
         self.assertTrue(gc.is_tracked(UserClass))
         self.assertTrue(gc.is_tracked(UserClass()))
+        self.assertTrue(gc.is_tracked(UserInt()))
         self.assertTrue(gc.is_tracked([]))
         self.assertTrue(gc.is_tracked(set()))
+        self.assertFalse(gc.is_tracked(UserClassSlots()))
+        self.assertFalse(gc.is_tracked(UserFloatSlots()))
+        self.assertFalse(gc.is_tracked(UserIntSlots()))
 
     def test_bug1055820b(self):
         # Corresponds to temp2b.py in the bug report.
