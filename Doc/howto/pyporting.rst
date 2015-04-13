@@ -350,7 +350,7 @@ Python 2 or 3 support.
 You may also want to use use the ``-bb`` flag with the Python 3 interpreter to
 trigger an exception when you are comparing bytes to strings or bytes to an int
 (the latter is available starting in Python 3.5). By default type-differing
- comparisons simply return ``False``, but if you made a mistake in your
+comparisons simply return ``False``, but if you made a mistake in your
 separation of text/binary data handling or indexing on bytes you wouldn't easily
 find the mistake. This flag will raise an exception when these kinds of
 comparisons occur, making the mistake much easier to track down.
