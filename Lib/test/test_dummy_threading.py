@@ -56,9 +56,5 @@ class DummyThreadingTestCase(unittest.TestCase):
         if support.verbose:
             print('all tasks done')
 
-def test_main():
-    support.run_unittest(DummyThreadingTestCase)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

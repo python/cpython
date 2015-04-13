@@ -1,5 +1,4 @@
 import unittest, string
-from test import support
 
 
 class ModuleTest(unittest.TestCase):
@@ -182,8 +181,5 @@ class ModuleTest(unittest.TestCase):
         self.assertIn("recursion", str(err.exception))
 
 
-def test_main():
-    support.run_unittest(ModuleTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

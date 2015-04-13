@@ -342,4 +342,4 @@ class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
 
 
 if __name__ == "__main__":
-    test.support.run_unittest(__name__)
+    unittest.main()

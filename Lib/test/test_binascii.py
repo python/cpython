@@ -1,6 +1,5 @@
 """Test the binascii C module."""
 
-from test import support
 import unittest
 import binascii
 import array
@@ -262,11 +261,5 @@ class MemoryviewBinASCIITest(BinASCIITest):
     type2test = memoryview
 
 
-def test_main():
-    support.run_unittest(BinASCIITest,
-                         ArrayBinASCIITest,
-                         BytearrayBinASCIITest,
-                         MemoryviewBinASCIITest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

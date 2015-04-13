@@ -216,8 +216,5 @@ class TupleTest(seq_tests.CommonTest):
         self.assertLess(a, b)
         self.assertLess(b, c)
 
-def test_main():
-    support.run_unittest(TupleTest)
-
-if __name__=="__main__":
-    test_main()
+if __name__ == "__main__":
+    unittest.main()

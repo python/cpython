@@ -7,7 +7,6 @@ import unittest
 import errno
 from errno import EEXIST
 
-from test import support
 
 class SubOSError(OSError):
     pass
@@ -202,8 +201,5 @@ class ExplicitSubclassingTest(unittest.TestCase):
         self.assertEqual(str(e), '')
 
 
-def test_main():
-    support.run_unittest(__name__)
-
-if __name__=="__main__":
-    test_main()
+if __name__ == "__main__":
+    unittest.main()

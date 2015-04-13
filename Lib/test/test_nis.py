@@ -36,8 +36,5 @@ class NisTests(unittest.TestCase):
             if done:
                 break
 
-def test_main():
-    support.run_unittest(NisTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

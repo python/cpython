@@ -1,4 +1,3 @@
-from test import support
 import unittest
 
 import xdrlib
@@ -74,9 +73,5 @@ class ConversionErrorTest(unittest.TestCase):
     def test_uhyper(self):
         self.assertRaisesConversion(self.packer.pack_uhyper, 'string')
 
-def test_main():
-    support.run_unittest(XDRTest)
-    support.run_unittest(ConversionErrorTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

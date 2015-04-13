@@ -32,7 +32,6 @@ import sys
 import shutil
 import tempfile
 import unittest
-import test.support
 
 
 TEMPLATE = r"""# coding: %s
@@ -199,8 +198,5 @@ class TestLiterals(unittest.TestCase):
         self.check_encoding("latin9")
 
 
-def test_main():
-    test.support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

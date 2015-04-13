@@ -429,8 +429,5 @@ class StrtodTests(unittest.TestCase):
         for s in test_strings:
             self.check_strtod(s)
 
-def test_main():
-    test.support.run_unittest(StrtodTests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

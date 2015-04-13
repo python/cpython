@@ -30,8 +30,5 @@ class TestCase(unittest.TestCase):
             startfile(empty)
             startfile(empty, "open")
 
-def test_main():
-    support.run_unittest(TestCase)
-
-if __name__=="__main__":
-    test_main()
+if __name__ == "__main__":
+    unittest.main()

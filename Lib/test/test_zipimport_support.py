@@ -238,9 +238,8 @@ class ZipSupportTests(unittest.TestCase):
             self.assertIn(os.path.normcase(run_name.encode('utf-8')), data)
 
 
-def test_main():
-    test.support.run_unittest(ZipSupportTests)
+def tearDownModule():
     test.support.reap_children()
 
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

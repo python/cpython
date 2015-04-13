@@ -3,7 +3,6 @@
 
 import sys
 import unittest
-from test.support import run_unittest
 
 class PropertyBase(Exception):
     pass
@@ -247,8 +246,5 @@ class PropertySubclassTests(unittest.TestCase):
 
 
 
-def test_main():
-    run_unittest(PropertyTests, PropertySubclassTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -1,7 +1,6 @@
 """Unit tests for __instancecheck__ and __subclasscheck__."""
 
 import unittest
-from test import support
 
 
 class ABC(type):
@@ -66,10 +65,6 @@ class TypeChecksTest(unittest.TestCase):
         self.assertEqual(isinstance(SubInt(), (SubInt,)), True)
         self.assertEqual(isinstance(42, SubInt), False)
         self.assertEqual(isinstance(42, (SubInt,)), False)
-
-
-def test_main():
-    support.run_unittest(TypeChecksTest)
 
 
 if __name__ == "__main__":

@@ -36,8 +36,5 @@ class Test(unittest.TestCase):
         syslog.openlog()
         syslog.syslog('test message from python test_syslog')
 
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
