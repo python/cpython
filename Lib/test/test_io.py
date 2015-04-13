@@ -2669,6 +2669,19 @@ class TextIOWrapperTest(unittest.TestCase):
             with self.open(filename, 'rb') as f:
                 self.assertEqual(f.read(), 'bbbzzz'.encode(charset))
 
+    def test_seek_append_bom(self):
+        # Same test, but first seek to the start and then to the end
+        filename = support.TESTFN
+        for charset in ('utf-8-sig', 'utf-16', 'utf-32'):
+            with self.open(filename, 'w', encoding=charset) as f:
+                f.write('aaa')
+            with self.open(filename, 'a', encoding=charset) as f:
+                f.seek(0)
+                f.seek(0, self.SEEK_END)
+                f.write('xxx')
+            with self.open(filename, 'rb') as f:
+                self.assertEqual(f.read(), 'aaaxxx'.encode(charset))
+
     def test_errors_property(self):
         with self.open(support.TESTFN, "w") as f:
             self.assertEqual(f.errors, "strict")
