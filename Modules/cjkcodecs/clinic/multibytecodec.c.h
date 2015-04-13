@@ -78,7 +78,8 @@ exit:
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_encode__doc__,
 "encode($self, /, input, final=0)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALENCODER_ENCODE_METHODDEF    \
     {"encode", (PyCFunction)_multibytecodec_MultibyteIncrementalEncoder_encode, METH_VARARGS|METH_KEYWORDS, _multibytecodec_MultibyteIncrementalEncoder_encode__doc__},
@@ -106,7 +107,8 @@ exit:
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_reset__doc__,
 "reset($self, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALENCODER_RESET_METHODDEF    \
     {"reset", (PyCFunction)_multibytecodec_MultibyteIncrementalEncoder_reset, METH_NOARGS, _multibytecodec_MultibyteIncrementalEncoder_reset__doc__},
@@ -122,7 +124,8 @@ _multibytecodec_MultibyteIncrementalEncoder_reset(MultibyteIncrementalEncoderObj
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_decode__doc__,
 "decode($self, /, input, final=0)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALDECODER_DECODE_METHODDEF    \
     {"decode", (PyCFunction)_multibytecodec_MultibyteIncrementalDecoder_decode, METH_VARARGS|METH_KEYWORDS, _multibytecodec_MultibyteIncrementalDecoder_decode__doc__},
@@ -154,7 +157,8 @@ exit:
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_reset__doc__,
 "reset($self, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTEINCREMENTALDECODER_RESET_METHODDEF    \
     {"reset", (PyCFunction)_multibytecodec_MultibyteIncrementalDecoder_reset, METH_NOARGS, _multibytecodec_MultibyteIncrementalDecoder_reset__doc__},
@@ -170,7 +174,8 @@ _multibytecodec_MultibyteIncrementalDecoder_reset(MultibyteIncrementalDecoderObj
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_read__doc__,
 "read($self, sizeobj=None, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMREADER_READ_METHODDEF    \
     {"read", (PyCFunction)_multibytecodec_MultibyteStreamReader_read, METH_VARARGS, _multibytecodec_MultibyteStreamReader_read__doc__},
@@ -196,7 +201,8 @@ exit:
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_readline__doc__,
 "readline($self, sizeobj=None, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMREADER_READLINE_METHODDEF    \
     {"readline", (PyCFunction)_multibytecodec_MultibyteStreamReader_readline, METH_VARARGS, _multibytecodec_MultibyteStreamReader_readline__doc__},
@@ -222,7 +228,8 @@ exit:
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_readlines__doc__,
 "readlines($self, sizehintobj=None, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMREADER_READLINES_METHODDEF    \
     {"readlines", (PyCFunction)_multibytecodec_MultibyteStreamReader_readlines, METH_VARARGS, _multibytecodec_MultibyteStreamReader_readlines__doc__},
@@ -248,7 +255,8 @@ exit:
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamReader_reset__doc__,
 "reset($self, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMREADER_RESET_METHODDEF    \
     {"reset", (PyCFunction)_multibytecodec_MultibyteStreamReader_reset, METH_NOARGS, _multibytecodec_MultibyteStreamReader_reset__doc__},
@@ -264,21 +272,24 @@ _multibytecodec_MultibyteStreamReader_reset(MultibyteStreamReaderObject *self, P
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_write__doc__,
 "write($self, strobj, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMWRITER_WRITE_METHODDEF    \
     {"write", (PyCFunction)_multibytecodec_MultibyteStreamWriter_write, METH_O, _multibytecodec_MultibyteStreamWriter_write__doc__},
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_writelines__doc__,
 "writelines($self, lines, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMWRITER_WRITELINES_METHODDEF    \
     {"writelines", (PyCFunction)_multibytecodec_MultibyteStreamWriter_writelines, METH_O, _multibytecodec_MultibyteStreamWriter_writelines__doc__},
 
 PyDoc_STRVAR(_multibytecodec_MultibyteStreamWriter_reset__doc__,
 "reset($self, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC_MULTIBYTESTREAMWRITER_RESET_METHODDEF    \
     {"reset", (PyCFunction)_multibytecodec_MultibyteStreamWriter_reset, METH_NOARGS, _multibytecodec_MultibyteStreamWriter_reset__doc__},
@@ -294,8 +305,9 @@ _multibytecodec_MultibyteStreamWriter_reset(MultibyteStreamWriterObject *self, P
 
 PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 "__create_codec($module, arg, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=dff1459dec464796 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0ea29cd57f7cbc1a input=a9049054013a1b77]*/

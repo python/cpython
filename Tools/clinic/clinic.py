@@ -66,6 +66,8 @@ class Unknown:
 
 unknown = Unknown()
 
+sig_end_marker = '--'
+
 
 _text_accumulator_nt = collections.namedtuple("_text_accumulator", "text append output")
 
@@ -559,8 +561,13 @@ class CLanguage(Language):
             add(quoted_for_c_string(line))
             add('\\n"\n')
 
-        text.pop()
-        add('"')
+        if text[-2] == sig_end_marker:
+            # If we only have a signature, add the blank line that the
+            # __text_signature__ getter expects to be there.
+            add('"\\n"')
+        else:
+            text.pop()
+            add('"')
         return ''.join(text)
 
     def output_templates(self, f):
@@ -4015,7 +4022,7 @@ class DSLParser:
         #     add(f.return_converter.py_default)
 
         if not f.docstring_only:
-            add("\n--\n")
+            add("\n" + sig_end_marker + "\n")
 
         docstring_first_line = output()
 

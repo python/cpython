@@ -3083,6 +3083,12 @@ PyDoc_STRVAR(docstring_with_signature,
 "This docstring has a valid signature."
 );
 
+PyDoc_STRVAR(docstring_with_signature_but_no_doc,
+"docstring_with_signature_but_no_doc($module, /, sig)\n"
+"--\n"
+"\n"
+);
+
 PyDoc_STRVAR(docstring_with_signature_and_extra_newlines,
 "docstring_with_signature_and_extra_newlines($module, /, parameter)\n"
 "--\n"
@@ -3635,6 +3641,9 @@ static PyMethodDef TestMethods[] = {
     {"docstring_with_signature",
         (PyCFunction)test_with_docstring, METH_NOARGS,
         docstring_with_signature},
+    {"docstring_with_signature_but_no_doc",
+        (PyCFunction)test_with_docstring, METH_NOARGS,
+        docstring_with_signature_but_no_doc},
     {"docstring_with_signature_and_extra_newlines",
         (PyCFunction)test_with_docstring, METH_NOARGS,
         docstring_with_signature_and_extra_newlines},
