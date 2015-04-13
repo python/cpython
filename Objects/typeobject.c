@@ -137,7 +137,7 @@ _PyType_GetDocFromInternalDoc(const char *name, const char *internal_doc)
 {
     const char *doc = _PyType_DocWithoutSignature(name, internal_doc);
 
-    if (!doc) {
+    if (!doc || *doc == '\0') {
         Py_INCREF(Py_None);
         return Py_None;
     }

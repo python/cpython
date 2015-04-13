@@ -209,7 +209,8 @@ exit:
 
 PyDoc_STRVAR(pyexpat_xmlparser___dir____doc__,
 "__dir__($self, /)\n"
-"--");
+"--\n"
+"\n");
 
 #define PYEXPAT_XMLPARSER___DIR___METHODDEF    \
     {"__dir__", (PyCFunction)pyexpat_xmlparser___dir__, METH_NOARGS, pyexpat_xmlparser___dir____doc__},
@@ -286,4 +287,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=9715b916f2d618fa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e5993de4e9dd2236 input=a9049054013a1b77]*/

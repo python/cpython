@@ -156,6 +156,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #20586: Argument Clinic now ensures that functions without docstrings
+  have signatures.
+
 - Issue #23492: Argument Clinic now generates argument parsing code with
   PyArg_Parse instead of PyArg_ParseTuple if possible.
 
