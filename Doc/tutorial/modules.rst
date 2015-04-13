@@ -216,15 +216,15 @@ Some tips for experts:
   statements, the ``-OO`` switch removes both assert statements and __doc__
   strings.  Since some programs may rely on having these available, you should
   only use this option if you know what you're doing.  "Optimized" modules have
-  a .pyo rather than a .pyc suffix and are usually smaller.  Future releases may
+  an ``opt-`` tag and are usually smaller.  Future releases may
   change the effects of optimization.
 
-* A program doesn't run any faster when it is read from a ``.pyc`` or ``.pyo``
+* A program doesn't run any faster when it is read from a ``.pyc``
   file than when it is read from a ``.py`` file; the only thing that's faster
-  about ``.pyc`` or ``.pyo`` files is the speed with which they are loaded.
+  about ``.pyc`` files is the speed with which they are loaded.
 
-* The module :mod:`compileall` can create .pyc files (or .pyo files when
-  :option:`-O` is used) for all modules in a directory.
+* The module :mod:`compileall` can create .pyc files for all modules in a
+  directory.
 
 * There is more detail on this process, including a flow chart of the
   decisions, in PEP 3147.
@@ -548,4 +548,3 @@ modules found in a package.
 .. [#] In fact function definitions are also 'statements' that are 'executed'; the
    execution of a module-level function definition enters the function name in
    the module's global symbol table.
-

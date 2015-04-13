@@ -13,8 +13,8 @@ from test.tracedmodules import testmod
 #------------------------------- Utilities -----------------------------------#
 
 def fix_ext_py(filename):
-    """Given a .pyc/.pyo filename converts it to the appropriate .py"""
-    if filename.endswith(('.pyc', '.pyo')):
+    """Given a .pyc filename converts it to the appropriate .py"""
+    if filename.endswith('.pyc'):
         filename = filename[:-1]
     return filename
 

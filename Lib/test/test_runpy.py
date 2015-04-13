@@ -269,7 +269,7 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
             if verbose > 1: print(ex) # Persist with cleaning up
 
     def _fix_ns_for_legacy_pyc(self, ns, alter_sys):
-        char_to_add = "c" if __debug__ else "o"
+        char_to_add = "c"
         ns["__file__"] += char_to_add
         ns["__cached__"] = ns["__file__"]
         spec = ns["__spec__"]

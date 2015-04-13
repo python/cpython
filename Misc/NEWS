@@ -10,6 +10,8 @@ Release date: XXX
 Core and Builtins
 -----------------
 
+- Issue #23731: Implement PEP 488: removal of .pyo files.
+
 - Issue #23726: Don't enable GC for user subclasses of non-GC types that
   don't add any new fields.  Patch by Eugene Toder.
 

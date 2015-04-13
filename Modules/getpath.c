@@ -170,14 +170,14 @@ isfile(wchar_t *filename)          /* Is file, not directory */
 
 
 static int
-ismodule(wchar_t *filename)        /* Is module -- check for .pyc/.pyo too */
+ismodule(wchar_t *filename)        /* Is module -- check for .pyc too */
 {
     if (isfile(filename))
         return 1;
 
     /* Check for the compiled version of prefix. */
     if (wcslen(filename) < MAXPATHLEN) {
-        wcscat(filename, Py_OptimizeFlag ? L"o" : L"c");
+        wcscat(filename, L"c");
         if (isfile(filename))
             return 1;
     }
@@ -891,4 +891,3 @@ Py_GetProgramFullPath(void)
 #ifdef __cplusplus
 }
 #endif
-

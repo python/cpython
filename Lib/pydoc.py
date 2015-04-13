@@ -213,7 +213,7 @@ def classify_class_attrs(object):
 def ispackage(path):
     """Guess whether a path refers to a package directory."""
     if os.path.isdir(path):
-        for ext in ('.py', '.pyc', '.pyo'):
+        for ext in ('.py', '.pyc'):
             if os.path.isfile(os.path.join(path, '__init__' + ext)):
                 return True
     return False

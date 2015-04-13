@@ -119,6 +119,10 @@ class PyCompileTests(unittest.TestCase):
         self.assertTrue(os.path.exists(cache_path))
         self.assertFalse(os.path.exists(pyc_path))
 
+    def test_optimization_path(self):
+        # Specifying optimized bytecode should lead to a path reflecting that.
+        self.assertIn('opt-2', py_compile.compile(self.source_path, optimize=2))
+
 
 if __name__ == "__main__":
     unittest.main()

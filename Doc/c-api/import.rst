@@ -183,9 +183,9 @@ Importing Modules
 
 .. c:function:: long PyImport_GetMagicNumber()
 
-   Return the magic number for Python bytecode files (a.k.a. :file:`.pyc` and
-   :file:`.pyo` files).  The magic number should be present in the first four bytes
-   of the bytecode file, in little-endian byte order. Returns -1 on error.
+   Return the magic number for Python bytecode files (a.k.a. :file:`.pyc` file).
+   The magic number should be present in the first four bytes of the bytecode
+   file, in little-endian byte order. Returns -1 on error.
 
    .. versionchanged:: 3.3
       Return value of -1 upon failure.

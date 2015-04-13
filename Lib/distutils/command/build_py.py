@@ -314,10 +314,10 @@ class build_py (Command):
             if include_bytecode:
                 if self.compile:
                     outputs.append(importlib.util.cache_from_source(
-                        filename, debug_override=True))
+                        filename, optimization=''))
                 if self.optimize > 0:
                     outputs.append(importlib.util.cache_from_source(
-                        filename, debug_override=False))
+                        filename, optimization=self.optimize))
 
         outputs += [
             os.path.join(build_dir, filename)

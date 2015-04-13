@@ -1193,12 +1193,12 @@ other utility module.
 
 .. function:: byte_compile(py_files[, optimize=0, force=0, prefix=None, base_dir=None, verbose=1, dry_run=0, direct=None])
 
-   Byte-compile a collection of Python source files to either :file:`.pyc` or
-   :file:`.pyo` files in a :file:`__pycache__` subdirectory (see :pep:`3147`).
+   Byte-compile a collection of Python source files to :file:`.pyc` files in a
+   :file:`__pycache__` subdirectory (see :pep:`3147` and :pep:`488`).
    *py_files* is a list of files to compile; any files that don't end in
    :file:`.py` are silently skipped.  *optimize* must be one of the following:
 
-   * ``0`` - don't optimize (generate :file:`.pyc`)
+   * ``0`` - don't optimize
    * ``1`` - normal optimization (like ``python -O``)
    * ``2`` - extra optimization (like ``python -OO``)
 
@@ -1222,9 +1222,12 @@ other utility module.
    doing, leave it set to ``None``.
 
    .. versionchanged:: 3.2.3
-      Create ``.pyc`` or ``.pyo`` files with an :func:`import magic tag
+      Create ``.pyc`` files with an :func:`import magic tag
       <imp.get_tag>` in their name, in a :file:`__pycache__` subdirectory
       instead of files without tag in the current directory.
+
+   .. versionchanged: 3.5
+      Create ``.pyc`` files according to :pep:`488`.
 
 
 .. function:: rfc822_escape(header)

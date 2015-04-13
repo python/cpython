@@ -1263,12 +1263,21 @@ libinstall:	build_all $(srcdir)/Lib/$(PLATDIR) $(srcdir)/Modules/xxmodule.c
 		-d $(LIBDEST) -f \
 		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
 		$(DESTDIR)$(LIBDEST)
-	-PYTHONPATH=$(DESTDIR)$(LIBDEST)  $(RUNSHARED) \
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+		$(PYTHON_FOR_BUILD) -Wi -OO $(DESTDIR)$(LIBDEST)/compileall.py \
+		-d $(LIBDEST) -f \
+		-x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
+		$(DESTDIR)$(LIBDEST)
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi $(DESTDIR)$(LIBDEST)/compileall.py \
 		-d $(LIBDEST)/site-packages -f \
 		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
 		$(PYTHON_FOR_BUILD) -Wi -O $(DESTDIR)$(LIBDEST)/compileall.py \
+		-d $(LIBDEST)/site-packages -f \
+		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
+	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \
+		$(PYTHON_FOR_BUILD) -Wi -OO $(DESTDIR)$(LIBDEST)/compileall.py \
 		-d $(LIBDEST)/site-packages -f \
 		-x badsyntax $(DESTDIR)$(LIBDEST)/site-packages
 	-PYTHONPATH=$(DESTDIR)$(LIBDEST) $(RUNSHARED) \

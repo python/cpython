@@ -29,9 +29,9 @@ byte-code cache files in the directory containing the source code.
 .. function:: compile(file, cfile=None, dfile=None, doraise=False, optimize=-1)
 
    Compile a source file to byte-code and write out the byte-code cache file.
-   The source code is loaded from the file name *file*.  The  byte-code is
-   written to *cfile*, which defaults to the :PEP:`3147` path, ending in
-   ``.pyc`` (``.pyo`` if optimization is enabled in the current interpreter).
+   The source code is loaded from the file name *file*.  The byte-code is
+   written to *cfile*, which defaults to the :pep:`3147`/:pep`488` path, ending
+   in ``.pyc``.
    For example, if *file* is ``/foo/bar/baz.py`` *cfile* will default to
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.  If *dfile* is
    specified, it is used as the name of the source file in error messages when
@@ -68,7 +68,7 @@ byte-code cache files in the directory containing the source code.
 .. function:: main(args=None)
 
    Compile several source files.  The files named in *args* (or on the command
-   line, if *args* is ``None``) are compiled and the resulting bytecode is
+   line, if *args* is ``None``) are compiled and the resulting byte-code is
    cached in the normal manner.  This function does not search a directory
    structure to locate source files; it only compiles files named explicitly.
    If ``'-'`` is the only parameter in args, the list of files is taken from
@@ -86,4 +86,3 @@ could not be compiled.
 
    Module :mod:`compileall`
       Utilities to compile all Python source files in a directory tree.
-

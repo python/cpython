@@ -363,7 +363,7 @@ Filter
    Filter on traces of memory blocks.
 
    See the :func:`fnmatch.fnmatch` function for the syntax of
-   *filename_pattern*. The ``'.pyc'`` and ``'.pyo'`` file extensions are
+   *filename_pattern*. The ``'.pyc'`` file extension is
    replaced with ``'.py'``.
 
    Examples:
@@ -373,6 +373,10 @@ Filter
    * ``Filter(False, tracemalloc.__file__)`` excludes traces of the
      :mod:`tracemalloc` module
    * ``Filter(False, "<unknown>")`` excludes empty tracebacks
+
+
+   .. versionchanged:: 3.5
+      The ``'.pyo'`` file extension is no longer replaced with ``'.py'``.
 
    .. attribute:: inclusive
 
@@ -631,4 +635,3 @@ Traceback
               obj = Object()
             File "test.py", line 12
               tb = tracemalloc.get_object_traceback(f())
-
