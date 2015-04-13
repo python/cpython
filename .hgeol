@@ -35,6 +35,9 @@ Lib/test/cjkencodings/* = BIN
 Lib/test/decimaltestdata/*.decTest = BIN
 Lib/test/sndhdrdata/sndhdr.* = BIN
 
+# Windows batch files work best with CRLF, there can be subtle problems with LF
+**.bat = CRLF
+
 # All other files (which presumably are human-editable) are "native".
 # This must be the last rule!
 
