@@ -38,7 +38,7 @@ config.status
 libpython*.a
 libpython*.so*
 pyconfig.h
-python
+python$
 python-gdb.py
 tags
 .coverage
