@@ -24,6 +24,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22982: Improve BOM handling when seeking to multiple positions of
+  a writable text file.
+
 - Issue #23464: Removed deprecated asyncio JoinableQueue.
 
 - Issue #23529: Limit the size of decompressed data when reading from
