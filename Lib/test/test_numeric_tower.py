@@ -5,7 +5,6 @@ import random
 import math
 import sys
 import operator
-from test.support import run_unittest
 
 from decimal import Decimal as D
 from fractions import Fraction as F
@@ -199,8 +198,5 @@ class ComparisonTest(unittest.TestCase):
                 self.assertRaises(TypeError, op, v, z)
 
 
-def test_main():
-    run_unittest(HashTest, ComparisonTest)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

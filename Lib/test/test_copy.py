@@ -7,7 +7,6 @@ import abc
 from operator import le, lt, ge, gt, eq, ne
 
 import unittest
-from test import support
 
 order_comparisons = le, lt, ge, gt
 equality_comparisons = eq, ne
@@ -822,8 +821,5 @@ class TestCopy(unittest.TestCase):
 
 def global_foo(x, y): return x+y
 
-def test_main():
-    support.run_unittest(TestCopy)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

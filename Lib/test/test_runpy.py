@@ -8,7 +8,7 @@ import tempfile
 import importlib, importlib.machinery, importlib.util
 import py_compile
 from test.support import (
-    forget, make_legacy_pyc, run_unittest, unload, verbose, no_tracing,
+    forget, make_legacy_pyc, unload, verbose, no_tracing,
     create_empty_file)
 from test.script_helper import (
     make_pkg, make_script, make_zip_pkg, make_zip_script, temp_dir)

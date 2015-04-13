@@ -1099,16 +1099,8 @@ class PendingSignalsTests(unittest.TestCase):
                                 (exitcode, stdout))
 
 
-def test_main():
-    try:
-        support.run_unittest(GenericTests, PosixTests, InterProcessSignalTests,
-                             WakeupFDTests, WakeupSignalTests,
-                             WakeupSocketSignalTests,
-                             SiginterruptTest, ItimerTest, WindowsSignalTests,
-                             PendingSignalsTests)
-    finally:
-        support.reap_children()
-
+def tearDownModule():
+    support.reap_children()
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

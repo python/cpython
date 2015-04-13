@@ -1084,11 +1084,5 @@ class TestUnicode(unittest.TestCase):
             self.assertEqual(fileobj.read(), expected)
 
 
-def test_main():
-    mod = sys.modules[__name__]
-    support.run_unittest(
-        *[getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
-    )
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

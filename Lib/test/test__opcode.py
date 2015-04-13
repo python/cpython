@@ -1,5 +1,5 @@
 import dis
-from test.support import run_unittest, import_module
+from test.support import import_module
 import unittest
 
 _opcode = import_module("_opcode")
@@ -16,8 +16,5 @@ class OpcodeTests(unittest.TestCase):
         self.assertRaises(ValueError, _opcode.stack_effect, dis.opmap['BUILD_SLICE'])
         self.assertRaises(ValueError, _opcode.stack_effect, dis.opmap['POP_TOP'], 0)
 
-def test_main():
-    run_unittest(OpcodeTests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

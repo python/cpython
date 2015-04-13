@@ -49,8 +49,5 @@ class CharmapCodecTest(unittest.TestCase):
     def test_maptoundefined(self):
         self.assertRaises(UnicodeError, str, b'abc\001', codecname)
 
-def test_main():
-    test.support.run_unittest(CharmapCodecTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

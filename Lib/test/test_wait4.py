@@ -5,7 +5,7 @@ import os
 import time
 import sys
 from test.fork_wait import ForkWait
-from test.support import run_unittest, reap_children, get_attribute
+from test.support import reap_children, get_attribute
 
 # If either of these do not exist, skip this test.
 get_attribute(os, 'fork')
@@ -31,9 +31,8 @@ class Wait4Test(ForkWait):
         self.assertEqual(status, 0, "cause = %d, exit = %d" % (status&0xff, status>>8))
         self.assertTrue(rusage)
 
-def test_main():
-    run_unittest(Wait4Test)
+def tearDownModule():
     reap_children()
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

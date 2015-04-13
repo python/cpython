@@ -5,7 +5,6 @@ import io
 import time
 from textwrap import dedent
 
-from test.support import run_unittest
 from test.support import captured_stdout
 from test.support import captured_stderr
 
@@ -343,8 +342,5 @@ class TestTimeit(unittest.TestCase):
         self.assert_exc_string(error_stringio.getvalue(), 'ZeroDivisionError')
 
 
-def test_main():
-    run_unittest(TestTimeit)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -13,7 +13,6 @@ import select
 import signal
 import subprocess
 import sys
-from test.support import run_unittest
 import time
 import unittest
 
@@ -249,12 +248,5 @@ class PyTestTextIOSignalInterrupt(TestTextIOSignalInterrupt, unittest.TestCase):
     modname = '_pyio'
 
 
-def test_main():
-    test_cases = [
-            tc for tc in globals().values()
-            if isinstance(tc, type) and issubclass(tc, unittest.TestCase)]
-    run_unittest(*test_cases)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -291,9 +291,5 @@ class TestPkg(unittest.TestCase):
         import t8
         self.assertEqual(t8.__doc__, "doc for t8")
 
-def test_main():
-    support.run_unittest(__name__)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

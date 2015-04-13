@@ -12,7 +12,7 @@ import struct
 import subprocess
 import sys
 import tempfile
-from test.support import (captured_stdout, captured_stderr, run_unittest,
+from test.support import (captured_stdout, captured_stderr,
                           can_symlink, EnvironmentVarGuard, rmtree)
 import textwrap
 import unittest
@@ -398,8 +398,5 @@ class EnsurePipTest(BaseTest):
         self.assert_pip_not_installed()
 
 
-def test_main():
-    run_unittest(BasicTest, EnsurePipTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

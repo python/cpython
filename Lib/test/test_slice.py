@@ -1,7 +1,6 @@
 # tests for slice objects; in particular the indices method.
 
 import unittest
-from test import support
 from pickle import loads, dumps
 
 import itertools
@@ -240,8 +239,5 @@ class SliceTest(unittest.TestCase):
             self.assertEqual(s.indices(15), t.indices(15))
             self.assertNotEqual(id(s), id(t))
 
-def test_main():
-    support.run_unittest(SliceTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

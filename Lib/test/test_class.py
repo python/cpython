@@ -2,7 +2,6 @@
 
 import unittest
 
-from test import support
 
 testmeths = [
 
@@ -569,8 +568,5 @@ class ClassTests(unittest.TestCase):
         a = A(hash(A.f)^(-1))
         hash(a.f)
 
-def test_main():
-    support.run_unittest(ClassTests)
-
-if __name__=='__main__':
-    test_main()
+if __name__ == '__main__':
+    unittest.main()

@@ -3,7 +3,6 @@
 # testing of error conditions uncovered when using extension types.
 
 import unittest
-from test import support
 import sys
 
 
@@ -277,13 +276,5 @@ def blowstack(fxn, arg, compare_to):
         fxn(arg, tuple_arg)
 
 
-def test_main():
-    support.run_unittest(
-        TestIsInstanceExceptions,
-        TestIsSubclassExceptions,
-        TestIsInstanceIsSubclass
-    )
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

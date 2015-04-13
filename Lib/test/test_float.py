@@ -1299,18 +1299,5 @@ class HexFloatTestCase(unittest.TestCase):
                 self.identical(x, fromHex(toHex(x)))
 
 
-def test_main():
-    support.run_unittest(
-        GeneralFloatCases,
-        FormatFunctionsTestCase,
-        UnknownFormatTestCase,
-        IEEEFormatTestCase,
-        FormatTestCase,
-        ReprTestCase,
-        RoundTestCase,
-        InfNanTest,
-        HexFloatTestCase,
-        )
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

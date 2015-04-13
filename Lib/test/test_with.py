@@ -8,7 +8,6 @@ import sys
 import unittest
 from collections import deque
 from contextlib import _GeneratorContextManager, contextmanager
-from test.support import run_unittest
 
 
 class MockContextManager(_GeneratorContextManager):
@@ -737,14 +736,5 @@ class NestedWith(unittest.TestCase):
             self.assertEqual(10, b1)
             self.assertEqual(20, b2)
 
-def test_main():
-    run_unittest(FailureTestCase, NonexceptionalTestCase,
-                 NestedNonexceptionalTestCase, ExceptionalTestCase,
-                 NonLocalFlowControlTestCase,
-                 AssignmentTargetTestCase,
-                 ExitSwallowsExceptionTestCase,
-                 NestedWith)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
