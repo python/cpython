@@ -1,5 +1,4 @@
 
-from test.support import run_unittest
 import unittest
 
 class ExceptionTestCase(unittest.TestCase):
@@ -173,8 +172,5 @@ class ExceptionTestCase(unittest.TestCase):
         self.assertTrue(hit_finally)
         self.assertTrue(hit_except)
 
-def test_main():
-    run_unittest(ExceptionTestCase)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

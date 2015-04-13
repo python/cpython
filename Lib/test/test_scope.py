@@ -1,7 +1,7 @@
 import unittest
 import weakref
 
-from test.support import check_syntax_error, cpython_only, run_unittest
+from test.support import check_syntax_error, cpython_only
 
 
 class ScopeTests(unittest.TestCase):
@@ -757,8 +757,5 @@ class ScopeTests(unittest.TestCase):
         self.assertIsNone(ref())
 
 
-def test_main():
-    run_unittest(ScopeTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -4,7 +4,6 @@ Test the API of the symtable module.
 import symtable
 import unittest
 
-from test import support
 
 
 TEST_CODE = """
@@ -169,8 +168,5 @@ class SymtableTest(unittest.TestCase):
         symbols = symtable.symtable("def f(x): return x", "?", "exec")
 
 
-def test_main():
-    support.run_unittest(SymtableTest)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -415,8 +415,5 @@ class TestRemovedFunctionality(unittest.TestCase):
             self.fail("No exception raised")
 
 
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == "__main__":
     unittest.main()

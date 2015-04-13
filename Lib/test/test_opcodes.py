@@ -1,6 +1,5 @@
 # Python test set -- part 2, opcodes
 
-from test.support import run_unittest
 import unittest
 
 class OpcodeTest(unittest.TestCase):
@@ -105,8 +104,5 @@ class OpcodeTest(unittest.TestCase):
         self.assertEqual(MyString() % 3, 42)
 
 
-def test_main():
-    run_unittest(OpcodeTest)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

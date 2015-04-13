@@ -252,8 +252,5 @@ class TestEPoll(unittest.TestCase):
         self.assertEqual(os.get_inheritable(epoll.fileno()), False)
 
 
-def test_main():
-    support.run_unittest(TestEPoll)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

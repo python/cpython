@@ -647,8 +647,5 @@ class RangeTest(unittest.TestCase):
         with self.assertRaises(AttributeError):
             del rangeobj.step
 
-def test_main():
-    test.support.run_unittest(RangeTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

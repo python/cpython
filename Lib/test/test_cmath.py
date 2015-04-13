@@ -1,4 +1,4 @@
-from test.support import run_unittest, requires_IEEE_754
+from test.support import requires_IEEE_754
 from test.test_math import parse_testfile, test_file
 import unittest
 import cmath, math
@@ -529,8 +529,5 @@ class CMathTests(unittest.TestCase):
             self.assertComplexIdentical(cmath.atanh(z), z)
 
 
-def test_main():
-    run_unittest(CMathTests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

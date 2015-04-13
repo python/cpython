@@ -1,4 +1,4 @@
-from test.support import run_unittest, open_urlresource
+from test.support import open_urlresource
 import unittest
 
 from http.client import HTTPException
@@ -97,8 +97,5 @@ class NormalizationTest(unittest.TestCase):
         normalize('NFC', '\ud55c\uae00')
 
 
-def test_main():
-    run_unittest(NormalizationTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

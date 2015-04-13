@@ -313,12 +313,5 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
                 self.assertEqual(len(lines), 1,
                                  r"\u%.4x should not be a linebreak" % i)
 
-def test_main():
-    test.support.run_unittest(
-        UnicodeMiscTest,
-        UnicodeMethodsTest,
-        UnicodeFunctionsTest
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

@@ -1,7 +1,6 @@
 # This file is marked as binary in the CVS, to prevent MacCVS from recoding it.
 
 import unittest
-from test import support
 
 class PEP3120Test(unittest.TestCase):
 
@@ -40,8 +39,5 @@ class BuiltinCompileTests(unittest.TestCase):
         self.assertEqual('Ç', ns['u'])
 
 
-def test_main():
-    support.run_unittest(PEP3120Test, BuiltinCompileTests)
-
-if __name__=="__main__":
-    test_main()
+if __name__ == "__main__":
+    unittest.main()

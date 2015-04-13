@@ -1,6 +1,5 @@
 # Augmented assignment test.
 
-from test.support import run_unittest
 import unittest
 
 
@@ -315,8 +314,5 @@ __rlshift__ called
 __ilshift__ called
 '''.splitlines())
 
-def test_main():
-    run_unittest(AugAssignTest)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

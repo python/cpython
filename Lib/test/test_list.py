@@ -108,20 +108,5 @@ class ListTest(list_tests.CommonTest):
         with self.assertRaises(TypeError):
             (3,) + L([1,2])
 
-def test_main(verbose=None):
-    support.run_unittest(ListTest)
-
-    # verify reference counting
-    import sys
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(ListTest)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

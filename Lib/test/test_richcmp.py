@@ -326,8 +326,5 @@ class ListTest(unittest.TestCase):
             self.assertIs(op(x, y), True)
 
 
-def test_main():
-    support.run_unittest(VectorTest, NumberTest, MiscTest, DictTest, ListTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

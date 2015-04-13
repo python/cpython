@@ -3885,8 +3885,5 @@ class Oddballs(unittest.TestCase):
         with self.assertRaises(TypeError):
             datetime(10, 10, 10, 10, 10, 10, 10.)
 
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
