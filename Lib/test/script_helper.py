@@ -1,6 +1,7 @@
 # Common utility functions used by various script execution tests
 #  e.g. test_cmd_line, test_cmd_line_script and test_runpy
 
+import collections
 import importlib
 import sys
 import os
@@ -50,8 +51,12 @@ def interpreter_requires_environment():
     return __cached_interp_requires_environment
 
 
+_PythonRunResult = collections.namedtuple("_PythonRunResult",
+                                          ("rc", "out", "err"))
+
+
 # Executing the interpreter in a subprocess
-def _assert_python(expected_success, *args, **env_vars):
+def run_python_until_end(*args, **env_vars):
     env_required = interpreter_requires_environment()
     if '__isolated' in env_vars:
         isolated = env_vars.pop('__isolated')
@@ -85,9 +90,14 @@ def _assert_python(expected_success, *args, **env_vars):
         p.stderr.close()
     rc = p.returncode
     err = strip_python_stderr(err)
-    if (rc and expected_success) or (not rc and not expected_success):
+    return _PythonRunResult(rc, out, err), cmd_line
+
+def _assert_python(expected_success, *args, **env_vars):
+    res, cmd_line = run_python_until_end(*args, **env_vars)
+    if (res.rc and expected_success) or (not res.rc and not expected_success):
         # Limit to 80 lines to ASCII characters
         maxlen = 80 * 100
+        out, err = res.out, res.err
         if len(out) > maxlen:
             out = b'(... truncated stdout ...)' + out[-maxlen:]
         if len(err) > maxlen:
@@ -106,10 +116,10 @@ def _assert_python(expected_success, *args, **env_vars):
                              "---\n"
                              "%s\n"
                              "---"
-                             % (rc, cmd_line,
+                             % (res.rc, cmd_line,
                                 out,
                                 err))
-    return rc, out, err
+    return res
 
 def assert_python_ok(*args, **env_vars):
     """
