@@ -6617,6 +6617,9 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, CAN_RAW_LOOPBACK);
     PyModule_AddIntMacro(m, CAN_RAW_RECV_OWN_MSGS);
 #endif
+#ifdef HAVE_LINUX_CAN_RAW_FD_FRAMES
+    PyModule_AddIntMacro(m, CAN_RAW_FD_FRAMES);
+#endif
 #ifdef HAVE_LINUX_CAN_BCM_H
     PyModule_AddIntMacro(m, CAN_BCM);
     PyModule_AddIntConstant(m, "CAN_BCM_TX_SETUP", TX_SETUP);

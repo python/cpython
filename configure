@@ -10495,6 +10495,36 @@ if test "$ipv6" = "yes" -a "$ipv6lib" != "none"; then
 	fi
 fi
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for CAN_RAW_FD_FRAMES" >&5
+$as_echo_n "checking for CAN_RAW_FD_FRAMES... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+ /* CAN_RAW_FD_FRAMES available check */
+#include <linux/can/raw.h>
+int
+main ()
+{
+int can_raw_fd_frames = CAN_RAW_FD_FRAMES;
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_compile "$LINENO"; then :
+
+
+$as_echo "#define HAVE_LINUX_CAN_RAW_FD_FRAMES 1" >>confdefs.h
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for OSX 10.5 SDK or later" >&5
 $as_echo_n "checking for OSX 10.5 SDK or later... " >&6; }
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
