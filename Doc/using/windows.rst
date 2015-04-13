@@ -111,7 +111,7 @@ of available options is shown below.
 |                           | launcher is also installed.          |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | CompileAll                | Compile all ``.py`` files to         | 0                        |
-|                           | ``.pyc`` and ``.pyo``.               |                          |
+|                           | ``.pyc``.                            |                          |
 +---------------------------+--------------------------------------+--------------------------+
 | PrependPath               | Add install and Scripts directories  | 0                        |
 |                           | tho :envvar:`PATH` and ``.PY`` to    |                          |
@@ -451,7 +451,7 @@ From file associations
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The launcher should have been associated with Python files (i.e. ``.py``,
-``.pyw``, ``.pyc``, ``.pyo`` files) when it was installed.  This means that
+``.pyw``, ``.pyc`` files) when it was installed.  This means that
 when you double-click on one of these files from Windows explorer the launcher
 will be used, and therefore you can use the same facilities described above to
 have the script specify the version which should be used.
@@ -796,5 +796,3 @@ Other resources
 
    :pep:`397` - Python launcher for Windows
       The proposal for the launcher to be included in the Python distribution.
-
-

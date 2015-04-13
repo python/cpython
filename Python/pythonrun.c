@@ -265,7 +265,7 @@ PyRun_InteractiveOneFlags(FILE *fp, const char *filename_str, PyCompilerFlags *f
 static int
 maybe_pyc_file(FILE *fp, const char* filename, const char* ext, int closeit)
 {
-    if (strcmp(ext, ".pyc") == 0 || strcmp(ext, ".pyo") == 0)
+    if (strcmp(ext, ".pyc") == 0)
         return 1;
 
     /* Only look into the file if we are allowed to close it, since
@@ -371,9 +371,6 @@ PyRun_SimpleFileExFlags(FILE *fp, const char *filename, int closeit,
             fprintf(stderr, "python: Can't reopen .pyc file\n");
             goto done;
         }
-        /* Turn on optimization if a .pyo file is given */
-        if (strcmp(ext, ".pyo") == 0)
-            Py_OptimizeFlag = 1;
 
         if (set_main_loader(d, filename, "SourcelessFileLoader") < 0) {
             fprintf(stderr, "python: failed to set __main__.__loader__\n");

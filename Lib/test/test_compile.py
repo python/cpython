@@ -425,7 +425,7 @@ if 1:
 
     def test_compile_ast(self):
         fname = __file__
-        if fname.lower().endswith(('pyc', 'pyo')):
+        if fname.lower().endswith('pyc'):
             fname = fname[:-1]
         with open(fname, 'r') as f:
             fcontents = f.read()

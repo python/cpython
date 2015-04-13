@@ -322,11 +322,11 @@ def byte_compile (py_files,
                   prefix=None, base_dir=None,
                   verbose=1, dry_run=0,
                   direct=None):
-    """Byte-compile a collection of Python source files to either .pyc
-    or .pyo files in a __pycache__ subdirectory.  'py_files' is a list
+    """Byte-compile a collection of Python source files to .pyc
+    files in a __pycache__ subdirectory.  'py_files' is a list
     of files to compile; any files that don't end in ".py" are silently
     skipped.  'optimize' must be one of the following:
-      0 - don't optimize (generate .pyc)
+      0 - don't optimize
       1 - normal optimization (like "python -O")
       2 - extra optimization (like "python -OO")
     If 'force' is true, all files are recompiled regardless of
@@ -438,8 +438,9 @@ byte_compile(files, optimize=%r, force=%r,
             #   cfile - byte-compiled file
             #   dfile - purported source filename (same as 'file' by default)
             if optimize >= 0:
+                opt = '' if optimize == 0 else optimize
                 cfile = importlib.util.cache_from_source(
-                    file, debug_override=not optimize)
+                    file, optimization=opt)
             else:
                 cfile = importlib.util.cache_from_source(file)
             dfile = file

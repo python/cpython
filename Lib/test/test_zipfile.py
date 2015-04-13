@@ -689,7 +689,7 @@ class PyZipFileTests(unittest.TestCase):
         self.requiresWriteAccess(os.path.dirname(__file__))
         with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
             fn = __file__
-            if fn.endswith('.pyc') or fn.endswith('.pyo'):
+            if fn.endswith('.pyc'):
                 path_split = fn.split(os.sep)
                 if os.altsep is not None:
                     path_split.extend(fn.split(os.altsep))
@@ -706,7 +706,7 @@ class PyZipFileTests(unittest.TestCase):
 
         with TemporaryFile() as t, zipfile.PyZipFile(t, "w") as zipfp:
             fn = __file__
-            if fn.endswith(('.pyc', '.pyo')):
+            if fn.endswith('.pyc'):
                 fn = fn[:-1]
 
             zipfp.writepy(fn, "testpackage")
@@ -762,10 +762,8 @@ class PyZipFileTests(unittest.TestCase):
         import email
         packagedir = os.path.dirname(email.__file__)
         self.requiresWriteAccess(packagedir)
-        # use .pyc if running test in optimization mode,
-        # use .pyo if running test in debug mode
         optlevel = 1 if __debug__ else 0
-        ext = '.pyo' if optlevel == 1 else '.pyc'
+        ext = '.pyc'
 
         with TemporaryFile() as t, \
              zipfile.PyZipFile(t, "w", optimize=optlevel) as zipfp:
@@ -839,11 +837,10 @@ class PyZipFileTests(unittest.TestCase):
                 self.assertIn("SyntaxError", s.getvalue())
 
                 # as it will not have compiled the python file, it will
-                # include the .py file not .pyc or .pyo
+                # include the .py file not .pyc
                 names = zipfp.namelist()
                 self.assertIn('mod1.py', names)
                 self.assertNotIn('mod1.pyc', names)
-                self.assertNotIn('mod1.pyo', names)
 
         finally:
             rmtree(TESTFN2)

@@ -1051,7 +1051,7 @@ class DocTestFinder:
             filename = None
         else:
             filename = getattr(module, '__file__', module.__name__)
-            if filename[-4:] in (".pyc", ".pyo"):
+            if filename[-4:] == ".pyc":
                 filename = filename[:-1]
         return self._parser.get_doctest(docstring, globs, name,
                                         filename, lineno)
@@ -2378,7 +2378,7 @@ def DocTestSuite(module=None, globs=None, extraglobs=None, test_finder=None,
             continue
         if not test.filename:
             filename = module.__file__
-            if filename[-4:] in (".pyc", ".pyo"):
+            if filename[-4:] == ".pyc":
                 filename = filename[:-1]
             test.filename = filename
         suite.addTest(DocTestCase(test, **options))

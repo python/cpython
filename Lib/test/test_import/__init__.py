@@ -32,7 +32,6 @@ skip_if_dont_write_bytecode = unittest.skipIf(
 def remove_files(name):
     for f in (name + ".py",
               name + ".pyc",
-              name + ".pyo",
               name + ".pyw",
               name + "$py.class"):
         unlink(f)
@@ -84,7 +83,6 @@ class ImportTests(unittest.TestCase):
         def test_with_extension(ext):
             # The extension is normally ".py", perhaps ".pyw".
             source = TESTFN + ext
-            pyo = TESTFN + ".pyo"
             if is_jython:
                 pyc = TESTFN + "$py.class"
             else:
@@ -115,7 +113,6 @@ class ImportTests(unittest.TestCase):
                 forget(TESTFN)
                 unlink(source)
                 unlink(pyc)
-                unlink(pyo)
 
         sys.path.insert(0, os.curdir)
         try:
@@ -138,7 +135,7 @@ class ImportTests(unittest.TestCase):
             f.write(']')
 
         try:
-            # Compile & remove .py file; we only need .pyc (or .pyo).
+            # Compile & remove .py file; we only need .pyc.
             # Bytecode must be relocated from the PEP 3147 bytecode-only location.
             py_compile.compile(filename)
         finally:
@@ -252,7 +249,7 @@ class ImportTests(unittest.TestCase):
             importlib.invalidate_caches()
             mod = __import__(TESTFN)
             base, ext = os.path.splitext(mod.__file__)
-            self.assertIn(ext, ('.pyc', '.pyo'))
+            self.assertEqual(ext, '.pyc')
         finally:
             del sys.path[0]
             remove_files(TESTFN)
@@ -328,7 +325,7 @@ class ImportTests(unittest.TestCase):
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
-    # tests for file mode on cached .pyc/.pyo files
+    # tests for file mode on cached .pyc files
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
@@ -339,7 +336,7 @@ class FilePermissionTests(unittest.TestCase):
             module = __import__(name)
             if not os.path.exists(cached_path):
                 self.fail("__import__ did not result in creation of "
-                          "either a .pyc or .pyo file")
+                          "a .pyc file")
             stat_info = os.stat(cached_path)
 
         # Check that the umask is respected, and the executable bits
@@ -358,7 +355,7 @@ class FilePermissionTests(unittest.TestCase):
             __import__(name)
             if not os.path.exists(cached_path):
                 self.fail("__import__ did not result in creation of "
-                          "either a .pyc or .pyo file")
+                          "a .pyc file")
             stat_info = os.stat(cached_path)
 
         self.assertEqual(oct(stat.S_IMODE(stat_info.st_mode)), oct(mode))
@@ -373,7 +370,7 @@ class FilePermissionTests(unittest.TestCase):
             __import__(name)
             if not os.path.exists(cached_path):
                 self.fail("__import__ did not result in creation of "
-                          "either a .pyc or .pyo file")
+                          "a .pyc file")
             stat_info = os.stat(cached_path)
 
         expected = mode | 0o200 # Account for fix for issue #6074
@@ -404,10 +401,7 @@ class FilePermissionTests(unittest.TestCase):
             unlink(path)
             unload(name)
             importlib.invalidate_caches()
-            if __debug__:
-                bytecode_only = path + "c"
-            else:
-                bytecode_only = path + "o"
+            bytecode_only = path + "c"
             os.rename(importlib.util.cache_from_source(path), bytecode_only)
             m = __import__(name)
             self.assertEqual(m.x, 'rewritten')
@@ -631,9 +625,7 @@ class OverridingImportBuiltinTests(unittest.TestCase):
 
 
 class PycacheTests(unittest.TestCase):
-    # Test the various PEP 3147 related behaviors.
-
-    tag = sys.implementation.cache_tag
+    # Test the various PEP 3147/488-related behaviors.
 
     def _clean(self):
         forget(TESTFN)
@@ -658,9 +650,10 @@ class PycacheTests(unittest.TestCase):
         self.assertFalse(os.path.exists('__pycache__'))
         __import__(TESTFN)
         self.assertTrue(os.path.exists('__pycache__'))
-        self.assertTrue(os.path.exists(os.path.join(
-            '__pycache__', '{}.{}.py{}'.format(
-            TESTFN, self.tag, 'c' if __debug__ else 'o'))))
+        pyc_path = importlib.util.cache_from_source(self.source)
+        self.assertTrue(os.path.exists(pyc_path),
+                        'bytecode file {!r} for {!r} does not '
+                        'exist'.format(pyc_path, TESTFN))
 
     @unittest.skipUnless(os.name == 'posix',
                          "test meaningful only on posix systems")
@@ -673,8 +666,10 @@ class PycacheTests(unittest.TestCase):
         with temp_umask(0o222):
             __import__(TESTFN)
         self.assertTrue(os.path.exists('__pycache__'))
-        self.assertFalse(os.path.exists(os.path.join(
-            '__pycache__', '{}.{}.pyc'.format(TESTFN, self.tag))))
+        pyc_path = importlib.util.cache_from_source(self.source)
+        self.assertFalse(os.path.exists(pyc_path),
+                        'bytecode file {!r} for {!r} '
+                        'exists'.format(pyc_path, TESTFN))
 
     @skip_if_dont_write_bytecode
     def test_missing_source(self):

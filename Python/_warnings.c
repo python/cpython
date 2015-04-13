@@ -563,13 +563,12 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
         data = PyUnicode_DATA(*filename);
 
 #define ascii_lower(c) ((c <= 127) ? Py_TOLOWER(c) : 0)
-        /* if filename.lower().endswith((".pyc", ".pyo")): */
+        /* if filename.lower().endswith(".pyc"): */
         if (len >= 4 &&
             PyUnicode_READ(kind, data, len-4) == '.' &&
             ascii_lower(PyUnicode_READ(kind, data, len-3)) == 'p' &&
             ascii_lower(PyUnicode_READ(kind, data, len-2)) == 'y' &&
-            (ascii_lower(PyUnicode_READ(kind, data, len-1)) == 'c' ||
-                ascii_lower(PyUnicode_READ(kind, data, len-1)) == 'o'))
+            ascii_lower(PyUnicode_READ(kind, data, len-1)) == 'c')
         {
             *filename = PyUnicode_Substring(*filename, 0,
                                             PyUnicode_GET_LENGTH(*filename)-1);

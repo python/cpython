@@ -188,7 +188,7 @@ def warn(message, category=None, stacklevel=1):
     filename = globals.get('__file__')
     if filename:
         fnl = filename.lower()
-        if fnl.endswith((".pyc", ".pyo")):
+        if fnl.endswith(".pyc"):
             filename = filename[:-1]
     else:
         if module == "__main__":

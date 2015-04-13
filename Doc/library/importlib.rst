@@ -711,6 +711,9 @@ find and load modules.
 
    .. versionadded:: 3.3
 
+   .. deprecated:: 3.5
+      Use :attr:`BYTECODE_SUFFIXES` instead.
+
 .. attribute:: OPTIMIZED_BYTECODE_SUFFIXES
 
    A list of strings representing the file suffixes for optimized bytecode
@@ -718,13 +721,18 @@ find and load modules.
 
    .. versionadded:: 3.3
 
+   .. deprecated:: 3.5
+      Use :attr:`BYTECODE_SUFFIXES` instead.
+
 .. attribute:: BYTECODE_SUFFIXES
 
    A list of strings representing the recognized file suffixes for bytecode
-   modules. Set to either :attr:`DEBUG_BYTECODE_SUFFIXES` or
-   :attr:`OPTIMIZED_BYTECODE_SUFFIXES` based on whether ``__debug__`` is true.
+   modules (including the leading dot).
 
    .. versionadded:: 3.3
+
+   .. versionchanged:: 3.5
+      The value is no longer dependent on ``__debug__``.
 
 .. attribute:: EXTENSION_SUFFIXES
 
@@ -1074,22 +1082,36 @@ an :term:`importer`.
 
    .. versionadded:: 3.4
 
-.. function:: cache_from_source(path, debug_override=None)
+.. function:: cache_from_source(path, debug_override=None, *, optimization=None)
 
-   Return the :pep:`3147` path to the byte-compiled file associated with the
-   source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
+   Return the :pep:`3147`/:pep:`488` path to the byte-compiled file associated
+   with the source *path*.  For example, if *path* is ``/foo/bar/baz.py`` the return
    value would be ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.
    The ``cpython-32`` string comes from the current magic tag (see
    :func:`get_tag`; if :attr:`sys.implementation.cache_tag` is not defined then
-   :exc:`NotImplementedError` will be raised).  The returned path will end in
-   ``.pyc`` when ``__debug__`` is ``True`` or ``.pyo`` for an optimized Python
-   (i.e. ``__debug__`` is ``False``).  By passing in ``True`` or ``False`` for
-   *debug_override* you can override the system's value for ``__debug__`` for
-   extension selection.
+   :exc:`NotImplementedError` will be raised).
 
-   *path* need not exist.
+   The *optimization* parameter is used to specify the optimization level of the
+   bytecode file. An empty string represents no optimization, so
+   ``/foo/bar/baz.py`` with an *optimization* of ``''`` will result in a
+   bytecode path of ``/foo/bar/__pycache__/baz.cpython-32.pyc``. ``None`` causes
+   the interpter's optimization level to be used. Any other value's string
+   representation being used, so ``/foo/bar/baz.py`` with an *optimization* of
+   ``2`` will lead to the bytecode path of
+   ``/foo/bar/__pycache__/baz.cpython-32.opt-2.pyc``. The string representation
+   of *optimization* can only be alphanumeric, else :exc:`ValueError` is raised.
+
+   The *debug_override* parameter is deprecated and can be used to override
+   the system's value for ``__debug__``. A ``True`` value is the equivalent of
+   setting *optimization* to the empty string. A ``False`` value is the same as
+   setting *optimization* to ``1``. If both *debug_override* an *optimization*
+   are not ``None`` then :exc:`TypeError` is raised.
 
    .. versionadded:: 3.4
+
+   .. versionchanged ::3.5
+      The *optimization* parameter was added and the *debug_override* parameter
+      was deprecated.
 
 
 .. function:: source_from_cache(path)
@@ -1098,7 +1120,7 @@ an :term:`importer`.
    file path.  For example, if *path* is
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` the returned path would be
    ``/foo/bar/baz.py``.  *path* need not exist, however if it does not conform
-   to :pep:`3147` format, a ``ValueError`` is raised. If
+   to :pep:`3147` or :pep`488` format, a ``ValueError`` is raised. If
    :attr:`sys.implementation.cache_tag` is not defined,
    :exc:`NotImplementedError` is raised.
 

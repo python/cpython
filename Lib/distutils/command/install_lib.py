@@ -22,15 +22,15 @@ class install_lib(Command):
     # possible scenarios:
     #   1) no compilation at all (--no-compile --no-optimize)
     #   2) compile .pyc only (--compile --no-optimize; default)
-    #   3) compile .pyc and "level 1" .pyo (--compile --optimize)
-    #   4) compile "level 1" .pyo only (--no-compile --optimize)
-    #   5) compile .pyc and "level 2" .pyo (--compile --optimize-more)
-    #   6) compile "level 2" .pyo only (--no-compile --optimize-more)
+    #   3) compile .pyc and "opt-1" .pyc (--compile --optimize)
+    #   4) compile "opt-1" .pyc only (--no-compile --optimize)
+    #   5) compile .pyc and "opt-2" .pyc (--compile --optimize-more)
+    #   6) compile "opt-2" .pyc only (--no-compile --optimize-more)
     #
-    # The UI for this is two option, 'compile' and 'optimize'.
+    # The UI for this is two options, 'compile' and 'optimize'.
     # 'compile' is strictly boolean, and only decides whether to
     # generate .pyc files.  'optimize' is three-way (0, 1, or 2), and
-    # decides both whether to generate .pyo files and what level of
+    # decides both whether to generate .pyc files and what level of
     # optimization to use.
 
     user_options = [
@@ -166,10 +166,10 @@ class install_lib(Command):
                 continue
             if self.compile:
                 bytecode_files.append(importlib.util.cache_from_source(
-                    py_file, debug_override=True))
+                    py_file, optimization=''))
             if self.optimize > 0:
                 bytecode_files.append(importlib.util.cache_from_source(
-                    py_file, debug_override=False))
+                    py_file, optimization=self.optimize))
 
         return bytecode_files
 

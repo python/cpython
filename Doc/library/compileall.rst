@@ -93,6 +93,10 @@ compile Python sources.
 .. versionchanged:: 3.5
    ``-q`` option was changed to a multilevel value.
 
+.. versionchanged:: 3.5
+   ``-b`` will always produce a byte-code file ending in ``.pyc``, never
+   ``.pyo``.
+
 
 There is no command-line option to control the optimization level used by the
 :func:`compile` function, because the Python interpreter itself already
@@ -150,6 +154,10 @@ Public functions
    .. versionchanged:: 3.5
       *quiet* parameter was changed to a multilevel value.
 
+   .. versionchanged:: 3.5
+      The *legacy* parameter only writes out ``.pyc`` files, not ``.pyo`` files
+      no matter what the value of *optimize* is.
+
 .. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1)
 
    Compile the file with path *fullname*.
@@ -182,6 +190,10 @@ Public functions
    .. versionchanged:: 3.5
       *quiet* parameter was changed to a multilevel value.
 
+   .. versionchanged:: 3.5
+      The *legacy* parameter only writes out ``.pyc`` files, not ``.pyo`` files
+      no matter what the value of *optimize* is.
+
 .. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1)
 
    Byte-compile all the :file:`.py` files found along ``sys.path``. If
@@ -195,6 +207,10 @@ Public functions
 
    .. versionchanged:: 3.5
       *quiet* parameter was changed to a multilevel value.
+
+   .. versionchanged:: 3.5
+      The *legacy* parameter only writes out ``.pyc`` files, not ``.pyo`` files
+      no matter what the value of *optimize* is.
 
 To force a recompile of all the :file:`.py` files in the :file:`Lib/`
 subdirectory and all its subdirectories::

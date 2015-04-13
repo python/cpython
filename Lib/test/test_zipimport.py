@@ -51,7 +51,7 @@ TESTPACK2 = "ziptestpackage2"
 TEMP_ZIP = os.path.abspath("junk95142.zip")
 
 pyc_file = importlib.util.cache_from_source(TESTMOD + '.py')
-pyc_ext = ('.pyc' if __debug__ else '.pyo')
+pyc_ext = '.pyc'
 
 
 class ImportHooksBaseTestCase(unittest.TestCase):

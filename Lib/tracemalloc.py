@@ -297,7 +297,7 @@ class _Traces(Sequence):
 
 def _normalize_filename(filename):
     filename = os.path.normcase(filename)
-    if filename.endswith(('.pyc', '.pyo')):
+    if filename.endswith('.pyc'):
         filename = filename[:-1]
     return filename
 

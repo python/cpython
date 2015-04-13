@@ -223,7 +223,7 @@ class ModuleFinder:
         if not m.__path__:
             return
         modules = {}
-        # 'suffixes' used to be a list hardcoded to [".py", ".pyc", ".pyo"].
+        # 'suffixes' used to be a list hardcoded to [".py", ".pyc"].
         # But we must also collect Python extension modules - although
         # we cannot separate normal dlls from Python extensions.
         suffixes = []

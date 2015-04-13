@@ -20,15 +20,13 @@ _Py_IDENTIFIER(replace);
 
 /* zip_searchorder defines how we search for a module in the Zip
    archive: we first search for a package __init__, then for
-   non-package .pyc, .pyo and .py entries. The .pyc and .pyo entries
+   non-package .pyc, and .py entries. The .pyc entries
    are swapped by initzipimport() if we run in optimized mode. Also,
    '/' is replaced by SEP there. */
 static struct st_zip_searchorder zip_searchorder[] = {
     {"/__init__.pyc", IS_PACKAGE | IS_BYTECODE},
-    {"/__init__.pyo", IS_PACKAGE | IS_BYTECODE},
     {"/__init__.py", IS_PACKAGE | IS_SOURCE},
     {".pyc", IS_BYTECODE},
-    {".pyo", IS_BYTECODE},
     {".py", IS_SOURCE},
     {"", 0}
 };
@@ -1318,7 +1316,7 @@ parse_dostime(int dostime, int dosdate)
     return mktime(&stm);
 }
 
-/* Given a path to a .pyc or .pyo file in the archive, return the
+/* Given a path to a .pyc file in the archive, return the
    modification time of the matching .py file, or 0 if no source
    is available. */
 static time_t
@@ -1481,17 +1479,6 @@ PyInit_zipimport(void)
     /* Correct directory separator */
     zip_searchorder[0].suffix[0] = SEP;
     zip_searchorder[1].suffix[0] = SEP;
-    zip_searchorder[2].suffix[0] = SEP;
-    if (Py_OptimizeFlag) {
-        /* Reverse *.pyc and *.pyo */
-        struct st_zip_searchorder tmp;
-        tmp = zip_searchorder[0];
-        zip_searchorder[0] = zip_searchorder[1];
-        zip_searchorder[1] = tmp;
-        tmp = zip_searchorder[3];
-        zip_searchorder[3] = zip_searchorder[4];
-        zip_searchorder[4] = tmp;
-    }
 
     mod = PyModule_Create(&zipimportmodule);
     if (mod == NULL)

@@ -1731,7 +1731,7 @@ class PyZipFile(ZipFile):
         the modules into the archive.  If pathname is a plain
         directory, listdir *.py and enter all modules.  Else, pathname
         must be a Python *.py file and the module will be put into the
-        archive.  Added modules are always module.pyo or module.pyc.
+        archive.  Added modules are always module.pyc.
         This method will compile the module.py into module.pyc if
         necessary.
         If filterfunc(pathname) is given, it is called with every argument.
@@ -1824,46 +1824,59 @@ class PyZipFile(ZipFile):
 
         file_py  = pathname + ".py"
         file_pyc = pathname + ".pyc"
-        file_pyo = pathname + ".pyo"
-        pycache_pyc = importlib.util.cache_from_source(file_py, True)
-        pycache_pyo = importlib.util.cache_from_source(file_py, False)
+        pycache_opt0 = importlib.util.cache_from_source(file_py, optimization='')
+        pycache_opt1 = importlib.util.cache_from_source(file_py, optimization=1)
+        pycache_opt2 = importlib.util.cache_from_source(file_py, optimization=2)
         if self._optimize == -1:
             # legacy mode: use whatever file is present
-            if (os.path.isfile(file_pyo) and
-                os.stat(file_pyo).st_mtime >= os.stat(file_py).st_mtime):
-                # Use .pyo file.
-                arcname = fname = file_pyo
-            elif (os.path.isfile(file_pyc) and
+            if (os.path.isfile(file_pyc) and
                   os.stat(file_pyc).st_mtime >= os.stat(file_py).st_mtime):
                 # Use .pyc file.
                 arcname = fname = file_pyc
-            elif (os.path.isfile(pycache_pyc) and
-                  os.stat(pycache_pyc).st_mtime >= os.stat(file_py).st_mtime):
+            elif (os.path.isfile(pycache_opt0) and
+                  os.stat(pycache_opt0).st_mtime >= os.stat(file_py).st_mtime):
                 # Use the __pycache__/*.pyc file, but write it to the legacy pyc
                 # file name in the archive.
-                fname = pycache_pyc
+                fname = pycache_opt0
                 arcname = file_pyc
-            elif (os.path.isfile(pycache_pyo) and
-                  os.stat(pycache_pyo).st_mtime >= os.stat(file_py).st_mtime):
-                # Use the __pycache__/*.pyo file, but write it to the legacy pyo
+            elif (os.path.isfile(pycache_opt1) and
+                  os.stat(pycache_opt1).st_mtime >= os.stat(file_py).st_mtime):
+                # Use the __pycache__/*.pyc file, but write it to the legacy pyc
                 # file name in the archive.
-                fname = pycache_pyo
-                arcname = file_pyo
+                fname = pycache_opt1
+                arcname = file_pyc
+            elif (os.path.isfile(pycache_opt2) and
+                  os.stat(pycache_opt2).st_mtime >= os.stat(file_py).st_mtime):
+                # Use the __pycache__/*.pyc file, but write it to the legacy pyc
+                # file name in the archive.
+                fname = pycache_opt2
+                arcname = file_pyc
             else:
                 # Compile py into PEP 3147 pyc file.
                 if _compile(file_py):
-                    fname = (pycache_pyc if __debug__ else pycache_pyo)
-                    arcname = (file_pyc if __debug__ else file_pyo)
+                    if sys.flags.optimize == 0:
+                        fname = pycache_opt0
+                    elif sys.flags.optimize == 1:
+                        fname = pycache_opt1
+                    else:
+                        fname = pycache_opt2
+                    arcname = file_pyc
                 else:
                     fname = arcname = file_py
         else:
             # new mode: use given optimization level
             if self._optimize == 0:
-                fname = pycache_pyc
+                fname = pycache_opt0
                 arcname = file_pyc
             else:
-                fname = pycache_pyo
-                arcname = file_pyo
+                arcname = file_pyc
+                if self._optimize == 1:
+                    fname = pycache_opt1
+                elif self._optimize == 2:
+                    fname = pycache_opt2
+                else:
+                    msg = "invalid value for 'optimize': {!r}".format(self._optimize)
+                    raise ValueError(msg)
             if not (os.path.isfile(fname) and
                     os.stat(fname).st_mtime >= os.stat(file_py).st_mtime):
                 if not _compile(file_py, optimize=self._optimize):
