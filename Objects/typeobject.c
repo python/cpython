@@ -2645,9 +2645,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
     type->tp_dealloc = subtype_dealloc;
 
-    /* Enable GC unless there are really no instance variables possible */
-    if (!(type->tp_basicsize == sizeof(PyObject) &&
-          type->tp_itemsize == 0))
+    /* Enable GC unless this class is not adding new instance variables and
+       the base class did not use GC. */
+    if ((base->tp_flags & Py_TPFLAGS_HAVE_GC) ||
+        type->tp_basicsize > base->tp_basicsize)
         type->tp_flags |= Py_TPFLAGS_HAVE_GC;
 
     /* Always override allocation strategy to use regular heap */

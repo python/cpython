@@ -10,6 +10,9 @@ Release date: XXX
 Core and Builtins
 -----------------
 
+- Issue #23726: Don't enable GC for user subclasses of non-GC types that
+  don't add any new fields.  Patch by Eugene Toder.
+
 - Issue #23309: Avoid a deadlock at shutdown if a daemon thread is aborted
   while it is holding a lock to a buffered I/O object, and the main thread
   tries to use the same I/O object (typically stdout or stderr).  A fatal
