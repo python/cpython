@@ -71,7 +71,14 @@ else:
                 os.unlink(name)
                 util.Finalize(self, os.close, (self.fd,))
                 with open(self.fd, 'wb', closefd=False) as f:
-                    f.write(b'\0'*size)
+                    bs = 1024 * 1024
+                    if size >= bs:
+                        zeros = b'\0' * bs
+                        for _ in range(size // bs):
+                            f.write(zeros)
+                        del zeros
+                    f.write(b'\0' * (size % bs))
+                    assert f.tell() == size
             self.buffer = mmap.mmap(self.fd, self.size)
 
     def reduce_arena(a):

@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21116: Avoid blowing memory when allocating a multiprocessing shared
+  array that's larger than 50% of the available RAM.  Patch by Médéric Boquien.
+
 - Issue #22982: Improve BOM handling when seeking to multiple positions of
   a writable text file.
 
