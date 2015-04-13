@@ -10,6 +10,11 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #23309: Avoid a deadlock at shutdown if a daemon thread is aborted
+  while it is holding a lock to a buffered I/O object, and the main thread
+  tries to use the same I/O object (typically stdout or stderr).  A fatal
+  error is emitted instead.
+
 - Issue #22977: Fixed formatting Windows error messages on Wine.
   Patch by Martin Panter.
 
