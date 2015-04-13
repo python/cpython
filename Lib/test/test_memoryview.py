@@ -492,8 +492,5 @@ class ArrayMemorySliceSliceTest(unittest.TestCase,
     pass
 
 
-def test_main():
-    test.support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

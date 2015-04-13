@@ -730,16 +730,5 @@ class OtherParserCase(unittest.TestCase):
         with self.assertRaises(TypeError):
             parser.expr("a", "b")
 
-def test_main():
-    support.run_unittest(
-        RoundtripLegalSyntaxTestCase,
-        IllegalSyntaxTestCase,
-        CompileTestCase,
-        ParserStackLimitTestCase,
-        STObjectTestCase,
-        OtherParserCase,
-    )
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

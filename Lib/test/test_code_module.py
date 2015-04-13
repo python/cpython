@@ -114,8 +114,5 @@ class TestInteractiveConsole(unittest.TestCase):
         self.assertIn(expected, output)
 
 
-def test_main():
-    support.run_unittest(TestInteractiveConsole)
-
 if __name__ == "__main__":
     unittest.main()

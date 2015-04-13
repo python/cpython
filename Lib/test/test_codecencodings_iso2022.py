@@ -38,8 +38,5 @@ class Test_ISO2022_KR(multibytecodec_support.TestBase, unittest.TestCase):
     def test_chunkcoding(self):
         pass
 
-def test_main():
-    support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

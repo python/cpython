@@ -4,7 +4,7 @@ import builtins
 import contextlib
 import unittest
 
-from test.support import run_unittest, swap_item, swap_attr
+from test.support import swap_item, swap_attr
 
 
 class RebindBuiltinsTests(unittest.TestCase):
@@ -135,9 +135,5 @@ class RebindBuiltinsTests(unittest.TestCase):
         self.assertEqual(foo(), 7)
 
 
-def test_main():
-    run_unittest(RebindBuiltinsTests)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

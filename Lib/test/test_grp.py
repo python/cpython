@@ -92,8 +92,5 @@ class GroupDatabaseTestCase(unittest.TestCase):
 
         self.assertRaises(KeyError, grp.getgrgid, fakegid)
 
-def test_main():
-    support.run_unittest(GroupDatabaseTestCase)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

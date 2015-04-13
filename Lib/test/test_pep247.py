@@ -6,7 +6,6 @@ for hashing algorithms
 import hmac
 import unittest
 from hashlib import md5, sha1, sha224, sha256, sha384, sha512
-from test import support
 
 class Pep247Test(unittest.TestCase):
 
@@ -63,8 +62,5 @@ class Pep247Test(unittest.TestCase):
     def test_hmac(self):
         self.check_module(hmac, key=b'abc')
 
-def test_main():
-    support.run_unittest(Pep247Test)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -578,18 +578,5 @@ class CacheTests(unittest.TestCase):
             locale.setlocale(locale.LC_TIME, locale_info)
 
 
-def test_main():
-    support.run_unittest(
-        getlang_Tests,
-        LocaleTime_Tests,
-        TimeRETests,
-        StrptimeTests,
-        Strptime12AMPMTests,
-        JulianTests,
-        CalculationTests,
-        CacheTests
-    )
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

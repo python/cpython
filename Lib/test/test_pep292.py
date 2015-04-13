@@ -244,11 +244,5 @@ class TestTemplate(unittest.TestCase):
                          'tim likes to eat a bag of ham worth $100')
 
 
-def test_main():
-    from test import support
-    test_classes = [TestTemplate,]
-    support.run_unittest(*test_classes)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

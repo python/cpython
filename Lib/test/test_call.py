@@ -1,5 +1,4 @@
 import unittest
-from test import support
 
 # The test cases here cover several paths through the function calling
 # code.  They depend on the METH_XXX flag that is used to define a C
@@ -123,9 +122,5 @@ class CFunctionCalls(unittest.TestCase):
         self.assertRaises(TypeError, [].count, x=2, y=2)
 
 
-def test_main():
-    support.run_unittest(CFunctionCalls)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

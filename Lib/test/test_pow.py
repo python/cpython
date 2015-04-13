@@ -122,8 +122,5 @@ class PowTest(unittest.TestCase):
             eq(pow(a, -fiveto), expected)
         eq(expected, 1.0)   # else we didn't push fiveto to evenness
 
-def test_main():
-    test.support.run_unittest(PowTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

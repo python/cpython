@@ -1,7 +1,7 @@
 # Test the module type
 import unittest
 import weakref
-from test.support import run_unittest, gc_collect
+from test.support import gc_collect
 from test.script_helper import assert_python_ok
 
 import sys
@@ -238,9 +238,5 @@ a = A(destroyed)"""
     # frozen and namespace module reprs are tested in importlib.
 
 
-def test_main():
-    run_unittest(ModuleTests)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

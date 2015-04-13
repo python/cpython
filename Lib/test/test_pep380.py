@@ -1013,11 +1013,5 @@ class TestPEP380Operation(unittest.TestCase):
         self.assertEqual(v, (1, 2, 3, 4))
 
 
-def test_main():
-    from test import support
-    test_classes = [TestPEP380Operation]
-    support.run_unittest(*test_classes)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

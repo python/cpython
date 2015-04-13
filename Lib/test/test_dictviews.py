@@ -1,5 +1,4 @@
 import unittest
-from test import support
 
 class DictSetTest(unittest.TestCase):
 
@@ -199,8 +198,5 @@ class DictSetTest(unittest.TestCase):
         self.assertRaises(RuntimeError, repr, d)
 
 
-def test_main():
-    support.run_unittest(DictSetTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()
