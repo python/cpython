@@ -79,8 +79,5 @@ class SmtpSSLTest(unittest.TestCase):
             server.quit()
 
 
-def test_main():
-    support.run_unittest(SmtpTest, SmtpSSLTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

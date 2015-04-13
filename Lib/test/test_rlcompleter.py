@@ -1,4 +1,3 @@
-from test import support
 import unittest
 import builtins
 import rlcompleter
@@ -65,9 +64,5 @@ class TestRlcompleter(unittest.TestCase):
                          ['egg.{}('.format(x) for x in dir(str)
                           if x.startswith('s')])
 
-def test_main():
-    support.run_unittest(TestRlcompleter)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

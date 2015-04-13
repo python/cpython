@@ -213,8 +213,5 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
             response.read())
 
 
-def test_main():
-    support.run_unittest(DocXMLRPCHTTPGETServer)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

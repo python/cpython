@@ -140,8 +140,5 @@ class TestWarnings(unittest.TestCase):
             ts.T_USHORT = USHRT_MAX+1
 
 
-def test_main(verbose=None):
-    support.run_unittest(__name__)
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

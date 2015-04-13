@@ -319,21 +319,5 @@ class TestBuglets(unittest.TestCase):
             f()
 
 
-def test_main(verbose=None):
-    import sys
-    from test import support
-    test_classes = (TestTranforms, TestBuglets)
-    support.run_unittest(*test_classes)
-
-    # verify reference counting
-    if verbose and hasattr(sys, 'gettotalrefcount'):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

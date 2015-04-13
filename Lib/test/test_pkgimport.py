@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from importlib.util import cache_from_source
-from test.support import run_unittest, create_empty_file
+from test.support import create_empty_file
 
 class TestImport(unittest.TestCase):
 
@@ -76,9 +76,5 @@ class TestImport(unittest.TestCase):
         self.assertEqual(getattr(module, var), 1)
 
 
-def test_main():
-    run_unittest(TestImport)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

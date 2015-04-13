@@ -262,24 +262,5 @@ class TestDecorateSortUndecorate(unittest.TestCase):
 
 #==============================================================================
 
-def test_main(verbose=None):
-    test_classes = (
-        TestBase,
-        TestDecorateSortUndecorate,
-        TestBugs,
-    )
-
-    support.run_unittest(*test_classes)
-
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        import gc
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(*test_classes)
-            gc.collect()
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

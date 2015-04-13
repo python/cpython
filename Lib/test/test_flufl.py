@@ -18,10 +18,5 @@ class FLUFLTests(unittest.TestCase):
                             '<FLUFL test>', 'exec')
 
 
-def test_main():
-    from test.support import run_unittest
-    run_unittest(FLUFLTests)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

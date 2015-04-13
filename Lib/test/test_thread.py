@@ -252,9 +252,5 @@ class TestForkInThread(unittest.TestCase):
             pass
 
 
-def test_main():
-    support.run_unittest(ThreadRunningTests, BarrierTest, LockTests,
-                         TestForkInThread)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

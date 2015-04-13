@@ -1,7 +1,7 @@
 """Tests for Lib/fractions.py."""
 
 from decimal import Decimal
-from test.support import run_unittest, requires_IEEE_754
+from test.support import requires_IEEE_754
 import math
 import numbers
 import operator
@@ -606,8 +606,5 @@ class FractionTest(unittest.TestCase):
         r = F(13, 7)
         self.assertRaises(AttributeError, setattr, r, 'a', 10)
 
-def test_main():
-    run_unittest(FractionTest, GcdTest)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

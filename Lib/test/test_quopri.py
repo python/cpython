@@ -1,4 +1,3 @@
-from test import support
 import unittest
 
 import sys, os, io, subprocess
@@ -207,9 +206,5 @@ zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz''')
         p = p.decode('latin-1')
         self.assertEqual(cout.splitlines(), p.splitlines())
 
-def test_main():
-    support.run_unittest(QuopriTestCase)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

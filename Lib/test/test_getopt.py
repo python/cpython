@@ -1,7 +1,7 @@
 # test_getopt.py
 # David Goodger <dgoodger@bigfoot.com> 2000-08-19
 
-from test.support import verbose, run_doctest, run_unittest, EnvironmentVarGuard
+from test.support import verbose, run_doctest, EnvironmentVarGuard
 import unittest
 
 import getopt
@@ -180,8 +180,5 @@ class GetoptTests(unittest.TestCase):
         self.assertEqual(longopts, [('--help', 'x')])
         self.assertRaises(getopt.GetoptError, getopt.getopt, ['--help='], '', ['help'])
 
-def test_main():
-    run_unittest(GetoptTests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

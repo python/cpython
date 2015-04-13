@@ -258,16 +258,5 @@ class TestLongStart(EnumerateStartTestCase):
                        (sys.maxsize+3,'c')]
 
 
-def test_main(verbose=None):
-    support.run_unittest(__name__)
-
-    # verify reference counting
-    if verbose and hasattr(sys, "gettotalrefcount"):
-        counts = [None] * 5
-        for i in range(len(counts)):
-            support.run_unittest(__name__)
-            counts[i] = sys.gettotalrefcount()
-        print(counts)
-
 if __name__ == "__main__":
-    test_main(verbose=True)
+    unittest.main()

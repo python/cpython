@@ -4,7 +4,6 @@
 import abc
 import sys
 import unittest
-from test.support import run_unittest
 from types import DynamicClassAttribute
 
 class PropertyBase(Exception):
@@ -297,8 +296,5 @@ class PropertySubclassTests(unittest.TestCase):
 
 
 
-def test_main():
-    run_unittest(PropertyTests, PropertySubclassTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
