@@ -1,6 +1,7 @@
 # Common utility functions used by various script execution tests
 #  e.g. test_cmd_line, test_cmd_line_script and test_runpy
 
+import collections
 import importlib
 import sys
 import os
@@ -50,8 +51,12 @@ def _interpreter_requires_environment():
     return __cached_interp_requires_environment
 
 
+_PythonRunResult = collections.namedtuple("_PythonRunResult",
+                                          ("rc", "out", "err"))
+
+
 # Executing the interpreter in a subprocess
-def _assert_python(expected_success, *args, **env_vars):
+def run_python_until_end(*args, **env_vars):
     env_required = _interpreter_requires_environment()
     if '__isolated' in env_vars:
         isolated = env_vars.pop('__isolated')
@@ -85,12 +90,16 @@ def _assert_python(expected_success, *args, **env_vars):
         p.stderr.close()
     rc = p.returncode
     err = strip_python_stderr(err)
-    if (rc and expected_success) or (not rc and not expected_success):
+    return _PythonRunResult(rc, out, err), cmd_line
+
+def _assert_python(expected_success, *args, **env_vars):
+    res, cmd_line = run_python_until_end(*args, **env_vars)
+    if (res.rc and expected_success) or (not res.rc and not expected_success):
         raise AssertionError(
             "Process return code is %d, command line was: %r, "
-            "stderr follows:\n%s" % (rc, cmd_line,
-                                     err.decode('ascii', 'ignore')))
-    return rc, out, err
+            "stderr follows:\n%s" % (res.rc, cmd_line,
+                                     res.err.decode('ascii', 'ignore')))
+    return res
 
 def assert_python_ok(*args, **env_vars):
     """
