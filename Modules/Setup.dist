@@ -91,7 +91,7 @@ SITEPATH=
 TESTPATH=
 
 # Path components for machine- or system-dependent modules and shared libraries
-MACHDEPPATH=:plat-$(MACHDEP)
+MACHDEPPATH=:$(PLATDIR)
 EXTRAMACHDEPPATH=
 
 COREPYTHONPATH=$(DESTPATH)$(SITEPATH)$(TESTPATH)$(MACHDEPPATH)$(EXTRAMACHDEPPATH)
