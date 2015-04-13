@@ -152,7 +152,7 @@ Unless otherwise stated, buffers are not NUL-terminated.
    any conversion.  Raises :exc:`TypeError` if the object is not a Unicode
    object.  The C variable may also be declared as :c:type:`PyObject\*`.
 
-``w*`` (:class:`bytearray` or read-write byte-oriented buffer) [Py_buffer]
+``w*`` (read-write :term:`bytes-like object`) [Py_buffer]
    This format accepts any object which implements the read-write buffer
    interface. It fills a :c:type:`Py_buffer` structure provided by the caller.
    The buffer may contain embedded null bytes. The caller have to call

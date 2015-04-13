@@ -88,10 +88,17 @@ Glossary
    bytes-like object
       An object that supports the :ref:`bufferobjects`, like :class:`bytes`,
       :class:`bytearray` or :class:`memoryview`.  Bytes-like objects can
-      be used for various operations that expect binary data, such as
-      compression, saving to a binary file or sending over a socket.
-      Some operations need the binary data to be mutable, in which case
-      not all bytes-like objects can apply.
+      be used for various operations that work with binary data; these include
+      compression, saving to a binary file, and sending over a socket.
+
+      Some operations need the binary data to be mutable.  The documentation
+      often refers to these as "read-write bytes-like objects".  Example
+      mutable buffer objects include :class:`bytearray` and a
+      :class:`memoryview` of a :class:`bytearray`.
+      Other operations require the binary data to be stored in
+      immutable objects ("read-only bytes-like objects"); examples
+      of these include :class:`bytes` and a :class:`memoryview`
+      of a :class:`bytes` object.
 
    bytecode
       Python source code is compiled into bytecode, the internal representation
