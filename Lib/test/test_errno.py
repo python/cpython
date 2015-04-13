@@ -3,7 +3,6 @@
 """
 
 import errno
-from test import support
 import unittest
 
 std_c_errors = frozenset(['EDOM', 'ERANGE'])
@@ -32,9 +31,5 @@ class ErrorcodeTests(unittest.TestCase):
                               'no %s attr in errno.errorcode' % attribute)
 
 
-def test_main():
-    support.run_unittest(ErrnoAttributeTests, ErrorcodeTests)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -30,9 +30,8 @@ class CrasherTest(unittest.TestCase):
             assert_python_failure(fname)
 
 
-def test_main():
-    test.support.run_unittest(CrasherTest)
+def tearDownModule():
     test.support.reap_children()
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

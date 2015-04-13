@@ -3,7 +3,6 @@ import pprint
 import sys
 import unittest
 
-from test import support
 
 class TestGetProfile(unittest.TestCase):
     def setUp(self):
@@ -373,13 +372,5 @@ def show_events(callable):
     pprint.pprint(capture_events(callable))
 
 
-def test_main():
-    support.run_unittest(
-        TestGetProfile,
-        ProfileHookTestCase,
-        ProfileSimulatorTestCase
-    )
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

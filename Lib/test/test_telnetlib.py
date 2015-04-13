@@ -393,9 +393,5 @@ class ExpectTests(ExpectAndReadTestCase):
         self.assertEqual(data, b''.join(want[:-1]))
 
 
-def test_main(verbose=None):
-    support.run_unittest(GeneralTests, ReadTests, WriteTests, OptionTests,
-                         ExpectTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

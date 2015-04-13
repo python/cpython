@@ -1,4 +1,4 @@
-from test.support import verbose, run_unittest, import_module, reap_children
+from test.support import verbose, import_module, reap_children
 
 # Skip these tests if termios is not available
 import_module('termios')
@@ -293,11 +293,8 @@ class SmallPtyTests(unittest.TestCase):
             pty._copy(masters[0])
 
 
-def test_main(verbose=None):
-    try:
-        run_unittest(SmallPtyTests, PtyTest)
-    finally:
-        reap_children()
+def tearDownModule():
+    reap_children()
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

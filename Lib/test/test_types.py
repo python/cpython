@@ -1,6 +1,6 @@
 # Python test set -- part 6, built-in types
 
-from test.support import run_unittest, run_with_locale
+from test.support import run_with_locale
 import collections
 import pickle
 import locale
@@ -1172,9 +1172,5 @@ class SimpleNamespaceTests(unittest.TestCase):
             self.assertEqual(ns, ns_roundtrip, pname)
 
 
-def test_main():
-    run_unittest(TypesTests, MappingProxyTests, ClassCreationTests,
-                 SimpleNamespaceTests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -369,8 +369,5 @@ class OperationOrderTests(unittest.TestCase):
         self.assertEqual(op_sequence(le, B, C), ['C.__ge__', 'B.__le__'])
         self.assertEqual(op_sequence(le, C, B), ['C.__le__', 'B.__ge__'])
 
-def test_main():
-    support.run_unittest(RatTestCase, OperationOrderTests)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

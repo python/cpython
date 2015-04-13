@@ -8,7 +8,7 @@ import sys
 import time
 
 from test.fork_wait import ForkWait
-from test.support import (run_unittest, reap_children, get_attribute,
+from test.support import (reap_children, get_attribute,
                           import_module, verbose)
 
 threading = import_module('threading')
@@ -104,9 +104,8 @@ class ForkTest(ForkWait):
             fork_with_import_lock(level)
 
 
-def test_main():
-    run_unittest(ForkTest)
+def tearDownModule():
     reap_children()
 
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

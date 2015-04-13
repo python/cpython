@@ -5,7 +5,6 @@ import copy
 import pickle
 import tempfile
 import unittest
-from test import support
 
 from collections import defaultdict
 
@@ -184,8 +183,5 @@ class TestDefaultDict(unittest.TestCase):
             o = pickle.loads(s)
             self.assertEqual(d, o)
 
-def test_main():
-    support.run_unittest(TestDefaultDict)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

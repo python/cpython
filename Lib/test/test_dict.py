@@ -949,12 +949,5 @@ class Dict(dict):
 class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = Dict
 
-def test_main():
-    support.run_unittest(
-        DictTest,
-        GeneralMappingTests,
-        SubclassMappingTests,
-    )
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

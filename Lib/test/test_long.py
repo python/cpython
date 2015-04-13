@@ -1241,8 +1241,5 @@ class LongTest(unittest.TestCase):
                 self.assertEqual(type(value >> shift), int)
 
 
-def test_main():
-    support.run_unittest(LongTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

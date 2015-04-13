@@ -1,7 +1,7 @@
 # test for xml.dom.minidom
 
 import pickle
-from test.support import run_unittest, findfile
+from test.support import findfile
 import unittest
 
 import xml.dom.minidom
@@ -1545,8 +1545,5 @@ class MinidomTest(unittest.TestCase):
         pi = doc.createProcessingInstruction("y", "z")
         pi.nodeValue = "crash"
 
-def test_main():
-    run_unittest(MinidomTest)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

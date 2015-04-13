@@ -826,10 +826,5 @@ class CStringIOPickleTest(PyStringIOPickleTest):
             pass
 
 
-def test_main():
-    tests = [PyBytesIOTest, PyStringIOTest, CBytesIOTest, CStringIOTest,
-             PyStringIOPickleTest, CStringIOPickleTest]
-    support.run_unittest(*tests)
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()

@@ -451,8 +451,5 @@ class IntTestCases(unittest.TestCase):
         check('123\ud800')
         check('123\ud800', 10)
 
-def test_main():
-    support.run_unittest(IntTestCases)
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

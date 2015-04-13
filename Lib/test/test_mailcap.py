@@ -213,9 +213,5 @@ class FindmatchTest(unittest.TestCase):
             self.assertEqual(mailcap.findmatch(*c[0], **c[1]), c[2])
 
 
-def test_main():
-    test.support.run_unittest(HelperFunctionTest, GetcapsTest, FindmatchTest)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
