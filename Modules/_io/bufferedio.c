@@ -300,14 +300,35 @@ typedef struct {
 static int
 _enter_buffered_busy(buffered *self)
 {
+    int relax_locking;
+    PyLockStatus st;
     if (self->owner == PyThread_get_thread_ident()) {
         PyErr_Format(PyExc_RuntimeError,
                      "reentrant call inside %R", self);
         return 0;
     }
+    relax_locking = (_Py_Finalizing != NULL);
     Py_BEGIN_ALLOW_THREADS
-    PyThread_acquire_lock(self->lock, 1);
+    if (!relax_locking)
+        st = PyThread_acquire_lock(self->lock, 1);
+    else {
+        /* When finalizing, we don't want a deadlock to happen with daemon
+         * threads abruptly shut down while they owned the lock.
+         * Therefore, only wait for a grace period (1 s.).
+         * Note that non-daemon threads have already exited here, so this
+         * shouldn't affect carefully written threaded I/O code.
+         */
+        st = PyThread_acquire_lock_timed(self->lock, 1e6, 0);
+    }
     Py_END_ALLOW_THREADS
+    if (relax_locking && st != PY_LOCK_ACQUIRED) {
+        PyObject *msgobj = PyUnicode_FromFormat(
+            "could not acquire lock for %A at interpreter "
+            "shutdown, possibly due to daemon threads",
+            (PyObject *) self);
+        char *msg = PyUnicode_AsUTF8(msgobj);
+        Py_FatalError(msg);
+    }
     return 1;
 }
 
