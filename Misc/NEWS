@@ -1,4 +1,4 @@
-﻿+++++++++++
++++++++++++
 Python News
 +++++++++++
 
@@ -9,6 +9,8 @@ Release date: XXX
 
 Core and Builtins
 -----------------
+- Issue #22631: Added Linux-specific socket constant CAN_RAW_FD_FRAMES.
+  Patch courtesy of Joe Jevnik.
 
 - Issue #23731: Implement PEP 488: removal of .pyo files.
 
