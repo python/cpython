@@ -531,6 +531,9 @@
 /* Define to 1 if you have the <linux/can.h> header file. */
 #undef HAVE_LINUX_CAN_H
 
+/* Define if compiling using Linux 3.6 or later. */
+#undef HAVE_LINUX_CAN_RAW_FD_FRAMES
+
 /* Define to 1 if you have the <linux/can/raw.h> header file. */
 #undef HAVE_LINUX_CAN_RAW_H
 

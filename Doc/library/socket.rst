@@ -279,6 +279,18 @@ Constants
 
    .. versionadded:: 3.4
 
+.. data:: CAN_RAW_FD_FRAMES
+
+   Enables CAN FD support in a CAN_RAW socket. This is disabled by default.
+   This allows your application to send both CAN and CAN FD frames; however,
+   you one must accept both CAN and CAN FD frames when reading from the socket.
+
+   This constant is documented in the Linux documentation.
+
+   Availability: Linux >= 3.6.
+
+   .. versionadded:: 3.5
+
 .. data:: AF_RDS
           PF_RDS
           SOL_RDS
