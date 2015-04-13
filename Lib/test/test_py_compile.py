@@ -100,6 +100,7 @@ class PyCompileTests(unittest.TestCase):
         self.assertFalse(os.path.exists(
             importlib.util.cache_from_source(bad_coding)))
 
+    @unittest.skipIf(sys.flags.optimize > 0, 'test does not work with -O')
     def test_double_dot_no_clobber(self):
         # http://bugs.python.org/issue22966
         # py_compile foo.bar.py -> __pycache__/foo.cpython-34.pyc
