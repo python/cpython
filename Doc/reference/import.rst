@@ -646,7 +646,7 @@ path entry finder that knows how to handle that particular kind of path.
 
 The default set of path entry finders implement all the semantics for finding
 modules on the file system, handling special file types such as Python source
-code (``.py`` files), Python byte code (``.pyc`` and ``.pyo`` files) and
+code (``.py`` files), Python byte code (``.pyc`` files) and
 shared libraries (e.g. ``.so`` files). When supported by the :mod:`zipimport`
 module in the standard library, the default path entry finders also handle
 loading all of these file types (other than shared libraries) from zipfiles.

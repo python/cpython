@@ -20,10 +20,10 @@ subdirectory.  For example, the path :file:`example.zip/lib/` would only
 import from the :file:`lib/` subdirectory within the archive.
 
 Any files may be present in the ZIP archive, but only files :file:`.py` and
-:file:`.py[co]` are available for import.  ZIP import of dynamic modules
+:file:`.pyc` are available for import.  ZIP import of dynamic modules
 (:file:`.pyd`, :file:`.so`) is disallowed. Note that if an archive only contains
 :file:`.py` files, Python will not attempt to modify the archive by adding the
-corresponding :file:`.pyc` or :file:`.pyo` file, meaning that if a ZIP archive
+corresponding :file:`.pyc` file, meaning that if a ZIP archive
 doesn't contain :file:`.pyc` files, importing may be rather slow.
 
 ZIP archives with an archive comment are currently not supported.
@@ -161,4 +161,3 @@ Here is an example that imports a module from a ZIP archive - note that the
    >>> import jwzthreading
    >>> jwzthreading.__file__
    'example.zip/jwzthreading.py'
-

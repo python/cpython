@@ -44,12 +44,11 @@ class InstallLibTestCase(support.TempdirManager,
         f = os.path.join(project_dir, 'foo.py')
         self.write_file(f, '# python file')
         cmd.byte_compile([f])
-        pyc_file = importlib.util.cache_from_source('foo.py',
-                                                    debug_override=True)
-        pyo_file = importlib.util.cache_from_source('foo.py',
-                                                    debug_override=False)
+        pyc_file = importlib.util.cache_from_source('foo.py', optimization='')
+        pyc_opt_file = importlib.util.cache_from_source('foo.py',
+                                                    optimization=cmd.optimize)
         self.assertTrue(os.path.exists(pyc_file))
-        self.assertTrue(os.path.exists(pyo_file))
+        self.assertTrue(os.path.exists(pyc_opt_file))
 
     def test_get_outputs(self):
         project_dir, dist = self.create_dist()
@@ -66,8 +65,8 @@ class InstallLibTestCase(support.TempdirManager,
         cmd.distribution.packages = ['spam']
         cmd.distribution.script_name = 'setup.py'
 
-        # get_outputs should return 4 elements: spam/__init__.py, .pyc and
-        # .pyo, foo.import-tag-abiflags.so / foo.pyd
+        # get_outputs should return 4 elements: spam/__init__.py and .pyc,
+        # foo.import-tag-abiflags.so / foo.pyd
         outputs = cmd.get_outputs()
         self.assertEqual(len(outputs), 4, outputs)
 

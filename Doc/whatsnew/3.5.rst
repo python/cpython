@@ -88,6 +88,8 @@ Implementation improvements:
   ``surrogateescape`` error handler, instead of the ``strict`` error handler
   (:issue:`19977`).
 
+* :pep:`488`, the elimination of ``.pyo`` files.
+
 Significantly Improved Library Modules:
 
 * None yet.
@@ -194,6 +196,24 @@ environment will be used.
 .. seealso::
 
     :pep:`486` -- Make the Python Launcher aware of virtual environments
+
+
+PEP 488: Elimination of PYO files
+---------------------------------
+
+:pep:`488` does away with the concept of ``.pyo`` files. This means that
+``.pyc`` files represent both unoptimized and optimized bytecode. To prevent
+the need to constantly regenerate bytecode files, ``.pyc`` files now have an
+optional ``opt-`` tag in their name when the bytecode is optimized. This has
+the side-effect of no more bytecode file name clashes when running under either
+``-O`` or ``-OO``, thus allowing unoptimized, ``-O``, and ``-OO`` bytecode files
+to all exist simultaneously. :func:`importlib.util.cache_from_source` has an
+updated API to help with this change.
+
+.. seealso::
+
+   :pep:`488` -- Elimination of PYO files
+
 
 Other Language Changes
 ======================
@@ -535,7 +555,7 @@ The following performance enhancements have been added:
   ``FindFirstFile``/``FindNextFile`` system calls. (Contributed by
   Ben Hoyt with help from Victor Stinner in :issue:`23605`.)
 
-* Construction of ``bytes(int)`` (filled by zero bytes) is faster and use less
+* Construction of ``bytes(int)`` (filled by zero bytes) is faster and uses less
   memory for large objects. ``calloc()`` is used instead of ``malloc()`` to
   allocate memory for these objects.
 
@@ -629,6 +649,8 @@ removed:
 * The internal ``Netrc`` class in the :mod:`ftplib` module was deprecated in
   3.4, and has now been removed.
   (Contributed by Matt Chaput in :issue:`6623`.)
+
+* The concept of ``.pyo`` files has been removed.
 
 * The JoinableQueue class in the provisional asyncio module was deprecated
   in 3.4.4 and is now removed (:issue:`23464`).
@@ -758,6 +780,17 @@ Changes in the Python API
   keys in the update dictionary are invalid.  In addition, the undocumented
   *LegalChars* parameter of :func:`~http.cookies.Morsel.set` is deprecated and
   is now ignored.  (:issue:`2211`)
+
+* :pep:`488` has removed ``.pyo`` files from Python and introduced the optional
+  ``opt-`` tag in ``.pyc`` file names. The
+  :func:`importlib.util.cache_from_source` has gained an *optimization*
+  parameter to help control the ``opt-`` tag. Because of this, the
+  *debug_override* parameter of the function is now deprecated. `.pyo` files
+  are also no longer supported as a file argument to the Python interpreter and
+  thus serve no purpose when distributed on their own (i.e. sourcless code
+  distribution). Due to the fact that the magic number for bytecode has changed
+  in Python 3.5, all old `.pyo` files from previous versions of Python are
+  invalid regardless of this PEP.
 
 Changes in the C API
 --------------------

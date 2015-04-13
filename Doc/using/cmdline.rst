@@ -199,7 +199,7 @@ Miscellaneous options
 
 .. cmdoption:: -B
 
-   If given, Python won't try to write ``.pyc`` or ``.pyo`` files on the
+   If given, Python won't try to write ``.pyc``` files on the
    import of source modules.  See also :envvar:`PYTHONDONTWRITEBYTECODE`.
 
 

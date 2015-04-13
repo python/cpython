@@ -1,4 +1,4 @@
-"""Routine to "compile" a .py file to a .pyc (or .pyo) file.
+"""Routine to "compile" a .py file to a .pyc file.
 
 This module has intimate knowledge of the format of .pyc files.
 """
@@ -67,7 +67,7 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
 
     :param file: The source file name.
     :param cfile: The target byte compiled file name.  When not given, this
-        defaults to the PEP 3147 location.
+        defaults to the PEP 3147/PEP 488 location.
     :param dfile: Purported file name, i.e. the file name that shows up in
         error messages.  Defaults to the source file name.
     :param doraise: Flag indicating whether or not an exception should be
@@ -85,12 +85,12 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     Note that it isn't necessary to byte-compile Python modules for
     execution efficiency -- Python itself byte-compiles a module when
     it is loaded, and if it can, writes out the bytecode to the
-    corresponding .pyc (or .pyo) file.
+    corresponding .pyc file.
 
     However, if a Python installation is shared between users, it is a
     good idea to byte-compile all modules upon installation, since
     other users may not be able to write in the source directories,
-    and thus they won't be able to write the .pyc/.pyo file, and then
+    and thus they won't be able to write the .pyc file, and then
     they would be byte-compiling every module each time it is loaded.
     This can slow down program start-up considerably.
 
@@ -105,8 +105,9 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     """
     if cfile is None:
         if optimize >= 0:
+            optimization = optimize if optimize >= 1 else ''
             cfile = importlib.util.cache_from_source(file,
-                                                     debug_override=not optimize)
+                                                     optimization=optimization)
         else:
             cfile = importlib.util.cache_from_source(file)
     if os.path.islink(cfile):

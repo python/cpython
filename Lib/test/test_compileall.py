@@ -101,16 +101,16 @@ class CompileallTests(unittest.TestCase):
     def test_optimize(self):
         # make sure compiling with different optimization settings than the
         # interpreter's creates the correct file names
-        optimize = 1 if __debug__ else 0
+        optimize, opt = (1, 1) if __debug__ else (0, '')
         compileall.compile_dir(self.directory, quiet=True, optimize=optimize)
         cached = importlib.util.cache_from_source(self.source_path,
-                                                  debug_override=not optimize)
+                                                  optimization=opt)
         self.assertTrue(os.path.isfile(cached))
         cached2 = importlib.util.cache_from_source(self.source_path2,
-                                                   debug_override=not optimize)
+                                                   optimization=opt)
         self.assertTrue(os.path.isfile(cached2))
         cached3 = importlib.util.cache_from_source(self.source_path3,
-                                                   debug_override=not optimize)
+                                                   optimization=opt)
         self.assertTrue(os.path.isfile(cached3))
 
     @mock.patch('compileall.ProcessPoolExecutor')
@@ -237,11 +237,11 @@ class CommandLineTests(unittest.TestCase):
         self.assertNotIn(b'Listing ', quiet)
 
     # Ensure that the default behavior of compileall's CLI is to create
-    # PEP 3147 pyc/pyo files.
+    # PEP 3147/PEP 488 pyc files.
     for name, ext, switch in [
         ('normal', 'pyc', []),
-        ('optimize', 'pyo', ['-O']),
-        ('doubleoptimize', 'pyo', ['-OO']),
+        ('optimize', 'opt-1.pyc', ['-O']),
+        ('doubleoptimize', 'opt-2.pyc', ['-OO']),
     ]:
         def f(self, ext=ext, switch=switch):
             script_helper.assert_python_ok(*(switch +
@@ -258,13 +258,12 @@ class CommandLineTests(unittest.TestCase):
 
     def test_legacy_paths(self):
         # Ensure that with the proper switch, compileall leaves legacy
-        # pyc/pyo files, and no __pycache__ directory.
+        # pyc files, and no __pycache__ directory.
         self.assertRunOK('-b', '-q', self.pkgdir)
         # Verify the __pycache__ directory contents.
         self.assertFalse(os.path.exists(self.pkgdir_cachedir))
-        opt = 'c' if __debug__ else 'o'
-        expected = sorted(['__init__.py', '__init__.py' + opt, 'bar.py',
-                           'bar.py' + opt])
+        expected = sorted(['__init__.py', '__init__.pyc', 'bar.py',
+                           'bar.pyc'])
         self.assertEqual(sorted(os.listdir(self.pkgdir)), expected)
 
     def test_multiple_runs(self):

@@ -305,7 +305,7 @@ class CoverageResults:
             if self.is_ignored_filename(filename):
                 continue
 
-            if filename.endswith((".pyc", ".pyo")):
+            if filename.endswith(".pyc"):
                 filename = filename[:-1]
 
             if coverdir is None:

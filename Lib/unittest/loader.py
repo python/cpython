@@ -14,9 +14,9 @@ from . import case, suite, util
 
 __unittest = True
 
-# what about .pyc or .pyo (etc)
+# what about .pyc (etc)
 # we would need to avoid loading the same tests multiple times
-# from '.py', '.pyc' *and* '.pyo'
+# from '.py', *and* '.pyc'
 VALID_MODULE_NAME = re.compile(r'[_a-z]\w*\.py$', re.IGNORECASE)
 
 

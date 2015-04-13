@@ -156,8 +156,8 @@ module
 
 pure Python module
    a module written in Python and contained in a single :file:`.py` file (and
-   possibly associated :file:`.pyc` and/or :file:`.pyo` files).  Sometimes referred
-   to as a "pure module."
+   possibly associated :file:`.pyc` files).  Sometimes referred to as a
+   "pure module."
 
 extension module
    a module written in the low-level language of the Python implementation: C/C++
@@ -210,5 +210,3 @@ distribution root
    the top-level directory of your source tree (or  source distribution); the
    directory where :file:`setup.py` exists.  Generally  :file:`setup.py` will be
    run from this directory.
-
-

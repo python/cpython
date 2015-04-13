@@ -405,8 +405,7 @@ The :class:`PyZipFile` constructor takes the same parameters as the
       archive.
 
       If the *optimize* parameter to :class:`PyZipFile` was not given or ``-1``,
-      the corresponding file is a :file:`\*.pyo` file if available, else a
-      :file:`\*.pyc` file, compiling if necessary.
+      the corresponding file is a :file:`\*.pyc` file, compiling if necessary.
 
       If the *optimize* parameter to :class:`PyZipFile` was ``0``, ``1`` or
       ``2``, only files with that optimization level (see :func:`compile`) are
@@ -569,4 +568,3 @@ Instances have the following attributes:
 .. attribute:: ZipInfo.file_size
 
    Size of the uncompressed file.
-

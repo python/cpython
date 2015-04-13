@@ -1,4 +1,4 @@
-"""Module/script to byte-compile all .py files to .pyc (or .pyo) files.
+"""Module/script to byte-compile all .py files to .pyc files.
 
 When called as a script with arguments, this compiles the directories
 given as arguments recursively; the -l option prevents it from
@@ -118,11 +118,12 @@ def compile_file(fullname, ddir=None, force=False, rx=None, quiet=0,
             return success
     if os.path.isfile(fullname):
         if legacy:
-            cfile = fullname + ('c' if __debug__ else 'o')
+            cfile = fullname + 'c'
         else:
             if optimize >= 0:
+                opt = optimize if optimize >= 1 else ''
                 cfile = importlib.util.cache_from_source(
-                                fullname, debug_override=not optimize)
+                                fullname, optimization=opt)
             else:
                 cfile = importlib.util.cache_from_source(fullname)
             cache_dir = os.path.dirname(cfile)
