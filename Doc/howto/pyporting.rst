@@ -348,10 +348,12 @@ tox with your continuous integration system so that you never accidentally break
 Python 2 or 3 support.
 
 You may also want to use use the ``-bb`` flag with the Python 3 interpreter to
-trigger an exception when you are comparing bytes to strings. Usually it's
-simply ``False``, but if you made a mistake in your separation of text/binary
-data handling you may be accidentally comparing text and binary data. This flag
-will raise an exception when that occurs to help track down such cases.
+trigger an exception when you are comparing bytes to strings or bytes to an int
+(the latter is available starting in Python 3.5). By default type-differing
+ comparisons simply return ``False``, but if you made a mistake in your
+separation of text/binary data handling or indexing on bytes you wouldn't easily
+find the mistake. This flag will raise an exception when these kinds of
+comparisons occur, making the mistake much easier to track down.
 
 And that's mostly it! At this point your code base is compatible with both
 Python 2 and 3 simultaneously. Your testing will also be set up so that you
