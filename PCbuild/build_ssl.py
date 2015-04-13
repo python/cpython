@@ -158,7 +158,11 @@ def main():
         make_flags = "-a"
     # perl should be on the path, but we also look in "\perl" and "c:\\perl"
     # as "well known" locations
-    perls = find_all_on_path("perl.exe", ["\\perl\\bin", "C:\\perl\\bin"])
+    perls = find_all_on_path("perl.exe", [r"\perl\bin",
+                                          r"C:\perl\bin",
+                                          r"\perl64\bin",
+                                          r"C:\perl64\bin",
+                                         ])
     perl = find_working_perl(perls)
     if perl:
         print("Found a working perl at '%s'" % (perl,))
