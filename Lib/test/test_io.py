@@ -35,7 +35,7 @@ import weakref
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
-from test.script_helper import assert_python_ok
+from test.script_helper import assert_python_ok, run_python_until_end
 
 import codecs
 import io  # C implementation of io
@@ -3436,6 +3436,49 @@ class CMiscIOTest(MiscIOTest):
         bufio = BadReader()
         b = bytearray(2)
         self.assertRaises(ValueError, bufio.readinto, b)
+
+    @unittest.skipUnless(threading, 'Threading required for this test.')
+    def check_daemon_threads_shutdown_deadlock(self, stream_name):
+        # Issue #23309: deadlocks at shutdown should be avoided when a
+        # daemon thread and the main thread both write to a file.
+        code = """if 1:
+            import sys
+            import time
+            import threading
+
+            file = sys.{stream_name}
+
+            def run():
+                while True:
+                    file.write('.')
+                    file.flush()
+
+            thread = threading.Thread(target=run)
+            thread.daemon = True
+            thread.start()
+
+            time.sleep(0.5)
+            file.write('!')
+            file.flush()
+            """.format_map(locals())
+        res, _ = run_python_until_end("-c", code)
+        err = res.err.decode()
+        if res.rc != 0:
+            # Failure: should be a fatal error
+            self.assertIn("Fatal Python error: could not acquire lock "
+                          "for <_io.BufferedWriter name='<{stream_name}>'> "
+                          "at interpreter shutdown, possibly due to "
+                          "daemon threads".format_map(locals()),
+                          err)
+        else:
+            self.assertFalse(err.strip('.!'))
+
+    def test_daemon_threads_shutdown_stdout_deadlock(self):
+        self.check_daemon_threads_shutdown_deadlock('stdout')
+
+    def test_daemon_threads_shutdown_stderr_deadlock(self):
+        self.check_daemon_threads_shutdown_deadlock('stderr')
+
 
 class PyMiscIOTest(MiscIOTest):
     io = pyio
