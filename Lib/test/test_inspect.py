@@ -1660,56 +1660,6 @@ class MyParameter(inspect.Parameter):
     # used in test_signature_object_pickle
     pass
 
-    @cpython_only
-    @unittest.skipIf(MISSING_C_DOCSTRINGS,
-                     "Signature information for builtins requires docstrings")
-    def test_builtins_have_signatures(self):
-        # This checks all builtin callables in CPython have signatures
-        # A few have signatures Signature can't yet handle, so we skip those
-        # since they will have to wait until PEP 457 adds the required
-        # introspection support to the inspect module
-        # Some others also haven't been converted yet for various other
-        # reasons, so we also skip those for the time being, but design
-        # the test to fail in order to indicate when it needs to be
-        # updated.
-        no_signature = set()
-        # These need PEP 457 groups
-        needs_groups = ["range", "slice", "dir", "getattr",
-                        "next", "iter", "vars"]
-        no_signature |= needs_groups
-        # These need PEP 457 groups or a signature change to accept None
-        needs_semantic_update = ["round"]
-        no_signature |= needs_semantic_update
-        # These need *args support in Argument Clinic
-        needs_varargs = ["min", "max", "print", "__build_class__"]
-        no_signature |= needs_varargs
-        # These simply weren't covered in the initial AC conversion
-        # for builtin callables
-        not_converted_yet = ["open", "__import__"]
-        no_signature |= not_converted_yet
-        # These builtin types are expected to provide introspection info
-        types_with_signatures = set()
-        # Check the signatures we expect to be there
-        ns = vars(builtins)
-        for name, obj in sorted(ns.items()):
-            if not callable(obj):
-                continue
-            # The builtin types haven't been converted to AC yet
-            if isinstance(obj, type) and (name not in types_with_signatures):
-                # Note that this also skips all the exception types
-                no_signature.append(name)
-            if (name in no_signature):
-                # Not yet converted
-                continue
-            with self.subTest(builtin=name):
-                self.assertIsNotNone(inspect.signature(obj))
-        # Check callables that haven't been converted don't claim a signature
-        # This ensures this test will start failing as more signatures are
-        # added, so the affected items can be moved into the scope of the
-        # regression test above
-        for name in no_signature:
-            with self.subTest(builtin=name):
-                self.assertIsNone(ns[name].__text_signature__)
 
 
 class TestSignatureObject(unittest.TestCase):
@@ -1913,7 +1863,6 @@ class TestSignatureObject(unittest.TestCase):
         # Regression test for issue #20786
         test_unbound_method(dict.__delitem__)
         test_unbound_method(property.__delete__)
-
 
     @cpython_only
     @unittest.skipIf(MISSING_C_DOCSTRINGS,
@@ -3182,6 +3131,61 @@ class TestSignaturePrivateHelpers(unittest.TestCase):
             None,
             None)
 
+class TestSignatureDefinitions(unittest.TestCase):
+    # This test case provides a home for checking that particular APIs
+    # have signatures available for introspection
+
+    @cpython_only
+    @unittest.skipIf(MISSING_C_DOCSTRINGS,
+                     "Signature information for builtins requires docstrings")
+    def test_builtins_have_signatures(self):
+        # This checks all builtin callables in CPython have signatures
+        # A few have signatures Signature can't yet handle, so we skip those
+        # since they will have to wait until PEP 457 adds the required
+        # introspection support to the inspect module
+        # Some others also haven't been converted yet for various other
+        # reasons, so we also skip those for the time being, but design
+        # the test to fail in order to indicate when it needs to be
+        # updated.
+        no_signature = set()
+        # These need PEP 457 groups
+        needs_groups = {"range", "slice", "dir", "getattr",
+                        "next", "iter", "vars"}
+        no_signature |= needs_groups
+        # These need PEP 457 groups or a signature change to accept None
+        needs_semantic_update = {"round"}
+        no_signature |= needs_semantic_update
+        # These need *args support in Argument Clinic
+        needs_varargs = {"min", "max", "print", "__build_class__"}
+        no_signature |= needs_varargs
+        # These simply weren't covered in the initial AC conversion
+        # for builtin callables
+        not_converted_yet = {"open", "__import__"}
+        no_signature |= not_converted_yet
+        # These builtin types are expected to provide introspection info
+        types_with_signatures = set()
+        # Check the signatures we expect to be there
+        ns = vars(builtins)
+        for name, obj in sorted(ns.items()):
+            if not callable(obj):
+                continue
+            # The builtin types haven't been converted to AC yet
+            if isinstance(obj, type) and (name not in types_with_signatures):
+                # Note that this also skips all the exception types
+                no_signature.add(name)
+            if (name in no_signature):
+                # Not yet converted
+                continue
+            with self.subTest(builtin=name):
+                self.assertIsNotNone(inspect.signature(obj))
+        # Check callables that haven't been converted don't claim a signature
+        # This ensures this test will start failing as more signatures are
+        # added, so the affected items can be moved into the scope of the
+        # regression test above
+        for name in no_signature:
+            with self.subTest(builtin=name):
+                self.assertIsNone(obj.__text_signature__)
+
 
 class TestUnwrap(unittest.TestCase):
 
@@ -3323,8 +3327,9 @@ def test_main():
         TestGetcallargsFunctions, TestGetcallargsMethods,
         TestGetcallargsUnboundMethods, TestGetattrStatic, TestGetGeneratorState,
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
-        TestBoundArguments, TestSignaturePrivateHelpers, TestGetClosureVars,
-        TestUnwrap, TestMain, TestReload
+        TestBoundArguments, TestSignaturePrivateHelpers,
+        TestSignatureDefinitions,
+        TestGetClosureVars, TestUnwrap, TestMain, TestReload
     )
 
 if __name__ == "__main__":
