@@ -3020,8 +3020,6 @@ order (MRO) for bases """
         cant(object(), list)
         cant(list(), object)
         class Int(int): __slots__ = []
-        cant(2, Int)
-        cant(Int(), int)
         cant(True, int)
         cant(2, bool)
         o = object()
