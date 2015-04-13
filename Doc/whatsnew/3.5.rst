@@ -594,7 +594,7 @@ Deprecated
 Unsupported Operating Systems
 -----------------------------
 
-* None yet.
+* Windows XP - Per :PEP:`11`, Microsoft support of Windows XP has ended.
 
 
 Deprecated Python modules, functions and methods
