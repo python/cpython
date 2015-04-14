@@ -59,7 +59,7 @@
     
     <Variable Name="AssociateFiles" Value="1" Persisted="yes" bal:Overridable="yes" />
     <Variable Name="PrependPath" Value="0" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="CompileAll" Value="0" Persisted="yes" bal:Overridable="yes" />
+    <Variable Name="CompileAll" Value="1" Persisted="yes" bal:Overridable="yes" />
     
     <Variable Name="SimpleInstall" Value="0" bal:Overridable="yes" />
     
