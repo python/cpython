@@ -300,7 +300,7 @@ ZipFile Objects
    it will override the default password set with :meth:`setpassword`.  Calling
    :meth:`read` on a closed ZipFile  will raise a :exc:`RuntimeError`. Calling
    :meth:`read` on a ZipFile that uses a compression method other than
-   :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or 
+   :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or
    :const:`ZIP_LZMA` will raise a :exc:`NotImplementedError`. An error will also
    be raised if the corresponding compression module is not available.
 
