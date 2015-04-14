@@ -377,26 +377,50 @@ class CalledProcessError(SubprocessError):
     The exit status will be stored in the returncode attribute;
     check_output() will also store the output in the output attribute.
     """
-    def __init__(self, returncode, cmd, output=None):
+    def __init__(self, returncode, cmd, output=None, stderr=None):
         self.returncode = returncode
         self.cmd = cmd
         self.output = output
+        self.stderr = stderr
+
     def __str__(self):
         return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+
+    @property
+    def stdout(self):
+        """Alias for output attribute, to match stderr"""
+        return self.output
+
+    @stdout.setter
+    def stdout(self, value):
+        # There's no obvious reason to set this, but allow it anyway so
+        # .stdout is a transparent alias for .output
+        self.output = value
 
 
 class TimeoutExpired(SubprocessError):
     """This exception is raised when the timeout expires while waiting for a
     child process.
     """
-    def __init__(self, cmd, timeout, output=None):
+    def __init__(self, cmd, timeout, output=None, stderr=None):
         self.cmd = cmd
         self.timeout = timeout
         self.output = output
+        self.stderr = stderr
 
     def __str__(self):
         return ("Command '%s' timed out after %s seconds" %
                 (self.cmd, self.timeout))
+
+    @property
+    def stdout(self):
+        return self.output
+
+    @stdout.setter
+    def stdout(self, value):
+        # There's no obvious reason to set this, but allow it anyway so
+        # .stdout is a transparent alias for .output
+        self.output = value
 
 
 if _mswindows:
@@ -433,8 +457,8 @@ else:
 
 
 __all__ = ["Popen", "PIPE", "STDOUT", "call", "check_call", "getstatusoutput",
-           "getoutput", "check_output", "CalledProcessError", "DEVNULL",
-           "SubprocessError", "TimeoutExpired"]
+           "getoutput", "check_output", "run", "CalledProcessError", "DEVNULL",
+           "SubprocessError", "TimeoutExpired", "CompletedProcess"]
            # NOTE: We intentionally exclude list2cmdline as it is
            # considered an internal implementation detail.  issue10838.
 
@@ -595,29 +619,97 @@ def check_output(*popenargs, timeout=None, **kwargs):
     """
     if 'stdout' in kwargs:
         raise ValueError('stdout argument not allowed, it will be overridden.')
-    if 'input' in kwargs:
+
+    if 'input' in kwargs and kwargs['input'] is None:
+        # Explicitly passing input=None was previously equivalent to passing an
+        # empty string. That is maintained here for backwards compatibility.
+        kwargs['input'] = '' if kwargs.get('universal_newlines', False) else b''
+
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+               **kwargs).stdout
+
+
+class CompletedProcess(object):
+    """A process that has finished running.
+
+    This is returned by run().
+
+    Attributes:
+      args: The list or str args passed to run().
+      returncode: The exit code of the process, negative for signals.
+      stdout: The standard output (None if not captured).
+      stderr: The standard error (None if not captured).
+    """
+    def __init__(self, args, returncode, stdout=None, stderr=None):
+        self.args = args
+        self.returncode = returncode
+        self.stdout = stdout
+        self.stderr = stderr
+
+    def __repr__(self):
+        args = ['args={!r}'.format(self.args),
+                'returncode={!r}'.format(self.returncode)]
+        if self.stdout is not None:
+            args.append('stdout={!r}'.format(self.stdout))
+        if self.stderr is not None:
+            args.append('stderr={!r}'.format(self.stderr))
+        return "{}({})".format(type(self).__name__, ', '.join(args))
+
+    def check_returncode(self):
+        """Raise CalledProcessError if the exit code is non-zero."""
+        if self.returncode:
+            raise CalledProcessError(self.returncode, self.args, self.stdout,
+                                     self.stderr)
+
+
+def run(*popenargs, input=None, timeout=None, check=False, **kwargs):
+    """Run command with arguments and return a CompletedProcess instance.
+
+    The returned instance will have attributes args, returncode, stdout and
+    stderr. By default, stdout and stderr are not captured, and those attributes
+    will be None. Pass stdout=PIPE and/or stderr=PIPE in order to capture them.
+
+    If check is True and the exit code was non-zero, it raises a
+    CalledProcessError. The CalledProcessError object will have the return code
+    in the returncode attribute, and output & stderr attributes if those streams
+    were captured.
+
+    If timeout is given, and the process takes too long, a TimeoutExpired
+    exception will be raised.
+
+    There is an optional argument "input", allowing you to
+    pass a string to the subprocess's stdin.  If you use this argument
+    you may not also use the Popen constructor's "stdin" argument, as
+    it will be used internally.
+
+    The other arguments are the same as for the Popen constructor.
+
+    If universal_newlines=True is passed, the "input" argument must be a
+    string and stdout/stderr in the returned object will be strings rather than
+    bytes.
+    """
+    if input is not None:
         if 'stdin' in kwargs:
             raise ValueError('stdin and input arguments may not both be used.')
-        inputdata = kwargs['input']
-        del kwargs['input']
         kwargs['stdin'] = PIPE
-    else:
-        inputdata = None
-    with Popen(*popenargs, stdout=PIPE, **kwargs) as process:
+
+    with Popen(*popenargs, **kwargs) as process:
         try:
-            output, unused_err = process.communicate(inputdata, timeout=timeout)
+            stdout, stderr = process.communicate(input, timeout=timeout)
         except TimeoutExpired:
             process.kill()
-            output, unused_err = process.communicate()
-            raise TimeoutExpired(process.args, timeout, output=output)
+            stdout, stderr = process.communicate()
+            raise TimeoutExpired(process.args, timeout, output=stdout,
+                                 stderr=stderr)
         except:
             process.kill()
             process.wait()
             raise
         retcode = process.poll()
-        if retcode:
-            raise CalledProcessError(retcode, process.args, output=output)
-    return output
+        if check and retcode:
+            raise CalledProcessError(retcode, process.args,
+                                     output=stdout, stderr=stderr)
+    return CompletedProcess(process.args, retcode, stdout, stderr)
 
 
 def list2cmdline(seq):
