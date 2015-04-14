@@ -1524,8 +1524,9 @@ The remaining characters are mapped through the given translation table.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_translate_impl(PyByteArrayObject *self, PyObject *table, int group_right_1, PyObject *deletechars)
-/*[clinic end generated code: output=fa3ea4f9a8d58bc7 input=b749ad85f4860824]*/
+bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
+                         int group_right_1, PyObject *deletechars)
+/*[clinic end generated code: output=2bebc86a9a1ff083 input=b749ad85f4860824]*/
 {
     char *input, *output;
     const char *table_chars;
@@ -2142,8 +2143,9 @@ replaced.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_replace_impl(PyByteArrayObject *self, Py_buffer *old, Py_buffer *new, Py_ssize_t count)
-/*[clinic end generated code: output=3fc105c8232d7b3f input=aa379d988637c7fb]*/
+bytearray_replace_impl(PyByteArrayObject *self, Py_buffer *old,
+                       Py_buffer *new, Py_ssize_t count)
+/*[clinic end generated code: output=d39884c4dc59412a input=aa379d988637c7fb]*/
 {
     return (PyObject *)replace((PyByteArrayObject *) self,
                                old->buf, old->len,
@@ -2165,8 +2167,9 @@ Return a list of the sections in the bytearray, using sep as the delimiter.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_split_impl(PyByteArrayObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=cdccf5a29dbf7eb5 input=24f82669f41bf523]*/
+bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
+                     Py_ssize_t maxsplit)
+/*[clinic end generated code: output=833e2cf385d9a04d input=24f82669f41bf523]*/
 {
     Py_ssize_t len = PyByteArray_GET_SIZE(self), n;
     const char *s = PyByteArray_AS_STRING(self), *sub;
@@ -2276,8 +2279,9 @@ Splitting is done starting at the end of the bytearray and working to the front.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=4d648cf3ac65c9e9 input=a68286e4dd692ffe]*/
+bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
+                      Py_ssize_t maxsplit)
+/*[clinic end generated code: output=a55e0b5a03cb6190 input=a68286e4dd692ffe]*/
 {
     Py_ssize_t len = PyByteArray_GET_SIZE(self), n;
     const char *s = PyByteArray_AS_STRING(self), *sub;
@@ -2730,8 +2734,9 @@ Decode the bytearray using the codec registered for encoding.
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_decode_impl(PyByteArrayObject *self, const char *encoding, const char *errors)
-/*[clinic end generated code: output=7e64e2cc91573b26 input=f28d8f903020257b]*/
+bytearray_decode_impl(PyByteArrayObject *self, const char *encoding,
+                      const char *errors)
+/*[clinic end generated code: output=f57d43f4a00b42c5 input=f28d8f903020257b]*/
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();

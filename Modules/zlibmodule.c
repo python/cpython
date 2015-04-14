@@ -280,8 +280,9 @@ Returns a bytes object containing the uncompressed data.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_decompress_impl(PyModuleDef *module, Py_buffer *data, int wbits, unsigned int bufsize)
-/*[clinic end generated code: output=9e5464e72df9cb5f input=0f4b9abb7103f50e]*/
+zlib_decompress_impl(PyModuleDef *module, Py_buffer *data, int wbits,
+                     unsigned int bufsize)
+/*[clinic end generated code: output=444d0987f3429574 input=0f4b9abb7103f50e]*/
 {
     PyObject *result_str = NULL;
     Byte *input;
@@ -410,8 +411,9 @@ Return a compressor object.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits, int memLevel, int strategy, Py_buffer *zdict)
-/*[clinic end generated code: output=89e5a6c1449caa9e input=b034847f8821f6af]*/
+zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits,
+                      int memLevel, int strategy, Py_buffer *zdict)
+/*[clinic end generated code: output=2949bbb9a5723ccd input=b034847f8821f6af]*/
 {
     compobject *self = NULL;
     int err;
@@ -703,8 +705,9 @@ Call the flush() method to clear these buffers.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int max_length)
-/*[clinic end generated code: output=755cccc9087bfe55 input=02cfc047377cec86]*/
+zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
+                                unsigned int max_length)
+/*[clinic end generated code: output=b82e2a2c19f5fe7b input=02cfc047377cec86]*/
 {
     int err;
     unsigned int old_length, length = DEF_BUF_SIZE;

@@ -78,7 +78,8 @@ PyDoc_STRVAR(_imp__fix_co_filename__doc__,
     {"_fix_co_filename", (PyCFunction)_imp__fix_co_filename, METH_VARARGS, _imp__fix_co_filename__doc__},
 
 static PyObject *
-_imp__fix_co_filename_impl(PyModuleDef *module, PyCodeObject *code, PyObject *path);
+_imp__fix_co_filename_impl(PyModuleDef *module, PyCodeObject *code,
+                           PyObject *path);
 
 static PyObject *
 _imp__fix_co_filename(PyModuleDef *module, PyObject *args)
@@ -295,7 +296,8 @@ PyDoc_STRVAR(_imp_load_dynamic__doc__,
     {"load_dynamic", (PyCFunction)_imp_load_dynamic, METH_VARARGS, _imp_load_dynamic__doc__},
 
 static PyObject *
-_imp_load_dynamic_impl(PyModuleDef *module, PyObject *name, PyObject *path, PyObject *file);
+_imp_load_dynamic_impl(PyModuleDef *module, PyObject *name, PyObject *path,
+                       PyObject *file);
 
 static PyObject *
 _imp_load_dynamic(PyModuleDef *module, PyObject *args)
@@ -320,4 +322,4 @@ exit:
 #ifndef _IMP_LOAD_DYNAMIC_METHODDEF
     #define _IMP_LOAD_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_LOAD_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=d41c392510815c5b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b64fe33fe76591cf input=a9049054013a1b77]*/

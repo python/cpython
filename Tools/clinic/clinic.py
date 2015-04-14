@@ -527,6 +527,58 @@ def normalize_snippet(s, *, indent=0):
     return s
 
 
+def wrap_declarations(text, length=78):
+    """
+    A simple-minded text wrapper for C function declarations.
+
+    It views a declaration line as looking like this:
+        xxxxxxxx(xxxxxxxxx,xxxxxxxxx)
+    If called with length=30, it would wrap that line into
+        xxxxxxxx(xxxxxxxxx,
+                 xxxxxxxxx)
+    (If the declaration has zero or one parameters, this
+    function won't wrap it.)
+
+    If this doesn't work properly, it's probably better to
+    start from scratch with a more sophisticated algorithm,
+    rather than try and improve/debug this dumb little function.
+    """
+    lines = []
+    for line in text.split('\n'):
+        prefix, _, after_l_paren = line.partition('(')
+        if not after_l_paren:
+            lines.append(line)
+            continue
+        parameters, _, after_r_paren = after_l_paren.partition(')')
+        if not _:
+            lines.append(line)
+            continue
+        if ',' not in parameters:
+            lines.append(line)
+            continue
+        parameters = [x.strip() + ", " for x in parameters.split(',')]
+        prefix += "("
+        if len(prefix) < length:
+            spaces = " " * len(prefix)
+        else:
+            spaces = " " * 4
+
+        while parameters:
+            line = prefix
+            first = True
+            while parameters:
+                if (not first and
+                    (len(line) + len(parameters[0]) > length)):
+                    break
+                line += parameters.pop(0)
+                first = False
+            if not parameters:
+                line = line.rstrip(", ") + ")" + after_r_paren
+            lines.append(line.rstrip())
+            prefix = spaces
+    return "\n".join(lines)
+
+
 class CLanguage(Language):
 
     body_prefix   = "#"
@@ -1128,6 +1180,11 @@ class CLanguage(Language):
                 )
 
             s = template.format_map(template_dict)
+
+            # mild hack:
+            # reflow long impl declarations
+            if name in {"impl_prototype", "impl_definition"}:
+                s = wrap_declarations(s)
 
             if clinic.line_prefix:
                 s = indent_all_lines(s, clinic.line_prefix)

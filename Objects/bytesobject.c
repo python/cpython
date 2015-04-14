@@ -2113,8 +2113,9 @@ The remaining characters are mapped through the given translation table.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, PyObject *deletechars)
-/*[clinic end generated code: output=0ddd2cef4f4918f2 input=d8fa5519d7cc4be7]*/
+bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1,
+                     PyObject *deletechars)
+/*[clinic end generated code: output=233df850eb50bf8d input=d8fa5519d7cc4be7]*/
 {
     char *input, *output;
     Py_buffer table_view = {NULL, NULL};
@@ -2761,8 +2762,9 @@ replaced.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_replace_impl(PyBytesObject*self, Py_buffer *old, Py_buffer *new, Py_ssize_t count)
-/*[clinic end generated code: output=3fe052c3c60cffc2 input=b2fbbf0bf04de8e5]*/
+bytes_replace_impl(PyBytesObject*self, Py_buffer *old, Py_buffer *new,
+                   Py_ssize_t count)
+/*[clinic end generated code: output=403dc9d7a83c5a1d input=b2fbbf0bf04de8e5]*/
 {
     return (PyObject *)replace((PyBytesObject *) self,
                                (const char *)old->buf, old->len,
@@ -2929,8 +2931,9 @@ Decode the bytes using the codec registered for encoding.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_decode_impl(PyBytesObject*self, const char *encoding, const char *errors)
-/*[clinic end generated code: output=8038751c823b9038 input=958174769d2a40ca]*/
+bytes_decode_impl(PyBytesObject*self, const char *encoding,
+                  const char *errors)
+/*[clinic end generated code: output=2d2016ff8e0bb176 input=958174769d2a40ca]*/
 {
     return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
 }

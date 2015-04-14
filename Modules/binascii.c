@@ -1381,8 +1381,9 @@ are both encoded.  When quotetabs is set, space and tabs are encoded.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs, int istext, int header)
-/*[clinic end generated code: output=ff2991ba640fff3e input=7f2a9aaa008e92b2]*/
+binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs,
+                     int istext, int header)
+/*[clinic end generated code: output=a87ca9ccb94e2a9f input=7f2a9aaa008e92b2]*/
 {
     Py_ssize_t in, out;
     unsigned char *databuf, *odata;

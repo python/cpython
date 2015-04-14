@@ -84,7 +84,8 @@ PyDoc_STRVAR(_lzma_LZMADecompressor_decompress__doc__,
     {"decompress", (PyCFunction)_lzma_LZMADecompressor_decompress, METH_VARARGS|METH_KEYWORDS, _lzma_LZMADecompressor_decompress__doc__},
 
 static PyObject *
-_lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data, Py_ssize_t max_length);
+_lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
+                                       Py_ssize_t max_length);
 
 static PyObject *
 _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *args, PyObject *kwargs)
@@ -132,7 +133,8 @@ PyDoc_STRVAR(_lzma_LZMADecompressor___init____doc__,
 "For one-shot decompression, use the decompress() function instead.");
 
 static int
-_lzma_LZMADecompressor___init___impl(Decompressor *self, int format, PyObject *memlimit, PyObject *filters);
+_lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
+                                     PyObject *memlimit, PyObject *filters);
 
 static int
 _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -229,7 +231,8 @@ PyDoc_STRVAR(_lzma__decode_filter_properties__doc__,
     {"_decode_filter_properties", (PyCFunction)_lzma__decode_filter_properties, METH_VARARGS, _lzma__decode_filter_properties__doc__},
 
 static PyObject *
-_lzma__decode_filter_properties_impl(PyModuleDef *module, lzma_vli filter_id, Py_buffer *encoded_props);
+_lzma__decode_filter_properties_impl(PyModuleDef *module, lzma_vli filter_id,
+                                     Py_buffer *encoded_props);
 
 static PyObject *
 _lzma__decode_filter_properties(PyModuleDef *module, PyObject *args)
@@ -251,4 +254,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=ea7f2b2c4019fe86 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8981089cde080b54 input=a9049054013a1b77]*/
