@@ -185,7 +185,7 @@ def renames(old, new):
     empty.  Works like rename, except creation of any intermediate
     directories needed to make the new pathname good is attempted
     first.  After the rename, directories corresponding to rightmost
-    path segments of the old name will be pruned way until either the
+    path segments of the old name will be pruned until either the
     whole path is consumed or a nonempty directory is found.
 
     Note: this function can fail with the new directory structure made
