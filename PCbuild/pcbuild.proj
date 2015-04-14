@@ -40,7 +40,7 @@
     <!-- _freeze_importlib -->
     <Projects Include="_freeze_importlib.vcxproj" />
     <!-- Extension modules -->
-    <ExtensionModules Include="_bz2;_ctypes;_decimal;_elementtree;_lzma;_msi;_multiprocessing;_overlapped;_sqlite3;_tkinter;pyexpat;select;unicodedata;winsound" />
+    <ExtensionModules Include="_bz2;_ctypes;_decimal;_elementtree;_lzma;_msi;_multiprocessing;_overlapped;_sqlite3;_tkinter;tix;pyexpat;select;unicodedata;winsound" />
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
     <ExtensionModules Include="_socket" Condition="!$(IncludeSSL)" />
     <ExtensionModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
