@@ -4,7 +4,7 @@
   <PropertyGroup>
     <TclMajorVersion>8</TclMajorVersion>
     <TclMinorVersion>6</TclMinorVersion>
-    <TclPatchLevel>3</TclPatchLevel>
+    <TclPatchLevel>4</TclPatchLevel>
     <TclRevision>1</TclRevision>
     <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
     <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
