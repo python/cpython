@@ -1789,14 +1789,15 @@ def _set_return_value(mock, method, name):
 
 class MagicMixin(object):
     def __init__(self, *args, **kw):
+        self._mock_set_magics()  # make magic work for kwargs in init
         _safe_super(MagicMixin, self).__init__(*args, **kw)
-        self._mock_set_magics()
+        self._mock_set_magics()  # fix magic broken by upper level init
 
 
     def _mock_set_magics(self):
         these_magics = _magics
 
-        if self._mock_methods is not None:
+        if getattr(self, "_mock_methods", None) is not None:
             these_magics = _magics.intersection(self._mock_methods)
 
             remove_magics = set()
