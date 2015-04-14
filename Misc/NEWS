@@ -32,6 +32,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23342: Add a subprocess.run() function than returns a CalledProcess
+  instance for a more consistent API than the existing call* functions.
+
 - Issue #21217: inspect.getsourcelines() now tries to compute the start and
   end lines from the code object, fixing an issue when a lambda function is
   used as decorator argument.  Patch by Thomas Ballinger.
