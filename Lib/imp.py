@@ -131,7 +131,7 @@ class NullImporter:
 
 class _HackedGetData:
 
-    """Compatibiilty support for 'file' arguments of various load_*()
+    """Compatibility support for 'file' arguments of various load_*()
     functions."""
 
     def __init__(self, fullname, path, file=None):
