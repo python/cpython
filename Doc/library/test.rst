@@ -577,6 +577,8 @@ The :mod:`test.support` module defines the following functions:
    By default this skips private attributes beginning with '_' but
    includes all magic methods, i.e. those starting and ending in '__'.
 
+   .. versionadded:: 3.5
+
 
 The :mod:`test.support` module defines the following classes:
 
