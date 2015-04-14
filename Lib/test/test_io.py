@@ -719,7 +719,8 @@ class PyIOTest(IOTest):
     pass
 
 
-class CPyMatchTest(unittest.TestCase):
+@support.cpython_only
+class APIMismatchTest(unittest.TestCase):
 
     @unittest.skip('test to be fixed by issue 9858')
     def test_RawIOBase_io_in_pyio_match(self):
@@ -3733,7 +3734,7 @@ class PySignalsTest(SignalsTest):
 
 
 def load_tests(*args):
-    tests = (CIOTest, PyIOTest, CPyMatchTest,
+    tests = (CIOTest, PyIOTest, APIMismatchTest,
              CBufferedReaderTest, PyBufferedReaderTest,
              CBufferedWriterTest, PyBufferedWriterTest,
              CBufferedRWPairTest, PyBufferedRWPairTest,
