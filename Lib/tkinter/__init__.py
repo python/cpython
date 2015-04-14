@@ -1736,7 +1736,7 @@ class Wm:
 
         On X, the images are arranged into the _NET_WM_ICON X property,
         which most modern window managers support. An icon specified by
-        wm_iconbitmap may exist simuultaneously.
+        wm_iconbitmap may exist simultaneously.
 
         On Macintosh, this currently does nothing."""
         if default:
