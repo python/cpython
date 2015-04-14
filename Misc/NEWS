@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17898: Fix exception in gettext.py when parsing certain plural forms.
+
 - Issue #23865: close() methods in multiple modules now are idempotent and more
   robust at shutdown. If needs to release multiple resources, they are released
   even if errors are occured.
