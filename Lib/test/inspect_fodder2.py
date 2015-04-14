@@ -110,6 +110,14 @@ def annotated(arg1: list):
 def keyword_only_arg(*, arg):
     pass
 
+@wrap(lambda: None)
+def func114():
+    return 115
+
+class ClassWithMethod:
+    def method(self):
+        pass
+
 from functools import wraps
 
 def decorator(func):
@@ -118,7 +126,7 @@ def decorator(func):
         return 42
     return fake
 
-#line 121
+#line 129
 @decorator
 def real():
     return 20
