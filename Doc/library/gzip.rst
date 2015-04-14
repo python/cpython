@@ -189,9 +189,10 @@ Example of how to create a compressed GZIP file::
 Example of how to GZIP compress an existing file::
 
    import gzip
+   import shutil
    with open('/home/joe/file.txt', 'rb') as f_in:
        with gzip.open('/home/joe/file.txt.gz', 'wb') as f_out:
-           f_out.writelines(f_in)
+           shutil.copyfileobj(f_in, f_out)
 
 Example of how to GZIP compress a binary string::
 
