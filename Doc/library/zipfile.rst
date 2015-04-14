@@ -298,7 +298,11 @@ ZipFile Objects
    file in the archive, or a :class:`ZipInfo` object.  The archive must be open for
    read or append. *pwd* is the password used for encrypted  files and, if specified,
    it will override the default password set with :meth:`setpassword`.  Calling
-   :meth:`read` on a closed ZipFile  will raise a :exc:`RuntimeError`.
+   :meth:`read` on a closed ZipFile  will raise a :exc:`RuntimeError`. Calling
+   :meth:`read` on a ZipFile that uses a compression method other than
+   :const:`ZIP_STORED`, :const:`ZIP_DEFLATED`, :const:`ZIP_BZIP2` or 
+   :const:`ZIP_LZMA` will raise a :exc:`NotImplementedError`. An error will also
+   be raised if the corresponding compression module is not available.
 
 
 .. method:: ZipFile.testzip()
