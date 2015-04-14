@@ -709,7 +709,7 @@ class GeneralModuleTests(unittest.TestCase):
             raise socket.gaierror
 
     def testSendtoErrors(self):
-        # Testing that sendto doens't masks failures. See #10169.
+        # Testing that sendto doesn't masks failures. See #10169.
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.addCleanup(s.close)
         s.bind(('', 0))

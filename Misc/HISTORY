@@ -25449,7 +25449,7 @@ some more documentation.
 fixed.
 
 - The test of negative number to the float power has been moved from the
-built-in pow() functin to floatobject.c (so complex numbers can yield the
+built-in pow() function to floatobject.c (so complex numbers can yield the
 correct result).
 
 - The bug introduced in beta2 where shared libraries loaded (using
