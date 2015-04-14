@@ -2184,7 +2184,7 @@ def fs_is_case_insensitive(directory):
             return False
 
 
-def detect_api_mismatch(ref_api, other_api, *, ignore=None):
+def detect_api_mismatch(ref_api, other_api, *, ignore=()):
     """Returns the set of items in ref_api not in other_api, except for a
     defined list of items to be ignored in this check.
 
