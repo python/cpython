@@ -88,7 +88,7 @@ __all__ = [
     "skip_unless_symlink", "requires_gzip", "requires_bz2", "requires_lzma",
     "bigmemtest", "bigaddrspacetest", "cpython_only", "get_attribute",
     "requires_IEEE_754", "skip_unless_xattr", "requires_zlib",
-    "anticipate_failure", "load_package_tests",
+    "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     # sys
     "is_jython", "check_impl_detail",
     # network
@@ -2182,6 +2182,21 @@ def fs_is_case_insensitive(directory):
             return os.path.samefile(base_path, case_path)
         except FileNotFoundError:
             return False
+
+
+def detect_api_mismatch(ref_api, other_api, *, ignore=None):
+    """Returns the set of items in ref_api not in other_api, except for a
+    defined list of items to be ignored in this check.
+
+    By default this skips private attributes beginning with '_' but
+    includes all magic methods, i.e. those starting and ending in '__'.
+    """
+    missing_items = set(dir(ref_api)) - set(dir(other_api))
+    if ignore:
+        missing_items -= set(ignore)
+    missing_items = set(m for m in missing_items
+                        if not m.startswith('_') or m.endswith('__'))
+    return missing_items
 
 
 class SuppressCrashReport:
