@@ -722,7 +722,7 @@ class PyIOTest(IOTest):
 @support.cpython_only
 class APIMismatchTest(unittest.TestCase):
 
-    @unittest.skip('test to be fixed by issue 9858')
+    @unittest.expectedFailure  # Test to be fixed by issue9858.
     def test_RawIOBase_io_in_pyio_match(self):
         """Test that pyio RawIOBase class has all c RawIOBase methods"""
         mismatch = support.detect_api_mismatch(pyio.RawIOBase, io.RawIOBase)
