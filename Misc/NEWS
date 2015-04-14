@@ -136,6 +136,9 @@ Library
 - Issue #22117: Fix os.utime(), it now rounds the timestamp towards minus
   infinity (-inf) instead of rounding towards zero.
 
+- Issue #23310: Fix MagicMock's initializer to work with __methods__, just
+  like configure_mock().  Patch by Kasia Jachim.
+
 Build
 -----
 
