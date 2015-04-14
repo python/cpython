@@ -275,11 +275,12 @@ class GNUTranslations(NullTranslations):
             # See if we're looking at GNU .mo conventions for metadata
             if mlen == 0:
                 # Catalog description
-                lastk = k = None
+                lastk = None
                 for b_item in tmsg.split('\n'.encode("ascii")):
                     item = b_item.decode().strip()
                     if not item:
                         continue
+                    k = v = None
                     if ':' in item:
                         k, v = item.split(':', 1)
                         k = k.strip().lower()
