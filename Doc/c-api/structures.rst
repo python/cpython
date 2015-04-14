@@ -22,9 +22,9 @@ the definition of all other Python objects.
    contains the information Python needs to treat a pointer to an object as an
    object.  In a normal "release" build, it contains only the object's
    reference count and a pointer to the corresponding type object.
-   Nothing is actually declared to be a PyObject, but every pointer to a
-   Python object can be cast to a PyObject*.  Access to the members
-   must be done by using the macros :c:macro:`Py_REFCNT` and
+   Nothing is actually declared to be a :c:type:`PyObject`, but every pointer
+   to a Python object can be cast to a :c:type:`PyObject*`.  Access to the
+   members must be done by using the macros :c:macro:`Py_REFCNT` and
    :c:macro:`Py_TYPE`.
 
 
