@@ -280,6 +280,48 @@ class TestSupport(unittest.TestCase):
             self.assertEqual(D["item"], 5)
         self.assertEqual(D["item"], 1)
 
+    def test_detect_api_mismatch(self):
+        class RefClass:
+            attribute1 = None
+            attribute2 = None
+            _hidden_attribute1 = None
+            __magic_1__ = None
+
+        class OtherClass:
+            attribute2 = None
+            attribute3 = None
+            __magic_1__ = None
+            __magic_2__ = None
+
+        missing_items = support.detect_api_mismatch(RefClass, OtherClass)
+        self.assertEqual({'attribute1'}, missing_items)
+
+        missing_items = support.detect_api_mismatch(OtherClass, RefClass)
+        self.assertEqual({'attribute3', '__magic_2__'}, missing_items)
+
+    def test_detect_api_mismatch__ignore(self):
+        class RefClass:
+            attribute1 = None
+            attribute2 = None
+            _hidden_attribute1 = None
+            __magic_1__ = None
+
+        class OtherClass:
+            attribute2 = None
+            attribute3 = None
+            __magic_1__ = None
+            __magic_2__ = None
+
+        ignore = ['attribute1', 'attribute3', '__magic_2__', 'not_in_either']
+
+        missing_items = support.detect_api_mismatch(RefClass, OtherClass,
+                                                    ignore=ignore)
+        self.assertEqual(set(), missing_items)
+
+        missing_items = support.detect_api_mismatch(OtherClass, RefClass,
+                                                    ignore=ignore)
+        self.assertEqual(set(), missing_items)
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
