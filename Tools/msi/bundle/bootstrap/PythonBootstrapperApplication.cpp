@@ -90,6 +90,7 @@ enum CONTROL_ID {
     ID_CUSTOM_ASSOCIATE_FILES_CHECKBOX,
     ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX,
     ID_CUSTOM_BROWSE_BUTTON,
+    ID_CUSTOM_BROWSE_BUTTON_LABEL,
     ID_CUSTOM_INSTALL_BUTTON,
     ID_CUSTOM_NEXT_BUTTON,
     ID_CUSTOM1_BACK_BUTTON,
@@ -149,6 +150,7 @@ static THEME_ASSIGN_CONTROL_ID CONTROL_ID_NAMES[] = {
     { ID_CUSTOM_ASSOCIATE_FILES_CHECKBOX, L"AssociateFiles" },
     { ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX, L"InstallAllUsers" },
     { ID_CUSTOM_BROWSE_BUTTON, L"CustomBrowseButton" },
+    { ID_CUSTOM_BROWSE_BUTTON_LABEL, L"CustomBrowseButtonLabel" },
     { ID_CUSTOM_INSTALL_BUTTON, L"CustomInstallButton" },
     { ID_CUSTOM_NEXT_BUTTON, L"CustomNextButton" },
     { ID_CUSTOM1_BACK_BUTTON, L"Custom1BackButton" },
@@ -366,6 +368,7 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             hr = BalGetNumericVariable(L"WixBundleElevated", &elevated);
             checked = ThemeIsControlChecked(_theme, ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX);
             ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, checked && (FAILED(hr) || !elevated));
+            ThemeShowControl(_theme, ID_CUSTOM_BROWSE_BUTTON_LABEL, checked ? SW_HIDE : SW_SHOW);
             ThemeGetTextControl(_theme, ID_TARGETDIR_EDITBOX, &targetDir);
             if (targetDir) {
                 // Check the current value against the default to see
@@ -467,8 +470,10 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         }
         if (SUCCEEDED(BalGetNumericVariable(L"InstallAllUsers", &installAll))) {
             ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, installAll && !elevated);
+            ThemeShowControl(_theme, ID_CUSTOM_BROWSE_BUTTON_LABEL, SW_HIDE);
         } else {
             installAll = 0;
+            ThemeShowControl(_theme, ID_CUSTOM_BROWSE_BUTTON_LABEL, SW_SHOW);
         }
 
         if (SUCCEEDED(BalGetNumericVariable(L"Include_launcher", &includeLauncher)) && includeLauncher) {

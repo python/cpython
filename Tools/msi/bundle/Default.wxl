@@ -40,10 +40,10 @@ Continue?</String>
     Logs to a specific file. By default, log files are created in %TEMP%.</String>
   <String Id="InstallLicenseLinkText">[WixBundleName] &lt;a href="#"&gt;license terms&lt;/a&gt;.</String>
   <String Id="InstallAcceptCheckbox">I &amp;agree to the license terms and conditions</String>
-  <String Id="InstallAllUsersButton">Install for &amp;All Users</String>
-  <String Id="InstallAllUsersButtonNote">[DefaultAllUsersTargetDir]</String>
-  <String Id="InstallJustForMeButton">Install &amp;Just for Me</String>
-  <String Id="InstallJustForMeButtonNote">[DefaultJustForMeTargetDir]</String>
+  <String Id="InstallJustForMeButton">&amp;Install Now</String>
+  <String Id="InstallJustForMeButtonNote">[DefaultJustForMeTargetDir]
+Includes IDLE and pip
+Creates shortcuts and file associations</String>
   <String Id="InstallCustomButton">C&amp;ustomize installation</String>
   <String Id="InstallCustomButtonNote">Choose location and features</String>
   <String Id="InstallSimpleButton">&amp;Install</String>
@@ -51,7 +51,7 @@ Continue?</String>
   <String Id="Custom1Header">Optional Features</String>
   <String Id="Custom2Header">Advanced Options</String>
   <String Id="CustomLocationLabel">Customize install location</String>
-  <String Id="CustomLocationHelpLabel">If not installing as administrator, you will require write permissions for this location.</String>
+  <String Id="CustomLocationHelpLabel">You will require write permissions for the selected location.</String>
   <String Id="CustomInstallButton">&amp;Install</String>
   <String Id="CustomNextButton">&amp;Next</String>
   <String Id="CustomBackButton">&amp;Back</String>
