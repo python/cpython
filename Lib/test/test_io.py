@@ -719,6 +719,20 @@ class PyIOTest(IOTest):
     pass
 
 
+class CPyMatchTest(unittest.TestCase):
+
+    @unittest.skip('test to be fixed by issue 9858')
+    def test_RawIOBase_io_in_pyio_match(self):
+        """Test that pyio RawIOBase class has all c RawIOBase methods"""
+        mismatch = support.detect_api_mismatch(pyio.RawIOBase, io.RawIOBase)
+        self.assertEqual(mismatch, set(), msg='Python RawIOBase does not have all C RawIOBase methods')
+
+    def test_RawIOBase_pyio_in_io_match(self):
+        """Test that c RawIOBase class has all pyio RawIOBase methods"""
+        mismatch = support.detect_api_mismatch(io.RawIOBase, pyio.RawIOBase)
+        self.assertEqual(mismatch, set(), msg='C RawIOBase does not have all Python RawIOBase methods')
+
+
 class CommonBufferedTests:
     # Tests common to BufferedReader, BufferedWriter and BufferedRandom
 
@@ -3719,7 +3733,7 @@ class PySignalsTest(SignalsTest):
 
 
 def load_tests(*args):
-    tests = (CIOTest, PyIOTest,
+    tests = (CIOTest, PyIOTest, CPyMatchTest,
              CBufferedReaderTest, PyBufferedReaderTest,
              CBufferedWriterTest, PyBufferedWriterTest,
              CBufferedRWPairTest, PyBufferedRWPairTest,
