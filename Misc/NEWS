@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23811: Add missing newline to the PyCompileError error message.
+  Patch by Alex Shkop.
+
 - Issue #17898: Fix exception in gettext.py when parsing certain plural forms.
 
 - Issue #22982: Improve BOM handling when seeking to multiple positions of
