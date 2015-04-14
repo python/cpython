@@ -34,7 +34,7 @@ def interpreter_requires_environment():
     doesn't have an obvious home with Python's current home finding logic.
 
     Setting PYTHONHOME is one way to get most of the testsuite to run in that
-    situation.  PYTHONPATH or PYTHONUSERSITE are other common envirnonment
+    situation.  PYTHONPATH or PYTHONUSERSITE are other common environment
     variables that might impact whether or not the interpreter can start.
     """
     global __cached_interp_requires_environment
