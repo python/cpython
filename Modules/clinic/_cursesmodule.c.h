@@ -24,7 +24,8 @@ PyDoc_STRVAR(curses_window_addch__doc__,
     {"addch", (PyCFunction)curses_window_addch, METH_VARARGS, curses_window_addch__doc__},
 
 static PyObject *
-curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1, int y, int x, PyObject *ch, int group_right_1, long attr);
+curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1, int y,
+                         int x, PyObject *ch, int group_right_1, long attr);
 
 static PyObject *
 curses_window_addch(PyCursesWindowObject *self, PyObject *args)
@@ -67,4 +68,4 @@ curses_window_addch(PyCursesWindowObject *self, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=660ab0ae6d8fbdda input=a9049054013a1b77]*/
+/*[clinic end generated code: output=982b1e709577f3ec input=a9049054013a1b77]*/

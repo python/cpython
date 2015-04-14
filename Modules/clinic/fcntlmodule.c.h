@@ -79,7 +79,8 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
     {"ioctl", (PyCFunction)fcntl_ioctl, METH_VARARGS, fcntl_ioctl__doc__},
 
 static PyObject *
-fcntl_ioctl_impl(PyModuleDef *module, int fd, unsigned int code, PyObject *ob_arg, int mutate_arg);
+fcntl_ioctl_impl(PyModuleDef *module, int fd, unsigned int code,
+                 PyObject *ob_arg, int mutate_arg);
 
 static PyObject *
 fcntl_ioctl(PyModuleDef *module, PyObject *args)
@@ -163,7 +164,8 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
     {"lockf", (PyCFunction)fcntl_lockf, METH_VARARGS, fcntl_lockf__doc__},
 
 static PyObject *
-fcntl_lockf_impl(PyModuleDef *module, int fd, int code, PyObject *lenobj, PyObject *startobj, int whence);
+fcntl_lockf_impl(PyModuleDef *module, int fd, int code, PyObject *lenobj,
+                 PyObject *startobj, int whence);
 
 static PyObject *
 fcntl_lockf(PyModuleDef *module, PyObject *args)
@@ -184,4 +186,4 @@ fcntl_lockf(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ec482672292aab0c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=badaa968eb04410d input=a9049054013a1b77]*/

@@ -1684,8 +1684,9 @@ some other type.
 [clinic start generated code]*/
 
 static PyObject *
-array_array_fromunicode_impl(arrayobject *self, Py_UNICODE *ustr, Py_ssize_clean_t ustr_length)
-/*[clinic end generated code: output=3b3f4f133bac725e input=56bcedb5ef70139f]*/
+array_array_fromunicode_impl(arrayobject *self, Py_UNICODE *ustr,
+                             Py_ssize_clean_t ustr_length)
+/*[clinic end generated code: output=ebb72fc16975e06d input=56bcedb5ef70139f]*/
 {
     char typecode;
 
@@ -1937,8 +1938,11 @@ Internal. Used for pickling support.
 [clinic start generated code]*/
 
 static PyObject *
-array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, int typecode, enum machine_format_code mformat_code, PyObject *items)
-/*[clinic end generated code: output=c51081ec91caf7e9 input=f72492708c0a1d50]*/
+array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype,
+                                int typecode,
+                                enum machine_format_code mformat_code,
+                                PyObject *items)
+/*[clinic end generated code: output=6ecbf0e8e4d92ab9 input=f72492708c0a1d50]*/
 {
     PyObject *converted_items;
     PyObject *result;

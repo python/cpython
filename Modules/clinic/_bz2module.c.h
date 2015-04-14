@@ -117,7 +117,8 @@ PyDoc_STRVAR(_bz2_BZ2Decompressor_decompress__doc__,
     {"decompress", (PyCFunction)_bz2_BZ2Decompressor_decompress, METH_VARARGS|METH_KEYWORDS, _bz2_BZ2Decompressor_decompress__doc__},
 
 static PyObject *
-_bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data, Py_ssize_t max_length);
+_bz2_BZ2Decompressor_decompress_impl(BZ2Decompressor *self, Py_buffer *data,
+                                     Py_ssize_t max_length);
 
 static PyObject *
 _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *args, PyObject *kwargs)
@@ -168,4 +169,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3565d163a360af01 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e8a48a949969c355 input=a9049054013a1b77]*/

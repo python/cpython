@@ -716,8 +716,9 @@ Parse XML data.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data, int isFinal)
-/*[clinic end generated code: output=2d4dc77f4d434854 input=e37b81b8948ca7e0]*/
+pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
+                             int isFinal)
+/*[clinic end generated code: output=37e105d55645b0f2 input=e37b81b8948ca7e0]*/
 {
     const char *s;
     Py_ssize_t slen;
@@ -918,8 +919,10 @@ Create a parser for parsing an external entity based on the information passed t
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self, const char *context, const char *encoding)
-/*[clinic end generated code: output=942f300ed0e56054 input=283206575d960272]*/
+pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
+                                                  const char *context,
+                                                  const char *encoding)
+/*[clinic end generated code: output=535cda9d7a0fbcd6 input=283206575d960272]*/
 {
     xmlparseobject *new_parser;
     int i;
@@ -1551,8 +1554,9 @@ Return a new XML parser object.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_ParserCreate_impl(PyModuleDef *module, const char *encoding, const char *namespace_separator, PyObject *intern)
-/*[clinic end generated code: output=b839b60992d8ce71 input=71b9f471aa6f8f86]*/
+pyexpat_ParserCreate_impl(PyModuleDef *module, const char *encoding,
+                          const char *namespace_separator, PyObject *intern)
+/*[clinic end generated code: output=81fccd233e1743a8 input=71b9f471aa6f8f86]*/
 {
     PyObject *result;
     int intern_decref = 0;

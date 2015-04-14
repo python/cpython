@@ -280,8 +280,9 @@ Return the value for key if present, otherwise default.
 [clinic start generated code]*/
 
 static PyObject *
-dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=c2bdccaa734ad349 input=aecf5efd2f2b1a3b]*/
+dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length,
+                 PyObject *default_value)
+/*[clinic end generated code: output=4f5c0e523eaf1251 input=aecf5efd2f2b1a3b]*/
 {
     datum dbm_key, val;
 
@@ -422,8 +423,9 @@ Return a database object.
 [clinic start generated code]*/
 
 static PyObject *
-dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags, int mode)
-/*[clinic end generated code: output=8b618fe06b92bf86 input=6499ab0fab1333ac]*/
+dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags,
+             int mode)
+/*[clinic end generated code: output=e8d4b36f25c733fd input=6499ab0fab1333ac]*/
 {
     int iflags;
 

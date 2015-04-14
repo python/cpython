@@ -52,7 +52,8 @@ PyDoc_STRVAR(bytearray_translate__doc__,
     {"translate", (PyCFunction)bytearray_translate, METH_VARARGS, bytearray_translate__doc__},
 
 static PyObject *
-bytearray_translate_impl(PyByteArrayObject *self, PyObject *table, int group_right_1, PyObject *deletechars);
+bytearray_translate_impl(PyByteArrayObject *self, PyObject *table,
+                         int group_right_1, PyObject *deletechars);
 
 static PyObject *
 bytearray_translate(PyByteArrayObject *self, PyObject *args)
@@ -140,7 +141,8 @@ PyDoc_STRVAR(bytearray_replace__doc__,
     {"replace", (PyCFunction)bytearray_replace, METH_VARARGS, bytearray_replace__doc__},
 
 static PyObject *
-bytearray_replace_impl(PyByteArrayObject *self, Py_buffer *old, Py_buffer *new, Py_ssize_t count);
+bytearray_replace_impl(PyByteArrayObject *self, Py_buffer *old,
+                       Py_buffer *new, Py_ssize_t count);
 
 static PyObject *
 bytearray_replace(PyByteArrayObject *self, PyObject *args)
@@ -185,7 +187,8 @@ PyDoc_STRVAR(bytearray_split__doc__,
     {"split", (PyCFunction)bytearray_split, METH_VARARGS|METH_KEYWORDS, bytearray_split__doc__},
 
 static PyObject *
-bytearray_split_impl(PyByteArrayObject *self, PyObject *sep, Py_ssize_t maxsplit);
+bytearray_split_impl(PyByteArrayObject *self, PyObject *sep,
+                     Py_ssize_t maxsplit);
 
 static PyObject *
 bytearray_split(PyByteArrayObject *self, PyObject *args, PyObject *kwargs)
@@ -257,7 +260,8 @@ PyDoc_STRVAR(bytearray_rsplit__doc__,
     {"rsplit", (PyCFunction)bytearray_rsplit, METH_VARARGS|METH_KEYWORDS, bytearray_rsplit__doc__},
 
 static PyObject *
-bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep, Py_ssize_t maxsplit);
+bytearray_rsplit_impl(PyByteArrayObject *self, PyObject *sep,
+                      Py_ssize_t maxsplit);
 
 static PyObject *
 bytearray_rsplit(PyByteArrayObject *self, PyObject *args, PyObject *kwargs)
@@ -546,7 +550,8 @@ PyDoc_STRVAR(bytearray_decode__doc__,
     {"decode", (PyCFunction)bytearray_decode, METH_VARARGS|METH_KEYWORDS, bytearray_decode__doc__},
 
 static PyObject *
-bytearray_decode_impl(PyByteArrayObject *self, const char *encoding, const char *errors);
+bytearray_decode_impl(PyByteArrayObject *self, const char *encoding,
+                      const char *errors);
 
 static PyObject *
 bytearray_decode(PyByteArrayObject *self, PyObject *args, PyObject *kwargs)
@@ -705,4 +710,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=d763876718a66fc3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2a698741a4f14047 input=a9049054013a1b77]*/

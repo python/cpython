@@ -57,7 +57,8 @@ PyDoc_STRVAR(zlib_decompress__doc__,
     {"decompress", (PyCFunction)zlib_decompress, METH_VARARGS, zlib_decompress__doc__},
 
 static PyObject *
-zlib_decompress_impl(PyModuleDef *module, Py_buffer *data, int wbits, unsigned int bufsize);
+zlib_decompress_impl(PyModuleDef *module, Py_buffer *data, int wbits,
+                     unsigned int bufsize);
 
 static PyObject *
 zlib_decompress(PyModuleDef *module, PyObject *args)
@@ -111,7 +112,8 @@ PyDoc_STRVAR(zlib_compressobj__doc__,
     {"compressobj", (PyCFunction)zlib_compressobj, METH_VARARGS|METH_KEYWORDS, zlib_compressobj__doc__},
 
 static PyObject *
-zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits, int memLevel, int strategy, Py_buffer *zdict);
+zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits,
+                      int memLevel, int strategy, Py_buffer *zdict);
 
 static PyObject *
 zlib_compressobj(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -235,7 +237,8 @@ PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
     {"decompress", (PyCFunction)zlib_Decompress_decompress, METH_VARARGS, zlib_Decompress_decompress__doc__},
 
 static PyObject *
-zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data, unsigned int max_length);
+zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
+                                unsigned int max_length);
 
 static PyObject *
 zlib_Decompress_decompress(compobject *self, PyObject *args)
@@ -446,4 +449,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=0743b1aa908f0b68 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6cdeb624bebfe11f input=a9049054013a1b77]*/

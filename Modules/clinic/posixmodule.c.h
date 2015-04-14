@@ -30,7 +30,8 @@ PyDoc_STRVAR(os_stat__doc__,
     {"stat", (PyCFunction)os_stat, METH_VARARGS|METH_KEYWORDS, os_stat__doc__},
 
 static PyObject *
-os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks);
+os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd,
+             int follow_symlinks);
 
 static PyObject *
 os_stat(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -126,7 +127,8 @@ PyDoc_STRVAR(os_access__doc__,
     {"access", (PyCFunction)os_access, METH_VARARGS|METH_KEYWORDS, os_access__doc__},
 
 static int
-os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks);
+os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd,
+               int effective_ids, int follow_symlinks);
 
 static PyObject *
 os_access(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -319,7 +321,8 @@ PyDoc_STRVAR(os_chmod__doc__,
     {"chmod", (PyCFunction)os_chmod, METH_VARARGS|METH_KEYWORDS, os_chmod__doc__},
 
 static PyObject *
-os_chmod_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int follow_symlinks);
+os_chmod_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd,
+              int follow_symlinks);
 
 static PyObject *
 os_chmod(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -438,7 +441,8 @@ PyDoc_STRVAR(os_chflags__doc__,
     {"chflags", (PyCFunction)os_chflags, METH_VARARGS|METH_KEYWORDS, os_chflags__doc__},
 
 static PyObject *
-os_chflags_impl(PyModuleDef *module, path_t *path, unsigned long flags, int follow_symlinks);
+os_chflags_impl(PyModuleDef *module, path_t *path, unsigned long flags,
+                int follow_symlinks);
 
 static PyObject *
 os_chflags(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -664,7 +668,8 @@ PyDoc_STRVAR(os_chown__doc__,
     {"chown", (PyCFunction)os_chown, METH_VARARGS|METH_KEYWORDS, os_chown__doc__},
 
 static PyObject *
-os_chown_impl(PyModuleDef *module, path_t *path, uid_t uid, gid_t gid, int dir_fd, int follow_symlinks);
+os_chown_impl(PyModuleDef *module, path_t *path, uid_t uid, gid_t gid,
+              int dir_fd, int follow_symlinks);
 
 static PyObject *
 os_chown(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -829,7 +834,8 @@ PyDoc_STRVAR(os_link__doc__,
     {"link", (PyCFunction)os_link, METH_VARARGS|METH_KEYWORDS, os_link__doc__},
 
 static PyObject *
-os_link_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int follow_symlinks);
+os_link_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd,
+             int dst_dir_fd, int follow_symlinks);
 
 static PyObject *
 os_link(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -1125,7 +1131,8 @@ PyDoc_STRVAR(os_rename__doc__,
     {"rename", (PyCFunction)os_rename, METH_VARARGS|METH_KEYWORDS, os_rename__doc__},
 
 static PyObject *
-os_rename_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd);
+os_rename_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd,
+               int dst_dir_fd);
 
 static PyObject *
 os_rename(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -1168,7 +1175,8 @@ PyDoc_STRVAR(os_replace__doc__,
     {"replace", (PyCFunction)os_replace, METH_VARARGS|METH_KEYWORDS, os_replace__doc__},
 
 static PyObject *
-os_replace_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd);
+os_replace_impl(PyModuleDef *module, path_t *src, path_t *dst,
+                int src_dir_fd, int dst_dir_fd);
 
 static PyObject *
 os_replace(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -1472,7 +1480,8 @@ PyDoc_STRVAR(os_utime__doc__,
     {"utime", (PyCFunction)os_utime, METH_VARARGS|METH_KEYWORDS, os_utime__doc__},
 
 static PyObject *
-os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times, PyObject *ns, int dir_fd, int follow_symlinks);
+os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times,
+              PyObject *ns, int dir_fd, int follow_symlinks);
 
 static PyObject *
 os_utime(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -1587,7 +1596,8 @@ PyDoc_STRVAR(os_execve__doc__,
     {"execve", (PyCFunction)os_execve, METH_VARARGS|METH_KEYWORDS, os_execve__doc__},
 
 static PyObject *
-os_execve_impl(PyModuleDef *module, path_t *path, PyObject *argv, PyObject *env);
+os_execve_impl(PyModuleDef *module, path_t *path, PyObject *argv,
+               PyObject *env);
 
 static PyObject *
 os_execve(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -1678,7 +1688,8 @@ PyDoc_STRVAR(os_spawnve__doc__,
     {"spawnve", (PyCFunction)os_spawnve, METH_VARARGS, os_spawnve__doc__},
 
 static PyObject *
-os_spawnve_impl(PyModuleDef *module, int mode, PyObject *path, PyObject *argv, PyObject *env);
+os_spawnve_impl(PyModuleDef *module, int mode, PyObject *path,
+                PyObject *argv, PyObject *env);
 
 static PyObject *
 os_spawnve(PyModuleDef *module, PyObject *args)
@@ -1900,7 +1911,8 @@ PyDoc_STRVAR(os_sched_setscheduler__doc__,
     {"sched_setscheduler", (PyCFunction)os_sched_setscheduler, METH_VARARGS, os_sched_setscheduler__doc__},
 
 static PyObject *
-os_sched_setscheduler_impl(PyModuleDef *module, pid_t pid, int policy, struct sched_param *param);
+os_sched_setscheduler_impl(PyModuleDef *module, pid_t pid, int policy,
+                           struct sched_param *param);
 
 static PyObject *
 os_sched_setscheduler(PyModuleDef *module, PyObject *args)
@@ -1972,7 +1984,8 @@ PyDoc_STRVAR(os_sched_setparam__doc__,
     {"sched_setparam", (PyCFunction)os_sched_setparam, METH_VARARGS, os_sched_setparam__doc__},
 
 static PyObject *
-os_sched_setparam_impl(PyModuleDef *module, pid_t pid, struct sched_param *param);
+os_sched_setparam_impl(PyModuleDef *module, pid_t pid,
+                       struct sched_param *param);
 
 static PyObject *
 os_sched_setparam(PyModuleDef *module, PyObject *args)
@@ -2972,7 +2985,8 @@ PyDoc_STRVAR(os_symlink__doc__,
     {"symlink", (PyCFunction)os_symlink, METH_VARARGS|METH_KEYWORDS, os_symlink__doc__},
 
 static PyObject *
-os_symlink_impl(PyModuleDef *module, path_t *src, path_t *dst, int target_is_directory, int dir_fd);
+os_symlink_impl(PyModuleDef *module, path_t *src, path_t *dst,
+                int target_is_directory, int dir_fd);
 
 static PyObject *
 os_symlink(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -3194,7 +3208,8 @@ PyDoc_STRVAR(os_open__doc__,
     {"open", (PyCFunction)os_open, METH_VARARGS|METH_KEYWORDS, os_open__doc__},
 
 static int
-os_open_impl(PyModuleDef *module, path_t *path, int flags, int mode, int dir_fd);
+os_open_impl(PyModuleDef *module, path_t *path, int flags, int mode,
+             int dir_fd);
 
 static PyObject *
 os_open(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -3756,7 +3771,8 @@ PyDoc_STRVAR(os_pwrite__doc__,
     {"pwrite", (PyCFunction)os_pwrite, METH_VARARGS, os_pwrite__doc__},
 
 static Py_ssize_t
-os_pwrite_impl(PyModuleDef *module, int fd, Py_buffer *buffer, Py_off_t offset);
+os_pwrite_impl(PyModuleDef *module, int fd, Py_buffer *buffer,
+               Py_off_t offset);
 
 static PyObject *
 os_pwrite(PyModuleDef *module, PyObject *args)
@@ -3853,7 +3869,8 @@ PyDoc_STRVAR(os_mknod__doc__,
     {"mknod", (PyCFunction)os_mknod, METH_VARARGS|METH_KEYWORDS, os_mknod__doc__},
 
 static PyObject *
-os_mknod_impl(PyModuleDef *module, path_t *path, int mode, dev_t device, int dir_fd);
+os_mknod_impl(PyModuleDef *module, path_t *path, int mode, dev_t device,
+              int dir_fd);
 
 static PyObject *
 os_mknod(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -4077,7 +4094,8 @@ PyDoc_STRVAR(os_posix_fallocate__doc__,
     {"posix_fallocate", (PyCFunction)os_posix_fallocate, METH_VARARGS, os_posix_fallocate__doc__},
 
 static PyObject *
-os_posix_fallocate_impl(PyModuleDef *module, int fd, Py_off_t offset, Py_off_t length);
+os_posix_fallocate_impl(PyModuleDef *module, int fd, Py_off_t offset,
+                        Py_off_t length);
 
 static PyObject *
 os_posix_fallocate(PyModuleDef *module, PyObject *args)
@@ -4119,7 +4137,8 @@ PyDoc_STRVAR(os_posix_fadvise__doc__,
     {"posix_fadvise", (PyCFunction)os_posix_fadvise, METH_VARARGS, os_posix_fadvise__doc__},
 
 static PyObject *
-os_posix_fadvise_impl(PyModuleDef *module, int fd, Py_off_t offset, Py_off_t length, int advice);
+os_posix_fadvise_impl(PyModuleDef *module, int fd, Py_off_t offset,
+                      Py_off_t length, int advice);
 
 static PyObject *
 os_posix_fadvise(PyModuleDef *module, PyObject *args)
@@ -5041,7 +5060,8 @@ PyDoc_STRVAR(os_getxattr__doc__,
     {"getxattr", (PyCFunction)os_getxattr, METH_VARARGS|METH_KEYWORDS, os_getxattr__doc__},
 
 static PyObject *
-os_getxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, int follow_symlinks);
+os_getxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute,
+                 int follow_symlinks);
 
 static PyObject *
 os_getxattr(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -5087,7 +5107,8 @@ PyDoc_STRVAR(os_setxattr__doc__,
     {"setxattr", (PyCFunction)os_setxattr, METH_VARARGS|METH_KEYWORDS, os_setxattr__doc__},
 
 static PyObject *
-os_setxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, Py_buffer *value, int flags, int follow_symlinks);
+os_setxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute,
+                 Py_buffer *value, int flags, int follow_symlinks);
 
 static PyObject *
 os_setxattr(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -5137,7 +5158,8 @@ PyDoc_STRVAR(os_removexattr__doc__,
     {"removexattr", (PyCFunction)os_removexattr, METH_VARARGS|METH_KEYWORDS, os_removexattr__doc__},
 
 static PyObject *
-os_removexattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, int follow_symlinks);
+os_removexattr_impl(PyModuleDef *module, path_t *path, path_t *attribute,
+                    int follow_symlinks);
 
 static PyObject *
 os_removexattr(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -5363,7 +5385,8 @@ PyDoc_STRVAR(os_set_handle_inheritable__doc__,
     {"set_handle_inheritable", (PyCFunction)os_set_handle_inheritable, METH_VARARGS, os_set_handle_inheritable__doc__},
 
 static PyObject *
-os_set_handle_inheritable_impl(PyModuleDef *module, Py_intptr_t handle, int inheritable);
+os_set_handle_inheritable_impl(PyModuleDef *module, Py_intptr_t handle,
+                               int inheritable);
 
 static PyObject *
 os_set_handle_inheritable(PyModuleDef *module, PyObject *args)
@@ -5847,4 +5870,4 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=22f405f79f87ba20 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0e3fb3bb5df25fea input=a9049054013a1b77]*/

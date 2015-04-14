@@ -1085,8 +1085,9 @@ the unused_data attribute.
 [clinic start generated code]*/
 
 static PyObject *
-_lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data, Py_ssize_t max_length)
-/*[clinic end generated code: output=1532a5bb23629001 input=f2bb902cc1caf203]*/
+_lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
+                                       Py_ssize_t max_length)
+/*[clinic end generated code: output=ef4e20ec7122241d input=f2bb902cc1caf203]*/
 {
     PyObject *result = NULL;
 
@@ -1150,8 +1151,9 @@ For one-shot decompression, use the decompress() function instead.
 [clinic start generated code]*/
 
 static int
-_lzma_LZMADecompressor___init___impl(Decompressor *self, int format, PyObject *memlimit, PyObject *filters)
-/*[clinic end generated code: output=9b119f6f2cc2d7a8 input=458ca6132ef29801]*/
+_lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
+                                     PyObject *memlimit, PyObject *filters)
+/*[clinic end generated code: output=3e1821f8aa36564c input=458ca6132ef29801]*/
 {
     const uint32_t decoder_flags = LZMA_TELL_ANY_CHECK | LZMA_TELL_NO_CHECK;
     uint64_t memlimit_ = UINT64_MAX;
@@ -1399,8 +1401,9 @@ The result does not include the filter ID itself, only the options.
 [clinic start generated code]*/
 
 static PyObject *
-_lzma__decode_filter_properties_impl(PyModuleDef *module, lzma_vli filter_id, Py_buffer *encoded_props)
-/*[clinic end generated code: output=235f7f5345d48744 input=246410800782160c]*/
+_lzma__decode_filter_properties_impl(PyModuleDef *module, lzma_vli filter_id,
+                                     Py_buffer *encoded_props)
+/*[clinic end generated code: output=af248f570746668b input=246410800782160c]*/
 {
     lzma_filter filter;
     lzma_ret lzret;

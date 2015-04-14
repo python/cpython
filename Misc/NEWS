@@ -162,6 +162,8 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #23944: Argument Clinic now wraps long impl prototypes at column 78.
+
 - Issue #20586: Argument Clinic now ensures that functions without docstrings
   have signatures.
 

@@ -133,8 +133,10 @@ not given, ValueError is raised.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_decimal_impl(PreviousDBVersion *self, PyUnicodeObject *unichr, PyObject *default_value)
-/*[clinic end generated code: output=d285215533b58b28 input=c25c9d2b4de076b1]*/
+unicodedata_UCD_decimal_impl(PreviousDBVersion *self,
+                             PyUnicodeObject *unichr,
+                             PyObject *default_value)
+/*[clinic end generated code: output=bf853108f246ba19 input=c25c9d2b4de076b1]*/
 {
     int have_old = 0;
     long rc;

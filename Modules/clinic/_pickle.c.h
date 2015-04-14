@@ -85,7 +85,8 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "2, so that the pickle data stream is readable with Python 2.");
 
 static int
-_pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *protocol, int fix_imports);
+_pickle_Pickler___init___impl(PicklerObject *self, PyObject *file,
+                              PyObject *protocol, int fix_imports);
 
 static int
 _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -199,7 +200,9 @@ PyDoc_STRVAR(_pickle_Unpickler_find_class__doc__,
     {"find_class", (PyCFunction)_pickle_Unpickler_find_class, METH_VARARGS, _pickle_Unpickler_find_class__doc__},
 
 static PyObject *
-_pickle_Unpickler_find_class_impl(UnpicklerObject *self, PyObject *module_name, PyObject *global_name);
+_pickle_Unpickler_find_class_impl(UnpicklerObject *self,
+                                  PyObject *module_name,
+                                  PyObject *global_name);
 
 static PyObject *
 _pickle_Unpickler_find_class(UnpicklerObject *self, PyObject *args)
@@ -271,7 +274,9 @@ PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
 "string instances as bytes objects.");
 
 static int
-_pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_imports, const char *encoding, const char *errors);
+_pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file,
+                                int fix_imports, const char *encoding,
+                                const char *errors);
 
 static int
 _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -377,7 +382,8 @@ PyDoc_STRVAR(_pickle_dump__doc__,
     {"dump", (PyCFunction)_pickle_dump, METH_VARARGS|METH_KEYWORDS, _pickle_dump__doc__},
 
 static PyObject *
-_pickle_dump_impl(PyModuleDef *module, PyObject *obj, PyObject *file, PyObject *protocol, int fix_imports);
+_pickle_dump_impl(PyModuleDef *module, PyObject *obj, PyObject *file,
+                  PyObject *protocol, int fix_imports);
 
 static PyObject *
 _pickle_dump(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -421,7 +427,8 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
     {"dumps", (PyCFunction)_pickle_dumps, METH_VARARGS|METH_KEYWORDS, _pickle_dumps__doc__},
 
 static PyObject *
-_pickle_dumps_impl(PyModuleDef *module, PyObject *obj, PyObject *protocol, int fix_imports);
+_pickle_dumps_impl(PyModuleDef *module, PyObject *obj, PyObject *protocol,
+                   int fix_imports);
 
 static PyObject *
 _pickle_dumps(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -475,7 +482,8 @@ PyDoc_STRVAR(_pickle_load__doc__,
     {"load", (PyCFunction)_pickle_load, METH_VARARGS|METH_KEYWORDS, _pickle_load__doc__},
 
 static PyObject *
-_pickle_load_impl(PyModuleDef *module, PyObject *file, int fix_imports, const char *encoding, const char *errors);
+_pickle_load_impl(PyModuleDef *module, PyObject *file, int fix_imports,
+                  const char *encoding, const char *errors);
 
 static PyObject *
 _pickle_load(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -521,7 +529,8 @@ PyDoc_STRVAR(_pickle_loads__doc__,
     {"loads", (PyCFunction)_pickle_loads, METH_VARARGS|METH_KEYWORDS, _pickle_loads__doc__},
 
 static PyObject *
-_pickle_loads_impl(PyModuleDef *module, PyObject *data, int fix_imports, const char *encoding, const char *errors);
+_pickle_loads_impl(PyModuleDef *module, PyObject *data, int fix_imports,
+                   const char *encoding, const char *errors);
 
 static PyObject *
 _pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -542,4 +551,4 @@ _pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3aba79576e240c62 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2c413ecc2ec74f7c input=a9049054013a1b77]*/

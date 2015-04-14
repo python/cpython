@@ -16,7 +16,9 @@ PyDoc_STRVAR(unicodedata_UCD_decimal__doc__,
     {"decimal", (PyCFunction)unicodedata_UCD_decimal, METH_VARARGS, unicodedata_UCD_decimal__doc__},
 
 static PyObject *
-unicodedata_UCD_decimal_impl(PreviousDBVersion *self, PyUnicodeObject *unichr, PyObject *default_value);
+unicodedata_UCD_decimal_impl(PreviousDBVersion *self,
+                             PyUnicodeObject *unichr,
+                             PyObject *default_value);
 
 static PyObject *
 unicodedata_UCD_decimal(PreviousDBVersion *self, PyObject *args)
@@ -34,4 +36,4 @@ unicodedata_UCD_decimal(PreviousDBVersion *self, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=15b82651419cc823 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=33b488251c4fd143 input=a9049054013a1b77]*/

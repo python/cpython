@@ -2476,8 +2476,9 @@ It's an error to use dir_fd or follow_symlinks when specifying path as
 [clinic start generated code]*/
 
 static PyObject *
-os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=708c225f94fcfc8e input=099d356c306fa24a]*/
+os_stat_impl(PyModuleDef *module, path_t *path, int dir_fd,
+             int follow_symlinks)
+/*[clinic end generated code: output=e4f7569f95d523ca input=099d356c306fa24a]*/
 {
     return posix_do_stat("stat", path, dir_fd, follow_symlinks);
 }
@@ -2547,8 +2548,9 @@ Note that most operations will use the effective uid/gid, therefore this
 [clinic start generated code]*/
 
 static int
-os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int effective_ids, int follow_symlinks)
-/*[clinic end generated code: output=f9e734db3d88b767 input=b75a756797af45ec]*/
+os_access_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd,
+               int effective_ids, int follow_symlinks)
+/*[clinic end generated code: output=abaa53340210088d input=b75a756797af45ec]*/
 {
     int return_value;
 
@@ -2775,8 +2777,9 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 [clinic start generated code]*/
 
 static PyObject *
-os_chmod_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=96063c976f23106a input=7f1618e5e15cc196]*/
+os_chmod_impl(PyModuleDef *module, path_t *path, int mode, int dir_fd,
+              int follow_symlinks)
+/*[clinic end generated code: output=05e7f73b1a843ba2 input=7f1618e5e15cc196]*/
 {
     int result;
 
@@ -2956,8 +2959,9 @@ unavailable, using it will raise a NotImplementedError.
 [clinic start generated code]*/
 
 static PyObject *
-os_chflags_impl(PyModuleDef *module, path_t *path, unsigned long flags, int follow_symlinks)
-/*[clinic end generated code: output=9e5f9417afc20c4b input=0327e29feb876236]*/
+os_chflags_impl(PyModuleDef *module, path_t *path, unsigned long flags,
+                int follow_symlinks)
+/*[clinic end generated code: output=ff2d6e73534a95b9 input=0327e29feb876236]*/
 {
     int result;
 
@@ -3136,8 +3140,9 @@ dir_fd and follow_symlinks may not be implemented on your platform.
 [clinic start generated code]*/
 
 static PyObject *
-os_chown_impl(PyModuleDef *module, path_t *path, uid_t uid, gid_t gid, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=59a8db91897fb46c input=a61cc35574814d5d]*/
+os_chown_impl(PyModuleDef *module, path_t *path, uid_t uid, gid_t gid,
+              int dir_fd, int follow_symlinks)
+/*[clinic end generated code: output=e0a4559f394dbd91 input=a61cc35574814d5d]*/
 {
     int result;
 
@@ -3365,8 +3370,9 @@ src_dir_fd, dst_dir_fd, and follow_symlinks may not be implemented on your
 [clinic start generated code]*/
 
 static PyObject *
-os_link_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=c0a9ded8111d2a79 input=b0095ebbcbaa7e04]*/
+os_link_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd,
+             int dst_dir_fd, int follow_symlinks)
+/*[clinic end generated code: output=f47a7e88f7b391b6 input=b0095ebbcbaa7e04]*/
 {
 #ifdef MS_WINDOWS
     BOOL result;
@@ -4162,8 +4168,9 @@ src_dir_fd and dst_dir_fd, may not be implemented on your platform.
 [clinic start generated code]*/
 
 static PyObject *
-os_rename_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd)
-/*[clinic end generated code: output=1bb520bf2fad186d input=faa61c847912c850]*/
+os_rename_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd,
+               int dst_dir_fd)
+/*[clinic end generated code: output=08033bb2ec27fb5f input=faa61c847912c850]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 0);
 }
@@ -4182,8 +4189,9 @@ src_dir_fd and dst_dir_fd, may not be implemented on your platform.
 [clinic start generated code]*/
 
 static PyObject *
-os_replace_impl(PyModuleDef *module, path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd)
-/*[clinic end generated code: output=aa9ddad55fdef8e3 input=25515dfb107c8421]*/
+os_replace_impl(PyModuleDef *module, path_t *src, path_t *dst,
+                int src_dir_fd, int dst_dir_fd)
+/*[clinic end generated code: output=131d012eed8d3b8b input=25515dfb107c8421]*/
 {
     return internal_rename(src, dst, src_dir_fd, dst_dir_fd, 1);
 }
@@ -4697,8 +4705,9 @@ dir_fd and follow_symlinks may not be available on your platform.
 [clinic start generated code]*/
 
 static PyObject *
-os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times, PyObject *ns, int dir_fd, int follow_symlinks)
-/*[clinic end generated code: output=c52d8fd0d1067f0b input=1f18c17d5941aa82]*/
+os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times,
+              PyObject *ns, int dir_fd, int follow_symlinks)
+/*[clinic end generated code: output=31f3434e560ba2f0 input=1f18c17d5941aa82]*/
 {
 #ifdef MS_WINDOWS
     HANDLE hFile;
@@ -5072,8 +5081,9 @@ Execute an executable path with arguments, replacing current process.
 [clinic start generated code]*/
 
 static PyObject *
-os_execve_impl(PyModuleDef *module, path_t *path, PyObject *argv, PyObject *env)
-/*[clinic end generated code: output=7758d4f230d8aac6 input=626804fa092606d9]*/
+os_execve_impl(PyModuleDef *module, path_t *path, PyObject *argv,
+               PyObject *env)
+/*[clinic end generated code: output=181884fcdb21508e input=626804fa092606d9]*/
 {
     char **argvlist = NULL;
     char **envlist;
@@ -5219,8 +5229,9 @@ Execute the program specified by path in a new process.
 [clinic start generated code]*/
 
 static PyObject *
-os_spawnve_impl(PyModuleDef *module, int mode, PyObject *path, PyObject *argv, PyObject *env)
-/*[clinic end generated code: output=1c52955789461be8 input=02362fd937963f8f]*/
+os_spawnve_impl(PyModuleDef *module, int mode, PyObject *path,
+                PyObject *argv, PyObject *env)
+/*[clinic end generated code: output=e7f5f0703610531f input=02362fd937963f8f]*/
 {
     char *path_char;
     char **argvlist;
@@ -5521,8 +5532,9 @@ param is an instance of sched_param.
 [clinic start generated code]*/
 
 static PyObject *
-os_sched_setscheduler_impl(PyModuleDef *module, pid_t pid, int policy, struct sched_param *param)
-/*[clinic end generated code: output=97f40f8384e554b0 input=c581f9469a5327dd]*/
+os_sched_setscheduler_impl(PyModuleDef *module, pid_t pid, int policy,
+                           struct sched_param *param)
+/*[clinic end generated code: output=37053e5c528c35c9 input=c581f9469a5327dd]*/
 {
     /*
     ** sched_setscheduler() returns 0 in Linux, but the previous
@@ -5584,8 +5596,9 @@ param should be an instance of sched_param.
 [clinic start generated code]*/
 
 static PyObject *
-os_sched_setparam_impl(PyModuleDef *module, pid_t pid, struct sched_param *param)
-/*[clinic end generated code: output=c6560b34395bb343 input=6b8d6dfcecdc21bd]*/
+os_sched_setparam_impl(PyModuleDef *module, pid_t pid,
+                       struct sched_param *param)
+/*[clinic end generated code: output=b7a3c589436cec9b input=6b8d6dfcecdc21bd]*/
 {
     if (sched_setparam(pid, param))
         return posix_error();
@@ -7353,8 +7366,9 @@ dir_fd may not be implemented on your platform.
 [clinic start generated code]*/
 
 static PyObject *
-os_symlink_impl(PyModuleDef *module, path_t *src, path_t *dst, int target_is_directory, int dir_fd)
-/*[clinic end generated code: output=11aa03f278bb2c8a input=e820ec4472547bc3]*/
+os_symlink_impl(PyModuleDef *module, path_t *src, path_t *dst,
+                int target_is_directory, int dir_fd)
+/*[clinic end generated code: output=a01b4bcf32403ccd input=e820ec4472547bc3]*/
 {
 #ifdef MS_WINDOWS
     DWORD result;
@@ -7677,8 +7691,9 @@ dir_fd may not be implemented on your platform.
 [clinic start generated code]*/
 
 static int
-os_open_impl(PyModuleDef *module, path_t *path, int flags, int mode, int dir_fd)
-/*[clinic end generated code: output=c95a64f0e62f199b input=ad8623b29acd2934]*/
+os_open_impl(PyModuleDef *module, path_t *path, int flags, int mode,
+             int dir_fd)
+/*[clinic end generated code: output=47e8cc63559f5ddd input=ad8623b29acd2934]*/
 {
     int fd;
     int async_err = 0;
@@ -8606,8 +8621,9 @@ current file offset.
 [clinic start generated code]*/
 
 static Py_ssize_t
-os_pwrite_impl(PyModuleDef *module, int fd, Py_buffer *buffer, Py_off_t offset)
-/*[clinic end generated code: output=95225f3b496feaf3 input=19903f1b3dd26377]*/
+os_pwrite_impl(PyModuleDef *module, int fd, Py_buffer *buffer,
+               Py_off_t offset)
+/*[clinic end generated code: output=93aabdb40e17d325 input=19903f1b3dd26377]*/
 {
     Py_ssize_t size;
     int async_err = 0;
@@ -8701,8 +8717,9 @@ dir_fd may not be implemented on your platform.
 [clinic start generated code]*/
 
 static PyObject *
-os_mknod_impl(PyModuleDef *module, path_t *path, int mode, dev_t device, int dir_fd)
-/*[clinic end generated code: output=f7f813e8847de12f input=ee44531551a4d83b]*/
+os_mknod_impl(PyModuleDef *module, path_t *path, int mode, dev_t device,
+              int dir_fd)
+/*[clinic end generated code: output=5151a8a9f754d272 input=ee44531551a4d83b]*/
 {
     int result;
     int async_err = 0;
@@ -8897,8 +8914,9 @@ starting at offset bytes from the beginning and continuing for length bytes.
 [clinic start generated code]*/
 
 static PyObject *
-os_posix_fallocate_impl(PyModuleDef *module, int fd, Py_off_t offset, Py_off_t length)
-/*[clinic end generated code: output=8ae5f7837004d454 input=d7a2ef0ab2ca52fb]*/
+os_posix_fallocate_impl(PyModuleDef *module, int fd, Py_off_t offset,
+                        Py_off_t length)
+/*[clinic end generated code: output=7f6f87a8c751e1b4 input=d7a2ef0ab2ca52fb]*/
 {
     int result;
     int async_err = 0;
@@ -8938,8 +8956,9 @@ POSIX_FADV_DONTNEED.
 [clinic start generated code]*/
 
 static PyObject *
-os_posix_fadvise_impl(PyModuleDef *module, int fd, Py_off_t offset, Py_off_t length, int advice)
-/*[clinic end generated code: output=0e3f09f651661257 input=0fbe554edc2f04b5]*/
+os_posix_fadvise_impl(PyModuleDef *module, int fd, Py_off_t offset,
+                      Py_off_t length, int advice)
+/*[clinic end generated code: output=457ce6a67189e10d input=0fbe554edc2f04b5]*/
 {
     int result;
     int async_err = 0;
@@ -10785,8 +10804,9 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 [clinic start generated code]*/
 
 static PyObject *
-os_getxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, int follow_symlinks)
-/*[clinic end generated code: output=d90086b314859f8b input=8c8ea3bab78d89c2]*/
+os_getxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute,
+                 int follow_symlinks)
+/*[clinic end generated code: output=cf2cede74bd5d412 input=8c8ea3bab78d89c2]*/
 {
     Py_ssize_t i;
     PyObject *buffer = NULL;
@@ -10856,8 +10876,9 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 [clinic start generated code]*/
 
 static PyObject *
-os_setxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, Py_buffer *value, int flags, int follow_symlinks)
-/*[clinic end generated code: output=e3defa5c4b1ad0ae input=f0d26833992015c2]*/
+os_setxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute,
+                 Py_buffer *value, int flags, int follow_symlinks)
+/*[clinic end generated code: output=1b395ef82880fea0 input=f0d26833992015c2]*/
 {
     ssize_t result;
 
@@ -10903,8 +10924,9 @@ If follow_symlinks is False, and the last element of the path is a symbolic
 [clinic start generated code]*/
 
 static PyObject *
-os_removexattr_impl(PyModuleDef *module, path_t *path, path_t *attribute, int follow_symlinks)
-/*[clinic end generated code: output=4870ec90249af875 input=cdb54834161e3329]*/
+os_removexattr_impl(PyModuleDef *module, path_t *path, path_t *attribute,
+                    int follow_symlinks)
+/*[clinic end generated code: output=f92bb39ab992650d input=cdb54834161e3329]*/
 {
     ssize_t result;
 
@@ -11293,8 +11315,9 @@ Set the inheritable flag of the specified handle.
 [clinic start generated code]*/
 
 static PyObject *
-os_set_handle_inheritable_impl(PyModuleDef *module, Py_intptr_t handle, int inheritable)
-/*[clinic end generated code: output=627aa5b158b69338 input=e64b2b2730469def]*/
+os_set_handle_inheritable_impl(PyModuleDef *module, Py_intptr_t handle,
+                               int inheritable)
+/*[clinic end generated code: output=d2e111a96c9eb296 input=e64b2b2730469def]*/
 {
     DWORD flags = inheritable ? HANDLE_FLAG_INHERIT : 0;
     if (!SetHandleInformation((HANDLE)handle, HANDLE_FLAG_INHERIT, flags)) {

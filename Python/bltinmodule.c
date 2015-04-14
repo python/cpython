@@ -574,8 +574,9 @@ format_spec defaults to the empty string
 [clinic start generated code]*/
 
 static PyObject *
-builtin_format_impl(PyModuleDef *module, PyObject *value, PyObject *format_spec)
-/*[clinic end generated code: output=fae3e927cc715466 input=e23f2f11e0098c64]*/
+builtin_format_impl(PyModuleDef *module, PyObject *value,
+                    PyObject *format_spec)
+/*[clinic end generated code: output=4341fd78a5f01764 input=e23f2f11e0098c64]*/
 {
     return PyObject_Format(value, format_spec);
 }
@@ -654,8 +655,10 @@ in addition to any features explicitly specified.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_compile_impl(PyModuleDef *module, PyObject *source, PyObject *filename, const char *mode, int flags, int dont_inherit, int optimize)
-/*[clinic end generated code: output=4f41a315386bab9f input=c6212a9d21472f7e]*/
+builtin_compile_impl(PyModuleDef *module, PyObject *source,
+                     PyObject *filename, const char *mode, int flags,
+                     int dont_inherit, int optimize)
+/*[clinic end generated code: output=31881762c1bb90c4 input=c6212a9d21472f7e]*/
 {
     Py_buffer view = {NULL, NULL};
     const char *str;
@@ -805,8 +808,9 @@ If only globals is given, locals defaults to it.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyObject *locals)
-/*[clinic end generated code: output=90642b79dd8b08d6 input=31e42c1d2125b50b]*/
+builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals,
+                  PyObject *locals)
+/*[clinic end generated code: output=7284501fb7b4d666 input=31e42c1d2125b50b]*/
 {
     PyObject *result, *tmp = NULL;
     Py_buffer view = {NULL, NULL};
@@ -889,8 +893,9 @@ If only globals is given, locals defaults to it.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_exec_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyObject *locals)
-/*[clinic end generated code: output=e8e0bbcde826a048 input=536e057b5e00d89e]*/
+builtin_exec_impl(PyModuleDef *module, PyObject *source, PyObject *globals,
+                  PyObject *locals)
+/*[clinic end generated code: output=83d574ef9d5d0b46 input=536e057b5e00d89e]*/
 {
     PyObject *v;
 
@@ -1303,8 +1308,9 @@ setattr(x, 'y', v) is equivalent to ``x.y = v''
 [clinic start generated code]*/
 
 static PyObject *
-builtin_setattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name, PyObject *value)
-/*[clinic end generated code: output=c5e0a3a3971333ed input=fbe7e53403116b93]*/
+builtin_setattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name,
+                     PyObject *value)
+/*[clinic end generated code: output=d881c655c0f7e34f input=fbe7e53403116b93]*/
 {
     if (PyObject_SetAttr(obj, name, value) != 0)
         return NULL;
@@ -2328,8 +2334,9 @@ or ...`` etc.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_isinstance_impl(PyModuleDef *module, PyObject *obj, PyObject *class_or_tuple)
-/*[clinic end generated code: output=5e234dc3872d75a2 input=cf9eb0ad6bb9bad6]*/
+builtin_isinstance_impl(PyModuleDef *module, PyObject *obj,
+                        PyObject *class_or_tuple)
+/*[clinic end generated code: output=f960b7c12dbbeda0 input=cf9eb0ad6bb9bad6]*/
 {
     int retval;
 
@@ -2355,8 +2362,9 @@ or ...`` etc.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_issubclass_impl(PyModuleDef *module, PyObject *cls, PyObject *class_or_tuple)
-/*[clinic end generated code: output=6346a85ba15dbd7d input=923d03fa41fc352a]*/
+builtin_issubclass_impl(PyModuleDef *module, PyObject *cls,
+                        PyObject *class_or_tuple)
+/*[clinic end generated code: output=8b012a151940bbf2 input=923d03fa41fc352a]*/
 {
     int retval;
 

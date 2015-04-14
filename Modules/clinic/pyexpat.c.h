@@ -14,7 +14,8 @@ PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
     {"Parse", (PyCFunction)pyexpat_xmlparser_Parse, METH_VARARGS, pyexpat_xmlparser_Parse__doc__},
 
 static PyObject *
-pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data, int isFinal);
+pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
+                             int isFinal);
 
 static PyObject *
 pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject *args)
@@ -119,7 +120,9 @@ PyDoc_STRVAR(pyexpat_xmlparser_ExternalEntityParserCreate__doc__,
     {"ExternalEntityParserCreate", (PyCFunction)pyexpat_xmlparser_ExternalEntityParserCreate, METH_VARARGS, pyexpat_xmlparser_ExternalEntityParserCreate__doc__},
 
 static PyObject *
-pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self, const char *context, const char *encoding);
+pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
+                                                  const char *context,
+                                                  const char *encoding);
 
 static PyObject *
 pyexpat_xmlparser_ExternalEntityParserCreate(xmlparseobject *self, PyObject *args)
@@ -235,7 +238,8 @@ PyDoc_STRVAR(pyexpat_ParserCreate__doc__,
     {"ParserCreate", (PyCFunction)pyexpat_ParserCreate, METH_VARARGS|METH_KEYWORDS, pyexpat_ParserCreate__doc__},
 
 static PyObject *
-pyexpat_ParserCreate_impl(PyModuleDef *module, const char *encoding, const char *namespace_separator, PyObject *intern);
+pyexpat_ParserCreate_impl(PyModuleDef *module, const char *encoding,
+                          const char *namespace_separator, PyObject *intern);
 
 static PyObject *
 pyexpat_ParserCreate(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -287,4 +291,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=e5993de4e9dd2236 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=abdf05a21dae98c7 input=a9049054013a1b77]*/
