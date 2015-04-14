@@ -272,7 +272,7 @@ Customize Memory Allocators
      :c:func:`PyObject_Free`
 
    Newly allocated memory is filled with the byte ``0xCB``, freed memory is
-   filled with the byte ``0xDB``. Additionnal checks:
+   filled with the byte ``0xDB``. Additional checks:
 
    - detect API violations, ex: :c:func:`PyObject_Free` called on a buffer
      allocated by :c:func:`PyMem_Malloc`
