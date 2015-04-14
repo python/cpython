@@ -425,7 +425,7 @@ Currently the email package provides only one concrete content manager,
        *cid* as its value.
 
        If *params* is specified, iterate its ``items`` method and use the
-       resulting ``(key, value)`` pairs to set additional paramters on the
+       resulting ``(key, value)`` pairs to set additional parameters on the
        :mailheader:`Content-Type` header.
 
        If *headers* is specified and is a list of strings of the form

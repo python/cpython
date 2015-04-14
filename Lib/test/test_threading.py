@@ -629,7 +629,7 @@ class ThreadTests(BaseTestCase):
 
         def generator():
             while 1:
-                yield "genereator"
+                yield "generator"
 
         def callback():
             if callback.gen is None:
