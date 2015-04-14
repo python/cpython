@@ -518,7 +518,8 @@ PyDoc_STRVAR(binascii_b2a_qp__doc__,
     {"b2a_qp", (PyCFunction)binascii_b2a_qp, METH_VARARGS|METH_KEYWORDS, binascii_b2a_qp__doc__},
 
 static PyObject *
-binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs, int istext, int header);
+binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs,
+                     int istext, int header);
 
 static PyObject *
 binascii_b2a_qp(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -543,4 +544,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=31ccbd5fddc8fd75 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=175025a8a94fbdd1 input=a9049054013a1b77]*/

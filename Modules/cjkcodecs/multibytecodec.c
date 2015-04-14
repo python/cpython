@@ -555,8 +555,10 @@ registered with codecs.register_error that can handle UnicodeEncodeErrors.
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self, PyObject *input, const char *errors)
-/*[clinic end generated code: output=a36bfa08783a0d0b input=252e7ee695867b2d]*/
+_multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self,
+                                           PyObject *input,
+                                           const char *errors)
+/*[clinic end generated code: output=7b26652045ba56a9 input=252e7ee695867b2d]*/
 {
     MultibyteCodec_State state;
     PyObject *errorcb, *r, *ucvt;
@@ -622,8 +624,10 @@ codecs.register_error that is able to handle UnicodeDecodeErrors."
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self, Py_buffer *input, const char *errors)
-/*[clinic end generated code: output=4c8ee8b2931b014e input=37e1d9236e3ce8f3]*/
+_multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
+                                           Py_buffer *input,
+                                           const char *errors)
+/*[clinic end generated code: output=ff419f65bad6cc77 input=37e1d9236e3ce8f3]*/
 {
     MultibyteCodec_State state;
     MultibyteDecodeBuffer buf;
@@ -884,8 +888,10 @@ _multibytecodec.MultibyteIncrementalEncoder.encode
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalEncoder_encode_impl(MultibyteIncrementalEncoderObject *self, PyObject *input, int final)
-/*[clinic end generated code: output=3cd8780c8a719bbf input=456b76d73e464661]*/
+_multibytecodec_MultibyteIncrementalEncoder_encode_impl(MultibyteIncrementalEncoderObject *self,
+                                                        PyObject *input,
+                                                        int final)
+/*[clinic end generated code: output=123361b6c505e2c1 input=456b76d73e464661]*/
 {
     return encoder_encode_stateful(STATEFUL_ECTX(self), input, final);
 }
@@ -1039,8 +1045,10 @@ _multibytecodec.MultibyteIncrementalDecoder.decode
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteIncrementalDecoder_decode_impl(MultibyteIncrementalDecoderObject *self, Py_buffer *input, int final)
-/*[clinic end generated code: output=a0f3f92aa7303cf7 input=eb18c2f6e83589e1]*/
+_multibytecodec_MultibyteIncrementalDecoder_decode_impl(MultibyteIncrementalDecoderObject *self,
+                                                        Py_buffer *input,
+                                                        int final)
+/*[clinic end generated code: output=b9b9090e8a9ce2ba input=eb18c2f6e83589e1]*/
 {
     MultibyteDecodeBuffer buf;
     char *data, *wdata = NULL;
@@ -1360,8 +1368,9 @@ errorexit:
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_read_impl(MultibyteStreamReaderObject *self, PyObject *sizeobj)
-/*[clinic end generated code: output=f298ea6e1bd2083c input=015b0d3ff2fca485]*/
+_multibytecodec_MultibyteStreamReader_read_impl(MultibyteStreamReaderObject *self,
+                                                PyObject *sizeobj)
+/*[clinic end generated code: output=35621eb75355d5b8 input=015b0d3ff2fca485]*/
 {
     Py_ssize_t size;
 
@@ -1388,8 +1397,9 @@ _multibytecodec_MultibyteStreamReader_read_impl(MultibyteStreamReaderObject *sel
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_readline_impl(MultibyteStreamReaderObject *self, PyObject *sizeobj)
-/*[clinic end generated code: output=e5ac302a6d0999de input=41ccc64f9bb0cec3]*/
+_multibytecodec_MultibyteStreamReader_readline_impl(MultibyteStreamReaderObject *self,
+                                                    PyObject *sizeobj)
+/*[clinic end generated code: output=4fbfaae1ed457a11 input=41ccc64f9bb0cec3]*/
 {
     Py_ssize_t size;
 
@@ -1416,8 +1426,9 @@ _multibytecodec_MultibyteStreamReader_readline_impl(MultibyteStreamReaderObject 
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteStreamReader_readlines_impl(MultibyteStreamReaderObject *self, PyObject *sizehintobj)
-/*[clinic end generated code: output=68f024178b77cb0f input=54932f5d4d88e880]*/
+_multibytecodec_MultibyteStreamReader_readlines_impl(MultibyteStreamReaderObject *self,
+                                                     PyObject *sizehintobj)
+/*[clinic end generated code: output=e7c4310768ed2ad4 input=54932f5d4d88e880]*/
 {
     PyObject *r, *sr;
     Py_ssize_t sizehint;
@@ -1618,8 +1629,9 @@ mbstreamwriter_iwrite(MultibyteStreamWriterObject *self,
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self, PyObject *strobj)
-/*[clinic end generated code: output=44e9eb0db0374cb1 input=551dc4c018c10a2b]*/
+_multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self,
+                                            PyObject *strobj)
+/*[clinic end generated code: output=e13ae841c895251e input=551dc4c018c10a2b]*/
 {
     if (mbstreamwriter_iwrite(self, strobj))
         return NULL;
@@ -1635,8 +1647,9 @@ _multibytecodec_MultibyteStreamWriter_write(MultibyteStreamWriterObject *self, P
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *self, PyObject *lines)
-/*[clinic end generated code: output=4facbb0638dde172 input=57797fe7008d4e96]*/
+_multibytecodec_MultibyteStreamWriter_writelines(MultibyteStreamWriterObject *self,
+                                                 PyObject *lines)
+/*[clinic end generated code: output=e5c4285ac8e7d522 input=57797fe7008d4e96]*/
 {
     PyObject *strobj;
     int i, r;

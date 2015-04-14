@@ -12,7 +12,8 @@ PyDoc_STRVAR(dbm_dbm_get__doc__,
     {"get", (PyCFunction)dbm_dbm_get, METH_VARARGS, dbm_dbm_get__doc__},
 
 static PyObject *
-dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length, PyObject *default_value);
+dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length,
+                 PyObject *default_value);
 
 static PyObject *
 dbm_dbm_get(dbmobject *dp, PyObject *args)
@@ -50,7 +51,8 @@ PyDoc_STRVAR(dbmopen__doc__,
     {"open", (PyCFunction)dbmopen, METH_VARARGS, dbmopen__doc__},
 
 static PyObject *
-dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags, int mode);
+dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags,
+             int mode);
 
 static PyObject *
 dbmopen(PyModuleDef *module, PyObject *args)
@@ -69,4 +71,4 @@ dbmopen(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=78d62d1aa3ddd13c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d6ec55c6c5d0b19d input=a9049054013a1b77]*/

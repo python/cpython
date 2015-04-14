@@ -277,7 +277,8 @@ PyDoc_STRVAR(bytes_translate__doc__,
     {"translate", (PyCFunction)bytes_translate, METH_VARARGS, bytes_translate__doc__},
 
 static PyObject *
-bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1, PyObject *deletechars);
+bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1,
+                     PyObject *deletechars);
 
 static PyObject *
 bytes_translate(PyBytesObject *self, PyObject *args)
@@ -365,7 +366,8 @@ PyDoc_STRVAR(bytes_replace__doc__,
     {"replace", (PyCFunction)bytes_replace, METH_VARARGS, bytes_replace__doc__},
 
 static PyObject *
-bytes_replace_impl(PyBytesObject*self, Py_buffer *old, Py_buffer *new, Py_ssize_t count);
+bytes_replace_impl(PyBytesObject*self, Py_buffer *old, Py_buffer *new,
+                   Py_ssize_t count);
 
 static PyObject *
 bytes_replace(PyBytesObject*self, PyObject *args)
@@ -411,7 +413,8 @@ PyDoc_STRVAR(bytes_decode__doc__,
     {"decode", (PyCFunction)bytes_decode, METH_VARARGS|METH_KEYWORDS, bytes_decode__doc__},
 
 static PyObject *
-bytes_decode_impl(PyBytesObject*self, const char *encoding, const char *errors);
+bytes_decode_impl(PyBytesObject*self, const char *encoding,
+                  const char *errors);
 
 static PyObject *
 bytes_decode(PyBytesObject*self, PyObject *args, PyObject *kwargs)
@@ -493,4 +496,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b9e69e1f7c8ccd14 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=deaf886e15270679 input=a9049054013a1b77]*/

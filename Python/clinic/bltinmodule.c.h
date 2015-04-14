@@ -83,7 +83,8 @@ PyDoc_STRVAR(builtin_format__doc__,
     {"format", (PyCFunction)builtin_format, METH_VARARGS, builtin_format__doc__},
 
 static PyObject *
-builtin_format_impl(PyModuleDef *module, PyObject *value, PyObject *format_spec);
+builtin_format_impl(PyModuleDef *module, PyObject *value,
+                    PyObject *format_spec);
 
 static PyObject *
 builtin_format(PyModuleDef *module, PyObject *args)
@@ -152,7 +153,9 @@ PyDoc_STRVAR(builtin_compile__doc__,
     {"compile", (PyCFunction)builtin_compile, METH_VARARGS|METH_KEYWORDS, builtin_compile__doc__},
 
 static PyObject *
-builtin_compile_impl(PyModuleDef *module, PyObject *source, PyObject *filename, const char *mode, int flags, int dont_inherit, int optimize);
+builtin_compile_impl(PyModuleDef *module, PyObject *source,
+                     PyObject *filename, const char *mode, int flags,
+                     int dont_inherit, int optimize);
 
 static PyObject *
 builtin_compile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
@@ -221,7 +224,8 @@ PyDoc_STRVAR(builtin_eval__doc__,
     {"eval", (PyCFunction)builtin_eval, METH_VARARGS, builtin_eval__doc__},
 
 static PyObject *
-builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyObject *locals);
+builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals,
+                  PyObject *locals);
 
 static PyObject *
 builtin_eval(PyModuleDef *module, PyObject *args)
@@ -257,7 +261,8 @@ PyDoc_STRVAR(builtin_exec__doc__,
     {"exec", (PyCFunction)builtin_exec, METH_VARARGS, builtin_exec__doc__},
 
 static PyObject *
-builtin_exec_impl(PyModuleDef *module, PyObject *source, PyObject *globals, PyObject *locals);
+builtin_exec_impl(PyModuleDef *module, PyObject *source, PyObject *globals,
+                  PyObject *locals);
 
 static PyObject *
 builtin_exec(PyModuleDef *module, PyObject *args)
@@ -353,7 +358,8 @@ PyDoc_STRVAR(builtin_setattr__doc__,
     {"setattr", (PyCFunction)builtin_setattr, METH_VARARGS, builtin_setattr__doc__},
 
 static PyObject *
-builtin_setattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name, PyObject *value);
+builtin_setattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name,
+                     PyObject *value);
 
 static PyObject *
 builtin_setattr(PyModuleDef *module, PyObject *args)
@@ -605,7 +611,8 @@ PyDoc_STRVAR(builtin_isinstance__doc__,
     {"isinstance", (PyCFunction)builtin_isinstance, METH_VARARGS, builtin_isinstance__doc__},
 
 static PyObject *
-builtin_isinstance_impl(PyModuleDef *module, PyObject *obj, PyObject *class_or_tuple);
+builtin_isinstance_impl(PyModuleDef *module, PyObject *obj,
+                        PyObject *class_or_tuple);
 
 static PyObject *
 builtin_isinstance(PyModuleDef *module, PyObject *args)
@@ -638,7 +645,8 @@ PyDoc_STRVAR(builtin_issubclass__doc__,
     {"issubclass", (PyCFunction)builtin_issubclass, METH_VARARGS, builtin_issubclass__doc__},
 
 static PyObject *
-builtin_issubclass_impl(PyModuleDef *module, PyObject *cls, PyObject *class_or_tuple);
+builtin_issubclass_impl(PyModuleDef *module, PyObject *cls,
+                        PyObject *class_or_tuple);
 
 static PyObject *
 builtin_issubclass(PyModuleDef *module, PyObject *args)
@@ -656,4 +664,4 @@ builtin_issubclass(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=12db4cde92eb11b3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b308ab64aa4d4ff8 input=a9049054013a1b77]*/

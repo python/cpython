@@ -12,7 +12,8 @@ PyDoc_STRVAR(audioop_getsample__doc__,
     {"getsample", (PyCFunction)audioop_getsample, METH_VARARGS, audioop_getsample__doc__},
 
 static PyObject *
-audioop_getsample_impl(PyModuleDef *module, Py_buffer *fragment, int width, Py_ssize_t index);
+audioop_getsample_impl(PyModuleDef *module, Py_buffer *fragment, int width,
+                       Py_ssize_t index);
 
 static PyObject *
 audioop_getsample(PyModuleDef *module, PyObject *args)
@@ -178,7 +179,8 @@ PyDoc_STRVAR(audioop_findfit__doc__,
     {"findfit", (PyCFunction)audioop_findfit, METH_VARARGS, audioop_findfit__doc__},
 
 static PyObject *
-audioop_findfit_impl(PyModuleDef *module, Py_buffer *fragment, Py_buffer *reference);
+audioop_findfit_impl(PyModuleDef *module, Py_buffer *fragment,
+                     Py_buffer *reference);
 
 static PyObject *
 audioop_findfit(PyModuleDef *module, PyObject *args)
@@ -214,7 +216,8 @@ PyDoc_STRVAR(audioop_findfactor__doc__,
     {"findfactor", (PyCFunction)audioop_findfactor, METH_VARARGS, audioop_findfactor__doc__},
 
 static PyObject *
-audioop_findfactor_impl(PyModuleDef *module, Py_buffer *fragment, Py_buffer *reference);
+audioop_findfactor_impl(PyModuleDef *module, Py_buffer *fragment,
+                        Py_buffer *reference);
 
 static PyObject *
 audioop_findfactor(PyModuleDef *module, PyObject *args)
@@ -250,7 +253,8 @@ PyDoc_STRVAR(audioop_findmax__doc__,
     {"findmax", (PyCFunction)audioop_findmax, METH_VARARGS, audioop_findmax__doc__},
 
 static PyObject *
-audioop_findmax_impl(PyModuleDef *module, Py_buffer *fragment, Py_ssize_t length);
+audioop_findmax_impl(PyModuleDef *module, Py_buffer *fragment,
+                     Py_ssize_t length);
 
 static PyObject *
 audioop_findmax(PyModuleDef *module, PyObject *args)
@@ -382,7 +386,8 @@ PyDoc_STRVAR(audioop_mul__doc__,
     {"mul", (PyCFunction)audioop_mul, METH_VARARGS, audioop_mul__doc__},
 
 static PyObject *
-audioop_mul_impl(PyModuleDef *module, Py_buffer *fragment, int width, double factor);
+audioop_mul_impl(PyModuleDef *module, Py_buffer *fragment, int width,
+                 double factor);
 
 static PyObject *
 audioop_mul(PyModuleDef *module, PyObject *args)
@@ -416,7 +421,8 @@ PyDoc_STRVAR(audioop_tomono__doc__,
     {"tomono", (PyCFunction)audioop_tomono, METH_VARARGS, audioop_tomono__doc__},
 
 static PyObject *
-audioop_tomono_impl(PyModuleDef *module, Py_buffer *fragment, int width, double lfactor, double rfactor);
+audioop_tomono_impl(PyModuleDef *module, Py_buffer *fragment, int width,
+                    double lfactor, double rfactor);
 
 static PyObject *
 audioop_tomono(PyModuleDef *module, PyObject *args)
@@ -451,7 +457,8 @@ PyDoc_STRVAR(audioop_tostereo__doc__,
     {"tostereo", (PyCFunction)audioop_tostereo, METH_VARARGS, audioop_tostereo__doc__},
 
 static PyObject *
-audioop_tostereo_impl(PyModuleDef *module, Py_buffer *fragment, int width, double lfactor, double rfactor);
+audioop_tostereo_impl(PyModuleDef *module, Py_buffer *fragment, int width,
+                      double lfactor, double rfactor);
 
 static PyObject *
 audioop_tostereo(PyModuleDef *module, PyObject *args)
@@ -486,7 +493,8 @@ PyDoc_STRVAR(audioop_add__doc__,
     {"add", (PyCFunction)audioop_add, METH_VARARGS, audioop_add__doc__},
 
 static PyObject *
-audioop_add_impl(PyModuleDef *module, Py_buffer *fragment1, Py_buffer *fragment2, int width);
+audioop_add_impl(PyModuleDef *module, Py_buffer *fragment1,
+                 Py_buffer *fragment2, int width);
 
 static PyObject *
 audioop_add(PyModuleDef *module, PyObject *args)
@@ -523,7 +531,8 @@ PyDoc_STRVAR(audioop_bias__doc__,
     {"bias", (PyCFunction)audioop_bias, METH_VARARGS, audioop_bias__doc__},
 
 static PyObject *
-audioop_bias_impl(PyModuleDef *module, Py_buffer *fragment, int width, int bias);
+audioop_bias_impl(PyModuleDef *module, Py_buffer *fragment, int width,
+                  int bias);
 
 static PyObject *
 audioop_bias(PyModuleDef *module, PyObject *args)
@@ -623,7 +632,8 @@ PyDoc_STRVAR(audioop_lin2lin__doc__,
     {"lin2lin", (PyCFunction)audioop_lin2lin, METH_VARARGS, audioop_lin2lin__doc__},
 
 static PyObject *
-audioop_lin2lin_impl(PyModuleDef *module, Py_buffer *fragment, int width, int newwidth);
+audioop_lin2lin_impl(PyModuleDef *module, Py_buffer *fragment, int width,
+                     int newwidth);
 
 static PyObject *
 audioop_lin2lin(PyModuleDef *module, PyObject *args)
@@ -658,7 +668,9 @@ PyDoc_STRVAR(audioop_ratecv__doc__,
     {"ratecv", (PyCFunction)audioop_ratecv, METH_VARARGS, audioop_ratecv__doc__},
 
 static PyObject *
-audioop_ratecv_impl(PyModuleDef *module, Py_buffer *fragment, int width, int nchannels, int inrate, int outrate, PyObject *state, int weightA, int weightB);
+audioop_ratecv_impl(PyModuleDef *module, Py_buffer *fragment, int width,
+                    int nchannels, int inrate, int outrate, PyObject *state,
+                    int weightA, int weightB);
 
 static PyObject *
 audioop_ratecv(PyModuleDef *module, PyObject *args)
@@ -829,7 +841,8 @@ PyDoc_STRVAR(audioop_lin2adpcm__doc__,
     {"lin2adpcm", (PyCFunction)audioop_lin2adpcm, METH_VARARGS, audioop_lin2adpcm__doc__},
 
 static PyObject *
-audioop_lin2adpcm_impl(PyModuleDef *module, Py_buffer *fragment, int width, PyObject *state);
+audioop_lin2adpcm_impl(PyModuleDef *module, Py_buffer *fragment, int width,
+                       PyObject *state);
 
 static PyObject *
 audioop_lin2adpcm(PyModuleDef *module, PyObject *args)
@@ -863,7 +876,8 @@ PyDoc_STRVAR(audioop_adpcm2lin__doc__,
     {"adpcm2lin", (PyCFunction)audioop_adpcm2lin, METH_VARARGS, audioop_adpcm2lin__doc__},
 
 static PyObject *
-audioop_adpcm2lin_impl(PyModuleDef *module, Py_buffer *fragment, int width, PyObject *state);
+audioop_adpcm2lin_impl(PyModuleDef *module, Py_buffer *fragment, int width,
+                       PyObject *state);
 
 static PyObject *
 audioop_adpcm2lin(PyModuleDef *module, PyObject *args)
@@ -886,4 +900,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=be840bba5d40c2ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9b01aafef50425ae input=a9049054013a1b77]*/

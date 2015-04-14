@@ -586,8 +586,9 @@ current settings for the window object.
 [clinic start generated code]*/
 
 static PyObject *
-curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1, int y, int x, PyObject *ch, int group_right_1, long attr)
-/*[clinic end generated code: output=9fa34a5d80151f1a input=5a41efb34a2de338]*/
+curses_window_addch_impl(PyCursesWindowObject *self, int group_left_1, int y,
+                         int x, PyObject *ch, int group_right_1, long attr)
+/*[clinic end generated code: output=99f7f85078ec06c3 input=5a41efb34a2de338]*/
 {
     PyCursesWindowObject *cwself = (PyCursesWindowObject *)self;
     int coordinates_group = group_left_1;

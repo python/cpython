@@ -376,7 +376,8 @@ PyDoc_STRVAR(array_array_fromunicode__doc__,
     {"fromunicode", (PyCFunction)array_array_fromunicode, METH_O, array_array_fromunicode__doc__},
 
 static PyObject *
-array_array_fromunicode_impl(arrayobject *self, Py_UNICODE *ustr, Py_ssize_clean_t ustr_length);
+array_array_fromunicode_impl(arrayobject *self, Py_UNICODE *ustr,
+                             Py_ssize_clean_t ustr_length);
 
 static PyObject *
 array_array_fromunicode(arrayobject *self, PyObject *arg)
@@ -446,7 +447,10 @@ PyDoc_STRVAR(array__array_reconstructor__doc__,
     {"_array_reconstructor", (PyCFunction)array__array_reconstructor, METH_VARARGS, array__array_reconstructor__doc__},
 
 static PyObject *
-array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype, int typecode, enum machine_format_code mformat_code, PyObject *items);
+array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype,
+                                int typecode,
+                                enum machine_format_code mformat_code,
+                                PyObject *items);
 
 static PyObject *
 array__array_reconstructor(PyModuleDef *module, PyObject *args)
@@ -502,4 +506,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=a8fbe83c2026fa83 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=48e8198c8087cd00 input=a9049054013a1b77]*/
