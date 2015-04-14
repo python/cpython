@@ -173,6 +173,9 @@ Library
 - Issue #23801: Fix issue where cgi.FieldStorage did not always ignore the
   entire preamble to a multipart body.
 
+- Issue #23310: Fix MagicMock's initializer to work with __methods__, just
+  like configure_mock().  Patch by Kasia Jachim.
+
 Tests
 -----
 
