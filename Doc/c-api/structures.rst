@@ -21,53 +21,65 @@ the definition of all other Python objects.
    All object types are extensions of this type.  This is a type which
    contains the information Python needs to treat a pointer to an object as an
    object.  In a normal "release" build, it contains only the object's
-   reference count and a pointer to the corresponding type object.  It
-   corresponds to the fields defined by the expansion of the ``PyObject_HEAD``
-   macro.
+   reference count and a pointer to the corresponding type object.
+   Nothing is actually declared to be a PyObject, but every pointer to a
+   Python object can be cast to a PyObject*.  Access to the members
+   must be done by using the macros :c:macro:`Py_REFCNT` and
+   :c:macro:`Py_TYPE`.
 
 
 .. c:type:: PyVarObject
 
    This is an extension of :c:type:`PyObject` that adds the :attr:`ob_size`
    field.  This is only used for objects that have some notion of *length*.
-   This type does not often appear in the Python/C API.  It corresponds to the
-   fields defined by the expansion of the ``PyObject_VAR_HEAD`` macro.
+   This type does not often appear in the Python/C API.
+   Access to the members must be done by using the macros
+   :c:macro:`Py_REFCNT`, :c:macro:`Py_TYPE`, and :c:macro:`Py_SIZE`.
 
-These macros are used in the definition of :c:type:`PyObject` and
-:c:type:`PyVarObject`:
-
-.. XXX need to document PEP 3123 changes here
 
 .. c:macro:: PyObject_HEAD
 
-   This is a macro which expands to the declarations of the fields of the
-   :c:type:`PyObject` type; it is used when declaring new types which represent
-   objects without a varying length.  The specific fields it expands to depend
-   on the definition of :c:macro:`Py_TRACE_REFS`.  By default, that macro is
-   not defined, and :c:macro:`PyObject_HEAD` expands to::
+   This is a macro used when declaring new types which represent objects
+   without a varying length.  The PyObject_HEAD macro expands to::
 
-      Py_ssize_t ob_refcnt;
-      PyTypeObject *ob_type;
+      PyObject ob_base;
 
-   When :c:macro:`Py_TRACE_REFS` is defined, it expands to::
-
-      PyObject *_ob_next, *_ob_prev;
-      Py_ssize_t ob_refcnt;
-      PyTypeObject *ob_type;
+   See documentation of :c:type::`PyObject` above.
 
 
 .. c:macro:: PyObject_VAR_HEAD
 
-   This is a macro which expands to the declarations of the fields of the
-   :c:type:`PyVarObject` type; it is used when declaring new types which
-   represent objects with a length that varies from instance to instance.
-   This macro always expands to::
+   This is a macro used when declaring new types which represent objects
+   with a length that varies from instance to instance.
+   The PyObject_VAR_HEAD macro expands to::
 
-      PyObject_HEAD
-      Py_ssize_t ob_size;
+      PyVarObject ob_base;
 
-   Note that :c:macro:`PyObject_HEAD` is part of the expansion, and that its own
-   expansion varies depending on the definition of :c:macro:`Py_TRACE_REFS`.
+   See documentation of :c:type:`PyVarObject` above.
+
+
+.. c:macro:: Py_TYPE(o)
+
+   This macro is used to access the `ob_type` member of a Python object.
+   It expands to::
+
+      (((PyObject*)(o))->ob_type)
+
+
+.. c:macro:: Py_REFCNT(o)
+
+   This macro is used to access the `ob_refcnt` member of a Python object.
+   It expands to::
+
+      (((PyObject*)(o))->ob_refcnt)
+
+
+.. c:macro:: Py_SIZE(o)
+
+   This macro is used to access the `ob_size` member of a Python object.
+   It expands to::
+
+      (((PyVarObject*)(o))->ob_size)
 
 
 .. c:macro:: PyObject_HEAD_INIT(type)
