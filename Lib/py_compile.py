@@ -178,7 +178,7 @@ def main(args=None):
             except PyCompileError as error:
                 # return value to indicate at least one failure
                 rv = 1
-                sys.stderr.write(error.msg)
+                sys.stderr.write("%s\n" % error.msg)
     return rv
 
 if __name__ == "__main__":
