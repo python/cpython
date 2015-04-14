@@ -191,7 +191,7 @@ typedef struct {
    remember is that in PyCArrayType_new the ffi_type fields must be filled in -
    so far it was unneeded because libffi doesn't support arrays at all
    (because they are passed as pointers to function calls anyway).  But it's
-   too much risk to change that now, and there are other fields which doen't
+   too much risk to change that now, and there are other fields which doesn't
    belong into this structure anyway.  Maybe in ctypes 2.0... (ctypes 2000?)
 */
     Py_ssize_t size;            /* number of bytes */

@@ -465,7 +465,7 @@ Library
   (including empty directories) in ZIP file.
 
 - Issue #22449: In the ssl.SSLContext.load_default_certs, consult the
-  enviromental variables SSL_CERT_DIR and SSL_CERT_FILE on Windows.
+  environmental variables SSL_CERT_DIR and SSL_CERT_FILE on Windows.
 
 - Issue #20076: Added non derived UTF-8 aliases to locale aliases table.
 
