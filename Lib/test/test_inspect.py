@@ -392,6 +392,9 @@ class TestRetrievingSourceCode(GetSourceBase):
         finally:
             linecache.getlines = getlines
 
+    def test_getsource_on_code_object(self):
+        self.assertSourceEqual(mod.eggs.__code__, 12, 18)
+
 class TestDecorators(GetSourceBase):
     fodderModule = mod2
 
@@ -402,7 +405,10 @@ class TestDecorators(GetSourceBase):
         self.assertSourceEqual(mod2.gone, 9, 10)
 
     def test_getsource_unwrap(self):
-        self.assertSourceEqual(mod2.real, 122, 124)
+        self.assertSourceEqual(mod2.real, 130, 132)
+
+    def test_decorator_with_lambda(self):
+        self.assertSourceEqual(mod2.func114, 113, 115)
 
 class TestOneliners(GetSourceBase):
     fodderModule = mod2
@@ -496,6 +502,9 @@ class TestBuggyCases(GetSourceBase):
             co = compile('x=1', fname, "exec")
             self.assertRaises(IOError, inspect.findsource, co)
             self.assertRaises(IOError, inspect.getsource, co)
+
+    def test_getsource_on_method(self):
+        self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
 
 class TestNoEOL(GetSourceBase):
     def __init__(self, *args, **kwargs):
