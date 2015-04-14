@@ -271,7 +271,11 @@ class CmdLineTest(unittest.TestCase):
 
     def test_displayhook_unencodable(self):
         for encoding in ('ascii', 'latin-1', 'utf-8'):
-            env = os.environ.copy()
+            # We are testing a PYTHON environment variable here, so we can't
+            # use -E, -I, or script_helper (which uses them).  So instead we do
+            # poor-man's isolation by deleting the PYTHON vars from env.
+            env = {key:value for (key,value) in os.environ.copy().items()
+                   if not key.startswith('PYTHON')}
             env['PYTHONIOENCODING'] = encoding
             p = subprocess.Popen(
                 [sys.executable, '-i'],
