@@ -492,6 +492,14 @@ tarfile
 * The :func:`tarfile.open` function now supports ``'x'`` (exclusive creation)
   mode.  (Contributed by Berker Peksag in :issue:`21717`.)
 
+subprocess
+----------
+
+* The new :func:`subprocess.run` function runs subprocesses and returns a
+  :class:`subprocess.CompletedProcess` object.  It Provides a more consistent
+  API than :func:`~subprocess.call`, :func:`~subprocess.check_call` and
+  :func:`~subprocess.check_output`.
+
 time
 ----
 
