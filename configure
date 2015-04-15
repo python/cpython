@@ -698,6 +698,7 @@ BUILDEXEEXT
 EGREP
 NO_AS_NEEDED
 PLATFORM_TRIPLET
+PLATDIR
 MULTIARCH
 ac_ct_CXX
 MAINCC
@@ -713,7 +714,6 @@ CFLAGS
 CC
 EXPORT_MACOSX_DEPLOYMENT_TARGET
 CONFIGURE_MACOSX_DEPLOYMENT_TARGET
-PLATDIR
 SGI_ABI
 _PYTHON_HOST_PLATFORM
 MACHDEP
@@ -3498,9 +3498,6 @@ then
 fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $MACHDEP" >&5
 $as_echo "$MACHDEP" >&6; }
-
-
-PLATDIR=plat-$MACHDEP
 
 # Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
 # it may influence the way we can build extensions, so distutils

@@ -556,9 +556,6 @@ then
 fi
 AC_MSG_RESULT($MACHDEP)
 
-AC_SUBST(PLATDIR)
-PLATDIR=plat-$MACHDEP
-
 # Record the configure-time value of MACOSX_DEPLOYMENT_TARGET,
 # it may influence the way we can build extensions, so distutils
 # needs to check it
