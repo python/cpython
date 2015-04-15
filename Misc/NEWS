@@ -36,6 +36,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 19933: Provide default argument for ndigits in round. Patch by
+  Vajrasky Kok.
+
 - Issue #23193: Add a numeric_owner parameter to
   tarfile.TarFile.extract and tarfile.TarFile.extractall. Patch by
   Michael Vogt and Eric Smith.
