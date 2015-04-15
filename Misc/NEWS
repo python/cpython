@@ -10,6 +10,10 @@ Release date: XXX
 Core and Builtins
 -----------------
 
+- Issue #22980: Under Linux, GNU/KFreeBSD and the Hurd, C extensions now include
+  the architecture triplet in the extension name, to make it easy to test builds
+  for different ABIs in the same working tree.
+
 - Issue #22631: Added Linux-specific socket constant CAN_RAW_FD_FRAMES.
   Patch courtesy of Joe Jevnik.
 
@@ -381,10 +385,6 @@ Release date: 2015-03-09
 
 Core and Builtins
 -----------------
-
-- Issue #22980: Under Linux, C extensions now include bitness in the file
-  name, to make it easy to test 32-bit and 64-bit builds in the same
-  working tree.
 
 - Issue #23571: PyObject_Call() and PyCFunction_Call() now raise a SystemError
   if a function returns a result and raises an exception. The SystemError is
