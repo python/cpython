@@ -2866,6 +2866,13 @@ update_lines_cols(void)
     Py_DECREF(m);
     return 1;
 }
+
+static PyObject *
+PyCurses_update_lines_cols(PyObject *self)
+{
+  return PyLong_FromLong((long) update_lines_cols());
+}
+
 #endif
 
 #ifdef HAVE_CURSES_RESIZETERM
@@ -3268,6 +3275,9 @@ static PyMethodDef PyCurses_methods[] = {
     {"typeahead",           (PyCFunction)PyCurses_TypeAhead, METH_VARARGS},
     {"unctrl",              (PyCFunction)PyCurses_UnCtrl, METH_VARARGS},
     {"ungetch",             (PyCFunction)PyCurses_UngetCh, METH_VARARGS},
+#if defined(HAVE_CURSES_RESIZETERM) || defined(HAVE_CURSES_RESIZE_TERM)
+    {"update_lines_cols",   (PyCFunction)PyCurses_update_lines_cols, METH_NOARGS},
+#endif
 #ifdef HAVE_NCURSESW
     {"unget_wch",           (PyCFunction)PyCurses_Unget_Wch, METH_VARARGS},
 #endif

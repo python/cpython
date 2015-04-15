@@ -599,6 +599,13 @@ The module :mod:`curses` defines the following functions:
       Only one *ch* can be pushed before :meth:`getch` is called.
 
 
+.. function:: update_lines_cols()
+
+   Update :envvar:`LINES` and :envvar:`COLS`. Useful for detecting manual screen resize.
+
+   .. versionadded:: 3.5
+
+
 .. function:: unget_wch(ch)
 
    Push *ch* so the next :meth:`get_wch` will return it.
