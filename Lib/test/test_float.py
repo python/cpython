@@ -773,6 +773,14 @@ class RoundTestCase(unittest.TestCase):
             test(sfmt, NAN, ' nan')
             test(sfmt, -NAN, ' nan')
 
+    def test_None_ndigits(self):
+        for x in round(1.23), round(1.23, None), round(1.23, ndigits=None):
+            self.assertEqual(x, 1)
+            self.assertIsInstance(x, int)
+        for x in round(1.78), round(1.78, None), round(1.78, ndigits=None):
+            self.assertEqual(x, 2)
+            self.assertIsInstance(x, int)
+
 
 # Beginning with Python 2.6 float has cross platform compatible
 # ways to create and represent inf and nan

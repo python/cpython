@@ -986,8 +986,9 @@ float_round(PyObject *v, PyObject *args)
     x = PyFloat_AsDouble(v);
     if (!PyArg_ParseTuple(args, "|O", &o_ndigits))
         return NULL;
-    if (o_ndigits == NULL) {
-        /* single-argument round: round to nearest integer */
+    if (o_ndigits == NULL || o_ndigits == Py_None) {
+        /* single-argument round or with None ndigits:
+         * round to nearest integer */
         rounded = round(x);
         if (fabs(x-rounded) == 0.5)
             /* halfway case: round to even */
