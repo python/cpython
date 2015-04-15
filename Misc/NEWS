@@ -36,6 +36,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #4254: Adds _curses.update_lines_cols() Patch by Arnon Yaari
+
 - Issue 19933: Provide default argument for ndigits in round. Patch by
   Vajrasky Kok.
 

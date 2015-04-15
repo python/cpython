@@ -370,6 +370,13 @@ class TestCurses(unittest.TestCase):
         offset = human_readable_signature.find("[y, x,]")
         assert offset >= 0, ""
 
+    def test_update_lines_cols(self):
+        # this doesn't actually test that LINES and COLS are updated,
+        # because we can't automate changing them. See Issue #4254 for
+        # a manual test script. We can only test that the function
+        # can be called.
+        curses.update_lines_cols()
+
 
 if __name__ == '__main__':
     unittest.main()

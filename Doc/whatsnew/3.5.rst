@@ -289,6 +289,11 @@ contextlib
   don't provide any options to redirect it.
   (Contributed by Berker Peksag in :issue:`22389`.)
 
+curses
+------
+* The new :func:`curses.update_lines_cols` function updates the variables
+  :envvar:`curses.LINES` and :envvar:`curses.COLS`.
+
 difflib
 -------
 
