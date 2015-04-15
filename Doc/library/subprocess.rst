@@ -26,8 +26,8 @@ Using the :mod:`subprocess` Module
 ----------------------------------
 
 The recommended approach to invoking subprocesses is to use the :func:`run`
-function for all use cases it can handle. For more advanced
-use cases, the underlying :class:`Popen` interface can be used directly.
+function for all use cases it can handle. For more advanced use cases, the
+underlying :class:`Popen` interface can be used directly.
 
 The :func:`run` function was added in Python 3.5; if you need to retain
 compatibility with older versions, see the :ref:`call-function-trio` section.
