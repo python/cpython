@@ -447,8 +447,7 @@ def urljoin(base, url, allow_fragments=True):
         segments = base_parts + path.split('/')
         # filter out elements that would cause redundant slashes on re-joining
         # the resolved_path
-        segments = segments[0:1] + [
-            s for s in segments[1:-1] if len(s) > 0] + segments[-1:]
+        segments[1:-1] = filter(None, segments[1:-1])
 
     resolved_path = []
 
