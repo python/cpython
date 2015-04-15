@@ -367,7 +367,7 @@ be finalized; only the internally used file object will be closed. See the
    available.
 
 
-.. method:: TarFile.extractall(path=".", members=None)
+.. method:: TarFile.extractall(path=".", members=None, *, numeric_owner=False)
 
    Extract all members from the archive to the current working directory or
    directory *path*. If optional *members* is given, it must be a subset of the
@@ -377,6 +377,10 @@ be finalized; only the internally used file object will be closed. See the
    reset each time a file is created in it. And, if a directory's permissions do
    not allow writing, extracting files to it will fail.
 
+   If *numeric_owner* is :const:`True`, the uid and gid numbers from the tarfile
+   are used to set the owner/group for the extracted files. Otherwise, the named
+   values from the tarfile are used.
+
    .. warning::
 
       Never extract archives from untrusted sources without prior inspection.
@@ -384,14 +388,21 @@ be finalized; only the internally used file object will be closed. See the
       that have absolute filenames starting with ``"/"`` or filenames with two
       dots ``".."``.
 
+   .. versionchanged:: 3.5
+      Added the *numeric_only* parameter.
 
-.. method:: TarFile.extract(member, path="", set_attrs=True)
+
+.. method:: TarFile.extract(member, path="", set_attrs=True, *, numeric_owner=False)
 
    Extract a member from the archive to the current working directory, using its
    full name. Its file information is extracted as accurately as possible. *member*
    may be a filename or a :class:`TarInfo` object. You can specify a different
    directory using *path*. File attributes (owner, mtime, mode) are set unless
    *set_attrs* is false.
+
+   If *numeric_owner* is :const:`True`, the uid and gid numbers from the tarfile
+   are used to set the owner/group for the extracted files. Otherwise, the named
+   values from the tarfile are used.
 
    .. note::
 
@@ -404,6 +415,9 @@ be finalized; only the internally used file object will be closed. See the
 
    .. versionchanged:: 3.2
       Added the *set_attrs* parameter.
+
+   .. versionchanged:: 3.5
+      Added the *numeric_only* parameter.
 
 .. method:: TarFile.extractfile(member)
 
@@ -827,4 +841,3 @@ In case of :const:`PAX_FORMAT` archives, *encoding* is generally not needed
 because all the metadata is stored using *UTF-8*. *encoding* is only used in
 the rare cases when binary pax headers are decoded or when strings with
 surrogate characters are stored.
-

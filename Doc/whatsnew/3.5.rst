@@ -479,19 +479,6 @@ socket
   :meth:`socket.socket.send`.
   (Contributed by Giampaolo Rodola' in :issue:`17552`.)
 
-sysconfig
----------
-
-* The user scripts directory on Windows is now versioned.
-  (Contributed by Paul Moore in :issue:`23437`.)
-
-
-tarfile
--------
-
-* The :func:`tarfile.open` function now supports ``'x'`` (exclusive creation)
-  mode.  (Contributed by Berker Peksag in :issue:`21717`.)
-
 subprocess
 ----------
 
@@ -499,6 +486,25 @@ subprocess
   :class:`subprocess.CompletedProcess` object.  It Provides a more consistent
   API than :func:`~subprocess.call`, :func:`~subprocess.check_call` and
   :func:`~subprocess.check_output`.
+
+sysconfig
+---------
+
+* The user scripts directory on Windows is now versioned.
+  (Contributed by Paul Moore in :issue:`23437`.)
+
+tarfile
+-------
+
+* The :func:`tarfile.open` function now supports ``'x'`` (exclusive creation)
+  mode.  (Contributed by Berker Peksag in :issue:`21717`.)
+
+* The :meth:`~tarfile.TarFile.extractall` and :meth:`~tarfile.TarFile.extract`
+  methods now take a keyword parameter *numeric_only*. If set to ``True``,
+  the extracted files and directories will be owned by the numeric uid and gid
+  from the tarfile. If set to ``False`` (the default, and the behavior in
+  versions prior to 3.5), they will be owned bythe named user and group in the
+  tarfile.  (Contributed by Michael Vogt and Eric Smith in :issue:`23193`.)
 
 time
 ----
