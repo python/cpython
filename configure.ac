@@ -730,6 +730,7 @@ AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
 cat >> conftest.c <<EOF
 #undef linux
 #undef i386
+#undef powerpc
 #undef unix
 #if defined(__linux__)
 # if defined(__x86_64__) && defined(__LP64__)
