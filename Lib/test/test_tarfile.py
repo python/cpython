@@ -2,8 +2,10 @@ import sys
 import os
 import io
 from hashlib import md5
+from contextlib import contextmanager
 
 import unittest
+import unittest.mock
 import tarfile
 
 from test import support, script_helper
@@ -2262,6 +2264,136 @@ class Bz2PartialReadTest(Bz2Test, unittest.TestCase):
 
     def test_partial_input_bz2(self):
         self._test_partial_input("r:bz2")
+
+
+def root_is_uid_gid_0():
+    try:
+        import pwd, grp
+    except ImportError:
+        return False
+    if pwd.getpwuid(0)[0] != 'root':
+        return False
+    if grp.getgrgid(0)[0] != 'root':
+        return False
+    return True
+
+
+class NumericOwnerTest(unittest.TestCase):
+    # mock the following:
+    #  os.chown: so we can test what's being called
+    #  os.chmod: so the modes are not actually changed. if they are, we can't
+    #             delete the files/directories
+    #  os.geteuid: so we can lie and say we're root (uid = 0)
+
+    @staticmethod
+    def _make_test_archive(filename_1, dirname_1, filename_2):
+        # the file contents to write
+        fobj = io.BytesIO(b"content")
+
+        # create a tar file with a file, a directory, and a file within that
+        #  directory. Assign various .uid/.gid values to them
+        items = [(filename_1, 99, 98, tarfile.REGTYPE, fobj),
+                 (dirname_1,  77, 76, tarfile.DIRTYPE, None),
+                 (filename_2, 88, 87, tarfile.REGTYPE, fobj),
+                 ]
+        with tarfile.open(tmpname, 'w') as tarfl:
+            for name, uid, gid, typ, contents in items:
+                t = tarfile.TarInfo(name)
+                t.uid = uid
+                t.gid = gid
+                t.uname = 'root'
+                t.gname = 'root'
+                t.type = typ
+                tarfl.addfile(t, contents)
+
+        # return the full pathname to the tar file
+        return tmpname
+
+    @staticmethod
+    @contextmanager
+    def _setup_test(mock_geteuid):
+        mock_geteuid.return_value = 0  # lie and say we're root
+        fname = 'numeric-owner-testfile'
+        dirname = 'dir'
+
+        # the names we want stored in the tarfile
+        filename_1 = fname
+        dirname_1 = dirname
+        filename_2 = os.path.join(dirname, fname)
+
+        # create the tarfile with the contents we're after
+        tar_filename = NumericOwnerTest._make_test_archive(filename_1,
+                                                           dirname_1,
+                                                           filename_2)
+
+        # open the tarfile for reading. yield it and the names of the items
+        #  we stored into the file
+        with tarfile.open(tar_filename) as tarfl:
+            yield tarfl, filename_1, dirname_1, filename_2
+
+    @unittest.mock.patch('os.chown')
+    @unittest.mock.patch('os.chmod')
+    @unittest.mock.patch('os.geteuid')
+    def test_extract_with_numeric_owner(self, mock_geteuid, mock_chmod,
+                                        mock_chown):
+        with self._setup_test(mock_geteuid) as (tarfl, filename_1, _,
+                                                filename_2):
+            tarfl.extract(filename_1, TEMPDIR, numeric_owner=True)
+            tarfl.extract(filename_2 , TEMPDIR, numeric_owner=True)
+
+        # convert to filesystem paths
+        f_filename_1 = os.path.join(TEMPDIR, filename_1)
+        f_filename_2 = os.path.join(TEMPDIR, filename_2)
+
+        mock_chown.assert_has_calls([unittest.mock.call(f_filename_1, 99, 98),
+                                     unittest.mock.call(f_filename_2, 88, 87),
+                                     ],
+                                    any_order=True)
+
+    @unittest.mock.patch('os.chown')
+    @unittest.mock.patch('os.chmod')
+    @unittest.mock.patch('os.geteuid')
+    def test_extractall_with_numeric_owner(self, mock_geteuid, mock_chmod,
+                                           mock_chown):
+        with self._setup_test(mock_geteuid) as (tarfl, filename_1, dirname_1,
+                                                filename_2):
+            tarfl.extractall(TEMPDIR, numeric_owner=True)
+
+        # convert to filesystem paths
+        f_filename_1 = os.path.join(TEMPDIR, filename_1)
+        f_dirname_1  = os.path.join(TEMPDIR, dirname_1)
+        f_filename_2 = os.path.join(TEMPDIR, filename_2)
+
+        mock_chown.assert_has_calls([unittest.mock.call(f_filename_1, 99, 98),
+                                     unittest.mock.call(f_dirname_1, 77, 76),
+                                     unittest.mock.call(f_filename_2, 88, 87),
+                                     ],
+                                    any_order=True)
+
+    # this test requires that uid=0 and gid=0 really be named 'root'. that's
+    #  because the uname and gname in the test file are 'root', and extract()
+    #  will look them up using pwd and grp to find their uid and gid, which we
+    #  test here to be 0.
+    @unittest.skipUnless(root_is_uid_gid_0(),
+                         'uid=0,gid=0 must be named "root"')
+    @unittest.mock.patch('os.chown')
+    @unittest.mock.patch('os.chmod')
+    @unittest.mock.patch('os.geteuid')
+    def test_extract_without_numeric_owner(self, mock_geteuid, mock_chmod,
+                                           mock_chown):
+        with self._setup_test(mock_geteuid) as (tarfl, filename_1, _, _):
+            tarfl.extract(filename_1, TEMPDIR, numeric_owner=False)
+
+        # convert to filesystem paths
+        f_filename_1 = os.path.join(TEMPDIR, filename_1)
+
+        mock_chown.assert_called_with(f_filename_1, 0, 0)
+
+    @unittest.mock.patch('os.geteuid')
+    def test_keyword_only(self, mock_geteuid):
+        with self._setup_test(mock_geteuid) as (tarfl, filename_1, _, _):
+            self.assertRaises(TypeError,
+                              tarfl.extract, filename_1, TEMPDIR, False, True)
 
 
 def setUpModule():
