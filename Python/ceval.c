@@ -3825,9 +3825,17 @@ unpack_iterable(PyObject *v, int argcnt, int argcntafter, PyObject **sp)
         if (w == NULL) {
             /* Iterator done, via error or exhaustion. */
             if (!PyErr_Occurred()) {
-                PyErr_Format(PyExc_ValueError,
-                    "need more than %d value%s to unpack",
-                    i, i == 1 ? "" : "s");
+                if (argcntafter == -1) {
+                    PyErr_Format(PyExc_ValueError,
+                        "not enough values to unpack (expected %d, got %d)",
+                        argcnt, i);
+                }
+                else {
+                    PyErr_Format(PyExc_ValueError,
+                        "not enough values to unpack "
+                        "(expected at least %d, got %d)",
+                        argcnt + argcntafter, i);
+                }
             }
             goto Error;
         }
@@ -3844,8 +3852,9 @@ unpack_iterable(PyObject *v, int argcnt, int argcntafter, PyObject **sp)
             return 1;
         }
         Py_DECREF(w);
-        PyErr_Format(PyExc_ValueError, "too many values to unpack "
-                     "(expected %d)", argcnt);
+        PyErr_Format(PyExc_ValueError,
+            "too many values to unpack (expected %d)",
+            argcnt);
         goto Error;
     }
 
@@ -3857,8 +3866,9 @@ unpack_iterable(PyObject *v, int argcnt, int argcntafter, PyObject **sp)
 
     ll = PyList_GET_SIZE(l);
     if (ll < argcntafter) {
-        PyErr_Format(PyExc_ValueError, "need more than %zd values to unpack",
-                     argcnt + ll);
+        PyErr_Format(PyExc_ValueError,
+            "not enough values to unpack (expected at least %d, got %zd)",
+            argcnt + argcntafter, argcnt + ll);
         goto Error;
     }
 

@@ -76,7 +76,7 @@ Unpacking sequence too short
     >>> a, b, c, d = Seq()
     Traceback (most recent call last):
       ...
-    ValueError: need more than 3 values to unpack
+    ValueError: not enough values to unpack (expected 4, got 3)
 
 Unpacking sequence too long
 
