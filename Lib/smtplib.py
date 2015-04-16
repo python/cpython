@@ -328,7 +328,7 @@ class SMTP:
         self.file = None
         (code, msg) = self.getreply()
         if self.debuglevel > 0:
-            self._print_debug('connect:', msg)
+            self._print_debug('connect:', repr(msg))
         return (code, msg)
 
     def send(self, s):
@@ -400,7 +400,7 @@ class SMTP:
 
         errmsg = b"\n".join(resp)
         if self.debuglevel > 0:
-            self._print_debug('reply: retcode (%s); Msg: %s' % (errcode, errmsg))
+            self._print_debug('reply: retcode (%s); Msg: %a' % (errcode, errmsg))
         return errcode, errmsg
 
     def docmd(self, cmd, args=""):
