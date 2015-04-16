@@ -124,6 +124,27 @@ class GeneralTests(unittest.TestCase):
         self.assertEqual(smtp.sock.gettimeout(), 30)
         smtp.close()
 
+    def test_debuglevel(self):
+        mock_socket.reply_with(b"220 Hello world")
+        smtp = smtplib.SMTP()
+        smtp.set_debuglevel(1)
+        with support.captured_stderr() as stderr:
+            smtp.connect(HOST, self.port)
+        smtp.close()
+        expected = re.compile(r"^connect:", re.MULTILINE)
+        self.assertRegex(stderr.getvalue(), expected)
+
+    def test_debuglevel_2(self):
+        mock_socket.reply_with(b"220 Hello world")
+        smtp = smtplib.SMTP()
+        smtp.set_debuglevel(2)
+        with support.captured_stderr() as stderr:
+            smtp.connect(HOST, self.port)
+        smtp.close()
+        expected = re.compile(r"^\d{2}:\d{2}:\d{2}\.\d{6} connect: ",
+                              re.MULTILINE)
+        self.assertRegex(stderr.getvalue(), expected)
+
 
 # Test server thread using the specified SMTP server class
 def debugging_server(serv, serv_evt, client_evt):
