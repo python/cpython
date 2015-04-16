@@ -1990,6 +1990,17 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertRaises(TypeError, t.__init__, b, newline=42)
         self.assertRaises(ValueError, t.__init__, b, newline='xyzzy')
 
+    def test_uninitialized(self):
+        t = self.TextIOWrapper.__new__(self.TextIOWrapper)
+        del t
+        t = self.TextIOWrapper.__new__(self.TextIOWrapper)
+        self.assertRaises(Exception, repr, t)
+        self.assertRaisesRegexp((ValueError, AttributeError),
+                                'uninitialized|has no attribute',
+                                t.read, 0)
+        t.__init__(self.MockRawIO())
+        self.assertEqual(t.read(0), u'')
+
     def test_detach(self):
         r = self.BytesIO()
         b = self.BufferedWriter(r)
