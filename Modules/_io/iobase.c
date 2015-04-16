@@ -13,6 +13,20 @@
 #include "structmember.h"
 #include "_iomodule.h"
 
+/*[clinic input]
+module _io
+class _io._IOBase "PyObject *" "&PyIOBase_Type"
+class _io._RawIOBase "PyObject *" "&PyRawIOBase_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=d29a4d076c2b211c]*/
+
+/*[python input]
+class io_ssize_t_converter(CConverter):
+    type = 'Py_ssize_t'
+    converter = '_PyIO_ConvertSsize_t'
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=d0a811d3cbfd1b33]*/
+
 /*
  * IOBase class, an abstract class
  */
@@ -96,11 +110,15 @@ iobase_seek(PyObject *self, PyObject *args)
     return iobase_unsupported("seek");
 }
 
-PyDoc_STRVAR(iobase_tell_doc,
-             "Return current stream position.");
+/*[clinic input]
+_io._IOBase.tell
+
+Return current stream position.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_tell(PyObject *self, PyObject *args)
+_io__IOBase_tell_impl(PyObject *self)
+/*[clinic end generated code: output=89a1c0807935abe2 input=04e615fec128801f]*/
 {
     _Py_IDENTIFIER(seek);
 
@@ -121,13 +139,17 @@ iobase_truncate(PyObject *self, PyObject *args)
 
 /* Flush and close methods */
 
-PyDoc_STRVAR(iobase_flush_doc,
-    "Flush write buffers, if applicable.\n"
-    "\n"
-    "This is not implemented for read-only and non-blocking streams.\n");
+/*[clinic input]
+_io._IOBase.flush
+
+Flush write buffers, if applicable.
+
+This is not implemented for read-only and non-blocking streams.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_flush(PyObject *self, PyObject *args)
+_io__IOBase_flush_impl(PyObject *self)
+/*[clinic end generated code: output=7cef4b4d54656a3b input=773be121abe270aa]*/
 {
     /* XXX Should this return the number of bytes written??? */
     if (IS_CLOSED(self)) {
@@ -136,11 +158,6 @@ iobase_flush(PyObject *self, PyObject *args)
     }
     Py_RETURN_NONE;
 }
-
-PyDoc_STRVAR(iobase_close_doc,
-    "Flush and close the IO object.\n"
-    "\n"
-    "This method has no effect if the file is already closed.\n");
 
 static int
 iobase_closed(PyObject *self)
@@ -180,8 +197,17 @@ _PyIOBase_check_closed(PyObject *self, PyObject *args)
    `__IOBase_closed` and call flush() by itself, but it is redundant with
    whatever behaviour a non-trivial derived class will implement. */
 
+/*[clinic input]
+_io._IOBase.close
+
+Flush and close the IO object.
+
+This method has no effect if the file is already closed.
+[clinic start generated code]*/
+
 static PyObject *
-iobase_close(PyObject *self, PyObject *args)
+_io__IOBase_close_impl(PyObject *self)
+/*[clinic end generated code: output=63c6a6f57d783d6d input=f4494d5c31dbc6b7]*/
 {
     PyObject *res;
 
@@ -304,14 +330,18 @@ iobase_dealloc(iobase *self)
 
 /* Inquiry methods */
 
-PyDoc_STRVAR(iobase_seekable_doc,
-    "Return whether object supports random access.\n"
-    "\n"
-    "If False, seek(), tell() and truncate() will raise UnsupportedOperation.\n"
-    "This method may need to do a test seek().");
+/*[clinic input]
+_io._IOBase.seekable
+
+Return whether object supports random access.
+
+If False, seek(), tell() and truncate() will raise UnsupportedOperation.
+This method may need to do a test seek().
+[clinic start generated code]*/
 
 static PyObject *
-iobase_seekable(PyObject *self, PyObject *args)
+_io__IOBase_seekable_impl(PyObject *self)
+/*[clinic end generated code: output=4c24c67f5f32a43d input=22676eebb81dcf1e]*/
 {
     Py_RETURN_FALSE;
 }
@@ -333,13 +363,17 @@ _PyIOBase_check_seekable(PyObject *self, PyObject *args)
     return res;
 }
 
-PyDoc_STRVAR(iobase_readable_doc,
-    "Return whether object was opened for reading.\n"
-    "\n"
-    "If False, read() will raise UnsupportedOperation.");
+/*[clinic input]
+_io._IOBase.readable
+
+Return whether object was opened for reading.
+
+If False, read() will raise UnsupportedOperation.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_readable(PyObject *self, PyObject *args)
+_io__IOBase_readable_impl(PyObject *self)
+/*[clinic end generated code: output=e48089250686388b input=12fc3d8f6be46434]*/
 {
     Py_RETURN_FALSE;
 }
@@ -362,13 +396,17 @@ _PyIOBase_check_readable(PyObject *self, PyObject *args)
     return res;
 }
 
-PyDoc_STRVAR(iobase_writable_doc,
-    "Return whether object was opened for writing.\n"
-    "\n"
-    "If False, write() will raise UnsupportedOperation.");
+/*[clinic input]
+_io._IOBase.writable
+
+Return whether object was opened for writing.
+
+If False, write() will raise UnsupportedOperation.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_writable(PyObject *self, PyObject *args)
+_io__IOBase_writable_impl(PyObject *self)
+/*[clinic end generated code: output=406001d0985be14f input=c17a0bb6a8dfc590]*/
 {
     Py_RETURN_FALSE;
 }
@@ -413,24 +451,32 @@ iobase_exit(PyObject *self, PyObject *args)
 
 /* XXX Should these be present even if unimplemented? */
 
-PyDoc_STRVAR(iobase_fileno_doc,
-    "Returns underlying file descriptor if one exists.\n"
-    "\n"
-    "An IOError is raised if the IO object does not use a file descriptor.\n");
+/*[clinic input]
+_io._IOBase.fileno
+
+Returns underlying file descriptor if one exists.
+
+An IOError is raised if the IO object does not use a file descriptor.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_fileno(PyObject *self, PyObject *args)
+_io__IOBase_fileno_impl(PyObject *self)
+/*[clinic end generated code: output=7cc0973f0f5f3b73 input=32773c5df4b7eede]*/
 {
     return iobase_unsupported("fileno");
 }
 
-PyDoc_STRVAR(iobase_isatty_doc,
-    "Return whether this is an 'interactive' stream.\n"
-    "\n"
-    "Return False if it can't be determined.\n");
+/*[clinic input]
+_io._IOBase.isatty
+
+Return whether this is an 'interactive' stream.
+
+Return False if it can't be determined.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_isatty(PyObject *self, PyObject *args)
+_io__IOBase_isatty_impl(PyObject *self)
+/*[clinic end generated code: output=60cab77cede41cdd input=9ef76530d368458b]*/
 {
     if (_PyIOBase_check_closed(self, Py_True) == NULL)
         return NULL;
@@ -439,29 +485,30 @@ iobase_isatty(PyObject *self, PyObject *args)
 
 /* Readline(s) and writelines */
 
-PyDoc_STRVAR(iobase_readline_doc,
-    "Read and return a line from the stream.\n"
-    "\n"
-    "If limit is specified, at most limit bytes will be read.\n"
-    "\n"
-    "The line terminator is always b'\\n' for binary files; for text\n"
-    "files, the newlines argument to open can be used to select the line\n"
-    "terminator(s) recognized.\n");
+/*[clinic input]
+_io._IOBase.readline
+    size as limit: io_ssize_t = -1
+    /
+
+Read and return a line from the stream.
+
+If size is specified, at most size bytes will be read.
+
+The line terminator is always b'\n' for binary files; for text
+files, the newlines argument to open can be used to select the line
+terminator(s) recognized.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_readline(PyObject *self, PyObject *args)
+_io__IOBase_readline_impl(PyObject *self, Py_ssize_t limit)
+/*[clinic end generated code: output=4479f79b58187840 input=df4cc8884f553cab]*/
 {
     /* For backwards compatibility, a (slowish) readline(). */
 
-    Py_ssize_t limit = -1;
     int has_peek = 0;
     PyObject *buffer, *result;
     Py_ssize_t old_size = -1;
     _Py_IDENTIFIER(peek);
-
-    if (!PyArg_ParseTuple(args, "|O&:readline", &_PyIO_ConvertSsize_t, &limit)) {
-        return NULL;
-    }
 
     if (_PyObject_HasAttrId(self, &PyId_peek))
         has_peek = 1;
@@ -585,22 +632,24 @@ iobase_iternext(PyObject *self)
     return line;
 }
 
-PyDoc_STRVAR(iobase_readlines_doc,
-    "Return a list of lines from the stream.\n"
-    "\n"
-    "hint can be specified to control the number of lines read: no more\n"
-    "lines will be read if the total size (in bytes/characters) of all\n"
-    "lines so far exceeds hint.");
+/*[clinic input]
+_io._IOBase.readlines
+    hint: io_ssize_t = -1
+    /
+
+Return a list of lines from the stream.
+
+hint can be specified to control the number of lines read: no more
+lines will be read if the total size (in bytes/characters) of all
+lines so far exceeds hint.
+[clinic start generated code]*/
 
 static PyObject *
-iobase_readlines(PyObject *self, PyObject *args)
+_io__IOBase_readlines_impl(PyObject *self, Py_ssize_t hint)
+/*[clinic end generated code: output=2f50421677fa3dea input=1961c4a95e96e661]*/
 {
-    Py_ssize_t hint = -1, length = 0;
+    Py_ssize_t length = 0;
     PyObject *result;
-
-    if (!PyArg_ParseTuple(args, "|O&:readlines", &_PyIO_ConvertSsize_t, &hint)) {
-        return NULL;
-    }
 
     result = PyList_New(0);
     if (result == NULL)
@@ -646,14 +695,17 @@ iobase_readlines(PyObject *self, PyObject *args)
     return result;
 }
 
-static PyObject *
-iobase_writelines(PyObject *self, PyObject *args)
-{
-    PyObject *lines, *iter, *res;
+/*[clinic input]
+_io._IOBase.writelines
+    lines: object
+    /
+[clinic start generated code]*/
 
-    if (!PyArg_ParseTuple(args, "O:writelines", &lines)) {
-        return NULL;
-    }
+static PyObject *
+_io__IOBase_writelines(PyObject *self, PyObject *lines)
+/*[clinic end generated code: output=976eb0a9b60a6628 input=432e729a8450b3cb]*/
+{
+    PyObject *iter, *res;
 
     if (_PyIOBase_check_closed(self, Py_True) == NULL)
         return NULL;
@@ -688,31 +740,33 @@ iobase_writelines(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+#include "clinic/iobase.c.h"
+
 static PyMethodDef iobase_methods[] = {
     {"seek", iobase_seek, METH_VARARGS, iobase_seek_doc},
-    {"tell", iobase_tell, METH_NOARGS, iobase_tell_doc},
+    _IO__IOBASE_TELL_METHODDEF
     {"truncate", iobase_truncate, METH_VARARGS, iobase_truncate_doc},
-    {"flush", iobase_flush, METH_NOARGS, iobase_flush_doc},
-    {"close", iobase_close, METH_NOARGS, iobase_close_doc},
+    _IO__IOBASE_FLUSH_METHODDEF
+    _IO__IOBASE_CLOSE_METHODDEF
 
-    {"seekable", iobase_seekable, METH_NOARGS, iobase_seekable_doc},
-    {"readable", iobase_readable, METH_NOARGS, iobase_readable_doc},
-    {"writable", iobase_writable, METH_NOARGS, iobase_writable_doc},
+    _IO__IOBASE_SEEKABLE_METHODDEF
+    _IO__IOBASE_READABLE_METHODDEF
+    _IO__IOBASE_WRITABLE_METHODDEF
 
     {"_checkClosed",   _PyIOBase_check_closed, METH_NOARGS},
     {"_checkSeekable", _PyIOBase_check_seekable, METH_NOARGS},
     {"_checkReadable", _PyIOBase_check_readable, METH_NOARGS},
     {"_checkWritable", _PyIOBase_check_writable, METH_NOARGS},
 
-    {"fileno", iobase_fileno, METH_NOARGS, iobase_fileno_doc},
-    {"isatty", iobase_isatty, METH_NOARGS, iobase_isatty_doc},
+    _IO__IOBASE_FILENO_METHODDEF
+    _IO__IOBASE_ISATTY_METHODDEF
 
     {"__enter__", iobase_enter, METH_NOARGS},
     {"__exit__", iobase_exit, METH_VARARGS},
 
-    {"readline", iobase_readline, METH_VARARGS, iobase_readline_doc},
-    {"readlines", iobase_readlines, METH_VARARGS, iobase_readlines_doc},
-    {"writelines", iobase_writelines, METH_VARARGS},
+    _IO__IOBASE_READLINE_METHODDEF
+    _IO__IOBASE_READLINES_METHODDEF
+    _IO__IOBASE_WRITELINES_METHODDEF
 
     {NULL, NULL}
 };
@@ -795,15 +849,17 @@ PyDoc_STRVAR(rawiobase_doc,
  * either.)
 */
 
-static PyObject *
-rawiobase_read(PyObject *self, PyObject *args)
-{
-    Py_ssize_t n = -1;
-    PyObject *b, *res;
+/*[clinic input]
+_io._RawIOBase.read
+    size as n: Py_ssize_t = -1
+    /
+[clinic start generated code]*/
 
-    if (!PyArg_ParseTuple(args, "|n:read", &n)) {
-        return NULL;
-    }
+static PyObject *
+_io__RawIOBase_read_impl(PyObject *self, Py_ssize_t n)
+/*[clinic end generated code: output=6cdeb731e3c9f13c input=b6d0dcf6417d1374]*/
+{
+    PyObject *b, *res;
 
     if (n < 0) {
         _Py_IDENTIFIER(readall);
@@ -836,11 +892,15 @@ rawiobase_read(PyObject *self, PyObject *args)
 }
 
 
-PyDoc_STRVAR(rawiobase_readall_doc,
-             "Read until EOF, using multiple read() call.");
+/*[clinic input]
+_io._RawIOBase.readall
+
+Read until EOF, using multiple read() call.
+[clinic start generated code]*/
 
 static PyObject *
-rawiobase_readall(PyObject *self, PyObject *args)
+_io__RawIOBase_readall_impl(PyObject *self)
+/*[clinic end generated code: output=1987b9ce929425a0 input=688874141213622a]*/
 {
     int r;
     PyObject *chunks = PyList_New(0);
@@ -893,8 +953,8 @@ rawiobase_readall(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef rawiobase_methods[] = {
-    {"read", rawiobase_read, METH_VARARGS},
-    {"readall", rawiobase_readall, METH_NOARGS, rawiobase_readall_doc},
+    _IO__RAWIOBASE_READ_METHODDEF
+    _IO__RAWIOBASE_READALL_METHODDEF
     {NULL, NULL}
 };
 
