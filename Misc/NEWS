@@ -37,6 +37,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16914: new debuglevel 2 in smtplib adds timestamps to debug output.
+
 - Issue #7159: urllib.request now supports sending auth credentials
   automatically after the first 401.  This enhancement is a superset of the
   enhancement from issue #19494 and supersedes that change.
