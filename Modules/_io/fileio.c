@@ -252,7 +252,7 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     struct _Py_stat_struct fdfstat;
     int async_err = 0;
 
-    assert(PyFileIO_Check(oself));
+    assert(PyFileIO_Check(self));
     if (self->fd >= 0) {
         if (self->closefd) {
             /* Have to close the existing file first. */
