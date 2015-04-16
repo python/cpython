@@ -11,6 +11,12 @@
 #define STATE_REALIZED 1
 #define STATE_ACCUMULATING 2
 
+/*[clinic input]
+module _io
+class _io.StringIO "stringio *" "&PyStringIO_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=c17bc0f42165cd7d]*/
+
 typedef struct {
     PyObject_HEAD
     Py_UCS4 *buf;
@@ -39,6 +45,8 @@ typedef struct {
     PyObject *weakreflist;
 } stringio;
 
+static int _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs);
+
 #define CHECK_INITIALIZED(self) \
     if (self->ok <= 0) { \
         PyErr_SetString(PyExc_ValueError, \
@@ -57,12 +65,6 @@ typedef struct {
     if (realize(self) < 0) { \
         return NULL; \
     }
-
-PyDoc_STRVAR(stringio_doc,
-    "Text I/O implementation using an in-memory buffer.\n"
-    "\n"
-    "The initial_value argument sets the value of object.  The newline\n"
-    "argument is like the one of TextIOWrapper's constructor.");
 
 
 /* Internal routine for changing the size, in terms of characters, of the
@@ -264,11 +266,15 @@ fail:
     return -1;
 }
 
-PyDoc_STRVAR(stringio_getvalue_doc,
-    "Retrieve the entire contents of the object.");
+/*[clinic input]
+_io.StringIO.getvalue
+
+Retrieve the entire contents of the object.
+[clinic start generated code]*/
 
 static PyObject *
-stringio_getvalue(stringio *self)
+_io_StringIO_getvalue_impl(stringio *self)
+/*[clinic end generated code: output=27b6a7bfeaebce01 input=d23cb81d6791cf88]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -278,33 +284,40 @@ stringio_getvalue(stringio *self)
                                      self->string_size);
 }
 
-PyDoc_STRVAR(stringio_tell_doc,
-    "Tell the current file position.");
+/*[clinic input]
+_io.StringIO.tell
+
+Tell the current file position.
+[clinic start generated code]*/
 
 static PyObject *
-stringio_tell(stringio *self)
+_io_StringIO_tell_impl(stringio *self)
+/*[clinic end generated code: output=2e87ac67b116c77b input=ec866ebaff02f405]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
     return PyLong_FromSsize_t(self->pos);
 }
 
-PyDoc_STRVAR(stringio_read_doc,
-    "Read at most n characters, returned as a string.\n"
-    "\n"
-    "If the argument is negative or omitted, read until EOF\n"
-    "is reached. Return an empty string at EOF.\n");
+/*[clinic input]
+_io.StringIO.read
+    size as arg: object = None
+    /
+
+Read at most size characters, returned as a string.
+
+If the argument is negative or omitted, read until EOF
+is reached. Return an empty string at EOF.
+[clinic start generated code]*/
 
 static PyObject *
-stringio_read(stringio *self, PyObject *args)
+_io_StringIO_read_impl(stringio *self, PyObject *arg)
+/*[clinic end generated code: output=3676864773746f68 input=9a319015f6f3965c]*/
 {
     Py_ssize_t size, n;
     Py_UCS4 *output;
-    PyObject *arg = Py_None;
 
     CHECK_INITIALIZED(self);
-    if (!PyArg_ParseTuple(args, "|O:read", &arg))
-        return NULL;
     CHECK_CLOSED(self);
 
     if (PyNumber_Check(arg)) {
@@ -373,20 +386,23 @@ _stringio_readline(stringio *self, Py_ssize_t limit)
     return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, start, len);
 }
 
-PyDoc_STRVAR(stringio_readline_doc,
-    "Read until newline or EOF.\n"
-    "\n"
-    "Returns an empty string if EOF is hit immediately.\n");
+/*[clinic input]
+_io.StringIO.readline
+    size as arg: object = None
+    /
+
+Read until newline or EOF.
+
+Returns an empty string if EOF is hit immediately.
+[clinic start generated code]*/
 
 static PyObject *
-stringio_readline(stringio *self, PyObject *args)
+_io_StringIO_readline_impl(stringio *self, PyObject *arg)
+/*[clinic end generated code: output=99fdcac03a3dee81 input=e0e0ed4042040176]*/
 {
-    PyObject *arg = Py_None;
     Py_ssize_t limit = -1;
 
     CHECK_INITIALIZED(self);
-    if (!PyArg_ParseTuple(args, "|O:readline", &arg))
-        return NULL;
     CHECK_CLOSED(self);
     ENSURE_REALIZED(self);
 
@@ -441,22 +457,25 @@ stringio_iternext(stringio *self)
     return line;
 }
 
-PyDoc_STRVAR(stringio_truncate_doc,
-    "Truncate size to pos.\n"
-    "\n"
-    "The pos argument defaults to the current file position, as\n"
-    "returned by tell().  The current file position is unchanged.\n"
-    "Returns the new absolute position.\n");
+/*[clinic input]
+_io.StringIO.truncate
+    pos as arg: object = None
+    /
+
+Truncate size to pos.
+
+The pos argument defaults to the current file position, as
+returned by tell().  The current file position is unchanged.
+Returns the new absolute position.
+[clinic start generated code]*/
 
 static PyObject *
-stringio_truncate(stringio *self, PyObject *args)
+_io_StringIO_truncate_impl(stringio *self, PyObject *arg)
+/*[clinic end generated code: output=6072439c2b01d306 input=748619a494ba53ad]*/
 {
     Py_ssize_t size;
-    PyObject *arg = Py_None;
 
     CHECK_INITIALIZED(self);
-    if (!PyArg_ParseTuple(args, "|O:truncate", &arg))
-        return NULL;
     CHECK_CLOSED(self);
 
     if (PyNumber_Check(arg)) {
@@ -490,49 +509,51 @@ stringio_truncate(stringio *self, PyObject *args)
     return PyLong_FromSsize_t(size);
 }
 
-PyDoc_STRVAR(stringio_seek_doc,
-    "Change stream position.\n"
-    "\n"
-    "Seek to character offset pos relative to position indicated by whence:\n"
-    "    0  Start of stream (the default).  pos should be >= 0;\n"
-    "    1  Current position - pos must be 0;\n"
-    "    2  End of stream - pos must be 0.\n"
-    "Returns the new absolute position.\n");
+/*[clinic input]
+_io.StringIO.seek
+    pos: Py_ssize_t
+    whence: int = 0
+    /
+
+Change stream position.
+
+Seek to character offset pos relative to position indicated by whence:
+    0  Start of stream (the default).  pos should be >= 0;
+    1  Current position - pos must be 0;
+    2  End of stream - pos must be 0.
+Returns the new absolute position.
+[clinic start generated code]*/
 
 static PyObject *
-stringio_seek(stringio *self, PyObject *args)
+_io_StringIO_seek_impl(stringio *self, Py_ssize_t pos, int whence)
+/*[clinic end generated code: output=e9e0ac9a8ae71c25 input=e3855b24e7cae06a]*/
 {
-    Py_ssize_t pos;
-    int mode = 0;
-
     CHECK_INITIALIZED(self);
-    if (!PyArg_ParseTuple(args, "n|i:seek", &pos, &mode))
-        return NULL;
     CHECK_CLOSED(self);
 
-    if (mode != 0 && mode != 1 && mode != 2) {
+    if (whence != 0 && whence != 1 && whence != 2) {
         PyErr_Format(PyExc_ValueError,
-                     "Invalid whence (%i, should be 0, 1 or 2)", mode);
+                     "Invalid whence (%i, should be 0, 1 or 2)", whence);
         return NULL;
     }
-    else if (pos < 0 && mode == 0) {
+    else if (pos < 0 && whence == 0) {
         PyErr_Format(PyExc_ValueError,
                      "Negative seek position %zd", pos);
         return NULL;
     }
-    else if (mode != 0 && pos != 0) {
+    else if (whence != 0 && pos != 0) {
         PyErr_SetString(PyExc_IOError,
                         "Can't do nonzero cur-relative seeks");
         return NULL;
     }
 
-    /* mode 0: offset relative to beginning of the string.
-       mode 1: no change to current position.
-       mode 2: change position to end of file. */
-    if (mode == 1) {
+    /* whence = 0: offset relative to beginning of the string.
+       whence = 1: no change to current position.
+       whence = 2: change position to end of file. */
+    if (whence == 1) {
         pos = self->pos;
     }
-    else if (mode == 2) {
+    else if (whence == 2) {
         pos = self->string_size;
     }
 
@@ -541,14 +562,20 @@ stringio_seek(stringio *self, PyObject *args)
     return PyLong_FromSsize_t(self->pos);
 }
 
-PyDoc_STRVAR(stringio_write_doc,
-    "Write string to file.\n"
-    "\n"
-    "Returns the number of characters written, which is always equal to\n"
-    "the length of the string.\n");
+/*[clinic input]
+_io.StringIO.write
+    s as obj: object
+    /
+
+Write string to file.
+
+Returns the number of characters written, which is always equal to
+the length of the string.
+[clinic start generated code]*/
 
 static PyObject *
-stringio_write(stringio *self, PyObject *obj)
+_io_StringIO_write(stringio *self, PyObject *obj)
+/*[clinic end generated code: output=0deaba91a15b94da input=cf96f3b16586e669]*/
 {
     Py_ssize_t size;
 
@@ -569,14 +596,20 @@ stringio_write(stringio *self, PyObject *obj)
     return PyLong_FromSsize_t(size);
 }
 
-PyDoc_STRVAR(stringio_close_doc,
-    "Close the IO object. Attempting any further operation after the\n"
-    "object is closed will raise a ValueError.\n"
-    "\n"
-    "This method has no effect if the file is already closed.\n");
+/*[clinic input]
+_io.StringIO.close
+
+Close the IO object.
+
+Attempting any further operation after the object is closed
+will raise a ValueError.
+
+This method has no effect if the file is already closed.
+[clinic start generated code]*/
 
 static PyObject *
-stringio_close(stringio *self)
+_io_StringIO_close_impl(stringio *self)
+/*[clinic end generated code: output=04399355cbe518f1 input=cbc10b45f35d6d46]*/
 {
     self->closed = 1;
     /* Free up some memory */
@@ -644,18 +677,24 @@ stringio_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *)self;
 }
 
+/*[clinic input]
+_io.StringIO.__init__
+    initial_value as value: object(c_default="NULL") = ''
+    newline as newline_obj: object(c_default="NULL") = '\n'
+
+Text I/O implementation using an in-memory buffer.
+
+The initial_value argument sets the value of object.  The newline
+argument is like the one of TextIOWrapper's constructor.
+[clinic start generated code]*/
+
 static int
-stringio_init(stringio *self, PyObject *args, PyObject *kwds)
+_io_StringIO___init___impl(stringio *self, PyObject *value,
+                           PyObject *newline_obj)
+/*[clinic end generated code: output=a421ea023b22ef4e input=cee2d9181b2577a3]*/
 {
-    char *kwlist[] = {"initial_value", "newline", NULL};
-    PyObject *value = NULL;
-    PyObject *newline_obj = NULL;
     char *newline = "\n";
     Py_ssize_t value_len;
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OO:__init__", kwlist,
-                                     &value, &newline_obj))
-        return -1;
 
     /* Parse the newline argument. This used to be done with the 'z'
        specifier, however this allowed any object with the buffer interface to
@@ -761,33 +800,45 @@ stringio_init(stringio *self, PyObject *args, PyObject *kwds)
 
 /* Properties and pseudo-properties */
 
-PyDoc_STRVAR(stringio_readable_doc,
-"readable() -> bool. Returns True if the IO object can be read.");
+/*[clinic input]
+_io.StringIO.readable
 
-PyDoc_STRVAR(stringio_writable_doc,
-"writable() -> bool. Returns True if the IO object can be written.");
-
-PyDoc_STRVAR(stringio_seekable_doc,
-"seekable() -> bool. Returns True if the IO object can be seeked.");
+Returns True if the IO object can be read.
+[clinic start generated code]*/
 
 static PyObject *
-stringio_seekable(stringio *self, PyObject *args)
+_io_StringIO_readable_impl(stringio *self)
+/*[clinic end generated code: output=b19d44dd8b1ceb99 input=39ce068b224c21ad]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
     Py_RETURN_TRUE;
 }
 
+/*[clinic input]
+_io.StringIO.writable
+
+Returns True if the IO object can be written.
+[clinic start generated code]*/
+
 static PyObject *
-stringio_readable(stringio *self, PyObject *args)
+_io_StringIO_writable_impl(stringio *self)
+/*[clinic end generated code: output=13e4dd77187074ca input=7a691353aac38835]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
     Py_RETURN_TRUE;
 }
 
+/*[clinic input]
+_io.StringIO.seekable
+
+Returns True if the IO object can be seeked.
+[clinic start generated code]*/
+
 static PyObject *
-stringio_writable(stringio *self, PyObject *args)
+_io_StringIO_seekable_impl(stringio *self)
+/*[clinic end generated code: output=4d20b4641c756879 input=4c606d05b32952e6]*/
 {
     CHECK_INITIALIZED(self);
     CHECK_CLOSED(self);
@@ -809,7 +860,7 @@ stringio_writable(stringio *self, PyObject *args)
 static PyObject *
 stringio_getstate(stringio *self)
 {
-    PyObject *initvalue = stringio_getvalue(self);
+    PyObject *initvalue = _io_StringIO_getvalue_impl(self);
     PyObject *dict;
     PyObject *state;
 
@@ -857,7 +908,7 @@ stringio_setstate(stringio *self, PyObject *state)
     initarg = PyTuple_GetSlice(state, 0, 2);
     if (initarg == NULL)
         return NULL;
-    if (stringio_init(self, initarg, NULL) < 0) {
+    if (_io_StringIO___init__((PyObject *)self, initarg, NULL) < 0) {
         Py_DECREF(initarg);
         return NULL;
     }
@@ -959,19 +1010,21 @@ stringio_newlines(stringio *self, void *context)
     return PyObject_GetAttr(self->decoder, _PyIO_str_newlines);
 }
 
-static struct PyMethodDef stringio_methods[] = {
-    {"close",    (PyCFunction)stringio_close,    METH_NOARGS,  stringio_close_doc},
-    {"getvalue", (PyCFunction)stringio_getvalue, METH_NOARGS,  stringio_getvalue_doc},
-    {"read",     (PyCFunction)stringio_read,     METH_VARARGS, stringio_read_doc},
-    {"readline", (PyCFunction)stringio_readline, METH_VARARGS, stringio_readline_doc},
-    {"tell",     (PyCFunction)stringio_tell,     METH_NOARGS,  stringio_tell_doc},
-    {"truncate", (PyCFunction)stringio_truncate, METH_VARARGS, stringio_truncate_doc},
-    {"seek",     (PyCFunction)stringio_seek,     METH_VARARGS, stringio_seek_doc},
-    {"write",    (PyCFunction)stringio_write,    METH_O,       stringio_write_doc},
+#include "clinic/stringio.c.h"
 
-    {"seekable", (PyCFunction)stringio_seekable, METH_NOARGS, stringio_seekable_doc},
-    {"readable", (PyCFunction)stringio_readable, METH_NOARGS, stringio_readable_doc},
-    {"writable", (PyCFunction)stringio_writable, METH_NOARGS, stringio_writable_doc},
+static struct PyMethodDef stringio_methods[] = {
+    _IO_STRINGIO_CLOSE_METHODDEF
+    _IO_STRINGIO_GETVALUE_METHODDEF
+    _IO_STRINGIO_READ_METHODDEF
+    _IO_STRINGIO_READLINE_METHODDEF
+    _IO_STRINGIO_TELL_METHODDEF
+    _IO_STRINGIO_TRUNCATE_METHODDEF
+    _IO_STRINGIO_SEEK_METHODDEF
+    _IO_STRINGIO_WRITE_METHODDEF
+
+    _IO_STRINGIO_SEEKABLE_METHODDEF
+    _IO_STRINGIO_READABLE_METHODDEF
+    _IO_STRINGIO_WRITABLE_METHODDEF
 
     {"__getstate__", (PyCFunction)stringio_getstate, METH_NOARGS},
     {"__setstate__", (PyCFunction)stringio_setstate, METH_O},
@@ -1013,7 +1066,7 @@ PyTypeObject PyStringIO_Type = {
     0,                                         /*tp_as_buffer*/
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
                        | Py_TPFLAGS_HAVE_GC,   /*tp_flags*/
-    stringio_doc,                              /*tp_doc*/
+    _io_StringIO___init____doc__,              /*tp_doc*/
     (traverseproc)stringio_traverse,           /*tp_traverse*/
     (inquiry)stringio_clear,                   /*tp_clear*/
     0,                                         /*tp_richcompare*/
@@ -1028,7 +1081,7 @@ PyTypeObject PyStringIO_Type = {
     0,                                         /*tp_descr_get*/
     0,                                         /*tp_descr_set*/
     offsetof(stringio, dict),                  /*tp_dictoffset*/
-    (initproc)stringio_init,                   /*tp_init*/
+    _io_StringIO___init__,                     /*tp_init*/
     0,                                         /*tp_alloc*/
     stringio_new,                              /*tp_new*/
 };
