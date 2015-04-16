@@ -15,8 +15,6 @@ Build Instructions
 
 On Unix, Linux, BSD, OSX, and Cygwin:
 
-New text
-
     ./configure
     make
     make test
