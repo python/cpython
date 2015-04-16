@@ -187,6 +187,9 @@ Tests
 Tools/Demos
 -----------
 
+- Issue #18128: pygettext now uses standard +NNNN format in the
+  POT-Creation-Date header.
+
 - Issue #23935: Argument Clinic's understanding of format units
   accepting bytes, bytearrays, and buffers is now consistent with
   both the documentation and the implementation.
