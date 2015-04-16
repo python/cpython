@@ -2163,6 +2163,17 @@ class TextIOWrapperTest(unittest.TestCase):
         self.assertRaises(TypeError, t.__init__, b, newline=42)
         self.assertRaises(ValueError, t.__init__, b, newline='xyzzy')
 
+    def test_uninitialized(self):
+        t = self.TextIOWrapper.__new__(self.TextIOWrapper)
+        del t
+        t = self.TextIOWrapper.__new__(self.TextIOWrapper)
+        self.assertRaises(Exception, repr, t)
+        self.assertRaisesRegex((ValueError, AttributeError),
+                               'uninitialized|has no attribute',
+                               t.read, 0)
+        t.__init__(self.MockRawIO())
+        self.assertEqual(t.read(0), '')
+
     def test_non_text_encoding_codecs_are_rejected(self):
         # Ensure the constructor complains if passed a codec that isn't
         # marked as a text encoding
@@ -3024,8 +3035,6 @@ class CTextIOWrapperTest(TextIOWrapperTest):
         r = self.BytesIO(b"\xc3\xa9\n\n")
         b = self.BufferedReader(r, 1000)
         t = self.TextIOWrapper(b)
-        self.assertRaises(TypeError, t.__init__, b, newline=42)
-        self.assertRaises(ValueError, t.read)
         self.assertRaises(ValueError, t.__init__, b, newline='xyzzy')
         self.assertRaises(ValueError, t.read)
 
