@@ -468,6 +468,10 @@ smtplib
   implement custom authentication mechanisms.
   (Contributed by Milan Oberkirch in :issue:`15014`.)
 
+* Additional debuglevel (2) shows timestamps for debug messages in
+  :class:`smtplib.SMTP`.  (Contributed by Gavin Chappell and Maciej Szulik in
+  :issue:`16914`.)
+
 sndhdr
 ------
 
@@ -818,6 +822,11 @@ Changes in the Python API
 
 * The `pygettext.py` Tool now uses the standard +NNNN format for timezones in
   the POT-Creation-Date header.
+
+* The :mod:`smtplib` module now uses :data:`sys.stderr` instead of previous
+  module level :data:`stderr` variable for debug output.  If your (test)
+  program depends on patching the module level variable to capture the debug
+  output, you will need to update it to capture sys.stderr instead.
 
 
 Changes in the C API

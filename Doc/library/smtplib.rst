@@ -189,8 +189,9 @@ An :class:`SMTP` instance has the following methods:
 
 .. method:: SMTP.set_debuglevel(level)
 
-   Set the debug output level.  A true value for *level* results in debug messages
-   for connection and for all messages sent to and received from the server.
+   Set the debug output level.  A value of 1 or ``True`` for *level* results in debug
+   messages for connection and for all messages sent to and received from the server.
+   A value of 2 for *level* results in these messages being timestamped.
 
 
 .. method:: SMTP.docmd(cmd, args='')

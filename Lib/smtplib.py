@@ -50,8 +50,9 @@ import email.generator
 import base64
 import hmac
 import copy
+import datetime
+import sys
 from email.base64mime import body_encode as encode_base64
-from sys import stderr
 
 __all__ = ["SMTPException", "SMTPServerDisconnected", "SMTPResponseException",
            "SMTPSenderRefused", "SMTPRecipientsRefused", "SMTPDataError",
@@ -282,12 +283,17 @@ class SMTP:
         """
         self.debuglevel = debuglevel
 
+    def _print_debug(self, *args):
+        if self.debuglevel > 1:
+            print(datetime.datetime.now().time(), *args, file=sys.stderr)
+        else:
+            print(*args, file=sys.stderr)
+
     def _get_socket(self, host, port, timeout):
         # This makes it simpler for SMTP_SSL to use the SMTP connect code
         # and just alter the socket connection bit.
         if self.debuglevel > 0:
-            print('connect: to', (host, port), self.source_address,
-                                 file=stderr)
+            self._print_debug('connect: to', (host, port), self.source_address)
         return socket.create_connection((host, port), timeout,
                                         self.source_address)
 
@@ -317,18 +323,18 @@ class SMTP:
         if not port:
             port = self.default_port
         if self.debuglevel > 0:
-            print('connect:', (host, port), file=stderr)
+            self._print_debug('connect:', (host, port))
         self.sock = self._get_socket(host, port, self.timeout)
         self.file = None
         (code, msg) = self.getreply()
         if self.debuglevel > 0:
-            print("connect:", msg, file=stderr)
+            self._print_debug('connect:', msg)
         return (code, msg)
 
     def send(self, s):
         """Send `s' to the server."""
         if self.debuglevel > 0:
-            print('send:', repr(s), file=stderr)
+            self._print_debug('send:', repr(s))
         if hasattr(self, 'sock') and self.sock:
             if isinstance(s, str):
                 s = s.encode("ascii")
@@ -375,7 +381,7 @@ class SMTP:
                 self.close()
                 raise SMTPServerDisconnected("Connection unexpectedly closed")
             if self.debuglevel > 0:
-                print('reply:', repr(line), file=stderr)
+                self._print_debug('reply:', repr(line))
             if len(line) > _MAXLINE:
                 self.close()
                 raise SMTPResponseException(500, "Line too long.")
@@ -394,8 +400,7 @@ class SMTP:
 
         errmsg = b"\n".join(resp)
         if self.debuglevel > 0:
-            print('reply: retcode (%s); Msg: %s' % (errcode, errmsg),
-                                                    file=stderr)
+            self._print_debug('reply: retcode (%s); Msg: %s' % (errcode, errmsg))
         return errcode, errmsg
 
     def docmd(self, cmd, args=""):
@@ -524,7 +529,7 @@ class SMTP:
         self.putcmd("data")
         (code, repl) = self.getreply()
         if self.debuglevel > 0:
-            print("data:", (code, repl), file=stderr)
+            self._print_debug('data:', (code, repl))
         if code != 354:
             raise SMTPDataError(code, repl)
         else:
@@ -537,7 +542,7 @@ class SMTP:
             self.send(q)
             (code, msg) = self.getreply()
             if self.debuglevel > 0:
-                print("data:", (code, msg), file=stderr)
+                self._print_debug('data:', (code, msg))
             return (code, msg)
 
     def verify(self, address):
@@ -940,7 +945,7 @@ if _have_ssl:
 
         def _get_socket(self, host, port, timeout):
             if self.debuglevel > 0:
-                print('connect:', (host, port), file=stderr)
+                self._print_debug('connect:', (host, port))
             new_socket = socket.create_connection((host, port), timeout,
                     self.source_address)
             new_socket = self.context.wrap_socket(new_socket,
@@ -988,14 +993,14 @@ class LMTP(SMTP):
             self.sock.connect(host)
         except OSError:
             if self.debuglevel > 0:
-                print('connect fail:', host, file=stderr)
+                self._print_debug('connect fail:', host)
             if self.sock:
                 self.sock.close()
             self.sock = None
             raise
         (code, msg) = self.getreply()
         if self.debuglevel > 0:
-            print('connect:', msg, file=stderr)
+            self._print_debug('connect:', msg)
         return (code, msg)
 
 
