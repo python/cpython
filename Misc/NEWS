@@ -12,7 +12,8 @@ Core and Builtins
 
 - Issue #22980: Under Linux, GNU/KFreeBSD and the Hurd, C extensions now include
   the architecture triplet in the extension name, to make it easy to test builds
-  for different ABIs in the same working tree.
+  for different ABIs in the same working tree.  Under OS X, the extension name
+  now includes PEP 3149-style information.
 
 - Issue #22631: Added Linux-specific socket constant CAN_RAW_FD_FRAMES.
   Patch courtesy of Joe Jevnik.
