@@ -11,7 +11,9 @@ import sys
 import urllib.request
 # The proxy bypass method imported below has logic specific to the OSX
 # proxy config data structure but is testable on all platforms.
-from urllib.request import Request, OpenerDirector, _parse_proxy, _proxy_bypass_macosx_sysconf
+from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
+                            HTTPPasswordMgrWithPriorAuth, _parse_proxy,
+                            _proxy_bypass_macosx_sysconf)
 from urllib.parse import urlparse
 import urllib.error
 import http.client
@@ -446,6 +448,25 @@ class MockHTTPSHandler(urllib.request.AbstractHTTPHandler):
 
     def https_open(self, req):
         return self.do_open(self.httpconn, req)
+
+
+class MockHTTPHandlerCheckAuth(urllib.request.BaseHandler):
+    # useful for testing auth
+    # sends supplied code response
+    # checks if auth header is specified in request
+    def __init__(self, code):
+        self.code = code
+        self.has_auth_header = False
+
+    def reset(self):
+        self.has_auth_header = False
+
+    def http_open(self, req):
+        if req.has_header('Authorization'):
+            self.has_auth_header = True
+        name = http.client.responses[self.code]
+        return MockResponse(self.code, name, MockFile(), "", req.get_full_url())
+
 
 class MockPasswordManager:
     def add_password(self, realm, uri, user, password):
@@ -1395,6 +1416,72 @@ class HandlerTests(unittest.TestCase):
         self.assertEqual(len(http_handler.requests), 1)
         self.assertFalse(http_handler.requests[0].has_header(auth_header))
 
+    def test_basic_prior_auth_auto_send(self):
+        # Assume already authenticated if is_authenticated=True
+        # for APIs like Github that don't return 401
+
+        user, password = "wile", "coyote"
+        request_url = "http://acme.example.com/protected"
+
+        http_handler = MockHTTPHandlerCheckAuth(200)
+
+        pwd_manager = HTTPPasswordMgrWithPriorAuth()
+        auth_prior_handler = HTTPBasicAuthHandler(pwd_manager)
+        auth_prior_handler.add_password(
+            None, request_url, user, password, is_authenticated=True)
+
+        is_auth = pwd_manager.is_authenticated(request_url)
+        self.assertTrue(is_auth)
+
+        opener = OpenerDirector()
+        opener.add_handler(auth_prior_handler)
+        opener.add_handler(http_handler)
+
+        opener.open(request_url)
+
+        # expect request to be sent with auth header
+        self.assertTrue(http_handler.has_auth_header)
+
+    def test_basic_prior_auth_send_after_first_success(self):
+        # Auto send auth header after authentication is successful once
+
+        user, password = 'wile', 'coyote'
+        request_url = 'http://acme.example.com/protected'
+        realm = 'ACME'
+
+        pwd_manager = HTTPPasswordMgrWithPriorAuth()
+        auth_prior_handler = HTTPBasicAuthHandler(pwd_manager)
+        auth_prior_handler.add_password(realm, request_url, user, password)
+
+        is_auth = pwd_manager.is_authenticated(request_url)
+        self.assertFalse(is_auth)
+
+        opener = OpenerDirector()
+        opener.add_handler(auth_prior_handler)
+
+        http_handler = MockHTTPHandler(
+            401, 'WWW-Authenticate: Basic realm="%s"\r\n\r\n' % None)
+        opener.add_handler(http_handler)
+
+        opener.open(request_url)
+
+        is_auth = pwd_manager.is_authenticated(request_url)
+        self.assertTrue(is_auth)
+
+        http_handler = MockHTTPHandlerCheckAuth(200)
+        self.assertFalse(http_handler.has_auth_header)
+
+        opener = OpenerDirector()
+        opener.add_handler(auth_prior_handler)
+        opener.add_handler(http_handler)
+
+        # After getting 200 from MockHTTPHandler
+        # Next request sends header in the first request
+        opener.open(request_url)
+
+        # expect request to be sent with auth header
+        self.assertTrue(http_handler.has_auth_header)
+
     def test_http_closed(self):
         """Test the connection is cleaned up when the response is closed"""
         for (transfer, data) in (
@@ -1422,21 +1509,6 @@ class HandlerTests(unittest.TestCase):
             handler.do_open(conn, req)
         self.assertTrue(conn.fakesock.closed, "Connection not closed")
 
-    def test_auth_prior_handler(self):
-        pwd_manager = MockPasswordManager()
-        pwd_manager.add_password(None, 'https://example.com',
-                                 'somebody', 'verysecret')
-        auth_prior_handler = urllib.request.HTTPBasicPriorAuthHandler(
-            pwd_manager)
-        http_hand = MockHTTPSHandler()
-
-        opener = OpenerDirector()
-        opener.add_handler(http_hand)
-        opener.add_handler(auth_prior_handler)
-
-        req = Request("https://example.com")
-        opener.open(req)
-        self.assertNotIn('Authorization', http_hand.httpconn.req_headers)
 
 class MiscTests(unittest.TestCase):
 
