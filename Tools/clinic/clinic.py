@@ -2493,12 +2493,12 @@ class bool_converter(CConverter):
 
 class char_converter(CConverter):
     type = 'char'
-    default_type = str
+    default_type = (bytes, bytearray)
     format_unit = 'c'
     c_ignored_default = "'\0'"
 
     def converter_init(self):
-        if isinstance(self.default, str) and (len(self.default) != 1):
+        if isinstance(self.default, self.default_type) and (len(self.default) != 1):
             fail("char_converter: illegal default value " + repr(self.default))
 
 
@@ -2531,18 +2531,18 @@ class unsigned_short_converter(CConverter):
         if not bitwise:
             fail("Unsigned shorts must be bitwise (for now).")
 
-@add_legacy_c_converter('C', types='str')
+@add_legacy_c_converter('C', types={'str'})
 class int_converter(CConverter):
     type = 'int'
     default_type = int
     format_unit = 'i'
     c_ignored_default = "0"
 
-    def converter_init(self, *, types='int', type=None):
-        if types == 'str':
+    def converter_init(self, *, types={'int'}, type=None):
+        if types == {'str'}:
             self.format_unit = 'C'
-        elif types != 'int':
-            fail("int_converter: illegal 'types' argument")
+        elif types != {'int'}:
+            fail("int_converter: illegal 'types' argument " + repr(types))
         if type != None:
             self.type = type
 
@@ -2633,63 +2633,64 @@ class object_converter(CConverter):
             self.type = type
 
 
-@add_legacy_c_converter('s#', length=True)
-@add_legacy_c_converter('y', types="bytes")
-@add_legacy_c_converter('y#', types="bytes", length=True)
+#
+# We define three string conventions for buffer types in the 'types' argument:
+#  'buffer' : any object supporting the buffer interface
+#  'rwbuffer': any object supporting the buffer interface, but must be writeable
+#  'robuffer': any object supporting the buffer interface, but must not be writeable
+#
+
+@add_legacy_c_converter('s#', types={"str", "robuffer"}, length=True)
+@add_legacy_c_converter('y', types={"robuffer"})
+@add_legacy_c_converter('y#', types={"robuffer"}, length=True)
 @add_legacy_c_converter('z', nullable=True)
-@add_legacy_c_converter('z#', nullable=True, length=True)
+@add_legacy_c_converter('z#', types={"str", "robuffer"}, nullable=True, length=True)
+# add_legacy_c_converter not supported for es, es#, et, et#
+# because of their extra encoding argument
 class str_converter(CConverter):
     type = 'const char *'
     default_type = (str, Null, NoneType)
     format_unit = 's'
 
-    def converter_init(self, *, encoding=None, types="str",
+    def converter_init(self, *, encoding=None, types={"str"},
         length=False, nullable=False, zeroes=False):
 
-        types = set(types.strip().split())
-        bytes_type = {"bytes"}
-        str_type = {"str"}
-        all_3_type = {"bytearray"} | bytes_type | str_type
-        is_bytes = types == bytes_type
-        is_str = types == str_type
-        is_all_3 = types == all_3_type
-
         self.length = bool(length)
+
+        is_b_or_ba = types == {"bytes", "bytearray"}
+        is_str = types == {"str"}
+        is_robuffer = types == {"robuffer"}
+        is_str_or_robuffer = types == {"str", "robuffer"}
+
         format_unit = None
 
         if encoding:
             self.encoding = encoding
 
-            if is_str and not (length or zeroes or nullable):
+            if   is_str     and not length and not zeroes and not nullable:
                 format_unit = 'es'
-            elif is_all_3 and not (length or zeroes or nullable):
-                format_unit = 'et'
-            elif is_str and length and zeroes and not nullable:
+            elif is_str     and     length and     zeroes and     nullable:
                 format_unit = 'es#'
-            elif is_all_3 and length and not (nullable or zeroes):
+            elif is_b_or_ba and not length and not zeroes and not nullable:
+                format_unit = 'et'
+            elif is_b_or_ba and     length and     zeroes and     nullable:
                 format_unit = 'et#'
-
-            if format_unit.endswith('#'):
-                fail("Sorry: code using format unit ", repr(format_unit), "probably doesn't work properly yet.\nGive Larry your test case and he'll it.")
-                # TODO set pointer to NULL
-                # TODO add cleanup for buffer
-                pass
 
         else:
             if zeroes:
                 fail("str_converter: illegal combination of arguments (zeroes is only legal with an encoding)")
 
-            if is_bytes and not (nullable or length):
-                format_unit = 'y'
-            elif is_bytes and length and not nullable:
-                format_unit = 'y#'
-            elif is_str and not (nullable or length):
+            if is_str               and not length and not nullable:
                 format_unit = 's'
-            elif is_str and length and not nullable:
-                format_unit = 's#'
-            elif is_str and nullable  and not length:
+            elif is_str             and not length and     nullable:
                 format_unit = 'z'
-            elif is_str and nullable and length:
+            elif is_robuffer        and not length and not nullable:
+                format_unit = 'y'
+            elif is_robuffer        and     length and not nullable:
+                format_unit = 'y#'
+            elif is_str_or_robuffer and     length and not nullable:
+                format_unit = 's#'
+            elif is_str_or_robuffer and     length and     nullable:
                 format_unit = 'z#'
 
         if not format_unit:
@@ -2700,10 +2701,12 @@ class str_converter(CConverter):
 class PyBytesObject_converter(CConverter):
     type = 'PyBytesObject *'
     format_unit = 'S'
+    # types = {'bytes'}
 
 class PyByteArrayObject_converter(CConverter):
     type = 'PyByteArrayObject *'
     format_unit = 'Y'
+    # types = {'bytearray'}
 
 class unicode_converter(CConverter):
     type = 'PyObject *'
@@ -2725,43 +2728,29 @@ class Py_UNICODE_converter(CConverter):
             self.length = True
         self.format_unit = format_unit
 
-#
-# We define three string conventions for buffer types in the 'types' argument:
-#  'buffer' : any object supporting the buffer interface
-#  'rwbuffer': any object supporting the buffer interface, but must be writeable
-#  'robuffer': any object supporting the buffer interface, but must not be writeable
-#
-@add_legacy_c_converter('s*', types='str bytes bytearray buffer')
-@add_legacy_c_converter('z*', types='str bytes bytearray buffer', nullable=True)
-@add_legacy_c_converter('w*', types='bytearray rwbuffer')
+@add_legacy_c_converter('s*', types={'str', 'buffer'})
+@add_legacy_c_converter('z*', types={'str', 'buffer'}, nullable=True)
+@add_legacy_c_converter('w*', types={'rwbuffer'})
 class Py_buffer_converter(CConverter):
     type = 'Py_buffer'
     format_unit = 'y*'
     impl_by_reference = True
     c_ignored_default = "{NULL, NULL}"
 
-    def converter_init(self, *, types='bytes bytearray buffer', nullable=False):
+    def converter_init(self, *, types={'buffer'}, nullable=False):
         if self.default not in (unspecified, None):
             fail("The only legal default value for Py_buffer is None.")
         self.c_default = self.c_ignored_default
-        types = set(types.strip().split())
-        bytes_type = {'bytes'}
-        bytearray_type = {'bytearray'}
-        buffer_type = {'buffer'}
-        rwbuffer_type = {'rwbuffer'}
-        robuffer_type = {'robuffer'}
-        str_type = {'str'}
-        bytes_bytearray_buffer_type = bytes_type | bytearray_type | buffer_type
 
         format_unit = None
-        if types == (str_type | bytes_bytearray_buffer_type):
+        if types == {'str', 'buffer'}:
             format_unit = 's*' if not nullable else 'z*'
         else:
             if nullable:
                 fail('Py_buffer_converter: illegal combination of arguments (nullable=True)')
-            elif types == (bytes_bytearray_buffer_type):
+            elif types == {'buffer'}:
                 format_unit = 'y*'
-            elif types == (bytearray_type | rwbuffer_type):
+            elif types == {'rwbuffer'}:
                 format_unit = 'w*'
         if not format_unit:
             fail("Py_buffer_converter: illegal combination of arguments")

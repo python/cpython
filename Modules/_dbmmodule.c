@@ -272,7 +272,7 @@ dbm.dbm.get
 
     self: dbmobject
 
-    key: str(length=True)
+    key: str(types={'str', 'robuffer'}, length=True)
     default: object = None
     /
 
@@ -282,7 +282,7 @@ Return the value for key if present, otherwise default.
 static PyObject *
 dbm_dbm_get_impl(dbmobject *dp, const char *key, Py_ssize_clean_t key_length,
                  PyObject *default_value)
-/*[clinic end generated code: output=4f5c0e523eaf1251 input=aecf5efd2f2b1a3b]*/
+/*[clinic end generated code: output=4f5c0e523eaf1251 input=f81478bc211895ef]*/
 {
     datum dbm_key, val;
 
