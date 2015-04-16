@@ -283,13 +283,36 @@ The following classes are provided:
    fits.
 
 
+.. class:: HTTPPasswordMgrWithPriorAuth()
+
+   A variant of :class:`HTTPPasswordMgrWithDefaultRealm` that also has a
+   database of ``uri -> is_authenticated`` mappings.  Can be used by a
+   BasicAuth handler to determine when to send authentication credentials
+   immediately instead of waiting for a ``401`` response first.
+
+   .. versionadded:: 3.5
+
+
 .. class:: AbstractBasicAuthHandler(password_mgr=None)
 
    This is a mixin class that helps with HTTP authentication, both to the remote
    host and to a proxy. *password_mgr*, if given, should be something that is
    compatible with :class:`HTTPPasswordMgr`; refer to section
    :ref:`http-password-mgr` for information on the interface that must be
-   supported.
+   supported.  If *passwd_mgr* also provides ``is_authenticated`` and
+   ``update_authenticated`` methods (see
+   :ref:`http-password-mgr-with-prior-auth`), then the handler will use the
+   ``is_authenticated`` result for a given URI to determine whether or not to
+   send authentication credentials with the request.  If ``is_authenticated``
+   returns ``True`` for the URI, credentials are sent.  If ``is_authenticated
+   is ``False``, credentials are not sent, and then if a ``401`` response is
+   received the request is re-sent with the authentication credentials.  If
+   authentication succeeds, ``update_authenticated`` is called to set
+   ``is_authenticated`` ``True`` for the URI, so that subsequent requests to
+   the URI or any of its super-URIs will automatically include the
+   authentication credentials.
+
+   .. versionadded:: 3.5: added ``is_authenticated`` support.
 
 
 .. class:: HTTPBasicAuthHandler(password_mgr=None)
@@ -300,17 +323,6 @@ The following classes are provided:
    be supported. HTTPBasicAuthHandler will raise a :exc:`ValueError` when
    presented with a wrong Authentication scheme.
 
-
-.. class:: HTTPBasicPriorAuthHandler(password_mgr=None)
-
-   A variant of :class:`HTTPBasicAuthHandler` which automatically sends
-   authorization credentials with the first request, rather than waiting to
-   first receive a HTTP 401 "Unauthorised" error response. This allows
-   authentication to sites that don't provide a 401 response when receiving
-   a request without an Authorization header. Aside from this difference,
-   this behaves exactly as :class:`HTTPBasicAuthHandler`.
-
-   .. versionadded:: 3.5
 
 .. class:: ProxyBasicAuthHandler(password_mgr=None)
 
@@ -850,6 +862,42 @@ These methods are available on :class:`HTTPPasswordMgr` and
 
    For :class:`HTTPPasswordMgrWithDefaultRealm` objects, the realm ``None`` will be
    searched if the given *realm* has no matching user/password.
+
+
+.. _http-password-mgr-with-prior-auth:
+
+HTTPPasswordMgrWithPriorAuth Objects
+------------------------------------
+
+This password manager extends :class:`HTTPPasswordMgrWithDefaultRealm` to support
+tracking URIs for which authentication credentials should always be sent.
+
+
+.. method:: HTTPPasswordMgrWithPriorAuth.add_password(realm, uri, user, \
+            passwd, is_authenticated=False)
+
+   *realm*, *uri*, *user*, *passwd* are as for
+   :meth:`HTTPPasswordMgr.add_password`.  *is_authenticated* sets the initial
+   value of the ``is_authenticated`` flag for the given URI or list of URIs.
+   If *is_authenticated* is specified as ``True``, *realm* is ignored.
+
+
+.. method:: HTTPPasswordMgr.find_user_password(realm, authuri)
+
+   Same as for :class:`HTTPPasswordMgrWithDefaultRealm` objects
+
+
+.. method:: HTTPPasswordMgrWithPriorAuth.update_authenticated(self, uri, \
+            is_authenticated=False)
+
+   Update the ``is_authenticated`` flag for the given *uri* or list
+   of URIs.
+
+
+.. method:: HTTPPasswordMgrWithPriorAuth.is_authenticated(self, authuri)
+
+   Returns the current state of the ``is_authenticated`` flag for
+   the given URI.
 
 
 .. _abstract-basic-auth-handler:

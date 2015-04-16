@@ -520,11 +520,13 @@ time
 urllib
 ------
 
-* A new :class:`urllib.request.HTTPBasicPriorAuthHandler` allows HTTP Basic
-  Authentication credentials to be sent unconditionally with the first HTTP
-  request, rather than waiting for a HTTP 401 Unauthorized response from the
-  server.
-  (Contributed by Matej Cepl in :issue:`19494`.)
+* A new :class:`~urllib.request.HTTPPasswordMgrWithPriorAuth` allows HTTP Basic
+  Authentication credentials to be managed so as to eliminate unnecessary
+  ``401`` response handling, or to unconditionally send credentials
+  on the first request in order to communicate with servers that return a
+  ``404`` response instead of a ``401`` if the ``Authorization`` header is not
+  sent.  (Contributed by Matej Cepl in :issue:`19494` and Akshit Khurana in
+  :issue:`7159`.)
 
 wsgiref
 -------
