@@ -826,6 +826,8 @@ cat >> conftest.c <<EOF
 # endif
 #elif defined(__gnu_hurd__)
         i386-gnu
+#elif defined(__APPLE__)
+        darwin
 #else
 # error unknown platform triplet
 #endif
@@ -4310,7 +4312,7 @@ AC_MSG_RESULT($SOABI)
 
 AC_SUBST(EXT_SUFFIX)
 case $ac_sys_system in
-    Linux*|GNU*)
+    Linux*|GNU*|Darwin)
 	EXT_SUFFIX=.${SOABI}${SHLIB_SUFFIX};;
     *)
 	EXT_SUFFIX=${SHLIB_SUFFIX};;
