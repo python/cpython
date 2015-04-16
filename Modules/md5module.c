@@ -350,13 +350,8 @@ MD5Type_copy_impl(MD5object *self)
 {
     MD5object *newobj;
 
-    if (Py_TYPE(self) == &MD5type) {
-        if ( (newobj = newMD5object())==NULL)
-            return NULL;
-    } else {
-        if ( (newobj = newMD5object())==NULL)
-            return NULL;
-    }
+    if ((newobj = newMD5object())==NULL)
+        return NULL;
 
     newobj->hash_state = self->hash_state;
     return (PyObject *)newobj;
