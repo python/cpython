@@ -16,17 +16,23 @@
 extern const char * gdbm_strerror(gdbm_error);
 #endif
 
+/*[clinic input]
+module _gdbm
+class _gdbm.gdbm "dbmobject *" "&Dbmtype"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=113927c6170729b2]*/
+
 PyDoc_STRVAR(gdbmmodule__doc__,
 "This module provides an interface to the GNU DBM (GDBM) library.\n\
 \n\
 This module is quite similar to the dbm module, but uses GDBM instead to\n\
-provide some additional functionality. Please note that the file formats\n\
-created by GDBM and dbm are incompatible. \n\
+provide some additional functionality.  Please note that the file formats\n\
+created by GDBM and dbm are incompatible.\n\
 \n\
 GDBM objects behave like mappings (dictionaries), except that keys and\n\
-values are always strings. Printing a GDBM object doesn't print the\n\
-keys and values, and the items() and values() methods are not\n\
-supported.");
+values are always immutable bytes-like objects or strings.  Printing\n\
+a GDBM object doesn't print the keys and values, and the items() and\n\
+values() methods are not supported.");
 
 typedef struct {
     PyObject_HEAD
@@ -35,6 +41,8 @@ typedef struct {
 } dbmobject;
 
 static PyTypeObject Dbmtype;
+
+#include "clinic/_gdbmmodule.c.h"
 
 #define is_dbmobject(v) (Py_TYPE(v) == &Dbmtype)
 #define check_dbmobject_open(v) if ((v)->di_dbm == NULL) \
@@ -48,15 +56,15 @@ static PyObject *DbmError;
 PyDoc_STRVAR(gdbm_object__doc__,
 "This object represents a GDBM database.\n\
 GDBM objects behave like mappings (dictionaries), except that keys and\n\
-values are always strings. Printing a GDBM object doesn't print the\n\
-keys and values, and the items() and values() methods are not\n\
-supported.\n\
+values are always immutable bytes-like objects or strings.  Printing\n\
+a GDBM object doesn't print the keys and values, and the items() and\n\
+values() methods are not supported.\n\
 \n\
 GDBM objects also support additional operations such as firstkey,\n\
 nextkey, reorganize, and sync.");
 
 static PyObject *
-newdbmobject(char *file, int flags, int mode)
+newdbmobject(const char *file, int flags, int mode)
 {
     dbmobject *dp;
 
@@ -65,7 +73,7 @@ newdbmobject(char *file, int flags, int mode)
         return NULL;
     dp->di_size = -1;
     errno = 0;
-    if ((dp->di_dbm = gdbm_open(file, 0, flags, mode, NULL)) == 0) {
+    if ((dp->di_dbm = gdbm_open((char *)file, 0, flags, mode, NULL)) == 0) {
         if (errno != 0)
             PyErr_SetFromErrno(DbmError);
         else
@@ -135,24 +143,27 @@ dbm_subscript(dbmobject *dp, PyObject *key)
     return v;
 }
 
-PyDoc_STRVAR(dbm_get__doc__,
-"get(key[, default]) -> value\n\
-Get the value for key, or default if not present; if not given,\n\
-default is None.");
+/*[clinic input]
+_gdbm.gdbm.get
+
+    key: object
+    default: object = None
+    /
+
+Get the value for key, or default if not present.
+[clinic start generated code]*/
 
 static PyObject *
-dbm_get(dbmobject *dp, PyObject *args)
+_gdbm_gdbm_get_impl(dbmobject *self, PyObject *key, PyObject *default_value)
+/*[clinic end generated code: output=19b7c585ad4f554a input=a9c20423f34c17b6]*/
 {
-    PyObject *v, *res;
-    PyObject *def = Py_None;
+    PyObject *res;
 
-    if (!PyArg_UnpackTuple(args, "get", 1, 2, &v, &def))
-        return NULL;
-    res = dbm_subscript(dp, v);
+    res = dbm_subscript(self, key);
     if (res == NULL && PyErr_ExceptionMatches(PyExc_KeyError)) {
         PyErr_Clear();
-        Py_INCREF(def);
-        return def;
+        Py_INCREF(default_value);
+        return default_value;
     }
     return res;
 }
@@ -198,25 +209,29 @@ dbm_ass_sub(dbmobject *dp, PyObject *v, PyObject *w)
     return 0;
 }
 
-PyDoc_STRVAR(dbm_setdefault__doc__,
-"setdefault(key[, default]) -> value\n\
-Get value for key, or set it to default and return default if not present;\n\
-if not given, default is None.");
+/*[clinic input]
+_gdbm.gdbm.setdefault
+
+    key: object
+    default: object = None
+    /
+
+Get value for key, or set it to default and return default if not present.
+[clinic start generated code]*/
 
 static PyObject *
-dbm_setdefault(dbmobject *dp, PyObject *args)
+_gdbm_gdbm_setdefault_impl(dbmobject *self, PyObject *key,
+                           PyObject *default_value)
+/*[clinic end generated code: output=88760ee520329012 input=0db46b69e9680171]*/
 {
-    PyObject *v, *res;
-    PyObject *def = Py_None;
+    PyObject *res;
 
-    if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &v, &def))
-        return NULL;
-    res = dbm_subscript(dp, v);
+    res = dbm_subscript(self, key);
     if (res == NULL && PyErr_ExceptionMatches(PyExc_KeyError)) {
         PyErr_Clear();
-        if (dbm_ass_sub(dp, v, def) < 0)
+        if (dbm_ass_sub(self, key, default_value) < 0)
             return NULL;
-        return dbm_subscript(dp, v);
+        return dbm_subscript(self, key);
     }
     return res;
 }
@@ -227,43 +242,49 @@ static PyMappingMethods dbm_as_mapping = {
     (objobjargproc)dbm_ass_sub,         /*mp_ass_subscript*/
 };
 
-PyDoc_STRVAR(dbm_close__doc__,
-"close() -> None\n\
-Closes the database.");
+/*[clinic input]
+_gdbm.gdbm.close
+
+Close the database.
+[clinic start generated code]*/
 
 static PyObject *
-dbm_close(dbmobject *dp, PyObject *unused)
+_gdbm_gdbm_close_impl(dbmobject *self)
+/*[clinic end generated code: output=23512a594598b563 input=0a203447379b45fd]*/
 {
-    if (dp->di_dbm)
-        gdbm_close(dp->di_dbm);
-    dp->di_dbm = NULL;
+    if (self->di_dbm)
+        gdbm_close(self->di_dbm);
+    self->di_dbm = NULL;
     Py_INCREF(Py_None);
     return Py_None;
 }
 
 /* XXX Should return a set or a set view */
-PyDoc_STRVAR(dbm_keys__doc__,
-"keys() -> list_of_keys\n\
-Get a list of all keys in the database.");
+/*[clinic input]
+_gdbm.gdbm.keys
+
+Get a list of all keys in the database.
+[clinic start generated code]*/
 
 static PyObject *
-dbm_keys(dbmobject *dp, PyObject *unused)
+_gdbm_gdbm_keys_impl(dbmobject *self)
+/*[clinic end generated code: output=cb4b1776c3645dcc input=1832ee0a3132cfaf]*/
 {
     PyObject *v, *item;
     datum key, nextkey;
     int err;
 
-    if (dp == NULL || !is_dbmobject(dp)) {
+    if (self == NULL || !is_dbmobject(self)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    check_dbmobject_open(dp);
+    check_dbmobject_open(self);
 
     v = PyList_New(0);
     if (v == NULL)
         return NULL;
 
-    key = gdbm_firstkey(dp->di_dbm);
+    key = gdbm_firstkey(self->di_dbm);
     while (key.dptr) {
         item = PyBytes_FromStringAndSize(key.dptr, key.dsize);
         if (item == NULL) {
@@ -278,7 +299,7 @@ dbm_keys(dbmobject *dp, PyObject *unused)
             Py_DECREF(v);
             return NULL;
         }
-        nextkey = gdbm_nextkey(dp->di_dbm, key);
+        nextkey = gdbm_nextkey(self->di_dbm, key);
         free(key.dptr);
         key = nextkey;
     }
@@ -329,21 +350,25 @@ static PySequenceMethods dbm_as_sequence = {
         0,                      /* sq_inplace_repeat */
 };
 
-PyDoc_STRVAR(dbm_firstkey__doc__,
-"firstkey() -> key\n\
-It's possible to loop over every key in the database using this method\n\
-and the nextkey() method. The traversal is ordered by GDBM's internal\n\
-hash values, and won't be sorted by the key values. This method\n\
-returns the starting key.");
+/*[clinic input]
+_gdbm.gdbm.firstkey
+
+Return the starting key for the traversal.
+
+It's possible to loop over every key in the database using this method
+and the nextkey() method.  The traversal is ordered by GDBM's internal
+hash values, and won't be sorted by the key values.
+[clinic start generated code]*/
 
 static PyObject *
-dbm_firstkey(dbmobject *dp, PyObject *unused)
+_gdbm_gdbm_firstkey_impl(dbmobject *self)
+/*[clinic end generated code: output=9ff85628d84b65d2 input=0dbd6a335d69bba0]*/
 {
     PyObject *v;
     datum key;
 
-    check_dbmobject_open(dp);
-    key = gdbm_firstkey(dp->di_dbm);
+    check_dbmobject_open(self);
+    key = gdbm_firstkey(self->di_dbm);
     if (key.dptr) {
         v = PyBytes_FromStringAndSize(key.dptr, key.dsize);
         free(key.dptr);
@@ -355,27 +380,35 @@ dbm_firstkey(dbmobject *dp, PyObject *unused)
     }
 }
 
-PyDoc_STRVAR(dbm_nextkey__doc__,
-"nextkey(key) -> next_key\n\
-Returns the key that follows key in the traversal.\n\
-The following code prints every key in the database db, without having\n\
-to create a list in memory that contains them all:\n\
-\n\
-      k = db.firstkey()\n\
-      while k != None:\n\
-          print k\n\
-          k = db.nextkey(k)");
+/*[clinic input]
+_gdbm.gdbm.nextkey
+
+    key: str(types={'str', 'robuffer'}, length=True)
+    /
+
+Returns the key that follows key in the traversal.
+
+The following code prints every key in the database db, without having
+to create a list in memory that contains them all:
+
+      k = db.firstkey()
+      while k != None:
+          print(k)
+          k = db.nextkey(k)
+[clinic start generated code]*/
 
 static PyObject *
-dbm_nextkey(dbmobject *dp, PyObject *args)
+_gdbm_gdbm_nextkey_impl(dbmobject *self, const char *key,
+                        Py_ssize_clean_t key_length)
+/*[clinic end generated code: output=192ab892de6eb2f6 input=df8e8828201214a6]*/
 {
     PyObject *v;
-    datum key, nextkey;
+    datum dbm_key, nextkey;
 
-    if (!PyArg_ParseTuple(args, "s#:nextkey", &key.dptr, &key.dsize))
-        return NULL;
-    check_dbmobject_open(dp);
-    nextkey = gdbm_nextkey(dp->di_dbm, key);
+    dbm_key.dptr = (char *)key;
+    dbm_key.dsize = key_length;
+    check_dbmobject_open(self);
+    nextkey = gdbm_nextkey(self->di_dbm, dbm_key);
     if (nextkey.dptr) {
         v = PyBytes_FromStringAndSize(nextkey.dptr, nextkey.dsize);
         free(nextkey.dptr);
@@ -387,20 +420,25 @@ dbm_nextkey(dbmobject *dp, PyObject *args)
     }
 }
 
-PyDoc_STRVAR(dbm_reorganize__doc__,
-"reorganize() -> None\n\
-If you have carried out a lot of deletions and would like to shrink\n\
-the space used by the GDBM file, this routine will reorganize the\n\
-database. GDBM will not shorten the length of a database file except\n\
-by using this reorganization; otherwise, deleted file space will be\n\
-kept and reused as new (key,value) pairs are added.");
+/*[clinic input]
+_gdbm.gdbm.reorganize
+
+Reorganize the database.
+
+If you have carried out a lot of deletions and would like to shrink
+the space used by the GDBM file, this routine will reorganize the
+database.  GDBM will not shorten the length of a database file except
+by using this reorganization; otherwise, deleted file space will be
+kept and reused as new (key,value) pairs are added.
+[clinic start generated code]*/
 
 static PyObject *
-dbm_reorganize(dbmobject *dp, PyObject *unused)
+_gdbm_gdbm_reorganize_impl(dbmobject *self)
+/*[clinic end generated code: output=38d9624df92e961d input=f6bea85bcfd40dd2]*/
 {
-    check_dbmobject_open(dp);
+    check_dbmobject_open(self);
     errno = 0;
-    if (gdbm_reorganize(dp->di_dbm) < 0) {
+    if (gdbm_reorganize(self->di_dbm) < 0) {
         if (errno != 0)
             PyErr_SetFromErrno(DbmError);
         else
@@ -411,16 +449,21 @@ dbm_reorganize(dbmobject *dp, PyObject *unused)
     return Py_None;
 }
 
-PyDoc_STRVAR(dbm_sync__doc__,
-"sync() -> None\n\
-When the database has been opened in fast mode, this method forces\n\
-any unwritten data to be written to the disk.");
+/*[clinic input]
+_gdbm.gdbm.sync
+
+Flush the database to the disk file.
+
+When the database has been opened in fast mode, this method forces
+any unwritten data to be written to the disk.
+[clinic start generated code]*/
 
 static PyObject *
-dbm_sync(dbmobject *dp, PyObject *unused)
+_gdbm_gdbm_sync_impl(dbmobject *self)
+/*[clinic end generated code: output=488b15f47028f125 input=2a47d2c9e153ab8a]*/
 {
-    check_dbmobject_open(dp);
-    gdbm_sync(dp->di_dbm);
+    check_dbmobject_open(self);
+    gdbm_sync(self->di_dbm);
     Py_INCREF(Py_None);
     return Py_None;
 }
@@ -440,14 +483,15 @@ dbm__exit__(PyObject *self, PyObject *args)
 }
 
 static PyMethodDef dbm_methods[] = {
-    {"close",     (PyCFunction)dbm_close,   METH_NOARGS, dbm_close__doc__},
-    {"keys",      (PyCFunction)dbm_keys,    METH_NOARGS, dbm_keys__doc__},
-    {"firstkey",  (PyCFunction)dbm_firstkey,METH_NOARGS, dbm_firstkey__doc__},
-    {"nextkey",   (PyCFunction)dbm_nextkey, METH_VARARGS, dbm_nextkey__doc__},
-    {"reorganize",(PyCFunction)dbm_reorganize,METH_NOARGS, dbm_reorganize__doc__},
-    {"sync",      (PyCFunction)dbm_sync,    METH_NOARGS, dbm_sync__doc__},
-    {"get",       (PyCFunction)dbm_get,     METH_VARARGS, dbm_get__doc__},
-    {"setdefault",(PyCFunction)dbm_setdefault,METH_VARARGS, dbm_setdefault__doc__},
+    _GDBM_GDBM_CLOSE_METHODDEF
+    _GDBM_GDBM_KEYS_METHODDEF
+    _GDBM_GDBM_FIRSTKEY_METHODDEF
+    _GDBM_GDBM_NEXTKEY_METHODDEF
+    _GDBM_GDBM_REORGANIZE_METHODDEF
+    _GDBM_GDBM_SYNC_METHODDEF
+    _GDBM_GDBM_GET_METHODDEF
+    _GDBM_GDBM_GET_METHODDEF
+    _GDBM_GDBM_SETDEFAULT_METHODDEF
     {"__enter__", dbm__enter__, METH_NOARGS, NULL},
     {"__exit__",  dbm__exit__, METH_VARARGS, NULL},
     {NULL,              NULL}           /* sentinel */
@@ -486,40 +530,44 @@ static PyTypeObject Dbmtype = {
 
 /* ----------------------------------------------------------------- */
 
-PyDoc_STRVAR(dbmopen__doc__,
-"open(filename, [flags, [mode]])  -> dbm_object\n\
-Open a dbm database and return a dbm object. The filename argument is\n\
-the name of the database file.\n\
-\n\
-The optional flags argument can be 'r' (to open an existing database\n\
-for reading only -- default), 'w' (to open an existing database for\n\
-reading and writing), 'c' (which creates the database if it doesn't\n\
-exist), or 'n' (which always creates a new empty database).\n\
-\n\
-Some versions of gdbm support additional flags which must be\n\
-appended to one of the flags described above. The module constant\n\
-'open_flags' is a string of valid additional flags. The 'f' flag\n\
-opens the database in fast mode; altered data will not automatically\n\
-be written to the disk after every change. This results in faster\n\
-writes to the database, but may result in an inconsistent database\n\
-if the program crashes while the database is still open. Use the\n\
-sync() method to force any unwritten data to be written to the disk.\n\
-The 's' flag causes all database operations to be synchronized to\n\
-disk. The 'u' flag disables locking of the database file.\n\
-\n\
-The optional mode argument is the Unix mode of the file, used only\n\
-when the database has to be created. It defaults to octal 0666. ");
+/*[clinic input]
+_gdbm.open as dbmopen
+    filename as name: str
+    flags: str="r"
+    mode: int(py_default="0o666") = 0o666
+    /
+
+Open a dbm database and return a dbm object.
+
+The filename argument is the name of the database file.
+
+The optional flags argument can be 'r' (to open an existing database
+for reading only -- default), 'w' (to open an existing database for
+reading and writing), 'c' (which creates the database if it doesn't
+exist), or 'n' (which always creates a new empty database).
+
+Some versions of gdbm support additional flags which must be
+appended to one of the flags described above.  The module constant
+'open_flags' is a string of valid additional flags.  The 'f' flag
+opens the database in fast mode; altered data will not automatically
+be written to the disk after every change.  This results in faster
+writes to the database, but may result in an inconsistent database
+if the program crashes while the database is still open.  Use the
+sync() method to force any unwritten data to be written to the disk.
+The 's' flag causes all database operations to be synchronized to
+disk.  The 'u' flag disables locking of the database file.
+
+The optional mode argument is the Unix mode of the file, used only
+when the database has to be created.  It defaults to octal 0o666.
+[clinic start generated code]*/
 
 static PyObject *
-dbmopen(PyObject *self, PyObject *args)
+dbmopen_impl(PyModuleDef *module, const char *name, const char *flags,
+             int mode)
+/*[clinic end generated code: output=365b31415c03ccd4 input=55563cd60e51984a]*/
 {
-    char *name;
-    char *flags = "r";
     int iflags;
-    int mode = 0666;
 
-    if (!PyArg_ParseTuple(args, "s|si:open", &name, &flags, &mode))
-        return NULL;
     switch (flags[0]) {
     case 'r':
         iflags = GDBM_READER;
@@ -580,7 +628,7 @@ static char dbmmodule_open_flags[] = "rwcn"
                                      ;
 
 static PyMethodDef dbmmodule_methods[] = {
-    { "open", (PyCFunction)dbmopen, METH_VARARGS, dbmopen__doc__},
+    DBMOPEN_METHODDEF
     { 0, 0 },
 };
 
