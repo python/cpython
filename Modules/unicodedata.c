@@ -101,50 +101,31 @@ new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4)
 }
 
 
-static Py_UCS4 getuchar(PyUnicodeObject *obj)
-{
-    if (PyUnicode_READY(obj))
-        return (Py_UCS4)-1;
-    if (PyUnicode_GET_LENGTH(obj) == 1) {
-        if (PyUnicode_READY(obj))
-            return (Py_UCS4)-1;
-        return PyUnicode_READ_CHAR(obj, 0);
-    }
-    PyErr_SetString(PyExc_TypeError,
-                    "need a single Unicode character as parameter");
-    return (Py_UCS4)-1;
-}
-
 /* --- Module API --------------------------------------------------------- */
 
 /*[clinic input]
-
 unicodedata.UCD.decimal
 
-    unichr: object(type='PyUnicodeObject *', subclass_of='&PyUnicode_Type')
+    self: self
+    chr: int(types={'str'})
     default: object=NULL
     /
 
 Converts a Unicode character into its equivalent decimal value.
 
-Returns the decimal value assigned to the Unicode character unichr
-as integer. If no such value is defined, default is returned, or, if
-not given, ValueError is raised.
+Returns the decimal value assigned to the character chr as integer.
+If no such value is defined, default is returned, or, if not given,
+ValueError is raised.
 [clinic start generated code]*/
 
 static PyObject *
-unicodedata_UCD_decimal_impl(PreviousDBVersion *self,
-                             PyUnicodeObject *unichr,
+unicodedata_UCD_decimal_impl(PyObject *self, int chr,
                              PyObject *default_value)
-/*[clinic end generated code: output=bf853108f246ba19 input=c25c9d2b4de076b1]*/
+/*[clinic end generated code: output=be23376e1a185231 input=3acf7f2238874a49]*/
 {
     int have_old = 0;
     long rc;
-    Py_UCS4 c;
-
-    c = getuchar(unichr);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
 
     if (self && UCD_Check(self)) {
         const change_record *old = get_old_record(self, c);
@@ -175,61 +156,64 @@ unicodedata_UCD_decimal_impl(PreviousDBVersion *self,
     return PyLong_FromLong(rc);
 }
 
-PyDoc_STRVAR(unicodedata_digit__doc__,
-"digit(unichr[, default])\n\
-\n\
-Returns the digit value assigned to the Unicode character unichr as\n\
-integer. If no such value is defined, default is returned, or, if\n\
-not given, ValueError is raised.");
+/*[clinic input]
+unicodedata.UCD.digit
+
+    self: self
+    chr: int(types={'str'})
+    default: object=NULL
+    /
+
+Converts a Unicode character into its equivalent digit value.
+
+Returns the digit value assigned to the character chr as integer.
+If no such value is defined, default is returned, or, if not given,
+ValueError is raised.
+[clinic start generated code]*/
 
 static PyObject *
-unicodedata_digit(PyObject *self, PyObject *args)
+unicodedata_UCD_digit_impl(PyObject *self, int chr, PyObject *default_value)
+/*[clinic end generated code: output=96e18c950171fd2f input=733f093b399f5ab6]*/
 {
-    PyUnicodeObject *v;
-    PyObject *defobj = NULL;
     long rc;
-    Py_UCS4 c;
-
-    if (!PyArg_ParseTuple(args, "O!|O:digit", &PyUnicode_Type, &v, &defobj))
-        return NULL;
-    c = getuchar(v);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
     rc = Py_UNICODE_TODIGIT(c);
     if (rc < 0) {
-        if (defobj == NULL) {
+        if (default_value == NULL) {
             PyErr_SetString(PyExc_ValueError, "not a digit");
             return NULL;
         }
         else {
-            Py_INCREF(defobj);
-            return defobj;
+            Py_INCREF(default_value);
+            return default_value;
         }
     }
     return PyLong_FromLong(rc);
 }
 
-PyDoc_STRVAR(unicodedata_numeric__doc__,
-"numeric(unichr[, default])\n\
-\n\
-Returns the numeric value assigned to the Unicode character unichr\n\
-as float. If no such value is defined, default is returned, or, if\n\
-not given, ValueError is raised.");
+/*[clinic input]
+unicodedata.UCD.numeric
+
+    self: self
+    chr: int(types={'str'})
+    default: object=NULL
+    /
+
+Converts a Unicode character into its equivalent numeric value.
+
+Returns the numeric value assigned to the character chr as float.
+If no such value is defined, default is returned, or, if not given,
+ValueError is raised.
+[clinic start generated code]*/
 
 static PyObject *
-unicodedata_numeric(PyObject *self, PyObject *args)
+unicodedata_UCD_numeric_impl(PyObject *self, int chr,
+                             PyObject *default_value)
+/*[clinic end generated code: output=53ce281fe85b10c4 input=c5875fa7cc768fb2]*/
 {
-    PyUnicodeObject *v;
-    PyObject *defobj = NULL;
     int have_old = 0;
     double rc;
-    Py_UCS4 c;
-
-    if (!PyArg_ParseTuple(args, "O!|O:numeric", &PyUnicode_Type, &v, &defobj))
-        return NULL;
-    c = getuchar(v);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
 
     if (self && UCD_Check(self)) {
         const change_record *old = get_old_record(self, c);
@@ -247,37 +231,34 @@ unicodedata_numeric(PyObject *self, PyObject *args)
     if (!have_old)
         rc = Py_UNICODE_TONUMERIC(c);
     if (rc == -1.0) {
-        if (defobj == NULL) {
+        if (default_value == NULL) {
             PyErr_SetString(PyExc_ValueError, "not a numeric character");
             return NULL;
         }
         else {
-            Py_INCREF(defobj);
-            return defobj;
+            Py_INCREF(default_value);
+            return default_value;
         }
     }
     return PyFloat_FromDouble(rc);
 }
 
-PyDoc_STRVAR(unicodedata_category__doc__,
-"category(unichr)\n\
-\n\
-Returns the general category assigned to the Unicode character\n\
-unichr as string.");
+/*[clinic input]
+unicodedata.UCD.category
+
+    self: self
+    chr: int(types={'str'})
+    /
+
+Returns the general category assigned to the character chr as string.
+[clinic start generated code]*/
 
 static PyObject *
-unicodedata_category(PyObject *self, PyObject *args)
+unicodedata_UCD_category_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=8571539ee2e6783a input=f5edd6fd04bd455d]*/
 {
-    PyUnicodeObject *v;
     int index;
-    Py_UCS4 c;
-
-    if (!PyArg_ParseTuple(args, "O!:category",
-                          &PyUnicode_Type, &v))
-        return NULL;
-    c = getuchar(v);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->category;
     if (self && UCD_Check(self)) {
         const change_record *old = get_old_record(self, c);
@@ -287,26 +268,24 @@ unicodedata_category(PyObject *self, PyObject *args)
     return PyUnicode_FromString(_PyUnicode_CategoryNames[index]);
 }
 
-PyDoc_STRVAR(unicodedata_bidirectional__doc__,
-"bidirectional(unichr)\n\
-\n\
-Returns the bidirectional class assigned to the Unicode character\n\
-unichr as string. If no such value is defined, an empty string is\n\
-returned.");
+/*[clinic input]
+unicodedata.UCD.bidirectional
+
+    self: self
+    chr: int(types={'str'})
+    /
+
+Returns the bidirectional class assigned to the character chr as string.
+
+If no such value is defined, an empty string is returned.
+[clinic start generated code]*/
 
 static PyObject *
-unicodedata_bidirectional(PyObject *self, PyObject *args)
+unicodedata_UCD_bidirectional_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=d36310ce2039bb92 input=5ce2f877b35305b5]*/
 {
-    PyUnicodeObject *v;
     int index;
-    Py_UCS4 c;
-
-    if (!PyArg_ParseTuple(args, "O!:bidirectional",
-                          &PyUnicode_Type, &v))
-        return NULL;
-    c = getuchar(v);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->bidirectional;
     if (self && UCD_Check(self)) {
         const change_record *old = get_old_record(self, c);
@@ -318,55 +297,52 @@ unicodedata_bidirectional(PyObject *self, PyObject *args)
     return PyUnicode_FromString(_PyUnicode_BidirectionalNames[index]);
 }
 
-PyDoc_STRVAR(unicodedata_combining__doc__,
-"combining(unichr)\n\
-\n\
-Returns the canonical combining class assigned to the Unicode\n\
-character unichr as integer. Returns 0 if no combining class is\n\
-defined.");
+/*[clinic input]
+unicodedata.UCD.combining -> int
 
-static PyObject *
-unicodedata_combining(PyObject *self, PyObject *args)
+    self: self
+    chr: int(types={'str'})
+    /
+
+Returns the canonical combining class assigned to the character chr as integer.
+
+Returns 0 if no combining class is defined.
+[clinic start generated code]*/
+
+static int
+unicodedata_UCD_combining_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=cad056d0cb6a5920 input=9125ea7d50b319e7]*/
 {
-    PyUnicodeObject *v;
     int index;
-    Py_UCS4 c;
-
-    if (!PyArg_ParseTuple(args, "O!:combining",
-                          &PyUnicode_Type, &v))
-        return NULL;
-    c = getuchar(v);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->combining;
     if (self && UCD_Check(self)) {
         const change_record *old = get_old_record(self, c);
         if (old->category_changed == 0)
             index = 0; /* unassigned */
     }
-    return PyLong_FromLong(index);
+    return index;
 }
 
-PyDoc_STRVAR(unicodedata_mirrored__doc__,
-"mirrored(unichr)\n\
-\n\
-Returns the mirrored property assigned to the Unicode character\n\
-unichr as integer. Returns 1 if the character has been identified as\n\
-a \"mirrored\" character in bidirectional text, 0 otherwise.");
+/*[clinic input]
+unicodedata.UCD.mirrored -> int
 
-static PyObject *
-unicodedata_mirrored(PyObject *self, PyObject *args)
+    self: self
+    chr: int(types={'str'})
+    /
+
+Returns the mirrored property assigned to the character chr as integer.
+
+Returns 1 if the character has been identified as a "mirrored"
+character in bidirectional text, 0 otherwise.
+[clinic start generated code]*/
+
+static int
+unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=2532dbf8121b50e6 input=4e51e8aaf8d7e23e]*/
 {
-    PyUnicodeObject *v;
     int index;
-    Py_UCS4 c;
-
-    if (!PyArg_ParseTuple(args, "O!:mirrored",
-                          &PyUnicode_Type, &v))
-        return NULL;
-    c = getuchar(v);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->mirrored;
     if (self && UCD_Check(self)) {
         const change_record *old = get_old_record(self, c);
@@ -375,28 +351,25 @@ unicodedata_mirrored(PyObject *self, PyObject *args)
         else if (old->mirrored_changed != 0xFF)
             index = old->mirrored_changed;
     }
-    return PyLong_FromLong(index);
+    return index;
 }
 
-PyDoc_STRVAR(unicodedata_east_asian_width__doc__,
-"east_asian_width(unichr)\n\
-\n\
-Returns the east asian width assigned to the Unicode character\n\
-unichr as string.");
+/*[clinic input]
+unicodedata.UCD.east_asian_width
+
+    self: self
+    chr: int(types={'str'})
+    /
+
+Returns the east asian width assigned to the character chr as string.
+[clinic start generated code]*/
 
 static PyObject *
-unicodedata_east_asian_width(PyObject *self, PyObject *args)
+unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=484e8537d9ee8197 input=f93c61f37276c8f0]*/
 {
-    PyUnicodeObject *v;
     int index;
-    Py_UCS4 c;
-
-    if (!PyArg_ParseTuple(args, "O!:east_asian_width",
-                          &PyUnicode_Type, &v))
-        return NULL;
-    c = getuchar(v);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
     index = (int) _getrecord_ex(c)->east_asian_width;
     if (self && UCD_Check(self)) {
         const change_record *old = get_old_record(self, c);
@@ -406,29 +379,27 @@ unicodedata_east_asian_width(PyObject *self, PyObject *args)
     return PyUnicode_FromString(_PyUnicode_EastAsianWidthNames[index]);
 }
 
-PyDoc_STRVAR(unicodedata_decomposition__doc__,
-"decomposition(unichr)\n\
-\n\
-Returns the character decomposition mapping assigned to the Unicode\n\
-character unichr as string. An empty string is returned in case no\n\
-such mapping is defined.");
+/*[clinic input]
+unicodedata.UCD.decomposition
+
+    self: self
+    chr: int(types={'str'})
+    /
+
+Returns the character decomposition mapping assigned to the character chr as string.
+
+An empty string is returned in case no such mapping is defined.
+[clinic start generated code]*/
 
 static PyObject *
-unicodedata_decomposition(PyObject *self, PyObject *args)
+unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
+/*[clinic end generated code: output=7d699f3ec7565d27 input=7f2c0ee66d75468f]*/
 {
-    PyUnicodeObject *v;
     char decomp[256];
     int code, index, count;
     size_t i;
     unsigned int prefix_index;
-    Py_UCS4 c;
-
-    if (!PyArg_ParseTuple(args, "O!:decomposition",
-                          &PyUnicode_Type, &v))
-        return NULL;
-    c = getuchar(v);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
 
     code = (int)c;
 
@@ -829,22 +800,24 @@ is_normalized(PyObject *self, PyObject *input, int nfc, int k)
     return 1; /* certainly normalized */
 }
 
-PyDoc_STRVAR(unicodedata_normalize__doc__,
-"normalize(form, unistr)\n\
-\n\
-Return the normal form 'form' for the Unicode string unistr.  Valid\n\
-values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.");
+/*[clinic input]
+unicodedata.UCD.normalize
 
-static PyObject*
-unicodedata_normalize(PyObject *self, PyObject *args)
+    self: self
+    form: str
+    unistr as input: object(subclass_of='&PyUnicode_Type')
+    /
+
+Return the normal form 'form' for the Unicode string unistr.
+
+Valid values for form are 'NFC', 'NFKC', 'NFD', and 'NFKD'.
+[clinic start generated code]*/
+
+static PyObject *
+unicodedata_UCD_normalize_impl(PyObject *self, const char *form,
+                               PyObject *input)
+/*[clinic end generated code: output=62d1f8870027efdc input=cd092e631cf11883]*/
 {
-    char *form;
-    PyObject *input;
-
-    if(!PyArg_ParseTuple(args, "sO!:normalize",
-                         &form, &PyUnicode_Type, &input))
-        return NULL;
-
     if (PyUnicode_READY(input) == -1)
         return NULL;
 
@@ -1203,64 +1176,67 @@ static const _PyUnicode_Name_CAPI hashAPI =
 /* -------------------------------------------------------------------- */
 /* Python bindings */
 
-PyDoc_STRVAR(unicodedata_name__doc__,
-"name(unichr[, default])\n\
-Returns the name assigned to the Unicode character unichr as a\n\
-string. If no name is defined, default is returned, or, if not\n\
-given, ValueError is raised.");
+/*[clinic input]
+unicodedata.UCD.name
+
+    self: self
+    chr: int(types={'str'})
+    default: object=NULL
+    /
+
+Returns the name assigned to the character chr as a string.
+
+If no name is defined, default is returned, or, if not given,
+ValueError is raised.
+[clinic start generated code]*/
 
 static PyObject *
-unicodedata_name(PyObject* self, PyObject* args)
+unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
+/*[clinic end generated code: output=6bbb37a326407707 input=51ee2f971c918113]*/
 {
     char name[NAME_MAXLEN];
-    Py_UCS4 c;
-
-    PyUnicodeObject* v;
-    PyObject* defobj = NULL;
-    if (!PyArg_ParseTuple(args, "O!|O:name", &PyUnicode_Type, &v, &defobj))
-        return NULL;
-
-    c = getuchar(v);
-    if (c == (Py_UCS4)-1)
-        return NULL;
+    Py_UCS4 c = (Py_UCS4)chr;
 
     if (!_getucname(self, c, name, sizeof(name), 0)) {
-        if (defobj == NULL) {
+        if (default_value == NULL) {
             PyErr_SetString(PyExc_ValueError, "no such name");
             return NULL;
         }
         else {
-            Py_INCREF(defobj);
-            return defobj;
+            Py_INCREF(default_value);
+            return default_value;
         }
     }
 
     return PyUnicode_FromString(name);
 }
 
-PyDoc_STRVAR(unicodedata_lookup__doc__,
-"lookup(name)\n\
-\n\
-Look up character by name.  If a character with the\n\
-given name is found, return the corresponding Unicode\n\
-character.  If not found, KeyError is raised.");
+/*[clinic input]
+unicodedata.UCD.lookup
+
+    self: self
+    name: str(types={'str', 'robuffer'}, length=True)
+    /
+
+Look up character by name.
+
+If a character with the given name is found, return the
+corresponding character.  If not found, KeyError is raised.
+[clinic start generated code]*/
 
 static PyObject *
-unicodedata_lookup(PyObject* self, PyObject* args)
+unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
+                            Py_ssize_clean_t name_length)
+/*[clinic end generated code: output=765cb8186788e6be input=f2bf29706135a590]*/
 {
     Py_UCS4 code;
-
-    char* name;
-    Py_ssize_t namelen;
     unsigned int index;
-    if (!PyArg_ParseTuple(args, "s#:lookup", &name, &namelen))
-        return NULL;
-    if (namelen > INT_MAX) {
+    if (name_length > INT_MAX) {
         PyErr_SetString(PyExc_KeyError, "name too long");
         return NULL;
     }
 
-    if (!_getcode(self, name, (int)namelen, &code, 1)) {
+    if (!_getcode(self, name, (int)name_length, &code, 1)) {
         PyErr_Format(PyExc_KeyError, "undefined character name '%s'", name);
         return NULL;
     }
@@ -1279,24 +1255,17 @@ unicodedata_lookup(PyObject* self, PyObject* args)
 
 static PyMethodDef unicodedata_functions[] = {
     UNICODEDATA_UCD_DECIMAL_METHODDEF
-    {"digit", unicodedata_digit, METH_VARARGS, unicodedata_digit__doc__},
-    {"numeric", unicodedata_numeric, METH_VARARGS, unicodedata_numeric__doc__},
-    {"category", unicodedata_category, METH_VARARGS,
-                 unicodedata_category__doc__},
-    {"bidirectional", unicodedata_bidirectional, METH_VARARGS,
-                      unicodedata_bidirectional__doc__},
-    {"combining", unicodedata_combining, METH_VARARGS,
-                  unicodedata_combining__doc__},
-    {"mirrored", unicodedata_mirrored, METH_VARARGS,
-                 unicodedata_mirrored__doc__},
-    {"east_asian_width", unicodedata_east_asian_width, METH_VARARGS,
-                         unicodedata_east_asian_width__doc__},
-    {"decomposition", unicodedata_decomposition, METH_VARARGS,
-                      unicodedata_decomposition__doc__},
-    {"name", unicodedata_name, METH_VARARGS, unicodedata_name__doc__},
-    {"lookup", unicodedata_lookup, METH_VARARGS, unicodedata_lookup__doc__},
-    {"normalize", unicodedata_normalize, METH_VARARGS,
-                  unicodedata_normalize__doc__},
+    UNICODEDATA_UCD_DIGIT_METHODDEF
+    UNICODEDATA_UCD_NUMERIC_METHODDEF
+    UNICODEDATA_UCD_CATEGORY_METHODDEF
+    UNICODEDATA_UCD_BIDIRECTIONAL_METHODDEF
+    UNICODEDATA_UCD_COMBINING_METHODDEF
+    UNICODEDATA_UCD_MIRRORED_METHODDEF
+    UNICODEDATA_UCD_EAST_ASIAN_WIDTH_METHODDEF
+    UNICODEDATA_UCD_DECOMPOSITION_METHODDEF
+    UNICODEDATA_UCD_NAME_METHODDEF
+    UNICODEDATA_UCD_LOOKUP_METHODDEF
+    UNICODEDATA_UCD_NORMALIZE_METHODDEF
     {NULL, NULL}                /* sentinel */
 };
 
