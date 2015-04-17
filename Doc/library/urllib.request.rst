@@ -304,7 +304,7 @@ The following classes are provided:
    :ref:`http-password-mgr-with-prior-auth`), then the handler will use the
    ``is_authenticated`` result for a given URI to determine whether or not to
    send authentication credentials with the request.  If ``is_authenticated``
-   returns ``True`` for the URI, credentials are sent.  If ``is_authenticated
+   returns ``True`` for the URI, credentials are sent.  If ``is_authenticated``
    is ``False``, credentials are not sent, and then if a ``401`` response is
    received the request is re-sent with the authentication credentials.  If
    authentication succeeds, ``update_authenticated`` is called to set
@@ -312,7 +312,8 @@ The following classes are provided:
    the URI or any of its super-URIs will automatically include the
    authentication credentials.
 
-   .. versionadded:: 3.5: added ``is_authenticated`` support.
+   .. versionadded:: 3.5
+      Added ``is_authenticated`` support.
 
 
 .. class:: HTTPBasicAuthHandler(password_mgr=None)
