@@ -1171,10 +1171,9 @@ bytearray_find_internal(PyByteArrayObject *self, PyObject *args, int dir)
     /* Issue #23573: FIXME, windows has no memrchr() */
     else if (sub_len == 1 && dir > 0) {
         unsigned char needle = *sub;
-        int mode = (dir > 0) ? FAST_SEARCH : FAST_RSEARCH;
         res = stringlib_fastsearch_memchr_1char(
             PyByteArray_AS_STRING(self) + start, end - start,
-            needle, needle, mode);
+            needle, needle, FAST_SEARCH);
         if (res >= 0)
             res += start;
     }
