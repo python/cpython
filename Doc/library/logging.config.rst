@@ -580,6 +580,18 @@ called ``form01`` in the ``[formatters]`` section will have its configuration
 specified in a section called ``[formatter_form01]``. The root logger
 configuration must be specified in a section called ``[logger_root]``.
 
+.. note::
+
+   The :func:`fileConfig` API is older than the :func:`dictConfig` API and does
+   not provide functionality to cover certain aspects of logging. For example,
+   you cannot configure :class:`~logging.Filter` objects, which provide for
+   filtering of messages beyond simple integer levels, using :func:`fileConfig`.
+   If you need to have instances of :class:`~logging.Filter` in your logging
+   configuration, you will need to use :func:`dictConfig`. Note that future
+   enhancements to configuration functionality will be added to
+   :func:`dictConfig`, so it's worth considering transitioning to this newer
+   API when it's convenient to do so.
+
 Examples of these sections in the file are given below. ::
 
    [loggers]
