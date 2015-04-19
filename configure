@@ -5069,9 +5069,16 @@ MULTIARCH=$($CC --print-multiarch 2>/dev/null)
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for the platform triplet based on compiler characteristics" >&5
 $as_echo_n "checking for the platform triplet based on compiler characteristics... " >&6; }
 cat >> conftest.c <<EOF
+#undef bfin
+#undef cris
+#undef fr30
 #undef linux
+#undef hppa
+#undef hpux
 #undef i386
+#undef mips
 #undef powerpc
+#undef sparc
 #undef unix
 #if defined(__linux__)
 # if defined(__x86_64__) && defined(__LP64__)

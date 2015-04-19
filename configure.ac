@@ -728,9 +728,16 @@ AC_SUBST(MULTIARCH)
 
 AC_MSG_CHECKING([for the platform triplet based on compiler characteristics])
 cat >> conftest.c <<EOF
+#undef bfin
+#undef cris
+#undef fr30
 #undef linux
+#undef hppa
+#undef hpux
 #undef i386
+#undef mips
 #undef powerpc
+#undef sparc
 #undef unix
 #if defined(__linux__)
 # if defined(__x86_64__) && defined(__LP64__)
