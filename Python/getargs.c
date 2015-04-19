@@ -968,7 +968,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
         Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
 
         if (*format == '#') {
-            /* "s#" or "Z#" */
+            /* "u#" or "Z#" */
             FETCH_SIZE;
 
             if (c == 'Z' && arg == Py_None) {
@@ -983,10 +983,11 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 STORE_SIZE(len);
             }
             else
-                return converterr("str or None", arg, msgbuf, bufsize);
+                return converterr(c == 'Z' ? "str or None" : "str",
+                                  arg, msgbuf, bufsize);
             format++;
         } else {
-            /* "s" or "Z" */
+            /* "u" or "Z" */
             if (c == 'Z' && arg == Py_None)
                 *p = NULL;
             else if (PyUnicode_Check(arg)) {
