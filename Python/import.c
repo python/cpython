@@ -207,8 +207,12 @@ _PyImport_ReleaseLock(void)
 void
 _PyImport_ReInitLock(void)
 {
-    if (import_lock != NULL)
+    if (import_lock != NULL) {
         import_lock = PyThread_allocate_lock();
+        if (import_lock == NULL) {
+            Py_FatalError("PyImport_ReInitLock failed to create a new lock");
+        }
+    }
     if (import_lock_level > 1) {
         /* Forked as a side effect of import */
         long me = PyThread_get_thread_ident();
