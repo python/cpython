@@ -30,7 +30,7 @@ byte-code cache files in the directory containing the source code.
 
    Compile a source file to byte-code and write out the byte-code cache file.
    The source code is loaded from the file name *file*.  The byte-code is
-   written to *cfile*, which defaults to the :pep:`3147`/:pep`488` path, ending
+   written to *cfile*, which defaults to the :pep:`3147`/:pep:`488` path, ending
    in ``.pyc``.
    For example, if *file* is ``/foo/bar/baz.py`` *cfile* will default to
    ``/foo/bar/__pycache__/baz.cpython-32.pyc`` for Python 3.2.  If *dfile* is

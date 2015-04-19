@@ -44,7 +44,7 @@ the definition of all other Python objects.
 
       PyObject ob_base;
 
-   See documentation of :c:type::`PyObject` above.
+   See documentation of :c:type:`PyObject` above.
 
 
 .. c:macro:: PyObject_VAR_HEAD
