@@ -275,7 +275,6 @@ whatsnew/3.2,,:location,zope9-location = ${zope9:location}
 whatsnew/3.2,,:prefix,zope-conf = ${custom:prefix}/etc/zope.conf
 whatsnew/changelog,,:gz,": TarFile opened with external fileobj and ""w:gz"" mode didn't"
 whatsnew/changelog,,::,": Use ""127.0.0.1"" or ""::1"" instead of ""localhost"" as much as"
-library/stdtypes,3688,::,>>> m[::2].tolist()
 library/tarfile,149,:xz,'x:xz'
 library/xml.etree.elementtree,290,:sometag,prefix:sometag
 library/xml.etree.elementtree,301,:fictional,"<actors xmlns:fictional=""http://characters.example.com"""
@@ -290,3 +289,4 @@ library/xml.etree.elementtree,332,:character,"for char in actor.findall('role:ch
 library/zipapp,31,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,82,:fn,"argument should have the form ""pkg.mod:fn"", where ""pkg.mod"" is a"
 library/zipapp,155,:callable,"""pkg.module:callable"" and the archive will be run by importing"
+library/stdtypes,3720,::,>>> m[::2].tolist()
