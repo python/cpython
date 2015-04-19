@@ -538,7 +538,7 @@ _io_IncrementalNewlineDecoder_getstate_impl(nldecoder_object *self)
            _PyIO_str_getstate, NULL);
         if (state == NULL)
             return NULL;
-        if (!PyArg_Parse(state, "(OK)", &buffer, &flag)) {
+        if (!PyArg_ParseTuple(state, "OK", &buffer, &flag)) {
             Py_DECREF(state);
             return NULL;
         }
@@ -569,7 +569,7 @@ _io_IncrementalNewlineDecoder_setstate(nldecoder_object *self,
     PyObject *buffer;
     unsigned PY_LONG_LONG flag;
 
-    if (!PyArg_Parse(state, "(OK)", &buffer, &flag))
+    if (!PyArg_ParseTuple(state, "OK", &buffer, &flag))
         return NULL;
 
     self->pendingcr = (int) (flag & 1);
@@ -1449,7 +1449,7 @@ textiowrapper_read_chunk(textio *self, Py_ssize_t size_hint)
         /* Given this, we know there was a valid snapshot point
          * len(dec_buffer) bytes ago with decoder state (b'', dec_flags).
          */
-        if (PyArg_Parse(state, "(OO)", &dec_buffer, &dec_flags) < 0) {
+        if (PyArg_ParseTuple(state, "OO", &dec_buffer, &dec_flags) < 0) {
             Py_DECREF(state);
             return -1;
         }
@@ -2305,7 +2305,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
         goto fail;
 
     /* Skip backward to the snapshot point (see _read_chunk). */
-    if (!PyArg_Parse(self->snapshot, "(iO)", &cookie.dec_flags, &next_input))
+    if (!PyArg_ParseTuple(self->snapshot, "iO", &cookie.dec_flags, &next_input))
         goto fail;
 
     assert (PyBytes_Check(next_input));
@@ -2331,7 +2331,7 @@ _io_TextIOWrapper_tell_impl(textio *self)
             _PyIO_str_getstate, NULL); \
         if (_state == NULL) \
             goto fail; \
-        if (!PyArg_Parse(_state, "(y#i)", &dec_buffer, &dec_buffer_len, &dec_flags)) { \
+        if (!PyArg_ParseTuple(_state, "y#i", &dec_buffer, &dec_buffer_len, &dec_flags)) { \
             Py_DECREF(_state); \
             goto fail; \
         } \
