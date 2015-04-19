@@ -263,6 +263,8 @@ Build
 C API
 -----
 
+- Issue #23998: PyImport_ReInitLock() now checks for lock allocation error
+
 - Issue #22079: PyType_Ready() now checks that statically allocated type has
   no dynamically allocated bases.
 
