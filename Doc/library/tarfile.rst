@@ -465,7 +465,7 @@ It does *not* contain the file's data itself.
    Create a :class:`TarInfo` object.
 
 
-.. method:: TarInfo.frombuf(buf)
+.. method:: TarInfo.frombuf(buf, encoding, errors)
 
    Create and return a :class:`TarInfo` object from string buffer *buf*.
 
