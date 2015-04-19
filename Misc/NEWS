@@ -213,6 +213,11 @@ Tools/Demos
   if Argument Clinic processes the same symbol multiple times, and it's emitted
   at the end of all processing rather than immediately after the first use.
 
+C API
+-----
+
+- Issue #23998: PyImport_ReInitLock() now checks for lock allocation error
+
 
 What's New in Python 3.5.0 alpha 3?
 ===================================
