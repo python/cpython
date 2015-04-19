@@ -504,14 +504,14 @@ It does *not* contain the file's data itself.
    Create a :class:`TarInfo` object.
 
 
-.. method:: TarInfo.frombuf(buf, encoding, errors)
+.. classmethod:: TarInfo.frombuf(buf, encoding, errors)
 
    Create and return a :class:`TarInfo` object from string buffer *buf*.
 
-   Raises :exc:`HeaderError` if the buffer is invalid..
+   Raises :exc:`HeaderError` if the buffer is invalid.
 
 
-.. method:: TarInfo.fromtarfile(tarfile)
+.. classmethod:: TarInfo.fromtarfile(tarfile)
 
    Read the next member from the :class:`TarFile` object *tarfile* and return it as
    a :class:`TarInfo` object.
