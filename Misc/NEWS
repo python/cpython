@@ -32,6 +32,11 @@ Library
 - Issue #23365: Fixed possible integer overflow in
   itertools.combinations_with_replacement.
 
+C API
+-----
+
+- Issue #23998: PyImport_ReInitLock() now checks for lock allocation error
+
 
 What's New in Python 3.3.6?
 ===========================
