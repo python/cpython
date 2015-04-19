@@ -201,6 +201,11 @@ Build
 - Issue #23686: Update OS X 10.5 installer and Windows builds to use
   OpenSSL 1.0.2a.
 
+C API
+-----
+
+- Issue #23998: PyImport_ReInitLock() now checks for lock allocation error
+
 
 What's New in Python 3.4.3?
 ===========================
