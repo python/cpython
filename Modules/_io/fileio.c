@@ -281,15 +281,14 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
 
 #ifdef MS_WINDOWS
     if (PyUnicode_Check(nameobj)) {
-        int rv = _PyUnicode_HasNULChars(nameobj);
-        if (rv) {
-            if (rv != -1)
-                PyErr_SetString(PyExc_ValueError, "embedded null character");
-            return -1;
-        }
-        widename = PyUnicode_AsUnicode(nameobj);
+        Py_ssize_t length;
+        widename = PyUnicode_AsUnicodeAndSize(nameobj, &length);
         if (widename == NULL)
             return -1;
+        if (wcslen(widename) != length) {
+            PyErr_SetString(PyExc_ValueError, "embedded null character");
+            return -1;
+        }
     } else
 #endif
     if (fd < 0)
