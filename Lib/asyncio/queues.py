@@ -54,6 +54,8 @@ class Queue:
         self._finished.set()
         self._init(maxsize)
 
+    # These three are overridable in subclasses.
+
     def _init(self, maxsize):
         self._queue = collections.deque()
 
@@ -62,6 +64,11 @@ class Queue:
 
     def _put(self, item):
         self._queue.append(item)
+
+    # End of the overridable methods.
+
+    def __put_internal(self, item):
+        self._put(item)
         self._unfinished_tasks += 1
         self._finished.clear()
 
@@ -133,7 +140,7 @@ class Queue:
                 'queue non-empty, why are getters waiting?')
 
             getter = self._getters.popleft()
-            self._put(item)
+            self.__put_internal(item)
 
             # getter cannot be cancelled, we just removed done getters
             getter.set_result(self._get())
@@ -145,7 +152,7 @@ class Queue:
             yield from waiter
 
         else:
-            self._put(item)
+            self.__put_internal(item)
 
     def put_nowait(self, item):
         """Put an item into the queue without blocking.
@@ -158,7 +165,7 @@ class Queue:
                 'queue non-empty, why are getters waiting?')
 
             getter = self._getters.popleft()
-            self._put(item)
+            self.__put_internal(item)
 
             # getter cannot be cancelled, we just removed done getters
             getter.set_result(self._get())
@@ -166,7 +173,7 @@ class Queue:
         elif self._maxsize > 0 and self._maxsize <= self.qsize():
             raise QueueFull
         else:
-            self._put(item)
+            self.__put_internal(item)
 
     @coroutine
     def get(self):
@@ -180,7 +187,7 @@ class Queue:
         if self._putters:
             assert self.full(), 'queue not full, why are putters waiting?'
             item, putter = self._putters.popleft()
-            self._put(item)
+            self.__put_internal(item)
 
             # When a getter runs and frees up a slot so this putter can
             # run, we need to defer the put for a tick to ensure that
@@ -207,7 +214,7 @@ class Queue:
         if self._putters:
             assert self.full(), 'queue not full, why are putters waiting?'
             item, putter = self._putters.popleft()
-            self._put(item)
+            self.__put_internal(item)
             # Wake putter on next tick.
 
             # getter cannot be cancelled, we just removed done putters

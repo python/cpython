@@ -408,14 +408,16 @@ class PriorityQueueTests(_QueueTestBase):
         self.assertEqual([1, 2, 3], items)
 
 
-class QueueJoinTests(_QueueTestBase):
+class _QueueJoinTestMixin:
+
+    q_class = None
 
     def test_task_done_underflow(self):
-        q = asyncio.Queue(loop=self.loop)
+        q = self.q_class(loop=self.loop)
         self.assertRaises(ValueError, q.task_done)
 
     def test_task_done(self):
-        q = asyncio.Queue(loop=self.loop)
+        q = self.q_class(loop=self.loop)
         for i in range(100):
             q.put_nowait(i)
 
@@ -452,7 +454,7 @@ class QueueJoinTests(_QueueTestBase):
         self.loop.run_until_complete(asyncio.wait(tasks, loop=self.loop))
 
     def test_join_empty_queue(self):
-        q = asyncio.Queue(loop=self.loop)
+        q = self.q_class(loop=self.loop)
 
         # Test that a queue join()s successfully, and before anything else
         # (done twice for insurance).
@@ -465,11 +467,23 @@ class QueueJoinTests(_QueueTestBase):
         self.loop.run_until_complete(join())
 
     def test_format(self):
-        q = asyncio.Queue(loop=self.loop)
+        q = self.q_class(loop=self.loop)
         self.assertEqual(q._format(), 'maxsize=0')
 
         q._unfinished_tasks = 2
         self.assertEqual(q._format(), 'maxsize=0 tasks=2')
+
+
+class QueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+    q_class = asyncio.Queue
+
+
+class LifoQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+    q_class = asyncio.LifoQueue
+
+
+class PriorityQueueJoinTests(_QueueJoinTestMixin, _QueueTestBase):
+    q_class = asyncio.PriorityQueue
 
 
 if __name__ == '__main__':
