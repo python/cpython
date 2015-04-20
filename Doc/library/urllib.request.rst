@@ -12,6 +12,11 @@ The :mod:`urllib.request` module defines functions and classes which help in
 opening URLs (mostly HTTP) in a complex world --- basic and digest
 authentication, redirections, cookies and more.
 
+.. seealso::
+
+    The `Requests package <http://requests.readthedocs.org/>`_
+    is recommended for a higher-level http client interface.
+
 
 The :mod:`urllib.request` module defines the following functions:
 
