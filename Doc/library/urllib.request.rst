@@ -1067,7 +1067,7 @@ The following W3C document, http://www.w3.org/International/O-charset\ , lists
 the various ways in which a (X)HTML or a XML document could have specified its
 encoding information.
 
-As the python.org website uses *utf-8* encoding as specified in it's meta tag, we
+As the python.org website uses *utf-8* encoding as specified in its meta tag, we
 will use the same for decoding the bytes object. ::
 
    >>> with urllib.request.urlopen('http://www.python.org/') as f:
