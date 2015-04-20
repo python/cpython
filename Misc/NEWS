@@ -29,6 +29,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23908: os functions now reject paths with embedded null character
+  on Windows instead of silently truncate them.
+
 - Issue #23728: binascii.crc_hqx() could return an integer outside of the range
   0-0xffff for empty data.
 
