@@ -69,7 +69,7 @@ Copyright (C) 1994 Steen Lumholt.
 #error "Tk older than 8.3.1 not supported"
 #endif
 
-#if TK_VERSION_HEX >= 0x08050000
+#if TK_VERSION_HEX >= 0x08050002
 #define HAVE_LIBTOMMAMTH
 #include <tclTomMath.h>
 #endif
