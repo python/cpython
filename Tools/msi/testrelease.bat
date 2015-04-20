@@ -1,4 +1,4 @@
-@setlocal
+@setlocal enableextensions
 @echo off
 
 set D=%~dp0
@@ -50,6 +50,9 @@ exit /B 0
 @echo on
 
 @if not exist "%~1" exit /B 1
+
+@set EXE=%~1
+@if not "%EXE:embed=%"=="%EXE%" exit /B 0
 
 @set EXITCODE=0
 @echo Installing %1 into %2

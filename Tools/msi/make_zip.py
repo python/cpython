@@ -30,9 +30,16 @@ def include_in_lib(p):
             return False
         return True
 
-    if name in {'_ctypes_test.pyd', '_testbuffer.pyd', '_testcapi.pyd', '_testimportmultiple.pyd', 'xxlimited.pyd'}:
-        return False
-    return p.suffix.lower() not in {'.pyc', '.pyo'}
+    suffix = p.suffix.lower()
+    if suffix == '.pyd':
+        return name not in {
+            '_ctypes_test.pyd',
+            '_testbuffer.pyd',
+            '_testcapi.pyd',
+            '_testimportmultiple.pyd',
+            'xxlimited.pyd',
+        }
+    return suffix not in {'.pyc', '.pyo'}
 
 def include_in_tools(p):
     if p.is_dir() and p.name.lower() in {'scripts', 'i18n', 'pynche', 'demo', 'parser'}:
