@@ -909,31 +909,31 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
 
 
 /*[clinic input]
-binascii.crc_hqx -> int
+binascii.crc_hqx -> unsigned_int
 
     data: Py_buffer
-    crc: int
+    crc: unsigned_int(bitwise=True)
     /
 
 Compute hqx CRC incrementally.
 [clinic start generated code]*/
 
-static int
-binascii_crc_hqx_impl(PyModuleDef *module, Py_buffer *data, int crc)
-/*[clinic end generated code: output=634dac18dfa863d7 input=68060931b2f51c8a]*/
+static unsigned int
+binascii_crc_hqx_impl(PyModuleDef *module, Py_buffer *data, unsigned int crc)
+/*[clinic end generated code: output=167c2dac62625717 input=add8c53712ccceda]*/
 {
     unsigned char *bin_data;
-    unsigned int ucrc = (unsigned int)crc;
     Py_ssize_t len;
 
+    crc &= 0xffff;
     bin_data = data->buf;
     len = data->len;
 
     while(len-- > 0) {
-        ucrc=((ucrc<<8)&0xff00)^crctab_hqx[((ucrc>>8)&0xff)^*bin_data++];
+        crc = ((crc<<8)&0xff00) ^ crctab_hqx[(crc>>8)^*bin_data++];
     }
 
-    return (int)ucrc;
+    return crc;
 }
 
 #ifndef USE_ZLIB_CRC32
