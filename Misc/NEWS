@@ -49,6 +49,10 @@ Core and Builtins
 Library
 -------
 
+- Fix asyncio issue 235: LifoQueue and PriorityQueue's put didn't
+  increment unfinished tasks (this bug was introduced when
+  JoinableQueue was merged with Queue).
+
 - Issue #23908: os functions now reject paths with embedded null character
   on Windows instead of silently truncate them.
 
