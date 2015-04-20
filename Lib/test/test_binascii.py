@@ -135,6 +135,18 @@ class BinASCIITest(unittest.TestCase):
         # Issue #7701 (crash on a pydebug build)
         self.assertEqual(binascii.b2a_uu(b'x'), b'!>   \n')
 
+    def test_crc_hqx(self):
+        crc = binascii.crc_hqx(self.type2test(b"Test the CRC-32 of"), 0)
+        crc = binascii.crc_hqx(self.type2test(b" this string."), crc)
+        self.assertEqual(crc, 14290)
+
+        self.assertRaises(TypeError, binascii.crc_hqx)
+        self.assertRaises(TypeError, binascii.crc_hqx, self.type2test(b''))
+
+        for crc in 0, 1, 0x1234, 0x12345, 0x12345678, -1:
+            self.assertEqual(binascii.crc_hqx(self.type2test(b''), crc),
+                             crc & 0xffff)
+
     def test_crc32(self):
         crc = binascii.crc32(self.type2test(b"Test the CRC-32 of"))
         crc = binascii.crc32(self.type2test(b" this string."), crc)
