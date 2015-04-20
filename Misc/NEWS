@@ -13,6 +13,16 @@ Core and Builtins
 Library
 -------
 
+- Fix asyncio issue 235: LifoQueue and PriorityQueue's put didn't
+  increment unfinished tasks (this bug was introduced when
+  JoinableQueue was merged with Queue).
+
+- Issue #23908: os functions now reject paths with embedded null character
+  on Windows instead of silently truncate them.
+
+- Issue #23728: binascii.crc_hqx() could return an integer outside of the range
+  0-0xffff for empty data.
+
 
 What's New in Python 3.5.0 alpha 4?
 ===================================
@@ -48,16 +58,6 @@ Core and Builtins
 
 Library
 -------
-
-- Fix asyncio issue 235: LifoQueue and PriorityQueue's put didn't
-  increment unfinished tasks (this bug was introduced when
-  JoinableQueue was merged with Queue).
-
-- Issue #23908: os functions now reject paths with embedded null character
-  on Windows instead of silently truncate them.
-
-- Issue #23728: binascii.crc_hqx() could return an integer outside of the range
-  0-0xffff for empty data.
 
 - Issue #16914: new debuglevel 2 in smtplib adds timestamps to debug output.
 
