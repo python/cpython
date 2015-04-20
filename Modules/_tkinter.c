@@ -96,7 +96,7 @@ Copyright (C) 1994 Steen Lumholt.
 #error "unsupported Tcl configuration"
 #endif
 
-#if TK_VERSION_HEX >= 0x08050000
+#if TK_VERSION_HEX >= 0x08050002
 #define HAVE_LIBTOMMAMTH
 #include <tclTomMath.h>
 #endif
