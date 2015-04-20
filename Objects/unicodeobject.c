@@ -3607,21 +3607,6 @@ PyUnicode_DecodeFSDefaultAndSize(const char *s, Py_ssize_t size)
 
 
 int
-_PyUnicode_HasNULChars(PyObject* str)
-{
-    Py_ssize_t pos;
-
-    if (PyUnicode_READY(str) == -1)
-        return -1;
-    pos = findchar(PyUnicode_DATA(str), PyUnicode_KIND(str),
-                   PyUnicode_GET_LENGTH(str), '\0', 1);
-    if (pos == -1)
-        return 0;
-    else
-        return 1;
-}
-
-int
 PyUnicode_FSConverter(PyObject* arg, void* addr)
 {
     PyObject *output = NULL;

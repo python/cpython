@@ -1168,6 +1168,42 @@ class PosixTester(unittest.TestCase):
             else:
                 self.fail("No valid path_error2() test for os." + name)
 
+    def test_path_with_null_character(self):
+        fn = support.TESTFN
+        fn_with_NUL = fn + '\0'
+        self.addCleanup(support.unlink, fn)
+        support.unlink(fn)
+        fd = None
+        try:
+            with self.assertRaises(ValueError):
+                fd = os.open(fn_with_NUL, os.O_WRONLY | os.O_CREAT) # raises
+        finally:
+            if fd is not None:
+                os.close(fd)
+        self.assertFalse(os.path.exists(fn))
+        self.assertRaises(ValueError, os.mkdir, fn_with_NUL)
+        self.assertFalse(os.path.exists(fn))
+        open(fn, 'wb').close()
+        self.assertRaises(ValueError, os.stat, fn_with_NUL)
+
+    def test_path_with_null_byte(self):
+        fn = os.fsencode(support.TESTFN)
+        fn_with_NUL = fn + b'\0'
+        self.addCleanup(support.unlink, fn)
+        support.unlink(fn)
+        fd = None
+        try:
+            with self.assertRaises(ValueError):
+                fd = os.open(fn_with_NUL, os.O_WRONLY | os.O_CREAT) # raises
+        finally:
+            if fd is not None:
+                os.close(fd)
+        self.assertFalse(os.path.exists(fn))
+        self.assertRaises(ValueError, os.mkdir, fn_with_NUL)
+        self.assertFalse(os.path.exists(fn))
+        open(fn, 'wb').close()
+        self.assertRaises(ValueError, os.stat, fn_with_NUL)
+
 class PosixGroupsTester(unittest.TestCase):
 
     def setUp(self):
