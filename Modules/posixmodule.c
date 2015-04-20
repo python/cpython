@@ -858,6 +858,11 @@ path_converter(PyObject *o, void *p) {
             Py_DECREF(unicode);
             return 0;
         }
+        if (wcslen(wide) != length) {
+            FORMAT_EXCEPTION(PyExc_TypeError, "embedded null character");
+            Py_DECREF(unicode);
+            return 0;
+        }
 
         path->wide = wide;
         path->narrow = NULL;
