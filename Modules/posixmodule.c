@@ -478,13 +478,38 @@ OverflowUp:
 static int
 _Py_Dev_Converter(PyObject *obj, void *p)
 {
-#ifdef HAVE_LONG_LONG
-    *((dev_t *)p) = PyLong_AsUnsignedLongLong(obj);
-#else
-    *((dev_t *)p) = PyLong_AsUnsignedLong(obj);
-#endif
-    if (PyErr_Occurred())
+    PyObject *index = PyNumber_Index(obj);
+    if (index == NULL)
         return 0;
+    if (PyInt_Check(index)) {
+        long x = PyInt_AS_LONG(index);
+        Py_DECREF(index);
+        if (x == -1 && PyErr_Occurred())
+            return 0;
+        if (x < 0) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "can't convert negative number to unsigned long");
+            return 0;
+        }
+        *((dev_t *)p) = (unsigned long)x;
+    }
+    else if (PyLong_Check(index)) {
+#ifdef HAVE_LONG_LONG
+        *((dev_t *)p) = PyLong_AsUnsignedLongLong(index);
+#else
+        *((dev_t *)p) = PyLong_AsUnsignedLong(index);
+#endif
+        Py_DECREF(index);
+        if (PyErr_Occurred())
+            return 0;
+    }
+    else {
+        Py_DECREF(index);
+        PyErr_Format(PyExc_TypeError,
+                     "expected int/long, %s found",
+                     Py_TYPE(obj)->tp_name);
+        return 0;
+    }
     return 1;
 }
 
