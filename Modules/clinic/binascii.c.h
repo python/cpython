@@ -267,25 +267,25 @@ PyDoc_STRVAR(binascii_crc_hqx__doc__,
 #define BINASCII_CRC_HQX_METHODDEF    \
     {"crc_hqx", (PyCFunction)binascii_crc_hqx, METH_VARARGS, binascii_crc_hqx__doc__},
 
-static int
-binascii_crc_hqx_impl(PyModuleDef *module, Py_buffer *data, int crc);
+static unsigned int
+binascii_crc_hqx_impl(PyModuleDef *module, Py_buffer *data, unsigned int crc);
 
 static PyObject *
 binascii_crc_hqx(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
-    int crc;
-    int _return_value;
+    unsigned int crc;
+    unsigned int _return_value;
 
     if (!PyArg_ParseTuple(args,
-        "y*i:crc_hqx",
+        "y*I:crc_hqx",
         &data, &crc))
         goto exit;
     _return_value = binascii_crc_hqx_impl(module, &data, crc);
     if ((_return_value == -1) && PyErr_Occurred())
         goto exit;
-    return_value = PyLong_FromLong((long)_return_value);
+    return_value = PyLong_FromUnsignedLong((unsigned long)_return_value);
 
 exit:
     /* Cleanup for data */
@@ -543,4 +543,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=e46d29f8c9adae7e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22761b36f4f9e5bb input=a9049054013a1b77]*/
