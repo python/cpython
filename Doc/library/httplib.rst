@@ -24,6 +24,11 @@ This module defines classes which implement the client side of the HTTP and
 HTTPS protocols.  It is normally not used directly --- the module :mod:`urllib`
 uses it to handle URLs that use HTTP and HTTPS.
 
+.. seealso::
+
+    The `Requests package <http://requests.readthedocs.org/>`_
+    is recommended for a higher-level http client interface.
+
 .. note::
 
    HTTPS support is only available if the :mod:`socket` module was compiled with
