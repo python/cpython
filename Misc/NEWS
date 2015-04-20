@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23728: binascii.crc_hqx() could return an integer outside of the range
+  0-0xffff for empty data.
+
 - Issue #16914: new debuglevel 2 in smtplib adds timestamps to debug output.
 
 - Issue #7159: urllib.request now supports sending auth credentials
