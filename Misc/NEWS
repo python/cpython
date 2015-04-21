@@ -195,6 +195,10 @@ Library
 - Issue #23310: Fix MagicMock's initializer to work with __methods__, just
   like configure_mock().  Patch by Kasia Jachim.
 
+- Issue #17445: add difflib.diff_bytes() to support comparison of
+  byte strings (fixes a regression from Python 2).
+
+
 Build
 -----
 

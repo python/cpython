@@ -315,6 +315,21 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
    See :ref:`difflib-interface` for a more detailed example.
 
+.. function:: diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'', fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\\n')
+
+   Compare *a* and *b* (lists of bytes objects) using *dfunc*; yield a
+   sequence of delta lines (also bytes) in the format returned by *dfunc*.
+   *dfunc* must be a callable, typically either :func:`unified_diff` or
+   :func:`context_diff`.
+
+   Allows you to compare data with unknown or inconsistent encoding. All
+   inputs except *n* must be bytes objects, not str. Works by losslessly
+   converting all inputs (except *n*) to str, and calling ``dfunc(a, b,
+   fromfile, tofile, fromfiledate, tofiledate, n, lineterm)``. The output of
+   *dfunc* is then converted back to bytes, so the delta lines that you
+   receive have the same unknown/inconsistent encodings as *a* and *b*.
+
+   .. versionadded:: 3.5
 
 .. function:: IS_LINE_JUNK(line)
 
