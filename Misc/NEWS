@@ -10,6 +10,8 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #24022: Fix tokenizer crash when processing undecodable source code.
+
 - Issue #23309: Avoid a deadlock at shutdown if a daemon thread is aborted
   while it is holding a lock to a buffered I/O object, and the main thread
   tries to use the same I/O object (typically stdout or stderr).  A fatal
