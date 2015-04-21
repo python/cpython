@@ -1301,6 +1301,8 @@ verify_identifier(struct tok_state *tok)
 {
     PyObject *s;
     int result;
+    if (tok->decoding_erred)
+        return 0;
     s = PyUnicode_DecodeUTF8(tok->start, tok->cur - tok->start, NULL);
     if (s == NULL || PyUnicode_READY(s) == -1) {
         if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
@@ -1469,11 +1471,8 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             c = tok_nextc(tok);
         }
         tok_backup(tok, c);
-        if (nonascii &&
-            !verify_identifier(tok)) {
-            tok->done = E_IDENTIFIER;
+        if (nonascii && !verify_identifier(tok))
             return ERRORTOKEN;
-        }
         *p_start = tok->start;
         *p_end = tok->cur;
         return NAME;
