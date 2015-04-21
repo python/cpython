@@ -28,7 +28,7 @@ Class HtmlDiff:
 
 __all__ = ['get_close_matches', 'ndiff', 'restore', 'SequenceMatcher',
            'Differ','IS_CHARACTER_JUNK', 'IS_LINE_JUNK', 'context_diff',
-           'unified_diff', 'HtmlDiff', 'Match']
+           'unified_diff', 'diff_bytes', 'HtmlDiff', 'Match']
 
 from heapq import nlargest as _nlargest
 from collections import namedtuple as _namedtuple
@@ -1174,6 +1174,7 @@ def unified_diff(a, b, fromfile='', tofile='', fromfiledate='',
      four
     """
 
+    _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     started = False
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
         if not started:
@@ -1261,6 +1262,7 @@ def context_diff(a, b, fromfile='', tofile='',
       four
     """
 
+    _check_types(a, b, fromfile, tofile, fromfiledate, tofiledate, lineterm)
     prefix = dict(insert='+ ', delete='- ', replace='! ', equal='  ')
     started = False
     for group in SequenceMatcher(None,a,b).get_grouped_opcodes(n):
@@ -1291,6 +1293,53 @@ def context_diff(a, b, fromfile='', tofile='',
                 if tag != 'delete':
                     for line in b[j1:j2]:
                         yield prefix[tag] + line
+
+def _check_types(a, b, *args):
+    # Checking types is weird, but the alternative is garbled output when
+    # someone passes mixed bytes and str to {unified,context}_diff(). E.g.
+    # without this check, passing filenames as bytes results in output like
+    #   --- b'oldfile.txt'
+    #   +++ b'newfile.txt'
+    # because of how str.format() incorporates bytes objects.
+    if a and not isinstance(a[0], str):
+        raise TypeError('lines to compare must be str, not %s (%r)' %
+                        (type(a[0]).__name__, a[0]))
+    if b and not isinstance(b[0], str):
+        raise TypeError('lines to compare must be str, not %s (%r)' %
+                        (type(b[0]).__name__, b[0]))
+    for arg in args:
+        if not isinstance(arg, str):
+            raise TypeError('all arguments must be str, not: %r' % (arg,))
+
+def diff_bytes(dfunc, a, b, fromfile=b'', tofile=b'',
+               fromfiledate=b'', tofiledate=b'', n=3, lineterm=b'\n'):
+    r"""
+    Compare `a` and `b`, two sequences of lines represented as bytes rather
+    than str. This is a wrapper for `dfunc`, which is typically either
+    unified_diff() or context_diff(). Inputs are losslessly converted to
+    strings so that `dfunc` only has to worry about strings, and encoded
+    back to bytes on return. This is necessary to compare files with
+    unknown or inconsistent encoding. All other inputs (except `n`) must be
+    bytes rather than str.
+    """
+    def decode(s):
+        try:
+            return s.decode('ascii', 'surrogateescape')
+        except AttributeError as err:
+            msg = ('all arguments must be bytes, not %s (%r)' %
+                   (type(s).__name__, s))
+            raise TypeError(msg) from err
+    a = list(map(decode, a))
+    b = list(map(decode, b))
+    fromfile = decode(fromfile)
+    tofile = decode(tofile)
+    fromfiledate = decode(fromfiledate)
+    tofiledate = decode(tofiledate)
+    lineterm = decode(lineterm)
+
+    lines = dfunc(a, b, fromfile, tofile, fromfiledate, tofiledate, n, lineterm)
+    for line in lines:
+        yield line.encode('ascii', 'surrogateescape')
 
 def ndiff(a, b, linejunk=None, charjunk=IS_CHARACTER_JUNK):
     r"""

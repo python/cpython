@@ -302,6 +302,9 @@ difflib
   charset of HTML document changed from ``'ISO-8859-1'`` to ``'utf-8'``.
   (Contributed by Berker Peksag in :issue:`2052`.)
 
+* It's now possible to compare lists of byte strings with
+  :func:`difflib.diff_bytes` (fixes a regression from Python 2).
+
 distutils
 ---------
 
