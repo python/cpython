@@ -10,6 +10,8 @@ Release date: 2015-04-24
 Core and Builtins
 -----------------
 
+- Issue #24022: Fix tokenizer crash when processing undecodable source code.
+
 Library
 -------
 
