@@ -1588,7 +1588,7 @@ def resolve(thing, forceload=0):
     """Given an object or a path to an object, get the object and its name."""
     if isinstance(thing, str):
         object = locate(thing, forceload)
-        if not object:
+        if object is None:
             raise ImportError('''\
 No Python documentation found for %r.
 Use help() to get the interactive help utility.
