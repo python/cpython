@@ -1590,7 +1590,7 @@ def resolve(thing, forceload=0):
     """Given an object or a path to an object, get the object and its name."""
     if isinstance(thing, str):
         object = locate(thing, forceload)
-        if not object:
+        if object is None:
             raise ImportError('no Python documentation found for %r' % thing)
         return object, thing
     else:

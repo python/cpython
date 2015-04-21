@@ -1029,6 +1029,14 @@ class PydocWithMetaClasses(unittest.TestCase):
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
 
+    def test_resolve_false(self):
+        # Issue #23008: pydoc enum.{,Int}Enum failed
+        # because bool(enum.Enum) is False.
+        with captured_stdout() as help_io:
+            pydoc.help('enum.Enum')
+        helptext = help_io.getvalue()
+        self.assertIn('class Enum', helptext)
+
 
 @reap_threads
 def test_main():
