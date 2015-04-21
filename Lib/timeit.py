@@ -14,7 +14,8 @@ Command line usage:
 Options:
   -n/--number N: how many times to execute 'statement' (default: see below)
   -r/--repeat N: how many times to repeat the timer (default 3)
-  -s/--setup S: statement to be executed once initially (default 'pass')
+  -s/--setup S: statement to be executed once initially (default 'pass').
+                Execution time of this setup statement is NOT timed.
   -p/--process: use time.process_time() (default is time.perf_counter())
   -t/--time: use time.time() (deprecated)
   -c/--clock: use time.clock() (deprecated)
