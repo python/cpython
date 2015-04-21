@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23008: Fixed resolving attributes with boolean value is False in pydoc.
+
 - Issue #23842: os.major(), os.minor() and os.makedev() now support ints again.
 
 - Issue #23811: Add missing newline to the PyCompileError error message.
