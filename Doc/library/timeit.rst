@@ -104,6 +104,8 @@ The module defines three convenience functions and a public class:
    method.  The :meth:`.repeat` method is a convenience to call :meth:`.timeit`
    multiple times and return a list of results.
 
+   The execution time of *setup* is excluded from the overall timed execution run.
+
    The *stmt* and *setup* parameters can also take objects that are callable
    without arguments.  This will embed calls to them in a timer function that
    will then be executed by :meth:`.timeit`.  Note that the timing overhead is a
