@@ -1,9 +1,11 @@
 import math
+import os
 import unittest
 import sys
 import _ast
+import tempfile
 import types
-from test import support
+from test import support, script_helper
 
 class TestSpecifics(unittest.TestCase):
 
@@ -491,6 +493,16 @@ if 1:
         self.assertInvalidSingle('f()\n# blah\nblah()')
         self.assertInvalidSingle('f()\nxy # blah\nblah()')
         self.assertInvalidSingle('x = 5 # comment\nx = 6\n')
+
+    def test_particularly_evil_undecodable(self):
+        # Issue 24022
+        src = b'0000\x00\n00000000000\n\x00\n\x9e\n'
+        with tempfile.TemporaryDirectory() as tmpd:
+            fn = os.path.join(tmpd, "bad.py")
+            with open(fn, "wb") as fp:
+                fp.write(src)
+            res = script_helper.run_python_until_end(fn)[0]
+        self.assertIn(b"Non-UTF-8", res.err)
 
     @support.cpython_only
     def test_compiler_recursion_limit(self):
