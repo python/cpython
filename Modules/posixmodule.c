@@ -9891,7 +9891,7 @@ os_confstr_impl(PyModuleDef *module, int name)
             return PyErr_NoMemory();
         len2 = confstr(name, buf, len);
         assert(len == len2);
-        result = PyUnicode_DecodeFSDefaultAndSize(buf, len-1);
+        result = PyUnicode_DecodeFSDefaultAndSize(buf, len2-1);
         PyMem_Free(buf);
     }
     else
