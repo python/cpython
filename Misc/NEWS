@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23917: Fall back to sequential compilation when ProcessPoolExecutor
+  doesn't exist.  Patch by Claudiu Popa.
+
 - Issue #23008: Fixed resolving attributes with boolean value is False in pydoc.
 
 - Fix asyncio issue 235: LifoQueue and PriorityQueue's put didn't
