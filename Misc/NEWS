@@ -220,6 +220,11 @@ C API
 
 - Issue #23998: PyImport_ReInitLock() now checks for lock allocation error
 
+Documentation
+-------------
+
+- Issue #24029: Document the name binding behavior for submodule imports.
+
 
 What's New in Python 3.4.3?
 ===========================
