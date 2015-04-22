@@ -33,6 +33,9 @@ Library
 - Issue #23728: binascii.crc_hqx() could return an integer outside of the range
   0-0xffff for empty data.
 
+- Issue #23887: urllib.error.HTTPError now has a proper repr() representation. 
+  Patch by Berker Peksag.
+
 
 What's New in Python 3.5.0 alpha 4?
 ===================================
