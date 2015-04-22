@@ -291,7 +291,8 @@ class ImportTests(unittest.TestCase):
             except OverflowError:
                 self.skipTest("cannot set modification time to large integer")
             except OSError as e:
-                if e.errno != getattr(errno, 'EOVERFLOW', None):
+                if e.errno not in (getattr(errno, 'EOVERFLOW', None),
+                                   getattr(errno, 'EINVAL', None)):
                     raise
                 self.skipTest("cannot set modification time to large integer ({})".format(e))
             __import__(TESTFN)
