@@ -142,8 +142,8 @@ Public functions
    The argument *workers* specifies how many workers are used to
    compile files in parallel. The default is to not use multiple workers.
    If the platform can't use multiple workers and *workers* argument is given,
-   then a :exc:`NotImplementedError` will be raised.
-   If *workers* is lower than ``0``, a :exc:`ValueError` will be raised.
+   then sequential compilation will be used as a fallback.  If *workers* is
+   lower than ``0``, a :exc:`ValueError` will be raised.
 
    .. versionchanged:: 3.2
       Added the *legacy* and *optimize* parameter.

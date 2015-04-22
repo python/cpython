@@ -136,10 +136,10 @@ class CompileallTests(unittest.TestCase):
         self.assertTrue(compile_file_mock.called)
 
     @mock.patch('compileall.ProcessPoolExecutor', new=None)
-    def test_compile_missing_multiprocessing(self):
-        with self.assertRaisesRegex(NotImplementedError,
-                                    "multiprocessing support not available"):
-            compileall.compile_dir(self.directory, quiet=True, workers=5)
+    @mock.patch('compileall.compile_file')
+    def test_compile_missing_multiprocessing(self, compile_file_mock):
+        compileall.compile_dir(self.directory, quiet=True, workers=5)
+        self.assertTrue(compile_file_mock.called)
 
 class EncodingTest(unittest.TestCase):
     """Issue 6716: compileall should escape source code when printing errors
