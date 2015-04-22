@@ -36,6 +36,11 @@ Library
 - Issue #23887: urllib.error.HTTPError now has a proper repr() representation. 
   Patch by Berker Peksag.
 
+Documentation
+-------------
+
+- Issue #24029: Document the name binding behavior for submodule imports.
+
 
 What's New in Python 3.5.0 alpha 4?
 ===================================
