@@ -69,11 +69,9 @@ def compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None,
     files = _walk_dir(dir, quiet=quiet, maxlevels=maxlevels,
                       ddir=ddir)
     success = 1
-    if workers is not None and workers != 1:
+    if workers is not None and workers != 1 and ProcessPoolExecutor is not None:
         if workers < 0:
             raise ValueError('workers must be greater or equal to 0')
-        if ProcessPoolExecutor is None:
-            raise NotImplementedError('multiprocessing support not available')
 
         workers = workers or None
         with ProcessPoolExecutor(max_workers=workers) as executor:
