@@ -35,6 +35,7 @@ class URLError(OSError):
     def __str__(self):
         return '<urlopen error %s>' % self.reason
 
+
 class HTTPError(URLError, urllib.response.addinfourl):
     """Raised when HTTP error occurs, but also acts like non-error return"""
     __super_init = urllib.response.addinfourl.__init__
@@ -55,6 +56,9 @@ class HTTPError(URLError, urllib.response.addinfourl):
     def __str__(self):
         return 'HTTP Error %s: %s' % (self.code, self.msg)
 
+    def __repr__(self):
+        return '<HTTPError %s: %r>' % (self.code, self.msg)
+
     # since URLError specifies a .reason attribute, HTTPError should also
     #  provide this attribute. See issue13211 for discussion.
     @property
@@ -69,8 +73,9 @@ class HTTPError(URLError, urllib.response.addinfourl):
     def headers(self, headers):
         self.hdrs = headers
 
-# exception raised when downloaded size does not match content-length
+
 class ContentTooShortError(URLError):
+    """Exception raised when downloaded size does not match content-length."""
     def __init__(self, message, content):
         URLError.__init__(self, message)
         self.content = content
