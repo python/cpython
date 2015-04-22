@@ -1,4 +1,5 @@
 import unittest
+import re
 import sys
 import os
 from test import support
@@ -17,27 +18,22 @@ try:
 except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
-tcl_version = _tkinter.TCL_VERSION.split('.')
-try:
-    for i in range(len(tcl_version)):
-        tcl_version[i] = int(tcl_version[i])
-except ValueError:
-    pass
-tcl_version = tuple(tcl_version)
+tcl_version = tuple(map(int, _tkinter.TCL_VERSION.split('.')))
 
 _tk_patchlevel = None
 def get_tk_patchlevel():
     global _tk_patchlevel
     if _tk_patchlevel is None:
         tcl = Tcl()
-        patchlevel = []
-        for x in tcl.call('info', 'patchlevel').split('.'):
-            try:
-                x = int(x, 10)
-            except ValueError:
-                x = -1
-            patchlevel.append(x)
-        _tk_patchlevel = tuple(patchlevel)
+        patchlevel = tcl.call('info', 'patchlevel')
+        m = re.fullmatch(r'(\d+)\.(\d+)([ab.])(\d+)', patchlevel)
+        major, minor, releaselevel, serial = m.groups()
+        major, minor, serial = int(major), int(minor), int(serial)
+        releaselevel = {'a': 'alpha', 'b': 'beta', '.': 'final'}[releaselevel]
+        if releaselevel == 'final':
+            _tk_patchlevel = major, minor, serial, releaselevel, 0
+        else:
+            _tk_patchlevel = major, minor, 0, releaselevel, serial
     return _tk_patchlevel
 
 
