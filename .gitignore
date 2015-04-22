@@ -1,3 +1,7 @@
+# Two-trick pony for OSX and other case insensitive file systems:
+# Ignore ./python binary on Unix but still look into ./Python/ directory.
+/python
+!/Python/**
 *.cover
 *.o
 *.orig
@@ -67,7 +71,6 @@ libpython*.so*
 platform
 pybuilddir.txt
 pyconfig.h
-python
 python-config
 python-config.py
 python.bat
