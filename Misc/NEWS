@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #17445: add difflib.diff_bytes() to support comparison of
+  byte strings (fixes a regression from Python 2).
+
 - Issue #23917: Fall back to sequential compilation when ProcessPoolExecutor
   doesn't exist.  Patch by Claudiu Popa.
 
@@ -201,9 +204,6 @@ Library
 
 - Issue #23310: Fix MagicMock's initializer to work with __methods__, just
   like configure_mock().  Patch by Kasia Jachim.
-
-- Issue #17445: add difflib.diff_bytes() to support comparison of
-  byte strings (fixes a regression from Python 2).
 
 
 Build
