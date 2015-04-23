@@ -148,8 +148,7 @@ _io_open(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O|sizzziO:open", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|sizzziO:open", _keywords,
         &file, &mode, &buffering, &encoding, &errors, &newline, &closefd, &opener))
         goto exit;
     return_value = _io_open_impl(module, file, mode, buffering, encoding, errors, newline, closefd, opener);
@@ -157,4 +156,4 @@ _io_open(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c51a5a443c11f02b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=97cdc09bf68a8064 input=a9049054013a1b77]*/

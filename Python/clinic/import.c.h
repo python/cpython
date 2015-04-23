@@ -88,8 +88,7 @@ _imp__fix_co_filename(PyModuleDef *module, PyObject *args)
     PyCodeObject *code;
     PyObject *path;
 
-    if (!PyArg_ParseTuple(args,
-        "O!U:_fix_co_filename",
+    if (!PyArg_ParseTuple(args, "O!U:_fix_co_filename",
         &PyCode_Type, &code, &path))
         goto exit;
     return_value = _imp__fix_co_filename_impl(module, code, path);
@@ -134,9 +133,7 @@ _imp_init_builtin(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg,
-        "U:init_builtin",
-        &name))
+    if (!PyArg_Parse(arg, "U:init_builtin", &name))
         goto exit;
     return_value = _imp_init_builtin_impl(module, name);
 
@@ -162,9 +159,7 @@ _imp_init_frozen(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg,
-        "U:init_frozen",
-        &name))
+    if (!PyArg_Parse(arg, "U:init_frozen", &name))
         goto exit;
     return_value = _imp_init_frozen_impl(module, name);
 
@@ -190,9 +185,7 @@ _imp_get_frozen_object(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg,
-        "U:get_frozen_object",
-        &name))
+    if (!PyArg_Parse(arg, "U:get_frozen_object", &name))
         goto exit;
     return_value = _imp_get_frozen_object_impl(module, name);
 
@@ -218,9 +211,7 @@ _imp_is_frozen_package(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg,
-        "U:is_frozen_package",
-        &name))
+    if (!PyArg_Parse(arg, "U:is_frozen_package", &name))
         goto exit;
     return_value = _imp_is_frozen_package_impl(module, name);
 
@@ -246,9 +237,7 @@ _imp_is_builtin(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg,
-        "U:is_builtin",
-        &name))
+    if (!PyArg_Parse(arg, "U:is_builtin", &name))
         goto exit;
     return_value = _imp_is_builtin_impl(module, name);
 
@@ -274,9 +263,7 @@ _imp_is_frozen(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg,
-        "U:is_frozen",
-        &name))
+    if (!PyArg_Parse(arg, "U:is_frozen", &name))
         goto exit;
     return_value = _imp_is_frozen_impl(module, name);
 
@@ -307,8 +294,7 @@ _imp_load_dynamic(PyModuleDef *module, PyObject *args)
     PyObject *path;
     PyObject *file = NULL;
 
-    if (!PyArg_ParseTuple(args,
-        "UO&|O:load_dynamic",
+    if (!PyArg_ParseTuple(args, "UO&|O:load_dynamic",
         &name, PyUnicode_FSDecoder, &path, &file))
         goto exit;
     return_value = _imp_load_dynamic_impl(module, name, path, file);
@@ -322,4 +308,4 @@ exit:
 #ifndef _IMP_LOAD_DYNAMIC_METHODDEF
     #define _IMP_LOAD_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_LOAD_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=b64fe33fe76591cf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6d75cece35863874 input=a9049054013a1b77]*/

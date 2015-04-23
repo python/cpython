@@ -102,8 +102,7 @@ _sha512_sha512(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     static char *_keywords[] = {"string", NULL};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|O:sha512", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha512", _keywords,
         &string))
         goto exit;
     return_value = _sha512_sha512_impl(module, string);
@@ -135,8 +134,7 @@ _sha512_sha384(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     static char *_keywords[] = {"string", NULL};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|O:sha384", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha384", _keywords,
         &string))
         goto exit;
     return_value = _sha512_sha384_impl(module, string);
@@ -170,4 +168,4 @@ exit:
 #ifndef _SHA512_SHA384_METHODDEF
     #define _SHA512_SHA384_METHODDEF
 #endif /* !defined(_SHA512_SHA384_METHODDEF) */
-/*[clinic end generated code: output=de7bda19fde49310 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1c7d385731fee7c0 input=a9049054013a1b77]*/

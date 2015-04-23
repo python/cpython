@@ -22,8 +22,7 @@ _opcode_stack_effect(PyModuleDef *module, PyObject *args)
     PyObject *oparg = Py_None;
     int _return_value;
 
-    if (!PyArg_ParseTuple(args,
-        "i|O:stack_effect",
+    if (!PyArg_ParseTuple(args, "i|O:stack_effect",
         &opcode, &oparg))
         goto exit;
     _return_value = _opcode_stack_effect_impl(module, opcode, oparg);
@@ -34,4 +33,4 @@ _opcode_stack_effect(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=dbe45148bc21ecdf input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8ee7cb735705e8b3 input=a9049054013a1b77]*/

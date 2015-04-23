@@ -29,8 +29,7 @@ _multibytecodec_MultibyteCodec_encode(MultibyteCodecObject *self, PyObject *args
     PyObject *input;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O|z:encode", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|z:encode", _keywords,
         &input, &errors))
         goto exit;
     return_value = _multibytecodec_MultibyteCodec_encode_impl(self, input, errors);
@@ -66,8 +65,7 @@ _multibytecodec_MultibyteCodec_decode(MultibyteCodecObject *self, PyObject *args
     Py_buffer input = {NULL, NULL};
     const char *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "y*|z:decode", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|z:decode", _keywords,
         &input, &errors))
         goto exit;
     return_value = _multibytecodec_MultibyteCodec_decode_impl(self, &input, errors);
@@ -101,8 +99,7 @@ _multibytecodec_MultibyteIncrementalEncoder_encode(MultibyteIncrementalEncoderOb
     PyObject *input;
     int final = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O|i:encode", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|i:encode", _keywords,
         &input, &final))
         goto exit;
     return_value = _multibytecodec_MultibyteIncrementalEncoder_encode_impl(self, input, final);
@@ -149,8 +146,7 @@ _multibytecodec_MultibyteIncrementalDecoder_decode(MultibyteIncrementalDecoderOb
     Py_buffer input = {NULL, NULL};
     int final = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "y*|i:decode", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|i:decode", _keywords,
         &input, &final))
         goto exit;
     return_value = _multibytecodec_MultibyteIncrementalDecoder_decode_impl(self, &input, final);
@@ -321,4 +317,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=0fe582cb941024c1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c104f5fd548c1ac5 input=a9049054013a1b77]*/

@@ -30,8 +30,7 @@ unicode_maketrans(void *null, PyObject *args)
     PyObject *y = NULL;
     PyObject *z = NULL;
 
-    if (!PyArg_ParseTuple(args,
-        "O|UU:maketrans",
+    if (!PyArg_ParseTuple(args, "O|UU:maketrans",
         &x, &y, &z))
         goto exit;
     return_value = unicode_maketrans_impl(x, y, z);
@@ -39,4 +38,4 @@ unicode_maketrans(void *null, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4670413843c53055 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=94affdff5b2daff5 input=a9049054013a1b77]*/

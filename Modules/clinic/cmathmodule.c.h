@@ -21,9 +21,7 @@ cmath_acos(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:acos",
-        &z))
+    if (!PyArg_Parse(arg, "D:acos", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -64,9 +62,7 @@ cmath_acosh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:acosh",
-        &z))
+    if (!PyArg_Parse(arg, "D:acosh", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -107,9 +103,7 @@ cmath_asin(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:asin",
-        &z))
+    if (!PyArg_Parse(arg, "D:asin", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -150,9 +144,7 @@ cmath_asinh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:asinh",
-        &z))
+    if (!PyArg_Parse(arg, "D:asinh", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -193,9 +185,7 @@ cmath_atan(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:atan",
-        &z))
+    if (!PyArg_Parse(arg, "D:atan", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -236,9 +226,7 @@ cmath_atanh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:atanh",
-        &z))
+    if (!PyArg_Parse(arg, "D:atanh", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -279,9 +267,7 @@ cmath_cos(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:cos",
-        &z))
+    if (!PyArg_Parse(arg, "D:cos", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -322,9 +308,7 @@ cmath_cosh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:cosh",
-        &z))
+    if (!PyArg_Parse(arg, "D:cosh", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -365,9 +349,7 @@ cmath_exp(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:exp",
-        &z))
+    if (!PyArg_Parse(arg, "D:exp", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -408,9 +390,7 @@ cmath_log10(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:log10",
-        &z))
+    if (!PyArg_Parse(arg, "D:log10", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -451,9 +431,7 @@ cmath_sin(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:sin",
-        &z))
+    if (!PyArg_Parse(arg, "D:sin", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -494,9 +472,7 @@ cmath_sinh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:sinh",
-        &z))
+    if (!PyArg_Parse(arg, "D:sinh", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -537,9 +513,7 @@ cmath_sqrt(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:sqrt",
-        &z))
+    if (!PyArg_Parse(arg, "D:sqrt", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -580,9 +554,7 @@ cmath_tan(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:tan",
-        &z))
+    if (!PyArg_Parse(arg, "D:tan", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -623,9 +595,7 @@ cmath_tanh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg,
-        "D:tanh",
-        &z))
+    if (!PyArg_Parse(arg, "D:tanh", &z))
         goto exit;
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
@@ -668,8 +638,7 @@ cmath_log(PyModuleDef *module, PyObject *args)
     Py_complex x;
     PyObject *y_obj = NULL;
 
-    if (!PyArg_ParseTuple(args,
-        "D|O:log",
+    if (!PyArg_ParseTuple(args, "D|O:log",
         &x, &y_obj))
         goto exit;
     return_value = cmath_log_impl(module, x, y_obj);
@@ -696,9 +665,7 @@ cmath_phase(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg,
-        "D:phase",
-        &z))
+    if (!PyArg_Parse(arg, "D:phase", &z))
         goto exit;
     return_value = cmath_phase_impl(module, z);
 
@@ -726,9 +693,7 @@ cmath_polar(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg,
-        "D:polar",
-        &z))
+    if (!PyArg_Parse(arg, "D:polar", &z))
         goto exit;
     return_value = cmath_polar_impl(module, z);
 
@@ -755,8 +720,7 @@ cmath_rect(PyModuleDef *module, PyObject *args)
     double r;
     double phi;
 
-    if (!PyArg_ParseTuple(args,
-        "dd:rect",
+    if (!PyArg_ParseTuple(args, "dd:rect",
         &r, &phi))
         goto exit;
     return_value = cmath_rect_impl(module, r, phi);
@@ -783,9 +747,7 @@ cmath_isfinite(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg,
-        "D:isfinite",
-        &z))
+    if (!PyArg_Parse(arg, "D:isfinite", &z))
         goto exit;
     return_value = cmath_isfinite_impl(module, z);
 
@@ -811,9 +773,7 @@ cmath_isnan(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg,
-        "D:isnan",
-        &z))
+    if (!PyArg_Parse(arg, "D:isnan", &z))
         goto exit;
     return_value = cmath_isnan_impl(module, z);
 
@@ -839,13 +799,11 @@ cmath_isinf(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg,
-        "D:isinf",
-        &z))
+    if (!PyArg_Parse(arg, "D:isinf", &z))
         goto exit;
     return_value = cmath_isinf_impl(module, z);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9143b8dcc8069024 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=274f59792cf4f418 input=a9049054013a1b77]*/

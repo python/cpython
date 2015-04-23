@@ -25,9 +25,7 @@ _lzma_LZMACompressor_compress(Compressor *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:compress",
-        &data))
+    if (!PyArg_Parse(arg, "y*:compress", &data))
         goto exit;
     return_value = _lzma_LZMACompressor_compress_impl(self, &data);
 
@@ -95,8 +93,7 @@ _lzma_LZMADecompressor_decompress(Decompressor *self, PyObject *args, PyObject *
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "y*|n:decompress", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|n:decompress", _keywords,
         &data, &max_length))
         goto exit;
     return_value = _lzma_LZMADecompressor_decompress_impl(self, &data, max_length);
@@ -145,8 +142,7 @@ _lzma_LZMADecompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs
     PyObject *memlimit = Py_None;
     PyObject *filters = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|iOO:LZMADecompressor", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iOO:LZMADecompressor", _keywords,
         &format, &memlimit, &filters))
         goto exit;
     return_value = _lzma_LZMADecompressor___init___impl((Decompressor *)self, format, memlimit, filters);
@@ -175,9 +171,7 @@ _lzma_is_check_supported(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     int check_id;
 
-    if (!PyArg_Parse(arg,
-        "i:is_check_supported",
-        &check_id))
+    if (!PyArg_Parse(arg, "i:is_check_supported", &check_id))
         goto exit;
     return_value = _lzma_is_check_supported_impl(module, check_id);
 
@@ -205,9 +199,7 @@ _lzma__encode_filter_properties(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     lzma_filter filter = {LZMA_VLI_UNKNOWN, NULL};
 
-    if (!PyArg_Parse(arg,
-        "O&:_encode_filter_properties",
-        lzma_filter_converter, &filter))
+    if (!PyArg_Parse(arg, "O&:_encode_filter_properties", lzma_filter_converter, &filter))
         goto exit;
     return_value = _lzma__encode_filter_properties_impl(module, filter);
 
@@ -241,8 +233,7 @@ _lzma__decode_filter_properties(PyModuleDef *module, PyObject *args)
     lzma_vli filter_id;
     Py_buffer encoded_props = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
-        "O&y*:_decode_filter_properties",
+    if (!PyArg_ParseTuple(args, "O&y*:_decode_filter_properties",
         lzma_vli_converter, &filter_id, &encoded_props))
         goto exit;
     return_value = _lzma__decode_filter_properties_impl(module, filter_id, &encoded_props);
@@ -254,4 +245,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=8981089cde080b54 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=2d3e0842be3d3fe1 input=a9049054013a1b77]*/

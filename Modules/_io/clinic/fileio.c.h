@@ -55,8 +55,7 @@ _io_FileIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int closefd = 1;
     PyObject *opener = Py_None;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O|siO:FileIO", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|siO:FileIO", _keywords,
         &nameobj, &mode, &closefd, &opener))
         goto exit;
     return_value = _io_FileIO___init___impl((fileio *)self, nameobj, mode, closefd, opener);
@@ -155,9 +154,7 @@ _io_FileIO_readinto(fileio *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "w*:readinto",
-        &buffer))
+    if (!PyArg_Parse(arg, "w*:readinto", &buffer))
         goto exit;
     return_value = _io_FileIO_readinto_impl(self, &buffer);
 
@@ -212,8 +209,7 @@ _io_FileIO_read(fileio *self, PyObject *args)
     PyObject *return_value = NULL;
     Py_ssize_t size = -1;
 
-    if (!PyArg_ParseTuple(args,
-        "|O&:read",
+    if (!PyArg_ParseTuple(args, "|O&:read",
         _PyIO_ConvertSsize_t, &size))
         goto exit;
     return_value = _io_FileIO_read_impl(self, size);
@@ -244,9 +240,7 @@ _io_FileIO_write(fileio *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer b = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:write",
-        &b))
+    if (!PyArg_Parse(arg, "y*:write", &b))
         goto exit;
     return_value = _io_FileIO_write_impl(self, &b);
 
@@ -285,8 +279,7 @@ _io_FileIO_seek(fileio *self, PyObject *args)
     PyObject *pos;
     int whence = 0;
 
-    if (!PyArg_ParseTuple(args,
-        "O|i:seek",
+    if (!PyArg_ParseTuple(args, "O|i:seek",
         &pos, &whence))
         goto exit;
     return_value = _io_FileIO_seek_impl(self, pos, whence);
@@ -371,4 +364,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=c6708e1980f6e02d input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1a20b10c81add64 input=a9049054013a1b77]*/

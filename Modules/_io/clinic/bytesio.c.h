@@ -276,9 +276,7 @@ _io_BytesIO_readinto(bytesio *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "w*:readinto",
-        &buffer))
+    if (!PyArg_Parse(arg, "w*:readinto", &buffer))
         goto exit;
     return_value = _io_BytesIO_readinto_impl(self, &buffer);
 
@@ -346,8 +344,7 @@ _io_BytesIO_seek(bytesio *self, PyObject *args)
     Py_ssize_t pos;
     int whence = 0;
 
-    if (!PyArg_ParseTuple(args,
-        "n|i:seek",
+    if (!PyArg_ParseTuple(args, "n|i:seek",
         &pos, &whence))
         goto exit;
     return_value = _io_BytesIO_seek_impl(self, pos, whence);
@@ -414,8 +411,7 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     static char *_keywords[] = {"initial_bytes", NULL};
     PyObject *initvalue = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|O:BytesIO", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:BytesIO", _keywords,
         &initvalue))
         goto exit;
     return_value = _io_BytesIO___init___impl((bytesio *)self, initvalue);
@@ -423,4 +419,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e22697ada514f4eb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=500ccc149587fac4 input=a9049054013a1b77]*/
