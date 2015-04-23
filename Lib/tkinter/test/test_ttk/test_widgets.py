@@ -352,7 +352,8 @@ class ComboboxTest(AbstractWidgetTest, unittest.TestCase):
                         expected=('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.combo, 'values', ('mon', 'tue', 'wed', 'thur'))
         self.checkParam(self.combo, 'values', (42, 3.14, '', 'any string'))
-        self.checkParam(self.combo, 'values', '', expected=())
+        self.checkParam(self.combo, 'values', '',
+                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
 
         self.combo['values'] = ['a', 1, 'c']
 
@@ -1125,7 +1126,8 @@ class TreeviewTest(AbstractWidgetTest, unittest.TestCase):
         self.checkParam(widget, 'columns', 'a b c',
                         expected=('a', 'b', 'c'))
         self.checkParam(widget, 'columns', ('a', 'b', 'c'))
-        self.checkParam(widget, 'columns', ())
+        self.checkParam(widget, 'columns', (),
+                        expected='' if get_tk_patchlevel() < (8, 5, 10) else ())
 
     def test_displaycolumns(self):
         widget = self.create()
