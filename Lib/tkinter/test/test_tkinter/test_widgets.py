@@ -1040,7 +1040,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     def test_paneconfigure_height(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'height', 10, 10,
-                                 stringify=tcl_version < (8, 5))
+                                 stringify=get_tk_patchlevel() < (8, 5, 11))
         self.check_paneconfigure_bad(p, b, 'height',
                                      'bad screen distance "badValue"')
 
@@ -1088,7 +1088,7 @@ class PanedWindowTest(AbstractWidgetTest, unittest.TestCase):
     def test_paneconfigure_width(self):
         p, b, c = self.create2()
         self.check_paneconfigure(p, b, 'width', 10, 10,
-                                 stringify=tcl_version < (8, 5))
+                                 stringify=get_tk_patchlevel() < (8, 5, 11))
         self.check_paneconfigure_bad(p, b, 'width',
                                      'bad screen distance "badValue"')
 
