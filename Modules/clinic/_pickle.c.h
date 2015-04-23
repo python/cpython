@@ -97,8 +97,7 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O|Op:Pickler", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Op:Pickler", _keywords,
         &file, &protocol, &fix_imports))
         goto exit;
     return_value = _pickle_Pickler___init___impl((PicklerObject *)self, file, protocol, fix_imports);
@@ -288,8 +287,7 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O|$pss:Unpickler", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$pss:Unpickler", _keywords,
         &file, &fix_imports, &encoding, &errors))
         goto exit;
     return_value = _pickle_Unpickler___init___impl((UnpicklerObject *)self, file, fix_imports, encoding, errors);
@@ -395,8 +393,7 @@ _pickle_dump(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "OO|O$p:dump", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O$p:dump", _keywords,
         &obj, &file, &protocol, &fix_imports))
         goto exit;
     return_value = _pickle_dump_impl(module, obj, file, protocol, fix_imports);
@@ -439,8 +436,7 @@ _pickle_dumps(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *protocol = NULL;
     int fix_imports = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O|O$p:dumps", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O$p:dumps", _keywords,
         &obj, &protocol, &fix_imports))
         goto exit;
     return_value = _pickle_dumps_impl(module, obj, protocol, fix_imports);
@@ -495,8 +491,7 @@ _pickle_load(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O|$pss:load", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$pss:load", _keywords,
         &file, &fix_imports, &encoding, &errors))
         goto exit;
     return_value = _pickle_load_impl(module, file, fix_imports, encoding, errors);
@@ -542,8 +537,7 @@ _pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     const char *encoding = "ASCII";
     const char *errors = "strict";
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O|$pss:loads", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$pss:loads", _keywords,
         &data, &fix_imports, &encoding, &errors))
         goto exit;
     return_value = _pickle_loads_impl(module, data, fix_imports, encoding, errors);
@@ -551,4 +545,4 @@ _pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2c413ecc2ec74f7c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=06f3a5233298448e input=a9049054013a1b77]*/

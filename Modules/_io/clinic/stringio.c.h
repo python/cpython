@@ -156,8 +156,7 @@ _io_StringIO_seek(stringio *self, PyObject *args)
     Py_ssize_t pos;
     int whence = 0;
 
-    if (!PyArg_ParseTuple(args,
-        "n|i:seek",
+    if (!PyArg_ParseTuple(args, "n|i:seek",
         &pos, &whence))
         goto exit;
     return_value = _io_StringIO_seek_impl(self, pos, whence);
@@ -222,8 +221,7 @@ _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *value = NULL;
     PyObject *newline_obj = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|OO:StringIO", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OO:StringIO", _keywords,
         &value, &newline_obj))
         goto exit;
     return_value = _io_StringIO___init___impl((stringio *)self, value, newline_obj);
@@ -285,4 +283,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=f3062096d357c652 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f061cf3a20cd14ed input=a9049054013a1b77]*/

@@ -185,8 +185,7 @@ _io__IOBase_readline(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     Py_ssize_t limit = -1;
 
-    if (!PyArg_ParseTuple(args,
-        "|O&:readline",
+    if (!PyArg_ParseTuple(args, "|O&:readline",
         _PyIO_ConvertSsize_t, &limit))
         goto exit;
     return_value = _io__IOBase_readline_impl(self, limit);
@@ -217,8 +216,7 @@ _io__IOBase_readlines(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     Py_ssize_t hint = -1;
 
-    if (!PyArg_ParseTuple(args,
-        "|O&:readlines",
+    if (!PyArg_ParseTuple(args, "|O&:readlines",
         _PyIO_ConvertSsize_t, &hint))
         goto exit;
     return_value = _io__IOBase_readlines_impl(self, hint);
@@ -252,8 +250,7 @@ _io__RawIOBase_read(PyObject *self, PyObject *args)
     PyObject *return_value = NULL;
     Py_ssize_t n = -1;
 
-    if (!PyArg_ParseTuple(args,
-        "|n:read",
+    if (!PyArg_ParseTuple(args, "|n:read",
         &n))
         goto exit;
     return_value = _io__RawIOBase_read_impl(self, n);
@@ -279,4 +276,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=84eef4b7541f54b7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fe034152b6884e65 input=a9049054013a1b77]*/

@@ -20,9 +20,7 @@ binascii_a2b_uu(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "O&:a2b_uu",
-        ascii_buffer_converter, &data))
+    if (!PyArg_Parse(arg, "O&:a2b_uu", ascii_buffer_converter, &data))
         goto exit;
     return_value = binascii_a2b_uu_impl(module, &data);
 
@@ -52,9 +50,7 @@ binascii_b2a_uu(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:b2a_uu",
-        &data))
+    if (!PyArg_Parse(arg, "y*:b2a_uu", &data))
         goto exit;
     return_value = binascii_b2a_uu_impl(module, &data);
 
@@ -84,9 +80,7 @@ binascii_a2b_base64(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "O&:a2b_base64",
-        ascii_buffer_converter, &data))
+    if (!PyArg_Parse(arg, "O&:a2b_base64", ascii_buffer_converter, &data))
         goto exit;
     return_value = binascii_a2b_base64_impl(module, &data);
 
@@ -116,9 +110,7 @@ binascii_b2a_base64(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:b2a_base64",
-        &data))
+    if (!PyArg_Parse(arg, "y*:b2a_base64", &data))
         goto exit;
     return_value = binascii_b2a_base64_impl(module, &data);
 
@@ -148,9 +140,7 @@ binascii_a2b_hqx(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "O&:a2b_hqx",
-        ascii_buffer_converter, &data))
+    if (!PyArg_Parse(arg, "O&:a2b_hqx", ascii_buffer_converter, &data))
         goto exit;
     return_value = binascii_a2b_hqx_impl(module, &data);
 
@@ -180,9 +170,7 @@ binascii_rlecode_hqx(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:rlecode_hqx",
-        &data))
+    if (!PyArg_Parse(arg, "y*:rlecode_hqx", &data))
         goto exit;
     return_value = binascii_rlecode_hqx_impl(module, &data);
 
@@ -212,9 +200,7 @@ binascii_b2a_hqx(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:b2a_hqx",
-        &data))
+    if (!PyArg_Parse(arg, "y*:b2a_hqx", &data))
         goto exit;
     return_value = binascii_b2a_hqx_impl(module, &data);
 
@@ -244,9 +230,7 @@ binascii_rledecode_hqx(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:rledecode_hqx",
-        &data))
+    if (!PyArg_Parse(arg, "y*:rledecode_hqx", &data))
         goto exit;
     return_value = binascii_rledecode_hqx_impl(module, &data);
 
@@ -278,8 +262,7 @@ binascii_crc_hqx(PyModuleDef *module, PyObject *args)
     unsigned int crc;
     unsigned int _return_value;
 
-    if (!PyArg_ParseTuple(args,
-        "y*I:crc_hqx",
+    if (!PyArg_ParseTuple(args, "y*I:crc_hqx",
         &data, &crc))
         goto exit;
     _return_value = binascii_crc_hqx_impl(module, &data, crc);
@@ -315,8 +298,7 @@ binascii_crc32(PyModuleDef *module, PyObject *args)
     unsigned int crc = 0;
     unsigned int _return_value;
 
-    if (!PyArg_ParseTuple(args,
-        "y*|I:crc32",
+    if (!PyArg_ParseTuple(args, "y*|I:crc32",
         &data, &crc))
         goto exit;
     _return_value = binascii_crc32_impl(module, &data, crc);
@@ -353,9 +335,7 @@ binascii_b2a_hex(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:b2a_hex",
-        &data))
+    if (!PyArg_Parse(arg, "y*:b2a_hex", &data))
         goto exit;
     return_value = binascii_b2a_hex_impl(module, &data);
 
@@ -387,9 +367,7 @@ binascii_hexlify(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:hexlify",
-        &data))
+    if (!PyArg_Parse(arg, "y*:hexlify", &data))
         goto exit;
     return_value = binascii_hexlify_impl(module, &data);
 
@@ -422,9 +400,7 @@ binascii_a2b_hex(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer hexstr = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "O&:a2b_hex",
-        ascii_buffer_converter, &hexstr))
+    if (!PyArg_Parse(arg, "O&:a2b_hex", ascii_buffer_converter, &hexstr))
         goto exit;
     return_value = binascii_a2b_hex_impl(module, &hexstr);
 
@@ -456,9 +432,7 @@ binascii_unhexlify(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer hexstr = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "O&:unhexlify",
-        ascii_buffer_converter, &hexstr))
+    if (!PyArg_Parse(arg, "O&:unhexlify", ascii_buffer_converter, &hexstr))
         goto exit;
     return_value = binascii_unhexlify_impl(module, &hexstr);
 
@@ -490,8 +464,7 @@ binascii_a2b_qp(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     Py_buffer data = {NULL, NULL};
     int header = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "O&|i:a2b_qp", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O&|i:a2b_qp", _keywords,
         ascii_buffer_converter, &data, &header))
         goto exit;
     return_value = binascii_a2b_qp_impl(module, &data, header);
@@ -531,8 +504,7 @@ binascii_b2a_qp(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int istext = 1;
     int header = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "y*|iii:b2a_qp", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|iii:b2a_qp", _keywords,
         &data, &quotetabs, &istext, &header))
         goto exit;
     return_value = binascii_b2a_qp_impl(module, &data, quotetabs, istext, header);
@@ -544,4 +516,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=5f8d3578618b3432 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b1a3cbf7660ebaa5 input=a9049054013a1b77]*/

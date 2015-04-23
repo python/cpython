@@ -786,9 +786,7 @@ class CLanguage(Language):
                     """ % argname)
 
                 parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!PyArg_Parse(%s,
-                        "{format_units}:{name}",
-                        {parse_arguments}))
+                    if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments}))
                         goto exit;
                     """ % argname, indent=4))
 
@@ -825,8 +823,7 @@ class CLanguage(Language):
             parser_prototype = parser_prototype_varargs
 
             parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                if (!PyArg_ParseTuple(args,
-                    "{format_units}:{name}",
+                if (!PyArg_ParseTuple(args, "{format_units}:{name}",
                     {parse_arguments}))
                     goto exit;
                 """, indent=4))
@@ -838,14 +835,12 @@ class CLanguage(Language):
             parser_prototype = parser_prototype_keyword
 
             body = normalize_snippet("""
-                if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "{format_units}:{name}", _keywords,
+                if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
                     {parse_arguments}))
                     goto exit;
             """, indent=4)
             parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-                    "{format_units}:{name}", _keywords,
+                if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
                     {parse_arguments}))
                     goto exit;
                 """, indent=4))

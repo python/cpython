@@ -25,9 +25,7 @@ _bz2_BZ2Compressor_compress(BZ2Compressor *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:compress",
-        &data))
+    if (!PyArg_Parse(arg, "y*:compress", &data))
         goto exit;
     return_value = _bz2_BZ2Compressor_compress_impl(self, &data);
 
@@ -84,8 +82,7 @@ _bz2_BZ2Compressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     if ((Py_TYPE(self) == &BZ2Compressor_Type) &&
         !_PyArg_NoKeywords("BZ2Compressor", kwargs))
         goto exit;
-    if (!PyArg_ParseTuple(args,
-        "|i:BZ2Compressor",
+    if (!PyArg_ParseTuple(args, "|i:BZ2Compressor",
         &compresslevel))
         goto exit;
     return_value = _bz2_BZ2Compressor___init___impl((BZ2Compressor *)self, compresslevel);
@@ -128,8 +125,7 @@ _bz2_BZ2Decompressor_decompress(BZ2Decompressor *self, PyObject *args, PyObject 
     Py_buffer data = {NULL, NULL};
     Py_ssize_t max_length = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "y*|n:decompress", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|n:decompress", _keywords,
         &data, &max_length))
         goto exit;
     return_value = _bz2_BZ2Decompressor_decompress_impl(self, &data, max_length);
@@ -169,4 +165,4 @@ _bz2_BZ2Decompressor___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=e8a48a949969c355 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=fef29b76b3314fc7 input=a9049054013a1b77]*/

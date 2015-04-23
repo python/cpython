@@ -93,8 +93,7 @@ builtin_format(PyModuleDef *module, PyObject *args)
     PyObject *value;
     PyObject *format_spec = NULL;
 
-    if (!PyArg_ParseTuple(args,
-        "O|U:format",
+    if (!PyArg_ParseTuple(args, "O|U:format",
         &value, &format_spec))
         goto exit;
     return_value = builtin_format_impl(module, value, format_spec);
@@ -121,9 +120,7 @@ builtin_chr(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     int i;
 
-    if (!PyArg_Parse(arg,
-        "i:chr",
-        &i))
+    if (!PyArg_Parse(arg, "i:chr", &i))
         goto exit;
     return_value = builtin_chr_impl(module, i);
 
@@ -169,8 +166,7 @@ builtin_compile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int dont_inherit = 0;
     int optimize = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "OO&s|iii:compile", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO&s|iii:compile", _keywords,
         &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize))
         goto exit;
     return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize);
@@ -664,4 +660,4 @@ builtin_issubclass(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b308ab64aa4d4ff8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9b34d1ca57effad8 input=a9049054013a1b77]*/

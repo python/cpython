@@ -26,8 +26,7 @@ zlib_compress(PyModuleDef *module, PyObject *args)
     Py_buffer bytes = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
 
-    if (!PyArg_ParseTuple(args,
-        "y*|i:compress",
+    if (!PyArg_ParseTuple(args, "y*|i:compress",
         &bytes, &level))
         goto exit;
     return_value = zlib_compress_impl(module, &bytes, level);
@@ -68,8 +67,7 @@ zlib_decompress(PyModuleDef *module, PyObject *args)
     int wbits = MAX_WBITS;
     unsigned int bufsize = DEF_BUF_SIZE;
 
-    if (!PyArg_ParseTuple(args,
-        "y*|iO&:decompress",
+    if (!PyArg_ParseTuple(args, "y*|iO&:decompress",
         &data, &wbits, uint_converter, &bufsize))
         goto exit;
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
@@ -127,8 +125,7 @@ zlib_compressobj(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int strategy = Z_DEFAULT_STRATEGY;
     Py_buffer zdict = {NULL, NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|iiiiiy*:compressobj", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iiiiiy*:compressobj", _keywords,
         &level, &method, &wbits, &memLevel, &strategy, &zdict))
         goto exit;
     return_value = zlib_compressobj_impl(module, level, method, wbits, memLevel, strategy, &zdict);
@@ -167,8 +164,7 @@ zlib_decompressobj(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int wbits = MAX_WBITS;
     PyObject *zdict = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|iO:decompressobj", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO:decompressobj", _keywords,
         &wbits, &zdict))
         goto exit;
     return_value = zlib_decompressobj_impl(module, wbits, zdict);
@@ -202,9 +198,7 @@ zlib_Compress_compress(compobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:compress",
-        &data))
+    if (!PyArg_Parse(arg, "y*:compress", &data))
         goto exit;
     return_value = zlib_Compress_compress_impl(self, &data);
 
@@ -247,8 +241,7 @@ zlib_Decompress_decompress(compobject *self, PyObject *args)
     Py_buffer data = {NULL, NULL};
     unsigned int max_length = 0;
 
-    if (!PyArg_ParseTuple(args,
-        "y*|O&:decompress",
+    if (!PyArg_ParseTuple(args, "y*|O&:decompress",
         &data, uint_converter, &max_length))
         goto exit;
     return_value = zlib_Decompress_decompress_impl(self, &data, max_length);
@@ -285,8 +278,7 @@ zlib_Compress_flush(compobject *self, PyObject *args)
     PyObject *return_value = NULL;
     int mode = Z_FINISH;
 
-    if (!PyArg_ParseTuple(args,
-        "|i:flush",
+    if (!PyArg_ParseTuple(args, "|i:flush",
         &mode))
         goto exit;
     return_value = zlib_Compress_flush_impl(self, mode);
@@ -360,8 +352,7 @@ zlib_Decompress_flush(compobject *self, PyObject *args)
     PyObject *return_value = NULL;
     unsigned int length = DEF_BUF_SIZE;
 
-    if (!PyArg_ParseTuple(args,
-        "|O&:flush",
+    if (!PyArg_ParseTuple(args, "|O&:flush",
         uint_converter, &length))
         goto exit;
     return_value = zlib_Decompress_flush_impl(self, length);
@@ -394,8 +385,7 @@ zlib_adler32(PyModuleDef *module, PyObject *args)
     Py_buffer data = {NULL, NULL};
     unsigned int value = 1;
 
-    if (!PyArg_ParseTuple(args,
-        "y*|I:adler32",
+    if (!PyArg_ParseTuple(args, "y*|I:adler32",
         &data, &value))
         goto exit;
     return_value = zlib_adler32_impl(module, &data, value);
@@ -432,8 +422,7 @@ zlib_crc32(PyModuleDef *module, PyObject *args)
     Py_buffer data = {NULL, NULL};
     unsigned int value = 0;
 
-    if (!PyArg_ParseTuple(args,
-        "y*|I:crc32",
+    if (!PyArg_ParseTuple(args, "y*|I:crc32",
         &data, &value))
         goto exit;
     return_value = zlib_crc32_impl(module, &data, value);
@@ -449,4 +438,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=6cdeb624bebfe11f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=56ed1147bbbb4788 input=a9049054013a1b77]*/
