@@ -10,6 +10,9 @@ What's New in Python 3.3.7?
 Core and Builtins
 -----------------
 
+- Issue #24044: Fix possible null pointer dereference in list.sort in out of
+  memory conditions.
+
 - Issue #23055: Fixed a buffer overflow in PyUnicode_FromFormatV.  Analysis
   and fix by Guido Vranken.
 
