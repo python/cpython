@@ -41,6 +41,10 @@ Documentation
 
 - Issue #24029: Document the name binding behavior for submodule imports.
 
+Tools/Demos
+-----------
+
+- Issue #24031: make patchcheck now supports git checkouts, too.
 
 What's New in Python 3.5.0 alpha 4?
 ===================================
