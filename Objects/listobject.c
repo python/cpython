@@ -1961,8 +1961,10 @@ listsort(PyListObject *self, PyObject *args, PyObject *kwds)
             keys = &ms.temparray[saved_ob_size+1];
         else {
             keys = PyMem_MALLOC(sizeof(PyObject *) * saved_ob_size);
-            if (keys == NULL)
-                return NULL;
+            if (keys == NULL) {
+                PyErr_NoMemory();
+                goto keyfunc_fail;
+            }
         }
 
         for (i = 0; i < saved_ob_size ; i++) {
