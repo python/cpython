@@ -78,6 +78,9 @@ Core and Builtins
 - Issue #23466: %c, %o, %x, and %X in bytes formatting now raise TypeError on
   non-integer input.
 
+- Issue #24044: Fix possible null pointer dereference in list.sort in out of
+  memory conditions.
+
 Library
 -------
 
