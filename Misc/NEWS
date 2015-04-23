@@ -28,6 +28,9 @@ Core and Builtins
 - Issue #23629: Fix the default __sizeof__ implementation for variable-sized
   objects.
 
+- Issue #24044: Fix possible null pointer dereference in list.sort in out of
+  memory conditions.
+
 Library
 -------
 
