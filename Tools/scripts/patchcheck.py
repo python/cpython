@@ -49,15 +49,31 @@ def mq_patches_applied():
 @status("Getting the list of files that have been added/changed",
         info=lambda x: n_files_str(len(x)))
 def changed_files():
-    """Get the list of changed or added files from Mercurial."""
-    if not os.path.isdir(os.path.join(SRCDIR, '.hg')):
-        sys.exit('need a checkout to get modified files')
-
-    cmd = 'hg status --added --modified --no-status'
-    if mq_patches_applied():
-        cmd += ' --rev qparent'
-    with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
-        return [x.decode().rstrip() for x in st.stdout]
+    """Get the list of changed or added files from Mercurial or git."""
+    if os.path.isdir(os.path.join(SRCDIR, '.hg')):
+        cmd = 'hg status --added --modified --no-status'
+        if mq_patches_applied():
+            cmd += ' --rev qparent'
+        with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
+            return [x.decode().rstrip() for x in st.stdout]
+    elif os.path.isdir(os.path.join(SRCDIR, '.git')):
+        cmd = 'git status --porcelain'
+        filenames = []
+        with subprocess.Popen(cmd.split(), stdout=subprocess.PIPE) as st:
+            for line in st.stdout:
+                line = line.decode().rstrip()
+                status = set(line[:2])
+                # modified, added or unmerged files
+                if not status.intersection('MAU'):
+                    continue
+                filename = line[3:]
+                if ' -> ' in filename:
+                    # file is renamed
+                    filename = filename.split(' -> ', 2)[1].strip()
+                filenames.append(filename)
+        return filenames
+    else:
+        sys.exit('need a Mercurial or git checkout to get modified files')
 
 
 def report_modified_files(file_paths):
