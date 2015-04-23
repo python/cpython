@@ -30,8 +30,7 @@ bytes_split(PyBytesObject*self, PyObject *args, PyObject *kwargs)
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|On:split", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|On:split", _keywords,
         &sep, &maxsplit))
         goto exit;
     return_value = bytes_split_impl(self, sep, maxsplit);
@@ -65,9 +64,7 @@ bytes_partition(PyBytesObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer sep = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:partition",
-        &sep))
+    if (!PyArg_Parse(arg, "y*:partition", &sep))
         goto exit;
     return_value = bytes_partition_impl(self, &sep);
 
@@ -104,9 +101,7 @@ bytes_rpartition(PyBytesObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer sep = {NULL, NULL};
 
-    if (!PyArg_Parse(arg,
-        "y*:rpartition",
-        &sep))
+    if (!PyArg_Parse(arg, "y*:rpartition", &sep))
         goto exit;
     return_value = bytes_rpartition_impl(self, &sep);
 
@@ -148,8 +143,7 @@ bytes_rsplit(PyBytesObject*self, PyObject *args, PyObject *kwargs)
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|On:rsplit", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|On:rsplit", _keywords,
         &sep, &maxsplit))
         goto exit;
     return_value = bytes_rsplit_impl(self, sep, maxsplit);
@@ -332,8 +326,7 @@ bytes_maketrans(void *null, PyObject *args)
     Py_buffer frm = {NULL, NULL};
     Py_buffer to = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
-        "y*y*:maketrans",
+    if (!PyArg_ParseTuple(args, "y*y*:maketrans",
         &frm, &to))
         goto exit;
     return_value = bytes_maketrans_impl(&frm, &to);
@@ -377,8 +370,7 @@ bytes_replace(PyBytesObject*self, PyObject *args)
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!PyArg_ParseTuple(args,
-        "y*y*|n:replace",
+    if (!PyArg_ParseTuple(args, "y*y*|n:replace",
         &old, &new, &count))
         goto exit;
     return_value = bytes_replace_impl(self, &old, &new, count);
@@ -424,8 +416,7 @@ bytes_decode(PyBytesObject*self, PyObject *args, PyObject *kwargs)
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|ss:decode", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:decode", _keywords,
         &encoding, &errors))
         goto exit;
     return_value = bytes_decode_impl(self, encoding, errors);
@@ -456,8 +447,7 @@ bytes_splitlines(PyBytesObject*self, PyObject *args, PyObject *kwargs)
     static char *_keywords[] = {"keepends", NULL};
     int keepends = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|i:splitlines", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:splitlines", _keywords,
         &keepends))
         goto exit;
     return_value = bytes_splitlines_impl(self, keepends);
@@ -487,13 +477,11 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *string;
 
-    if (!PyArg_Parse(arg,
-        "U:fromhex",
-        &string))
+    if (!PyArg_Parse(arg, "U:fromhex", &string))
         goto exit;
     return_value = bytes_fromhex_impl(type, string);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=deaf886e15270679 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bd0ce8f25d7e18f4 input=a9049054013a1b77]*/

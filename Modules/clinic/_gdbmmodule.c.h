@@ -147,9 +147,7 @@ _gdbm_gdbm_nextkey(dbmobject *self, PyObject *arg)
     const char *key;
     Py_ssize_clean_t key_length;
 
-    if (!PyArg_Parse(arg,
-        "s#:nextkey",
-        &key, &key_length))
+    if (!PyArg_Parse(arg, "s#:nextkey", &key, &key_length))
         goto exit;
     return_value = _gdbm_gdbm_nextkey_impl(self, key, key_length);
 
@@ -244,8 +242,7 @@ dbmopen(PyModuleDef *module, PyObject *args)
     const char *flags = "r";
     int mode = 438;
 
-    if (!PyArg_ParseTuple(args,
-        "s|si:open",
+    if (!PyArg_ParseTuple(args, "s|si:open",
         &name, &flags, &mode))
         goto exit;
     return_value = dbmopen_impl(module, name, flags, mode);
@@ -253,4 +250,4 @@ dbmopen(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b41c68a5f30699cb input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d3d8d871bcccb68a input=a9049054013a1b77]*/

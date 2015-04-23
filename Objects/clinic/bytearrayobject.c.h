@@ -107,8 +107,7 @@ bytearray_maketrans(void *null, PyObject *args)
     Py_buffer frm = {NULL, NULL};
     Py_buffer to = {NULL, NULL};
 
-    if (!PyArg_ParseTuple(args,
-        "y*y*:maketrans",
+    if (!PyArg_ParseTuple(args, "y*y*:maketrans",
         &frm, &to))
         goto exit;
     return_value = bytearray_maketrans_impl(&frm, &to);
@@ -152,8 +151,7 @@ bytearray_replace(PyByteArrayObject *self, PyObject *args)
     Py_buffer new = {NULL, NULL};
     Py_ssize_t count = -1;
 
-    if (!PyArg_ParseTuple(args,
-        "y*y*|n:replace",
+    if (!PyArg_ParseTuple(args, "y*y*|n:replace",
         &old, &new, &count))
         goto exit;
     return_value = bytearray_replace_impl(self, &old, &new, count);
@@ -198,8 +196,7 @@ bytearray_split(PyByteArrayObject *self, PyObject *args, PyObject *kwargs)
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|On:split", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|On:split", _keywords,
         &sep, &maxsplit))
         goto exit;
     return_value = bytearray_split_impl(self, sep, maxsplit);
@@ -271,8 +268,7 @@ bytearray_rsplit(PyByteArrayObject *self, PyObject *args, PyObject *kwargs)
     PyObject *sep = Py_None;
     Py_ssize_t maxsplit = -1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|On:rsplit", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|On:rsplit", _keywords,
         &sep, &maxsplit))
         goto exit;
     return_value = bytearray_rsplit_impl(self, sep, maxsplit);
@@ -323,8 +319,7 @@ bytearray_insert(PyByteArrayObject *self, PyObject *args)
     Py_ssize_t index;
     int item;
 
-    if (!PyArg_ParseTuple(args,
-        "nO&:insert",
+    if (!PyArg_ParseTuple(args, "nO&:insert",
         &index, _getbytevalue, &item))
         goto exit;
     return_value = bytearray_insert_impl(self, index, item);
@@ -354,9 +349,7 @@ bytearray_append(PyByteArrayObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int item;
 
-    if (!PyArg_Parse(arg,
-        "O&:append",
-        _getbytevalue, &item))
+    if (!PyArg_Parse(arg, "O&:append", _getbytevalue, &item))
         goto exit;
     return_value = bytearray_append_impl(self, item);
 
@@ -400,8 +393,7 @@ bytearray_pop(PyByteArrayObject *self, PyObject *args)
     PyObject *return_value = NULL;
     Py_ssize_t index = -1;
 
-    if (!PyArg_ParseTuple(args,
-        "|n:pop",
+    if (!PyArg_ParseTuple(args, "|n:pop",
         &index))
         goto exit;
     return_value = bytearray_pop_impl(self, index);
@@ -431,9 +423,7 @@ bytearray_remove(PyByteArrayObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int value;
 
-    if (!PyArg_Parse(arg,
-        "O&:remove",
-        _getbytevalue, &value))
+    if (!PyArg_Parse(arg, "O&:remove", _getbytevalue, &value))
         goto exit;
     return_value = bytearray_remove_impl(self, value);
 
@@ -561,8 +551,7 @@ bytearray_decode(PyByteArrayObject *self, PyObject *args, PyObject *kwargs)
     const char *encoding = NULL;
     const char *errors = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|ss:decode", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|ss:decode", _keywords,
         &encoding, &errors))
         goto exit;
     return_value = bytearray_decode_impl(self, encoding, errors);
@@ -606,8 +595,7 @@ bytearray_splitlines(PyByteArrayObject *self, PyObject *args, PyObject *kwargs)
     static char *_keywords[] = {"keepends", NULL};
     int keepends = 0;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|i:splitlines", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|i:splitlines", _keywords,
         &keepends))
         goto exit;
     return_value = bytearray_splitlines_impl(self, keepends);
@@ -637,9 +625,7 @@ bytearray_fromhex(PyTypeObject *cls, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *string;
 
-    if (!PyArg_Parse(arg,
-        "U:fromhex",
-        &string))
+    if (!PyArg_Parse(arg, "U:fromhex", &string))
         goto exit;
     return_value = bytearray_fromhex_impl((PyObject*)cls, string);
 
@@ -683,8 +669,7 @@ bytearray_reduce_ex(PyByteArrayObject *self, PyObject *args)
     PyObject *return_value = NULL;
     int proto = 0;
 
-    if (!PyArg_ParseTuple(args,
-        "|i:__reduce_ex__",
+    if (!PyArg_ParseTuple(args, "|i:__reduce_ex__",
         &proto))
         goto exit;
     return_value = bytearray_reduce_ex_impl(self, proto);
@@ -710,4 +695,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=2a698741a4f14047 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=966c15ff22c5e243 input=a9049054013a1b77]*/

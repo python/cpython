@@ -59,8 +59,7 @@ _dbm_dbm_get(dbmobject *self, PyObject *args)
     Py_ssize_clean_t key_length;
     PyObject *default_value = NULL;
 
-    if (!PyArg_ParseTuple(args,
-        "s#|O:get",
+    if (!PyArg_ParseTuple(args, "s#|O:get",
         &key, &key_length, &default_value))
         goto exit;
     return_value = _dbm_dbm_get_impl(self, key, key_length, default_value);
@@ -93,8 +92,7 @@ _dbm_dbm_setdefault(dbmobject *self, PyObject *args)
     Py_ssize_clean_t key_length;
     PyObject *default_value = NULL;
 
-    if (!PyArg_ParseTuple(args,
-        "s#|O:setdefault",
+    if (!PyArg_ParseTuple(args, "s#|O:setdefault",
         &key, &key_length, &default_value))
         goto exit;
     return_value = _dbm_dbm_setdefault_impl(self, key, key_length, default_value);
@@ -132,8 +130,7 @@ dbmopen(PyModuleDef *module, PyObject *args)
     const char *flags = "r";
     int mode = 438;
 
-    if (!PyArg_ParseTuple(args,
-        "s|si:open",
+    if (!PyArg_ParseTuple(args, "s|si:open",
         &filename, &flags, &mode))
         goto exit;
     return_value = dbmopen_impl(module, filename, flags, mode);
@@ -141,4 +138,4 @@ dbmopen(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=951fcfdb6d667a61 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1d92e81b28c558d0 input=a9049054013a1b77]*/

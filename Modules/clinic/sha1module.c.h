@@ -84,8 +84,7 @@ _sha1_sha1(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     static char *_keywords[] = {"string", NULL};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|O:sha1", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha1", _keywords,
         &string))
         goto exit;
     return_value = _sha1_sha1_impl(module, string);
@@ -93,4 +92,4 @@ _sha1_sha1(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b2890b9ca964b217 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=be19102f3120490a input=a9049054013a1b77]*/

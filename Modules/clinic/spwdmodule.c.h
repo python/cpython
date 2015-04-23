@@ -24,9 +24,7 @@ spwd_getspnam(PyModuleDef *module, PyObject *arg_)
     PyObject *return_value = NULL;
     PyObject *arg;
 
-    if (!PyArg_Parse(arg_,
-        "U:getspnam",
-        &arg))
+    if (!PyArg_Parse(arg_, "U:getspnam", &arg))
         goto exit;
     return_value = spwd_getspnam_impl(module, arg);
 
@@ -67,4 +65,4 @@ spwd_getspall(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 #ifndef SPWD_GETSPALL_METHODDEF
     #define SPWD_GETSPALL_METHODDEF
 #endif /* !defined(SPWD_GETSPALL_METHODDEF) */
-/*[clinic end generated code: output=67a4f8c47008f28f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6c178830413f7763 input=a9049054013a1b77]*/

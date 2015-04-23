@@ -26,8 +26,7 @@ crypt_crypt(PyModuleDef *module, PyObject *args)
     const char *word;
     const char *salt;
 
-    if (!PyArg_ParseTuple(args,
-        "ss:crypt",
+    if (!PyArg_ParseTuple(args, "ss:crypt",
         &word, &salt))
         goto exit;
     return_value = crypt_crypt_impl(module, word, salt);
@@ -35,4 +34,4 @@ crypt_crypt(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b5b8d977189d19ea input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22c295c9bce018c4 input=a9049054013a1b77]*/

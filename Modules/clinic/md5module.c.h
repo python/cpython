@@ -84,8 +84,7 @@ _md5_md5(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     static char *_keywords[] = {"string", NULL};
     PyObject *string = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs,
-        "|O:md5", _keywords,
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:md5", _keywords,
         &string))
         goto exit;
     return_value = _md5_md5_impl(module, string);
@@ -93,4 +92,4 @@ _md5_md5(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=f72618edfd35d984 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0f803ded701aca54 input=a9049054013a1b77]*/
