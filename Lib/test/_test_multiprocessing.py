@@ -1799,17 +1799,23 @@ class _TestPool(BaseTestCase):
         it = self.pool.imap_unordered(sqr,
                                       exception_throwing_generator(10, 3),
                                       1)
+        expected_values = list(map(sqr, list(range(10))))
         with self.assertRaises(SayWhenError):
             # imap_unordered makes it difficult to anticipate the SayWhenError
             for i in range(10):
-                self.assertEqual(next(it), i*i)
+                value = next(it)
+                self.assertIn(value, expected_values)
+                expected_values.remove(value)
 
         it = self.pool.imap_unordered(sqr,
                                       exception_throwing_generator(20, 7),
                                       2)
+        expected_values = list(map(sqr, list(range(20))))
         with self.assertRaises(SayWhenError):
             for i in range(20):
-                self.assertEqual(next(it), i*i)
+                value = next(it)
+                self.assertIn(value, expected_values)
+                expected_values.remove(value)
 
     def test_make_pool(self):
         self.assertRaises(ValueError, multiprocessing.Pool, -1)
