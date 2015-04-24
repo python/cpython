@@ -583,35 +583,6 @@ drop_class_free(PySTEntryObject *ste, PyObject *free)
     return 1;
 }
 
-/* Check for illegal statements in unoptimized namespaces */
-static int
-check_unoptimized(const PySTEntryObject* ste) {
-    const char* trailer;
-
-    if (ste->ste_type != FunctionBlock || !ste->ste_unoptimized
-        || !(ste->ste_free || ste->ste_child_free))
-        return 1;
-
-    trailer = (ste->ste_child_free ?
-                   "contains a nested function with free variables" :
-                   "is a nested function");
-
-    switch (ste->ste_unoptimized) {
-    case OPT_TOPLEVEL: /* import * at top-level is fine */
-        return 1;
-    case OPT_IMPORT_STAR:
-        PyErr_Format(PyExc_SyntaxError,
-                     "import * is not allowed in function '%U' because it %s",
-                     ste->ste_name, trailer);
-        break;
-    }
-
-    PyErr_SyntaxLocationObject(ste->ste_table->st_filename,
-                               ste->ste_opt_lineno,
-                               ste->ste_opt_col_offset);
-    return 0;
-}
-
 /* Enter the final scope information into the ste_symbols dict.
  *
  * All arguments are dicts.  Modifies symbols, others are read-only.
@@ -853,8 +824,6 @@ analyze_block(PySTEntryObject *ste, PyObject *bound, PyObject *free,
     /* Records the results of the analysis in the symbol table entry */
     if (!update_symbols(ste->ste_symbols, scopes, bound, newfree,
                         ste->ste_type == ClassBlock))
-        goto error;
-    if (!check_unoptimized(ste))
         goto error;
 
     temp = PyNumber_InPlaceOr(free, newfree);
