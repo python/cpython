@@ -161,10 +161,6 @@ conjunction with nested scopes that contain free variables.
 If a variable is referenced in an enclosing scope, it is illegal to delete the
 name.  An error will be reported at compile time.
 
-If the wild card form of import --- ``import *`` --- is used in a function and
-the function contains or is a nested block with free variables, the compiler
-will raise a :exc:`SyntaxError`.
-
 .. XXX from * also invalid with relative imports (at least currently)
 
 The :func:`eval` and :func:`exec` functions do not have access to the full
