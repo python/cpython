@@ -3267,12 +3267,15 @@ os_lchown_impl(PyModuleDef *module, path_t *path, uid_t uid, gid_t gid)
 static PyObject *
 posix_getcwd(int use_bytes)
 {
-    char buf[1026];
-    char *res;
+    char *buf, *tmpbuf;
+    char *cwd;
+    const size_t chunk = 1024;
+    size_t buflen = 0;
+    PyObject *obj;
 
 #ifdef MS_WINDOWS
     if (!use_bytes) {
-        wchar_t wbuf[1026];
+        wchar_t wbuf[MAXPATHLEN];
         wchar_t *wbuf2 = wbuf;
         PyObject *resobj;
         DWORD len;
@@ -3306,14 +3309,31 @@ posix_getcwd(int use_bytes)
         return NULL;
 #endif
 
+    buf = cwd = NULL;
     Py_BEGIN_ALLOW_THREADS
-    res = getcwd(buf, sizeof buf);
+    do {
+        buflen += chunk;
+        tmpbuf = PyMem_RawRealloc(buf, buflen);
+        if (tmpbuf == NULL)
+            break;
+
+        buf = tmpbuf;
+        cwd = getcwd(buf, buflen);
+    } while (cwd == NULL && errno == ERANGE);
     Py_END_ALLOW_THREADS
-    if (res == NULL)
+
+    if (cwd == NULL) {
+        PyMem_RawFree(buf);
         return posix_error();
+    }
+
     if (use_bytes)
-        return PyBytes_FromStringAndSize(buf, strlen(buf));
-    return PyUnicode_DecodeFSDefault(buf);
+        obj = PyBytes_FromStringAndSize(buf, strlen(buf));
+    else
+        obj = PyUnicode_DecodeFSDefault(buf);
+    PyMem_RawFree(buf);
+
+    return obj;
 }
 
 
@@ -8873,7 +8893,7 @@ os_truncate_impl(PyModuleDef *module, path_t *path, Py_off_t length)
         fd = _wopen(path->wide, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
     else
         fd = _open(path->narrow, _O_WRONLY | _O_BINARY | _O_NOINHERIT);
-    if (fd < 0) 
+    if (fd < 0)
         result = -1;
     else {
         result = _chsize_s(fd, length);

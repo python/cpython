@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #9246: On POSIX, os.getcwd() now supports paths longer than 1025 bytes.
+  Patch written by William Orr.
+
 - Issue #17445: add difflib.diff_bytes() to support comparison of
   byte strings (fixes a regression from Python 2).
 
@@ -33,7 +36,7 @@ Library
 - Issue #23728: binascii.crc_hqx() could return an integer outside of the range
   0-0xffff for empty data.
 
-- Issue #23887: urllib.error.HTTPError now has a proper repr() representation. 
+- Issue #23887: urllib.error.HTTPError now has a proper repr() representation.
   Patch by Berker Peksag.
 
 Documentation
