@@ -2289,6 +2289,19 @@ the bytes type has an additional class method to read data in that format:
    >>> bytes.fromhex('2Ef0 F1f2  ')
    b'.\xf0\xf1\xf2'
 
+A reverse conversion function exists to transform a bytes object into its
+hexadecimal representation.
+
+.. method:: bytes.hex()
+
+   Return a string object containing two hexadecimal digits for each
+   byte in the instance.
+
+   >>> b'\xf0\xf1\xf2'.hex()
+   'f0f1f2'
+
+   .. versionadded:: 3.5
+
 Since bytes objects are sequences of integers (akin to a tuple), for a bytes
 object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be a bytes
 object of length 1.  (This contrasts with text strings, where both indexing
@@ -2343,6 +2356,19 @@ the bytearray type has an additional class method to read data in that format:
 
    >>> bytearray.fromhex('2Ef0 F1f2  ')
    bytearray(b'.\xf0\xf1\xf2')
+
+A reverse conversion function exists to transform a bytearray object into its
+hexadecimal representation.
+
+.. method:: bytearray.hex()
+
+   Return a string object containing two hexadecimal digits for each
+   byte in the instance.
+
+   >>> bytearray(b'\xf0\xf1\xf2').hex()
+   'f0f1f2'
+
+   .. versionadded:: 3.5
 
 Since bytearray objects are sequences of integers (akin to a list), for a
 bytearray object *b*, ``b[0]`` will be an integer, while ``b[0:1]`` will be
@@ -3457,6 +3483,17 @@ copying.
       representation with all elements converted to bytes. :meth:`tobytes`
       supports all format strings, including those that are not in
       :mod:`struct` module syntax.
+
+   .. method:: hex()
+
+      Return a string object containing two hexadecimal digits for each
+      byte in the buffer. ::
+
+         >>> m = memoryview(b"abc")
+         >>> m.hex()
+         '616263'
+
+      .. versionadded:: 3.5
 
    .. method:: tolist()
 

@@ -1,6 +1,7 @@
 /* Memoryview object implementation */
 
 #include "Python.h"
+#include "pystrhex.h"
 #include <stddef.h>
 
 
@@ -2158,6 +2159,14 @@ memory_tobytes(PyMemoryViewObject *self, PyObject *dummy)
 }
 
 static PyObject *
+memory_hex(PyMemoryViewObject *self, PyObject *dummy)
+{
+    Py_buffer *src = VIEW_ADDR(self);
+    CHECK_RELEASED(self);
+    return _Py_strhex(src->buf, src->len);
+}
+
+static PyObject *
 memory_repr(PyMemoryViewObject *self)
 {
     if (self->flags & _Py_MEMORYVIEW_RELEASED)
@@ -3061,6 +3070,10 @@ PyDoc_STRVAR(memory_tobytes_doc,
 "tobytes($self, /)\n--\n\
 \n\
 Return the data in the buffer as a byte string.");
+PyDoc_STRVAR(memory_hex_doc,
+"hex($self, /)\n--\n\
+\n\
+Return the data in the buffer as a string of hexadecimal numbers.");
 PyDoc_STRVAR(memory_tolist_doc,
 "tolist($self, /)\n--\n\
 \n\
@@ -3073,6 +3086,7 @@ Cast a memoryview to a new format or shape.");
 static PyMethodDef memory_methods[] = {
     {"release",     (PyCFunction)memory_release, METH_NOARGS, memory_release_doc},
     {"tobytes",     (PyCFunction)memory_tobytes, METH_NOARGS, memory_tobytes_doc},
+    {"hex",         (PyCFunction)memory_hex, METH_NOARGS, memory_hex_doc},
     {"tolist",      (PyCFunction)memory_tolist, METH_NOARGS, memory_tolist_doc},
     {"cast",        (PyCFunction)memory_cast, METH_VARARGS|METH_KEYWORDS, memory_cast_doc},
     {"__enter__",   memory_enter, METH_NOARGS, NULL},

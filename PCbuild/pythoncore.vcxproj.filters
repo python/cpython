@@ -243,6 +243,9 @@
     <ClInclude Include="..\Include\pystrtod.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\pystrhex.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\dtoa.h">
       <Filter>Include</Filter>
     </ClInclude>
@@ -906,6 +909,9 @@
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pystrcmp.c">
+      <Filter>Python</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Python\pystrhex.c">
       <Filter>Python</Filter>
     </ClCompile>
     <ClCompile Include="..\Python\pystrtod.c">

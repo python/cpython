@@ -5,6 +5,7 @@
 #include "structmember.h"
 #include "bytes_methods.h"
 #include "bytesobject.h"
+#include "pystrhex.h"
 
 /*[clinic input]
 class bytearray "PyByteArrayObject *" "&PyByteArray_Type"
@@ -2872,6 +2873,19 @@ bytearray_fromhex_impl(PyObject*cls, PyObject *string)
     return NULL;
 }
 
+PyDoc_STRVAR(hex__doc__,
+"B.hex() -> string\n\
+\n\
+Create a string of hexadecimal numbers from a bytearray object.\n\
+Example: bytearray([0xb9, 0x01, 0xef]).hex() -> 'b901ef'.");
+
+static PyObject *
+bytearray_hex(PyBytesObject *self)
+{
+    char* argbuf = PyByteArray_AS_STRING(self);
+    Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
+    return _Py_strhex(argbuf, arglen);
+}
 
 static PyObject *
 _common_reduce(PyByteArrayObject *self, int proto)
@@ -3002,6 +3016,7 @@ bytearray_methods[] = {
     BYTEARRAY_EXTEND_METHODDEF
     {"find", (PyCFunction)bytearray_find, METH_VARARGS, find__doc__},
     BYTEARRAY_FROMHEX_METHODDEF
+    {"hex", (PyCFunction)bytearray_hex, METH_NOARGS, hex__doc__},
     {"index", (PyCFunction)bytearray_index, METH_VARARGS, index__doc__},
     BYTEARRAY_INSERT_METHODDEF
     {"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,

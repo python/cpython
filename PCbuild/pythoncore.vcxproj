@@ -147,6 +147,7 @@
     <ClInclude Include="..\Include\pystate.h" />
     <ClInclude Include="..\Include\pystrcmp.h" />
     <ClInclude Include="..\Include\pystrtod.h" />
+    <ClInclude Include="..\Include\pystrhex.h" />
     <ClInclude Include="..\Include\dtoa.h" />
     <ClInclude Include="..\Include\Python-ast.h" />
     <ClInclude Include="..\Include\Python.h" />
@@ -376,6 +377,7 @@
     <ClCompile Include="..\Python\pytime.c" />
     <ClCompile Include="..\Python\pystate.c" />
     <ClCompile Include="..\Python\pystrcmp.c" />
+    <ClCompile Include="..\Python\pystrhex.c" />
     <ClCompile Include="..\Python\pystrtod.c" />
     <ClCompile Include="..\Python\dtoa.c" />
     <ClCompile Include="..\Python\Python-ast.c" />
