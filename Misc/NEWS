@@ -11,6 +11,7 @@ Core and Builtins
 -----------------
 
 - Issue #24022: Fix tokenizer crash when processing undecodable source code.
+- Issue #9951: Added a hex() method to bytes, bytearray, and memoryview.
 
 Library
 -------

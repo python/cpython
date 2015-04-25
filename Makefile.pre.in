@@ -402,6 +402,7 @@ PYTHON_OBJS=	\
 		Python/getopt.o \
 		Python/pystrcmp.o \
 		Python/pystrtod.o \
+		Python/pystrhex.o \
 		Python/dtoa.o \
 		Python/formatter_unicode.o \
 		Python/fileutils.o \
@@ -919,6 +920,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/pystate.h \
 		$(srcdir)/Include/pystrcmp.h \
 		$(srcdir)/Include/pystrtod.h \
+		$(srcdir)/Include/pystrhex.h \
 		$(srcdir)/Include/pythonrun.h \
 		$(srcdir)/Include/pythread.h \
 		$(srcdir)/Include/pytime.h \
