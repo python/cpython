@@ -16,6 +16,7 @@
 #include "Python.h"
 #include "structmember.h"
 #include "hashlib.h"
+#include "pystrhex.h"
 
 
 /* EVP is the preferred interface to hashing in OpenSSL */
@@ -157,9 +158,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
 {
     unsigned char digest[EVP_MAX_MD_SIZE];
     EVP_MD_CTX temp_ctx;
-    PyObject *retval;
-    char *hex_digest;
-    unsigned int i, j, digest_size;
+    unsigned int digest_size;
 
     /* Get the raw (binary) digest value */
     locked_EVP_MD_CTX_copy(&temp_ctx, self);
@@ -168,22 +167,7 @@ EVP_hexdigest(EVPobject *self, PyObject *unused)
 
     EVP_MD_CTX_cleanup(&temp_ctx);
 
-    /* Allocate a new buffer */
-    hex_digest = PyMem_Malloc(digest_size * 2 + 1);
-    if (!hex_digest)
-        return PyErr_NoMemory();
-
-    /* Make hex version of the digest */
-    for(i=j=0; i<digest_size; i++) {
-        unsigned char c;
-        c = (digest[i] >> 4) & 0xf;
-        hex_digest[j++] = Py_hexdigits[c];
-        c = (digest[i] & 0xf);
-        hex_digest[j++] = Py_hexdigits[c];
-    }
-    retval = PyUnicode_FromStringAndSize(hex_digest, digest_size * 2);
-    PyMem_Free(hex_digest);
-    return retval;
+    return _Py_strhex((const char *)digest, digest_size);
 }
 
 PyDoc_STRVAR(EVP_update__doc__,

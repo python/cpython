@@ -18,6 +18,7 @@
 
 #include "Python.h"
 #include "hashlib.h"
+#include "pystrhex.h"
 
 /*[clinic input]
 module _md5
@@ -387,32 +388,12 @@ MD5Type_hexdigest_impl(MD5object *self)
 {
     unsigned char digest[MD5_DIGESTSIZE];
     struct md5_state temp;
-    PyObject *retval;
-    Py_UCS1 *hex_digest;
-    int i, j;
 
     /* Get the raw (binary) digest value */
     temp = self->hash_state;
     md5_done(&temp, digest);
 
-    /* Create a new string */
-    retval = PyUnicode_New(MD5_DIGESTSIZE * 2, 127);
-    if (!retval)
-            return NULL;
-    hex_digest = PyUnicode_1BYTE_DATA(retval);
-
-    /* Make hex version of the digest */
-    for(i=j=0; i<MD5_DIGESTSIZE; i++) {
-        unsigned char c;
-        c = (digest[i] >> 4) & 0xf;
-        hex_digest[j++] = Py_hexdigits[c];
-        c = (digest[i] & 0xf);
-        hex_digest[j++] = Py_hexdigits[c];
-    }
-#ifdef Py_DEBUG
-    assert(_PyUnicode_CheckConsistency(retval, 1));
-#endif
-    return retval;
+    return _Py_strhex((const char*)digest, MD5_DIGESTSIZE);
 }
 
 /*[clinic input]

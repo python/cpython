@@ -504,7 +504,7 @@ error:
         _Py_write_noraise(errpipe_write, "OSError:", 8);
         cur = hex_errno + sizeof(hex_errno);
         while (saved_errno != 0 && cur > hex_errno) {
-            *--cur = "0123456789ABCDEF"[saved_errno % 16];
+            *--cur = Py_hexdigits[saved_errno % 16];
             saved_errno /= 16;
         }
         _Py_write_noraise(errpipe_write, cur, hex_errno + sizeof(hex_errno) - cur);
