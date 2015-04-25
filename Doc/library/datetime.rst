@@ -619,8 +619,8 @@ Example of working with :class:`date`:
 
 .. _datetime-datetime:
 
-:class:`datetime` Objects
--------------------------
+:class:`.datetime` Objects
+--------------------------
 
 A :class:`.datetime` object is a single object containing all the information
 from a :class:`date` object and a :class:`.time` object.  Like a :class:`date`
