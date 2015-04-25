@@ -301,6 +301,14 @@ class BaseBytesTest:
         self.assertRaises(ValueError, self.type2test.fromhex, '\x00')
         self.assertRaises(ValueError, self.type2test.fromhex, '12   \x00   34')
 
+    def test_hex(self):
+        self.assertRaises(TypeError, self.type2test.hex)
+        self.assertRaises(TypeError, self.type2test.hex, 1)
+        self.assertEquals(self.type2test(b"").hex(), "")
+        self.assertEquals(bytearray([0x1a, 0x2b, 0x30]).hex(), '1a2b30')
+        self.assertEquals(self.type2test(b"\x1a\x2b\x30").hex(), '1a2b30')
+        self.assertEquals(memoryview(b"\x1a\x2b\x30").hex(), '1a2b30')
+
     def test_join(self):
         self.assertEqual(self.type2test(b"").join([]), b"")
         self.assertEqual(self.type2test(b"").join([b""]), b"")

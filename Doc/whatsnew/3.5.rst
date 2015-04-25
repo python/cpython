@@ -80,6 +80,9 @@ New built-in features:
 
 * ``bytes % args``, ``bytearray % args``: :pep:`461` - Adding ``%`` formatting
   to bytes and bytearray
+* ``b'\xf0\x9f\x90\x8d'.hex()``, ``bytearray(b'\xf0\x9f\x90\x8d').hex()``,
+  ``memoryview(b'\xf0\x9f\x90\x8d').hex()``: :issue:`9951` - A ``hex`` method
+  has been added to bytes, bytearray, and memoryview.
 
 Implementation improvements:
 

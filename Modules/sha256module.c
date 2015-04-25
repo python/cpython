@@ -19,6 +19,7 @@
 #include "Python.h"
 #include "structmember.h"
 #include "hashlib.h"
+#include "pystrhex.h"
 
 /*[clinic input]
 module _sha256
@@ -454,32 +455,12 @@ SHA256Type_hexdigest_impl(SHAobject *self)
 {
     unsigned char digest[SHA_DIGESTSIZE];
     SHAobject temp;
-    PyObject *retval;
-    Py_UCS1 *hex_digest;
-    int i, j;
 
     /* Get the raw (binary) digest value */
     SHAcopy(self, &temp);
     sha_final(digest, &temp);
 
-    /* Create a new string */
-    retval = PyUnicode_New(self->digestsize * 2, 127);
-    if (!retval)
-            return NULL;
-    hex_digest = PyUnicode_1BYTE_DATA(retval);
-
-    /* Make hex version of the digest */
-    for(i=j=0; i<self->digestsize; i++) {
-        unsigned char c;
-        c = (digest[i] >> 4) & 0xf;
-        hex_digest[j++] = Py_hexdigits[c];
-        c = (digest[i] & 0xf);
-        hex_digest[j++] = Py_hexdigits[c];
-    }
-#ifdef Py_DEBUG
-    assert(_PyUnicode_CheckConsistency(retval, 1));
-#endif
-    return retval;
+    return _Py_strhex((const char *)digest, self->digestsize);
 }
 
 /*[clinic input]
