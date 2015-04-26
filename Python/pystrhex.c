@@ -18,6 +18,7 @@ static PyObject *_Py_strhex_impl(const char* argbuf, const Py_ssize_t arglen,
         retbuf = (Py_UCS1*) PyMem_Malloc(arglen*2);
 	if (!retbuf)
 	    return PyErr_NoMemory();
+        retval = NULL;  /* silence a compiler warning, assigned later. */
     } else {
 	retval = PyUnicode_New(arglen*2, 127);
 	if (!retval)
