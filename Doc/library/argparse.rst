@@ -1884,10 +1884,7 @@ Customizing file parsing
    as an argument::
 
     def convert_arg_line_to_args(self, arg_line):
-        for arg in arg_line.split():
-            if not arg.strip():
-                continue
-            yield arg
+        return arg_line.split()
 
 
 Exiting methods
