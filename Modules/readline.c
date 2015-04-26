@@ -975,8 +975,6 @@ rlhandler(char *text)
     rl_callback_handler_remove();
 }
 
-extern PyThreadState* _PyOS_ReadlineTState;
-
 static char *
 readline_until_enter_or_signal(char *prompt, int *signal)
 {
