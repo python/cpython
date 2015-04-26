@@ -14,6 +14,9 @@
 #ifdef HAVE_SYS_SYSCALL_H
 #include <sys/syscall.h>
 #endif
+#if defined(HAVE_SYS_RESOURCE_H)
+#include <sys/resource.h>
+#endif
 #ifdef HAVE_DIRENT_H
 #include <dirent.h>
 #endif
@@ -173,6 +176,13 @@ safe_get_max_fd(void)
     local_max_fd = fcntl(0, F_MAXFD);
     if (local_max_fd >= 0)
         return local_max_fd;
+#endif
+#if defined(HAVE_SYS_RESOURCE_H) && defined(__OpenBSD__)
+    struct rlimit rl;
+    /* Not on the POSIX async signal safe functions list but likely
+     * safe.  TODO - Someone should audit OpenBSD to make sure. */
+    if (getrlimit(RLIMIT_NOFILE, &rl) >= 0)
+        return (long) rl.rlim_max;
 #endif
 #ifdef _SC_OPEN_MAX
     local_max_fd = sysconf(_SC_OPEN_MAX);
