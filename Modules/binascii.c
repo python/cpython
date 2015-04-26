@@ -56,6 +56,7 @@
 #define PY_SSIZE_T_CLEAN
 
 #include "Python.h"
+#include "pystrhex.h"
 #ifdef USE_ZLIB_CRC32
 #include "zlib.h"
 #endif
@@ -1117,33 +1118,7 @@ static PyObject *
 binascii_b2a_hex_impl(PyModuleDef *module, Py_buffer *data)
 /*[clinic end generated code: output=179318922c2f8fda input=96423cfa299ff3b1]*/
 {
-    char* argbuf;
-    Py_ssize_t arglen;
-    PyObject *retval;
-    char* retbuf;
-    Py_ssize_t i, j;
-
-    argbuf = data->buf;
-    arglen = data->len;
-
-    assert(arglen >= 0);
-    if (arglen > PY_SSIZE_T_MAX / 2)
-        return PyErr_NoMemory();
-
-    retval = PyBytes_FromStringAndSize(NULL, arglen*2);
-    if (!retval)
-        return NULL;
-    retbuf = PyBytes_AS_STRING(retval);
-
-    /* make hex version of string, taken from shamodule.c */
-    for (i=j=0; i < arglen; i++) {
-        unsigned char c;
-        c = (argbuf[i] >> 4) & 0xf;
-        retbuf[j++] = Py_hexdigits[c];
-        c = argbuf[i] & 0xf;
-        retbuf[j++] = Py_hexdigits[c];
-    }
-    return retval;
+    return _Py_strhex_bytes((const char *)data->buf, data->len);
 }
 
 /*[clinic input]
@@ -1158,7 +1133,7 @@ static PyObject *
 binascii_hexlify_impl(PyModuleDef *module, Py_buffer *data)
 /*[clinic end generated code: output=6098440091fb61dc input=2e3afae7f083f061]*/
 {
-    return binascii_b2a_hex_impl(module, data);
+    return _Py_strhex_bytes((const char *)data->buf, data->len);
 }
 
 static int
