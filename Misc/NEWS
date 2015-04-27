@@ -89,6 +89,8 @@ Core and Builtins
 - Issue #24044: Fix possible null pointer dereference in list.sort in out of
   memory conditions.
 
+- Issue #21354: PyCFunction_New function is exposed by python DLL again.
+
 Library
 -------
 
