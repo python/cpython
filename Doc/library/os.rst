@@ -772,7 +772,7 @@ as internal buffering of data.
 
    .. seealso::
 
-      The :func:`stat` function.
+      The :func:`.stat` function.
 
    Availability: Unix, Windows.
 
@@ -1601,7 +1601,7 @@ features:
 
    .. seealso::
 
-      The :func:`stat` function.
+      The :func:`.stat` function.
 
    .. versionchanged:: 3.2
       Added support for Windows 6.0 (Vista) symbolic links.
