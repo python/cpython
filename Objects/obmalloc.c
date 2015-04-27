@@ -1,5 +1,23 @@
 #include "Python.h"
 
+#if defined(__has_feature)  /* Clang */
+ #if __has_feature(address_sanitizer)  /* is ASAN enabled? */
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS \
+        __attribute__((no_address_safety_analysis)) \
+        __attribute__ ((noinline))
+ #else
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+ #endif
+#else
+ #if defined(__SANITIZE_ADDRESS__)  /* GCC 4.8.x, is ASAN enabled? */
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS \
+        __attribute__((no_address_safety_analysis)) \
+        __attribute__ ((noinline))
+ #else
+  #define ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
+ #endif
+#endif
+
 #ifdef WITH_PYMALLOC
 
 #ifdef HAVE_MMAP
@@ -971,6 +989,7 @@ redirect:
 /* free */
 
 #undef PyObject_Free
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 void
 PyObject_Free(void *p)
 {
@@ -1201,6 +1220,7 @@ redirect:
  */
 
 #undef PyObject_Realloc
+ATTRIBUTE_NO_ADDRESS_SAFETY_ANALYSIS
 void *
 PyObject_Realloc(void *p, size_t nbytes)
 {
