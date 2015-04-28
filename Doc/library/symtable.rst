@@ -71,10 +71,6 @@ Examining Symbol Tables
 
       Return ``True`` if the block uses ``exec``.
 
-   .. method:: has_import_star()
-
-      Return ``True`` if the block uses a starred from-import.
-
    .. method:: get_identifiers()
 
       Return a list of names of symbols in this table.
