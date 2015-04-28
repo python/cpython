@@ -2753,8 +2753,7 @@ compiler_nameop(struct compiler *c, identifier name, expr_context_ty ctx)
             optype = OP_FAST;
         break;
     case GLOBAL_IMPLICIT:
-        if (c->u->u_ste->ste_type == FunctionBlock &&
-            !c->u->u_ste->ste_unoptimized)
+        if (c->u->u_ste->ste_type == FunctionBlock)
             optype = OP_GLOBAL;
         break;
     case GLOBAL_EXPLICIT:
@@ -4185,9 +4184,7 @@ compute_code_flags(struct compiler *c)
     int flags = 0;
     Py_ssize_t n;
     if (ste->ste_type == FunctionBlock) {
-        flags |= CO_NEWLOCALS;
-        if (!ste->ste_unoptimized)
-            flags |= CO_OPTIMIZED;
+        flags |= CO_NEWLOCALS | CO_OPTIMIZED;
         if (ste->ste_nested)
             flags |= CO_NESTED;
         if (ste->ste_generator)
