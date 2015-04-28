@@ -43,7 +43,6 @@ typedef struct _symtable_entry {
     PyObject *ste_children;  /* list of child blocks */
     PyObject *ste_directives;/* locations of global and nonlocal statements */
     _Py_block_ty ste_type;   /* module, class, or function */
-    int ste_unoptimized;     /* false if namespace is optimized */
     int ste_nested;      /* true if block is nested */
     unsigned ste_free : 1;        /* true if block has free variables */
     unsigned ste_child_free : 1;  /* true if a child block has free vars,
@@ -107,10 +106,6 @@ PyAPI_FUNC(void) PySymtable_Free(struct symtable *);
 #define GLOBAL_IMPLICIT 3
 #define FREE 4
 #define CELL 5
-
-/* The following two names are used for the ste_unoptimized bit field */
-#define OPT_IMPORT_STAR 1
-#define OPT_TOPLEVEL 2  /* top-level names, including eval and exec */
 
 #define GENERATOR 1
 #define GENERATOR_EXPRESSION 2

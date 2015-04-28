@@ -84,9 +84,6 @@ PyInit__symtable(void)
     PyModule_AddIntConstant(m, "TYPE_CLASS", ClassBlock);
     PyModule_AddIntConstant(m, "TYPE_MODULE", ModuleBlock);
 
-    PyModule_AddIntMacro(m, OPT_IMPORT_STAR);
-    PyModule_AddIntMacro(m, OPT_TOPLEVEL);
-
     PyModule_AddIntMacro(m, LOCAL);
     PyModule_AddIntMacro(m, GLOBAL_EXPLICIT);
     PyModule_AddIntMacro(m, GLOBAL_IMPLICIT);

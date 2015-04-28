@@ -47,7 +47,6 @@ ste_new(struct symtable *st, identifier name, _Py_block_ty block,
     ste->ste_directives = NULL;
 
     ste->ste_type = block;
-    ste->ste_unoptimized = 0;
     ste->ste_nested = 0;
     ste->ste_free = 0;
     ste->ste_varargs = 0;
@@ -113,7 +112,6 @@ static PyMemberDef ste_memberlist[] = {
     {"symbols",  T_OBJECT, OFF(ste_symbols), READONLY},
     {"varnames", T_OBJECT, OFF(ste_varnames), READONLY},
     {"children", T_OBJECT, OFF(ste_children), READONLY},
-    {"optimized",T_INT,    OFF(ste_unoptimized), READONLY},
     {"nested",   T_INT,    OFF(ste_nested), READONLY},
     {"type",     T_INT,    OFF(ste_type), READONLY},
     {"lineno",   T_INT,    OFF(ste_lineno), READONLY},
@@ -271,7 +269,6 @@ PySymtable_BuildObject(mod_ty mod, PyObject *filename, PyFutureFeatures *future)
     }
 
     st->st_top = st->st_cur;
-    st->st_cur->ste_unoptimized = OPT_TOPLEVEL;
     switch (mod->kind) {
     case Module_kind:
         seq = mod->v.Module.body;
@@ -1245,21 +1242,9 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         break;
     case Import_kind:
         VISIT_SEQ(st, alias, s->v.Import.names);
-        /* XXX Don't have the lineno available inside
-           visit_alias */
-        if (st->st_cur->ste_unoptimized && !st->st_cur->ste_opt_lineno) {
-            st->st_cur->ste_opt_lineno = s->lineno;
-            st->st_cur->ste_opt_col_offset = s->col_offset;
-        }
         break;
     case ImportFrom_kind:
         VISIT_SEQ(st, alias, s->v.ImportFrom.names);
-        /* XXX Don't have the lineno available inside
-           visit_alias */
-        if (st->st_cur->ste_unoptimized && !st->st_cur->ste_opt_lineno) {
-            st->st_cur->ste_opt_lineno = s->lineno;
-            st->st_cur->ste_opt_col_offset = s->col_offset;
-        }
         break;
     case Global_kind: {
         int i;
@@ -1615,7 +1600,6 @@ symtable_visit_alias(struct symtable *st, alias_ty a)
             Py_DECREF(store_name);
             return 0;
         }
-        st->st_cur->ste_unoptimized |= OPT_IMPORT_STAR;
         Py_DECREF(store_name);
         return 1;
     }
