@@ -2,7 +2,7 @@
 
 import _symtable
 from _symtable import (USE, DEF_GLOBAL, DEF_LOCAL, DEF_PARAM,
-     DEF_IMPORT, DEF_BOUND, OPT_IMPORT_STAR, SCOPE_OFF, SCOPE_MASK, FREE,
+     DEF_IMPORT, DEF_BOUND, SCOPE_OFF, SCOPE_MASK, FREE,
      LOCAL, GLOBAL_IMPLICIT, GLOBAL_EXPLICIT, CELL)
 
 import weakref
@@ -74,8 +74,7 @@ class SymbolTable(object):
         return self._table.lineno
 
     def is_optimized(self):
-        return bool(self._table.type == _symtable.TYPE_FUNCTION
-                    and not self._table.optimized)
+        return bool(self._table.type == _symtable.TYPE_FUNCTION)
 
     def is_nested(self):
         return bool(self._table.nested)
@@ -86,10 +85,6 @@ class SymbolTable(object):
     def has_exec(self):
         """Return true if the scope uses exec.  Deprecated method."""
         return False
-
-    def has_import_star(self):
-        """Return true if the scope uses import *"""
-        return bool(self._table.optimized & OPT_IMPORT_STAR)
 
     def get_identifiers(self):
         return self._table.symbols.keys()
