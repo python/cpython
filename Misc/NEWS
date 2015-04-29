@@ -236,6 +236,8 @@ Documentation
 
 - Issue #24029: Document the name binding behavior for submodule imports.
 
+- Issue #24077: Fix typo in man page for -I command option: -s, not -S.
+
 Tools/Demos
 -----------
 
