@@ -87,8 +87,7 @@ python \- an interpreted, interactive, object-oriented programming language
 .SH DESCRIPTION
 Python is an interpreted, interactive, object-oriented programming
 language that combines remarkable power with very clear syntax.
-For an introduction to programming in Python you are referred to the
-Python Tutorial.
+For an introduction to programming in Python, see the Python Tutorial.
 The Python Library Reference documents built-in and standard types,
 constants, functions and modules.
 Finally, the Python Reference Manual describes the syntax and
