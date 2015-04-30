@@ -13,6 +13,8 @@ Core and Builtins
 - Issue #23996: Avoid a crash when a delegated generator raises an
   unnormalized StopIteration exception.  Patch by Stefan Behnel.
 
+- Issue #23910: Optimize property() getter calls.  Patch by Joe Jevnik.
+
 - Issue #24022: Fix tokenizer crash when processing undecodable source code.
 
 - Issue #9951: Added a hex() method to bytes, bytearray, and memoryview.

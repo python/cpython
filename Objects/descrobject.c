@@ -1372,6 +1372,8 @@ property_dealloc(PyObject *self)
 static PyObject *
 property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
 {
+    static PyObject *args = NULL;
+    PyObject *ret;
     propertyobject *gs = (propertyobject *)self;
 
     if (obj == NULL || obj == Py_None) {
@@ -1382,7 +1384,13 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         PyErr_SetString(PyExc_AttributeError, "unreadable attribute");
         return NULL;
     }
-    return PyObject_CallFunctionObjArgs(gs->prop_get, obj, NULL);
+    if (!args && !(args = PyTuple_New(1))) {
+        return NULL;
+    }
+    PyTuple_SET_ITEM(args, 0, obj);
+    ret = PyObject_Call(gs->prop_get, args, NULL);
+    PyTuple_SET_ITEM(args, 0, NULL);
+    return ret;
 }
 
 static int
