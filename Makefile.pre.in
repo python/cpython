@@ -1124,8 +1124,7 @@ maninstall:	altmaninstall
 
 # Install the library
 PLATDIR=	@PLATDIR@
-EXTRAPLATDIR= @EXTRAPLATDIR@
-MACHDEPS=	$(PLATDIR) $(EXTRAPLATDIR)
+MACHDEPS=	$(PLATDIR)
 XMLLIBSUBDIRS=  xml xml/dom xml/etree xml/parsers xml/sax
 LIBSUBDIRS=	tkinter tkinter/test tkinter/test/test_tkinter \
 		tkinter/test/test_ttk site-packages test \
