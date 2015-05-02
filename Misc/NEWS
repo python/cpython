@@ -42,6 +42,9 @@ Library
 - Issue #9246: On POSIX, os.getcwd() now supports paths longer than 1025 bytes.
   Patch written by William Orr.
 
+- Issues #24099, #24100, and #24101: Fix free-after-use bug in heapq's siftup
+  and siftdown functions.
+
 - Issue #23008: Fixed resolving attributes with boolean value is False in pydoc.
 
 - Fix asyncio issue 235: LifoQueue and PriorityQueue's put didn't
