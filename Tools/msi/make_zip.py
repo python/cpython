@@ -14,7 +14,19 @@ DEBUG_RE = re.compile(r'_d\.(pyd|dll|exe)$', re.IGNORECASE)
 PYTHON_DLL_RE = re.compile(r'python\d\d?\.dll$', re.IGNORECASE)
 
 def is_not_debug(p):
-    return not DEBUG_RE.search(p.name) and not TKTCL_RE.search(p.name)
+    if DEBUG_RE.search(p.name):
+        return False
+
+    if TKTCL_RE.search(p.name):
+        return False
+
+    return p.name.lower() not in {
+        '_ctypes_test.pyd',
+        '_testbuffer.pyd',
+        '_testcapi.pyd',
+        '_testimportmultiple.pyd',
+        'xxlimited.pyd',
+    }
 
 def is_not_debug_or_python(p):
     return is_not_debug(p) and not PYTHON_DLL_RE.search(p.name)
@@ -31,14 +43,6 @@ def include_in_lib(p):
         return True
 
     suffix = p.suffix.lower()
-    if suffix == '.pyd':
-        return name not in {
-            '_ctypes_test.pyd',
-            '_testbuffer.pyd',
-            '_testcapi.pyd',
-            '_testimportmultiple.pyd',
-            'xxlimited.pyd',
-        }
     return suffix not in {'.pyc', '.pyo'}
 
 def include_in_tools(p):
@@ -153,8 +157,7 @@ def main():
             subprocess.check_call([
                 str(rar),
                 "a",
-                "-m5", "-ed", "-ep1", "-s", "-r",
-                "-sfxwincon.sfx",
+                "-ed", "-ep1", "-s", "-r",
                 str(out),
                 str(temp / '*')
             ])
