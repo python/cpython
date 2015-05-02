@@ -1178,12 +1178,6 @@ section.
 
    There are a number of other caveats:
 
-   If a module is syntactically correct but its initialization fails, the first
-   :keyword:`import` statement for it does not bind its name locally, but does
-   store a (partially initialized) module object in ``sys.modules``.  To reload the
-   module you must first :keyword:`import` it again (this will bind the name to the
-   partially initialized module object) before you can :func:`reload` it.
-
    When a module is reloaded, its dictionary (containing the module's global
    variables) is retained.  Redefinitions of names will override the old
    definitions, so this is generally not a problem.  If the new version of a module
