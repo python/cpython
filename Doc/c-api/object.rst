@@ -203,7 +203,7 @@ Object Protocol
    i.e. contained in ``cls.__mro__``.
 
    Normally only class objects, i.e. instances of :class:`type` or a derived
-   class, are considered classes.  However, objects can override this by haivng
+   class, are considered classes.  However, objects can override this by having
    a :attr:`__bases__` attribute (which must be a tuple of base classes).
 
 
