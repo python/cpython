@@ -26,6 +26,10 @@ Library
 - Issues #24099, #24100, and #24101: Fix free-after-use bug in heapq's siftup
   and siftdown functions.
 
+- Backport collections.deque fixes from Python 3.5.  Prevents reentrant badness
+  during deletion by deferring the decref until the container has been restored
+  to a consistent state.
+
 - Issue #23842: os.major(), os.minor() and os.makedev() now support ints again.
 
 - Issue #23811: Add missing newline to the PyCompileError error message.
