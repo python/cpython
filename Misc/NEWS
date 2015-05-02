@@ -23,6 +23,9 @@ Library
 
 - Issue #23008: Fixed resolving attributes with boolean value is False in pydoc.
 
+- Issues #24099, #24100, and #24101: Fix free-after-use bug in heapq's siftup
+  and siftdown functions.
+
 - Issue #23842: os.major(), os.minor() and os.makedev() now support ints again.
 
 - Issue #23811: Add missing newline to the PyCompileError error message.
