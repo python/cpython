@@ -9,8 +9,9 @@
     <Import Project="msi.props" />
 
     <PropertyGroup>
+        <SignOutput>false</SignOutput>
         <TargetName>python-$(PythonVersion)-embed-$(ArchName)</TargetName>
-        <TargetExt>.exe</TargetExt>
+        <TargetExt>.zip</TargetExt>
         <TargetPath>$(OutputPath)\en-us\$(TargetName)$(TargetExt)</TargetPath>
         <Arguments>"$(PythonExe)" "$(MSBuildThisFileDirectory)\make_zip.py"</Arguments>
         <Arguments>$(Arguments) -e -o "$(TargetPath)" -t "$(IntermediateOutputPath)\zip_$(ArchName)" -a $(ArchName)</Arguments>
