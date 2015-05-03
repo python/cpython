@@ -304,7 +304,7 @@ set_main_loader(PyObject *d, const char *filename, const char *loader_name)
 {
     PyInterpreterState *interp;
     PyThreadState *tstate;
-    PyObject *filename_obj, *loader_type, *loader;
+    PyObject *filename_obj, *bootstrap, *loader_type = NULL, *loader;
     int result = 0;
 
     filename_obj = PyUnicode_DecodeFSDefault(filename);
@@ -313,7 +313,12 @@ set_main_loader(PyObject *d, const char *filename, const char *loader_name)
     /* Get current thread state and interpreter pointer */
     tstate = PyThreadState_GET();
     interp = tstate->interp;
-    loader_type = PyObject_GetAttrString(interp->importlib, loader_name);
+    bootstrap = PyObject_GetAttrString(interp->importlib,
+                                       "_bootstrap_external");
+    if (bootstrap != NULL) {
+        loader_type = PyObject_GetAttrString(bootstrap, loader_name);
+        Py_DECREF(bootstrap);
+    }
     if (loader_type == NULL) {
         Py_DECREF(filename_obj);
         return -1;

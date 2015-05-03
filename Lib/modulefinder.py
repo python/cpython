@@ -1,7 +1,7 @@
 """Find modules used by a script, using introspection."""
 
 import dis
-import importlib._bootstrap
+import importlib._bootstrap_external
 import importlib.machinery
 import marshal
 import os
@@ -289,7 +289,7 @@ class ModuleFinder:
             co = compile(fp.read()+'\n', pathname, 'exec')
         elif type == imp.PY_COMPILED:
             try:
-                marshal_data = importlib._bootstrap._validate_bytecode_header(fp.read())
+                marshal_data = importlib._bootstrap_external._validate_bytecode_header(fp.read())
             except ImportError as exc:
                 self.msgout(2, "raise ImportError: " + str(exc), pathname)
                 raise

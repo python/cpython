@@ -16,7 +16,8 @@ except ImportError:
     # Platform doesn't support dynamic loading.
     load_dynamic = None
 
-from importlib._bootstrap import SourcelessFileLoader, _ERR_MSG, _exec, _load
+from importlib._bootstrap import _ERR_MSG, _exec, _load
+from importlib._bootstrap_external import SourcelessFileLoader
 
 from importlib import machinery
 from importlib import util

@@ -99,7 +99,7 @@ class FinderTests:
         new_path_importer_cache.pop(None, None)
         new_path_hooks = [zipimport.zipimporter,
                           self.machinery.FileFinder.path_hook(
-                              *self.importlib._bootstrap._get_supported_file_loaders())]
+                              *self.importlib._bootstrap_external._get_supported_file_loaders())]
         missing = object()
         email = sys.modules.pop('email', missing)
         try:
