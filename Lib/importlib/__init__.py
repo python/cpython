@@ -30,9 +30,25 @@ else:
         pass
     sys.modules['importlib._bootstrap'] = _bootstrap
 
+try:
+    import _frozen_importlib_external as _bootstrap_external
+except ImportError:
+    from . import _bootstrap_external
+    _bootstrap_external._setup(_bootstrap)
+else:
+    _bootstrap_external.__name__ = 'importlib._bootstrap_external'
+    _bootstrap_external.__package__ = 'importlib'
+    try:
+        _bootstrap_external.__file__ = __file__.replace('__init__.py', '_bootstrap_external.py')
+    except NameError:
+        # __file__ is not guaranteed to be defined, e.g. if this code gets
+        # frozen by a tool like cx_Freeze.
+        pass
+    sys.modules['importlib._bootstrap_external'] = _bootstrap_external
+
 # To simplify imports in test code
-_w_long = _bootstrap._w_long
-_r_long = _bootstrap._r_long
+_w_long = _bootstrap_external._w_long
+_r_long = _bootstrap_external._r_long
 
 # Fully bootstrapped at this point, import whatever you like, circular
 # dependencies and startup overhead minimisation permitting :)

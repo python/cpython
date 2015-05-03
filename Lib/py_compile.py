@@ -3,7 +3,7 @@
 This module has intimate knowledge of the format of .pyc files.
 """
 
-import importlib._bootstrap
+import importlib._bootstrap_external
 import importlib.machinery
 import importlib.util
 import os
@@ -137,10 +137,10 @@ def compile(file, cfile=None, dfile=None, doraise=False, optimize=-1):
     except FileExistsError:
         pass
     source_stats = loader.path_stats(file)
-    bytecode = importlib._bootstrap._code_to_bytecode(
+    bytecode = importlib._bootstrap_external._code_to_bytecode(
             code, source_stats['mtime'], source_stats['size'])
-    mode = importlib._bootstrap._calc_mode(file)
-    importlib._bootstrap._write_atomic(cfile, bytecode, mode)
+    mode = importlib._bootstrap_external._calc_mode(file)
+    importlib._bootstrap_external._write_atomic(cfile, bytecode, mode)
     return cfile
 
 

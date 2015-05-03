@@ -1,12 +1,17 @@
 """Abstract base classes related to import."""
-from . import _bootstrap
+from . import _bootstrap_external
 from . import machinery
 try:
     import _frozen_importlib
+#    import _frozen_importlib_external
 except ImportError as exc:
     if exc.name != '_frozen_importlib':
         raise
     _frozen_importlib = None
+try:
+    import _frozen_importlib_external
+except ImportError as exc:
+    _frozen_importlib_external = _bootstrap_external
 import abc
 
 
@@ -14,7 +19,10 @@ def _register(abstract_cls, *classes):
     for cls in classes:
         abstract_cls.register(cls)
         if _frozen_importlib is not None:
-            frozen_cls = getattr(_frozen_importlib, cls.__name__)
+            try:
+                frozen_cls = getattr(_frozen_importlib, cls.__name__)
+            except AttributeError:
+                frozen_cls = getattr(_frozen_importlib_external, cls.__name__)
             abstract_cls.register(frozen_cls)
 
 
@@ -102,7 +110,7 @@ class PathEntryFinder(Finder):
         else:
             return None, []
 
-    find_module = _bootstrap._find_module_shim
+    find_module = _bootstrap_external._find_module_shim
 
     def invalidate_caches(self):
         """An optional method for clearing the finder's cache, if any.
@@ -144,7 +152,7 @@ class Loader(metaclass=abc.ABCMeta):
         """
         if not hasattr(self, 'exec_module'):
             raise ImportError
-        return _bootstrap._load_module_shim(self, fullname)
+        return _bootstrap_external._load_module_shim(self, fullname)
 
     def module_repr(self, module):
         """Return a module's repr.
@@ -222,8 +230,8 @@ class InspectLoader(Loader):
         argument should be where the data was retrieved (when applicable)."""
         return compile(data, path, 'exec', dont_inherit=True)
 
-    exec_module = _bootstrap._LoaderBasics.exec_module
-    load_module = _bootstrap._LoaderBasics.load_module
+    exec_module = _bootstrap_external._LoaderBasics.exec_module
+    load_module = _bootstrap_external._LoaderBasics.load_module
 
 _register(InspectLoader, machinery.BuiltinImporter, machinery.FrozenImporter)
 
@@ -265,7 +273,7 @@ class ExecutionLoader(InspectLoader):
 _register(ExecutionLoader, machinery.ExtensionFileLoader)
 
 
-class FileLoader(_bootstrap.FileLoader, ResourceLoader, ExecutionLoader):
+class FileLoader(_bootstrap_external.FileLoader, ResourceLoader, ExecutionLoader):
 
     """Abstract base class partially implementing the ResourceLoader and
     ExecutionLoader ABCs."""
@@ -274,7 +282,7 @@ _register(FileLoader, machinery.SourceFileLoader,
             machinery.SourcelessFileLoader)
 
 
-class SourceLoader(_bootstrap.SourceLoader, ResourceLoader, ExecutionLoader):
+class SourceLoader(_bootstrap_external.SourceLoader, ResourceLoader, ExecutionLoader):
 
     """Abstract base class for loading source code (and optionally any
     corresponding bytecode).

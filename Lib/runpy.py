@@ -58,7 +58,7 @@ class _ModifiedArgv0(object):
         self.value = self._sentinel
         sys.argv[0] = self._saved_value
 
-# TODO: Replace these helpers with importlib._bootstrap functions
+# TODO: Replace these helpers with importlib._bootstrap_external functions.
 def _run_code(code, run_globals, init_globals=None,
               mod_name=None, mod_spec=None,
               pkg_name=None, script_name=None):

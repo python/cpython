@@ -1,14 +1,14 @@
 """Utility code for constructing importers, etc."""
 from . import abc
-from ._bootstrap import MAGIC_NUMBER
-from ._bootstrap import cache_from_source
-from ._bootstrap import decode_source
 from ._bootstrap import module_from_spec
-from ._bootstrap import source_from_cache
-from ._bootstrap import spec_from_loader
-from ._bootstrap import spec_from_file_location
 from ._bootstrap import _resolve_name
+from ._bootstrap import spec_from_loader
 from ._bootstrap import _find_spec
+from ._bootstrap_external import MAGIC_NUMBER
+from ._bootstrap_external import cache_from_source
+from ._bootstrap_external import decode_source
+from ._bootstrap_external import source_from_cache
+from ._bootstrap_external import spec_from_file_location
 
 from contextlib import contextmanager
 import functools
