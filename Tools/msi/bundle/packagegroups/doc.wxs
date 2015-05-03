@@ -6,6 +6,7 @@
                         SourceFile="doc.msi"
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
+                        EnableFeatureSelection="yes"
                         ForcePerMachine="yes"
                         InstallCondition="InstallAllUsers and Include_doc">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
@@ -15,6 +16,7 @@
                         SourceFile="doc.msi"
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
+                        EnableFeatureSelection="yes"
                         ForcePerMachine="no"
                         InstallCondition="not InstallAllUsers and Include_doc">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />

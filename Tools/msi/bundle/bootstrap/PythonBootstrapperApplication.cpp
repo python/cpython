@@ -746,8 +746,8 @@ public: // IBootstrapperApplication
     ) {
         LONGLONG install;
         
-        if (wcscmp(wzFeatureId, L"AssociateFiles") == 0) {
-            if (SUCCEEDED(_engine->GetVariableNumeric(L"AssociateFiles", &install)) && install) {
+        if (wcscmp(wzFeatureId, L"AssociateFiles") == 0 || wcscmp(wzFeatureId, L"Shortcuts") == 0) {
+            if (SUCCEEDED(_engine->GetVariableNumeric(wzFeatureId, &install)) && install) {
                 *pRequestedState = BOOTSTRAPPER_FEATURE_STATE_LOCAL;
             } else {
                 *pRequestedState = BOOTSTRAPPER_FEATURE_STATE_ABSENT;

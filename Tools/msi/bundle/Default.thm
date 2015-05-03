@@ -65,15 +65,16 @@
         
         <Checkbox Name="InstallAllUsers" X="185" Y="51" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.InstallAllUsersLabel)</Checkbox>
         <Checkbox Name="AssociateFiles" X="185" Y="76" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.AssociateFilesLabel)</Checkbox>
-        <Checkbox Name="PrependPath" X="185" Y="101" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.PrependPathLabel)</Checkbox>
-        <Checkbox Name="CompileAll" X="185" Y="126" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.PrecompileLabel)</Checkbox>
-        <Checkbox Name="Include_symbols" X="185" Y="151" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_symbolsLabel)</Checkbox>
-        <Checkbox Name="Include_debug" X="185" Y="176" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_debugLabel)</Checkbox>
+        <Checkbox Name="Shortcuts" X="185" Y="101" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.ShortcutsLabel)</Checkbox>
+        <Checkbox Name="PrependPath" X="185" Y="126" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.PrependPathLabel)</Checkbox>
+        <Checkbox Name="CompileAll" X="185" Y="151" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.PrecompileLabel)</Checkbox>
+        <Checkbox Name="Include_symbols" X="185" Y="176" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_symbolsLabel)</Checkbox>
+        <Checkbox Name="Include_debug" X="185" Y="201" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_debugLabel)</Checkbox>
 
-        <Text X="185" Y="221" Width="-11" Height="17" FontId="3">#(loc.CustomLocationLabel)</Text>
-        <Editbox Name="TargetDir" X="185" Y="237" Width="-91" Height="21" TabStop="yes" FontId="3" FileSystemAutoComplete="yes" />
-        <Button Name="CustomBrowseButton" X="-11" Y="236" Width="75" Height="23" TabStop="yes" FontId="3">#(loc.CustomBrowseButton)</Button>
-        <Text Name="CustomBrowseButtonLabel" X="185" Y="261" Width="-91" Height="35" FontId="5" Visible="no">#(loc.CustomLocationHelpLabel)</Text>
+        <Text X="185" Y="241" Width="-11" Height="17" FontId="3">#(loc.CustomLocationLabel)</Text>
+        <Editbox Name="TargetDir" X="185" Y="257" Width="-91" Height="21" TabStop="yes" FontId="3" FileSystemAutoComplete="yes" />
+        <Button Name="CustomBrowseButton" X="-11" Y="256" Width="75" Height="23" TabStop="yes" FontId="3">#(loc.CustomBrowseButton)</Button>
+        <Text Name="CustomBrowseButtonLabel" X="185" Y="281" Width="-91" Height="35" FontId="5" Visible="no">#(loc.CustomLocationHelpLabel)</Text>
 
         <Button Name="Custom2BackButton" X="185" Y="-11" Width="75" Height="23" TabStop="yes" FontId="0">#(loc.CustomBackButton)</Button>
         <Button Name="CustomInstallButton" X="-91" Y="-11" Width="95" Height="23" TabStop="yes" FontId="0">#(loc.CustomInstallButton)</Button>

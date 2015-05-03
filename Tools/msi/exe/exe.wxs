@@ -8,10 +8,13 @@
         <PropertyRef Id="REGISTRYKEY" />
         
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
-            <ComponentGroupRef Id="exe_python" />
+            <ComponentGroupRef Id="exe_python" Primary="yes" />
             <ComponentGroupRef Id="exe_txt" />
             <ComponentGroupRef Id="exe_icons" />
+        </Feature>
             
+        <Feature Id="Shortcuts" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="exe_python" />
             <Component Id="exe_shortcut" Directory="MenuDir" Guid="*">
                 <Shortcut Id="python.exe"
                           Target="[#python.exe]"
@@ -19,8 +22,7 @@
                           Description="!(loc.ShortcutDescription)" />
                 <RemoveFolder Id="Remove_MenuDir" Directory="MenuDir" On="uninstall" />
                 <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
-                    <RegistryValue Key="InstallPath" Type="string" Value="[InstallDirectory]" KeyPath="yes" />
-                    <RegistryValue Key="InstallPath\InstallGroup" Type="string" Value="Python $(var.ShortVersion)" />
+                    <RegistryValue Key="InstallPath\InstallGroup" Type="string" Value="!(loc.ProductName)" KeyPath="yes" />
                 </RegistryKey>
             </Component>
         </Feature>

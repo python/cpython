@@ -8,13 +8,14 @@
         <PropertyRef Id="REGISTRYKEY" />
         
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
+            <ComponentGroupRef Id="doc" Primary="yes" />
+        </Feature>
+        <Feature Id="Shortcuts" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="doc" />
             
             <?ifdef DocFilename ?>
             <Component Id="doc_shortcut" Directory="MenuDir" Guid="*">
-                <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
-                    <RegistryValue Key="Help\Main Python Documentation" Type="string" Value="[#python.chm]" KeyPath="yes" />
-                </RegistryKey>
+                <RegistryValue Root="HKMU" Key="[REGISTRYKEY]\DocShortcuts" Type="integer" Value="1" KeyPath="yes" />
                 <Shortcut Id="python.chm"
                           Target="[#python.chm]"
                           Name="!(loc.ShortcutName)"
