@@ -23,7 +23,7 @@
         <File Include="$(OutputPath)\*.msi;$(OutputPath)\*.msu">
             <CopyTo>$(MSITarget)</CopyTo>
         </File>
-        <File Include="$(OutputPath)\*.exe">
+        <File Include="$(OutputPath)\*.exe;$(OutputPath)\*.zip">
             <CopyTo>$(EXETarget)</CopyTo>
         </File>
         <File Include="$(PySourcePath)Doc\build\htmlhelp\python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm" Condition="$(IncludeDoc)">
