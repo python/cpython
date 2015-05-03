@@ -1663,35 +1663,10 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc,
         */
     }
 
-    if (PyObject_IsTrue(s->sort_keys)) {
-        /* First sort the keys then replace them with (key, value) tuples. */
-        Py_ssize_t i, nitems;
-        items = PyMapping_Keys(dct);
-        if (items == NULL)
-            goto bail;
-        if (!PyList_Check(items)) {
-            PyErr_SetString(PyExc_ValueError, "keys must return list");
-            goto bail;
-        }
-        if (PyList_Sort(items) < 0)
-            goto bail;
-        nitems = PyList_GET_SIZE(items);
-        for (i = 0; i < nitems; i++) {
-            PyObject *key, *value;
-            key = PyList_GET_ITEM(items, i);
-            value = PyDict_GetItem(dct, key);
-            item = PyTuple_Pack(2, key, value);
-            if (item == NULL)
-                goto bail;
-            PyList_SET_ITEM(items, i, item);
-            item = NULL;
-            Py_DECREF(key);
-        }
-    }
-    else {
-        items = PyMapping_Items(dct);
-    }
+    items = PyMapping_Items(dct);
     if (items == NULL)
+        goto bail;
+    if (PyObject_IsTrue(s->sort_keys) && PyList_Sort(items) < 0)
         goto bail;
     it = PyObject_GetIter(items);
     Py_DECREF(items);
