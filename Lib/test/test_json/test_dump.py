@@ -28,6 +28,25 @@ class TestDump:
         self.assertEqual(self.dumps(a, default=crasher),
                  '[null, null, null, null, null]')
 
+    # Issue 24094
+    def test_encode_evil_dict(self):
+        class D(dict):
+            def keys(self):
+                return L
+
+        class X:
+            def __hash__(self):
+                del L[0]
+                return 1337
+
+            def __lt__(self, o):
+                return 0
+
+        L = [X() for i in range(1122)]
+        d = D()
+        d[1337] = "true.dat"
+        self.assertEqual(self.dumps(d, sort_keys=True), '{"1337": "true.dat"}')
+
 
 class TestPyDump(TestDump, PyTest): pass
 
