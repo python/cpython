@@ -10,6 +10,9 @@ What's New in Python 3.3.7?
 Core and Builtins
 -----------------
 
+- Issue #24096: Make warnings.warn_explicit more robust against mutation of the
+  warnings.filters list.
+
 - Issue #24044: Fix possible null pointer dereference in list.sort in out of
   memory conditions.
 
