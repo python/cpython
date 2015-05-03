@@ -533,6 +533,7 @@ coverage-report:
 	: # force rebuilding of parser and importlib
 	@touch $(GRAMMAR_INPUT)
 	@touch $(srcdir)/Lib/importlib/_bootstrap.py
+	@touch $(srcdir)/Lib/importlib/_bootstrap_external.py
 	: # build with coverage info
 	$(MAKE) coverage
 	: # run tests, ignore failures
@@ -694,6 +695,10 @@ Programs/_freeze_importlib.o: Programs/_freeze_importlib.c Makefile
 Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN)
 	$(LINKCC) $(PY_LDFLAGS) -o $@ Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
+Python/importlib_external.h: $(srcdir)/Lib/importlib/_bootstrap_external.py Programs/_freeze_importlib
+	./Programs/_freeze_importlib \
+		$(srcdir)/Lib/importlib/_bootstrap_external.py Python/importlib_external.h
+
 Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py Programs/_freeze_importlib
 	./Programs/_freeze_importlib \
 		$(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h
@@ -841,7 +846,7 @@ $(OPCODETARGETS_H): $(OPCODETARGETGEN_FILES)
 
 Python/ceval.o: $(OPCODETARGETS_H) $(srcdir)/Python/ceval_gil.h
 
-Python/frozen.o: Python/importlib.h
+Python/frozen.o: Python/importlib.h Python/importlib_external.h
 
 Objects/typeobject.o: Objects/typeslots.inc
 Objects/typeslots.inc: $(srcdir)/Include/typeslots.h $(srcdir)/Objects/typeslots.py

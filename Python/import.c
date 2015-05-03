@@ -491,8 +491,13 @@ PyImport_GetMagicNumber(void)
 {
     long res;
     PyInterpreterState *interp = PyThreadState_Get()->interp;
-    PyObject *pyc_magic = PyObject_GetAttrString(interp->importlib,
-                                                 "_RAW_MAGIC_NUMBER");
+    PyObject *external, *pyc_magic;
+
+    external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
+    if (external == NULL)
+        return -1;
+    pyc_magic = PyObject_GetAttrString(external, "_RAW_MAGIC_NUMBER");
+    Py_DECREF(external);
     if (pyc_magic == NULL)
         return -1;
     res = PyLong_AsLong(pyc_magic);
@@ -737,7 +742,7 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
                                      const char *cpathname)
 {
     PyObject *m = NULL;
-    PyObject *nameobj, *pathobj = NULL, *cpathobj = NULL;
+    PyObject *nameobj, *pathobj = NULL, *cpathobj = NULL, *external= NULL;
 
     nameobj = PyUnicode_FromString(name);
     if (nameobj == NULL)
@@ -765,9 +770,14 @@ PyImport_ExecCodeModuleWithPathnames(const char *name, PyObject *co,
                           "no interpreter!");
         }
 
-        pathobj = _PyObject_CallMethodIdObjArgs(interp->importlib,
-                                                &PyId__get_sourcefile, cpathobj,
-                                                NULL);
+        external= PyObject_GetAttrString(interp->importlib,
+                                         "_bootstrap_external");
+        if (external != NULL) {
+            pathobj = _PyObject_CallMethodIdObjArgs(external,
+                                                    &PyId__get_sourcefile, cpathobj,
+                                                    NULL);
+            Py_DECREF(external);
+        }
         if (pathobj == NULL)
             PyErr_Clear();
     }
@@ -833,7 +843,7 @@ PyObject*
 PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
                               PyObject *cpathname)
 {
-    PyObject *d, *res;
+    PyObject *d, *external, *res;
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     _Py_IDENTIFIER(_fix_up_module);
 
@@ -845,9 +855,13 @@ PyImport_ExecCodeModuleObject(PyObject *name, PyObject *co, PyObject *pathname,
     if (pathname == NULL) {
         pathname = ((PyCodeObject *)co)->co_filename;
     }
-    res = _PyObject_CallMethodIdObjArgs(interp->importlib,
+    external = PyObject_GetAttrString(interp->importlib, "_bootstrap_external");
+    if (external == NULL)
+        return NULL;
+    res = _PyObject_CallMethodIdObjArgs(external,
                                         &PyId__fix_up_module,
                                         d, name, pathname, cpathname, NULL);
+    Py_DECREF(external);
     if (res != NULL) {
         Py_DECREF(res);
         res = exec_code_in_module(name, d, co);
@@ -1245,6 +1259,7 @@ static void
 remove_importlib_frames(void)
 {
     const char *importlib_filename = "<frozen importlib._bootstrap>";
+    const char *external_filename = "<frozen importlib._bootstrap_external>";
     const char *remove_frames = "_call_with_frames_removed";
     int always_trim = 0;
     int in_importlib = 0;
@@ -1274,7 +1289,10 @@ remove_importlib_frames(void)
         assert(PyTraceBack_Check(tb));
         now_in_importlib = (PyUnicode_CompareWithASCIIString(
                                 code->co_filename,
-                                importlib_filename) == 0);
+                                importlib_filename) == 0) ||
+                           (PyUnicode_CompareWithASCIIString(
+                                code->co_filename,
+                                external_filename) == 0);
         if (now_in_importlib && !in_importlib) {
             /* This is the link to this chunk of importlib tracebacks */
             outer_link = prev_link;

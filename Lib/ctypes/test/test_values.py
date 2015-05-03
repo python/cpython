@@ -59,8 +59,13 @@ class Win_ValuesTestCase(unittest.TestCase):
         items = []
         # _frozen_importlib changes size whenever importlib._bootstrap
         # changes, so it gets a special case.  We should make sure it's
-        # found, but don't worry about its size too much.
-        _fzn_implib_seen = False
+        # found, but don't worry about its size too much.  The same
+        # applies to _frozen_importlib_external.
+        bootstrap_seen = []
+        bootstrap_expected = (
+                b'_frozen_importlib',
+                b'_frozen_importlib_external',
+                )
         for entry in ft:
             # This is dangerous. We *can* iterate over a pointer, but
             # the loop will not terminate (maybe with an access
@@ -68,10 +73,10 @@ class Win_ValuesTestCase(unittest.TestCase):
             if entry.name is None:
                 break
 
-            if entry.name == b'_frozen_importlib':
-                _fzn_implib_seen = True
+            if entry.name in bootstrap_expected:
+                bootstrap_seen.append(entry.name)
                 self.assertTrue(entry.size,
-                    "_frozen_importlib was reported as having no size")
+                    "{} was reported as having no size".format(entry.name))
                 continue
             items.append((entry.name, entry.size))
 
@@ -81,8 +86,8 @@ class Win_ValuesTestCase(unittest.TestCase):
                     ]
         self.assertEqual(items, expected)
 
-        self.assertTrue(_fzn_implib_seen,
-            "_frozen_importlib wasn't found in PyImport_FrozenModules")
+        self.assertEqual(sorted(bootstrap_seen), bootstrap_expected,
+            "frozen bootstrap modules did not match PyImport_FrozenModules")
 
         from ctypes import _pointer_type_cache
         del _pointer_type_cache[struct_frozen]

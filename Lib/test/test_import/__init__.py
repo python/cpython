@@ -1,7 +1,7 @@
 # We import importlib *ASAP* in order to test #15386
 import importlib
 import importlib.util
-from importlib._bootstrap import _get_sourcefile
+from importlib._bootstrap_external import _get_sourcefile
 import builtins
 import marshal
 import os
@@ -845,19 +845,27 @@ class ImportlibBootstrapTests(unittest.TestCase):
         self.assertEqual(mod.__package__, 'importlib')
         self.assertTrue(mod.__file__.endswith('_bootstrap.py'), mod.__file__)
 
+    def test_frozen_importlib_external_is_bootstrap_external(self):
+        from importlib import _bootstrap_external
+        mod = sys.modules['_frozen_importlib_external']
+        self.assertIs(mod, _bootstrap_external)
+        self.assertEqual(mod.__name__, 'importlib._bootstrap_external')
+        self.assertEqual(mod.__package__, 'importlib')
+        self.assertTrue(mod.__file__.endswith('_bootstrap_external.py'), mod.__file__)
+
     def test_there_can_be_only_one(self):
         # Issue #15386 revealed a tricky loophole in the bootstrapping
         # This test is technically redundant, since the bug caused importing
         # this test module to crash completely, but it helps prove the point
         from importlib import machinery
         mod = sys.modules['_frozen_importlib']
-        self.assertIs(machinery.FileFinder, mod.FileFinder)
+        self.assertIs(machinery.ModuleSpec, mod.ModuleSpec)
 
 
 @cpython_only
 class GetSourcefileTests(unittest.TestCase):
 
-    """Test importlib._bootstrap._get_sourcefile() as used by the C API.
+    """Test importlib._bootstrap_external._get_sourcefile() as used by the C API.
 
     Because of the peculiarities of the need of this function, the tests are
     knowingly whitebox tests.
@@ -867,7 +875,7 @@ class GetSourcefileTests(unittest.TestCase):
     def test_get_sourcefile(self):
         # Given a valid bytecode path, return the path to the corresponding
         # source file if it exists.
-        with mock.patch('importlib._bootstrap._path_isfile') as _path_isfile:
+        with mock.patch('importlib._bootstrap_external._path_isfile') as _path_isfile:
             _path_isfile.return_value = True;
             path = TESTFN + '.pyc'
             expect = TESTFN + '.py'
@@ -876,7 +884,7 @@ class GetSourcefileTests(unittest.TestCase):
     def test_get_sourcefile_no_source(self):
         # Given a valid bytecode path without a corresponding source path,
         # return the original bytecode path.
-        with mock.patch('importlib._bootstrap._path_isfile') as _path_isfile:
+        with mock.patch('importlib._bootstrap_external._path_isfile') as _path_isfile:
             _path_isfile.return_value = False;
             path = TESTFN + '.pyc'
             self.assertEqual(_get_sourcefile(path), path)
@@ -1031,7 +1039,7 @@ class ImportTracebackTests(unittest.TestCase):
         # We simulate a bug in importlib and check that it's not stripped
         # away from the traceback.
         self.create_module("foo", "")
-        importlib = sys.modules['_frozen_importlib']
+        importlib = sys.modules['_frozen_importlib_external']
         if 'load_module' in vars(importlib.SourceLoader):
             old_exec_module = importlib.SourceLoader.exec_module
         else:
