@@ -1,8 +1,9 @@
 """Extract, format and print information about Python stack traces."""
 
+import collections
+import itertools
 import linecache
 import sys
-import operator
 
 __all__ = ['extract_stack', 'extract_tb', 'format_exception',
            'format_exception_only', 'format_list', 'format_stack',
@@ -315,12 +316,17 @@ class StackSummary(list):
         """
         if limit is None:
             limit = getattr(sys, 'tracebacklimit', None)
+            if limit is not None and limit < 0:
+                limit = 0
+        if limit is not None:
+            if limit >= 0:
+                frame_gen = itertools.islice(frame_gen, limit)
+            else:
+                frame_gen = collections.deque(frame_gen, maxlen=-limit)
 
         result = klass()
         fnames = set()
-        for pos, (f, lineno) in enumerate(frame_gen):
-            if limit is not None and pos >= limit:
-                break
+        for f, lineno in frame_gen:
             co = f.f_code
             filename = co.co_filename
             name = co.co_name

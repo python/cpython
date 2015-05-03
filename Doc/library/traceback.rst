@@ -22,15 +22,20 @@ The module defines the following functions:
 
 .. function:: print_tb(traceback, limit=None, file=None)
 
-   Print up to *limit* stack trace entries from *traceback*.  If *limit* is omitted
-   or ``None``, all entries are printed. If *file* is omitted or ``None``, the
-   output goes to ``sys.stderr``; otherwise it should be an open file or file-like
-   object to receive the output.
+   Print up to *limit* stack trace entries from *traceback* (starting from
+   the caller's frame) if *limit* is positive.  Otherwise, print the last
+   ``abs(limit)`` entries.  If *limit* is omitted or ``None``, all entries
+   are printed.  If *file* is omitted or ``None``, the output goes to
+   ``sys.stderr``; otherwise it should be an open file or file-like object
+   to receive the output.
+
+   .. versionchanged:: 3.5
+       Added negative *limit* support.
 
 
 .. function:: print_exception(type, value, traceback, limit=None, file=None, chain=True)
 
-   Print exception information and up to *limit* stack trace entries from
+   Print exception information and stack trace entries from
    *traceback* to *file*. This differs from :func:`print_tb` in the following
    ways:
 
@@ -41,6 +46,7 @@ The module defines the following functions:
      prints the line where the syntax error occurred with a caret indicating the
      approximate position of the error.
 
+   The optional *limit* argument has the same meaning as for :func:`print_tb`.
    If *chain* is true (the default), then chained exceptions (the
    :attr:`__cause__` or :attr:`__context__` attributes of the exception) will be
    printed as well, like the interpreter itself does when printing an unhandled
@@ -49,33 +55,41 @@ The module defines the following functions:
 
 .. function:: print_exc(limit=None, file=None, chain=True)
 
-   This is a shorthand for ``print_exception(*sys.exc_info())``.
+   This is a shorthand for ``print_exception(*sys.exc_info(), limit, file,
+   chain)``.
 
 
 .. function:: print_last(limit=None, file=None, chain=True)
 
    This is a shorthand for ``print_exception(sys.last_type, sys.last_value,
-   sys.last_traceback, limit, file)``.  In general it will work only after
-   an exception has reached an interactive prompt (see :data:`sys.last_type`).
+   sys.last_traceback, limit, file, chain)``.  In general it will work only
+   after an exception has reached an interactive prompt (see
+   :data:`sys.last_type`).
 
 
 .. function:: print_stack(f=None, limit=None, file=None)
 
-   This function prints a stack trace from its invocation point.  The optional *f*
-   argument can be used to specify an alternate stack frame to start.  The optional
-   *limit* and *file* arguments have the same meaning as for
-   :func:`print_exception`.
+   Print up to *limit* stack trace entries (starting from the invocation
+   point) if *limit* is positive.  Otherwise, print the last ``abs(limit)``
+   entries.  If *limit* is omitted or ``None``, all entries are printed.
+   The optional *f* argument can be used to specify an alternate stack frame
+   to start.  The optional *file* argument has the same meaning as for
+   :func:`print_tb`.
+
+   .. versionchanged:: 3.5
+          Added negative *limit* support.
 
 
 .. function:: extract_tb(traceback, limit=None)
 
-   Return a list of up to *limit* "pre-processed" stack trace entries extracted
-   from the traceback object *traceback*.  It is useful for alternate formatting of
-   stack traces.  If *limit* is omitted or ``None``, all entries are extracted.  A
-   "pre-processed" stack trace entry is a 4-tuple (*filename*, *line number*,
-   *function name*, *text*) representing the information that is usually printed
-   for a stack trace.  The *text* is a string with leading and trailing whitespace
-   stripped; if the source is not available it is ``None``.
+   Return a list of "pre-processed" stack trace entries extracted from the
+   traceback object *traceback*.  It is useful for alternate formatting of
+   stack traces.  The optional *limit* argument has the same meaning as for
+   :func:`print_tb`.  A "pre-processed" stack trace entry is a 4-tuple
+   (*filename*, *line number*, *function name*, *text*) representing the
+   information that is usually printed for a stack trace.  The *text* is a
+   string with leading and trailing whitespace stripped; if the source is
+   not available it is ``None``.
 
 
 .. function:: extract_stack(f=None, limit=None)
