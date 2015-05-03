@@ -7,6 +7,7 @@
                         ForcePerMachine="yes"
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
+                        EnableFeatureSelection="yes"
                         InstallCondition="InstallAllUsers and (Include_exe or Include_launcher or Include_pip)">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
             </MsiPackage>
@@ -32,6 +33,7 @@
                         ForcePerMachine="no"
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
+                        EnableFeatureSelection="yes"
                         InstallCondition="not InstallAllUsers and (Include_exe or Include_launcher or Include_pip)">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
             </MsiPackage>
