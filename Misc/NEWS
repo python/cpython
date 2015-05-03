@@ -210,6 +210,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #23330: h2py now supports arbitrary filenames in #include.
+
 - Issue #6639: Module-level turtle functions no longer raise TclError after
   closing the window.
 
