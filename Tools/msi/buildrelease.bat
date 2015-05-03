@@ -64,13 +64,6 @@ for %%f in (%_DLLTOOL_PATH%) do set PATH=%PATH%;%%~dpf
 set _DLLTOOL_PATH=
 :skipdlltoolsearch
 
-where rar /q && goto skiprarsearch
-set _RAR_PATH=
-where /R "%ProgramFiles%\WinRAR" rar > "%TEMP%\rar.loc" 2> nul && set /P _RAR_PATH= < "%TEMP%\rar.loc" & del "%TEMP%\rar.loc" 
-where /R "%ProgramFiles(x86)%\WinRAR" rar > "%TEMP%\rar.loc" 2> nul && set /P _RAR_PATH= < "%TEMP%\rar.loc" & del "%TEMP%\rar.loc" 
-if not exist "%_RAR_PATH%" echo Cannot find WinRAR on PATH or in external && pause
-:skiprarsearch
-
 if defined BUILDX86 (
     call :build x86
     if errorlevel 1 exit /B
@@ -142,7 +135,7 @@ if errorlevel 1 exit /B
 msbuild "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
 if errorlevel 1 exit /B
 
-if defined _RAR_PATH msbuild "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS% "/p:RAR=%_RAR_PATH%"
+msbuild "%D%make_zip.proj" /t:Build %BUILDOPTS% %CERTOPTS%
 
 if not "%OUTDIR%" EQU "" (
     mkdir "%OUTDIR%\%OUTDIR_PLAT%"

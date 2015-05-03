@@ -72,7 +72,7 @@ EMBED_LAYOUT = [
     ('python35.zip', 'Lib', '**/*', include_in_lib),
 ]
 
-def copy_to_layout(target, source, rel_sources):
+def copy_to_layout(target, rel_sources):
     count = 0
 
     if target.suffix.lower() == '.zip':
@@ -146,21 +146,11 @@ def main():
     try:
         for t, s, p, c in layout:
             s = source / s.replace("$arch", arch)
-            copied = copy_to_layout(
-                temp / t.rstrip('/'),
-                source,
-                rglob(s, p, c)
-            )
+            copied = copy_to_layout(temp / t.rstrip('/'), rglob(s, p, c))
             print('Copied {} files'.format(copied))
 
-        if rar and rar.is_file():
-            subprocess.check_call([
-                str(rar),
-                "a",
-                "-ed", "-ep1", "-s", "-r",
-                str(out),
-                str(temp / '*')
-            ])
+        total = copy_to_layout(out, rglob(temp, '*', None))
+        print('Wrote {} files to {}'.format(total, out))
     finally:
         if delete_temp:
             shutil.rmtree(temp, True)
