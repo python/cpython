@@ -12,11 +12,6 @@
 This document aims to give an overview of Windows-specific behaviour you should
 know about when using Python on Microsoft Windows.
 
-.. XXX (ncoghlan)
-
-   This looks rather stale to me...
-
-
 Installing Python
 =================
 
@@ -24,11 +19,10 @@ Unlike most Unix systems and services, Windows does not include a system
 supported installation of Python. To make Python available, the CPython team
 has compiled Windows installers (MSI packages) with every `release
 <https://www.python.org/download/releases/>`_ for many years. These installers
-are primarily intended to add a system-wide installation of Python, with the
-core interpreter and library being shared by all application. Non-shared
-layouts of the Python interpreter may also be created with the same installer,
-however, the released installer is not intended for embedding in other
-installers.
+are primarily intended to add a per-user installation of Python, with the
+core interpreter and library being used by a single user. The installer is also
+able to install for all users of a single machine, and a separate ZIP file is
+available for application-local distributions.
 
 Installation Steps
 ------------------
@@ -41,30 +35,34 @@ default installation and only requires an internet connection for optional
 features. See :ref:`install-layout-option` for other ways to avoid downloading
 during installation.
 
-After starting the installer, one of three options may be selected:
+After starting the installer, one of two options may be selected:
 
 .. image:: win_installer.png
 
-If you select "Install for All Users":
+If you select "Install Now":
 
-* You may be required to provide administrative credentials or approval
-* Python will be installed into your Program Files directory
-* The :ref:`launcher` will be installed into your Windows directory
-* The standard library, test suite, launcher and pip will be installed
-* After installation, the standard library will be pre-compiled to bytecode
-* If selected, the install directory will be added to :envvar:`PATH`
-
-If you select "Install Just for Me":
-
-* You will *not* need to be an administrator
+* You will *not* need to be an administrator (unless a system update for the
+  C Runtime Library is required)
 * Python will be installed into your user directory
 * The :ref:`launcher` will *also* be installed into your user directory
 * The standard library, test suite, launcher and pip will be installed
-* If selected, the install directory will be added to :envvar:`PATH`
+* If selected, the install directory will be added to your :envvar:`PATH`
+* Shortcuts will only be visible for the current user
 
 Selecting "Customize installation" will allow you to select the features to
 install, the installation location and other options or post-install actions.
 To install debugging symbols or binaries, you will need to use this option.
+
+To perform an all-users installation, you should select "Customize
+installation". In this case:
+
+* You may be required to provide administrative credentials or approval
+* Python will be installed into the Program Files directory
+* The :ref:`launcher` will be installed into the Windows directory
+* Optional features may be selected during installation
+* The standard library will be pre-compiled to bytecode
+* If selected, the install directory will be added to the system :envvar:`PATH`
+* Shortcuts are available for all users
 
 .. _install-quiet-option:
 
@@ -294,7 +292,7 @@ System variables, you need non-restricted access to your machine
 
     The :envvar:`PYTHONPATH` variable is used by all versions of Python 2 and
     Python 3, so you should not permanently configure this variable unless it
-    only includes code that is compatible all of your installed Python
+    only includes code that is compatible with all of your installed Python
     versions.
 
 .. seealso::
