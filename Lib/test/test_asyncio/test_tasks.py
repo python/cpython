@@ -1,5 +1,7 @@
 """Tests for tasks.py."""
 
+import contextlib
+import functools
 import os
 import re
 import sys
@@ -26,6 +28,19 @@ PY35 = (sys.version_info >= (3, 5))
 @asyncio.coroutine
 def coroutine_function():
     pass
+
+
+@contextlib.contextmanager
+def set_coroutine_debug(enabled):
+    coroutines = asyncio.coroutines
+
+    old_debug = coroutines._DEBUG
+    try:
+        coroutines._DEBUG = enabled
+        yield
+    finally:
+        coroutines._DEBUG = old_debug
+
 
 
 def format_coroutine(qualname, state, src, source_traceback, generator=False):
@@ -278,6 +293,29 @@ class TaskTests(test_utils.TestCase):
 
         fut.set_result(None)
         self.loop.run_until_complete(task)
+
+    def test_task_repr_partial_corowrapper(self):
+        # Issue #222: repr(CoroWrapper) must not fail in debug mode if the
+        # coroutine is a partial function
+        with set_coroutine_debug(True):
+            self.loop.set_debug(True)
+
+            @asyncio.coroutine
+            def func(x, y):
+                yield from asyncio.sleep(0)
+
+            partial_func = asyncio.coroutine(functools.partial(func, 1))
+            task = self.loop.create_task(partial_func(2))
+
+            # make warnings quiet
+            task._log_destroy_pending = False
+            self.addCleanup(task._coro.close)
+
+        coro_repr = repr(task._coro)
+        expected = ('<CoroWrapper TaskTests.test_task_repr_partial_corowrapper'
+                    '.<locals>.func(1)() running, ')
+        self.assertTrue(coro_repr.startswith(expected),
+                        coro_repr)
 
     def test_task_basics(self):
         @asyncio.coroutine
@@ -1555,25 +1593,16 @@ class TaskTests(test_utils.TestCase):
             # The frame should have changed.
             self.assertIsNone(gen.gi_frame)
 
-        # Save debug flag.
-        old_debug = asyncio.coroutines._DEBUG
-        try:
-            # Test with debug flag cleared.
-            asyncio.coroutines._DEBUG = False
+        # Test with debug flag cleared.
+        with set_coroutine_debug(False):
             check()
 
-            # Test with debug flag set.
-            asyncio.coroutines._DEBUG = True
+        # Test with debug flag set.
+        with set_coroutine_debug(True):
             check()
-
-        finally:
-            # Restore original debug flag.
-            asyncio.coroutines._DEBUG = old_debug
 
     def test_yield_from_corowrapper(self):
-        old_debug = asyncio.coroutines._DEBUG
-        asyncio.coroutines._DEBUG = True
-        try:
+        with set_coroutine_debug(True):
             @asyncio.coroutine
             def t1():
                 return (yield from t2())
@@ -1591,8 +1620,6 @@ class TaskTests(test_utils.TestCase):
             task = asyncio.Task(t1(), loop=self.loop)
             val = self.loop.run_until_complete(task)
             self.assertEqual(val, (1, 2, 3))
-        finally:
-            asyncio.coroutines._DEBUG = old_debug
 
     def test_yield_from_corowrapper_send(self):
         def foo():
@@ -1663,14 +1690,10 @@ class TaskTests(test_utils.TestCase):
 
     @mock.patch('asyncio.coroutines.logger')
     def test_coroutine_never_yielded(self, m_log):
-        debug = asyncio.coroutines._DEBUG
-        try:
-            asyncio.coroutines._DEBUG = True
+        with set_coroutine_debug(True):
             @asyncio.coroutine
             def coro_noop():
                 pass
-        finally:
-            asyncio.coroutines._DEBUG = debug
 
         tb_filename = __file__
         tb_lineno = sys._getframe().f_lineno + 2
