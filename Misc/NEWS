@@ -65,7 +65,10 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #23330: h2py now supports arbitrary filenames in #include.
+
 - Issue #24031: make patchcheck now supports git checkouts, too.
+
 
 What's New in Python 3.5.0 alpha 4?
 ===================================
