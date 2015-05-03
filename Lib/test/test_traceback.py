@@ -6,6 +6,7 @@ import linecache
 import sys
 import unittest
 import re
+from test import support
 from test.support import TESTFN, Error, captured_output, unlink, cpython_only
 from test.script_helper import assert_python_ok
 import textwrap
@@ -453,6 +454,126 @@ class CExcReportingTests(BaseExceptionReportingTests, unittest.TestCase):
         return s.getvalue()
 
 
+class LimitTests(unittest.TestCase):
+
+    ''' Tests for limit argument.
+        It's enough to test extact_tb, extract_stack and format_exception '''
+
+    def last_raises1(self):
+        raise Exception('Last raised')
+
+    def last_raises2(self):
+        self.last_raises1()
+
+    def last_raises3(self):
+        self.last_raises2()
+
+    def last_raises4(self):
+        self.last_raises3()
+
+    def last_raises5(self):
+        self.last_raises4()
+
+    def last_returns_frame1(self):
+        return sys._getframe()
+
+    def last_returns_frame2(self):
+        return self.last_returns_frame1()
+
+    def last_returns_frame3(self):
+        return self.last_returns_frame2()
+
+    def last_returns_frame4(self):
+        return self.last_returns_frame3()
+
+    def last_returns_frame5(self):
+        return self.last_returns_frame4()
+
+    def test_extract_stack(self):
+        frame = self.last_returns_frame5()
+        def extract(**kwargs):
+            return traceback.extract_stack(frame, **kwargs)
+        def assertEqualExcept(actual, expected, ignore):
+            self.assertEqual(actual[:ignore], expected[:ignore])
+            self.assertEqual(actual[ignore+1:], expected[ignore+1:])
+            self.assertEqual(len(actual), len(expected))
+
+        with support.swap_attr(sys, 'tracebacklimit', 1000):
+            nolim = extract()
+            self.assertGreater(len(nolim), 5)
+            self.assertEqual(extract(limit=2), nolim[-2:])
+            assertEqualExcept(extract(limit=100), nolim[-100:], -5-1)
+            self.assertEqual(extract(limit=-2), nolim[:2])
+            assertEqualExcept(extract(limit=-100), nolim[:100], len(nolim)-5-1)
+            self.assertEqual(extract(limit=0), [])
+            del sys.tracebacklimit
+            assertEqualExcept(extract(), nolim, -5-1)
+            sys.tracebacklimit = 2
+            self.assertEqual(extract(), nolim[-2:])
+            self.assertEqual(extract(limit=3), nolim[-3:])
+            self.assertEqual(extract(limit=-3), nolim[:3])
+            sys.tracebacklimit = 0
+            self.assertEqual(extract(), [])
+            sys.tracebacklimit = -1
+            self.assertEqual(extract(), [])
+
+    def test_extract_tb(self):
+        try:
+            self.last_raises5()
+        except Exception:
+            exc_type, exc_value, tb = sys.exc_info()
+        def extract(**kwargs):
+            return traceback.extract_tb(tb, **kwargs)
+
+        with support.swap_attr(sys, 'tracebacklimit', 1000):
+            nolim = extract()
+            self.assertEqual(len(nolim), 5+1)
+            self.assertEqual(extract(limit=2), nolim[:2])
+            self.assertEqual(extract(limit=10), nolim)
+            self.assertEqual(extract(limit=-2), nolim[-2:])
+            self.assertEqual(extract(limit=-10), nolim)
+            self.assertEqual(extract(limit=0), [])
+            del sys.tracebacklimit
+            self.assertEqual(extract(), nolim)
+            sys.tracebacklimit = 2
+            self.assertEqual(extract(), nolim[:2])
+            self.assertEqual(extract(limit=3), nolim[:3])
+            self.assertEqual(extract(limit=-3), nolim[-3:])
+            sys.tracebacklimit = 0
+            self.assertEqual(extract(), [])
+            sys.tracebacklimit = -1
+            self.assertEqual(extract(), [])
+
+    def test_format_exception(self):
+        try:
+            self.last_raises5()
+        except Exception:
+            exc_type, exc_value, tb = sys.exc_info()
+        # [1:-1] to exclude "Traceback (...)" header and
+        # exception type and value
+        def extract(**kwargs):
+            return traceback.format_exception(exc_type, exc_value, tb, **kwargs)[1:-1]
+
+        with support.swap_attr(sys, 'tracebacklimit', 1000):
+            nolim = extract()
+            self.assertEqual(len(nolim), 5+1)
+            self.assertEqual(extract(limit=2), nolim[:2])
+            self.assertEqual(extract(limit=10), nolim)
+            self.assertEqual(extract(limit=-2), nolim[-2:])
+            self.assertEqual(extract(limit=-10), nolim)
+            self.assertEqual(extract(limit=0), [])
+            del sys.tracebacklimit
+            self.assertEqual(extract(), nolim)
+            sys.tracebacklimit = 2
+            self.assertEqual(extract(), nolim[:2])
+            self.assertEqual(extract(limit=3), nolim[:3])
+            self.assertEqual(extract(limit=-3), nolim[-3:])
+            sys.tracebacklimit = 0
+            self.assertEqual(extract(), [])
+            sys.tracebacklimit = -1
+            self.assertEqual(extract(), [])
+
+
 class MiscTracebackCases(unittest.TestCase):
     #
     # Check non-printing functions in traceback module
@@ -592,15 +713,13 @@ class TestStack(unittest.TestCase):
                 traceback.walk_stack(None), capture_locals=True, limit=1)
         s = some_inner(3, 4)
         self.assertEqual(
-            ['  File "' + __file__ + '", line 592, '
-             'in some_inner\n'
+            ['  File "%s", line %d, in some_inner\n'
              '    traceback.walk_stack(None), capture_locals=True, limit=1)\n'
              '    a = 1\n'
              '    b = 2\n'
              '    k = 3\n'
-             '    v = 4\n'
+             '    v = 4\n' % (__file__, some_inner.__code__.co_firstlineno + 4)
             ], s.format())
-
 
 class TestTracebackException(unittest.TestCase):
 

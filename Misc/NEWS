@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22619: Added negative limit support in the traceback module.
+  Based on patch by Dmitry Kazakov.
+
 - Issue #24094: Fix possible crash in json.encode with poorly behaved dict
   subclasses.
 
