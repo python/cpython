@@ -162,7 +162,7 @@ class Future:
             cb = ''
 
         def format_cb(callback):
-            return events._format_callback(callback, ())
+            return events._format_callback_source(callback, ())
 
         if size == 1:
             cb = format_cb(cb[0])

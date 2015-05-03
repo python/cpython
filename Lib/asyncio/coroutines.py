@@ -151,7 +151,8 @@ def coroutine(func):
             w = CoroWrapper(coro(*args, **kwds), func)
             if w._source_traceback:
                 del w._source_traceback[-1]
-            w.__name__ = func.__name__
+            if hasattr(func, '__name__'):
+                w.__name__ = func.__name__
             if hasattr(func, '__qualname__'):
                 w.__qualname__ = func.__qualname__
             w.__doc__ = func.__doc__
@@ -175,25 +176,30 @@ def iscoroutine(obj):
 
 def _format_coroutine(coro):
     assert iscoroutine(coro)
-    coro_name = getattr(coro, '__qualname__', coro.__name__)
+
+    if isinstance(coro, CoroWrapper):
+        func = coro.func
+    else:
+        func = coro
+    coro_name = events._format_callback(func, ())
 
     filename = coro.gi_code.co_filename
     if (isinstance(coro, CoroWrapper)
     and not inspect.isgeneratorfunction(coro.func)):
         filename, lineno = events._get_function_source(coro.func)
         if coro.gi_frame is None:
-            coro_repr = ('%s() done, defined at %s:%s'
+            coro_repr = ('%s done, defined at %s:%s'
                          % (coro_name, filename, lineno))
         else:
-            coro_repr = ('%s() running, defined at %s:%s'
+            coro_repr = ('%s running, defined at %s:%s'
                          % (coro_name, filename, lineno))
     elif coro.gi_frame is not None:
         lineno = coro.gi_frame.f_lineno
-        coro_repr = ('%s() running at %s:%s'
+        coro_repr = ('%s running at %s:%s'
                      % (coro_name, filename, lineno))
     else:
         lineno = coro.gi_code.co_firstlineno
-        coro_repr = ('%s() done, defined at %s:%s'
+        coro_repr = ('%s done, defined at %s:%s'
                      % (coro_name, filename, lineno))
 
     return coro_repr
