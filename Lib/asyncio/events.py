@@ -54,15 +54,21 @@ def _format_callback(func, args, suffix=''):
             suffix = _format_args(args) + suffix
         return _format_callback(func.func, func.args, suffix)
 
-    func_repr = getattr(func, '__qualname__', None)
-    if not func_repr:
+    if hasattr(func, '__qualname__'):
+        func_repr = getattr(func, '__qualname__')
+    elif hasattr(func, '__name__'):
+        func_repr = getattr(func, '__name__')
+    else:
         func_repr = repr(func)
 
     if args is not None:
         func_repr += _format_args(args)
     if suffix:
         func_repr += suffix
+    return func_repr
 
+def _format_callback_source(func, args):
+    func_repr = _format_callback(func, args)
     source = _get_function_source(func)
     if source:
         func_repr += ' at %s:%s' % source
@@ -92,7 +98,7 @@ class Handle:
         if self._cancelled:
             info.append('cancelled')
         if self._callback is not None:
-            info.append(_format_callback(self._callback, self._args))
+            info.append(_format_callback_source(self._callback, self._args))
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append('created at %s:%s' % (frame[0], frame[1]))
@@ -119,7 +125,7 @@ class Handle:
         try:
             self._callback(*self._args)
         except Exception as exc:
-            cb = _format_callback(self._callback, self._args)
+            cb = _format_callback_source(self._callback, self._args)
             msg = 'Exception in callback {}'.format(cb)
             context = {
                 'message': msg,
