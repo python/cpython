@@ -42,7 +42,8 @@ Continue?</String>
   <String Id="InstallAcceptCheckbox">I &amp;agree to the license terms and conditions</String>
   <String Id="InstallJustForMeButton">&amp;Install Now</String>
   <String Id="InstallJustForMeButtonNote">[DefaultJustForMeTargetDir]
-Includes IDLE and pip
+
+Includes IDLE, pip and documentation
 Creates shortcuts and file associations</String>
   <String Id="InstallCustomButton">C&amp;ustomize installation</String>
   <String Id="InstallCustomButtonNote">Choose location and features</String>
@@ -68,6 +69,7 @@ Creates shortcuts and file associations</String>
   <String Id="Include_launcherHelpLabel">Installs the global 'py' launcher to make it easier to start Python.</String>
   
   <String Id="AssociateFilesLabel">Associate &amp;files with Python (requires the py launcher)</String>
+  <String Id="ShortcutsLabel">Create shortcuts for installed applications</String>
   <String Id="PrependPathLabel">Add Python to &amp;environment variables</String>
   <String Id="ShortPrependPathLabel">Add &amp;Python [ShortVersion] to PATH</String>
   <String Id="InstallAllUsersLabel">Install as &amp;Administrator</String>

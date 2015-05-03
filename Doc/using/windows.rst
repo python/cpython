@@ -115,6 +115,9 @@ of available options is shown below.
 |                           | tho :envvar:`PATH` and ``.PY`` to    |                          |
 |                           | :envvar:`PATHEXT`                    |                          |
 +---------------------------+--------------------------------------+--------------------------+
+| Shortcuts                 | Create shortcuts for the interpreter,| 1                        |
+|                           | documentation and IDLE if installed. |                          |
++---------------------------+--------------------------------------+--------------------------+
 | Include_doc               | Install Python manual                | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
 | Include_debug             | Install debug binaries               | 0                        |
