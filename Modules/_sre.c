@@ -269,6 +269,10 @@ class _sre.SRE_Scanner "ScannerObject *" "&Scanner_Type"
 [clinic start generated code]*/
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=b0230ec19a0deac8]*/
 
+static PyTypeObject Pattern_Type;
+static PyTypeObject Match_Type;
+static PyTypeObject Scanner_Type;
+
 /*[clinic input]
 _sre.getcodesize -> int
 [clinic start generated code]*/
@@ -1426,60 +1430,12 @@ done:
 
 PyDoc_STRVAR(pattern_doc, "Compiled regular expression objects");
 
-static PyMethodDef pattern_methods[];
-
 /* PatternObject's 'groupindex' method. */
 static PyObject *
 pattern_groupindex(PatternObject *self)
 {
     return PyDictProxy_New(self->groupindex);
 }
-
-static PyGetSetDef pattern_getset[] = {
-    {"groupindex", (getter)pattern_groupindex, (setter)NULL,
-      "A dictionary mapping group names to group numbers."},
-    {NULL}  /* Sentinel */
-};
-
-#define PAT_OFF(x) offsetof(PatternObject, x)
-static PyMemberDef pattern_members[] = {
-    {"pattern",    T_OBJECT,    PAT_OFF(pattern),       READONLY},
-    {"flags",      T_INT,       PAT_OFF(flags),         READONLY},
-    {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY},
-    {NULL}  /* Sentinel */
-};
-
-static PyTypeObject Pattern_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_" SRE_MODULE ".SRE_Pattern",
-    sizeof(PatternObject), sizeof(SRE_CODE),
-    (destructor)pattern_dealloc,        /* tp_dealloc */
-    0,                                  /* tp_print */
-    0,                                  /* tp_getattr */
-    0,                                  /* tp_setattr */
-    0,                                  /* tp_reserved */
-    (reprfunc)pattern_repr,             /* tp_repr */
-    0,                                  /* tp_as_number */
-    0,                                  /* tp_as_sequence */
-    0,                                  /* tp_as_mapping */
-    0,                                  /* tp_hash */
-    0,                                  /* tp_call */
-    0,                                  /* tp_str */
-    0,                                  /* tp_getattro */
-    0,                                  /* tp_setattro */
-    0,                                  /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
-    pattern_doc,                        /* tp_doc */
-    0,                                  /* tp_traverse */
-    0,                                  /* tp_clear */
-    0,                                  /* tp_richcompare */
-    offsetof(PatternObject, weakreflist),       /* tp_weaklistoffset */
-    0,                                  /* tp_iter */
-    0,                                  /* tp_iternext */
-    pattern_methods,                    /* tp_methods */
-    pattern_members,                    /* tp_members */
-    pattern_getset,                     /* tp_getset */
-};
 
 static int _validate(PatternObject *self); /* Forward */
 
@@ -2469,8 +2425,6 @@ PyDoc_STRVAR(match_group_doc,
     Return subgroup(s) of the match by indices or names.\n\
     For 0 returns the entire match.");
 
-static PyMethodDef match_methods[];
-
 static PyObject *
 match_lastindex_get(MatchObject *self)
 {
@@ -2520,57 +2474,6 @@ match_repr(MatchObject *self)
     return result;
 }
 
-
-static PyGetSetDef match_getset[] = {
-    {"lastindex", (getter)match_lastindex_get, (setter)NULL},
-    {"lastgroup", (getter)match_lastgroup_get, (setter)NULL},
-    {"regs",      (getter)match_regs_get,      (setter)NULL},
-    {NULL}
-};
-
-#define MATCH_OFF(x) offsetof(MatchObject, x)
-static PyMemberDef match_members[] = {
-    {"string",  T_OBJECT,   MATCH_OFF(string),  READONLY},
-    {"re",      T_OBJECT,   MATCH_OFF(pattern), READONLY},
-    {"pos",     T_PYSSIZET, MATCH_OFF(pos),     READONLY},
-    {"endpos",  T_PYSSIZET, MATCH_OFF(endpos),  READONLY},
-    {NULL}
-};
-
-/* FIXME: implement setattr("string", None) as a special case (to
-   detach the associated string, if any */
-
-static PyTypeObject Match_Type = {
-    PyVarObject_HEAD_INIT(NULL,0)
-    "_" SRE_MODULE ".SRE_Match",
-    sizeof(MatchObject), sizeof(Py_ssize_t),
-    (destructor)match_dealloc,  /* tp_dealloc */
-    0,                          /* tp_print */
-    0,                          /* tp_getattr */
-    0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
-    (reprfunc)match_repr,       /* tp_repr */
-    0,                          /* tp_as_number */
-    0,                          /* tp_as_sequence */
-    0,                          /* tp_as_mapping */
-    0,                          /* tp_hash */
-    0,                          /* tp_call */
-    0,                          /* tp_str */
-    0,                          /* tp_getattro */
-    0,                          /* tp_setattro */
-    0,                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,         /* tp_flags */
-    match_doc,                  /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    match_methods,              /* tp_methods */
-    match_members,              /* tp_members */
-    match_getset,               /* tp_getset */
-};
 
 static PyObject*
 pattern_new_match(PatternObject* pattern, SRE_STATE* state, Py_ssize_t status)
@@ -2712,46 +2615,6 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self)
     return match;
 }
 
-static PyMethodDef scanner_methods[];
-
-#define SCAN_OFF(x) offsetof(ScannerObject, x)
-static PyMemberDef scanner_members[] = {
-    {"pattern", T_OBJECT, SCAN_OFF(pattern), READONLY},
-    {NULL}  /* Sentinel */
-};
-
-static PyTypeObject Scanner_Type = {
-    PyVarObject_HEAD_INIT(NULL, 0)
-    "_" SRE_MODULE ".SRE_Scanner",
-    sizeof(ScannerObject), 0,
-    (destructor)scanner_dealloc,/* tp_dealloc */
-    0,                          /* tp_print */
-    0,                          /* tp_getattr */
-    0,                          /* tp_setattr */
-    0,                          /* tp_reserved */
-    0,                          /* tp_repr */
-    0,                          /* tp_as_number */
-    0,                          /* tp_as_sequence */
-    0,                          /* tp_as_mapping */
-    0,                          /* tp_hash */
-    0,                          /* tp_call */
-    0,                          /* tp_str */
-    0,                          /* tp_getattro */
-    0,                          /* tp_setattro */
-    0,                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,         /* tp_flags */
-    0,                          /* tp_doc */
-    0,                          /* tp_traverse */
-    0,                          /* tp_clear */
-    0,                          /* tp_richcompare */
-    0,                          /* tp_weaklistoffset */
-    0,                          /* tp_iter */
-    0,                          /* tp_iternext */
-    scanner_methods,            /* tp_methods */
-    scanner_members,            /* tp_members */
-    0,                          /* tp_getset */
-};
-
 static PyObject *
 pattern_scanner(PatternObject *self, PyObject *string, Py_ssize_t pos, Py_ssize_t endpos)
 {
@@ -2792,6 +2655,53 @@ static PyMethodDef pattern_methods[] = {
     {NULL, NULL}
 };
 
+static PyGetSetDef pattern_getset[] = {
+    {"groupindex", (getter)pattern_groupindex, (setter)NULL,
+      "A dictionary mapping group names to group numbers."},
+    {NULL}  /* Sentinel */
+};
+
+#define PAT_OFF(x) offsetof(PatternObject, x)
+static PyMemberDef pattern_members[] = {
+    {"pattern",    T_OBJECT,    PAT_OFF(pattern),       READONLY},
+    {"flags",      T_INT,       PAT_OFF(flags),         READONLY},
+    {"groups",     T_PYSSIZET,  PAT_OFF(groups),        READONLY},
+    {NULL}  /* Sentinel */
+};
+
+static PyTypeObject Pattern_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_" SRE_MODULE ".SRE_Pattern",
+    sizeof(PatternObject), sizeof(SRE_CODE),
+    (destructor)pattern_dealloc,        /* tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    (reprfunc)pattern_repr,             /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    0,                                  /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,                 /* tp_flags */
+    pattern_doc,                        /* tp_doc */
+    0,                                  /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    offsetof(PatternObject, weakreflist),       /* tp_weaklistoffset */
+    0,                                  /* tp_iter */
+    0,                                  /* tp_iternext */
+    pattern_methods,                    /* tp_methods */
+    pattern_members,                    /* tp_members */
+    pattern_getset,                     /* tp_getset */
+};
+
+
 static PyMethodDef match_methods[] = {
     {"group", (PyCFunction) match_group, METH_VARARGS, match_group_doc},
     _SRE_SRE_MATCH_START_METHODDEF
@@ -2805,10 +2715,99 @@ static PyMethodDef match_methods[] = {
     {NULL, NULL}
 };
 
+static PyGetSetDef match_getset[] = {
+    {"lastindex", (getter)match_lastindex_get, (setter)NULL},
+    {"lastgroup", (getter)match_lastgroup_get, (setter)NULL},
+    {"regs",      (getter)match_regs_get,      (setter)NULL},
+    {NULL}
+};
+
+#define MATCH_OFF(x) offsetof(MatchObject, x)
+static PyMemberDef match_members[] = {
+    {"string",  T_OBJECT,   MATCH_OFF(string),  READONLY},
+    {"re",      T_OBJECT,   MATCH_OFF(pattern), READONLY},
+    {"pos",     T_PYSSIZET, MATCH_OFF(pos),     READONLY},
+    {"endpos",  T_PYSSIZET, MATCH_OFF(endpos),  READONLY},
+    {NULL}
+};
+
+/* FIXME: implement setattr("string", None) as a special case (to
+   detach the associated string, if any */
+
+static PyTypeObject Match_Type = {
+    PyVarObject_HEAD_INIT(NULL,0)
+    "_" SRE_MODULE ".SRE_Match",
+    sizeof(MatchObject), sizeof(Py_ssize_t),
+    (destructor)match_dealloc,  /* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_reserved */
+    (reprfunc)match_repr,       /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,         /* tp_flags */
+    match_doc,                  /* tp_doc */
+    0,                          /* tp_traverse */
+    0,                          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+    0,                          /* tp_iter */
+    0,                          /* tp_iternext */
+    match_methods,              /* tp_methods */
+    match_members,              /* tp_members */
+    match_getset,               /* tp_getset */
+};
+
 static PyMethodDef scanner_methods[] = {
     _SRE_SRE_SCANNER_MATCH_METHODDEF
     _SRE_SRE_SCANNER_SEARCH_METHODDEF
     {NULL, NULL}
+};
+
+#define SCAN_OFF(x) offsetof(ScannerObject, x)
+static PyMemberDef scanner_members[] = {
+    {"pattern", T_OBJECT, SCAN_OFF(pattern), READONLY},
+    {NULL}  /* Sentinel */
+};
+
+static PyTypeObject Scanner_Type = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "_" SRE_MODULE ".SRE_Scanner",
+    sizeof(ScannerObject), 0,
+    (destructor)scanner_dealloc,/* tp_dealloc */
+    0,                          /* tp_print */
+    0,                          /* tp_getattr */
+    0,                          /* tp_setattr */
+    0,                          /* tp_reserved */
+    0,                          /* tp_repr */
+    0,                          /* tp_as_number */
+    0,                          /* tp_as_sequence */
+    0,                          /* tp_as_mapping */
+    0,                          /* tp_hash */
+    0,                          /* tp_call */
+    0,                          /* tp_str */
+    0,                          /* tp_getattro */
+    0,                          /* tp_setattro */
+    0,                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT,         /* tp_flags */
+    0,                          /* tp_doc */
+    0,                          /* tp_traverse */
+    0,                          /* tp_clear */
+    0,                          /* tp_richcompare */
+    0,                          /* tp_weaklistoffset */
+    0,                          /* tp_iter */
+    0,                          /* tp_iternext */
+    scanner_methods,            /* tp_methods */
+    scanner_members,            /* tp_members */
+    0,                          /* tp_getset */
 };
 
 static PyMethodDef _functions[] = {
