@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24094: Fix possible crash in json.encode with poorly behaved dict
+  subclasses.
+
 - Issue #9246: On POSIX, os.getcwd() now supports paths longer than 1025 bytes.
   Patch written by William Orr.
 
