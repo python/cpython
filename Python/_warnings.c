@@ -101,7 +101,7 @@ get_default_action(void)
 }
 
 
-/* The item is a borrowed reference. */
+/* The item is a new reference. */
 static PyObject*
 get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
            PyObject *module, PyObject **item)
@@ -132,14 +132,15 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         Py_ssize_t ln;
         int is_subclass, good_msg, good_mod;
 
-        tmp_item = *item = PyList_GET_ITEM(_filters, i);
-        if (PyTuple_Size(tmp_item) != 5) {
+        tmp_item = PyList_GET_ITEM(_filters, i);
+        if (!PyTuple_Check(tmp_item) || PyTuple_GET_SIZE(tmp_item) != 5) {
             PyErr_Format(PyExc_ValueError,
                          MODULE_NAME ".filters item %zd isn't a 5-tuple", i);
             return NULL;
         }
 
         /* Python code: action, msg, cat, mod, ln = item */
+        Py_INCREF(tmp_item);
         action = PyTuple_GET_ITEM(tmp_item, 0);
         msg = PyTuple_GET_ITEM(tmp_item, 1);
         cat = PyTuple_GET_ITEM(tmp_item, 2);
@@ -147,28 +148,43 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
         ln_obj = PyTuple_GET_ITEM(tmp_item, 4);
 
         good_msg = check_matched(msg, text);
-        if (good_msg == -1)
+        if (good_msg == -1) {
+            Py_DECREF(tmp_item);
             return NULL;
+        }
 
         good_mod = check_matched(mod, module);
-        if (good_mod == -1)
+        if (good_mod == -1) {
+            Py_DECREF(tmp_item);
             return NULL;
+        }
 
         is_subclass = PyObject_IsSubclass(category, cat);
-        if (is_subclass == -1)
+        if (is_subclass == -1) {
+            Py_DECREF(tmp_item);
             return NULL;
+        }
 
         ln = PyLong_AsSsize_t(ln_obj);
-        if (ln == -1 && PyErr_Occurred())
+        if (ln == -1 && PyErr_Occurred()) {
+            Py_DECREF(tmp_item);
             return NULL;
+        }
 
-        if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln))
+        if (good_msg && is_subclass && good_mod && (ln == 0 || lineno == ln)) {
+            *item = tmp_item;
             return action;
+        }
+
+        Py_DECREF(tmp_item);
     }
 
     action = get_default_action();
-    if (action != NULL)
+    if (action != NULL) {
+        Py_INCREF(Py_None);
+        *item = Py_None;
         return action;
+    }
 
     PyErr_SetString(PyExc_ValueError,
                     MODULE_NAME ".defaultaction not found");
@@ -349,7 +365,7 @@ warn_explicit(PyObject *category, PyObject *message,
               PyObject *module, PyObject *registry, PyObject *sourceline)
 {
     PyObject *key = NULL, *text = NULL, *result = NULL, *lineno_obj = NULL;
-    PyObject *item = Py_None;
+    PyObject *item = NULL;
     PyObject *action;
     int rc;
 
@@ -488,6 +504,7 @@ warn_explicit(PyObject *category, PyObject *message,
     Py_INCREF(result);
 
  cleanup:
+    Py_XDECREF(item);
     Py_XDECREF(key);
     Py_XDECREF(text);
     Py_XDECREF(lineno_obj);
