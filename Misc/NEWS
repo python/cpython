@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24094: Fix possible crash in json.encode with poorly behaved dict
+  subclasses.
+
 - Asyncio issue 222 / PR 231 (Victor Stinner) -- fix @coroutine
   functions without __name__.
 
