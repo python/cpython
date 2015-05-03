@@ -29,7 +29,7 @@ p_macro = re.compile(
   '^[\t ]*#[\t ]*define[\t ]+'
   '([a-zA-Z0-9_]+)\(([_a-zA-Z][_a-zA-Z0-9]*)\)[\t ]+')
 
-p_include = re.compile('^[\t ]*#[\t ]*include[\t ]+<([a-zA-Z0-9_/\.]+)')
+p_include = re.compile('^[\t ]*#[\t ]*include[\t ]+<([^>\n]+)>')
 
 p_comment = re.compile(r'/\*([^*]+|\*+[^/])*(\*+/)?')
 p_cpp_comment = re.compile('//.*')
