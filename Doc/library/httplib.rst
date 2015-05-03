@@ -591,13 +591,13 @@ Examples
 Here is an example session that uses the ``GET`` method::
 
    >>> import httplib
-   >>> conn = httplib.HTTPConnection("www.python.org")
-   >>> conn.request("GET", "/index.html")
+   >>> conn = httplib.HTTPSConnection("www.python.org")
+   >>> conn.request("GET", "/")
    >>> r1 = conn.getresponse()
    >>> print r1.status, r1.reason
    200 OK
    >>> data1 = r1.read()
-   >>> conn.request("GET", "/parrot.spam")
+   >>> conn.request("GET", "/")
    >>> r2 = conn.getresponse()
    >>> print r2.status, r2.reason
    404 Not Found
@@ -608,8 +608,8 @@ Here is an example session that uses the ``HEAD`` method.  Note that the
 ``HEAD`` method never returns any data. ::
 
    >>> import httplib
-   >>> conn = httplib.HTTPConnection("www.python.org")
-   >>> conn.request("HEAD","/index.html")
+   >>> conn = httplib.HTTPSConnection("www.python.org")
+   >>> conn.request("HEAD","/")
    >>> res = conn.getresponse()
    >>> print res.status, res.reason
    200 OK
