@@ -247,6 +247,18 @@ class FilterTests(BaseTest):
             self.assertEqual(str(w[-1].message), text)
             self.assertTrue(w[-1].category is UserWarning)
 
+    def test_mutate_filter_list(self):
+        class X:
+            def match(self, a):
+                L[:] = []
+
+        L = [("default",X(),UserWarning,X(),0) for i in range(2)]
+        with original_warnings.catch_warnings(record=True,
+                module=self.module) as w:
+            self.module.filters = L
+            self.module.warn_explicit(UserWarning("b"), None, "f.py", 42)
+            self.assertEqual(str(w[-1].message), "b")
+
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
 
