@@ -356,9 +356,11 @@ class ImportSideEffectTests(unittest.TestCase):
         self.assertEqual(proc.returncode, 0)
         os__file__, os__cached__ = stdout.splitlines()[:2]
         self.assertTrue(os.path.isabs(os__file__),
-                        "expected absolute path, got {}".format(os__file__))
+                        "expected absolute path, got {}"
+                        .format(os__file__.decode('ascii')))
         self.assertTrue(os.path.isabs(os__cached__),
-                        "expected absolute path, got {}".format(os__cached__))
+                        "expected absolute path, got {}"
+                        .format(os__cached__.decode('ascii')))
 
     def test_no_duplicate_paths(self):
         # No duplicate paths should exist in sys.path
