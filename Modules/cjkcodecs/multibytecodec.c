@@ -544,7 +544,7 @@ errorexit:
 _multibytecodec.MultibyteCodec.encode
 
   input: object
-  errors: str(nullable=True) = NULL
+  errors: str(accept={str, NoneType}) = NULL
 
 Return an encoded string version of `input'.
 
@@ -558,7 +558,7 @@ static PyObject *
 _multibytecodec_MultibyteCodec_encode_impl(MultibyteCodecObject *self,
                                            PyObject *input,
                                            const char *errors)
-/*[clinic end generated code: output=7b26652045ba56a9 input=252e7ee695867b2d]*/
+/*[clinic end generated code: output=7b26652045ba56a9 input=05f6ced3c8dd0582]*/
 {
     MultibyteCodec_State state;
     PyObject *errorcb, *r, *ucvt;
@@ -613,7 +613,7 @@ errorexit:
 _multibytecodec.MultibyteCodec.decode
 
   input: Py_buffer
-  errors: str(nullable=True) = NULL
+  errors: str(accept={str, NoneType}) = NULL
 
 Decodes 'input'.
 
@@ -627,7 +627,7 @@ static PyObject *
 _multibytecodec_MultibyteCodec_decode_impl(MultibyteCodecObject *self,
                                            Py_buffer *input,
                                            const char *errors)
-/*[clinic end generated code: output=ff419f65bad6cc77 input=37e1d9236e3ce8f3]*/
+/*[clinic end generated code: output=ff419f65bad6cc77 input=a7d45f87f75e5e02]*/
 {
     MultibyteCodec_State state;
     MultibyteDecodeBuffer buf;

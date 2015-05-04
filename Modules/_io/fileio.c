@@ -603,7 +603,7 @@ _io_FileIO_seekable_impl(fileio *self)
 
 /*[clinic input]
 _io.FileIO.readinto
-    buffer: Py_buffer(types={'rwbuffer'})
+    buffer: Py_buffer(accept={rwbuffer})
     /
 
 Same as RawIOBase.readinto().
@@ -611,7 +611,7 @@ Same as RawIOBase.readinto().
 
 static PyObject *
 _io_FileIO_readinto_impl(fileio *self, Py_buffer *buffer)
-/*[clinic end generated code: output=b01a5a22c8415cb4 input=5edd8327498d468c]*/
+/*[clinic end generated code: output=b01a5a22c8415cb4 input=4721d7b68b154eaf]*/
 {
     Py_ssize_t n;
     int err;

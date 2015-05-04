@@ -789,9 +789,9 @@ static encodefuncentry encodefuncs[] = {
 /*[clinic input]
 _io.TextIOWrapper.__init__
     buffer: object
-    encoding: str(nullable=True) = NULL
-    errors: str(nullable=True) = NULL
-    newline: str(nullable=True) = NULL
+    encoding: str(accept={str, NoneType}) = NULL
+    errors: str(accept={str, NoneType}) = NULL
+    newline: str(accept={str, NoneType}) = NULL
     line_buffering: int(c_default="0") = False
     write_through: int(c_default="0") = False
 
@@ -830,7 +830,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                                 const char *encoding, const char *errors,
                                 const char *newline, int line_buffering,
                                 int write_through)
-/*[clinic end generated code: output=56a83402ce2a8381 input=1f20decb8d54a4ec]*/
+/*[clinic end generated code: output=56a83402ce2a8381 input=3126cb3101a2c99b]*/
 {
     PyObject *raw, *codec_info = NULL;
     _PyIO_State *state = NULL;

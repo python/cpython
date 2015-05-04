@@ -1600,7 +1600,7 @@ frombytes(arrayobject *self, Py_buffer *buffer)
 /*[clinic input]
 array.array.fromstring
 
-    buffer: Py_buffer(types={'str', 'buffer'})
+    buffer: Py_buffer(accept={str, buffer})
     /
 
 Appends items from the string, interpreting it as an array of machine values, as if it had been read from a file using the fromfile() method).
@@ -1610,7 +1610,7 @@ This method is deprecated. Use frombytes instead.
 
 static PyObject *
 array_array_fromstring_impl(arrayobject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=31c4baa779df84ce input=fdde1a56cbe2b05b]*/
+/*[clinic end generated code: output=31c4baa779df84ce input=a3341a512e11d773]*/
 {
     if (PyErr_WarnEx(PyExc_DeprecationWarning,
             "fromstring() is deprecated. Use frombytes() instead.", 2) != 0)
@@ -1929,7 +1929,7 @@ make_array(PyTypeObject *arraytype, char typecode, PyObject *items)
 array._array_reconstructor
 
     arraytype: object(type="PyTypeObject *")
-    typecode: int(types={'str'})
+    typecode: int(accept={str})
     mformat_code: int(type="enum machine_format_code")
     items: object
     /
@@ -1942,7 +1942,7 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype,
                                 int typecode,
                                 enum machine_format_code mformat_code,
                                 PyObject *items)
-/*[clinic end generated code: output=6ecbf0e8e4d92ab9 input=a9ae223306d7b262]*/
+/*[clinic end generated code: output=6ecbf0e8e4d92ab9 input=2464dc8f4c7736b5]*/
 {
     PyObject *converted_items;
     PyObject *result;

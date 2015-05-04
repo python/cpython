@@ -26,7 +26,11 @@ import sys
 import tempfile
 import textwrap
 import traceback
+import types
 import uuid
+
+from types import *
+NoneType = type(None)
 
 # TODO:
 #
@@ -2526,18 +2530,18 @@ class unsigned_short_converter(CConverter):
         if not bitwise:
             fail("Unsigned shorts must be bitwise (for now).")
 
-@add_legacy_c_converter('C', types={'str'})
+@add_legacy_c_converter('C', accept={str})
 class int_converter(CConverter):
     type = 'int'
     default_type = int
     format_unit = 'i'
     c_ignored_default = "0"
 
-    def converter_init(self, *, types={'int'}, type=None):
-        if types == {'str'}:
+    def converter_init(self, *, accept={int}, type=None):
+        if accept == {str}:
             self.format_unit = 'C'
-        elif types != {'int'}:
-            fail("int_converter: illegal 'types' argument " + repr(types))
+        elif accept != {int}:
+            fail("int_converter: illegal 'accept' argument " + repr(accept))
         if type != None:
             self.type = type
 
@@ -2629,17 +2633,22 @@ class object_converter(CConverter):
 
 
 #
-# We define three string conventions for buffer types in the 'types' argument:
-#  'buffer' : any object supporting the buffer interface
-#  'rwbuffer': any object supporting the buffer interface, but must be writeable
-#  'robuffer': any object supporting the buffer interface, but must not be writeable
+# We define three conventions for buffer types in the 'accept' argument:
+#
+#  buffer  : any object supporting the buffer interface
+#  rwbuffer: any object supporting the buffer interface, but must be writeable
+#  robuffer: any object supporting the buffer interface, but must not be writeable
 #
 
-@add_legacy_c_converter('s#', types={"str", "robuffer"}, length=True)
-@add_legacy_c_converter('y', types={"robuffer"})
-@add_legacy_c_converter('y#', types={"robuffer"}, length=True)
-@add_legacy_c_converter('z', nullable=True)
-@add_legacy_c_converter('z#', types={"str", "robuffer"}, nullable=True, length=True)
+class buffer: pass
+class rwbuffer: pass
+class robuffer: pass
+
+@add_legacy_c_converter('s#', accept={str, robuffer}, length=True)
+@add_legacy_c_converter('y', accept={robuffer})
+@add_legacy_c_converter('y#', accept={robuffer}, length=True)
+@add_legacy_c_converter('z', accept={str, NoneType})
+@add_legacy_c_converter('z#', accept={str, NoneType}, length=True)
 # add_legacy_c_converter not supported for es, es#, et, et#
 # because of their extra encoding argument
 class str_converter(CConverter):
@@ -2647,45 +2656,47 @@ class str_converter(CConverter):
     default_type = (str, Null, NoneType)
     format_unit = 's'
 
-    def converter_init(self, *, encoding=None, types={"str"},
-        length=False, nullable=False, zeroes=False):
+    def converter_init(self, *, encoding=None, accept={str}, length=False, zeroes=False):
 
         self.length = bool(length)
 
-        is_b_or_ba = types == {"bytes", "bytearray"}
-        is_str = types == {"str"}
-        is_robuffer = types == {"robuffer"}
-        is_str_or_robuffer = types == {"str", "robuffer"}
+        is_b_or_ba = accept == {bytes, bytearray}
+        is_b_or_ba_or_none = accept == {bytes, bytearray, NoneType}
+        is_str = accept == {str}
+        is_str_or_none = accept == {str, NoneType}
+        is_robuffer = accept == {robuffer}
+        is_str_or_robuffer = accept == {str, robuffer}
+        is_str_or_robuffer_or_none = accept == {str, robuffer, NoneType}
 
         format_unit = None
 
         if encoding:
             self.encoding = encoding
 
-            if   is_str     and not length and not zeroes and not nullable:
+            if   is_str             and not length and not zeroes:
                 format_unit = 'es'
-            elif is_str     and     length and     zeroes and     nullable:
+            elif is_str_or_none     and     length and     zeroes:
                 format_unit = 'es#'
-            elif is_b_or_ba and not length and not zeroes and not nullable:
+            elif is_b_or_ba         and not length and not zeroes:
                 format_unit = 'et'
-            elif is_b_or_ba and     length and     zeroes and     nullable:
+            elif is_b_or_ba_or_none and     length and     zeroes:
                 format_unit = 'et#'
 
         else:
             if zeroes:
                 fail("str_converter: illegal combination of arguments (zeroes is only legal with an encoding)")
 
-            if is_str               and not length and not nullable:
+            if is_str               and not length:
                 format_unit = 's'
-            elif is_str             and not length and     nullable:
+            elif is_str_or_none     and not length:
                 format_unit = 'z'
-            elif is_robuffer        and not length and not nullable:
+            elif is_robuffer        and not length:
                 format_unit = 'y'
-            elif is_robuffer        and     length and not nullable:
+            elif is_robuffer        and     length:
                 format_unit = 'y#'
-            elif is_str_or_robuffer and     length and not nullable:
+            elif is_str_or_robuffer and     length:
                 format_unit = 's#'
-            elif is_str_or_robuffer and     length and     nullable:
+            elif is_str_or_robuffer_or_none and     length:
                 format_unit = 'z#'
 
         if not format_unit:
@@ -2696,12 +2707,12 @@ class str_converter(CConverter):
 class PyBytesObject_converter(CConverter):
     type = 'PyBytesObject *'
     format_unit = 'S'
-    # types = {'bytes'}
+    # accept = {bytes}
 
 class PyByteArrayObject_converter(CConverter):
     type = 'PyByteArrayObject *'
     format_unit = 'Y'
-    # types = {'bytearray'}
+    # accept = {bytearray}
 
 class unicode_converter(CConverter):
     type = 'PyObject *'
@@ -2709,45 +2720,44 @@ class unicode_converter(CConverter):
     format_unit = 'U'
 
 @add_legacy_c_converter('u#', length=True)
-@add_legacy_c_converter('Z', nullable=True)
-@add_legacy_c_converter('Z#', nullable=True, length=True)
+@add_legacy_c_converter('Z', accept={str, NoneType})
+@add_legacy_c_converter('Z#', accept={str, NoneType}, length=True)
 class Py_UNICODE_converter(CConverter):
     type = 'Py_UNICODE *'
     default_type = (str, Null, NoneType)
     format_unit = 'u'
 
-    def converter_init(self, *, nullable=False, length=False):
-        format_unit = 'Z' if nullable else 'u'
+    def converter_init(self, *, accept={str}, length=False):
+        format_unit = 'Z' if accept=={str, NoneType} else 'u'
         if length:
             format_unit += '#'
             self.length = True
         self.format_unit = format_unit
 
-@add_legacy_c_converter('s*', types={'str', 'buffer'})
-@add_legacy_c_converter('z*', types={'str', 'buffer'}, nullable=True)
-@add_legacy_c_converter('w*', types={'rwbuffer'})
+@add_legacy_c_converter('s*', accept={str, buffer})
+@add_legacy_c_converter('z*', accept={str, buffer, NoneType})
+@add_legacy_c_converter('w*', accept={rwbuffer})
 class Py_buffer_converter(CConverter):
     type = 'Py_buffer'
     format_unit = 'y*'
     impl_by_reference = True
     c_ignored_default = "{NULL, NULL}"
 
-    def converter_init(self, *, types={'buffer'}, nullable=False):
+    def converter_init(self, *, accept={buffer}):
         if self.default not in (unspecified, None):
             fail("The only legal default value for Py_buffer is None.")
+
         self.c_default = self.c_ignored_default
 
-        format_unit = None
-        if types == {'str', 'buffer'}:
-            format_unit = 's*' if not nullable else 'z*'
+        if accept == {str, buffer, NoneType}:
+            format_unit = 'z*'
+        elif accept == {str, buffer}:
+            format_unit = 's*'
+        elif accept == {buffer}:
+            format_unit = 'y*'
+        elif accept == {rwbuffer}:
+            format_unit = 'w*'
         else:
-            if nullable:
-                fail('Py_buffer_converter: illegal combination of arguments (nullable=True)')
-            elif types == {'buffer'}:
-                format_unit = 'y*'
-            elif types == {'rwbuffer'}:
-                format_unit = 'w*'
-        if not format_unit:
             fail("Py_buffer_converter: illegal combination of arguments")
 
         self.format_unit = format_unit
@@ -3028,6 +3038,24 @@ class DecodeFSDefault_return_converter(CReturnConverter):
         self.err_occurred_if_null_pointer("_return_value", data)
         data.return_conversion.append(
             'return_value = PyUnicode_DecodeFSDefault(_return_value);\n')
+
+
+def eval_ast_expr(node, globals, *, filename='-'):
+    """
+    Takes an ast.Expr node.  Compiles and evaluates it.
+    Returns the result of the expression.
+
+    globals represents the globals dict the expression
+    should see.  (There's no equivalent for "locals" here.)
+    """
+
+    if isinstance(node, ast.Expr):
+        node = node.value
+
+    node = ast.Expression(node)
+    co = compile(node, filename, 'eval')
+    fn = types.FunctionType(co, globals)
+    return fn()
 
 
 class IndentStack:
@@ -3617,7 +3645,7 @@ class DSLParser:
         except SyntaxError:
             try:
                 # the last = was probably inside a function call, like
-                #   i: int(nullable=True)
+                #   c: int(accept={str})
                 # so assume there was no actual default value.
                 default = None
                 ast_input = "def x({}): pass".format(line)
@@ -3628,6 +3656,14 @@ class DSLParser:
             fail("Function " + self.function.name + " has an invalid parameter declaration:\n\t" + line)
 
         function_args = module.body[0].args
+
+        if len(function_args.args) > 1:
+            fail("Function " + self.function.name + " has an invalid parameter declaration (comma?):\n\t" + line)
+        if function_args.defaults or function_args.kw_defaults:
+            fail("Function " + self.function.name + " has an invalid parameter declaration (default value?):\n\t" + line)
+        if function_args.vararg or function_args.kwarg:
+            fail("Function " + self.function.name + " has an invalid parameter declaration (*args? **kwargs?):\n\t" + line)
+
         parameter = function_args.args[0]
 
         parameter_name = parameter.arg
@@ -3790,7 +3826,9 @@ class DSLParser:
             fail("Annotations must be either a name, a function call, or a string.")
 
         name = annotation.func.id
-        kwargs = {node.arg: ast.literal_eval(node.value) for node in annotation.keywords}
+        symbols = globals()
+
+        kwargs = {node.arg: eval_ast_expr(node.value, symbols) for node in annotation.keywords}
         return name, False, kwargs
 
     def parse_special_symbol(self, symbol):
