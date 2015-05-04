@@ -541,7 +541,7 @@ _io_BytesIO_readlines_impl(bytesio *self, PyObject *arg)
 
 /*[clinic input]
 _io.BytesIO.readinto
-    buffer: Py_buffer(types={'rwbuffer'})
+    buffer: Py_buffer(accept={rwbuffer})
     /
 
 Read up to len(buffer) bytes into buffer.
@@ -552,7 +552,7 @@ is set not to block as has no data to read.
 
 static PyObject *
 _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
-/*[clinic end generated code: output=a5d407217dcf0639 input=d289da851c7c4159]*/
+/*[clinic end generated code: output=a5d407217dcf0639 input=71581f32635c3a31]*/
 {
     Py_ssize_t len, n;
 

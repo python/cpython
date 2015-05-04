@@ -107,7 +107,7 @@ new_previous_version(const char*name, const change_record* (*getrecord)(Py_UCS4)
 unicodedata.UCD.decimal
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     default: object=NULL
     /
 
@@ -121,7 +121,7 @@ ValueError is raised.
 static PyObject *
 unicodedata_UCD_decimal_impl(PyObject *self, int chr,
                              PyObject *default_value)
-/*[clinic end generated code: output=be23376e1a185231 input=3acf7f2238874a49]*/
+/*[clinic end generated code: output=be23376e1a185231 input=933f8107993f23d0]*/
 {
     int have_old = 0;
     long rc;
@@ -160,7 +160,7 @@ unicodedata_UCD_decimal_impl(PyObject *self, int chr,
 unicodedata.UCD.digit
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     default: object=NULL
     /
 
@@ -173,7 +173,7 @@ ValueError is raised.
 
 static PyObject *
 unicodedata_UCD_digit_impl(PyObject *self, int chr, PyObject *default_value)
-/*[clinic end generated code: output=96e18c950171fd2f input=733f093b399f5ab6]*/
+/*[clinic end generated code: output=96e18c950171fd2f input=e27d6e4565cd29f2]*/
 {
     long rc;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -195,7 +195,7 @@ unicodedata_UCD_digit_impl(PyObject *self, int chr, PyObject *default_value)
 unicodedata.UCD.numeric
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     default: object=NULL
     /
 
@@ -209,7 +209,7 @@ ValueError is raised.
 static PyObject *
 unicodedata_UCD_numeric_impl(PyObject *self, int chr,
                              PyObject *default_value)
-/*[clinic end generated code: output=53ce281fe85b10c4 input=c5875fa7cc768fb2]*/
+/*[clinic end generated code: output=53ce281fe85b10c4 input=fdf5871a5542893c]*/
 {
     int have_old = 0;
     double rc;
@@ -247,7 +247,7 @@ unicodedata_UCD_numeric_impl(PyObject *self, int chr,
 unicodedata.UCD.category
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     /
 
 Returns the general category assigned to the character chr as string.
@@ -255,7 +255,7 @@ Returns the general category assigned to the character chr as string.
 
 static PyObject *
 unicodedata_UCD_category_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=8571539ee2e6783a input=f5edd6fd04bd455d]*/
+/*[clinic end generated code: output=8571539ee2e6783a input=27d6f3d85050bc06]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -272,7 +272,7 @@ unicodedata_UCD_category_impl(PyObject *self, int chr)
 unicodedata.UCD.bidirectional
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     /
 
 Returns the bidirectional class assigned to the character chr as string.
@@ -282,7 +282,7 @@ If no such value is defined, an empty string is returned.
 
 static PyObject *
 unicodedata_UCD_bidirectional_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=d36310ce2039bb92 input=5ce2f877b35305b5]*/
+/*[clinic end generated code: output=d36310ce2039bb92 input=b3d8f42cebfcf475]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -301,7 +301,7 @@ unicodedata_UCD_bidirectional_impl(PyObject *self, int chr)
 unicodedata.UCD.combining -> int
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     /
 
 Returns the canonical combining class assigned to the character chr as integer.
@@ -311,7 +311,7 @@ Returns 0 if no combining class is defined.
 
 static int
 unicodedata_UCD_combining_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=cad056d0cb6a5920 input=9125ea7d50b319e7]*/
+/*[clinic end generated code: output=cad056d0cb6a5920 input=9f2d6b2a95d0a22a]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -328,7 +328,7 @@ unicodedata_UCD_combining_impl(PyObject *self, int chr)
 unicodedata.UCD.mirrored -> int
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     /
 
 Returns the mirrored property assigned to the character chr as integer.
@@ -339,7 +339,7 @@ character in bidirectional text, 0 otherwise.
 
 static int
 unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=2532dbf8121b50e6 input=4e51e8aaf8d7e23e]*/
+/*[clinic end generated code: output=2532dbf8121b50e6 input=5dd400d351ae6f3b]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -358,7 +358,7 @@ unicodedata_UCD_mirrored_impl(PyObject *self, int chr)
 unicodedata.UCD.east_asian_width
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     /
 
 Returns the east asian width assigned to the character chr as string.
@@ -366,7 +366,7 @@ Returns the east asian width assigned to the character chr as string.
 
 static PyObject *
 unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=484e8537d9ee8197 input=f93c61f37276c8f0]*/
+/*[clinic end generated code: output=484e8537d9ee8197 input=c4854798aab026e0]*/
 {
     int index;
     Py_UCS4 c = (Py_UCS4)chr;
@@ -383,7 +383,7 @@ unicodedata_UCD_east_asian_width_impl(PyObject *self, int chr)
 unicodedata.UCD.decomposition
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     /
 
 Returns the character decomposition mapping assigned to the character chr as string.
@@ -393,7 +393,7 @@ An empty string is returned in case no such mapping is defined.
 
 static PyObject *
 unicodedata_UCD_decomposition_impl(PyObject *self, int chr)
-/*[clinic end generated code: output=7d699f3ec7565d27 input=7f2c0ee66d75468f]*/
+/*[clinic end generated code: output=7d699f3ec7565d27 input=e4c12459ad68507b]*/
 {
     char decomp[256];
     int code, index, count;
@@ -1180,7 +1180,7 @@ static const _PyUnicode_Name_CAPI hashAPI =
 unicodedata.UCD.name
 
     self: self
-    chr: int(types={'str'})
+    chr: int(accept={str})
     default: object=NULL
     /
 
@@ -1192,7 +1192,7 @@ ValueError is raised.
 
 static PyObject *
 unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
-/*[clinic end generated code: output=6bbb37a326407707 input=51ee2f971c918113]*/
+/*[clinic end generated code: output=6bbb37a326407707 input=3e0367f534de56d9]*/
 {
     char name[NAME_MAXLEN];
     Py_UCS4 c = (Py_UCS4)chr;
@@ -1215,7 +1215,7 @@ unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
 unicodedata.UCD.lookup
 
     self: self
-    name: str(types={'str', 'robuffer'}, length=True)
+    name: str(accept={str, robuffer}, length=True)
     /
 
 Look up character by name.
@@ -1227,7 +1227,7 @@ corresponding character.  If not found, KeyError is raised.
 static PyObject *
 unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
                             Py_ssize_clean_t name_length)
-/*[clinic end generated code: output=765cb8186788e6be input=f2bf29706135a590]*/
+/*[clinic end generated code: output=765cb8186788e6be input=2dfe682c2491447a]*/
 {
     Py_UCS4 code;
     unsigned int index;

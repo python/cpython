@@ -100,9 +100,9 @@ _io.open
     file: object
     mode: str = "r"
     buffering: int = -1
-    encoding: str(nullable=True) = NULL
-    errors: str(nullable=True) = NULL
-    newline: str(nullable=True) = NULL
+    encoding: str(accept={str, NoneType}) = NULL
+    errors: str(accept={str, NoneType}) = NULL
+    newline: str(accept={str, NoneType}) = NULL
     closefd: int(c_default="1") = True
     opener: object = None
 
@@ -230,7 +230,7 @@ static PyObject *
 _io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=7615d0d746eb14d2 input=0541ce15691a82f2]*/
+/*[clinic end generated code: output=7615d0d746eb14d2 input=f4e1ca75223987bc]*/
 {
     unsigned i;
 

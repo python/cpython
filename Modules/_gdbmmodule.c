@@ -383,7 +383,7 @@ _gdbm_gdbm_firstkey_impl(dbmobject *self)
 /*[clinic input]
 _gdbm.gdbm.nextkey
 
-    key: str(types={'str', 'robuffer'}, length=True)
+    key: str(accept={str, robuffer}, length=True)
     /
 
 Returns the key that follows key in the traversal.
@@ -400,7 +400,7 @@ to create a list in memory that contains them all:
 static PyObject *
 _gdbm_gdbm_nextkey_impl(dbmobject *self, const char *key,
                         Py_ssize_clean_t key_length)
-/*[clinic end generated code: output=192ab892de6eb2f6 input=df8e8828201214a6]*/
+/*[clinic end generated code: output=192ab892de6eb2f6 input=1eb2ff9b4b0e6ffd]*/
 {
     PyObject *v;
     datum dbm_key, nextkey;

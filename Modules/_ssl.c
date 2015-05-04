@@ -1877,7 +1877,7 @@ _ssl__SSLSocket_pending_impl(PySSLSocket *self)
 _ssl._SSLSocket.read
     size as len: int
     [
-    buffer: Py_buffer(types={'rwbuffer'})
+    buffer: Py_buffer(accept={rwbuffer})
     ]
     /
 
@@ -1887,7 +1887,7 @@ Read up to size bytes from the SSL socket.
 static PyObject *
 _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
                           Py_buffer *buffer)
-/*[clinic end generated code: output=00097776cec2a0af input=4a0bbd2859e817b0]*/
+/*[clinic end generated code: output=00097776cec2a0af input=ff157eb918d0905b]*/
 {
     PyObject *dest = NULL;
     char *mem;
@@ -3799,7 +3799,7 @@ static PyTypeObject PySSLMemoryBIO_Type = {
 /* helper routines for seeding the SSL PRNG */
 /*[clinic input]
 _ssl.RAND_add
-    string as view: Py_buffer(types={'str', 'buffer'})
+    string as view: Py_buffer(accept={str, buffer})
     entropy: double
     /
 
@@ -3811,7 +3811,7 @@ string.  See RFC 1750.
 
 static PyObject *
 _ssl_RAND_add_impl(PyModuleDef *module, Py_buffer *view, double entropy)
-/*[clinic end generated code: output=0f8d5c8cce328958 input=c98b11d606b354bc]*/
+/*[clinic end generated code: output=0f8d5c8cce328958 input=580c85e6a3a4fe29]*/
 {
     const char *buf;
     Py_ssize_t len, written;

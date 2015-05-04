@@ -3101,7 +3101,7 @@ _tkinter__flatten(PyModuleDef *module, PyObject *item)
 /*[clinic input]
 _tkinter.create
 
-    screenName: str(nullable=True) = NULL
+    screenName: str(accept={str, NoneType}) = NULL
     baseName: str = NULL
     className: str = "Tk"
     interactive: int(c_default="0") = False
@@ -3110,7 +3110,7 @@ _tkinter.create
         if false, then Tk_Init() doesn't get called
     sync: int(c_default="0") = False
         if true, then pass -sync to wish
-    use: str(nullable=True) = NULL
+    use: str(accept={str, NoneType}) = NULL
         if not None, then pass -use to wish
     /
 
@@ -3121,7 +3121,7 @@ _tkinter_create_impl(PyModuleDef *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use)
-/*[clinic end generated code: output=b8847800fc3b27eb input=c133c59a99dd0086]*/
+/*[clinic end generated code: output=b8847800fc3b27eb input=0d522aad1cb0ca0e]*/
 {
     /* XXX baseName is not used anymore;
      * try getting rid of it. */

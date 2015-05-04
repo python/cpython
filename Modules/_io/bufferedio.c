@@ -101,26 +101,26 @@ _bufferediobase_readinto_generic(PyObject *self, Py_buffer *buffer, char readint
 
 /*[clinic input]
 _io._BufferedIOBase.readinto
-    buffer: Py_buffer(types={'rwbuffer'})
+    buffer: Py_buffer(accept={rwbuffer})
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__BufferedIOBase_readinto_impl(PyObject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=8c8cda6684af8038 input=f8242a06c21763a0]*/
+/*[clinic end generated code: output=8c8cda6684af8038 input=00a6b9a38f29830a]*/
 {
     return _bufferediobase_readinto_generic(self, buffer, 0);
 }
 
 /*[clinic input]
 _io._BufferedIOBase.readinto1
-    buffer: Py_buffer(types={'rwbuffer'})
+    buffer: Py_buffer(accept={rwbuffer})
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__BufferedIOBase_readinto1_impl(PyObject *self, Py_buffer *buffer)
-/*[clinic end generated code: output=358623e4fd2b69d3 input=2003e706c730bd21]*/
+/*[clinic end generated code: output=358623e4fd2b69d3 input=ebad75b4aadfb9be]*/
 {
     return _bufferediobase_readinto_generic(self, buffer, 1);
 }
@@ -1065,26 +1065,26 @@ end:
 
 /*[clinic input]
 _io._Buffered.readinto
-    buffer: Py_buffer(types={'rwbuffer'})
+    buffer: Py_buffer(accept={rwbuffer})
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_readinto_impl(buffered *self, Py_buffer *buffer)
-/*[clinic end generated code: output=bcb376580b1d8170 input=962b7496eac38b3a]*/
+/*[clinic end generated code: output=bcb376580b1d8170 input=ed6b98b7a20a3008]*/
 {
     return _buffered_readinto_generic(self, buffer, 0);
 }
 
 /*[clinic input]
 _io._Buffered.readinto1
-    buffer: Py_buffer(types={'rwbuffer'})
+    buffer: Py_buffer(accept={rwbuffer})
     /
 [clinic start generated code]*/
 
 static PyObject *
 _io__Buffered_readinto1_impl(buffered *self, Py_buffer *buffer)
-/*[clinic end generated code: output=6e5c6ac5868205d6 input=834614d93f0adeb5]*/
+/*[clinic end generated code: output=6e5c6ac5868205d6 input=4455c5d55fdf1687]*/
 {
     return _buffered_readinto_generic(self, buffer, 1);
 }
