@@ -3206,14 +3206,14 @@ _elementtree.XMLParser.__init__
 
     html: object = NULL
     target: object = NULL
-    encoding: str(nullable=True) = NULL
+    encoding: str(accept={str, NoneType}) = NULL
 
 [clinic start generated code]*/
 
 static int
 _elementtree_XMLParser___init___impl(XMLParserObject *self, PyObject *html,
                                      PyObject *target, const char *encoding)
-/*[clinic end generated code: output=d6a16c63dda54441 input=a870da39c80d7d68]*/
+/*[clinic end generated code: output=d6a16c63dda54441 input=155bc5695baafffd]*/
 {
     self->entity = PyDict_New();
     if (!self->entity)

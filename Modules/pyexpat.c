@@ -911,7 +911,7 @@ pyexpat_xmlparser_GetInputContext_impl(xmlparseobject *self)
 /*[clinic input]
 pyexpat.xmlparser.ExternalEntityParserCreate
 
-    context: str(nullable=True)
+    context: str(accept={str, NoneType})
     encoding: str = NULL
     /
 
@@ -922,7 +922,7 @@ static PyObject *
 pyexpat_xmlparser_ExternalEntityParserCreate_impl(xmlparseobject *self,
                                                   const char *context,
                                                   const char *encoding)
-/*[clinic end generated code: output=535cda9d7a0fbcd6 input=283206575d960272]*/
+/*[clinic end generated code: output=535cda9d7a0fbcd6 input=b906714cc122c322]*/
 {
     xmlparseobject *new_parser;
     int i;
@@ -1546,8 +1546,8 @@ static PyTypeObject Xmlparsetype = {
 /*[clinic input]
 pyexpat.ParserCreate
 
-    encoding: str(nullable=True) = NULL
-    namespace_separator: str(nullable=True) = NULL
+    encoding: str(accept={str, NoneType}) = NULL
+    namespace_separator: str(accept={str, NoneType}) = NULL
     intern: object = NULL
 
 Return a new XML parser object.
@@ -1556,7 +1556,7 @@ Return a new XML parser object.
 static PyObject *
 pyexpat_ParserCreate_impl(PyModuleDef *module, const char *encoding,
                           const char *namespace_separator, PyObject *intern)
-/*[clinic end generated code: output=81fccd233e1743a8 input=71b9f471aa6f8f86]*/
+/*[clinic end generated code: output=81fccd233e1743a8 input=23d29704acad385d]*/
 {
     PyObject *result;
     int intern_decref = 0;
