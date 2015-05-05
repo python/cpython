@@ -49,9 +49,6 @@ class shlex:
         self.token = ''
         self.filestack = deque()
         self.source = None
-        if self.debug:
-            print('shlex: reading from %s, line %d' \
-                  % (self.instream, self.lineno))
 
     def push_token(self, tok):
         "Push a token onto the stack popped by the get_token method"
