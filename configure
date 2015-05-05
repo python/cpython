@@ -14030,7 +14030,7 @@ LDVERSION='$(VERSION)$(ABIFLAGS)'
 $as_echo "$LDVERSION" >&6; }
 
 
-LIBPL="${prefix}/lib/python${VERSION}/config-${LDVERSION}"
+LIBPL='$(prefix)'"/lib/python${VERSION}/config-${LDVERSION}"
 
 
 # Check whether right shifting a negative integer extends the sign bit
