@@ -325,7 +325,7 @@ thus can only be used in the body of a function definition.  Using a yield
 expression in a function's body causes that function to be a generator.
 
 When a generator function is called, it returns an iterator known as a
-generator.  That generator then controls the execution of a generator function.
+generator.  That generator then controls the execution of the generator function.
 The execution starts when one of the generator's methods is called.  At that
 time, the execution proceeds to the first yield expression, where it is
 suspended again, returning the value of :token:`expression_list` to the generator's
