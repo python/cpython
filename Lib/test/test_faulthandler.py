@@ -6,8 +6,8 @@ import re
 import signal
 import subprocess
 import sys
-from test import support, script_helper
-from test.script_helper import assert_python_ok
+from test import support
+from test.support import script_helper
 import tempfile
 import unittest
 from textwrap import dedent

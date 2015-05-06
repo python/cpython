@@ -8,8 +8,8 @@ import shutil
 import sys
 import subprocess
 import tempfile
-from test import script_helper
-from test.script_helper import (spawn_python, kill_python, assert_python_ok,
+from test.support import script_helper
+from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
     assert_python_failure)
 
 
@@ -59,7 +59,7 @@ class CmdLineTest(unittest.TestCase):
 
     def test_xoptions(self):
         def get_xoptions(*args):
-            # use subprocess module directly because test.script_helper adds
+            # use subprocess module directly because test.support.script_helper adds
             # "-X faulthandler" to the command line
             args = (sys.executable, '-E') + args
             args += ('-c', 'import sys; print(sys._xoptions)')

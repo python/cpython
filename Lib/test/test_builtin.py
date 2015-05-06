@@ -16,7 +16,7 @@ import unittest
 import warnings
 from operator import neg
 from test.support import TESTFN, unlink,  run_unittest, check_warnings
-from test.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok
 try:
     import pty, signal
 except ImportError:
