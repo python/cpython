@@ -9,7 +9,7 @@ test.support.import_module('multiprocessing.synchronize')
 # without thread support.
 test.support.import_module('threading')
 
-from test.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok
 
 import os
 import sys

@@ -12,7 +12,8 @@ import weakref
 from unittest import mock
 
 import unittest
-from test import support, script_helper
+from test import support
+from test.support import script_helper
 
 
 if hasattr(os, 'stat'):
