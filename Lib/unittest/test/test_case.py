@@ -954,6 +954,50 @@ test case
         self.assertRaises(self.failureException, self.assertRegexpMatches,
                           'saaas', r'aaaa')
 
+    def testAssertRaisesCallable(self):
+        class ExceptionMock(Exception):
+            pass
+        def Stub():
+            raise ExceptionMock('We expect')
+        self.assertRaises(ExceptionMock, Stub)
+        # A tuple of exception classes is accepted
+        self.assertRaises((ValueError, ExceptionMock), Stub)
+        # *args and **kwargs also work
+        self.assertRaises(ValueError, int, '19', base=8)
+        # Failure when no exception is raised
+        with self.assertRaises(self.failureException):
+            self.assertRaises(ExceptionMock, lambda: 0)
+        # Failure when the function is None
+        with self.assertRaises(TypeError):
+            self.assertRaises(ExceptionMock, None)
+        # Failure when another exception is raised
+        with self.assertRaises(ExceptionMock):
+            self.assertRaises(ValueError, Stub)
+
+    def testAssertRaisesContext(self):
+        class ExceptionMock(Exception):
+            pass
+        def Stub():
+            raise ExceptionMock('We expect')
+        with self.assertRaises(ExceptionMock):
+            Stub()
+        # A tuple of exception classes is accepted
+        with self.assertRaises((ValueError, ExceptionMock)) as cm:
+            Stub()
+        # The context manager exposes caught exception
+        self.assertIsInstance(cm.exception, ExceptionMock)
+        self.assertEqual(cm.exception.args[0], 'We expect')
+        # *args and **kwargs also work
+        with self.assertRaises(ValueError):
+            int('19', base=8)
+        # Failure when no exception is raised
+        with self.assertRaises(self.failureException):
+            with self.assertRaises(ExceptionMock):
+                pass
+        # Failure when another exception is raised
+        with self.assertRaises(ExceptionMock):
+            self.assertRaises(ValueError, Stub)
+
     def testAssertRaisesRegexp(self):
         class ExceptionMock(Exception):
             pass
@@ -964,6 +1008,8 @@ test case
         self.assertRaisesRegexp(ExceptionMock, re.compile('expect$'), Stub)
         self.assertRaisesRegexp(ExceptionMock, 'expect$', Stub)
         self.assertRaisesRegexp(ExceptionMock, u'expect$', Stub)
+        with self.assertRaises(TypeError):
+            self.assertRaisesRegexp(ExceptionMock, 'expect$', None)
 
     def testAssertNotRaisesRegexp(self):
         self.assertRaisesRegexp(

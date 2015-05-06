@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24134: assertRaises() and assertRaisesRegexp() checks are not longer
+  successful if the callable is None.
+
 - Issue #23008: Fixed resolving attributes with boolean value is False in pydoc.
 
 - Issues #24099, #24100, and #24101: Fix free-after-use bug in heapq's siftup

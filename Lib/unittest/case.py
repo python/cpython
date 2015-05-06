@@ -127,6 +127,8 @@ class _AssertRaisesContext(object):
                      (expected_regexp.pattern, str(exc_value)))
         return True
 
+def _sentinel(*args, **kwargs):
+    raise AssertionError('Should never called')
 
 class TestCase(object):
     """A class whose instances are single test cases.
@@ -443,7 +445,7 @@ class TestCase(object):
             return  '%s : %s' % (safe_repr(standardMsg), safe_repr(msg))
 
 
-    def assertRaises(self, excClass, callableObj=None, *args, **kwargs):
+    def assertRaises(self, excClass, callableObj=_sentinel, *args, **kwargs):
         """Fail unless an exception of class excClass is raised
            by callableObj when invoked with arguments args and keyword
            arguments kwargs. If a different type of exception is
@@ -451,7 +453,7 @@ class TestCase(object):
            deemed to have suffered an error, exactly as for an
            unexpected exception.
 
-           If called with callableObj omitted or None, will return a
+           If called with callableObj omitted, will return a
            context object used like this::
 
                 with self.assertRaises(SomeException):
@@ -467,7 +469,7 @@ class TestCase(object):
                self.assertEqual(the_exception.error_code, 3)
         """
         context = _AssertRaisesContext(excClass, self)
-        if callableObj is None:
+        if callableObj is _sentinel:
             return context
         with context:
             callableObj(*args, **kwargs)
@@ -973,7 +975,7 @@ class TestCase(object):
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertRaisesRegexp(self, expected_exception, expected_regexp,
-                           callable_obj=None, *args, **kwargs):
+                           callable_obj=_sentinel, *args, **kwargs):
         """Asserts that the message in a raised exception matches a regexp.
 
         Args:
@@ -987,7 +989,7 @@ class TestCase(object):
         if expected_regexp is not None:
             expected_regexp = re.compile(expected_regexp)
         context = _AssertRaisesContext(expected_exception, self, expected_regexp)
-        if callable_obj is None:
+        if callable_obj is _sentinel:
             return context
         with context:
             callable_obj(*args, **kwargs)
