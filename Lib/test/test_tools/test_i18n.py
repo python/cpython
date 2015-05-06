@@ -3,7 +3,7 @@
 import os
 import unittest
 
-from test.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok
 from test.test_tools import toolsdir
 from test.support import temp_cwd
 

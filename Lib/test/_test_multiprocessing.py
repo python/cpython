@@ -19,7 +19,7 @@ import logging
 import struct
 import operator
 import test.support
-import test.script_helper
+import test.support.script_helper
 
 
 # Skip tests if _multiprocessing wasn't built.
@@ -3483,11 +3483,11 @@ class TestNoForkBomb(unittest.TestCase):
         sm = multiprocessing.get_start_method()
         name = os.path.join(os.path.dirname(__file__), 'mp_fork_bomb.py')
         if sm != 'fork':
-            rc, out, err = test.script_helper.assert_python_failure(name, sm)
+            rc, out, err = test.support.script_helper.assert_python_failure(name, sm)
             self.assertEqual(out, b'')
             self.assertIn(b'RuntimeError', err)
         else:
-            rc, out, err = test.script_helper.assert_python_ok(name, sm)
+            rc, out, err = test.support.script_helper.assert_python_ok(name, sm)
             self.assertEqual(out.rstrip(), b'123')
             self.assertEqual(err, b'')
 
