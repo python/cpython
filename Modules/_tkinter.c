@@ -2092,7 +2092,7 @@ _tkinter_tkapp_exprlong_impl(TkappObject *self, const char *s)
     if (retval == TCL_ERROR)
         res = Tkinter_Error((PyObject *)self);
     else
-        res = Py_BuildValue("l", v);
+        res = PyLong_FromLong(v);
     LEAVE_OVERLAP_TCL
     return res;
 }
@@ -2123,7 +2123,7 @@ _tkinter_tkapp_exprdouble_impl(TkappObject *self, const char *s)
     if (retval == TCL_ERROR)
         res = Tkinter_Error((PyObject *)self);
     else
-        res = Py_BuildValue("d", v);
+        res = PyFloat_FromDouble(v);
     LEAVE_OVERLAP_TCL
     return res;
 }
@@ -2152,7 +2152,7 @@ _tkinter_tkapp_exprboolean_impl(TkappObject *self, const char *s)
     if (retval == TCL_ERROR)
         res = Tkinter_Error((PyObject *)self);
     else
-        res = Py_BuildValue("i", v);
+        res = PyLong_FromLong(v);
     LEAVE_OVERLAP_TCL
     return res;
 }
@@ -2891,7 +2891,7 @@ _tkinter_tkapp_dooneevent_impl(TkappObject *self, int flags)
     ENTER_TCL
     rv = Tcl_DoOneEvent(flags);
     LEAVE_TCL
-    return Py_BuildValue("i", rv);
+    return PyLong_FromLong(rv);
 }
 
 /*[clinic input]
