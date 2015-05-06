@@ -12,8 +12,6 @@
 #include <unistd.h>
 #endif
 
-int Py_FrozenFlag = 1;  /* Suppress errors from getpath.c */
-
 /* To avoid a circular dependency on frozen.o, we create our own structure
    of frozen modules instead, left deliberately blank so as to avoid
    unintentional import of a stale version of _frozen_importlib. */
