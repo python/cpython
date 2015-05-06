@@ -128,7 +128,7 @@ class _AssertRaisesContext(object):
         return True
 
 def _sentinel(*args, **kwargs):
-    raise AssertionError('Should never called')
+    raise AssertionError('Should never be called')
 
 class TestCase(object):
     """A class whose instances are single test cases.
