@@ -200,4 +200,10 @@ hasfree.append(148)
 def_op('EXTENDED_ARG', 144)
 EXTENDED_ARG = 144
 
+def_op('BUILD_LIST_UNPACK', 149)
+def_op('BUILD_MAP_UNPACK', 150)
+def_op('BUILD_MAP_UNPACK_WITH_CALL', 151)
+def_op('BUILD_TUPLE_UNPACK', 152)
+def_op('BUILD_SET_UNPACK', 153)
+
 del def_op, name_op, jrel_op, jabs_op

@@ -141,6 +141,9 @@ From ast_for_call():
 >>> f(x for x in L, 1)
 Traceback (most recent call last):
 SyntaxError: Generator expression must be parenthesized if not sole argument
+>>> f(x for x in L, y for y in L)
+Traceback (most recent call last):
+SyntaxError: Generator expression must be parenthesized if not sole argument
 >>> f((x for x in L), 1)
 [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
 
@@ -582,7 +585,18 @@ class SyntaxTestCase(unittest.TestCase):
                           subclass=IndentationError)
 
     def test_kwargs_last(self):
-        self._check_error("int(base=10, '2')", "non-keyword arg")
+        self._check_error("int(base=10, '2')",
+                          "positional argument follows keyword argument")
+
+    def test_kwargs_last2(self):
+        self._check_error("int(**{base: 10}, '2')",
+                          "positional argument follows "
+                          "keyword argument unpacking")
+
+    def test_kwargs_last3(self):
+        self._check_error("int(**{base: 10}, *['2'])",
+                          "iterable argument unpacking follows "
+                          "keyword argument unpacking")
 
 def test_main():
     support.run_unittest(SyntaxTestCase)

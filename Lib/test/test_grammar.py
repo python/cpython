@@ -296,8 +296,12 @@ class GrammarTests(unittest.TestCase):
             return args, kwargs
         self.assertEqual(f(1, x=2, *[3, 4], y=5), ((1, 3, 4),
                                                     {'x':2, 'y':5}))
-        self.assertRaises(SyntaxError, eval, "f(1, *(2,3), 4)")
+        self.assertEqual(f(1, *(2,3), 4), ((1, 2, 3, 4), {}))
         self.assertRaises(SyntaxError, eval, "f(1, x=2, *(3,4), x=5)")
+        self.assertEqual(f(**{'eggs':'scrambled', 'spam':'fried'}),
+                         ((), {'eggs':'scrambled', 'spam':'fried'}))
+        self.assertEqual(f(spam='fried', **{'eggs':'scrambled'}),
+                         ((), {'eggs':'scrambled', 'spam':'fried'}))
 
         # argument annotation tests
         def f(x) -> list: pass

@@ -105,6 +105,10 @@ PyAPI_FUNC(int) PyDict_Merge(PyObject *mp,
                                    PyObject *other,
                                    int override);
 
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(PyObject *) _PyDictView_Intersect(PyObject* self, PyObject *other);
+#endif
+
 /* PyDict_MergeFromSeq2 updates/merges from an iterable object producing
    iterable objects of length 2.  If override is true, the last occurrence
    of a key wins, else the first.  The Python dict constructor dict(seq2)

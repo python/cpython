@@ -48,14 +48,10 @@ static char *FunctionDef_fields[]={
 static PyTypeObject *ClassDef_type;
 _Py_IDENTIFIER(bases);
 _Py_IDENTIFIER(keywords);
-_Py_IDENTIFIER(starargs);
-_Py_IDENTIFIER(kwargs);
 static char *ClassDef_fields[]={
     "name",
     "bases",
     "keywords",
-    "starargs",
-    "kwargs",
     "body",
     "decorator_list",
 };
@@ -254,8 +250,6 @@ static char *Call_fields[]={
     "func",
     "args",
     "keywords",
-    "starargs",
-    "kwargs",
 };
 static PyTypeObject *Num_type;
 _Py_IDENTIFIER(n);
@@ -812,7 +806,7 @@ static int init_types(void)
     FunctionDef_type = make_type("FunctionDef", stmt_type, FunctionDef_fields,
                                  5);
     if (!FunctionDef_type) return 0;
-    ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 7);
+    ClassDef_type = make_type("ClassDef", stmt_type, ClassDef_fields, 5);
     if (!ClassDef_type) return 0;
     Return_type = make_type("Return", stmt_type, Return_fields, 1);
     if (!Return_type) return 0;
@@ -884,7 +878,7 @@ static int init_types(void)
     if (!YieldFrom_type) return 0;
     Compare_type = make_type("Compare", expr_type, Compare_fields, 3);
     if (!Compare_type) return 0;
-    Call_type = make_type("Call", expr_type, Call_fields, 5);
+    Call_type = make_type("Call", expr_type, Call_fields, 3);
     if (!Call_type) return 0;
     Num_type = make_type("Num", expr_type, Num_fields, 1);
     if (!Num_type) return 0;
@@ -1207,9 +1201,9 @@ FunctionDef(identifier name, arguments_ty args, asdl_seq * body, asdl_seq *
 }
 
 stmt_ty
-ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, expr_ty
-         starargs, expr_ty kwargs, asdl_seq * body, asdl_seq * decorator_list,
-         int lineno, int col_offset, PyArena *arena)
+ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, asdl_seq *
+         body, asdl_seq * decorator_list, int lineno, int col_offset, PyArena
+         *arena)
 {
     stmt_ty p;
     if (!name) {
@@ -1224,8 +1218,6 @@ ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords, expr_ty
     p->v.ClassDef.name = name;
     p->v.ClassDef.bases = bases;
     p->v.ClassDef.keywords = keywords;
-    p->v.ClassDef.starargs = starargs;
-    p->v.ClassDef.kwargs = kwargs;
     p->v.ClassDef.body = body;
     p->v.ClassDef.decorator_list = decorator_list;
     p->lineno = lineno;
@@ -1885,8 +1877,8 @@ Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators, int lineno,
 }
 
 expr_ty
-Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty starargs,
-     expr_ty kwargs, int lineno, int col_offset, PyArena *arena)
+Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int lineno, int
+     col_offset, PyArena *arena)
 {
     expr_ty p;
     if (!func) {
@@ -1901,8 +1893,6 @@ Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty starargs,
     p->v.Call.func = func;
     p->v.Call.args = args;
     p->v.Call.keywords = keywords;
-    p->v.Call.starargs = starargs;
-    p->v.Call.kwargs = kwargs;
     p->lineno = lineno;
     p->col_offset = col_offset;
     return p;
@@ -2276,11 +2266,6 @@ keyword_ty
 keyword(identifier arg, expr_ty value, PyArena *arena)
 {
     keyword_ty p;
-    if (!arg) {
-        PyErr_SetString(PyExc_ValueError,
-                        "field arg is required for keyword");
-        return NULL;
-    }
     if (!value) {
         PyErr_SetString(PyExc_ValueError,
                         "field value is required for keyword");
@@ -2440,16 +2425,6 @@ ast2obj_stmt(void* _o)
         value = ast2obj_list(o->v.ClassDef.keywords, ast2obj_keyword);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_keywords, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->v.ClassDef.starargs);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_starargs, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->v.ClassDef.kwargs);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_kwargs, value) == -1)
             goto failed;
         Py_DECREF(value);
         value = ast2obj_list(o->v.ClassDef.body, ast2obj_stmt);
@@ -2962,16 +2937,6 @@ ast2obj_expr(void* _o)
         value = ast2obj_list(o->v.Call.keywords, ast2obj_keyword);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_keywords, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->v.Call.starargs);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_starargs, value) == -1)
-            goto failed;
-        Py_DECREF(value);
-        value = ast2obj_expr(o->v.Call.kwargs);
-        if (!value) goto failed;
-        if (_PyObject_SetAttrId(result, &PyId_kwargs, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -3875,8 +3840,6 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
         identifier name;
         asdl_seq* bases;
         asdl_seq* keywords;
-        expr_ty starargs;
-        expr_ty kwargs;
         asdl_seq* body;
         asdl_seq* decorator_list;
 
@@ -3939,26 +3902,6 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from ClassDef");
             return 1;
         }
-        if (exists_not_none(obj, &PyId_starargs)) {
-            int res;
-            tmp = _PyObject_GetAttrId(obj, &PyId_starargs);
-            if (tmp == NULL) goto failed;
-            res = obj2ast_expr(tmp, &starargs, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        } else {
-            starargs = NULL;
-        }
-        if (exists_not_none(obj, &PyId_kwargs)) {
-            int res;
-            tmp = _PyObject_GetAttrId(obj, &PyId_kwargs);
-            if (tmp == NULL) goto failed;
-            res = obj2ast_expr(tmp, &kwargs, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        } else {
-            kwargs = NULL;
-        }
         if (_PyObject_HasAttrId(obj, &PyId_body)) {
             int res;
             Py_ssize_t len;
@@ -4007,8 +3950,8 @@ obj2ast_stmt(PyObject* obj, stmt_ty* out, PyArena* arena)
             PyErr_SetString(PyExc_TypeError, "required field \"decorator_list\" missing from ClassDef");
             return 1;
         }
-        *out = ClassDef(name, bases, keywords, starargs, kwargs, body,
-                        decorator_list, lineno, col_offset, arena);
+        *out = ClassDef(name, bases, keywords, body, decorator_list, lineno,
+                        col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -5506,8 +5449,6 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         expr_ty func;
         asdl_seq* args;
         asdl_seq* keywords;
-        expr_ty starargs;
-        expr_ty kwargs;
 
         if (_PyObject_HasAttrId(obj, &PyId_func)) {
             int res;
@@ -5568,28 +5509,7 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
             PyErr_SetString(PyExc_TypeError, "required field \"keywords\" missing from Call");
             return 1;
         }
-        if (exists_not_none(obj, &PyId_starargs)) {
-            int res;
-            tmp = _PyObject_GetAttrId(obj, &PyId_starargs);
-            if (tmp == NULL) goto failed;
-            res = obj2ast_expr(tmp, &starargs, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        } else {
-            starargs = NULL;
-        }
-        if (exists_not_none(obj, &PyId_kwargs)) {
-            int res;
-            tmp = _PyObject_GetAttrId(obj, &PyId_kwargs);
-            if (tmp == NULL) goto failed;
-            res = obj2ast_expr(tmp, &kwargs, arena);
-            if (res != 0) goto failed;
-            Py_CLEAR(tmp);
-        } else {
-            kwargs = NULL;
-        }
-        *out = Call(func, args, keywords, starargs, kwargs, lineno, col_offset,
-                    arena);
+        *out = Call(func, args, keywords, lineno, col_offset, arena);
         if (*out == NULL) goto failed;
         return 0;
     }
@@ -6737,7 +6657,7 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
     identifier arg;
     expr_ty value;
 
-    if (_PyObject_HasAttrId(obj, &PyId_arg)) {
+    if (exists_not_none(obj, &PyId_arg)) {
         int res;
         tmp = _PyObject_GetAttrId(obj, &PyId_arg);
         if (tmp == NULL) goto failed;
@@ -6745,8 +6665,7 @@ obj2ast_keyword(PyObject* obj, keyword_ty* out, PyArena* arena)
         if (res != 0) goto failed;
         Py_CLEAR(tmp);
     } else {
-        PyErr_SetString(PyExc_TypeError, "required field \"arg\" missing from keyword");
-        return 1;
+        arg = NULL;
     }
     if (_PyObject_HasAttrId(obj, &PyId_value)) {
         int res;
