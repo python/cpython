@@ -1166,6 +1166,8 @@ class ErrorReportingTest(unittest.TestCase):
         parser = create_parser()
         parser.setContentHandler(ContentHandler()) # do nothing
         self.assertRaises(SAXParseException, parser.parse, StringIO("<foo>"))
+        self.assertEqual(parser.getColumnNumber(), 5)
+        self.assertEqual(parser.getLineNumber(), 1)
 
     def test_sax_parse_exception_str(self):
         # pass various values from a locator to the SAXParseException to
