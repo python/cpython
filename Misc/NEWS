@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23880: Tkinter's getint() and getdouble() now support Tcl_Obj.
+  Tkinter's getdouble() now supports any numbers (in particular int).
+
 - Issue #22619: Added negative limit support in the traceback module.
   Based on patch by Dmitry Kazakov.
 

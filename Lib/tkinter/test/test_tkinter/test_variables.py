@@ -122,10 +122,10 @@ class TestIntVar(TestBase):
     def test_invalid_value(self):
         v = IntVar(self.root, name="name")
         self.root.globalsetvar("name", "value")
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, TclError)):
             v.get()
         self.root.globalsetvar("name", "345.0")
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, TclError)):
             v.get()
 
 
@@ -152,7 +152,7 @@ class TestDoubleVar(TestBase):
     def test_invalid_value(self):
         v = DoubleVar(self.root, name="name")
         self.root.globalsetvar("name", "value")
-        with self.assertRaises(ValueError):
+        with self.assertRaises((ValueError, TclError)):
             v.get()
 
 
