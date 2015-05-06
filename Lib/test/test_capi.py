@@ -11,7 +11,7 @@ import time
 import unittest
 from test import support
 from test.support import MISSING_C_DOCSTRINGS
-from test.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure
 try:
     import _posixsubprocess
 except ImportError:

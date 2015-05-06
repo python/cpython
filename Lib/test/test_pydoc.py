@@ -21,7 +21,7 @@ import xml.etree
 import textwrap
 from io import StringIO
 from collections import namedtuple
-from test.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok
 from test.support import (
     TESTFN, rmtree,
     reap_children, reap_threads, captured_output, captured_stdout,

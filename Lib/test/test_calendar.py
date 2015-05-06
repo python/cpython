@@ -2,7 +2,7 @@ import calendar
 import unittest
 
 from test import support
-from test.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure
 import time
 import locale
 import sys

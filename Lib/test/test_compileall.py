@@ -17,7 +17,8 @@ try:
 except ImportError:
     _have_multiprocessing = False
 
-from test import support, script_helper
+from test import support
+from test.support import script_helper
 
 class CompileallTests(unittest.TestCase):
 
