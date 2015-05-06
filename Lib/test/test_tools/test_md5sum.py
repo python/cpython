@@ -4,7 +4,7 @@ import os
 import sys
 import unittest
 from test import support
-from test.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure
 
 from test.test_tools import scriptsdir, import_tool, skip_if_missing
 

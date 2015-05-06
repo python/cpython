@@ -4,7 +4,7 @@ import textwrap
 import unittest
 import subprocess
 from test import support
-from test.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok
 
 
 class TestTool(unittest.TestCase):

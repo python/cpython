@@ -60,6 +60,12 @@ Library
 - Issue #23887: urllib.error.HTTPError now has a proper repr() representation.
   Patch by Berker Peksag.
 
+Tests
+-----
+
+- Issue #9517: Move script_helper into the support package.
+  Patch by Christie Wilson.
+
 Documentation
 -------------
 

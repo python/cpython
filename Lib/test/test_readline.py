@@ -5,7 +5,7 @@ import os
 import tempfile
 import unittest
 from test.support import import_module, unlink
-from test.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
 readline = import_module('readline')

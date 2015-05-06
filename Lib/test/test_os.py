@@ -64,7 +64,7 @@ try:
 except ImportError:
     INT_MAX = PY_SSIZE_T_MAX = sys.maxsize
 
-from test.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok
 
 root_in_posix = False
 if hasattr(os, 'geteuid'):

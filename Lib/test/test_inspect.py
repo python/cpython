@@ -26,7 +26,7 @@ except ImportError:
 
 from test.support import run_unittest, TESTFN, DirsOnSysPath, cpython_only
 from test.support import MISSING_C_DOCSTRINGS, cpython_only
-from test.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
 

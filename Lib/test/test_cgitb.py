@@ -1,4 +1,5 @@
-from test.script_helper import assert_python_failure, temp_dir
+from test.support import temp_dir
+from test.support.script_helper import assert_python_failure
 import unittest
 import sys
 import cgitb
