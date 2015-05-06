@@ -130,7 +130,7 @@ class _BaseTestCaseContext:
         raise self.test_case.failureException(msg)
 
 def _sentinel(*args, **kwargs):
-    raise AssertionError('Should never called')
+    raise AssertionError('Should never be called')
 
 class _AssertRaisesBaseContext(_BaseTestCaseContext):
 
