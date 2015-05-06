@@ -8,7 +8,7 @@ import unittest
 import re
 from test import support
 from test.support import TESTFN, Error, captured_output, unlink, cpython_only
-from test.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok
 import textwrap
 
 import traceback

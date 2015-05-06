@@ -7,7 +7,8 @@ import operator
 import contextlib
 import copy
 
-from test import support, script_helper
+from test import support
+from test.support import script_helper
 
 # Used in ReferencesTestCase.test_ref_created_during_del() .
 ref_from_del = None

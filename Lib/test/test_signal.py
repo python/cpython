@@ -11,7 +11,7 @@ import struct
 import subprocess
 import traceback
 import sys, os, time, errno
-from test.script_helper import assert_python_ok, spawn_python
+from test.support.script_helper import assert_python_ok, spawn_python
 try:
     import threading
 except ImportError:

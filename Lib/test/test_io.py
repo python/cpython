@@ -35,7 +35,7 @@ import weakref
 from collections import deque, UserList
 from itertools import cycle, count
 from test import support
-from test.script_helper import assert_python_ok, run_python_until_end
+from test.support.script_helper import assert_python_ok, run_python_until_end
 
 import codecs
 import io  # C implementation of io

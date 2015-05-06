@@ -1,5 +1,5 @@
 import unittest
-from test import script_helper
+from test.support import script_helper
 from test import support
 import subprocess
 import sys
@@ -394,7 +394,7 @@ class ProcessTestCase(BaseTestCase):
         python_dir, python_base = self._split_python_path()
         abs_python = os.path.join(python_dir, python_base)
         rel_python = os.path.join(os.curdir, python_base)
-        with script_helper.temp_dir() as wrong_dir:
+        with support.temp_dir() as wrong_dir:
             # Before calling with an absolute path, confirm that using a
             # relative path fails.
             self.assertRaises(FileNotFoundError, subprocess.Popen,

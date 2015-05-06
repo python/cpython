@@ -1,8 +1,8 @@
-"""Unittests for test.script_helper.  Who tests the test helper?"""
+"""Unittests for test.support.script_helper.  Who tests the test helper?"""
 
 import subprocess
 import sys
-from test import script_helper
+from test.support import script_helper
 import unittest
 from unittest import mock
 

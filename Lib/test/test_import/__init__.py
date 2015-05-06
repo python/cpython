@@ -21,8 +21,9 @@ import test.support
 from test.support import (
     EnvironmentVarGuard, TESTFN, check_warnings, forget, is_jython,
     make_legacy_pyc, rmtree, run_unittest, swap_attr, swap_item, temp_umask,
-    unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE)
-from test import script_helper
+    unlink, unload, create_empty_file, cpython_only, TESTFN_UNENCODABLE,
+    temp_dir)
+from test.support import script_helper
 
 
 skip_if_dont_write_bytecode = unittest.skipIf(
@@ -45,7 +46,7 @@ def _ready_to_import(name=None, source=""):
     # temporarily clears the module from sys.modules (if any)
     # reverts or removes the module when cleaning up
     name = name or "spam"
-    with script_helper.temp_dir() as tempdir:
+    with temp_dir() as tempdir:
         path = script_helper.make_script(tempdir, name, source)
         old_module = sys.modules.pop(name, None)
         try:
