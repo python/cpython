@@ -427,17 +427,17 @@ class ASTHelpers_Test(unittest.TestCase):
         self.assertEqual(ast.dump(node),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load()), "
             "args=[Name(id='eggs', ctx=Load()), Str(s='and cheese')], "
-            "keywords=[], starargs=None, kwargs=None))])"
+            "keywords=[]))])"
         )
         self.assertEqual(ast.dump(node, annotate_fields=False),
             "Module([Expr(Call(Name('spam', Load()), [Name('eggs', Load()), "
-            "Str('and cheese')], [], None, None))])"
+            "Str('and cheese')], []))])"
         )
         self.assertEqual(ast.dump(node, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='spam', ctx=Load(), "
             "lineno=1, col_offset=0), args=[Name(id='eggs', ctx=Load(), "
             "lineno=1, col_offset=5), Str(s='and cheese', lineno=1, "
-            "col_offset=11)], keywords=[], starargs=None, kwargs=None, "
+            "col_offset=11)], keywords=[], "
             "lineno=1, col_offset=0), lineno=1, col_offset=0)])"
         )
 
@@ -453,16 +453,16 @@ class ASTHelpers_Test(unittest.TestCase):
     def test_fix_missing_locations(self):
         src = ast.parse('write("spam")')
         src.body.append(ast.Expr(ast.Call(ast.Name('spam', ast.Load()),
-                                          [ast.Str('eggs')], [], None, None)))
+                                          [ast.Str('eggs')], [])))
         self.assertEqual(src, ast.fix_missing_locations(src))
         self.assertEqual(ast.dump(src, include_attributes=True),
             "Module(body=[Expr(value=Call(func=Name(id='write', ctx=Load(), "
             "lineno=1, col_offset=0), args=[Str(s='spam', lineno=1, "
-            "col_offset=6)], keywords=[], starargs=None, kwargs=None, "
+            "col_offset=6)], keywords=[], "
             "lineno=1, col_offset=0), lineno=1, col_offset=0), "
             "Expr(value=Call(func=Name(id='spam', ctx=Load(), lineno=1, "
             "col_offset=0), args=[Str(s='eggs', lineno=1, col_offset=0)], "
-            "keywords=[], starargs=None, kwargs=None, lineno=1, "
+            "keywords=[], lineno=1, "
             "col_offset=0), lineno=1, col_offset=0)])"
         )
 
@@ -487,8 +487,7 @@ class ASTHelpers_Test(unittest.TestCase):
         node = ast.parse('foo()', mode='eval')
         d = dict(ast.iter_fields(node.body))
         self.assertEqual(d.pop('func').id, 'foo')
-        self.assertEqual(d, {'keywords': [], 'kwargs': None,
-                             'args': [], 'starargs': None})
+        self.assertEqual(d, {'keywords': [], 'args': []})
 
     def test_iter_child_nodes(self):
         node = ast.parse("spam(23, 42, eggs='leek')", mode='eval')
@@ -604,8 +603,7 @@ class ASTValidatorTests(unittest.TestCase):
         self._check_arguments(fac, self.stmt)
 
     def test_classdef(self):
-        def cls(bases=None, keywords=None, starargs=None, kwargs=None,
-                body=None, decorator_list=None):
+        def cls(bases=None, keywords=None, body=None, decorator_list=None):
             if bases is None:
                 bases = []
             if keywords is None:
@@ -614,15 +612,11 @@ class ASTValidatorTests(unittest.TestCase):
                 body = [ast.Pass()]
             if decorator_list is None:
                 decorator_list = []
-            return ast.ClassDef("myclass", bases, keywords, starargs,
-                                kwargs, body, decorator_list)
+            return ast.ClassDef("myclass", bases, keywords,
+                                body, decorator_list)
         self.stmt(cls(bases=[ast.Name("x", ast.Store())]),
                   "must have Load context")
         self.stmt(cls(keywords=[ast.keyword("x", ast.Name("x", ast.Store()))]),
-                  "must have Load context")
-        self.stmt(cls(starargs=ast.Name("x", ast.Store())),
-                  "must have Load context")
-        self.stmt(cls(kwargs=ast.Name("x", ast.Store())),
                   "must have Load context")
         self.stmt(cls(body=[]), "empty body on ClassDef")
         self.stmt(cls(body=[None]), "None disallowed")
@@ -854,20 +848,12 @@ class ASTValidatorTests(unittest.TestCase):
         func = ast.Name("x", ast.Load())
         args = [ast.Name("y", ast.Load())]
         keywords = [ast.keyword("w", ast.Name("z", ast.Load()))]
-        stararg = ast.Name("p", ast.Load())
-        kwarg = ast.Name("q", ast.Load())
-        call = ast.Call(ast.Name("x", ast.Store()), args, keywords, stararg,
-                        kwarg)
+        call = ast.Call(ast.Name("x", ast.Store()), args, keywords)
         self.expr(call, "must have Load context")
-        call = ast.Call(func, [None], keywords, stararg, kwarg)
+        call = ast.Call(func, [None], keywords)
         self.expr(call, "None disallowed")
         bad_keywords = [ast.keyword("w", ast.Name("z", ast.Store()))]
-        call = ast.Call(func, args, bad_keywords, stararg, kwarg)
-        self.expr(call, "must have Load context")
-        call = ast.Call(func, args, keywords, ast.Name("z", ast.Store()), kwarg)
-        self.expr(call, "must have Load context")
-        call = ast.Call(func, args, keywords, stararg,
-                        ast.Name("w", ast.Store()))
+        call = ast.Call(func, args, bad_keywords)
         self.expr(call, "must have Load context")
 
     def test_num(self):
@@ -957,8 +943,8 @@ exec_results = [
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], ('arg', (1, 7), 'args', None), [], [], None, []), [('Pass', (1, 14))], [], None)]),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], ('arg', (1, 8), 'kwargs', None), []), [('Pass', (1, 17))], [], None)]),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [('arg', (1, 6), 'a', None), ('arg', (1, 9), 'b', None), ('arg', (1, 14), 'c', None), ('arg', (1, 22), 'd', None), ('arg', (1, 28), 'e', None)], ('arg', (1, 35), 'args', None), [('arg', (1, 41), 'f', None)], [('Num', (1, 43), 42)], ('arg', (1, 49), 'kwargs', None), [('Num', (1, 11), 1), ('NameConstant', (1, 16), None), ('List', (1, 24), [], ('Load',)), ('Dict', (1, 30), [], [])]), [('Pass', (1, 58))], [], None)]),
-('Module', [('ClassDef', (1, 0), 'C', [], [], None, None, [('Pass', (1, 8))], [])]),
-('Module', [('ClassDef', (1, 0), 'C', [('Name', (1, 8), 'object', ('Load',))], [], None, None, [('Pass', (1, 17))], [])]),
+('Module', [('ClassDef', (1, 0), 'C', [], [], [('Pass', (1, 8))], [])]),
+('Module', [('ClassDef', (1, 0), 'C', [('Name', (1, 8), 'object', ('Load',))], [], [('Pass', (1, 17))], [])]),
 ('Module', [('FunctionDef', (1, 0), 'f', ('arguments', [], None, [], [], None, []), [('Return', (1, 8), ('Num', (1, 15), 1))], [], None)]),
 ('Module', [('Delete', (1, 0), [('Name', (1, 4), 'v', ('Del',))])]),
 ('Module', [('Assign', (1, 0), [('Name', (1, 0), 'v', ('Store',))], ('Num', (1, 4), 1))]),
@@ -968,7 +954,7 @@ exec_results = [
 ('Module', [('If', (1, 0), ('Name', (1, 3), 'v', ('Load',)), [('Pass', (1, 5))], [])]),
 ('Module', [('With', (1, 0), [('withitem', ('Name', (1, 5), 'x', ('Load',)), ('Name', (1, 10), 'y', ('Store',)))], [('Pass', (1, 13))])]),
 ('Module', [('With', (1, 0), [('withitem', ('Name', (1, 5), 'x', ('Load',)), ('Name', (1, 10), 'y', ('Store',))), ('withitem', ('Name', (1, 13), 'z', ('Load',)), ('Name', (1, 18), 'q', ('Store',)))], [('Pass', (1, 21))])]),
-('Module', [('Raise', (1, 0), ('Call', (1, 6), ('Name', (1, 6), 'Exception', ('Load',)), [('Str', (1, 16), 'string')], [], None, None), None)]),
+('Module', [('Raise', (1, 0), ('Call', (1, 6), ('Name', (1, 6), 'Exception', ('Load',)), [('Str', (1, 16), 'string')], []), None)]),
 ('Module', [('Try', (1, 0), [('Pass', (2, 2))], [('ExceptHandler', (3, 0), ('Name', (3, 7), 'Exception', ('Load',)), None, [('Pass', (4, 2))])], [], [])]),
 ('Module', [('Try', (1, 0), [('Pass', (2, 2))], [], [], [('Pass', (4, 2))])]),
 ('Module', [('Assert', (1, 0), ('Name', (1, 7), 'v', ('Load',)), None)]),
@@ -998,14 +984,14 @@ eval_results = [
 ('Expression', ('BinOp', (1, 0), ('Name', (1, 0), 'a', ('Load',)), ('Add',), ('Name', (1, 4), 'b', ('Load',)))),
 ('Expression', ('UnaryOp', (1, 0), ('Not',), ('Name', (1, 4), 'v', ('Load',)))),
 ('Expression', ('Lambda', (1, 0), ('arguments', [], None, [], [], None, []), ('NameConstant', (1, 7), None))),
-('Expression', ('Dict', (1, 0), [('Num', (1, 2), 1)], [('Num', (1, 4), 2)])),
+('Expression', ('Dict', (1, 2), [('Num', (1, 2), 1)], [('Num', (1, 4), 2)])),
 ('Expression', ('Dict', (1, 0), [], [])),
-('Expression', ('Set', (1, 0), [('NameConstant', (1, 1), None)])),
-('Expression', ('Dict', (1, 0), [('Num', (2, 6), 1)], [('Num', (4, 10), 2)])),
+('Expression', ('Set', (1, 1), [('NameConstant', (1, 1), None)])),
+('Expression', ('Dict', (2, 6), [('Num', (2, 6), 1)], [('Num', (4, 10), 2)])),
 ('Expression', ('ListComp', (1, 1), ('Name', (1, 1), 'a', ('Load',)), [('comprehension', ('Name', (1, 7), 'b', ('Store',)), ('Name', (1, 12), 'c', ('Load',)), [('Name', (1, 17), 'd', ('Load',))])])),
 ('Expression', ('GeneratorExp', (1, 1), ('Name', (1, 1), 'a', ('Load',)), [('comprehension', ('Name', (1, 7), 'b', ('Store',)), ('Name', (1, 12), 'c', ('Load',)), [('Name', (1, 17), 'd', ('Load',))])])),
 ('Expression', ('Compare', (1, 0), ('Num', (1, 0), 1), [('Lt',), ('Lt',)], [('Num', (1, 4), 2), ('Num', (1, 8), 3)])),
-('Expression', ('Call', (1, 0), ('Name', (1, 0), 'f', ('Load',)), [('Num', (1, 2), 1), ('Num', (1, 4), 2)], [('keyword', 'c', ('Num', (1, 8), 3))], ('Name', (1, 11), 'd', ('Load',)), ('Name', (1, 15), 'e', ('Load',)))),
+('Expression', ('Call', (1, 0), ('Name', (1, 0), 'f', ('Load',)), [('Num', (1, 2), 1), ('Num', (1, 4), 2), ('Starred', (1, 10), ('Name', (1, 11), 'd', ('Load',)), ('Load',))], [('keyword', 'c', ('Num', (1, 8), 3)), ('keyword', None, ('Name', (1, 15), 'e', ('Load',)))])),
 ('Expression', ('Num', (1, 0), 10)),
 ('Expression', ('Str', (1, 0), 'string')),
 ('Expression', ('Attribute', (1, 0), ('Name', (1, 0), 'a', ('Load',)), 'b', ('Load',))),
@@ -1016,6 +1002,6 @@ eval_results = [
 ('Expression', ('Tuple', (1, 0), [('Num', (1, 0), 1), ('Num', (1, 2), 2), ('Num', (1, 4), 3)], ('Load',))),
 ('Expression', ('Tuple', (1, 1), [('Num', (1, 1), 1), ('Num', (1, 3), 2), ('Num', (1, 5), 3)], ('Load',))),
 ('Expression', ('Tuple', (1, 0), [], ('Load',))),
-('Expression', ('Call', (1, 0), ('Attribute', (1, 0), ('Attribute', (1, 0), ('Attribute', (1, 0), ('Name', (1, 0), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8), ('Attribute', (1, 8), ('Name', (1, 8), 'a', ('Load',)), 'b', ('Load',)), ('Slice', ('Num', (1, 12), 1), ('Num', (1, 14), 2), None), ('Load',))], [], None, None)),
+('Expression', ('Call', (1, 0), ('Attribute', (1, 0), ('Attribute', (1, 0), ('Attribute', (1, 0), ('Name', (1, 0), 'a', ('Load',)), 'b', ('Load',)), 'c', ('Load',)), 'd', ('Load',)), [('Subscript', (1, 8), ('Attribute', (1, 8), ('Name', (1, 8), 'a', ('Load',)), 'b', ('Load',)), ('Slice', ('Num', (1, 12), 1), ('Num', (1, 14), 2), None), ('Load',))], [])),
 ]
 main()

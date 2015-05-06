@@ -10,6 +10,8 @@ Release date: 2015-04-24
 Core and Builtins
 -----------------
 
+- Issue #2292: PEP 448: Additional Unpacking Generalizations.
+
 - Issue #24096: Make warnings.warn_explicit more robust against mutation of the
   warnings.filters list.
 
