@@ -42,6 +42,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24134: assertRaises(), assertRaisesRegex(), assertWarns() and
+  assertWarnsRegex() checks are not longer successful if the callable is None.
+
 - Issue #24094: Fix possible crash in json.encode with poorly behaved dict
   subclasses.
 
