@@ -57,18 +57,18 @@ class CodeContext:
             # Calculate the border width and horizontal padding required to
             # align the context with the text in the main Text widget.
             #
-            # All values are passed through int(str(<value>)), since some
+            # All values are passed through getint(), since some
             # values may be pixel objects, which can't simply be added to ints.
             widgets = self.editwin.text, self.editwin.text_frame
             # Calculate the required vertical padding
             padx = 0
             for widget in widgets:
-                padx += int(str( widget.pack_info()['padx'] ))
-                padx += int(str( widget.cget('padx') ))
+                padx += widget.tk.getint(widget.pack_info()['padx'])
+                padx += widget.tk.getint(widget.cget('padx'))
             # Calculate the required border width
             border = 0
             for widget in widgets:
-                border += int(str( widget.cget('border') ))
+                border += widget.tk.getint(widget.cget('border'))
             self.label = tkinter.Label(self.editwin.top,
                                        text="\n" * (self.context_depth - 1),
                                        anchor=W, justify=LEFT,

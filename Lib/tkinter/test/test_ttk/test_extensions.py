@@ -70,17 +70,15 @@ class LabeledScaleTest(AbstractTkTest, unittest.TestCase):
         # variable initialization/passing
         passed_expected = (('0', 0), (0, 0), (10, 10),
             (-1, -1), (sys.maxsize + 1, sys.maxsize + 1))
-        if self.wantobjects:
-            passed_expected += ((2.5, 2),)
         for pair in passed_expected:
             x = ttk.LabeledScale(self.root, from_=pair[0])
             self.assertEqual(x.value, pair[1])
             x.destroy()
         x = ttk.LabeledScale(self.root, from_='2.5')
-        self.assertRaises(ValueError, x._variable.get)
+        self.assertRaises((ValueError, tkinter.TclError), x._variable.get)
         x.destroy()
         x = ttk.LabeledScale(self.root, from_=None)
-        self.assertRaises(ValueError, x._variable.get)
+        self.assertRaises((ValueError, tkinter.TclError), x._variable.get)
         x.destroy()
         # variable should have its default value set to the from_ value
         myvar = tkinter.DoubleVar(self.root, value=20)
