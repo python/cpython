@@ -1,5 +1,5 @@
 import unittest, test.support
-from test.script_helper import assert_python_ok, assert_python_failure
+from test.support.script_helper import assert_python_ok, assert_python_failure
 import sys, io, os
 import struct
 import subprocess
@@ -708,7 +708,7 @@ class SysModuleTest(unittest.TestCase):
     @test.support.cpython_only
     def test_debugmallocstats(self):
         # Test sys._debugmallocstats()
-        from test.script_helper import assert_python_ok
+        from test.support.script_helper import assert_python_ok
         args = ['-c', 'import sys; sys._debugmallocstats()']
         ret, out, err = assert_python_ok(*args)
         self.assertIn(b"free PyDictObjects", err)

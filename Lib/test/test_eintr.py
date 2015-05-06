@@ -2,7 +2,8 @@ import os
 import signal
 import unittest
 
-from test import script_helper, support
+from test import support
+from test.support import script_helper
 
 
 @unittest.skipUnless(os.name == "posix", "only supported on Unix")

@@ -38,7 +38,7 @@ import socket
 import struct
 import sys
 import tempfile
-from test.script_helper import assert_python_ok
+from test.support.script_helper import assert_python_ok
 from test import support
 import textwrap
 import time

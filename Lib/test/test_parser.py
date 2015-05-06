@@ -4,7 +4,7 @@ import sys
 import operator
 import struct
 from test import support
-from test.script_helper import assert_python_failure
+from test.support.script_helper import assert_python_failure
 
 #
 #  First, we test that we can generate trees from valid source fragments,
