@@ -14,8 +14,6 @@ module Python
           | ClassDef(identifier name,
              expr* bases,
              keyword* keywords,
-             expr? starargs,
-             expr? kwargs,
              stmt* body,
              expr* decorator_list)
           | Return(expr? value)
@@ -64,8 +62,7 @@ module Python
          -- need sequences for compare to distinguish between
          -- x < 4 < 3 and (x < 4) < 3
          | Compare(expr left, cmpop* ops, expr* comparators)
-         | Call(expr func, expr* args, keyword* keywords,
-             expr? starargs, expr? kwargs)
+         | Call(expr func, expr* args, keyword* keywords)
          | Num(object n) -- a number as a PyObject.
          | Str(string s) -- need to specify raw, unicode, etc?
          | Bytes(bytes s)
@@ -109,8 +106,8 @@ module Python
     arg = (identifier arg, expr? annotation)
            attributes (int lineno, int col_offset)
 
-    -- keyword arguments supplied to call
-    keyword = (identifier arg, expr value)
+    -- keyword arguments supplied to call (NULL identifier for **kwargs)
+    keyword = (identifier? arg, expr value)
 
     -- import name with optional 'as' alias.
     alias = (identifier name, identifier? asname)

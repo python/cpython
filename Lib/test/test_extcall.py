@@ -34,17 +34,37 @@ Argument list examples
     (1, 2, 3, 4, 5) {}
     >>> f(1, 2, 3, *[4, 5])
     (1, 2, 3, 4, 5) {}
+    >>> f(*[1, 2, 3], 4, 5)
+    (1, 2, 3, 4, 5) {}
     >>> f(1, 2, 3, *UserList([4, 5]))
     (1, 2, 3, 4, 5) {}
+    >>> f(1, 2, 3, *[4, 5], *[6, 7])
+    (1, 2, 3, 4, 5, 6, 7) {}
+    >>> f(1, *[2, 3], 4, *[5, 6], 7)
+    (1, 2, 3, 4, 5, 6, 7) {}
+    >>> f(*UserList([1, 2]), *UserList([3, 4]), 5, *UserList([6, 7]))
+    (1, 2, 3, 4, 5, 6, 7) {}
 
 Here we add keyword arguments
 
     >>> f(1, 2, 3, **{'a':4, 'b':5})
     (1, 2, 3) {'a': 4, 'b': 5}
+    >>> f(1, 2, **{'a': -1, 'b': 5}, **{'a': 4, 'c': 6})
+    Traceback (most recent call last):
+        ...
+    TypeError: f() got multiple values for keyword argument 'a'
+    >>> f(1, 2, **{'a': -1, 'b': 5}, a=4, c=6)
+    Traceback (most recent call last):
+        ...
+    TypeError: f() got multiple values for keyword argument 'a'
     >>> f(1, 2, 3, *[4, 5], **{'a':6, 'b':7})
     (1, 2, 3, 4, 5) {'a': 6, 'b': 7}
     >>> f(1, 2, 3, x=4, y=5, *(6, 7), **{'a':8, 'b': 9})
     (1, 2, 3, 6, 7) {'a': 8, 'b': 9, 'x': 4, 'y': 5}
+    >>> f(1, 2, 3, *[4, 5], **{'c': 8}, **{'a':6, 'b':7})
+    (1, 2, 3, 4, 5) {'a': 6, 'b': 7, 'c': 8}
+    >>> f(1, 2, 3, *(4, 5), x=6, y=7, **{'a':8, 'b': 9})
+    (1, 2, 3, 4, 5) {'a': 8, 'b': 9, 'x': 6, 'y': 7}
 
     >>> f(1, 2, 3, **UserDict(a=4, b=5))
     (1, 2, 3) {'a': 4, 'b': 5}
@@ -52,6 +72,8 @@ Here we add keyword arguments
     (1, 2, 3, 4, 5) {'a': 6, 'b': 7}
     >>> f(1, 2, 3, x=4, y=5, *(6, 7), **UserDict(a=8, b=9))
     (1, 2, 3, 6, 7) {'a': 8, 'b': 9, 'x': 4, 'y': 5}
+    >>> f(1, 2, 3, *(4, 5), x=6, y=7, **UserDict(a=8, b=9))
+    (1, 2, 3, 4, 5) {'a': 8, 'b': 9, 'x': 6, 'y': 7}
 
 Examples with invalid arguments (TypeErrors). We're also testing the function
 names in the exception messages.

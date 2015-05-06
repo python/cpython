@@ -195,9 +195,7 @@ static int expr_constant(struct compiler *, expr_ty);
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_call_helper(struct compiler *c, Py_ssize_t n,
                                 asdl_seq *args,
-                                asdl_seq *keywords,
-                                expr_ty starargs,
-                                expr_ty kwargs);
+                                asdl_seq *keywords);
 static int compiler_try_except(struct compiler *, stmt_ty);
 static int compiler_set_qualname(struct compiler *);
 
@@ -672,7 +670,8 @@ compiler_set_qualname(struct compiler *c)
         PyObject *mangled, *capsule;
 
         capsule = PyList_GET_ITEM(c->c_stack, stack_size - 1);
-        parent = (struct compiler_unit *)PyCapsule_GetPointer(capsule, COMPILER_CAPSULE_NAME_COMPILER_UNIT);
+        parent = (struct compiler_unit *)PyCapsule_GetPointer(
+                capsule, COMPILER_CAPSULE_NAME_COMPILER_UNIT);
         assert(parent);
 
         if (u->u_scope_type == COMPILER_SCOPE_FUNCTION || u->u_scope_type == COMPILER_SCOPE_CLASS) {
@@ -973,6 +972,13 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case BUILD_LIST:
         case BUILD_SET:
             return 1-oparg;
+        case BUILD_LIST_UNPACK:
+        case BUILD_TUPLE_UNPACK:
+        case BUILD_SET_UNPACK:
+        case BUILD_MAP_UNPACK:
+            return 1 - oparg;
+        case BUILD_MAP_UNPACK_WITH_CALL:
+            return 1 - (oparg & 0xFF);
         case BUILD_MAP:
             return 1;
         case LOAD_ATTR:
@@ -1821,9 +1827,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     /* 5. generate the rest of the code for the call */
     if (!compiler_call_helper(c, 2,
                               s->v.ClassDef.bases,
-                              s->v.ClassDef.keywords,
-                              s->v.ClassDef.starargs,
-                              s->v.ClassDef.kwargs))
+                              s->v.ClassDef.keywords))
         return 0;
 
     /* 6. apply decorators */
@@ -2871,67 +2875,145 @@ compiler_boolop(struct compiler *c, expr_ty e)
 }
 
 static int
+starunpack_helper(struct compiler *c, asdl_seq *elts,
+                  int single_op, int inner_op, int outer_op)
+{
+    Py_ssize_t n = asdl_seq_LEN(elts);
+    Py_ssize_t i, nsubitems = 0, nseen = 0;
+    for (i = 0; i < n; i++) {
+        expr_ty elt = asdl_seq_GET(elts, i);
+        if (elt->kind == Starred_kind) {
+            if (nseen) {
+                ADDOP_I(c, inner_op, nseen);
+                nseen = 0;
+                nsubitems++;
+            }
+            VISIT(c, expr, elt->v.Starred.value);
+            nsubitems++;
+        }
+        else {
+            VISIT(c, expr, elt);
+            nseen++;
+        }
+    }
+    if (nsubitems) {
+        if (nseen) {
+            ADDOP_I(c, inner_op, nseen);
+            nsubitems++;
+        }
+        ADDOP_I(c, outer_op, nsubitems);
+    }
+    else
+        ADDOP_I(c, single_op, nseen);
+    return 1;
+}
+
+static int
+assignment_helper(struct compiler *c, asdl_seq *elts)
+{
+    Py_ssize_t n = asdl_seq_LEN(elts);
+    Py_ssize_t i;
+    int seen_star = 0;
+    for (i = 0; i < n; i++) {
+        expr_ty elt = asdl_seq_GET(elts, i);
+        if (elt->kind == Starred_kind && !seen_star) {
+            if ((i >= (1 << 8)) ||
+                (n-i-1 >= (INT_MAX >> 8)))
+                return compiler_error(c,
+                    "too many expressions in "
+                    "star-unpacking assignment");
+            ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
+            seen_star = 1;
+            asdl_seq_SET(elts, i, elt->v.Starred.value);
+        }
+        else if (elt->kind == Starred_kind) {
+            return compiler_error(c,
+                "two starred expressions in assignment");
+        }
+    }
+    if (!seen_star) {
+        ADDOP_I(c, UNPACK_SEQUENCE, n);
+    }
+    VISIT_SEQ(c, expr, elts);
+    return 1;
+}
+
+static int
 compiler_list(struct compiler *c, expr_ty e)
 {
-    Py_ssize_t n = asdl_seq_LEN(e->v.List.elts);
+    asdl_seq *elts = e->v.List.elts;
     if (e->v.List.ctx == Store) {
-        int i, seen_star = 0;
-        for (i = 0; i < n; i++) {
-            expr_ty elt = asdl_seq_GET(e->v.List.elts, i);
-            if (elt->kind == Starred_kind && !seen_star) {
-                if ((i >= (1 << 8)) ||
-                    (n-i-1 >= (INT_MAX >> 8)))
-                    return compiler_error(c,
-                        "too many expressions in "
-                        "star-unpacking assignment");
-                ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
-                seen_star = 1;
-                asdl_seq_SET(e->v.List.elts, i, elt->v.Starred.value);
-            } else if (elt->kind == Starred_kind) {
-                return compiler_error(c,
-                    "two starred expressions in assignment");
-            }
-        }
-        if (!seen_star) {
-            ADDOP_I(c, UNPACK_SEQUENCE, n);
-        }
+        return assignment_helper(c, elts);
     }
-    VISIT_SEQ(c, expr, e->v.List.elts);
-    if (e->v.List.ctx == Load) {
-        ADDOP_I(c, BUILD_LIST, n);
+    else if (e->v.List.ctx == Load) {
+        return starunpack_helper(c, elts,
+                                 BUILD_LIST, BUILD_TUPLE, BUILD_LIST_UNPACK);
     }
+    else
+        VISIT_SEQ(c, expr, elts);
     return 1;
 }
 
 static int
 compiler_tuple(struct compiler *c, expr_ty e)
 {
-    Py_ssize_t n = asdl_seq_LEN(e->v.Tuple.elts);
+    asdl_seq *elts = e->v.Tuple.elts;
     if (e->v.Tuple.ctx == Store) {
-        int i, seen_star = 0;
-        for (i = 0; i < n; i++) {
-            expr_ty elt = asdl_seq_GET(e->v.Tuple.elts, i);
-            if (elt->kind == Starred_kind && !seen_star) {
-                if ((i >= (1 << 8)) ||
-                    (n-i-1 >= (INT_MAX >> 8)))
-                    return compiler_error(c,
-                        "too many expressions in "
-                        "star-unpacking assignment");
-                ADDOP_I(c, UNPACK_EX, (i + ((n-i-1) << 8)));
-                seen_star = 1;
-                asdl_seq_SET(e->v.Tuple.elts, i, elt->v.Starred.value);
-            } else if (elt->kind == Starred_kind) {
-                return compiler_error(c,
-                    "two starred expressions in assignment");
-            }
+        return assignment_helper(c, elts);
+    }
+    else if (e->v.Tuple.ctx == Load) {
+        return starunpack_helper(c, elts,
+                                 BUILD_TUPLE, BUILD_TUPLE, BUILD_TUPLE_UNPACK);
+    }
+    else
+        VISIT_SEQ(c, expr, elts);
+    return 1;
+}
+
+static int
+compiler_set(struct compiler *c, expr_ty e)
+{
+    return starunpack_helper(c, e->v.Set.elts, BUILD_SET,
+                             BUILD_SET, BUILD_SET_UNPACK);
+}
+
+static int
+compiler_dict(struct compiler *c, expr_ty e)
+{
+    Py_ssize_t i, n, containers, elements;
+    int is_unpacking = 0;
+    n = asdl_seq_LEN(e->v.Dict.values);
+    containers = 0;
+    elements = 0;
+    for (i = 0; i < n; i++) {
+        is_unpacking = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i) == NULL;
+        if (elements == 0xFFFF || (elements && is_unpacking)) {
+            ADDOP_I(c, BUILD_MAP, elements);
+            containers++;
+            elements = 0;
         }
-        if (!seen_star) {
-            ADDOP_I(c, UNPACK_SEQUENCE, n);
+        if (is_unpacking) {
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+            containers++;
+        }
+        else {
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            elements++;
         }
     }
-    VISIT_SEQ(c, expr, e->v.Tuple.elts);
-    if (e->v.Tuple.ctx == Load) {
-        ADDOP_I(c, BUILD_TUPLE, n);
+    if (elements || containers == 0) {
+        ADDOP_I(c, BUILD_MAP, elements);
+        containers++;
+    }
+    /* If there is more than one dict, they need to be merged into a new
+     * dict.  If there is one dict and it's an unpacking, then it needs
+     * to be copied into a new dict." */
+    while (containers > 1 || is_unpacking) {
+        int oparg = containers < 255 ? containers : 255;
+        ADDOP_I(c, BUILD_MAP_UNPACK, oparg);
+        containers -= (oparg - 1);
+        is_unpacking = 0;
     }
     return 1;
 }
@@ -2987,9 +3069,7 @@ compiler_call(struct compiler *c, expr_ty e)
     VISIT(c, expr, e->v.Call.func);
     return compiler_call_helper(c, 0,
                                 e->v.Call.args,
-                                e->v.Call.keywords,
-                                e->v.Call.starargs,
-                                e->v.Call.kwargs);
+                                e->v.Call.keywords);
 }
 
 /* shared code between compiler_call and compiler_class */
@@ -2997,26 +3077,102 @@ static int
 compiler_call_helper(struct compiler *c,
                      Py_ssize_t n, /* Args already pushed */
                      asdl_seq *args,
-                     asdl_seq *keywords,
-                     expr_ty starargs,
-                     expr_ty kwargs)
+                     asdl_seq *keywords)
 {
     int code = 0;
+    Py_ssize_t nelts, i, nseen, nkw;
 
-    n += asdl_seq_LEN(args);
-    VISIT_SEQ(c, expr, args);
-    if (keywords) {
-        VISIT_SEQ(c, keyword, keywords);
-        n |= asdl_seq_LEN(keywords) << 8;
+    /* the number of tuples and dictionaries on the stack */
+    Py_ssize_t nsubargs = 0, nsubkwargs = 0;
+
+    nkw = 0;
+    nseen = 0;  /* the number of positional arguments on the stack */
+    nelts = asdl_seq_LEN(args);
+    for (i = 0; i < nelts; i++) {
+        expr_ty elt = asdl_seq_GET(args, i);
+        if (elt->kind == Starred_kind) {
+            /* A star-arg. If we've seen positional arguments,
+               pack the positional arguments into a
+               tuple. */
+            if (nseen) {
+                ADDOP_I(c, BUILD_TUPLE, nseen);
+                nseen = 0;
+                nsubargs++;
+            }
+            VISIT(c, expr, elt->v.Starred.value);
+            nsubargs++;
+        }
+        else if (nsubargs) {
+            /* We've seen star-args already, so we
+               count towards items-to-pack-into-tuple. */
+            VISIT(c, expr, elt);
+            nseen++;
+        }
+        else {
+            /* Positional arguments before star-arguments
+               are left on the stack. */
+            VISIT(c, expr, elt);
+            n++;
+        }
     }
-    if (starargs) {
-        VISIT(c, expr, starargs);
+    if (nseen) {
+        /* Pack up any trailing positional arguments. */
+        ADDOP_I(c, BUILD_TUPLE, nseen);
+        nsubargs++;
+    }
+    if (nsubargs) {
         code |= 1;
+        if (nsubargs > 1) {
+            /* If we ended up with more than one stararg, we need
+               to concatenate them into a single sequence. */
+            ADDOP_I(c, BUILD_LIST_UNPACK, nsubargs);
+        }
     }
-    if (kwargs) {
-        VISIT(c, expr, kwargs);
+
+    /* Same dance again for keyword arguments */
+    nseen = 0;  /* the number of keyword arguments on the stack following */
+    nelts = asdl_seq_LEN(keywords);
+    for (i = 0; i < nelts; i++) {
+        keyword_ty kw = asdl_seq_GET(keywords, i);
+        if (kw->arg == NULL) {
+            /* A keyword argument unpacking. */
+            if (nseen) {
+                ADDOP_I(c, BUILD_MAP, nseen);
+                nseen = 0;
+                nsubkwargs++;
+            }
+            VISIT(c, expr, kw->value);
+            nsubkwargs++;
+        }
+        else if (nsubkwargs) {
+            /* A keyword argument and we already have a dict. */
+            VISIT(c, expr, kw->value);
+            ADDOP_O(c, LOAD_CONST, kw->arg, consts);
+            nseen++;
+        }
+        else {
+            /* keyword argument */
+            VISIT(c, keyword, kw)
+            nkw++;
+        }
+    }
+    if (nseen) {
+        /* Pack up any trailing keyword arguments. */
+        ADDOP_I(c, BUILD_MAP, nseen);
+        nsubkwargs++;
+    }
+    if (nsubkwargs) {
         code |= 2;
+        if (nsubkwargs > 1) {
+            /* Pack it all up */
+            int function_pos = n + (code & 1) + nkw + 1;
+            ADDOP_I(c, BUILD_MAP_UNPACK_WITH_CALL, nsubkwargs | (function_pos << 8));
+        }
     }
+    assert(n < 1<<8);
+    assert(nkw < 1<<24);
+    n |= nkw << 8;
+
     switch (code) {
     case 0:
         ADDOP_I(c, CALL_FUNCTION, n);
@@ -3141,8 +3297,9 @@ compiler_comprehension_generator(struct compiler *c,
 }
 
 static int
-compiler_comprehension(struct compiler *c, expr_ty e, int type, identifier name,
-                       asdl_seq *generators, expr_ty elt, expr_ty val)
+compiler_comprehension(struct compiler *c, expr_ty e, int type,
+                       identifier name, asdl_seq *generators, expr_ty elt,
+                       expr_ty val)
 {
     PyCodeObject *co = NULL;
     expr_ty outermost_iter;
@@ -3399,8 +3556,6 @@ compiler_with(struct compiler *c, stmt_ty s, int pos)
 static int
 compiler_visit_expr(struct compiler *c, expr_ty e)
 {
-    Py_ssize_t i, n;
-
     /* If expr e has a different line number than the last expr/stmt,
        set a new line number for the next instruction.
     */
@@ -3427,23 +3582,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
     case IfExp_kind:
         return compiler_ifexp(c, e);
     case Dict_kind:
-        n = asdl_seq_LEN(e->v.Dict.values);
-        /* BUILD_MAP parameter is only used to preallocate the dictionary,
-           it doesn't need to be exact */
-        ADDOP_I(c, BUILD_MAP, (n>0xFFFF ? 0xFFFF : n));
-        for (i = 0; i < n; i++) {
-            VISIT(c, expr,
-                (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
-            VISIT(c, expr,
-                (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
-            ADDOP(c, STORE_MAP);
-        }
-        break;
+        return compiler_dict(c, e);
     case Set_kind:
-        n = asdl_seq_LEN(e->v.Set.elts);
-        VISIT_SEQ(c, expr, e->v.Set.elts);
-        ADDOP_I(c, BUILD_SET, n);
-        break;
+        return compiler_set(c, e);
     case GeneratorExp_kind:
         return compiler_genexp(c, e);
     case ListComp_kind:
@@ -3554,7 +3695,7 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
                 "starred assignment target must be in a list or tuple");
         default:
             return compiler_error(c,
-                "can use starred expression only as assignment target");
+                "can't use starred expression here");
         }
         break;
     case Name_kind:

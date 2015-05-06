@@ -84,8 +84,6 @@ struct _stmt {
             identifier name;
             asdl_seq *bases;
             asdl_seq *keywords;
-            expr_ty starargs;
-            expr_ty kwargs;
             asdl_seq *body;
             asdl_seq *decorator_list;
         } ClassDef;
@@ -263,8 +261,6 @@ struct _expr {
             expr_ty func;
             asdl_seq *args;
             asdl_seq *keywords;
-            expr_ty starargs;
-            expr_ty kwargs;
         } Call;
         
         struct {
@@ -406,11 +402,10 @@ mod_ty _Py_Suite(asdl_seq * body, PyArena *arena);
 stmt_ty _Py_FunctionDef(identifier name, arguments_ty args, asdl_seq * body,
                         asdl_seq * decorator_list, expr_ty returns, int lineno,
                         int col_offset, PyArena *arena);
-#define ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9) _Py_ClassDef(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9)
+#define ClassDef(a0, a1, a2, a3, a4, a5, a6, a7) _Py_ClassDef(a0, a1, a2, a3, a4, a5, a6, a7)
 stmt_ty _Py_ClassDef(identifier name, asdl_seq * bases, asdl_seq * keywords,
-                     expr_ty starargs, expr_ty kwargs, asdl_seq * body,
-                     asdl_seq * decorator_list, int lineno, int col_offset,
-                     PyArena *arena);
+                     asdl_seq * body, asdl_seq * decorator_list, int lineno,
+                     int col_offset, PyArena *arena);
 #define Return(a0, a1, a2, a3) _Py_Return(a0, a1, a2, a3)
 stmt_ty _Py_Return(expr_ty value, int lineno, int col_offset, PyArena *arena);
 #define Delete(a0, a1, a2, a3) _Py_Delete(a0, a1, a2, a3)
@@ -504,10 +499,9 @@ expr_ty _Py_YieldFrom(expr_ty value, int lineno, int col_offset, PyArena
 #define Compare(a0, a1, a2, a3, a4, a5) _Py_Compare(a0, a1, a2, a3, a4, a5)
 expr_ty _Py_Compare(expr_ty left, asdl_int_seq * ops, asdl_seq * comparators,
                     int lineno, int col_offset, PyArena *arena);
-#define Call(a0, a1, a2, a3, a4, a5, a6, a7) _Py_Call(a0, a1, a2, a3, a4, a5, a6, a7)
-expr_ty _Py_Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, expr_ty
-                 starargs, expr_ty kwargs, int lineno, int col_offset, PyArena
-                 *arena);
+#define Call(a0, a1, a2, a3, a4, a5) _Py_Call(a0, a1, a2, a3, a4, a5)
+expr_ty _Py_Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int
+                 lineno, int col_offset, PyArena *arena);
 #define Num(a0, a1, a2, a3) _Py_Num(a0, a1, a2, a3)
 expr_ty _Py_Num(object n, int lineno, int col_offset, PyArena *arena);
 #define Str(a0, a1, a2, a3) _Py_Str(a0, a1, a2, a3)

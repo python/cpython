@@ -235,9 +235,7 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
     case Call_kind:
         return validate_expr(exp->v.Call.func, Load) &&
             validate_exprs(exp->v.Call.args, Load, 0) &&
-            validate_keywords(exp->v.Call.keywords) &&
-            (!exp->v.Call.starargs || validate_expr(exp->v.Call.starargs, Load)) &&
-            (!exp->v.Call.kwargs || validate_expr(exp->v.Call.kwargs, Load));
+            validate_keywords(exp->v.Call.keywords);
     case Num_kind: {
         PyObject *n = exp->v.Num.n;
         if (!PyLong_CheckExact(n) && !PyFloat_CheckExact(n) &&
@@ -322,9 +320,7 @@ validate_stmt(stmt_ty stmt)
         return validate_body(stmt->v.ClassDef.body, "ClassDef") &&
             validate_exprs(stmt->v.ClassDef.bases, Load, 0) &&
             validate_keywords(stmt->v.ClassDef.keywords) &&
-            validate_exprs(stmt->v.ClassDef.decorator_list, Load, 0) &&
-            (!stmt->v.ClassDef.starargs || validate_expr(stmt->v.ClassDef.starargs, Load)) &&
-            (!stmt->v.ClassDef.kwargs || validate_expr(stmt->v.ClassDef.kwargs, Load));
+            validate_exprs(stmt->v.ClassDef.decorator_list, Load, 0);
     case Return_kind:
         return !stmt->v.Return.value || validate_expr(stmt->v.Return.value, Load);
     case Delete_kind:
@@ -848,7 +844,8 @@ static const char* FORBIDDEN[] = {
 };
 
 static int
-forbidden_name(struct compiling *c, identifier name, const node *n, int full_checks)
+forbidden_name(struct compiling *c, identifier name, const node *n,
+               int full_checks)
 {
     assert(PyUnicode_Check(name));
     if (PyUnicode_CompareWithASCIIString(name, "__debug__") == 0) {
@@ -1445,7 +1442,7 @@ ast_for_decorator(struct compiling *c, const node *n)
         name_expr = NULL;
     }
     else if (NCH(n) == 5) { /* Call with no arguments */
-        d = Call(name_expr, NULL, NULL, NULL, NULL, LINENO(n),
+        d = Call(name_expr, NULL, NULL, LINENO(n),
                  n->n_col_offset, c->c_arena);
         if (!d)
             return NULL;
@@ -1735,16 +1732,22 @@ ast_for_comprehension(struct compiling *c, const node *n)
 static expr_ty
 ast_for_itercomp(struct compiling *c, const node *n, int type)
 {
-    /* testlist_comp: test ( comp_for | (',' test)* [','] )
-       argument: [test '='] test [comp_for]       # Really [keyword '='] test */
+    /* testlist_comp: (test|star_expr)
+     *                ( comp_for | (',' (test|star_expr))* [','] ) */
     expr_ty elt;
     asdl_seq *comps;
+    node *ch;
 
     assert(NCH(n) > 1);
 
-    elt = ast_for_expr(c, CHILD(n, 0));
+    ch = CHILD(n, 0);
+    elt = ast_for_expr(c, ch);
     if (!elt)
         return NULL;
+    if (elt->kind == Starred_kind) {
+        ast_error(c, ch, "iterable unpacking cannot be used in comprehension");
+        return NULL;
+    }
 
     comps = ast_for_comprehension(c, CHILD(n, 1));
     if (!comps)
@@ -1761,27 +1764,96 @@ ast_for_itercomp(struct compiling *c, const node *n, int type)
         return NULL;
 }
 
+/* Fills in the key, value pair corresponding to the dict element.  In case
+ * of an unpacking, key is NULL.  *i is advanced by the number of ast
+ * elements.  Iff successful, nonzero is returned.
+ */
+static int
+ast_for_dictelement(struct compiling *c, const node *n, int *i,
+                    expr_ty *key, expr_ty *value)
+{
+    expr_ty expression;
+    if (TYPE(CHILD(n, *i)) == DOUBLESTAR) {
+        assert(NCH(n) - *i >= 2);
+
+        expression = ast_for_expr(c, CHILD(n, *i + 1));
+        if (!expression)
+            return 0;
+        *key = NULL;
+        *value = expression;
+
+        *i += 2;
+    }
+    else {
+        assert(NCH(n) - *i >= 3);
+
+        expression = ast_for_expr(c, CHILD(n, *i));
+        if (!expression)
+            return 0;
+        *key = expression;
+
+        REQ(CHILD(n, *i + 1), COLON);
+
+        expression = ast_for_expr(c, CHILD(n, *i + 2));
+        if (!expression)
+            return 0;
+        *value = expression;
+
+        *i += 3;
+    }
+    return 1;
+}
+
 static expr_ty
 ast_for_dictcomp(struct compiling *c, const node *n)
 {
     expr_ty key, value;
     asdl_seq *comps;
+    int i = 0;
 
-    assert(NCH(n) > 3);
-    REQ(CHILD(n, 1), COLON);
-
-    key = ast_for_expr(c, CHILD(n, 0));
-    if (!key)
+    if (!ast_for_dictelement(c, n, &i, &key, &value))
         return NULL;
-    value = ast_for_expr(c, CHILD(n, 2));
-    if (!value)
-        return NULL;
+    assert(key);
+    assert(NCH(n) - i >= 1);
 
-    comps = ast_for_comprehension(c, CHILD(n, 3));
+    comps = ast_for_comprehension(c, CHILD(n, i));
     if (!comps)
         return NULL;
 
     return DictComp(key, value, comps, LINENO(n), n->n_col_offset, c->c_arena);
+}
+
+static expr_ty
+ast_for_dictdisplay(struct compiling *c, const node *n)
+{
+    int i;
+    int j;
+    int size;
+    asdl_seq *keys, *values;
+
+    size = (NCH(n) + 1) / 3; /* +1 in case no trailing comma */
+    keys = _Py_asdl_seq_new(size, c->c_arena);
+    if (!keys)
+        return NULL;
+
+    values = _Py_asdl_seq_new(size, c->c_arena);
+    if (!values)
+        return NULL;
+
+    j = 0;
+    for (i = 0; i < NCH(n); i++) {
+        expr_ty key, value;
+
+        if (!ast_for_dictelement(c, n, &i, &key, &value))
+            return NULL;
+        asdl_seq_SET(keys, j, key);
+        asdl_seq_SET(values, j, value);
+
+        j++;
+    }
+    keys->size = j;
+    values->size = j;
+    return Dict(keys, values, LINENO(n), n->n_col_offset, c->c_arena);
 }
 
 static expr_ty
@@ -1805,6 +1877,27 @@ ast_for_setcomp(struct compiling *c, const node *n)
     return ast_for_itercomp(c, n, COMP_SETCOMP);
 }
 
+static expr_ty
+ast_for_setdisplay(struct compiling *c, const node *n)
+{
+    int i;
+    int size;
+    asdl_seq *elts;
+
+    assert(TYPE(n) == (dictorsetmaker));
+    size = (NCH(n) + 1) / 2; /* +1 in case no trailing comma */
+    elts = _Py_asdl_seq_new(size, c->c_arena);
+    if (!elts)
+        return NULL;
+    for (i = 0; i < NCH(n); i += 2) {
+        expr_ty expression;
+        expression = ast_for_expr(c, CHILD(n, i));
+        if (!expression)
+            return NULL;
+        asdl_seq_SET(elts, i / 2, expression);
+    }
+    return Set(elts, LINENO(n), n->n_col_offset, c->c_arena);
+}
 
 static expr_ty
 ast_for_atom(struct compiling *c, const node *n)
@@ -1915,62 +2008,42 @@ ast_for_atom(struct compiling *c, const node *n)
         else
             return ast_for_listcomp(c, ch);
     case LBRACE: {
-        /* dictorsetmaker: test ':' test (',' test ':' test)* [','] |
-         *                 test (gen_for | (',' test)* [','])  */
-        int i, size;
-        asdl_seq *keys, *values;
-
+        /* dictorsetmaker: ( ((test ':' test | '**' test)
+         *                    (comp_for | (',' (test ':' test | '**' test))* [','])) |
+         *                   ((test | '*' test)
+         *                    (comp_for | (',' (test | '*' test))* [','])) ) */
         ch = CHILD(n, 1);
         if (TYPE(ch) == RBRACE) {
-            /* it's an empty dict */
+            /* It's an empty dict. */
             return Dict(NULL, NULL, LINENO(n), n->n_col_offset, c->c_arena);
-        } else if (NCH(ch) == 1 || TYPE(CHILD(ch, 1)) == COMMA) {
-            /* it's a simple set */
-            asdl_seq *elts;
-            size = (NCH(ch) + 1) / 2; /* +1 in case no trailing comma */
-            elts = _Py_asdl_seq_new(size, c->c_arena);
-            if (!elts)
-                return NULL;
-            for (i = 0; i < NCH(ch); i += 2) {
-                expr_ty expression;
-                expression = ast_for_expr(c, CHILD(ch, i));
-                if (!expression)
-                    return NULL;
-                asdl_seq_SET(elts, i / 2, expression);
+        }
+        else {
+            int is_dict = (TYPE(CHILD(ch, 0)) == DOUBLESTAR);
+            if (NCH(ch) == 1 ||
+                    (NCH(ch) > 1 &&
+                     TYPE(CHILD(ch, 1)) == COMMA)) {
+                /* It's a set display. */
+                return ast_for_setdisplay(c, ch);
             }
-            return Set(elts, LINENO(n), n->n_col_offset, c->c_arena);
-        } else if (TYPE(CHILD(ch, 1)) == comp_for) {
-            /* it's a set comprehension */
-            return ast_for_setcomp(c, ch);
-        } else if (NCH(ch) > 3 && TYPE(CHILD(ch, 3)) == comp_for) {
-            return ast_for_dictcomp(c, ch);
-        } else {
-            /* it's a dict */
-            size = (NCH(ch) + 1) / 4; /* +1 in case no trailing comma */
-            keys = _Py_asdl_seq_new(size, c->c_arena);
-            if (!keys)
-                return NULL;
-
-            values = _Py_asdl_seq_new(size, c->c_arena);
-            if (!values)
-                return NULL;
-
-            for (i = 0; i < NCH(ch); i += 4) {
-                expr_ty expression;
-
-                expression = ast_for_expr(c, CHILD(ch, i));
-                if (!expression)
-                    return NULL;
-
-                asdl_seq_SET(keys, i / 4, expression);
-
-                expression = ast_for_expr(c, CHILD(ch, i + 2));
-                if (!expression)
-                    return NULL;
-
-                asdl_seq_SET(values, i / 4, expression);
+            else if (NCH(ch) > 1 &&
+                    TYPE(CHILD(ch, 1)) == comp_for) {
+                /* It's a set comprehension. */
+                return ast_for_setcomp(c, ch);
             }
-            return Dict(keys, values, LINENO(n), n->n_col_offset, c->c_arena);
+            else if (NCH(ch) > 3 - is_dict &&
+                    TYPE(CHILD(ch, 3 - is_dict)) == comp_for) {
+                /* It's a dictionary comprehension. */
+                if (is_dict) {
+                    ast_error(c, n, "dict unpacking cannot be used in "
+                            "dict comprehension");
+                    return NULL;
+                }
+                return ast_for_dictcomp(c, ch);
+            }
+            else {
+                /* It's a dictionary display. */
+                return ast_for_dictdisplay(c, ch);
+            }
         }
     }
     default:
@@ -2106,7 +2179,7 @@ ast_for_trailer(struct compiling *c, const node *n, expr_ty left_expr)
     REQ(n, trailer);
     if (TYPE(CHILD(n, 0)) == LPAR) {
         if (NCH(n) == 2)
-            return Call(left_expr, NULL, NULL, NULL, NULL, LINENO(n),
+            return Call(left_expr, NULL, NULL, LINENO(n),
                         n->n_col_offset, c->c_arena);
         else
             return ast_for_call(c, CHILD(n, 1), left_expr);
@@ -2415,15 +2488,14 @@ static expr_ty
 ast_for_call(struct compiling *c, const node *n, expr_ty func)
 {
     /*
-      arglist: (argument ',')* (argument [',']| '*' test [',' '**' test]
-               | '**' test)
-      argument: [test '='] (test) [comp_for]        # Really [keyword '='] test
+      arglist: argument (',' argument)*  [',']
+      argument: ( test [comp_for] | '*' test | test '=' test | '**' test )
     */
 
     int i, nargs, nkeywords, ngens;
+    int ndoublestars;
     asdl_seq *args;
     asdl_seq *keywords;
-    expr_ty vararg = NULL, kwarg = NULL;
 
     REQ(n, arglist);
 
@@ -2437,7 +2509,10 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                 nargs++;
             else if (TYPE(CHILD(ch, 1)) == comp_for)
                 ngens++;
+            else if (TYPE(CHILD(ch, 0)) == STAR)
+                nargs++;
             else
+                /* TYPE(CHILD(ch, 0)) == DOUBLESTAR or keyword argument */
                 nkeywords++;
         }
     }
@@ -2458,41 +2533,82 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
     keywords = _Py_asdl_seq_new(nkeywords, c->c_arena);
     if (!keywords)
         return NULL;
-    nargs = 0;
-    nkeywords = 0;
+
+    nargs = 0;  /* positional arguments + iterable argument unpackings */
+    nkeywords = 0;  /* keyword arguments + keyword argument unpackings */
+    ndoublestars = 0;  /* just keyword argument unpackings */
     for (i = 0; i < NCH(n); i++) {
         node *ch = CHILD(n, i);
         if (TYPE(ch) == argument) {
             expr_ty e;
+            node *chch = CHILD(ch, 0);
             if (NCH(ch) == 1) {
-                if (nkeywords) {
-                    ast_error(c, CHILD(ch, 0),
-                              "non-keyword arg after keyword arg");
-                    return NULL;
+                if (TYPE(chch) == star_expr) {
+                    /* an iterable argument unpacking */
+                    expr_ty starred;
+                    if (ndoublestars) {
+                        ast_error(c, chch,
+                                "iterable argument unpacking follows "
+                                "keyword argument unpacking");
+                        return NULL;
+                    }
+                    e = ast_for_expr(c, CHILD(chch, 1));
+                    if (!e)
+                        return NULL;
+                    starred = Starred(e, Load, LINENO(chch),
+                            chch->n_col_offset,
+                            c->c_arena);
+                    if (!starred)
+                        return NULL;
+                    asdl_seq_SET(args, nargs++, starred);
                 }
-                if (vararg) {
-                    ast_error(c, CHILD(ch, 0),
-                              "only named arguments may follow *expression");
-                    return NULL;
+                else {
+                    /* a positional argument */
+                    if (nkeywords) {
+                        if (ndoublestars) {
+                            ast_error(c, chch,
+                                    "positional argument follows "
+                                    "keyword argument unpacking");
+                        }
+                        else {
+                            ast_error(c, chch,
+                                    "positional argument follows "
+                                    "keyword argument");
+                        }
+                        return NULL;
+                    }
+                    e = ast_for_expr(c, chch);
+                    if (!e)
+                        return NULL;
+                    asdl_seq_SET(args, nargs++, e);
                 }
-                e = ast_for_expr(c, CHILD(ch, 0));
+            }
+            else if (TYPE(chch) == DOUBLESTAR) {
+                /* a keyword argument unpacking */
+                keyword_ty kw;
+                i++;
+                e = ast_for_expr(c, CHILD(ch, 1));
                 if (!e)
                     return NULL;
-                asdl_seq_SET(args, nargs++, e);
+                kw = keyword(NULL, e, c->c_arena);
+                asdl_seq_SET(keywords, nkeywords++, kw);
+                ndoublestars++;
             }
             else if (TYPE(CHILD(ch, 1)) == comp_for) {
+                /* the lone generator expression */
                 e = ast_for_genexp(c, ch);
                 if (!e)
                     return NULL;
                 asdl_seq_SET(args, nargs++, e);
             }
             else {
+                /* a keyword argument */
                 keyword_ty kw;
                 identifier key, tmp;
                 int k;
 
-                /* CHILD(ch, 0) is test, but must be an identifier? */
-                e = ast_for_expr(c, CHILD(ch, 0));
+                /* chch is test, but must be an identifier? */
+                e = ast_for_expr(c, chch);
                 if (!e)
                     return NULL;
                 /* f(lambda x: x[0] = 3) ends up getting parsed with
@@ -2501,19 +2617,24 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                  * then is very confusing.
                  */
                 if (e->kind == Lambda_kind) {
-                    ast_error(c, CHILD(ch, 0), "lambda cannot contain assignment");
+                    ast_error(c, chch,
+                            "lambda cannot contain assignment");
                     return NULL;
-                } else if (e->kind != Name_kind) {
-                    ast_error(c, CHILD(ch, 0), "keyword can't be an expression");
+                }
+                else if (e->kind != Name_kind) {
+                    ast_error(c, chch,
+                            "keyword can't be an expression");
                     return NULL;
-                } else if (forbidden_name(c, e->v.Name.id, ch, 1)) {
+                }
+                else if (forbidden_name(c, e->v.Name.id, ch, 1)) {
                     return NULL;
                 }
                 key = e->v.Name.id;
                 for (k = 0; k < nkeywords; k++) {
                     tmp = ((keyword_ty)asdl_seq_GET(keywords, k))->arg;
-                    if (!PyUnicode_Compare(tmp, key)) {
-                        ast_error(c, CHILD(ch, 0), "keyword argument repeated");
+                    if (tmp && !PyUnicode_Compare(tmp, key)) {
+                        ast_error(c, chch,
+                                "keyword argument repeated");
                         return NULL;
                     }
                 }
@@ -2526,21 +2647,9 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
                 asdl_seq_SET(keywords, nkeywords++, kw);
             }
         }
-        else if (TYPE(ch) == STAR) {
-            vararg = ast_for_expr(c, CHILD(n, i+1));
-            if (!vararg)
-                return NULL;
-            i++;
-        }
-        else if (TYPE(ch) == DOUBLESTAR) {
-            kwarg = ast_for_expr(c, CHILD(n, i+1));
-            if (!kwarg)
-                return NULL;
-            i++;
-        }
     }
 
-    return Call(func, args, keywords, vararg, kwarg, func->lineno, func->col_offset, c->c_arena);
+    return Call(func, args, keywords, func->lineno, func->col_offset, c->c_arena);
 }
 
 static expr_ty
@@ -3520,8 +3629,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
             return NULL;
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
-        return ClassDef(classname, NULL, NULL, NULL, NULL, s, decorator_seq,
-                        LINENO(n), n->n_col_offset, c->c_arena);
+        return ClassDef(classname, NULL, NULL, s, decorator_seq, LINENO(n),
+                        n->n_col_offset, c->c_arena);
     }
 
     if (TYPE(CHILD(n, 3)) == RPAR) { /* class NAME '(' ')' ':' suite */
@@ -3533,8 +3642,8 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
             return NULL;
         if (forbidden_name(c, classname, CHILD(n, 3), 0))
             return NULL;
-        return ClassDef(classname, NULL, NULL, NULL, NULL, s, decorator_seq,
-                        LINENO(n), n->n_col_offset, c->c_arena);
+        return ClassDef(classname, NULL, NULL, s, decorator_seq, LINENO(n),
+                        n->n_col_offset, c->c_arena);
     }
 
     /* class NAME '(' arglist ')' ':' suite */
@@ -3559,8 +3668,7 @@ ast_for_classdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     if (forbidden_name(c, classname, CHILD(n, 1), 0))
         return NULL;
 
-    return ClassDef(classname, call->v.Call.args, call->v.Call.keywords,
-                    call->v.Call.starargs, call->v.Call.kwargs, s,
+    return ClassDef(classname, call->v.Call.args, call->v.Call.keywords, s,
                     decorator_seq, LINENO(n), n->n_col_offset, c->c_arena);
 }
 

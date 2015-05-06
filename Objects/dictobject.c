@@ -3412,8 +3412,8 @@ dictviews_sub(PyObject* self, PyObject *other)
     return result;
 }
 
-static PyObject*
-dictviews_and(PyObject* self, PyObject *other)
+PyObject*
+_PyDictView_Intersect(PyObject* self, PyObject *other)
 {
     PyObject *result = PySet_New(self);
     PyObject *tmp;
@@ -3487,7 +3487,7 @@ static PyNumberMethods dictviews_as_number = {
     0,                                  /*nb_invert*/
     0,                                  /*nb_lshift*/
     0,                                  /*nb_rshift*/
-    (binaryfunc)dictviews_and,          /*nb_and*/
+    (binaryfunc)_PyDictView_Intersect,  /*nb_and*/
     (binaryfunc)dictviews_xor,          /*nb_xor*/
     (binaryfunc)dictviews_or,           /*nb_or*/
 };

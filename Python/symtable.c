@@ -1083,13 +1083,13 @@ error:
     } \
 }
 
-#define VISIT_KWONLYDEFAULTS(ST, KW_DEFAULTS) { \
+#define VISIT_SEQ_WITH_NULL(ST, TYPE, SEQ) {     \
     int i = 0; \
-    asdl_seq *seq = (KW_DEFAULTS); /* avoid variable capture */ \
+    asdl_seq *seq = (SEQ); /* avoid variable capture */ \
     for (i = 0; i < asdl_seq_LEN(seq); i++) { \
-        expr_ty elt = (expr_ty)asdl_seq_GET(seq, i); \
+        TYPE ## _ty elt = (TYPE ## _ty)asdl_seq_GET(seq, i); \
         if (!elt) continue; /* can be NULL */ \
-        if (!symtable_visit_expr((ST), elt)) \
+        if (!symtable_visit_ ## TYPE((ST), elt)) \
             VISIT_QUIT((ST), 0);             \
     } \
 }
@@ -1146,8 +1146,7 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
         if (s->v.FunctionDef.args->defaults)
             VISIT_SEQ(st, expr, s->v.FunctionDef.args->defaults);
         if (s->v.FunctionDef.args->kw_defaults)
-            VISIT_KWONLYDEFAULTS(st,
-                               s->v.FunctionDef.args->kw_defaults);
+            VISIT_SEQ_WITH_NULL(st, expr, s->v.FunctionDef.args->kw_defaults);
         if (!symtable_visit_annotations(st, s))
             VISIT_QUIT(st, 0);
         if (s->v.FunctionDef.decorator_list)
@@ -1167,10 +1166,6 @@ symtable_visit_stmt(struct symtable *st, stmt_ty s)
             VISIT_QUIT(st, 0);
         VISIT_SEQ(st, expr, s->v.ClassDef.bases);
         VISIT_SEQ(st, keyword, s->v.ClassDef.keywords);
-        if (s->v.ClassDef.starargs)
-            VISIT(st, expr, s->v.ClassDef.starargs);
-        if (s->v.ClassDef.kwargs)
-            VISIT(st, expr, s->v.ClassDef.kwargs);
         if (s->v.ClassDef.decorator_list)
             VISIT_SEQ(st, expr, s->v.ClassDef.decorator_list);
         if (!symtable_enter_block(st, s->v.ClassDef.name, ClassBlock,
@@ -1349,8 +1344,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         if (e->v.Lambda.args->defaults)
             VISIT_SEQ(st, expr, e->v.Lambda.args->defaults);
         if (e->v.Lambda.args->kw_defaults)
-            VISIT_KWONLYDEFAULTS(st,
-                                 e->v.Lambda.args->kw_defaults);
+            VISIT_SEQ_WITH_NULL(st, expr, e->v.Lambda.args->kw_defaults);
         if (!symtable_enter_block(st, lambda,
                                   FunctionBlock, (void *)e, e->lineno,
                                   e->col_offset))
@@ -1367,7 +1361,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT(st, expr, e->v.IfExp.orelse);
         break;
     case Dict_kind:
-        VISIT_SEQ(st, expr, e->v.Dict.keys);
+        VISIT_SEQ_WITH_NULL(st, expr, e->v.Dict.keys);
         VISIT_SEQ(st, expr, e->v.Dict.values);
         break;
     case Set_kind:
@@ -1405,11 +1399,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case Call_kind:
         VISIT(st, expr, e->v.Call.func);
         VISIT_SEQ(st, expr, e->v.Call.args);
-        VISIT_SEQ(st, keyword, e->v.Call.keywords);
-        if (e->v.Call.starargs)
-            VISIT(st, expr, e->v.Call.starargs);
-        if (e->v.Call.kwargs)
-            VISIT(st, expr, e->v.Call.kwargs);
+        VISIT_SEQ_WITH_NULL(st, keyword, e->v.Call.keywords);
         break;
     case Num_kind:
     case Str_kind:
