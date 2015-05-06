@@ -325,7 +325,7 @@ class _QueryDialog(Dialog):
 class _QueryInteger(_QueryDialog):
     errormessage = "Not an integer."
     def getresult(self):
-        return int(self.entry.get())
+        return self.getint(self.entry.get())
 
 def askinteger(title, prompt, **kw):
     '''get an integer from the user
@@ -344,7 +344,7 @@ def askinteger(title, prompt, **kw):
 class _QueryFloat(_QueryDialog):
     errormessage = "Not a floating point value."
     def getresult(self):
-        return float(self.entry.get())
+        return self.getdouble(self.entry.get())
 
 def askfloat(title, prompt, **kw):
     '''get a float from the user

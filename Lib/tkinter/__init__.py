@@ -355,7 +355,7 @@ class IntVar(Variable):
 
     def get(self):
         """Return the value of the variable as an integer."""
-        return getint(self._tk.globalgetvar(self._name))
+        return self._tk.getint(self._tk.globalgetvar(self._name))
 
 class DoubleVar(Variable):
     """Value holder for float variables."""
@@ -374,7 +374,7 @@ class DoubleVar(Variable):
 
     def get(self):
         """Return the value of the variable as a float."""
-        return getdouble(self._tk.globalgetvar(self._name))
+        return self._tk.getdouble(self._tk.globalgetvar(self._name))
 
 class BooleanVar(Variable):
     """Value holder for boolean variables."""
@@ -505,14 +505,26 @@ class Misc:
     def getvar(self, name='PY_VAR'):
         """Return value of Tcl variable NAME."""
         return self.tk.getvar(name)
-    getint = int
-    getdouble = float
+
+    def getint(self, s):
+        try:
+            return self.tk.getint(s)
+        except TclError as exc:
+            raise ValueError(str(exc))
+
+    def getdouble(self, s):
+        try:
+            return self.tk.getdouble(s)
+        except TclError as exc:
+            raise ValueError(str(exc))
+
     def getboolean(self, s):
         """Return a boolean value for Tcl boolean values true and false given as parameter."""
         try:
             return self.tk.getboolean(s)
         except TclError:
             raise ValueError("invalid literal for getboolean()")
+
     def focus_set(self):
         """Direct input focus to this widget.
 
@@ -778,7 +790,7 @@ class Misc:
     def winfo_atom(self, name, displayof=0):
         """Return integer which represents atom NAME."""
         args = ('winfo', 'atom') + self._displayof(displayof) + (name,)
-        return getint(self.tk.call(args))
+        return self.tk.getint(self.tk.call(args))
     def winfo_atomname(self, id, displayof=0):
         """Return name of atom with identifier ID."""
         args = ('winfo', 'atomname') \
@@ -786,7 +798,7 @@ class Misc:
         return self.tk.call(args)
     def winfo_cells(self):
         """Return number of cells in the colormap for this widget."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'cells', self._w))
     def winfo_children(self):
         """Return a list of all widgets which are children of this widget."""
@@ -817,22 +829,22 @@ class Misc:
         return self._nametowidget(name)
     def winfo_depth(self):
         """Return the number of bits per pixel."""
-        return getint(self.tk.call('winfo', 'depth', self._w))
+        return self.tk.getint(self.tk.call('winfo', 'depth', self._w))
     def winfo_exists(self):
         """Return true if this widget exists."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'exists', self._w))
     def winfo_fpixels(self, number):
         """Return the number of pixels for the given distance NUMBER
         (e.g. "3c") as float."""
-        return getdouble(self.tk.call(
+        return self.tk.getdouble(self.tk.call(
             'winfo', 'fpixels', self._w, number))
     def winfo_geometry(self):
         """Return geometry string for this widget in the form "widthxheight+X+Y"."""
         return self.tk.call('winfo', 'geometry', self._w)
     def winfo_height(self):
         """Return height of this widget."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'height', self._w))
     def winfo_id(self):
         """Return identifier ID for this widget."""
@@ -844,7 +856,7 @@ class Misc:
         return self.tk.splitlist(self.tk.call(args))
     def winfo_ismapped(self):
         """Return true if this widget is mapped."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'ismapped', self._w))
     def winfo_manager(self):
         """Return the window mananger name for this widget."""
@@ -862,11 +874,11 @@ class Misc:
         return self.tk.call(args)
     def winfo_pixels(self, number):
         """Rounded integer value of winfo_fpixels."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'pixels', self._w, number))
     def winfo_pointerx(self):
         """Return the x coordinate of the pointer on the root window."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'pointerx', self._w))
     def winfo_pointerxy(self):
         """Return a tuple of x and y coordinates of the pointer on the root window."""
@@ -874,15 +886,15 @@ class Misc:
             self.tk.call('winfo', 'pointerxy', self._w))
     def winfo_pointery(self):
         """Return the y coordinate of the pointer on the root window."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'pointery', self._w))
     def winfo_reqheight(self):
         """Return requested height of this widget."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'reqheight', self._w))
     def winfo_reqwidth(self):
         """Return requested width of this widget."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'reqwidth', self._w))
     def winfo_rgb(self, color):
         """Return tuple of decimal values for red, green, blue for
@@ -892,12 +904,12 @@ class Misc:
     def winfo_rootx(self):
         """Return x coordinate of upper left corner of this widget on the
         root window."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'rootx', self._w))
     def winfo_rooty(self):
         """Return y coordinate of upper left corner of this widget on the
         root window."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'rooty', self._w))
     def winfo_screen(self):
         """Return the screen name of this widget."""
@@ -905,27 +917,27 @@ class Misc:
     def winfo_screencells(self):
         """Return the number of the cells in the colormap of the screen
         of this widget."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'screencells', self._w))
     def winfo_screendepth(self):
         """Return the number of bits per pixel of the root window of the
         screen of this widget."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'screendepth', self._w))
     def winfo_screenheight(self):
         """Return the number of pixels of the height of the screen of this widget
         in pixel."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'screenheight', self._w))
     def winfo_screenmmheight(self):
         """Return the number of pixels of the height of the screen of
         this widget in mm."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'screenmmheight', self._w))
     def winfo_screenmmwidth(self):
         """Return the number of pixels of the width of the screen of
         this widget in mm."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'screenmmwidth', self._w))
     def winfo_screenvisual(self):
         """Return one of the strings directcolor, grayscale, pseudocolor,
@@ -935,7 +947,7 @@ class Misc:
     def winfo_screenwidth(self):
         """Return the number of pixels of the width of the screen of
         this widget in pixel."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'screenwidth', self._w))
     def winfo_server(self):
         """Return information of the X-Server of the screen of this widget in
@@ -947,7 +959,7 @@ class Misc:
             'winfo', 'toplevel', self._w))
     def winfo_viewable(self):
         """Return true if the widget and all its higher ancestors are mapped."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'viewable', self._w))
     def winfo_visual(self):
         """Return one of the strings directcolor, grayscale, pseudocolor,
@@ -979,37 +991,37 @@ class Misc:
         """Return the height of the virtual root window associated with this
         widget in pixels. If there is no virtual root window return the
         height of the screen."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'vrootheight', self._w))
     def winfo_vrootwidth(self):
         """Return the width of the virtual root window associated with this
         widget in pixel. If there is no virtual root window return the
         width of the screen."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'vrootwidth', self._w))
     def winfo_vrootx(self):
         """Return the x offset of the virtual root relative to the root
         window of the screen of this widget."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'vrootx', self._w))
     def winfo_vrooty(self):
         """Return the y offset of the virtual root relative to the root
         window of the screen of this widget."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'vrooty', self._w))
     def winfo_width(self):
         """Return the width of this widget."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'width', self._w))
     def winfo_x(self):
         """Return the x coordinate of the upper left corner of this widget
         in the parent."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'x', self._w))
     def winfo_y(self):
         """Return the y coordinate of the upper left corner of this widget
         in the parent."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('winfo', 'y', self._w))
     def update(self):
         """Enter event loop until all pending events have been processed by Tcl."""
@@ -1126,11 +1138,11 @@ class Misc:
     def _getints(self, string):
         """Internal function."""
         if string:
-            return tuple(map(getint, self.tk.splitlist(string)))
+            return tuple(map(self.tk.getint, self.tk.splitlist(string)))
     def _getdoubles(self, string):
         """Internal function."""
         if string:
-            return tuple(map(getdouble, self.tk.splitlist(string)))
+            return tuple(map(self.tk.getdouble, self.tk.splitlist(string)))
     def _getboolean(self, string):
         """Internal function."""
         if string:
@@ -1229,12 +1241,12 @@ class Misc:
         if len(args) != len(self._subst_format): return args
         getboolean = self.tk.getboolean
 
-        getint = int
+        getint = self.tk.getint
         def getint_event(s):
             """Tk changed behavior in 8.4.2, returning "??" rather more often."""
             try:
-                return int(s)
-            except ValueError:
+                return getint(s)
+            except (ValueError, TclError):
                 return s
 
         nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y, D = args
@@ -1278,7 +1290,7 @@ class Misc:
         e.y_root = getint_event(Y)
         try:
             e.delta = getint(D)
-        except ValueError:
+        except (ValueError, TclError):
             e.delta = 0
         return (e,)
     def _report_exception(self):
@@ -1403,10 +1415,10 @@ class Misc:
                 if not svalue:
                     return None
                 elif '.' in svalue:
-                    return getdouble(svalue)
+                    return self.tk.getdouble(svalue)
                 else:
-                    return getint(svalue)
-            except ValueError:
+                    return self.tk.getint(svalue)
+            except (ValueError, TclError):
                 pass
         return value
 
@@ -2284,17 +2296,17 @@ class Canvas(Widget, XView, YView):
     def canvasx(self, screenx, gridspacing=None):
         """Return the canvas x coordinate of pixel position SCREENX rounded
         to nearest multiple of GRIDSPACING units."""
-        return getdouble(self.tk.call(
+        return self.tk.getdouble(self.tk.call(
             self._w, 'canvasx', screenx, gridspacing))
     def canvasy(self, screeny, gridspacing=None):
         """Return the canvas y coordinate of pixel position SCREENY rounded
         to nearest multiple of GRIDSPACING units."""
-        return getdouble(self.tk.call(
+        return self.tk.getdouble(self.tk.call(
             self._w, 'canvasy', screeny, gridspacing))
     def coords(self, *args):
         """Return a list of coordinates for the item given in ARGS."""
         # XXX Should use _flatten on args
-        return [getdouble(x) for x in
+        return [self.tk.getdouble(x) for x in
                            self.tk.splitlist(
                    self.tk.call((self._w, 'coords') + args))]
     def _create(self, itemType, args, kw): # Args: (val, val, ..., cnf={})
@@ -2305,7 +2317,7 @@ class Canvas(Widget, XView, YView):
             args = args[:-1]
         else:
             cnf = {}
-        return getint(self.tk.call(
+        return self.tk.getint(self.tk.call(
             self._w, 'create', itemType,
             *(args + self._options(cnf, kw))))
     def create_arc(self, *args, **kw):
@@ -2389,7 +2401,7 @@ class Canvas(Widget, XView, YView):
         self.tk.call((self._w, 'icursor') + args)
     def index(self, *args):
         """Return position of cursor as integer in item specified in ARGS."""
-        return getint(self.tk.call((self._w, 'index') + args))
+        return self.tk.getint(self.tk.call((self._w, 'index') + args))
     def insert(self, *args):
         """Insert TEXT in item TAGORID at position POS. ARGS must
         be TAGORID POS TEXT."""
@@ -2515,7 +2527,7 @@ class Entry(Widget, XView):
         self.tk.call(self._w, 'icursor', index)
     def index(self, index):
         """Return position of cursor."""
-        return getint(self.tk.call(
+        return self.tk.getint(self.tk.call(
             self._w, 'index', index))
     def insert(self, index, string):
         """Insert STRING at INDEX."""
@@ -2630,13 +2642,13 @@ class Listbox(Widget, XView, YView):
         """Return index of item identified with INDEX."""
         i = self.tk.call(self._w, 'index', index)
         if i == 'none': return None
-        return getint(i)
+        return self.tk.getint(i)
     def insert(self, index, *elements):
         """Insert ELEMENTS at INDEX."""
         self.tk.call((self._w, 'insert', index) + elements)
     def nearest(self, y):
         """Get index of item which is nearest to y coordinate Y."""
-        return getint(self.tk.call(
+        return self.tk.getint(self.tk.call(
             self._w, 'nearest', y))
     def scan_mark(self, x, y):
         """Remember the current X, Y coordinates."""
@@ -2670,7 +2682,7 @@ class Listbox(Widget, XView, YView):
     select_set = selection_set
     def size(self):
         """Return the number of elements in the listbox."""
-        return getint(self.tk.call(self._w, 'size'))
+        return self.tk.getint(self.tk.call(self._w, 'size'))
     def itemcget(self, index, option):
         """Return the resource value for an ITEM and an OPTION."""
         return self.tk.call(
@@ -2772,7 +2784,7 @@ class Menu(Widget):
         """Return the index of a menu item identified by INDEX."""
         i = self.tk.call(self._w, 'index', index)
         if i == 'none': return None
-        return getint(i)
+        return self.tk.getint(i)
     def invoke(self, index):
         """Invoke a menu item identified by INDEX and execute
         the associated command."""
@@ -2789,10 +2801,10 @@ class Menu(Widget):
     def xposition(self, index): # new in Tk 8.5
         """Return the x-position of the leftmost pixel of the menu item
         at INDEX."""
-        return getint(self.tk.call(self._w, 'xposition', index))
+        return self.tk.getint(self.tk.call(self._w, 'xposition', index))
     def yposition(self, index):
         """Return the y-position of the topmost pixel of the menu item at INDEX."""
-        return getint(self.tk.call(
+        return self.tk.getint(self.tk.call(
             self._w, 'yposition', index))
 
 class Menubutton(Widget):
@@ -2848,9 +2860,9 @@ class Scale(Widget):
         """Get the current value as integer or float."""
         value = self.tk.call(self._w, 'get')
         try:
-            return getint(value)
-        except ValueError:
-            return getdouble(value)
+            return self.tk.getint(value)
+        except (ValueError, TclError):
+            return self.tk.getdouble(value)
     def set(self, value):
         """Set the value to VALUE."""
         self.tk.call(self._w, 'set', value)
@@ -2888,12 +2900,12 @@ class Scrollbar(Widget):
     def delta(self, deltax, deltay):
         """Return the fractional change of the scrollbar setting if it
         would be moved by DELTAX or DELTAY pixels."""
-        return getdouble(
+        return self.tk.getdouble(
             self.tk.call(self._w, 'delta', deltax, deltay))
     def fraction(self, x, y):
         """Return the fractional value which corresponds to a slider
         position of X,Y."""
-        return getdouble(self.tk.call(self._w, 'fraction', x, y))
+        return self.tk.getdouble(self.tk.call(self._w, 'fraction', x, y))
     def identify(self, x, y):
         """Return the element under position X,Y as one of
         "arrow1","slider","arrow2" or ""."""
@@ -3364,14 +3376,14 @@ class Image:
     config = configure
     def height(self):
         """Return the height of the image."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('image', 'height', self.name))
     def type(self):
         """Return the type of the imgage, e.g. "photo" or "bitmap"."""
         return self.tk.call('image', 'type', self.name)
     def width(self):
         """Return the width of the image."""
-        return getint(
+        return self.tk.getint(
             self.tk.call('image', 'width', self.name))
 
 class PhotoImage(Image):

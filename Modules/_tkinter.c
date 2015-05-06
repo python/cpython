@@ -1934,12 +1934,18 @@ _tkinter_tkapp_getint(TkappObject *self, PyObject *arg)
         return arg;
     }
 
-    if (!PyArg_Parse(arg, "s:getint", &s))
-        return NULL;
-    CHECK_STRING_LENGTH(s);
-    value = Tcl_NewStringObj(s, -1);
-    if (value == NULL)
-        return Tkinter_Error((PyObject *)self);
+    if (PyTclObject_Check(arg)) {
+        value = ((PyTclObject*)arg)->value;
+        Tcl_IncrRefCount(value);
+    }
+    else {
+        if (!PyArg_Parse(arg, "s:getint", &s))
+            return NULL;
+        CHECK_STRING_LENGTH(s);
+        value = Tcl_NewStringObj(s, -1);
+        if (value == NULL)
+            return Tkinter_Error((PyObject *)self);
+    }
     /* Don't use Tcl_GetInt() because it returns ambiguous result for value
        in ranges -2**32..-2**31-1 and 2**31..2**32-1 (on 32-bit platform).
 
@@ -1977,12 +1983,24 @@ _tkinter_tkapp_getdouble(TkappObject *self, PyObject *arg)
         return arg;
     }
 
+    if (PyNumber_Check(arg)) {
+        return PyNumber_Float(arg);
+    }
+
+    if (PyTclObject_Check(arg)) {
+        if (Tcl_GetDoubleFromObj(Tkapp_Interp(self),
+                                 ((PyTclObject*)arg)->value,
+                                 &v) == TCL_ERROR)
+            return Tkinter_Error((PyObject *)self);
+        return PyFloat_FromDouble(v);
+    }
+
     if (!PyArg_Parse(arg, "s:getdouble", &s))
         return NULL;
     CHECK_STRING_LENGTH(s);
     if (Tcl_GetDouble(Tkapp_Interp(self), s, &v) == TCL_ERROR)
         return Tkinter_Error((PyObject *)self);
-    return Py_BuildValue("d", v);
+    return PyFloat_FromDouble(v);
 }
 
 /*[clinic input]
