@@ -196,9 +196,9 @@ Condition
 
    .. method:: notify_all()
 
-      Wake up all threads waiting on this condition. This method acts like
-      :meth:`notify`, but wakes up all waiting threads instead of one. If the
-      calling thread has not acquired the lock when this method is called, a
+      Wake up all coroutines waiting on this condition. This method acts like
+      :meth:`notify`, but wakes up all waiting coroutines instead of one. If the
+      calling coroutine has not acquired the lock when this method is called, a
       :exc:`RuntimeError` is raised.
 
    .. method:: release()
@@ -250,7 +250,7 @@ Semaphore
    A semaphore manages an internal counter which is decremented by each
    :meth:`acquire` call and incremented by each :meth:`release` call. The
    counter can never go below zero; when :meth:`acquire` finds that it is zero,
-   it blocks, waiting until some other thread calls :meth:`release`.
+   it blocks, waiting until some other coroutine calls :meth:`release`.
 
    Semaphores also support the context management protocol.
 
