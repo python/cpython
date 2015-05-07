@@ -185,4 +185,4 @@ Examining Symbol Tables
    .. method:: get_namespace()
 
       Return the namespace bound to this name.  If more than one namespace is
-      bound, a :exc:`ValueError` is raised.
+      bound, :exc:`ValueError` is raised.
