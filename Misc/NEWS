@@ -228,6 +228,9 @@ Library
 Tests
 -----
 
+- Issue #21520: test_zipfile no longer fails if the word 'bad' appears
+  anywhere in the name of the current directory.
+
 - Issue #23799: Added test.support.start_threads() for running and
   cleaning up multiple threads.
 
