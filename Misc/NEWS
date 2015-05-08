@@ -10,6 +10,12 @@ What's New in Python 2.7.10?
 Core and Builtins
 -----------------
 
+- Issue #20274: When calling a _sqlite.Connection, it now complains if passed
+  any keyword arguments.  Previously it silently ignored them.
+
+- Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
+  METH_VARARGS methods on _sqlite.Connection.
+
 - Issue #23629: Fix the default __sizeof__ implementation for variable-sized
   objects.
 

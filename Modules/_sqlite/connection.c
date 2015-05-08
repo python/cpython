@@ -1192,6 +1192,9 @@ PyObject* pysqlite_connection_call(pysqlite_Connection* self, PyObject* args, Py
         return NULL;
     }
 
+    if (!_PyArg_NoKeywords(MODULE_NAME ".Connection()", kwargs))
+        return NULL;
+
     if (!PyArg_ParseTuple(args, "O", &sql)) {
         return NULL;
     }
@@ -1242,7 +1245,7 @@ error:
     return (PyObject*)statement;
 }
 
-PyObject* pysqlite_connection_execute(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
+PyObject* pysqlite_connection_execute(pysqlite_Connection* self, PyObject* args)
 {
     PyObject* cursor = 0;
     PyObject* result = 0;
@@ -1271,7 +1274,7 @@ error:
     return cursor;
 }
 
-PyObject* pysqlite_connection_executemany(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
+PyObject* pysqlite_connection_executemany(pysqlite_Connection* self, PyObject* args)
 {
     PyObject* cursor = 0;
     PyObject* result = 0;
@@ -1300,7 +1303,7 @@ error:
     return cursor;
 }
 
-PyObject* pysqlite_connection_executescript(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)
+PyObject* pysqlite_connection_executescript(pysqlite_Connection* self, PyObject* args)
 {
     PyObject* cursor = 0;
     PyObject* result = 0;
