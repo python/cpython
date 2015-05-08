@@ -275,7 +275,7 @@ Semaphore
 
       Returns ``True`` if semaphore can not be acquired immediately.
 
-   .. coroutinemethod:: release()
+   .. method:: release()
 
       Release a semaphore, incrementing the internal counter by one. When it
       was zero on entry and another coroutine is waiting for it to become
@@ -291,4 +291,3 @@ BoundedSemaphore
 
    This raises :exc:`ValueError` in :meth:`~Semaphore.release` if it would
    increase the value above the initial value.
-
