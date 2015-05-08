@@ -10,6 +10,12 @@ Release date: 2015-04-24
 Core and Builtins
 -----------------
 
+- Issue #20274: When calling a _sqlite.Connection, it now complains if passed
+  any keyword arguments.  Previously it silently ignored them.
+
+- Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
+  METH_VARARGS methods on _sqlite.Connection.
+
 - Issue #2292: PEP 448: Additional Unpacking Generalizations.
 
 - Issue #24096: Make warnings.warn_explicit more robust against mutation of the
