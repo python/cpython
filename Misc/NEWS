@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
+  METH_VARARGS methods on _sqlite.Connection.
+
 - Issue #24096: Make warnings.warn_explicit more robust against mutation of the
   warnings.filters list.
 
