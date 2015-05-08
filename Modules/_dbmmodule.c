@@ -274,7 +274,7 @@ static PySequenceMethods dbm_as_sequence = {
 /*[clinic input]
 _dbm.dbm.get
 
-    key: str(accept={str, robuffer}, length=True)
+    key: str(accept={str, robuffer}, zeroes=True)
     default: object(c_default="NULL") = b''
     /
 
@@ -284,7 +284,8 @@ Return the value for key if present, otherwise default.
 static PyObject *
 _dbm_dbm_get_impl(dbmobject *self, const char *key,
                   Py_ssize_clean_t key_length, PyObject *default_value)
-/*[clinic end generated code: output=b44f95eba8203d93 input=3c7c1afd9c508457]*/
+/*[clinic end generated code: output=b44f95eba8203d93 input=a3a279957f85eb6d]*/
+/*[clinic end generated code: output=4f5c0e523eaf1251 input=9402c0af8582dc69]*/
 {
     datum dbm_key, val;
 
@@ -301,7 +302,7 @@ _dbm_dbm_get_impl(dbmobject *self, const char *key,
 
 /*[clinic input]
 _dbm.dbm.setdefault
-    key: str(accept={str, robuffer}, length=True)
+    key: str(accept={str, robuffer}, zeroes=True)
     default: object(c_default="NULL") = b''
     /
 
@@ -314,7 +315,7 @@ static PyObject *
 _dbm_dbm_setdefault_impl(dbmobject *self, const char *key,
                          Py_ssize_clean_t key_length,
                          PyObject *default_value)
-/*[clinic end generated code: output=52545886cf272161 input=a66fcb7f18ee2f50]*/
+/*[clinic end generated code: output=52545886cf272161 input=bf40c48edaca01d6]*/
 {
     datum dbm_key, val;
     Py_ssize_t tmp_size;

@@ -2644,64 +2644,85 @@ class buffer: pass
 class rwbuffer: pass
 class robuffer: pass
 
-@add_legacy_c_converter('s#', accept={str, robuffer}, length=True)
-@add_legacy_c_converter('y', accept={robuffer})
-@add_legacy_c_converter('y#', accept={robuffer}, length=True)
-@add_legacy_c_converter('z', accept={str, NoneType})
-@add_legacy_c_converter('z#', accept={str, NoneType}, length=True)
-# add_legacy_c_converter not supported for es, es#, et, et#
-# because of their extra encoding argument
+def str_converter_key(types, encoding, zeroes):
+    return (frozenset(types), bool(encoding), bool(zeroes))
+
+str_converter_argument_map = {}
+
 class str_converter(CConverter):
     type = 'const char *'
     default_type = (str, Null, NoneType)
     format_unit = 's'
 
-    def converter_init(self, *, encoding=None, accept={str}, length=False, zeroes=False):
+    def converter_init(self, *, accept={str}, encoding=None, zeroes=False):
 
-        self.length = bool(length)
-
-        is_b_or_ba = accept == {bytes, bytearray}
-        is_b_or_ba_or_none = accept == {bytes, bytearray, NoneType}
-        is_str = accept == {str}
-        is_str_or_none = accept == {str, NoneType}
-        is_robuffer = accept == {robuffer}
-        is_str_or_robuffer = accept == {str, robuffer}
-        is_str_or_robuffer_or_none = accept == {str, robuffer, NoneType}
-
-        format_unit = None
-
-        if encoding:
-            self.encoding = encoding
-
-            if   is_str             and not length and not zeroes:
-                format_unit = 'es'
-            elif is_str_or_none     and     length and     zeroes:
-                format_unit = 'es#'
-            elif is_b_or_ba         and not length and not zeroes:
-                format_unit = 'et'
-            elif is_b_or_ba_or_none and     length and     zeroes:
-                format_unit = 'et#'
-
-        else:
-            if zeroes:
-                fail("str_converter: illegal combination of arguments (zeroes is only legal with an encoding)")
-
-            if is_str               and not length:
-                format_unit = 's'
-            elif is_str_or_none     and not length:
-                format_unit = 'z'
-            elif is_robuffer        and not length:
-                format_unit = 'y'
-            elif is_robuffer        and     length:
-                format_unit = 'y#'
-            elif is_str_or_robuffer and     length:
-                format_unit = 's#'
-            elif is_str_or_robuffer_or_none and     length:
-                format_unit = 'z#'
-
+        key = str_converter_key(accept, encoding, zeroes)
+        format_unit = str_converter_argument_map.get(key)
         if not format_unit:
-            fail("str_converter: illegal combination of arguments")
+            fail("str_converter: illegal combination of arguments", key)
+
         self.format_unit = format_unit
+        self.length = bool(zeroes)
+        if encoding:
+            if self.default not in (Null, None, unspecified):
+                fail("str_converter: Argument Clinic doesn't support default values for encoded strings")
+            self.encoding = encoding
+            self.type = 'char *'
+            # sorry, clinic can't support preallocated buffers
+            # for es# and et#
+            self.c_default = "NULL"
+
+    def cleanup(self):
+        if self.encoding:
+            name = ensure_legal_c_identifier(self.name)
+            return "".join(["if (", name, ")\n   PyMem_FREE(", name, ");\n"])
+
+#
+# This is the fourth or fifth rewrite of registering all the
+# crazy string converter format units.  Previous approaches hid
+# bugs--generally mismatches between the semantics of the format
+# unit and the arguments necessary to represent those semantics
+# properly.  Hopefully with this approach we'll get it 100% right.
+#
+# The r() function (short for "register") both registers the
+# mapping from arguments to format unit *and* registers the
+# legacy C converter for that format unit.
+#
+def r(format_unit, *, accept, encoding=False, zeroes=False):
+    if not encoding and format_unit != 's':
+        # add the legacy c converters here too.
+        #
+        # note: add_legacy_c_converter can't work for
+        #   es, es#, et, or et#
+        #   because of their extra encoding argument
+        #
+        # also don't add the converter for 's' because
+        # the metaclass for CConverter adds it for us.
+        kwargs = {}
+        if accept != {str}:
+            kwargs['accept'] = accept
+        if zeroes:
+            kwargs['zeroes'] = True
+        added_f = functools.partial(str_converter, **kwargs)
+        legacy_converters[format_unit] = added_f
+
+    d = str_converter_argument_map
+    key = str_converter_key(accept, encoding, zeroes)
+    if key in d:
+        sys.exit("Duplicate keys specified for str_converter_argument_map!")
+    d[key] = format_unit
+
+r('es',  encoding=True,              accept={str})
+r('es#', encoding=True, zeroes=True, accept={str})
+r('et',  encoding=True,              accept={bytes, bytearray, str})
+r('et#', encoding=True, zeroes=True, accept={bytes, bytearray, str})
+r('s',                               accept={str})
+r('s#',                 zeroes=True, accept={robuffer, str})
+r('y',                               accept={robuffer})
+r('y#',                 zeroes=True, accept={robuffer})
+r('z',                               accept={str, NoneType})
+r('z#',                 zeroes=True, accept={robuffer, str, NoneType})
+del r
 
 
 class PyBytesObject_converter(CConverter):
@@ -2719,17 +2740,17 @@ class unicode_converter(CConverter):
     default_type = (str, Null, NoneType)
     format_unit = 'U'
 
-@add_legacy_c_converter('u#', length=True)
+@add_legacy_c_converter('u#', zeroes=True)
 @add_legacy_c_converter('Z', accept={str, NoneType})
-@add_legacy_c_converter('Z#', accept={str, NoneType}, length=True)
+@add_legacy_c_converter('Z#', accept={str, NoneType}, zeroes=True)
 class Py_UNICODE_converter(CConverter):
     type = 'Py_UNICODE *'
     default_type = (str, Null, NoneType)
     format_unit = 'u'
 
-    def converter_init(self, *, accept={str}, length=False):
+    def converter_init(self, *, accept={str}, zeroes=False):
         format_unit = 'Z' if accept=={str, NoneType} else 'u'
-        if length:
+        if zeroes:
             format_unit += '#'
             self.length = True
         self.format_unit = format_unit
