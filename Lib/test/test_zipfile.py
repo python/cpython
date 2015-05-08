@@ -719,9 +719,10 @@ class PyZipFileTests(unittest.TestCase):
             self.assertTrue('SyntaxError' not in reportStr)
 
             # then check that the filter works on individual files
+            def filter(path):
+                return not os.path.basename(path).startswith("bad")
             with captured_stdout() as reportSIO, self.assertWarns(UserWarning):
-                zipfp.writepy(packagedir, filterfunc=lambda fn:
-                                                     'bad' not in fn)
+                zipfp.writepy(packagedir, filterfunc=filter)
             reportStr = reportSIO.getvalue()
             if reportStr:
                 print(reportStr)
