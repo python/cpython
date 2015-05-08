@@ -758,6 +758,14 @@ All Argument Clinic converters accept the following arguments:
 In addition, some converters accept additional arguments.  Here is a list
 of these arguments, along with their meanings:
 
+  ``accept``
+    A set of Python types (and possibly pseudo-types);
+    this restricts the allowable Python argument to values of these types.
+    (This is not a general-purpose facility; as a rule it only supports
+    specific lists of types as shown in the legacy converter table.)
+
+    To accept ``None``, add ``NoneType`` to this set.
+
   ``bitwise``
     Only supported for unsigned integers.  The native integer value of this
     Python argument will be written to the parameter without any range checking,
@@ -772,39 +780,27 @@ of these arguments, along with their meanings:
     Only supported for strings.  Specifies the encoding to use when converting
     this string from a Python str (Unicode) value into a C ``char *`` value.
 
-  ``length``
-    Only supported for strings.  If true, requests that the length of the
-    string be passed in to the impl function, just after the string parameter,
-    in a parameter named ``<parameter_name>_length``.
-
-  ``nullable``
-    Only supported for strings.  If true, this parameter may also be set to
-    ``None``, in which case the C parameter will be set to ``NULL``.
 
   ``subclass_of``
     Only supported for the ``object`` converter.  Requires that the Python
     value be a subclass of a Python type, as expressed in C.
 
-  ``types``
-    Only supported for the ``object`` (and ``self``) converter.  Specifies
+  ``type``
+    Only supported for the ``object`` and ``self`` converters.  Specifies
     the C type that will be used to declare the variable.  Default value is
     ``"PyObject *"``.
 
-  ``types``
-    A string containing a list of Python types (and possibly pseudo-types);
-    this restricts the allowable Python argument to values of these types.
-    (This is not a general-purpose facility; as a rule it only supports
-    specific lists of types as shown in the legacy converter table.)
-
   ``zeroes``
     Only supported for strings.  If true, embedded NUL bytes (``'\\0'``) are
-    permitted inside the value.
+    permitted inside the value.  The length of the string will be passed in
+    to the impl function, just after the string parameter, as a parameter named
+    ``<parameter_name>_length``.
 
 Please note, not every possible combination of arguments will work.
-Often these arguments are implemented internally by specific ``PyArg_ParseTuple``
+Usually these arguments are implemented by specific ``PyArg_ParseTuple``
 *format units*, with specific behavior.  For example, currently you cannot
-call ``str`` and pass in ``zeroes=True`` without also specifying an ``encoding``;
-although it's perfectly reasonable to think this would work, these semantics don't
+call ``unsigned_short`` without also specifying ``bitwise=True``.
+Although it's perfectly reasonable to think this would work, these semantics don't
 map to any existing format unit.  So Argument Clinic doesn't support it.  (Or, at
 least, not yet.)
 
@@ -816,13 +812,13 @@ on the right is the text you'd replace it with.
 ``'B'``     ``unsigned_char(bitwise=True)``
 ``'b'``     ``unsigned_char``
 ``'c'``     ``char``
-``'C'``     ``int(types='str')``
+``'C'``     ``int(accept={str})``
 ``'d'``     ``double``
 ``'D'``     ``Py_complex``
-``'es#'``   ``str(encoding='name_of_encoding', length=True, zeroes=True)``
 ``'es'``    ``str(encoding='name_of_encoding')``
-``'et#'``   ``str(encoding='name_of_encoding', types='bytes bytearray str', length=True)``
-``'et'``    ``str(encoding='name_of_encoding', types='bytes bytearray str')``
+``'es#'``   ``str(encoding='name_of_encoding', zeroes=True)``
+``'et'``    ``str(encoding='name_of_encoding', accept={bytes, bytearray, str})``
+``'et#'``   ``str(encoding='name_of_encoding', accept={bytes, bytearray, str}, zeroes=True)``
 ``'f'``     ``float``
 ``'h'``     ``short``
 ``'H'``     ``unsigned_short(bitwise=True)``
@@ -832,27 +828,27 @@ on the right is the text you'd replace it with.
 ``'K'``     ``unsigned_PY_LONG_LONG(bitwise=True)``
 ``'L'``     ``PY_LONG_LONG``
 ``'n'``     ``Py_ssize_t``
+``'O'``     ``object``
 ``'O!'``    ``object(subclass_of='&PySomething_Type')``
 ``'O&'``    ``object(converter='name_of_c_function')``
-``'O'``     ``object``
 ``'p'``     ``bool``
-``'s#'``    ``str(length=True)``
 ``'S'``     ``PyBytesObject``
 ``'s'``     ``str``
-``'s*'``    ``Py_buffer(types='str bytes bytearray buffer')``
-``'u#'``    ``Py_UNICODE(length=True)``
-``'u'``     ``Py_UNICODE``
+``'s#'``    ``str(zeroes=True)``
+``'s*'``    ``Py_buffer(accept={buffer, str})``
 ``'U'``     ``unicode``
-``'w*'``    ``Py_buffer(types='bytearray rwbuffer')``
-``'y#'``    ``str(types='bytes', length=True)``
+``'u'``     ``Py_UNICODE``
+``'u#'``    ``Py_UNICODE(zeroes=True)``
+``'w*'``    ``Py_buffer(accept={rwbuffer})``
 ``'Y'``     ``PyByteArrayObject``
-``'y'``     ``str(types='bytes')``
+``'y'``     ``str(accept={bytes})``
+``'y#'``    ``str(accept={robuffer}, zeroes=True)``
 ``'y*'``    ``Py_buffer``
-``'Z#'``    ``Py_UNICODE(nullable=True, length=True)``
-``'z#'``    ``str(nullable=True, length=True)``
-``'Z'``     ``Py_UNICODE(nullable=True)``
-``'z'``     ``str(nullable=True)``
-``'z*'``    ``Py_buffer(types='str bytes bytearray buffer', nullable=True)``
+``'Z'``     ``Py_UNICODE(accept={str, NoneType})``
+``'Z#'``    ``Py_UNICODE(accept={str, NoneType}, zeroes=True)``
+``'z'``     ``str(accept={str, NoneType})``
+``'z#'``    ``str(accept={str, NoneType}, zeroes=True)``
+``'z*'``    ``Py_buffer(accept={buffer, str, NoneType})``
 =========   =================================================================================
 
 As an example, here's our sample ``pickle.Pickler.dump`` using the proper

@@ -1673,7 +1673,7 @@ array_array_tostring_impl(arrayobject *self)
 /*[clinic input]
 array.array.fromunicode
 
-    ustr: Py_UNICODE(length=True)
+    ustr: Py_UNICODE(zeroes=True)
     /
 
 Extends this array with data from the unicode string ustr.
@@ -1686,7 +1686,7 @@ some other type.
 static PyObject *
 array_array_fromunicode_impl(arrayobject *self, Py_UNICODE *ustr,
                              Py_ssize_clean_t ustr_length)
-/*[clinic end generated code: output=ebb72fc16975e06d input=56bcedb5ef70139f]*/
+/*[clinic end generated code: output=ebb72fc16975e06d input=150f00566ffbca6e]*/
 {
     char typecode;
 

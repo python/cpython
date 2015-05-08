@@ -1215,7 +1215,7 @@ unicodedata_UCD_name_impl(PyObject *self, int chr, PyObject *default_value)
 unicodedata.UCD.lookup
 
     self: self
-    name: str(accept={str, robuffer}, length=True)
+    name: str(accept={str, robuffer}, zeroes=True)
     /
 
 Look up character by name.
@@ -1227,7 +1227,7 @@ corresponding character.  If not found, KeyError is raised.
 static PyObject *
 unicodedata_UCD_lookup_impl(PyObject *self, const char *name,
                             Py_ssize_clean_t name_length)
-/*[clinic end generated code: output=765cb8186788e6be input=2dfe682c2491447a]*/
+/*[clinic end generated code: output=765cb8186788e6be input=a557be0f8607a0d6]*/
 {
     Py_UCS4 code;
     unsigned int index;
