@@ -41,7 +41,7 @@ Library
 - Issue #24134: assertRaises(), assertRaisesRegex(), assertWarns() and
   assertWarnsRegex() checks are not longer successful if the callable is None.
 
-- Issue #24018: Add a collections.Generator abstract base class.
+- Issue #24018: Add a collections.abc.Generator abstract base class.
   Contributed by Stefan Behnel.
 
 - Issue #23880: Tkinter's getint() and getdouble() now support Tcl_Obj.
