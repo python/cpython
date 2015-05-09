@@ -9,7 +9,7 @@ Unit tests are in test_collections.
 from abc import ABCMeta, abstractmethod
 import sys
 
-__all__ = ["Hashable", "Iterable", "Iterator",
+__all__ = ["Hashable", "Iterable", "Iterator", "Generator",
            "Sized", "Container", "Callable",
            "Set", "MutableSet",
            "Mapping", "MutableMapping",
@@ -50,6 +50,7 @@ dict_values = type({}.values())
 dict_items = type({}.items())
 ## misc ##
 mappingproxy = type(type.__dict__)
+generator = type((lambda: (yield))())
 
 
 ### ONE-TRICK PONIES ###
@@ -123,6 +124,64 @@ Iterator.register(set_iterator)
 Iterator.register(str_iterator)
 Iterator.register(tuple_iterator)
 Iterator.register(zip_iterator)
+
+
+class Generator(Iterator):
+
+    __slots__ = ()
+
+    def __next__(self):
+        """Return the next item from the generator.
+        When exhausted, raise StopIteration.
+        """
+        return self.send(None)
+
+    @abstractmethod
+    def send(self, value):
+        """Send a value into the generator.
+        Return next yielded value or raise StopIteration.
+        """
+        raise StopIteration
+
+    @abstractmethod
+    def throw(self, typ, val=None, tb=None):
+        """Raise an exception in the generator.
+        Return next yielded value or raise StopIteration.
+        """
+        if val is None:
+            if tb is None:
+                raise typ
+            val = typ()
+        if tb is not None:
+            val = val.with_traceback(tb)
+        raise val
+
+    def close(self):
+        """Raise GeneratorExit inside generator.
+        """
+        try:
+            self.throw(GeneratorExit)
+        except (GeneratorExit, StopIteration):
+            pass
+        else:
+            raise RuntimeError("generator ignored GeneratorExit")
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Generator:
+            mro = C.__mro__
+            for method in ('__iter__', '__next__', 'send', 'throw', 'close'):
+                for base in mro:
+                    if method in base.__dict__:
+                        break
+                else:
+                    return NotImplemented
+            return True
+        return NotImplemented
+
+
+Generator.register(generator)
+
 
 class Sized(metaclass=ABCMeta):
 
