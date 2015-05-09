@@ -40,6 +40,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 :class:`Hashable`                                 ``__hash__``
 :class:`Iterable`                                 ``__iter__``
 :class:`Iterator`          :class:`Iterable`      ``__next__``            ``__iter__``
+:class:`Generator`         :class:`Iterator`      ``send``, ``throw``     ``close``, ``__iter__``, ``__next__``
 :class:`Sized`                                    ``__len__``
 :class:`Callable`                                 ``__call__``
 
@@ -101,6 +102,15 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    ABC for classes that provide the :meth:`~iterator.__iter__` and
    :meth:`~iterator.__next__` methods.  See also the definition of
    :term:`iterator`.
+
+.. class:: Generator
+
+   ABC for generator classes that implement the protocol defined in
+   :pep:`342` that extends iterators with the :meth:`~generator.send`,
+   :meth:`~generator.throw` and :meth:`~generator.close` methods.
+   See also the definition of :term:`generator`.
+
+   .. versionadded:: 3.5
 
 .. class:: Sequence
            MutableSequence
