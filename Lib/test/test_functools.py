@@ -77,9 +77,11 @@ class TestPartial:
         # exercise special code paths for no keyword args in
         # either the partial object or the caller
         p = self.partial(capture)
+        self.assertEqual(p.keywords, {})
         self.assertEqual(p(), ((), {}))
         self.assertEqual(p(a=1), ((), {'a':1}))
         p = self.partial(capture, a=1)
+        self.assertEqual(p.keywords, {'a':1})
         self.assertEqual(p(), ((), {'a':1}))
         self.assertEqual(p(b=2), ((), {'a':1, 'b':2}))
         # keyword args in the call override those in the partial object

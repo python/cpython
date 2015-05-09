@@ -102,8 +102,17 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         }
     }
     else {
-        pto->kw = pkw;
-        Py_INCREF(pkw);
+        if (pkw == Py_None) {
+            pto->kw = PyDict_New();
+            if (pto->kw == NULL) {
+                Py_DECREF(pto);
+                return NULL;
+            }
+        }
+        else {
+            pto->kw = pkw;
+            Py_INCREF(pkw);
+        }
     }
 
     pto->weakreflist = NULL;
