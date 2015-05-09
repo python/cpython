@@ -77,10 +77,17 @@ class _GeneratorContextManager(ContextDecorator):
                 self.gen.throw(type, value, traceback)
                 raise RuntimeError("generator didn't stop after throw()")
             except StopIteration as exc:
-                # Suppress the exception *unless* it's the same exception that
+                # Suppress StopIteration *unless* it's the same exception that
                 # was passed to throw().  This prevents a StopIteration
-                # raised inside the "with" statement from being suppressed
+                # raised inside the "with" statement from being suppressed.
                 return exc is not value
+            except RuntimeError as exc:
+                # Likewise, avoid suppressing if a StopIteration exception
+                # was passed to throw() and later wrapped into a RuntimeError
+                # (see PEP 479).
+                if exc.__cause__ is value:
+                    return False
+                raise
             except:
                 # only re-raise if it's *not* the exception that was
                 # passed to throw(), because __exit__() must not raise

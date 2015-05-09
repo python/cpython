@@ -62,6 +62,7 @@ typedef struct {
 #define CO_FUTURE_UNICODE_LITERALS 0x20000
 
 #define CO_FUTURE_BARRY_AS_BDFL  0x40000
+#define CO_FUTURE_GENERATOR_STOP  0x80000
 
 /* This value is found in the co_cell2arg array when the associated cell
    variable does not correspond to an argument. The maximum number of

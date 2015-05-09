@@ -27,6 +27,7 @@ typedef struct {
 #define FUTURE_PRINT_FUNCTION "print_function"
 #define FUTURE_UNICODE_LITERALS "unicode_literals"
 #define FUTURE_BARRY_AS_BDFL "barry_as_FLUFL"
+#define FUTURE_GENERATOR_STOP "generator_stop"
 
 struct _mod; /* Declare the existence of this type */
 #define PyAST_Compile(mod, s, f, ar) PyAST_CompileEx(mod, s, f, -1, ar)

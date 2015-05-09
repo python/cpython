@@ -130,6 +130,30 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
         }
         Py_CLEAR(result);
     }
+    else if (!result) {
+        /* Check for __future__ generator_stop and conditionally turn
+         * a leaking StopIteration into RuntimeError (with its cause
+         * set appropriately). */
+        if ((((PyCodeObject *)gen->gi_code)->co_flags &
+                                                CO_FUTURE_GENERATOR_STOP)
+            && PyErr_ExceptionMatches(PyExc_StopIteration))
+        {
+            PyObject *exc, *val, *val2, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+            PyErr_NormalizeException(&exc, &val, &tb);
+            if (tb != NULL)
+                PyException_SetTraceback(val, tb);
+            Py_DECREF(exc);
+            Py_XDECREF(tb);
+            PyErr_SetString(PyExc_RuntimeError,
+                "generator raised StopIteration");
+            PyErr_Fetch(&exc, &val2, &tb);
+            PyErr_NormalizeException(&exc, &val2, &tb);
+            PyException_SetCause(val2, val);
+            PyException_SetContext(val2, val);
+            PyErr_Restore(exc, val2, tb);
+        }
+    }
 
     if (!result || f->f_stacktop == NULL) {
         /* generator can't be rerun, so release the frame */
