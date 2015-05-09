@@ -310,9 +310,17 @@ The following exceptions are the exceptions that are usually raised.
    raised, and the value returned by the function is used as the
    :attr:`value` parameter to the constructor of the exception.
 
+   If a generator function defined in the presence of a ``from __future__
+   import generator_stop`` directive raises :exc:`StopIteration`, it will be
+   converted into a :exc:`RuntimeError` (retaining the :exc:`StopIteration`
+   as the new exception's cause).
+
    .. versionchanged:: 3.3
       Added ``value`` attribute and the ability for generator functions to
       use it to return a value.
+
+   .. versionchanged:: 3.5
+      Introduced the RuntimeError transformation.
 
 .. exception:: SyntaxError
 

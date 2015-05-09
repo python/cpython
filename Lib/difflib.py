@@ -1596,8 +1596,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
     # them up without doing anything else with them.
     line_pair_iterator = _line_pair_iterator()
     if context is None:
-        while True:
-            yield next(line_pair_iterator)
+        yield from line_pair_iterator
     # Handle case where user wants context differencing.  We must do some
     # storage of lines until we know for sure that they are to be yielded.
     else:

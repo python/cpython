@@ -83,6 +83,40 @@ class ContextManagerTestCase(unittest.TestCase):
             raise ZeroDivisionError(999)
         self.assertEqual(state, [1, 42, 999])
 
+    def test_contextmanager_except_stopiter(self):
+        stop_exc = StopIteration('spam')
+        @contextmanager
+        def woohoo():
+            yield
+        try:
+            with woohoo():
+                raise stop_exc
+        except Exception as ex:
+            self.assertIs(ex, stop_exc)
+        else:
+            self.fail('StopIteration was suppressed')
+
+    def test_contextmanager_except_pep479(self):
+        code = """\
+from __future__ import generator_stop
+from contextlib import contextmanager
+@contextmanager
+def woohoo():
+    yield
+"""
+        locals = {}
+        exec(code, locals, locals)
+        woohoo = locals['woohoo']
+
+        stop_exc = StopIteration('spam')
+        try:
+            with woohoo():
+                raise stop_exc
+        except Exception as ex:
+            self.assertIs(ex, stop_exc)
+        else:
+            self.fail('StopIteration was suppressed')
+
     def _create_contextmanager_attribs(self):
         def attribs(**kw):
             def decorate(func):

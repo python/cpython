@@ -87,6 +87,9 @@ language using this mechanism:
 | unicode_literals | 2.6.0a2     | 3.0          | :pep:`3112`:                                |
 |                  |             |              | *Bytes literals in Python 3000*             |
 +------------------+-------------+--------------+---------------------------------------------+
+| generator_stop   | 3.5.0b1     | 3.7          | :pep:`479`:                                 |
+|                  |             |              | *StopIteration handling inside generators*  |
++------------------+-------------+--------------+---------------------------------------------+
 
 
 .. seealso::
