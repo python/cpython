@@ -57,6 +57,8 @@ Library
 - Issue #9246: On POSIX, os.getcwd() now supports paths longer than 1025 bytes.
   Patch written by William Orr.
 
+- The keywords attribute of functools.partial is now always a dictionary.
+
 - Issues #24099, #24100, and #24101: Fix free-after-use bug in heapq's siftup
   and siftdown functions.
 
