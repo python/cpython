@@ -33,6 +33,8 @@ Core and Builtins
 
 - Issue #9951: Added a hex() method to bytes, bytearray, and memoryview.
 
+- Issue #22906: PEP 479: Change StopIteration handling inside generators.
+
 Library
 -------
 
