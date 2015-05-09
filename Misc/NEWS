@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- The keywords attribute of functools.partial is now always a dictionary.
+
 - Issue #24134: assertRaises() and assertRaisesRegexp() checks are not longer
   successful if the callable is None.
 
