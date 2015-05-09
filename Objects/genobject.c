@@ -151,6 +151,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
             PyErr_NormalizeException(&exc, &val2, &tb);
             PyException_SetCause(val2, val);
             PyException_SetContext(val2, val);
+            Py_INCREF(val);
             PyErr_Restore(exc, val2, tb);
         }
     }
