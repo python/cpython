@@ -167,6 +167,8 @@ Library
   lines from the code object, fixing an issue when a lambda function is used as
   decorator argument. Patch by Thomas Ballinger and Allison Kaptur.
 
+- The keywords attribute of functools.partial is now always a dictionary.
+
 - Issue #23811: Add missing newline to the PyCompileError error message.
   Patch by Alex Shkop.
 
