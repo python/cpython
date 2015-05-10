@@ -265,6 +265,84 @@ class ThreadedNetworkedTests(unittest.TestCase):
             self.assertRaises(imaplib.IMAP4.abort,
                               self.imap_class, *server.server_address)
 
+    class UTF8Server(SimpleIMAPHandler):
+        capabilities = 'AUTH ENABLE UTF8=ACCEPT'
+
+        def cmd_ENABLE(self, tag, args):
+            self._send_tagged(tag, 'OK', 'ENABLE successful')
+
+        def cmd_AUTHENTICATE(self, tag, args):
+            self._send_textline('+')
+            self.server.response = yield
+            self._send_tagged(tag, 'OK', 'FAKEAUTH successful')
+
+    @reap_threads
+    def test_enable_raises_error_if_not_AUTH(self):
+        with self.reaped_pair(self.UTF8Server) as (server, client):
+            self.assertFalse(client.utf8_enabled)
+            self.assertRaises(imaplib.IMAP4.error, client.enable, 'foo')
+            self.assertFalse(client.utf8_enabled)
+
+    # XXX Also need a test that enable after SELECT raises an error.
+
+    @reap_threads
+    def test_enable_raises_error_if_no_capability(self):
+        class NoEnableServer(self.UTF8Server):
+            capabilities = 'AUTH'
+        with self.reaped_pair(NoEnableServer) as (server, client):
+            self.assertRaises(imaplib.IMAP4.error, client.enable, 'foo')
+
+    @reap_threads
+    def test_enable_UTF8_raises_error_if_not_supported(self):
+        class NonUTF8Server(SimpleIMAPHandler):
+            pass
+        with self.assertRaises(imaplib.IMAP4.error):
+            with self.reaped_pair(NonUTF8Server) as (server, client):
+                typ, data = client.login('user', 'pass')
+                self.assertEqual(typ, 'OK')
+                client.enable('UTF8=ACCEPT')
+                pass
+
+    @reap_threads
+    def test_enable_UTF8_True_append(self):
+
+        class UTF8AppendServer(self.UTF8Server):
+            def cmd_APPEND(self, tag, args):
+                self._send_textline('+')
+                self.server.response = yield
+                self._send_tagged(tag, 'OK', 'okay')
+
+        with self.reaped_pair(UTF8AppendServer) as (server, client):
+            self.assertEqual(client._encoding, 'ascii')
+            code, _ = client.authenticate('MYAUTH', lambda x: b'fake')
+            self.assertEqual(code, 'OK')
+            self.assertEqual(server.response,
+                             b'ZmFrZQ==\r\n')  # b64 encoded 'fake'
+            code, _ = client.enable('UTF8=ACCEPT')
+            self.assertEqual(code, 'OK')
+            self.assertEqual(client._encoding, 'utf-8')
+            msg_string = 'Subject: üñí©öðé'
+            typ, data = client.append(
+                None, None, None, msg_string.encode('utf-8'))
+            self.assertEqual(typ, 'OK')
+            self.assertEqual(
+                server.response,
+                ('UTF8 (%s)\r\n' % msg_string).encode('utf-8')
+            )
+
+    # XXX also need a test that makes sure that the Literal and Untagged_status
+    # regexes uses unicode in UTF8 mode instead of the default ASCII.
+
+    @reap_threads
+    def test_search_disallows_charset_in_utf8_mode(self):
+        with self.reaped_pair(self.UTF8Server) as (server, client):
+            typ, _ = client.authenticate('MYAUTH', lambda x: b'fake')
+            self.assertEqual(typ, 'OK')
+            typ, _ = client.enable('UTF8=ACCEPT')
+            self.assertEqual(typ, 'OK')
+            self.assertTrue(client.utf8_enabled)
+            self.assertRaises(imaplib.IMAP4.error, client.search, 'foo', 'bar')
+
     @reap_threads
     def test_bad_auth_name(self):
 

@@ -337,6 +337,17 @@ imaplib
   automatically at the end of the block.  (Contributed by Tarek Ziadé and
   Serhiy Storchaka in :issue:`4972`.)
 
+* :mod:`imaplib` now supports :rfc:`5161`: the :meth:`~imaplib.IMAP4.enable`
+  extension), and :rfc:`6855`: utf-8 support (internationalized email, via the
+  ``UTF8=ACCEPT`` argument to :meth:`~imaplib.IMAP4.enable`).  A new attribute,
+  :attr:`~imaplib.IMAP4.utf8_enabled`, tracks whether or not :rfc:`6855`
+  support is enabled.  Milan Oberkirch, R. David Murray, and Maciej Szulik in
+  :issue:`21800`.)
+
+* :mod:`imaplib` now automatically encodes non-ASCII string usernames and
+  passwords using ``UTF8``, as recommended by the RFCs.  (Contributed by Milan
+  Oberkirch in :issue:`21800`.)
+
 imghdr
 ------
 
