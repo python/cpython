@@ -38,6 +38,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21800: imaplib now supports RFC 5161 (enable), RFC 6855
+  (utf8/internationalized email) and automatically encodes non-ASCII
+  usernames and passwords to UTF8.
+
 - Issue #24134: assertRaises(), assertRaisesRegex(), assertWarns() and
   assertWarnsRegex() checks are not longer successful if the callable is None.
 
