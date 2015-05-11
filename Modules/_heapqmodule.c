@@ -250,6 +250,71 @@ PyDoc_STRVAR(heappushpop_doc,
 from the heap. The combined action runs more efficiently than\n\
 heappush() followed by a separate call to heappop().");
 
+static Py_ssize_t
+keep_top_bit(Py_ssize_t n)
+{
+    int i = 0;
+
+    while (n > 1) {
+        i += 1;
+        n >>= 1;
+    }
+    return n << i;
+}
+
+/* Cache friendly version of heapify()
+   -----------------------------------
+
+   Build-up a heap in O(n) time by performing siftup() operations
+   on nodes whose children are already heaps.
+
+   The simplest way is to sift the nodes in reverse order from
+   n//2-1 to 0 inclusive.  The downside is that children may be
+   out of cache by the time their parent is reached.
+
+   A better way is to not wait for the children to go out of cache.
+   Once a sibling pair of child nodes have been sifted, immediately
+   sift their parent node (while the children are still in cache).
+
+   Both ways build child heaps before their parents, so both ways
+   do the exact same number of comparisons and produce exactly
+   the same heap.  The only difference is that the traversal
+   order is optimized for cache efficiency.
+*/
+
+static PyObject *
+cache_friendly_heapify(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
+{
+    Py_ssize_t i, j, m, mhalf, leftmost;
+
+    m = PyList_GET_SIZE(heap) >> 1;         /* index of first childless node */
+    leftmost = keep_top_bit(m + 1) - 1;     /* leftmost node in row of m */
+    mhalf = m >> 1;                         /* parent of first childless node */
+
+    for (i = leftmost - 1 ; i >= mhalf ; i--) {
+        j = i;
+        while (1) {
+            if (siftup_func((PyListObject *)heap, j))
+                return NULL;
+            if (!(j & 1))
+                break;
+            j >>= 1;
+        }
+    }
+
+    for (i = m - 1 ; i >= leftmost ; i--) {
+        j = i;
+        while (1) {
+            if (siftup_func((PyListObject *)heap, j))
+                return NULL;
+            if (!(j & 1))
+                break;
+            j >>= 1;
+        }
+    }
+    Py_RETURN_NONE;
+}
+
 static PyObject *
 heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 {
@@ -260,7 +325,14 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
         return NULL;
     }
 
+    /* For heaps likely to be bigger than L1 cache, we use the cache
+       friendly heapify function.  For smaller heaps that fit entirely
+       in cache, we prefer the simpler algorithm with less branching.
+    */
     n = PyList_GET_SIZE(heap);
+    if (n > 10000)
+        return cache_friendly_heapify(heap, siftup_func);
+
     /* Transform bottom-up.  The largest index there's any point to
        looking at is the largest with a child index in-range, so must
        have 2*i + 1 < n, or i < (n-1)/2.  If n is even = 2*j, this is
