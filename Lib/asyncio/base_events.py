@@ -197,6 +197,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         # exceed this duration in seconds, the slow callback/task is logged.
         self.slow_callback_duration = 0.1
         self._current_handle = None
+        self._task_factory = None
 
     def __repr__(self):
         return ('<%s running=%s closed=%s debug=%s>'
@@ -209,10 +210,31 @@ class BaseEventLoop(events.AbstractEventLoop):
         Return a task object.
         """
         self._check_closed()
-        task = tasks.Task(coro, loop=self)
-        if task._source_traceback:
-            del task._source_traceback[-1]
+        if self._task_factory is None:
+            task = tasks.Task(coro, loop=self)
+            if task._source_traceback:
+                del task._source_traceback[-1]
+        else:
+            task = self._task_factory(self, coro)
         return task
+
+    def set_task_factory(self, factory):
+        """Set a task factory that will be used by loop.create_task().
+
+        If factory is None the default task factory will be set.
+
+        If factory is a callable, it should have a signature matching
+        '(loop, coro)', where 'loop' will be a reference to the active
+        event loop, 'coro' will be a coroutine object.  The callable
+        must return a Future.
+        """
+        if factory is not None and not callable(factory):
+            raise TypeError('task factory must be a callable or None')
+        self._task_factory = factory
+
+    def get_task_factory(self):
+        """Return a task factory, or None if the default one is in use."""
+        return self._task_factory
 
     def _make_socket_transport(self, sock, protocol, waiter=None, *,
                                extra=None, server=None):
@@ -465,25 +487,25 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._write_to_self()
         return handle
 
-    def run_in_executor(self, executor, callback, *args):
-        if (coroutines.iscoroutine(callback)
-        or coroutines.iscoroutinefunction(callback)):
+    def run_in_executor(self, executor, func, *args):
+        if (coroutines.iscoroutine(func)
+        or coroutines.iscoroutinefunction(func)):
             raise TypeError("coroutines cannot be used with run_in_executor()")
         self._check_closed()
-        if isinstance(callback, events.Handle):
+        if isinstance(func, events.Handle):
             assert not args
-            assert not isinstance(callback, events.TimerHandle)
-            if callback._cancelled:
+            assert not isinstance(func, events.TimerHandle)
+            if func._cancelled:
                 f = futures.Future(loop=self)
                 f.set_result(None)
                 return f
-            callback, args = callback._callback, callback._args
+            func, args = func._callback, func._args
         if executor is None:
             executor = self._default_executor
             if executor is None:
                 executor = concurrent.futures.ThreadPoolExecutor(_MAX_WORKERS)
                 self._default_executor = executor
-        return futures.wrap_future(executor.submit(callback, *args), loop=self)
+        return futures.wrap_future(executor.submit(func, *args), loop=self)
 
     def set_default_executor(self, executor):
         self._default_executor = executor
