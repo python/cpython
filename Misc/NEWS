@@ -38,6 +38,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21795: smtpd now supports the 8BITMIME extension whenever
+  the new *decode_data* constructor argument is set to False.
+
 - Issue #21800: imaplib now supports RFC 5161 (enable), RFC 6855
   (utf8/internationalized email) and automatically encodes non-ASCII
   usernames and passwords to UTF8.
