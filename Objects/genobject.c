@@ -149,9 +149,9 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
                 "generator raised StopIteration");
             PyErr_Fetch(&exc, &val2, &tb);
             PyErr_NormalizeException(&exc, &val2, &tb);
+            Py_INCREF(val);
             PyException_SetCause(val2, val);
             PyException_SetContext(val2, val);
-            Py_INCREF(val);
             PyErr_Restore(exc, val2, tb);
         }
     }
