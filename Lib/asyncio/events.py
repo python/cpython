@@ -277,7 +277,7 @@ class AbstractEventLoop:
     def call_soon_threadsafe(self, callback, *args):
         raise NotImplementedError
 
-    def run_in_executor(self, executor, callback, *args):
+    def run_in_executor(self, executor, func, *args):
         raise NotImplementedError
 
     def set_default_executor(self, executor):
@@ -436,6 +436,14 @@ class AbstractEventLoop:
         raise NotImplementedError
 
     def remove_signal_handler(self, sig):
+        raise NotImplementedError
+
+    # Task factory.
+
+    def set_task_factory(self, factory):
+        raise NotImplementedError
+
+    def get_task_factory(self):
         raise NotImplementedError
 
     # Error handlers.

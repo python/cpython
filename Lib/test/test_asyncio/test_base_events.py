@@ -623,6 +623,42 @@ class BaseEventLoopTests(test_utils.TestCase):
             self.assertIs(type(_context['context']['exception']),
                           ZeroDivisionError)
 
+    def test_set_task_factory_invalid(self):
+        with self.assertRaisesRegex(
+            TypeError, 'task factory must be a callable or None'):
+
+            self.loop.set_task_factory(1)
+
+        self.assertIsNone(self.loop.get_task_factory())
+
+    def test_set_task_factory(self):
+        self.loop._process_events = mock.Mock()
+
+        class MyTask(asyncio.Task):
+            pass
+
+        @asyncio.coroutine
+        def coro():
+            pass
+
+        factory = lambda loop, coro: MyTask(coro, loop=loop)
+
+        self.assertIsNone(self.loop.get_task_factory())
+        self.loop.set_task_factory(factory)
+        self.assertIs(self.loop.get_task_factory(), factory)
+
+        task = self.loop.create_task(coro())
+        self.assertTrue(isinstance(task, MyTask))
+        self.loop.run_until_complete(task)
+
+        self.loop.set_task_factory(None)
+        self.assertIsNone(self.loop.get_task_factory())
+
+        task = self.loop.create_task(coro())
+        self.assertTrue(isinstance(task, asyncio.Task))
+        self.assertFalse(isinstance(task, MyTask))
+        self.loop.run_until_complete(task)
+
     def test_env_var_debug(self):
         code = '\n'.join((
             'import asyncio',
