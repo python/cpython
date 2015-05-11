@@ -315,7 +315,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._check_closed()
 
         new_task = not isinstance(future, futures.Future)
-        future = tasks.async(future, loop=self)
+        future = tasks.ensure_future(future, loop=self)
         if new_task:
             # An exception is raised if the future didn't complete, so there
             # is no need to log the "destroy pending task" message

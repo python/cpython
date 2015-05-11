@@ -488,7 +488,7 @@ class IocpProactor:
 
         future = self._register(ov, listener, finish_accept)
         coro = accept_coro(future, conn)
-        tasks.async(coro, loop=self._loop)
+        tasks.ensure_future(coro, loop=self._loop)
         return future
 
     def connect(self, conn, address):
