@@ -154,6 +154,8 @@ Core and Builtins
 
 - Issue #21354: PyCFunction_New function is exposed by python DLL again.
 
+- asyncio: New event loop APIs: set_task_factory() and get_task_factory()
+
 Library
 -------
 
