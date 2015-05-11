@@ -40,20 +40,27 @@ SMTPServer Objects
    accepted in a ``DATA`` command.  A value of ``None`` or ``0`` means no
    limit.
 
-   *enable_SMTPUTF8* determins whether the ``SMTPUTF8`` extension (as defined
-   in :RFC:`6531`) should be enabled.  The default is ``False``.  If
-   *enable_SMTPUTF* is set to ``True``, the :meth:`process_smtputf8_message`
-   method must be defined.  A :exc:`ValueError` is raised if both
-   *enable_SMTPUTF8* and *decode_data* are set to ``True`` at the same time.
+   *map* is the socket map to use for connections (an initially empty
+   dictionary is a suitable value).  If not specified the :mod:`asyncore`
+   global socket map is used.
 
-   A dictionary can be specified in *map* to avoid using a global socket map.
+   *enable_SMTPUTF8* determins whether the ``SMTPUTF8`` extension (as defined
+   in :RFC:`6531`) should be enabled.  The default is ``False``.  If set to
+   ``True``, *decode_data* must be ``False`` (otherwise an error is raised).
+   When ``True``, ``SMTPUTF8`` is accepted as a parameter to the ``MAIL``
+   command and when present is passed to :meth:`process_message` in the
+   ``kwargs['mail_options']`` list.
 
    *decode_data* specifies whether the data portion of the SMTP transaction
    should be decoded using UTF-8.  The default is ``True`` for backward
-   compatibility reasons, but will change to ``False`` in Python 3.6.  Specify
-   the keyword value explicitly to avoid the :exc:`DeprecationWarning`.
+   compatibility reasons, but will change to ``False`` in Python 3.6; specify
+   the keyword value explicitly to avoid the :exc:`DeprecationWarning`.  When
+   *decode_data* is set to ``False`` the server advertises the ``8BITMIME``
+   extension (:rfc:`6152`), accepts the ``BODY=8BITMIME`` parameter to
+   the ``MAIL`` command, and when present passes it to :meth:`process_message`
+   in the ``kwargs['mail_options']`` list.
 
-   .. method:: process_message(peer, mailfrom, rcpttos, data)
+   .. method:: process_message(peer, mailfrom, rcpttos, data, **kwargs)
 
       Raise a :exc:`NotImplementedError` exception. Override this in subclasses to
       do something useful with this message. Whatever was passed in the
@@ -67,34 +74,39 @@ SMTPServer Objects
       argument will be a unicode string.  If it is set to ``False``, it
       will be a bytes object.
 
+      *kwargs* is a dictionary containing additional information. It is empty
+      unless at least one of ``decode_data=False`` or ``enable_SMTPUTF8=True``
+      was given as an init parameter, in which case it contains the following
+      keys:
+
+          *mail_options*:
+             a list of all received parameters to the ``MAIL``
+             command (the elements are uppercase strings; example:
+             ``['BODY=8BITMIME', 'SMTPUTF8']``).
+
+          *rcpt_options*:
+             same as *mail_options* but for the ``RCPT`` command.
+             Currently no ``RCPT TO`` options are supported, so for now
+             this will always be an empty list.
+
       Return ``None`` to request a normal ``250 Ok`` response; otherwise
       return the desired response string in :RFC:`5321` format.
-
-   .. method:: process_smtputf8_message(peer, mailfrom, rcpttos, data)
-
-      Raise a :exc:`NotImplementedError` exception.  Override this in
-      subclasses to do something useful with messages when *enable_SMTPUTF8*
-      has been set to ``True`` and the SMTP client requested ``SMTPUTF8``,
-      since this method is called rather than :meth:`process_message` when the
-      client actively requests ``SMTPUTF8``.  The *data* argument will always
-      be a bytes object, and any non-``None`` return value should conform to
-      :rfc:`6531`; otherwise, the API is the same as for
-      :meth:`process_message`.
 
    .. attribute:: channel_class
 
       Override this in subclasses to use a custom :class:`SMTPChannel` for
       managing SMTP clients.
 
-   .. versionchanged:: 3.4
-      The *map* argument was added.
+   .. versionadded:: 3.4
+      The *map* constructor argument.
 
    .. versionchanged:: 3.5
       *localaddr* and *remoteaddr* may now contain IPv6 addresses.
 
    .. versionadded:: 3.5
       the *decode_data* and *enable_SMTPUTF8* constructor arguments, and the
-      :meth:`process_smtputf8_message` method.
+      *kwargs* argument to :meth:`process_message` when one or more of these is
+      specified.
 
 
 DebuggingServer Objects
