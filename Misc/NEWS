@@ -42,10 +42,6 @@ Core and Builtins
 
 - Issue #21354: PyCFunction_New function is exposed by python DLL again.
 
-- asyncio: New event loop APIs: set_task_factory() and get_task_factory().
-
-- asyncio: async() function is deprecated in favour of ensure_future().
-
 Library
 -------
 
@@ -233,6 +229,10 @@ Library
 
 - Issue #23310: Fix MagicMock's initializer to work with __methods__, just
   like configure_mock().  Patch by Kasia Jachim.
+
+- asyncio: New event loop APIs: set_task_factory() and get_task_factory().
+
+- asyncio: async() function is deprecated in favour of ensure_future().
 
 Tests
 -----
