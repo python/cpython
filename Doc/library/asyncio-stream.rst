@@ -364,7 +364,7 @@ Simple example querying HTTP headers of the URL passed on the command line::
 
     url = sys.argv[1]
     loop = asyncio.get_event_loop()
-    task = asyncio.async(print_http_headers(url))
+    task = asyncio.ensure_future(print_http_headers(url))
     loop.run_until_complete(task)
     loop.close()
 
