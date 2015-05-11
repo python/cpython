@@ -381,10 +381,13 @@ class SMTPChannel(asynchat.async_chat):
                     data.append(text)
             self.received_data = self._newline.join(data)
             args = (self.peer, self.mailfrom, self.rcpttos, self.received_data)
-            if self.require_SMTPUTF8:
-                status = self.smtp_server.process_smtputf8_message(*args)
-            else:
-                status = self.smtp_server.process_message(*args)
+            kwargs = {}
+            if not self._decode_data:
+                kwargs = {
+                    'mail_options': self.mail_options,
+                    'rcpt_options': self.rcpt_options,
+                }
+            status = self.smtp_server.process_message(*args, **kwargs)
             self._set_post_data_state()
             if not status:
                 self.push('250 OK')
@@ -419,8 +422,9 @@ class SMTPChannel(asynchat.async_chat):
         if self.data_size_limit:
             self.push('250-SIZE %s' % self.data_size_limit)
             self.command_size_limits['MAIL'] += 26
-        if self.enable_SMTPUTF8:
+        if not self._decode_data:
             self.push('250-8BITMIME')
+        if self.enable_SMTPUTF8:
             self.push('250-SMTPUTF8')
             self.command_size_limits['MAIL'] += 10
         self.push('250 HELP')
@@ -454,11 +458,15 @@ class SMTPChannel(asynchat.async_chat):
         return address.addr_spec, rest
 
     def _getparams(self, params):
-        # Return any parameters that appear to be syntactically valid according
-        # to RFC 1869, ignore all others.  (Postel rule: accept what we can.)
-        params = [param.split('=', 1) if '=' in param else (param, True)
-                  for param in params.split()]
-        return {k: v for k, v in params if k.isalnum()}
+        # Return params as dictionary. Return None if not all parameters
+        # appear to be syntactically valid according to RFC 1869.
+        result = {}
+        for param in params:
+            param, eq, value = param.partition('=')
+            if not param.isalnum() or eq and not value:
+                return None
+            result[param] = value if eq else True
+        return result
 
     def smtp_HELP(self, arg):
         if arg:
@@ -508,7 +516,7 @@ class SMTPChannel(asynchat.async_chat):
 
     def smtp_MAIL(self, arg):
         if not self.seen_greeting:
-            self.push('503 Error: send HELO first');
+            self.push('503 Error: send HELO first')
             return
         print('===> MAIL', arg, file=DEBUGSTREAM)
         syntaxerr = '501 Syntax: MAIL FROM: <address>'
@@ -528,18 +536,23 @@ class SMTPChannel(asynchat.async_chat):
         if self.mailfrom:
             self.push('503 Error: nested MAIL command')
             return
-        params = self._getparams(params.upper())
+        self.mail_options = params.upper().split()
+        params = self._getparams(self.mail_options)
         if params is None:
             self.push(syntaxerr)
             return
-        body = params.pop('BODY', '7BIT')
-        if self.enable_SMTPUTF8 and params.pop('SMTPUTF8', False):
-            if body != '8BITMIME':
-                self.push('501 Syntax: MAIL FROM: <address>'
-                          ' [BODY=8BITMIME SMTPUTF8]')
+        if not self._decode_data:
+            body = params.pop('BODY', '7BIT')
+            if body not in ['7BIT', '8BITMIME']:
+                self.push('501 Error: BODY can only be one of 7BIT, 8BITMIME')
                 return
-            else:
+        if self.enable_SMTPUTF8:
+            smtputf8 = params.pop('SMTPUTF8', False)
+            if smtputf8 is True:
                 self.require_SMTPUTF8 = True
+            elif smtputf8 is not False:
+                self.push('501 Error: SMTPUTF8 takes no arguments')
+                return
         size = params.pop('SIZE', None)
         if size:
             if not size.isdigit():
@@ -574,16 +587,16 @@ class SMTPChannel(asynchat.async_chat):
         if not address:
             self.push(syntaxerr)
             return
-        if params:
-            if self.extended_smtp:
-                params = self._getparams(params.upper())
-                if params is None:
-                    self.push(syntaxerr)
-                    return
-            else:
-                self.push(syntaxerr)
-                return
-        if params and len(params.keys()) > 0:
+        if not self.extended_smtp and params:
+            self.push(syntaxerr)
+            return
+        self.rcpt_options = params.upper().split()
+        params = self._getparams(self.rcpt_options)
+        if params is None:
+            self.push(syntaxerr)
+            return
+        # XXX currently there are no options we recognize.
+        if len(params.keys()) > 0:
             self.push('555 RCPT TO parameters not recognized or not implemented')
             return
         self.rcpttos.append(address)
@@ -667,7 +680,7 @@ class SMTPServer(asyncore.dispatcher):
                                      self._decode_data)
 
     # API for "doing something useful with the message"
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         """Override this abstract method to handle messages from the client.
 
         peer is a tuple containing (ipaddr, port) of the client that made the
@@ -685,21 +698,16 @@ class SMTPServer(asyncore.dispatcher):
         containing a `.' followed by other text has had the leading dot
         removed.
 
+        kwargs is a dictionary containing additional information. It is empty
+        unless decode_data=False or enable_SMTPUTF8=True was given as init
+        parameter, in which case ut will contain the following keys:
+            'mail_options': list of parameters to the mail command.  All
+                            elements are uppercase strings.  Example:
+                            ['BODY=8BITMIME', 'SMTPUTF8'].
+            'rcpt_options': same, for the rcpt command.
+
         This function should return None for a normal `250 Ok' response;
         otherwise, it should return the desired response string in RFC 821
-        format.
-
-        """
-        raise NotImplementedError
-
-    # API for processing messeges needing Unicode support (RFC 6531, RFC 6532).
-    def process_smtputf8_message(self, peer, mailfrom, rcpttos, data):
-        """Same as ``process_message`` but for messages for which the client
-        has sent the SMTPUTF8 parameter with the MAIL command (see the
-        enable_SMTPUTF8 parameter of the constructor).
-
-        This function should return None for a normal `250 Ok' response;
-        otherwise, it should return the desired response string in RFC 6531
         format.
 
         """
@@ -725,13 +733,13 @@ class DebuggingServer(SMTPServer):
                 line = repr(line)
             print(line)
 
-    def process_message(self, peer, mailfrom, rcpttos, data):
+    def process_message(self, peer, mailfrom, rcpttos, data, **kwargs):
         print('---------- MESSAGE FOLLOWS ----------')
-        self._print_message_content(peer, data)
-        print('------------ END MESSAGE ------------')
-
-    def process_smtputf8_message(self, peer, mailfrom, rcpttos, data):
-        print('----- SMTPUTF8 MESSAGE FOLLOWS ------')
+        if kwargs:
+            if kwargs.get('mail_options'):
+                print('mail options: %s' % kwargs['mail_options'])
+            if kwargs.get('rcpt_options'):
+                print('rcpt options: %s\n' % kwargs['rcpt_options'])
         self._print_message_content(peer, data)
         print('------------ END MESSAGE ------------')
 
