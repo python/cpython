@@ -452,7 +452,7 @@ The integer must be a decimal number in the range [0,4294967295].  Specifying
 the value 0 will lead to the same hash values as when hash randomization is
 disabled.
 .SH AUTHOR
-The Python Software Foundation: https://www.python.org/psf
+The Python Software Foundation: https://www.python.org/psf/
 .SH INTERNET RESOURCES
 Main website:  https://www.python.org/
 .br
