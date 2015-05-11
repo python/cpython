@@ -107,10 +107,10 @@ heappush(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (PyList_Append(heap, item) == -1)
+    if (PyList_Append(heap, item))
         return NULL;
 
-    if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1) == -1)
+    if (siftdown((PyListObject *)heap, 0, PyList_GET_SIZE(heap)-1))
         return NULL;
     Py_RETURN_NONE;
 }
@@ -148,7 +148,7 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
         return lastelt;
     returnitem = PyList_GET_ITEM(heap, 0);
     PyList_SET_ITEM(heap, 0, lastelt);
-    if (siftup_func((PyListObject *)heap, 0) == -1) {
+    if (siftup_func((PyListObject *)heap, 0)) {
         Py_DECREF(returnitem);
         return NULL;
     }
@@ -185,7 +185,7 @@ heapreplace_internal(PyObject *args, int siftup_func(PyListObject *, Py_ssize_t)
     returnitem = PyList_GET_ITEM(heap, 0);
     Py_INCREF(item);
     PyList_SET_ITEM(heap, 0, item);
-    if (siftup_func((PyListObject *)heap, 0) == -1) {
+    if (siftup_func((PyListObject *)heap, 0)) {
         Py_DECREF(returnitem);
         return NULL;
     }
@@ -238,7 +238,7 @@ heappushpop(PyObject *self, PyObject *args)
     returnitem = PyList_GET_ITEM(heap, 0);
     Py_INCREF(item);
     PyList_SET_ITEM(heap, 0, item);
-    if (siftup((PyListObject *)heap, 0) == -1) {
+    if (siftup((PyListObject *)heap, 0)) {
         Py_DECREF(returnitem);
         return NULL;
     }
@@ -341,7 +341,7 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
        and that's again n//2-1.
     */
     for (i=n/2-1 ; i>=0 ; i--)
-        if(siftup_func((PyListObject *)heap, i) == -1)
+        if(siftup_func((PyListObject *)heap, i))
             return NULL;
     Py_RETURN_NONE;
 }
