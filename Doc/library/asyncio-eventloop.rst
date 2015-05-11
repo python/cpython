@@ -181,6 +181,26 @@ Coroutines
 
    .. versionadded:: 3.4.2
 
+.. method:: BaseEventLoop.set_task_factory(factory)
+
+   Set a task factory that will be used by
+   :meth:`BaseEventLoop.create_task`.
+
+   If *factory* is ``None`` the default task factory will be set.
+
+   If *factory* is a *callable*, it should have a signature matching
+   ``(loop, coro)``, where *loop* will be a reference to the active
+   event loop, *coro* will be a coroutine object.  The callable
+   must return an :class:`asyncio.Future` compatible object.
+
+   .. versionadded:: 3.4.4
+
+.. method:: BaseEventLoop.get_task_factory()
+
+   Return a task factory, or ``None`` if the default one is in use.
+
+   .. versionadded:: 3.4.4
+
 
 Creating connections
 --------------------

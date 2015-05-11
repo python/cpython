@@ -296,7 +296,7 @@ Example combining a :class:`Future` and a :ref:`coroutine function
 
     loop = asyncio.get_event_loop()
     future = asyncio.Future()
-    asyncio.async(slow_operation(future))
+    asyncio.ensure_future(slow_operation(future))
     loop.run_until_complete(future)
     print(future.result())
     loop.close()
@@ -332,7 +332,7 @@ flow::
 
     loop = asyncio.get_event_loop()
     future = asyncio.Future()
-    asyncio.async(slow_operation(future))
+    asyncio.ensure_future(slow_operation(future))
     future.add_done_callback(got_result)
     try:
         loop.run_forever()
@@ -461,9 +461,9 @@ Example executing 3 tasks (A, B, C) in parallel::
 
     loop = asyncio.get_event_loop()
     tasks = [
-        asyncio.async(factorial("A", 2)),
-        asyncio.async(factorial("B", 3)),
-        asyncio.async(factorial("C", 4))]
+        asyncio.ensure_future(factorial("A", 2)),
+        asyncio.ensure_future(factorial("B", 3)),
+        asyncio.ensure_future(factorial("C", 4))]
     loop.run_until_complete(asyncio.wait(tasks))
     loop.close()
 
@@ -510,16 +510,24 @@ Task functions
 
       The futures ``f`` are not necessarily members of fs.
 
-.. function:: async(coro_or_future, \*, loop=None)
+.. function:: ensure_future(coro_or_future, \*, loop=None)
 
    Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
    a future. Return a :class:`Task` object.
 
    If the argument is a :class:`Future`, it is returned directly.
 
+   .. versionadded:: 3.4.4
+
    .. seealso::
 
       The :meth:`BaseEventLoop.create_task` method.
+
+.. function:: async(coro_or_future, \*, loop=None)
+
+   A deprecated alias to :func:`ensure_future`.
+
+   .. deprecated:: 3.4.4
 
 .. function:: gather(\*coros_or_futures, loop=None, return_exceptions=False)
 
