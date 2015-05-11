@@ -87,6 +87,10 @@ Library
 - Issue #23887: urllib.error.HTTPError now has a proper repr() representation.
   Patch by Berker Peksag.
 
+- asyncio: New event loop APIs: set_task_factory() and get_task_factory().
+
+- asyncio: async() function is deprecated in favour of ensure_future().
+
 Tests
 -----
 
@@ -153,8 +157,6 @@ Core and Builtins
   memory conditions.
 
 - Issue #21354: PyCFunction_New function is exposed by python DLL again.
-
-- asyncio: New event loop APIs: set_task_factory() and get_task_factory()
 
 Library
 -------
