@@ -504,7 +504,7 @@ class BaseEventLoopTests(test_utils.TestCase):
 
         # Test Future.__del__
         with mock.patch('asyncio.base_events.logger') as log:
-            fut = asyncio.async(zero_error_coro(), loop=self.loop)
+            fut = asyncio.ensure_future(zero_error_coro(), loop=self.loop)
             fut.add_done_callback(lambda *args: self.loop.stop())
             self.loop.run_forever()
             fut = None # Trigger Future.__del__ or futures._TracebackLogger
@@ -703,7 +703,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.set_event_loop(loop)
 
         coro = test()
-        task = asyncio.async(coro, loop=loop)
+        task = asyncio.ensure_future(coro, loop=loop)
         self.assertIsInstance(task, MyTask)
 
         # make warnings quiet
@@ -1265,7 +1265,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                          "took .* seconds$")
 
         # slow task
-        asyncio.async(stop_loop_coro(self.loop), loop=self.loop)
+        asyncio.ensure_future(stop_loop_coro(self.loop), loop=self.loop)
         self.loop.run_forever()
         fmt, *args = m_logger.warning.call_args[0]
         self.assertRegex(fmt % tuple(args),
