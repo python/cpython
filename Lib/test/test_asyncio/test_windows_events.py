@@ -37,7 +37,7 @@ class ProactorTests(test_utils.TestCase):
     def test_close(self):
         a, b = self.loop._socketpair()
         trans = self.loop._make_socket_transport(a, asyncio.Protocol())
-        f = asyncio.async(self.loop.sock_recv(b, 100))
+        f = asyncio.ensure_future(self.loop.sock_recv(b, 100))
         trans.close()
         self.loop.run_until_complete(f)
         self.assertEqual(f.result(), b'')
