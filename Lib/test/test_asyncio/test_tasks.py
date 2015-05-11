@@ -15,10 +15,15 @@ from asyncio import coroutines
 from asyncio import test_utils
 try:
     from test import support
-    from test.script_helper import assert_python_ok
 except ImportError:
     from asyncio import test_support as support
-    from asyncio.test_support import assert_python_ok
+try:
+    from test.support.script_helper import assert_python_ok
+except ImportError:
+    try:
+        from test.script_helper import assert_python_ok
+    except ImportError:
+        from asyncio.test_support import assert_python_ok
 
 
 PY34 = (sys.version_info >= (3, 4))
