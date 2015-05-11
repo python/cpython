@@ -1,6 +1,7 @@
 """Queues"""
 
-__all__ = ['Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty']
+__all__ = ['Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty',
+           'JoinableQueue']
 
 import collections
 import heapq
@@ -286,3 +287,7 @@ class LifoQueue(Queue):
 
     def _get(self):
         return self._queue.pop()
+
+
+JoinableQueue = Queue
+"""Deprecated alias for Queue."""
