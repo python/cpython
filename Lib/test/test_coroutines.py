@@ -772,13 +772,15 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
                 raise MyException
             buffer.append('unreachable')
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
         try:
             loop.run_until_complete(f())
         except MyException:
             pass
         finally:
             loop.close()
+            asyncio.set_event_loop(None)
 
         self.assertEqual(buffer, [1, 2, 'MyException'])
 
