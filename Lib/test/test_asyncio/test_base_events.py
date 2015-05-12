@@ -61,7 +61,8 @@ class BaseEventLoopTests(test_utils.TestCase):
             NotImplementedError,
             self.loop._make_write_pipe_transport, m, m)
         gen = self.loop._make_subprocess_transport(m, m, m, m, m, m, m)
-        self.assertRaises(NotImplementedError, next, iter(gen))
+        with self.assertRaises(NotImplementedError):
+            gen.send(None)
 
     def test_close(self):
         self.assertFalse(self.loop.is_closed())
