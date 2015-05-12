@@ -508,6 +508,38 @@ the original TOS1.
    Implements ``del TOS1[TOS]``.
 
 
+**Coroutines opcodes**
+
+.. opcode:: GET_AWAITABLE
+
+   Implements ``TOS = get_awaitable(TOS)``; where ``get_awaitable(o)``
+   returns ``o`` if ``o`` is a coroutine object; or resolved ``o.__await__``.
+
+
+.. opcode:: GET_AITER
+
+   Implements ``TOS = get_awaitable(TOS.__aiter__())``.  See ``GET_AWAITABLE``
+   for details about ``get_awaitable``
+
+
+.. opcode:: GET_ANEXT
+
+   Implements ``PUSH(get_awaitable(TOS.__anext__()))``.  See ``GET_AWAITABLE``
+   for details about ``get_awaitable``
+
+
+.. opcode:: BEFORE_ASYNC_WITH
+
+   Resolves ``__aenter__`` and ``__aexit__`` from the object on top of the
+   stack.  Pushes ``__aexit__`` and result of ``__aenter__()`` to the stack.
+
+
+.. opcode:: SETUP_ASYNC_WITH
+
+   Creates a new frame object.
+
+
+
 **Miscellaneous opcodes**
 
 .. opcode:: PRINT_EXPR
@@ -612,7 +644,7 @@ iterations of the loop.
    :opcode:`UNPACK_SEQUENCE`).
 
 
-.. opcode:: WITH_CLEANUP
+.. opcode:: WITH_CLEANUP_START
 
    Cleans up the stack when a :keyword:`with` statement block exits.  TOS is the
    context manager's :meth:`__exit__` bound method. Below TOS are 1--3 values
@@ -624,7 +656,13 @@ iterations of the loop.
    * (SECOND, THIRD, FOURTH) = exc_info()
 
    In the last case, ``TOS(SECOND, THIRD, FOURTH)`` is called, otherwise
-   ``TOS(None, None, None)``.  In addition, TOS is removed from the stack.
+   ``TOS(None, None, None)``.  Pushes SECOND and result of the call
+   to the stack.
+
+
+.. opcode:: WITH_CLEANUP_FINISH
+
+   Pops exception type and result of 'exit' function call from the stack.
 
    If the stack represents an exception, *and* the function call returns a
    'true' value, this information is "zapped" and replaced with a single

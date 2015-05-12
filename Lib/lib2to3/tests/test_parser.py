@@ -55,10 +55,40 @@ class TestMatrixMultiplication(GrammarTest):
 
 
 class TestYieldFrom(GrammarTest):
-    def test_matrix_multiplication_operator(self):
+    def test_yield_from(self):
         self.validate("yield from x")
         self.validate("(yield from x) + y")
         self.invalid_syntax("yield from")
+
+
+class TestAsyncAwait(GrammarTest):
+    def test_await_expr(self):
+        self.validate("""async def foo():
+                             await x
+                      """)
+
+        self.invalid_syntax("await x")
+        self.invalid_syntax("""def foo():
+                                   await x""")
+
+    def test_async_var(self):
+        self.validate("""async = 1""")
+        self.validate("""await = 1""")
+        self.validate("""def async(): pass""")
+
+    def test_async_with(self):
+        self.validate("""async def foo():
+                             async for a in b: pass""")
+
+        self.invalid_syntax("""def foo():
+                                   async for a in b: pass""")
+
+    def test_async_for(self):
+        self.validate("""async def foo():
+                             async with a: pass""")
+
+        self.invalid_syntax("""def foo():
+                                   async with a: pass""")
 
 
 class TestRaiseChanges(GrammarTest):

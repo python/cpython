@@ -63,6 +63,22 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
                          "    if (yield):\n"
                          "        yield x\n")
 
+    def test_await_statement(self):
+        self.check_suite("async def f():\n await smth()")
+        self.check_suite("async def f():\n foo = await smth()")
+        self.check_suite("async def f():\n foo, bar = await smth()")
+        self.check_suite("async def f():\n (await smth())")
+        self.check_suite("async def f():\n foo((await smth()))")
+        self.check_suite("async def f():\n await foo(); return 42")
+
+    def test_async_with_statement(self):
+        self.check_suite("async def f():\n async with 1: pass")
+        self.check_suite("async def f():\n async with a as b, c as d: pass")
+
+    def test_async_for_statement(self):
+        self.check_suite("async def f():\n async for i in (): pass")
+        self.check_suite("async def f():\n async for i, b in (): pass")
+
     def test_nonlocal_statement(self):
         self.check_suite("def f():\n"
                          "    x = 0\n"

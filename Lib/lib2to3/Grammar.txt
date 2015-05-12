@@ -33,7 +33,8 @@ eval_input: testlist NEWLINE* ENDMARKER
 
 decorator: '@' dotted_name [ '(' [arglist] ')' ] NEWLINE
 decorators: decorator+
-decorated: decorators (classdef | funcdef)
+decorated: decorators (classdef | funcdef | async_funcdef)
+async_funcdef: ASYNC funcdef
 funcdef: 'def' NAME parameters ['->' test] ':' suite
 parameters: '(' [typedargslist] ')'
 typedargslist: ((tfpdef ['=' test] ',')*
@@ -82,7 +83,8 @@ global_stmt: ('global' | 'nonlocal') NAME (',' NAME)*
 exec_stmt: 'exec' expr ['in' test [',' test]]
 assert_stmt: 'assert' test [',' test]
 
-compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated
+compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt | with_stmt | funcdef | classdef | decorated | async_stmt
+async_stmt: ASYNC (funcdef | with_stmt | for_stmt)
 if_stmt: 'if' test ':' suite ('elif' test ':' suite)* ['else' ':' suite]
 while_stmt: 'while' test ':' suite ['else' ':' suite]
 for_stmt: 'for' exprlist 'in' testlist ':' suite ['else' ':' suite]
@@ -121,7 +123,7 @@ shift_expr: arith_expr (('<<'|'>>') arith_expr)*
 arith_expr: term (('+'|'-') term)*
 term: factor (('*'|'@'|'/'|'%'|'//') factor)*
 factor: ('+'|'-'|'~') factor | power
-power: atom trailer* ['**' factor]
+power: [AWAIT] atom trailer* ['**' factor]
 atom: ('(' [yield_expr|testlist_gexp] ')' |
        '[' [listmaker] ']' |
        '{' [dictsetmaker] '}' |

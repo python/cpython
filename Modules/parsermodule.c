@@ -1041,6 +1041,8 @@ VALIDATER(testlist_comp);       VALIDATER(yield_expr);
 VALIDATER(or_test);
 VALIDATER(test_nocond);         VALIDATER(lambdef_nocond);
 VALIDATER(yield_arg);
+VALIDATER(async_funcdef);       VALIDATER(async_stmt);
+VALIDATER(atom_expr);
 
 #undef VALIDATER
 
@@ -1608,6 +1610,7 @@ validate_compound_stmt(node *tree)
           || (ntype == try_stmt)
           || (ntype == with_stmt)
           || (ntype == funcdef)
+          || (ntype == async_stmt)
           || (ntype == classdef)
           || (ntype == decorated))
         res = validate_node(tree);
@@ -2440,27 +2443,60 @@ validate_factor(node *tree)
 
 /*  power:
  *
- *  power: atom trailer* ('**' factor)*
+ *  power: atom_expr trailer* ['**' factor]
  */
 static int
 validate_power(node *tree)
 {
-    int pos = 1;
     int nch = NCH(tree);
     int res = (validate_ntype(tree, power) && (nch >= 1)
-               && validate_atom(CHILD(tree, 0)));
+               && validate_atom_expr(CHILD(tree, 0)));
 
-    while (res && (pos < nch) && (TYPE(CHILD(tree, pos)) == trailer))
-        res = validate_trailer(CHILD(tree, pos++));
-    if (res && (pos < nch)) {
-        if (!is_even(nch - pos)) {
+    if (nch > 1) {
+        if (nch != 3) {
             err_string("illegal number of nodes for 'power'");
             return (0);
         }
-        for ( ; res && (pos < (nch - 1)); pos += 2)
-            res = (validate_doublestar(CHILD(tree, pos))
-                   && validate_factor(CHILD(tree, pos + 1)));
+        res = (validate_doublestar(CHILD(tree, 1))
+               && validate_factor(CHILD(tree, 2)));
     }
+
+    return (res);
+}
+
+
+/*  atom_expr:
+ *
+ *  atom_expr: [AWAIT] atom trailer*
+ */
+static int
+validate_atom_expr(node *tree)
+{
+    int start = 0;
+    int nch = NCH(tree);
+    int res;
+    int pos;
+
+    res = validate_ntype(tree, atom_expr) && (nch >= 1);
+    if (!res) {
+        return (res);
+    }
+
+    if (TYPE(CHILD(tree, 0)) == AWAIT) {
+        start = 1;
+        if (nch < 2) {
+            err_string("illegal number of nodes for 'atom_expr'");
+            return (0);
+        }
+    }
+
+    res = validate_atom(CHILD(tree, start));
+    if (res) {
+        pos = start + 1;
+        while (res && (pos < nch) && (TYPE(CHILD(tree, pos)) == trailer))
+            res = validate_trailer(CHILD(tree, pos++));
+    }
+
     return (res);
 }
 
@@ -2482,9 +2518,9 @@ validate_atom(node *tree)
 
             if (res && (nch == 3)) {
                 if (TYPE(CHILD(tree, 1))==yield_expr)
-                    res = validate_yield_expr(CHILD(tree, 1));
+                        res = validate_yield_expr(CHILD(tree, 1));
                 else
-                    res = validate_testlist_comp(CHILD(tree, 1));
+                        res = validate_testlist_comp(CHILD(tree, 1));
             }
             break;
           case LSQB:
@@ -2657,6 +2693,55 @@ validate_funcdef(node *tree)
     }
     return res;
 }
+
+/* async_funcdef: ASYNC funcdef */
+
+static int
+validate_async_funcdef(node *tree)
+{
+    int nch = NCH(tree);
+    int res = validate_ntype(tree, async_funcdef);
+    if (res) {
+        if (nch == 2) {
+            res = (validate_ntype(CHILD(tree, 0), ASYNC)
+                   && validate_funcdef(CHILD(tree, 1)));
+        }
+        else {
+            res = 0;
+            err_string("illegal number of children for async_funcdef");
+        }
+    }
+    return res;
+}
+
+
+/* async_stmt: ASYNC (funcdef | with_stmt | for_stmt) */
+
+static int
+validate_async_stmt(node *tree)
+{
+    int nch = NCH(tree);
+    int res = (validate_ntype(tree, async_stmt)
+                && validate_ntype(CHILD(tree, 0), ASYNC));
+
+    if (nch != 2) {
+        res = 0;
+        err_string("illegal number of children for async_stmt");
+    } else {
+        if (TYPE(CHILD(tree, 1)) == funcdef) {
+            res = validate_funcdef(CHILD(tree, 1));
+        }
+        else if (TYPE(CHILD(tree, 1)) == with_stmt) {
+            res = validate_with_stmt(CHILD(tree, 1));
+        }
+        else if (TYPE(CHILD(tree, 1)) == for_stmt) {
+            res = validate_for(CHILD(tree, 1));
+        }
+    }
+
+    return res;
+}
+
 
 
 /* decorated
@@ -3085,6 +3170,12 @@ validate_node(node *tree)
             /*
              *  Definition nodes.
              */
+          case async_funcdef:
+            res = validate_async_funcdef(tree);
+            break;
+          case async_stmt:
+            res = validate_async_stmt(tree);
+            break;
           case funcdef:
             res = validate_funcdef(tree);
             break;
