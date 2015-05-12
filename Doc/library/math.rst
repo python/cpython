@@ -107,6 +107,8 @@ Number-theoretic and representation functions
    positive integer that divides both *a* and *b*.  ``gcd(0, 0)`` returns
    ``0``.
 
+   .. versionadded:: 3.5
+
 
 .. function:: isfinite(x)
 
