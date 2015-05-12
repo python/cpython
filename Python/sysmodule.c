@@ -655,12 +655,10 @@ sys_set_coroutine_wrapper(PyObject *self, PyObject *wrapper)
                          Py_TYPE(wrapper)->tp_name);
             return NULL;
         }
-
         PyEval_SetCoroutineWrapper(wrapper);
     }
     else
         PyEval_SetCoroutineWrapper(NULL);
-    Py_INCREF(Py_None);
     Py_RETURN_NONE;
 }
 
