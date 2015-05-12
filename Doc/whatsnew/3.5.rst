@@ -879,3 +879,6 @@ Changes in the C API
   introspection, a deprecation warning now is raised for builtin type without
   the :attr:`__module__` attribute.  Would be an AttributeError in future.
   (:issue:`20204`)
+
+* As part of PEP 492 implementation, ``tp_reserved`` slot of
+  ``PyTypeObject`` was replaced with ``tp_as_async`` slot.
