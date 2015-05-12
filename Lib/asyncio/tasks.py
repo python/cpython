@@ -11,6 +11,7 @@ import functools
 import inspect
 import linecache
 import sys
+import types
 import traceback
 import warnings
 import weakref
@@ -73,7 +74,10 @@ class Task(futures.Future):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
-        self._coro = iter(coro)  # Use the iterator just in case.
+        if coro.__class__ is types.GeneratorType:
+            self._coro = coro
+        else:
+            self._coro = iter(coro)  # Use the iterator just in case.
         self._fut_waiter = None
         self._must_cancel = False
         self._loop.call_soon(self._step)
@@ -236,7 +240,7 @@ class Task(futures.Future):
             elif value is not None:
                 result = coro.send(value)
             else:
-                result = next(coro)
+                result = coro.send(None)
         except StopIteration as exc:
             self.set_result(exc.value)
         except futures.CancelledError as exc:
