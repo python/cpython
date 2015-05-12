@@ -198,6 +198,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self.slow_callback_duration = 0.1
         self._current_handle = None
         self._task_factory = None
+        self._coroutine_wrapper_set = False
 
     def __repr__(self):
         return ('<%s running=%s closed=%s debug=%s>'
@@ -291,6 +292,7 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._check_closed()
         if self.is_running():
             raise RuntimeError('Event loop is running.')
+        self._set_coroutine_wrapper(self._debug)
         self._thread_id = threading.get_ident()
         try:
             while True:
@@ -300,6 +302,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                     break
         finally:
             self._thread_id = None
+            self._set_coroutine_wrapper(False)
 
     def run_until_complete(self, future):
         """Run until the Future is done.
@@ -360,18 +363,13 @@ class BaseEventLoop(events.AbstractEventLoop):
             return
         if self._debug:
             logger.debug("Close %r", self)
-        try:
-            self._closed = True
-            self._ready.clear()
-            self._scheduled.clear()
-            executor = self._default_executor
-            if executor is not None:
-                self._default_executor = None
-                executor.shutdown(wait=False)
-        finally:
-            # It is important to unregister "sys.coroutine_wrapper"
-            # if it was registered.
-            self.set_debug(False)
+        self._closed = True
+        self._ready.clear()
+        self._scheduled.clear()
+        executor = self._default_executor
+        if executor is not None:
+            self._default_executor = None
+            executor.shutdown(wait=False)
 
     def is_closed(self):
         """Returns True if the event loop was closed."""
@@ -1199,32 +1197,44 @@ class BaseEventLoop(events.AbstractEventLoop):
                 handle._run()
         handle = None  # Needed to break cycles when an exception occurs.
 
+    def _set_coroutine_wrapper(self, enabled):
+        try:
+            set_wrapper = sys.set_coroutine_wrapper
+            get_wrapper = sys.get_coroutine_wrapper
+        except AttributeError:
+            return
+
+        enabled = bool(enabled)
+        if self._coroutine_wrapper_set is enabled:
+            return
+
+        wrapper = coroutines.debug_wrapper
+        current_wrapper = get_wrapper()
+
+        if enabled:
+            if current_wrapper not in (None, wrapper):
+                warnings.warn(
+                    "loop.set_debug(True): cannot set debug coroutine "
+                    "wrapper; another wrapper is already set %r" %
+                    current_wrapper, RuntimeWarning)
+            else:
+                set_wrapper(wrapper)
+                self._coroutine_wrapper_set = True
+        else:
+            if current_wrapper not in (None, wrapper):
+                warnings.warn(
+                    "loop.set_debug(False): cannot unset debug coroutine "
+                    "wrapper; another wrapper was set %r" %
+                    current_wrapper, RuntimeWarning)
+            else:
+                set_wrapper(None)
+                self._coroutine_wrapper_set = False
+
     def get_debug(self):
         return self._debug
 
     def set_debug(self, enabled):
         self._debug = enabled
-        wrapper = coroutines.debug_wrapper
 
-        try:
-            set_wrapper = sys.set_coroutine_wrapper
-        except AttributeError:
-            pass
-        else:
-            current_wrapper = sys.get_coroutine_wrapper()
-            if enabled:
-                if current_wrapper not in (None, wrapper):
-                    warnings.warn(
-                        "loop.set_debug(True): cannot set debug coroutine "
-                        "wrapper; another wrapper is already set %r" %
-                        current_wrapper, RuntimeWarning)
-                else:
-                    set_wrapper(wrapper)
-            else:
-                if current_wrapper not in (None, wrapper):
-                    warnings.warn(
-                        "loop.set_debug(False): cannot unset debug coroutine "
-                        "wrapper; another wrapper was set %r" %
-                        current_wrapper, RuntimeWarning)
-                else:
-                    set_wrapper(None)
+        if self.is_running():
+            self._set_coroutine_wrapper(enabled)
