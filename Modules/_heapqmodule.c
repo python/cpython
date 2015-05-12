@@ -138,7 +138,7 @@ heappop_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
 
     lastelt = PyList_GET_ITEM(heap, n-1) ;
     Py_INCREF(lastelt);
-    if (PyList_SetSlice(heap, n-1, n, NULL) < 0) {
+    if (PyList_SetSlice(heap, n-1, n, NULL)) {
         Py_DECREF(lastelt);
         return NULL;
     }
@@ -177,7 +177,7 @@ heapreplace_internal(PyObject *args, int siftup_func(PyListObject *, Py_ssize_t)
         return NULL;
     }
 
-    if (PyList_GET_SIZE(heap) < 1) {
+    if (PyList_GET_SIZE(heap) == 0) {
         PyErr_SetString(PyExc_IndexError, "index out of range");
         return NULL;
     }
@@ -222,7 +222,7 @@ heappushpop(PyObject *self, PyObject *args)
         return NULL;
     }
 
-    if (PyList_GET_SIZE(heap) < 1) {
+    if (PyList_GET_SIZE(heap) == 0) {
         Py_INCREF(item);
         return item;
     }
@@ -340,8 +340,8 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
        n is odd = 2*j+1, this is (2*j+1-1)/2 = j so j-1 is the largest,
        and that's again n//2-1.
     */
-    for (i=n/2-1 ; i>=0 ; i--)
-        if(siftup_func((PyListObject *)heap, i))
+    for (i = n/2 - 1 ; i >= 0 ; i--)
+        if (siftup_func((PyListObject *)heap, i))
             return NULL;
     Py_RETURN_NONE;
 }
