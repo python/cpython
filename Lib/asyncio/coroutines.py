@@ -14,6 +14,9 @@ from . import futures
 from .log import logger
 
 
+_PY35 = sys.version_info >= (3, 5)
+
+
 # Opcode of "yield from" instruction
 _YIELD_FROM = opcode.opmap['YIELD_FROM']
 
@@ -28,6 +31,27 @@ _YIELD_FROM = opcode.opmap['YIELD_FROM']
 # when _DEBUG is true.
 _DEBUG = (not sys.flags.ignore_environment
           and bool(os.environ.get('PYTHONASYNCIODEBUG')))
+
+
+try:
+    types.coroutine
+except AttributeError:
+    native_coroutine_support = False
+else:
+    native_coroutine_support = True
+
+try:
+    _iscoroutinefunction = inspect.iscoroutinefunction
+except AttributeError:
+    _iscoroutinefunction = lambda func: False
+
+try:
+    inspect.CO_COROUTINE
+except AttributeError:
+    _is_native_coro_code = lambda code: False
+else:
+    _is_native_coro_code = lambda code: (code.co_flags &
+                                         inspect.CO_COROUTINE)
 
 
 # Check for CPython issue #21209
@@ -54,16 +78,27 @@ _YIELD_FROM_BUG = has_yield_from_bug()
 del has_yield_from_bug
 
 
+def debug_wrapper(gen):
+    # This function is called from 'sys.set_coroutine_wrapper'.
+    # We only wrap here coroutines defined via 'async def' syntax.
+    # Generator-based coroutines are wrapped in @coroutine
+    # decorator.
+    if _is_native_coro_code(gen.gi_code):
+        return CoroWrapper(gen, None)
+    else:
+        return gen
+
+
 class CoroWrapper:
     # Wrapper for coroutine object in _DEBUG mode.
 
-    def __init__(self, gen, func):
-        assert inspect.isgenerator(gen), gen
+    def __init__(self, gen, func=None):
+        assert inspect.isgenerator(gen) or inspect.iscoroutine(gen), gen
         self.gen = gen
-        self.func = func
+        self.func = func # Used to unwrap @coroutine decorator
         self._source_traceback = traceback.extract_stack(sys._getframe(1))
-        # __name__, __qualname__, __doc__ attributes are set by the coroutine()
-        # decorator
+        self.__name__ = getattr(gen, '__name__', None)
+        self.__qualname__ = getattr(gen, '__qualname__', None)
 
     def __repr__(self):
         coro_repr = _format_coroutine(self)
@@ -74,6 +109,9 @@ class CoroWrapper:
 
     def __iter__(self):
         return self
+
+    if _PY35:
+        __await__ = __iter__ # make compatible with 'await' expression
 
     def __next__(self):
         return next(self.gen)
@@ -133,6 +171,14 @@ def coroutine(func):
     If the coroutine is not yielded from before it is destroyed,
     an error message is logged.
     """
+    is_coroutine = _iscoroutinefunction(func)
+    if is_coroutine and _is_native_coro_code(func.__code__):
+        # In Python 3.5 that's all we need to do for coroutines
+        # defiend with "async def".
+        # Wrapping in CoroWrapper will happen via
+        # 'sys.set_coroutine_wrapper' function.
+        return func
+
     if inspect.isgeneratorfunction(func):
         coro = func
     else:
@@ -144,18 +190,22 @@ def coroutine(func):
             return res
 
     if not _DEBUG:
-        wrapper = coro
+        if native_coroutine_support:
+            wrapper = types.coroutine(coro)
+        else:
+            wrapper = coro
     else:
         @functools.wraps(func)
         def wrapper(*args, **kwds):
-            w = CoroWrapper(coro(*args, **kwds), func)
+            w = CoroWrapper(coro(*args, **kwds), func=func)
             if w._source_traceback:
                 del w._source_traceback[-1]
-            if hasattr(func, '__name__'):
-                w.__name__ = func.__name__
-            if hasattr(func, '__qualname__'):
-                w.__qualname__ = func.__qualname__
-            w.__doc__ = func.__doc__
+            # Python < 3.5 does not implement __qualname__
+            # on generator objects, so we set it manually.
+            # We use getattr as some callables (such as
+            # functools.partial may lack __qualname__).
+            w.__name__ = getattr(func, '__name__', None)
+            w.__qualname__ = getattr(func, '__qualname__', None)
             return w
 
     wrapper._is_coroutine = True  # For iscoroutinefunction().
@@ -164,7 +214,8 @@ def coroutine(func):
 
 def iscoroutinefunction(func):
     """Return True if func is a decorated coroutine function."""
-    return getattr(func, '_is_coroutine', False)
+    return (getattr(func, '_is_coroutine', False) or
+            _iscoroutinefunction(func))
 
 
 _COROUTINE_TYPES = (types.GeneratorType, CoroWrapper)
