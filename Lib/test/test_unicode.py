@@ -2081,7 +2081,8 @@ class UnicodeTest(string_tests.CommonTest,
             'cp863', 'cp865', 'cp866', 'cp1125',
             'iso8859_10', 'iso8859_13', 'iso8859_14', 'iso8859_15',
             'iso8859_2', 'iso8859_3', 'iso8859_4', 'iso8859_5', 'iso8859_6',
-            'iso8859_7', 'iso8859_9', 'koi8_r', 'kz1048', 'latin_1',
+            'iso8859_7', 'iso8859_9',
+            'koi8_r', 'koi8_t', 'koi8_u', 'kz1048', 'latin_1',
             'mac_cyrillic', 'mac_latin2',
 
             'cp1250', 'cp1251', 'cp1252', 'cp1253', 'cp1254', 'cp1255',
@@ -2109,14 +2110,14 @@ class UnicodeTest(string_tests.CommonTest,
             'cp863', 'cp865', 'cp866', 'cp1125',
             'iso8859_10', 'iso8859_13', 'iso8859_14', 'iso8859_15',
             'iso8859_2', 'iso8859_4', 'iso8859_5',
-            'iso8859_9', 'koi8_r', 'latin_1',
+            'iso8859_9', 'koi8_r', 'koi8_u', 'latin_1',
             'mac_cyrillic', 'mac_latin2',
 
             ### These have undefined mappings:
             #'cp1250', 'cp1251', 'cp1252', 'cp1253', 'cp1254', 'cp1255',
             #'cp1256', 'cp1257', 'cp1258',
             #'cp424', 'cp856', 'cp857', 'cp864', 'cp869', 'cp874',
-            #'iso8859_3', 'iso8859_6', 'iso8859_7', 'kz1048',
+            #'iso8859_3', 'iso8859_6', 'iso8859_7', 'koi8_t', 'kz1048',
             #'mac_greek', 'mac_iceland','mac_roman', 'mac_turkish',
 
             ### These fail the round-trip:

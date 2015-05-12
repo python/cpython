@@ -42,6 +42,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22681: Added support for the koi8_t encoding.
+
 - Issue #22682: Added support for the kz1048 encoding.
 
 - Issue #23796: peak and read1 methods of BufferedReader now raise ValueError

@@ -699,6 +699,7 @@ locale_encoding_alias = {
     'euc_kr':                       'eucKR',
     'utf_8':                        'UTF-8',
     'koi8_r':                       'KOI8-R',
+    'koi8_t':                       'KOI8-T',
     'koi8_u':                       'KOI8-U',
     'kz1048':                       'RK1048',
     'cp1251':                       'CP1251',

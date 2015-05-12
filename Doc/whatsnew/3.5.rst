@@ -234,6 +234,9 @@ Some smaller changes made to the core Python language are:
 * New Kazakh :ref:`codec <standard-encodings>` ``kz1048``.  (Contributed by
   Serhiy Storchaka in :issue:`22682`.)
 
+* New Tajik :ref:`codec <standard-encodings>` ``koi8_t``.  (Contributed by
+  Serhiy Storchaka in :issue:`22681`.)
+
 
 New Modules
 ===========
