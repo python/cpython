@@ -3748,62 +3748,53 @@ os_listdir_impl(PyModuleDef *module, path_t *path)
 
 #ifdef MS_WINDOWS
 /* A helper function for abspath on win32 */
-/* AC 3.5: probably just convert to using path converter */
-static PyObject *
-posix__getfullpathname(PyObject *self, PyObject *args)
-{
-    const char *path;
-    char outbuf[MAX_PATH];
-    char *temp;
-    PyObject *po;
+/*[clinic input]
+os._getfullpathname
 
-    if (PyArg_ParseTuple(args, "U|:_getfullpathname", &po))
+    path: path_t
+    /
+
+[clinic start generated code]*/
+
+static PyObject *
+os__getfullpathname_impl(PyModuleDef *module, path_t *path)
+/*[clinic end generated code: output=b90b1f103b08773f input=332ed537c29d0a3e]*/
+{
+    if (!path->narrow)
     {
-        wchar_t *wpath;
         wchar_t woutbuf[MAX_PATH], *woutbufp = woutbuf;
         wchar_t *wtemp;
         DWORD result;
         PyObject *v;
 
-        wpath = PyUnicode_AsUnicode(po);
-        if (wpath == NULL)
-            return NULL;
-        result = GetFullPathNameW(wpath,
+        result = GetFullPathNameW(path->wide,
                                   Py_ARRAY_LENGTH(woutbuf),
                                   woutbuf, &wtemp);
         if (result > Py_ARRAY_LENGTH(woutbuf)) {
             woutbufp = PyMem_New(wchar_t, result);
             if (!woutbufp)
                 return PyErr_NoMemory();
-            result = GetFullPathNameW(wpath, result, woutbufp, &wtemp);
+            result = GetFullPathNameW(path->wide, result, woutbufp, &wtemp);
         }
         if (result)
             v = PyUnicode_FromWideChar(woutbufp, wcslen(woutbufp));
         else
-            v = win32_error_object("GetFullPathNameW", po);
+            v = win32_error_object("GetFullPathNameW", path->object);
         if (woutbufp != woutbuf)
             PyMem_Free(woutbufp);
         return v;
     }
-    /* Drop the argument parsing error as narrow strings
-       are also valid. */
-    PyErr_Clear();
+    else {
+        char outbuf[MAX_PATH];
+        char *temp;
 
-    if (!PyArg_ParseTuple (args, "y:_getfullpathname",
-                           &path))
-        return NULL;
-    if (win32_warn_bytes_api())
-        return NULL;
-    if (!GetFullPathName(path, Py_ARRAY_LENGTH(outbuf),
-                         outbuf, &temp)) {
-        win32_error("GetFullPathName", path);
-        return NULL;
+        if (!GetFullPathName(path->narrow, Py_ARRAY_LENGTH(outbuf),
+                             outbuf, &temp)) {
+            win32_error_object("GetFullPathName", path->object);
+            return NULL;
+        }
+        return PyBytes_FromString(outbuf);
     }
-    if (PyUnicode_Check(PyTuple_GetItem(args, 0))) {
-        return PyUnicode_Decode(outbuf, strlen(outbuf),
-                                Py_FileSystemDefaultEncoding, NULL);
-    }
-    return PyBytes_FromString(outbuf);
 }
 
 
@@ -3872,37 +3863,28 @@ os__getfinalpathname_impl(PyModuleDef *module, PyObject *path)
 PyDoc_STRVAR(posix__isdir__doc__,
 "Return true if the pathname refers to an existing directory.");
 
-/* AC 3.5: convert using path converter */
+/*[clinic input]
+os._isdir
+
+    path: path_t
+    /
+
+[clinic start generated code]*/
+
 static PyObject *
-posix__isdir(PyObject *self, PyObject *args)
+os__isdir_impl(PyModuleDef *module, path_t *path)
+/*[clinic end generated code: output=f17b2d4e1994b0ff input=e794f12faab62a2a]*/
 {
-    const char *path;
-    PyObject *po;
     DWORD attributes;
 
-    if (PyArg_ParseTuple(args, "U|:_isdir", &po)) {
-        wchar_t *wpath = PyUnicode_AsUnicode(po);
-        if (wpath == NULL)
-            return NULL;
+    if (!path->narrow)
+        attributes = GetFileAttributesW(path->wide);
+    else
+        attributes = GetFileAttributesA(path->narrow);
 
-        attributes = GetFileAttributesW(wpath);
-        if (attributes == INVALID_FILE_ATTRIBUTES)
-            Py_RETURN_FALSE;
-        goto check;
-    }
-    /* Drop the argument parsing error as narrow strings
-       are also valid. */
-    PyErr_Clear();
-
-    if (!PyArg_ParseTuple(args, "y:_isdir", &path))
-        return NULL;
-    if (win32_warn_bytes_api())
-        return NULL;
-    attributes = GetFileAttributesA(path);
     if (attributes == INVALID_FILE_ATTRIBUTES)
         Py_RETURN_FALSE;
 
-check:
     if (attributes & FILE_ATTRIBUTE_DIRECTORY)
         Py_RETURN_TRUE;
     else
@@ -12351,10 +12333,8 @@ static PyMethodDef posix_methods[] = {
     OS_FPATHCONF_METHODDEF
     OS_PATHCONF_METHODDEF
     OS_ABORT_METHODDEF
-#ifdef MS_WINDOWS
-    {"_getfullpathname",        posix__getfullpathname, METH_VARARGS, NULL},
-    {"_isdir",                  posix__isdir, METH_VARARGS, posix__isdir__doc__},
-#endif
+    OS__GETFULLPATHNAME_METHODDEF
+    OS__ISDIR_METHODDEF
     OS__GETDISKUSAGE_METHODDEF
     OS__GETFINALPATHNAME_METHODDEF
     OS__GETVOLUMEPATHNAME_METHODDEF
