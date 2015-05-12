@@ -700,6 +700,7 @@ locale_encoding_alias = {
     'utf_8':                        'UTF-8',
     'koi8_r':                       'KOI8-R',
     'koi8_u':                       'KOI8-U',
+    'kz1048':                       'RK1048',
     'cp1251':                       'CP1251',
     'cp1255':                       'CP1255',
     'cp1256':                       'CP1256',

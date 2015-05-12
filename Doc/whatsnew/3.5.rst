@@ -231,6 +231,9 @@ Some smaller changes made to the core Python language are:
 * The :option:`-b` option now affects comparisons of :class:`bytes` with
   :class:`int`.  (Contributed by Serhiy Storchaka in :issue:`23681`)
 
+* New Kazakh :ref:`codec <standard-encodings>` ``kz1048``.  (Contributed by
+  Serhiy Storchaka in :issue:`22682`.)
+
 
 New Modules
 ===========
