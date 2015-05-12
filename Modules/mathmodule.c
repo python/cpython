@@ -685,6 +685,33 @@ m_log10(double x)
 }
 
 
+static PyObject *
+math_gcd(PyObject *self, PyObject *args)
+{
+    PyObject *a, *b, *g;
+
+    if (!PyArg_ParseTuple(args, "OO:gcd", &a, &b))
+        return NULL;
+
+    a = PyNumber_Index(a);
+    if (a == NULL)
+        return NULL;
+    b = PyNumber_Index(b);
+    if (b == NULL) {
+        Py_DECREF(a);
+        return NULL;
+    }
+    g = _PyLong_GCD(a, b);
+    Py_DECREF(a);
+    Py_DECREF(b);
+    return g;
+}
+
+PyDoc_STRVAR(math_gcd_doc,
+"gcd(x, y) -> int\n\
+greatest common divisor of x and y");
+
+
 /* Call is_error when errno != 0, and where x is the result libm
  * returned.  is_error will usually set up an exception and return
  * true (1), but may return false (0) without setting up an exception.
@@ -1987,6 +2014,7 @@ static PyMethodDef math_methods[] = {
     {"frexp",           math_frexp,     METH_O,         math_frexp_doc},
     {"fsum",            math_fsum,      METH_O,         math_fsum_doc},
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
+    {"gcd",             math_gcd,       METH_VARARGS,   math_gcd_doc},
     {"hypot",           math_hypot,     METH_VARARGS,   math_hypot_doc},
     {"isfinite",        math_isfinite,  METH_O,         math_isfinite_doc},
     {"isinf",           math_isinf,     METH_O,         math_isinf_doc},
