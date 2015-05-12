@@ -404,6 +404,86 @@ class PrettyPrinter:
         """
         return _safe_repr(object, context, maxlevels, level)
 
+    def _pprint_default_dict(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        rdf = self._repr(object.default_factory, context, level)
+        cls = object.__class__
+        indent += len(cls.__name__) + 1
+        stream.write('%s(%s,\n%s' % (cls.__name__, rdf, ' ' * indent))
+        self._pprint_dict(object, stream, indent, allowance + 1, context, level)
+        stream.write(')')
+
+    _dispatch[_collections.defaultdict.__repr__] = _pprint_default_dict
+
+    def _pprint_counter(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        cls = object.__class__
+        stream.write(cls.__name__ + '({')
+        if self._indent_per_level > 1:
+            stream.write((self._indent_per_level - 1) * ' ')
+        items = object.most_common()
+        self._format_dict_items(items, stream,
+                                indent + len(cls.__name__) + 1, allowance + 2,
+                                context, level)
+        stream.write('})')
+
+    _dispatch[_collections.Counter.__repr__] = _pprint_counter
+
+    def _pprint_chain_map(self, object, stream, indent, allowance, context, level):
+        if not len(object.maps):
+            stream.write(repr(object))
+            return
+        cls = object.__class__
+        stream.write(cls.__name__ + '(')
+        indent += len(cls.__name__) + 1
+        for i, m in enumerate(object.maps):
+            if i == len(object.maps) - 1:
+                self._format(m, stream, indent, allowance + 1, context, level)
+                stream.write(')')
+            else:
+                self._format(m, stream, indent, 1, context, level)
+                stream.write(',\n' + ' ' * indent)
+
+    _dispatch[_collections.ChainMap.__repr__] = _pprint_chain_map
+
+    def _pprint_deque(self, object, stream, indent, allowance, context, level):
+        if not len(object):
+            stream.write(repr(object))
+            return
+        cls = object.__class__
+        stream.write(cls.__name__ + '(')
+        indent += len(cls.__name__) + 1
+        stream.write('[')
+        if object.maxlen is None:
+            self._format_items(object, stream, indent, allowance + 2,
+                               context, level)
+            stream.write('])')
+        else:
+            self._format_items(object, stream, indent, 2,
+                               context, level)
+            rml = self._repr(object.maxlen, context, level)
+            stream.write('],\n%smaxlen=%s)' % (' ' * indent, rml))
+
+    _dispatch[_collections.deque.__repr__] = _pprint_deque
+
+    def _pprint_user_dict(self, object, stream, indent, allowance, context, level):
+        self._format(object.data, stream, indent, allowance, context, level - 1)
+
+    _dispatch[_collections.UserDict.__repr__] = _pprint_user_dict
+
+    def _pprint_user_list(self, object, stream, indent, allowance, context, level):
+        self._format(object.data, stream, indent, allowance, context, level - 1)
+
+    _dispatch[_collections.UserList.__repr__] = _pprint_user_list
+
+    def _pprint_user_string(self, object, stream, indent, allowance, context, level):
+        self._format(object.data, stream, indent, allowance, context, level - 1)
+
+    _dispatch[_collections.UserString.__repr__] = _pprint_user_string
 
 # Return triple (repr_string, isreadable, isrecursive).
 
