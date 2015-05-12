@@ -35,6 +35,8 @@ Core and Builtins
 
 - Issue #22906: PEP 479: Change StopIteration handling inside generators.
 
+- Issue #24017: PEP 492: Coroutines with async and await syntax.
+
 Library
 -------
 
