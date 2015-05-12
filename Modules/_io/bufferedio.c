@@ -889,6 +889,8 @@ buffered_peek(buffered *self, PyObject *args)
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
+    CHECK_CLOSED(self, "peek of closed file")
+
     if (!PyArg_ParseTuple(args, "|n:peek", &n)) {
         return NULL;
     }
@@ -963,6 +965,9 @@ buffered_read1(buffered *self, PyObject *args)
                         "read length must be positive");
         return NULL;
     }
+
+    CHECK_CLOSED(self, "read of closed file")
+
     if (n == 0)
         return PyBytes_FromStringAndSize(NULL, 0);
 
