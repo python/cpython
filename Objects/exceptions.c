@@ -473,6 +473,13 @@ SimpleExtendsException(PyExc_Exception, TypeError,
 
 
 /*
+ *    StopAsyncIteration extends Exception
+ */
+SimpleExtendsException(PyExc_Exception, StopAsyncIteration,
+                       "Signal the end from iterator.__anext__().");
+
+
+/*
  *    StopIteration extends Exception
  */
 
@@ -2468,6 +2475,7 @@ _PyExc_Init(PyObject *bltinmod)
     PRE_INIT(BaseException)
     PRE_INIT(Exception)
     PRE_INIT(TypeError)
+    PRE_INIT(StopAsyncIteration)
     PRE_INIT(StopIteration)
     PRE_INIT(GeneratorExit)
     PRE_INIT(SystemExit)
@@ -2538,6 +2546,7 @@ _PyExc_Init(PyObject *bltinmod)
     POST_INIT(BaseException)
     POST_INIT(Exception)
     POST_INIT(TypeError)
+    POST_INIT(StopAsyncIteration)
     POST_INIT(StopIteration)
     POST_INIT(GeneratorExit)
     POST_INIT(SystemExit)

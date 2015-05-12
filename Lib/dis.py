@@ -84,6 +84,8 @@ COMPILER_FLAG_NAMES = {
     16: "NESTED",
     32: "GENERATOR",
     64: "NOFREE",
+   128: "COROUTINE",
+   256: "ITERABLE_COROUTINE",
 }
 
 def pretty_flags(flags):

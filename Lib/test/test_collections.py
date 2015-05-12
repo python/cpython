@@ -11,9 +11,11 @@ from random import randrange, shuffle
 import keyword
 import re
 import sys
+import types
 from collections import UserDict
 from collections import ChainMap
 from collections import deque
+from collections.abc import Awaitable, Coroutine
 from collections.abc import Hashable, Iterable, Iterator, Generator
 from collections.abc import Sized, Container, Callable
 from collections.abc import Set, MutableSet
@@ -445,6 +447,84 @@ class ABCTestCase(unittest.TestCase):
                             % (type(instance), name))
 
 class TestOneTrickPonyABCs(ABCTestCase):
+
+    def test_Awaitable(self):
+        def gen():
+            yield
+
+        @types.coroutine
+        def coro():
+            yield
+
+        async def new_coro():
+            pass
+
+        class Bar:
+            def __await__(self):
+                yield
+
+        class MinimalCoro(Coroutine):
+            def send(self, value):
+                return value
+            def throw(self, typ, val=None, tb=None):
+                super().throw(typ, val, tb)
+
+        non_samples = [None, int(), gen(), object()]
+        for x in non_samples:
+            self.assertNotIsInstance(x, Awaitable)
+            self.assertFalse(issubclass(type(x), Awaitable), repr(type(x)))
+
+        samples = [Bar(), MinimalCoro()]
+        for x in samples:
+            self.assertIsInstance(x, Awaitable)
+            self.assertTrue(issubclass(type(x), Awaitable))
+
+        c = coro()
+        self.assertIsInstance(c, Awaitable)
+        c.close() # awoid RuntimeWarning that coro() was not awaited
+
+        c = new_coro()
+        self.assertIsInstance(c, Awaitable)
+        c.close() # awoid RuntimeWarning that coro() was not awaited
+
+    def test_Coroutine(self):
+        def gen():
+            yield
+
+        @types.coroutine
+        def coro():
+            yield
+
+        async def new_coro():
+            pass
+
+        class Bar:
+            def __await__(self):
+                yield
+
+        class MinimalCoro(Coroutine):
+            def send(self, value):
+                return value
+            def throw(self, typ, val=None, tb=None):
+                super().throw(typ, val, tb)
+
+        non_samples = [None, int(), gen(), object(), Bar()]
+        for x in non_samples:
+            self.assertNotIsInstance(x, Coroutine)
+            self.assertFalse(issubclass(type(x), Coroutine), repr(type(x)))
+
+        samples = [MinimalCoro()]
+        for x in samples:
+            self.assertIsInstance(x, Awaitable)
+            self.assertTrue(issubclass(type(x), Awaitable))
+
+        c = coro()
+        self.assertIsInstance(c, Coroutine)
+        c.close() # awoid RuntimeWarning that coro() was not awaited
+
+        c = new_coro()
+        self.assertIsInstance(c, Coroutine)
+        c.close() # awoid RuntimeWarning that coro() was not awaited
 
     def test_Hashable(self):
         # Check some non-hashables

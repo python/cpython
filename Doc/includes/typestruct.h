@@ -9,7 +9,7 @@ typedef struct _typeobject {
     printfunc tp_print;
     getattrfunc tp_getattr;
     setattrfunc tp_setattr;
-    void *tp_reserved;
+    PyAsyncMethods *tp_as_async;
     reprfunc tp_repr;
 
     /* Method suites for standard classes */

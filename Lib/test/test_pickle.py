@@ -351,7 +351,9 @@ class CompatPickleTests(unittest.TestCase):
 
         for name, exc in get_exceptions(builtins):
             with self.subTest(name):
-                if exc in (BlockingIOError, ResourceWarning):
+                if exc in (BlockingIOError,
+                           ResourceWarning,
+                           StopAsyncIteration):
                     continue
                 if exc is not OSError and issubclass(exc, OSError):
                     self.assertEqual(reverse_mapping('builtins', name),

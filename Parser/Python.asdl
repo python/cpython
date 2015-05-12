@@ -10,7 +10,10 @@ module Python
         | Suite(stmt* body)
 
     stmt = FunctionDef(identifier name, arguments args,
-                           stmt* body, expr* decorator_list, expr? returns)
+                       stmt* body, expr* decorator_list, expr? returns)
+          | AsyncFunctionDef(identifier name, arguments args,
+                             stmt* body, expr* decorator_list, expr? returns)
+
           | ClassDef(identifier name,
              expr* bases,
              keyword* keywords,
@@ -24,9 +27,11 @@ module Python
 
           -- use 'orelse' because else is a keyword in target languages
           | For(expr target, expr iter, stmt* body, stmt* orelse)
+          | AsyncFor(expr target, expr iter, stmt* body, stmt* orelse)
           | While(expr test, stmt* body, stmt* orelse)
           | If(expr test, stmt* body, stmt* orelse)
           | With(withitem* items, stmt* body)
+          | AsyncWith(withitem* items, stmt* body)
 
           | Raise(expr? exc, expr? cause)
           | Try(stmt* body, excepthandler* handlers, stmt* orelse, stmt* finalbody)
@@ -57,6 +62,7 @@ module Python
          | DictComp(expr key, expr value, comprehension* generators)
          | GeneratorExp(expr elt, comprehension* generators)
          -- the grammar constrains where yield expressions can occur
+         | Await(expr value)
          | Yield(expr? value)
          | YieldFrom(expr value)
          -- need sequences for compare to distinguish between

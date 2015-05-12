@@ -3944,6 +3944,98 @@ static PyTypeObject matmulType = {
 };
 
 
+typedef struct {
+    PyObject_HEAD
+    PyObject *ao_iterator;
+} awaitObject;
+
+
+static PyObject *
+awaitObject_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+{
+    PyObject *v;
+    awaitObject *ao;
+
+    if (!PyArg_UnpackTuple(args, "awaitObject", 1, 1, &v))
+        return NULL;
+
+    ao = (awaitObject *)type->tp_alloc(type, 0);
+    if (ao == NULL) {
+        return NULL;
+    }
+
+    Py_INCREF(v);
+    ao->ao_iterator = v;
+
+    return (PyObject *)ao;
+}
+
+
+static void
+awaitObject_dealloc(awaitObject *ao)
+{
+    Py_CLEAR(ao->ao_iterator);
+    Py_TYPE(ao)->tp_free(ao);
+}
+
+
+static PyObject *
+awaitObject_await(awaitObject *ao)
+{
+    Py_INCREF(ao->ao_iterator);
+    return ao->ao_iterator;
+}
+
+static PyAsyncMethods awaitType_as_async = {
+    (getawaitablefunc)awaitObject_await,    /* am_await */
+    0,                                      /* am_aiter */
+    0                                       /* am_anext */
+};
+
+
+static PyTypeObject awaitType = {
+    PyVarObject_HEAD_INIT(NULL, 0)
+    "awaitType",
+    sizeof(awaitObject),                /* tp_basicsize */
+    0,                                  /* tp_itemsize */
+    (destructor)awaitObject_dealloc,    /* destructor tp_dealloc */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    &awaitType_as_async,                /* tp_as_async */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    PyObject_GenericSetAttr,            /* tp_setattro */
+    0,                                  /* tp_as_buffer */
+    0,                                  /* tp_flags */
+    "C level type with tp_as_async",
+    0,                                  /* traverseproc tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    0,                                  /* tp_iter */
+    0,                                  /* tp_iternext */
+    0,                                  /* tp_methods */
+    0,                                  /* tp_members */
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    awaitObject_new,                    /* tp_new */
+    PyObject_Del,                       /* tp_free */
+};
+
+
 static struct PyModuleDef _testcapimodule = {
     PyModuleDef_HEAD_INIT,
     "_testcapi",
@@ -3976,6 +4068,11 @@ PyInit__testcapi(void)
         return NULL;
     Py_INCREF(&matmulType);
     PyModule_AddObject(m, "matmulType", (PyObject *)&matmulType);
+
+    if (PyType_Ready(&awaitType) < 0)
+        return NULL;
+    Py_INCREF(&awaitType);
+    PyModule_AddObject(m, "awaitType", (PyObject *)&awaitType);
 
     PyModule_AddObject(m, "CHAR_MAX", PyLong_FromLong(CHAR_MAX));
     PyModule_AddObject(m, "CHAR_MIN", PyLong_FromLong(CHAR_MIN));
