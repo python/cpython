@@ -1638,7 +1638,7 @@ class TaskTests(test_utils.TestCase):
             return a
 
         def call(arg):
-            cw = asyncio.coroutines.CoroWrapper(foo(), foo)
+            cw = asyncio.coroutines.CoroWrapper(foo())
             cw.send(None)
             try:
                 cw.send(arg)
@@ -1653,7 +1653,7 @@ class TaskTests(test_utils.TestCase):
     def test_corowrapper_weakref(self):
         wd = weakref.WeakValueDictionary()
         def foo(): yield from []
-        cw = asyncio.coroutines.CoroWrapper(foo(), foo)
+        cw = asyncio.coroutines.CoroWrapper(foo())
         wd['cw'] = cw  # Would fail without __weakref__ slot.
         cw.gen = None  # Suppress warning from __del__.
 
