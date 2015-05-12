@@ -629,6 +629,9 @@ The following performance enhancements have been added:
   versions 0--2 on typical data, and up to 5x in best cases).
   (Contributed by Serhiy Storchaka in :issue:`20416` and :issue:`23344`.)
 
+* The UTF-32 encoder is now 3x to 7x faster.  (Contributed by Serhiy Storchaka
+  in :issue:`15027`.)
+
 
 Build and C API Changes
 =======================
