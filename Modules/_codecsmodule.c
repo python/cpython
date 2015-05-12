@@ -644,7 +644,7 @@ _codecs_code_page_decode_impl(PyModuleDef *module, int codepage,
 /*[clinic end generated code: output=4318e3d9971e31ba input=4f3152a304e21d51]*/
 {
     Py_ssize_t consumed = data->len;
-    PyObject *decoded = PyUnicode_DecodeCodePageStateful(code_page,
+    PyObject *decoded = PyUnicode_DecodeCodePageStateful(codepage,
                                                          data->buf, data->len,
                                                          errors,
                                                          final ? NULL : &consumed);
