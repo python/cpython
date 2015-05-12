@@ -890,6 +890,38 @@ exit:
 
 #if defined(MS_WINDOWS)
 
+PyDoc_STRVAR(os__getfullpathname__doc__,
+"_getfullpathname($module, path, /)\n"
+"--\n"
+"\n");
+
+#define OS__GETFULLPATHNAME_METHODDEF    \
+    {"_getfullpathname", (PyCFunction)os__getfullpathname, METH_O, os__getfullpathname__doc__},
+
+static PyObject *
+os__getfullpathname_impl(PyModuleDef *module, path_t *path);
+
+static PyObject *
+os__getfullpathname(PyModuleDef *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    path_t path = PATH_T_INITIALIZE("_getfullpathname", "path", 0, 0);
+
+    if (!PyArg_Parse(arg, "O&:_getfullpathname", path_converter, &path))
+        goto exit;
+    return_value = os__getfullpathname_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
 PyDoc_STRVAR(os__getfinalpathname__doc__,
 "_getfinalpathname($module, path, /)\n"
 "--\n"
@@ -913,6 +945,38 @@ os__getfinalpathname(PyModuleDef *module, PyObject *arg)
     return_value = os__getfinalpathname_impl(module, path);
 
 exit:
+    return return_value;
+}
+
+#endif /* defined(MS_WINDOWS) */
+
+#if defined(MS_WINDOWS)
+
+PyDoc_STRVAR(os__isdir__doc__,
+"_isdir($module, path, /)\n"
+"--\n"
+"\n");
+
+#define OS__ISDIR_METHODDEF    \
+    {"_isdir", (PyCFunction)os__isdir, METH_O, os__isdir__doc__},
+
+static PyObject *
+os__isdir_impl(PyModuleDef *module, path_t *path);
+
+static PyObject *
+os__isdir(PyModuleDef *module, PyObject *arg)
+{
+    PyObject *return_value = NULL;
+    path_t path = PATH_T_INITIALIZE("_isdir", "path", 0, 0);
+
+    if (!PyArg_Parse(arg, "O&:_isdir", path_converter, &path))
+        goto exit;
+    return_value = os__isdir_impl(module, &path);
+
+exit:
+    /* Cleanup for path */
+    path_cleanup(&path);
+
     return return_value;
 }
 
@@ -5313,9 +5377,17 @@ exit:
     #define OS_LINK_METHODDEF
 #endif /* !defined(OS_LINK_METHODDEF) */
 
+#ifndef OS__GETFULLPATHNAME_METHODDEF
+    #define OS__GETFULLPATHNAME_METHODDEF
+#endif /* !defined(OS__GETFULLPATHNAME_METHODDEF) */
+
 #ifndef OS__GETFINALPATHNAME_METHODDEF
     #define OS__GETFINALPATHNAME_METHODDEF
 #endif /* !defined(OS__GETFINALPATHNAME_METHODDEF) */
+
+#ifndef OS__ISDIR_METHODDEF
+    #define OS__ISDIR_METHODDEF
+#endif /* !defined(OS__ISDIR_METHODDEF) */
 
 #ifndef OS__GETVOLUMEPATHNAME_METHODDEF
     #define OS__GETVOLUMEPATHNAME_METHODDEF
@@ -5716,4 +5788,4 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=bba73c13a01c09a0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f3f92b2d2e2c3fe3 input=a9049054013a1b77]*/
