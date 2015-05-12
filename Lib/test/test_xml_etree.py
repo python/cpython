@@ -704,7 +704,7 @@ class ElementTreeTest(unittest.TestCase):
             'mac-roman', 'mac-turkish',
             'iso2022-jp', 'iso2022-jp-1', 'iso2022-jp-2', 'iso2022-jp-2004',
             'iso2022-jp-3', 'iso2022-jp-ext',
-            'koi8-r', 'koi8-u',
+            'koi8-r', 'koi8-u', 'kz1048',
             'hz', 'ptcp154',
         ]
         for encoding in supported_encodings:
