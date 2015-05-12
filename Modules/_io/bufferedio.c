@@ -871,6 +871,8 @@ _io__Buffered_peek_impl(buffered *self, Py_ssize_t size)
     PyObject *res = NULL;
 
     CHECK_INITIALIZED(self)
+    CHECK_CLOSED(self, "peek of closed file")
+
     if (!ENTER_BUFFERED(self))
         return NULL;
 
@@ -947,6 +949,9 @@ _io__Buffered_read1_impl(buffered *self, Py_ssize_t n)
                         "read length must be positive");
         return NULL;
     }
+
+    CHECK_CLOSED(self, "read of closed file")
+
     if (n == 0)
         return PyBytes_FromStringAndSize(NULL, 0);
 
