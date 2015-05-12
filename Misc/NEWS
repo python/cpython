@@ -10,6 +10,8 @@ Release date: 2015-04-24
 Core and Builtins
 -----------------
 
+- Issue #15027: The UTF-32 encoder is now 3x to 7x faster.
+
 - Issue #20274: When calling a _sqlite.Connection, it now complains if passed
   any keyword arguments.  Previously it silently ignored them.
 

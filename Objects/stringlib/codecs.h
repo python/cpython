@@ -718,6 +718,93 @@ STRINGLIB(utf16_encode)(const STRINGLIB_CHAR *in,
     return len - (end - in + 1);
 #endif
 }
+
+#if STRINGLIB_SIZEOF_CHAR == 1
+# define SWAB4(CH, tmp)  ((CH) << 24) /* high bytes are zero */
+#elif STRINGLIB_SIZEOF_CHAR == 2
+# define SWAB4(CH, tmp)  (tmp = (CH), \
+            ((tmp & 0x00FFu) << 24) + ((tmp & 0xFF00u) << 8))
+            /* high bytes are zero */
+#else
+# define SWAB4(CH, tmp)  (tmp = (CH), \
+            tmp = ((tmp & 0x00FF00FFu) << 8) + ((tmp >> 8) & 0x00FF00FFu), \
+            ((tmp & 0x0000FFFFu) << 16) + ((tmp >> 16) & 0x0000FFFFu))
+#endif
+Py_LOCAL_INLINE(Py_ssize_t)
+STRINGLIB(utf32_encode)(const STRINGLIB_CHAR *in,
+                        Py_ssize_t len,
+                        PY_UINT32_T **outptr,
+                        int native_ordering)
+{
+    PY_UINT32_T *out = *outptr;
+    const STRINGLIB_CHAR *end = in + len;
+    if (native_ordering) {
+        const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
+        while (in < unrolled_end) {
+#if STRINGLIB_SIZEOF_CHAR > 1
+            /* check if any character is a surrogate character */
+            if (((in[0] ^ 0xd800) &
+                 (in[1] ^ 0xd800) &
+                 (in[2] ^ 0xd800) &
+                 (in[3] ^ 0xd800) & 0xf800) == 0)
+                break;
+#endif
+            out[0] = in[0];
+            out[1] = in[1];
+            out[2] = in[2];
+            out[3] = in[3];
+            in += 4; out += 4;
+        }
+        while (in < end) {
+            Py_UCS4 ch;
+            ch = *in++;
+#if STRINGLIB_SIZEOF_CHAR > 1
+            if (Py_UNICODE_IS_SURROGATE(ch)) {
+                /* reject surrogate characters (U+DC800-U+DFFF) */
+                goto fail;
+            }
+#endif
+            *out++ = ch;
+        }
+    } else {
+        const STRINGLIB_CHAR *unrolled_end = in + _Py_SIZE_ROUND_DOWN(len, 4);
+        while (in < unrolled_end) {
+#if STRINGLIB_SIZEOF_CHAR > 1
+            Py_UCS4 ch1, ch2, ch3, ch4;
+            /* check if any character is a surrogate character */
+            if (((in[0] ^ 0xd800) &
+                 (in[1] ^ 0xd800) &
+                 (in[2] ^ 0xd800) &
+                 (in[3] ^ 0xd800) & 0xf800) == 0)
+                break;
+#endif
+            out[0] = SWAB4(in[0], ch1);
+            out[1] = SWAB4(in[1], ch2);
+            out[2] = SWAB4(in[2], ch3);
+            out[3] = SWAB4(in[3], ch4);
+            in += 4; out += 4;
+        }
+        while (in < end) {
+            Py_UCS4 ch = *in++;
+#if STRINGLIB_SIZEOF_CHAR > 1
+            if (Py_UNICODE_IS_SURROGATE(ch)) {
+                /* reject surrogate characters (U+DC800-U+DFFF) */
+                goto fail;
+            }
+#endif
+            *out++ = SWAB4(ch, ch);
+        }
+    }
+    *outptr = out;
+    return len;
+#if STRINGLIB_SIZEOF_CHAR > 1
+  fail:
+    *outptr = out;
+    return len - (end - in + 1);
+#endif
+}
+#undef SWAB4
+
 #endif
 
 #endif /* STRINGLIB_IS_UNICODE */
