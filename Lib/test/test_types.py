@@ -1,7 +1,8 @@
 # Python test set -- part 6, built-in types
 
 from test.support import run_with_locale
-import collections
+import collections.abc
+import inspect
 import pickle
 import locale
 import sys
@@ -1170,6 +1171,38 @@ class SimpleNamespaceTests(unittest.TestCase):
             ns_roundtrip = pickle.loads(ns_pickled)
 
             self.assertEqual(ns, ns_roundtrip, pname)
+
+
+class CoroutineTests(unittest.TestCase):
+    def test_wrong_args(self):
+        class Foo:
+            def __call__(self):
+                pass
+        def bar(): pass
+
+        samples = [Foo, Foo(), bar, None, int, 1]
+        for sample in samples:
+            with self.assertRaisesRegex(TypeError, 'expects a generator'):
+                types.coroutine(sample)
+
+    def test_genfunc(self):
+        def gen():
+            yield
+
+        self.assertFalse(isinstance(gen(), collections.abc.Coroutine))
+        self.assertFalse(isinstance(gen(), collections.abc.Awaitable))
+
+        self.assertIs(types.coroutine(gen), gen)
+
+        self.assertTrue(gen.__code__.co_flags & inspect.CO_ITERABLE_COROUTINE)
+        self.assertFalse(gen.__code__.co_flags & inspect.CO_COROUTINE)
+
+        g = gen()
+        self.assertTrue(g.gi_code.co_flags & inspect.CO_ITERABLE_COROUTINE)
+        self.assertFalse(g.gi_code.co_flags & inspect.CO_COROUTINE)
+        self.assertTrue(isinstance(g, collections.abc.Coroutine))
+        self.assertTrue(isinstance(g, collections.abc.Awaitable))
+        g.close() # silence warning
 
 
 if __name__ == '__main__':

@@ -51,6 +51,11 @@ typedef struct {
 */
 #define CO_NOFREE       0x0040
 
+/* The CO_COROUTINE flag is set for coroutine functions (defined with
+   ``async def`` keywords) */
+#define CO_COROUTINE            0x0080
+#define CO_ITERABLE_COROUTINE   0x0100
+
 /* These are no longer used. */
 #if 0
 #define CO_GENERATOR_ALLOWED    0x1000

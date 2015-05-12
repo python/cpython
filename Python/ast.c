@@ -219,6 +219,8 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         return !exp->v.Yield.value || validate_expr(exp->v.Yield.value, Load);
     case YieldFrom_kind:
         return validate_expr(exp->v.YieldFrom.value, Load);
+    case Await_kind:
+        return validate_expr(exp->v.Await.value, Load);
     case Compare_kind:
         if (!asdl_seq_LEN(exp->v.Compare.comparators)) {
             PyErr_SetString(PyExc_ValueError, "Compare with no comparators");
@@ -336,6 +338,11 @@ validate_stmt(stmt_ty stmt)
             validate_expr(stmt->v.For.iter, Load) &&
             validate_body(stmt->v.For.body, "For") &&
             validate_stmts(stmt->v.For.orelse);
+    case AsyncFor_kind:
+        return validate_expr(stmt->v.AsyncFor.target, Store) &&
+            validate_expr(stmt->v.AsyncFor.iter, Load) &&
+            validate_body(stmt->v.AsyncFor.body, "AsyncFor") &&
+            validate_stmts(stmt->v.AsyncFor.orelse);
     case While_kind:
         return validate_expr(stmt->v.While.test, Load) &&
             validate_body(stmt->v.While.body, "While") &&
@@ -354,6 +361,16 @@ validate_stmt(stmt_ty stmt)
                 return 0;
         }
         return validate_body(stmt->v.With.body, "With");
+    case AsyncWith_kind:
+        if (!validate_nonempty_seq(stmt->v.AsyncWith.items, "items", "AsyncWith"))
+            return 0;
+        for (i = 0; i < asdl_seq_LEN(stmt->v.AsyncWith.items); i++) {
+            withitem_ty item = asdl_seq_GET(stmt->v.AsyncWith.items, i);
+            if (!validate_expr(item->context_expr, Load) ||
+                (item->optional_vars && !validate_expr(item->optional_vars, Store)))
+                return 0;
+        }
+        return validate_body(stmt->v.AsyncWith.body, "AsyncWith");
     case Raise_kind:
         if (stmt->v.Raise.exc) {
             return validate_expr(stmt->v.Raise.exc, Load) &&
@@ -405,6 +422,12 @@ validate_stmt(stmt_ty stmt)
         return validate_nonempty_seq(stmt->v.Nonlocal.names, "names", "Nonlocal");
     case Expr_kind:
         return validate_expr(stmt->v.Expr.value, Load);
+    case AsyncFunctionDef_kind:
+        return validate_body(stmt->v.AsyncFunctionDef.body, "AsyncFunctionDef") &&
+            validate_arguments(stmt->v.AsyncFunctionDef.args) &&
+            validate_exprs(stmt->v.AsyncFunctionDef.decorator_list, Load, 0) &&
+            (!stmt->v.AsyncFunctionDef.returns ||
+             validate_expr(stmt->v.AsyncFunctionDef.returns, Load));
     case Pass_kind:
     case Break_kind:
     case Continue_kind:
@@ -502,6 +525,9 @@ static asdl_seq *ast_for_exprlist(struct compiling *, const node *,
                                   expr_context_ty);
 static expr_ty ast_for_testlist(struct compiling *, const node *);
 static stmt_ty ast_for_classdef(struct compiling *, const node *, asdl_seq *);
+
+static stmt_ty ast_for_with_stmt(struct compiling *, const node *, int);
+static stmt_ty ast_for_for_stmt(struct compiling *, const node *, int);
 
 /* Note different signature for ast_for_call */
 static expr_ty ast_for_call(struct compiling *, const node *, expr_ty);
@@ -940,6 +966,9 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
         case Yield_kind:
         case YieldFrom_kind:
             expr_name = "yield expression";
+            break;
+        case Await_kind:
+            expr_name = "await expression";
             break;
         case ListComp_kind:
             expr_name = "list comprehension";
@@ -1480,7 +1509,8 @@ ast_for_decorators(struct compiling *c, const node *n)
 }
 
 static stmt_ty
-ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
+ast_for_funcdef_impl(struct compiling *c, const node *n,
+                     asdl_seq *decorator_seq, int is_async)
 {
     /* funcdef: 'def' NAME parameters ['->' test] ':' suite */
     identifier name;
@@ -1509,14 +1539,68 @@ ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
     if (!body)
         return NULL;
 
-    return FunctionDef(name, args, body, decorator_seq, returns, LINENO(n),
-                       n->n_col_offset, c->c_arena);
+    if (is_async)
+        return AsyncFunctionDef(name, args, body, decorator_seq, returns,
+                                LINENO(n),
+                                n->n_col_offset, c->c_arena);
+    else
+        return FunctionDef(name, args, body, decorator_seq, returns,
+                           LINENO(n),
+                           n->n_col_offset, c->c_arena);
+}
+
+static stmt_ty
+ast_for_async_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
+{
+    /* async_funcdef: ASYNC funcdef */
+    REQ(n, async_funcdef);
+    REQ(CHILD(n, 0), ASYNC);
+    REQ(CHILD(n, 1), funcdef);
+
+    return ast_for_funcdef_impl(c, CHILD(n, 1), decorator_seq,
+                                1 /* is_async */);
+}
+
+static stmt_ty
+ast_for_funcdef(struct compiling *c, const node *n, asdl_seq *decorator_seq)
+{
+    /* funcdef: 'def' NAME parameters ['->' test] ':' suite */
+    return ast_for_funcdef_impl(c, n, decorator_seq,
+                                0 /* is_async */);
+}
+
+
+static stmt_ty
+ast_for_async_stmt(struct compiling *c, const node *n)
+{
+    /* async_stmt: ASYNC (funcdef | with_stmt | for_stmt) */
+    REQ(n, async_stmt);
+    REQ(CHILD(n, 0), ASYNC);
+
+    switch (TYPE(CHILD(n, 1))) {
+        case funcdef:
+            return ast_for_funcdef_impl(c, CHILD(n, 1), NULL,
+                                        1 /* is_async */);
+        case with_stmt:
+            return ast_for_with_stmt(c, CHILD(n, 1),
+                                     1 /* is_async */);
+
+        case for_stmt:
+            return ast_for_for_stmt(c, CHILD(n, 1),
+                                    1 /* is_async */);
+
+        default:
+            PyErr_Format(PyExc_SystemError,
+                         "invalid async stament: %s",
+                         STR(CHILD(n, 1)));
+            return NULL;
+    }
 }
 
 static stmt_ty
 ast_for_decorated(struct compiling *c, const node *n)
 {
-    /* decorated: decorators (classdef | funcdef) */
+    /* decorated: decorators (classdef | funcdef | async_funcdef) */
     stmt_ty thing = NULL;
     asdl_seq *decorator_seq = NULL;
 
@@ -1527,12 +1611,15 @@ ast_for_decorated(struct compiling *c, const node *n)
       return NULL;
 
     assert(TYPE(CHILD(n, 1)) == funcdef ||
+           TYPE(CHILD(n, 1)) == async_funcdef ||
            TYPE(CHILD(n, 1)) == classdef);
 
     if (TYPE(CHILD(n, 1)) == funcdef) {
       thing = ast_for_funcdef(c, CHILD(n, 1), decorator_seq);
     } else if (TYPE(CHILD(n, 1)) == classdef) {
       thing = ast_for_classdef(c, CHILD(n, 1), decorator_seq);
+    } else if (TYPE(CHILD(n, 1)) == async_funcdef) {
+      thing = ast_for_async_funcdef(c, CHILD(n, 1), decorator_seq);
     }
     /* we count the decorators in when talking about the class' or
      * function's line number */
@@ -2271,19 +2358,29 @@ ast_for_factor(struct compiling *c, const node *n)
 }
 
 static expr_ty
-ast_for_power(struct compiling *c, const node *n)
+ast_for_atom_expr(struct compiling *c, const node *n)
 {
-    /* power: atom trailer* ('**' factor)*
-     */
-    int i;
+    int i, nch, start = 0;
     expr_ty e, tmp;
-    REQ(n, power);
-    e = ast_for_atom(c, CHILD(n, 0));
+
+    REQ(n, atom_expr);
+    nch = NCH(n);
+
+    if (TYPE(CHILD(n, 0)) == AWAIT) {
+        start = 1;
+        assert(nch > 1);
+    }
+
+    e = ast_for_atom(c, CHILD(n, start));
     if (!e)
         return NULL;
-    if (NCH(n) == 1)
+    if (nch == 1)
         return e;
-    for (i = 1; i < NCH(n); i++) {
+    if (start && nch == 2) {
+        return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
+    }
+
+    for (i = start + 1; i < nch; i++) {
         node *ch = CHILD(n, i);
         if (TYPE(ch) != trailer)
             break;
@@ -2294,6 +2391,28 @@ ast_for_power(struct compiling *c, const node *n)
         tmp->col_offset = e->col_offset;
         e = tmp;
     }
+
+    if (start) {
+        /* there was an AWAIT */
+        return Await(e, LINENO(n), n->n_col_offset, c->c_arena);
+    }
+    else {
+        return e;
+    }
+}
+
+static expr_ty
+ast_for_power(struct compiling *c, const node *n)
+{
+    /* power: atom trailer* ('**' factor)*
+     */
+    expr_ty e;
+    REQ(n, power);
+    e = ast_for_atom_expr(c, CHILD(n, 0));
+    if (!e)
+        return NULL;
+    if (NCH(n) == 1)
+        return e;
     if (TYPE(CHILD(n, NCH(n) - 1)) == factor) {
         expr_ty f = ast_for_expr(c, CHILD(n, NCH(n) - 1));
         if (!f)
@@ -2338,7 +2457,9 @@ ast_for_expr(struct compiling *c, const node *n)
        arith_expr: term (('+'|'-') term)*
        term: factor (('*'|'@'|'/'|'%'|'//') factor)*
        factor: ('+'|'-'|'~') factor | power
-       power: atom trailer* ('**' factor)*
+       power: atom_expr ['**' factor]
+       atom_expr: [AWAIT] atom trailer*
+       yield_expr: 'yield' [yield_arg]
     */
 
     asdl_seq *seq;
@@ -3403,7 +3524,7 @@ ast_for_while_stmt(struct compiling *c, const node *n)
 }
 
 static stmt_ty
-ast_for_for_stmt(struct compiling *c, const node *n)
+ast_for_for_stmt(struct compiling *c, const node *n, int is_async)
 {
     asdl_seq *_target, *seq = NULL, *suite_seq;
     expr_ty expression;
@@ -3437,8 +3558,14 @@ ast_for_for_stmt(struct compiling *c, const node *n)
     if (!suite_seq)
         return NULL;
 
-    return For(target, expression, suite_seq, seq, LINENO(n), n->n_col_offset,
-               c->c_arena);
+    if (is_async)
+        return AsyncFor(target, expression, suite_seq, seq,
+                        LINENO(n), n->n_col_offset,
+                        c->c_arena);
+    else
+        return For(target, expression, suite_seq, seq,
+                   LINENO(n), n->n_col_offset,
+                   c->c_arena);
 }
 
 static excepthandler_ty
@@ -3585,7 +3712,7 @@ ast_for_with_item(struct compiling *c, const node *n)
 
 /* with_stmt: 'with' with_item (',' with_item)* ':' suite */
 static stmt_ty
-ast_for_with_stmt(struct compiling *c, const node *n)
+ast_for_with_stmt(struct compiling *c, const node *n, int is_async)
 {
     int i, n_items;
     asdl_seq *items, *body;
@@ -3607,7 +3734,10 @@ ast_for_with_stmt(struct compiling *c, const node *n)
     if (!body)
         return NULL;
 
-    return With(items, body, LINENO(n), n->n_col_offset, c->c_arena);
+    if (is_async)
+        return AsyncWith(items, body, LINENO(n), n->n_col_offset, c->c_arena);
+    else
+        return With(items, body, LINENO(n), n->n_col_offset, c->c_arena);
 }
 
 static stmt_ty
@@ -3714,7 +3844,7 @@ ast_for_stmt(struct compiling *c, const node *n)
     }
     else {
         /* compound_stmt: if_stmt | while_stmt | for_stmt | try_stmt
-                        | funcdef | classdef | decorated
+                        | funcdef | classdef | decorated | async_stmt
         */
         node *ch = CHILD(n, 0);
         REQ(n, compound_stmt);
@@ -3724,17 +3854,19 @@ ast_for_stmt(struct compiling *c, const node *n)
             case while_stmt:
                 return ast_for_while_stmt(c, ch);
             case for_stmt:
-                return ast_for_for_stmt(c, ch);
+                return ast_for_for_stmt(c, ch, 0);
             case try_stmt:
                 return ast_for_try_stmt(c, ch);
             case with_stmt:
-                return ast_for_with_stmt(c, ch);
+                return ast_for_with_stmt(c, ch, 0);
             case funcdef:
                 return ast_for_funcdef(c, ch, NULL);
             case classdef:
                 return ast_for_classdef(c, ch, NULL);
             case decorated:
                 return ast_for_decorated(c, ch);
+            case async_stmt:
+                return ast_for_async_stmt(c, ch);
             default:
                 PyErr_Format(PyExc_SystemError,
                              "unhandled small_stmt: TYPE=%d NCH=%d\n",

@@ -76,3 +76,6 @@
 #define Py_tp_free 74
 #define Py_nb_matrix_multiply 75
 #define Py_nb_inplace_matrix_multiply 76
+#define Py_am_await 77
+#define Py_am_aiter 78
+#define Py_am_anext 79

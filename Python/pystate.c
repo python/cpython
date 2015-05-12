@@ -212,6 +212,8 @@ new_threadstate(PyInterpreterState *interp, int init)
         tstate->on_delete = NULL;
         tstate->on_delete_data = NULL;
 
+        tstate->coroutine_wrapper = NULL;
+
         if (init)
             _PyThreadState_Init(tstate);
 
@@ -372,6 +374,8 @@ PyThreadState_Clear(PyThreadState *tstate)
     tstate->c_tracefunc = NULL;
     Py_CLEAR(tstate->c_profileobj);
     Py_CLEAR(tstate->c_traceobj);
+
+    Py_CLEAR(tstate->coroutine_wrapper);
 }
 
 

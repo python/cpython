@@ -33,6 +33,7 @@ __author__ = ('Ka-Ping Yee <ping@lfw.org>',
 
 import ast
 import dis
+import collections.abc
 import enum
 import importlib.machinery
 import itertools
@@ -174,7 +175,22 @@ def isgeneratorfunction(object):
 
     See help(isfunction) for attributes listing."""
     return bool((isfunction(object) or ismethod(object)) and
-                object.__code__.co_flags & CO_GENERATOR)
+                object.__code__.co_flags & CO_GENERATOR and
+                not object.__code__.co_flags & CO_COROUTINE)
+
+def iscoroutinefunction(object):
+    """Return true if the object is a coroutine function.
+
+    Coroutine functions are defined with "async def" syntax,
+    or generators decorated with "types.coroutine".
+    """
+    return bool((isfunction(object) or ismethod(object)) and
+                object.__code__.co_flags & (CO_ITERABLE_COROUTINE |
+                                            CO_COROUTINE))
+
+def isawaitable(object):
+    """Return true if the object can be used in "await" expression."""
+    return isinstance(object, collections.abc.Awaitable)
 
 def isgenerator(object):
     """Return true if the object is a generator.
@@ -191,7 +207,13 @@ def isgenerator(object):
         send            resumes the generator and "sends" a value that becomes
                         the result of the current yield-expression
         throw           used to raise an exception inside the generator"""
-    return isinstance(object, types.GeneratorType)
+    return (isinstance(object, types.GeneratorType) and
+            not object.gi_code.co_flags & CO_COROUTINE)
+
+def iscoroutine(object):
+    """Return true if the object is a coroutine."""
+    return (isinstance(object, types.GeneratorType) and
+            object.gi_code.co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))
 
 def istraceback(object):
     """Return true if the object is a traceback.
