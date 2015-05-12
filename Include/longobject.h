@@ -198,6 +198,9 @@ PyAPI_FUNC(int) _PyLong_FormatAdvancedWriter(
 PyAPI_FUNC(unsigned long) PyOS_strtoul(const char *, char **, int);
 PyAPI_FUNC(long) PyOS_strtol(const char *, char **, int);
 
+/* For use by the gcd function in mathmodule.c */
+PyAPI_FUNC(PyObject *) _PyLong_GCD(PyObject *, PyObject *);
+
 #ifdef __cplusplus
 }
 #endif

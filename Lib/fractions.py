@@ -20,6 +20,17 @@ def gcd(a, b):
     Unless b==0, the result will have the same sign as b (so that when
     b is divided by it, the result comes out positive).
     """
+    import warnings
+    warnings.warn('fractions.gcd() is deprecated. Use math.gcd() instead.',
+                  DeprecationWarning, 2)
+    if type(a) is int is type(b):
+        if (b or a) < 0:
+            return -math.gcd(a, b)
+        return math.gcd(a, b)
+    return _gcd(a, b)
+
+def _gcd(a, b):
+    # Supports non-integers for backward compatibility.
     while b:
         a, b = b, a%b
     return a
@@ -159,7 +170,7 @@ class Fraction(numbers.Rational):
                                 "or a Rational instance")
 
         elif type(numerator) is int is type(denominator):
-            pass  # *very* normal case
+            pass # *very* normal case
 
         elif (isinstance(numerator, numbers.Rational) and
             isinstance(denominator, numbers.Rational)):
@@ -174,7 +185,13 @@ class Fraction(numbers.Rational):
         if denominator == 0:
             raise ZeroDivisionError('Fraction(%s, 0)' % numerator)
         if _normalize:
-            g = gcd(numerator, denominator)
+            if type(numerator) is int is type(denominator):
+                # *very* normal case
+                g = math.gcd(numerator, denominator)
+                if denominator < 0:
+                    g = -g
+            else:
+                g = _gcd(numerator, denominator)
             numerator //= g
             denominator //= g
         self._numerator = numerator
