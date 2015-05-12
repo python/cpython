@@ -657,8 +657,9 @@ sys_set_coroutine_wrapper(PyObject *self, PyObject *wrapper)
         }
         PyEval_SetCoroutineWrapper(wrapper);
     }
-    else
+    else {
         PyEval_SetCoroutineWrapper(NULL);
+    }
     Py_RETURN_NONE;
 }
 
