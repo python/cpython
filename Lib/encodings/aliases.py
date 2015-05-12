@@ -412,6 +412,11 @@ aliases = {
     # koi8_r codec
     'cskoi8r'            : 'koi8_r',
 
+    # kz1048 codec
+    'kz_1048'           : 'kz1048',
+    'rk1048'            : 'kz1048',
+    'strk1048_2002'     : 'kz1048',
+
     # latin_1 codec
     #
     # Note that the latin_1 codec is implemented internally in C and a

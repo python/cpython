@@ -1823,6 +1823,7 @@ all_unicode_encodings = [
     "johab",
     "koi8_r",
     "koi8_u",
+    "kz1048",
     "latin_1",
     "mac_cyrillic",
     "mac_greek",
