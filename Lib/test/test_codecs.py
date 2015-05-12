@@ -1822,6 +1822,7 @@ all_unicode_encodings = [
     "iso8859_9",
     "johab",
     "koi8_r",
+    "koi8_t",
     "koi8_u",
     "kz1048",
     "latin_1",
