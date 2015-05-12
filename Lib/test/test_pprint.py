@@ -843,6 +843,154 @@ bytearray(b'\\x00\\x01\\x02\\x03'
 [[[[[bytearray(b'\\x00\\x01\\x02\\x03\\x04\\x05\\x06\\x07'
                b'\\x08\\t\\n\\x0b\\x0c\\r\\x0e\\x0f')]]]]]""")
 
+    def test_default_dict(self):
+        d = collections.defaultdict(int)
+        self.assertEqual(pprint.pformat(d, width=1), "defaultdict(<class 'int'>, {})")
+        words = 'the quick brown fox jumped over a lazy dog'.split()
+        d = collections.defaultdict(int, zip(words, itertools.count()))
+        self.assertEqual(pprint.pformat(d),
+"""\
+defaultdict(<class 'int'>,
+            {'a': 6,
+             'brown': 2,
+             'dog': 8,
+             'fox': 3,
+             'jumped': 4,
+             'lazy': 7,
+             'over': 5,
+             'quick': 1,
+             'the': 0})""")
+
+    def test_counter(self):
+        d = collections.Counter()
+        self.assertEqual(pprint.pformat(d, width=1), "Counter()")
+        d = collections.Counter('senselessness')
+        self.assertEqual(pprint.pformat(d, width=40),
+"""\
+Counter({'s': 6,
+         'e': 4,
+         'n': 2,
+         'l': 1})""")
+
+    def test_chainmap(self):
+        d = collections.ChainMap()
+        self.assertEqual(pprint.pformat(d, width=1), "ChainMap({})")
+        words = 'the quick brown fox jumped over a lazy dog'.split()
+        items = list(zip(words, itertools.count()))
+        d = collections.ChainMap(dict(items))
+        self.assertEqual(pprint.pformat(d),
+"""\
+ChainMap({'a': 6,
+          'brown': 2,
+          'dog': 8,
+          'fox': 3,
+          'jumped': 4,
+          'lazy': 7,
+          'over': 5,
+          'quick': 1,
+          'the': 0})""")
+        d = collections.ChainMap(dict(items), collections.OrderedDict(items))
+        self.assertEqual(pprint.pformat(d),
+"""\
+ChainMap({'a': 6,
+          'brown': 2,
+          'dog': 8,
+          'fox': 3,
+          'jumped': 4,
+          'lazy': 7,
+          'over': 5,
+          'quick': 1,
+          'the': 0},
+         OrderedDict([('the', 0),
+                      ('quick', 1),
+                      ('brown', 2),
+                      ('fox', 3),
+                      ('jumped', 4),
+                      ('over', 5),
+                      ('a', 6),
+                      ('lazy', 7),
+                      ('dog', 8)]))""")
+
+    def test_deque(self):
+        d = collections.deque()
+        self.assertEqual(pprint.pformat(d, width=1), "deque([])")
+        d = collections.deque(maxlen=7)
+        self.assertEqual(pprint.pformat(d, width=1), "deque([], maxlen=7)")
+        words = 'the quick brown fox jumped over a lazy dog'.split()
+        d = collections.deque(zip(words, itertools.count()))
+        self.assertEqual(pprint.pformat(d),
+"""\
+deque([('the', 0),
+       ('quick', 1),
+       ('brown', 2),
+       ('fox', 3),
+       ('jumped', 4),
+       ('over', 5),
+       ('a', 6),
+       ('lazy', 7),
+       ('dog', 8)])""")
+        d = collections.deque(zip(words, itertools.count()), maxlen=7)
+        self.assertEqual(pprint.pformat(d),
+"""\
+deque([('brown', 2),
+       ('fox', 3),
+       ('jumped', 4),
+       ('over', 5),
+       ('a', 6),
+       ('lazy', 7),
+       ('dog', 8)],
+      maxlen=7)""")
+
+    def test_user_dict(self):
+        d = collections.UserDict()
+        self.assertEqual(pprint.pformat(d, width=1), "{}")
+        words = 'the quick brown fox jumped over a lazy dog'.split()
+        d = collections.UserDict(zip(words, itertools.count()))
+        self.assertEqual(pprint.pformat(d),
+"""\
+{'a': 6,
+ 'brown': 2,
+ 'dog': 8,
+ 'fox': 3,
+ 'jumped': 4,
+ 'lazy': 7,
+ 'over': 5,
+ 'quick': 1,
+ 'the': 0}""")
+
+    def test_user_dict(self):
+        d = collections.UserList()
+        self.assertEqual(pprint.pformat(d, width=1), "[]")
+        words = 'the quick brown fox jumped over a lazy dog'.split()
+        d = collections.UserList(zip(words, itertools.count()))
+        self.assertEqual(pprint.pformat(d),
+"""\
+[('the', 0),
+ ('quick', 1),
+ ('brown', 2),
+ ('fox', 3),
+ ('jumped', 4),
+ ('over', 5),
+ ('a', 6),
+ ('lazy', 7),
+ ('dog', 8)]""")
+
+    def test_user_string(self):
+        d = collections.UserString('')
+        self.assertEqual(pprint.pformat(d, width=1), "''")
+        d = collections.UserString('the quick brown fox jumped over a lazy dog')
+        self.assertEqual(pprint.pformat(d, width=20),
+"""\
+('the quick brown '
+ 'fox jumped over '
+ 'a lazy dog')""")
+        self.assertEqual(pprint.pformat({1: d}, width=20),
+"""\
+{1: 'the quick '
+    'brown fox '
+    'jumped over a '
+    'lazy dog'}""")
+
 
 class DottedPrettyPrinter(pprint.PrettyPrinter):
 
