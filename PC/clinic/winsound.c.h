@@ -26,8 +26,7 @@ winsound_PlaySound(PyModuleDef *module, PyObject *args)
     Py_UNICODE *sound;
     int flags;
 
-    if (!PyArg_ParseTuple(args,
-        "Zi:PlaySound",
+    if (!PyArg_ParseTuple(args, "Zi:PlaySound",
         &sound, &flags))
         goto exit;
     return_value = winsound_PlaySound_impl(module, sound, flags);
@@ -61,8 +60,7 @@ winsound_Beep(PyModuleDef *module, PyObject *args)
     int frequency;
     int duration;
 
-    if (!PyArg_ParseTuple(args,
-        "ii:Beep",
+    if (!PyArg_ParseTuple(args, "ii:Beep",
         &frequency, &duration))
         goto exit;
     return_value = winsound_Beep_impl(module, frequency, duration);
@@ -91,8 +89,7 @@ winsound_MessageBeep(PyModuleDef *module, PyObject *args)
     PyObject *return_value = NULL;
     int x = MB_OK;
 
-    if (!PyArg_ParseTuple(args,
-        "|i:MessageBeep",
+    if (!PyArg_ParseTuple(args, "|i:MessageBeep",
         &x))
         goto exit;
     return_value = winsound_MessageBeep_impl(module, x);
@@ -100,4 +97,4 @@ winsound_MessageBeep(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=89c85ed36c3af2fd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c5b018ac9dc1f500 input=a9049054013a1b77]*/
