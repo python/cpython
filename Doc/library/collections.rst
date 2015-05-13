@@ -929,9 +929,9 @@ fields:
 
    >>> Book = namedtuple('Book', ['id', 'title', 'authors'])
    >>> Book.__doc__ = 'Hardcover book in active collection'
-   >>> Book.id = '13-digit ISBN'
-   >>> Book.title = 'Title of first printing'
-   >>> Book.author = 'List of authors sorted by last name'
+   >>> Book.id.__doc__ = '13-digit ISBN'
+   >>> Book.title.__doc__ = 'Title of first printing'
+   >>> Book.author.__doc__ = 'List of authors sorted by last name'
 
 Default values can be implemented by using :meth:`_replace` to
 customize a prototype instance:
