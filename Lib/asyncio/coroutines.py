@@ -53,6 +53,11 @@ else:
     _is_native_coro_code = lambda code: (code.co_flags &
                                          inspect.CO_COROUTINE)
 
+try:
+    from collections.abc import Coroutine as CoroutineABC
+except ImportError:
+    CoroutineABC = None
+
 
 # Check for CPython issue #21209
 def has_yield_from_bug():
@@ -219,6 +224,9 @@ def iscoroutinefunction(func):
 
 
 _COROUTINE_TYPES = (types.GeneratorType, CoroWrapper)
+if CoroutineABC is not None:
+    _COROUTINE_TYPES += (CoroutineABC,)
+
 
 def iscoroutine(obj):
     """Return True if obj is a coroutine object."""
