@@ -121,8 +121,8 @@ Please read on for a comprehensive list of user-facing changes.
        PEP written by Carl Meyer
 
 
-PEP 461 - Adding % formatting to bytes and bytearray
-----------------------------------------------------
+PEP 461 - Adding formatting to bytes and bytearray
+--------------------------------------------------
 
 This PEP proposes adding % formatting operations similar to Python 2's ``str``
 type to :class:`bytes` and :class:`bytearray`.
