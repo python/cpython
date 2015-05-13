@@ -247,6 +247,8 @@ Unix Platforms
 
    This is another name for :func:`linux_distribution`.
 
+   .. deprecated-removed:: 3.5 3.7
+
 .. function:: linux_distribution(distname='', version='', id='', supported_dists=('SuSE','debian','redhat','mandrake',...), full_distribution_name=1)
 
    Tries to determine the name of the Linux OS distribution name.
@@ -262,6 +264,8 @@ Unix Platforms
    Returns a tuple ``(distname,version,id)`` which defaults to the args given as
    parameters.  ``id`` is the item in parentheses after the version number.  It
    is usually the version codename.
+
+   .. deprecated-removed:: 3.5 3.7
 
 .. function:: libc_ver(executable=sys.executable, lib='', version='', chunksize=2048)
 

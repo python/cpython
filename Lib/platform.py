@@ -297,6 +297,15 @@ def linux_distribution(distname='', version='', id='',
 
                        supported_dists=_supported_dists,
                        full_distribution_name=1):
+    import warnings
+    warnings.warn("dist() and linux_distribution() functions are deprecated "
+                  "in Python 3.5 and will be removed in Python 3.7",
+                  PendingDeprecationWarning, stacklevel=2)
+    return _linux_distribution(distname, version, id, supported_dists,
+                               full_distribution_name)
+
+def _linux_distribution(distname, version, id, supported_dists,
+                        full_distribution_name):
 
     """ Tries to determine the name of the Linux OS distribution name.
 
@@ -363,9 +372,13 @@ def dist(distname='', version='', id='',
         args given as parameters.
 
     """
-    return linux_distribution(distname, version, id,
-                              supported_dists=supported_dists,
-                              full_distribution_name=0)
+    import warnings
+    warnings.warn("dist() and linux_distribution() functions are deprecated "
+                  "in Python 3.5 and will be removed in Python 3.7",
+                  PendingDeprecationWarning, stacklevel=2)
+    return _linux_distribution(distname, version, id,
+                               supported_dists=supported_dists,
+                               full_distribution_name=0)
 
 def popen(cmd, mode='r', bufsize=-1):
 
