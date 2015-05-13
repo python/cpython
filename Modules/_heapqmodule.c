@@ -335,7 +335,7 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
        in cache, we prefer the simpler algorithm with less branching.
     */
     n = PyList_GET_SIZE(heap);
-    if (n > 10000)
+    if (n > 2500)
         return cache_friendly_heapify(heap, siftup_func);
 
     /* Transform bottom-up.  The largest index there's any point to
