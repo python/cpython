@@ -76,6 +76,13 @@ class PropertyNewGetter(object):
         """new docstring"""
         return 8
 
+class PropertyWritableDoc(object):
+
+    @property
+    def spam(self):
+        """Eggs"""
+        return "eggs"
+
 class PropertyTests(unittest.TestCase):
     def test_property_decorator_baseclass(self):
         # see #1620
@@ -150,6 +157,21 @@ class PropertyTests(unittest.TestCase):
                 foo = property(foo)
             C.foo.__isabstractmethod__
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_builtin_doc_writable(self):
+        p = property(doc='basic')
+        self.assertEqual(p.__doc__, 'basic')
+        p.__doc__ = 'extended'
+        self.assertEqual(p.__doc__, 'extended')
+
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_property_decorator_doc_writable(self):
+        sub = PropertyWritableDoc()
+        self.assertEqual(sub.__class__.spam.__doc__, 'Eggs')
+        sub.__class__.spam.__doc__ = 'Spam'
+        self.assertEqual(sub.__class__.spam.__doc__, 'Spam')
 
 # Issue 5890: subclasses of property do not preserve method __doc__ strings
 class PropertySub(property):

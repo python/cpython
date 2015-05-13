@@ -234,6 +234,10 @@ Some smaller changes made to the core Python language are:
 * New Kazakh :ref:`codec <standard-encodings>` ``kz1048``.  (Contributed by
   Serhiy Storchaka in :issue:`22682`.)
 
+* Property docstrings are now writable. This is especially useful for
+  :func:`collections.namedtuple` docstrings.
+  (Contributed by Berker Peksag in :issue:`24064`.)
+
 * New Tajik :ref:`codec <standard-encodings>` ``koi8_t``.  (Contributed by
   Serhiy Storchaka in :issue:`22681`.)
 
@@ -282,6 +286,18 @@ code
 * The :func:`code.InteractiveInterpreter.showtraceback` method now prints
   the full chained traceback, just like the interactive interpreter.
   (Contributed by Claudiu Popa in :issue:`17442`.)
+
+collections
+-----------
+
+* You can now update docstrings produced by :func:`collections.namedtuple`::
+
+    Point = namedtuple('Point', ['x', 'y'])
+    Point.__doc__ = 'ordered pair'
+    Point.x.__doc__ = 'abscissa'
+    Point.y.__doc__ = 'ordinate'
+
+  (Contributed by Berker Peksag in :issue:`24064`.)
 
 compileall
 ----------

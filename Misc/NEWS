@@ -45,6 +45,9 @@ Library
 - Issue #22486: Added the math.gcd() function.  The fractions.gcd() function now is
   deprecated.  Based on patch by Mark Dickinson.
 
+- Issue #24064: Property() docstrings are now writeable.
+  (Patch by Berker Peksag.)
+
 - Issue #22681: Added support for the koi8_t encoding.
 
 - Issue #22682: Added support for the kz1048 encoding.

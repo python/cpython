@@ -2022,7 +2022,7 @@ order (MRO) for bases """
         self.assertIs(raw.fset, C.__dict__['setx'])
         self.assertIs(raw.fdel, C.__dict__['delx'])
 
-        for attr in "__doc__", "fget", "fset", "fdel":
+        for attr in "fget", "fset", "fdel":
             try:
                 setattr(raw, attr, 42)
             except AttributeError as msg:
@@ -2032,6 +2032,9 @@ order (MRO) for bases """
             else:
                 self.fail("expected AttributeError from trying to set readonly %r "
                           "attr on a property" % attr)
+
+        raw.__doc__ = 42
+        self.assertEqual(raw.__doc__, 42)
 
         class D(object):
             __getitem__ = property(lambda s: 1/0)
