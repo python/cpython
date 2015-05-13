@@ -25,6 +25,8 @@ Core and Builtins
 - Issue #20274: When calling a _sqlite.Connection, it now complains if passed
   any keyword arguments.  Previously it silently ignored them.
 
+- Issue #23971:  Fix underestimated presizing in dict.fromkeys().
+
 - Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
   METH_VARARGS methods on _sqlite.Connection.
 
