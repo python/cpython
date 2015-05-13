@@ -69,8 +69,8 @@ Summary -- Release highlights
 
 New syntax features:
 
-*  :pep:`465`, a new matrix multiplication operator: ``a @ b``.
-*  :pep:`492`, coroutines with async and await syntax.
+* :pep:`465`, a new matrix multiplication operator: ``a @ b``.
+* :pep:`492`, coroutines with async and await syntax.
 
 New library modules:
 
