@@ -3156,6 +3156,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             if (res == NULL)
                 goto error;
 
+            Py_INCREF(exc); /* Duplicating the exception on the stack */
             PUSH(exc);
             PUSH(res);
             PREDICT(WITH_CLEANUP_FINISH);
@@ -3174,6 +3175,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 err = 0;
 
             Py_DECREF(res);
+            Py_DECREF(exc);
 
             if (err < 0)
                 goto error;
