@@ -2279,6 +2279,8 @@ def root_is_uid_gid_0():
     return True
 
 
+@unittest.skipUnless(hasattr(os, 'chown'), "missing os.chown")
+@unittest.skipUnless(hasattr(os, 'geteuid'), "missing os.geteuid")
 class NumericOwnerTest(unittest.TestCase):
     # mock the following:
     #  os.chown: so we can test what's being called
