@@ -1,6 +1,10 @@
 """Tests support for new syntax introduced by PEP 492."""
 
+import collections.abc
+import gc
 import unittest
+
+from test import support
 from unittest import mock
 
 import asyncio
@@ -81,6 +85,31 @@ class StreamReaderTests(BaseTest):
 
         data = self.loop.run_until_complete(reader())
         self.assertEqual(data, [b'line1\n', b'line2\n', b'line3'])
+
+
+class CoroutineTests(BaseTest):
+
+    def test_iscoroutine(self):
+        async def foo(): pass
+
+        f = foo()
+        try:
+            self.assertTrue(asyncio.iscoroutine(f))
+        finally:
+            f.close() # silence warning
+
+        class FakeCoro(collections.abc.Coroutine):
+            def send(self, value): pass
+            def throw(self, typ, val=None, tb=None): pass
+
+        fc = FakeCoro()
+        try:
+            self.assertTrue(asyncio.iscoroutine(fc))
+        finally:
+            # To make sure that ABCMeta caches are freed
+            # from FakeCoro ASAP.
+            fc = FakeCoro = None
+            support.gc_collect()
 
 
 if __name__ == '__main__':
