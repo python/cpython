@@ -1313,7 +1313,7 @@ static PyMemberDef property_members[] = {
     {"fget", T_OBJECT, offsetof(propertyobject, prop_get), READONLY},
     {"fset", T_OBJECT, offsetof(propertyobject, prop_set), READONLY},
     {"fdel", T_OBJECT, offsetof(propertyobject, prop_del), READONLY},
-    {"__doc__",  T_OBJECT, offsetof(propertyobject, prop_doc), READONLY},
+    {"__doc__",  T_OBJECT, offsetof(propertyobject, prop_doc), 0},
     {0}
 };
 

@@ -924,6 +924,15 @@ create a new named tuple type from the :attr:`_fields` attribute:
 
     >>> Point3D = namedtuple('Point3D', Point._fields + ('z',))
 
+Docstrings can be customized by making direct assignments to the ``__doc__``
+fields:
+
+   >>> Book = namedtuple('Book', ['id', 'title', 'authors'])
+   >>> Book.__doc__ = 'Hardcover book in active collection'
+   >>> Book.id = '13-digit ISBN'
+   >>> Book.title = 'Title of first printing'
+   >>> Book.author = 'List of authors sorted by last name'
+
 Default values can be implemented by using :meth:`_replace` to
 customize a prototype instance:
 
