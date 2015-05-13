@@ -64,7 +64,7 @@ module winsound
 /*[clinic input]
 winsound.PlaySound
 
-    sound: Py_UNICODE(nullable=True)
+    sound: Py_UNICODE(accept={str, NoneType})
         The sound to play; a filename, data, or None.
     flags: int
         Flag values, ored together.  See module documentation.
@@ -75,7 +75,7 @@ A wrapper around the Windows PlaySound API.
 
 static PyObject *
 winsound_PlaySound_impl(PyModuleDef *module, Py_UNICODE *sound, int flags)
-/*[clinic end generated code: output=614273784bf59e5c input=c86fab5d8e86f31d]*/
+/*[clinic end generated code: output=614273784bf59e5c input=3411b1b7c1f36d93]*/
 {
     int ok;
 
