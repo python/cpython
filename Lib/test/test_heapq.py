@@ -65,7 +65,7 @@ class TestHeap:
                 self.assertTrue(heap[parentpos] <= item)
 
     def test_heapify(self):
-        for size in range(30):
+        for size in list(range(30)) + [20000]:
             heap = [random.random() for dummy in range(size)]
             self.module.heapify(heap)
             self.check_invariant(heap)
