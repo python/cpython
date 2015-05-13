@@ -548,16 +548,16 @@ set_merge(PySetObject *so, PyObject *otherset)
 {
     PySetObject *other;
     PyObject *key;
-    Py_hash_t hash;
     Py_ssize_t i;
-    setentry *entry;
+    setentry *so_entry;
+    setentry *other_entry;
 
     assert (PyAnySet_Check(so));
     assert (PyAnySet_Check(otherset));
 
     other = (PySetObject*)otherset;
     if (other == so || other->used == 0)
-        /* a.update(a) or a.update({}); nothing to do */
+        /* a.update(a) or a.update(set()); nothing to do */
         return 0;
     /* Do one big resize at the start, rather than
      * incrementally resizing as we insert new keys.  Expect
@@ -567,14 +567,44 @@ set_merge(PySetObject *so, PyObject *otherset)
        if (set_table_resize(so, (so->used + other->used)*2) != 0)
            return -1;
     }
-    for (i = 0; i <= other->mask; i++) {
-        entry = &other->table[i];
-        key = entry->key;
-        hash = entry->hash;
-        if (key != NULL &&
-            key != dummy) {
+    so_entry = so->table;
+    other_entry = other->table;
+
+    /* If our table is empty, and both tables have the same size, and
+       there are no dummies to eliminate, then just copy the pointers. */
+    if (so->fill == 0 && so->mask == other->mask && other->fill == other->used) {
+        for (i = 0; i <= other->mask; i++, so_entry++, other_entry++) {
+            key = other_entry->key;
+            if (key != NULL) {
+                assert(so_entry->key == NULL);
+                Py_INCREF(key);
+                so_entry->key = key;
+                so_entry->hash = other_entry->hash;
+            }
+        }
+        so->fill = other->fill;
+        so->used = other->used;
+        return 0;
+    }
+
+    /* If our table is empty, we can use set_insert_clean() */
+    if (so->fill == 0) {
+        for (i = 0; i <= other->mask; i++, other_entry++) {
+            key = other_entry->key;
+            if (key != NULL && key != dummy) {
+                Py_INCREF(key);
+                set_insert_clean(so, key, other_entry->hash);
+            }
+        }
+        return 0;
+    }
+
+    /* We can't assure there are no duplicates, so do normal insertions */
+    for (i = 0; i <= other->mask; i++, other_entry++) {
+        key = other_entry->key;
+        if (key != NULL && key != dummy) {
             Py_INCREF(key);
-            if (set_insert_key(so, key, hash) == -1) {
+            if (set_insert_key(so, key, other_entry->hash)) {
                 Py_DECREF(key);
                 return -1;
             }
