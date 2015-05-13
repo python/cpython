@@ -45,6 +45,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #1322: platform.dist() and platform.linux_distribution() functions are
+  now deprecated.  Initial patch by Vajrasky Kok.
+
 - Issue #22486: Added the math.gcd() function.  The fractions.gcd() function now is
   deprecated.  Based on patch by Mark Dickinson.
 
