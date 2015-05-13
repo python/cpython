@@ -116,6 +116,9 @@ Library
 
 - asyncio: async() function is deprecated in favour of ensure_future().
 
+- Issue 24178: asyncio.Lock, Condition, Semaphore, and BoundedSemaphore
+  support new 'async with' syntax.  Contributed by Yury Selivanov.
+
 Tests
 -----
 
