@@ -623,6 +623,27 @@ class CoroutineTest(unittest.TestCase):
 
         run_async(foo())
 
+    def test_with_13(self):
+        CNT = 0
+
+        class CM:
+            async def __aenter__(self):
+                1/0
+
+            async def __aexit__(self, *e):
+                return True
+
+        async def foo():
+            nonlocal CNT
+            CNT += 1
+            async with CM():
+                CNT += 1000
+            CNT += 10000
+
+        with self.assertRaises(ZeroDivisionError):
+            run_async(foo())
+        self.assertEqual(CNT, 1)
+
     def test_for_1(self):
         aiter_calls = 0
 
@@ -858,6 +879,20 @@ class CoroutineTest(unittest.TestCase):
 
         run_async(main())
         self.assertEqual(I, 20555255)
+
+    def test_for_7(self):
+        CNT = 0
+        class AI:
+            async def __aiter__(self):
+                1/0
+        async def foo():
+            nonlocal CNT
+            async for i in AI():
+                CNT += 1
+            CNT += 10
+        with self.assertRaises(ZeroDivisionError):
+            run_async(foo())
+        self.assertEqual(CNT, 0)
 
 
 class CoroAsyncIOCompatTest(unittest.TestCase):
