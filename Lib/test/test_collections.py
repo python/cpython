@@ -199,6 +199,14 @@ class TestNamedTuple(unittest.TestCase):
         Point = namedtuple('Point', 'x y')
         self.assertEqual(Point.__doc__, 'Point(x, y)')
 
+    @unittest.skipIf(sys.flags.optimize >= 2,
+                     "Docstrings are omitted with -O2 and above")
+    def test_doc_writable(self):
+        Point = namedtuple('Point', 'x y')
+        self.assertEqual(Point.x.__doc__, 'Alias for field number 0')
+        Point.x.__doc__ = 'docstring for Point.x'
+        self.assertEqual(Point.x.__doc__, 'docstring for Point.x')
+
     def test_name_fixer(self):
         for spec, renamed in [
             [('efg', 'g%hi'),  ('efg', '_1')],                              # field with non-alpha char
