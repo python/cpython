@@ -255,7 +255,7 @@ class RefactoringTool(object):
             fixer = fix_class(self.options, self.fixer_log)
             if fixer.explicit and self.explicit is not True and \
                     fix_mod_path not in self.explicit:
-                self.log_message("Skipping implicit fixer: %s", fix_name)
+                self.log_message("Skipping optional fixer: %s", fix_name)
                 continue
 
             self.log_debug("Adding transformation: %s", fix_name)
