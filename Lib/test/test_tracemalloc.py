@@ -671,7 +671,6 @@ class TestFilters(unittest.TestCase):
             self.assertTrue(fnmatch('aBcDe', 'Ab*dE'))
 
             self.assertTrue(fnmatch('a.pyc', 'a.PY'))
-            self.assertTrue(fnmatch('a.PYO', 'a.py'))
             self.assertTrue(fnmatch('a.py', 'a.PYC'))
         else:
             # case sensitive
@@ -679,7 +678,6 @@ class TestFilters(unittest.TestCase):
             self.assertFalse(fnmatch('aBcDe', 'Ab*dE'))
 
             self.assertFalse(fnmatch('a.pyc', 'a.PY'))
-            self.assertFalse(fnmatch('a.PYO', 'a.py'))
             self.assertFalse(fnmatch('a.py', 'a.PYC'))
 
         if os.name == 'nt':
@@ -694,6 +692,9 @@ class TestFilters(unittest.TestCase):
             self.assertFalse(fnmatch(r'a\b', r'a/b'))
             self.assertFalse(fnmatch(r'a/b\c', r'a\b/c'))
             self.assertFalse(fnmatch(r'a/b/c', r'a\b\c'))
+
+        # as of 3.5, .pyo is no longer munged to .py
+        self.assertFalse(fnmatch('a.pyo', 'a.py'))
 
     def test_filter_match_trace(self):
         t1 = (("a.py", 2), ("b.py", 3))
