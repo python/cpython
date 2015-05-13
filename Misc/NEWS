@@ -119,6 +119,9 @@ Library
 - Issue 24178: asyncio.Lock, Condition, Semaphore, and BoundedSemaphore
   support new 'async with' syntax.  Contributed by Yury Selivanov.
 
+- Issue 24179: Support 'async for' for asyncio.StreamReader.
+  Contributed by Yury Selivanov.
+
 Tests
 -----
 

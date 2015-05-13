@@ -64,5 +64,24 @@ class LockTests(BaseTest):
             self.assertFalse(primitive.locked())
 
 
+class StreamReaderTests(BaseTest):
+
+    def test_readline(self):
+        DATA = b'line1\nline2\nline3'
+
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream.feed_data(DATA)
+        stream.feed_eof()
+
+        async def reader():
+            data = []
+            async for line in stream:
+                data.append(line)
+            return data
+
+        data = self.loop.run_until_complete(reader())
+        self.assertEqual(data, [b'line1\n', b'line2\n', b'line3'])
+
+
 if __name__ == '__main__':
     unittest.main()

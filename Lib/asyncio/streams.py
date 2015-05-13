@@ -6,6 +6,7 @@ __all__ = ['StreamReader', 'StreamWriter', 'StreamReaderProtocol',
            ]
 
 import socket
+import sys
 
 if hasattr(socket, 'AF_UNIX'):
     __all__.extend(['open_unix_connection', 'start_unix_server'])
@@ -19,6 +20,7 @@ from .log import logger
 
 
 _DEFAULT_LIMIT = 2**16
+_PY35 = sys.version_info >= (3, 5)
 
 
 class IncompleteReadError(EOFError):
@@ -485,3 +487,15 @@ class StreamReader:
             n -= len(block)
 
         return b''.join(blocks)
+
+    if _PY35:
+        @coroutine
+        def __aiter__(self):
+            return self
+
+        @coroutine
+        def __anext__(self):
+            val = yield from self.readline()
+            if val == b'':
+                raise StopAsyncIteration
+            return val
