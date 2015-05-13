@@ -3,10 +3,14 @@
 __all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
 
 import collections
+import sys
 
 from . import events
 from . import futures
 from .coroutines import coroutine
+
+
+_PY35 = sys.version_info >= (3, 5)
 
 
 class _ContextManager:
@@ -39,7 +43,53 @@ class _ContextManager:
             self._lock = None  # Crudely prevent reuse.
 
 
-class Lock:
+class _ContextManagerMixin:
+    def __enter__(self):
+        raise RuntimeError(
+            '"yield from" should be used as context manager expression')
+
+    def __exit__(self, *args):
+        # This must exist because __enter__ exists, even though that
+        # always raises; that's how the with-statement works.
+        pass
+
+    @coroutine
+    def __iter__(self):
+        # This is not a coroutine.  It is meant to enable the idiom:
+        #
+        #     with (yield from lock):
+        #         <block>
+        #
+        # as an alternative to:
+        #
+        #     yield from lock.acquire()
+        #     try:
+        #         <block>
+        #     finally:
+        #         lock.release()
+        yield from self.acquire()
+        return _ContextManager(self)
+
+    if _PY35:
+
+        def __await__(self):
+            # To make "with await lock" work.
+            yield from self.acquire()
+            return _ContextManager(self)
+
+        @coroutine
+        def __aenter__(self):
+            yield from self.acquire()
+            # We have no use for the "as ..."  clause in the with
+            # statement for locks.
+            return None
+
+        @coroutine
+        def __aexit__(self, exc_type, exc, tb):
+            self.release()
+
+
+class Lock(_ContextManagerMixin):
     """Primitive lock objects.
 
     A primitive lock is a synchronization primitive that is not owned
@@ -153,32 +203,6 @@ class Lock:
         else:
             raise RuntimeError('Lock is not acquired.')
 
-    def __enter__(self):
-        raise RuntimeError(
-            '"yield from" should be used as context manager expression')
-
-    def __exit__(self, *args):
-        # This must exist because __enter__ exists, even though that
-        # always raises; that's how the with-statement works.
-        pass
-
-    @coroutine
-    def __iter__(self):
-        # This is not a coroutine.  It is meant to enable the idiom:
-        #
-        #     with (yield from lock):
-        #         <block>
-        #
-        # as an alternative to:
-        #
-        #     yield from lock.acquire()
-        #     try:
-        #         <block>
-        #     finally:
-        #         lock.release()
-        yield from self.acquire()
-        return _ContextManager(self)
-
 
 class Event:
     """Asynchronous equivalent to threading.Event.
@@ -246,7 +270,7 @@ class Event:
             self._waiters.remove(fut)
 
 
-class Condition:
+class Condition(_ContextManagerMixin):
     """Asynchronous equivalent to threading.Condition.
 
     This class implements condition variable objects. A condition variable
@@ -356,21 +380,8 @@ class Condition:
         """
         self.notify(len(self._waiters))
 
-    def __enter__(self):
-        raise RuntimeError(
-            '"yield from" should be used as context manager expression')
 
-    def __exit__(self, *args):
-        pass
-
-    @coroutine
-    def __iter__(self):
-        # See comment in Lock.__iter__().
-        yield from self.acquire()
-        return _ContextManager(self)
-
-
-class Semaphore:
+class Semaphore(_ContextManagerMixin):
     """A Semaphore implementation.
 
     A semaphore manages an internal counter which is decremented by each
@@ -440,19 +451,6 @@ class Semaphore:
             if not waiter.done():
                 waiter.set_result(True)
                 break
-
-    def __enter__(self):
-        raise RuntimeError(
-            '"yield from" should be used as context manager expression')
-
-    def __exit__(self, *args):
-        pass
-
-    @coroutine
-    def __iter__(self):
-        # See comment in Lock.__iter__().
-        yield from self.acquire()
-        return _ContextManager(self)
 
 
 class BoundedSemaphore(Semaphore):
