@@ -307,7 +307,7 @@ set_add_entry(PySetObject *so, setentry *entry)
     assert(so->fill <= so->mask);  /* at least one empty slot */
     n_used = so->used;
     Py_INCREF(key);
-    if (set_insert_key(so, key, hash) == -1) {
+    if (set_insert_key(so, key, hash)) {
         Py_DECREF(key);
         return -1;
     }
@@ -923,7 +923,7 @@ set_update_internal(PySetObject *so, PyObject *other)
 
             an_entry.hash = hash;
             an_entry.key = key;
-            if (set_add_entry(so, &an_entry) == -1)
+            if (set_add_entry(so, &an_entry))
                 return -1;
         }
         return 0;
@@ -934,7 +934,7 @@ set_update_internal(PySetObject *so, PyObject *other)
         return -1;
 
     while ((key = PyIter_Next(it)) != NULL) {
-        if (set_add_key(so, key) == -1) {
+        if (set_add_key(so, key)) {
             Py_DECREF(it);
             Py_DECREF(key);
             return -1;
@@ -954,7 +954,7 @@ set_update(PySetObject *so, PyObject *args)
 
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
-        if (set_update_internal(so, other) == -1)
+        if (set_update_internal(so, other))
             return NULL;
     }
     Py_RETURN_NONE;
@@ -988,7 +988,7 @@ make_new_set(PyTypeObject *type, PyObject *iterable)
     so->weakreflist = NULL;
 
     if (iterable != NULL) {
-        if (set_update_internal(so, iterable) == -1) {
+        if (set_update_internal(so, iterable)) {
             Py_DECREF(so);
             return NULL;
         }
@@ -1153,7 +1153,7 @@ set_union(PySetObject *so, PyObject *args)
         other = PyTuple_GET_ITEM(args, i);
         if ((PyObject *)so == other)
             continue;
-        if (set_update_internal(result, other) == -1) {
+        if (set_update_internal(result, other)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1179,7 +1179,7 @@ set_or(PySetObject *so, PyObject *other)
         return NULL;
     if ((PyObject *)so == other)
         return (PyObject *)result;
-    if (set_update_internal(result, other) == -1) {
+    if (set_update_internal(result, other)) {
         Py_DECREF(result);
         return NULL;
     }
@@ -1192,7 +1192,7 @@ set_ior(PySetObject *so, PyObject *other)
     if (!PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
 
-    if (set_update_internal(so, other) == -1)
+    if (set_update_internal(so, other))
         return NULL;
     Py_INCREF(so);
     return (PyObject *)so;
@@ -1228,7 +1228,7 @@ set_intersection(PySetObject *so, PyObject *other)
                 return NULL;
             }
             if (rv) {
-                if (set_add_entry(result, entry) == -1) {
+                if (set_add_entry(result, entry)) {
                     Py_DECREF(result);
                     return NULL;
                 }
@@ -1264,7 +1264,7 @@ set_intersection(PySetObject *so, PyObject *other)
             return NULL;
         }
         if (rv) {
-            if (set_add_entry(result, &entry) == -1) {
+            if (set_add_entry(result, &entry)) {
                 Py_DECREF(it);
                 Py_DECREF(result);
                 Py_DECREF(key);
@@ -1472,7 +1472,7 @@ set_difference_update(PySetObject *so, PyObject *args)
 
     for (i=0 ; i<PyTuple_GET_SIZE(args) ; i++) {
         PyObject *other = PyTuple_GET_ITEM(args, i);
-        if (set_difference_update_internal(so, other) == -1)
+        if (set_difference_update_internal(so, other))
             return NULL;
     }
     Py_RETURN_NONE;
@@ -1522,7 +1522,7 @@ set_difference(PySetObject *so, PyObject *other)
             entrycopy.hash = entry->hash;
             entrycopy.key = entry->key;
             if (!_PyDict_Contains(other, entry->key, entry->hash)) {
-                if (set_add_entry((PySetObject *)result, &entrycopy) == -1) {
+                if (set_add_entry((PySetObject *)result, &entrycopy)) {
                     Py_DECREF(result);
                     return NULL;
                 }
@@ -1539,7 +1539,7 @@ set_difference(PySetObject *so, PyObject *other)
             return NULL;
         }
         if (!rv) {
-            if (set_add_entry((PySetObject *)result, entry) == -1) {
+            if (set_add_entry((PySetObject *)result, entry)) {
                 Py_DECREF(result);
                 return NULL;
             }
@@ -1564,7 +1564,7 @@ set_difference_multi(PySetObject *so, PyObject *args)
 
     for (i=1 ; i<PyTuple_GET_SIZE(args) ; i++) {
         other = PyTuple_GET_ITEM(args, i);
-        if (set_difference_update_internal((PySetObject *)result, other) == -1) {
+        if (set_difference_update_internal((PySetObject *)result, other)) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1589,7 +1589,7 @@ set_isub(PySetObject *so, PyObject *other)
 {
     if (!PyAnySet_Check(other))
         Py_RETURN_NOTIMPLEMENTED;
-    if (set_difference_update_internal(so, other) == -1)
+    if (set_difference_update_internal(so, other))
         return NULL;
     Py_INCREF(so);
     return (PyObject *)so;
@@ -1623,7 +1623,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
                 return NULL;
             }
             if (rv == DISCARD_NOTFOUND) {
-                if (set_add_entry(so, &an_entry) == -1) {
+                if (set_add_entry(so, &an_entry)) {
                     Py_DECREF(key);
                     return NULL;
                 }
@@ -1649,7 +1649,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
             return NULL;
         }
         if (rv == DISCARD_NOTFOUND) {
-            if (set_add_entry(so, entry) == -1) {
+            if (set_add_entry(so, entry)) {
                 Py_DECREF(otherset);
                 return NULL;
             }
@@ -1797,7 +1797,7 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
 static PyObject *
 set_add(PySetObject *so, PyObject *key)
 {
-    if (set_add_key(so, key) == -1)
+    if (set_add_key(so, key))
         return NULL;
     Py_RETURN_NONE;
 }
@@ -2341,7 +2341,7 @@ test_c_api(PySetObject *so)
     if (str == NULL)
         return NULL;
     set_clear_internal(so);
-    if (set_update_internal(so, str) == -1) {
+    if (set_update_internal(so, str)) {
         Py_DECREF(str);
         return NULL;
     }
