@@ -39,22 +39,6 @@
 #include <windows.h>
 #include <mmsystem.h>
 
-PyDoc_STRVAR(sound_playsound_doc,
-"PlaySound(sound, flags) - a wrapper around the Windows PlaySound API\n"
-"\n"
-"The sound argument can be a filename, data, or None.\n"
-"For flag values, ored together, see module documentation.");
-
-PyDoc_STRVAR(sound_beep_doc,
-"Beep(frequency, duration) - a wrapper around the Windows Beep API\n"
-"\n"
-"The frequency argument specifies frequency, in hertz, of the sound.\n"
-"This parameter must be in the range 37 through 32,767.\n"
-"The duration argument specifies the number of milliseconds.\n");
-
-PyDoc_STRVAR(sound_msgbeep_doc,
-"MessageBeep(x) - call Windows MessageBeep(x). x defaults to MB_OK.");
-
 PyDoc_STRVAR(sound_module_doc,
 "PlaySound(sound, flags) - play a sound\n"
 "SND_FILENAME - sound is a wav file name\n"
@@ -67,79 +51,112 @@ PyDoc_STRVAR(sound_module_doc,
 "SND_NOSTOP - Do not interrupt any sounds currently playing\n"  // Raising RuntimeError if needed
 "SND_NOWAIT - Return immediately if the sound driver is busy\n" // Without any errors
 "\n"
-"Beep(frequency, duration) - Make a beep through the PC speaker.");
+"Beep(frequency, duration) - Make a beep through the PC speaker.\n"
+"MessageBeep(x) - Call Windows MessageBeep.");
+
+/*[clinic input]
+module winsound
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=a18401142d97b8d5]*/
+
+#include "clinic/winsound.c.h"
+
+/*[clinic input]
+winsound.PlaySound
+
+    sound: Py_UNICODE(nullable=True)
+        The sound to play; a filename, data, or None.
+    flags: int
+        Flag values, ored together.  See module documentation.
+    /
+
+A wrapper around the Windows PlaySound API.
+[clinic start generated code]*/
 
 static PyObject *
-sound_playsound(PyObject *s, PyObject *args)
+winsound_PlaySound_impl(PyModuleDef *module, Py_UNICODE *sound, int flags)
+/*[clinic end generated code: output=614273784bf59e5c input=c86fab5d8e86f31d]*/
 {
-    wchar_t *wsound;
-    int flags;
     int ok;
 
-    if (PyArg_ParseTuple(args, "Zi:PlaySound", &wsound, &flags)) {
-        if (flags & SND_ASYNC && flags & SND_MEMORY) {
-            /* Sidestep reference counting headache; unfortunately this also
-               prevent SND_LOOP from memory. */
-            PyErr_SetString(PyExc_RuntimeError, "Cannot play asynchronously from memory");
-            return NULL;
-        }
-        Py_BEGIN_ALLOW_THREADS
-        ok = PlaySoundW(wsound, NULL, flags);
-        Py_END_ALLOW_THREADS
-        if (!ok) {
-            PyErr_SetString(PyExc_RuntimeError, "Failed to play sound");
-            return NULL;
-        }
-        Py_INCREF(Py_None);
-        return Py_None;
+    if (flags & SND_ASYNC && flags & SND_MEMORY) {
+        /* Sidestep reference counting headache; unfortunately this also
+            prevent SND_LOOP from memory. */
+        PyErr_SetString(PyExc_RuntimeError,
+                        "Cannot play asynchronously from memory");
+        return NULL;
     }
-    return NULL;
+
+    Py_BEGIN_ALLOW_THREADS
+    ok = PlaySoundW(sound, NULL, flags);
+    Py_END_ALLOW_THREADS
+    if (!ok) {
+        PyErr_SetString(PyExc_RuntimeError, "Failed to play sound");
+        return NULL;
+    }
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winsound.Beep
+
+    frequency: int
+        Frequency of the sound in hertz.
+        Must be in the range 37 through 32,767.
+    duration: int
+        How long the sound should play, in milliseconds.
+    /
+
+A wrapper around the Windows Beep API.
+[clinic start generated code]*/
+
 static PyObject *
-sound_beep(PyObject *self, PyObject *args)
+winsound_Beep_impl(PyModuleDef *module, int frequency, int duration)
+/*[clinic end generated code: output=c75f282035a872bd input=628a99d2ddf73798]*/
 {
-    int freq;
-    int dur;
     BOOL ok;
 
-    if (!PyArg_ParseTuple(args, "ii:Beep", &freq,  &dur))
-        return NULL;
-
-    if (freq < 37 || freq > 32767) {
+    if (frequency < 37 || frequency > 32767) {
         PyErr_SetString(PyExc_ValueError,
                         "frequency must be in 37 thru 32767");
         return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    ok = Beep(freq, dur);
+    ok = Beep(frequency, duration);
     Py_END_ALLOW_THREADS
     if (!ok) {
         PyErr_SetString(PyExc_RuntimeError,"Failed to beep");
         return NULL;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winsound.MessageBeep
+
+    x: int(c_default="MB_OK") = MB_OK
+    /
+
+Call Windows MessageBeep(x).
+
+x defaults to MB_OK.
+[clinic start generated code]*/
+
 static PyObject *
-sound_msgbeep(PyObject *self, PyObject *args)
+winsound_MessageBeep_impl(PyModuleDef *module, int x)
+/*[clinic end generated code: output=92aa6a822bdc66ad input=a776c8a85c9853f6]*/
 {
-    int x = MB_OK;
-    if (!PyArg_ParseTuple(args, "|i:MessageBeep", &x))
-        return NULL;
     MessageBeep(x);
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static struct PyMethodDef sound_methods[] =
 {
-    {"PlaySound", sound_playsound, METH_VARARGS, sound_playsound_doc},
-    {"Beep",      sound_beep,      METH_VARARGS, sound_beep_doc},
-    {"MessageBeep", sound_msgbeep, METH_VARARGS, sound_msgbeep_doc},
+    WINSOUND_PLAYSOUND_METHODDEF
+    WINSOUND_BEEP_METHODDEF
+    WINSOUND_MESSAGEBEEP_METHODDEF
     {NULL,  NULL}
 };
 
