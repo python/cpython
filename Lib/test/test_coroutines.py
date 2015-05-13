@@ -1,5 +1,4 @@
 import contextlib
-import gc
 import sys
 import types
 import unittest
@@ -185,8 +184,8 @@ class CoroutineTest(unittest.TestCase):
             await bar()
 
         f = foo()
-        self.assertEquals(f.send(None), 1)
-        self.assertEquals(f.send(None), 2)
+        self.assertEqual(f.send(None), 1)
+        self.assertEqual(f.send(None), 2)
         with self.assertRaises(StopIteration):
             f.send(None)
 
@@ -968,13 +967,5 @@ class CAPITest(unittest.TestCase):
             self.assertEqual(foo().send(None), 1)
 
 
-def test_main():
-    support.run_unittest(AsyncBadSyntaxTest,
-                         CoroutineTest,
-                         CoroAsyncIOCompatTest,
-                         SysSetCoroWrapperTest,
-                         CAPITest)
-
-
 if __name__=="__main__":
-    test_main()
+    unittest.main()
