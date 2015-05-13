@@ -1592,6 +1592,14 @@ property_traverse(PyObject *self, visitproc visit, void *arg)
     return 0;
 }
 
+static int
+property_clear(PyObject *self)
+{
+    propertyobject *pp = (propertyobject *)self;
+    Py_CLEAR(pp->prop_doc);
+    return 0;
+}
+
 PyTypeObject PyProperty_Type = {
     PyVarObject_HEAD_INIT(&PyType_Type, 0)
     "property",                                 /* tp_name */
@@ -1617,7 +1625,7 @@ PyTypeObject PyProperty_Type = {
         Py_TPFLAGS_BASETYPE,                    /* tp_flags */
     property_doc,                               /* tp_doc */
     property_traverse,                          /* tp_traverse */
-    0,                                          /* tp_clear */
+    (inquiry)property_clear,                    /* tp_clear */
     0,                                          /* tp_richcompare */
     0,                                          /* tp_weaklistoffset */
     0,                                          /* tp_iter */
