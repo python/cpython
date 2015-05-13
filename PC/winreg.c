@@ -319,8 +319,9 @@ winreg.HKEYType.__exit__
 [clinic start generated code]*/
 
 static PyObject *
-winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type, PyObject *exc_value, PyObject *traceback)
-/*[clinic end generated code: output=51adcc1522e9c847 input=fb32489ee92403c7]*/
+winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type,
+                              PyObject *exc_value, PyObject *traceback)
+/*[clinic end generated code: output=923ebe7389e6a263 input=fb32489ee92403c7]*/
 {
     if (!PyHKEY_Close((PyObject *)self))
         return NULL;
@@ -784,7 +785,7 @@ winreg_CloseKey(PyModuleDef *module, PyObject *hkey)
 /*[clinic input]
 winreg.ConnectRegistry -> HKEY
 
-    computer_name: Py_UNICODE(nullable=True)
+    computer_name: Py_UNICODE(accept={str, NoneType})
         The name of the remote computer, of the form r"\\computername".  If
         None, the local computer is used.
     key: HKEY
@@ -798,8 +799,9 @@ If the function fails, an OSError exception is raised.
 [clinic start generated code]*/
 
 static HKEY
-winreg_ConnectRegistry_impl(PyModuleDef *module, Py_UNICODE *computer_name, HKEY key)
-/*[clinic end generated code: output=bce735a41d767290 input=dcea2c433af51576]*/
+winreg_ConnectRegistry_impl(PyModuleDef *module, Py_UNICODE *computer_name,
+                            HKEY key)
+/*[clinic end generated code: output=5c52f6f7ba6e7b46 input=9a056558ce318433]*/
 {
     HKEY retKey;
     long rc;
@@ -818,7 +820,7 @@ winreg.CreateKey -> HKEY
 
     key: HKEY
         An already open key, or one of the predefined HKEY_* constants.
-    sub_key: Py_UNICODE(nullable=True)
+    sub_key: Py_UNICODE(accept={str, NoneType})
         The name of the key this method opens or creates.
     /
 
@@ -835,7 +837,7 @@ If the function fails, an OSError exception is raised.
 
 static HKEY
 winreg_CreateKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key)
-/*[clinic end generated code: output=cd6843f30a73fc0e input=8014b171a5682fe7]*/
+/*[clinic end generated code: output=cd6843f30a73fc0e input=3cdd1622488acea2]*/
 {
     HKEY retKey;
     long rc;
@@ -853,7 +855,7 @@ winreg.CreateKeyEx -> HKEY
 
     key: HKEY
         An already open key, or one of the predefined HKEY_* constants.
-    sub_key: Py_UNICODE(nullable=True)
+    sub_key: Py_UNICODE(accept={str, NoneType})
         The name of the key this method opens or creates.
     reserved: int = 0
         A reserved integer, and must be zero.  Default is zero.
@@ -873,8 +875,9 @@ If the function fails, an OSError exception is raised.
 [clinic start generated code]*/
 
 static HKEY
-winreg_CreateKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, int reserved, REGSAM access)
-/*[clinic end generated code: output=543d176b19183749 input=4322acd5c7f2e787]*/
+winreg_CreateKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+                        int reserved, REGSAM access)
+/*[clinic end generated code: output=db835d5be84e72b2 input=42c2b03f98406b66]*/
 {
     HKEY retKey;
     long rc;
@@ -942,8 +945,9 @@ On unsupported Windows versions, NotImplementedError is raised.
 [clinic start generated code]*/
 
 static PyObject *
-winreg_DeleteKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, REGSAM access, int reserved)
-/*[clinic end generated code: output=8b8a20684a59a902 input=711d9d89e7ecbed7]*/
+winreg_DeleteKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+                        REGSAM access, int reserved)
+/*[clinic end generated code: output=0362a0ac6502379f input=711d9d89e7ecbed7]*/
 {
     HMODULE hMod;
     typedef LONG (WINAPI *RDKEFunc)(HKEY, const wchar_t*, REGSAM, int);
@@ -975,7 +979,7 @@ winreg.DeleteValue
 
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
-    value: Py_UNICODE(nullable=True)
+    value: Py_UNICODE(accept={str, NoneType})
         A string that identifies the value to remove.
     /
 
@@ -984,7 +988,7 @@ Removes a named value from a registry key.
 
 static PyObject *
 winreg_DeleteValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *value)
-/*[clinic end generated code: output=308550b8cdcfd8e1 input=417a5c1005cbbddc]*/
+/*[clinic end generated code: output=308550b8cdcfd8e1 input=a78d3407a4197b21]*/
 {
     long rc;
     Py_BEGIN_ALLOW_THREADS
@@ -1244,8 +1248,9 @@ tree.
 [clinic start generated code]*/
 
 static PyObject *
-winreg_LoadKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, Py_UNICODE *file_name)
-/*[clinic end generated code: output=53b22607f8e73d34 input=e3b5b45ade311582]*/
+winreg_LoadKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+                    Py_UNICODE *file_name)
+/*[clinic end generated code: output=b8b700e39c695b90 input=e3b5b45ade311582]*/
 {
     long rc;
 
@@ -1262,7 +1267,7 @@ winreg.OpenKey -> HKEY
 
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
-    sub_key: Py_UNICODE(nullable=True)
+    sub_key: Py_UNICODE(accept={str, NoneType})
         A string that identifies the sub_key to open.
     reserved: int = 0
         A reserved integer that must be zero.  Default is zero.
@@ -1277,8 +1282,9 @@ If the function fails, an OSError exception is raised.
 [clinic start generated code]*/
 
 static HKEY
-winreg_OpenKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, int reserved, REGSAM access)
-/*[clinic end generated code: output=8bf50881521469c6 input=dc84a4af4af4d387]*/
+winreg_OpenKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+                    int reserved, REGSAM access)
+/*[clinic end generated code: output=79818ea356490a55 input=098505ac36a9ae28]*/
 {
     HKEY retKey;
     long rc;
@@ -1303,8 +1309,9 @@ If the function fails, an OSError exception is raised.
 [clinic start generated code]*/
 
 static HKEY
-winreg_OpenKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, int reserved, REGSAM access)
-/*[clinic end generated code: output=f6f7cd4befb9585b input=c6c4972af8622959]*/
+winreg_OpenKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+                      int reserved, REGSAM access)
+/*[clinic end generated code: output=2dd9f29e84ea2dbc input=c6c4972af8622959]*/
 {
     return winreg_OpenKey_impl(module, key, sub_key, reserved, access);
 }
@@ -1355,7 +1362,7 @@ winreg.QueryValue
 
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
-    sub_key: Py_UNICODE(nullable=True)
+    sub_key: Py_UNICODE(accept={str, NoneType})
         A string that holds the name of the subkey with which the value
         is associated.  If this parameter is None or empty, the function
         retrieves the value set by the SetValue() method for the key
@@ -1373,7 +1380,7 @@ completeness.
 
 static PyObject *
 winreg_QueryValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key)
-/*[clinic end generated code: output=f91cb6f623c3b65a input=e6ec57bb8d39aaa6]*/
+/*[clinic end generated code: output=f91cb6f623c3b65a input=41cafbbf423b21d6]*/
 {
     long rc;
     PyObject *retStr;
@@ -1426,7 +1433,7 @@ winreg.QueryValueEx
 
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
-    name: Py_UNICODE(nullable=True)
+    name: Py_UNICODE(accept={str, NoneType})
         A string indicating the value to query.
     /
 
@@ -1440,7 +1447,7 @@ The return value is a tuple of the value and the type_id.
 
 static PyObject *
 winreg_QueryValueEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *name)
-/*[clinic end generated code: output=a4b07f7807194f23 input=4403ae868b44e563]*/
+/*[clinic end generated code: output=a4b07f7807194f23 input=cf366cada4836891]*/
 {
     long rc;
     BYTE *retBuf, *tmp;
@@ -1535,12 +1542,12 @@ winreg.SetValue
 
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
-    sub_key: Py_UNICODE(nullable=True)
+    sub_key: Py_UNICODE(accept={str, NoneType})
         A string that names the subkey with which the value is associated.
     type: DWORD
         An integer that specifies the type of the data.  Currently this must
         be REG_SZ, meaning only strings are supported.
-    value: Py_UNICODE(length=True)
+    value: Py_UNICODE(zeroes=True)
         A string that specifies the new value.
     /
 
@@ -1558,8 +1565,10 @@ KEY_SET_VALUE access.
 [clinic start generated code]*/
 
 static PyObject *
-winreg_SetValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, DWORD type, Py_UNICODE *value, Py_ssize_clean_t value_length)
-/*[clinic end generated code: output=807274a1c01961b5 input=83ad2fae2ffbb941]*/
+winreg_SetValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+                     DWORD type, Py_UNICODE *value,
+                     Py_ssize_clean_t value_length)
+/*[clinic end generated code: output=3c9c7c2769e8f953 input=2cd2adab79339c53]*/
 {
     long rc;
 
@@ -1582,7 +1591,7 @@ winreg.SetValueEx
 
     key: HKEY
         An already open key, or any one of the predefined HKEY_* constants.
-    value_name: Py_UNICODE(nullable=True)
+    value_name: Py_UNICODE(accept={str, NoneType})
         A string containing the name of the value to set, or None.
     reserved: object
         Can be anything - zero is always passed to the API.
@@ -1620,8 +1629,9 @@ the configuration registry to help the registry perform efficiently.
 [clinic start generated code]*/
 
 static PyObject *
-winreg_SetValueEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *value_name, PyObject *reserved, DWORD type, PyObject *value)
-/*[clinic end generated code: output=a53ac3aecef9b977 input=8fe45d7ac381cf96]*/
+winreg_SetValueEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *value_name,
+                       PyObject *reserved, DWORD type, PyObject *value)
+/*[clinic end generated code: output=ea092a935c361582 input=e73dec535ebeea7d]*/
 {
     BYTE *data;
     DWORD len;

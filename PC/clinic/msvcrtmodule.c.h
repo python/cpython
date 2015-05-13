@@ -50,8 +50,7 @@ msvcrt_locking(PyModuleDef *module, PyObject *args)
     int mode;
     long nbytes;
 
-    if (!PyArg_ParseTuple(args,
-        "iil:locking",
+    if (!PyArg_ParseTuple(args, "iil:locking",
         &fd, &mode, &nbytes))
         goto exit;
     return_value = msvcrt_locking_impl(module, fd, mode, nbytes);
@@ -85,8 +84,7 @@ msvcrt_setmode(PyModuleDef *module, PyObject *args)
     int flags;
     long _return_value;
 
-    if (!PyArg_ParseTuple(args,
-        "ii:setmode",
+    if (!PyArg_ParseTuple(args, "ii:setmode",
         &fd, &flags))
         goto exit;
     _return_value = msvcrt_setmode_impl(module, fd, flags);
@@ -112,7 +110,8 @@ PyDoc_STRVAR(msvcrt_open_osfhandle__doc__,
     {"open_osfhandle", (PyCFunction)msvcrt_open_osfhandle, METH_VARARGS, msvcrt_open_osfhandle__doc__},
 
 static long
-msvcrt_open_osfhandle_impl(PyModuleDef *module, Py_intptr_t handle, int flags);
+msvcrt_open_osfhandle_impl(PyModuleDef *module, Py_intptr_t handle,
+                           int flags);
 
 static PyObject *
 msvcrt_open_osfhandle(PyModuleDef *module, PyObject *args)
@@ -122,8 +121,7 @@ msvcrt_open_osfhandle(PyModuleDef *module, PyObject *args)
     int flags;
     long _return_value;
 
-    if (!PyArg_ParseTuple(args,
-        ""_Py_PARSE_INTPTR"i:open_osfhandle",
+    if (!PyArg_ParseTuple(args, ""_Py_PARSE_INTPTR"i:open_osfhandle",
         &handle, &flags))
         goto exit;
     _return_value = msvcrt_open_osfhandle_impl(module, handle, flags);
@@ -156,9 +154,7 @@ msvcrt_get_osfhandle(PyModuleDef *module, PyObject *arg)
     int fd;
     Py_intptr_t _return_value;
 
-    if (!PyArg_Parse(arg,
-        "i:get_osfhandle",
-        &fd))
+    if (!PyArg_Parse(arg, "i:get_osfhandle", &fd))
         goto exit;
     _return_value = msvcrt_get_osfhandle_impl(module, fd);
     if ((_return_value == -1) && PyErr_Occurred())
@@ -324,9 +320,7 @@ msvcrt_putch(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     char char_value;
 
-    if (!PyArg_Parse(arg,
-        "c:putch",
-        &char_value))
+    if (!PyArg_Parse(arg, "c:putch", &char_value))
         goto exit;
     return_value = msvcrt_putch_impl(module, char_value);
 
@@ -354,9 +348,7 @@ msvcrt_putwch(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     int unicode_char;
 
-    if (!PyArg_Parse(arg,
-        "C:putwch",
-        &unicode_char))
+    if (!PyArg_Parse(arg, "C:putwch", &unicode_char))
         goto exit;
     return_value = msvcrt_putwch_impl(module, unicode_char);
 
@@ -388,9 +380,7 @@ msvcrt_ungetch(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     char char_value;
 
-    if (!PyArg_Parse(arg,
-        "c:ungetch",
-        &char_value))
+    if (!PyArg_Parse(arg, "c:ungetch", &char_value))
         goto exit;
     return_value = msvcrt_ungetch_impl(module, char_value);
 
@@ -418,9 +408,7 @@ msvcrt_ungetwch(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     int unicode_char;
 
-    if (!PyArg_Parse(arg,
-        "C:ungetwch",
-        &unicode_char))
+    if (!PyArg_Parse(arg, "C:ungetwch", &unicode_char))
         goto exit;
     return_value = msvcrt_ungetwch_impl(module, unicode_char);
 
@@ -454,8 +442,7 @@ msvcrt_CrtSetReportFile(PyModuleDef *module, PyObject *args)
     int file;
     long _return_value;
 
-    if (!PyArg_ParseTuple(args,
-        "ii:CrtSetReportFile",
+    if (!PyArg_ParseTuple(args, "ii:CrtSetReportFile",
         &type, &file))
         goto exit;
     _return_value = msvcrt_CrtSetReportFile_impl(module, type, file);
@@ -493,8 +480,7 @@ msvcrt_CrtSetReportMode(PyModuleDef *module, PyObject *args)
     int mode;
     long _return_value;
 
-    if (!PyArg_ParseTuple(args,
-        "ii:CrtSetReportMode",
+    if (!PyArg_ParseTuple(args, "ii:CrtSetReportMode",
         &type, &mode))
         goto exit;
     _return_value = msvcrt_CrtSetReportMode_impl(module, type, mode);
@@ -531,9 +517,7 @@ msvcrt_set_error_mode(PyModuleDef *module, PyObject *arg)
     int mode;
     long _return_value;
 
-    if (!PyArg_Parse(arg,
-        "i:set_error_mode",
-        &mode))
+    if (!PyArg_Parse(arg, "i:set_error_mode", &mode))
         goto exit;
     _return_value = msvcrt_set_error_mode_impl(module, mode);
     if ((_return_value == -1) && PyErr_Occurred())
@@ -564,9 +548,7 @@ msvcrt_SetErrorMode(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned int mode;
 
-    if (!PyArg_Parse(arg,
-        "I:SetErrorMode",
-        &mode))
+    if (!PyArg_Parse(arg, "I:SetErrorMode", &mode))
         goto exit;
     return_value = msvcrt_SetErrorMode_impl(module, mode);
 
@@ -601,4 +583,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=41dfb6ca722afa4f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=72468bb32006a11b input=a9049054013a1b77]*/

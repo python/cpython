@@ -160,8 +160,9 @@ to os.fdopen() to create a file object.
 [clinic start generated code]*/
 
 static long
-msvcrt_open_osfhandle_impl(PyModuleDef *module, Py_intptr_t handle, int flags)
-/*[clinic end generated code: output=8cda35b8e4ea4178 input=4d8516ed32db8f65]*/
+msvcrt_open_osfhandle_impl(PyModuleDef *module, Py_intptr_t handle,
+                           int flags)
+/*[clinic end generated code: output=86bce32582c49c06 input=4d8516ed32db8f65]*/
 {
     int fd;
 
@@ -320,7 +321,7 @@ msvcrt_putch_impl(PyModuleDef *module, char char_value)
 /*[clinic input]
 msvcrt.putwch
 
-    unicode_char: int(types='str')
+    unicode_char: int(accept={str})
     /
 
 Wide char variant of putch(), accepting a Unicode value.
@@ -328,7 +329,7 @@ Wide char variant of putch(), accepting a Unicode value.
 
 static PyObject *
 msvcrt_putwch_impl(PyModuleDef *module, int unicode_char)
-/*[clinic end generated code: output=c216a73694ca73dd input=74377c932af728a4]*/
+/*[clinic end generated code: output=c216a73694ca73dd input=996ccd0bbcbac4c3]*/
 {
     _putwch(unicode_char);
     Py_RETURN_NONE;
@@ -362,7 +363,7 @@ msvcrt_ungetch_impl(PyModuleDef *module, char char_value)
 /*[clinic input]
 msvcrt.ungetwch
 
-    unicode_char: int(types='str')
+    unicode_char: int(accept={str})
     /
 
 Wide char variant of ungetch(), accepting a Unicode value.
@@ -370,7 +371,7 @@ Wide char variant of ungetch(), accepting a Unicode value.
 
 static PyObject *
 msvcrt_ungetwch_impl(PyModuleDef *module, int unicode_char)
-/*[clinic end generated code: output=1ee7674710322bd1 input=6bcd16276e035902]*/
+/*[clinic end generated code: output=1ee7674710322bd1 input=83ec0492be04d564]*/
 {
     if (_ungetwch(unicode_char) == WEOF)
         return PyErr_SetFromErrno(PyExc_IOError);
