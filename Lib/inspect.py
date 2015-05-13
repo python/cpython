@@ -2377,6 +2377,8 @@ class BoundArguments:
         Dict of keyword arguments values.
     """
 
+    __slots__ = ('arguments', '_signature', '__weakref__')
+
     def __init__(self, signature, arguments):
         self.arguments = arguments
         self._signature = signature
@@ -2442,6 +2444,13 @@ class BoundArguments:
         return (issubclass(other.__class__, BoundArguments) and
                 self.signature == other.signature and
                 self.arguments == other.arguments)
+
+    def __setstate__(self, state):
+        self._signature = state['_signature']
+        self.arguments = state['arguments']
+
+    def __getstate__(self):
+        return {'_signature': self._signature, 'arguments': self.arguments}
 
 
 class Signature:
