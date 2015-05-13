@@ -17,6 +17,7 @@
 #include "windows.h"
 
 static BOOL PyHKEY_AsHKEY(PyObject *ob, HKEY *pRes, BOOL bNoneOK);
+static BOOL clinic_HKEY_converter(PyObject *ob, void *p);
 static PyObject *PyHKEY_FromHKEY(HKEY h);
 static BOOL PyHKEY_Close(PyObject *obHandle);
 
@@ -46,10 +47,12 @@ PyDoc_STRVAR(module_doc,
 "DeleteValue() - Removes a named value from the specified registry key.\n"
 "EnumKey() - Enumerates subkeys of the specified open registry key.\n"
 "EnumValue() - Enumerates values of the specified open registry key.\n"
-"ExpandEnvironmentStrings() - Expand the env strings in a REG_EXPAND_SZ string.\n"
+"ExpandEnvironmentStrings() - Expand the env strings in a REG_EXPAND_SZ\n"
+"                             string.\n"
 "FlushKey() - Writes all the attributes of the specified key to the registry.\n"
-"LoadKey() - Creates a subkey under HKEY_USER or HKEY_LOCAL_MACHINE and stores\n"
-"            registration information from a specified file into that subkey.\n"
+"LoadKey() - Creates a subkey under HKEY_USER or HKEY_LOCAL_MACHINE and\n"
+"            stores registration information from a specified file into that\n"
+"            subkey.\n"
 "OpenKey() - Opens the specified key.\n"
 "OpenKeyEx() - Alias of OpenKey().\n"
 "QueryValue() - Retrieves the value associated with the unnamed value for a\n"
@@ -71,299 +74,6 @@ PyDoc_STRVAR(module_doc,
 "to see what constants are used, and where.");
 
 
-PyDoc_STRVAR(CloseKey_doc,
-"CloseKey(hkey)\n"
-"Closes a previously opened registry key.\n"
-"\n"
-"The hkey argument specifies a previously opened key.\n"
-"\n"
-"Note that if the key is not closed using this method, it will be\n"
-"closed when the hkey object is destroyed by Python.");
-
-PyDoc_STRVAR(ConnectRegistry_doc,
-"ConnectRegistry(computer_name, key) -> key\n"
-"Establishes a connection to a predefined registry handle on another computer.\n"
-"\n"
-"computer_name is the name of the remote computer, of the form \\\\computername.\n"
-"              If None, the local computer is used.\n"
-"key is the predefined handle to connect to.\n"
-"\n"
-"The return value is the handle of the opened key.\n"
-"If the function fails, an OSError exception is raised.");
-
-PyDoc_STRVAR(CreateKey_doc,
-"CreateKey(key, sub_key) -> key\n"
-"Creates or opens the specified key.\n"
-"\n"
-"key is an already open key, or one of the predefined HKEY_* constants.\n"
-"sub_key is a string that names the key this method opens or creates.\n"
-"\n"
-"If key is one of the predefined keys, sub_key may be None. In that case,\n"
-"the handle returned is the same key handle passed in to the function.\n"
-"\n"
-"If the key already exists, this function opens the existing key.\n"
-"\n"
-"The return value is the handle of the opened key.\n"
-"If the function fails, an OSError exception is raised.");
-
-PyDoc_STRVAR(CreateKeyEx_doc,
-"CreateKeyEx(key, sub_key, reserved=0, access=KEY_WRITE) -> key\n"
-"Creates or opens the specified key.\n"
-"\n"
-"key is an already open key, or one of the predefined HKEY_* constants\n"
-"sub_key is a string that names the key this method opens or creates.\n"
-"reserved is a reserved integer, and must be zero.  Default is zero.\n"
-"access is an integer that specifies an access mask that describes the \n"
-"       desired security access for the key. Default is KEY_WRITE.\n"
-"\n"
-"If key is one of the predefined keys, sub_key may be None. In that case,\n"
-"the handle returned is the same key handle passed in to the function.\n"
-"\n"
-"If the key already exists, this function opens the existing key\n"
-"\n"
-"The return value is the handle of the opened key.\n"
-"If the function fails, an OSError exception is raised.");
-
-PyDoc_STRVAR(DeleteKey_doc,
-"DeleteKey(key, sub_key)\n"
-"Deletes the specified key.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that must be a subkey of the key identified by the key\n"
-"        parameter. This value must not be None, and the key may not have\n"
-"        subkeys.\n"
-"\n"
-"This method can not delete keys with subkeys.\n"
-"\n"
-"If the function succeeds, the entire key, including all of its values,\n"
-"is removed.  If the function fails, an OSError exception is raised.");
-
-PyDoc_STRVAR(DeleteKeyEx_doc,
-"DeleteKeyEx(key, sub_key, access=KEY_WOW64_64KEY, reserved=0)\n"
-"Deletes the specified key (64-bit OS only).\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that must be a subkey of the key identified by the key\n"
-"        parameter. This value must not be None, and the key may not have\n"
-"        subkeys.\n"
-"reserved is a reserved integer, and must be zero.  Default is zero.\n"
-"access is an integer that specifies an access mask that describes the \n"
-"       desired security access for the key. Default is KEY_WOW64_64KEY.\n"
-"\n"
-"This method can not delete keys with subkeys.\n"
-"\n"
-"If the function succeeds, the entire key, including all of its values,\n"
-"is removed.  If the function fails, an OSError exception is raised.\n"
-"On unsupported Windows versions, NotImplementedError is raised.");
-
-PyDoc_STRVAR(DeleteValue_doc,
-"DeleteValue(key, value)\n"
-"Removes a named value from a registry key.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"value is a string that identifies the value to remove.");
-
-PyDoc_STRVAR(EnumKey_doc,
-"EnumKey(key, index) -> string\n"
-"Enumerates subkeys of an open registry key.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"index is an integer that identifies the index of the key to retrieve.\n"
-"\n"
-"The function retrieves the name of one subkey each time it is called.\n"
-"It is typically called repeatedly until an OSError exception is\n"
-"raised, indicating no more values are available.");
-
-PyDoc_STRVAR(EnumValue_doc,
-"EnumValue(key, index) -> tuple\n"
-"Enumerates values of an open registry key.\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"index is an integer that identifies the index of the value to retrieve.\n"
-"\n"
-"The function retrieves the name of one subkey each time it is called.\n"
-"It is typically called repeatedly, until an OSError exception\n"
-"is raised, indicating no more values.\n"
-"\n"
-"The result is a tuple of 3 items:\n"
-"value_name is a string that identifies the value.\n"
-"value_data is an object that holds the value data, and whose type depends\n"
-"           on the underlying registry type.\n"
-"data_type is an integer that identifies the type of the value data.");
-
-PyDoc_STRVAR(ExpandEnvironmentStrings_doc,
-"ExpandEnvironmentStrings(string) -> string\n"
-"Expand environment vars.\n");
-
-PyDoc_STRVAR(FlushKey_doc,
-"FlushKey(key)\n"
-"Writes all the attributes of a key to the registry.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"\n"
-"It is not necessary to call FlushKey to change a key.  Registry changes are\n"
-"flushed to disk by the registry using its lazy flusher.  Registry changes are\n"
-"also flushed to disk at system shutdown.  Unlike CloseKey(), the FlushKey()\n"
-"method returns only when all the data has been written to the registry.\n"
-"\n"
-"An application should only call FlushKey() if it requires absolute certainty\n"
-"that registry changes are on disk.  If you don't know whether a FlushKey()\n"
-"call is required, it probably isn't.");
-
-PyDoc_STRVAR(LoadKey_doc,
-"LoadKey(key, sub_key, file_name)\n"
-"Creates a subkey under the specified key and stores registration information\n"
-"from a specified file into that subkey.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that identifies the sub_key to load.\n"
-"file_name is the name of the file to load registry data from.  This file must\n"
-"          have been created with the SaveKey() function.  Under the file\n"
-"          allocation table (FAT) file system, the filename may not have an\n"
-"          extension.\n"
-"\n"
-"A call to LoadKey() fails if the calling process does not have the\n"
-"SE_RESTORE_PRIVILEGE privilege.\n"
-"\n"
-"If key is a handle returned by ConnectRegistry(), then the path specified\n"
-"in fileName is relative to the remote computer.\n"
-"\n"
-"The docs imply key must be in the HKEY_USER or HKEY_LOCAL_MACHINE tree");
-
-PyDoc_STRVAR(OpenKey_doc,
-"OpenKey(key, sub_key, reserved=0, access=KEY_READ) -> key\n"
-"Opens the specified key.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that identifies the sub_key to open.\n"
-"reserved is a reserved integer, and must be zero.  Default is zero.\n"
-"access is an integer that specifies an access mask that describes the desired\n"
-"       security access for the key.  Default is KEY_READ\n"
-"\n"
-"The result is a new handle to the specified key\n"
-"If the function fails, an OSError exception is raised.");
-
-PyDoc_STRVAR(OpenKeyEx_doc, "See OpenKey()");
-
-PyDoc_STRVAR(QueryInfoKey_doc,
-"QueryInfoKey(key) -> tuple\n"
-"Returns information about a key.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"\n"
-"The result is a tuple of 3 items:"
-"An integer that identifies the number of sub keys this key has.\n"
-"An integer that identifies the number of values this key has.\n"
-"An integer that identifies when the key was last modified (if available)\n"
-" as 100's of nanoseconds since Jan 1, 1600.");
-
-PyDoc_STRVAR(QueryValue_doc,
-"QueryValue(key, sub_key) -> string\n"
-"Retrieves the unnamed value for a key.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that holds the name of the subkey with which the value\n"
-"        is associated.  If this parameter is None or empty, the function\n"
-"        retrieves the value set by the SetValue() method for the key\n"
-"        identified by key."
-"\n"
-"Values in the registry have name, type, and data components. This method\n"
-"retrieves the data for a key's first value that has a NULL name.\n"
-"But the underlying API call doesn't return the type, Lame Lame Lame, DONT USE THIS!!!");
-
-PyDoc_STRVAR(QueryValueEx_doc,
-"QueryValueEx(key, value_name) -> (value, type_id)\n"
-"Retrieves the type and data for a specified value name associated with an\n"
-"open registry key.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"value_name is a string indicating the value to query");
-
-PyDoc_STRVAR(SaveKey_doc,
-"SaveKey(key, file_name)\n"
-"Saves the specified key, and all its subkeys to the specified file.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"file_name is the name of the file to save registry data to.  This file cannot\n"
-"          already exist. If this filename includes an extension, it cannot be\n"
-"          used on file allocation table (FAT) file systems by the LoadKey(),\n"
-"          ReplaceKey() or RestoreKey() methods.\n"
-"\n"
-"If key represents a key on a remote computer, the path described by file_name\n"
-"is relative to the remote computer.\n"
-"\n"
-"The caller of this method must possess the SeBackupPrivilege security\n"
-"privilege.  This function passes NULL for security_attributes to the API.");
-
-PyDoc_STRVAR(SetValue_doc,
-"SetValue(key, sub_key, type, value)\n"
-"Associates a value with a specified key.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"sub_key is a string that names the subkey with which the value is associated.\n"
-"type is an integer that specifies the type of the data.  Currently this must\n"
-"     be REG_SZ, meaning only strings are supported.\n"
-"value is a string that specifies the new value.\n"
-"\n"
-"If the key specified by the sub_key parameter does not exist, the SetValue\n"
-"function creates it.\n"
-"\n"
-"Value lengths are limited by available memory. Long values (more than\n"
-"2048 bytes) should be stored as files with the filenames stored in \n"
-"the configuration registry.  This helps the registry perform efficiently.\n"
-"\n"
-"The key identified by the key parameter must have been opened with\n"
-"KEY_SET_VALUE access.");
-
-PyDoc_STRVAR(SetValueEx_doc,
-"SetValueEx(key, value_name, reserved, type, value)\n"
-"Stores data in the value field of an open registry key.\n"
-"\n"
-"key is an already open key, or any one of the predefined HKEY_* constants.\n"
-"value_name is a string containing the name of the value to set, or None.\n"
-"reserved can be anything - zero is always passed to the API.\n"
-"type is an integer that specifies the type of the data.  This should be one of:\n"
-"  REG_BINARY -- Binary data in any form.\n"
-"  REG_DWORD -- A 32-bit number.\n"
-"  REG_DWORD_LITTLE_ENDIAN -- A 32-bit number in little-endian format.\n"
-"  REG_DWORD_BIG_ENDIAN -- A 32-bit number in big-endian format.\n"
-"  REG_EXPAND_SZ -- A null-terminated string that contains unexpanded references\n"
-"                   to environment variables (for example, %PATH%).\n"
-"  REG_LINK -- A Unicode symbolic link.\n"
-"  REG_MULTI_SZ -- An sequence of null-terminated strings, terminated by\n"
-"                  two null characters.  Note that Python handles this\n"
-"                  termination automatically.\n"
-"  REG_NONE -- No defined value type.\n"
-"  REG_RESOURCE_LIST -- A device-driver resource list.\n"
-"  REG_SZ -- A null-terminated string.\n"
-"value is a string that specifies the new value.\n"
-"\n"
-"This method can also set additional value and type information for the\n"
-"specified key.  The key identified by the key parameter must have been\n"
-"opened with KEY_SET_VALUE access.\n"
-"\n"
-"To open the key, use the CreateKeyEx() or OpenKeyEx() methods.\n"
-"\n"
-"Value lengths are limited by available memory. Long values (more than\n"
-"2048 bytes) should be stored as files with the filenames stored in \n"
-"the configuration registry.  This helps the registry perform efficiently.");
-
-PyDoc_STRVAR(DisableReflectionKey_doc,
-"Disables registry reflection for 32-bit processes running on a 64-bit\n"
-"Operating System.  Will generally raise NotImplemented if executed on\n"
-"a 32-bit Operating System.\n"
-"\n"
-"If the key is not on the reflection list, the function succeeds but has no effect.\n"
-"Disabling reflection for a key does not affect reflection of any subkeys.");
-
-PyDoc_STRVAR(EnableReflectionKey_doc,
-"Restores registry reflection for the specified disabled key.\n"
-"Will generally raise NotImplemented if executed on a 32-bit Operating System.\n"
-"Restoring reflection for a key does not affect reflection of any subkeys.");
-
-PyDoc_STRVAR(QueryReflectionKey_doc,
-"QueryReflectionKey(hkey) -> bool\n"
-"Determines the reflection state for the specified key.\n"
-"Will generally raise NotImplemented if executed on a 32-bit Operating System.\n");
 
 /* PyHKEY docstrings */
 PyDoc_STRVAR(PyHKEY_doc,
@@ -388,24 +98,6 @@ PyDoc_STRVAR(PyHKEY_doc,
 "__int__ - Converting a handle to an integer returns the Win32 handle.\n"
 "rich comparison - Handle objects are compared using the handle value.");
 
-
-PyDoc_STRVAR(PyHKEY_Close_doc,
-"key.Close()\n"
-"Closes the underlying Windows handle.\n"
-"\n"
-"If the handle is already closed, no error is raised.");
-
-PyDoc_STRVAR(PyHKEY_Detach_doc,
-"key.Detach() -> int\n"
-"Detaches the Windows handle from the handle object.\n"
-"\n"
-"The result is the value of the handle before it is detached.  If the\n"
-"handle is already detached, this will return zero.\n"
-"\n"
-"After calling this function, the handle is effectively invalidated,\n"
-"but the handle is not closed.  You would call this function when you\n"
-"need the underlying win32 handle to exist beyond the lifetime of the\n"
-"handle object.");
 
 
 /************************************************************************
@@ -516,16 +208,134 @@ static PyNumberMethods PyHKEY_NumberMethods =
     PyHKEY_unaryFailureFunc,            /* nb_float */
 };
 
-static PyObject *PyHKEY_CloseMethod(PyObject *self, PyObject *args);
-static PyObject *PyHKEY_DetachMethod(PyObject *self, PyObject *args);
-static PyObject *PyHKEY_Enter(PyObject *self);
-static PyObject *PyHKEY_Exit(PyObject *self, PyObject *args);
+/*[clinic input]
+module winreg
+class winreg.HKEYType "PyHKEYObject *" "&PyHKEY_Type"
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=4c964eba3bf914d6]*/
+
+/*[python input]
+class REGSAM_converter(CConverter):
+    type = 'REGSAM'
+    format_unit = 'i'
+
+class DWORD_converter(CConverter):
+    type = 'DWORD'
+    format_unit = 'k'
+
+class HKEY_converter(CConverter):
+    type = 'HKEY'
+    converter = 'clinic_HKEY_converter'
+
+class HKEY_return_converter(CReturnConverter):
+    type = 'HKEY'
+
+    def render(self, function, data):
+        self.declare(data)
+        self.err_occurred_if_null_pointer("_return_value", data)
+        data.return_conversion.append(
+            'return_value = PyHKEY_FromHKEY(_return_value);\n')
+
+# HACK: this only works for PyHKEYObjects, nothing else.
+#       Should this be generalized and enshrined in clinic.py,
+#       destroy this converter with prejudice.
+class self_return_converter(CReturnConverter):
+    type = 'PyHKEYObject *'
+
+    def render(self, function, data):
+        self.declare(data)
+        data.return_conversion.append(
+            'return_value = (PyObject *)_return_value;\n')
+[python start generated code]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=22f7aedc6d68e80e]*/
+
+#include "clinic/winreg.c.h"
+
+/************************************************************************
+
+  The PyHKEY object methods
+
+************************************************************************/
+/*[clinic input]
+winreg.HKEYType.Close
+
+Closes the underlying Windows handle.
+
+If the handle is already closed, no error is raised.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_HKEYType_Close_impl(PyHKEYObject *self)
+/*[clinic end generated code: output=fced3a624fb0c344 input=6786ac75f6b89de6]*/
+{
+    if (!PyHKEY_Close((PyObject *)self))
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+winreg.HKEYType.Detach
+
+Detaches the Windows handle from the handle object.
+
+The result is the value of the handle before it is detached.  If the
+handle is already detached, this will return zero.
+
+After calling this function, the handle is effectively invalidated,
+but the handle is not closed.  You would call this function when you
+need the underlying win32 handle to exist beyond the lifetime of the
+handle object.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_HKEYType_Detach_impl(PyHKEYObject *self)
+/*[clinic end generated code: output=dda5a9e1a01ae78f input=dd2cc09e6c6ba833]*/
+{
+    void* ret;
+    ret = (void*)self->hkey;
+    self->hkey = 0;
+    return PyLong_FromVoidPtr(ret);
+}
+
+/*[clinic input]
+winreg.HKEYType.__enter__ -> self
+[clinic start generated code]*/
+
+static PyHKEYObject *
+winreg_HKEYType___enter___impl(PyHKEYObject *self)
+/*[clinic end generated code: output=52c34986dab28990 input=c40fab1f0690a8e2]*/
+{
+    Py_XINCREF(self);
+    return self;
+}
+
+
+/*[clinic input]
+winreg.HKEYType.__exit__
+
+    exc_type: object
+    exc_value: object
+    traceback: object
+[clinic start generated code]*/
+
+static PyObject *
+winreg_HKEYType___exit___impl(PyHKEYObject *self, PyObject *exc_type, PyObject *exc_value, PyObject *traceback)
+/*[clinic end generated code: output=51adcc1522e9c847 input=fb32489ee92403c7]*/
+{
+    if (!PyHKEY_Close((PyObject *)self))
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+[clinic start generated code]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=da39a3ee5e6b4b0d]*/
 
 static struct PyMethodDef PyHKEY_methods[] = {
-    {"Close",  PyHKEY_CloseMethod, METH_VARARGS, PyHKEY_Close_doc},
-    {"Detach", PyHKEY_DetachMethod, METH_VARARGS, PyHKEY_Detach_doc},
-    {"__enter__", (PyCFunction)PyHKEY_Enter, METH_NOARGS, NULL},
-    {"__exit__", PyHKEY_Exit, METH_VARARGS, NULL},
+    WINREG_HKEYTYPE_CLOSE_METHODDEF
+    WINREG_HKEYTYPE_DETACH_METHODDEF
+    WINREG_HKEYTYPE___ENTER___METHODDEF
+    WINREG_HKEYTYPE___EXIT___METHODDEF
     {NULL}
 };
 
@@ -568,50 +378,6 @@ PyTypeObject PyHKEY_Type =
     PyHKEY_methods,                     /*tp_methods*/
     PyHKEY_memberlist,                  /*tp_members*/
 };
-
-/************************************************************************
-
-  The PyHKEY object methods
-
-************************************************************************/
-static PyObject *
-PyHKEY_CloseMethod(PyObject *self, PyObject *args)
-{
-    if (!PyArg_ParseTuple(args, ":Close"))
-        return NULL;
-    if (!PyHKEY_Close(self))
-        return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
-static PyObject *
-PyHKEY_DetachMethod(PyObject *self, PyObject *args)
-{
-    void* ret;
-    PyHKEYObject *pThis = (PyHKEYObject *)self;
-    if (!PyArg_ParseTuple(args, ":Detach"))
-        return NULL;
-    ret = (void*)pThis->hkey;
-    pThis->hkey = 0;
-    return PyLong_FromVoidPtr(ret);
-}
-
-static PyObject *
-PyHKEY_Enter(PyObject *self)
-{
-    Py_XINCREF(self);
-    return self;
-}
-
-static PyObject *
-PyHKEY_Exit(PyObject *self, PyObject *args)
-{
-    if (!PyHKEY_Close(self))
-        return NULL;
-    Py_RETURN_NONE;
-}
-
 
 /************************************************************************
    The public PyHKEY API (well, not public yet :-)
@@ -672,6 +438,14 @@ PyHKEY_AsHKEY(PyObject *ob, HKEY *pHANDLE, BOOL bNoneOK)
             "The object is not a PyHKEY object");
         return FALSE;
     }
+    return TRUE;
+}
+
+BOOL
+clinic_HKEY_converter(PyObject *ob, void *p)
+{
+    if (!PyHKEY_AsHKEY(ob, (HKEY *)p, FALSE))
+        return FALSE;
     return TRUE;
 }
 
@@ -985,120 +759,196 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
 
 /* The Python methods */
 
-static PyObject *
-PyCloseKey(PyObject *self, PyObject *args)
-{
-    PyObject *obKey;
-    if (!PyArg_ParseTuple(args, "O:CloseKey", &obKey))
-        return NULL;
-    if (!PyHKEY_Close(obKey))
-        return NULL;
-    Py_INCREF(Py_None);
-    return Py_None;
-}
+/*[clinic input]
+winreg.CloseKey
+
+    hkey: object
+        A previously opened key.
+    /
+
+Closes a previously opened registry key.
+
+Note that if the key is not closed using this method, it will be
+closed when the hkey object is destroyed by Python.
+[clinic start generated code]*/
 
 static PyObject *
-PyConnectRegistry(PyObject *self, PyObject *args)
+winreg_CloseKey(PyModuleDef *module, PyObject *hkey)
+/*[clinic end generated code: output=d96f73439403a064 input=5b1aac65ba5127ad]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *szCompName = NULL;
+    if (!PyHKEY_Close(hkey))
+        return NULL;
+    Py_RETURN_NONE;
+}
+
+/*[clinic input]
+winreg.ConnectRegistry -> HKEY
+
+    computer_name: Py_UNICODE(nullable=True)
+        The name of the remote computer, of the form r"\\computername".  If
+        None, the local computer is used.
+    key: HKEY
+        The predefined key to connect to.
+    /
+
+Establishes a connection to the registry on on another computer.
+
+The return value is the handle of the opened key.
+If the function fails, an OSError exception is raised.
+[clinic start generated code]*/
+
+static HKEY
+winreg_ConnectRegistry_impl(PyModuleDef *module, Py_UNICODE *computer_name, HKEY key)
+/*[clinic end generated code: output=bce735a41d767290 input=dcea2c433af51576]*/
+{
     HKEY retKey;
     long rc;
-    if (!PyArg_ParseTuple(args, "ZO:ConnectRegistry", &szCompName, &obKey))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
     Py_BEGIN_ALLOW_THREADS
-    rc = RegConnectRegistryW(szCompName, hKey, &retKey);
+    rc = RegConnectRegistryW(computer_name, key, &retKey);
     Py_END_ALLOW_THREADS
-    if (rc != ERROR_SUCCESS)
-        return PyErr_SetFromWindowsErrWithFunction(rc,
-                                                   "ConnectRegistry");
-    return PyHKEY_FromHKEY(retKey);
+    if (rc != ERROR_SUCCESS) {
+        PyErr_SetFromWindowsErrWithFunction(rc, "ConnectRegistry");
+        return NULL;
+    }
+    return retKey;
 }
 
-static PyObject *
-PyCreateKey(PyObject *self, PyObject *args)
+/*[clinic input]
+winreg.CreateKey -> HKEY
+
+    key: HKEY
+        An already open key, or one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(nullable=True)
+        The name of the key this method opens or creates.
+    /
+
+Creates or opens the specified key.
+
+If key is one of the predefined keys, sub_key may be None. In that case,
+the handle returned is the same key handle passed in to the function.
+
+If the key already exists, this function opens the existing key.
+
+The return value is the handle of the opened key.
+If the function fails, an OSError exception is raised.
+[clinic start generated code]*/
+
+static HKEY
+winreg_CreateKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key)
+/*[clinic end generated code: output=cd6843f30a73fc0e input=8014b171a5682fe7]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *subKey;
     HKEY retKey;
     long rc;
-    if (!PyArg_ParseTuple(args, "OZ:CreateKey", &obKey, &subKey))
+
+    rc = RegCreateKeyW(key, sub_key, &retKey);
+    if (rc != ERROR_SUCCESS) {
+        PyErr_SetFromWindowsErrWithFunction(rc, "CreateKey");
         return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
-    rc = RegCreateKeyW(hKey, subKey, &retKey);
-    if (rc != ERROR_SUCCESS)
-        return PyErr_SetFromWindowsErrWithFunction(rc, "CreateKey");
-    return PyHKEY_FromHKEY(retKey);
+    }
+    return retKey;
 }
 
-static PyObject *
-PyCreateKeyEx(PyObject *self, PyObject *args, PyObject *kwargs)
+/*[clinic input]
+winreg.CreateKeyEx -> HKEY
+
+    key: HKEY
+        An already open key, or one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(nullable=True)
+        The name of the key this method opens or creates.
+    reserved: int = 0
+        A reserved integer, and must be zero.  Default is zero.
+    access: REGSAM(c_default='KEY_WRITE') = winreg.KEY_WRITE
+        An integer that specifies an access mask that describes the
+        desired security access for the key. Default is KEY_WRITE.
+
+Creates or opens the specified key.
+
+If key is one of the predefined keys, sub_key may be None. In that case,
+the handle returned is the same key handle passed in to the function.
+
+If the key already exists, this function opens the existing key
+
+The return value is the handle of the opened key.
+If the function fails, an OSError exception is raised.
+[clinic start generated code]*/
+
+static HKEY
+winreg_CreateKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, int reserved, REGSAM access)
+/*[clinic end generated code: output=543d176b19183749 input=4322acd5c7f2e787]*/
 {
-    HKEY hKey;
-    PyObject *key;
-    wchar_t *sub_key;
     HKEY retKey;
-    int reserved = 0;
-    REGSAM access = KEY_WRITE;
     long rc;
 
-    char *kwlist[] = {"key", "sub_key", "reserved", "access", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OZ|ii:CreateKeyEx", kwlist,
-                                     &key, &sub_key, &reserved, &access))
-        return NULL;
-    if (!PyHKEY_AsHKEY(key, &hKey, FALSE))
-        return NULL;
-
-    rc = RegCreateKeyExW(hKey, sub_key, reserved, NULL, (DWORD)NULL,
+    rc = RegCreateKeyExW(key, sub_key, reserved, NULL, (DWORD)NULL,
                          access, NULL, &retKey, NULL);
-    if (rc != ERROR_SUCCESS)
-        return PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
-    return PyHKEY_FromHKEY(retKey);
+    if (rc != ERROR_SUCCESS) {
+        PyErr_SetFromWindowsErrWithFunction(rc, "CreateKeyEx");
+        return NULL;
+    }
+    return retKey;
 }
 
+/*[clinic input]
+winreg.DeleteKey
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE
+        A string that must be the name of a subkey of the key identified by
+        the key parameter. This value must not be None, and the key may not
+        have subkeys.
+    /
+
+Deletes the specified key.
+
+This method can not delete keys with subkeys.
+
+If the function succeeds, the entire key, including all of its values,
+is removed.  If the function fails, an OSError exception is raised.
+[clinic start generated code]*/
+
 static PyObject *
-PyDeleteKey(PyObject *self, PyObject *args)
+winreg_DeleteKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key)
+/*[clinic end generated code: output=875c8917dacbc99d input=b31d225b935e4211]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *subKey;
     long rc;
-    if (!PyArg_ParseTuple(args, "Ou:DeleteKey", &obKey, &subKey))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
-    rc = RegDeleteKeyW(hKey, subKey );
+    rc = RegDeleteKeyW(key, sub_key );
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKey");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.DeleteKeyEx
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE
+        A string that must be the name of a subkey of the key identified by
+        the key parameter. This value must not be None, and the key may not
+        have subkeys.
+    access: REGSAM(c_default='KEY_WOW64_64KEY') = winreg.KEY_WOW64_64KEY
+        An integer that specifies an access mask that describes the
+        desired security access for the key. Default is KEY_WOW64_64KEY.
+    reserved: int = 0
+        A reserved integer, and must be zero.  Default is zero.
+
+Deletes the specified key (64-bit OS only).
+
+This method can not delete keys with subkeys.
+
+If the function succeeds, the entire key, including all of its values,
+is removed.  If the function fails, an OSError exception is raised.
+On unsupported Windows versions, NotImplementedError is raised.
+[clinic start generated code]*/
+
 static PyObject *
-PyDeleteKeyEx(PyObject *self, PyObject *args, PyObject *kwargs)
+winreg_DeleteKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, REGSAM access, int reserved)
+/*[clinic end generated code: output=8b8a20684a59a902 input=711d9d89e7ecbed7]*/
 {
-    HKEY hKey;
-    PyObject *key;
     HMODULE hMod;
     typedef LONG (WINAPI *RDKEFunc)(HKEY, const wchar_t*, REGSAM, int);
     RDKEFunc pfn = NULL;
-    wchar_t *sub_key;
     long rc;
-    int reserved = 0;
-    REGSAM access = KEY_WOW64_64KEY;
-
-    char *kwlist[] = {"key", "sub_key", "access", "reserved", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Ou|ii:DeleteKeyEx", kwlist,
-                                     &key, &sub_key, &access, &reserved))
-        return NULL;
-    if (!PyHKEY_AsHKEY(key, &hKey, FALSE))
-        return NULL;
 
     /* Only available on 64bit platforms, so we must load it
        dynamically. */
@@ -1112,42 +962,60 @@ PyDeleteKeyEx(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
-    rc = (*pfn)(hKey, sub_key, access, reserved);
+    rc = (*pfn)(key, sub_key, access, reserved);
     Py_END_ALLOW_THREADS
 
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegDeleteKeyEx");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.DeleteValue
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    value: Py_UNICODE(nullable=True)
+        A string that identifies the value to remove.
+    /
+
+Removes a named value from a registry key.
+[clinic start generated code]*/
+
 static PyObject *
-PyDeleteValue(PyObject *self, PyObject *args)
+winreg_DeleteValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *value)
+/*[clinic end generated code: output=308550b8cdcfd8e1 input=417a5c1005cbbddc]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *subKey;
     long rc;
-    if (!PyArg_ParseTuple(args, "OZ:DeleteValue", &obKey, &subKey))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
     Py_BEGIN_ALLOW_THREADS
-    rc = RegDeleteValueW(hKey, subKey);
+    rc = RegDeleteValueW(key, value);
     Py_END_ALLOW_THREADS
     if (rc !=ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegDeleteValue");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.EnumKey
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    index: int
+        An integer that identifies the index of the key to retrieve.
+    /
+
+Enumerates subkeys of an open registry key.
+
+The function retrieves the name of one subkey each time it is called.
+It is typically called repeatedly until an OSError exception is
+raised, indicating no more values are available.
+[clinic start generated code]*/
+
 static PyObject *
-PyEnumKey(PyObject *self, PyObject *args)
+winreg_EnumKey_impl(PyModuleDef *module, HKEY key, int index)
+/*[clinic end generated code: output=58074ffabbc67896 input=fad9a7c00ab0e04b]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    int index;
     long rc;
     PyObject *retStr;
 
@@ -1160,13 +1028,8 @@ PyEnumKey(PyObject *self, PyObject *args)
     wchar_t tmpbuf[257];
     DWORD len = sizeof(tmpbuf)/sizeof(wchar_t); /* includes NULL terminator */
 
-    if (!PyArg_ParseTuple(args, "Oi:EnumKey", &obKey, &index))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
-
     Py_BEGIN_ALLOW_THREADS
-    rc = RegEnumKeyExW(hKey, index, tmpbuf, &len, NULL, NULL, NULL, NULL);
+    rc = RegEnumKeyExW(key, index, tmpbuf, &len, NULL, NULL, NULL, NULL);
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegEnumKeyEx");
@@ -1175,12 +1038,35 @@ PyEnumKey(PyObject *self, PyObject *args)
     return retStr;  /* can be NULL */
 }
 
+/*[clinic input]
+winreg.EnumValue
+
+    key: HKEY
+            An already open key, or any one of the predefined HKEY_* constants.
+    index: int
+        An integer that identifies the index of the value to retrieve.
+    /
+
+Enumerates values of an open registry key.
+
+The function retrieves the name of one subkey each time it is called.
+It is typically called repeatedly, until an OSError exception
+is raised, indicating no more values.
+
+The result is a tuple of 3 items:
+  value_name
+    A string that identifies the value.
+  value_data
+    An object that holds the value data, and whose type depends
+    on the underlying registry type.
+  data_type
+    An integer that identifies the type of the value data.
+[clinic start generated code]*/
+
 static PyObject *
-PyEnumValue(PyObject *self, PyObject *args)
+winreg_EnumValue_impl(PyModuleDef *module, HKEY key, int index)
+/*[clinic end generated code: output=4570367ebaf0e979 input=4414f47a6fb238b5]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    int index;
     long rc;
     wchar_t *retValueBuf;
     BYTE *tmpBuf;
@@ -1191,12 +1077,7 @@ PyEnumValue(PyObject *self, PyObject *args)
     PyObject *obData;
     PyObject *retVal;
 
-    if (!PyArg_ParseTuple(args, "Oi:EnumValue", &obKey, &index))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
-
-    if ((rc = RegQueryInfoKeyW(hKey, NULL, NULL, NULL, NULL, NULL, NULL,
+    if ((rc = RegQueryInfoKeyW(key, NULL, NULL, NULL, NULL, NULL, NULL,
                               NULL,
                               &retValueSize, &retDataSize, NULL, NULL))
         != ERROR_SUCCESS)
@@ -1217,7 +1098,7 @@ PyEnumValue(PyObject *self, PyObject *args)
 
     while (1) {
         Py_BEGIN_ALLOW_THREADS
-        rc = RegEnumValueW(hKey,
+        rc = RegEnumValueW(key,
                   index,
                   retValueBuf,
                   &retValueSize,
@@ -1260,19 +1141,25 @@ PyEnumValue(PyObject *self, PyObject *args)
     return retVal;
 }
 
+/*[clinic input]
+winreg.ExpandEnvironmentStrings
+
+    string: Py_UNICODE
+    /
+
+Expand environment vars.
+[clinic start generated code]*/
+
 static PyObject *
-PyExpandEnvironmentStrings(PyObject *self, PyObject *args)
+winreg_ExpandEnvironmentStrings_impl(PyModuleDef *module, Py_UNICODE *string)
+/*[clinic end generated code: output=4cb6914065a8663c input=b2a9714d2b751aa6]*/
 {
     wchar_t *retValue = NULL;
-    wchar_t *src;
     DWORD retValueSize;
     DWORD rc;
     PyObject *o;
 
-    if (!PyArg_ParseTuple(args, "u:ExpandEnvironmentStrings", &src))
-        return NULL;
-
-    retValueSize = ExpandEnvironmentStringsW(src, retValue, 0);
+    retValueSize = ExpandEnvironmentStringsW(string, retValue, 0);
     if (retValueSize == 0) {
         return PyErr_SetFromWindowsErrWithFunction(retValueSize,
                                         "ExpandEnvironmentStrings");
@@ -1282,7 +1169,7 @@ PyExpandEnvironmentStrings(PyObject *self, PyObject *args)
         return PyErr_NoMemory();
     }
 
-    rc = ExpandEnvironmentStringsW(src, retValue, retValueSize);
+    rc = ExpandEnvironmentStringsW(string, retValue, retValueSize);
     if (rc == 0) {
         PyMem_Free(retValue);
         return PyErr_SetFromWindowsErrWithFunction(retValueSize,
@@ -1293,90 +1180,163 @@ PyExpandEnvironmentStrings(PyObject *self, PyObject *args)
     return o;
 }
 
+/*[clinic input]
+winreg.FlushKey
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    /
+
+Writes all the attributes of a key to the registry.
+
+It is not necessary to call FlushKey to change a key.  Registry changes
+are flushed to disk by the registry using its lazy flusher.  Registry
+changes are also flushed to disk at system shutdown.  Unlike
+CloseKey(), the FlushKey() method returns only when all the data has
+been written to the registry.
+
+An application should only call FlushKey() if it requires absolute
+certainty that registry changes are on disk.  If you don't know whether
+a FlushKey() call is required, it probably isn't.
+[clinic start generated code]*/
+
 static PyObject *
-PyFlushKey(PyObject *self, PyObject *args)
+winreg_FlushKey_impl(PyModuleDef *module, HKEY key)
+/*[clinic end generated code: output=b9a7a6e405466420 input=f57457c12297d82f]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
     long rc;
-    if (!PyArg_ParseTuple(args, "O:FlushKey", &obKey))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
     Py_BEGIN_ALLOW_THREADS
-    rc = RegFlushKey(hKey);
+    rc = RegFlushKey(key);
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegFlushKey");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
-static PyObject *
-PyLoadKey(PyObject *self, PyObject *args)
-{
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *subKey;
-    wchar_t *fileName;
 
+
+/*[clinic input]
+winreg.LoadKey
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE
+        A string that identifies the sub-key to load.
+    file_name: Py_UNICODE
+        The name of the file to load registry data from.  This file must
+        have been created with the SaveKey() function.  Under the file
+        allocation table (FAT) file system, the filename may not have an
+        extension.
+    /
+
+Insert data into the registry from a file.
+
+Creates a subkey under the specified key and stores registration
+information from a specified file into that subkey.
+
+A call to LoadKey() fails if the calling process does not have the
+SE_RESTORE_PRIVILEGE privilege.
+
+If key is a handle returned by ConnectRegistry(), then the path
+specified in fileName is relative to the remote computer.
+
+The MSDN docs imply key must be in the HKEY_USER or HKEY_LOCAL_MACHINE
+tree.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_LoadKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, Py_UNICODE *file_name)
+/*[clinic end generated code: output=53b22607f8e73d34 input=e3b5b45ade311582]*/
+{
     long rc;
-    if (!PyArg_ParseTuple(args, "Ouu:LoadKey", &obKey, &subKey, &fileName))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
+
     Py_BEGIN_ALLOW_THREADS
-    rc = RegLoadKeyW(hKey, subKey, fileName );
+    rc = RegLoadKeyW(key, sub_key, file_name );
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegLoadKey");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
-static PyObject *
-PyOpenKey(PyObject *self, PyObject *args, PyObject *kwargs)
+/*[clinic input]
+winreg.OpenKey -> HKEY
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(nullable=True)
+        A string that identifies the sub_key to open.
+    reserved: int = 0
+        A reserved integer that must be zero.  Default is zero.
+    access: REGSAM(c_default='KEY_READ') = winreg.KEY_READ
+        An integer that specifies an access mask that describes the desired
+        security access for the key.  Default is KEY_READ.
+
+Opens the specified key.
+
+The result is a new handle to the specified key.
+If the function fails, an OSError exception is raised.
+[clinic start generated code]*/
+
+static HKEY
+winreg_OpenKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, int reserved, REGSAM access)
+/*[clinic end generated code: output=8bf50881521469c6 input=dc84a4af4af4d387]*/
 {
-    HKEY hKey;
-    PyObject *key;
-    wchar_t *sub_key;
-    int reserved = 0;
     HKEY retKey;
     long rc;
-    REGSAM access = KEY_READ;
-
-    char *kwlist[] = {"key", "sub_key", "reserved", "access", NULL};
-
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OZ|ii:OpenKey", kwlist,
-                                     &key, &sub_key, &reserved, &access))
-        return NULL;
-    if (!PyHKEY_AsHKEY(key, &hKey, FALSE))
-        return NULL;
 
     Py_BEGIN_ALLOW_THREADS
-    rc = RegOpenKeyExW(hKey, sub_key, reserved, access, &retKey);
+    rc = RegOpenKeyExW(key, sub_key, reserved, access, &retKey);
     Py_END_ALLOW_THREADS
-    if (rc != ERROR_SUCCESS)
-        return PyErr_SetFromWindowsErrWithFunction(rc, "RegOpenKeyEx");
-    return PyHKEY_FromHKEY(retKey);
+    if (rc != ERROR_SUCCESS) {
+        PyErr_SetFromWindowsErrWithFunction(rc, "RegOpenKeyEx");
+        return NULL;
+    }
+    return retKey;
 }
 
+/*[clinic input]
+winreg.OpenKeyEx = winreg.OpenKey
+
+Opens the specified key.
+
+The result is a new handle to the specified key.
+If the function fails, an OSError exception is raised.
+[clinic start generated code]*/
+
+static HKEY
+winreg_OpenKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, int reserved, REGSAM access)
+/*[clinic end generated code: output=f6f7cd4befb9585b input=c6c4972af8622959]*/
+{
+    return winreg_OpenKey_impl(module, key, sub_key, reserved, access);
+}
+
+/*[clinic input]
+winreg.QueryInfoKey
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    /
+
+Returns information about a key.
+
+The result is a tuple of 3 items:
+An integer that identifies the number of sub keys this key has.
+An integer that identifies the number of values this key has.
+An integer that identifies when the key was last modified (if available)
+as 100's of nanoseconds since Jan 1, 1600.
+[clinic start generated code]*/
 
 static PyObject *
-PyQueryInfoKey(PyObject *self, PyObject *args)
+winreg_QueryInfoKey_impl(PyModuleDef *module, HKEY key)
+/*[clinic end generated code: output=ae885222fe966a34 input=c3593802390cde1f]*/
 {
-  HKEY hKey;
-  PyObject *obKey;
   long rc;
   DWORD nSubKeys, nValues;
   FILETIME ft;
   LARGE_INTEGER li;
   PyObject *l;
   PyObject *ret;
-  if (!PyArg_ParseTuple(args, "O:QueryInfoKey", &obKey))
-    return NULL;
-  if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-    return NULL;
-  if ((rc = RegQueryInfoKey(hKey, NULL, NULL, 0, &nSubKeys, NULL, NULL,
+
+  if ((rc = RegQueryInfoKey(key, NULL, NULL, 0, &nSubKeys, NULL, NULL,
                             &nValues,  NULL,  NULL, NULL, &ft))
       != ERROR_SUCCESS)
     return PyErr_SetFromWindowsErrWithFunction(rc, "RegQueryInfoKey");
@@ -1390,12 +1350,31 @@ PyQueryInfoKey(PyObject *self, PyObject *args)
   return ret;
 }
 
+/*[clinic input]
+winreg.QueryValue
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(nullable=True)
+        A string that holds the name of the subkey with which the value
+        is associated.  If this parameter is None or empty, the function
+        retrieves the value set by the SetValue() method for the key
+        identified by key.
+    /
+
+Retrieves the unnamed value for a key.
+
+Values in the registry have name, type, and data components. This method
+retrieves the data for a key's first value that has a NULL name.
+But since the underlying API call doesn't return the type, you'll
+probably be happier using QueryValueEx; this function is just here for
+completeness.
+[clinic start generated code]*/
+
 static PyObject *
-PyQueryValue(PyObject *self, PyObject *args)
+winreg_QueryValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key)
+/*[clinic end generated code: output=f91cb6f623c3b65a input=e6ec57bb8d39aaa6]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *subKey;
     long rc;
     PyObject *retStr;
     wchar_t *retBuf;
@@ -1403,13 +1382,7 @@ PyQueryValue(PyObject *self, PyObject *args)
     DWORD retSize = 0;
     wchar_t *tmp;
 
-    if (!PyArg_ParseTuple(args, "OZ:QueryValue", &obKey, &subKey))
-        return NULL;
-
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
-
-    rc = RegQueryValueW(hKey, subKey, NULL, &retSize);
+    rc = RegQueryValueW(key, sub_key, NULL, &retSize);
     if (rc == ERROR_MORE_DATA)
         retSize = 256;
     else if (rc != ERROR_SUCCESS)
@@ -1423,7 +1396,7 @@ PyQueryValue(PyObject *self, PyObject *args)
 
     while (1) {
         retSize = bufSize;
-        rc = RegQueryValueW(hKey, subKey, retBuf, &retSize);
+        rc = RegQueryValueW(key, sub_key, retBuf, &retSize);
         if (rc != ERROR_MORE_DATA)
             break;
 
@@ -1447,13 +1420,28 @@ PyQueryValue(PyObject *self, PyObject *args)
     return retStr;
 }
 
-static PyObject *
-PyQueryValueEx(PyObject *self, PyObject *args)
-{
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *valueName;
 
+/*[clinic input]
+winreg.QueryValueEx
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    name: Py_UNICODE(nullable=True)
+        A string indicating the value to query.
+    /
+
+Retrieves the type and value of a specified sub-key.
+
+Behaves mostly like QueryValue(), but also returns the type of the
+specified value name associated with the given open registry key.
+
+The return value is a tuple of the value and the type_id.
+[clinic start generated code]*/
+
+static PyObject *
+winreg_QueryValueEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *name)
+/*[clinic end generated code: output=a4b07f7807194f23 input=4403ae868b44e563]*/
+{
     long rc;
     BYTE *retBuf, *tmp;
     DWORD bufSize = 0, retSize;
@@ -1461,13 +1449,7 @@ PyQueryValueEx(PyObject *self, PyObject *args)
     PyObject *obData;
     PyObject *result;
 
-    if (!PyArg_ParseTuple(args, "OZ:QueryValueEx", &obKey, &valueName))
-        return NULL;
-
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
-
-    rc = RegQueryValueExW(hKey, valueName, NULL, NULL, NULL, &bufSize);
+    rc = RegQueryValueExW(key, name, NULL, NULL, NULL, &bufSize);
     if (rc == ERROR_MORE_DATA)
         bufSize = 256;
     else if (rc != ERROR_SUCCESS)
@@ -1479,7 +1461,7 @@ PyQueryValueEx(PyObject *self, PyObject *args)
 
     while (1) {
         retSize = bufSize;
-        rc = RegQueryValueExW(hKey, valueName, NULL, &typ,
+        rc = RegQueryValueExW(key, name, NULL, &typ,
                              (BYTE *)retBuf, &retSize);
         if (rc != ERROR_MORE_DATA)
             break;
@@ -1507,91 +1489,146 @@ PyQueryValueEx(PyObject *self, PyObject *args)
     return result;
 }
 
+/*[clinic input]
+winreg.SaveKey
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    file_name: Py_UNICODE
+        The name of the file to save registry data to.  This file cannot
+        already exist. If this filename includes an extension, it cannot be
+        used on file allocation table (FAT) file systems by the LoadKey(),
+        ReplaceKey() or RestoreKey() methods.
+    /
+
+Saves the specified key, and all its subkeys to the specified file.
+
+If key represents a key on a remote computer, the path described by
+file_name is relative to the remote computer.
+
+The caller of this method must possess the SeBackupPrivilege
+security privilege.  This function passes NULL for security_attributes
+to the API.
+[clinic start generated code]*/
 
 static PyObject *
-PySaveKey(PyObject *self, PyObject *args)
+winreg_SaveKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *file_name)
+/*[clinic end generated code: output=33109b96bfabef8f input=da735241f91ac7a2]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *fileName;
     LPSECURITY_ATTRIBUTES pSA = NULL;
 
     long rc;
-    if (!PyArg_ParseTuple(args, "Ou:SaveKey", &obKey, &fileName))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
 /*  One day we may get security into the core?
     if (!PyWinObject_AsSECURITY_ATTRIBUTES(obSA, &pSA, TRUE))
         return NULL;
 */
     Py_BEGIN_ALLOW_THREADS
-    rc = RegSaveKeyW(hKey, fileName, pSA );
+    rc = RegSaveKeyW(key, file_name, pSA );
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSaveKey");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.SetValue
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    sub_key: Py_UNICODE(nullable=True)
+        A string that names the subkey with which the value is associated.
+    type: DWORD
+        An integer that specifies the type of the data.  Currently this must
+        be REG_SZ, meaning only strings are supported.
+    value: Py_UNICODE(length=True)
+        A string that specifies the new value.
+    /
+
+Associates a value with a specified key.
+
+If the key specified by the sub_key parameter does not exist, the
+SetValue function creates it.
+
+Value lengths are limited by available memory. Long values (more than
+2048 bytes) should be stored as files with the filenames stored in
+the configuration registry to help the registry perform efficiently.
+
+The key identified by the key parameter must have been opened with
+KEY_SET_VALUE access.
+[clinic start generated code]*/
+
 static PyObject *
-PySetValue(PyObject *self, PyObject *args)
+winreg_SetValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key, DWORD type, Py_UNICODE *value, Py_ssize_clean_t value_length)
+/*[clinic end generated code: output=807274a1c01961b5 input=83ad2fae2ffbb941]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *subKey;
-    wchar_t *str;
-    DWORD typ;
-    DWORD len;
     long rc;
-    if (!PyArg_ParseTuple(args, "OZiu#:SetValue",
-                          &obKey,
-                          &subKey,
-                          &typ,
-                          &str,
-                          &len))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
-    if (typ != REG_SZ) {
+
+    if (type != REG_SZ) {
         PyErr_SetString(PyExc_TypeError,
                         "Type must be winreg.REG_SZ");
         return NULL;
     }
 
     Py_BEGIN_ALLOW_THREADS
-    rc = RegSetValueW(hKey, subKey, REG_SZ, str, len+1);
+    rc = RegSetValueW(key, sub_key, REG_SZ, value, value_length+1);
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc, "RegSetValue");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.SetValueEx
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    value_name: Py_UNICODE(nullable=True)
+        A string containing the name of the value to set, or None.
+    reserved: object
+        Can be anything - zero is always passed to the API.
+    type: DWORD
+        An integer that specifies the type of the data, one of:
+        REG_BINARY -- Binary data in any form.
+        REG_DWORD -- A 32-bit number.
+        REG_DWORD_LITTLE_ENDIAN -- A 32-bit number in little-endian format.
+        REG_DWORD_BIG_ENDIAN -- A 32-bit number in big-endian format.
+        REG_EXPAND_SZ -- A null-terminated string that contains unexpanded
+                         references to environment variables (for example,
+                         %PATH%).
+        REG_LINK -- A Unicode symbolic link.
+        REG_MULTI_SZ -- An sequence of null-terminated strings, terminated
+                        by two null characters.  Note that Python handles
+                        this termination automatically.
+        REG_NONE -- No defined value type.
+        REG_RESOURCE_LIST -- A device-driver resource list.
+        REG_SZ -- A null-terminated string.
+    value: object
+        A string that specifies the new value.
+    /
+
+Stores data in the value field of an open registry key.
+
+This method can also set additional value and type information for the
+specified key.  The key identified by the key parameter must have been
+opened with KEY_SET_VALUE access.
+
+To open the key, use the CreateKeyEx() or OpenKeyEx() methods.
+
+Value lengths are limited by available memory. Long values (more than
+2048 bytes) should be stored as files with the filenames stored in
+the configuration registry to help the registry perform efficiently.
+[clinic start generated code]*/
+
 static PyObject *
-PySetValueEx(PyObject *self, PyObject *args)
+winreg_SetValueEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *value_name, PyObject *reserved, DWORD type, PyObject *value)
+/*[clinic end generated code: output=a53ac3aecef9b977 input=8fe45d7ac381cf96]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
-    wchar_t *valueName;
-    PyObject *obRes;
-    PyObject *value;
     BYTE *data;
     DWORD len;
-    DWORD typ;
 
     LONG rc;
 
-    if (!PyArg_ParseTuple(args, "OZOiO:SetValueEx",
-                          &obKey,
-                          &valueName,
-                          &obRes,
-                          &typ,
-                          &value))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
-    if (!Py2Reg(value, typ, &data, &len))
+    if (!Py2Reg(value, type, &data, &len))
     {
         if (!PyErr_Occurred())
             PyErr_SetString(PyExc_ValueError,
@@ -1599,30 +1636,39 @@ PySetValueEx(PyObject *self, PyObject *args)
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
-    rc = RegSetValueExW(hKey, valueName, 0, typ, data, len);
+    rc = RegSetValueExW(key, value_name, 0, type, data, len);
     Py_END_ALLOW_THREADS
     PyMem_DEL(data);
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegSetValueEx");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.DisableReflectionKey
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    /
+
+Disables registry reflection for 32bit processes running on a 64bit OS.
+
+Will generally raise NotImplemented if executed on a 32bit OS.
+
+If the key is not on the reflection list, the function succeeds but has
+no effect.  Disabling reflection for a key does not affect reflection
+of any subkeys.
+[clinic start generated code]*/
+
 static PyObject *
-PyDisableReflectionKey(PyObject *self, PyObject *args)
+winreg_DisableReflectionKey_impl(PyModuleDef *module, HKEY key)
+/*[clinic end generated code: output=50fe6e2604324cdd input=a6c9e5ca5410193c]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
     HMODULE hMod;
     typedef LONG (WINAPI *RDRKFunc)(HKEY);
     RDRKFunc pfn = NULL;
     LONG rc;
-
-    if (!PyArg_ParseTuple(args, "O:DisableReflectionKey", &obKey))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
@@ -1636,29 +1682,36 @@ PyDisableReflectionKey(PyObject *self, PyObject *args)
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
-    rc = (*pfn)(hKey);
+    rc = (*pfn)(key);
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegDisableReflectionKey");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.EnableReflectionKey
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    /
+
+Restores registry reflection for the specified disabled key.
+
+Will generally raise NotImplemented if executed on a 32bit OS.
+Restoring reflection for a key does not affect reflection of any
+subkeys.
+[clinic start generated code]*/
+
 static PyObject *
-PyEnableReflectionKey(PyObject *self, PyObject *args)
+winreg_EnableReflectionKey_impl(PyModuleDef *module, HKEY key)
+/*[clinic end generated code: output=e3f23edb414f24a4 input=7748abbacd1e166a]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
     HMODULE hMod;
     typedef LONG (WINAPI *RERKFunc)(HKEY);
     RERKFunc pfn = NULL;
     LONG rc;
-
-    if (!PyArg_ParseTuple(args, "O:EnableReflectionKey", &obKey))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
@@ -1672,30 +1725,35 @@ PyEnableReflectionKey(PyObject *self, PyObject *args)
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
-    rc = (*pfn)(hKey);
+    rc = (*pfn)(key);
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc,
                                                    "RegEnableReflectionKey");
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
+/*[clinic input]
+winreg.QueryReflectionKey
+
+    key: HKEY
+        An already open key, or any one of the predefined HKEY_* constants.
+    /
+
+Returns the reflection state for the specified key as a bool.
+
+Will generally raise NotImplemented if executed on a 32bit OS.
+[clinic start generated code]*/
+
 static PyObject *
-PyQueryReflectionKey(PyObject *self, PyObject *args)
+winreg_QueryReflectionKey_impl(PyModuleDef *module, HKEY key)
+/*[clinic end generated code: output=2a49c564ca162e50 input=9f325eacb5a65d88]*/
 {
-    HKEY hKey;
-    PyObject *obKey;
     HMODULE hMod;
     typedef LONG (WINAPI *RQRKFunc)(HKEY, BOOL *);
     RQRKFunc pfn = NULL;
     BOOL result;
     LONG rc;
-
-    if (!PyArg_ParseTuple(args, "O:QueryReflectionKey", &obKey))
-        return NULL;
-    if (!PyHKEY_AsHKEY(obKey, &hKey, FALSE))
-        return NULL;
 
     /* Only available on 64bit platforms, so we must load it
        dynamically.*/
@@ -1709,7 +1767,7 @@ PyQueryReflectionKey(PyObject *self, PyObject *args)
         return NULL;
     }
     Py_BEGIN_ALLOW_THREADS
-    rc = (*pfn)(hKey, &result);
+    rc = (*pfn)(key, &result);
     Py_END_ALLOW_THREADS
     if (rc != ERROR_SUCCESS)
         return PyErr_SetFromWindowsErrWithFunction(rc,
@@ -1718,34 +1776,29 @@ PyQueryReflectionKey(PyObject *self, PyObject *args)
 }
 
 static struct PyMethodDef winreg_methods[] = {
-    {"CloseKey",         PyCloseKey,        METH_VARARGS, CloseKey_doc},
-    {"ConnectRegistry",  PyConnectRegistry, METH_VARARGS, ConnectRegistry_doc},
-    {"CreateKey",        PyCreateKey,       METH_VARARGS, CreateKey_doc},
-    {"CreateKeyEx",      (PyCFunction)PyCreateKeyEx,
-                         METH_VARARGS | METH_KEYWORDS, CreateKeyEx_doc},
-    {"DeleteKey",        PyDeleteKey,       METH_VARARGS, DeleteKey_doc},
-    {"DeleteKeyEx",      (PyCFunction)PyDeleteKeyEx,
-                         METH_VARARGS | METH_KEYWORDS, DeleteKeyEx_doc},
-    {"DeleteValue",      PyDeleteValue,     METH_VARARGS, DeleteValue_doc},
-    {"DisableReflectionKey", PyDisableReflectionKey, METH_VARARGS, DisableReflectionKey_doc},
-    {"EnableReflectionKey",  PyEnableReflectionKey,  METH_VARARGS, EnableReflectionKey_doc},
-    {"EnumKey",          PyEnumKey,         METH_VARARGS, EnumKey_doc},
-    {"EnumValue",        PyEnumValue,       METH_VARARGS, EnumValue_doc},
-    {"ExpandEnvironmentStrings", PyExpandEnvironmentStrings, METH_VARARGS,
-        ExpandEnvironmentStrings_doc },
-    {"FlushKey",         PyFlushKey,        METH_VARARGS, FlushKey_doc},
-    {"LoadKey",          PyLoadKey,         METH_VARARGS, LoadKey_doc},
-    {"OpenKey",          (PyCFunction)PyOpenKey, METH_VARARGS | METH_KEYWORDS,
-                                                 OpenKey_doc},
-    {"OpenKeyEx",        (PyCFunction)PyOpenKey, METH_VARARGS | METH_KEYWORDS,
-                                                 OpenKeyEx_doc},
-    {"QueryValue",       PyQueryValue,      METH_VARARGS, QueryValue_doc},
-    {"QueryValueEx",     PyQueryValueEx,    METH_VARARGS, QueryValueEx_doc},
-    {"QueryInfoKey",     PyQueryInfoKey,    METH_VARARGS, QueryInfoKey_doc},
-    {"QueryReflectionKey",PyQueryReflectionKey,METH_VARARGS, QueryReflectionKey_doc},
-    {"SaveKey",          PySaveKey,         METH_VARARGS, SaveKey_doc},
-    {"SetValue",         PySetValue,        METH_VARARGS, SetValue_doc},
-    {"SetValueEx",       PySetValueEx,      METH_VARARGS, SetValueEx_doc},
+    WINREG_CLOSEKEY_METHODDEF
+    WINREG_CONNECTREGISTRY_METHODDEF
+    WINREG_CREATEKEY_METHODDEF
+    WINREG_CREATEKEYEX_METHODDEF
+    WINREG_DELETEKEY_METHODDEF
+    WINREG_DELETEKEYEX_METHODDEF
+    WINREG_DELETEVALUE_METHODDEF
+    WINREG_DISABLEREFLECTIONKEY_METHODDEF
+    WINREG_ENABLEREFLECTIONKEY_METHODDEF
+    WINREG_ENUMKEY_METHODDEF
+    WINREG_ENUMVALUE_METHODDEF
+    WINREG_EXPANDENVIRONMENTSTRINGS_METHODDEF
+    WINREG_FLUSHKEY_METHODDEF
+    WINREG_LOADKEY_METHODDEF
+    WINREG_OPENKEY_METHODDEF
+    WINREG_OPENKEYEX_METHODDEF
+    WINREG_QUERYVALUE_METHODDEF
+    WINREG_QUERYVALUEEX_METHODDEF
+    WINREG_QUERYINFOKEY_METHODDEF
+    WINREG_QUERYREFLECTIONKEY_METHODDEF
+    WINREG_SAVEKEY_METHODDEF
+    WINREG_SETVALUE_METHODDEF
+    WINREG_SETVALUEEX_METHODDEF
     NULL,
 };
 
