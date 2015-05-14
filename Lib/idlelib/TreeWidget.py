@@ -245,7 +245,7 @@ class TreeNode:
         else:
             self.edit_finish()
         try:
-            label = self.label
+            self.label
         except AttributeError:
             # padding carefully selected (on Windows) to match Entry widget:
             self.label = Label(self.canvas, text=text, bd=0, padx=2, pady=2)
