@@ -5,7 +5,6 @@ import sys
 from tkinter import StringVar, BooleanVar, Checkbutton  # for GrepDialog
 from tkinter import Tk, Text, Button, SEL, END  # for htest
 from idlelib import SearchEngine
-import itertools
 from idlelib.SearchDialogBase import SearchDialogBase
 # Importing OutputWindow fails due to import loop
 # EditorWindow -> GrepDialop -> OutputWindow -> EditorWindow

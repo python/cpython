@@ -18,13 +18,11 @@ XXX GvR Redesign this interface (yet again) as follows:
 """
 
 import os
-import re
 import string
 import tabnanny
 import tokenize
 import tkinter.messagebox as tkMessageBox
-from idlelib.EditorWindow import EditorWindow
-from idlelib import PyShell, IOBinding
+from idlelib import PyShell
 
 from idlelib.configHandler import idleConf
 from idlelib import macosxSupport
