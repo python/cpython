@@ -179,7 +179,7 @@ Process
    :func:`create_subprocess_shell` function.
 
    The API of the :class:`~asyncio.subprocess.Process` class was designed to be
-   closed the API of the :class:`subprocess.Popen` class, but they are some
+   close to the API of the :class:`subprocess.Popen` class, but there are some
    differences:
 
    * There is no explicit :meth:`~subprocess.Popen.poll` method
