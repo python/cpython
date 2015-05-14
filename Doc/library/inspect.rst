@@ -699,6 +699,10 @@ function.
       A dict of keyword arguments values.  Dynamically computed from the
       :attr:`arguments` attribute.
 
+   .. attribute:: BoundArguments.signature
+
+      A reference to the parent :class:`Signature` object.
+
    The :attr:`args` and :attr:`kwargs` properties can be used to invoke
    functions::
 
