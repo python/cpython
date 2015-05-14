@@ -64,7 +64,8 @@ Direct API functions
 .. c:function:: char* PyByteArray_AsString(PyObject *bytearray)
 
    Return the contents of *bytearray* as a char array after checking for a
-   *NULL* pointer.
+   *NULL* pointer.  The returned array always has an extra
+   null byte appended.
 
 
 .. c:function:: int PyByteArray_Resize(PyObject *bytearray, Py_ssize_t len)
