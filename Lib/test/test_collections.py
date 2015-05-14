@@ -495,6 +495,22 @@ class TestOneTrickPonyABCs(ABCTestCase):
         self.assertIsInstance(c, Awaitable)
         c.close() # awoid RuntimeWarning that coro() was not awaited
 
+        class CoroLike:
+            def send(self, value):
+                pass
+            def throw(self, typ, val=None, tb=None):
+                pass
+            def close(self):
+                pass
+        Coroutine.register(CoroLike)
+        try:
+            self.assertTrue(isinstance(CoroLike(), Awaitable))
+            self.assertTrue(issubclass(CoroLike, Awaitable))
+            CoroLike = None
+        finally:
+            support.gc_collect() # Kill CoroLike to clean-up ABCMeta cache
+
+
     def test_Coroutine(self):
         def gen():
             yield
