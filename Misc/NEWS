@@ -125,6 +125,9 @@ Library
 - Issue 24184: Add AsyncIterator and AsyncIterable ABCs to
   collections.abc.  Contributed by Yury Selivanov.
 
+- Issue 22547: Implement informative __repr__ for inspect.BoundArguments.
+  Contributed by Yury Selivanov.
+
 Tests
 -----
 
