@@ -15,7 +15,7 @@ import types
 from collections import UserDict
 from collections import ChainMap
 from collections import deque
-from collections.abc import Awaitable, Coroutine
+from collections.abc import Awaitable, Coroutine, AsyncIterator, AsyncIterable
 from collections.abc import Hashable, Iterable, Iterator, Generator
 from collections.abc import Sized, Container, Callable
 from collections.abc import Set, MutableSet
@@ -572,6 +572,40 @@ class TestOneTrickPonyABCs(ABCTestCase):
         self.assertFalse(issubclass(int, H))
         self.validate_abstract_methods(Hashable, '__hash__')
         self.validate_isinstance(Hashable, '__hash__')
+
+    def test_AsyncIterable(self):
+        class AI:
+            async def __aiter__(self):
+                return self
+        self.assertTrue(isinstance(AI(), AsyncIterable))
+        self.assertTrue(issubclass(AI, AsyncIterable))
+        # Check some non-iterables
+        non_samples = [None, object, []]
+        for x in non_samples:
+            self.assertNotIsInstance(x, AsyncIterable)
+            self.assertFalse(issubclass(type(x), AsyncIterable), repr(type(x)))
+        self.validate_abstract_methods(AsyncIterable, '__aiter__')
+        self.validate_isinstance(AsyncIterable, '__aiter__')
+
+    def test_AsyncIterator(self):
+        class AI:
+            async def __aiter__(self):
+                return self
+            async def __anext__(self):
+                raise StopAsyncIteration
+        self.assertTrue(isinstance(AI(), AsyncIterator))
+        self.assertTrue(issubclass(AI, AsyncIterator))
+        non_samples = [None, object, []]
+        # Check some non-iterables
+        for x in non_samples:
+            self.assertNotIsInstance(x, AsyncIterator)
+            self.assertFalse(issubclass(type(x), AsyncIterator), repr(type(x)))
+        # Similarly to regular iterators (see issue 10565)
+        class AnextOnly:
+            async def __anext__(self):
+                raise StopAsyncIteration
+        self.assertNotIsInstance(AnextOnly(), AsyncIterator)
+        self.validate_abstract_methods(AsyncIterator, '__anext__', '__aiter__')
 
     def test_Iterable(self):
         # Check some non-iterables

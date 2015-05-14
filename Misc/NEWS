@@ -122,6 +122,9 @@ Library
 - Issue 24179: Support 'async for' for asyncio.StreamReader.
   Contributed by Yury Selivanov.
 
+- Issue 24184: Add AsyncIterator and AsyncIterable ABCs to
+  collections.abc.  Contributed by Yury Selivanov.
+
 Tests
 -----
 
