@@ -17,7 +17,6 @@
     <PreprocessorDefinitions Include="OPENSSL_THREADS" />
     <PreprocessorDefinitions Include="OPENSSL_SYSNAME_WIN32" />
     <PreprocessorDefinitions Include="OPENSSL_IA32_SSE2" />
-    <PreprocessorDefinitions Include="OPENSSL_BN_ASM_GF2m" />
     <PreprocessorDefinitions Include="OPENSSL_CPUID_OBJ" />
     <PreprocessorDefinitions Include="SHA1_ASM" />
     <PreprocessorDefinitions Include="SHA256_ASM" />
@@ -38,6 +37,7 @@
     <PreprocessorDefinitions Include="OPENSSL_NO_DYNAMIC_ENGINE" />
   </ItemGroup>
   <ItemGroup Condition="'$(Platform)'=='Win32'">
+    <PreprocessorDefinitions Include="OPENSSL_BN_ASM_GF2m" />
     <PreprocessorDefinitions Include="OPENSSL_BN_ASM_PART_WORDS" />
     <PreprocessorDefinitions Include="OPENSSL_BN_ASM_MONT" />
     <PreprocessorDefinitions Include="RMD160_ASM" />
