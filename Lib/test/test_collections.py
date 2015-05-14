@@ -503,13 +503,10 @@ class TestOneTrickPonyABCs(ABCTestCase):
             def close(self):
                 pass
         Coroutine.register(CoroLike)
-        try:
-            self.assertTrue(isinstance(CoroLike(), Awaitable))
-            self.assertTrue(issubclass(CoroLike, Awaitable))
-            CoroLike = None
-        finally:
-            support.gc_collect() # Kill CoroLike to clean-up ABCMeta cache
-
+        self.assertTrue(isinstance(CoroLike(), Awaitable))
+        self.assertTrue(issubclass(CoroLike, Awaitable))
+        CoroLike = None
+        support.gc_collect() # Kill CoroLike to clean-up ABCMeta cache
 
     def test_Coroutine(self):
         def gen():
