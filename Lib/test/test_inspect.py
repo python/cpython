@@ -3133,6 +3133,12 @@ class TestBoundArguments(unittest.TestCase):
         ba4 = inspect.signature(bar).bind(1)
         self.assertNotEqual(ba, ba4)
 
+        def foo(*, a, b): pass
+        sig = inspect.signature(foo)
+        ba1 = sig.bind(a=1, b=2)
+        ba2 = sig.bind(b=2, a=1)
+        self.assertEqual(ba1, ba2)
+
     def test_signature_bound_arguments_pickle(self):
         def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
         sig = inspect.signature(foo)
