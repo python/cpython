@@ -222,8 +222,6 @@ msvcrt_getch(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if defined(_WCONIO_DEFINED)
-
 PyDoc_STRVAR(msvcrt_getwch__doc__,
 "getwch($module, /)\n"
 "--\n"
@@ -247,8 +245,6 @@ msvcrt_getwch(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-
-#endif /* defined(_WCONIO_DEFINED) */
 
 PyDoc_STRVAR(msvcrt_getche__doc__,
 "getche($module, /)\n"
@@ -274,8 +270,6 @@ msvcrt_getche(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
     return return_value;
 }
 
-#if defined(_WCONIO_DEFINED)
-
 PyDoc_STRVAR(msvcrt_getwche__doc__,
 "getwche($module, /)\n"
 "--\n"
@@ -299,8 +293,6 @@ msvcrt_getwche(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 
     return return_value;
 }
-
-#endif /* defined(_WCONIO_DEFINED) */
 
 PyDoc_STRVAR(msvcrt_putch__doc__,
 "putch($module, char, /)\n"
@@ -328,8 +320,6 @@ exit:
     return return_value;
 }
 
-#if defined(_WCONIO_DEFINED)
-
 PyDoc_STRVAR(msvcrt_putwch__doc__,
 "putwch($module, unicode_char, /)\n"
 "--\n"
@@ -355,8 +345,6 @@ msvcrt_putwch(PyModuleDef *module, PyObject *arg)
 exit:
     return return_value;
 }
-
-#endif /* defined(_WCONIO_DEFINED) */
 
 PyDoc_STRVAR(msvcrt_ungetch__doc__,
 "ungetch($module, char, /)\n"
@@ -388,8 +376,6 @@ exit:
     return return_value;
 }
 
-#if defined(_WCONIO_DEFINED)
-
 PyDoc_STRVAR(msvcrt_ungetwch__doc__,
 "ungetwch($module, unicode_char, /)\n"
 "--\n"
@@ -415,8 +401,6 @@ msvcrt_ungetwch(PyModuleDef *module, PyObject *arg)
 exit:
     return return_value;
 }
-
-#endif /* defined(_WCONIO_DEFINED) */
 
 #if defined(_DEBUG)
 
@@ -556,22 +540,6 @@ exit:
     return return_value;
 }
 
-#ifndef MSVCRT_GETWCH_METHODDEF
-    #define MSVCRT_GETWCH_METHODDEF
-#endif /* !defined(MSVCRT_GETWCH_METHODDEF) */
-
-#ifndef MSVCRT_GETWCHE_METHODDEF
-    #define MSVCRT_GETWCHE_METHODDEF
-#endif /* !defined(MSVCRT_GETWCHE_METHODDEF) */
-
-#ifndef MSVCRT_PUTWCH_METHODDEF
-    #define MSVCRT_PUTWCH_METHODDEF
-#endif /* !defined(MSVCRT_PUTWCH_METHODDEF) */
-
-#ifndef MSVCRT_UNGETWCH_METHODDEF
-    #define MSVCRT_UNGETWCH_METHODDEF
-#endif /* !defined(MSVCRT_UNGETWCH_METHODDEF) */
-
 #ifndef MSVCRT_CRTSETREPORTFILE_METHODDEF
     #define MSVCRT_CRTSETREPORTFILE_METHODDEF
 #endif /* !defined(MSVCRT_CRTSETREPORTFILE_METHODDEF) */
@@ -583,4 +551,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=72468bb32006a11b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=16613d3119a1fd44 input=a9049054013a1b77]*/

@@ -242,7 +242,6 @@ msvcrt_getch_impl(PyModuleDef *module)
     return ch;
 }
 
-#ifdef _WCONIO_DEFINED
 /*[clinic input]
 msvcrt.getwch -> wchar_t
 
@@ -260,7 +259,6 @@ msvcrt_getwch_impl(PyModuleDef *module)
     Py_END_ALLOW_THREADS
     return ch;
 }
-#endif /* _WCONIO_DEFINED */
 
 /*[clinic input]
 msvcrt.getche -> byte_char
@@ -280,7 +278,6 @@ msvcrt_getche_impl(PyModuleDef *module)
     return ch;
 }
 
-#ifdef _WCONIO_DEFINED
 /*[clinic input]
 msvcrt.getwche -> wchar_t
 
@@ -298,7 +295,6 @@ msvcrt_getwche_impl(PyModuleDef *module)
     Py_END_ALLOW_THREADS
     return ch;
 }
-#endif /* _WCONIO_DEFINED */
 
 /*[clinic input]
 msvcrt.putch
@@ -317,7 +313,6 @@ msvcrt_putch_impl(PyModuleDef *module, char char_value)
     Py_RETURN_NONE;
 }
 
-#ifdef _WCONIO_DEFINED
 /*[clinic input]
 msvcrt.putwch
 
@@ -335,7 +330,6 @@ msvcrt_putwch_impl(PyModuleDef *module, int unicode_char)
     Py_RETURN_NONE;
 
 }
-#endif /* _WCONIO_DEFINED */
 
 /*[clinic input]
 msvcrt.ungetch
@@ -359,7 +353,6 @@ msvcrt_ungetch_impl(PyModuleDef *module, char char_value)
     Py_RETURN_NONE;
 }
 
-#ifdef _WCONIO_DEFINED
 /*[clinic input]
 msvcrt.ungetwch
 
@@ -377,7 +370,6 @@ msvcrt_ungetwch_impl(PyModuleDef *module, int unicode_char)
         return PyErr_SetFromErrno(PyExc_IOError);
     Py_RETURN_NONE;
 }
-#endif /* _WCONIO_DEFINED */
 
 #ifdef _DEBUG
 /*[clinic input]
