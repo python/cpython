@@ -9,7 +9,7 @@ Unit tests are in test_collections.
 from abc import ABCMeta, abstractmethod
 import sys
 
-__all__ = ["Awaitable", "Coroutine",
+__all__ = ["Awaitable", "Coroutine", "AsyncIterable", "AsyncIterator",
            "Hashable", "Iterable", "Iterator", "Generator",
            "Sized", "Container", "Callable",
            "Set", "MutableSet",
@@ -146,6 +146,43 @@ class Awaitable(metaclass=_CoroutineMeta):
         return NotImplemented
 
 Awaitable.register(Coroutine)
+
+
+class AsyncIterable(metaclass=ABCMeta):
+
+    __slots__ = ()
+
+    @abstractmethod
+    async def __aiter__(self):
+        return AsyncIterator()
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is AsyncIterable:
+            if any("__aiter__" in B.__dict__ for B in C.__mro__):
+                return True
+        return NotImplemented
+
+
+class AsyncIterator(AsyncIterable):
+
+    __slots__ = ()
+
+    @abstractmethod
+    async def __anext__(self):
+        """Return the next item or raise StopAsyncIteration when exhausted."""
+        raise StopAsyncIteration
+
+    async def __aiter__(self):
+        return self
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is AsyncIterator:
+            if (any("__anext__" in B.__dict__ for B in C.__mro__) and
+                any("__aiter__" in B.__dict__ for B in C.__mro__)):
+                return True
+        return NotImplemented
 
 
 class Iterable(metaclass=ABCMeta):
