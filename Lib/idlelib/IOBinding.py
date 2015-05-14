@@ -6,7 +6,6 @@
 #     which will only understand the local convention.
 
 import os
-import types
 import pipes
 import sys
 import codecs
@@ -391,7 +390,7 @@ class IOBinding:
             return False
 
     def encode(self, chars):
-        if isinstance(chars, types.StringType):
+        if isinstance(chars, str):
             # This is either plain ASCII, or Tk was returning mixed-encoding
             # text to us. Don't try to guess further.
             return chars
@@ -568,7 +567,7 @@ class IOBinding:
         "Update recent file list on all editor windows"
         self.editwin.update_recent_files_list(filename)
 
-def _io_binding(parent):
+def _io_binding(parent):  # htest #
     root = Tk()
     root.title("Test IOBinding")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
@@ -591,7 +590,7 @@ def _io_binding(parent):
     text.pack()
     text.focus_set()
     editwin = MyEditWin(text)
-    io = IOBinding(editwin)
+    IOBinding(editwin)
 
 if __name__ == "__main__":
     from idlelib.idle_test.htest import run

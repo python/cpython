@@ -14,7 +14,6 @@ import tkMessageBox, tkColorChooser, tkFont
 
 from idlelib.configHandler import idleConf
 from idlelib.dynOptionMenuWidget import DynOptionMenu
-from idlelib.tabbedpages import TabbedPageSet
 from idlelib.keybindingDialog import GetKeysDialog
 from idlelib.configSectionNameDialog import GetCfgSectionNameDialog
 from idlelib.configHelpSourceEdit import GetHelpSourceDialog
