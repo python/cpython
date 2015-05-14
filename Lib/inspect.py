@@ -2353,11 +2353,15 @@ class Parameter:
         return hash((self.name, self.kind, self.annotation, self.default))
 
     def __eq__(self, other):
-        return (issubclass(other.__class__, Parameter) and
-                self._name == other._name and
-                self._kind == other._kind and
-                self._default == other._default and
-                self._annotation == other._annotation)
+        return (self is other or
+                    (issubclass(other.__class__, Parameter) and
+                     self._name == other._name and
+                     self._kind == other._kind and
+                     self._default == other._default and
+                     self._annotation == other._annotation))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
 
 class BoundArguments:
@@ -2441,9 +2445,13 @@ class BoundArguments:
         return kwargs
 
     def __eq__(self, other):
-        return (issubclass(other.__class__, BoundArguments) and
-                self.signature == other.signature and
-                self.arguments == other.arguments)
+        return (self is other or
+                    (issubclass(other.__class__, BoundArguments) and
+                     self.signature == other.signature and
+                     self.arguments == other.arguments))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def __setstate__(self, state):
         self._signature = state['_signature']
@@ -2663,8 +2671,12 @@ class Signature:
         return hash((params, kwo_params, return_annotation))
 
     def __eq__(self, other):
-        return (isinstance(other, Signature) and
-                self._hash_basis() == other._hash_basis())
+        return (self is other or
+                    (isinstance(other, Signature) and
+                     self._hash_basis() == other._hash_basis()))
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def _bind(self, args, kwargs, *, partial=False):
         """Private method. Don't use directly."""
