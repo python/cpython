@@ -227,7 +227,10 @@ access internal read-only data of Unicode objects:
                 const char* PyUnicode_AS_DATA(PyObject *o)
 
    Return a pointer to a :c:type:`Py_UNICODE` representation of the object.  The
-   ``AS_DATA`` form casts the pointer to :c:type:`const char *`.  *o* has to be
+   returned buffer is always terminated with an extra null code point.  It
+   may also contain embedded null code points, which would cause the string
+   to be truncated when used in most C functions.  The ``AS_DATA`` form
+   casts the pointer to :c:type:`const char *`.  The *o* argument has to be
    a Unicode object (not checked).
 
    .. versionchanged:: 3.3
@@ -650,7 +653,8 @@ APIs:
 
    Copy the string *u* into a new UCS4 buffer that is allocated using
    :c:func:`PyMem_Malloc`.  If this fails, *NULL* is returned with a
-   :exc:`MemoryError` set.
+   :exc:`MemoryError` set.  The returned buffer always has an extra
+   null code point appended.
 
    .. versionadded:: 3.3
 
@@ -689,8 +693,9 @@ Extension modules can continue using them, as they will not be removed in Python
    Return a read-only pointer to the Unicode object's internal
    :c:type:`Py_UNICODE` buffer, or *NULL* on error. This will create the
    :c:type:`Py_UNICODE*` representation of the object if it is not yet
-   available. Note that the resulting :c:type:`Py_UNICODE` string may contain
-   embedded null characters, which would cause the string to be truncated when
+   available. The buffer is always terminated with an extra null code point.
+   Note that the resulting :c:type:`Py_UNICODE` string may also contain
+   embedded null code points, which would cause the string to be truncated when
    used in most C functions.
 
    Please migrate to using :c:func:`PyUnicode_AsUCS4`,
@@ -708,8 +713,9 @@ Extension modules can continue using them, as they will not be removed in Python
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicodeAndSize(PyObject *unicode, Py_ssize_t *size)
 
    Like :c:func:`PyUnicode_AsUnicode`, but also saves the :c:func:`Py_UNICODE`
-   array length in *size*. Note that the resulting :c:type:`Py_UNICODE*` string
-   may contain embedded null characters, which would cause the string to be
+   array length (excluding the extra null terminator) in *size*.
+   Note that the resulting :c:type:`Py_UNICODE*` string
+   may contain embedded null code points, which would cause the string to be
    truncated when used in most C functions.
 
    .. versionadded:: 3.3
@@ -717,11 +723,11 @@ Extension modules can continue using them, as they will not be removed in Python
 
 .. c:function:: Py_UNICODE* PyUnicode_AsUnicodeCopy(PyObject *unicode)
 
-   Create a copy of a Unicode string ending with a nul character. Return *NULL*
+   Create a copy of a Unicode string ending with a null code point. Return *NULL*
    and raise a :exc:`MemoryError` exception on memory allocation failure,
    otherwise return a new allocated buffer (use :c:func:`PyMem_Free` to free
    the buffer). Note that the resulting :c:type:`Py_UNICODE*` string may
-   contain embedded null characters, which would cause the string to be
+   contain embedded null code points, which would cause the string to be
    truncated when used in most C functions.
 
    .. versionadded:: 3.2
@@ -902,10 +908,10 @@ wchar_t Support
 
    Copy the Unicode object contents into the :c:type:`wchar_t` buffer *w*.  At most
    *size* :c:type:`wchar_t` characters are copied (excluding a possibly trailing
-   0-termination character).  Return the number of :c:type:`wchar_t` characters
+   null termination character).  Return the number of :c:type:`wchar_t` characters
    copied or -1 in case of an error.  Note that the resulting :c:type:`wchar_t*`
-   string may or may not be 0-terminated.  It is the responsibility of the caller
-   to make sure that the :c:type:`wchar_t*` string is 0-terminated in case this is
+   string may or may not be null-terminated.  It is the responsibility of the caller
+   to make sure that the :c:type:`wchar_t*` string is null-terminated in case this is
    required by the application. Also, note that the :c:type:`wchar_t*` string
    might contain null characters, which would cause the string to be truncated
    when used with most C functions.
@@ -914,8 +920,8 @@ wchar_t Support
 .. c:function:: wchar_t* PyUnicode_AsWideCharString(PyObject *unicode, Py_ssize_t *size)
 
    Convert the Unicode object to a wide character string. The output string
-   always ends with a nul character. If *size* is not *NULL*, write the number
-   of wide characters (excluding the trailing 0-termination character) into
+   always ends with a null character. If *size* is not *NULL*, write the number
+   of wide characters (excluding the trailing null termination character) into
    *\*size*.
 
    Returns a buffer allocated by :c:func:`PyMem_Alloc` (use
@@ -1045,9 +1051,11 @@ These are the UTF-8 codec APIs:
 
 .. c:function:: char* PyUnicode_AsUTF8AndSize(PyObject *unicode, Py_ssize_t *size)
 
-   Return a pointer to the default encoding (UTF-8) of the Unicode object, and
-   store the size of the encoded representation (in bytes) in *size*.  *size*
-   can be *NULL*, in this case no size will be stored.
+   Return a pointer to the UTF-8 encoding of the Unicode object, and
+   store the size of the encoded representation (in bytes) in *size*.  The
+   *size* argument can be *NULL*; in this case no size will be stored.  The
+   returned buffer always has an extra null byte appended (not included in
+   *size*), regardless of whether there are any other null code points.
 
    In the case of an error, *NULL* is returned with an exception set and no
    *size* is stored.
