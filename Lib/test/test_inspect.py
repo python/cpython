@@ -3149,6 +3149,13 @@ class TestBoundArguments(unittest.TestCase):
                 ba_pickled = pickle.loads(pickle.dumps(ba, ver))
                 self.assertEqual(ba, ba_pickled)
 
+    def test_signature_bound_arguments_repr(self):
+        def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
+        sig = inspect.signature(foo)
+        ba = sig.bind(20, 30, z={})
+        self.assertRegex(repr(ba),
+                         r'<BoundArguments at 0x[a-fA-F0-9]+ \(a=20,.*\}\}\)>')
+
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
     def test_signature_get_bound_param(self):
