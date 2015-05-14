@@ -2460,6 +2460,13 @@ class BoundArguments:
     def __getstate__(self):
         return {'_signature': self._signature, 'arguments': self.arguments}
 
+    def __repr__(self):
+        args = []
+        for arg, value in self.arguments.items():
+            args.append('{}={!r}'.format(arg, value))
+        return '<{} at {:#x} ({})>'.format(self.__class__.__name__,
+                                           id(self), ', '.join(args))
+
 
 class Signature:
     """A Signature object represents the overall signature of a function.
