@@ -302,9 +302,16 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
 
         case ID_INSTALL_JUST_FOR_ME_BUTTON:
             SavePageSettings();
-            
+
+            if (!QueryElevateForCrtInstall()) {
+                break;
+            }
+
             hr = _engine->SetVariableNumeric(L"InstallAllUsers", 0);
             ExitOnFailure(hr, L"Failed to set install scope");
+
+            hr = _engine->SetVariableNumeric(L"CompileAll", 0);
+            ExitOnFailure(hr, L"Failed to unset CompileAll");
 
             hr = BalGetStringVariable(L"DefaultJustForMeTargetDir", &defaultDir);
             BalExitOnFailure(hr, "Failed to get the default per-user install directory");
@@ -319,10 +326,6 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             hr = _engine->SetVariableString(L"TargetDir", targetDir);
             ReleaseStr(targetDir);
             BalExitOnFailure(hr, "Failed to set install target directory");
-
-            if (!QueryElevateForCrtInstall()) {
-                break;
-            }
 
             OnPlan(BOOTSTRAPPER_ACTION_INSTALL);
             break;
