@@ -708,7 +708,7 @@ deque_del_item(dequeobject *deque, Py_ssize_t i)
     PyObject *item;
     int rv;
 
-    assert (i >= 0 && i < Py_SIZE(deque));
+    assert (i >= 0 && i < deque->len);
     if (_deque_rotate(deque, -i))
         return -1;
     item = deque_popleft(deque, NULL);
