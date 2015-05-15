@@ -1793,7 +1793,7 @@ class TestSignatureObject(unittest.TestCase):
             S((pkd, pk))
 
         self.assertTrue(repr(sig).startswith('<Signature'))
-        self.assertTrue('"(po, pk' in repr(sig))
+        self.assertTrue('(po, pk' in repr(sig))
 
     def test_signature_object_pickle(self):
         def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
