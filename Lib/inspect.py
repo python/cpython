@@ -2346,8 +2346,7 @@ class Parameter:
         return formatted
 
     def __repr__(self):
-        return '<{} at {:#x} "{}">'.format(self.__class__.__name__,
-                                           id(self), self)
+        return '<{} "{}">'.format(self.__class__.__name__, self)
 
     def __hash__(self):
         return hash((self.name, self.kind, self.annotation, self.default))
@@ -2464,8 +2463,7 @@ class BoundArguments:
         args = []
         for arg, value in self.arguments.items():
             args.append('{}={!r}'.format(arg, value))
-        return '<{} at {:#x} ({})>'.format(self.__class__.__name__,
-                                           id(self), ', '.join(args))
+        return '<{} ({})>'.format(self.__class__.__name__, ', '.join(args))
 
 
 class Signature:
@@ -2835,8 +2833,7 @@ class Signature:
         self._return_annotation = state['_return_annotation']
 
     def __repr__(self):
-        return '<{} at {:#x} "{}">'.format(self.__class__.__name__,
-                                           id(self), self)
+        return '<{} {}>'.format(self.__class__.__name__, self)
 
     def __str__(self):
         result = []
