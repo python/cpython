@@ -1193,6 +1193,9 @@ are always available.  They are listed here in alphabetical order.
    The returned property object also has the attributes ``fget``, ``fset``, and
    ``fdel`` corresponding to the constructor arguments.
 
+   .. versionchanged:: 3.5
+      The docstrings of property objects are now writeable.
+
 
 .. _func-range:
 .. function:: range(stop)
