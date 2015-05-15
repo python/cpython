@@ -3153,8 +3153,7 @@ class TestBoundArguments(unittest.TestCase):
         def foo(a, b, *, c:1={}, **kw) -> {42:'ham'}: pass
         sig = inspect.signature(foo)
         ba = sig.bind(20, 30, z={})
-        self.assertRegex(repr(ba),
-                         r'<BoundArguments at 0x[a-fA-F0-9]+ \(a=20,.*\}\}\)>')
+        self.assertRegex(repr(ba), r'<BoundArguments \(a=20,.*\}\}\)>')
 
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
