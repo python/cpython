@@ -71,6 +71,13 @@ OLDSTYLE_AUTH = re.compile(r"auth=(.*)", re.I)
 class SMTPException(OSError):
     """Base class for all exceptions raised by this module."""
 
+class SMTPNotSupportedError(SMTPException):
+    """The command or option is not supported by the SMTP server.
+
+    This exception is raised when an attempt is made to run a command or a
+    command with an option which is not supported by the server.
+    """
+
 class SMTPServerDisconnected(SMTPException):
     """Not connected to any SMTP server.
 
@@ -237,6 +244,7 @@ class SMTP:
         self._host = host
         self.timeout = timeout
         self.esmtp_features = {}
+        self.command_encoding = 'ascii'
         self.source_address = source_address
 
         if host:
@@ -337,7 +345,10 @@ class SMTP:
             self._print_debug('send:', repr(s))
         if hasattr(self, 'sock') and self.sock:
             if isinstance(s, str):
-                s = s.encode("ascii")
+                # send is used by the 'data' command, where command_encoding
+                # should not be used, but 'data' needs to convert the string to
+                # binary itself anyway, so that's not a problem.
+                s = s.encode(self.command_encoding)
             try:
                 self.sock.sendall(s)
             except OSError:
@@ -482,6 +493,7 @@ class SMTP:
 
     def rset(self):
         """SMTP 'rset' command -- resets session."""
+        self.command_encoding = 'ascii'
         return self.docmd("rset")
 
     def _rset(self):
@@ -501,9 +513,22 @@ class SMTP:
         return self.docmd("noop")
 
     def mail(self, sender, options=[]):
-        """SMTP 'mail' command -- begins mail xfer session."""
+        """SMTP 'mail' command -- begins mail xfer session.
+
+        This method may raise the following exceptions:
+
+         SMTPNotSupportedError  The options parameter includes 'SMTPUTF8'
+                                but the SMTPUTF8 extension is not supported by
+                                the server.
+        """
         optionlist = ''
         if options and self.does_esmtp:
+            if any(x.lower()=='smtputf8' for x in options):
+                if self.has_extn('smtputf8'):
+                    self.command_encoding = 'utf-8'
+                else:
+                    raise SMTPNotSupportedError(
+                        'SMTPUTF8 not supported by server')
             optionlist = ' ' + ' '.join(options)
         self.putcmd("mail", "FROM:%s%s" % (quoteaddr(sender), optionlist))
         return self.getreply()
@@ -642,13 +667,16 @@ class SMTP:
                                   the helo greeting.
          SMTPAuthenticationError  The server didn't accept the username/
                                   password combination.
+         SMTPNotSupportedError    The AUTH command is not supported by the
+                                  server.
          SMTPException            No suitable authentication method was
                                   found.
         """
 
         self.ehlo_or_helo_if_needed()
         if not self.has_extn("auth"):
-            raise SMTPException("SMTP AUTH extension not supported by server.")
+            raise SMTPNotSupportedError(
+                "SMTP AUTH extension not supported by server.")
 
         # Authentication methods the server claims to support
         advertised_authlist = self.esmtp_features["auth"].split()
@@ -700,7 +728,8 @@ class SMTP:
         """
         self.ehlo_or_helo_if_needed()
         if not self.has_extn("starttls"):
-            raise SMTPException("STARTTLS extension not supported by server.")
+            raise SMTPNotSupportedError(
+                "STARTTLS extension not supported by server.")
         (resp, reply) = self.docmd("STARTTLS")
         if resp == 220:
             if not _have_ssl:
@@ -765,6 +794,9 @@ class SMTP:
          SMTPDataError          The server replied with an unexpected
                                 error code (other than a refusal of
                                 a recipient).
+         SMTPNotSupportedError  The mail_options parameter includes 'SMTPUTF8'
+                                but the SMTPUTF8 extension is not supported by
+                                the server.
 
         Note: the connection will be open even after an exception is raised.
 
@@ -793,8 +825,6 @@ class SMTP:
         if isinstance(msg, str):
             msg = _fix_eols(msg).encode('ascii')
         if self.does_esmtp:
-            # Hmmm? what's this? -ddm
-            # self.esmtp_features['7bit']=""
             if self.has_extn('size'):
                 esmtp_opts.append("size=%d" % len(msg))
             for option in mail_options:
