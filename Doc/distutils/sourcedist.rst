@@ -32,11 +32,17 @@ to create a gzipped tarball and a zip file.  The available formats are:
 | ``bztar`` | bzip2'ed tar file       |         |
 |           | (:file:`.tar.bz2`)      |         |
 +-----------+-------------------------+---------+
+| ``xztar`` | xz'ed tar file          |         |
+|           | (:file:`.tar.xz`)       |         |
++-----------+-------------------------+---------+
 | ``ztar``  | compressed tar file     | \(4)    |
 |           | (:file:`.tar.Z`)        |         |
 +-----------+-------------------------+---------+
 | ``tar``   | tar file (:file:`.tar`) |         |
 +-----------+-------------------------+---------+
+
+.. versionchanged: 3.5
+   Added support for the ``xztar`` format.
 
 Notes:
 
@@ -54,7 +60,7 @@ Notes:
    requires the :program:`compress` program. Notice that this format is now
    pending for deprecation and will be removed in the future versions of Python.
 
-When using any ``tar`` format (``gztar``, ``bztar``, ``ztar`` or
+When using any ``tar`` format (``gztar``, ``bztar``, ``xztar``, ``ztar`` or
 ``tar``), under Unix you can specify the ``owner`` and ``group`` names
 that will be set for each member of the archive.
 

@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16314: Added support for the LZMA compression in distutils.
+
 - Issue #21804: poplib now supports RFC 6856 (UTF8).
 
 - Issue #18682: Optimized pprint functions for builtin scalar types.
