@@ -927,6 +927,18 @@ class Message:
         """
         return [part.get_content_charset(failobj) for part in self.walk()]
 
+    def get_content_disposition(self):
+        """Return the message's content-disposition if it exists, or None.
+
+        The return values can be either 'inline', 'attachment' or None
+        according to the rfc2183.
+        """
+        value = self.get('content-disposition')
+        if value is None:
+            return None
+        c_d = _splitparam(value)[0].lower()
+        return c_d
+
     # I.e. def walk(self): ...
     from email.iterators import walk
 

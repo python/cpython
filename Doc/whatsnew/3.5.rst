@@ -348,6 +348,14 @@ doctest
   *module* contains no docstrings instead of raising :exc:`ValueError`.
   (Contributed by Glenn Jones in :issue:`15916`.)
 
+email
+-----
+
+* A new method :meth:`~email.message.Message.get_content_disposition` provides
+  easy access to a canonical value for the :mailheader:`Content-Disposition`
+  header (``None`` if there is no such header).  (Contributed by Abhilash Raj
+  in :issue:`21083`.)
+
 glob
 ----
 
