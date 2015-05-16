@@ -1147,9 +1147,6 @@ test case
         # Failure when no exception is raised
         with self.assertRaises(self.failureException):
             self.assertRaises(ExceptionMock, lambda: 0)
-        # Failure when the function is None
-        with self.assertRaises(TypeError):
-            self.assertRaises(ExceptionMock, None)
         # Failure when another exception is raised
         with self.assertRaises(ExceptionMock):
             self.assertRaises(ValueError, Stub)
@@ -1187,8 +1184,6 @@ test case
 
         self.assertRaisesRegex(ExceptionMock, re.compile('expect$'), Stub)
         self.assertRaisesRegex(ExceptionMock, 'expect$', Stub)
-        with self.assertRaises(TypeError):
-            self.assertRaisesRegex(ExceptionMock, 'expect$', None)
 
     def testAssertNotRaisesRegex(self):
         self.assertRaisesRegex(
@@ -1256,9 +1251,6 @@ test case
         # Failure when no warning is triggered
         with self.assertRaises(self.failureException):
             self.assertWarns(RuntimeWarning, lambda: 0)
-        # Failure when the function is None
-        with self.assertRaises(TypeError):
-            self.assertWarns(RuntimeWarning, None)
         # Failure when another warning is triggered
         with warnings.catch_warnings():
             # Force default filter (in case tests are run with -We)
@@ -1320,9 +1312,6 @@ test case
         with self.assertRaises(self.failureException):
             self.assertWarnsRegex(RuntimeWarning, "o+",
                                   lambda: 0)
-        # Failure when the function is None
-        with self.assertRaises(TypeError):
-            self.assertWarnsRegex(RuntimeWarning, "o+", None)
         # Failure when another warning is triggered
         with warnings.catch_warnings():
             # Force default filter (in case tests are run with -We)
