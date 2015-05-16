@@ -2,7 +2,7 @@
 import unittest
 from idlelib import FormatParagraph as fp
 from idlelib.EditorWindow import EditorWindow
-from Tkinter import Tk, Text, TclError
+from Tkinter import Tk, Text
 from test.test_support import requires
 
 
