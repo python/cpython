@@ -236,7 +236,14 @@ class PlatformTest(unittest.TestCase):
             self.assertEqual(sts, 0)
 
     def test_dist(self):
-        res = platform.dist()
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                'ignore',
+                'dist\(\) and linux_distribution\(\) '
+                'functions are deprecated .*',
+                PendingDeprecationWarning,
+            )
+            res = platform.dist()
 
     def test_libc_ver(self):
         import os
@@ -305,7 +312,14 @@ class PlatformTest(unittest.TestCase):
                 f.write('Fedora release 19 (Schr\xf6dinger\u2019s Cat)\n')
 
             with mock.patch('platform._UNIXCONFDIR', tempdir):
-                distname, version, distid = platform.linux_distribution()
+                with warnings.catch_warnings():
+                    warnings.filterwarnings(
+                        'ignore',
+                        'dist\(\) and linux_distribution\(\) '
+                        'functions are deprecated .*',
+                        PendingDeprecationWarning,
+                    )
+                    distname, version, distid = platform.linux_distribution()
 
                 self.assertEqual(distname, 'Fedora')
             self.assertEqual(version, '19')
