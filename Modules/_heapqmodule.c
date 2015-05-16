@@ -261,8 +261,8 @@ keep_top_bit(Py_ssize_t n)
     int i = 0;
 
     while (n > 1) {
-        i += 1;
         n >>= 1;
+        i++;
     }
     return n << i;
 }
