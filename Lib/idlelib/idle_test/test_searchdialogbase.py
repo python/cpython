@@ -6,13 +6,13 @@ testing skipping of suite when self.needwrapbutton is false.
 '''
 import unittest
 from test.support import requires
-from tkinter import Tk, Toplevel, Frame, Label, BooleanVar, StringVar
+from tkinter import Tk, Toplevel, Frame ##, BooleanVar, StringVar
 from idlelib import SearchEngine as se
 from idlelib import SearchDialogBase as sdb
 from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Var, Mbox
+## from idlelib.idle_test.mock_tk import Var
 
-# The following could help make some tests gui-free.
+# The ## imports above & following could help make some tests gui-free.
 # However, they currently make radiobutton tests fail.
 ##def setUpModule():
 ##    # Replace tk objects used to initialize se.SearchEngine.
