@@ -129,17 +129,15 @@ class _BaseTestCaseContext:
         msg = self.test_case._formatMessage(self.msg, standardMsg)
         raise self.test_case.failureException(msg)
 
-def _sentinel(*args, **kwargs):
-    raise AssertionError('Should never be called')
 
 class _AssertRaisesBaseContext(_BaseTestCaseContext):
 
-    def __init__(self, expected, test_case, callable_obj=_sentinel,
+    def __init__(self, expected, test_case, callable_obj=None,
                  expected_regex=None):
         _BaseTestCaseContext.__init__(self, test_case)
         self.expected = expected
         self.test_case = test_case
-        if callable_obj is not _sentinel:
+        if callable_obj is not None:
             try:
                 self.obj_name = callable_obj.__name__
             except AttributeError:
@@ -153,11 +151,11 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
 
     def handle(self, name, callable_obj, args, kwargs):
         """
-        If callable_obj is _sentinel, assertRaises/Warns is being used as a
+        If callable_obj is None, assertRaises/Warns is being used as a
         context manager, so check for a 'msg' kwarg and return self.
-        If callable_obj is not _sentinel, call it passing args and kwargs.
+        If callable_obj is not None, call it passing args and kwargs.
         """
-        if callable_obj is _sentinel:
+        if callable_obj is None:
             self.msg = kwargs.pop('msg', None)
             return self
         with self:
@@ -676,7 +674,7 @@ class TestCase(object):
         except UnicodeDecodeError:
             return  '%s : %s' % (safe_repr(standardMsg), safe_repr(msg))
 
-    def assertRaises(self, excClass, callableObj=_sentinel, *args, **kwargs):
+    def assertRaises(self, excClass, callableObj=None, *args, **kwargs):
         """Fail unless an exception of class excClass is raised
            by callableObj when invoked with arguments args and keyword
            arguments kwargs. If a different type of exception is
@@ -684,7 +682,7 @@ class TestCase(object):
            deemed to have suffered an error, exactly as for an
            unexpected exception.
 
-           If called with callableObj omitted, will return a
+           If called with callableObj omitted or None, will return a
            context object used like this::
 
                 with self.assertRaises(SomeException):
@@ -705,7 +703,7 @@ class TestCase(object):
         context = _AssertRaisesContext(excClass, self, callableObj)
         return context.handle('assertRaises', callableObj, args, kwargs)
 
-    def assertWarns(self, expected_warning, callable_obj=_sentinel, *args, **kwargs):
+    def assertWarns(self, expected_warning, callable_obj=None, *args, **kwargs):
         """Fail unless a warning of class warnClass is triggered
            by callable_obj when invoked with arguments args and keyword
            arguments kwargs.  If a different type of warning is
@@ -713,7 +711,7 @@ class TestCase(object):
            warning filtering rules in effect, it might be silenced, printed
            out, or raised as an exception.
 
-           If called with callable_obj omitted, will return a
+           If called with callable_obj omitted or None, will return a
            context object used like this::
 
                 with self.assertWarns(SomeWarning):
@@ -1221,7 +1219,7 @@ class TestCase(object):
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertRaisesRegex(self, expected_exception, expected_regex,
-                          callable_obj=_sentinel, *args, **kwargs):
+                          callable_obj=None, *args, **kwargs):
         """Asserts that the message in a raised exception matches a regex.
 
         Args:
@@ -1240,7 +1238,7 @@ class TestCase(object):
         return context.handle('assertRaisesRegex', callable_obj, args, kwargs)
 
     def assertWarnsRegex(self, expected_warning, expected_regex,
-                         callable_obj=_sentinel, *args, **kwargs):
+                         callable_obj=None, *args, **kwargs):
         """Asserts that the message in a triggered warning matches a regexp.
         Basic functioning is similar to assertWarns() with the addition
         that only warnings whose messages also match the regular expression
