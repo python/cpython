@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23637: Showing a warning no longer fails with UnicodeErrror.
+  Formatting unicode warning in the file with the path containing non-ascii
+  characters no longer fails with UnicodeErrror.
+
 - Issue #24134: Reverted issue #24134 changes.
 
 
