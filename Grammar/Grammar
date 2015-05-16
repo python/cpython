@@ -136,7 +136,7 @@ arglist: argument (',' argument)*  [',']
 # that precede iterable unpackings are blocked; etc.
 argument: ( test [comp_for] |
             test '=' test |
-            '**' expr |
+            '**' test |
             star_expr )
 
 comp_iter: comp_for | comp_if
