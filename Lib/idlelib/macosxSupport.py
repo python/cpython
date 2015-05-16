@@ -123,11 +123,9 @@ def overrideRootMenu(root, flist):
     #
     # Due to a (mis-)feature of TkAqua the user will also see an empty Help
     # menu.
-    from tkinter import Menu, Text, Text
-    from idlelib.EditorWindow import prepstr, get_accelerator
+    from tkinter import Menu
     from idlelib import Bindings
     from idlelib import WindowList
-    from idlelib.MultiCall import MultiCallCreator
 
     closeItem = Bindings.menudefs[0][1][-2]
 
