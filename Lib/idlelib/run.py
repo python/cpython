@@ -1,8 +1,6 @@
 import sys
-import io
 import linecache
 import time
-import socket
 import traceback
 import _thread as thread
 import threading
