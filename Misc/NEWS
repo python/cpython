@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24134: Reverted issue #24134 changes.
+
 
 What's New in Python 2.7.10 release candidate 1?
 ================================================

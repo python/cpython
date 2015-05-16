@@ -967,9 +967,6 @@ test case
         # Failure when no exception is raised
         with self.assertRaises(self.failureException):
             self.assertRaises(ExceptionMock, lambda: 0)
-        # Failure when the function is None
-        with self.assertRaises(TypeError):
-            self.assertRaises(ExceptionMock, None)
         # Failure when another exception is raised
         with self.assertRaises(ExceptionMock):
             self.assertRaises(ValueError, Stub)
@@ -1008,8 +1005,6 @@ test case
         self.assertRaisesRegexp(ExceptionMock, re.compile('expect$'), Stub)
         self.assertRaisesRegexp(ExceptionMock, 'expect$', Stub)
         self.assertRaisesRegexp(ExceptionMock, u'expect$', Stub)
-        with self.assertRaises(TypeError):
-            self.assertRaisesRegexp(ExceptionMock, 'expect$', None)
 
     def testAssertNotRaisesRegexp(self):
         self.assertRaisesRegexp(
