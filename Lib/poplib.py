@@ -71,6 +71,7 @@ class POP3:
             UIDL [msg]              uidl(msg = None)
             CAPA                    capa()
             STLS                    stls()
+            UTF8                    utf8()
 
     Raises one exception: 'error_proto'.
 
@@ -346,6 +347,12 @@ class POP3:
         if which is not None:
             return self._shortcmd('UIDL %s' % which)
         return self._longcmd('UIDL')
+
+
+    def utf8(self):
+        """Try to enter UTF-8 mode (see RFC 6856). Returns server response.
+        """
+        return self._shortcmd('UTF8')
 
 
     def capa(self):

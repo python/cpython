@@ -44,6 +44,7 @@ line3\r\n\
 class DummyPOP3Handler(asynchat.async_chat):
 
     CAPAS = {'UIDL': [], 'IMPLEMENTATION': ['python-testlib-pop-server']}
+    enable_UTF8 = False
 
     def __init__(self, conn):
         asynchat.async_chat.__init__(self, conn)
@@ -141,6 +142,11 @@ class DummyPOP3Handler(asynchat.async_chat):
                     _ln.extend(params)
                 self.push(' '.join(_ln))
         self.push('.')
+
+    def cmd_utf8(self, arg):
+        self.push('+OK I know RFC6856'
+                  if self.enable_UTF8
+                  else '-ERR What is UTF8?!')
 
     if SUPPORTS_SSL:
 
@@ -308,6 +314,16 @@ class TestPOP3Class(TestCase):
     def test_uidl(self):
         self.client.uidl()
         self.client.uidl('foo')
+
+    def test_utf8_raises_if_unsupported(self):
+        self.server.handler.enable_UTF8 = False
+        self.assertRaises(poplib.error_proto, self.client.utf8)
+
+    def test_utf8(self):
+        self.server.handler.enable_UTF8 = True
+        expected = b'+OK I know RFC6856'
+        result = self.client.utf8()
+        self.assertEqual(result, expected)
 
     def test_capa(self):
         capa = self.client.capa()
