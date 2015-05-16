@@ -1146,7 +1146,7 @@ test case
         with self.assertRaises(self.failureException):
             self.assertRaises(ExceptionMock, lambda: 0)
         # Failure when the function is None
-        with self.assertRaises(TypeError):
+        with self.assertWarns(DeprecationWarning):
             self.assertRaises(ExceptionMock, None)
         # Failure when another exception is raised
         with self.assertRaises(ExceptionMock):
@@ -1172,6 +1172,15 @@ test case
         with self.assertRaises(self.failureException):
             with self.assertRaises(ExceptionMock):
                 pass
+        # Custom message
+        with self.assertRaisesRegex(self.failureException, 'foobar'):
+            with self.assertRaises(ExceptionMock, msg='foobar'):
+                pass
+        # Invalid keyword argument
+        with self.assertWarnsRegex(DeprecationWarning, 'foobar'), \
+             self.assertRaises(AssertionError):
+            with self.assertRaises(ExceptionMock, foobar=42):
+                pass
         # Failure when another exception is raised
         with self.assertRaises(ExceptionMock):
             self.assertRaises(ValueError, Stub)
@@ -1185,7 +1194,7 @@ test case
 
         self.assertRaisesRegex(ExceptionMock, re.compile('expect$'), Stub)
         self.assertRaisesRegex(ExceptionMock, 'expect$', Stub)
-        with self.assertRaises(TypeError):
+        with self.assertWarns(DeprecationWarning):
             self.assertRaisesRegex(ExceptionMock, 'expect$', None)
 
     def testAssertNotRaisesRegex(self):
@@ -1197,6 +1206,15 @@ test case
                 self.failureException, '^Exception not raised by <lambda>$',
                 self.assertRaisesRegex, Exception, 'x',
                 lambda: None)
+        # Custom message
+        with self.assertRaisesRegex(self.failureException, 'foobar'):
+            with self.assertRaisesRegex(Exception, 'expect', msg='foobar'):
+                pass
+        # Invalid keyword argument
+        with self.assertWarnsRegex(DeprecationWarning, 'foobar'), \
+             self.assertRaises(AssertionError):
+            with self.assertRaisesRegex(Exception, 'expect', foobar=42):
+                pass
 
     def testAssertRaisesRegexInvalidRegex(self):
         # Issue 20145.
@@ -1255,7 +1273,7 @@ test case
         with self.assertRaises(self.failureException):
             self.assertWarns(RuntimeWarning, lambda: 0)
         # Failure when the function is None
-        with self.assertRaises(TypeError):
+        with self.assertWarns(DeprecationWarning):
             self.assertWarns(RuntimeWarning, None)
         # Failure when another warning is triggered
         with warnings.catch_warnings():
@@ -1295,6 +1313,15 @@ test case
         with self.assertRaises(self.failureException):
             with self.assertWarns(RuntimeWarning):
                 pass
+        # Custom message
+        with self.assertRaisesRegex(self.failureException, 'foobar'):
+            with self.assertWarns(RuntimeWarning, msg='foobar'):
+                pass
+        # Invalid keyword argument
+        with self.assertWarnsRegex(DeprecationWarning, 'foobar'), \
+             self.assertRaises(AssertionError):
+            with self.assertWarns(RuntimeWarning, foobar=42):
+                pass
         # Failure when another warning is triggered
         with warnings.catch_warnings():
             # Force default filter (in case tests are run with -We)
@@ -1319,7 +1346,7 @@ test case
             self.assertWarnsRegex(RuntimeWarning, "o+",
                                   lambda: 0)
         # Failure when the function is None
-        with self.assertRaises(TypeError):
+        with self.assertWarns(DeprecationWarning):
             self.assertWarnsRegex(RuntimeWarning, "o+", None)
         # Failure when another warning is triggered
         with warnings.catch_warnings():
@@ -1356,6 +1383,15 @@ test case
         # Failure when no warning is triggered
         with self.assertRaises(self.failureException):
             with self.assertWarnsRegex(RuntimeWarning, "o+"):
+                pass
+        # Custom message
+        with self.assertRaisesRegex(self.failureException, 'foobar'):
+            with self.assertWarnsRegex(RuntimeWarning, 'o+', msg='foobar'):
+                pass
+        # Invalid keyword argument
+        with self.assertWarnsRegex(DeprecationWarning, 'foobar'), \
+             self.assertRaises(AssertionError):
+            with self.assertWarnsRegex(RuntimeWarning, 'o+', foobar=42):
                 pass
         # Failure when another warning is triggered
         with warnings.catch_warnings():
