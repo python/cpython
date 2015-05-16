@@ -26,7 +26,17 @@ class BadConstructorTest(unittest.TestCase):
         self.assertRaises(TypeError, array.array)
         self.assertRaises(TypeError, array.array, spam=42)
         self.assertRaises(TypeError, array.array, 'xx')
+        self.assertRaises(TypeError, array.array, '')
+        self.assertRaises(TypeError, array.array, 1)
         self.assertRaises(ValueError, array.array, 'x')
+        self.assertRaises(ValueError, array.array, '\x80')
+
+    @test_support.requires_unicode
+    def test_unicode_constructor(self):
+        self.assertRaises(TypeError, array.array, u'xx')
+        self.assertRaises(TypeError, array.array, u'')
+        self.assertRaises(ValueError, array.array, u'x')
+        self.assertRaises(ValueError, array.array, u'\x80')
 
 tests.append(BadConstructorTest)
 
@@ -1038,6 +1048,17 @@ class UnsignedLongTest(UnsignedNumberTest):
     typecode = 'L'
     minitemsize = 4
 tests.append(UnsignedLongTest)
+
+
+@test_support.requires_unicode
+class UnicodeTypecodeTest(unittest.TestCase):
+    def test_unicode_typecode(self):
+        for typecode in typecodes:
+            a = array.array(unicode(typecode))
+            self.assertEqual(a.typecode, typecode)
+            self.assertIs(type(a.typecode), str)
+tests.append(UnicodeTypecodeTest)
+
 
 class FPTest(NumberTest):
     example = [-42.0, 0, 42, 1e5, -1e10]
