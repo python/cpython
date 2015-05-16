@@ -1,6 +1,6 @@
 import unittest
 from test.support import requires
-from tkinter import Tk, Text, TclError
+from tkinter import Tk, Text
 
 import idlelib.AutoComplete as ac
 import idlelib.AutoCompleteWindow as acw
@@ -95,8 +95,8 @@ class AutoCompleteTest(unittest.TestCase):
         del ev.mc_state
 
         # If autocomplete window is open, complete() method is called
-        testwin = self.autocomplete._make_autocomplete_window()
         self.text.insert('1.0', 're.')
+        # This must call autocomplete._make_autocomplete_window()
         Equal(self.autocomplete.autocomplete_event(ev), 'break')
 
         # If autocomplete window is not active or does not exist,
