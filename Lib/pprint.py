@@ -489,24 +489,8 @@ class PrettyPrinter:
 
 def _safe_repr(object, context, maxlevels, level):
     typ = type(object)
-    if typ is str:
-        if 'locale' not in _sys.modules:
-            return repr(object), True, False
-        if "'" in object and '"' not in object:
-            closure = '"'
-            quotes = {'"': '\\"'}
-        else:
-            closure = "'"
-            quotes = {"'": "\\'"}
-        qget = quotes.get
-        sio = _StringIO()
-        write = sio.write
-        for char in object:
-            if char.isalpha():
-                write(char)
-            else:
-                write(qget(char, repr(char)[1:-1]))
-        return ("%s%s%s" % (closure, sio.getvalue(), closure)), True, False
+    if typ in _builtin_scalars:
+        return repr(object), True, False
 
     r = getattr(typ, "__repr__", None)
     if issubclass(typ, dict) and r is dict.__repr__:
@@ -571,6 +555,8 @@ def _safe_repr(object, context, maxlevels, level):
     rep = repr(object)
     return rep, (rep and not rep.startswith('<')), False
 
+_builtin_scalars = frozenset({str, bytes, bytearray, int, float, complex,
+                              bool, type(None)})
 
 def _recursion(object):
     return ("<Recursion on %s with id=%s>"
