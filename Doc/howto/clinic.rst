@@ -826,6 +826,7 @@ on the right is the text you'd replace it with.
 ``'I'``     ``unsigned_int(bitwise=True)``
 ``'k'``     ``unsigned_long(bitwise=True)``
 ``'K'``     ``unsigned_PY_LONG_LONG(bitwise=True)``
+``'l'``     ``long``
 ``'L'``     ``PY_LONG_LONG``
 ``'n'``     ``Py_ssize_t``
 ``'O'``     ``object``
