@@ -3153,6 +3153,41 @@ class TestBoundArguments(unittest.TestCase):
         ba = sig.bind(20, 30, z={})
         self.assertRegex(repr(ba), r'<BoundArguments \(a=20,.*\}\}\)>')
 
+    def test_signature_bound_arguments_apply_defaults(self):
+        def foo(a, b=1, *args, c:1={}, **kw): pass
+        sig = inspect.signature(foo)
+
+        ba = sig.bind(20)
+        ba.apply_defaults()
+        self.assertEqual(
+            list(ba.arguments.items()),
+            [('a', 20), ('b', 1), ('args', ()), ('c', {}), ('kw', {})])
+
+        # Make sure that we preserve the order:
+        # i.e. 'c' should be *before* 'kw'.
+        ba = sig.bind(10, 20, 30, d=1)
+        ba.apply_defaults()
+        self.assertEqual(
+            list(ba.arguments.items()),
+            [('a', 10), ('b', 20), ('args', (30,)), ('c', {}), ('kw', {'d':1})])
+
+        # Make sure that BoundArguments produced by bind_partial()
+        # are supported.
+        def foo(a, b): pass
+        sig = inspect.signature(foo)
+        ba = sig.bind_partial(20)
+        ba.apply_defaults()
+        self.assertEqual(
+            list(ba.arguments.items()),
+            [('a', 20)])
+
+        # Test no args
+        def foo(): pass
+        sig = inspect.signature(foo)
+        ba = sig.bind()
+        ba.apply_defaults()
+        self.assertEqual(list(ba.arguments.items()), [])
+
 
 class TestSignaturePrivateHelpers(unittest.TestCase):
     def test_signature_get_bound_param(self):

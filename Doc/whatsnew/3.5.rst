@@ -400,6 +400,9 @@ inspect
   picklable and hashable.  (Contributed by Yury Selivanov in :issue:`20726`
   and :issue:`20334`.)
 
+* New method :meth:`inspect.BoundArguments.apply_defaults`.  (Contributed
+  by Yury Selivanov in :issue:`24190`.)
+
 * New class method :meth:`inspect.Signature.from_callable`, which makes
   subclassing of :class:`~inspect.Signature` easier.  (Contributed
   by Yury Selivanov and Eric Snow in :issue:`17373`.)

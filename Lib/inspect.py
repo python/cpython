@@ -2443,6 +2443,36 @@ class BoundArguments:
 
         return kwargs
 
+    def apply_defaults(self):
+        """Set default values for missing arguments.
+
+        For variable-positional arguments (*args) the default is an
+        empty tuple.
+
+        For variable-keyword arguments (**kwargs) the default is an
+        empty dict.
+        """
+        arguments = self.arguments
+        if not arguments:
+            return
+        new_arguments = []
+        for name, param in self._signature.parameters.items():
+            try:
+                new_arguments.append((name, arguments[name]))
+            except KeyError:
+                if param.default is not _empty:
+                    val = param.default
+                elif param.kind is _VAR_POSITIONAL:
+                    val = ()
+                elif param.kind is _VAR_KEYWORD:
+                    val = {}
+                else:
+                    # This BoundArguments was likely produced by
+                    # Signature.bind_partial().
+                    continue
+                new_arguments.append((name, val))
+        self.arguments = OrderedDict(new_arguments)
+
     def __eq__(self, other):
         return (self is other or
                     (issubclass(other.__class__, BoundArguments) and

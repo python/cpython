@@ -131,6 +131,9 @@ Library
 - Issue 22547: Implement informative __repr__ for inspect.BoundArguments.
   Contributed by Yury Selivanov.
 
+- Issue 24190: Implement inspect.BoundArgument.apply_defaults() method.
+  Contributed by Yury Selivanov.
+
 Tests
 -----
 
