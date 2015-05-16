@@ -702,6 +702,8 @@ function.
         >>> ba.arguments
         OrderedDict([('a', 'spam'), ('b', 'ham'), ('args', ())])
 
+      .. versionadded:: 3.5
+
    The :attr:`args` and :attr:`kwargs` properties can be used to invoke
    functions::
 
