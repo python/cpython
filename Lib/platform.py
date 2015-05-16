@@ -114,6 +114,8 @@ __version__ = '1.0.7'
 import collections
 import sys, os, re, subprocess
 
+import warnings
+
 ### Globals & Constants
 
 # Determine the platform's /dev/null device
@@ -1438,7 +1440,15 @@ def platform(aliased=0, terse=0):
 
     elif system in ('Linux',):
         # Linux based systems
-        distname, distversion, distid = dist('')
+        with warnings.catch_warnings():
+            # see issue #1322 for more information
+            warnings.filterwarnings(
+                'ignore',
+                'dist\(\) and linux_distribution\(\) '
+                'functions are deprecated .*',
+                PendingDeprecationWarning,
+            )
+            distname, distversion, distid = dist('')
         if distname and not terse:
             platform = _platform(system, release, machine, processor,
                                  'with',
