@@ -338,6 +338,9 @@ distutils
   option to enable parallel building of extension modules.
   (Contributed by Antoine Pitrou in :issue:`5309`.)
 
+* Added support for the LZMA compression.
+  (Contributed by Serhiy Storchaka in :issue:`16314`.)
+
 doctest
 -------
 

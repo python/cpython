@@ -21,7 +21,7 @@ class BuildTestCase(support.TempdirManager,
 
         # what formats does bdist offer?
         formats = ['bztar', 'gztar', 'msi', 'rpm', 'tar',
-                   'wininst', 'zip', 'ztar']
+                   'wininst', 'xztar', 'zip', 'ztar']
         found = sorted(cmd.format_command)
         self.assertEqual(found, formats)
 
