@@ -49,7 +49,7 @@ def import_importlib(module_name):
     fresh = ('importlib',) if '.' in module_name else ()
     frozen = support.import_fresh_module(module_name)
     source = support.import_fresh_module(module_name, fresh=fresh,
-                                         blocked=('_frozen_importlib',))
+                                         blocked=('_frozen_importlib', '_frozen_importlib_external'))
     return {'Frozen': frozen, 'Source': source}
 
 
