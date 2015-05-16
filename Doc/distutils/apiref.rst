@@ -868,23 +868,31 @@ tarballs or zipfiles.
 
    Create an archive file (eg. ``zip`` or ``tar``).  *base_name*  is the name of
    the file to create, minus any format-specific extension;  *format* is the
-   archive format: one of ``zip``, ``tar``,  ``ztar``, or ``gztar``. *root_dir* is
-   a directory that will be the root directory of the archive; ie. we typically
-   ``chdir`` into *root_dir* before  creating the archive.  *base_dir* is the
-   directory where we start  archiving from; ie. *base_dir* will be the common
-   prefix of all files and directories in the archive.  *root_dir* and *base_dir*
-   both default to the current directory.  Returns the name of the archive file.
+   archive format: one of ``zip``, ``tar``, ``gztar``, ``bztar``, ``xztar``, or
+   ``ztar``. *root_dir* is a directory that will be the root directory of the
+   archive; ie. we typically ``chdir`` into *root_dir* before  creating the
+   archive.  *base_dir* is the directory where we start  archiving from; ie.
+   *base_dir* will be the common prefix of all files and directories in the
+   archive.  *root_dir* and *base_dir* both default to the current directory.
+   Returns the name of the archive file.
+
+   .. versionchanged: 3.5
+      Added support for the ``xztar`` format.
 
 
 .. function:: make_tarball(base_name, base_dir[, compress='gzip', verbose=0, dry_run=0])
 
    'Create an (optional compressed) archive as a tar file from all files in and
-   under *base_dir*. *compress* must be ``'gzip'`` (the default),  ``'compress'``,
-   ``'bzip2'``, or ``None``.  Both :program:`tar` and the compression utility named
-   by *compress* must be on the  default program search path, so this is probably
-   Unix-specific.  The  output tar file will be named :file:`base_dir.tar`,
-   possibly plus the appropriate compression extension (:file:`.gz`, :file:`.bz2`
-   or :file:`.Z`).  Return the output filename.
+   under *base_dir*. *compress* must be ``'gzip'`` (the default),
+   ``'bzip2'``, ``'xz'``, ``'compress'``, or ``None``.  For the ``'compress'``
+   method the compression utility named by :program:`compress` must be on the
+   default program search path, so this is probably Unix-specific.  The output
+   tar file will be named :file:`base_dir.tar`, possibly plus the appropriate
+   compression extension (``.gz``, ``.bz2``, ``.xz`` or ``.Z``).  Return the
+   output filename.
+
+   .. versionchanged: 3.5
+      Added support for the ``xz`` compression.
 
 
 .. function:: make_zipfile(base_name, base_dir[, verbose=0, dry_run=0])
