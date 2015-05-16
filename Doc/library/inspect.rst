@@ -667,27 +667,8 @@ function.
 
          Arguments for which :meth:`Signature.bind` or
          :meth:`Signature.bind_partial` relied on a default value are skipped.
-         However, if needed, it is easy to include them.
-
-      ::
-
-        >>> def foo(a, b=10):
-        ...     pass
-
-        >>> sig = signature(foo)
-        >>> ba = sig.bind(5)
-
-        >>> ba.args, ba.kwargs
-        ((5,), {})
-
-        >>> for param in sig.parameters.values():
-        ...     if (param.name not in ba.arguments
-        ...             and param.default is not param.empty):
-        ...         ba.arguments[param.name] = param.default
-
-        >>> ba.args, ba.kwargs
-        ((5, 10), {})
-
+         However, if needed, use :meth:`BoundArguments.apply_defaults` to add
+         them.
 
    .. attribute:: BoundArguments.args
 
@@ -702,6 +683,24 @@ function.
    .. attribute:: BoundArguments.signature
 
       A reference to the parent :class:`Signature` object.
+
+   .. method:: BoundArguments.apply_defaults()
+
+      Set default values for missing arguments.
+
+      For variable-positional arguments (``*args``) the default is an
+      empty tuple.
+
+      For variable-keyword arguments (``**kwargs``) the default is an
+      empty dict.
+
+      ::
+
+        >>> def foo(a, b='ham', *args): pass
+        >>> ba = inspect.signature(foo).bind('spam')
+        >>> ba.apply_defaults()
+        >>> ba.arguments
+        OrderedDict([('a', 'spam'), ('b', 'ham'), ('args', ())])
 
    The :attr:`args` and :attr:`kwargs` properties can be used to invoke
    functions::
