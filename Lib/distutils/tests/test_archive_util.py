@@ -325,7 +325,7 @@ class ArchiveUtilTestCase(support.TempdirManager,
         self.assertEqual(os.path.basename(res), 'archive.tar.bz2')
         self.assertEqual(self._tarinfo(res), self._created_files)
 
-    @unittest.skipUnless(bz2, 'Need xz support to run')
+    @unittest.skipUnless(lzma, 'Need xz support to run')
     def test_make_archive_xztar(self):
         base_dir =  self._create_files()
         base_name = os.path.join(self.mkdtemp() , 'archive')
