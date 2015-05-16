@@ -1,5 +1,4 @@
 import sys
-import io
 import linecache
 import time
 import socket
