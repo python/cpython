@@ -288,9 +288,7 @@ class GetSourceBase(unittest.TestCase):
     # Subclasses must override.
     fodderModule = None
 
-    def __init__(self, *args, **kwargs):
-        unittest.TestCase.__init__(self, *args, **kwargs)
-
+    def setUp(self):
         with open(inspect.getsourcefile(self.fodderModule)) as fp:
             self.source = fp.read()
 
@@ -571,7 +569,7 @@ class TestBuggyCases(GetSourceBase):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
 
 class TestNoEOL(GetSourceBase):
-    def __init__(self, *args, **kwargs):
+    def setUp(self):
         self.tempdir = TESTFN + '_dir'
         os.mkdir(self.tempdir)
         with open(os.path.join(self.tempdir,
@@ -580,7 +578,7 @@ class TestNoEOL(GetSourceBase):
         with DirsOnSysPath(self.tempdir):
             import inspect_fodder3 as mod3
         self.fodderModule = mod3
-        GetSourceBase.__init__(self, *args, **kwargs)
+        super().setUp()
 
     def tearDown(self):
         shutil.rmtree(self.tempdir)
