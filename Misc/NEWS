@@ -76,7 +76,8 @@ Library
   usernames and passwords to UTF8.
 
 - Issue #24134: assertRaises(), assertRaisesRegex(), assertWarns() and
-  assertWarnsRegex() checks are not longer successful if the callable is None.
+  assertWarnsRegex() checks now emits a deprecation warning when callable is
+  None or keyword arguments except msg is passed in the context manager mode.
 
 - Issue #24018: Add a collections.abc.Generator abstract base class.
   Contributed by Stefan Behnel.

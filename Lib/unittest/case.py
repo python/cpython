@@ -129,37 +129,42 @@ class _BaseTestCaseContext:
         msg = self.test_case._formatMessage(self.msg, standardMsg)
         raise self.test_case.failureException(msg)
 
-def _sentinel(*args, **kwargs):
-    raise AssertionError('Should never be called')
-
 class _AssertRaisesBaseContext(_BaseTestCaseContext):
 
-    def __init__(self, expected, test_case, callable_obj=_sentinel,
-                 expected_regex=None):
+    def __init__(self, expected, test_case, expected_regex=None):
         _BaseTestCaseContext.__init__(self, test_case)
         self.expected = expected
         self.test_case = test_case
-        if callable_obj is not _sentinel:
-            try:
-                self.obj_name = callable_obj.__name__
-            except AttributeError:
-                self.obj_name = str(callable_obj)
-        else:
-            self.obj_name = None
         if expected_regex is not None:
             expected_regex = re.compile(expected_regex)
         self.expected_regex = expected_regex
+        self.obj_name = None
         self.msg = None
 
-    def handle(self, name, callable_obj, args, kwargs):
+    def handle(self, name, args, kwargs):
         """
-        If callable_obj is _sentinel, assertRaises/Warns is being used as a
+        If args is empty, assertRaises/Warns is being used as a
         context manager, so check for a 'msg' kwarg and return self.
-        If callable_obj is not _sentinel, call it passing args and kwargs.
+        If args is not empty, call a callable passing positional and keyword
+        arguments.
         """
-        if callable_obj is _sentinel:
+        if args and args[0] is None:
+            warnings.warn("callable is None",
+                          DeprecationWarning, 3)
+            args = ()
+        if not args:
             self.msg = kwargs.pop('msg', None)
+            if kwargs:
+                warnings.warn('%r is an invalid keyword argument for '
+                              'this function' % next(iter(kwargs)),
+                              DeprecationWarning, 3)
             return self
+
+        callable_obj, *args = args
+        try:
+            self.obj_name = callable_obj.__name__
+        except AttributeError:
+            self.obj_name = str(callable_obj)
         with self:
             callable_obj(*args, **kwargs)
 
@@ -676,15 +681,15 @@ class TestCase(object):
         except UnicodeDecodeError:
             return  '%s : %s' % (safe_repr(standardMsg), safe_repr(msg))
 
-    def assertRaises(self, excClass, callableObj=_sentinel, *args, **kwargs):
-        """Fail unless an exception of class excClass is raised
-           by callableObj when invoked with arguments args and keyword
-           arguments kwargs. If a different type of exception is
+    def assertRaises(self, expected_exception, *args, **kwargs):
+        """Fail unless an exception of class expected_exception is raised
+           by the callable when invoked with specified positional and
+           keyword arguments. If a different type of exception is
            raised, it will not be caught, and the test case will be
            deemed to have suffered an error, exactly as for an
            unexpected exception.
 
-           If called with callableObj omitted, will return a
+           If called with the callable and arguments omitted, will return a
            context object used like this::
 
                 with self.assertRaises(SomeException):
@@ -702,18 +707,18 @@ class TestCase(object):
                the_exception = cm.exception
                self.assertEqual(the_exception.error_code, 3)
         """
-        context = _AssertRaisesContext(excClass, self, callableObj)
-        return context.handle('assertRaises', callableObj, args, kwargs)
+        context = _AssertRaisesContext(expected_exception, self)
+        return context.handle('assertRaises', args, kwargs)
 
-    def assertWarns(self, expected_warning, callable_obj=_sentinel, *args, **kwargs):
+    def assertWarns(self, expected_warning, *args, **kwargs):
         """Fail unless a warning of class warnClass is triggered
-           by callable_obj when invoked with arguments args and keyword
-           arguments kwargs.  If a different type of warning is
+           by the callable when invoked with specified positional and
+           keyword arguments.  If a different type of warning is
            triggered, it will not be handled: depending on the other
            warning filtering rules in effect, it might be silenced, printed
            out, or raised as an exception.
 
-           If called with callable_obj omitted, will return a
+           If called with the callable and arguments omitted, will return a
            context object used like this::
 
                 with self.assertWarns(SomeWarning):
@@ -733,8 +738,8 @@ class TestCase(object):
                the_warning = cm.warning
                self.assertEqual(the_warning.some_attribute, 147)
         """
-        context = _AssertWarnsContext(expected_warning, self, callable_obj)
-        return context.handle('assertWarns', callable_obj, args, kwargs)
+        context = _AssertWarnsContext(expected_warning, self)
+        return context.handle('assertWarns', args, kwargs)
 
     def assertLogs(self, logger=None, level=None):
         """Fail unless a log message of level *level* or higher is emitted
@@ -1221,26 +1226,23 @@ class TestCase(object):
             self.fail(self._formatMessage(msg, standardMsg))
 
     def assertRaisesRegex(self, expected_exception, expected_regex,
-                          callable_obj=_sentinel, *args, **kwargs):
+                          *args, **kwargs):
         """Asserts that the message in a raised exception matches a regex.
 
         Args:
             expected_exception: Exception class expected to be raised.
             expected_regex: Regex (re pattern object or string) expected
                     to be found in error message.
-            callable_obj: Function to be called.
+            args: Function to be called and extra positional args.
+            kwargs: Extra kwargs.
             msg: Optional message used in case of failure. Can only be used
                     when assertRaisesRegex is used as a context manager.
-            args: Extra args.
-            kwargs: Extra kwargs.
         """
-        context = _AssertRaisesContext(expected_exception, self, callable_obj,
-                                       expected_regex)
-
-        return context.handle('assertRaisesRegex', callable_obj, args, kwargs)
+        context = _AssertRaisesContext(expected_exception, self, expected_regex)
+        return context.handle('assertRaisesRegex', args, kwargs)
 
     def assertWarnsRegex(self, expected_warning, expected_regex,
-                         callable_obj=_sentinel, *args, **kwargs):
+                         *args, **kwargs):
         """Asserts that the message in a triggered warning matches a regexp.
         Basic functioning is similar to assertWarns() with the addition
         that only warnings whose messages also match the regular expression
@@ -1250,15 +1252,13 @@ class TestCase(object):
             expected_warning: Warning class expected to be triggered.
             expected_regex: Regex (re pattern object or string) expected
                     to be found in error message.
-            callable_obj: Function to be called.
+            args: Function to be called and extra positional args.
+            kwargs: Extra kwargs.
             msg: Optional message used in case of failure. Can only be used
                     when assertWarnsRegex is used as a context manager.
-            args: Extra args.
-            kwargs: Extra kwargs.
         """
-        context = _AssertWarnsContext(expected_warning, self, callable_obj,
-                                      expected_regex)
-        return context.handle('assertWarnsRegex', callable_obj, args, kwargs)
+        context = _AssertWarnsContext(expected_warning, self, expected_regex)
+        return context.handle('assertWarnsRegex', args, kwargs)
 
     def assertRegex(self, text, expected_regex, msg=None):
         """Fail the test unless the text matches the regular expression."""
