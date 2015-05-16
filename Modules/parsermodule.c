@@ -2871,7 +2871,7 @@ validate_argument(node *tree)
 
     if (res) {
         if (TYPE(CHILD(tree, 0)) == DOUBLESTAR) {
-            res = validate_expr(CHILD(tree, 1));
+            res = validate_test(CHILD(tree, 1));
         }
         else if (nch == 1) {
             res = validate_test_or_star_expr(CHILD(tree, 0));
