@@ -1017,7 +1017,7 @@ signal_sigwaitinfo(PyModuleDef *module, PyObject *sigset)
 signal.sigtimedwait
 
     sigset:  object
-    timeout: object
+    timeout as timeout_obj: object
     /
 
 Like sigwaitinfo(), but with a timeout.
@@ -1027,8 +1027,8 @@ The timeout is specified in seconds, with floating point numbers allowed.
 
 static PyObject *
 signal_sigtimedwait_impl(PyModuleDef *module, PyObject *sigset,
-                         PyObject *timeout)
-/*[clinic end generated code: output=e6e049f2bddea688 input=036bbab9b15cb8de]*/
+                         PyObject *timeout_obj)
+/*[clinic end generated code: output=c1960b5cea139929 input=53fd4ea3e3724eb8]*/
 {
     struct timespec ts;
     sigset_t set;
