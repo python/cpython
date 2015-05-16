@@ -2,12 +2,10 @@
 
 """
 
-from tkinter import *
 import os
-import sys
-
+from sys import version
+from tkinter import *
 from idlelib import textView
-from idlelib import idlever
 
 class AboutDialog(Toplevel):
     """Modal about dialog for idle
@@ -38,6 +36,7 @@ class AboutDialog(Toplevel):
         self.wait_window()
 
     def CreateWidgets(self):
+        release = version[:version.index(' ')]
         frameMain = Frame(self, borderwidth=2, relief=SUNKEN)
         frameButtons = Frame(self)
         frameButtons.pack(side=BOTTOM, fill=X)
@@ -64,14 +63,14 @@ class AboutDialog(Toplevel):
         labelEmail.grid(row=6, column=0, columnspan=2,
                         sticky=W, padx=10, pady=0)
         labelWWW = Label(frameBg, text='https://docs.python.org/' +
-                         sys.version[:3] + '/library/idle.html',
+                         version[:3] + '/library/idle.html',
                          justify=LEFT, fg=self.fg, bg=self.bg)
         labelWWW.grid(row=7, column=0, columnspan=2, sticky=W, padx=10, pady=0)
         Frame(frameBg, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=8, column=0, sticky=EW,
                                          columnspan=3, padx=5, pady=5)
-        labelPythonVer = Label(frameBg, text='Python version:  ' + \
-                               sys.version.split()[0], fg=self.fg, bg=self.bg)
+        labelPythonVer = Label(frameBg, text='Python version:  ' +
+                               release, fg=self.fg, bg=self.bg)
         labelPythonVer.grid(row=9, column=0, sticky=W, padx=10, pady=0)
         tkVer = self.tk.call('info', 'patchlevel')
         labelTkVer = Label(frameBg, text='Tk version:  '+
@@ -94,7 +93,7 @@ class AboutDialog(Toplevel):
         Frame(frameBg, borderwidth=1, relief=SUNKEN,
               height=2, bg=self.bg).grid(row=11, column=0, sticky=EW,
                                          columnspan=3, padx=5, pady=5)
-        idle_v = Label(frameBg, text='IDLE version:   ' + idlever.IDLE_VERSION,
+        idle_v = Label(frameBg, text='IDLE version:   ' + release,
                        fg=self.fg, bg=self.bg)
         idle_v.grid(row=12, column=0, sticky=W, padx=10, pady=0)
         idle_button_f = Frame(frameBg, bg=self.bg)
