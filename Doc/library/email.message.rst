@@ -578,6 +578,15 @@ Here are the methods of the :class:`Message` class:
       will be *failobj*.
 
 
+   .. method:: get_content_disposition()
+
+      Return the lowercased value (without parameters) of the message's
+      :mailheader:`Content-Disposition` header if it has one, or ``None``.  The
+      possible values for this method are *inline*, *attachment* or ``None``
+      if the message follows :rfc:`2183`.
+
+      .. versionadded:: 3.5
+
    .. method:: walk()
 
       The :meth:`walk` method is an all-purpose generator which can be used to

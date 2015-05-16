@@ -586,6 +586,17 @@ class TestMessageAPI(TestEmailBase):
         eq(msg.values(), ['One Hundred', 'Twenty', 'Three', 'Eleven'])
         self.assertRaises(KeyError, msg.replace_header, 'Fourth', 'Missing')
 
+    def test_get_content_disposition(self):
+        msg = Message()
+        self.assertIsNone(msg.get_content_disposition())
+        msg.add_header('Content-Disposition', 'attachment',
+                       filename='random.avi')
+        self.assertEqual(msg.get_content_disposition(), 'attachment')
+        msg.replace_header('Content-Disposition', 'inline')
+        self.assertEqual(msg.get_content_disposition(), 'inline')
+        msg.replace_header('Content-Disposition', 'InlinE')
+        self.assertEqual(msg.get_content_disposition(), 'inline')
+
     # test_defect_handling:test_invalid_chars_in_base64_payload
     def test_broken_base64_payload(self):
         x = 'AwDp0P7//y6LwKEAcPa/6Q=9'
