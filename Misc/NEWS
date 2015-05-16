@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21804: poplib now supports RFC 6856 (UTF8).
+
 - Issue #18682: Optimized pprint functions for builtin scalar types.
 
 - Issue #22027: smtplib now supports RFC 6531 (SMTPUTF8).

@@ -194,6 +194,15 @@ An :class:`POP3` instance has the following methods:
    the unique id for that message in the form ``'response mesgnum uid``, otherwise
    result is list ``(response, ['mesgnum uid', ...], octets)``.
 
+
+.. method:: POP3.utf8()
+
+   Try to switch to UTF-8 mode. Returns the server response if sucessful,
+   raises :class:`error_proto` if not. Specified in :RFC:`6856`.
+
+   .. versionadded:: 3.5
+
+
 .. method:: POP3.stls(context=None)
 
    Start a TLS session on the active connection as specified in :rfc:`2595`.

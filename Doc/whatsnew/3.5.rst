@@ -452,6 +452,13 @@ pickle
   classes) now are supported with pickle protocols < 4.
   (Contributed by Serhiy Storchaka in :issue:`23611`.)
 
+poplib
+------
+
+* A new command :meth:`~poplib.POP3.utf8` enables :rfc:`6856`
+  (internationalized email) support if the POP server supports it.  (Contributed
+  by Milan OberKirch in :issue:`21804`.)
+
 re
 --
 
