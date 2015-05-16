@@ -50,7 +50,7 @@ siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 static int
 siftup(PyListObject *heap, Py_ssize_t pos)
 {
-    Py_ssize_t startpos, endpos, childpos, rightpos, limit;
+    Py_ssize_t startpos, endpos, childpos, limit;
     PyObject *tmp1, *tmp2;
     int cmp;
 
@@ -67,16 +67,15 @@ siftup(PyListObject *heap, Py_ssize_t pos)
     while (pos < limit) {
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
-        rightpos = childpos + 1;
-        if (rightpos < endpos) {
+        if (childpos + 1 < endpos) {
             cmp = PyObject_RichCompareBool(
                 PyList_GET_ITEM(heap, childpos),
-                PyList_GET_ITEM(heap, rightpos),
+                PyList_GET_ITEM(heap, childpos + 1),
                 Py_LT);
             if (cmp == -1)
                 return -1;
             if (cmp == 0)
-                childpos = rightpos;
+                childpos++;      /* rightmost child is smallest */
             if (endpos != PyList_GET_SIZE(heap)) {
                 PyErr_SetString(PyExc_RuntimeError,
                                 "list changed size during iteration");
@@ -402,7 +401,7 @@ siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 static int
 siftup_max(PyListObject *heap, Py_ssize_t pos)
 {
-    Py_ssize_t startpos, endpos, childpos, rightpos, limit;
+    Py_ssize_t startpos, endpos, childpos, limit;
     PyObject *tmp1, *tmp2;
     int cmp;
 
@@ -419,16 +418,15 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
     while (pos < limit) {
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
-        rightpos = childpos + 1;
-        if (rightpos < endpos) {
+        if (childpos + 1 < endpos) {
             cmp = PyObject_RichCompareBool(
-                PyList_GET_ITEM(heap, rightpos),
+                PyList_GET_ITEM(heap, childpos + 1),
                 PyList_GET_ITEM(heap, childpos),
                 Py_LT);
             if (cmp == -1)
                 return -1;
             if (cmp == 0)
-                childpos = rightpos;
+                childpos++;      /* rightmost child is smallest */
             if (endpos != PyList_GET_SIZE(heap)) {
                 PyErr_SetString(PyExc_RuntimeError,
                                 "list changed size during iteration");
