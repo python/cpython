@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22027: smtplib now supports RFC 6531 (SMTPUTF8).
+
 - Issue #23488: Random generator objects now consume 2x less memory on 64-bit.
 
 - Issue #1322: platform.dist() and platform.linux_distribution() functions are
