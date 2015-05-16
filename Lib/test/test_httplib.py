@@ -5,6 +5,7 @@ import StringIO
 import socket
 import errno
 import os
+import tempfile
 
 import unittest
 TestCase = unittest.TestCase
@@ -399,6 +400,22 @@ class BasicTest(TestCase):
         conn.sock = sock
         conn.request('GET', '/foo', body)
         self.assertTrue(sock.data.startswith(expected))
+        self.assertIn('def test_send_file', sock.data)
+
+    def test_send_tempfile(self):
+        expected = ('GET /foo HTTP/1.1\r\nHost: example.com\r\n'
+                    'Accept-Encoding: identity\r\nContent-Length: 9\r\n\r\n'
+                    'fake\ndata')
+
+        with tempfile.TemporaryFile() as body:
+            body.write('fake\ndata')
+            body.seek(0)
+
+            conn = httplib.HTTPConnection('example.com')
+            sock = FakeSocket(body)
+            conn.sock = sock
+            conn.request('GET', '/foo', body)
+        self.assertEqual(sock.data, expected)
 
     def test_send(self):
         expected = 'this is a test this is only a test'

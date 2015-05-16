@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15267: HTTPConnection.request() now is compatibile with old-style
+  classes (such as TemporaryFile).  Original patch by Atsuo Ishimoto.
+
 - Issue #20014: array.array() now accepts unicode typecodes.  Based on patch by
   Vajrasky Kok.
 
