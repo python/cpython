@@ -18,7 +18,6 @@ XXX GvR Redesign this interface (yet again) as follows:
 """
 
 import os
-import string
 import tabnanny
 import tokenize
 import tkinter.messagebox as tkMessageBox
