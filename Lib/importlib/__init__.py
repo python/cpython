@@ -35,6 +35,7 @@ try:
 except ImportError:
     from . import _bootstrap_external
     _bootstrap_external._setup(_bootstrap)
+    _bootstrap._bootstrap_external = _bootstrap_external
 else:
     _bootstrap_external.__name__ = 'importlib._bootstrap_external'
     _bootstrap_external.__package__ = 'importlib'

@@ -1,4 +1,5 @@
 """Abstract base classes related to import."""
+from . import _bootstrap
 from . import _bootstrap_external
 from . import machinery
 try:
@@ -152,7 +153,7 @@ class Loader(metaclass=abc.ABCMeta):
         """
         if not hasattr(self, 'exec_module'):
             raise ImportError
-        return _bootstrap_external._load_module_shim(self, fullname)
+        return _bootstrap._load_module_shim(self, fullname)
 
     def module_repr(self, module):
         """Return a module's repr.
