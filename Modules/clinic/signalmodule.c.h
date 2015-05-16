@@ -333,20 +333,20 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
 
 static PyObject *
 signal_sigtimedwait_impl(PyModuleDef *module, PyObject *sigset,
-                         PyObject *timeout);
+                         PyObject *timeout_obj);
 
 static PyObject *
 signal_sigtimedwait(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *sigset;
-    PyObject *timeout;
+    PyObject *timeout_obj;
 
     if (!PyArg_UnpackTuple(args, "sigtimedwait",
         2, 2,
-        &sigset, &timeout))
+        &sigset, &timeout_obj))
         goto exit;
-    return_value = signal_sigtimedwait_impl(module, sigset, timeout);
+    return_value = signal_sigtimedwait_impl(module, sigset, timeout_obj);
 
 exit:
     return return_value;
@@ -429,4 +429,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=65ca7b83632eda99 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b99278c16c40ea43 input=a9049054013a1b77]*/
