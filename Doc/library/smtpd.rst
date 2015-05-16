@@ -89,6 +89,10 @@ SMTPServer Objects
              Currently no ``RCPT TO`` options are supported, so for now
              this will always be an empty list.
 
+      Implementations of ``process_message`` should use the ``**kwargs``
+      signature to accept arbitrary keword arguments, since future feature
+      enhancements may add keys to the kwargs dictionary.
+
       Return ``None`` to request a normal ``250 Ok`` response; otherwise
       return the desired response string in :RFC:`5321` format.
 
