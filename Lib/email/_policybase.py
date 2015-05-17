@@ -149,12 +149,18 @@ class Policy(_PolicyBase, metaclass=abc.ABCMeta):
                            during serialization.  None or 0 means no line
                            wrapping is done.  Default is 78.
 
+    mangle_from_        -- a flag that, when True escapes From_ lines in the
+                           body of the message by putting a `>' in front of
+                           them. This is used when the message is being
+                           serialized by a generator. Default: True.
+
     """
 
     raise_on_defect = False
     linesep = '\n'
     cte_type = '8bit'
     max_line_length = 78
+    mangle_from_ = False
 
     def handle_defect(self, obj, defect):
         """Based on policy, either raise defect or call register_defect.
@@ -265,6 +271,8 @@ class Compat32(Policy):
     This particular policy is the backward compatibility Policy.  It
     replicates the behavior of the email package version 5.1.
     """
+
+    mangle_from_ = True
 
     def _sanitize_header(self, name, value):
         # If the header value contains surrogates, return a Header using
