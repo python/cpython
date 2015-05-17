@@ -73,6 +73,7 @@ PCbuild/*.suo
 PCbuild/*.*sdf
 PCbuild/*-pgi
 PCbuild/*-pgo
+PCbuild/.vs
 PCbuild/amd64
 PCbuild/obj
 PCbuild/win32
