@@ -125,30 +125,11 @@ might include the Tix libraries as well).
 Can I have Tk events handled while waiting for I/O?
 ---------------------------------------------------
 
-Yes, and you don't even need threads!  But you'll have to restructure your I/O
+On platforms other than Windows, yes, and you don't even
+need threads!  But you'll have to restructure your I/O
 code a bit.  Tk has the equivalent of Xt's :c:func:`XtAddInput()` call, which allows you
 to register a callback function which will be called from the Tk mainloop when
-I/O is possible on a file descriptor.  Here's what you need::
-
-   from Tkinter import tkinter
-   tkinter.createfilehandler(file, mask, callback)
-
-The file may be a Python file or socket object (actually, anything with a
-fileno() method), or an integer file descriptor.  The mask is one of the
-constants tkinter.READABLE or tkinter.WRITABLE.  The callback is called as
-follows::
-
-   callback(file, mask)
-
-You must unregister the callback when you're done, using ::
-
-   tkinter.deletefilehandler(file)
-
-Note: since you don't know *how many bytes* are available for reading, you can't
-use the Python file object's read or readline methods, since these will insist
-on reading a predefined number of bytes.  For sockets, the :meth:`recv` or
-:meth:`recvfrom` methods will work fine; for other files, use
-``os.read(file.fileno(), maxbytecount)``.
+I/O is possible on a file descriptor.  See :ref:`tkinter-file-handlers`.
 
 
 I can't get key bindings to work in Tkinter: why?

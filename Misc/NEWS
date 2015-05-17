@@ -30,6 +30,12 @@ IDLE
 
 - Issue #15809: IDLE shell now uses locale encoding instead of Latin1 for
   decoding unicode literals.
+  
+Documentation
+-------------
+
+- Issue #22155: Add File Handlers subsection with createfilehandler to Tkinter
+  doc.  Remove obsolete example from FAQ.  Patch by Martin Panter.
 
 
 What's New in Python 2.7.10 release candidate 1?
