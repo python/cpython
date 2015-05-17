@@ -2,6 +2,7 @@ import io
 import textwrap
 import unittest
 from email import message_from_string, message_from_bytes
+from email.message import EmailMessage
 from email.generator import Generator, BytesGenerator
 from email import policy
 from test.test_email import TestEmailBase, parameterize
@@ -191,6 +192,27 @@ class TestBytesGenerator(TestGeneratorBase, TestEmailBase):
         s = io.BytesIO()
         g = BytesGenerator(s, policy=self.policy.clone(cte_type='7bit',
                                                        linesep='\n'))
+        g.flatten(msg)
+        self.assertEqual(s.getvalue(), expected)
+
+    def test_smtputf8_policy(self):
+        msg = EmailMessage()
+        msg['From'] = "Páolo <főo@bar.com>"
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        msg.set_content("oh là là, know what I mean, know what I mean?")
+        expected = textwrap.dedent("""\
+            From: Páolo <főo@bar.com>
+            To: Dinsdale
+            Subject: Nudge nudge, wink, wink \u1F609
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: 8bit
+            MIME-Version: 1.0
+
+            oh là là, know what I mean, know what I mean?
+            """).encode('utf-8').replace(b'\n', b'\r\n')
+        s = io.BytesIO()
+        g = BytesGenerator(s, policy=policy.SMTPUTF8)
         g.flatten(msg)
         self.assertEqual(s.getvalue(), expected)
 
