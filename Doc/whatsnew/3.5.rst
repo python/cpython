@@ -356,6 +356,12 @@ email
   header (``None`` if there is no such header).  (Contributed by Abhilash Raj
   in :issue:`21083`.)
 
+* A new policy option :attr:`~email.policy.EmailPolicy.utf8` can be set
+  ``True`` to encode email headers using the utf8 charset instead of using
+  encoded words.  This allows ``Messages`` to be formatted according to
+  :rfc:`6532` and used with an SMTP server that supports the :rfc:`6531`
+  ``SMTPUTF8`` extension.  (Contributed by R. David Murray in :issue:`24211`.)
+
 glob
 ----
 

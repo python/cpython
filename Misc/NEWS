@@ -47,6 +47,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24211: The email library now supports RFC 6532: it can generate
+  headers using utf-8 instead of encoded words.
+
 - Issue #16314: Added support for the LZMA compression in distutils.
 
 - Issue #21804: poplib now supports RFC 6856 (UTF8).

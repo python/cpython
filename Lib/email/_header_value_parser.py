@@ -320,17 +320,18 @@ class TokenList(list):
         return ''.join(res)
 
     def _fold(self, folded):
+        encoding = 'utf-8' if folded.policy.utf8 else 'ascii'
         for part in self.parts:
             tstr = str(part)
             tlen = len(tstr)
             try:
-                str(part).encode('us-ascii')
+                str(part).encode(encoding)
             except UnicodeEncodeError:
                 if any(isinstance(x, errors.UndecodableBytesDefect)
                         for x in part.all_defects):
                     charset = 'unknown-8bit'
                 else:
-                    # XXX: this should be a policy setting
+                    # XXX: this should be a policy setting when utf8 is False.
                     charset = 'utf-8'
                 tstr = part.cte_encode(charset, folded.policy)
                 tlen = len(tstr)
@@ -394,11 +395,12 @@ class UnstructuredTokenList(TokenList):
 
     def _fold(self, folded):
         last_ew = None
+        encoding = 'utf-8' if folded.policy.utf8 else 'ascii'
         for part in self.parts:
             tstr = str(part)
             is_ew = False
             try:
-                str(part).encode('us-ascii')
+                str(part).encode(encoding)
             except UnicodeEncodeError:
                 if any(isinstance(x, errors.UndecodableBytesDefect)
                        for x in part.all_defects):
@@ -475,12 +477,13 @@ class Phrase(TokenList):
         # comment that becomes a barrier across which we can't compose encoded
         # words.
         last_ew = None
+        encoding = 'utf-8' if folded.policy.utf8 else 'ascii'
         for part in self.parts:
             tstr = str(part)
             tlen = len(tstr)
             has_ew = False
             try:
-                str(part).encode('us-ascii')
+                str(part).encode(encoding)
             except UnicodeEncodeError:
                 if any(isinstance(x, errors.UndecodableBytesDefect)
                         for x in part.all_defects):

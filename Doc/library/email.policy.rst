@@ -378,6 +378,14 @@ added matters.  To illustrate::
    In addition to the settable attributes listed above that apply to all
    policies, this policy adds the following additional attributes:
 
+   .. attribute:: utf8
+
+      If ``False``, follow :rfc:`5322`, supporting non-ASCII characters in
+      headers by encoding them as "encoded words".  If ``True``, follow
+      :rfc:`6532` and use ``utf-8`` encoding for headers.  Messages
+      formatted in this way may be passed to SMTP servers that support
+      the ``SMTPUTF8`` extension (:rfc:`6531`).
+
    .. attribute:: refold_source
 
       If the value for a header in the ``Message`` object originated from a
