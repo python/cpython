@@ -34,6 +34,7 @@ from idlelib import rpc
 from idlelib import Debugger
 from idlelib import RemoteDebugger
 from idlelib import macosxSupport
+from idlelib import IOBinding
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 HOST = '127.0.0.1' # python execution server on localhost loopback
@@ -668,10 +669,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.more = 0
         self.save_warnings_filters = warnings.filters[:]
         warnings.filterwarnings(action="error", category=SyntaxWarning)
-        if isinstance(source, unicode):
-            from idlelib import IOBinding
+        if isinstance(source, unicode) and IOBinding.encoding != 'utf-8':
             try:
-                source = source.encode(IOBinding.encoding)
+                source = '# -*- coding: %s -*-\n%s' % (
+                        IOBinding.encoding,
+                        source.encode(IOBinding.encoding))
             except UnicodeError:
                 self.tkconsole.resetoutput()
                 self.write("Unsupported characters in input\n")

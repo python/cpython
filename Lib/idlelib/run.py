@@ -210,6 +210,8 @@ def cleanup_traceback(tb, exclude):
         fn, ln, nm, line = tb[i]
         if nm == '?':
             nm = "-toplevel-"
+        if fn.startswith("<pyshell#") and IOBinding.encoding != 'utf-8':
+            ln -= 1  # correction for coding cookie
         if not line and fn.startswith("<pyshell#"):
             line = rpchandler.remotecall('linecache', 'getline',
                                               (fn, ln), {})
