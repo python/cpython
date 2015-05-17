@@ -32,16 +32,16 @@ class Generator:
     # Public interface
     #
 
-    def __init__(self, outfp, mangle_from_=True, maxheaderlen=None, *,
+    def __init__(self, outfp, mangle_from_=None, maxheaderlen=None, *,
                  policy=None):
         """Create the generator for message flattening.
 
         outfp is the output file-like object for writing the message to.  It
         must have a write() method.
 
-        Optional mangle_from_ is a flag that, when True (the default), escapes
-        From_ lines in the body of the message by putting a `>' in front of
-        them.
+        Optional mangle_from_ is a flag that, when True (the default if policy
+        is not set), escapes From_ lines in the body of the message by putting
+        a `>' in front of them.
 
         Optional maxheaderlen specifies the longest length for a non-continued
         header.  When a header line is longer (in characters, with tabs
@@ -56,6 +56,9 @@ class Generator:
         flatten method is used.
 
         """
+
+        if mangle_from_ is None:
+            mangle_from_ = True if policy is None else policy.mangle_from_
         self._fp = outfp
         self._mangle_from_ = mangle_from_
         self.maxheaderlen = maxheaderlen
@@ -449,7 +452,7 @@ class DecodedGenerator(Generator):
     Like the Generator base class, except that non-text parts are substituted
     with a format string representing the part.
     """
-    def __init__(self, outfp, mangle_from_=True, maxheaderlen=78, fmt=None):
+    def __init__(self, outfp, mangle_from_=None, maxheaderlen=78, fmt=None):
         """Like Generator.__init__() except that an additional optional
         argument is allowed.
 

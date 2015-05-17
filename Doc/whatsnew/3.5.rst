@@ -351,6 +351,12 @@ doctest
 email
 -----
 
+* A new policy option :attr:`~email.policy.Policy.mangle_from_` controls
+  whether or not lines that start with "From " in email bodies are prefixed with
+  a '>' character by generators.  The default is ``True`` for
+  :attr:`~email.policy.compat32` and ``False`` for all other policies.
+  (Contributed by Milan Oberkirch in :issue:`20098`.)
+
 * A new method :meth:`~email.message.Message.get_content_disposition` provides
   easy access to a canonical value for the :mailheader:`Content-Disposition`
   header (``None`` if there is no such header).  (Contributed by Abhilash Raj

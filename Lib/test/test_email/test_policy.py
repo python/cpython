@@ -22,6 +22,7 @@ class PolicyAPITests(unittest.TestCase):
         'linesep':                  '\n',
         'cte_type':                 '8bit',
         'raise_on_defect':          False,
+        'mangle_from_':             True,
         }
     # These default values are the ones set on email.policy.default.
     # If any of these defaults change, the docs must be updated.
@@ -32,6 +33,7 @@ class PolicyAPITests(unittest.TestCase):
         'header_factory':           email.policy.EmailPolicy.header_factory,
         'refold_source':            'long',
         'content_manager':          email.policy.EmailPolicy.content_manager,
+        'mangle_from_':             False,
         })
 
     # For each policy under test, we give here what we expect the defaults to
