@@ -187,6 +187,18 @@ added matters.  To illustrate::
       :const:`False` (the default), defects will be passed to the
       :meth:`register_defect` method.
 
+
+
+   .. attribute:: mangle_from\_
+
+      If :const:`True`, lines starting with *"From "* in the body are
+      escaped by putting a ``>`` in front of them. This parameter is used when
+      the message is being serialized by a generator.
+      Default: :const:`False`.
+
+      .. versionadded:: 3.5
+         The *mangle_from_* parameter.
+
    The following :class:`Policy` method is intended to be called by code using
    the email library to create policy instances with custom settings:
 
@@ -319,6 +331,13 @@ added matters.  To illustrate::
    :const:`compat32`, that is used as the default policy.  Thus the default
    behavior of the email package is to maintain compatibility with Python 3.2.
 
+   The following attributes have values that are different from the
+   :class:`Policy` default:
+
+   .. attribute:: mangle_from_
+
+      The default is ``True``.
+
    The class provides the following concrete implementations of the
    abstract methods of :class:`Policy`:
 
@@ -354,6 +373,14 @@ added matters.  To illustrate::
       ``7bit``, non-ascii binary data is CTE encoded using the ``unknown-8bit``
       charset.  Otherwise the original source header is used, with its existing
       line breaks and any (RFC invalid) binary data it may contain.
+
+
+An instance of :class:`Compat32` is provided as a module constant:
+
+.. data:: compat32
+
+   An instance of :class:`Compat32`, providing  backward compatibility with the
+   behavior of the email package in Python 3.2.
 
 
 .. note::

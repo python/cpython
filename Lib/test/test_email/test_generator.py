@@ -140,6 +140,28 @@ class TestGeneratorBase:
         g.flatten(msg, linesep='\n')
         self.assertEqual(s.getvalue(), self.typ(expected))
 
+    def test_set_mangle_from_via_policy(self):
+        source = textwrap.dedent("""\
+            Subject: test that
+             from is mangeld in the body!
+
+            From time to time I write a rhyme.
+            """)
+        variants = (
+            (None, True),
+            (policy.compat32, True),
+            (policy.default, False),
+            (policy.default.clone(mangle_from_=True), True),
+            )
+        for p, mangle in variants:
+            expected = source.replace('From ', '>From ') if mangle else source
+            with self.subTest(policy=p, mangle_from_=mangle):
+                msg = self.msgmaker(self.typ(source))
+                s = self.ioclass()
+                g = self.genclass(s, policy=p)
+                g.flatten(msg)
+                self.assertEqual(s.getvalue(), self.typ(expected))
+
 
 class TestGenerator(TestGeneratorBase, TestEmailBase):
 
