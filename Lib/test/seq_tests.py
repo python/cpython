@@ -85,6 +85,14 @@ def itermulti(seqn):
     'Test multiple tiers of iterators'
     return chain(map(lambda x:x, iterfunc(IterGen(Sequence(seqn)))))
 
+class LyingTuple(tuple):
+    def __iter__(self):
+        yield 1
+
+class LyingList(list):
+    def __iter__(self):
+        yield 1
+
 class CommonTest(unittest.TestCase):
     # The type to be tested
     type2test = None
@@ -130,6 +138,10 @@ class CommonTest(unittest.TestCase):
             self.assertRaises(TypeError, self.type2test, IterNextOnly(s))
             self.assertRaises(TypeError, self.type2test, IterNoNext(s))
             self.assertRaises(ZeroDivisionError, self.type2test, IterGenExc(s))
+
+        # Issue #23757
+        self.assertEqual(self.type2test(LyingTuple((2,))), self.type2test((1,)))
+        self.assertEqual(self.type2test(LyingList([2])), self.type2test([1]))
 
     def test_truth(self):
         self.assertFalse(self.type2test())
