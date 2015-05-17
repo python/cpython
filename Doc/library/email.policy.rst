@@ -534,6 +534,14 @@ more closely to the RFCs relevant to their domains.
    Like ``default``, but with ``linesep`` set to ``\r\n``, which is RFC
    compliant.
 
+.. data:: SMTPUTF8
+
+   The same as ``SMTP`` except that :attr:`~EmailPolicy.utf8` is ``True``.
+   Useful for serializing messages to a message store without using encoded
+   words in the headers.  Should only be used for SMTP trasmission if the
+   sender or recipient addresses have non-ASCII characters (the
+   :meth:`smtplib.SMTP.send_message` method handles this automatically).
+
 .. data:: HTTP
 
    Suitable for serializing headers with for use in HTTP traffic.  Like
