@@ -1,5 +1,6 @@
 import asyncore
 import email.mime.text
+from email.message import EmailMessage
 import email.utils
 import socket
 import smtpd
@@ -10,7 +11,7 @@ import sys
 import time
 import select
 import errno
-import base64
+import textwrap
 
 import unittest
 from test import support, mock_socket
@@ -1029,6 +1030,8 @@ class SimSMTPUTF8Server(SimSMTPServer):
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class SMTPUTF8SimTests(unittest.TestCase):
 
+    maxDiff = None
+
     def setUp(self):
         self.real_getfqdn = socket.getfqdn
         socket.getfqdn = mock_socket.getfqdn
@@ -1095,6 +1098,48 @@ class SMTPUTF8SimTests(unittest.TestCase):
         self.assertIn('BODY=8BITMIME', self.serv.last_mail_options)
         self.assertIn('SMTPUTF8', self.serv.last_mail_options)
         self.assertEqual(self.serv.last_rcpt_options, [])
+
+    def test_send_message_uses_smtputf8_if_addrs_non_ascii(self):
+        msg = EmailMessage()
+        msg['From'] = "Páolo <főo@bar.com>"
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        # XXX I don't know why I need two \n's here, but this is an existing
+        # bug (if it is one) and not a problem with the new functionality.
+        msg.set_content("oh là là, know what I mean, know what I mean?\n\n")
+        # XXX smtpd converts received /r/n to /n, so we can't easily test that
+        # we are successfully sending /r/n :(.
+        expected = textwrap.dedent("""\
+            From: Páolo <főo@bar.com>
+            To: Dinsdale
+            Subject: Nudge nudge, wink, wink \u1F609
+            Content-Type: text/plain; charset="utf-8"
+            Content-Transfer-Encoding: 8bit
+            MIME-Version: 1.0
+
+            oh là là, know what I mean, know what I mean?
+            """)
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3)
+        self.addCleanup(smtp.close)
+        self.assertEqual(smtp.send_message(msg), {})
+        self.assertEqual(self.serv.last_mailfrom, 'főo@bar.com')
+        self.assertEqual(self.serv.last_rcpttos, ['Dinsdale'])
+        self.assertEqual(self.serv.last_message.decode(), expected)
+        self.assertIn('BODY=8BITMIME', self.serv.last_mail_options)
+        self.assertIn('SMTPUTF8', self.serv.last_mail_options)
+        self.assertEqual(self.serv.last_rcpt_options, [])
+
+    def test_send_message_error_on_non_ascii_addrs_if_no_smtputf8(self):
+        msg = EmailMessage()
+        msg['From'] = "Páolo <főo@bar.com>"
+        msg['To'] = 'Dinsdale'
+        msg['Subject'] = 'Nudge nudge, wink, wink \u1F609'
+        smtp = smtplib.SMTP(
+            HOST, self.port, local_hostname='localhost', timeout=3)
+        self.addCleanup(smtp.close)
+        self.assertRaises(smtplib.SMTPNotSupportedError,
+                          smtp.send_message(msg))
 
 
 @support.reap_threads

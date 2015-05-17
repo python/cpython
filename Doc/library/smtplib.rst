@@ -467,7 +467,7 @@ An :class:`SMTP` instance has the following methods:
 
    If *from_addr* is ``None`` or *to_addrs* is ``None``, ``send_message`` fills
    those arguments with addresses extracted from the headers of *msg* as
-   specified in :rfc:`2822`\: *from_addr* is set to the :mailheader:`Sender`
+   specified in :rfc:`5322`\: *from_addr* is set to the :mailheader:`Sender`
    field if it is present, and otherwise to the :mailheader:`From` field.
    *to_adresses* combines the values (if any) of the :mailheader:`To`,
    :mailheader:`Cc`, and :mailheader:`Bcc` fields from *msg*.  If exactly one
@@ -482,9 +482,17 @@ An :class:`SMTP` instance has the following methods:
    calls :meth:`sendmail` to transmit the resulting message.  Regardless of the
    values of *from_addr* and *to_addrs*, ``send_message`` does not transmit any
    :mailheader:`Bcc` or :mailheader:`Resent-Bcc` headers that may appear
-   in *msg*.
+   in *msg*.  If any of the addresses in *from_addr* and *to_addrs* contain
+   non-ASCII characters and the server does not advertise ``SMTPUTF8`` support,
+   an :exc:`SMTPNotSupported` error is raised.  Otherwise the ``Message`` is
+   serialized with a clone of its :mod:`~email.policy` with the
+   :attr:`~email.policy.EmailPolicy.utf8` attribute set to ``True``, and
+   ``SMTPUTF8`` and ``BODY=8BITMIME`` are added to *mail_options*.
 
    .. versionadded:: 3.2
+
+   .. versionadded:: 3.5
+      Support for internationalized addresses (``SMTPUTF8``).
 
 
 .. method:: SMTP.quit()

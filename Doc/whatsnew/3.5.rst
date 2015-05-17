@@ -557,8 +557,10 @@ smtplib
   :class:`smtplib.SMTP`.  (Contributed by Gavin Chappell and Maciej Szulik in
   :issue:`16914`.)
 
-* :mod:`smtplib` now support :rfc:`6531` (SMTPUTF8).  (Contributed by
-  Milan Oberkirch and R. David Murray in :issue:`22027`.)
+* :mod:`smtplib` now supports :rfc:`6531` (SMTPUTF8) in both the
+  :meth:`~smtplib.SMTP.sendmail` and :meth:`~smtplib.SMTP.send_message`
+  commands.  (Contributed by Milan Oberkirch and R. David Murray in
+  :issue:`22027`.)
 
 sndhdr
 ------
