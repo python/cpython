@@ -2483,7 +2483,7 @@ arbitrary binary data.
    Return a bytes or bytearray object which is the concatenation of the
    binary data sequences in the :term:`iterable` *iterable*.  A
    :exc:`TypeError` will be raised if there are any values in *iterable*
-   that are note :term:`bytes-like objects <bytes-like object>`, including
+   that are not :term:`bytes-like objects <bytes-like object>`, including
    :class:`str` objects.  The separator between elements is the contents
    of the bytes or bytearray object providing this method.
 
