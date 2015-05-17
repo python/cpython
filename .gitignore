@@ -49,9 +49,10 @@ PCbuild/*.suo
 PCbuild/*.*sdf
 PCbuild/*-pgi
 PCbuild/*-pgo
+PCbuild/.vs/
 PCbuild/amd64/
-PCbuild/obj
-PCBuild/win32
+PCbuild/obj/
+PCBuild/win32/
 .purify
 Parser/pgen
 __pycache__
