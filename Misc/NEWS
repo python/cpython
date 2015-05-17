@@ -51,6 +51,9 @@ Core and Builtins
 
 - Issue #23971:  Fix underestimated presizing in dict.fromkeys().
 
+- Issue #23757:  PySequence_Tuple() incorrectly called the concrete list API
+  when the data was a list subclass.
+
 - Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
   METH_VARARGS methods on _sqlite.Connection.
 
