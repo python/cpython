@@ -58,7 +58,7 @@ Library
 
 - Issue #13866: *quote_via* argument added to urllib.parse.urlencode.
 
-- Issue #20098: New mangle_from_ policy option for email, default True
+- Issue #20098: New mangle_from policy option for email, default True
   for compat32, but False for all other policies.
 
 - Issue #24211: The email library now supports RFC 6532: it can generate
