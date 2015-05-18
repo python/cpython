@@ -652,7 +652,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if source is None:
             source = open(filename, "r").read()
         try:
-            code = compile(source, filename, "exec")
+            code = compile(source, filename, "exec", dont_inherit=True)
         except (OverflowError, SyntaxError):
             self.tkconsole.resetoutput()
             print('*** Error in script or command!\n'
