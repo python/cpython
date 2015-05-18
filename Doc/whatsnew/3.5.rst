@@ -622,6 +622,10 @@ urllib
   sent.  (Contributed by Matej Cepl in :issue:`19494` and Akshit Khurana in
   :issue:`7159`.)
 
+* A new :func:`~urllib.parse.urlencode` parameter *quote_via* provides a way to
+  control the encoding of query parts if needed.  (Contributed by Samwyse and
+  Arnon Yaari in :issue:`13866`.)
+
 wsgiref
 -------
 

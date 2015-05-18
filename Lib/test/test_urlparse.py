@@ -785,6 +785,16 @@ class UrlParseTestCase(unittest.TestCase):
         result = urllib.parse.urlencode({'a': Trivial()}, True)
         self.assertEqual(result, 'a=trivial')
 
+    def test_urlencode_quote_via(self):
+        result = urllib.parse.urlencode({'a': 'some value'})
+        self.assertEqual(result, "a=some+value")
+        result = urllib.parse.urlencode({'a': 'some value/another'},
+                                        quote_via=urllib.parse.quote)
+        self.assertEqual(result, "a=some%20value%2Fanother")
+        result = urllib.parse.urlencode({'a': 'some value/another'},
+                                        safe='/', quote_via=urllib.parse.quote)
+        self.assertEqual(result, "a=some%20value/another")
+
     def test_quote_from_bytes(self):
         self.assertRaises(TypeError, urllib.parse.quote_from_bytes, 'foo')
         result = urllib.parse.quote_from_bytes(b'archaeological arcana')
