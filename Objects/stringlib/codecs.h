@@ -660,7 +660,7 @@ STRINGLIB(utf16_encode)(const STRINGLIB_CHAR *in,
             if (ch < 0xd800)
                 *out++ = ch;
             else if (ch < 0xe000)
-                /* reject surrogate characters (U+DC800-U+DFFF) */
+                /* reject surrogate characters (U+D800-U+DFFF) */
                 goto fail;
 #if STRINGLIB_MAX_CHAR >= 0x10000
             else if (ch >= 0x10000) {
@@ -695,7 +695,7 @@ STRINGLIB(utf16_encode)(const STRINGLIB_CHAR *in,
             if (ch < 0xd800)
                 *out++ = SWAB2((Py_UCS2)ch);
             else if (ch < 0xe000)
-                /* reject surrogate characters (U+DC800-U+DFFF) */
+                /* reject surrogate characters (U+D800-U+DFFF) */
                 goto fail;
 #if STRINGLIB_MAX_CHAR >= 0x10000
             else if (ch >= 0x10000) {
