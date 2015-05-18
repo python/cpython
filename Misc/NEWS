@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24091: Fixed various crashes in corner cases in C implementation of
+  ElementTree.
+
 - Issue #21931: msilib.FCICreate() now raises TypeError in the case of a bad
   argument instead of a ValueError with a bogus FCI error number.
   Patch by Jeffrey Armstrong.
