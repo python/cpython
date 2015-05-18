@@ -87,7 +87,7 @@ Library
 
 - Issue #22682: Added support for the kz1048 encoding.
 
-- Issue #23796: peak and read1 methods of BufferedReader now raise ValueError
+- Issue #23796: peek and read1 methods of BufferedReader now raise ValueError
   if they called on a closed object. Patch by John Hergenroeder.
 
 - Issue #21795: smtpd now supports the 8BITMIME extension whenever
