@@ -333,7 +333,7 @@ counts, but the output will exclude results with counts of zero or less.
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
 
-Unary addition and substraction are shortcuts for adding an empty counter
+Unary addition and subtraction are shortcuts for adding an empty counter
 or subtracting from an empty counter.
 
     >>> c = Counter(a=2, b=-4)
