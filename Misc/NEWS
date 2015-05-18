@@ -10,6 +10,8 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #24102: Fixed exception type checking in standard error handlers.
+
 - Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
   METH_VARARGS methods on _sqlite.Connection.
 

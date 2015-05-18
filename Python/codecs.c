@@ -661,18 +661,9 @@ PyObject *PyCodec_LookupError(const char *name)
 
 static void wrong_exception_type(PyObject *exc)
 {
-    _Py_IDENTIFIER(__class__);
-    _Py_IDENTIFIER(__name__);
-    PyObject *type = _PyObject_GetAttrId(exc, &PyId___class__);
-    if (type != NULL) {
-        PyObject *name = _PyObject_GetAttrId(type, &PyId___name__);
-        Py_DECREF(type);
-        if (name != NULL) {
-            PyErr_Format(PyExc_TypeError,
-                         "don't know how to handle %S in error callback", name);
-            Py_DECREF(name);
-        }
-    }
+    PyErr_Format(PyExc_TypeError,
+                 "don't know how to handle %.200s in error callback",
+                 exc->ob_type->tp_name);
 }
 
 PyObject *PyCodec_StrictErrors(PyObject *exc)
@@ -688,15 +679,16 @@ PyObject *PyCodec_StrictErrors(PyObject *exc)
 PyObject *PyCodec_IgnoreErrors(PyObject *exc)
 {
     Py_ssize_t end;
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         if (PyUnicodeEncodeError_GetEnd(exc, &end))
             return NULL;
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
         if (PyUnicodeDecodeError_GetEnd(exc, &end))
             return NULL;
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeTranslateError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
         if (PyUnicodeTranslateError_GetEnd(exc, &end))
             return NULL;
     }
@@ -712,7 +704,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 {
     Py_ssize_t start, end, i, len;
 
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         PyObject *res;
         int kind;
         void *data;
@@ -731,14 +723,14 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         assert(_PyUnicode_CheckConsistency(res, 1));
         return Py_BuildValue("(Nn)", res, end);
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
         if (PyUnicodeDecodeError_GetEnd(exc, &end))
             return NULL;
         return Py_BuildValue("(Cn)",
                              (int)Py_UNICODE_REPLACEMENT_CHARACTER,
                              end);
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeTranslateError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
         PyObject *res;
         int kind;
         void *data;
@@ -765,7 +757,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 
 PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 {
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         PyObject *restuple;
         PyObject *object;
         Py_ssize_t i;
@@ -863,7 +855,7 @@ PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         PyObject *restuple;
         PyObject *object;
         Py_ssize_t i;
@@ -1007,7 +999,8 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
     Py_ssize_t start;
     Py_ssize_t end;
     PyObject *res;
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         unsigned char *outp;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
@@ -1078,7 +1071,7 @@ PyCodec_SurrogatePassErrors(PyObject *exc)
         Py_DECREF(object);
         return restuple;
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
         unsigned char *p;
         Py_UCS4 ch = 0;
         if (PyUnicodeDecodeError_GetStart(exc, &start))
@@ -1157,7 +1150,8 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
     Py_ssize_t start;
     Py_ssize_t end;
     PyObject *res;
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         char *outp;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
             return NULL;
@@ -1188,7 +1182,7 @@ PyCodec_SurrogateEscapeErrors(PyObject *exc)
         Py_DECREF(object);
         return restuple;
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
         PyObject *str;
         unsigned char *p;
         Py_UCS2 ch[4]; /* decode up to 4 bad bytes. */
