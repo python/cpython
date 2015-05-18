@@ -47,6 +47,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13866: *quote_via* argument added to urllib.parse.urlencode.
+
 - Issue #20098: New mangle_from_ policy option for email, default True
   for compat32, but False for all other policies.
 

@@ -750,7 +750,8 @@ def quote_from_bytes(bs, safe='/'):
         _safe_quoters[safe] = quoter = Quoter(safe).__getitem__
     return ''.join([quoter(char) for char in bs])
 
-def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
+def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
+              quote_via=quote_plus):
     """Encode a dict or sequence of two-element tuples into a URL query string.
 
     If any values in the query arg are sequences and doseq is true, each
@@ -762,8 +763,8 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
 
     The components of a query arg may each be either a string or a bytes type.
 
-    The safe, encoding, and errors parameters are passed down to quote_plus()
-    (encoding and errors only if a component is a str).
+    The safe, encoding, and errors parameters are passed down to the function
+    specified by quote_via (encoding and errors only if a component is a str).
     """
 
     if hasattr(query, "items"):
@@ -789,27 +790,27 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
     if not doseq:
         for k, v in query:
             if isinstance(k, bytes):
-                k = quote_plus(k, safe)
+                k = quote_via(k, safe)
             else:
-                k = quote_plus(str(k), safe, encoding, errors)
+                k = quote_via(str(k), safe, encoding, errors)
 
             if isinstance(v, bytes):
-                v = quote_plus(v, safe)
+                v = quote_via(v, safe)
             else:
-                v = quote_plus(str(v), safe, encoding, errors)
+                v = quote_via(str(v), safe, encoding, errors)
             l.append(k + '=' + v)
     else:
         for k, v in query:
             if isinstance(k, bytes):
-                k = quote_plus(k, safe)
+                k = quote_via(k, safe)
             else:
-                k = quote_plus(str(k), safe, encoding, errors)
+                k = quote_via(str(k), safe, encoding, errors)
 
             if isinstance(v, bytes):
-                v = quote_plus(v, safe)
+                v = quote_via(v, safe)
                 l.append(k + '=' + v)
             elif isinstance(v, str):
-                v = quote_plus(v, safe, encoding, errors)
+                v = quote_via(v, safe, encoding, errors)
                 l.append(k + '=' + v)
             else:
                 try:
@@ -817,15 +818,15 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None):
                     x = len(v)
                 except TypeError:
                     # not a sequence
-                    v = quote_plus(str(v), safe, encoding, errors)
+                    v = quote_via(str(v), safe, encoding, errors)
                     l.append(k + '=' + v)
                 else:
                     # loop over the sequence
                     for elt in v:
                         if isinstance(elt, bytes):
-                            elt = quote_plus(elt, safe)
+                            elt = quote_via(elt, safe)
                         else:
-                            elt = quote_plus(str(elt), safe, encoding, errors)
+                            elt = quote_via(str(elt), safe, encoding, errors)
                         l.append(k + '=' + elt)
     return '&'.join(l)
 
