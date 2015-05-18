@@ -1,4 +1,5 @@
 import contextlib
+import inspect
 import sys
 import types
 import unittest
@@ -85,6 +86,28 @@ class AsyncBadSyntaxTest(unittest.TestCase):
     def test_badsyntax_9(self):
         with self.assertRaisesRegex(SyntaxError, 'invalid syntax'):
             import test.badsyntax_async9
+
+
+class TokenizerRegrTest(unittest.TestCase):
+
+    def test_oneline_defs(self):
+        buf = []
+        for i in range(500):
+            buf.append('def i{i}(): return {i}'.format(i=i))
+        buf = '\n'.join(buf)
+
+        # Test that 500 consequent, one-line defs is OK
+        ns = {}
+        exec(buf, ns, ns)
+        self.assertEqual(ns['i499'](), 499)
+
+        # Test that 500 consequent, one-line defs *and*
+        # one 'async def' following them is OK
+        buf += '\nasync def foo():\n    return'
+        ns = {}
+        exec(buf, ns, ns)
+        self.assertEqual(ns['i499'](), 499)
+        self.assertTrue(inspect.iscoroutinefunction(ns['foo']))
 
 
 class CoroutineTest(unittest.TestCase):

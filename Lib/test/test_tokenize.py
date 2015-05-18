@@ -1289,6 +1289,17 @@ class TestTokenize(TestCase):
 
         self.assertTrue(encoding_used, encoding)
 
+    def test_oneline_defs(self):
+        buf = []
+        for i in range(500):
+            buf.append('def i{i}(): return {i}'.format(i=i))
+        buf.append('OK')
+        buf = '\n'.join(buf)
+
+        # Test that 500 consequent, one-line defs is OK
+        toks = list(tokenize(BytesIO(buf.encode('utf-8')).readline))
+        self.assertEqual(toks[-2].string, 'OK') # [-1] is always ENDMARKER
+
     def assertExactTypeEqual(self, opstr, *optypes):
         tokens = list(tokenize(BytesIO(opstr.encode('utf-8')).readline))
         num_optypes = len(optypes)

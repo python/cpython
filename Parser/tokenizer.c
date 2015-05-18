@@ -1501,17 +1501,20 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
 
         tok_len = tok->cur - tok->start;
         if (tok_len == 3 && memcmp(tok->start, "def", 3) == 0) {
-
-            if (tok->def + 1 >= MAXINDENT) {
-                tok->done = E_TOODEEP;
-                tok->cur = tok->inp;
-                return ERRORTOKEN;
-            }
-
             if (tok->def && tok->deftypestack[tok->def] == 3) {
                 tok->deftypestack[tok->def] = 2;
             }
-            else {
+            else if (tok->defstack[tok->def] < tok->indent) {
+                /* We advance defs stack only when we see "def" *and*
+                   the indentation level was increased relative to the
+                   previous "def". */
+
+                if (tok->def + 1 >= MAXINDENT) {
+                    tok->done = E_TOODEEP;
+                    tok->cur = tok->inp;
+                    return ERRORTOKEN;
+                }
+
                 tok->def++;
                 tok->defstack[tok->def] = tok->indent;
                 tok->deftypestack[tok->def] = 1;
@@ -1527,6 +1530,12 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 if (ahead_tok_kind == NAME &&
                         ahead_tok.cur - ahead_tok.start == 3 &&
                         memcmp(ahead_tok.start, "def", 3) == 0) {
+
+                    if (tok->def + 1 >= MAXINDENT) {
+                        tok->done = E_TOODEEP;
+                        tok->cur = tok->inp;
+                        return ERRORTOKEN;
+                    }
 
                     tok->def++;
                     tok->defstack[tok->def] = tok->indent;
