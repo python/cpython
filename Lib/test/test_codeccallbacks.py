@@ -961,6 +961,29 @@ class CodecCallbackTest(unittest.TestCase):
                 with self.assertRaises(TypeError):
                     data.decode(encoding, "test.replacing")
 
+    def test_fake_error_class(self):
+        handlers = [
+            codecs.strict_errors,
+            codecs.ignore_errors,
+            codecs.replace_errors,
+            codecs.backslashreplace_errors,
+            codecs.xmlcharrefreplace_errors,
+            codecs.lookup_error('surrogateescape'),
+            codecs.lookup_error('surrogatepass'),
+        ]
+        for cls in UnicodeEncodeError, UnicodeDecodeError, UnicodeTranslateError:
+            class FakeUnicodeError(str):
+                __class__ = cls
+            for handler in handlers:
+                with self.subTest(handler=handler, error_class=cls):
+                    self.assertRaises(TypeError, handler, FakeUnicodeError())
+            class FakeUnicodeError(Exception):
+                __class__ = cls
+            for handler in handlers:
+                with self.subTest(handler=handler, error_class=cls):
+                    with self.assertRaises((TypeError, FakeUnicodeError)):
+                        handler(FakeUnicodeError())
+
 
 if __name__ == "__main__":
     unittest.main()
