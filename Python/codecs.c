@@ -472,15 +472,16 @@ PyObject *PyCodec_StrictErrors(PyObject *exc)
 PyObject *PyCodec_IgnoreErrors(PyObject *exc)
 {
     Py_ssize_t end;
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         if (PyUnicodeEncodeError_GetEnd(exc, &end))
             return NULL;
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
         if (PyUnicodeDecodeError_GetEnd(exc, &end))
             return NULL;
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeTranslateError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
         if (PyUnicodeTranslateError_GetEnd(exc, &end))
             return NULL;
     }
@@ -500,7 +501,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
     Py_ssize_t end;
     Py_ssize_t i;
 
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         PyObject *res;
         Py_UNICODE *p;
         if (PyUnicodeEncodeError_GetStart(exc, &start))
@@ -517,13 +518,13 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
         Py_DECREF(res);
         return restuple;
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeDecodeError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeDecodeError)) {
         Py_UNICODE res = Py_UNICODE_REPLACEMENT_CHARACTER;
         if (PyUnicodeDecodeError_GetEnd(exc, &end))
             return NULL;
         return Py_BuildValue("(u#n)", &res, (Py_ssize_t)1, end);
     }
-    else if (PyObject_IsInstance(exc, PyExc_UnicodeTranslateError)) {
+    else if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeTranslateError)) {
         PyObject *res;
         Py_UNICODE *p;
         if (PyUnicodeTranslateError_GetStart(exc, &start))
@@ -548,7 +549,7 @@ PyObject *PyCodec_ReplaceErrors(PyObject *exc)
 
 PyObject *PyCodec_XMLCharRefReplaceErrors(PyObject *exc)
 {
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         PyObject *restuple;
         PyObject *object;
         Py_ssize_t start;
@@ -673,7 +674,7 @@ static Py_UNICODE hexdigits[] = {
 
 PyObject *PyCodec_BackslashReplaceErrors(PyObject *exc)
 {
-    if (PyObject_IsInstance(exc, PyExc_UnicodeEncodeError)) {
+    if (PyObject_TypeCheck(exc, (PyTypeObject *)PyExc_UnicodeEncodeError)) {
         PyObject *restuple;
         PyObject *object;
         Py_ssize_t start;

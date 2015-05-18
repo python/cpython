@@ -10,6 +10,8 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #24102: Fixed exception type checking in standard error handlers.
+
 Library
 -------
 

@@ -836,6 +836,26 @@ class CodecCallbackTest(unittest.TestCase):
             text = u'abc<def>ghi'*n
             text.translate(charmap)
 
+    def test_fake_error_class(self):
+        handlers = [
+            codecs.strict_errors,
+            codecs.ignore_errors,
+            codecs.replace_errors,
+            codecs.backslashreplace_errors,
+            codecs.xmlcharrefreplace_errors,
+        ]
+        for cls in UnicodeEncodeError, UnicodeDecodeError, UnicodeTranslateError:
+            class FakeUnicodeError(str):
+                __class__ = cls
+            for handler in handlers:
+                self.assertRaises(TypeError, handler, FakeUnicodeError())
+            class FakeUnicodeError(Exception):
+                __class__ = cls
+            for handler in handlers:
+                with self.assertRaises((TypeError, FakeUnicodeError)):
+                    handler(FakeUnicodeError())
+
+
 def test_main():
     test.test_support.run_unittest(CodecCallbackTest)
 
