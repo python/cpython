@@ -1408,7 +1408,7 @@ works::
     def worker_process(config):
         """
         A number of these are spawned for the purpose of illustration. In
-        practice, they could be a heterogenous bunch of processes rather than
+        practice, they could be a heterogeneous bunch of processes rather than
         ones which are identical to each other.
 
         This initialises logging according to the specified configuration,

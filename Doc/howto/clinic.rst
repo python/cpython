@@ -1498,7 +1498,7 @@ preset configurations, as follows:
     the ``buffer`` preset.
 
     Suppresses the ``impl_prototype``, write the ``docstring_definition``
-    and ``parser_defintion`` to ``buffer``, write everything else to ``block``.
+    and ``parser_definition`` to ``buffer``, write everything else to ``block``.
 
 The third new directive is ``destination``::
 
