@@ -1709,6 +1709,126 @@ class BasicElementTest(ElementTestCase, unittest.TestCase):
                 self.assertEqual(e2[0].tag, 'dogs')
 
 
+class BadElementTest(ElementTestCase, unittest.TestCase):
+    def test_extend_mutable_list(self):
+        class X:
+            @property
+            def __class__(self):
+                L[:] = [ET.Element('baz')]
+                return ET.Element
+        L = [X()]
+        e = ET.Element('foo')
+        try:
+            e.extend(L)
+        except TypeError:
+            pass
+
+        class Y(X, ET.Element):
+            pass
+        L = [Y('x')]
+        e = ET.Element('foo')
+        e.extend(L)
+
+    def test_extend_mutable_list2(self):
+        class X:
+            @property
+            def __class__(self):
+                del L[:]
+                return ET.Element
+        L = [X(), ET.Element('baz')]
+        e = ET.Element('foo')
+        try:
+            e.extend(L)
+        except TypeError:
+            pass
+
+        class Y(X, ET.Element):
+            pass
+        L = [Y('bar'), ET.Element('baz')]
+        e = ET.Element('foo')
+        e.extend(L)
+
+    def test_remove_with_mutating(self):
+        class X(ET.Element):
+            def __eq__(self, o):
+                del e[:]
+                return False
+        e = ET.Element('foo')
+        e.extend([X('bar')])
+        self.assertRaises(ValueError, e.remove, ET.Element('baz'))
+
+        e = ET.Element('foo')
+        e.extend([ET.Element('bar')])
+        self.assertRaises(ValueError, e.remove, X('baz'))
+
+
+class MutatingElementPath(str):
+    def __new__(cls, elem, *args):
+        self = str.__new__(cls, *args)
+        self.elem = elem
+        return self
+    def __eq__(self, o):
+        del self.elem[:]
+        return True
+MutatingElementPath.__hash__ = str.__hash__
+
+class BadElementPath(str):
+    def __eq__(self, o):
+        raise 1/0
+BadElementPath.__hash__ = str.__hash__
+
+class BadElementPathTest(ElementTestCase, unittest.TestCase):
+    def setUp(self):
+        super().setUp()
+        from xml.etree import ElementPath
+        self.path_cache = ElementPath._cache
+        ElementPath._cache = {}
+
+    def tearDown(self):
+        from xml.etree import ElementPath
+        ElementPath._cache = self.path_cache
+        super().tearDown()
+
+    def test_find_with_mutating(self):
+        e = ET.Element('foo')
+        e.extend([ET.Element('bar')])
+        e.find(MutatingElementPath(e, 'x'))
+
+    def test_find_with_error(self):
+        e = ET.Element('foo')
+        e.extend([ET.Element('bar')])
+        try:
+            e.find(BadElementPath('x'))
+        except ZeroDivisionError:
+            pass
+
+    def test_findtext_with_mutating(self):
+        e = ET.Element('foo')
+        e.extend([ET.Element('bar')])
+        e.findtext(MutatingElementPath(e, 'x'))
+
+    def test_findtext_with_error(self):
+        e = ET.Element('foo')
+        e.extend([ET.Element('bar')])
+        try:
+            e.findtext(BadElementPath('x'))
+        except ZeroDivisionError:
+            pass
+
+    def test_findall_with_mutating(self):
+        e = ET.Element('foo')
+        e.extend([ET.Element('bar')])
+        e.findall(MutatingElementPath(e, 'x'))
+
+    def test_findall_with_error(self):
+        e = ET.Element('foo')
+        e.extend([ET.Element('bar')])
+        try:
+            e.findall(BadElementPath('x'))
+        except ZeroDivisionError:
+            pass
+
+
 class ElementTreeTypeTest(unittest.TestCase):
     def test_istype(self):
         self.assertIsInstance(ET.ParseError, type)
@@ -2556,6 +2676,8 @@ def test_main(module=None):
         ModuleTest,
         ElementSlicingTest,
         BasicElementTest,
+        BadElementTest,
+        BadElementPathTest,
         ElementTreeTest,
         IOTest,
         ParseErrorTest,
