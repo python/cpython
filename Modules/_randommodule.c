@@ -266,7 +266,7 @@ random_seed(RandomObject *self, PyObject *args)
     {
         size_t i, j;
         /* Reverse an array. */
-        for (i = 0; j = keyused - 1; i < j; i++, j--) {
+        for (i = 0, j = keyused - 1; i < j; i++, j--) {
             PY_UINT32_T tmp = key[i];
             key[i] = key[j];
             key[j] = tmp;
