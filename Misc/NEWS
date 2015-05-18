@@ -10,6 +10,8 @@ Release date: 2015-05-24
 Core and Builtins
 -----------------
 
+- Issue #24102: Fixed exception type checking in standard error handlers.
+
 - Issue #15027: The UTF-32 encoder is now 3x to 7x faster.
 
 - Issue #23290:  Optimize set_merge() for cases where the target is empty.
