@@ -197,7 +197,7 @@ An :class:`POP3` instance has the following methods:
 
 .. method:: POP3.utf8()
 
-   Try to switch to UTF-8 mode. Returns the server response if sucessful,
+   Try to switch to UTF-8 mode. Returns the server response if successful,
    raises :class:`error_proto` if not. Specified in :RFC:`6856`.
 
    .. versionadded:: 3.5
