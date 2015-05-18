@@ -513,7 +513,7 @@ The :mod:`socket` module also offers various network-related services:
    always hold.
 
    Note: :func:`gethostname` doesn't always return the fully qualified domain
-   name; use ``getfqdn()`` (see above).
+   name; use :func:`getfqdn` for that.
 
 
 .. function:: gethostbyaddr(ip_address)
