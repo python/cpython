@@ -76,6 +76,8 @@ def join(a, *p):
     sep = _get_sep(a)
     path = a
     try:
+        if not p:
+            path[:0] + sep  #23780: Ensure compatible data type even if p is null.
         for b in p:
             if b.startswith(sep):
                 path = b
