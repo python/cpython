@@ -2762,7 +2762,7 @@ class Signature:
                             parameters_ex = (param,)
                             break
                         else:
-                            msg = '{arg!r} parameter lacking default value'
+                            msg = 'missing a required argument: {arg!r}'
                             msg = msg.format(arg=param.name)
                             raise TypeError(msg) from None
             else:
@@ -2775,7 +2775,8 @@ class Signature:
                     if param.kind in (_VAR_KEYWORD, _KEYWORD_ONLY):
                         # Looks like we have no parameter for this positional
                         # argument
-                        raise TypeError('too many positional arguments')
+                        raise TypeError(
+                            'too many positional arguments') from None
 
                     if param.kind == _VAR_POSITIONAL:
                         # We have an '*args'-like argument, let's fill it with
@@ -2787,8 +2788,9 @@ class Signature:
                         break
 
                     if param.name in kwargs:
-                        raise TypeError('multiple values for argument '
-                                        '{arg!r}'.format(arg=param.name))
+                        raise TypeError(
+                            'multiple values for argument {arg!r}'.format(
+                                arg=param.name)) from None
 
                     arguments[param.name] = arg_val
 
@@ -2817,7 +2819,7 @@ class Signature:
                 # arguments.
                 if (not partial and param.kind != _VAR_POSITIONAL and
                                                     param.default is _empty):
-                    raise TypeError('{arg!r} parameter lacking default value'. \
+                    raise TypeError('missing a required argument: {arg!r}'. \
                                     format(arg=param_name)) from None
 
             else:
@@ -2836,7 +2838,9 @@ class Signature:
                 # Process our '**kwargs'-like parameter
                 arguments[kwargs_param.name] = kwargs
             else:
-                raise TypeError('too many keyword arguments')
+                raise TypeError(
+                    'got an unexpected keyword argument {arg!r}'.format(
+                        arg=next(iter(kwargs))))
 
         return self._bound_arguments_cls(self, arguments)
 
