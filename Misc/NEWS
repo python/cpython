@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #23985: Fix a possible buffer overrun when deleting a slice from
+  the front of a bytearray and then appending some other bytes data.
+
 - Issue #24102: Fixed exception type checking in standard error handlers.
 
 - Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
