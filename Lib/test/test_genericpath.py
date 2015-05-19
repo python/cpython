@@ -448,6 +448,10 @@ class CommonTest(GenericTest):
                 self.pathmodule.join(42, 'str')
             with self.assertRaisesRegex(TypeError, errmsg % 'int'):
                 self.pathmodule.join('str', 42)
+            with self.assertRaisesRegex(TypeError, errmsg % 'int'):
+                self.pathmodule.join(42)
+            with self.assertRaisesRegex(TypeError, errmsg % 'list'):
+                self.pathmodule.join([])
             with self.assertRaisesRegex(TypeError, errmsg % 'bytearray'):
                 self.pathmodule.join(bytearray(b'foo'), bytearray(b'bar'))
 
