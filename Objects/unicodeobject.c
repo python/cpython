@@ -3566,6 +3566,7 @@ PyUnicode_DecodeLocaleAndSize(const char *str, Py_ssize_t len,
     return unicode;
 
 decode_error:
+    reason = NULL;
     errmsg = strerror(errno);
     assert(errmsg != NULL);
 
@@ -3576,10 +3577,9 @@ decode_error:
         if (wstr != NULL) {
             reason = PyUnicode_FromWideChar(wstr, errlen);
             PyMem_RawFree(wstr);
-        } else
-            errmsg = NULL;
+        }
     }
-    if (errmsg == NULL)
+    if (reason == NULL)
         reason = PyUnicode_FromString(
             "mbstowcs() encountered an invalid multibyte sequence");
     if (reason == NULL)
@@ -9474,7 +9474,7 @@ handle_capital_sigma(int kind, void *data, Py_ssize_t length, Py_ssize_t i)
 {
     Py_ssize_t j;
     int final_sigma;
-    Py_UCS4 c;
+    Py_UCS4 c = 0;
     /* U+03A3 is in the Final_Sigma context when, it is found like this:
 
      \p{cased}\p{case-ignorable}*U+03A3!(\p{case-ignorable}*\p{cased})
@@ -11144,7 +11144,7 @@ interpreted as in slice notation.");
 static PyObject *
 unicode_count(PyObject *self, PyObject *args)
 {
-    PyObject *substring;
+    PyObject *substring = NULL;
     Py_ssize_t start = 0;
     Py_ssize_t end = PY_SSIZE_T_MAX;
     PyObject *result;
@@ -11332,9 +11332,9 @@ Return -1 on failure.");
 static PyObject *
 unicode_find(PyObject *self, PyObject *args)
 {
-    PyObject *substring;
-    Py_ssize_t start;
-    Py_ssize_t end;
+    PyObject *substring = NULL;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
     Py_ssize_t result;
 
     if (!stringlib_parse_args_finds_unicode("find", args, &substring,
@@ -11420,9 +11420,9 @@ static PyObject *
 unicode_index(PyObject *self, PyObject *args)
 {
     Py_ssize_t result;
-    PyObject *substring;
-    Py_ssize_t start;
-    Py_ssize_t end;
+    PyObject *substring = NULL;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
 
     if (!stringlib_parse_args_finds_unicode("index", args, &substring,
                                             &start, &end))
@@ -12497,9 +12497,9 @@ Return -1 on failure.");
 static PyObject *
 unicode_rfind(PyObject *self, PyObject *args)
 {
-    PyObject *substring;
-    Py_ssize_t start;
-    Py_ssize_t end;
+    PyObject *substring = NULL;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
     Py_ssize_t result;
 
     if (!stringlib_parse_args_finds_unicode("rfind", args, &substring,
@@ -12533,9 +12533,9 @@ Like S.rfind() but raise ValueError when the substring is not found.");
 static PyObject *
 unicode_rindex(PyObject *self, PyObject *args)
 {
-    PyObject *substring;
-    Py_ssize_t start;
-    Py_ssize_t end;
+    PyObject *substring = NULL;
+    Py_ssize_t start = 0;
+    Py_ssize_t end = 0;
     Py_ssize_t result;
 
     if (!stringlib_parse_args_finds_unicode("rindex", args, &substring,
