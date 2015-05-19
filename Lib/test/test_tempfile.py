@@ -275,7 +275,39 @@ def _mock_candidate_names(*names):
                              lambda: iter(names))
 
 
-class TestMkstempInner(BaseTestCase):
+class TestBadTempdir:
+
+    def test_read_only_directory(self):
+        with _inside_empty_temp_dir():
+            oldmode = mode = os.stat(tempfile.tempdir).st_mode
+            mode &= ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH)
+            os.chmod(tempfile.tempdir, mode)
+            try:
+                if os.access(tempfile.tempdir, os.W_OK):
+                    self.skipTest("can't set the directory read-only")
+                with self.assertRaises(PermissionError):
+                    self.make_temp()
+                self.assertEqual(os.listdir(tempfile.tempdir), [])
+            finally:
+                os.chmod(tempfile.tempdir, oldmode)
+
+    def test_nonexisting_directory(self):
+        with _inside_empty_temp_dir():
+            tempdir = os.path.join(tempfile.tempdir, 'nonexistent')
+            with support.swap_attr(tempfile, 'tempdir', tempdir):
+                with self.assertRaises(FileNotFoundError):
+                    self.make_temp()
+
+    def test_non_directory(self):
+        with _inside_empty_temp_dir():
+            tempdir = os.path.join(tempfile.tempdir, 'file')
+            open(tempdir, 'wb').close()
+            with support.swap_attr(tempfile, 'tempdir', tempdir):
+                with self.assertRaises((NotADirectoryError, FileNotFoundError)):
+                    self.make_temp()
+
+
+class TestMkstempInner(TestBadTempdir, BaseTestCase):
     """Test the internal function _mkstemp_inner."""
 
     class mkstemped:
@@ -390,7 +422,7 @@ class TestMkstempInner(BaseTestCase):
         os.lseek(f.fd, 0, os.SEEK_SET)
         self.assertEqual(os.read(f.fd, 20), b"blat")
 
-    def default_mkstemp_inner(self):
+    def make_temp(self):
         return tempfile._mkstemp_inner(tempfile.gettempdir(),
                                        tempfile.template,
                                        '',
@@ -401,11 +433,11 @@ class TestMkstempInner(BaseTestCase):
         # the chosen name already exists
         with _inside_empty_temp_dir(), \
              _mock_candidate_names('aaa', 'aaa', 'bbb'):
-            (fd1, name1) = self.default_mkstemp_inner()
+            (fd1, name1) = self.make_temp()
             os.close(fd1)
             self.assertTrue(name1.endswith('aaa'))
 
-            (fd2, name2) = self.default_mkstemp_inner()
+            (fd2, name2) = self.make_temp()
             os.close(fd2)
             self.assertTrue(name2.endswith('bbb'))
 
@@ -417,7 +449,7 @@ class TestMkstempInner(BaseTestCase):
             dir = tempfile.mkdtemp()
             self.assertTrue(dir.endswith('aaa'))
 
-            (fd, name) = self.default_mkstemp_inner()
+            (fd, name) = self.make_temp()
             os.close(fd)
             self.assertTrue(name.endswith('bbb'))
 
@@ -529,8 +561,11 @@ class TestMkstemp(BaseTestCase):
             os.rmdir(dir)
 
 
-class TestMkdtemp(BaseTestCase):
+class TestMkdtemp(TestBadTempdir, BaseTestCase):
     """Test mkdtemp()."""
+
+    def make_temp(self):
+        return tempfile.mkdtemp()
 
     def do_create(self, dir=None, pre="", suf=""):
         if dir is None:
