@@ -52,6 +52,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #22107: tempfile.gettempdir() and tempfile.mkdtemp() now try again
+  when a directory with the chosen name already exists on Windows as well as
+  on Unix.  tempfile.mkstemp() now fails early if parent directory is not
+  valid (not exists or is a file) on Windows.
+
 - Issue #23780: Improved error message in os.path.join() with single argument.
 
 - Issue #6598: Increased time precision and random number range in
