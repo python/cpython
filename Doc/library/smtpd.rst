@@ -90,7 +90,7 @@ SMTPServer Objects
              this will always be an empty list.
 
       Implementations of ``process_message`` should use the ``**kwargs``
-      signature to accept arbitrary keword arguments, since future feature
+      signature to accept arbitrary keyword arguments, since future feature
       enhancements may add keys to the kwargs dictionary.
 
       Return ``None`` to request a normal ``250 Ok`` response; otherwise
