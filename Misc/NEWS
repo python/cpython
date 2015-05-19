@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #6598: Increased time precision and random number range in
+  email.utils.make_msgid() to strengthen the uniqueness of the message ID.
+
 - Issue #24091: Fixed various crashes in corner cases in cElementTree.
 
 - Issue #15267: HTTPConnection.request() now is compatibile with old-style
