@@ -166,6 +166,13 @@ def _get_default_tempdir():
                 return dir
             except FileExistsError:
                 pass
+            except PermissionError:
+                # This exception is thrown when a directory with the chosen name
+                # already exists on windows.
+                if (_os.name == 'nt' and _os.path.isdir(dir) and
+                    _os.access(dir, _os.W_OK)):
+                    continue
+                break   # no point trying more names in this directory
             except OSError:
                 break   # no point trying more names in this directory
     raise FileNotFoundError(_errno.ENOENT,
@@ -204,7 +211,8 @@ def _mkstemp_inner(dir, pre, suf, flags):
         except PermissionError:
             # This exception is thrown when a directory with the chosen name
             # already exists on windows.
-            if _os.name == 'nt':
+            if (_os.name == 'nt' and _os.path.isdir(dir) and
+                _os.access(dir, _os.W_OK)):
                 continue
             else:
                 raise
@@ -296,6 +304,14 @@ def mkdtemp(suffix="", prefix=template, dir=None):
             return file
         except FileExistsError:
             continue    # try again
+        except PermissionError:
+            # This exception is thrown when a directory with the chosen name
+            # already exists on windows.
+            if (_os.name == 'nt' and _os.path.isdir(dir) and
+                _os.access(dir, _os.W_OK)):
+                continue
+            else:
+                raise
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary directory name found")
