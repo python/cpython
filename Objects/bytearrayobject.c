@@ -187,7 +187,7 @@ PyByteArray_Resize(PyObject *self, Py_ssize_t requested_size)
         return -1;
     }
 
-    if (size + logical_offset + 1 < alloc) {
+    if (size + logical_offset + 1 <= alloc) {
         /* Current buffer is large enough to host the requested size,
            decide on a strategy. */
         if (size < alloc / 2) {
@@ -331,11 +331,7 @@ bytearray_iconcat(PyByteArrayObject *self, PyObject *other)
         PyBuffer_Release(&vo);
         return PyErr_NoMemory();
     }
-    if (size < self->ob_alloc) {
-        Py_SIZE(self) = size;
-        PyByteArray_AS_STRING(self)[Py_SIZE(self)] = '\0'; /* Trailing null byte */
-    }
-    else if (PyByteArray_Resize((PyObject *)self, size) < 0) {
+    if (PyByteArray_Resize((PyObject *)self, size) < 0) {
         PyBuffer_Release(&vo);
         return NULL;
     }
