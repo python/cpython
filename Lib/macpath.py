@@ -53,6 +53,8 @@ def join(s, *p):
     try:
         colon = _get_colon(s)
         path = s
+        if not p:
+            path[:0] + colon  #23780: Ensure compatible data type even if p is null.
         for t in p:
             if (not path) or isabs(t):
                 path = t
