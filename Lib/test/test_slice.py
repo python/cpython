@@ -80,7 +80,8 @@ class SliceTest(unittest.TestCase):
     def test_hash(self):
         # Verify clearing of SF bug #800796
         self.assertRaises(TypeError, hash, slice(5))
-        self.assertRaises(TypeError, slice(5).__hash__)
+        with self.assertRaises(TypeError):
+            slice(5).__hash__()
 
     def test_cmp(self):
         s1 = slice(1, 2, 3)
