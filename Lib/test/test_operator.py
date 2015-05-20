@@ -37,9 +37,6 @@ class Seq2(object):
 
 
 class OperatorTestCase:
-    def setUp(self):
-        sys.modules['operator'] = self.module
-
     def test_lt(self):
         operator = self.module
         self.assertRaises(TypeError, operator.lt)
@@ -506,7 +503,6 @@ class OperatorPickleTestCase:
             return pickle.loads(pickled)
 
     def test_attrgetter(self):
-        attrgetter = self.module.attrgetter
         attrgetter = self.module.attrgetter
         class A:
             pass
