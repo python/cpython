@@ -952,9 +952,25 @@ _io__RawIOBase_readall_impl(PyObject *self)
     return result;
 }
 
+static PyObject *
+rawiobase_readinto(PyObject *self, PyObject *args)
+{
+    PyErr_SetNone(PyExc_NotImplementedError);
+    return NULL;
+}
+
+static PyObject *
+rawiobase_write(PyObject *self, PyObject *args)
+{
+    PyErr_SetNone(PyExc_NotImplementedError);
+    return NULL;
+}
+
 static PyMethodDef rawiobase_methods[] = {
     _IO__RAWIOBASE_READ_METHODDEF
     _IO__RAWIOBASE_READALL_METHODDEF
+    {"readinto", rawiobase_readinto, METH_VARARGS},
+    {"write", rawiobase_write, METH_VARARGS},
     {NULL, NULL}
 };
 
