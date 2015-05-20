@@ -2017,6 +2017,87 @@ def _signature_from_builtin(cls, func, skip_bound_arg=True):
     return _signature_fromstr(cls, func, s, skip_bound_arg)
 
 
+def _signature_from_function(cls, func):
+    """Private helper: constructs Signature for the given python function."""
+
+    is_duck_function = False
+    if not isfunction(func):
+        if _signature_is_functionlike(func):
+            is_duck_function = True
+        else:
+            # If it's not a pure Python function, and not a duck type
+            # of pure function:
+            raise TypeError('{!r} is not a Python function'.format(func))
+
+    Parameter = cls._parameter_cls
+
+    # Parameter information.
+    func_code = func.__code__
+    pos_count = func_code.co_argcount
+    arg_names = func_code.co_varnames
+    positional = tuple(arg_names[:pos_count])
+    keyword_only_count = func_code.co_kwonlyargcount
+    keyword_only = arg_names[pos_count:(pos_count + keyword_only_count)]
+    annotations = func.__annotations__
+    defaults = func.__defaults__
+    kwdefaults = func.__kwdefaults__
+
+    if defaults:
+        pos_default_count = len(defaults)
+    else:
+        pos_default_count = 0
+
+    parameters = []
+
+    # Non-keyword-only parameters w/o defaults.
+    non_default_count = pos_count - pos_default_count
+    for name in positional[:non_default_count]:
+        annotation = annotations.get(name, _empty)
+        parameters.append(Parameter(name, annotation=annotation,
+                                    kind=_POSITIONAL_OR_KEYWORD))
+
+    # ... w/ defaults.
+    for offset, name in enumerate(positional[non_default_count:]):
+        annotation = annotations.get(name, _empty)
+        parameters.append(Parameter(name, annotation=annotation,
+                                    kind=_POSITIONAL_OR_KEYWORD,
+                                    default=defaults[offset]))
+
+    # *args
+    if func_code.co_flags & CO_VARARGS:
+        name = arg_names[pos_count + keyword_only_count]
+        annotation = annotations.get(name, _empty)
+        parameters.append(Parameter(name, annotation=annotation,
+                                    kind=_VAR_POSITIONAL))
+
+    # Keyword-only parameters.
+    for name in keyword_only:
+        default = _empty
+        if kwdefaults is not None:
+            default = kwdefaults.get(name, _empty)
+
+        annotation = annotations.get(name, _empty)
+        parameters.append(Parameter(name, annotation=annotation,
+                                    kind=_KEYWORD_ONLY,
+                                    default=default))
+    # **kwargs
+    if func_code.co_flags & CO_VARKEYWORDS:
+        index = pos_count + keyword_only_count
+        if func_code.co_flags & CO_VARARGS:
+            index += 1
+
+        name = arg_names[index]
+        annotation = annotations.get(name, _empty)
+        parameters.append(Parameter(name, annotation=annotation,
+                                    kind=_VAR_KEYWORD))
+
+    # Is 'func' is a pure Python function - don't validate the
+    # parameters list (for correct order and defaults), it should be OK.
+    return cls(parameters,
+               return_annotation=annotations.get('return', _empty),
+               __validate_parameters__=is_duck_function)
+
+
 def _signature_from_callable(obj, *,
                              follow_wrapper_chains=True,
                              skip_bound_arg=True,
@@ -2088,7 +2169,7 @@ def _signature_from_callable(obj, *,
     if isfunction(obj) or _signature_is_functionlike(obj):
         # If it's a pure Python function, or an object that is duck type
         # of a Python function (Cython functions, for instance), then:
-        return sigcls.from_function(obj)
+        return _signature_from_function(sigcls, obj)
 
     if _signature_is_builtin(obj):
         return _signature_from_builtin(sigcls, obj,
@@ -2580,83 +2661,7 @@ class Signature:
     @classmethod
     def from_function(cls, func):
         """Constructs Signature for the given python function."""
-
-        is_duck_function = False
-        if not isfunction(func):
-            if _signature_is_functionlike(func):
-                is_duck_function = True
-            else:
-                # If it's not a pure Python function, and not a duck type
-                # of pure function:
-                raise TypeError('{!r} is not a Python function'.format(func))
-
-        Parameter = cls._parameter_cls
-
-        # Parameter information.
-        func_code = func.__code__
-        pos_count = func_code.co_argcount
-        arg_names = func_code.co_varnames
-        positional = tuple(arg_names[:pos_count])
-        keyword_only_count = func_code.co_kwonlyargcount
-        keyword_only = arg_names[pos_count:(pos_count + keyword_only_count)]
-        annotations = func.__annotations__
-        defaults = func.__defaults__
-        kwdefaults = func.__kwdefaults__
-
-        if defaults:
-            pos_default_count = len(defaults)
-        else:
-            pos_default_count = 0
-
-        parameters = []
-
-        # Non-keyword-only parameters w/o defaults.
-        non_default_count = pos_count - pos_default_count
-        for name in positional[:non_default_count]:
-            annotation = annotations.get(name, _empty)
-            parameters.append(Parameter(name, annotation=annotation,
-                                        kind=_POSITIONAL_OR_KEYWORD))
-
-        # ... w/ defaults.
-        for offset, name in enumerate(positional[non_default_count:]):
-            annotation = annotations.get(name, _empty)
-            parameters.append(Parameter(name, annotation=annotation,
-                                        kind=_POSITIONAL_OR_KEYWORD,
-                                        default=defaults[offset]))
-
-        # *args
-        if func_code.co_flags & CO_VARARGS:
-            name = arg_names[pos_count + keyword_only_count]
-            annotation = annotations.get(name, _empty)
-            parameters.append(Parameter(name, annotation=annotation,
-                                        kind=_VAR_POSITIONAL))
-
-        # Keyword-only parameters.
-        for name in keyword_only:
-            default = _empty
-            if kwdefaults is not None:
-                default = kwdefaults.get(name, _empty)
-
-            annotation = annotations.get(name, _empty)
-            parameters.append(Parameter(name, annotation=annotation,
-                                        kind=_KEYWORD_ONLY,
-                                        default=default))
-        # **kwargs
-        if func_code.co_flags & CO_VARKEYWORDS:
-            index = pos_count + keyword_only_count
-            if func_code.co_flags & CO_VARARGS:
-                index += 1
-
-            name = arg_names[index]
-            annotation = annotations.get(name, _empty)
-            parameters.append(Parameter(name, annotation=annotation,
-                                        kind=_VAR_KEYWORD))
-
-        # Is 'func' is a pure Python function - don't validate the
-        # parameters list (for correct order and defaults), it should be OK.
-        return cls(parameters,
-                   return_annotation=annotations.get('return', _empty),
-                   __validate_parameters__=is_duck_function)
+        return _signature_from_function(cls, func)
 
     @classmethod
     def from_builtin(cls, func):
