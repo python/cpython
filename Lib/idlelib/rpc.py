@@ -332,10 +332,7 @@ class SocketIO(object):
                 n = self.sock.send(s[:BUFSIZE])
             except (AttributeError, TypeError):
                 raise IOError, "socket no longer exists"
-            except socket.error:
-                raise
-            else:
-                s = s[n:]
+            s = s[n:]
 
     buffer = ""
     bufneed = 4
