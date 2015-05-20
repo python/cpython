@@ -431,7 +431,7 @@ The Signature object represents the call signature of a callable object and its
 return annotation.  To retrieve a Signature object, use the :func:`signature`
 function.
 
-.. function:: signature(callable)
+.. function:: signature(callable, \*, follow_wrapped=True)
 
    Return a :class:`Signature` object for the given ``callable``::
 
@@ -455,6 +455,11 @@ function.
 
    Raises :exc:`ValueError` if no signature can be provided, and
    :exc:`TypeError` if that type of object is not supported.
+
+   .. versionadded:: 3.5
+      ``follow_wrapped`` parameter. Pass ``False`` to get a signature of
+      ``callable`` specifically (``callable.__wrapped__`` will not be used to
+      unwrap decorated callables.)
 
    .. note::
 
@@ -528,12 +533,13 @@ function.
          >>> str(new_sig)
          "(a, b) -> 'new return anno'"
 
-   .. classmethod:: Signature.from_callable(obj)
+   .. classmethod:: Signature.from_callable(obj, \*, follow_wrapped=True)
 
        Return a :class:`Signature` (or its subclass) object for a given callable
-       ``obj``. This method simplifies subclassing of :class:`Signature`:
+       ``obj``.  Pass ``follow_wrapped=False`` to get a signature of ``obj``
+       without unwrapping its ``__wrapped__`` chain.
 
-       ::
+       This method simplifies subclassing of :class:`Signature`::
 
          class MySignature(Signature):
              pass

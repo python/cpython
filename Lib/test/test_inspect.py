@@ -1735,8 +1735,8 @@ class MyParameter(inspect.Parameter):
 
 class TestSignatureObject(unittest.TestCase):
     @staticmethod
-    def signature(func):
-        sig = inspect.signature(func)
+    def signature(func, **kw):
+        sig = inspect.signature(func, **kw)
         return (tuple((param.name,
                        (... if param.default is param.empty else param.default),
                        (... if param.annotation is param.empty
@@ -1955,6 +1955,11 @@ class TestSignatureObject(unittest.TestCase):
 
         self.assertEqual(inspect.signature(func),
                          inspect.signature(decorated_func))
+
+        def wrapper_like(*args, **kwargs) -> int: pass
+        self.assertEqual(inspect.signature(decorated_func,
+                                           follow_wrapped=False),
+                         inspect.signature(wrapper_like))
 
     @cpython_only
     def test_signature_on_builtins_no_signature(self):
@@ -2383,6 +2388,13 @@ class TestSignatureObject(unittest.TestCase):
                          ((('a', ..., ..., "positional_or_keyword"),
                            ('b', ..., ..., "positional_or_keyword")),
                           ...))
+
+        self.assertEqual(self.signature(Foo.bar, follow_wrapped=False),
+                         ((('args', ..., ..., "var_positional"),
+                           ('kwargs', ..., ..., "var_keyword")),
+                          ...)) # functools.wraps will copy __annotations__
+                                # from "func" to "wrapper", hence no
+                                # return_annotation
 
         # Test that we handle method wrappers correctly
         def decorator(func):
