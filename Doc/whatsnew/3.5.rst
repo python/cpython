@@ -430,6 +430,9 @@ inspect
   subclassing of :class:`~inspect.Signature` easier.  (Contributed
   by Yury Selivanov and Eric Snow in :issue:`17373`.)
 
+* New argument ``follow_wrapped`` for :func:`inspect.signature`.
+  (Contributed by Yury Selivanov in :issue:`20691`.)
+
 ipaddress
 ---------
 

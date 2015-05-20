@@ -2664,9 +2664,10 @@ class Signature:
         return _signature_from_builtin(cls, func)
 
     @classmethod
-    def from_callable(cls, obj):
+    def from_callable(cls, obj, *, follow_wrapped=True):
         """Constructs Signature for the given callable object."""
-        return _signature_from_callable(obj, sigcls=cls)
+        return _signature_from_callable(obj, sigcls=cls,
+                                        follow_wrapper_chains=follow_wrapped)
 
     @property
     def parameters(self):
@@ -2915,9 +2916,9 @@ class Signature:
         return rendered
 
 
-def signature(obj):
+def signature(obj, *, follow_wrapped=True):
     """Get a signature object for the passed callable."""
-    return Signature.from_callable(obj)
+    return Signature.from_callable(obj, follow_wrapped=follow_wrapped)
 
 
 def _main():
