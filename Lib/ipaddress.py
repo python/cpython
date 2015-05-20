@@ -135,7 +135,7 @@ def v4_int_to_packed(address):
     """
     try:
         return address.to_bytes(4, 'big')
-    except:
+    except OverflowError:
         raise ValueError("Address negative or too large for IPv4")
 
 
@@ -151,7 +151,7 @@ def v6_int_to_packed(address):
     """
     try:
         return address.to_bytes(16, 'big')
-    except:
+    except OverflowError:
         raise ValueError("Address negative or too large for IPv6")
 
 

@@ -572,7 +572,7 @@ def getTclTkVersion(configfile, versionline):
     """
     try:
         f = open(configfile, "r")
-    except:
+    except OSError:
         fatal("Framework configuration file not found: %s" % configfile)
 
     for l in f:
@@ -814,7 +814,7 @@ def downloadURL(url, fname):
     except:
         try:
             os.unlink(fname)
-        except:
+        except OSError:
             pass
 
 def verifyThirdPartyFile(url, checksum, fname):
