@@ -127,7 +127,7 @@ def hexrepr(t, precision=4):
         return 'None'
     try:
         len(t)
-    except:
+    except TypeError:
         return '0x%0*X' % (precision, t)
     try:
         return '(' + ', '.join(['0x%0*X' % (precision, item)

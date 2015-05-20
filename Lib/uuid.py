@@ -465,7 +465,7 @@ try:
     for libname in ['uuid', 'c']:
         try:
             lib = ctypes.CDLL(ctypes.util.find_library(libname))
-        except:
+        except Exception:
             continue
         if hasattr(lib, 'uuid_generate_random'):
             _uuid_generate_random = lib.uuid_generate_random
@@ -607,7 +607,7 @@ def uuid4():
     try:
         import os
         return UUID(bytes=os.urandom(16), version=4)
-    except:
+    except Exception:
         import random
         return UUID(int=random.getrandbits(128), version=4)
 
