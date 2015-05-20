@@ -52,6 +52,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22955: attrgetter, itemgetter and methodcaller objects in the operator
+  module now support pickling.  Added readable and evaluable repr for these
+  objects.  Based on patch by Josh Rosenberg.
+
 - Issue #22107: tempfile.gettempdir() and tempfile.mkdtemp() now try again
   when a directory with the chosen name already exists on Windows as well as
   on Unix.  tempfile.mkstemp() now fails early if parent directory is not
