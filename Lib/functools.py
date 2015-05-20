@@ -23,7 +23,7 @@ from types import MappingProxyType
 from weakref import WeakKeyDictionary
 try:
     from _thread import RLock
-except:
+except ImportError:
     class RLock:
         'Dummy reentrant lock for builds without threads'
         def __enter__(self): pass

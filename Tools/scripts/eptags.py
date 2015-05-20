@@ -25,7 +25,7 @@ def treat_file(filename, outfp):
     """Append tags found in file named 'filename' to the open file 'outfp'"""
     try:
         fp = open(filename, 'r')
-    except:
+    except OSError:
         sys.stderr.write('Cannot open %s\n'%filename)
         return
     charno = 0

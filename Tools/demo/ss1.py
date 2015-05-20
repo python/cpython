@@ -261,7 +261,7 @@ class SheetParser:
     def end_int(self, text):
         try:
             self.value = int(text)
-        except:
+        except (TypeError, ValueError):
             self.value = None
 
     end_long = end_int
@@ -269,13 +269,13 @@ class SheetParser:
     def end_double(self, text):
         try:
             self.value = float(text)
-        except:
+        except (TypeError, ValueError):
             self.value = None
 
     def end_complex(self, text):
         try:
             self.value = complex(text)
-        except:
+        except (TypeError, ValueError):
             self.value = None
 
     def end_string(self, text):
@@ -763,7 +763,7 @@ class SheetGUI:
             for cls in int, float, complex:
                 try:
                     value = cls(text)
-                except:
+                except (TypeError, ValueError):
                     continue
                 else:
                     cell = NumericCell(value)
