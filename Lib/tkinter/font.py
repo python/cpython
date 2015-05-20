@@ -112,8 +112,6 @@ class Font:
         try:
             if self.delete_font:
                 self._call("font", "delete", self.name)
-        except (KeyboardInterrupt, SystemExit):
-            raise
         except Exception:
             pass
 

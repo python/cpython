@@ -765,8 +765,6 @@ def main(tests=None, **kwargs):
                 except KeyboardInterrupt:
                     interrupted = True
                     break
-                except:
-                    raise
             if ns.findleaks:
                 gc.collect()
                 if gc.garbage:
@@ -823,8 +821,6 @@ def main(tests=None, **kwargs):
                 # print a newline separate from the ^C
                 print()
                 break
-            except:
-                raise
 
     if ns.single:
         if next_single_test:

@@ -20,8 +20,6 @@ def _retry_thrice(func, exc, *args, **kwargs):
         except exc as e:
             last_exc = e
             continue
-        except:
-            raise
     raise last_exc
 
 def _wrap_with_retry_thrice(func, exc):
