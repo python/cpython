@@ -176,6 +176,10 @@ Library
 - Issue 24190: Implement inspect.BoundArgument.apply_defaults() method.
   Contributed by Yury Selivanov.
 
+- Issue 20691: Add 'follow_wrapped' argument to
+  inspect.Signature.from_callable() and inspect.signature().
+  Contributed by Yury Selivanov.
+
 Tests
 -----
 
