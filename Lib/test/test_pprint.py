@@ -58,7 +58,8 @@ class QueryTestCase(unittest.TestCase):
     def test_basic(self):
         # Verify .isrecursive() and .isreadable() w/o recursion
         pp = pprint.PrettyPrinter()
-        for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, "yaddayadda",
+        for safe in (2, 2.0, 2j, "abc", [3], (2,2), {3: 3}, b"def",
+                     bytearray(b"ghi"), True, False, None, ...,
                      self.a, self.b):
             # module-level convenience functions
             self.assertFalse(pprint.isrecursive(safe),
@@ -128,21 +129,23 @@ class QueryTestCase(unittest.TestCase):
         # it sorted a dict display if and only if the display required
         # multiple lines.  For that reason, dicts with more than one element
         # aren't tested here.
-        for simple in (0, 0, 0+0j, 0.0, "", b"",
+        for simple in (0, 0, 0+0j, 0.0, "", b"", bytearray(),
                        (), tuple2(), tuple3(),
                        [], list2(), list3(),
                        set(), set2(), set3(),
                        frozenset(), frozenset2(), frozenset3(),
                        {}, dict2(), dict3(),
                        self.assertTrue, pprint,
-                       -6, -6, -6-6j, -1.5, "x", b"x", (3,), [3], {3: 6},
+                       -6, -6, -6-6j, -1.5, "x", b"x", bytearray(b"x"),
+                       (3,), [3], {3: 6},
                        (1,2), [3,4], {5: 6},
                        tuple2((1,2)), tuple3((1,2)), tuple3(range(100)),
                        [3,4], list2([3,4]), list3([3,4]), list3(range(100)),
                        set({7}), set2({7}), set3({7}),
                        frozenset({8}), frozenset2({8}), frozenset3({8}),
                        dict2({5: 6}), dict3({5: 6}),
-                       range(10, -11, -1)
+                       range(10, -11, -1),
+                       True, False, None, ...,
                       ):
             native = repr(simple)
             self.assertEqual(pprint.pformat(simple), native)
@@ -597,9 +600,5 @@ class DottedPrettyPrinter(pprint.PrettyPrinter):
                 self, object, context, maxlevels, level)
 
 
-def test_main():
-    test.support.run_unittest(QueryTestCase)
-
-
 if __name__ == "__main__":
-    test_main()
+    unittest.main()

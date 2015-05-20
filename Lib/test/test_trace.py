@@ -1,8 +1,7 @@
 import os
 import io
 import sys
-from test.support import (run_unittest, TESTFN, rmtree, unlink,
-                               captured_stdout)
+from test.support import TESTFN, rmtree, unlink, captured_stdout
 import unittest
 
 import trace
@@ -297,7 +296,8 @@ class TestCoverage(unittest.TestCase):
         unlink(TESTFN)
 
     def _coverage(self, tracer,
-                  cmd='from test import test_pprint; test_pprint.test_main()'):
+                  cmd='import test.support, test.test_pprint;'
+                      'test.support.run_unittest(test.test_pprint.QueryTestCase)'):
         tracer.run(cmd)
         r = tracer.results()
         r.write_results(show_missing=True, summary=True, coverdir=TESTFN)
@@ -407,9 +407,5 @@ class TestDeprecatedMethods(unittest.TestCase):
             trace.find_executable_linenos(fd.name)
 
 
-def test_main():
-    run_unittest(__name__)
-
-
 if __name__ == '__main__':
-    test_main()
+    unittest.main()
