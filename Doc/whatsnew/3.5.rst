@@ -751,8 +751,8 @@ Deprecated Python modules, functions and methods
   left to a package.
   (Contributed by Vajrasky Kok and Berker Peksag in :issue:`1322`.)
 
-* Previously undocumented ``from_function`` and ``from_builtin`` methods
-  of :class:`inspect.Signature` are deprecated.  Use  new
+* The previously undocumented ``from_function`` and ``from_builtin`` methods of
+  :class:`inspect.Signature` are deprecated.  Use new
   :meth:`inspect.Signature.from_callable` instead. (Contributed by Yury
   Selivanov in :issue:`24248`.)
 
