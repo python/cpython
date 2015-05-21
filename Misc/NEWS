@@ -10,7 +10,7 @@ Release date: tba
 Core and Builtins
 -----------------
 
-- Issue #23985: Fixed integer overflow in iterator object.  Patch by
+- Issue #22939: Fixed integer overflow in iterator object.  Patch by
   Clement Rouault.
 
 - Issue #23985: Fix a possible buffer overrun when deleting a slice from
