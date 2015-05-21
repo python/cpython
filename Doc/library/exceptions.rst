@@ -322,6 +322,14 @@ The following exceptions are the exceptions that are usually raised.
    .. versionchanged:: 3.5
       Introduced the RuntimeError transformation.
 
+.. exception:: StopAsyncIteration
+
+   Must be raised by :meth:`__anext__` method of an
+   :term:`asynchronous iterator` object to stop the iteration.
+
+   .. versionadded:: 3.5
+      See also :pep:`492`.
+
 .. exception:: SyntaxError
 
    Raised when the parser encounters a syntax error.  This may occur in an

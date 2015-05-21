@@ -33,9 +33,9 @@ The collections module offers the following :term:`ABCs <abstract base class>`:
 
 .. tabularcolumns:: |l|L|L|L|
 
-=========================  =====================  ======================  ====================================================
+========================== ====================== ======================= ====================================================
 ABC                        Inherits from          Abstract Methods        Mixin Methods
-=========================  =====================  ======================  ====================================================
+========================== ====================== ======================= ====================================================
 :class:`Container`                                ``__contains__``
 :class:`Hashable`                                 ``__hash__``
 :class:`Iterable`                                 ``__iter__``
@@ -81,7 +81,11 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 :class:`KeysView`          :class:`MappingView`,                          ``__contains__``,
                            :class:`Set`                                   ``__iter__``
 :class:`ValuesView`        :class:`MappingView`                           ``__contains__``, ``__iter__``
-=========================  =====================  ======================  ====================================================
+:class:`Awaitable`                                ``__await__``
+:class:`Coroutine`                                ``send``, ``throw``     ``close``
+:class:`AsyncIterable`                            ``__aiter__``
+:class:`AsyncIterator`     :class:`AsyncIterable` ``__anext__``           ``__aiter__``
+========================== ====================== ======================= ====================================================
 
 
 .. class:: Container
@@ -133,6 +137,41 @@ ABC                        Inherits from          Abstract Methods        Mixin 
            ValuesView
 
    ABCs for mapping, items, keys, and values :term:`views <view>`.
+
+.. class:: Awaitable
+
+   ABC for classes that provide ``__await__`` method.  Instances
+   of such classes can be used in ``await`` expression.
+
+   :term:`coroutine` objects and instances of
+   :class:`~collections.abc.Coroutine` are too instances of this ABC.
+
+   .. versionadded:: 3.5
+
+.. class:: Coroutine
+
+   ABC for coroutine compatible classes that implement a subset of
+   generator methods defined in :pep:`342`, namely:
+   :meth:`~generator.send`, :meth:`~generator.throw` and
+   :meth:`~generator.close` methods.  All :class:`Coroutine` instances
+   are also instances of :class:`Awaitable`.  See also the definition
+   of :term:`coroutine`.
+
+   .. versionadded:: 3.5
+
+.. class:: AsyncIterable
+
+   ABC for classes that provide ``__aiter__`` method.  See also the
+   definition of :term:`asynchronous iterable`.
+
+   .. versionadded:: 3.5
+
+.. class:: AsyncIterator
+
+   ABC for classes that provide ``__aiter__`` and ``__anext__``
+   methods.  See also the definition of :term:`asynchronous iterator`.
+
+   .. versionadded:: 3.5
 
 
 These ABCs allow us to ask classes or instances if they provide
