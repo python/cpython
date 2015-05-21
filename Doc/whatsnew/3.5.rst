@@ -121,6 +121,26 @@ Please read on for a comprehensive list of user-facing changes.
        PEP written by Carl Meyer
 
 
+PEP 492 - Coroutines with async and await syntax
+------------------------------------------------
+
+The PEP added dedicated syntax for declaring :term:`coroutines <coroutine>`,
+:keyword:`await` expressions, new asynchronous :keyword:`async for`
+and :keyword:`async with` statements.
+
+Example::
+
+    async def read_data(db):
+        async with db.transaction():
+            data = await db.fetch('SELECT ...')
+
+PEP written and implemented by Yury Selivanov.
+
+.. seealso::
+
+   :pep:`492` -- Coroutines with async and await syntax
+
+
 PEP 461 - Adding formatting to bytes and bytearray
 --------------------------------------------------
 
@@ -433,6 +453,10 @@ inspect
 * New argument ``follow_wrapped`` for :func:`inspect.signature`.
   (Contributed by Yury Selivanov in :issue:`20691`.)
 
+* New :func:`~inspect.iscoroutine`, :func:`~inspect.iscoroutinefunction`,
+  and :func:`~inspect.isawaitable` functions.  (Contributed by Yury Selivanov
+  in :issue:`24017`.)
+
 ipaddress
 ---------
 
@@ -613,6 +637,12 @@ time
 
 * The :func:`time.monotonic` function is now always available.  (Contributed by
   Victor Stinner in :issue:`22043`.)
+
+types
+-----
+
+* New :func:`~types.coroutine` function.  (Contributed by Yury Selivanov
+  in :issue:`24017`.)
 
 urllib
 ------
@@ -961,4 +991,5 @@ Changes in the C API
   (:issue:`20204`)
 
 * As part of PEP 492 implementation, ``tp_reserved`` slot of
-  ``PyTypeObject`` was replaced with ``tp_as_async`` slot.
+  :c:type:`PyTypeObject` was replaced with a
+  :c:member:`PyTypeObject.tp_as_async` slot.

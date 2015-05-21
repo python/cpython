@@ -220,9 +220,16 @@ type objects) *must* have the :attr:`ob_size` field.
    the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both *NULL*.
 
 
-.. c:member:: void* PyTypeObject.tp_reserved
+.. c:member:: void* PyTypeObject.tp_as_async
 
-   Reserved slot, formerly known as tp_compare.
+   Pointer to an additional structure that contains fields relevant only to
+   objects which implement :term:`awaitable` and :term:`asynchronous iterator`
+   protocols at the C-level.  See :ref:`async-structs` for details.
+
+   .. versionadded:: 3.5
+
+   .. note::
+      Formerly known as tp_compare and tp_reserved.
 
 
 .. c:member:: reprfunc PyTypeObject.tp_repr
@@ -1332,3 +1339,57 @@ Buffer Object Structures
 
    :c:func:`PyBuffer_Release` is the interface for the consumer that
    wraps this function.
+
+
+.. _async-structs:
+
+
+Async Object Structures
+=======================
+
+.. sectionauthor:: Yury Selivanov <yselivanov@sprymix.com>
+
+
+.. c:type:: PyAsyncMethods
+
+   This structure holds pointers to the functions required to implement
+   :term:`awaitable` and :term:`asynchronous iterator` objects.
+
+   Here is the structure definition::
+
+        typedef struct {
+            getawaitablefunc am_await;
+            getaiterfunc am_aiter;
+            aiternextfunc am_anext;
+        } PyAsyncMethods;
+
+.. c:member:: getawaitablefunc PyAsyncMethods.am_await
+
+   The signature of this function is::
+
+      PyObject *am_await(PyObject *self)
+
+   The returned object must be an iterator, i.e. :c:func:`PyIter_Check` must
+   return ``1`` for it.
+
+   This slot may be set to *NULL* if an object is not an :term:`awaitable`.
+
+.. c:member:: getaiterfunc PyAsyncMethods.am_aiter
+
+   The signature of this function is::
+
+      PyObject *am_aiter(PyObject *self)
+
+   Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+
+   This slot may be set to *NULL* if an object does not implement
+   asynchronous iteration protocol.
+
+.. c:member:: aiternextfunc PyAsyncMethods.am_anext
+
+   The signature of this function is::
+
+      PyObject *am_anext(PyObject *self)
+
+   Must return an :term:`awaitable` object.  See :meth:`__anext__` for details.
+   This slot may be set to *NULL*.

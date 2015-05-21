@@ -271,3 +271,17 @@ Additional Utility Classes and Functions
    attributes on the class with the same name (see Enum for an example).
 
    .. versionadded:: 3.4
+
+
+Coroutines Utility Functions
+----------------------------
+
+.. function:: coroutine(gen_func)
+
+   The function transforms a generator function to a :term:`coroutine function`,
+   so that it returns a :term:`coroutine` object.
+
+   *gen_func* is modified in-place, hence the function can be used as a
+   decorator.
+
+   .. versionadded:: 3.5

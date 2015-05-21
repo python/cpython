@@ -811,6 +811,20 @@ a class instance:
    if that method was called.
 
 
+.. _await:
+
+Await expression
+================
+
+Suspend the execution of :term:`coroutine` on an :term:`awaitable` object.
+Can only be used inside a :term:`coroutine function`.
+
+.. productionlist::
+   await: ["await"] `primary`
+
+.. versionadded:: 3.5
+
+
 .. _power:
 
 The power operator
@@ -820,7 +834,7 @@ The power operator binds more tightly than unary operators on its left; it binds
 less tightly than unary operators on its right.  The syntax is:
 
 .. productionlist::
-   power: `primary` ["**" `u_expr`]
+   power: `await` ["**" `u_expr`]
 
 Thus, in an unparenthesized sequence of power and unary operators, the operators
 are evaluated from right to left (this does not constrain the evaluation order
@@ -1361,6 +1375,8 @@ precedence and have a left-to-right chaining feature as described in the
 | ``+x``, ``-x``, ``~x``                        | Positive, negative, bitwise NOT     |
 +-----------------------------------------------+-------------------------------------+
 | ``**``                                        | Exponentiation [#]_                 |
++-----------------------------------------------+-------------------------------------+
+| ``await`` ``x``                               | Await expression                    |
 +-----------------------------------------------+-------------------------------------+
 | ``x[index]``, ``x[index:index]``,             | Subscription, slicing,              |
 | ``x(arguments...)``, ``x.attribute``          | call, attribute reference           |
