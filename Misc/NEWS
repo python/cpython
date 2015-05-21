@@ -52,6 +52,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #15836: assertRaises(), assertRaisesRegex(), assertWarns() and
+  assertWarnsRegex() assertments now check the type of the first argument
+  to prevent possible user error.  Based on patch by Daniel Wagner-Hall.
+
 - Issue #9858: Add missing method stubs to _io.RawIOBase.  Patch by Laura
   Rupprecht.
 

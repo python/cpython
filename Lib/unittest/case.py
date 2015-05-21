@@ -119,6 +119,10 @@ def expectedFailure(test_item):
     test_item.__unittest_expecting_failure__ = True
     return test_item
 
+def _is_subtype(expected, basetype):
+    if isinstance(expected, tuple):
+        return all(_is_subtype(e, basetype) for e in expected)
+    return isinstance(expected, type) and issubclass(expected, basetype)
 
 class _BaseTestCaseContext:
 
@@ -148,6 +152,9 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
         If args is not empty, call a callable passing positional and keyword
         arguments.
         """
+        if not _is_subtype(self.expected, self._base_type):
+            raise TypeError('%s() arg 1 must be %s' %
+                            (name, self._base_type_str))
         if args and args[0] is None:
             warnings.warn("callable is None",
                           DeprecationWarning, 3)
@@ -171,6 +178,9 @@ class _AssertRaisesBaseContext(_BaseTestCaseContext):
 
 class _AssertRaisesContext(_AssertRaisesBaseContext):
     """A context manager used to implement TestCase.assertRaises* methods."""
+
+    _base_type = BaseException
+    _base_type_str = 'an exception type or tuple of exception types'
 
     def __enter__(self):
         return self
@@ -205,6 +215,9 @@ class _AssertRaisesContext(_AssertRaisesBaseContext):
 
 class _AssertWarnsContext(_AssertRaisesBaseContext):
     """A context manager used to implement TestCase.assertWarns* methods."""
+
+    _base_type = Warning
+    _base_type_str = 'a warning type or tuple of warning types'
 
     def __enter__(self):
         # The __warningregistry__'s need to be in a pristine state for tests
