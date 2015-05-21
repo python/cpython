@@ -260,6 +260,9 @@ Library
 
 - asyncio: async() function is deprecated in favour of ensure_future().
 
+- Issue 23898: Fix inspect.classify_class_attrs() to support attributes
+  with overloaded __eq__ and __bool__.  Patch by Mike Bayer.
+
 Tests
 -----
 
