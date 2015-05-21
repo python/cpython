@@ -227,9 +227,7 @@ type objects) *must* have the :attr:`ob_size` field.
    protocols at the C-level.  See :ref:`async-structs` for details.
 
    .. versionadded:: 3.5
-
-   .. note::
-      Formerly known as tp_compare and tp_reserved.
+      Formerly known as ``tp_compare`` and ``tp_reserved``.
 
 
 .. c:member:: reprfunc PyTypeObject.tp_repr
@@ -1349,6 +1347,7 @@ Async Object Structures
 
 .. sectionauthor:: Yury Selivanov <yselivanov@sprymix.com>
 
+.. versionadded:: 3.5
 
 .. c:type:: PyAsyncMethods
 

@@ -328,7 +328,6 @@ The following exceptions are the exceptions that are usually raised.
    :term:`asynchronous iterator` object to stop the iteration.
 
    .. versionadded:: 3.5
-      See also :pep:`492`.
 
 .. exception:: SyntaxError
 
