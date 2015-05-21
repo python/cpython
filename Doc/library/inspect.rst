@@ -266,6 +266,47 @@ attributes:
    Return true if the object is a generator.
 
 
+.. function:: iscoroutinefunction(object)
+
+   Return true if the object is a coroutine function.
+
+   Coroutine functions are defined with an ``async def`` syntax,
+   or are generators decorated with :func:`types.coroutine`
+   or :func:`asyncio.coroutine`.
+
+   The function will return false for plain python generator
+   functions.
+
+   See also :pep:`492`.
+
+   .. versionadded:: 3.5
+
+
+.. function:: iscoroutine(object)
+
+   Return true if the object is a coroutine.
+
+   Coroutines are results of calls of coroutine functions or
+   generator functions decorated with :func:`types.coroutine`
+   or :func:`asyncio.coroutine`.
+
+   The function will return false for plain python generators.
+
+   See also :class:`collections.abc.Coroutine` and :pep:`492`.
+
+   .. versionadded:: 3.5
+
+
+.. function:: isawaitable(object)
+
+   Return true if the object can be used in :keyword:`await`
+   expression.
+
+   See also :class:`collections.abc.Awaitable` and :pep:`492`.
+
+   .. versionadded:: 3.5
+
+
 .. function:: istraceback(object)
 
    Return true if the object is a traceback.

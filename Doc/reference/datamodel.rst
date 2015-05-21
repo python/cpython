@@ -616,6 +616,16 @@ Callable types
       exception is raised and the iterator will have reached the end of the set of
       values to be returned.
 
+   Coroutine functions
+      .. index::
+         single: coroutine; function
+
+      A function or method which is defined using :keyword:`async def` is called
+      a :dfn:`coroutine function`.  Such a function, when called, returns a
+      :term:`coroutine` object.  It may contain :keyword:`await` expressions,
+      as well as :keyword:`async with` and :keyword:`async for` statements. See
+      also :ref:`coroutines` section.
+
    Built-in functions
       .. index::
          object: built-in function
@@ -2252,6 +2262,104 @@ provides significant scope for speed optimisations within the
 interpreter, at the cost of some flexibility in the handling of
 special methods (the special method *must* be set on the class
 object itself in order to be consistently invoked by the interpreter).
+
+
+.. _coroutines:
+
+Coroutines
+==========
+
+.. index::
+   single: coroutine
+
+
+Awaitable Objects
+-----------------
+
+An *awaitable* object can be one of the following:
+
+* A :term:`coroutine` object returned from a :term:`coroutine function`.
+
+* A :term:`generator` decorated with :func:`types.coroutine`
+  (or :func:`asyncio.coroutine`) decorator.
+
+* An object that implements an ``__await__`` method.
+
+.. method:: object.__await__(self)
+
+   Must return an :term:`iterator`.  Should be used to implement
+   :term:`awaitable` objects.  For instance, :class:`asyncio.Future` implements
+   this method to be compatible with the :keyword:`await` expression.
+
+.. versionadded:: 3.5
+
+.. seealso:: :pep:`492` for additional information about awaitable objects.
+
+
+Asynchronous Iterators
+----------------------
+
+An *asynchronous iterable* is able to call asynchronous code in its
+``__aiter__`` implementation, and an *asynchronous iterator* can call
+asynchronous code in its ``__anext__`` method.
+
+Asynchronous iterators can be used in a :keyword:`async for` statement.
+
+.. method:: object.__aiter__(self)
+
+   Must return an *awaitable* resulting in an *asynchronous iterator* object.
+
+.. method:: object.__anext__(self)
+
+   Must return an *awaitable* resulting in a next value of the iterator.  Should
+   raise a :exc:`StopAsyncIteration` error when the iteration is over.
+
+An example of an asynchronous iterable object::
+
+    class Reader:
+        async def readline(self):
+            ...
+
+        async def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            val = await self.readline()
+            if val == b'':
+                raise StopAsyncIteration
+            return val
+
+.. versionadded:: 3.5
+
+
+Asynchronous Context Managers
+-----------------------------
+
+An *asynchronous context manager* is a *context manager* that is able to
+suspend execution in its ``__aenter__`` and ``__aexit__`` methods.
+
+Asynchronous context managers can be used in a :keyword:`async with` statement.
+
+.. method:: object.__aenter__(self)
+
+   This method is semantically similar to the :meth:`__enter__`, with only
+   difference that it must return an *awaitable*.
+
+.. method:: object.__aexit__(self, exc_type, exc_value, traceback)
+
+   This method is semantically similar to the :meth:`__exit__`, with only
+   difference that it must return an *awaitable*.
+
+An example of an asynchronous context manager class::
+
+    class AsyncContextManager:
+        async def __aenter__(self):
+            await log('entering context')
+
+        async def __aexit__(self, exc_type, exc, tb):
+            await log('exiting context')
+
+.. versionadded:: 3.5
 
 
 .. rubric:: Footnotes

@@ -51,6 +51,9 @@ Summarizing:
                 : | `with_stmt`
                 : | `funcdef`
                 : | `classdef`
+                : | `async_with_stmt`
+                : | `async_for_stmt`
+                : | `async_funcdef`
    suite: `stmt_list` NEWLINE | NEWLINE INDENT `statement`+ DEDENT
    statement: `stmt_list` NEWLINE | `compound_stmt`
    stmt_list: `simple_stmt` (";" `simple_stmt`)* [";"]
@@ -658,6 +661,112 @@ can be used to create instance variables with different implementation details.
 
    :pep:`3115` - Metaclasses in Python 3
    :pep:`3129` - Class Decorators
+
+
+Coroutines
+==========
+
+.. _`async def`:
+
+Coroutine function definition
+-----------------------------
+
+.. productionlist::
+   async_funcdef: "async" `funcdef`
+
+Execution of Python coroutines can be suspended and resumed at many points
+(see :term:`coroutine`.)  :keyword:`await` expressions, :keyword:`async for`
+and :keyword:`async with` can only be used in their bodies.
+
+Functions defined with ``async def`` syntax are always coroutine functions,
+even if they do not contain ``await`` or ``async`` keywords.
+
+It is a :exc:`SyntaxError` to use :keyword:`yield` expressions in coroutines.
+
+.. versionadded:: 3.5
+
+
+.. _`async for`:
+
+The :keyword:`async for` statement
+----------------------------------
+
+.. productionlist::
+   async_for_stmt: "async" `for_stmt`
+
+An :term:`asynchronous iterable` is able to call asynchronous code in its
+*iter* implementation, and :term:`asynchronous iterator` can call asynchronous
+code in its *next* method.
+
+The ``async for`` statement allows convenient iteration over asynchronous
+iterators.
+
+The following code::
+
+    async for TARGET in ITER:
+        BLOCK
+    else:
+        BLOCK2
+
+Is semantically equivalent to::
+
+    iter = (ITER)
+    iter = await type(iter).__aiter__(iter)
+    running = True
+    while running:
+        try:
+            TARGET = await type(iter).__anext__(iter)
+        except StopAsyncIteration:
+            running = False
+        else:
+            BLOCK
+    else:
+        BLOCK2
+
+See also :meth:`__aiter__` and :meth:`__anext__` for details.
+
+.. versionadded:: 3.5
+
+
+.. _`async with`:
+
+The :keyword:`async with` statement
+-----------------------------------
+
+.. productionlist::
+   async_with_stmt: "async" `with_stmt`
+
+An :term:`asynchronous context manager` is a :term:`context manager` that is
+able to suspend execution in its *enter* and *exit* methods.
+
+The following code::
+
+    async with EXPR as VAR:
+        BLOCK
+
+Is semantically equivalent to::
+
+    mgr = (EXPR)
+    aexit = type(mgr).__aexit__
+    aenter = type(mgr).__aenter__(mgr)
+    exc = True
+
+    VAR = await aenter
+    try:
+        BLOCK
+    except:
+        if not await aexit(mgr, *sys.exc_info()):
+            raise
+    else:
+        await aexit(mgr, None, None, None)
+
+See also :meth:`__aenter__` and :meth:`__aexit__` for details.
+
+.. versionadded:: 3.5
+
+.. seealso::
+
+   :pep:`492` - Coroutines with async and await syntax
 
 
 .. rubric:: Footnotes
