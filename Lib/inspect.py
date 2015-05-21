@@ -2662,7 +2662,8 @@ class Signature:
         """Constructs Signature for the given python function."""
 
         warnings.warn("inspect.Signature.from_function() is deprecated, "
-                      "use Signature.from_callable()", DeprecationWarning)
+                      "use Signature.from_callable()",
+                      DeprecationWarning, stacklevel=2)
         return _signature_from_function(cls, func)
 
     @classmethod
@@ -2670,7 +2671,8 @@ class Signature:
         """Constructs Signature for the given builtin function."""
 
         warnings.warn("inspect.Signature.from_builtin() is deprecated, "
-                      "use Signature.from_callable()", DeprecationWarning)
+                      "use Signature.from_callable()",
+                      DeprecationWarning, stacklevel=2)
         return _signature_from_builtin(cls, func)
 
     @classmethod
