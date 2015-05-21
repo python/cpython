@@ -10,7 +10,7 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
-- Issue #23985: Fixed integer overflow in iterator object.  Original patch by
+- Issue #22939: Fixed integer overflow in iterator object.  Original patch by
   Clement Rouault.
 
 - Issue #24102: Fixed exception type checking in standard error handlers.
