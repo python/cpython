@@ -97,7 +97,6 @@ class InspectLoaderTests:
             method = getattr(self.machinery.BuiltinImporter, meth_name)
         with self.assertRaises(ImportError) as cm:
             method(util.BUILTINS.bad_name)
-        self.assertRaises(util.BUILTINS.bad_name)
 
 
 (Frozen_InspectLoaderTests,
