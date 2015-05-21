@@ -74,15 +74,11 @@ Glossary
       :keyword:`async with` statement by defining :meth:`__aenter__` and
       :meth:`__aexit__` methods.  Introduced by :pep:`492`.
 
-      .. versionadded:: 3.5
-
    asynchronous iterable
       An object, that can be used in an :keyword:`async for` statement.
       Must return an :term:`awaitable` from its :meth:`__aiter__` method,
       which should in turn be resolved in an :term:`asynchronous iterator`
       object.  Introduced by :pep:`492`.
-
-      .. versionadded:: 3.5
 
    asynchronous iterator
       An object that implements :meth:`__aiter__` and :meth:`__anext__`
@@ -90,8 +86,6 @@ Glossary
       :keyword:`async for` resolves awaitable returned from asynchronous
       iterator's :meth:`__anext__` method until it raises
       :exc:`StopAsyncIteration` exception.  Introduced by :pep:`492`.
-
-      .. versionadded:: 3.5
 
    attribute
       A value associated with an object which is referenced by name using
@@ -102,8 +96,6 @@ Glossary
       An object that can be used in an :keyword:`await` expression.  Can be
       a :term:`coroutine` or an object with an :meth:`__await__` method.
       See also :pep:`492`.
-
-      .. versionadded:: 3.5
 
    BDFL
       Benevolent Dictator For Life, a.k.a. `Guido van Rossum
@@ -183,16 +175,12 @@ Glossary
       :keyword:`async for`, and :keyword:`async with` keywords.  Introduced
       by :pep:`492`.
 
-      .. versionadded:: 3.5
-
    coroutine
       Coroutines is a more generalized form of subroutines. Subroutines are
       entered at one point and exited at another point.  Coroutines, can be
       entered, exited, and resumed at many different points.  See
       :keyword:`await` expressions, and :keyword:`async for` and
       :keyword:`async with` statements. See also :pep:`492`.
-
-      .. versionadded:: 3.5
 
    CPython
       The canonical implementation of the Python programming language, as
