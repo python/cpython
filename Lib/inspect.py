@@ -2661,11 +2661,17 @@ class Signature:
     @classmethod
     def from_function(cls, func):
         """Constructs Signature for the given python function."""
+
+        warnings.warn("inspect.Signature.from_function() is deprecated, "
+                      "use Signature.from_callable()", DeprecationWarning)
         return _signature_from_function(cls, func)
 
     @classmethod
     def from_builtin(cls, func):
         """Constructs Signature for the given builtin function."""
+
+        warnings.warn("inspect.Signature.from_builtin() is deprecated, "
+                      "use Signature.from_callable()", DeprecationWarning)
         return _signature_from_builtin(cls, func)
 
     @classmethod

@@ -1971,13 +1971,6 @@ class TestSignatureObject(unittest.TestCase):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):
             inspect.signature(42)
 
-        with self.assertRaisesRegex(TypeError, 'is not a Python function'):
-            inspect.Signature.from_function(42)
-
-    def test_signature_from_builtin_errors(self):
-        with self.assertRaisesRegex(TypeError, 'is not a Python builtin'):
-            inspect.Signature.from_builtin(42)
-
     def test_signature_from_functionlike_object(self):
         def func(a,b, *args, kwonly=True, kwonlyreq, **kwargs):
             pass
@@ -1998,9 +1991,9 @@ class TestSignatureObject(unittest.TestCase):
             def __call__(self, *args, **kwargs):
                 return self.func(*args, **kwargs)
 
-        sig_func = inspect.Signature.from_function(func)
+        sig_func = inspect.Signature.from_callable(func)
 
-        sig_funclike = inspect.Signature.from_function(funclike(func))
+        sig_funclike = inspect.Signature.from_callable(funclike(func))
         self.assertEqual(sig_funclike, sig_func)
 
         sig_funclike = inspect.signature(funclike(func))
@@ -2047,9 +2040,6 @@ class TestSignatureObject(unittest.TestCase):
             __annotations__ = func.__annotations__
             __defaults__ = func.__defaults__
             __kwdefaults__ = func.__kwdefaults__
-
-        with self.assertRaisesRegex(TypeError, 'is not a Python function'):
-            inspect.Signature.from_function(funclike)
 
         self.assertEqual(str(inspect.signature(funclike)), '(marker)')
 

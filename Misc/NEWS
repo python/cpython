@@ -183,6 +183,9 @@ Library
   inspect.Signature.from_callable() and inspect.signature().
   Contributed by Yury Selivanov.
 
+- Issue 24248: Deprecate inspect.Signature.from_function() and
+  inspect.Signature.from_builtin().
+
 Tests
 -----
 
