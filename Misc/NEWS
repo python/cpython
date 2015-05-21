@@ -52,9 +52,6 @@ Core and Builtins
 
 - Issue #24017: PEP 492: Coroutines with async and await syntax.
 
-- Issue #23898: Fix inspect.classify_class_attrs() to support attributes
-  with overloaded __eq__ and __bool__.  Patch by Mike Bayer.
-
 Library
 -------
 
@@ -195,6 +192,9 @@ Library
 
 - Issue 24248: Deprecate inspect.Signature.from_function() and
   inspect.Signature.from_builtin().
+
+- Issue #23898: Fix inspect.classify_class_attrs() to support attributes
+  with overloaded __eq__ and __bool__.  Patch by Mike Bayer.
 
 Tests
 -----
