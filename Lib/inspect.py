@@ -212,8 +212,7 @@ def isgenerator(object):
 
 def iscoroutine(object):
     """Return true if the object is a coroutine."""
-    return (isinstance(object, types.GeneratorType) and
-            object.gi_code.co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))
+    return isinstance(object, collections.abc.Coroutine)
 
 def istraceback(object):
     """Return true if the object is a traceback.
