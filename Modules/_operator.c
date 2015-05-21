@@ -825,8 +825,10 @@ attrgetter_repr(attrgetterobject *ag)
     if (ag->nattrs == 1) {
         PyObject *attrsep = NULL;
         PyObject *attr = dotjoinattr(PyTuple_GET_ITEM(ag->attr, 0), &attrsep);
-        if (attr != NULL)
+        if (attr != NULL) {
             repr = PyUnicode_FromFormat("%s(%R)", Py_TYPE(ag)->tp_name, attr);
+            Py_DECREF(attr);
+        }
         Py_XDECREF(attrsep);
     }
     else {
