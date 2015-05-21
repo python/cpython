@@ -54,6 +54,11 @@ iter_iternext(PyObject *iterator)
     seq = it->it_seq;
     if (seq == NULL)
         return NULL;
+    if (it->it_index == PY_SSIZE_T_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "iter index too large");
+        return NULL;
+    }
 
     result = PySequence_GetItem(seq, it->it_index);
     if (result != NULL) {
