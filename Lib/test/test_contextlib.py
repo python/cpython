@@ -89,8 +89,10 @@ class ContextManagerTestCase(unittest.TestCase):
         def woohoo():
             yield
         try:
-            with woohoo():
-                raise stop_exc
+            with self.assertWarnsRegex(PendingDeprecationWarning,
+                                       "StopIteration"):
+                with woohoo():
+                    raise stop_exc
         except Exception as ex:
             self.assertIs(ex, stop_exc)
         else:
