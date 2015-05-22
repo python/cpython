@@ -631,7 +631,8 @@ class TestClassesAndFunctions(unittest.TestCase):
 
     def assertArgSpecEquals(self, routine, args_e, varargs_e=None,
                             varkw_e=None, defaults_e=None, formatted=None):
-        args, varargs, varkw, defaults = inspect.getargspec(routine)
+        with self.assertWarns(DeprecationWarning):
+            args, varargs, varkw, defaults = inspect.getargspec(routine)
         self.assertEqual(args, args_e)
         self.assertEqual(varargs, varargs_e)
         self.assertEqual(varkw, varkw_e)

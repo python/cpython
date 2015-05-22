@@ -815,14 +815,15 @@ Classes and functions
 
    The first four items in the tuple correspond to :func:`getargspec`.
 
-   .. note::
-      Consider using the new :ref:`Signature Object <inspect-signature-object>`
-      interface, which provides a better way of introspecting functions.
-
    .. versionchanged:: 3.4
       This function is now based on :func:`signature`, but still ignores
       ``__wrapped__`` attributes and includes the already bound first
       parameter in the signature output for bound methods.
+
+   .. deprecated:: 3.5
+      Use :func:`signature` and
+      :ref:`Signature Object <inspect-signature-object>`, which provide a
+      better introspecting API for callables.
 
 
 .. function:: getargvalues(frame)
@@ -896,8 +897,8 @@ Classes and functions
 
    .. versionadded:: 3.2
 
-   .. note::
-      Consider using the new :meth:`Signature.bind` instead.
+   .. deprecated:: 3.5
+      Use :meth:`Signature.bind` and :meth:`Signature.bind_partial` instead.
 
 
 .. function:: getclosurevars(func)
