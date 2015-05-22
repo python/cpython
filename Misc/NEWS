@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24257: Fixed segmentation fault in sqlite3.Row constructor with faked
+  cursor type.
+
 - Issue #22107: tempfile.gettempdir() and tempfile.mkdtemp() now try again
   when a directory with the chosen name already exists on Windows as well as
   on Unix.  tempfile.mkstemp() now fails early if parent directory is not
