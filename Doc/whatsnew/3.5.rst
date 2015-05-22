@@ -1,4 +1,4 @@
-****************************
+﻿****************************
   What's New In Python 3.5
 ****************************
 
@@ -658,6 +658,14 @@ time
 
 * The :func:`time.monotonic` function is now always available.  (Contributed by
   Victor Stinner in :issue:`22043`.)
+
+tkinter
+-------
+
+* The :module:`tkinter._fix` module used for setting up the Tcl/Tk environment
+  on Windows has been replaced by a private function in the :module:`_tkinter`
+  module which makes no permanent changes to environment variables.
+  (Contributed by Zachary Ware in :issue:`20035`.)
 
 types
 -----

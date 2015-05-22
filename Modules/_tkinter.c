@@ -101,7 +101,65 @@ Copyright (C) 1994 Steen Lumholt.
 #ifdef MS_WINDOWS
 #include <conio.h>
 #define WAIT_FOR_STDIN
+
+static PyObject *
+_get_tcl_lib_path()
+{
+    static PyObject *tcl_library_path = NULL;
+    static int already_checked = 0;
+
+    if (already_checked == 0) {
+        PyObject *prefix;
+        struct stat stat_buf;
+        int stat_return_value;
+
+        prefix = PyUnicode_FromWideChar(Py_GetPrefix(), -1);
+        if (prefix == NULL) {
+            return NULL;
+        }
+
+        /* Check expected location for an installed Python first */
+        tcl_library_path = PyUnicode_FromString("\\tcl\\tcl" TCL_VERSION);
+        if (tcl_library_path == NULL) {
+            return NULL;
+        }
+        tcl_library_path = PyUnicode_Concat(prefix, tcl_library_path);
+        if (tcl_library_path == NULL) {
+            return NULL;
+        }
+        stat_return_value = _Py_stat(tcl_library_path, &stat_buf);
+        if (stat_return_value == -2) {
+            return NULL;
+        }
+        if (stat_return_value == -1) {
+            /* install location doesn't exist, reset errno and see if
+               we're a repository build */
+            errno = 0;
+#ifdef Py_TCLTK_DIR
+            tcl_library_path = PyUnicode_FromString(
+                                    Py_TCLTK_DIR "\\lib\\tcl" TCL_VERSION);
+            if (tcl_library_path == NULL) {
+                return NULL;
+            }
+            stat_return_value = _Py_stat(tcl_library_path, &stat_buf);
+            if (stat_return_value == -2) {
+                return NULL;
+            }
+            if (stat_return_value == -1) {
+                /* tcltkDir for a repository build doesn't exist either,
+                   reset errno and leave Tcl to its own devices */
+                errno = 0;
+                tcl_library_path = NULL;
+            }
+#else
+            tcl_library_path = NULL;
 #endif
+        }
+        already_checked = 1;
+    }
+    return tcl_library_path;
+}
+#endif /* MS_WINDOWS */
 
 #ifdef WITH_THREAD
 
@@ -680,6 +738,33 @@ Tkapp_New(const char *screenName, const char *className,
         Tcl_SetVar(v->interp, "argv", args, TCL_GLOBAL_ONLY);
         PyMem_Free(args);
     }
+
+#ifdef MS_WINDOWS
+    {
+        PyObject *str_path;
+        PyObject *utf8_path;
+        DWORD ret;
+
+        ret = GetEnvironmentVariableW(L"TCL_LIBRARY", NULL, 0);
+        if (!ret && GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
+            str_path = _get_tcl_lib_path();
+            if (str_path == NULL && PyErr_Occurred()) {
+                return NULL;
+            }
+            if (str_path != NULL) {
+                utf8_path = PyUnicode_AsUTF8String(str_path);
+                if (utf8_path == NULL) {
+                    return NULL;
+                }
+                Tcl_SetVar(v->interp,
+                           "tcl_library",
+                           PyBytes_AsString(utf8_path),
+                           TCL_GLOBAL_ONLY);
+                Py_DECREF(utf8_path);
+            }
+        }
+    }
+#endif
 
     if (Tcl_AppInit(v->interp) != TCL_OK) {
         PyObject *result = Tkinter_Error((PyObject *)v);
@@ -3517,8 +3602,40 @@ PyInit__tkinter(void)
     uexe = PyUnicode_FromWideChar(Py_GetProgramName(), -1);
     if (uexe) {
         cexe = PyUnicode_EncodeFSDefault(uexe);
-        if (cexe)
+        if (cexe) {
+#ifdef MS_WINDOWS
+            int set_var = 0;
+            PyObject *str_path;
+            wchar_t *wcs_path;
+            DWORD ret;
+
+            ret = GetEnvironmentVariableW(L"TCL_LIBRARY", NULL, 0);
+
+            if (!ret && GetLastError() == ERROR_ENVVAR_NOT_FOUND) {
+                str_path = _get_tcl_lib_path();
+                if (str_path == NULL && PyErr_Occurred()) {
+                    return NULL;
+                }
+                if (str_path != NULL) {
+                    wcs_path = PyUnicode_AsWideCharString(str_path, NULL);
+                    if (wcs_path == NULL) {
+                        return NULL;
+                    }
+                    SetEnvironmentVariableW(L"TCL_LIBRARY", wcs_path);
+                    set_var = 1;
+                }
+            }
+
             Tcl_FindExecutable(PyBytes_AsString(cexe));
+
+            if (set_var) {
+                SetEnvironmentVariableW(L"TCL_LIBRARY", NULL);
+                PyMem_Free(wcs_path);
+            }
+#else
+            Tcl_FindExecutable(PyBytes_AsString(cexe));
+#endif /* MS_WINDOWS */
+        }
         Py_XDECREF(cexe);
         Py_DECREF(uexe);
     }

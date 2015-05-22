@@ -5,12 +5,10 @@ from test import support
 # Skip this test if _tkinter wasn't built.
 support.import_module('_tkinter')
 
-# Make sure tkinter._fix runs to set up the environment
-tkinter = support.import_fresh_module('tkinter')
-
 # Skip test if tk cannot be initialized.
 support.requires('gui')
 
+import tkinter
 from _tkinter import TclError
 from tkinter import ttk
 from tkinter.test import runtktests
