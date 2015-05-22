@@ -96,7 +96,12 @@ Implementation improvements:
 
 Significantly Improved Library Modules:
 
-* None yet.
+* You may now pass bytes to the :mod:`tempfile` module's APIs and it will
+  return the temporary pathname as bytes instead of str.  It also accepts
+  a value of ``None`` on parameters where only str was accepted in the past to
+  do the right thing based on the types of the other inputs.  Two functions,
+  :func:`gettempdirb` and :func:`gettempprefixb`, have been added to go along
+  with this.  This behavior matches that of the :mod:`os` APIs.
 
 Security improvements:
 
