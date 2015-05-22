@@ -149,6 +149,9 @@ def main():
             copied = copy_to_layout(temp / t.rstrip('/'), rglob(s, p, c))
             print('Copied {} files'.format(copied))
 
+        with open(str(temp / 'pyvenv.cfg'), 'w') as f:
+            print('applocal = true', file=f)
+
         total = copy_to_layout(out, rglob(temp, '*', None))
         print('Wrote {} files to {}'.format(total, out))
     finally:
