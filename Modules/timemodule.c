@@ -616,13 +616,6 @@ time_strftime(PyObject *self, PyObject *args)
     {
         if (outbuf[1]=='#')
             ++outbuf; /* not documented by python, */
-        if (outbuf[1]=='\0' ||
-            !strchr("aAbBcdHIjmMpSUwWxXyYzZ%", outbuf[1]))
-        {
-            PyErr_SetString(PyExc_ValueError, "Invalid format string");
-            Py_DECREF(format);
-            return NULL;
-        }
         if ((outbuf[1] == 'y') && buf.tm_year < 0)
         {
             PyErr_SetString(PyExc_ValueError,
@@ -660,7 +653,9 @@ time_strftime(PyObject *self, PyObject *args)
             PyErr_NoMemory();
             break;
         }
+        _Py_BEGIN_SUPPRESS_IPH
         buflen = format_time(outbuf, i, fmt, &buf);
+        _Py_END_SUPPRESS_IPH
 #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
         err = errno;
 #endif
