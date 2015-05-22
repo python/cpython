@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 24230: The tempfile module now accepts bytes for prefix, suffix and dir
+  parameters and returns bytes in such situations (matching the os module APIs).
+
 - Issue 24244: Prevents termination when an invalid format string is
   encountered on Windows in strftime.
 
