@@ -209,6 +209,27 @@ against asynchronous signal reception.
    :pep:`475` -- Retry system calls failing with EINTR
 
 
+PEP 479: Change StopIteration handling inside generators
+--------------------------------------------------------
+
+:pep:`479` changes the behavior of generators: when a :exc:`StopIteration`
+exception is raised inside a generator, it is replaced with a
+:exc:`RuntimeError`.  To enable the feature a ``__future__`` import should
+be used::
+
+    from __future__ import generator_stop
+
+Without a ``__future__`` import, a :exc:`PendingDeprecationWarning` will be
+raised.
+
+PEP written by Chris Angelico and Guido van Rossum. Implemented by
+Chris Angelico, Yury Selivanov and Nick Coghlan.
+
+.. seealso::
+
+   :pep:`479` -- Change StopIteration handling inside generators
+
+
 PEP 486: Make the Python Launcher aware of virtual environments
 ---------------------------------------------------------------
 
