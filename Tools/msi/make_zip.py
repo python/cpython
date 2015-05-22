@@ -113,17 +113,14 @@ def main():
     parser.add_argument('-t', '--temp', metavar='dir', help='A directory to temporarily extract files into', type=Path, default=None)
     parser.add_argument('-e', '--embed', help='Create an embedding layout', action='store_true', default=False)
     parser.add_argument('-a', '--arch', help='Specify the architecture to use (win32/amd64)', type=str, default="win32")
-    parser.add_argument('--rar', help='Full path to WinRAR compressor (rar.exe)', type=Path, default=Path("rar.exe"))
     ns = parser.parse_args()
 
     source = ns.source or (Path(__file__).parent.parent.parent)
     out = ns.out
     arch = ns.arch
-    rar = getattr(ns, 'rar')
     assert isinstance(source, Path)
     assert isinstance(out, Path)
     assert isinstance(arch, str)
-    assert isinstance(rar, Path)
 
     if ns.temp:
         temp = ns.temp
