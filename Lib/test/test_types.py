@@ -1169,6 +1169,22 @@ class SimpleNamespaceTests(unittest.TestCase):
 
             self.assertEqual(ns, ns_roundtrip, pname)
 
+    def test_fake_namespace_compare(self):
+        # Issue #24257: Incorrect use of PyObject_IsInstance() caused
+        # SystemError.
+        class FakeSimpleNamespace(str):
+            __class__ = types.SimpleNamespace
+        self.assertFalse(types.SimpleNamespace() == FakeSimpleNamespace())
+        self.assertTrue(types.SimpleNamespace() != FakeSimpleNamespace())
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace() < FakeSimpleNamespace()
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace() <= FakeSimpleNamespace()
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace() > FakeSimpleNamespace()
+        with self.assertRaises(TypeError):
+            types.SimpleNamespace() >= FakeSimpleNamespace()
+
 
 def test_main():
     run_unittest(TypesTests, MappingProxyTests, ClassCreationTests,

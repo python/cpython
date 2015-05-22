@@ -164,12 +164,11 @@ namespace_clear(_PyNamespaceObject *ns)
 static PyObject *
 namespace_richcompare(PyObject *self, PyObject *other, int op)
 {
-    if (PyObject_IsInstance(self, (PyObject *)&_PyNamespace_Type) &&
-            PyObject_IsInstance(other, (PyObject *)&_PyNamespace_Type))
+    if (PyObject_TypeCheck(self, &_PyNamespace_Type) &&
+        PyObject_TypeCheck(other, &_PyNamespace_Type))
         return PyObject_RichCompare(((_PyNamespaceObject *)self)->ns_dict,
                                    ((_PyNamespaceObject *)other)->ns_dict, op);
-    Py_INCREF(Py_NotImplemented);
-    return Py_NotImplemented;
+    Py_RETURN_NOTIMPLEMENTED;
 }
 
 
