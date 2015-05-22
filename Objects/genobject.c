@@ -143,13 +143,12 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
         }
         Py_CLEAR(result);
     }
-    else if (!result) {
+    else if (!result && PyErr_ExceptionMatches(PyExc_StopIteration)) {
         /* Check for __future__ generator_stop and conditionally turn
          * a leaking StopIteration into RuntimeError (with its cause
          * set appropriately). */
-        if ((((PyCodeObject *)gen->gi_code)->co_flags &
+        if (((PyCodeObject *)gen->gi_code)->co_flags &
               (CO_FUTURE_GENERATOR_STOP | CO_COROUTINE | CO_ITERABLE_COROUTINE))
-            && PyErr_ExceptionMatches(PyExc_StopIteration))
         {
             PyObject *exc, *val, *val2, *tb;
             PyErr_Fetch(&exc, &val, &tb);
@@ -166,6 +165,24 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
             PyException_SetCause(val2, val);
             PyException_SetContext(val2, val);
             PyErr_Restore(exc, val2, tb);
+        }
+        else {
+            PyObject *exc, *val, *tb;
+
+            /* Pop the exception before issuing a warning. */
+            PyErr_Fetch(&exc, &val, &tb);
+
+            if (PyErr_WarnFormat(PyExc_PendingDeprecationWarning, 1,
+                                 "generator '%.50S' raised StopIteration",
+                                 gen->gi_qualname)) {
+                /* Warning was converted to an error. */
+                Py_XDECREF(exc);
+                Py_XDECREF(val);
+                Py_XDECREF(tb);
+            }
+            else {
+                PyErr_Restore(exc, val, tb);
+            }
         }
     }
 

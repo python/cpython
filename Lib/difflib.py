@@ -1582,7 +1582,10 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
         while True:
             # Collecting lines of text until we have a from/to pair
             while (len(fromlines)==0 or len(tolines)==0):
-                from_line, to_line, found_diff = next(line_iterator)
+                try:
+                    from_line, to_line, found_diff = next(line_iterator)
+                except StopIteration:
+                    return
                 if from_line is not None:
                     fromlines.append((from_line,found_diff))
                 if to_line is not None:
@@ -1609,7 +1612,10 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
             index, contextLines = 0, [None]*(context)
             found_diff = False
             while(found_diff is False):
-                from_line, to_line, found_diff = next(line_pair_iterator)
+                try:
+                    from_line, to_line, found_diff = next(line_pair_iterator)
+                except StopIteration:
+                    return
                 i = index % context
                 contextLines[i] = (from_line, to_line, found_diff)
                 index += 1
