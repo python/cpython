@@ -661,6 +661,17 @@ This is how :data:`sys.path` is populated on Windows:
   the environment, and no registry entries can be found, a default path with
   relative entries is used (e.g. ``.\Lib;.\plat-win``, etc).
 
+If a ``pyvenv.cfg`` file is found alongside the main executable or in the
+directory one level above the executable, the following variations apply:
+
+* If ``home`` is an absolute path and :envvar:`PYTHONHOME` is not set, this
+  path is used instead of the path to the main executable when deducing the
+  home location.
+
+* If ``applocal`` is set to true, the ``home`` property or the main executable
+  is always used as the home path, and all environment variables or registry
+  values affecting the path are ignored. The landmark file is not checked.
+
 The end result of all this is:
 
 * When running :file:`python.exe`, or any other .exe in the main Python
@@ -672,12 +683,16 @@ The end result of all this is:
   etc), the "Python Home" will not be deduced, so the core path from the
   registry is used.  Other "application paths" in the registry are always read.
 
-* If Python can't find its home and there is no registry (eg, frozen .exe, some
-  very strange installation setup) you get a path with some default, but
+* If Python can't find its home and there are no registry value (frozen .exe,
+  some very strange installation setup) you get a path with some default, but
   relative, paths.
 
 For those who want to bundle Python into their application or distribution, the
 following advice will prevent conflicts with other installations:
+
+* Include a ``pyvenv.cfg`` file alongside your executable containing
+  ``applocal = true``. This will ensure that your own directory will be used to
+  resolve paths even if you have included the standard library in a ZIP file.
 
 * If you are loading :file:`python3.dll` or :file:`python35.dll` in your own
   executable, explicitly call :c:func:`Py_SetPath` or (at least)
@@ -688,7 +703,7 @@ following advice will prevent conflicts with other installations:
 
 * If you cannot use the previous suggestions (for example, you are a
   distribution that allows people to run :file:`python.exe` directly), ensure
-  that the landmark file (:file:`Lib\\os.py`) exists in your bundled library.
+  that the landmark file (:file:`Lib\\os.py`) exists in your install directory.
   (Note that it will not be detected inside a ZIP file.)
 
 These will ensure that the files in a system-wide installation will not take
