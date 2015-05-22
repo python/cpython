@@ -1060,6 +1060,8 @@ class UserString(Sequence):
     def __float__(self): return float(self.data)
     def __complex__(self): return complex(self.data)
     def __hash__(self): return hash(self.data)
+    def __getnewargs__(self):
+        return (self.data[:],)
 
     def __eq__(self, string):
         if isinstance(string, UserString):
@@ -1104,9 +1106,13 @@ class UserString(Sequence):
     __rmul__ = __mul__
     def __mod__(self, args):
         return self.__class__(self.data % args)
+    def __rmod__(self, format):
+        return self.__class__(format % args)
 
     # the following methods are defined in alphabetical order:
     def capitalize(self): return self.__class__(self.data.capitalize())
+    def casefold(self):
+        return self.__class__(self.data.casefold())
     def center(self, width, *args):
         return self.__class__(self.data.center(width, *args))
     def count(self, sub, start=0, end=_sys.maxsize):
@@ -1129,6 +1135,8 @@ class UserString(Sequence):
         return self.data.find(sub, start, end)
     def format(self, *args, **kwds):
         return self.data.format(*args, **kwds)
+    def format_map(self, mapping):
+        return self.data.format_map(mapping)
     def index(self, sub, start=0, end=_sys.maxsize):
         return self.data.index(sub, start, end)
     def isalpha(self): return self.data.isalpha()
@@ -1138,6 +1146,7 @@ class UserString(Sequence):
     def isidentifier(self): return self.data.isidentifier()
     def islower(self): return self.data.islower()
     def isnumeric(self): return self.data.isnumeric()
+    def isprintable(self): return self.data.isprintable()
     def isspace(self): return self.data.isspace()
     def istitle(self): return self.data.istitle()
     def isupper(self): return self.data.isupper()
@@ -1146,6 +1155,7 @@ class UserString(Sequence):
         return self.__class__(self.data.ljust(width, *args))
     def lower(self): return self.__class__(self.data.lower())
     def lstrip(self, chars=None): return self.__class__(self.data.lstrip(chars))
+    maketrans = str.maketrans
     def partition(self, sep):
         return self.data.partition(sep)
     def replace(self, old, new, maxsplit=-1):
