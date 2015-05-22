@@ -63,6 +63,7 @@
     <ClCompile>
       <AdditionalIncludeDirectories>$(tcltkDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WITH_APPINIT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions Condition="'$(BuildForRelease)' != 'true'">Py_TCLTK_DIR="$(tcltkDir.TrimEnd('\').Replace('\', '\\'))";%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <AdditionalDependencies>$(tcltkLib);%(AdditionalDependencies)</AdditionalDependencies>

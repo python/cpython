@@ -31,9 +31,6 @@ tk.mainloop()
 """
 
 import sys
-if sys.platform == "win32":
-    # Attempt to configure Tcl/Tk without requiring PATH
-    from tkinter import _fix
 
 import _tkinter # If this fails your Python may not be configured for Tk
 TclError = _tkinter.TclError

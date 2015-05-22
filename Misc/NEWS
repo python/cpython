@@ -58,6 +58,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #20035: Replaced the ``tkinter._fix`` module used for setting up the
+  Tcl/Tk environment on Windows with a private function in the ``_tkinter``
+  module that makes no permanent changes to the environment.
+
 - Issue #24257: Fixed segmentation fault in sqlite3.Row constructor with faked
   cursor type.
 
