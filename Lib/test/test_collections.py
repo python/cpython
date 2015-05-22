@@ -12,7 +12,7 @@ import keyword
 import re
 import sys
 import types
-from collections import UserDict
+from collections import UserDict, UserString, UserList
 from collections import ChainMap
 from collections import deque
 from collections.abc import Awaitable, Coroutine, AsyncIterator, AsyncIterable
@@ -22,6 +22,26 @@ from collections.abc import Set, MutableSet
 from collections.abc import Mapping, MutableMapping, KeysView, ItemsView
 from collections.abc import Sequence, MutableSequence
 from collections.abc import ByteString
+
+
+class TestUserObjects(unittest.TestCase):
+    def _superset_test(self, a, b):
+        self.assertGreaterEqual(
+            set(dir(a)),
+            set(dir(b)),
+            '{a} should have all the methods of {b}'.format(
+                a=a.__name__,
+                b=b.__name__,
+            ),
+        )
+    def test_str_protocol(self):
+        self._superset_test(UserString, str)
+
+    def test_list_protocol(self):
+        self._superset_test(UserList, list)
+
+    def test_dict_protocol(self):
+        self._superset_test(UserDict, dict)
 
 
 ################################################################################
@@ -1848,7 +1868,8 @@ def test_main(verbose=None):
     NamedTupleDocs = doctest.DocTestSuite(module=collections)
     test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs,
                     TestCollectionABCs, TestCounter, TestChainMap,
-                    TestOrderedDict, GeneralMappingTests, SubclassMappingTests]
+                    TestOrderedDict, GeneralMappingTests, SubclassMappingTests,
+                    TestUserObjects]
     support.run_unittest(*test_classes)
     support.run_doctest(collections, verbose)
 
