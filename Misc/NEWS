@@ -58,6 +58,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23973: PEP 484: Add the typing module.
+
 - Issue #20035: Replaced the ``tkinter._fix`` module used for setting up the
   Tcl/Tk environment on Windows with a private function in the ``_tkinter``
   module that makes no permanent changes to the environment.
