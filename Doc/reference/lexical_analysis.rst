@@ -632,8 +632,7 @@ for disambiguation with C-style octal literals, which Python used before version
 Some examples of integer literals::
 
    7     2147483647                        0o177    0b100110111
-   3     79228162514264337593543950336     0o377    0x100000000
-         79228162514264337593543950336              0xdeadbeef
+   3     79228162514264337593543950336     0o377    0xdeadbeef
 
 
 .. _floating:
