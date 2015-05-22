@@ -793,8 +793,10 @@ Classes and functions
    *n* elements listed in *args*.
 
    .. deprecated:: 3.0
-      Use :func:`getfullargspec` instead, which provides information about
-      keyword-only arguments and annotations.
+      Use :func:`signature` and
+      :ref:`Signature Object <inspect-signature-object>`, which provide a
+      better introspecting API for callables.  This function will be removed
+      in Python 3.6.
 
 
 .. function:: getfullargspec(func)
@@ -834,6 +836,11 @@ Classes and functions
    are the names of the ``*`` and ``**`` arguments or ``None``.  *locals* is the
    locals dictionary of the given frame.
 
+   .. deprecated:: 3.5
+      Use :func:`signature` and
+      :ref:`Signature Object <inspect-signature-object>`, which provide a
+      better introspecting API for callables.
+
 
 .. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations[, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations]])
 
@@ -856,12 +863,22 @@ Classes and functions
    >>> formatargspec(*getfullargspec(f))
    '(a: int, b: float)'
 
+   .. deprecated:: 3.5
+      Use :func:`signature` and
+      :ref:`Signature Object <inspect-signature-object>`, which provide a
+      better introspecting API for callables.
+
 
 .. function:: formatargvalues(args[, varargs, varkw, locals, formatarg, formatvarargs, formatvarkw, formatvalue])
 
    Format a pretty argument spec from the four values returned by
    :func:`getargvalues`.  The format\* arguments are the corresponding optional
    formatting functions that are called to turn names and values into strings.
+
+   .. deprecated:: 3.5
+      Use :func:`signature` and
+      :ref:`Signature Object <inspect-signature-object>`, which provide a
+      better introspecting API for callables.
 
 
 .. function:: getmro(cls)

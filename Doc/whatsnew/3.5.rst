@@ -815,6 +815,16 @@ Deprecated Python modules, functions and methods
   :meth:`inspect.Signature.from_callable` instead. (Contributed by Yury
   Selivanov in :issue:`24248`.)
 
+* :func:`inspect.getargspec` is deprecated and scheduled to be removed in
+  Python 3.6.  (See :issue:`20438` for details.)
+
+* :func:`~inspect.getfullargspec`, :func:`~inspect.getargvalues`,
+  :func:`~inspect.getcallargs`, :func:`~inspect.getargvalues`,
+  :func:`~inspect.formatargspec`, and :func:`~inspect.formatargvalues` are
+  deprecated in favor of :func:`inspect.signature` API.  (See :issue:`20438`
+  for details.)
+
+
 Deprecated functions and types of the C API
 -------------------------------------------
 
