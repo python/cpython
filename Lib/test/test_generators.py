@@ -1,6 +1,7 @@
 import gc
 import sys
 import unittest
+import warnings
 import weakref
 
 from test import support
@@ -217,6 +218,46 @@ class ExceptionTest(unittest.TestCase):
         self.assertEqual(next(g), "done")
         self.assertEqual(sys.exc_info(), (None, None, None))
 
+    def test_stopiteration_warning(self):
+        # See also PEP 479.
+
+        def gen():
+            raise StopIteration
+            yield
+
+        with self.assertRaises(StopIteration), \
+             self.assertWarnsRegex(PendingDeprecationWarning, "StopIteration"):
+
+            next(gen())
+
+        with self.assertRaisesRegex(PendingDeprecationWarning,
+                                    "generator .* raised StopIteration"), \
+             warnings.catch_warnings():
+
+            warnings.simplefilter('error')
+            next(gen())
+
+
+    def test_tutorial_stopiteration(self):
+        # Raise StopIteration" stops the generator too:
+
+        def f():
+            yield 1
+            raise StopIteration
+            yield 2 # never reached
+
+        g = f()
+        self.assertEqual(next(g), 1)
+
+        with self.assertWarnsRegex(PendingDeprecationWarning, "StopIteration"):
+            with self.assertRaises(StopIteration):
+                next(g)
+
+        with self.assertRaises(StopIteration):
+            # This time StopIteration isn't raised from the generator's body,
+            # hence no warning.
+            next(g)
+
 
 tutorial_tests = """
 Let's try a simple generator:
@@ -263,26 +304,7 @@ Let's try a simple generator:
       File "<stdin>", line 1, in ?
     StopIteration
 
-"raise StopIteration" stops the generator too:
-
-    >>> def f():
-    ...     yield 1
-    ...     raise StopIteration
-    ...     yield 2 # never reached
-    ...
-    >>> g = f()
-    >>> next(g)
-    1
-    >>> next(g)
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-    StopIteration
-    >>> next(g)
-    Traceback (most recent call last):
-      File "<stdin>", line 1, in ?
-    StopIteration
-
-However, they are not exactly equivalent:
+However, "return" and StopIteration are not exactly equivalent:
 
     >>> def g1():
     ...     try:
