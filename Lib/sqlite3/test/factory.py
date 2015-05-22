@@ -162,6 +162,14 @@ class RowFactoryTests(unittest.TestCase):
         self.assertEqual(list(reversed(row)), list(reversed(as_tuple)))
         self.assertIsInstance(row, Sequence)
 
+    def CheckFakeCursorClass(self):
+        # Issue #24257: Incorrect use of PyObject_IsInstance() caused
+        # segmentation fault.
+        class FakeCursor(str):
+            __class__ = sqlite.Cursor
+        cur = self.con.cursor(factory=FakeCursor)
+        self.assertRaises(TypeError, sqlite.Row, cur, ())
+
     def tearDown(self):
         self.con.close()
 
