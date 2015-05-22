@@ -58,6 +58,9 @@ Core and Builtins
 Library
 -------
 
+- Issue 24244: Prevents termination when an invalid format string is
+  encountered on Windows in strftime.
+
 - Issue #23973: PEP 484: Add the typing module.
 
 - Issue #20035: Replaced the ``tkinter._fix`` module used for setting up the
