@@ -11,7 +11,7 @@ annotated by François Pinard, and converted to C by Raymond Hettinger.
 static int
 siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
-    PyObject *newitem, *parent;
+    PyObject *newitem, *parent, **arr;
     Py_ssize_t parentpos, size;
     int cmp;
 
@@ -24,12 +24,13 @@ siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 
     /* Follow the path to the root, moving parents down until finding
        a place newitem fits. */
-    newitem = PyList_GET_ITEM(heap, pos);
+    arr = _PyList_ITEMS(heap);
+    newitem = arr[pos];
     while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
-        parent = PyList_GET_ITEM(heap, parentpos);
+        parent = arr[parentpos];
         cmp = PyObject_RichCompareBool(newitem, parent, Py_LT);
-        if (cmp == -1)
+        if (cmp < 0)
             return -1;
         if (size != PyList_GET_SIZE(heap)) {
             PyErr_SetString(PyExc_RuntimeError,
@@ -38,10 +39,11 @@ siftdown(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
         }
         if (cmp == 0)
             break;
-        parent = PyList_GET_ITEM(heap, parentpos);
-        newitem = PyList_GET_ITEM(heap, pos);
-        PyList_SET_ITEM(heap, parentpos, newitem);
-        PyList_SET_ITEM(heap, pos, parent);
+        arr = _PyList_ITEMS(heap);
+        parent = arr[parentpos];
+        newitem = arr[pos];
+        arr[parentpos] = newitem;
+        arr[pos] = parent;
         pos = parentpos;
     }
     return 0;
@@ -51,7 +53,7 @@ static int
 siftup(PyListObject *heap, Py_ssize_t pos)
 {
     Py_ssize_t startpos, endpos, childpos, limit;
-    PyObject *tmp1, *tmp2;
+    PyObject *tmp1, *tmp2, **arr;
     int cmp;
 
     assert(PyList_Check(heap));
@@ -63,19 +65,19 @@ siftup(PyListObject *heap, Py_ssize_t pos)
     }
 
     /* Bubble up the smaller child until hitting a leaf. */
+    arr = _PyList_ITEMS(heap);
     limit = endpos / 2;          /* smallest pos that has no child */
     while (pos < limit) {
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
         if (childpos + 1 < endpos) {
             cmp = PyObject_RichCompareBool(
-                PyList_GET_ITEM(heap, childpos),
-                PyList_GET_ITEM(heap, childpos + 1),
+                arr[childpos],
+                arr[childpos + 1],
                 Py_LT);
-            if (cmp == -1)
+            if (cmp < 0)
                 return -1;
-            if (cmp == 0)
-                childpos++;      /* rightmost child is smallest */
+            childpos += ((unsigned)cmp ^ 1);   /* increment when cmp==0 */
             if (endpos != PyList_GET_SIZE(heap)) {
                 PyErr_SetString(PyExc_RuntimeError,
                                 "list changed size during iteration");
@@ -83,10 +85,11 @@ siftup(PyListObject *heap, Py_ssize_t pos)
             }
         }
         /* Move the smaller child up. */
-        tmp1 = PyList_GET_ITEM(heap, childpos);
-        tmp2 = PyList_GET_ITEM(heap, pos);
-        PyList_SET_ITEM(heap, childpos, tmp2);
-        PyList_SET_ITEM(heap, pos, tmp1);
+        arr = _PyList_ITEMS(heap);
+        tmp1 = arr[childpos];
+        tmp2 = arr[pos];
+        arr[childpos] = tmp2;
+        arr[pos] = tmp1;
         pos = childpos;
     }
     /* Bubble it up to its final resting place (by sifting its parents down). */
@@ -227,7 +230,7 @@ heappushpop(PyObject *self, PyObject *args)
     }
 
     cmp = PyObject_RichCompareBool(PyList_GET_ITEM(heap, 0), item, Py_LT);
-    if (cmp == -1)
+    if (cmp < 0)
         return NULL;
     if (cmp == 0) {
         Py_INCREF(item);
@@ -362,7 +365,7 @@ PyDoc_STRVAR(heapify_doc,
 static int
 siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 {
-    PyObject *newitem, *parent;
+    PyObject *newitem, *parent, **arr;
     Py_ssize_t parentpos, size;
     int cmp;
 
@@ -375,12 +378,13 @@ siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
 
     /* Follow the path to the root, moving parents down until finding
        a place newitem fits. */
-    newitem = PyList_GET_ITEM(heap, pos);
+    arr = _PyList_ITEMS(heap);
+    newitem = arr[pos];
     while (pos > startpos) {
         parentpos = (pos - 1) >> 1;
-        parent = PyList_GET_ITEM(heap, parentpos);
+        parent = arr[parentpos];
         cmp = PyObject_RichCompareBool(parent, newitem, Py_LT);
-        if (cmp == -1)
+        if (cmp < 0)
             return -1;
         if (size != PyList_GET_SIZE(heap)) {
             PyErr_SetString(PyExc_RuntimeError,
@@ -389,10 +393,11 @@ siftdown_max(PyListObject *heap, Py_ssize_t startpos, Py_ssize_t pos)
         }
         if (cmp == 0)
             break;
-        parent = PyList_GET_ITEM(heap, parentpos);
-        newitem = PyList_GET_ITEM(heap, pos);
-        PyList_SET_ITEM(heap, parentpos, newitem);
-        PyList_SET_ITEM(heap, pos, parent);
+        arr = _PyList_ITEMS(heap);
+        parent = arr[parentpos];
+        newitem = arr[pos];
+        arr[parentpos] = newitem;
+        arr[pos] = parent;
         pos = parentpos;
     }
     return 0;
@@ -402,7 +407,7 @@ static int
 siftup_max(PyListObject *heap, Py_ssize_t pos)
 {
     Py_ssize_t startpos, endpos, childpos, limit;
-    PyObject *tmp1, *tmp2;
+    PyObject *tmp1, *tmp2, **arr;
     int cmp;
 
     assert(PyList_Check(heap));
@@ -414,19 +419,19 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
     }
 
     /* Bubble up the smaller child until hitting a leaf. */
+    arr = _PyList_ITEMS(heap);
     limit = endpos / 2;          /* smallest pos that has no child */
     while (pos < limit) {
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
         if (childpos + 1 < endpos) {
             cmp = PyObject_RichCompareBool(
-                PyList_GET_ITEM(heap, childpos + 1),
-                PyList_GET_ITEM(heap, childpos),
+                arr[childpos + 1],
+                arr[childpos],
                 Py_LT);
-            if (cmp == -1)
+            if (cmp < 0)
                 return -1;
-            if (cmp == 0)
-                childpos++;      /* rightmost child is smallest */
+            childpos += ((unsigned)cmp ^ 1);   /* increment when cmp==0 */
             if (endpos != PyList_GET_SIZE(heap)) {
                 PyErr_SetString(PyExc_RuntimeError,
                                 "list changed size during iteration");
@@ -434,10 +439,11 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
             }
         }
         /* Move the smaller child up. */
-        tmp1 = PyList_GET_ITEM(heap, childpos);
-        tmp2 = PyList_GET_ITEM(heap, pos);
-        PyList_SET_ITEM(heap, childpos, tmp2);
-        PyList_SET_ITEM(heap, pos, tmp1);
+        arr = _PyList_ITEMS(heap);
+        tmp1 = arr[childpos];
+        tmp2 = arr[pos];
+        arr[childpos] = tmp2;
+        arr[pos] = tmp1;
         pos = childpos;
     }
     /* Bubble it up to its final resting place (by sifting its parents down). */
