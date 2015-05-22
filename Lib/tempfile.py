@@ -6,6 +6,14 @@ provided by this module can be used without fear of race conditions
 except for 'mktemp'.  'mktemp' is subject to race conditions and
 should not be used; it is provided for backward compatibility only.
 
+The default path names are returned as str.  If you supply bytes as
+input, all return values will be in bytes.  Ex:
+
+    >>> tempfile.mkstemp()
+    (4, '/tmp/tmptpu9nin8')
+    >>> tempfile.mkdtemp(suffix=b'')
+    b'/tmp/tmppbi8f0hy'
+
 This module also provides some data items to the user:
 
   TMP_MAX  - maximum number of names that will be tried before
@@ -21,7 +29,8 @@ __all__ = [
     "mkstemp", "mkdtemp",                  # low level safe interfaces
     "mktemp",                              # deprecated unsafe interface
     "TMP_MAX", "gettempprefix",            # constants
-    "tempdir", "gettempdir"
+    "tempdir", "gettempdir",
+    "gettempprefixb", "gettempdirb",
    ]
 
 
@@ -55,8 +64,10 @@ if hasattr(_os, 'TMP_MAX'):
 else:
     TMP_MAX = 10000
 
-# Although it does not have an underscore for historical reasons, this
-# variable is an internal implementation detail (see issue 10354).
+# This variable _was_ unused for legacy reasons, see issue 10354.
+# But as of 3.5 we actually use it at runtime so changing it would
+# have a possibly desirable side effect...  But we do not want to support
+# that as an API.  It is undocumented on purpose.  Do not depend on this.
 template = "tmp"
 
 # Internal routines.
@@ -81,6 +92,46 @@ def _exists(fn):
         return False
     else:
         return True
+
+
+def _infer_return_type(*args):
+    """Look at the type of all args and divine their implied return type."""
+    return_type = None
+    for arg in args:
+        if arg is None:
+            continue
+        if isinstance(arg, bytes):
+            if return_type is str:
+                raise TypeError("Can't mix bytes and non-bytes in "
+                                "path components.")
+            return_type = bytes
+        else:
+            if return_type is bytes:
+                raise TypeError("Can't mix bytes and non-bytes in "
+                                "path components.")
+            return_type = str
+    if return_type is None:
+        return str  # tempfile APIs return a str by default.
+    return return_type
+
+
+def _sanitize_params(prefix, suffix, dir):
+    """Common parameter processing for most APIs in this module."""
+    output_type = _infer_return_type(prefix, suffix, dir)
+    if suffix is None:
+        suffix = output_type()
+    if prefix is None:
+        if output_type is str:
+            prefix = template
+        else:
+            prefix = _os.fsencode(template)
+    if dir is None:
+        if output_type is str:
+            dir = gettempdir()
+        else:
+            dir = gettempdirb()
+    return prefix, suffix, dir, output_type
+
 
 class _RandomNameSequence:
     """An instance of _RandomNameSequence generates an endless
@@ -195,17 +246,18 @@ def _get_candidate_names():
     return _name_sequence
 
 
-def _mkstemp_inner(dir, pre, suf, flags):
+def _mkstemp_inner(dir, pre, suf, flags, output_type):
     """Code common to mkstemp, TemporaryFile, and NamedTemporaryFile."""
 
     names = _get_candidate_names()
+    if output_type is bytes:
+        names = map(_os.fsencode, names)
 
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, pre + name + suf)
         try:
             fd = _os.open(file, flags, 0o600)
-            return (fd, _os.path.abspath(file))
         except FileExistsError:
             continue    # try again
         except PermissionError:
@@ -216,6 +268,7 @@ def _mkstemp_inner(dir, pre, suf, flags):
                 continue
             else:
                 raise
+        return (fd, _os.path.abspath(file))
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary file name found")
@@ -224,8 +277,12 @@ def _mkstemp_inner(dir, pre, suf, flags):
 # User visible interfaces.
 
 def gettempprefix():
-    """Accessor for tempdir.template."""
+    """The default prefix for temporary directories."""
     return template
+
+def gettempprefixb():
+    """The default prefix for temporary directories as bytes."""
+    return _os.fsencode(gettempprefix())
 
 tempdir = None
 
@@ -241,7 +298,11 @@ def gettempdir():
             _once_lock.release()
     return tempdir
 
-def mkstemp(suffix="", prefix=template, dir=None, text=False):
+def gettempdirb():
+    """A bytes version of tempfile.gettempdir()."""
+    return _os.fsencode(gettempdir())
+
+def mkstemp(suffix=None, prefix=None, dir=None, text=False):
     """User-callable function to create and return a unique temporary
     file.  The return value is a pair (fd, name) where fd is the
     file descriptor returned by os.open, and name is the filename.
@@ -259,6 +320,10 @@ def mkstemp(suffix="", prefix=template, dir=None, text=False):
     mode.  Else (the default) the file is opened in binary mode.  On
     some operating systems, this makes no difference.
 
+    suffix, prefix and dir must all contain the same type if specified.
+    If they are bytes, the returned name will be bytes; str otherwise.
+    A value of None will cause an appropriate default to be used.
+
     The file is readable and writable only by the creating user ID.
     If the operating system uses permission bits to indicate whether a
     file is executable, the file is executable by no one. The file
@@ -267,18 +332,17 @@ def mkstemp(suffix="", prefix=template, dir=None, text=False):
     Caller is responsible for deleting the file when done with it.
     """
 
-    if dir is None:
-        dir = gettempdir()
+    prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
     if text:
         flags = _text_openflags
     else:
         flags = _bin_openflags
 
-    return _mkstemp_inner(dir, prefix, suffix, flags)
+    return _mkstemp_inner(dir, prefix, suffix, flags, output_type)
 
 
-def mkdtemp(suffix="", prefix=template, dir=None):
+def mkdtemp(suffix=None, prefix=None, dir=None):
     """User-callable function to create and return a unique temporary
     directory.  The return value is the pathname of the directory.
 
@@ -291,17 +355,17 @@ def mkdtemp(suffix="", prefix=template, dir=None):
     Caller is responsible for deleting the directory when done with it.
     """
 
-    if dir is None:
-        dir = gettempdir()
+    prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
     names = _get_candidate_names()
+    if output_type is bytes:
+        names = map(_os.fsencode, names)
 
     for seq in range(TMP_MAX):
         name = next(names)
         file = _os.path.join(dir, prefix + name + suffix)
         try:
             _os.mkdir(file, 0o700)
-            return file
         except FileExistsError:
             continue    # try again
         except PermissionError:
@@ -312,6 +376,7 @@ def mkdtemp(suffix="", prefix=template, dir=None):
                 continue
             else:
                 raise
+        return file
 
     raise FileExistsError(_errno.EEXIST,
                           "No usable temporary directory name found")
@@ -323,8 +388,8 @@ def mktemp(suffix="", prefix=template, dir=None):
     Arguments are as for mkstemp, except that the 'text' argument is
     not accepted.
 
-    This function is unsafe and should not be used.  The file name
-    refers to a file that did not exist at some point, but by the time
+    THIS FUNCTION IS UNSAFE AND SHOULD NOT BE USED.  The file name may
+    refer to a file that did not exist at some point, but by the time
     you get around to creating it, someone else may have beaten you to
     the punch.
     """
@@ -454,7 +519,7 @@ class _TemporaryFileWrapper:
 
 
 def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
-                       newline=None, suffix="", prefix=template,
+                       newline=None, suffix=None, prefix=None,
                        dir=None, delete=True):
     """Create and return a temporary file.
     Arguments:
@@ -471,8 +536,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     when it is closed unless the 'delete' argument is set to False.
     """
 
-    if dir is None:
-        dir = gettempdir()
+    prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
     flags = _bin_openflags
 
@@ -481,7 +545,7 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     if _os.name == 'nt' and delete:
         flags |= _os.O_TEMPORARY
 
-    (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
+    (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
     try:
         file = _io.open(fd, mode, buffering=buffering,
                         newline=newline, encoding=encoding)
@@ -503,7 +567,7 @@ else:
     _O_TMPFILE_WORKS = hasattr(_os, 'O_TMPFILE')
 
     def TemporaryFile(mode='w+b', buffering=-1, encoding=None,
-                      newline=None, suffix="", prefix=template,
+                      newline=None, suffix=None, prefix=None,
                       dir=None):
         """Create and return a temporary file.
         Arguments:
@@ -519,8 +583,7 @@ else:
         """
         global _O_TMPFILE_WORKS
 
-        if dir is None:
-            dir = gettempdir()
+        prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
 
         flags = _bin_openflags
         if _O_TMPFILE_WORKS:
@@ -544,7 +607,7 @@ else:
                     raise
             # Fallback to _mkstemp_inner().
 
-        (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags)
+        (fd, name) = _mkstemp_inner(dir, prefix, suffix, flags, output_type)
         try:
             _os.unlink(name)
             return _io.open(fd, mode, buffering=buffering,
@@ -562,7 +625,7 @@ class SpooledTemporaryFile:
 
     def __init__(self, max_size=0, mode='w+b', buffering=-1,
                  encoding=None, newline=None,
-                 suffix="", prefix=template, dir=None):
+                 suffix=None, prefix=None, dir=None):
         if 'b' in mode:
             self._file = _io.BytesIO()
         else:
@@ -713,7 +776,7 @@ class TemporaryDirectory(object):
     in it are removed.
     """
 
-    def __init__(self, suffix="", prefix=template, dir=None):
+    def __init__(self, suffix=None, prefix=None, dir=None):
         self.name = mkdtemp(suffix, prefix, dir)
         self._finalizer = _weakref.finalize(
             self, self._cleanup, self.name,

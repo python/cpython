@@ -119,7 +119,7 @@ The module defines the following user-callable items:
    .. versionadded:: 3.2
 
 
-.. function:: mkstemp(suffix='', prefix='tmp', dir=None, text=False)
+.. function:: mkstemp(suffix=None, prefix=None, dir=None, text=False)
 
    Creates a temporary file in the most secure manner possible.  There are
    no race conditions in the file's creation, assuming that the platform
@@ -148,6 +148,16 @@ The module defines the following user-callable items:
    filename will have any nice properties, such as not requiring quoting
    when passed to external commands via ``os.popen()``.
 
+   *suffix*, *prefix*, and *dir* must all contain the same type, if specified.
+   If they are bytes, the returned name will be bytes instead of str.
+   If you want to force a bytes return value with otherwise default behavior,
+   pass ``suffix=b''``.
+
+   A *prefix* value of ``None`` means use the return value of
+   :func:`gettempprefix` or :func:`gettempprefixb` as appropriate.
+
+   A *suffix* value of ``None`` means use an appropriate empty value.
+
    If *text* is specified, it indicates whether to open the file in binary
    mode (the default) or text mode.  On some platforms, this makes no
    difference.
@@ -156,8 +166,14 @@ The module defines the following user-callable items:
    file (as would be returned by :func:`os.open`) and the absolute pathname
    of that file, in that order.
 
+   .. versionchanged:: 3.5
+      *suffix*, *prefix*, and *dir* may now be supplied in bytes in order to
+      obtain a bytes return value.  Prior to this, only str was allowed.
+      *suffix* and *prefix* now accept and default to ``None`` to cause
+      an appropriate default value to be used.
 
-.. function:: mkdtemp(suffix='', prefix='tmp', dir=None)
+
+.. function:: mkdtemp(suffix=None, prefix=None, dir=None)
 
    Creates a temporary directory in the most secure manner possible. There
    are no race conditions in the directory's creation.  The directory is
@@ -170,6 +186,12 @@ The module defines the following user-callable items:
    :func:`mkstemp`.
 
    :func:`mkdtemp` returns the absolute pathname of the new directory.
+
+   .. versionchanged:: 3.5
+      *suffix*, *prefix*, and *dir* may now be supplied in bytes in order to
+      obtain a bytes return value.  Prior to this, only str was allowed.
+      *suffix* and *prefix* now accept and default to ``None`` to cause
+      an appropriate default value to be used.
 
 
 .. function:: mktemp(suffix='', prefix='tmp', dir=None)
@@ -239,11 +261,22 @@ the appropriate function arguments, instead.
    :data:`tempdir` is not ``None``, this simply returns its contents; otherwise,
    the search described above is performed, and the result returned.
 
+.. function:: gettempdirb()
+
+   Same as :func:`gettempdir` but the return value is in bytes.
+
+   .. versionadded:: 3.5
 
 .. function:: gettempprefix()
 
    Return the filename prefix used to create temporary files.  This does not
    contain the directory component.
+
+.. function:: gettempprefixb()
+
+   Same as :func:`gettempprefixb` but the return value is in bytes.
+
+   .. versionadded:: 3.5
 
 
 Examples
