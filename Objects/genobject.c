@@ -442,8 +442,7 @@ _PyGen_FetchStopIterationValue(PyObject **pvalue) {
         PyErr_Fetch(&et, &ev, &tb);
         if (ev) {
             /* exception will usually be normalised already */
-            if (Py_TYPE(ev) == (PyTypeObject *) et
-                || PyObject_IsInstance(ev, PyExc_StopIteration)) {
+            if (PyObject_TypeCheck(ev, (PyTypeObject *) et)) {
                 value = ((PyStopIterationObject *)ev)->value;
                 Py_INCREF(value);
                 Py_DECREF(ev);
@@ -453,7 +452,7 @@ _PyGen_FetchStopIterationValue(PyObject **pvalue) {
             } else {
                 /* normalisation required */
                 PyErr_NormalizeException(&et, &ev, &tb);
-                if (!PyObject_IsInstance(ev, PyExc_StopIteration)) {
+                if (!PyObject_TypeCheck(ev, (PyTypeObject *)PyExc_StopIteration)) {
                     PyErr_Restore(et, ev, tb);
                     return -1;
                 }

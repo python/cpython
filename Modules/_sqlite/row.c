@@ -46,7 +46,7 @@ pysqlite_row_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     if (!PyArg_ParseTuple(args, "OO", &cursor, &data))
         return NULL;
 
-    if (!PyObject_IsInstance((PyObject*)cursor, (PyObject*)&pysqlite_CursorType)) {
+    if (!PyObject_TypeCheck((PyObject*)cursor, &pysqlite_CursorType)) {
         PyErr_SetString(PyExc_TypeError, "instance of cursor required for first argument");
         return NULL;
     }
