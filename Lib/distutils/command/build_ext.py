@@ -19,10 +19,6 @@ from distutils import log
 
 from site import USER_BASE
 
-if os.name == 'nt':
-    from distutils.msvccompiler import get_build_version
-    MSVC_VERSION = int(get_build_version())
-
 # An extension name is just a dot-separated list of Python NAMEs (ie.
 # the same as a fully-qualified module name).
 extension_name_re = re.compile \
@@ -206,27 +202,17 @@ class build_ext(Command):
             _sys_home = getattr(sys, '_home', None)
             if _sys_home:
                 self.library_dirs.append(_sys_home)
-            if MSVC_VERSION >= 9:
-                # Use the .lib files for the correct architecture
-                if self.plat_name == 'win32':
-                    suffix = 'win32'
-                else:
-                    # win-amd64 or win-ia64
-                    suffix = self.plat_name[4:]
-                new_lib = os.path.join(sys.exec_prefix, 'PCbuild')
-                if suffix:
-                    new_lib = os.path.join(new_lib, suffix)
-                self.library_dirs.append(new_lib)
 
-            elif MSVC_VERSION == 8:
-                self.library_dirs.append(os.path.join(sys.exec_prefix,
-                                         'PC', 'VS8.0'))
-            elif MSVC_VERSION == 7:
-                self.library_dirs.append(os.path.join(sys.exec_prefix,
-                                         'PC', 'VS7.1'))
+            # Use the .lib files for the correct architecture
+            if self.plat_name == 'win32':
+                suffix = 'win32'
             else:
-                self.library_dirs.append(os.path.join(sys.exec_prefix,
-                                         'PC', 'VC6'))
+                # win-amd64 or win-ia64
+                suffix = self.plat_name[4:]
+            new_lib = os.path.join(sys.exec_prefix, 'PCbuild')
+            if suffix:
+                new_lib = os.path.join(new_lib, suffix)
+            self.library_dirs.append(new_lib)
 
         # for extensions under Cygwin and AtheOS Python's library directory must be
         # appended to library_dirs
@@ -716,7 +702,7 @@ class build_ext(Command):
         # to need it mentioned explicitly, though, so that's what we do.
         # Append '_d' to the python import library on debug builds.
         if sys.platform == "win32":
-            from distutils.msvccompiler import MSVCCompiler
+            from distutils._msvccompiler import MSVCCompiler
             if not isinstance(self.compiler, MSVCCompiler):
                 template = "python%d%d"
                 if self.debug:
