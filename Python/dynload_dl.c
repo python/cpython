@@ -18,6 +18,6 @@ dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
 {
     char funcname[258];
 
-    PyOS_snprintf(funcname, sizeof(funcname), "%20s_%.200s", prefix, shortname);
+    PyOS_snprintf(funcname, sizeof(funcname), "%.20s_%.200s", prefix, shortname);
     return dl_loadmod(Py_GetProgramName(), pathname, funcname);
 }

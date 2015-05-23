@@ -40,7 +40,7 @@ dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
     const char *errString;
     char errBuf[512];
 
-    PyOS_snprintf(funcname, sizeof(funcname), "_%20s_%.200s", prefix, shortname);
+    PyOS_snprintf(funcname, sizeof(funcname), "_%.20s_%.200s", prefix, shortname);
 
 #ifdef USE_DYLD_GLOBAL_NAMESPACE
     if (NSIsSymbolNameDefined(funcname)) {
