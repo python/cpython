@@ -303,7 +303,6 @@ class bdist_wininst(Command):
         return installer_name
 
     def get_exe_bytes(self):
-        from distutils.msvccompiler import get_build_version
         # If a target-version other than the current version has been
         # specified, then using the MSVC version from *this* build is no good.
         # Without actually finding and executing the target version and parsing
@@ -313,20 +312,28 @@ class bdist_wininst(Command):
         # We can then execute this program to obtain any info we need, such
         # as the real sys.version string for the build.
         cur_version = get_python_version()
-        if self.target_version and self.target_version != cur_version:
-            # If the target version is *later* than us, then we assume they
-            # use what we use
-            # string compares seem wrong, but are what sysconfig.py itself uses
-            if self.target_version > cur_version:
-                bv = get_build_version()
+
+        # If the target version is *later* than us, then we assume they
+        # use what we use
+        # string compares seem wrong, but are what sysconfig.py itself uses
+        if self.target_version and self.target_version < cur_version:
+            if self.target_version < "2.4":
+                bv = 6.0
+            elif self.target_version == "2.4":
+                bv = 7.1
+            elif self.target_version == "2.5":
+                bv = 8.0
+            elif self.target_version <= "3.2":
+                bv = 9.0
+            elif self.target_version <= "3.4":
+                bv = 10.0
             else:
-                if self.target_version < "2.4":
-                    bv = 6.0
-                else:
-                    bv = 7.1
+                bv = 14.0
         else:
             # for current version - use authoritative check.
-            bv = get_build_version()
+            from msvcrt import CRT_ASSEMBLY_VERSION
+            bv = float('.'.join(CRT_ASSEMBLY_VERSION.split('.', 2)[:2]))
+
 
         # wininst-x.y.exe is in the same directory as this file
         directory = os.path.dirname(__file__)
