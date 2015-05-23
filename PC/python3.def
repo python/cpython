@@ -330,6 +330,8 @@ EXPORTS
   PyModule_GetState=python35.PyModule_GetState
   PyModule_New=python35.PyModule_New
   PyModule_Type=python35.PyModule_Type DATA
+  PyModuleDef_Init=python35.PyModuleDef_Init
+  PyModuleDef_Type=python35.PyModuleDef_Type DATA
   PyNullImporter_Type=python35.PyNullImporter_Type DATA
   PyNumber_Absolute=python35.PyNumber_Absolute
   PyNumber_Add=python35.PyNumber_Add
