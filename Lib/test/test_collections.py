@@ -1227,6 +1227,41 @@ class TestCollectionABCs(ABCTestCase):
         self.validate_abstract_methods(Sequence, '__contains__', '__iter__', '__len__',
             '__getitem__')
 
+    def test_Sequence_mixins(self):
+        class SequenceSubclass(Sequence):
+            def __init__(self, seq=()):
+                self.seq = seq
+
+            def __getitem__(self, index):
+                return self.seq[index]
+
+            def __len__(self):
+                return len(self.seq)
+
+        # Compare Sequence.index() behavior to (list|str).index() behavior
+        def assert_index_same(seq1, seq2, index_args):
+            try:
+                expected = seq1.index(*index_args)
+            except ValueError:
+                with self.assertRaises(ValueError):
+                    seq2.index(*index_args)
+            else:
+                actual = seq2.index(*index_args)
+                self.assertEqual(
+                    actual, expected, '%r.index%s' % (seq1, index_args))
+
+        for ty in list, str:
+            nativeseq = ty('abracadabra')
+            indexes = [-10000, -9999] + list(range(-3, len(nativeseq) + 3))
+            seqseq = SequenceSubclass(nativeseq)
+            for letter in set(nativeseq) | {'z'}:
+                assert_index_same(nativeseq, seqseq, (letter,))
+                for start in range(-3, len(nativeseq) + 3):
+                    assert_index_same(nativeseq, seqseq, (letter, start))
+                    for stop in range(-3, len(nativeseq) + 3):
+                        assert_index_same(
+                            nativeseq, seqseq, (letter, start, stop))
+
     def test_ByteString(self):
         for sample in [bytes, bytearray]:
             self.assertIsInstance(sample(), ByteString)
