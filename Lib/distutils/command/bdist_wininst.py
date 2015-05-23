@@ -331,8 +331,13 @@ class bdist_wininst(Command):
                 bv = 14.0
         else:
             # for current version - use authoritative check.
-            from msvcrt import CRT_ASSEMBLY_VERSION
-            bv = float('.'.join(CRT_ASSEMBLY_VERSION.split('.', 2)[:2]))
+            try:
+                from msvcrt import CRT_ASSEMBLY_VERSION
+            except ImportError:
+                # cross-building, so assume the latest version
+                bv = 14.0
+            else:
+                bv = float('.'.join(CRT_ASSEMBLY_VERSION.split('.', 2)[:2]))
 
 
         # wininst-x.y.exe is in the same directory as this file
