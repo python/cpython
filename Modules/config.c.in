@@ -13,7 +13,7 @@ redistribution of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 /* !!! !!! !!! This file is edited by the makesetup script !!! !!! !!! */
 
 /* This file contains the table of built-in modules.
-   See init_builtin() in import.c. */
+   See create_builtin() in import.c. */
 
 #include "Python.h"
 

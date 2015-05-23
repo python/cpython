@@ -257,13 +257,50 @@ static PyMethodDef xxsubtype_functions[] = {
     {NULL,              NULL}           /* sentinel */
 };
 
+static int
+xxsubtype_exec(PyObject* m)
+{
+    /* Fill in deferred data addresses.  This must be done before
+       PyType_Ready() is called.  Note that PyType_Ready() automatically
+       initializes the ob.ob_type field to &PyType_Type if it's NULL,
+       so it's not necessary to fill in ob_type first. */
+    spamdict_type.tp_base = &PyDict_Type;
+    if (PyType_Ready(&spamdict_type) < 0)
+        return -1;
+
+    spamlist_type.tp_base = &PyList_Type;
+    if (PyType_Ready(&spamlist_type) < 0)
+        return -1;
+
+    if (PyType_Ready(&spamlist_type) < 0)
+        return -1;
+    if (PyType_Ready(&spamdict_type) < 0)
+        return -1;
+
+    Py_INCREF(&spamlist_type);
+    if (PyModule_AddObject(m, "spamlist",
+                           (PyObject *) &spamlist_type) < 0)
+        return -1;
+
+    Py_INCREF(&spamdict_type);
+    if (PyModule_AddObject(m, "spamdict",
+                           (PyObject *) &spamdict_type) < 0)
+        return -1;
+    return 0;
+}
+
+static struct PyModuleDef_Slot xxsubtype_slots[] = {
+    {Py_mod_exec, xxsubtype_exec},
+    {0, NULL},
+};
+
 static struct PyModuleDef xxsubtypemodule = {
     PyModuleDef_HEAD_INIT,
     "xxsubtype",
     xxsubtype__doc__,
-    -1,
+    0,
     xxsubtype_functions,
-    NULL,
+    xxsubtype_slots,
     NULL,
     NULL,
     NULL
@@ -273,37 +310,5 @@ static struct PyModuleDef xxsubtypemodule = {
 PyMODINIT_FUNC
 PyInit_xxsubtype(void)
 {
-    PyObject *m;
-
-    /* Fill in deferred data addresses.  This must be done before
-       PyType_Ready() is called.  Note that PyType_Ready() automatically
-       initializes the ob.ob_type field to &PyType_Type if it's NULL,
-       so it's not necessary to fill in ob_type first. */
-    spamdict_type.tp_base = &PyDict_Type;
-    if (PyType_Ready(&spamdict_type) < 0)
-        return NULL;
-
-    spamlist_type.tp_base = &PyList_Type;
-    if (PyType_Ready(&spamlist_type) < 0)
-        return NULL;
-
-    m = PyModule_Create(&xxsubtypemodule);
-    if (m == NULL)
-        return NULL;
-
-    if (PyType_Ready(&spamlist_type) < 0)
-        return NULL;
-    if (PyType_Ready(&spamdict_type) < 0)
-        return NULL;
-
-    Py_INCREF(&spamlist_type);
-    if (PyModule_AddObject(m, "spamlist",
-                           (PyObject *) &spamlist_type) < 0)
-        return NULL;
-
-    Py_INCREF(&spamdict_type);
-    if (PyModule_AddObject(m, "spamdict",
-                           (PyObject *) &spamdict_type) < 0)
-        return NULL;
-    return m;
+    return PyModuleDef_Init(&xxsubtypemodule);
 }

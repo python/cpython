@@ -27,8 +27,9 @@ const char *_PyImport_DynLoadFiletab[] = {".so", NULL};
 #define LINKOPTIONS NSLINKMODULE_OPTION_BINDNOW| \
     NSLINKMODULE_OPTION_RETURN_ON_ERROR|NSLINKMODULE_OPTION_PRIVATE
 #endif
-dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
-                                    const char *pathname, FILE *fp)
+dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
+                                       const char *shortname,
+                                       const char *pathname, FILE *fp)
 {
     dl_funcptr p = NULL;
     char funcname[258];
@@ -39,7 +40,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
     const char *errString;
     char errBuf[512];
 
-    PyOS_snprintf(funcname, sizeof(funcname), "_PyInit_%.200s", shortname);
+    PyOS_snprintf(funcname, sizeof(funcname), "_%20s_%.200s", prefix, shortname);
 
 #ifdef USE_DYLD_GLOBAL_NAMESPACE
     if (NSIsSymbolNameDefined(funcname)) {

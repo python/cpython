@@ -255,6 +255,9 @@ PyState_FindModule(struct PyModuleDef* module)
     Py_ssize_t index = module->m_base.m_index;
     PyInterpreterState *state = PyThreadState_GET()->interp;
     PyObject *res;
+    if (module->m_slots) {
+        return NULL;
+    }
     if (index == 0)
         return NULL;
     if (state->modules_by_index == NULL)
@@ -268,7 +271,13 @@ PyState_FindModule(struct PyModuleDef* module)
 int
 _PyState_AddModule(PyObject* module, struct PyModuleDef* def)
 {
-    PyInterpreterState *state = PyThreadState_GET()->interp;
+    PyInterpreterState *state;
+    if (def->m_slots) {
+        PyErr_SetString(PyExc_SystemError,
+                        "PyState_AddModule called on module with slots");
+        return -1;
+    }
+    state = PyThreadState_GET()->interp;
     if (!def)
         return -1;
     if (!state->modules_by_index) {
@@ -308,8 +317,14 @@ PyState_AddModule(PyObject* module, struct PyModuleDef* def)
 int
 PyState_RemoveModule(struct PyModuleDef* def)
 {
+    PyInterpreterState *state;
     Py_ssize_t index = def->m_base.m_index;
-    PyInterpreterState *state = PyThreadState_GET()->interp;
+    if (def->m_slots) {
+        PyErr_SetString(PyExc_SystemError,
+                        "PyState_RemoveModule called on module with slots");
+        return -1;
+    }
+    state = PyThreadState_GET()->interp;
     if (index == 0) {
         Py_FatalError("PyState_RemoveModule: Module index invalid.");
         return -1;

@@ -13,87 +13,186 @@
 #include "importdl.h"
 
 #ifdef MS_WINDOWS
-extern dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
-                                              PyObject *pathname, FILE *fp);
+extern dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
+                                                     const char *shortname,
+                                                     PyObject *pathname,
+                                                     FILE *fp);
 #else
-extern dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
-                                           const char *pathname, FILE *fp);
+extern dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
+                                              const char *shortname,
+                                              const char *pathname, FILE *fp);
 #endif
+
+static const char *ascii_only_prefix = "PyInit";
+static const char *nonascii_prefix = "PyInitU";
+
+/* Get the variable part of a module's export symbol name.
+ * Returns a bytes instance. For non-ASCII-named modules, the name is
+ * encoded as per PEP 489.
+ * The hook_prefix pointer is set to either ascii_only_prefix or
+ * nonascii_prefix, as appropriate.
+ */
+static PyObject *
+get_encoded_name(PyObject *name, const char **hook_prefix) {
+    char *buf;
+    PyObject *tmp;
+    PyObject *encoded = NULL;
+    Py_ssize_t name_len, lastdot, i;
+
+    /* Get the short name (substring after last dot) */
+    name_len = PyUnicode_GetLength(name);
+    lastdot = PyUnicode_FindChar(name, '.', 0, name_len, -1);
+    if (lastdot < -1) {
+        return NULL;
+    } else if (lastdot >= 0) {
+        tmp = PyUnicode_Substring(name, lastdot, name_len);
+        if (tmp == NULL)
+            return NULL;
+        name = tmp;
+        /* "name" now holds a new reference to the substring */
+    } else {
+        Py_INCREF(name);
+    }
+
+    /* Encode to ASCII or Punycode, as needed */
+    encoded = PyUnicode_AsEncodedString(name, "ascii", NULL);
+    if (encoded != NULL) {
+        *hook_prefix = ascii_only_prefix;
+    } else {
+        if (PyErr_ExceptionMatches(PyExc_UnicodeEncodeError)) {
+            PyErr_Clear();
+            encoded = PyUnicode_AsEncodedString(name, "punycode", NULL);
+            if (encoded == NULL) {
+                goto error;
+            }
+            *hook_prefix = nonascii_prefix;
+        } else {
+            goto error;
+        }
+    }
+
+    buf = PyBytes_AS_STRING(encoded);
+    assert(Py_REFCNT(encoded) == 1);
+    for (i = 0; i < PyBytes_GET_SIZE(encoded) + 1; i++) {
+        if (buf[i] == '-') {
+            buf[i] = '_';
+        }
+    }
+
+    Py_DECREF(name);
+    return encoded;
+error:
+    Py_DECREF(name);
+    Py_XDECREF(encoded);
+    return NULL;
+}
 
 PyObject *
-_PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
+_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *fp)
 {
-    PyObject *m = NULL;
 #ifndef MS_WINDOWS
-    PyObject *pathbytes;
+    PyObject *pathbytes = NULL;
 #endif
-    PyObject *nameascii;
-    char *namestr, *lastdot, *shortname, *packagecontext, *oldcontext;
-    dl_funcptr p0;
-    PyObject* (*p)(void);
-    struct PyModuleDef *def;
+    PyObject *name_unicode = NULL, *name = NULL, *path = NULL, *m = NULL;
+    const char *name_buf, *hook_prefix;
+    char *oldcontext;
+    dl_funcptr exportfunc;
+    PyModuleDef *def;
+    PyObject *(*p0)(void);
 
-    m = _PyImport_FindExtensionObject(name, path);
-    if (m != NULL) {
-        Py_INCREF(m);
-        return m;
+    name_unicode = PyObject_GetAttrString(spec, "name");
+    if (name_unicode == NULL) {
+        return NULL;
     }
 
-    /* name must be encodable to ASCII because dynamic module must have a
-       function called "PyInit_NAME", they are written in C, and the C language
-       doesn't accept non-ASCII identifiers. */
-    nameascii = PyUnicode_AsEncodedString(name, "ascii", NULL);
-    if (nameascii == NULL)
-        return NULL;
+    name = get_encoded_name(name_unicode, &hook_prefix);
+    if (name == NULL) {
+        goto error;
+    }
+    name_buf = PyBytes_AS_STRING(name);
 
-    namestr = PyBytes_AS_STRING(nameascii);
-    if (namestr == NULL)
+    path = PyObject_GetAttrString(spec, "origin");
+    if (path == NULL)
         goto error;
 
-    lastdot = strrchr(namestr, '.');
-    if (lastdot == NULL) {
-        packagecontext = NULL;
-        shortname = namestr;
-    }
-    else {
-        packagecontext = namestr;
-        shortname = lastdot+1;
-    }
-
 #ifdef MS_WINDOWS
-    p0 = _PyImport_GetDynLoadWindows(shortname, path, fp);
+    exportfunc = _PyImport_FindSharedFuncptrWindows(hook_prefix, name_buf,
+                                                    path, fp);
 #else
     pathbytes = PyUnicode_EncodeFSDefault(path);
     if (pathbytes == NULL)
         goto error;
-    p0 = _PyImport_GetDynLoadFunc(shortname,
-                                  PyBytes_AS_STRING(pathbytes), fp);
+    exportfunc = _PyImport_FindSharedFuncptr(hook_prefix, name_buf,
+                                             PyBytes_AS_STRING(pathbytes),
+                                             fp);
     Py_DECREF(pathbytes);
 #endif
-    p = (PyObject*(*)(void))p0;
-    if (PyErr_Occurred())
-        goto error;
-    if (p == NULL) {
-        PyObject *msg = PyUnicode_FromFormat("dynamic module does not define "
-                                             "init function (PyInit_%s)",
-                                             shortname);
-        if (msg == NULL)
-            goto error;
-        PyErr_SetImportError(msg, name, path);
-        Py_DECREF(msg);
+
+    if (exportfunc == NULL) {
+        if (!PyErr_Occurred()) {
+            PyObject *msg;
+            msg = PyUnicode_FromFormat(
+                "dynamic module does not define "
+                "module export function (%s_%s)",
+                hook_prefix, name_buf);
+            if (msg == NULL)
+                goto error;
+            PyErr_SetImportError(msg, name_unicode, path);
+            Py_DECREF(msg);
+        }
         goto error;
     }
-    oldcontext = _Py_PackageContext;
-    _Py_PackageContext = packagecontext;
-    m = (*p)();
-    _Py_PackageContext = oldcontext;
-    if (m == NULL)
-        goto error;
 
-    if (PyErr_Occurred()) {
+    p0 = (PyObject *(*)(void))exportfunc;
+
+    /* Package context is needed for single-phase init */
+    oldcontext = _Py_PackageContext;
+    _Py_PackageContext = PyUnicode_AsUTF8(name_unicode);
+    m = p0();
+    _Py_PackageContext = oldcontext;
+
+    if (m == NULL) {
+        if (!PyErr_Occurred()) {
+            PyErr_Format(
+                PyExc_SystemError,
+                "initialization of %s failed without raising an exception",
+                name_buf);
+        }
+        goto error;
+    } else if (PyErr_Occurred()) {
+        PyErr_Clear();
+        PyErr_Format(
+            PyExc_SystemError,
+            "initialization of %s raised unreported exception",
+            name_buf);
+        m = NULL;
+        goto error;
+    }
+    if (Py_TYPE(m) == NULL) {
+        /* This can happen when a PyModuleDef is returned without calling
+         * PyModuleDef_Init on it
+         */
         PyErr_Format(PyExc_SystemError,
-                     "initialization of %s raised unreported exception",
-                     shortname);
+                     "init function of %s returned uninitialized object",
+                     name_buf);
+        m = NULL; /* prevent segfault in DECREF */
+        goto error;
+    }
+    if (PyObject_TypeCheck(m, &PyModuleDef_Type)) {
+        Py_DECREF(name_unicode);
+        Py_DECREF(name);
+        Py_DECREF(path);
+        return PyModule_FromDefAndSpec((PyModuleDef*)m, spec);
+    }
+
+    /* Fall back to single-phase init mechanism */
+
+    if (hook_prefix == nonascii_prefix) {
+        /* don't allow legacy init for non-ASCII module names */
+        PyErr_Format(
+            PyExc_SystemError,
+            "initialization of * did not return PyModuleDef",
+            name_buf);
         goto error;
     }
 
@@ -102,10 +201,10 @@ _PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
     if (def == NULL) {
         PyErr_Format(PyExc_SystemError,
                      "initialization of %s did not return an extension "
-                     "module", shortname);
+                     "module", name_buf);
         goto error;
     }
-    def->m_base.m_init = p;
+    def->m_base.m_init = p0;
 
     /* Remember the filename as the __file__ attribute */
     if (PyModule_AddObject(m, "__file__", path) < 0)
@@ -113,13 +212,19 @@ _PyImport_LoadDynamicModule(PyObject *name, PyObject *path, FILE *fp)
     else
         Py_INCREF(path);
 
-    if (_PyImport_FixupExtensionObject(m, name, path) < 0)
+    if (_PyImport_FixupExtensionObject(m, name_unicode, path) < 0)
         goto error;
-    Py_DECREF(nameascii);
+
+    Py_DECREF(name_unicode);
+    Py_DECREF(name);
+    Py_DECREF(path);
+
     return m;
 
 error:
-    Py_DECREF(nameascii);
+    Py_DECREF(name_unicode);
+    Py_XDECREF(name);
+    Py_XDECREF(path);
     Py_XDECREF(m);
     return NULL;
 }

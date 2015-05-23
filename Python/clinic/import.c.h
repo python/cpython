@@ -97,6 +97,15 @@ exit:
     return return_value;
 }
 
+PyDoc_STRVAR(_imp_create_builtin__doc__,
+"create_builtin($module, spec, /)\n"
+"--\n"
+"\n"
+"Create an extension module.");
+
+#define _IMP_CREATE_BUILTIN_METHODDEF    \
+    {"create_builtin", (PyCFunction)_imp_create_builtin, METH_O, _imp_create_builtin__doc__},
+
 PyDoc_STRVAR(_imp_extension_suffixes__doc__,
 "extension_suffixes($module, /)\n"
 "--\n"
@@ -113,32 +122,6 @@ static PyObject *
 _imp_extension_suffixes(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 {
     return _imp_extension_suffixes_impl(module);
-}
-
-PyDoc_STRVAR(_imp_init_builtin__doc__,
-"init_builtin($module, name, /)\n"
-"--\n"
-"\n"
-"Initializes a built-in module.");
-
-#define _IMP_INIT_BUILTIN_METHODDEF    \
-    {"init_builtin", (PyCFunction)_imp_init_builtin, METH_O, _imp_init_builtin__doc__},
-
-static PyObject *
-_imp_init_builtin_impl(PyModuleDef *module, PyObject *name);
-
-static PyObject *
-_imp_init_builtin(PyModuleDef *module, PyObject *arg)
-{
-    PyObject *return_value = NULL;
-    PyObject *name;
-
-    if (!PyArg_Parse(arg, "U:init_builtin", &name))
-        goto exit;
-    return_value = _imp_init_builtin_impl(module, name);
-
-exit:
-    return return_value;
 }
 
 PyDoc_STRVAR(_imp_init_frozen__doc__,
@@ -273,31 +256,30 @@ exit:
 
 #if defined(HAVE_DYNAMIC_LOADING)
 
-PyDoc_STRVAR(_imp_load_dynamic__doc__,
-"load_dynamic($module, name, path, file=None, /)\n"
+PyDoc_STRVAR(_imp_create_dynamic__doc__,
+"create_dynamic($module, spec, file=None, /)\n"
 "--\n"
 "\n"
-"Loads an extension module.");
+"Create an extension module.");
 
-#define _IMP_LOAD_DYNAMIC_METHODDEF    \
-    {"load_dynamic", (PyCFunction)_imp_load_dynamic, METH_VARARGS, _imp_load_dynamic__doc__},
-
-static PyObject *
-_imp_load_dynamic_impl(PyModuleDef *module, PyObject *name, PyObject *path,
-                       PyObject *file);
+#define _IMP_CREATE_DYNAMIC_METHODDEF    \
+    {"create_dynamic", (PyCFunction)_imp_create_dynamic, METH_VARARGS, _imp_create_dynamic__doc__},
 
 static PyObject *
-_imp_load_dynamic(PyModuleDef *module, PyObject *args)
+_imp_create_dynamic_impl(PyModuleDef *module, PyObject *spec, PyObject *file);
+
+static PyObject *
+_imp_create_dynamic(PyModuleDef *module, PyObject *args)
 {
     PyObject *return_value = NULL;
-    PyObject *name;
-    PyObject *path;
+    PyObject *spec;
     PyObject *file = NULL;
 
-    if (!PyArg_ParseTuple(args, "UO&|O:load_dynamic",
-        &name, PyUnicode_FSDecoder, &path, &file))
+    if (!PyArg_UnpackTuple(args, "create_dynamic",
+        1, 2,
+        &spec, &file))
         goto exit;
-    return_value = _imp_load_dynamic_impl(module, name, path, file);
+    return_value = _imp_create_dynamic_impl(module, spec, file);
 
 exit:
     return return_value;
@@ -305,7 +287,42 @@ exit:
 
 #endif /* defined(HAVE_DYNAMIC_LOADING) */
 
-#ifndef _IMP_LOAD_DYNAMIC_METHODDEF
-    #define _IMP_LOAD_DYNAMIC_METHODDEF
-#endif /* !defined(_IMP_LOAD_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=6d75cece35863874 input=a9049054013a1b77]*/
+#if defined(HAVE_DYNAMIC_LOADING)
+
+PyDoc_STRVAR(_imp_exec_dynamic__doc__,
+"exec_dynamic($module, mod, /)\n"
+"--\n"
+"\n"
+"Initialize an extension module.");
+
+#define _IMP_EXEC_DYNAMIC_METHODDEF    \
+    {"exec_dynamic", (PyCFunction)_imp_exec_dynamic, METH_O, _imp_exec_dynamic__doc__},
+
+static int
+_imp_exec_dynamic_impl(PyModuleDef *module, PyObject *mod);
+
+static PyObject *
+_imp_exec_dynamic(PyModuleDef *module, PyObject *mod)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _imp_exec_dynamic_impl(module, mod);
+    if ((_return_value == -1) && PyErr_Occurred())
+        goto exit;
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
+#endif /* defined(HAVE_DYNAMIC_LOADING) */
+
+#ifndef _IMP_CREATE_DYNAMIC_METHODDEF
+    #define _IMP_CREATE_DYNAMIC_METHODDEF
+#endif /* !defined(_IMP_CREATE_DYNAMIC_METHODDEF) */
+
+#ifndef _IMP_EXEC_DYNAMIC_METHODDEF
+    #define _IMP_EXEC_DYNAMIC_METHODDEF
+#endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
+/*[clinic end generated code: output=0f1059766dd58f88 input=a9049054013a1b77]*/

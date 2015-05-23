@@ -93,6 +93,7 @@ Implementation improvements:
   (:issue:`19977`).
 
 * :pep:`488`, the elimination of ``.pyo`` files.
+* :pep:`489`, multi-phase initialization of extension modules.
 
 Significantly Improved Library Modules:
 
@@ -264,6 +265,21 @@ updated API to help with this change.
 
    :pep:`488` -- Elimination of PYO files
 
+
+PEP 489: Multi-phase extension module initialization
+----------------------------------------------------
+
+:pep:`489` updates extension module initialization to take advantage of the
+two step module loading mechanism introduced by :pep:`451` in Python 3.4.
+
+This change brings the import semantics of extension modules that opt-in to
+using the new mechanism much closer to those of Python source and bytecode
+modules, including the ability to any valid identifier as a module name,
+rather than being restricted to ASCII.
+
+.. seealso::
+
+   :pep:`488` -- Multi-phase extension module initialization
 
 Other Language Changes
 ======================
@@ -667,7 +683,7 @@ time
 tkinter
 -------
 
-* The :module:`tkinter._fix` module used for setting up the Tcl/Tk environment
+* The :mod:`tkinter._fix` module used for setting up the Tcl/Tk environment
   on Windows has been replaced by a private function in the :module:`_tkinter`
   module which makes no permanent changes to environment variables.
   (Contributed by Zachary Ware in :issue:`20035`.)
@@ -1011,7 +1027,6 @@ Changes in the Python API
   module level :data:`stderr` variable for debug output.  If your (test)
   program depends on patching the module level variable to capture the debug
   output, you will need to update it to capture sys.stderr instead.
-
 
 Changes in the C API
 --------------------

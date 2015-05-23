@@ -10,6 +10,8 @@ Release date: 2015-05-24
 Core and Builtins
 -----------------
 
+- Issue #24268: PEP 489: Multi-phase extension module initialization
+
 - Issue #23955: Add pyvenv.cfg option to suppress registry/environment
   lookup for generating sys.path on Windows.
 
