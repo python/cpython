@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14373: Added C implementation of functools.lru_cache().  Based on
+  patches by Matt Joiner and Alexey Kachayev.
+
 - Issue 24230: The tempfile module now accepts bytes for prefix, suffix and dir
   parameters and returns bytes in such situations (matching the os module APIs).
 
