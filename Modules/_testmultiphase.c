@@ -262,6 +262,7 @@ createfunc_nonmodule(PyObject *spec, PyModuleDef *def)
         return NULL;
     }
     PyDict_SetItemString(dct, "three", three);
+    Py_DECREF(three);
 
     ns = _PyNamespace_New(dct);
     Py_DECREF(dct);

@@ -2694,6 +2694,7 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 {
     PyHeapTypeObject *res = (PyHeapTypeObject*)PyType_GenericAlloc(&PyType_Type, 0);
     PyTypeObject *type, *base;
+    PyObject *modname;
     char *s;
     char *res_start = (char*)res;
     PyType_Slot *slot;
@@ -2807,11 +2808,15 @@ PyType_FromSpecWithBases(PyType_Spec *spec, PyObject *bases)
 
     /* Set type.__module__ */
     s = strrchr(spec->name, '.');
-    if (s != NULL)
-        _PyDict_SetItemId(type->tp_dict, &PyId___module__,
-            PyUnicode_FromStringAndSize(
-                spec->name, (Py_ssize_t)(s - spec->name)));
-    else {
+    if (s != NULL) {
+        modname = PyUnicode_FromStringAndSize(
+                spec->name, (Py_ssize_t)(s - spec->name));
+        if (modname == NULL) {
+            goto fail;
+        }
+        _PyDict_SetItemId(type->tp_dict, &PyId___module__, modname);
+        Py_DECREF(modname);
+    } else {
         if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                 "builtin type %.200s has no __module__ attribute",
                 spec->name))
