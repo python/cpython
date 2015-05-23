@@ -311,6 +311,7 @@ PyModule_FromDefAndSpec2(struct PyModuleDef* def, PyObject *spec, int module_api
         }
     }
 
+    Py_DECREF(nameobj);
     return m;
 
 error:
