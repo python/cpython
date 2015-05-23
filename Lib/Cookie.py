@@ -528,12 +528,13 @@ class Morsel(dict):
 # result, the parsing rules here are less strict.
 #
 
-_LegalCharsPatt  = r"[\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\=]"
+_LegalKeyChars  = r"\w\d!#%&'~_`><@,:/\$\*\+\-\.\^\|\)\(\?\}\{\="
+_LegalValueChars = _LegalKeyChars + r"\[\]"
 _CookiePattern = re.compile(
     r"(?x)"                       # This is a Verbose pattern
     r"\s*"                        # Optional whitespace at start of cookie
     r"(?P<key>"                   # Start of group 'key'
-    ""+ _LegalCharsPatt +"+?"     # Any word of at least one letter, nongreedy
+    "["+ _LegalKeyChars +"]+?"     # Any word of at least one letter, nongreedy
     r")"                          # End of group 'key'
     r"("                          # Optional group: there may not be a value.
     r"\s*=\s*"                    # Equal Sign
@@ -542,7 +543,7 @@ _CookiePattern = re.compile(
     r"|"                            # or
     r"\w{3},\s[\s\w\d-]{9,11}\s[\d:]{8}\sGMT" # Special case for "expires" attr
     r"|"                            # or
-    ""+ _LegalCharsPatt +"*"        # Any word or empty string
+    "["+ _LegalValueChars +"]*"        # Any word or empty string
     r")"                          # End of group 'val'
     r")?"                         # End of optional value group
     r"\s*"                        # Any number of spaces.

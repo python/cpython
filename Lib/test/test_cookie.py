@@ -27,6 +27,20 @@ class CookieTests(unittest.TestCase):
               'dict': {'keebler' : 'E=mc2'},
               'repr': "<SimpleCookie: keebler='E=mc2'>",
               'output': 'Set-Cookie: keebler=E=mc2',
+            },
+
+            # issue22931 - Adding '[' and ']' as valid characters in cookie
+            # values as defined in RFC 6265
+            {
+                'data': 'a=b; c=[; d=r; f=h',
+                'dict': {'a':'b', 'c':'[', 'd':'r', 'f':'h'},
+                'repr': "<SimpleCookie: a='b' c='[' d='r' f='h'>",
+                'output': '\n'.join((
+                    'Set-Cookie: a=b',
+                    'Set-Cookie: c=[',
+                    'Set-Cookie: d=r',
+                    'Set-Cookie: f=h'
+                ))
             }
         ]
 
