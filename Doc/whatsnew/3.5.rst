@@ -437,7 +437,7 @@ glob
   subdirectories using the "``**``" pattern.
   (Contributed by Serhiy Storchaka in :issue:`13968`.)
 
-  idlelib and IDLE
+idlelib and IDLE
 ----------------
 
 Since idlelib implements the IDLE shell and editor and is not intended for
