@@ -202,7 +202,7 @@ dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
     if (wpathname == NULL)
         return NULL;
 
-    PyOS_snprintf(funcname, sizeof(funcname), "%20_%.200s", prefix, shortname);
+    PyOS_snprintf(funcname, sizeof(funcname), "%.20s_%.200s", prefix, shortname);
 
     {
         HINSTANCE hDLL = NULL;
