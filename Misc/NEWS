@@ -80,6 +80,8 @@ Library
 - Issue #23796: peek and read1 methods of BufferedReader now raise ValueError
   if they called on a closed object. Patch by John Hergenroeder.
 
+- Issue #22931: Allow '[' and ']' in cookie values.
+
 - Issue #24094: Fix possible crash in json.encode with poorly behaved dict
   subclasses.
 
