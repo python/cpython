@@ -1,5 +1,19 @@
 What's New in Idle 3.4.3?
 =========================
+*Release date: 2015-??-??*
+
+- Issue #23184: remove unused names and imports in idlelib.
+  Initial patch by Al Sweigart.
+
+
+What's New in Idle 3.4.3?
+=========================
+*Release date: 2015-02-25*
+
+- Issue #20577: Configuration of the max line length for the FormatParagraph
+  extension has been moved from the General tab of the Idle preferences dialog
+  to the FormatParagraph tab of the Config Extensions dialog.
+  Patch by Tal Einat.
 
 - Issue #16893: Update Idle doc chapter to match current Idle and add new
   information.
@@ -21,9 +35,13 @@ What's New in Idle 3.4.3?
 - Issue #21986: Code objects are not normally pickled by the pickle module.
   To match this, they are no longer pickled when running under Idle.
 
+- Issue #23180: Rename IDLE "Windows" menu item to "Window".
+  Patch by Al Sweigart.
+
 
 What's New in IDLE 3.4.2?
 =========================
+*Release date: 2014-10-06*
 
 - Issue #17390: Adjust Editor window title; remove 'Python',
   move version to end.
@@ -66,6 +84,7 @@ What's New in IDLE 3.4.2?
 
 What's New in IDLE 3.4.1?
 =========================
+*Release date: 2014-05-18*
 
 - Issue #18104: Add idlelib/idle_test/htest.py with a few sample tests to begin
   consolidating and improving human-validated tests of Idle. Change other files
@@ -81,6 +100,7 @@ What's New in IDLE 3.4.1?
 
 What's New in IDLE 3.4.0?
 =========================
+*Release date: 2014-03-16*
 
 - Issue #17390: Display Python version on Idle title bar.
   Initial patch by Edmond Burnett.
@@ -98,6 +118,7 @@ What's New in IDLE 3.4.0?
 
 What's New in IDLE 3.3.0?
 =========================
+*Release date: 2012-09-29*
 
 - Issue #17625: Close the replace dialog after it is used.
 
