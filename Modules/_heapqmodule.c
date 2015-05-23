@@ -244,6 +244,11 @@ heappushpop(PyObject *self, PyObject *args)
         return item;
     }
 
+    if (PyList_GET_SIZE(heap) == 0) {
+        PyErr_SetString(PyExc_IndexError, "index out of range");
+        return NULL;
+    }
+
     returnitem = PyList_GET_ITEM(heap, 0);
     Py_INCREF(item);
     PyList_SET_ITEM(heap, 0, item);

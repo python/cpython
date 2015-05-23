@@ -21,7 +21,6 @@ barrier, in particular frame and traceback objects.
 """
 
 import types
-from idlelib import rpc
 from idlelib import Debugger
 
 debugging = 0
@@ -101,7 +100,7 @@ class IdbAdapter:
             tb = tracebacktable[tbid]
         stack, i = self.idb.get_stack(frame, tb)
         ##print >>sys.__stderr__, "get_stack() ->", stack
-        stack = [(wrap_frame(frame), k) for frame, k in stack]
+        stack = [(wrap_frame(frame2), k) for frame2, k in stack]
         ##print >>sys.__stderr__, "get_stack() ->", stack
         return stack, i
 

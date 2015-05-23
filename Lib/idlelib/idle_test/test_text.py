@@ -3,7 +3,6 @@ import unittest
 from test.test_support import requires
 
 from _tkinter import TclError
-import Tkinter as tk
 
 class TextTest(object):
 

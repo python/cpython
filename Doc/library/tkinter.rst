@@ -817,3 +817,53 @@ reference to the image. When the last Python reference to the image object is
 deleted, the image data is deleted as well, and Tk will display an empty box
 wherever the image was used.
 
+
+.. _tkinter-file-handlers:
+
+File Handlers
+-------------
+
+Tk allows you to register and unregister a callback function which will be
+called from the Tk mainloop when I/O is possible on a file descriptor.
+Only one handler may be registered per file descriptor. Example code::
+
+   import Tkinter
+   widget = Tkinter.Tk()
+   mask = Tkinter.READABLE | Tkinter.WRITABLE
+   widget.tk.createfilehandler(file, mask, callback)
+   ...
+   widget.tk.deletefilehandler(file)
+
+This feature is not available on Windows.
+
+Since you don't know how many bytes are available for reading, you may not
+want to use the :class:`~io.BufferedIOBase` or :class:`~io.TextIOBase`
+:meth:`~io.BufferedIOBase.read` or :meth:`~io.IOBase.readline` methods,
+since these will insist on reading a predefined number of bytes.
+For sockets, the :meth:`~socket.socket.recv` or
+:meth:`~socket.socket.recvfrom` methods will work fine; for other files,
+use raw reads or ``os.read(file.fileno(), maxbytecount)``.
+
+
+.. method:: Widget.tk.createfilehandler(file, mask, func)
+
+   Registers the file handler callback function *func*. The *file* argument
+   may either be an object with a :meth:`~io.IOBase.fileno` method (such as
+   a file or socket object), or an integer file descriptor. The *mask*
+   argument is an ORed combination of any of the three constants below.
+   The callback is called as follows::
+
+      callback(file, mask)
+
+
+.. method:: Widget.tk.deletefilehandler(file)
+
+   Unregisters a file handler.
+
+
+.. data:: READABLE
+          WRITABLE
+          EXCEPTION
+
+   Constants used in the *mask* arguments.
+

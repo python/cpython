@@ -7,7 +7,7 @@
 
 import re
 import unittest
-from test.test_support import requires
+#from test.test_support import requires
 from Tkinter import  BooleanVar, StringVar, TclError  # ,Tk, Text
 import tkMessageBox
 from idlelib import SearchEngine as se

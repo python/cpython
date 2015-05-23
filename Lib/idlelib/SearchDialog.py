@@ -23,7 +23,7 @@ def find_selection(text):
 class SearchDialog(SearchDialogBase):
 
     def create_widgets(self):
-        f = SearchDialogBase.create_widgets(self)
+        SearchDialogBase.create_widgets(self)
         self.make_button("Find Next", self.default_command, 1)
 
     def default_command(self, event=None):

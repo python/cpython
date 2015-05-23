@@ -104,9 +104,9 @@ For example::
    .. method:: most_common([n])
 
       Return a list of the *n* most common elements and their counts from the
-      most common to the least.  If *n* is not specified, :func:`most_common`
-      returns *all* elements in the counter.  Elements with equal counts are
-      ordered arbitrarily:
+      most common to the least.  If *n* is omitted or ``None``,
+      :func:`most_common` returns *all* elements in the counter.
+      Elements with equal counts are ordered arbitrarily:
 
             >>> Counter('abracadabra').most_common(3)
             [('a', 5), ('r', 2), ('b', 2)]

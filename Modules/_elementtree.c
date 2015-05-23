@@ -756,7 +756,7 @@ static PyObject*
 element_extend(ElementObject* self, PyObject* args)
 {
     PyObject* seq;
-    Py_ssize_t i, seqlen = 0;
+    Py_ssize_t i;
 
     PyObject* seq_in;
     if (!PyArg_ParseTuple(args, "O:extend", &seq_in))
@@ -771,8 +771,7 @@ element_extend(ElementObject* self, PyObject* args)
         return NULL;
     }
 
-    seqlen = PySequence_Size(seq);
-    for (i = 0; i < seqlen; i++) {
+    for (i = 0; i < PySequence_Fast_GET_SIZE(seq); i++) {
         PyObject* element = PySequence_Fast_GET_ITEM(seq, i);
         if (element_add_subelement(self, element) < 0) {
             Py_DECREF(seq);
@@ -805,11 +804,16 @@ element_find(ElementObject* self, PyObject* args)
         
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
-        if (Element_CheckExact(item) &&
-            PyObject_Compare(((ElementObject*)item)->tag, tag) == 0) {
-            Py_INCREF(item);
+        int rc;
+        if (!Element_CheckExact(item))
+            continue;
+        Py_INCREF(item);
+        rc = PyObject_Compare(((ElementObject*)item)->tag, tag);
+        if (rc == 0)
             return item;
-        }
+        Py_DECREF(item);
+        if (rc < 0 && PyErr_Occurred())
+            return NULL;
     }
 
     Py_RETURN_NONE;
@@ -838,13 +842,24 @@ element_findtext(ElementObject* self, PyObject* args)
 
     for (i = 0; i < self->extra->length; i++) {
         ElementObject* item = (ElementObject*) self->extra->children[i];
-        if (Element_CheckExact(item) && !PyObject_Compare(item->tag, tag)) {
+        int rc;
+        if (!Element_CheckExact(item))
+            continue;
+        Py_INCREF(item);
+        rc = PyObject_Compare(item->tag, tag);
+        if (rc == 0) {
             PyObject* text = element_get_text(item);
-            if (text == Py_None)
+            if (text == Py_None) {
+                Py_DECREF(item);
                 return PyString_FromString("");
+            }
             Py_XINCREF(text);
+            Py_DECREF(item);
             return text;
         }
+        Py_DECREF(item);
+        if (rc < 0 && PyErr_Occurred())
+            return NULL;
     }
 
     Py_INCREF(default_value);
@@ -876,12 +891,17 @@ element_findall(ElementObject* self, PyObject* args)
 
     for (i = 0; i < self->extra->length; i++) {
         PyObject* item = self->extra->children[i];
-        if (Element_CheckExact(item) &&
-            PyObject_Compare(((ElementObject*)item)->tag, tag) == 0) {
-            if (PyList_Append(out, item) < 0) {
-                Py_DECREF(out);
-                return NULL;
-            }
+        int rc;
+        if (!Element_CheckExact(item))
+            continue;
+        Py_INCREF(item);
+        rc = PyObject_Compare(((ElementObject*)item)->tag, tag);
+        if (rc == 0)
+            rc = PyList_Append(out, item);
+        Py_DECREF(item);
+        if (rc < 0 && PyErr_Occurred()) {
+            Py_DECREF(out);
+            return NULL;
         }
     }
 
@@ -1147,8 +1167,10 @@ static PyObject*
 element_remove(ElementObject* self, PyObject* args)
 {
     int i;
-
+    int rc;
     PyObject* element;
+    PyObject* found;
+
     if (!PyArg_ParseTuple(args, "O!:remove", &Element_Type, &element))
         return NULL;
 
@@ -1164,11 +1186,14 @@ element_remove(ElementObject* self, PyObject* args)
     for (i = 0; i < self->extra->length; i++) {
         if (self->extra->children[i] == element)
             break;
-        if (PyObject_Compare(self->extra->children[i], element) == 0)
+        rc = PyObject_Compare(self->extra->children[i], element);
+        if (rc == 0)
             break;
+        if (rc < 0 && PyErr_Occurred())
+            return NULL;
     }
 
-    if (i == self->extra->length) {
+    if (i >= self->extra->length) {
         /* element is not in children, so raise exception */
         PyErr_SetString(
             PyExc_ValueError,
@@ -1177,13 +1202,13 @@ element_remove(ElementObject* self, PyObject* args)
         return NULL;
     }
 
-    Py_DECREF(self->extra->children[i]);
+    found = self->extra->children[i];
 
     self->extra->length--;
-
     for (; i < self->extra->length; i++)
         self->extra->children[i] = self->extra->children[i+1];
 
+    Py_DECREF(found);
     Py_RETURN_NONE;
 }
 

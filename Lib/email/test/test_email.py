@@ -12,6 +12,10 @@ import warnings
 import textwrap
 from cStringIO import StringIO
 from random import choice
+try:
+    from threading import Thread
+except ImportError:
+    from dummy_threading import Thread
 
 import email
 
@@ -33,7 +37,7 @@ from email import Iterators
 from email import base64MIME
 from email import quopriMIME
 
-from test.test_support import findfile, run_unittest
+from test.test_support import findfile, run_unittest, start_threads
 from email.test import __file__ as landmark
 
 
@@ -2411,6 +2415,25 @@ Foo
         eq = self.assertEqual
         addrs = Utils.getaddresses(['User ((nested comment)) <foo@bar.com>'])
         eq(addrs[0][1], 'foo@bar.com')
+
+    def test_make_msgid_collisions(self):
+        # Test make_msgid uniqueness, even with multiple threads
+        class MsgidsThread(Thread):
+            def run(self):
+                # generate msgids for 3 seconds
+                self.msgids = []
+                append = self.msgids.append
+                make_msgid = Utils.make_msgid
+                clock = time.clock
+                tfin = clock() + 3.0
+                while clock() < tfin:
+                    append(make_msgid())
+
+        threads = [MsgidsThread() for i in range(5)]
+        with start_threads(threads):
+            pass
+        all_ids = sum([t.msgids for t in threads], [])
+        self.assertEqual(len(set(all_ids)), len(all_ids))
 
     def test_utils_quote_unquote(self):
         eq = self.assertEqual

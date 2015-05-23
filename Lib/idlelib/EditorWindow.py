@@ -9,7 +9,6 @@ import tkMessageBox
 import webbrowser
 
 from idlelib.MultiCall import MultiCallCreator
-from idlelib import idlever
 from idlelib import WindowList
 from idlelib import SearchDialog
 from idlelib import GrepDialog
@@ -154,7 +153,6 @@ class EditorWindow(object):
                     EditorWindow.help_url = 'file://' + EditorWindow.help_url
             else:
                 EditorWindow.help_url = "https://docs.python.org/%d.%d/" % sys.version_info[:2]
-        currentTheme=idleConf.CurrentTheme()
         self.flist = flist
         root = root or flist.root
         self.root = root

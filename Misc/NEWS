@@ -2,6 +2,60 @@
 Python News
 +++++++++++
 
+What's New in Python 2.7.11?
+============================
+
+*Release date: XXXX-XX-XX*
+
+Core and Builtins
+-----------------
+
+- Issue #22939: Fixed integer overflow in iterator object.  Original patch by
+  Clement Rouault.
+
+- Issue #24102: Fixed exception type checking in standard error handlers.
+
+Library
+-------
+
+- Issue #24257: Fixed segmentation fault in sqlite3.Row constructor with faked
+  cursor type.
+
+- Issue #22107: tempfile.gettempdir() and tempfile.mkdtemp() now try again
+  when a directory with the chosen name already exists on Windows as well as
+  on Unix.  tempfile.mkstemp() now fails early if parent directory is not
+  valid (not exists or is a file) on Windows.
+
+- Issue #6598: Increased time precision and random number range in
+  email.utils.make_msgid() to strengthen the uniqueness of the message ID.
+
+- Issue #24091: Fixed various crashes in corner cases in cElementTree.
+
+- Issue #15267: HTTPConnection.request() now is compatibile with old-style
+  classes (such as TemporaryFile).  Original patch by Atsuo Ishimoto.
+
+- Issue #20014: array.array() now accepts unicode typecodes.  Based on patch by
+  Vajrasky Kok.
+
+- Issue #23637: Showing a warning no longer fails with UnicodeErrror.
+  Formatting unicode warning in the file with the path containing non-ascii
+  characters no longer fails with UnicodeErrror.
+
+- Issue #24134: Reverted issue #24134 changes.
+
+IDLE
+----
+
+- Issue #15809: IDLE shell now uses locale encoding instead of Latin1 for
+  decoding unicode literals.
+  
+Documentation
+-------------
+
+- Issue #22155: Add File Handlers subsection with createfilehandler to Tkinter
+  doc.  Remove obsolete example from FAQ.  Patch by Martin Panter.
+
+
 What's New in Python 2.7.10?
 ============================
 
@@ -11,7 +65,6 @@ Library
 -------
 
 - Issue #22931: Allow '[' and ']' in cookie values.
-
 
 What's New in Python 2.7.10 release candidate 1?
 ================================================
@@ -23,6 +76,11 @@ Core and Builtins
 
 - Issue #20274: When calling a _sqlite.Connection, it now complains if passed
   any keyword arguments.  Previously it silently ignored them.
+
+- Issue #23971:  Fix underestimated presizing in dict.fromkeys().
+
+- Issue #23757:  PySequence_Tuple() incorrectly called the concrete list API
+  when the data was a list subclass.
 
 - Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
   METH_VARARGS methods on _sqlite.Connection.

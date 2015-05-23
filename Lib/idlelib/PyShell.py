@@ -10,8 +10,6 @@ import re
 import socket
 import time
 import threading
-import traceback
-import types
 import io
 
 import linecache
@@ -32,11 +30,11 @@ from idlelib.ColorDelegator import ColorDelegator
 from idlelib.UndoDelegator import UndoDelegator
 from idlelib.OutputWindow import OutputWindow
 from idlelib.configHandler import idleConf
-from idlelib import idlever
 from idlelib import rpc
 from idlelib import Debugger
 from idlelib import RemoteDebugger
 from idlelib import macosxSupport
+from idlelib import IOBinding
 
 IDENTCHARS = string.ascii_letters + string.digits + "_"
 HOST = '127.0.0.1' # python execution server on localhost loopback
@@ -171,7 +169,7 @@ class PyShellEditorWindow(EditorWindow):
         filename = self.io.filename
         text.tag_add("BREAK", "%d.0" % lineno, "%d.0" % (lineno+1))
         try:
-            i = self.breakpoints.index(lineno)
+            self.breakpoints.index(lineno)
         except ValueError:  # only add if missing, i.e. do once
             self.breakpoints.append(lineno)
         try:    # update the subprocess debugger
@@ -439,7 +437,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             try:
                 self.rpcclt = MyRPCClient(addr)
                 break
-            except socket.error as err:
+            except socket.error:
                 pass
         else:
             self.display_port_binding_error()
@@ -460,7 +458,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.rpcclt.listening_sock.settimeout(10)
         try:
             self.rpcclt.accept()
-        except socket.timeout as err:
+        except socket.timeout:
             self.display_no_subprocess_error()
             return None
         self.rpcclt.register("console", self.tkconsole)
@@ -495,7 +493,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.spawn_subprocess()
         try:
             self.rpcclt.accept()
-        except socket.timeout as err:
+        except socket.timeout:
             self.display_no_subprocess_error()
             return None
         self.transfer_path(with_cwd=with_cwd)
@@ -513,7 +511,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         # restart subprocess debugger
         if debug:
             # Restarted debugger connects to current instance of debug GUI
-            gui = RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
+            RemoteDebugger.restart_subprocess_debugger(self.rpcclt)
             # reload remote debugger breakpoints for all PyShellEditWindows
             debug.load_breakpoints()
         self.compile.compiler.flags = self.original_compiler_flags
@@ -654,7 +652,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         if source is None:
             source = open(filename, "r").read()
         try:
-            code = compile(source, filename, "exec")
+            code = compile(source, filename, "exec", dont_inherit=True)
         except (OverflowError, SyntaxError):
             self.tkconsole.resetoutput()
             print('*** Error in script or command!\n'
@@ -671,10 +669,11 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.more = 0
         self.save_warnings_filters = warnings.filters[:]
         warnings.filterwarnings(action="error", category=SyntaxWarning)
-        if isinstance(source, types.UnicodeType):
-            from idlelib import IOBinding
+        if isinstance(source, unicode) and IOBinding.encoding != 'utf-8':
             try:
-                source = source.encode(IOBinding.encoding)
+                source = '# -*- coding: %s -*-\n%s' % (
+                        IOBinding.encoding,
+                        source.encode(IOBinding.encoding))
             except UnicodeError:
                 self.tkconsole.resetoutput()
                 self.write("Unsupported characters in input\n")
@@ -1246,7 +1245,7 @@ class PyShell(OutputWindow):
         while i > 0 and line[i-1] in " \t":
             i = i-1
         line = line[:i]
-        more = self.interp.runsource(line)
+        self.interp.runsource(line)
 
     def open_stack_viewer(self, event=None):
         if self.interp.rpcclt:
@@ -1260,7 +1259,7 @@ class PyShell(OutputWindow):
                 master=self.text)
             return
         from idlelib.StackViewer import StackBrowser
-        sv = StackBrowser(self.root, self.flist)
+        StackBrowser(self.root, self.flist)
 
     def view_restart_mark(self, event=None):
         self.text.see("iomark")

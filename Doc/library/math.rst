@@ -280,12 +280,12 @@ Angular conversion
 
 .. function:: degrees(x)
 
-   Converts angle *x* from radians to degrees.
+   Convert angle *x* from radians to degrees.
 
 
 .. function:: radians(x)
 
-   Converts angle *x* from degrees to radians.
+   Convert angle *x* from degrees to radians.
 
 
 Hyperbolic functions

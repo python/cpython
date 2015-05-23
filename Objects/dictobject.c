@@ -1361,7 +1361,7 @@ dict_fromkeys(PyObject *cls, PyObject *args)
             PyObject *key;
             long hash;
 
-            if (dictresize(mp, Py_SIZE(seq))) {
+            if (dictresize(mp, Py_SIZE(seq) / 2 * 3)) {
                 Py_DECREF(d);
                 return NULL;
             }
@@ -1382,7 +1382,7 @@ dict_fromkeys(PyObject *cls, PyObject *args)
             PyObject *key;
             long hash;
 
-            if (dictresize(mp, PySet_GET_SIZE(seq))) {
+            if (dictresize(mp, PySet_GET_SIZE(seq) / 2 * 3)) {
                 Py_DECREF(d);
                 return NULL;
             }

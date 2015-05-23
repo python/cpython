@@ -1063,7 +1063,7 @@ class HTTPConnection:
         elif body is not None:
             try:
                 thelen = str(len(body))
-            except TypeError:
+            except (TypeError, AttributeError):
                 # If this is a file-like object, try to
                 # fstat its file descriptor
                 try:
