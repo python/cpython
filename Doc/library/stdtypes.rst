@@ -1937,6 +1937,16 @@ expression support in the :mod:`re` module).
       >>> 'www.example.com'.strip('cmowz.')
       'example'
 
+   The outermost leading and trailing *chars* argument values are stripped
+   from the string. Characters are removed from the leading end until
+   reaching a string character that is not contained in the set of
+   characters in *chars*. A similar action takes place on the trailing end.
+   For example::
+
+      >>> comment_string = '#....... Section 3.2.1 Issue #32 .......'
+      >>> comment_string.strip('.#! ')
+      'Section 3.2.1 Issue #32'
+
 
 .. method:: str.swapcase()
 
