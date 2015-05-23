@@ -7,8 +7,6 @@ Module Objects
 
 .. index:: object: module
 
-There are only a few functions special to module objects.
-
 
 .. c:var:: PyTypeObject PyModule_Type
 
@@ -109,6 +107,14 @@ There are only a few functions special to module objects.
       unencodable filenames, use :c:func:`PyModule_GetFilenameObject` instead.
 
 
+Per-interpreter module state
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Single-phase initialization creates singleton modules that can store additional
+information as part of the interpreter, allow that state to be retrieved later
+with only a reference to the module definition, rather than to the module
+itself.
+
 .. c:function:: void* PyModule_GetState(PyObject *module)
 
    Return the "state" of the module, that is, a pointer to the block of memory
@@ -145,27 +151,6 @@ There are only a few functions special to module objects.
 
 Initializing C modules
 ^^^^^^^^^^^^^^^^^^^^^^
-
-These functions are usually used in the module initialization function.
-
-.. c:function:: PyObject* PyModule_Create(PyModuleDef *module)
-
-   Create a new module object, given the definition in *module*.  This behaves
-   like :c:func:`PyModule_Create2` with *module_api_version* set to
-   :const:`PYTHON_API_VERSION`.
-
-
-.. c:function:: PyObject* PyModule_Create2(PyModuleDef *module, int module_api_version)
-
-   Create a new module object, given the definition in *module*, assuming the
-   API version *module_api_version*.  If that version does not match the version
-   of the running interpreter, a :exc:`RuntimeWarning` is emitted.
-
-   .. note::
-
-      Most uses of this function should be using :c:func:`PyModule_Create`
-      instead; only use this if you are sure you need it.
-
 
 .. c:type:: PyModuleDef
 
@@ -210,9 +195,10 @@ These functions are usually used in the module initialization function.
       A pointer to a table of module-level functions, described by
       :c:type:`PyMethodDef` values.  Can be *NULL* if no functions are present.
 
-   .. c:member:: inquiry m_reload
+   .. c:member:: PyModuleDef_Slot* m_slots
 
-      Currently unused, should be *NULL*.
+      An array of slot definitions for multi-phase initialization, terminated by
+      a *NULL* entry.
 
    .. c:member:: traverseproc m_traverse
 
@@ -229,13 +215,67 @@ These functions are usually used in the module initialization function.
       A function to call during deallocation of the module object, or *NULL* if
       not needed.
 
+The module initialization function may create and return the module object
+directly. This is referred to as "single-phase initialization", and uses one
+of the following two module creation functions:
+
+.. c:function:: PyObject* PyModule_Create(PyModuleDef *module)
+
+   Create a new module object, given the definition in *module*.  This behaves
+   like :c:func:`PyModule_Create2` with *module_api_version* set to
+   :const:`PYTHON_API_VERSION`.
+
+
+.. c:function:: PyObject* PyModule_Create2(PyModuleDef *module, int module_api_version)
+
+   Create a new module object, given the definition in *module*, assuming the
+   API version *module_api_version*.  If that version does not match the version
+   of the running interpreter, a :exc:`RuntimeWarning` is emitted.
+
+   .. note::
+
+      Most uses of this function should be using :c:func:`PyModule_Create`
+      instead; only use this if you are sure you need it.
+
+
+Alternatively, the module initialization function may instead return a
+:c:type:`PyModuleDef` instance with a non-empty ``m_slots`` array. This is
+referred to as "multi-phase initialization", and ``PyModuleDef`` instance
+should be initialized with the following function:
+
+.. c:function:: PyObject* PyModuleDef_Init(PyModuleDef *module)
+
+   Ensures a module definition is a properly initialized Python object that
+   correctly reports its type and reference count.
+
+.. XXX (ncoghlan): It's not clear if it makes sense to document PyModule_ExecDef
+   PyModule_FromDefAndSpec or PyModule_FromDefAndSpec2 here, as end user code
+   generally shouldn't be calling those.
+
+The module initialization function (if using single phase initialization) or
+a function called from a module execution slot (if using multiphase
+initialization), can use the following functions to help initialize the module
+state:
+
+.. c:function:: int PyModule_SetDocString(PyObject *module, const char *docstring)
+
+   Set the docstring for *module* to *docstring*. Return ``-1`` on error, ``0``
+   on success.
+
+.. c:function:: int PyModule_AddFunctions(PyObject *module, PyMethodDef *functions)
+
+   Add the functions from the ``NULL`` terminated *functions* array to *module*.
+   Refer to the :c:type:`PyMethodDef` documentation for details on individual
+   entries (due to the lack of a shared module namespace, module level
+   "functions" implemented in C typically receive the module as their first
+   parameter, making them similar to instance methods on Python classes).
+
 
 .. c:function:: int PyModule_AddObject(PyObject *module, const char *name, PyObject *value)
 
    Add an object to *module* as *name*.  This is a convenience function which can
    be used from the module's initialization function.  This steals a reference to
    *value*.  Return ``-1`` on error, ``0`` on success.
-
 
 .. c:function:: int PyModule_AddIntConstant(PyObject *module, const char *name, long value)
 

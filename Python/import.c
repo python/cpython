@@ -1026,50 +1026,74 @@ PyImport_GetImporter(PyObject *path) {
     return importer;
 }
 
+/*[clinic input]
+_imp.create_builtin
 
-static int init_builtin(PyObject *); /* Forward */
+    spec: object
+    /
 
-/* Initialize a built-in module.
-   Return 1 for success, 0 if the module is not found, and -1 with
-   an exception set if the initialization failed. */
+Create an extension module.
+[clinic start generated code]*/
 
-static int
-init_builtin(PyObject *name)
+static PyObject *
+_imp_create_builtin(PyModuleDef *module, PyObject *spec)
+/*[clinic end generated code: output=5038f467617226bd input=37f966f890384e47]*/
 {
     struct _inittab *p;
+    PyObject *name;
+    char *namestr;
     PyObject *mod;
 
+    name = PyObject_GetAttrString(spec, "name");
+    if (name == NULL) {
+        return NULL;
+    }
+
     mod = _PyImport_FindExtensionObject(name, name);
-    if (PyErr_Occurred())
-        return -1;
-    if (mod != NULL)
-        return 1;
+    if (mod || PyErr_Occurred()) {
+        Py_DECREF(name);
+        Py_INCREF(mod);
+        return mod;
+    }
+
+    namestr = PyUnicode_AsUTF8(name);
+    if (namestr == NULL) {
+        Py_DECREF(name);
+        return NULL;
+    }
 
     for (p = PyImport_Inittab; p->name != NULL; p++) {
-        PyObject *mod;
         PyModuleDef *def;
         if (PyUnicode_CompareWithASCIIString(name, p->name) == 0) {
             if (p->initfunc == NULL) {
-                PyErr_Format(PyExc_ImportError,
-                    "Cannot re-init internal module %R",
-                    name);
-                return -1;
+                /* Cannot re-init internal module ("sys" or "builtins") */
+                mod = PyImport_AddModule(namestr);
+                Py_DECREF(name);
+                return mod;
             }
             mod = (*p->initfunc)();
-            if (mod == 0)
-                return -1;
-            /* Remember pointer to module init function. */
-            def = PyModule_GetDef(mod);
-            def->m_base.m_init = p->initfunc;
-            if (_PyImport_FixupExtensionObject(mod, name, name) < 0)
-                return -1;
-            /* FixupExtension has put the module into sys.modules,
-               so we can release our own reference. */
-            Py_DECREF(mod);
-            return 1;
+            if (mod == NULL) {
+                Py_DECREF(name);
+                return NULL;
+            }
+            if (PyObject_TypeCheck(mod, &PyModuleDef_Type)) {
+                Py_DECREF(name);
+                return PyModule_FromDefAndSpec((PyModuleDef*)mod, spec);
+            } else {
+                /* Remember pointer to module init function. */
+                def = PyModule_GetDef(mod);
+                def->m_base.m_init = p->initfunc;
+                if (_PyImport_FixupExtensionObject(mod, name, name) < 0) {
+                    Py_DECREF(name);
+                    return NULL;
+                }
+                Py_DECREF(name);
+                return mod;
+            }
         }
     }
-    return 0;
+    Py_DECREF(name);
+    Py_RETURN_NONE;
 }
 
 
@@ -1821,34 +1845,6 @@ _imp_extension_suffixes_impl(PyModuleDef *module)
 }
 
 /*[clinic input]
-_imp.init_builtin
-
-    name: unicode
-    /
-
-Initializes a built-in module.
-[clinic start generated code]*/
-
-static PyObject *
-_imp_init_builtin_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=1868f473685f6d67 input=f934d2231ec52a2e]*/
-{
-    int ret;
-    PyObject *m;
-
-    ret = init_builtin(name);
-    if (ret < 0)
-        return NULL;
-    if (ret == 0) {
-        Py_INCREF(Py_None);
-        return Py_None;
-    }
-    m = PyImport_AddModuleObject(name);
-    Py_XINCREF(m);
-    return m;
-}
-
-/*[clinic input]
 _imp.init_frozen
 
     name: unicode
@@ -1946,39 +1942,99 @@ _imp_is_frozen_impl(PyModuleDef *module, PyObject *name)
 #ifdef HAVE_DYNAMIC_LOADING
 
 /*[clinic input]
-_imp.load_dynamic
+_imp.create_dynamic
 
-    name: unicode
-    path: fs_unicode
+    spec: object
     file: object = NULL
     /
 
-Loads an extension module.
+Create an extension module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_load_dynamic_impl(PyModuleDef *module, PyObject *name, PyObject *path,
-                       PyObject *file)
-/*[clinic end generated code: output=e84e5f7f0f39bc54 input=af64f06e4bad3526]*/
+_imp_create_dynamic_impl(PyModuleDef *module, PyObject *spec, PyObject *file)
+/*[clinic end generated code: output=935cde5b3872d56d input=c31b954f4cf4e09d]*/
 {
-    PyObject *mod;
+    PyObject *mod, *name, *path;
     FILE *fp;
+
+    name = PyObject_GetAttrString(spec, "name");
+    if (name == NULL) {
+        return NULL;
+    }
+
+    path = PyObject_GetAttrString(spec, "origin");
+    if (path == NULL) {
+        Py_DECREF(name);
+        return NULL;
+    }
+
+    mod = _PyImport_FindExtensionObject(name, path);
+    if (mod != NULL) {
+        Py_DECREF(name);
+        Py_DECREF(path);
+        Py_INCREF(mod);
+        return mod;
+    }
 
     if (file != NULL) {
         fp = _Py_fopen_obj(path, "r");
         if (fp == NULL) {
+            Py_DECREF(name);
             Py_DECREF(path);
             return NULL;
         }
     }
     else
         fp = NULL;
-    mod = _PyImport_LoadDynamicModule(name, path, fp);
+
+    mod = _PyImport_LoadDynamicModuleWithSpec(spec, fp);
+
+    Py_DECREF(name);
     Py_DECREF(path);
     if (fp)
         fclose(fp);
     return mod;
 }
+
+/*[clinic input]
+_imp.exec_dynamic -> int
+
+    mod: object
+    /
+
+Initialize an extension module.
+[clinic start generated code]*/
+
+static int
+_imp_exec_dynamic_impl(PyModuleDef *module, PyObject *mod)
+/*[clinic end generated code: output=4b84f1301b22d4bd input=9fdbfcb250280d3a]*/
+{
+    PyModuleDef *def;
+    void *state;
+
+    if (!PyModule_Check(mod)) {
+        return 0;
+    }
+
+    def = PyModule_GetDef(mod);
+    if (def == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    state = PyModule_GetState(mod);
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    if (state) {
+        /* Already initialized; skip reload */
+        return 0;
+    }
+    return PyModule_ExecDef(mod, def);
+}
+
 
 #endif /* HAVE_DYNAMIC_LOADING */
 
@@ -1998,11 +2054,12 @@ static PyMethodDef imp_methods[] = {
     _IMP_RELEASE_LOCK_METHODDEF
     _IMP_GET_FROZEN_OBJECT_METHODDEF
     _IMP_IS_FROZEN_PACKAGE_METHODDEF
-    _IMP_INIT_BUILTIN_METHODDEF
+    _IMP_CREATE_BUILTIN_METHODDEF
     _IMP_INIT_FROZEN_METHODDEF
     _IMP_IS_BUILTIN_METHODDEF
     _IMP_IS_FROZEN_METHODDEF
-    _IMP_LOAD_DYNAMIC_METHODDEF
+    _IMP_CREATE_DYNAMIC_METHODDEF
+    _IMP_EXEC_DYNAMIC_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
     {NULL, NULL}  /* sentinel */
 };

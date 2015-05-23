@@ -8,8 +8,7 @@ extern "C" {
 
 extern const char *_PyImport_DynLoadFiletab[];
 
-extern PyObject *_PyImport_LoadDynamicModule(PyObject *name, PyObject *pathname,
-                                             FILE *);
+extern PyObject *_PyImport_LoadDynamicModuleWithSpec(PyObject *spec, FILE *);
 
 /* Max length of module suffix searched for -- accommodates "module.slb" */
 #define MAXSUFFIXSIZE 12

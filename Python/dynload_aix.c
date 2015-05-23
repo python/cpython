@@ -154,8 +154,9 @@ aix_loaderror(const char *pathname)
 }
 
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
-                                    const char *pathname, FILE *fp)
+dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
+                                       const char *shortname,
+                                       const char *pathname, FILE *fp)
 {
     dl_funcptr p;
 

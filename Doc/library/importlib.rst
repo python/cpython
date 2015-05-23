@@ -55,6 +55,12 @@ generically as an :term:`importer`) to participate in the import process.
     :pep:`451`
         A ModuleSpec Type for the Import System
 
+    :pep:`488`
+        Elimination of PYO files
+
+    :pep:`489`
+        Multi-phase extension module initialization
+
     :pep:`3120`
         Using UTF-8 as the Default Source Encoding
 
@@ -756,9 +762,9 @@ find and load modules.
     Only class methods are defined by this class to alleviate the need for
     instantiation.
 
-    .. note::
-       Due to limitations in the extension module C-API, for now
-       BuiltinImporter does not implement :meth:`Loader.exec_module`.
+    .. versionchanged:: 3.5
+       As part of :pep:`489`, the builtin importer now implements
+       :meth:`Loader.create_module` and :meth:`Loader.exec_module`
 
 
 .. class:: FrozenImporter
@@ -973,14 +979,18 @@ find and load modules.
 
       Path to the extension module.
 
-   .. method:: load_module(name=None)
+   .. method:: create_module(spec)
 
-      Loads the extension module if and only if *fullname* is the same as
-      :attr:`name` or is ``None``.
+      Creates the module object from the given specification in accordance
+      with :pep:`489`.
 
-      .. note::
-         Due to limitations in the extension module C-API, for now
-         ExtensionFileLoader does not implement :meth:`Loader.exec_module`.
+      .. versionadded:: 3.5
+
+   .. method:: exec_module(module)
+
+      Initializes the given module object in accordance with :pep:`489`.
+
+      .. versionadded:: 3.5
 
    .. method:: is_package(fullname)
 

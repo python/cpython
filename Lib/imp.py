@@ -8,15 +8,15 @@ functionality over this module.
 # (Probably) need to stay in _imp
 from _imp import (lock_held, acquire_lock, release_lock,
                   get_frozen_object, is_frozen_package,
-                  init_builtin, init_frozen, is_builtin, is_frozen,
+                  init_frozen, is_builtin, is_frozen,
                   _fix_co_filename)
 try:
-    from _imp import load_dynamic
+    from _imp import create_dynamic
 except ImportError:
     # Platform doesn't support dynamic loading.
-    load_dynamic = None
+    create_dynamic = None
 
-from importlib._bootstrap import _ERR_MSG, _exec, _load
+from importlib._bootstrap import _ERR_MSG, _exec, _load, _builtin_from_name
 from importlib._bootstrap_external import SourcelessFileLoader
 
 from importlib import machinery
@@ -312,3 +312,28 @@ def reload(module):
 
     """
     return importlib.reload(module)
+
+
+def init_builtin(name):
+    """**DEPRECATED**
+
+    Load and return a built-in module by name, or None is such module doesn't
+    exist
+    """
+    try:
+        return _builtin_from_name(name)
+    except ImportError:
+        return None
+
+
+if create_dynamic:
+    def load_dynamic(name, path, file=None):
+        """**DEPRECATED**
+
+        Load an extension module.
+        """
+        import importlib.machinery
+        loader = importlib.machinery.ExtensionFileLoader(name, path)
+        return loader.load_module()
+else:
+    load_dynamic = None

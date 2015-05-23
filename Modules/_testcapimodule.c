@@ -4048,6 +4048,9 @@ static struct PyModuleDef _testcapimodule = {
     NULL
 };
 
+/* Per PEP 489, this module will not be converted to multi-phase initialization
+ */
+
 PyMODINIT_FUNC
 PyInit__testcapi(void)
 {

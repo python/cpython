@@ -51,8 +51,10 @@ static struct {
 static int nhandles = 0;
 
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
-                                    const char *pathname, FILE *fp)
+dl_funcptr
+_PyImport_FindSharedFuncptr(const char *prefix,
+                            const char *shortname,
+                            const char *pathname, FILE *fp)
 {
     dl_funcptr p;
     void *handle;
@@ -67,7 +69,7 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
     }
 
     PyOS_snprintf(funcname, sizeof(funcname),
-                  LEAD_UNDERSCORE "PyInit_%.200s", shortname);
+                  LEAD_UNDERSCORE "%.20s_%.200s", prefix, shortname);
 
     if (fp != NULL) {
         int i;
