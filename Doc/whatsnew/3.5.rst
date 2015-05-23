@@ -437,6 +437,15 @@ glob
   subdirectories using the "``**``" pattern.
   (Contributed by Serhiy Storchaka in :issue:`13968`.)
 
+  idlelib and IDLE
+----------------
+
+Since idlelib implements the IDLE shell and editor and is not intended for
+import by other programs, it gets improvements with every release. See
+:file:`Lib/idlelib/NEWS.txt` for a cumulative list of changes since 3.4.0,
+as well as changes made in future 3.5.x releases. This file is also available
+from the IDLE Help -> About Idle dialog.
+
 imaplib
 -------
 
