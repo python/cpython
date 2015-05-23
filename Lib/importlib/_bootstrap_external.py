@@ -378,7 +378,8 @@ def _check_name(method):
         if name is None:
             name = self.name
         elif self.name != name:
-            raise ImportError('loader cannot handle %s' % name, name=name)
+            raise ImportError('loader for %s cannot handle %s' %
+                                (self.name, name), name=name)
         return method(self, name, *args, **kwargs)
     try:
         _wrap = _bootstrap._wrap
@@ -875,7 +876,7 @@ class SourcelessFileLoader(FileLoader, _LoaderBasics):
 EXTENSION_SUFFIXES = []
 
 
-class ExtensionFileLoader:
+class ExtensionFileLoader(FileLoader, _LoaderBasics):
 
     """Loader for extension modules.
 
@@ -894,23 +895,19 @@ class ExtensionFileLoader:
     def __hash__(self):
         return hash(self.name) ^ hash(self.path)
 
-    @_check_name
-    def load_module(self, fullname):
-        """Load an extension module."""
-        # Once an exec_module() implementation is added we can also
-        # add a deprecation warning here.
-        with _bootstrap._ManageReload(fullname):
-            module = _bootstrap._call_with_frames_removed(_imp.load_dynamic,
-                                                          fullname, self.path)
-        _verbose_message('extension module loaded from {!r}', self.path)
-        is_package = self.is_package(fullname)
-        if is_package and not hasattr(module, '__path__'):
-            module.__path__ = [_path_split(self.path)[0]]
-        module.__loader__ = self
-        module.__package__ = module.__name__
-        if not is_package:
-            module.__package__ = module.__package__.rpartition('.')[0]
+    def create_module(self, spec):
+        """Create an unitialized extension module"""
+        module = _bootstrap._call_with_frames_removed(
+            _imp.create_dynamic, spec)
+        _verbose_message('extension module {!r} loaded from {!r}',
+                         spec.name, self.path)
         return module
+
+    def exec_module(self, module):
+        """Initialize an extension module"""
+        _bootstrap._call_with_frames_removed(_imp.exec_dynamic, module)
+        _verbose_message('extension module {!r} executed from {!r}',
+                         self.name, self.path)
 
     def is_package(self, fullname):
         """Return True if the extension module is a package."""

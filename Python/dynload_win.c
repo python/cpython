@@ -186,8 +186,9 @@ static char *GetPythonImport (HINSTANCE hModule)
     return NULL;
 }
 
-dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
-                                       PyObject *pathname, FILE *fp)
+dl_funcptr _PyImport_FindSharedFuncptrWindows(const char *prefix,
+                                              const char *shortname,
+                                              PyObject *pathname, FILE *fp)
 {
     dl_funcptr p;
     char funcname[258], *import_python;
@@ -201,7 +202,7 @@ dl_funcptr _PyImport_GetDynLoadWindows(const char *shortname,
     if (wpathname == NULL)
         return NULL;
 
-    PyOS_snprintf(funcname, sizeof(funcname), "PyInit_%.200s", shortname);
+    PyOS_snprintf(funcname, sizeof(funcname), "%20_%.200s", prefix, shortname);
 
     {
         HINSTANCE hDLL = NULL;

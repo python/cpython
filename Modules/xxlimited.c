@@ -222,25 +222,9 @@ static PyMethodDef xx_methods[] = {
 PyDoc_STRVAR(module_doc,
 "This is a template module just for instruction.");
 
-/* Initialization function for the module (*must* be called PyInit_xx) */
-
-
-static struct PyModuleDef xxmodule = {
-    PyModuleDef_HEAD_INIT,
-    "xxlimited",
-    module_doc,
-    -1,
-    xx_methods,
-    NULL,
-    NULL,
-    NULL,
-    NULL
-};
-
-PyMODINIT_FUNC
-PyInit_xxlimited(void)
+static int
+xx_modexec(PyObject *m)
 {
-    PyObject *m = NULL;
     PyObject *o;
 
     /* Due to cross platform compiler issues the slots must be filled
@@ -252,11 +236,6 @@ PyInit_xxlimited(void)
 
     Xxo_Type = PyType_FromSpec(&Xxo_Type_spec);
     if (Xxo_Type == NULL)
-        goto fail;
-
-    /* Create the module and add the functions */
-    m = PyModule_Create(&xxmodule);
-    if (m == NULL)
         goto fail;
 
     /* Add some symbolic constants to the module */
@@ -279,8 +258,34 @@ PyInit_xxlimited(void)
     if (o == NULL)
         goto fail;
     PyModule_AddObject(m, "Null", o);
-    return m;
+    return 0;
  fail:
     Py_XDECREF(m);
-    return NULL;
+    return -1;
+}
+
+
+static PyModuleDef_Slot xx_slots[] = {
+    {Py_mod_exec, xx_modexec},
+    {0, NULL}
+};
+
+static struct PyModuleDef xxmodule = {
+    PyModuleDef_HEAD_INIT,
+    "xxlimited",
+    module_doc,
+    0,
+    xx_methods,
+    xx_slots,
+    NULL,
+    NULL,
+    NULL
+};
+
+/* Export function for the module (*must* be called PyInit_xx) */
+
+PyMODINIT_FUNC
+PyInit_xxlimited(void)
+{
+    return PyModuleDef_Init(&xxmodule);
 }

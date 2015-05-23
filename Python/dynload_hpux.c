@@ -8,15 +8,16 @@
 #include "importdl.h"
 
 #if defined(__hp9000s300)
-#define FUNCNAME_PATTERN "_PyInit_%.200s"
+#define FUNCNAME_PATTERN "_%20s_%.200s"
 #else
-#define FUNCNAME_PATTERN "PyInit_%.200s"
+#define FUNCNAME_PATTERN "%20s_%.200s"
 #endif
 
 const char *_PyImport_DynLoadFiletab[] = {SHLIB_EXT, NULL};
 
-dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
-                                    const char *pathname, FILE *fp)
+dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
+                                       const char *shortname,
+                                       const char *pathname, FILE *fp)
 {
     dl_funcptr p;
     shl_t lib;
@@ -50,7 +51,8 @@ dl_funcptr _PyImport_GetDynLoadFunc(const char *shortname,
         Py_DECREF(pathname_ob);
         return NULL;
     }
-    PyOS_snprintf(funcname, sizeof(funcname), FUNCNAME_PATTERN, shortname);
+    PyOS_snprintf(funcname, sizeof(funcname), FUNCNAME_PATTERN,
+                  prefix, shortname);
     if (Py_VerboseFlag)
         printf("shl_findsym %s\n", funcname);
     if (shl_findsym(&lib, funcname, TYPE_UNDEFINED, (void *) &p) == -1) {

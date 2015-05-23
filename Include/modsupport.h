@@ -12,13 +12,13 @@ extern "C" {
 /* If PY_SSIZE_T_CLEAN is defined, each functions treats #-specifier
    to mean Py_ssize_t */
 #ifdef PY_SSIZE_T_CLEAN
-#define PyArg_Parse			_PyArg_Parse_SizeT
-#define PyArg_ParseTuple		_PyArg_ParseTuple_SizeT
-#define PyArg_ParseTupleAndKeywords	_PyArg_ParseTupleAndKeywords_SizeT
-#define PyArg_VaParse			_PyArg_VaParse_SizeT
-#define PyArg_VaParseTupleAndKeywords	_PyArg_VaParseTupleAndKeywords_SizeT
-#define Py_BuildValue			_Py_BuildValue_SizeT
-#define Py_VaBuildValue			_Py_VaBuildValue_SizeT
+#define PyArg_Parse                     _PyArg_Parse_SizeT
+#define PyArg_ParseTuple                _PyArg_ParseTuple_SizeT
+#define PyArg_ParseTupleAndKeywords     _PyArg_ParseTupleAndKeywords_SizeT
+#define PyArg_VaParse                   _PyArg_VaParse_SizeT
+#define PyArg_VaParseTupleAndKeywords   _PyArg_VaParseTupleAndKeywords_SizeT
+#define Py_BuildValue                   _Py_BuildValue_SizeT
+#define Py_VaBuildValue                 _Py_VaBuildValue_SizeT
 #else
 PyAPI_FUNC(PyObject *) _Py_VaBuildValue_SizeT(const char *, va_list);
 #endif
@@ -49,6 +49,9 @@ PyAPI_FUNC(int) PyModule_AddIntConstant(PyObject *, const char *, long);
 PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char *);
 #define PyModule_AddIntMacro(m, c) PyModule_AddIntConstant(m, #c, c)
 #define PyModule_AddStringMacro(m, c) PyModule_AddStringConstant(m, #c, c)
+PyAPI_FUNC(int) PyModule_SetDocString(PyObject *, const char *);
+PyAPI_FUNC(int) PyModule_AddFunctions(PyObject *, PyMethodDef *);
+PyAPI_FUNC(int) PyModule_ExecDef(PyObject *module, PyModuleDef *def);
 
 #define Py_CLEANUP_SUPPORTED 0x20000
 
@@ -67,35 +70,35 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
    Please add a line or two to the top of this log for each API
    version change:
 
-   22-Feb-2006  MvL	1013	PEP 353 - long indices for sequence lengths
+   22-Feb-2006  MvL     1013    PEP 353 - long indices for sequence lengths
 
-   19-Aug-2002  GvR	1012	Changes to string object struct for
-   				interning changes, saving 3 bytes.
+   19-Aug-2002  GvR     1012    Changes to string object struct for
+                                interning changes, saving 3 bytes.
 
-   17-Jul-2001	GvR	1011	Descr-branch, just to be on the safe side
+   17-Jul-2001  GvR     1011    Descr-branch, just to be on the safe side
 
    25-Jan-2001  FLD     1010    Parameters added to PyCode_New() and
                                 PyFrame_New(); Python 2.1a2
 
    14-Mar-2000  GvR     1009    Unicode API added
 
-   3-Jan-1999	GvR	1007	Decided to change back!  (Don't reuse 1008!)
+   3-Jan-1999   GvR     1007    Decided to change back!  (Don't reuse 1008!)
 
-   3-Dec-1998	GvR	1008	Python 1.5.2b1
+   3-Dec-1998   GvR     1008    Python 1.5.2b1
 
-   18-Jan-1997	GvR	1007	string interning and other speedups
+   18-Jan-1997  GvR     1007    string interning and other speedups
 
-   11-Oct-1996	GvR	renamed Py_Ellipses to Py_Ellipsis :-(
+   11-Oct-1996  GvR     renamed Py_Ellipses to Py_Ellipsis :-(
 
-   30-Jul-1996	GvR	Slice and ellipses syntax added
+   30-Jul-1996  GvR     Slice and ellipses syntax added
 
-   23-Jul-1996	GvR	For 1.4 -- better safe than sorry this time :-)
+   23-Jul-1996  GvR     For 1.4 -- better safe than sorry this time :-)
 
-   7-Nov-1995	GvR	Keyword arguments (should've been done at 1.3 :-( )
+   7-Nov-1995   GvR     Keyword arguments (should've been done at 1.3 :-( )
 
-   10-Jan-1995	GvR	Renamed globals to new naming scheme
+   10-Jan-1995  GvR     Renamed globals to new naming scheme
 
-   9-Jan-1995	GvR	Initial version (incompatible with older API)
+   9-Jan-1995   GvR     Initial version (incompatible with older API)
 */
 
 /* The PYTHON_ABI_VERSION is introduced in PEP 384. For the lifetime of
@@ -105,10 +108,11 @@ PyAPI_FUNC(int) PyModule_AddStringConstant(PyObject *, const char *, const char 
 #define PYTHON_ABI_STRING "3"
 
 #ifdef Py_TRACE_REFS
- /* When we are tracing reference counts, rename PyModule_Create2 so
+ /* When we are tracing reference counts, rename module creation functions so
     modules compiled with incompatible settings will generate a
     link-time error. */
  #define PyModule_Create2 PyModule_Create2TraceRefs
+ #define PyModule_FromDefAndSpec2 PyModule_FromDefAndSpec2TraceRefs
 #endif
 
 PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef*,
@@ -116,10 +120,22 @@ PyAPI_FUNC(PyObject *) PyModule_Create2(struct PyModuleDef*,
 
 #ifdef Py_LIMITED_API
 #define PyModule_Create(module) \
-	PyModule_Create2(module, PYTHON_ABI_VERSION)
+        PyModule_Create2(module, PYTHON_ABI_VERSION)
 #else
 #define PyModule_Create(module) \
-	PyModule_Create2(module, PYTHON_API_VERSION)
+        PyModule_Create2(module, PYTHON_API_VERSION)
+#endif
+
+PyAPI_FUNC(PyObject *) PyModule_FromDefAndSpec2(PyModuleDef *def,
+                                                PyObject *spec,
+                                                int module_api_version);
+
+#ifdef Py_LIMITED_API
+#define PyModule_FromDefAndSpec(module, spec) \
+    PyModule_FromDefAndSpec2(module, spec, PYTHON_ABI_VERSION)
+#else
+#define PyModule_FromDefAndSpec(module, spec) \
+    PyModule_FromDefAndSpec2(module, spec, PYTHON_API_VERSION)
 #endif
 
 #ifndef Py_LIMITED_API
