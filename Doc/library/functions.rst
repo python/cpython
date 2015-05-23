@@ -261,7 +261,7 @@ section.
 
 .. class:: complex([real[, imag]])
 
-   Return a complex number with the value *real* + *imag*\*j or convert a string or
+   Return a complex number with the value *real* + *imag*\*1j or convert a string or
    number to a complex number.  If the first parameter is a string, it will be
    interpreted as a complex number and the function must be called without a second
    parameter.  The second parameter can never be a string. Each argument may be any
