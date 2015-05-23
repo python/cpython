@@ -121,6 +121,20 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
    ABCs for read-only and mutable :term:`sequences <sequence>`.
 
+   Implementation note: Some of the mixin methods, such as
+   :meth:`__iter__`, :meth:`__reversed__` and :meth:`index`, make
+   repeated calls to the underlying :meth:`__getitem__` method.
+   Consequently, if :meth:`__getitem__` is implemented with constant
+   access speed, the mixin methods will have linear performance;
+   however, if the underlying method is linear (as it would be with a
+   linked list), the mixins will have quadratic performance and will
+   likely need to be overridden.
+
+   .. versionchanged:: 3.5
+      The index() method added support for *stop* and *start*
+      arguments.
+
+
 .. class:: Set
            MutableSet
 
