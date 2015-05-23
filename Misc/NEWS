@@ -271,6 +271,12 @@ Library
 - Issue 23898: Fix inspect.classify_class_attrs() to support attributes
   with overloaded __eq__ and __bool__.  Patch by Mike Bayer.
 
+IDLE
+----
+
+- Issue #23184: remove unused names and imports in idlelib.
+  Initial patch by Al Sweigart.
+
 Tests
 -----
 
