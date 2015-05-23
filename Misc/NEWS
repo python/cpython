@@ -16,6 +16,11 @@ Core and Builtins
 - Issue #23055: Fixed a buffer overflow in PyUnicode_FromFormatV.  Analysis
   and fix by Guido Vranken.
 
+Library
+-------
+
+- Issue #22931: Allow '[' and ']' in cookie values.
+
 
 What's New in Python 3.2.6?
 ===========================
