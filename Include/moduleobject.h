@@ -31,7 +31,7 @@ PyAPI_FUNC(struct PyModuleDef*) PyModule_GetDef(PyObject*);
 PyAPI_FUNC(void*) PyModule_GetState(PyObject*);
 
 PyAPI_FUNC(PyObject *) PyModuleDef_Init(struct PyModuleDef*);
-PyTypeObject PyModuleDef_Type;
+PyAPI_DATA(PyTypeObject) PyModuleDef_Type;
 
 typedef struct PyModuleDef_Base {
   PyObject_HEAD
