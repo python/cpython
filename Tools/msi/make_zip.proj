@@ -4,6 +4,7 @@
         <ProjectGuid>{10487945-15D1-4092-A214-338395C4116B}</ProjectGuid>
         <OutputName>python</OutputName>
         <OutputSuffix></OutputSuffix>
+        <SupportSigning>false</SupportSigning>
     </PropertyGroup>
 
     <Import Project="msi.props" />
