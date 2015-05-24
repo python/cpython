@@ -289,4 +289,4 @@ library/xml.etree.elementtree,332,:character,"for char in actor.findall('role:ch
 library/zipapp,31,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,82,:fn,"argument should have the form ""pkg.mod:fn"", where ""pkg.mod"" is a"
 library/zipapp,155,:callable,"""pkg.module:callable"" and the archive will be run by importing"
-library/stdtypes,3720,::,>>> m[::2].tolist()
+library/stdtypes,3767,::,>>> m[::2].tolist()
