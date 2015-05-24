@@ -25,6 +25,7 @@ def is_not_debug(p):
         '_testbuffer.pyd',
         '_testcapi.pyd',
         '_testimportmultiple.pyd',
+        '_testmultiphase.pyd',
         'xxlimited.pyd',
     }
 
