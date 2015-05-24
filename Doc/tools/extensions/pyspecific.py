@@ -34,7 +34,7 @@ import suspicious
 
 
 ISSUE_URI = 'https://bugs.python.org/issue%s'
-SOURCE_URI = 'https://hg.python.org/cpython/file/default/%s'
+SOURCE_URI = 'https://hg.python.org/cpython/file/3.5/%s'
 
 # monkey-patch reST parser to disable alphabetic and roman enumerated lists
 from docutils.parsers.rst.states import Body
