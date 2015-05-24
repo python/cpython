@@ -620,21 +620,21 @@ calculate_path(void)
             if (*p == DELIM)
                 bufsz++; /* number of DELIM plus one */
         }
-        bufsz *= wcsnlen_s(pythonhome, MAXPATHLEN+1);
+        bufsz *= wcslen(pythonhome);
     }
     else
         bufsz = 0;
-    bufsz += wcsnlen_s(PYTHONPATH, MAXPATHLEN+1) + 1;
-    bufsz += wcsnlen_s(argv0_path, MAXPATHLEN+1) + 1;
+    bufsz += wcslen(PYTHONPATH) + 1;
+    bufsz += wcslen(argv0_path) + 1;
 #ifdef MS_WINDOWS
     if (!applocal && userpath)
-        bufsz += wcsnlen_s(userpath, MAXPATHLEN+1) + 1;
+        bufsz += wcslen(userpath) + 1;
     if (!applocal && machinepath)
-        bufsz += wcsnlen_s(machinepath, MAXPATHLEN+1) + 1;
-    bufsz += wcsnlen_s(zip_path, MAXPATHLEN+1) + 1;
+        bufsz += wcslen(machinepath) + 1;
+    bufsz += wcslen(zip_path) + 1;
 #endif
     if (envpath != NULL)
-        bufsz += wcsnlen_s(envpath, MAXPATHLEN+1) + 1;
+        bufsz += wcslen(envpath) + 1;
 
     module_search_path = buf = PyMem_RawMalloc(bufsz*sizeof(wchar_t));
     if (buf == NULL) {
