@@ -834,7 +834,7 @@ from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      STRING, ENDMARKER, ENCODING, tok_name, detect_encoding,
                      open as tokenize_open, Untokenizer)
 from io import BytesIO
-from unittest import TestCase
+from unittest import TestCase, mock
 import os, sys, glob
 import token
 
@@ -1245,6 +1245,14 @@ class TestDetectEncoding(TestCase):
         with self.assertRaisesRegex(SyntaxError, '.*{}'.format(path)):
             ins = Bunk(lines, path)
             detect_encoding(ins.readline)
+
+    def test_open_error(self):
+        # Issue #23840: open() must close the binary file on error
+        m = BytesIO(b'#coding:xxx')
+        with mock.patch('tokenize._builtin_open', return_value=m):
+            self.assertRaises(SyntaxError, tokenize_open, 'foobar')
+        self.assertTrue(m.closed)
+
 
 
 class TestTokenize(TestCase):

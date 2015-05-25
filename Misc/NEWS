@@ -323,6 +323,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23840: tokenize.open() now closes the temporary binary file on error
+  to fix a resource warning.
+
 - Issue #16914: new debuglevel 2 in smtplib adds timestamps to debug output.
 
 - Issue #7159: urllib.request now supports sending auth credentials
