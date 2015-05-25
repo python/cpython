@@ -1,4 +1,4 @@
-﻿.. _tut-informal:
+.. _tut-informal:
 
 **********************************
 An Informal Introduction to Python
