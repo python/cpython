@@ -59,6 +59,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23840: tokenize.open() now closes the temporary binary file on error
+  to fix a resource warning.
+
 - Issue #24257: Fixed segmentation fault in sqlite3.Row constructor with faked
   cursor type.
 
