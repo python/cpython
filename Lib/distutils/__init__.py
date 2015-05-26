@@ -8,12 +8,6 @@ used from a setup script as
    setup (...)
 """
 
-__revision__ = "$Id$"
+import sys
 
-# Distutils version
-#
-# Updated automatically by the Python release process.
-#
-#--start constants--
-__version__ = "2.7.10"
-#--end constants--
+__version__ = sys.version[:sys.version.index(' ')]
