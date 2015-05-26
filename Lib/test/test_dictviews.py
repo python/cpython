@@ -1,4 +1,5 @@
 import unittest
+import collections
 from test import test_support
 
 class DictSetTest(unittest.TestCase):
@@ -164,7 +165,26 @@ class DictSetTest(unittest.TestCase):
         d[42] = d.viewvalues()
         self.assertRaises(RuntimeError, repr, d)
 
+    def test_abc_registry(self):
+        d = dict(a=1)
 
+        self.assertIsInstance(d.viewkeys(), collections.KeysView)
+        self.assertIsInstance(d.viewkeys(), collections.MappingView)
+        self.assertIsInstance(d.viewkeys(), collections.Set)
+        self.assertIsInstance(d.viewkeys(), collections.Sized)
+        self.assertIsInstance(d.viewkeys(), collections.Iterable)
+        self.assertIsInstance(d.viewkeys(), collections.Container)
+
+        self.assertIsInstance(d.viewvalues(), collections.ValuesView)
+        self.assertIsInstance(d.viewvalues(), collections.MappingView)
+        self.assertIsInstance(d.viewvalues(), collections.Sized)
+
+        self.assertIsInstance(d.viewitems(), collections.ItemsView)
+        self.assertIsInstance(d.viewitems(), collections.MappingView)
+        self.assertIsInstance(d.viewitems(), collections.Set)
+        self.assertIsInstance(d.viewitems(), collections.Sized)
+        self.assertIsInstance(d.viewitems(), collections.Iterable)
+        self.assertIsInstance(d.viewitems(), collections.Container)
 
 
 def test_main():

@@ -453,6 +453,7 @@ class KeysView(MappingView, Set):
         for key in self._mapping:
             yield key
 
+KeysView.register(type({}.viewkeys()))
 
 class ItemsView(MappingView, Set):
 
@@ -473,6 +474,7 @@ class ItemsView(MappingView, Set):
         for key in self._mapping:
             yield (key, self._mapping[key])
 
+ItemsView.register(type({}.viewitems()))
 
 class ValuesView(MappingView):
 
@@ -486,6 +488,7 @@ class ValuesView(MappingView):
         for key in self._mapping:
             yield self._mapping[key]
 
+ValuesView.register(type({}.viewvalues()))
 
 class MutableMapping(Mapping):
 

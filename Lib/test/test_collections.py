@@ -1286,6 +1286,10 @@ class TestOrderedDict(unittest.TestCase):
         self.assertEqual(list(od.viewvalues()),  [None for k in s])
         self.assertEqual(list(od.viewitems()),  [(k, None) for k in s])
 
+        # See http://bugs.python.org/issue24286
+        self.assertEqual(od.viewkeys(), dict(od).viewkeys())
+        self.assertEqual(od.viewitems(), dict(od).viewitems())
+
     def test_override_update(self):
         # Verify that subclasses can override update() without breaking __init__()
         class MyOD(OrderedDict):
