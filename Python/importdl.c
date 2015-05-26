@@ -45,7 +45,7 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
     if (lastdot < -1) {
         return NULL;
     } else if (lastdot >= 0) {
-        tmp = PyUnicode_Substring(name, lastdot, name_len);
+        tmp = PyUnicode_Substring(name, lastdot + 1, name_len);
         if (tmp == NULL)
             return NULL;
         name = tmp;
