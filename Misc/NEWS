@@ -21,9 +21,6 @@ Core and Builtins
 
 - Issue #24102: Fixed exception type checking in standard error handlers.
 
-- Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
-  METH_VARARGS methods on _sqlite.Connection.
-
 - Issue #23757:  PySequence_Tuple() incorrectly called the concrete list API
   when the data was a list subclass.
 
@@ -84,6 +81,9 @@ Library
   if they called on a closed object. Patch by John Hergenroeder.
 
 - Issue #22931: Allow '[' and ']' in cookie values.
+
+- Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
+  METH_VARARGS methods on _sqlite.Connection.
 
 - Issue #24094: Fix possible crash in json.encode with poorly behaved dict
   subclasses.
@@ -271,7 +271,7 @@ Library
 
 - asyncio: async() function is deprecated in favour of ensure_future().
 
-- Issue 23898: Fix inspect.classify_class_attrs() to support attributes
+- Issue #23898: Fix inspect.classify_class_attrs() to support attributes
   with overloaded __eq__ and __bool__.  Patch by Mike Bayer.
 
 IDLE
@@ -2437,7 +2437,7 @@ Library
 - Issue #19782: imaplib now supports SSLContext.check_hostname and server name
   indication for TLS/SSL connections.
 
-- Issue 20123: Fix pydoc.synopsis() for "binary" modules.
+- Issue #20123: Fix pydoc.synopsis() for "binary" modules.
 
 - Issue #19834: Support unpickling of exceptions pickled by Python 2.
 
@@ -5703,7 +5703,7 @@ Documentation
 
 - Issue #15940: Specify effect of locale on time functions.
 
-- Issue 17538: Document XML vulnerabilties
+- Issue #17538: Document XML vulnerabilties
 
 - Issue #16642: sched.scheduler timefunc initial default is time.monotonic.
   Patch by Ramchandra Apte
@@ -9707,7 +9707,7 @@ Tests
 - Issue #13218: Fix test_ssl failures on Debian/Ubuntu.
 
 - Re-enable lib2to3's test_parser.py tests, though with an expected failure
-  (see issue 13125).
+  (see issue #13125).
 
 - Issue #12656: Add tests for IPv6 and Unix sockets to test_asyncore.
 
