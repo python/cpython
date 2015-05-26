@@ -57,12 +57,6 @@ Core and Builtins
 - Issue #23290:  Optimize set_merge() for cases where the target is empty.
   (Contributed by Serhiy Storchaka.)
 
-- Issue #20274: When calling a _sqlite.Connection, it now complains if passed
-  any keyword arguments.  Previously it silently ignored them.
-
-- Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
-  METH_VARARGS methods on _sqlite.Connection.
-
 - Issue #2292: PEP 448: Additional Unpacking Generalizations.
 
 - Issue #24096: Make warnings.warn_explicit more robust against mutation of the
@@ -186,6 +180,12 @@ Library
 - Issue #21800: imaplib now supports RFC 5161 (enable), RFC 6855
   (utf8/internationalized email) and automatically encodes non-ASCII
   usernames and passwords to UTF8.
+
+- Issue #20274: When calling a _sqlite.Connection, it now complains if passed
+  any keyword arguments.  Previously it silently ignored them.
+
+- Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
+  METH_VARARGS methods on _sqlite.Connection.
 
 - Issue #24134: assertRaises(), assertRaisesRegex(), assertWarns() and
   assertWarnsRegex() checks now emits a deprecation warning when callable is
@@ -3527,7 +3527,7 @@ Library
 - Issue #19782: imaplib now supports SSLContext.check_hostname and server name
   indication for TLS/SSL connections.
 
-- Issue 20123: Fix pydoc.synopsis() for "binary" modules.
+- Issue #20123: Fix pydoc.synopsis() for "binary" modules.
 
 - Issue #19834: Support unpickling of exceptions pickled by Python 2.
 
@@ -6797,7 +6797,7 @@ Documentation
 
 - Issue #15940: Specify effect of locale on time functions.
 
-- Issue 17538: Document XML vulnerabilties
+- Issue #17538: Document XML vulnerabilties
 
 - Issue #16642: sched.scheduler timefunc initial default is time.monotonic.
   Patch by Ramchandra Apte
