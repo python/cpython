@@ -736,14 +736,22 @@ class Counter(dict):
 
     def __pos__(self):
         'Adds an empty counter, effectively stripping negative and zero counts'
-        return self + Counter()
+        result = Counter()
+        for elem, count in self.items():
+            if count > 0:
+                result[elem] = count
+        return result
 
     def __neg__(self):
         '''Subtracts from an empty counter.  Strips positive and zero counts,
         and flips the sign on negative counts.
 
         '''
-        return Counter() - self
+        result = Counter()
+        for elem, count in self.items():
+            if count < 0:
+                result[elem] = 0 - count
+        return result
 
     def _keep_positive(self):
         '''Internal method to strip elements with a negative or zero count'''
