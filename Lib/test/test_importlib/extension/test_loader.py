@@ -170,6 +170,13 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         loader.exec_module(module)
         return module
 
+    def test_load_submodule(self):
+        '''Test loading a simulated submodule'''
+        module = self.load_module_by_name('pkg.' + self.name)
+        self.assertIsInstance(module, types.ModuleType)
+        self.assertEqual(module.__name__, 'pkg.' + self.name)
+        self.assertEqual(module.str_const, 'something different')
+
     def test_load_twice(self):
         '''Test that 2 loads result in 2 module objects'''
         module1 = self.load_module_by_name(self.name)
