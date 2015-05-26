@@ -8,10 +8,6 @@ used from a setup script as
    setup (...)
 """
 
-# Distutils version
-#
-# Updated automatically by the Python release process.
-#
-#--start constants--
-__version__ = "3.5.0b1"
-#--end constants--
+import sys
+
+__version__ = sys.version[:sys.version.index(' ')]
