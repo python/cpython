@@ -1867,6 +1867,13 @@ class TestOrderedDict(unittest.TestCase):
         od = OrderedDict(**d)
         self.assertGreater(sys.getsizeof(od), sys.getsizeof(d))
 
+    def test_views(self):
+        # See http://bugs.python.org/issue24286
+        s = 'the quick brown fox jumped over a lazy dog yesterday before dawn'.split()
+        od = OrderedDict.fromkeys(s)
+        self.assertEqual(od.keys(), dict(od).keys())
+        self.assertEqual(od.items(), dict(od).items())
+
     def test_override_update(self):
         # Verify that subclasses can override update() without breaking __init__()
         class MyOD(OrderedDict):
