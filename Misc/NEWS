@@ -48,7 +48,7 @@ IDLE
 
 - Issue #15809: IDLE shell now uses locale encoding instead of Latin1 for
   decoding unicode literals.
-  
+
 Documentation
 -------------
 
@@ -74,16 +74,10 @@ What's New in Python 2.7.10 release candidate 1?
 Core and Builtins
 -----------------
 
-- Issue #20274: When calling a _sqlite.Connection, it now complains if passed
-  any keyword arguments.  Previously it silently ignored them.
-
 - Issue #23971:  Fix underestimated presizing in dict.fromkeys().
 
 - Issue #23757:  PySequence_Tuple() incorrectly called the concrete list API
   when the data was a list subclass.
-
-- Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
-  METH_VARARGS methods on _sqlite.Connection.
 
 - Issue #23629: Fix the default __sizeof__ implementation for variable-sized
   objects.
@@ -97,6 +91,12 @@ Library
 -------
 
 - The keywords attribute of functools.partial is now always a dictionary.
+
+- Issue #20274: When calling a _sqlite.Connection, it now complains if passed
+  any keyword arguments.  Previously it silently ignored them.
+
+- Issue #20274: Remove ignored and erroneous "kwargs" parameters from three
+  METH_VARARGS methods on _sqlite.Connection.
 
 - Issue #24134: assertRaises() and assertRaisesRegexp() checks are not longer
   successful if the callable is None.
