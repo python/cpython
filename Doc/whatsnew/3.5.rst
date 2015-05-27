@@ -253,13 +253,13 @@ PEP 488: Elimination of PYO files
 ---------------------------------
 
 :pep:`488` does away with the concept of ``.pyo`` files. This means that
-``.pyc`` files represent both unoptimized and optimized bytecode. To prevent
-the need to constantly regenerate bytecode files, ``.pyc`` files now have an
-optional ``opt-`` tag in their name when the bytecode is optimized. This has
-the side-effect of no more bytecode file name clashes when running under either
-``-O`` or ``-OO``, thus allowing unoptimized, ``-O``, and ``-OO`` bytecode files
-to all exist simultaneously. :func:`importlib.util.cache_from_source` has an
-updated API to help with this change.
+``.pyc`` files represent both unoptimized and optimized bytecode. To prevent the
+need to constantly regenerate bytecode files, ``.pyc`` files now have an
+optional ``opt-`` tag in their name when the bytecode is optimized. This has the
+side-effect of no more bytecode file name clashes when running under either
+``-O`` or ``-OO``. Consequently, bytecode files generated from ``-O``, and
+``-OO`` may now exist simultaneously. :func:`importlib.util.cache_from_source`
+has an updated API to help with this change.
 
 .. seealso::
 
