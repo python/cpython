@@ -53,7 +53,7 @@ commercial use, to sell copies of Python in source or binary form (modified or
 unmodified), or to sell products that incorporate Python in some form.  We would
 still like to know about all commercial use of Python, of course.
 
-See `the PSF license page <https://docs.python.org/3/license/>`_ to find further
+See `the PSF license page <https://www.python.org/psf/license/>`_ to find further
 explanations and a link to the full text of the license.
 
 The Python logo is trademarked, and in certain cases permission is required to
