@@ -982,6 +982,19 @@ class WriteTestBase(TarTest):
         self.assertFalse(fobj.closed)
         self.assertEqual(data, fobj.getvalue())
 
+    def test_eof_marker(self):
+        # Make sure an end of archive marker is written (two zero blocks).
+        # tarfile insists on aligning archives to a 20 * 512 byte recordsize.
+        # So, we create an archive that has exactly 10240 bytes without the
+        # marker, and has 20480 bytes once the marker is written.
+        with tarfile.open(tmpname, self.mode) as tar:
+            t = tarfile.TarInfo("foo")
+            t.size = tarfile.RECORDSIZE - tarfile.BLOCKSIZE
+            tar.addfile(t, io.BytesIO(b"a" * t.size))
+
+        with self.open(tmpname, "rb") as fobj:
+            self.assertEqual(len(fobj.read()), tarfile.RECORDSIZE * 2)
+
 
 class WriteTest(WriteTestBase, unittest.TestCase):
 
@@ -1431,7 +1444,7 @@ class GNUWriteTest(unittest.TestCase):
                    ("longlnk/" * 127) + "longlink_")
 
 
-class CreateTest(TarTest, unittest.TestCase):
+class CreateTest(WriteTestBase, unittest.TestCase):
 
     prefix = "x:"
 
