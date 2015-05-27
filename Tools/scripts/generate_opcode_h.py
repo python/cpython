@@ -43,9 +43,9 @@ def main(opcode_py, outfile='Include/opcode.h'):
         fobj.write(header)
         for name in opcode['opname']:
             if name in opmap:
-                fobj.write("#define %-20s\t%-3s\n" % (name, opmap[name]))
+                fobj.write("#define %-23s %3s\n" % (name, opmap[name]))
             if name == 'POP_EXCEPT': # Special entry for HAVE_ARGUMENT
-                fobj.write("#define %-20s\t%-3d\n" %
+                fobj.write("#define %-23s %3d\n" %
                             ('HAVE_ARGUMENT', opcode['HAVE_ARGUMENT']))
         fobj.write(footer)
 
