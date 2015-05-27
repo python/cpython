@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Theme xmlns="http://wixtoolset.org/schemas/thmutil/2010">
-    <Window Width="640" Height="382" HexStyle="100a0000" FontId="0">#(loc.Caption)</Window>
-    <Font Id="0" Height="-12" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
-    <Font Id="1" Height="-24" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
-    <Font Id="2" Height="-22" Weight="500" Foreground="666666" Background="ffffff">Segoe UI</Font>
-    <Font Id="3" Height="-12" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
-    <Font Id="4" Height="-12" Weight="500" Foreground="ff0000" Background="ffffff" Underline="yes">Segoe UI</Font>
-    <Font Id="5" Height="-12" Weight="500" Foreground="666666" Background="ffffff">Segoe UI</Font>
+    <Window Background="ffff00" Width="640" Height="382" HexStyle="100a0000" FontId="0">#(loc.Caption)</Window>
+    <Font Id="0" Height="-12" Weight="500">Segoe UI</Font>
+    <Font Id="1" Height="-24" Weight="500">Segoe UI</Font>
+    <Font Id="2" Height="-22" Weight="500" Foreground="666666">Segoe UI</Font>
+    <Font Id="3" Height="-12" Weight="500">Segoe UI</Font>
+    <Font Id="4" Height="-12" Weight="500" Foreground="ff0000" Underline="yes">Segoe UI</Font>
+    <Font Id="5" Height="-12" Weight="500" Foreground="666666">Segoe UI</Font>
 
     <Page Name="Help">
         <Text X="185" Y="11" Width="-11" Height="32" FontId="1" DisablePrefix="yes">#(loc.HelpHeader)</Text>
@@ -74,7 +74,7 @@
         <Text X="185" Y="241" Width="-11" Height="17" FontId="3">#(loc.CustomLocationLabel)</Text>
         <Editbox Name="TargetDir" X="185" Y="257" Width="-91" Height="21" TabStop="yes" FontId="3" FileSystemAutoComplete="yes" />
         <Button Name="CustomBrowseButton" X="-11" Y="256" Width="75" Height="23" TabStop="yes" FontId="3">#(loc.CustomBrowseButton)</Button>
-        <Text Name="CustomBrowseButtonLabel" X="185" Y="281" Width="-91" Height="35" FontId="5" Visible="no">#(loc.CustomLocationHelpLabel)</Text>
+        <Text Name="CustomBrowseButtonLabel" X="185" Y="281" Width="-91" Height="35" FontId="5" HideWhenDisabled="yes">#(loc.CustomLocationHelpLabel)</Text>
 
         <Button Name="Custom2BackButton" X="185" Y="-11" Width="75" Height="23" TabStop="yes" FontId="0">#(loc.CustomBackButton)</Button>
         <Button Name="CustomInstallButton" X="-91" Y="-11" Width="95" Height="23" TabStop="yes" FontId="0">#(loc.CustomInstallButton)</Button>

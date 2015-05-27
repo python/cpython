@@ -371,7 +371,7 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             hr = BalGetNumericVariable(L"WixBundleElevated", &elevated);
             checked = ThemeIsControlChecked(_theme, ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX);
             ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, checked && (FAILED(hr) || !elevated));
-            ThemeShowControl(_theme, ID_CUSTOM_BROWSE_BUTTON_LABEL, checked ? SW_HIDE : SW_SHOW);
+            ThemeControlEnable(_theme, ID_CUSTOM_BROWSE_BUTTON_LABEL, !checked);
             ThemeGetTextControl(_theme, ID_TARGETDIR_EDITBOX, &targetDir);
             if (targetDir) {
                 // Check the current value against the default to see
@@ -1489,7 +1489,7 @@ private:
         wc.hInstance = _hModule;
         wc.hIcon = hIcon;
         wc.hCursor = ::LoadCursorW(nullptr, (LPCWSTR)IDC_ARROW);
-        wc.hbrBackground = _theme->rgFonts[_theme->dwFontId].hBackground;
+        wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
         wc.lpszMenuName = nullptr;
         wc.lpszClassName = PYBA_WINDOW_CLASS;
         if (!::RegisterClassW(&wc)) {
