@@ -2584,8 +2584,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 goto error;
             while (--oparg >= 0) {
                 int err;
-                PyObject *key = TOP();
-                PyObject *value = SECOND();
+                PyObject *value = TOP();
+                PyObject *key = SECOND();
                 STACKADJ(-2);
                 err = PyDict_SetItem(map, key, value);
                 Py_DECREF(value);
