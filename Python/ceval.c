@@ -1927,7 +1927,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         }
 
         TARGET(GET_AITER) {
-            getaiterfunc getter = NULL;
+            unaryfunc getter = NULL;
             PyObject *iter = NULL;
             PyObject *awaitable = NULL;
             PyObject *obj = TOP();
@@ -1974,7 +1974,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         }
 
         TARGET(GET_ANEXT) {
-            aiternextfunc getter = NULL;
+            unaryfunc getter = NULL;
             PyObject *next_iter = NULL;
             PyObject *awaitable = NULL;
             PyObject *aiter = TOP();
