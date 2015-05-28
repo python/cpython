@@ -113,6 +113,14 @@ Build and C API Changes
 Deprecated
 ==========
 
+New Keywords
+------------
+
+``async`` and ``await`` are not recommended to be used as variable, class or
+function names.  Introduced by :pep:`492` in Python 3.5, they will become
+proper keywords in Python 3.7.
+
+
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
