@@ -461,6 +461,17 @@ if 1:
         ast.body = [_ast.BoolOp()]
         self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
 
+    def test_dict_evaluation_order(self):
+        i = 0
+
+        def f():
+            nonlocal i
+            i += 1
+            return i
+
+        d = {f(): f(), f(): f()}
+        self.assertEqual(d, {1: 2, 3: 4})
+
     @support.cpython_only
     def test_same_filename_used(self):
         s = """def f(): pass\ndef g(): pass"""
