@@ -19,7 +19,7 @@ Continue?</String>
   <String Id="CancelButton">&amp;Cancel</String>
   <String Id="CloseButton">&amp;Close</String>
   <String Id="InstallHeader">Install [WixBundleName]</String>
-  <String Id="InstallMessage">Select to location to install Python, or choose Customize to enable or disable features.</String>
+  <String Id="InstallMessage">Select Install Now to install Python with default settings, or choose Customize to enable or disable features.</String>
   <String Id="InstallVersion">Version [WixBundleVersion]</String>
   <String Id="ConfirmCancelMessage">Are you sure you want to cancel?</String>
   <String Id="ExecuteUpgradeRelatedBundleMessage">Previous version</String>
