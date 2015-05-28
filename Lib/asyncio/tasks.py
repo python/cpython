@@ -74,10 +74,7 @@ class Task(futures.Future):
         super().__init__(loop=loop)
         if self._source_traceback:
             del self._source_traceback[-1]
-        if coro.__class__ is types.GeneratorType:
-            self._coro = coro
-        else:
-            self._coro = iter(coro)  # Use the iterator just in case.
+        self._coro = coro
         self._fut_waiter = None
         self._must_cancel = False
         self._loop.call_soon(self._step)
@@ -237,10 +234,8 @@ class Task(futures.Future):
         try:
             if exc is not None:
                 result = coro.throw(exc)
-            elif value is not None:
-                result = coro.send(value)
             else:
-                result = coro.send(None)
+                result = coro.send(value)
         except StopIteration as exc:
             self.set_result(exc.value)
         except futures.CancelledError as exc:
