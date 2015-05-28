@@ -37,12 +37,21 @@ extern "C" {
 
 #define SLICE		30
 /* Also uses 31-33 */
+#define SLICE_1		31
+#define SLICE_2		32
+#define SLICE_3		33
 
 #define STORE_SLICE	40
 /* Also uses 41-43 */
+#define STORE_SLICE_1	41
+#define STORE_SLICE_2	42
+#define STORE_SLICE_3	43
 
 #define DELETE_SLICE	50
 /* Also uses 51-53 */
+#define DELETE_SLICE_1	51
+#define DELETE_SLICE_2	52
+#define DELETE_SLICE_3	53
 
 #define STORE_MAP	54
 #define INPLACE_ADD	55

@@ -10,6 +10,10 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #4753: On compilers where it is supported, use "computed gotos" for
+  bytecode dispatch in the interpreter. This improves interpretation
+  performance.
+
 - Issue #22939: Fixed integer overflow in iterator object.  Original patch by
   Clement Rouault.
 

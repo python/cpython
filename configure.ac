@@ -4557,6 +4557,57 @@ for dir in $SRCDIRS; do
         mkdir $dir
     fi
 done
+
+# BEGIN_COMPUTED_GOTO 
+# Check for --with-computed-gotos
+AC_MSG_CHECKING(for --with-computed-gotos)
+AC_ARG_WITH(computed-gotos,
+            AS_HELP_STRING([--with(out)-computed-gotos],
+                           [Use computed gotos in evaluation loop (enabled by default on supported compilers)]),
+[
+if test "$withval" = yes
+then 
+  AC_DEFINE(USE_COMPUTED_GOTOS, 1,
+  [Define if you want to use computed gotos in ceval.c.]) 
+  AC_MSG_RESULT(yes)
+fi
+if test "$withval" = no
+then 
+  AC_DEFINE(USE_COMPUTED_GOTOS, 0,
+  [Define if you want to use computed gotos in ceval.c.]) 
+  AC_MSG_RESULT(no)
+fi
+],
+[AC_MSG_RESULT(no value specified)])
+
+AC_MSG_CHECKING(whether $CC supports computed gotos)
+AC_CACHE_VAL(ac_cv_computed_gotos,
+AC_RUN_IFELSE([AC_LANG_SOURCE([[[
+int main(int argc, char **argv)
+{
+    static void *targets[1] = { &&LABEL1 };
+    goto LABEL2;
+LABEL1:
+    return 0;
+LABEL2:
+    goto *targets[0];
+    return 1;
+}
+]]])],
+[ac_cv_computed_gotos=yes],
+[ac_cv_computed_gotos=no],
+[if test "${with_computed_gotos+set}" = set; then
+   ac_cv_computed_gotos="$with_computed_gotos -- configured --with(out)-computed-gotos"
+ else
+   ac_cv_computed_gotos=no
+ fi]))
+AC_MSG_RESULT($ac_cv_computed_gotos)
+case "$ac_cv_computed_gotos" in yes*)
+  AC_DEFINE(HAVE_COMPUTED_GOTOS, 1,
+  [Define if the C compiler supports computed gotos.])
+esac
+# END_COMPUTED_GOTO
+
 AC_MSG_RESULT(done)
 
 # ensurepip option
