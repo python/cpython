@@ -173,9 +173,6 @@ typedef PyObject *(*ssizessizeargfunc)(PyObject *, Py_ssize_t, Py_ssize_t);
 typedef int(*ssizeobjargproc)(PyObject *, Py_ssize_t, PyObject *);
 typedef int(*ssizessizeobjargproc)(PyObject *, Py_ssize_t, Py_ssize_t, PyObject *);
 typedef int(*objobjargproc)(PyObject *, PyObject *, PyObject *);
-typedef PyObject *(*getawaitablefunc) (PyObject *);
-typedef PyObject *(*getaiterfunc) (PyObject *);
-typedef PyObject *(*aiternextfunc) (PyObject *);
 
 #ifndef Py_LIMITED_API
 /* buffer interface */
@@ -305,9 +302,9 @@ typedef struct {
 } PyMappingMethods;
 
 typedef struct {
-    getawaitablefunc am_await;
-    getaiterfunc am_aiter;
-    aiternextfunc am_anext;
+    unaryfunc am_await;
+    unaryfunc am_aiter;
+    unaryfunc am_anext;
 } PyAsyncMethods;
 
 typedef struct {
