@@ -3138,8 +3138,8 @@ compiler_dict(struct compiler *c, expr_ty e)
             containers++;
         }
         else {
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
             VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
             elements++;
         }
     }
@@ -3287,8 +3287,8 @@ compiler_call_helper(struct compiler *c,
         }
         else if (nsubkwargs) {
             /* A keyword argument and we already have a dict. */
-            VISIT(c, expr, kw->value);
             ADDOP_O(c, LOAD_CONST, kw->arg, consts);
+            VISIT(c, expr, kw->value);
             nseen++;
         }
         else {
