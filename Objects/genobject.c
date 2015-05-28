@@ -708,7 +708,7 @@ PyGen_NeedsFinalizing(PyGenObject *gen)
 PyObject *
 _PyGen_GetAwaitableIter(PyObject *o)
 {
-    getawaitablefunc getter = NULL;
+    unaryfunc getter = NULL;
     PyTypeObject *ot;
 
     if (PyGen_CheckCoroutineExact(o)) {

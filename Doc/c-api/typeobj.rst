@@ -1357,12 +1357,12 @@ Async Object Structures
    Here is the structure definition::
 
         typedef struct {
-            getawaitablefunc am_await;
-            getaiterfunc am_aiter;
-            aiternextfunc am_anext;
+            unaryfunc am_await;
+            unaryfunc am_aiter;
+            unaryfunc am_anext;
         } PyAsyncMethods;
 
-.. c:member:: getawaitablefunc PyAsyncMethods.am_await
+.. c:member:: unaryfunc PyAsyncMethods.am_await
 
    The signature of this function is::
 
@@ -1373,7 +1373,7 @@ Async Object Structures
 
    This slot may be set to *NULL* if an object is not an :term:`awaitable`.
 
-.. c:member:: getaiterfunc PyAsyncMethods.am_aiter
+.. c:member:: unaryfunc PyAsyncMethods.am_aiter
 
    The signature of this function is::
 
@@ -1384,7 +1384,7 @@ Async Object Structures
    This slot may be set to *NULL* if an object does not implement
    asynchronous iteration protocol.
 
-.. c:member:: aiternextfunc PyAsyncMethods.am_anext
+.. c:member:: unaryfunc PyAsyncMethods.am_anext
 
    The signature of this function is::
 
