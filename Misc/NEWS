@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22095: Fixed HTTPConnection.set_tunnel with default port.  The port
+  value in the host header was set to "None".  Patch by Demian Brecht.
+
 - Issue #24257: Fixed segmentation fault in sqlite3.Row constructor with faked
   cursor type.
 

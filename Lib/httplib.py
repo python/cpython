@@ -772,8 +772,7 @@ class HTTPConnection:
         if self.sock:
             raise RuntimeError("Can't setup tunnel for established connection.")
 
-        self._tunnel_host = host
-        self._tunnel_port = port
+        self._tunnel_host, self._tunnel_port = self._get_hostport(host, port)
         if headers:
             self._tunnel_headers = headers
         else:
@@ -802,8 +801,8 @@ class HTTPConnection:
         self.debuglevel = level
 
     def _tunnel(self):
-        (host, port) = self._get_hostport(self._tunnel_host, self._tunnel_port)
-        self.send("CONNECT %s:%d HTTP/1.0\r\n" % (host, port))
+        self.send("CONNECT %s:%d HTTP/1.0\r\n" % (self._tunnel_host,
+            self._tunnel_port))
         for header, value in self._tunnel_headers.iteritems():
             self.send("%s: %s\r\n" % (header, value))
         self.send("\r\n")

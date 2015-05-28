@@ -842,10 +842,12 @@ class TunnelTests(TestCase):
 
         self.assertEqual(conn.sock.host, 'proxy.com')
         self.assertEqual(conn.sock.port, 80)
-        self.assertTrue('CONNECT destination.com' in conn.sock.data)
-        self.assertTrue('Host: destination.com' in conn.sock.data)
+        self.assertIn('CONNECT destination.com', conn.sock.data)
+        # issue22095
+        self.assertNotIn('Host: destination.com:None', conn.sock.data)
+        self.assertIn('Host: destination.com', conn.sock.data)
 
-        self.assertTrue('Host: proxy.com' not in conn.sock.data)
+        self.assertNotIn('Host: proxy.com', conn.sock.data)
 
         conn.close()
 
