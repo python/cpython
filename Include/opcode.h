@@ -32,7 +32,6 @@ extern "C" {
 #define GET_AITER                50
 #define GET_ANEXT                51
 #define BEFORE_ASYNC_WITH        52
-#define STORE_MAP                54
 #define INPLACE_ADD              55
 #define INPLACE_SUBTRACT         56
 #define INPLACE_MULTIPLY         57
