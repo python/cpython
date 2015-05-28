@@ -903,8 +903,6 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -1;
         case STORE_SUBSCR:
             return -3;
-        case STORE_MAP:
-            return -2;
         case DELETE_SUBSCR:
             return -2;
 
