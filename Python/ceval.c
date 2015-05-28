@@ -2680,21 +2680,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        TARGET(STORE_MAP) {
-            PyObject *key = TOP();
-            PyObject *value = SECOND();
-            PyObject *map = THIRD();
-            int err;
-            STACKADJ(-2);
-            assert(PyDict_CheckExact(map));
-            err = PyDict_SetItem(map, key, value);
-            Py_DECREF(value);
-            Py_DECREF(key);
-            if (err != 0)
-                goto error;
-            DISPATCH();
-        }
-
         TARGET(MAP_ADD) {
             PyObject *key = TOP();
             PyObject *value = SECOND();
