@@ -248,6 +248,9 @@ Library
 - Issue #23898: Fix inspect.classify_class_attrs() to support attributes
   with overloaded __eq__ and __bool__.  Patch by Mike Bayer.
 
+- Issue #24298: Fix inspect.signature() to correctly unwrap wrappers
+  around bound methods.
+
 IDLE
 ----
 
