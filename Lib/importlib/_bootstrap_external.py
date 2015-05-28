@@ -221,12 +221,13 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.4rc2 3310 (alter __qualname__ computation)
 #     Python 3.5a0  3320 (matrix multiplication operator)
 #     Python 3.5b1  3330 (PEP 448: Additional Unpacking Generalizations)
+#     Python 3.5b2  3340 (fix dictionary display evaluation order #11205)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
 
-MAGIC_NUMBER = (3330).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3340).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'
