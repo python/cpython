@@ -97,18 +97,14 @@ class CoroutineTests(BaseTest):
         finally:
             f.close() # silence warning
 
-        class FakeCoro(collections.abc.Coroutine):
+        # Test that asyncio.iscoroutine() uses collections.abc.Coroutine
+        class FakeCoro:
             def send(self, value): pass
             def throw(self, typ, val=None, tb=None): pass
+            def close(self): pass
+            def __await__(self): yield
 
-        fc = FakeCoro()
-        try:
-            self.assertTrue(asyncio.iscoroutine(fc))
-        finally:
-            # To make sure that ABCMeta caches are freed
-            # from FakeCoro ASAP.
-            fc = FakeCoro = None
-            support.gc_collect()
+        self.assertTrue(asyncio.iscoroutine(FakeCoro()))
 
 
 if __name__ == '__main__':
