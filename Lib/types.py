@@ -166,32 +166,64 @@ def coroutine(func):
 
     # We don't want to import 'dis' or 'inspect' just for
     # these constants.
-    _CO_GENERATOR = 0x20
-    _CO_ITERABLE_COROUTINE = 0x100
+    CO_GENERATOR = 0x20
+    CO_ITERABLE_COROUTINE = 0x100
 
     if not callable(func):
         raise TypeError('types.coroutine() expects a callable')
 
     if (isinstance(func, FunctionType) and
         isinstance(getattr(func, '__code__', None), CodeType) and
-        (func.__code__.co_flags & _CO_GENERATOR)):
+        (func.__code__.co_flags & CO_GENERATOR)):
 
         # TODO: Implement this in C.
         co = func.__code__
         func.__code__ = CodeType(
             co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
             co.co_stacksize,
-            co.co_flags | _CO_ITERABLE_COROUTINE,
+            co.co_flags | CO_ITERABLE_COROUTINE,
             co.co_code,
             co.co_consts, co.co_names, co.co_varnames, co.co_filename,
             co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
             co.co_cellvars)
         return func
 
+    # The following code is primarily to support functions that
+    # return generator-like objects (for instance generators
+    # compiled with Cython).
+
+    class GeneratorWrapper:
+        def __init__(self, gen):
+            self.__wrapped__ = gen
+            self.send = gen.send
+            self.throw = gen.throw
+            self.close = gen.close
+            self.__name__ = getattr(gen, '__name__', None)
+            self.__qualname__ = getattr(gen, '__qualname__', None)
+        @property
+        def gi_code(self):
+            return self.__wrapped__.gi_code
+        @property
+        def gi_frame(self):
+            return self.__wrapped__.gi_frame
+        @property
+        def gi_running(self):
+            return self.__wrapped__.gi_running
+        def __next__(self):
+            return next(self.__wrapped__)
+        def __iter__(self):
+            return self.__wrapped__
+        __await__ = __iter__
+
     @_functools.wraps(func)
     def wrapped(*args, **kwargs):
         coro = func(*args, **kwargs)
+        if coro.__class__ is GeneratorType:
+            return GeneratorWrapper(coro)
+        # slow checks
         if not isinstance(coro, _collections_abc.Coroutine):
+            if isinstance(coro, _collections_abc.Generator):
+                return GeneratorWrapper(coro)
             raise TypeError(
                 'callable wrapped with types.coroutine() returned '
                 'non-coroutine: {!r}'.format(coro))
