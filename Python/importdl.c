@@ -34,10 +34,11 @@ static const char *nonascii_prefix = "PyInitU";
  */
 static PyObject *
 get_encoded_name(PyObject *name, const char **hook_prefix) {
-    char *buf;
     PyObject *tmp;
     PyObject *encoded = NULL;
-    Py_ssize_t name_len, lastdot, i;
+    PyObject *modname = NULL;
+    Py_ssize_t name_len, lastdot;
+    _Py_IDENTIFIER(replace);
 
     /* Get the short name (substring after last dot) */
     name_len = PyUnicode_GetLength(name);
@@ -71,16 +72,14 @@ get_encoded_name(PyObject *name, const char **hook_prefix) {
         }
     }
 
-    buf = PyBytes_AS_STRING(encoded);
-    assert(Py_REFCNT(encoded) == 1);
-    for (i = 0; i < PyBytes_GET_SIZE(encoded) + 1; i++) {
-        if (buf[i] == '-') {
-            buf[i] = '_';
-        }
-    }
+    /* Replace '-' by '_' */
+    modname = _PyObject_CallMethodId(encoded, &PyId_replace, "cc", '-', '_');
+    if (modname == NULL)
+        goto error;
 
     Py_DECREF(name);
-    return encoded;
+    Py_DECREF(encoded);
+    return modname;
 error:
     Py_DECREF(name);
     Py_XDECREF(encoded);
