@@ -75,7 +75,7 @@ class Hashable(metaclass=ABCMeta):
         return NotImplemented
 
 
-class _CoroutineMeta(ABCMeta):
+class _AwaitableMeta(ABCMeta):
 
     def __instancecheck__(cls, instance):
         # 0x80 = CO_COROUTINE
@@ -92,7 +92,26 @@ class _CoroutineMeta(ABCMeta):
         return super().__instancecheck__(instance)
 
 
-class Coroutine(metaclass=_CoroutineMeta):
+class Awaitable(metaclass=_AwaitableMeta):
+
+    __slots__ = ()
+
+    @abstractmethod
+    def __await__(self):
+        yield
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Awaitable:
+            for B in C.__mro__:
+                if "__await__" in B.__dict__:
+                    if B.__dict__["__await__"]:
+                        return True
+                    break
+        return NotImplemented
+
+
+class Coroutine(Awaitable):
 
     __slots__ = ()
 
@@ -126,26 +145,18 @@ class Coroutine(metaclass=_CoroutineMeta):
         else:
             raise RuntimeError("coroutine ignored GeneratorExit")
 
-
-class Awaitable(metaclass=_CoroutineMeta):
-
-    __slots__ = ()
-
-    @abstractmethod
-    def __await__(self):
-        yield
-
     @classmethod
     def __subclasshook__(cls, C):
-        if cls is Awaitable:
-            for B in C.__mro__:
-                if "__await__" in B.__dict__:
-                    if B.__dict__["__await__"]:
-                        return True
-                    break
+        if cls is Coroutine:
+            mro = C.__mro__
+            for method in ('__await__', 'send', 'throw', 'close'):
+                for base in mro:
+                    if method in base.__dict__:
+                        break
+                else:
+                    return NotImplemented
+            return True
         return NotImplemented
-
-Awaitable.register(Coroutine)
 
 
 class AsyncIterable(metaclass=ABCMeta):

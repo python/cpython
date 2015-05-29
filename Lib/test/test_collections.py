@@ -496,6 +496,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
                 return value
             def throw(self, typ, val=None, tb=None):
                 super().throw(typ, val, tb)
+            def __await__(self):
+                yield
 
         non_samples = [None, int(), gen(), object()]
         for x in non_samples:
@@ -515,13 +517,7 @@ class TestOneTrickPonyABCs(ABCTestCase):
         self.assertIsInstance(c, Awaitable)
         c.close() # awoid RuntimeWarning that coro() was not awaited
 
-        class CoroLike:
-            def send(self, value):
-                pass
-            def throw(self, typ, val=None, tb=None):
-                pass
-            def close(self):
-                pass
+        class CoroLike: pass
         Coroutine.register(CoroLike)
         self.assertTrue(isinstance(CoroLike(), Awaitable))
         self.assertTrue(issubclass(CoroLike, Awaitable))
@@ -548,6 +544,8 @@ class TestOneTrickPonyABCs(ABCTestCase):
                 return value
             def throw(self, typ, val=None, tb=None):
                 super().throw(typ, val, tb)
+            def __await__(self):
+                yield
 
         non_samples = [None, int(), gen(), object(), Bar()]
         for x in non_samples:
@@ -566,6 +564,28 @@ class TestOneTrickPonyABCs(ABCTestCase):
         c = new_coro()
         self.assertIsInstance(c, Coroutine)
         c.close() # awoid RuntimeWarning that coro() was not awaited
+
+        class CoroLike:
+            def send(self, value):
+                pass
+            def throw(self, typ, val=None, tb=None):
+                pass
+            def close(self):
+                pass
+            def __await__(self):
+                pass
+        self.assertTrue(isinstance(CoroLike(), Coroutine))
+        self.assertTrue(issubclass(CoroLike, Coroutine))
+
+        class CoroLike:
+            def send(self, value):
+                pass
+            def close(self):
+                pass
+            def __await__(self):
+                pass
+        self.assertFalse(isinstance(CoroLike(), Coroutine))
+        self.assertFalse(issubclass(CoroLike, Coroutine))
 
     def test_Hashable(self):
         # Check some non-hashables
