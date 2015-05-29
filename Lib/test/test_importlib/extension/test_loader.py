@@ -183,7 +183,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         self.assertIsInstance(module, types.ModuleType)
         self.assertEqual(module.__name__, 'x')
         self.assertEqual(module.str_const, 'something different')
-        assert 'x' not in sys.modules
+        self.assertNotIn('x', sys.modules)
 
     def test_load_twice(self):
         '''Test that 2 loads result in 2 module objects'''
