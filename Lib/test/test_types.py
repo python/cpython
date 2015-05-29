@@ -1206,28 +1206,51 @@ class CoroutineTests(unittest.TestCase):
         @types.coroutine
         def foo():
             pass
-        @types.coroutine
-        def gen():
-            def _gen(): yield
-            return _gen()
-
-        for sample in (foo, gen):
-            with self.assertRaisesRegex(TypeError,
-                                        'callable wrapped .* non-coroutine'):
-                sample()
+        with self.assertRaisesRegex(TypeError,
+                                    'callable wrapped .* non-coroutine'):
+            foo()
 
     def test_duck_coro(self):
         class CoroLike:
             def send(self): pass
             def throw(self): pass
             def close(self): pass
-            def __await__(self): pass
+            def __await__(self): return self
 
         coro = CoroLike()
         @types.coroutine
         def foo():
             return coro
-        self.assertIs(coro, foo())
+        self.assertIs(foo().__await__(), coro)
+
+    def test_duck_gen(self):
+        class GenLike:
+            def send(self): pass
+            def throw(self): pass
+            def close(self): pass
+            def __iter__(self): return self
+            def __next__(self): pass
+
+        gen = GenLike()
+        @types.coroutine
+        def foo():
+            return gen
+        self.assertIs(foo().__await__(), gen)
+
+        with self.assertRaises(AttributeError):
+            foo().gi_code
+
+    def test_gen(self):
+        def gen(): yield
+        gen = gen()
+        @types.coroutine
+        def foo(): return gen
+        self.assertIs(foo().__await__(), gen)
+
+        for name in ('__name__', '__qualname__', 'gi_code',
+                     'gi_running', 'gi_frame'):
+            self.assertIs(getattr(foo(), name),
+                          getattr(gen, name))
 
     def test_genfunc(self):
         def gen():
