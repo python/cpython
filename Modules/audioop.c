@@ -1331,7 +1331,7 @@ audioop_ratecv_impl(PyModuleDef *module, Py_buffer *fragment, int width,
     /* divide weightA and weightB by their greatest common divisor */
     d = gcd(weightA, weightB);
     weightA /= d;
-    weightA /= d;
+    weightB /= d;
 
     if ((size_t)nchannels > PY_SIZE_MAX/sizeof(int)) {
         PyErr_SetString(PyExc_MemoryError,
