@@ -22,6 +22,8 @@ Release date: 2015-07-05
 Core and Builtins
 -----------------
 
+- Issue #24328: Fix importing one character extension modules.
+
 - Issue #11205: In dictionary displays, evaluate the key before the value.
 
 - Issue #24285: Fixed regression that prevented importing extension modules
