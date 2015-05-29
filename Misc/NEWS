@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24326: Fixed audioop.ratecv() with non-default weightB argument.
+  Original patch by David Moore.
+
 
 What's New in Python 3.5.0 beta 1?
 ==================================
