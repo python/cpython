@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24326: Fixed audioop.ratecv() with non-default weightB argument.
+  Original patch by David Moore.
+
 - Issue #22095: Fixed HTTPConnection.set_tunnel with default port.  The port
   value in the host header was set to "None".  Patch by Demian Brecht.
 
