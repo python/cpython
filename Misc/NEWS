@@ -56,6 +56,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24326: Fixed audioop.ratecv() with non-default weightB argument.
+  Original patch by David Moore.
+
 - Issue #23840: tokenize.open() now closes the temporary binary file on error
   to fix a resource warning.
 
