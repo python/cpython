@@ -321,6 +321,14 @@ PyInitU_eckzbwbhc6jpgzcx415x(PyObject *spec)
     return PyModuleDef_Init(&def_nonascii_kana);
 }
 
+/*** Module with a single-character name ***/
+
+PyMODINIT_FUNC
+PyInit_x(PyObject *spec)
+{
+    return PyModuleDef_Init(&main_def);
+}
+
 /**** Testing NULL slots ****/
 
 static PyModuleDef null_slots_def = TEST_MODULE_DEF(
