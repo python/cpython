@@ -43,30 +43,6 @@ MemberDescriptorType = type(FunctionType.__globals__)
 del sys, _f, _g, _C,                              # Not for export
 
 
-_CO_GENERATOR = 0x20
-_CO_ITERABLE_COROUTINE = 0x100
-
-def coroutine(func):
-    """Convert regular generator function to a coroutine."""
-
-    # TODO: Implement this in C.
-
-    if (not isinstance(func, (FunctionType, MethodType)) or
-            not isinstance(getattr(func, '__code__', None), CodeType) or
-            not (func.__code__.co_flags & _CO_GENERATOR)):
-        raise TypeError('coroutine() expects a generator function')
-
-    co = func.__code__
-    func.__code__ = CodeType(
-        co.co_argcount, co.co_kwonlyargcount, co.co_nlocals, co.co_stacksize,
-        co.co_flags | _CO_ITERABLE_COROUTINE,
-        co.co_code,
-        co.co_consts, co.co_names, co.co_varnames, co.co_filename, co.co_name,
-        co.co_firstlineno, co.co_lnotab, co.co_freevars, co.co_cellvars)
-
-    return func
-
-
 # Provide a PEP 3115 compliant mechanism for class creation
 def new_class(name, bases=(), kwds=None, exec_body=None):
     """Create a class object dynamically using the appropriate metaclass."""
@@ -180,6 +156,48 @@ class DynamicClassAttribute:
         result = type(self)(self.fget, self.fset, fdel, self.__doc__)
         result.overwrite_doc = self.overwrite_doc
         return result
+
+
+import functools as _functools
+import collections.abc as _collections_abc
+
+def coroutine(func):
+    """Convert regular generator function to a coroutine."""
+
+    # We don't want to import 'dis' or 'inspect' just for
+    # these constants.
+    _CO_GENERATOR = 0x20
+    _CO_ITERABLE_COROUTINE = 0x100
+
+    if not callable(func):
+        raise TypeError('types.coroutine() expects a callable')
+
+    if (isinstance(func, FunctionType) and
+        isinstance(getattr(func, '__code__', None), CodeType) and
+        (func.__code__.co_flags & _CO_GENERATOR)):
+
+        # TODO: Implement this in C.
+        co = func.__code__
+        func.__code__ = CodeType(
+            co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
+            co.co_stacksize,
+            co.co_flags | _CO_ITERABLE_COROUTINE,
+            co.co_code,
+            co.co_consts, co.co_names, co.co_varnames, co.co_filename,
+            co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
+            co.co_cellvars)
+        return func
+
+    @_functools.wraps(func)
+    def wrapped(*args, **kwargs):
+        coro = func(*args, **kwargs)
+        if not isinstance(coro, _collections_abc.Coroutine):
+            raise TypeError(
+                'callable wrapped with types.coroutine() returned '
+                'non-coroutine: {!r}'.format(coro))
+        return coro
+
+    return wrapped
 
 
 __all__ = [n for n in globals() if n[:1] != '_']

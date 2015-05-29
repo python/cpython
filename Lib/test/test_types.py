@@ -1196,10 +1196,38 @@ class CoroutineTests(unittest.TestCase):
                 pass
         def bar(): pass
 
-        samples = [Foo, Foo(), bar, None, int, 1]
+        samples = [None, 1, object()]
         for sample in samples:
-            with self.assertRaisesRegex(TypeError, 'expects a generator'):
+            with self.assertRaisesRegex(TypeError,
+                                        'types.coroutine.*expects a callable'):
                 types.coroutine(sample)
+
+    def test_wrong_func(self):
+        @types.coroutine
+        def foo():
+            pass
+        @types.coroutine
+        def gen():
+            def _gen(): yield
+            return _gen()
+
+        for sample in (foo, gen):
+            with self.assertRaisesRegex(TypeError,
+                                        'callable wrapped .* non-coroutine'):
+                sample()
+
+    def test_duck_coro(self):
+        class CoroLike:
+            def send(self): pass
+            def throw(self): pass
+            def close(self): pass
+            def __await__(self): pass
+
+        coro = CoroLike()
+        @types.coroutine
+        def foo():
+            return coro
+        self.assertIs(coro, foo())
 
     def test_genfunc(self):
         def gen():
