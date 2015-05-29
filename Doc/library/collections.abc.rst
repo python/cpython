@@ -82,7 +82,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
                            :class:`Set`                                   ``__iter__``
 :class:`ValuesView`        :class:`MappingView`                           ``__contains__``, ``__iter__``
 :class:`Awaitable`                                ``__await__``
-:class:`Coroutine`                                ``send``, ``throw``     ``close``
+:class:`Coroutine`         :class:`Awaitable`     ``send``, ``throw``     ``close``
 :class:`AsyncIterable`                            ``__aiter__``
 :class:`AsyncIterator`     :class:`AsyncIterable` ``__anext__``           ``__aiter__``
 ========================== ====================== ======================= ====================================================
@@ -166,10 +166,10 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
    ABC for coroutine compatible classes that implement a subset of
    generator methods defined in :pep:`342`, namely:
-   :meth:`~generator.send`, :meth:`~generator.throw` and
-   :meth:`~generator.close` methods.  All :class:`Coroutine` instances
-   are also instances of :class:`Awaitable`.  See also the definition
-   of :term:`coroutine`.
+   :meth:`~generator.send`, :meth:`~generator.throw`,
+   :meth:`~generator.close` methods.  :meth:`__await__` must also be
+   implemented.  All :class:`Coroutine` instances are also instances of
+   :class:`Awaitable`.  See also the definition of :term:`coroutine`.
 
    .. versionadded:: 3.5
 
