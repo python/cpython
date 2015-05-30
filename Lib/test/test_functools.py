@@ -1120,14 +1120,10 @@ class TestLRU:
         sys.setswitchinterval(1e-6)
         try:
             # create 5 threads in order to fill cache
-            threads = []
-            for k in range(5):
-                t = threading.Thread(target=full, args=[f, k, k])
-                t.start()
-                threads.append(t)
-
-            for t in threads:
-                t.join()
+            threads = [threading.Thread(target=full, args=[f, k, k])
+                       for k in range(5)]
+            with support.start_threads(threads):
+                pass
 
             hits, misses, maxsize, currsize = f.cache_info()
             self.assertEqual(hits, 45)
@@ -1135,16 +1131,11 @@ class TestLRU:
             self.assertEqual(currsize, 5)
 
             # create 5 threads in order to fill cache and 1 to clear it
-            cleaner = threading.Thread(target=clear, args=[f])
-            cleaner.start()
-            threads = [cleaner]
-            for k in range(5):
-                t = threading.Thread(target=full, args=[f, k, k])
-                t.start()
-                threads.append(t)
-
-            for t in threads:
-                t.join()
+            threads = [threading.Thread(target=clear, args=[f])]
+            threads += [threading.Thread(target=full, args=[f, k, k])
+                        for k in range(5)]
+            with support.start_threads(threads):
+                pass
         finally:
             sys.setswitchinterval(orig_si)
 
