@@ -1357,9 +1357,6 @@ static PyObject * odictiter_new(PyODictObject *, int);
 static PyObject *
 odict_reversed(PyODictObject *od)
 {
-    if (_odict_EMPTY(od)) {
-        Py_RETURN_NONE;
-    }
     return odictiter_new(od, _odict_ITER_KEYS|_odict_ITER_REVERSED);
 }
 
