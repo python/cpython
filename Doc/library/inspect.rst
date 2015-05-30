@@ -43,6 +43,11 @@ attributes:
 +-----------+-----------------+---------------------------+
 | class     | __doc__         | documentation string      |
 +-----------+-----------------+---------------------------+
+|           | __name__        | name with which this      |
+|           |                 | class was defined         |
++-----------+-----------------+---------------------------+
+|           | __qualname__    | qualified name            |
++-----------+-----------------+---------------------------+
 |           | __module__      | name of module in which   |
 |           |                 | this class was defined    |
 +-----------+-----------------+---------------------------+
@@ -50,6 +55,8 @@ attributes:
 +-----------+-----------------+---------------------------+
 |           | __name__        | name with which this      |
 |           |                 | method was defined        |
++-----------+-----------------+---------------------------+
+|           | __qualname__    | qualified name            |
 +-----------+-----------------+---------------------------+
 |           | __func__        | function object           |
 |           |                 | containing implementation |
@@ -63,6 +70,8 @@ attributes:
 +-----------+-----------------+---------------------------+
 |           | __name__        | name with which this      |
 |           |                 | function was defined      |
++-----------+-----------------+---------------------------+
+|           | __qualname__    | qualified name            |
 +-----------+-----------------+---------------------------+
 |           | __code__        | code object containing    |
 |           |                 | compiled function         |
@@ -163,6 +172,8 @@ attributes:
 +-----------+-----------------+---------------------------+
 |           | __name__        | original name of this     |
 |           |                 | function or method        |
++-----------+-----------------+---------------------------+
+|           | __qualname__    | qualified name            |
 +-----------+-----------------+---------------------------+
 |           | __self__        | instance to which a       |
 |           |                 | method is bound, or       |
