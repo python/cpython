@@ -34,7 +34,6 @@ PyAPI_FUNC(int) PyODict_DelItem(PyObject *od, PyObject *key);
 #define PyODict_Size(od) PyDict_Size((PyObject *)od)
 #define PyODict_GetItemString(od, key) \
     PyDict_GetItemString((PyObject *)od, key)
-#define Py_ODict_GetItemId(od, key)  _PyDict_GetItemId((PyObject *)od, key)
 
 #ifdef __cplusplus
 }
