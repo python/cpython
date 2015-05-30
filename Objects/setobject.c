@@ -1582,9 +1582,15 @@ set_difference(PySetObject *so, PyObject *other)
     if (PyDict_CheckExact(other)) {
         while (set_next(so, &pos, &entry)) {
             setentry entrycopy;
+            int rv;
             entrycopy.hash = entry->hash;
             entrycopy.key = entry->key;
-            if (!_PyDict_Contains(other, entry->key, entry->hash)) {
+            rv = _PyDict_Contains(other, entry->key, entry->hash);
+            if (rv < 0) {
+                Py_DECREF(result);
+                return NULL;
+            }
+            if (!rv) {
                 if (set_add_entry((PySetObject *)result, &entrycopy)) {
                     Py_DECREF(result);
                     return NULL;
@@ -1820,7 +1826,8 @@ PyDoc_STRVAR(issuperset_doc, "Report whether this set contains another set.");
 static PyObject *
 set_richcompare(PySetObject *v, PyObject *w, int op)
 {
-    PyObject *r1, *r2;
+    PyObject *r1;
+    int r2;
 
     if(!PyAnySet_Check(w))
         Py_RETURN_NOTIMPLEMENTED;
@@ -1838,9 +1845,11 @@ set_richcompare(PySetObject *v, PyObject *w, int op)
         r1 = set_richcompare(v, w, Py_EQ);
         if (r1 == NULL)
             return NULL;
-        r2 = PyBool_FromLong(PyObject_Not(r1));
+        r2 = PyObject_IsTrue(r1);
         Py_DECREF(r1);
-        return r2;
+        if (r2 < 0)
+            return NULL;
+        return PyBool_FromLong(!r2);
     case Py_LE:
         return set_issubset(v, w);
     case Py_GE:

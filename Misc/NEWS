@@ -22,6 +22,10 @@ Release date: 2015-07-05
 Core and Builtins
 -----------------
 
+- Issue #24115: Update uses of PyObject_IsTrue(), PyObject_Not(),
+  PyObject_IsInstance(), PyObject_RichCompareBool() and _PyDict_Contains()
+  to check for and handle errors correctly.
+
 - Issue #24328: Fix importing one character extension modules.
 
 - Issue #11205: In dictionary displays, evaluate the key before the value.
