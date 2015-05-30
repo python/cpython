@@ -96,8 +96,8 @@ doctest:
 
 pydoc-topics: BUILDER = pydoc-topics
 pydoc-topics: build
-	@echo "Building finished; now copy build/pydoc-topics/topics.py" \
-	      "to ../Lib/pydoc_data/topics.py"
+	@echo "Building finished; now run this:" \
+	      "cp build/pydoc-topics/topics.py ../Lib/pydoc_data/topics.py"
 
 htmlview: html
 	 $(PYTHON) -c "import webbrowser; webbrowser.open('build/html/index.html')"
