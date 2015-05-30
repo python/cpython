@@ -79,7 +79,7 @@ exit:
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalEncoder_encode__doc__,
-"encode($self, /, input, final=0)\n"
+"encode($self, /, input, final=False)\n"
 "--\n"
 "\n");
 
@@ -126,7 +126,7 @@ _multibytecodec_MultibyteIncrementalEncoder_reset(MultibyteIncrementalEncoderObj
 }
 
 PyDoc_STRVAR(_multibytecodec_MultibyteIncrementalDecoder_decode__doc__,
-"decode($self, /, input, final=0)\n"
+"decode($self, /, input, final=False)\n"
 "--\n"
 "\n");
 
@@ -317,4 +317,4 @@ PyDoc_STRVAR(_multibytecodec___create_codec__doc__,
 
 #define _MULTIBYTECODEC___CREATE_CODEC_METHODDEF    \
     {"__create_codec", (PyCFunction)_multibytecodec___create_codec, METH_O, _multibytecodec___create_codec__doc__},
-/*[clinic end generated code: output=c104f5fd548c1ac5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=eebb21e18c3043d1 input=a9049054013a1b77]*/

@@ -707,7 +707,7 @@ get_parse_result(xmlparseobject *self, int rv)
 pyexpat.xmlparser.Parse
 
     data: object
-    isFinal: int = 0
+    isfinal: int(c_default="0") = False
     /
 
 Parse XML data.
@@ -717,8 +717,8 @@ Parse XML data.
 
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
-                             int isFinal)
-/*[clinic end generated code: output=37e105d55645b0f2 input=e37b81b8948ca7e0]*/
+                             int isfinal)
+/*[clinic end generated code: output=f4db843dd1f4ed4b input=199d9e8e92ebbb4b]*/
 {
     const char *s;
     Py_ssize_t slen;
@@ -748,7 +748,7 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
         slen -= MAX_CHUNK_SIZE;
     }
     assert(MAX_CHUNK_SIZE < INT_MAX && slen < INT_MAX);
-    rc = XML_Parse(self->itself, s, (int)slen, isFinal);
+    rc = XML_Parse(self->itself, s, (int)slen, isfinal);
 
 done:
     if (view.buf != NULL)
