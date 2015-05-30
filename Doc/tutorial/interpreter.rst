@@ -1,4 +1,4 @@
-3.6.. _tut-using:
+.. _tut-using:
 
 ****************************
 Using the Python Interpreter
@@ -10,13 +10,13 @@ Using the Python Interpreter
 Invoking the Interpreter
 ========================
 
-The Python interpreter is usually installed as :file:`/usr/local/bin/python3.6`
+The Python interpreter is usually installed as :file:`/usr/local/bin/python3.5`
 on those machines where it is available; putting :file:`/usr/local/bin` in your
 Unix shell's search path makes it possible to start it by typing the command:
 
 .. code-block:: text
 
-   python3.6
+   python3.5
 
 to the shell. [#]_ Since the choice of the directory where the interpreter lives
 is an installation option, other places are possible; check with your local
@@ -24,11 +24,11 @@ Python guru or system administrator.  (E.g., :file:`/usr/local/python` is a
 popular alternative location.)
 
 On Windows machines, the Python installation is usually placed in
-:file:`C:\\Python36`, though you can change this when you're running the
+:file:`C:\\Python35`, though you can change this when you're running the
 installer.  To add this directory to your path,  you can type the following
 command into the command prompt in a DOS box::
 
-   set path=%path%;C:\python36
+   set path=%path%;C:\python35
 
 Typing an end-of-file character (:kbd:`Control-D` on Unix, :kbd:`Control-Z` on
 Windows) at the primary prompt causes the interpreter to exit with a zero exit
@@ -96,8 +96,8 @@ with the *secondary prompt*, by default three dots (``...``). The interpreter
 prints a welcome message stating its version number and a copyright notice
 before printing the first prompt::
 
-   $ python3.6
-   Python 3.6 (default, Sep 16 2015, 09:25:04)
+   $ python3.5
+   Python 3.5 (default, Sep 16 2015, 09:25:04)
    [GCC 4.8.2] on linux
    Type "help", "copyright", "credits" or "license" for more information.
    >>>
