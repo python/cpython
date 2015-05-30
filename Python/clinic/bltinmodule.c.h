@@ -129,8 +129,8 @@ exit:
 }
 
 PyDoc_STRVAR(builtin_compile__doc__,
-"compile($module, /, source, filename, mode, flags=0, dont_inherit=0,\n"
-"        optimize=-1)\n"
+"compile($module, /, source, filename, mode, flags=0,\n"
+"        dont_inherit=False, optimize=-1)\n"
 "--\n"
 "\n"
 "Compile source into a code object that can be executed by exec() or eval().\n"
@@ -141,9 +141,9 @@ PyDoc_STRVAR(builtin_compile__doc__,
 "single (interactive) statement, or \'eval\' to compile an expression.\n"
 "The flags argument, if present, controls which future statements influence\n"
 "the compilation of the code.\n"
-"The dont_inherit argument, if non-zero, stops the compilation inheriting\n"
+"The dont_inherit argument, if true, stops the compilation inheriting\n"
 "the effects of any future statements in effect in the code calling\n"
-"compile; if absent or zero these statements do influence the compilation,\n"
+"compile; if absent or false these statements do influence the compilation,\n"
 "in addition to any features explicitly specified.");
 
 #define BUILTIN_COMPILE_METHODDEF    \
@@ -660,4 +660,4 @@ builtin_issubclass(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=9b34d1ca57effad8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bec3399c0aee98d7 input=a9049054013a1b77]*/
