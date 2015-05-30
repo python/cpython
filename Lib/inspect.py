@@ -2255,9 +2255,13 @@ def _signature_from_callable(obj, *,
             if type not in obj.__mro__:
                 # We have a class (not metaclass), but no user-defined
                 # __init__ or __new__ for it
-                if obj.__init__ is object.__init__:
+                if (obj.__init__ is object.__init__ and
+                    obj.__new__ is object.__new__):
                     # Return a signature of 'object' builtin.
                     return signature(object)
+                else:
+                    raise ValueError(
+                        'no signature found for builtin type {!r}'.format(obj))
 
     elif not isinstance(obj, _NonUserDefinedCallables):
         # An object with __call__
