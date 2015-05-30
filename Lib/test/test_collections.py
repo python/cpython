@@ -1773,6 +1773,19 @@ class OrderedDictTests:
         self.assertEqual(sorted(reversed(od)),
                          sorted([t[0] for t in reversed(pairs)]))
 
+    def test_iterators_empty(self):
+        OrderedDict = self.module.OrderedDict
+        od = OrderedDict()
+        empty = []
+        self.assertEqual(list(od), empty)
+        self.assertEqual(list(od.keys()), empty)
+        self.assertEqual(list(od.values()), empty)
+        self.assertEqual(list(od.items()), empty)
+        self.assertEqual(list(reversed(od)), empty)
+        self.assertEqual(list(reversed(od.keys())), empty)
+        self.assertEqual(list(reversed(od.values())), empty)
+        self.assertEqual(list(reversed(od.items())), empty)
+
     def test_popitem(self):
         OrderedDict = self.module.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
@@ -1966,7 +1979,6 @@ class OrderedDictTests:
         self.assertGreater(sys.getsizeof(od), sys.getsizeof(d))
 
     def test_views(self):
-        OrderedDict = self.module.OrderedDict
         # See http://bugs.python.org/issue24286
         s = 'the quick brown fox jumped over a lazy dog yesterday before dawn'.split()
         od = OrderedDict.fromkeys(s)
