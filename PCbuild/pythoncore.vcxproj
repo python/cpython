@@ -122,6 +122,7 @@
     <ClInclude Include="..\Include\node.h" />
     <ClInclude Include="..\Include\object.h" />
     <ClInclude Include="..\Include\objimpl.h" />
+    <ClInclude Include="..\Include\odictobject.h" />
     <ClInclude Include="..\Include\opcode.h" />
     <ClInclude Include="..\Include\osdefs.h" />
     <ClInclude Include="..\Include\parsetok.h" />
@@ -313,6 +314,7 @@
     <ClCompile Include="..\Objects\namespaceobject.c" />
     <ClCompile Include="..\Objects\object.c" />
     <ClCompile Include="..\Objects\obmalloc.c" />
+    <ClCompile Include="..\Objects\odictobject.c" />
     <ClCompile Include="..\Objects\rangeobject.c" />
     <ClCompile Include="..\Objects\setobject.c" />
     <ClCompile Include="..\Objects\sliceobject.c" />
