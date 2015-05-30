@@ -235,7 +235,7 @@ is the number of parent directories to search relative to the current module.");
 /*[clinic input]
 abs as builtin_abs
 
-    x: 'O'
+    x: object
     /
 
 Return the absolute value of the argument.
@@ -243,7 +243,7 @@ Return the absolute value of the argument.
 
 static PyObject *
 builtin_abs(PyModuleDef *module, PyObject *x)
-/*[clinic end generated code: output=6833047c493ecea2 input=aa29cc07869b4732]*/
+/*[clinic end generated code: output=6833047c493ecea2 input=bed4ca14e29c20d1]*/
 {
     return PyNumber_Absolute(x);
 }
@@ -251,7 +251,7 @@ builtin_abs(PyModuleDef *module, PyObject *x)
 /*[clinic input]
 all as builtin_all
 
-    iterable: 'O'
+    iterable: object
     /
 
 Return True if bool(x) is True for all values x in the iterable.
@@ -261,7 +261,7 @@ If the iterable is empty, return True.
 
 static PyObject *
 builtin_all(PyModuleDef *module, PyObject *iterable)
-/*[clinic end generated code: output=089e6d1b7bde27b1 input=dd506dc9998d42bd]*/
+/*[clinic end generated code: output=089e6d1b7bde27b1 input=1a7c5d1bc3438a21]*/
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
@@ -300,7 +300,7 @@ builtin_all(PyModuleDef *module, PyObject *iterable)
 /*[clinic input]
 any as builtin_any
 
-    iterable: 'O'
+    iterable: object
     /
 
 Return True if bool(x) is True for any x in the iterable.
@@ -310,7 +310,7 @@ If the iterable is empty, return False.
 
 static PyObject *
 builtin_any(PyModuleDef *module, PyObject *iterable)
-/*[clinic end generated code: output=1be994b2c2307492 input=8fe8460f3fbbced8]*/
+/*[clinic end generated code: output=1be994b2c2307492 input=41d7451c23384f24]*/
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
@@ -349,7 +349,7 @@ builtin_any(PyModuleDef *module, PyObject *iterable)
 /*[clinic input]
 ascii as builtin_ascii
 
-    obj: 'O'
+    obj: object
     /
 
 Return an ASCII-only representation of an object.
@@ -362,7 +362,7 @@ to that returned by repr() in Python 2.
 
 static PyObject *
 builtin_ascii(PyModuleDef *module, PyObject *obj)
-/*[clinic end generated code: output=d4e862c48af2a933 input=0cbdc1420a306325]*/
+/*[clinic end generated code: output=d4e862c48af2a933 input=4c62732e1b3a3cc9]*/
 {
     return PyObject_ASCII(obj);
 }
@@ -371,7 +371,7 @@ builtin_ascii(PyModuleDef *module, PyObject *obj)
 /*[clinic input]
 bin as builtin_bin
 
-    number: 'O'
+    number: object
     /
 
 Return the binary representation of an integer.
@@ -382,7 +382,7 @@ Return the binary representation of an integer.
 
 static PyObject *
 builtin_bin(PyModuleDef *module, PyObject *number)
-/*[clinic end generated code: output=25ee26c6cf3bbb54 input=2a6362ae9a9c9203]*/
+/*[clinic end generated code: output=25ee26c6cf3bbb54 input=53f8a0264bacaf90]*/
 {
     return PyNumber_ToBase(number, 2);
 }
@@ -391,7 +391,7 @@ builtin_bin(PyModuleDef *module, PyObject *number)
 /*[clinic input]
 callable as builtin_callable
 
-    obj: 'O'
+    obj: object
     /
 
 Return whether the object is callable (i.e., some kind of function).
@@ -402,7 +402,7 @@ __call__() method.
 
 static PyObject *
 builtin_callable(PyModuleDef *module, PyObject *obj)
-/*[clinic end generated code: output=f4df2ce92364b656 input=bb3bb528fffdade4]*/
+/*[clinic end generated code: output=f4df2ce92364b656 input=1423bab99cc41f58]*/
 {
     return PyBool_FromLong((long)PyCallable_Check(obj));
 }
@@ -564,7 +564,7 @@ PyTypeObject PyFilter_Type = {
 /*[clinic input]
 format as builtin_format
 
-    value: 'O'
+    value: object
     format_spec: unicode(c_default="NULL") = ''
     /
 
@@ -576,7 +576,7 @@ format_spec defaults to the empty string
 static PyObject *
 builtin_format_impl(PyModuleDef *module, PyObject *value,
                     PyObject *format_spec)
-/*[clinic end generated code: output=4341fd78a5f01764 input=e23f2f11e0098c64]*/
+/*[clinic end generated code: output=4341fd78a5f01764 input=6325e751a1b29b86]*/
 {
     return PyObject_Format(value, format_spec);
 }
@@ -584,7 +584,7 @@ builtin_format_impl(PyModuleDef *module, PyObject *value,
 /*[clinic input]
 chr as builtin_chr
 
-    i: 'i'
+    i: int
     /
 
 Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.
@@ -592,7 +592,7 @@ Return a Unicode string of one character with ordinal i; 0 <= i <= 0x10ffff.
 
 static PyObject *
 builtin_chr_impl(PyModuleDef *module, int i)
-/*[clinic end generated code: output=67fe4d87e690f373 input=9b1ced29615adf66]*/
+/*[clinic end generated code: output=67fe4d87e690f373 input=3f604ef45a70750d]*/
 {
     return PyUnicode_FromOrdinal(i);
 }
@@ -633,12 +633,12 @@ source_as_string(PyObject *cmd, const char *funcname, const char *what, PyCompil
 /*[clinic input]
 compile as builtin_compile
 
-    source: 'O'
+    source: object
     filename: object(converter="PyUnicode_FSDecoder")
-    mode: 's'
-    flags: 'i' = 0
-    dont_inherit: 'i' = 0
-    optimize: 'i' = -1
+    mode: str
+    flags: int = 0
+    dont_inherit: int = 0
+    optimize: int = -1
 
 Compile source into a code object that can be executed by exec() or eval().
 
@@ -658,7 +658,7 @@ static PyObject *
 builtin_compile_impl(PyModuleDef *module, PyObject *source,
                      PyObject *filename, const char *mode, int flags,
                      int dont_inherit, int optimize)
-/*[clinic end generated code: output=31881762c1bb90c4 input=c6212a9d21472f7e]*/
+/*[clinic end generated code: output=31881762c1bb90c4 input=7faa105f669fefcf]*/
 {
     Py_buffer view = {NULL, NULL};
     const char *str;
@@ -775,8 +775,8 @@ PyDoc_STRVAR(dir_doc,
 /*[clinic input]
 divmod as builtin_divmod
 
-    x: 'O'
-    y: 'O'
+    x: object
+    y: object
     /
 
 Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.
@@ -784,7 +784,7 @@ Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.
 
 static PyObject *
 builtin_divmod_impl(PyModuleDef *module, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=9ad0076120ebf9ac input=c9c617b7bb74c615]*/
+/*[clinic end generated code: output=9ad0076120ebf9ac input=7fdb15f8a97a5fe7]*/
 {
     return PyNumber_Divmod(x, y);
 }
@@ -793,9 +793,9 @@ builtin_divmod_impl(PyModuleDef *module, PyObject *x, PyObject *y)
 /*[clinic input]
 eval as builtin_eval
 
-    source: 'O'
-    globals: 'O' = None
-    locals: 'O' = None
+    source: object
+    globals: object = None
+    locals: object = None
     /
 
 Evaluate the given source in the context of globals and locals.
@@ -810,7 +810,7 @@ If only globals is given, locals defaults to it.
 static PyObject *
 builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals,
                   PyObject *locals)
-/*[clinic end generated code: output=7284501fb7b4d666 input=31e42c1d2125b50b]*/
+/*[clinic end generated code: output=7284501fb7b4d666 input=11ee718a8640e527]*/
 {
     PyObject *result, *tmp = NULL;
     Py_buffer view = {NULL, NULL};
@@ -878,9 +878,9 @@ builtin_eval_impl(PyModuleDef *module, PyObject *source, PyObject *globals,
 /*[clinic input]
 exec as builtin_exec
 
-    source: 'O'
-    globals: 'O' = None
-    locals: 'O' = None
+    source: object
+    globals: object = None
+    locals: object = None
     /
 
 Execute the given source in the context of globals and locals.
@@ -895,7 +895,7 @@ If only globals is given, locals defaults to it.
 static PyObject *
 builtin_exec_impl(PyModuleDef *module, PyObject *source, PyObject *globals,
                   PyObject *locals)
-/*[clinic end generated code: output=83d574ef9d5d0b46 input=536e057b5e00d89e]*/
+/*[clinic end generated code: output=83d574ef9d5d0b46 input=01ca3e1c01692829]*/
 {
     PyObject *v;
 
@@ -1022,8 +1022,8 @@ builtin_globals_impl(PyModuleDef *module)
 /*[clinic input]
 hasattr as builtin_hasattr
 
-    obj: 'O'
-    name: 'O'
+    obj: object
+    name: object
     /
 
 Return whether the object has an attribute with the given name.
@@ -1033,7 +1033,7 @@ This is done by calling getattr(obj, name) and catching AttributeError.
 
 static PyObject *
 builtin_hasattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name)
-/*[clinic end generated code: output=81154fdd63634696 input=b50bad5f739ea10d]*/
+/*[clinic end generated code: output=81154fdd63634696 input=0faec9787d979542]*/
 {
     PyObject *v;
 
@@ -1063,7 +1063,7 @@ builtin_hasattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name)
 id as builtin_id
 
     self: self(type="PyModuleDef *")
-    obj as v: 'O'
+    obj as v: object
     /
 
 Return the identity of an object.
@@ -1074,7 +1074,7 @@ This is guaranteed to be unique among simultaneously existing objects.
 
 static PyObject *
 builtin_id(PyModuleDef *self, PyObject *v)
-/*[clinic end generated code: output=0aa640785f697f65 input=a1f988d98357341d]*/
+/*[clinic end generated code: output=0aa640785f697f65 input=5a534136419631f4]*/
 {
     return PyLong_FromVoidPtr(v);
 }
@@ -1297,9 +1297,9 @@ is exhausted, it is returned instead of raising StopIteration.");
 /*[clinic input]
 setattr as builtin_setattr
 
-    obj: 'O'
-    name: 'O'
-    value: 'O'
+    obj: object
+    name: object
+    value: object
     /
 
 Sets the named attribute on the given object to the specified value.
@@ -1310,7 +1310,7 @@ setattr(x, 'y', v) is equivalent to ``x.y = v''
 static PyObject *
 builtin_setattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name,
                      PyObject *value)
-/*[clinic end generated code: output=d881c655c0f7e34f input=fbe7e53403116b93]*/
+/*[clinic end generated code: output=d881c655c0f7e34f input=bd2b7ca6875a1899]*/
 {
     if (PyObject_SetAttr(obj, name, value) != 0)
         return NULL;
@@ -1322,8 +1322,8 @@ builtin_setattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name,
 /*[clinic input]
 delattr as builtin_delattr
 
-    obj: 'O'
-    name: 'O'
+    obj: object
+    name: object
     /
 
 Deletes the named attribute from the given object.
@@ -1333,7 +1333,7 @@ delattr(x, 'y') is equivalent to ``del x.y''
 
 static PyObject *
 builtin_delattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name)
-/*[clinic end generated code: output=ef653e698a0b4187 input=647af2ce9183a823]*/
+/*[clinic end generated code: output=ef653e698a0b4187 input=db16685d6b4b9410]*/
 {
     if (PyObject_SetAttr(obj, name, (PyObject *)NULL) != 0)
         return NULL;
@@ -1345,7 +1345,7 @@ builtin_delattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name)
 /*[clinic input]
 hash as builtin_hash
 
-    obj: 'O'
+    obj: object
     /
 
 Return the hash value for the given object.
@@ -1356,7 +1356,7 @@ reverse is not necessarily true.
 
 static PyObject *
 builtin_hash(PyModuleDef *module, PyObject *obj)
-/*[clinic end generated code: output=1f32ff154c1f751a input=ccc4d2b9a351df4e]*/
+/*[clinic end generated code: output=1f32ff154c1f751a input=58c48be822bf9c54]*/
 {
     Py_hash_t x;
 
@@ -1370,7 +1370,7 @@ builtin_hash(PyModuleDef *module, PyObject *obj)
 /*[clinic input]
 hex as builtin_hex
 
-    number: 'O'
+    number: object
     /
 
 Return the hexadecimal representation of an integer.
@@ -1381,7 +1381,7 @@ Return the hexadecimal representation of an integer.
 
 static PyObject *
 builtin_hex(PyModuleDef *module, PyObject *number)
-/*[clinic end generated code: output=618489ce3cbc5858 input=e816200b0a728ebe]*/
+/*[clinic end generated code: output=618489ce3cbc5858 input=e645aff5fc7d540e]*/
 {
     return PyNumber_ToBase(number, 16);
 }
@@ -1417,7 +1417,7 @@ In the second form, the callable is called until it returns the sentinel.");
 /*[clinic input]
 len as builtin_len
 
-    obj: 'O'
+    obj: object
     /
 
 Return the number of items in a container.
@@ -1425,7 +1425,7 @@ Return the number of items in a container.
 
 static PyObject *
 builtin_len(PyModuleDef *module, PyObject *obj)
-/*[clinic end generated code: output=8e5837b6f81d915b input=2e5ff15db9a2de22]*/
+/*[clinic end generated code: output=8e5837b6f81d915b input=bc55598da9e9c9b5]*/
 {
     Py_ssize_t res;
 
@@ -1596,7 +1596,7 @@ With two or more arguments, return the largest argument.");
 /*[clinic input]
 oct as builtin_oct
 
-    number: 'O'
+    number: object
     /
 
 Return the octal representation of an integer.
@@ -1607,7 +1607,7 @@ Return the octal representation of an integer.
 
 static PyObject *
 builtin_oct(PyModuleDef *module, PyObject *number)
-/*[clinic end generated code: output=18f701bc6d8f804a input=a3a372b521b3dd13]*/
+/*[clinic end generated code: output=18f701bc6d8f804a input=ad6b274af4016c72]*/
 {
     return PyNumber_ToBase(number, 8);
 }
@@ -1616,7 +1616,7 @@ builtin_oct(PyModuleDef *module, PyObject *number)
 /*[clinic input]
 ord as builtin_ord
 
-    c: 'O'
+    c: object
     /
 
 Return the Unicode code point for a one-character string.
@@ -1624,7 +1624,7 @@ Return the Unicode code point for a one-character string.
 
 static PyObject *
 builtin_ord(PyModuleDef *module, PyObject *c)
-/*[clinic end generated code: output=04fd27272d9462f6 input=762355f87451efa3]*/
+/*[clinic end generated code: output=04fd27272d9462f6 input=3064e5d6203ad012]*/
 {
     long ord;
     Py_ssize_t size;
@@ -1671,9 +1671,9 @@ builtin_ord(PyModuleDef *module, PyObject *c)
 /*[clinic input]
 pow as builtin_pow
 
-    x: 'O'
-    y: 'O'
-    z: 'O' = None
+    x: object
+    y: object
+    z: object = None
     /
 
 Equivalent to x**y (with two arguments) or x**y % z (with three arguments)
@@ -1684,7 +1684,7 @@ invoked using the three argument form.
 
 static PyObject *
 builtin_pow_impl(PyModuleDef *module, PyObject *x, PyObject *y, PyObject *z)
-/*[clinic end generated code: output=1fba268adba9b45f input=561a942d5f5c1899]*/
+/*[clinic end generated code: output=1fba268adba9b45f input=653d57d38d41fc07]*/
 {
     return PyNumber_Power(x, y, z);
 }
@@ -1978,7 +1978,7 @@ builtin_input_impl(PyModuleDef *module, PyObject *prompt)
 /*[clinic input]
 repr as builtin_repr
 
-    obj: 'O'
+    obj: object
     /
 
 Return the canonical string representation of the object.
@@ -1988,7 +1988,7 @@ For many object types, including most builtins, eval(repr(obj)) == obj.
 
 static PyObject *
 builtin_repr(PyModuleDef *module, PyObject *obj)
-/*[clinic end generated code: output=dc41784fa4341834 input=a2bca0f38a5a924d]*/
+/*[clinic end generated code: output=dc41784fa4341834 input=1c9e6d66d3e3be04]*/
 {
     return PyObject_Repr(obj);
 }
@@ -2045,9 +2045,9 @@ same type as the number. ndigits may be negative.");
 /* [disabled clinic input]
 sorted as builtin_sorted
 
-    iterable as seq: 'O'
-    key as keyfunc: 'O' = None
-    reverse: 'O' = False
+    iterable as seq: object
+    key as keyfunc: object = None
+    reverse: object = False
 
 Return a new list containing all items from the iterable in ascending order.
 
@@ -2145,7 +2145,7 @@ With an argument, equivalent to object.__dict__.");
 /*[clinic input]
 sum as builtin_sum
 
-    iterable: 'O'
+    iterable: object
     start: object(c_default="NULL") = 0
     /
 
@@ -2158,7 +2158,7 @@ reject non-numeric types.
 
 static PyObject *
 builtin_sum_impl(PyModuleDef *module, PyObject *iterable, PyObject *start)
-/*[clinic end generated code: output=33655b248b21d581 input=90ae7a242cfcf025]*/
+/*[clinic end generated code: output=33655b248b21d581 input=3b5b7a9d7611c73a]*/
 {
     PyObject *result = start;
     PyObject *temp, *item, *iter;
@@ -2322,8 +2322,8 @@ builtin_sum_impl(PyModuleDef *module, PyObject *iterable, PyObject *start)
 /*[clinic input]
 isinstance as builtin_isinstance
 
-    obj: 'O'
-    class_or_tuple: 'O'
+    obj: object
+    class_or_tuple: object
     /
 
 Return whether an object is an instance of a class or of a subclass thereof.
@@ -2336,7 +2336,7 @@ or ...`` etc.
 static PyObject *
 builtin_isinstance_impl(PyModuleDef *module, PyObject *obj,
                         PyObject *class_or_tuple)
-/*[clinic end generated code: output=f960b7c12dbbeda0 input=cf9eb0ad6bb9bad6]*/
+/*[clinic end generated code: output=f960b7c12dbbeda0 input=ffa743db1daf7549]*/
 {
     int retval;
 
@@ -2350,8 +2350,8 @@ builtin_isinstance_impl(PyModuleDef *module, PyObject *obj,
 /*[clinic input]
 issubclass as builtin_issubclass
 
-    cls: 'O'
-    class_or_tuple: 'O'
+    cls: object
+    class_or_tuple: object
     /
 
 Return whether 'cls' is a derived from another class or is the same class.
@@ -2364,7 +2364,7 @@ or ...`` etc.
 static PyObject *
 builtin_issubclass_impl(PyModuleDef *module, PyObject *cls,
                         PyObject *class_or_tuple)
-/*[clinic end generated code: output=8b012a151940bbf2 input=923d03fa41fc352a]*/
+/*[clinic end generated code: output=8b012a151940bbf2 input=af5f35e9ceaddaf6]*/
 {
     int retval;
 
