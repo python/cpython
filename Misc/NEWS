@@ -2,6 +2,18 @@
 Python News
 +++++++++++
 
+What's New in Python 3.6.0 alpha 1?
+===================================
+
+Release date: XXXX-XX-XX
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+
 What's New in Python 3.5.0 beta 2?
 ==================================
 
@@ -42,6 +54,9 @@ Core and Builtins
 
 - Issue #24268: PEP 489: Multi-phase extension module initialization.
   Patch by Petr Viktorin.
+
+- Issue #23359: Optimize set object internals by specializing the
+  hash table search into a lookup function and an insert function.
 
 - Issue #23955: Add pyvenv.cfg option to suppress registry/environment
   lookup for generating sys.path on Windows.
