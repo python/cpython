@@ -7,7 +7,6 @@ from _collections_abc import *
 import _collections_abc
 __all__ += _collections_abc.__all__
 
-from _collections import deque, defaultdict
 from operator import itemgetter as _itemgetter, eq as _eq
 from keyword import iskeyword as _iskeyword
 import sys as _sys
@@ -16,7 +15,18 @@ from _weakref import proxy as _proxy
 from itertools import repeat as _repeat, chain as _chain, starmap as _starmap
 from reprlib import recursive_repr as _recursive_repr
 
-MutableSequence.register(deque)
+try:
+    from _collections import deque
+except ImportError:
+    pass
+else:
+    MutableSequence.register(deque)
+
+try:
+    from _collections import defaultdict
+except ImportError:
+    pass
+
 
 ################################################################################
 ### OrderedDict
@@ -262,6 +272,13 @@ class OrderedDict(dict):
         if isinstance(other, OrderedDict):
             return dict.__eq__(self, other) and all(map(_eq, self, other))
         return dict.__eq__(self, other)
+
+
+try:
+    from _collections import OrderedDict
+except ImportError:
+    # Leave the pure Python version in place.
+    pass
 
 
 ################################################################################
