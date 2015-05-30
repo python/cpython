@@ -17,8 +17,8 @@ module crypt
 /*[clinic input]
 crypt.crypt
 
-    word: 's'
-    salt: 's'
+    word: str
+    salt: str
     /
 
 Hash a *word* with the given *salt* and return the hashed password.
@@ -32,7 +32,7 @@ results for a given *word*.
 
 static PyObject *
 crypt_crypt_impl(PyModuleDef *module, const char *word, const char *salt)
-/*[clinic end generated code: output=995ad1e854d83069 input=4d93b6d0f41fbf58]*/
+/*[clinic end generated code: output=995ad1e854d83069 input=0e8edec9c364352b]*/
 {
     /* On some platforms (AtheOS) crypt returns NULL for an invalid
        salt. Return None in that case. XXX Maybe raise an exception?  */
