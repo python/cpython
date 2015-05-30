@@ -1419,25 +1419,36 @@ bytes_richcompare(PyBytesObject *a, PyBytesObject *b, int op)
     Py_ssize_t len_a, len_b;
     Py_ssize_t min_len;
     PyObject *result;
+    int rc;
 
     /* Make sure both arguments are strings. */
     if (!(PyBytes_Check(a) && PyBytes_Check(b))) {
         if (Py_BytesWarningFlag && (op == Py_EQ || op == Py_NE)) {
-            if (PyObject_IsInstance((PyObject*)a,
-                                    (PyObject*)&PyUnicode_Type) ||
-                PyObject_IsInstance((PyObject*)b,
-                                    (PyObject*)&PyUnicode_Type)) {
+            rc = PyObject_IsInstance((PyObject*)a,
+                                     (PyObject*)&PyUnicode_Type);
+            if (!rc)
+                rc = PyObject_IsInstance((PyObject*)b,
+                                         (PyObject*)&PyUnicode_Type);
+            if (rc < 0)
+                return NULL;
+            if (rc) {
                 if (PyErr_WarnEx(PyExc_BytesWarning,
-                            "Comparison between bytes and string", 1))
+                                 "Comparison between bytes and string", 1))
                     return NULL;
             }
-            else if (PyObject_IsInstance((PyObject*)a,
-                                    (PyObject*)&PyLong_Type) ||
-                PyObject_IsInstance((PyObject*)b,
-                                    (PyObject*)&PyLong_Type)) {
-                if (PyErr_WarnEx(PyExc_BytesWarning,
-                            "Comparison between bytes and int", 1))
+            else {
+                rc = PyObject_IsInstance((PyObject*)a,
+                                         (PyObject*)&PyLong_Type);
+                if (!rc)
+                    rc = PyObject_IsInstance((PyObject*)b,
+                                             (PyObject*)&PyLong_Type);
+                if (rc < 0)
                     return NULL;
+                if (rc) {
+                    if (PyErr_WarnEx(PyExc_BytesWarning,
+                                     "Comparison between bytes and int", 1))
+                        return NULL;
+                }
             }
         }
         result = Py_NotImplemented;
