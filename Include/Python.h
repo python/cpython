@@ -85,6 +85,7 @@
 #include "tupleobject.h"
 #include "listobject.h"
 #include "dictobject.h"
+#include "odictobject.h"
 #include "enumobject.h"
 #include "setobject.h"
 #include "methodobject.h"
