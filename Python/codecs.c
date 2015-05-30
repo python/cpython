@@ -549,12 +549,13 @@ PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
         } else {
             is_text_codec = PyObject_IsTrue(attr);
             Py_DECREF(attr);
-            if (!is_text_codec) {
+            if (is_text_codec <= 0) {
                 Py_DECREF(codec);
-                PyErr_Format(PyExc_LookupError,
-                             "'%.400s' is not a text encoding; "
-                             "use %s to handle arbitrary codecs",
-                             encoding, alternate_command);
+                if (!is_text_codec)
+                    PyErr_Format(PyExc_LookupError,
+                                 "'%.400s' is not a text encoding; "
+                                 "use %s to handle arbitrary codecs",
+                                 encoding, alternate_command);
                 return NULL;
             }
         }
