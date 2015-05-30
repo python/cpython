@@ -1030,8 +1030,7 @@ odict_reduce(register PyODictObject *od)
             goto Done;
         if (!ns_len) {
             /* nothing novel to pickle in od.__dict__ */
-            Py_DECREF(ns);
-            ns = NULL;
+            Py_CLEAR(ns);
         }
     }
 
@@ -1184,8 +1183,7 @@ _odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
             value = PyObject_GetItem(od, key);
             if (value != NULL) {
                 if (PyObject_DelItem(od, key) == -1) {
-                    Py_DECREF(value);
-                    value = NULL;
+                    Py_CLEAR(value);
                 }
             }
         }
@@ -1718,10 +1716,10 @@ odict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *od = PyDict_Type.tp_new(type, args, kwds);
     if (od != NULL) {
-        ((PyODictObject *)od)->od_inst_dict = PyDict_New();
-        ((PyODictObject *)od)->od_weakreflist = NULL;
         if (_odict_initialize((PyODictObject *)od) < 0)
             return NULL;
+        ((PyODictObject *)od)->od_inst_dict = PyDict_New();
+        ((PyODictObject *)od)->od_weakreflist = NULL;
     }
     return od;
 }
@@ -1845,8 +1843,7 @@ odictiter_nextkey(odictiterobject *di)
     node = _odict_find_node(di->di_odict, di->di_current);
     if (node == NULL) {
         /* Must have been deleted. */
-        Py_DECREF(di->di_current);
-        di->di_current = NULL;
+        Py_CLEAR(di->di_current);
         return NULL;
     }
     key = di->di_current;
@@ -1884,8 +1881,11 @@ odictiter_iternext(odictiterobject *di)
         PyObject *result = di->di_result;
 
         value = PyODict_GetItem((PyObject *)di->di_odict, key);  /* borrowed */
-        if (value == NULL)
+        if (value == NULL) {
+            Py_DECREF(key);
             return NULL;
+        }
+        Py_INCREF(value);
 
         if (result->ob_refcnt == 1) {
             /* not in use so we can reuse it
@@ -1896,11 +1896,13 @@ odictiter_iternext(odictiterobject *di)
         }
         else {
             result = PyTuple_New(2);
-            if (result == NULL)
+            if (result == NULL) {
+                Py_DECREF(key);
+                Py_DECREF(value);
                 return NULL;
+            }
         }
 
-        Py_INCREF(value);
         PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
         PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
 
@@ -2365,7 +2367,6 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         else if (PyObject_HasAttrString(other, "keys")) {  /* never fails */
             PyObject *keys, *iterator, *key;
             keys = PyObject_CallMethod(other, "keys", NULL);
-            Py_DECREF(other);
             if (keys == NULL)
                 return NULL;
             iterator = PyObject_GetIter(keys);
@@ -2383,6 +2384,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
                 }
                 Py_DECREF(key);
             }
+            Py_DECREF(other);
             Py_DECREF(iterator);
             if (res != 0 || PyErr_Occurred())
                 return NULL;
