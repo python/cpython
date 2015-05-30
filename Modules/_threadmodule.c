@@ -718,12 +718,18 @@ local_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         "_localdummy_destroyed", (PyCFunction) _localdummy_destroyed, METH_O
     };
 
-    if (type->tp_init == PyBaseObject_Type.tp_init
-        && ((args && PyObject_IsTrue(args))
-        || (kw && PyObject_IsTrue(kw)))) {
-        PyErr_SetString(PyExc_TypeError,
-                  "Initialization arguments are not supported");
-        return NULL;
+    if (type->tp_init == PyBaseObject_Type.tp_init) {
+        int rc = 0;
+        if (args != NULL)
+            rc = PyObject_IsTrue(args);
+        if (rc == 0 && kw != NULL)
+            rc = PyObject_IsTrue(kw);
+        if (rc != 0) {
+            if (rc > 0)
+                PyErr_SetString(PyExc_TypeError,
+                          "Initialization arguments are not supported");
+            return NULL;
+        }
     }
 
     self = (localobject *)type->tp_alloc(type, 0);

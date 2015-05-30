@@ -1087,8 +1087,8 @@ faulthandler_env_options(void)
 
         has_key = PyDict_Contains(xoptions, key);
         Py_DECREF(key);
-        if (!has_key)
-            return 0;
+        if (has_key <= 0)
+            return has_key;
     }
 
     module = PyImport_ImportModule("faulthandler");
