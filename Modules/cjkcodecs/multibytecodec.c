@@ -884,14 +884,14 @@ decoder_feed_buffer(MultibyteStatefulDecoderContext *ctx,
 _multibytecodec.MultibyteIncrementalEncoder.encode
 
     input: object
-    final: int = 0
+    final: int(c_default="0") = False
 [clinic start generated code]*/
 
 static PyObject *
 _multibytecodec_MultibyteIncrementalEncoder_encode_impl(MultibyteIncrementalEncoderObject *self,
                                                         PyObject *input,
                                                         int final)
-/*[clinic end generated code: output=123361b6c505e2c1 input=456b76d73e464661]*/
+/*[clinic end generated code: output=123361b6c505e2c1 input=a345c688fa664f92]*/
 {
     return encoder_encode_stateful(STATEFUL_ECTX(self), input, final);
 }
@@ -1041,14 +1041,14 @@ static PyTypeObject MultibyteIncrementalEncoder_Type = {
 _multibytecodec.MultibyteIncrementalDecoder.decode
 
     input: Py_buffer
-    final: int = 0
+    final: int(c_default="0") = False
 [clinic start generated code]*/
 
 static PyObject *
 _multibytecodec_MultibyteIncrementalDecoder_decode_impl(MultibyteIncrementalDecoderObject *self,
                                                         Py_buffer *input,
                                                         int final)
-/*[clinic end generated code: output=b9b9090e8a9ce2ba input=eb18c2f6e83589e1]*/
+/*[clinic end generated code: output=b9b9090e8a9ce2ba input=576631c61906d39d]*/
 {
     MultibyteDecodeBuffer buf;
     char *data, *wdata = NULL;
