@@ -1980,8 +1980,13 @@ class TestSignatureObject(unittest.TestCase):
     @cpython_only
     def test_signature_on_builtins_no_signature(self):
         import _testcapi
-        with self.assertRaisesRegex(ValueError, 'no signature found for builtin'):
+        with self.assertRaisesRegex(ValueError,
+                                    'no signature found for builtin'):
             inspect.signature(_testcapi.docstring_no_signature)
+
+        with self.assertRaisesRegex(ValueError,
+                                    'no signature found for builtin'):
+            inspect.signature(str)
 
     def test_signature_on_non_function(self):
         with self.assertRaisesRegex(TypeError, 'is not a callable object'):

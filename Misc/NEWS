@@ -31,6 +31,9 @@ Library
 
 - Issue #16991: Add a C implementation of OrderedDict.
 
+- Issue #23934: Fix inspect.signature to fail correctly for builtin types
+  lacking signature information.  Initial patch by James Powell.
+
 
 What's New in Python 3.5.0 beta 1?
 ==================================
