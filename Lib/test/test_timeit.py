@@ -124,6 +124,9 @@ class TestTimeit(unittest.TestCase):
     def test_timeit_callable_stmt(self):
         self.timeit(self.fake_callable_stmt, self.fake_setup, number=3)
 
+    def test_timeit_callable_setup(self):
+        self.timeit(self.fake_stmt, self.fake_callable_setup, number=3)
+
     def test_timeit_callable_stmt_and_setup(self):
         self.timeit(self.fake_callable_stmt,
                 self.fake_callable_setup, number=3)
@@ -171,6 +174,10 @@ class TestTimeit(unittest.TestCase):
 
     def test_repeat_callable_stmt(self):
         self.repeat(self.fake_callable_stmt, self.fake_setup,
+                repeat=3, number=5)
+
+    def test_repeat_callable_setup(self):
+        self.repeat(self.fake_stmt, self.fake_callable_setup,
                 repeat=3, number=5)
 
     def test_repeat_callable_stmt_and_setup(self):
