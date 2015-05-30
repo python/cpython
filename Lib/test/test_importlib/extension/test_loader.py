@@ -217,7 +217,7 @@ class MultiPhaseExtensionModuleTests(abc.LoaderTests):
         name = self.name + '_null_slots'
         module = self.load_module_by_name(name)
         self.assertIsInstance(module, types.ModuleType)
-        assert module.__name__ == name
+        self.assertEqual(module.__name__, name)
 
     def test_bad_modules(self):
         '''Test SystemError is raised for misbehaving extensions'''
