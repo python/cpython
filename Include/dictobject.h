@@ -45,9 +45,9 @@ PyAPI_DATA(PyTypeObject) PyDictValues_Type;
 #define PyDict_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_DICT_SUBCLASS)
 #define PyDict_CheckExact(op) (Py_TYPE(op) == &PyDict_Type)
-#define PyDictKeys_Check(op) (PyObject_IsInstance(op, (PyObject *)&PyDictKeys_Type))
-#define PyDictItems_Check(op) (PyObject_IsInstance(op, (PyObject *)&PyDictItems_Type))
-#define PyDictValues_Check(op) (PyObject_IsInstance(op, (PyObject *)&PyDictValues_Type))
+#define PyDictKeys_Check(op) PyObject_TypeCheck(op, &PyDictKeys_Type)
+#define PyDictItems_Check(op) PyObject_TypeCheck(op, &PyDictItems_Type)
+#define PyDictValues_Check(op) PyObject_TypeCheck(op, &PyDictValues_Type)
 /* This excludes Values, since they are not sets. */
 # define PyDictViewSet_Check(op) \
     (PyDictKeys_Check(op) || PyDictItems_Check(op))
