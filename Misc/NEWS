@@ -10,6 +10,10 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #24115: Update uses of PyObject_IsTrue(), PyObject_Not(),
+  PyObject_IsInstance(), PyObject_RichCompareBool() and _PyDict_Contains()
+  to check for and handle errors correctly.
+
 - Issue #24257: Fixed system error in the comparison of faked
   types.SimpleNamespace.
 
