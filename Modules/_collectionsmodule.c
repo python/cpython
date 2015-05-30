@@ -2263,6 +2263,9 @@ PyInit__collections(void)
     Py_INCREF(&defdict_type);
     PyModule_AddObject(m, "defaultdict", (PyObject *)&defdict_type);
 
+    Py_INCREF(&PyODict_Type);
+    PyModule_AddObject(m, "OrderedDict", (PyObject *)&PyODict_Type);
+
     if (PyType_Ready(&dequeiter_type) < 0)
         return NULL;
     Py_INCREF(&dequeiter_type);

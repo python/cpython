@@ -27,6 +27,11 @@ typedef struct {
     PyObject **ma_values;
 } PyDictObject;
 
+typedef struct {
+    PyObject_HEAD
+    PyDictObject *dv_dict;
+} _PyDictViewObject;
+
 #endif /* Py_LIMITED_API */
 
 PyAPI_DATA(PyTypeObject) PyDict_Type;
@@ -40,9 +45,9 @@ PyAPI_DATA(PyTypeObject) PyDictValues_Type;
 #define PyDict_Check(op) \
                  PyType_FastSubclass(Py_TYPE(op), Py_TPFLAGS_DICT_SUBCLASS)
 #define PyDict_CheckExact(op) (Py_TYPE(op) == &PyDict_Type)
-#define PyDictKeys_Check(op) (Py_TYPE(op) == &PyDictKeys_Type)
-#define PyDictItems_Check(op) (Py_TYPE(op) == &PyDictItems_Type)
-#define PyDictValues_Check(op) (Py_TYPE(op) == &PyDictValues_Type)
+#define PyDictKeys_Check(op) (PyObject_IsInstance(op, (PyObject *)&PyDictKeys_Type))
+#define PyDictItems_Check(op) (PyObject_IsInstance(op, (PyObject *)&PyDictItems_Type))
+#define PyDictValues_Check(op) (PyObject_IsInstance(op, (PyObject *)&PyDictValues_Type))
 /* This excludes Values, since they are not sets. */
 # define PyDictViewSet_Check(op) \
     (PyDictKeys_Check(op) || PyDictItems_Check(op))
@@ -75,6 +80,7 @@ PyDictKeysObject *_PyDict_NewKeysForClass(void);
 PyAPI_FUNC(PyObject *) PyObject_GenericGetDict(PyObject *, void *);
 PyAPI_FUNC(int) _PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value, Py_hash_t *hash);
+PyObject *_PyDictView_New(PyObject *, PyTypeObject *);
 #endif
 PyAPI_FUNC(PyObject *) PyDict_Keys(PyObject *mp);
 PyAPI_FUNC(PyObject *) PyDict_Values(PyObject *mp);
@@ -88,6 +94,9 @@ PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 PyAPI_FUNC(void) _PyDict_MaybeUntrack(PyObject *mp);
 PyAPI_FUNC(int) _PyDict_HasOnlyStringKeys(PyObject *mp);
 Py_ssize_t _PyDict_KeysSize(PyDictKeysObject *keys);
+PyObject *_PyDict_SizeOf(PyDictObject *);
+PyObject *_PyDict_Pop(PyDictObject *, PyObject *, PyObject *);
+PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 #define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
 
 PyAPI_FUNC(int) PyDict_ClearFreeList(void);
