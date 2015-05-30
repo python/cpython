@@ -1773,6 +1773,19 @@ class OrderedDictTests:
         self.assertEqual(sorted(reversed(od)),
                          sorted([t[0] for t in reversed(pairs)]))
 
+    def test_iterators_empty(self):
+        OrderedDict = self.module.OrderedDict
+        od = OrderedDict()
+        empty = []
+        self.assertEqual(list(od), empty)
+        self.assertEqual(list(od.keys()), empty)
+        self.assertEqual(list(od.values()), empty)
+        self.assertEqual(list(od.items()), empty)
+        self.assertEqual(list(reversed(od)), empty)
+        self.assertEqual(list(reversed(od.keys())), empty)
+        self.assertEqual(list(reversed(od.values())), empty)
+        self.assertEqual(list(reversed(od.items())), empty)
+
     def test_popitem(self):
         OrderedDict = self.module.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
@@ -1965,7 +1978,6 @@ class OrderedDictTests:
         od = OrderedDict(**d)
         self.assertGreater(sys.getsizeof(od), sys.getsizeof(d))
 
-        OrderedDict = self.module.OrderedDict
     def test_override_update(self):
         OrderedDict = self.module.OrderedDict
         # Verify that subclasses can override update() without breaking __init__()
