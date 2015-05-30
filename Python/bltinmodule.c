@@ -637,7 +637,7 @@ compile as builtin_compile
     filename: object(converter="PyUnicode_FSDecoder")
     mode: str
     flags: int = 0
-    dont_inherit: int = 0
+    dont_inherit: int(c_default="0") = False
     optimize: int = -1
 
 Compile source into a code object that can be executed by exec() or eval().
@@ -648,9 +648,9 @@ The mode must be 'exec' to compile a module, 'single' to compile a
 single (interactive) statement, or 'eval' to compile an expression.
 The flags argument, if present, controls which future statements influence
 the compilation of the code.
-The dont_inherit argument, if non-zero, stops the compilation inheriting
+The dont_inherit argument, if true, stops the compilation inheriting
 the effects of any future statements in effect in the code calling
-compile; if absent or zero these statements do influence the compilation,
+compile; if absent or false these statements do influence the compilation,
 in addition to any features explicitly specified.
 [clinic start generated code]*/
 
@@ -658,7 +658,7 @@ static PyObject *
 builtin_compile_impl(PyModuleDef *module, PyObject *source,
                      PyObject *filename, const char *mode, int flags,
                      int dont_inherit, int optimize)
-/*[clinic end generated code: output=31881762c1bb90c4 input=7faa105f669fefcf]*/
+/*[clinic end generated code: output=31881762c1bb90c4 input=9d53e8cfb3c86414]*/
 {
     Py_buffer view = {NULL, NULL};
     const char *str;

@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
-"Parse($self, data, isFinal=0, /)\n"
+"Parse($self, data, isfinal=False, /)\n"
 "--\n"
 "\n"
 "Parse XML data.\n"
@@ -15,19 +15,19 @@ PyDoc_STRVAR(pyexpat_xmlparser_Parse__doc__,
 
 static PyObject *
 pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
-                             int isFinal);
+                             int isfinal);
 
 static PyObject *
 pyexpat_xmlparser_Parse(xmlparseobject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *data;
-    int isFinal = 0;
+    int isfinal = 0;
 
     if (!PyArg_ParseTuple(args, "O|i:Parse",
-        &data, &isFinal))
+        &data, &isfinal))
         goto exit;
-    return_value = pyexpat_xmlparser_Parse_impl(self, data, isFinal);
+    return_value = pyexpat_xmlparser_Parse_impl(self, data, isfinal);
 
 exit:
     return return_value;
@@ -281,4 +281,4 @@ exit:
 #ifndef PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
     #define PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF
 #endif /* !defined(PYEXPAT_XMLPARSER_USEFOREIGNDTD_METHODDEF) */
-/*[clinic end generated code: output=958c0faa1b855fc7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=bf4d99c9702d8a6c input=a9049054013a1b77]*/
