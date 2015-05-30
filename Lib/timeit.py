@@ -68,7 +68,7 @@ _globals = globals
 # in Timer.__init__() depend on setup being indented 4 spaces and stmt
 # being indented 8 spaces.
 template = """
-def inner(_it, _timer):
+def inner(_it, _timer{init}):
     {setup}
     _t0 = _timer()
     for _i in _it:
@@ -80,17 +80,6 @@ def inner(_it, _timer):
 def reindent(src, indent):
     """Helper to reindent a multi-line statement."""
     return src.replace("\n", "\n" + " "*indent)
-
-def _template_func(setup, func):
-    """Create a timer function. Used if the "statement" is a callable."""
-    def inner(_it, _timer, _func=func):
-        setup()
-        _t0 = _timer()
-        for _i in _it:
-            _func()
-        _t1 = _timer()
-        return _t1 - _t0
-    return inner
 
 class Timer:
     """Class for timing execution speed of small code snippets.
@@ -116,37 +105,35 @@ class Timer:
         self.timer = timer
         local_ns = {}
         global_ns = _globals() if globals is None else globals
+        init = ''
+        if isinstance(setup, str):
+            # Check that the code can be compiled outside a function
+            compile(setup, dummy_src_name, "exec")
+            setup = reindent(setup, 4)
+        elif callable(setup):
+            local_ns['_setup'] = setup
+            init += ', _setup=_setup'
+            setup = '_setup()'
+        else:
+            raise ValueError("setup is neither a string nor callable")
         if isinstance(stmt, str):
             # Check that the code can be compiled outside a function
             if isinstance(setup, str):
-                compile(setup, dummy_src_name, "exec")
                 compile(setup + '\n' + stmt, dummy_src_name, "exec")
             else:
                 compile(stmt, dummy_src_name, "exec")
             stmt = reindent(stmt, 8)
-            if isinstance(setup, str):
-                setup = reindent(setup, 4)
-                src = template.format(stmt=stmt, setup=setup)
-            elif callable(setup):
-                src = template.format(stmt=stmt, setup='_setup()')
-                local_ns['_setup'] = setup
-            else:
-                raise ValueError("setup is neither a string nor callable")
-            self.src = src  # Save for traceback display
-            code = compile(src, dummy_src_name, "exec")
-            exec(code, global_ns, local_ns)
-            self.inner = local_ns["inner"]
         elif callable(stmt):
-            self.src = None
-            if isinstance(setup, str):
-                _setup = setup
-                def setup():
-                    exec(_setup, global_ns, local_ns)
-            elif not callable(setup):
-                raise ValueError("setup is neither a string nor callable")
-            self.inner = _template_func(setup, stmt)
+            local_ns['_stmt'] = stmt
+            init += ', _stmt=_stmt'
+            stmt = '_stmt()'
         else:
             raise ValueError("stmt is neither a string nor callable")
+        src = template.format(stmt=stmt, setup=setup, init=init)
+        self.src = src  # Save for traceback display
+        code = compile(src, dummy_src_name, "exec")
+        exec(code, global_ns, local_ns)
+        self.inner = local_ns["inner"]
 
     def print_exc(self, file=None):
         """Helper to print a traceback from the timed code.
