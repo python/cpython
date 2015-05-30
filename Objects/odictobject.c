@@ -948,7 +948,7 @@ static PyObject *
 odict_sizeof(PyODictObject *od)
 {
     PyObject *pylong;
-    Py_ssize_t res;
+    Py_ssize_t res, temp;
 
     pylong = _PyDict_SizeOf((PyDictObject *)od);
     if (pylong == NULL)
@@ -964,10 +964,11 @@ odict_sizeof(PyODictObject *od)
     pylong = _PyDict_SizeOf((PyDictObject *)od->od_inst_dict);
     if (pylong == NULL)
         return NULL;
-    res += PyLong_AsSsize_t(pylong);
+    temp = PyLong_AsSsize_t(pylong);
     Py_DECREF(pylong);
-    if (res == -1 && PyErr_Occurred())
+    if (temp == -1 && PyErr_Occurred())
         return NULL;
+    res += temp;
 
     res += sizeof(_ODictNode) * od->od_size;  /* od_fast_nodes */
     if (!_odict_EMPTY(od)) {
@@ -990,8 +991,11 @@ odict_reduce(register PyODictObject *od)
 
     /* capture any instance state */
     vars = _PyObject_GetAttrId((PyObject *)od, &PyId___dict__);
-    if (vars != NULL) {
+    if (vars == NULL)
+        goto Done;
+    else {
         PyObject *empty, *od_vars, *iterator, *key;
+        int ns_len;
 
         /* od.__dict__ isn't necessarily a dict... */
         ns = PyObject_CallMethod((PyObject *)vars, "copy", NULL);
@@ -1021,7 +1025,10 @@ odict_reduce(register PyODictObject *od)
         if (PyErr_Occurred())
             goto Done;
 
-        if (!PyObject_Length(ns)) {
+        ns_len = PyObject_Length(ns);
+        if (ns_len == -1)
+            goto Done;
+        if (!ns_len) {
             /* nothing novel to pickle in od.__dict__ */
             Py_DECREF(ns);
             ns = NULL;
@@ -1382,14 +1389,21 @@ odict_move_to_end(PyODictObject *od, PyObject *args)
         return NULL;
     }
     if (last != NULL) {
+        int is_true;
         Py_INCREF(last);
-        pos = PyObject_IsTrue(last) ? -1 : 0;
+        is_true = PyObject_IsTrue(last);
         Py_DECREF(last);
+        if (is_true == -1)
+            return NULL;
+        pos = is_true ? -1 : 0;
     }
     if (pos == 0) {
         /* Only move if not already the first one. */
         PyObject *first_key = _odictnode_KEY(_odict_FIRST(od));
-        if (PyObject_RichCompareBool(key, first_key, Py_NE)) {
+        int not_equal = PyObject_RichCompareBool(key, first_key, Py_NE);
+        if (not_equal == -1)
+            return NULL;
+        if (not_equal) {
             _ODictNode *node = _odict_pop_node(od, NULL, key);
             if (node != NULL) {
                 _odict_add_head(od, node);
@@ -1405,7 +1419,10 @@ odict_move_to_end(PyODictObject *od, PyObject *args)
     else if (pos == -1) {
         /* Only move if not already the last one. */
         PyObject *last_key = _odictnode_KEY(_odict_LAST(od));
-        if (PyObject_RichCompareBool(key, last_key, Py_NE)) {
+        int not_equal = PyObject_RichCompareBool(key, last_key, Py_NE);
+        if (not_equal == -1)
+            return NULL;
+        if (not_equal) {
             _ODictNode *node = _odict_pop_node(od, NULL, key);
             if (node != NULL) {
                 _odict_add_tail(od, node);
@@ -1771,6 +1788,7 @@ PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value) {
     int res = PyDict_SetItem(od, key, value);
     if (res == 0) {
         res = _odict_add_new_node((PyODictObject *)od, key);
+        /* XXX Revert setting the value on the dict? */
     }
     return res;
 };
@@ -1869,6 +1887,8 @@ odictiter_iternext(odictiterobject *di)
         PyObject *result = di->di_result;
 
         value = PyODict_GetItem((PyObject *)di->di_odict, key);  /* borrowed */
+        if (value == NULL)
+            return NULL;
 
         if (result->ob_refcnt == 1) {
             /* not in use so we can reuse it
@@ -1905,7 +1925,7 @@ PyDoc_STRVAR(reduce_doc, "Return state information for pickling");
 static PyObject *
 odictiter_reduce(odictiterobject *di)
 {
-    PyObject *list;
+    PyObject *list, *iter;
 
     list = PyList_New(0);
     if (!list)
@@ -1931,7 +1951,12 @@ odictiter_reduce(odictiterobject *di)
         Py_DECREF(list);
         return NULL;
     }
-    return Py_BuildValue("N(N)", _PyObject_GetBuiltin("iter"), list);
+    iter = _PyObject_GetBuiltin("iter");
+    if (iter == NULL) {
+        Py_DECREF(list);
+        return NULL;
+    }
+    return Py_BuildValue("N(N)", iter, list);
 }
 
 static PyMethodDef odictiter_methods[] = {
@@ -2262,8 +2287,10 @@ mutablemapping_add_pairs(PyObject *self, PyObject *pairs)
 
     while ((pair = PyIter_Next(iterator)) != NULL) {
         /* could be more efficient (see UNPACK_SEQUENCE in ceval.c) */
-        PyObject * key, *value = NULL;
+        PyObject *key = NULL, *value = NULL;
         PyObject *pair_iterator = PyObject_GetIter(pair);
+        if (pair_iterator == NULL)
+            goto Done;
 
         key = PyIter_Next(pair_iterator);
         if (key == NULL) {
@@ -2295,7 +2322,7 @@ mutablemapping_add_pairs(PyObject *self, PyObject *pairs)
 
 Done:
         Py_DECREF(pair);
-        Py_DECREF(pair_iterator);
+        Py_XDECREF(pair_iterator);
         Py_XDECREF(key);
         Py_XDECREF(value);
         if (PyErr_Occurred())
@@ -2316,7 +2343,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t len = (args != NULL) ? PyObject_Size(args) : 0;
 
     /* first handle args, if any */
-    if (len < 0)
+    if (len < 0) /* PyObject_Size raised an exception. */
         return NULL;
     else if (len > 1) {
         char *msg = "update() takes at most 1 positional argument (%d given)";
@@ -2328,7 +2355,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         if (other == NULL)
             return NULL;
         Py_INCREF(other);
-        if (PyObject_HasAttrString(other, "items")) {
+        if (PyObject_HasAttrString(other, "items")) {  /* never fails */
             PyObject *items = PyMapping_Items(other);
             Py_DECREF(other);
             if (items == NULL)
@@ -2338,7 +2365,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
             if (res == -1)
                 return NULL;
         }
-        else if (PyObject_HasAttrString(other, "keys")) {
+        else if (PyObject_HasAttrString(other, "keys")) {  /* never fails */
             PyObject *keys, *iterator, *key;
             keys = PyObject_CallMethod(other, "keys", NULL);
             Py_DECREF(other);
@@ -2373,7 +2400,7 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
 
     /* now handle kwargs */
     len = (kwargs != NULL) ? PyObject_Size(kwargs) : 0;
-    if (len < 0)
+    if (len < 0) /* PyObject_Size raised an exception. */
         return NULL;
     else if (len > 0) {
         PyObject *items;
