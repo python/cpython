@@ -19,7 +19,7 @@ PyAPI_DATA(PyTypeObject) PyODictValues_Type;
 
 #endif /* Py_LIMITED_API */
 
-#define PyODict_Check(op) PyObject_IsInstance(op, (PyObject *)&PyODict_Type)
+#define PyODict_Check(op) PyObject_TypeCheck(op, &PyODict_Type)
 #define PyODict_CheckExact(op) (Py_TYPE(op) == &PyODict_Type)
 #define PyODict_SIZE(op) ((PyDictObject *)op)->ma_used
 #define PyODict_HasKey(od, key) (PyMapping_HasKey(PyObject *)od, key)
