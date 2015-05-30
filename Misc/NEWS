@@ -10,6 +10,10 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #24115: Update uses of PyObject_IsTrue(), PyObject_Not(),
+  PyObject_IsInstance(), PyObject_RichCompareBool() and _PyDict_Contains()
+  to check for and handle errors correctly.
+
 - Issue #4753: On compilers where it is supported, use "computed gotos" for
   bytecode dispatch in the interpreter. This improves interpretation
   performance.

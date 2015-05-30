@@ -874,6 +874,9 @@ _parse_object_str(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     int strict = PyObject_IsTrue(s->strict);
     Py_ssize_t next_idx;
 
+    if (strict < 0)
+        return NULL;
+
     pairs = PyList_New(0);
     if (pairs == NULL)
         return NULL;
@@ -996,6 +999,9 @@ _parse_object_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ss
     PyObject *val = NULL;
     int strict = PyObject_IsTrue(s->strict);
     Py_ssize_t next_idx;
+
+    if (strict < 0)
+        return NULL;
 
     pairs = PyList_New(0);
     if (pairs == NULL)
@@ -1466,6 +1472,7 @@ scan_once_str(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *n
     Returns a new PyObject representation of the term.
     */
     PyObject *res;
+    int strict;
     char *str = PyString_AS_STRING(pystr);
     Py_ssize_t length = PyString_GET_SIZE(pystr);
     if (idx < 0) {
@@ -1479,10 +1486,11 @@ scan_once_str(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_t *n
     switch (str[idx]) {
         case '"':
             /* string */
+            strict = PyObject_IsTrue(s->strict);
+            if (strict < 0)
+                return NULL;
             return scanstring_str(pystr, idx + 1,
-                PyString_AS_STRING(s->encoding),
-                PyObject_IsTrue(s->strict),
-                next_idx_ptr);
+                PyString_AS_STRING(s->encoding), strict, next_idx_ptr);
         case '{':
             /* object */
             if (Py_EnterRecursiveCall(" while decoding a JSON object "
@@ -1557,6 +1565,7 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     Returns a new PyObject representation of the term.
     */
     PyObject *res;
+    int strict;
     Py_UNICODE *str = PyUnicode_AS_UNICODE(pystr);
     Py_ssize_t length = PyUnicode_GET_SIZE(pystr);
     if (idx < 0) {
@@ -1570,9 +1579,10 @@ scan_once_unicode(PyScannerObject *s, PyObject *pystr, Py_ssize_t idx, Py_ssize_
     switch (str[idx]) {
         case '"':
             /* string */
-            return scanstring_unicode(pystr, idx + 1,
-                PyObject_IsTrue(s->strict),
-                next_idx_ptr);
+            strict = PyObject_IsTrue(s->strict);
+            if (strict < 0)
+                return NULL;
+            return scanstring_unicode(pystr, idx + 1, strict, next_idx_ptr);
         case '{':
             /* object */
             if (Py_EnterRecursiveCall(" while decoding a JSON object "
@@ -1825,14 +1835,19 @@ encoder_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     PyEncoderObject *s;
     PyObject *markers, *defaultfn, *encoder, *indent, *key_separator;
-    PyObject *item_separator, *sort_keys, *skipkeys, *allow_nan;
+    PyObject *item_separator, *sort_keys, *skipkeys, *allow_nan_obj;
+    int allow_nan;
 
     assert(PyEncoder_Check(self));
     s = (PyEncoderObject *)self;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOOOOOO:make_encoder", kwlist,
         &markers, &defaultfn, &encoder, &indent, &key_separator, &item_separator,
-        &sort_keys, &skipkeys, &allow_nan))
+        &sort_keys, &skipkeys, &allow_nan_obj))
+        return -1;
+
+    allow_nan = PyObject_IsTrue(allow_nan_obj);
+    if (allow_nan < 0)
         return -1;
 
     s->markers = markers;
@@ -1844,7 +1859,7 @@ encoder_init(PyObject *self, PyObject *args, PyObject *kwds)
     s->sort_keys = sort_keys;
     s->skipkeys = skipkeys;
     s->fast_encode = (PyCFunction_Check(s->encoder) && PyCFunction_GetFunction(s->encoder) == (PyCFunction)py_encode_basestring_ascii);
-    s->allow_nan = PyObject_IsTrue(allow_nan);
+    s->allow_nan = allow_nan;
 
     Py_INCREF(s->markers);
     Py_INCREF(s->defaultfn);
@@ -2110,6 +2125,8 @@ encoder_listencode_dict(PyEncoderObject *s, PyObject *rval, PyObject *dct, Py_ss
     if (it == NULL)
         goto bail;
     skipkeys = PyObject_IsTrue(s->skipkeys);
+    if (skipkeys < 0)
+        goto bail;
     idx = 0;
     while ((key = PyIter_Next(it)) != NULL) {
         PyObject *encoded;
