@@ -434,6 +434,14 @@ EXPORTS
   PyObject_Size=python35.PyObject_Size
   PyObject_Str=python35.PyObject_Str
   PyObject_Type=python35.PyObject_Type DATA
+  PyODict_DelItem=python35.PyODict_DelItem
+  PyODict_New=python35.PyODict_New
+  PyODict_SetItem=python35.PyODict_SetItem
+  PyODict_Type=python35.PyODict_Type DATA
+  PyODictItems_Type=python35.PyODictItems_Type DATA
+  PyODictIter_Type=python35.PyODictIter_Type DATA
+  PyODictKeys_Type=python35.PyODictKeys_Type DATA
+  PyODictValues_Type=python35.PyODictValues_Type DATA
   PyParser_SimpleParseFileFlags=python35.PyParser_SimpleParseFileFlags
   PyParser_SimpleParseStringFlags=python35.PyParser_SimpleParseStringFlags
   PyProperty_Type=python35.PyProperty_Type DATA
