@@ -97,6 +97,10 @@ Implementation improvements:
 
 Significantly Improved Library Modules:
 
+* :class:`collections.OrderedDict` is now implemented in C, which improves
+  its performance between 4x to 100x times.  Contributed by Eric Snow in
+  :issue:`16991`.
+
 * You may now pass bytes to the :mod:`tempfile` module's APIs and it will
   return the temporary pathname as bytes instead of str.  It also accepts
   a value of ``None`` on parameters where only str was accepted in the past to
