@@ -112,10 +112,7 @@ class Template(metaclass=_TemplateMetaclass):
             # Check the most common path first.
             named = mo.group('named') or mo.group('braced')
             if named is not None:
-                val = mapping[named]
-                # We use this idiom instead of str() because the latter will
-                # fail if val is a Unicode containing non-ASCII characters.
-                return '%s' % (val,)
+                return str(mapping[named])
             if mo.group('escaped') is not None:
                 return self.delimiter
             if mo.group('invalid') is not None:
@@ -142,9 +139,7 @@ class Template(metaclass=_TemplateMetaclass):
             named = mo.group('named') or mo.group('braced')
             if named is not None:
                 try:
-                    # We use this idiom instead of str() because the latter
-                    # will fail if val is a Unicode containing non-ASCII
-                    return '%s' % (mapping[named],)
+                    return str(mapping[named])
                 except KeyError:
                     return mo.group()
             if mo.group('escaped') is not None:

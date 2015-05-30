@@ -52,7 +52,6 @@ static setentry *
 set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *table = so->table;
-    setentry *freeslot = NULL;
     setentry *entry;
     size_t perturb = hash;
     size_t mask = so->mask;
@@ -86,14 +85,12 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 return entry;
             mask = so->mask;                 /* help avoid a register spill */
         }
-        if (entry->hash == -1 && freeslot == NULL)
-            freeslot = entry;
 
         if (i + LINEAR_PROBES <= mask) {
             for (j = 0 ; j < LINEAR_PROBES ; j++) {
                 entry++;
-                if (entry->key == NULL)
-                    goto found_null;
+                if (entry->hash == 0 && entry->key == NULL)
+                    return entry;
                 if (entry->hash == hash) {
                     PyObject *startkey = entry->key;
                     assert(startkey != dummy);
@@ -114,6 +111,89 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                         return entry;
                     mask = so->mask;
                 }
+            }
+        }
+
+        perturb >>= PERTURB_SHIFT;
+        i = (i * 5 + 1 + perturb) & mask;
+
+        entry = &table[i];
+        if (entry->hash == 0 && entry->key == NULL)
+            return entry;
+    }
+}
+
+/*
+Internal routine to insert a new key into the table.
+Used by the public insert routine.
+Eats a reference to key.
+*/
+static int
+set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
+{
+    setentry *table = so->table;
+    setentry *freeslot = NULL;
+    setentry *entry;
+    size_t perturb = hash;
+    size_t mask = so->mask;
+    size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior */
+    size_t j;
+    int cmp;
+
+    entry = &table[i];
+    if (entry->key == NULL)
+        goto found_null;
+
+    while (1) {
+        if (entry->hash == hash) {
+            PyObject *startkey = entry->key;
+            /* startkey cannot be a dummy because the dummy hash field is -1 */
+            assert(startkey != dummy);
+            if (startkey == key)
+                goto found_active;
+            if (PyUnicode_CheckExact(startkey)
+                && PyUnicode_CheckExact(key)
+                && unicode_eq(startkey, key))
+                goto found_active;
+            Py_INCREF(startkey);
+            cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+            Py_DECREF(startkey);
+            if (cmp < 0)                                          /* unlikely */
+                return -1;
+            if (table != so->table || entry->key != startkey)     /* unlikely */
+                return set_insert_key(so, key, hash);
+            if (cmp > 0)                                          /* likely */
+                goto found_active;
+            mask = so->mask;                 /* help avoid a register spill */
+        }
+        if (entry->hash == -1 && freeslot == NULL)
+            freeslot = entry;
+
+        if (i + LINEAR_PROBES <= mask) {
+            for (j = 0 ; j < LINEAR_PROBES ; j++) {
+                entry++;
+                if (entry->hash == 0 && entry->key == NULL)
+                    goto found_null;
+                if (entry->hash == hash) {
+                    PyObject *startkey = entry->key;
+                    assert(startkey != dummy);
+                    if (startkey == key)
+                        goto found_active;
+                    if (PyUnicode_CheckExact(startkey)
+                        && PyUnicode_CheckExact(key)
+                        && unicode_eq(startkey, key))
+                        goto found_active;
+                    Py_INCREF(startkey);
+                    cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
+                    Py_DECREF(startkey);
+                    if (cmp < 0)
+                        return -1;
+                    if (table != so->table || entry->key != startkey)
+                        return set_insert_key(so, key, hash);
+                    if (cmp > 0)
+                        goto found_active;
+                    mask = so->mask;
+                }
                 if (entry->hash == -1 && freeslot == NULL)
                     freeslot = entry;
             }
@@ -123,11 +203,26 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         i = (i * 5 + 1 + perturb) & mask;
 
         entry = &table[i];
-        if (entry->key == NULL)
+        if (entry->hash == 0 && entry->key == NULL)
             goto found_null;
     }
+
   found_null:
-    return freeslot == NULL ? entry : freeslot;
+    if (freeslot == NULL) {
+        /* UNUSED */
+        so->fill++;
+    } else {
+        /* DUMMY */
+        entry = freeslot;
+    }
+    so->used++;
+    entry->key = key;
+    entry->hash = hash;
+    return 0;
+
+  found_active:
+    Py_DECREF(key);
+    return 0;
 }
 
 /*
@@ -171,38 +266,6 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
 
 /* ======== End logic for probing the hash table ========================== */
 /* ======================================================================== */
-
-
-/*
-Internal routine to insert a new key into the table.
-Used by the public insert routine.
-Eats a reference to key.
-*/
-static int
-set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
-{
-    setentry *entry;
-
-    entry = set_lookkey(so, key, hash);
-    if (entry == NULL)
-        return -1;
-    if (entry->key == NULL) {
-        /* UNUSED */
-        entry->key = key;
-        entry->hash = hash;
-        so->fill++;
-        so->used++;
-    } else if (entry->key == dummy) {
-        /* DUMMY */
-        entry->key = key;
-        entry->hash = hash;
-        so->used++;
-    } else {
-        /* ACTIVE */
-        Py_DECREF(key);
-    }
-    return 0;
-}
 
 /*
 Restructure the table by allocating a new table and reinserting all
@@ -345,7 +408,7 @@ set_discard_entry(PySetObject *so, setentry *oldentry)
     entry = set_lookkey(so, oldentry->key, oldentry->hash);
     if (entry == NULL)
         return -1;
-    if (entry->key == NULL  ||  entry->key == dummy)
+    if (entry->key == NULL)
         return DISCARD_NOTFOUND;
     old_key = entry->key;
     entry->key = dummy;
@@ -623,7 +686,7 @@ set_contains_entry(PySetObject *so, setentry *entry)
     if (lu_entry == NULL)
         return -1;
     key = lu_entry->key;
-    return key != NULL && key != dummy;
+    return key != NULL;
 }
 
 static int
