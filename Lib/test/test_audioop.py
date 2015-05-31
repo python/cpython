@@ -301,12 +301,10 @@ class TestAudioop(unittest.TestCase):
         expected = {
             1: packs[1](0, 0x0d, 0x37, -0x26, 0x55, -0x4b, -0x14),
             2: packs[2](0, 0x0da7, 0x3777, -0x2630, 0x5673, -0x4a64, -0x129a),
-            3: packs[3](0, 0x0da740, 0x377776, -0x262fca,
-                        0x56740c, -0x4a62fd, -0x1298c0),
             4: packs[4](0, 0x0da740da, 0x37777776, -0x262fc962,
                         0x56740da6, -0x4a62fc96, -0x1298bf26),
         }
-        for w in 1, 2, 3, 4:
+        for w in 1, 2, 4:
             self.assertEqual(audioop.ratecv(datas[w], w, 1, 8000, 8000, None, 3, 1)[0],
                              expected[w])
             self.assertEqual(audioop.ratecv(datas[w], w, 1, 8000, 8000, None, 30, 10)[0],
