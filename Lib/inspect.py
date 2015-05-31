@@ -969,8 +969,13 @@ def getcallargs(func, *positional, **named):
         assign(varkw, named)
     elif named:
         unexpected = next(iter(named))
-        if isinstance(unexpected, unicode):
-            unexpected = unexpected.encode(sys.getdefaultencoding(), 'replace')
+        try:
+            unicode
+        except NameError:
+            pass
+        else:
+            if isinstance(unexpected, unicode):
+                unexpected = unexpected.encode(sys.getdefaultencoding(), 'replace')
         raise TypeError("%s() got an unexpected keyword argument '%s'" %
                         (f_name, unexpected))
     unassigned = num_args - len([arg for arg in args if is_assigned(arg)])
