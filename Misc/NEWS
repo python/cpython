@@ -10,6 +10,10 @@ Release date: 2015-07-05
 Core and Builtins
 -----------------
 
+- Issue #24284: The startswith and endswith methods of the str class no longer
+  return True when finding the empty string and the indexes are completely out
+  of range.
+
 - Issue #24115: Update uses of PyObject_IsTrue(), PyObject_Not(),
   PyObject_IsInstance(), PyObject_RichCompareBool() and _PyDict_Contains()
   to check for and handle errors correctly.
