@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Theme xmlns="http://wixtoolset.org/schemas/thmutil/2010">
-    <Window Background="ffff00" Width="640" Height="382" HexStyle="100a0000" FontId="0">#(loc.Caption)</Window>
-    <Font Id="0" Height="-12" Weight="500">Segoe UI</Font>
-    <Font Id="1" Height="-24" Weight="500">Segoe UI</Font>
-    <Font Id="2" Height="-22" Weight="500" Foreground="666666">Segoe UI</Font>
-    <Font Id="3" Height="-12" Weight="500">Segoe UI</Font>
-    <Font Id="4" Height="-12" Weight="500" Foreground="ff0000" Underline="yes">Segoe UI</Font>
-    <Font Id="5" Height="-12" Weight="500" Foreground="666666">Segoe UI</Font>
+    <Window Width="640" Height="382" HexStyle="100a0000" FontId="0">#(loc.Caption)</Window>
+    <Font Id="0" Height="-12" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
+    <Font Id="1" Height="-24" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
+    <Font Id="2" Height="-22" Weight="500" Foreground="808080" Background="ffffff">Segoe UI</Font>
+    <Font Id="3" Height="-12" Weight="500" Foreground="000000" Background="ffffff">Segoe UI</Font>
+    <Font Id="4" Height="-12" Weight="500" Foreground="ff0000" Background="ffffff" Underline="yes">Segoe UI</Font>
+    <Font Id="5" Height="-12" Weight="500" Foreground="808080" Background="ffffff">Segoe UI</Font>
 
     <Page Name="Help">
         <Text X="185" Y="11" Width="-11" Height="32" FontId="1" DisablePrefix="yes">#(loc.HelpHeader)</Text>
