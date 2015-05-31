@@ -89,6 +89,7 @@ enum CONTROL_ID {
     ID_TARGETDIR_EDITBOX,
     ID_CUSTOM_ASSOCIATE_FILES_CHECKBOX,
     ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX,
+    ID_CUSTOM_COMPILE_ALL_CHECKBOX,
     ID_CUSTOM_BROWSE_BUTTON,
     ID_CUSTOM_BROWSE_BUTTON_LABEL,
     ID_CUSTOM_INSTALL_BUTTON,
@@ -149,6 +150,7 @@ static THEME_ASSIGN_CONTROL_ID CONTROL_ID_NAMES[] = {
     { ID_TARGETDIR_EDITBOX, L"TargetDir" },
     { ID_CUSTOM_ASSOCIATE_FILES_CHECKBOX, L"AssociateFiles" },
     { ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX, L"InstallAllUsers" },
+    { ID_CUSTOM_COMPILE_ALL_CHECKBOX, L"CompileAll" },
     { ID_CUSTOM_BROWSE_BUTTON, L"CustomBrowseButton" },
     { ID_CUSTOM_BROWSE_BUTTON_LABEL, L"CustomBrowseButtonLabel" },
     { ID_CUSTOM_INSTALL_BUTTON, L"CustomInstallButton" },
@@ -372,6 +374,10 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             checked = ThemeIsControlChecked(_theme, ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX);
             ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, checked && (FAILED(hr) || !elevated));
             ThemeControlEnable(_theme, ID_CUSTOM_BROWSE_BUTTON_LABEL, !checked);
+            if (checked) {
+                _engine->SetVariableNumeric(L"CompileAll", 1);
+                ThemeSendControlMessage(_theme, ID_CUSTOM_COMPILE_ALL_CHECKBOX, BM_SETCHECK, BST_CHECKED, 0);
+            }
             ThemeGetTextControl(_theme, ID_TARGETDIR_EDITBOX, &targetDir);
             if (targetDir) {
                 // Check the current value against the default to see
@@ -1475,6 +1481,8 @@ private:
         POINT ptCursor = { };
         HMONITOR hMonitor = nullptr;
         MONITORINFO mi = { };
+        COLORREF fg, bg;
+        HBRUSH bgBrush;
 
         // If the theme did not provide an icon, try using the icon from the bundle engine.
         if (!hIcon) {
@@ -1484,12 +1492,23 @@ private:
             }
         }
 
+        fg = RGB(0, 0, 0);
+        bg = RGB(255, 255, 255);
+        bgBrush = (HBRUSH)(COLOR_WINDOW+1);
+        if (_theme->dwFontId < _theme->cFonts) {
+            THEME_FONT *font = &_theme->rgFonts[_theme->dwFontId];
+            fg = font->crForeground;
+            bg = font->crBackground;
+            bgBrush = font->hBackground;
+            RemapColor(&fg, &bg, &bgBrush);
+        }
+
         // Register the window class and create the window.
         wc.lpfnWndProc = PythonBootstrapperApplication::WndProc;
         wc.hInstance = _hModule;
         wc.hIcon = hIcon;
         wc.hCursor = ::LoadCursorW(nullptr, (LPCWSTR)IDC_ARROW);
-        wc.hbrBackground = (HBRUSH)(COLOR_WINDOW+1);
+        wc.hbrBackground = bgBrush;
         wc.lpszMenuName = nullptr;
         wc.lpszClassName = PYBA_WINDOW_CLASS;
         if (!::RegisterClassW(&wc)) {
@@ -1704,12 +1723,12 @@ private:
             }
             break;
 
+        case WM_CTLCOLORSTATIC:
         case WM_CTLCOLORBTN:
             if (pBA) {
-                HWND button = (HWND)lParam;
-                DWORD style = GetWindowLong(button, GWL_STYLE) & BS_TYPEMASK;
-                if (style == BS_COMMANDLINK || style == BS_DEFCOMMANDLINK) {
-                    return (LRESULT)pBA->_theme->rgFonts[pBA->_theme->dwFontId].hBackground;
+                HBRUSH brush = nullptr;
+                if (pBA->SetControlColor((HWND)lParam, (HDC)wParam, &brush)) {
+                    return (LRESULT)brush;
                 }
             }
             break;
@@ -1782,6 +1801,40 @@ private:
         return SUCCEEDED(hr);
     }
 
+    void RemapColor(COLORREF *fg, COLORREF *bg, HBRUSH *bgBrush) {
+        if (*fg == RGB(0, 0, 0)) {
+            *fg = GetSysColor(COLOR_WINDOWTEXT);
+        } else if (*fg == RGB(128, 128, 128)) {
+            *fg = GetSysColor(COLOR_GRAYTEXT);
+        }
+        if (*bgBrush && *bg == RGB(255, 255, 255)) {
+            *bg = GetSysColor(COLOR_WINDOW);
+            *bgBrush = GetSysColorBrush(COLOR_WINDOW);
+        }
+    }
+
+    BOOL SetControlColor(HWND hWnd, HDC hDC, HBRUSH *brush) {
+        for (int i = 0; i < _theme->cControls; ++i) {
+            if (_theme->rgControls[i].hWnd != hWnd) {
+                continue;
+            }
+
+            DWORD fontId = _theme->rgControls[i].dwFontId;
+            if (fontId > _theme->cFonts) {
+                fontId = 0;
+            }
+            THEME_FONT *fnt = &_theme->rgFonts[fontId];
+
+            COLORREF fg = fnt->crForeground, bg = fnt->crBackground;
+            *brush = fnt->hBackground;
+            RemapColor(&fg, &bg, brush);
+            SetTextColor(hDC, fg);
+            SetBkColor(hDC, bg);
+
+            return TRUE;
+        }
+        return FALSE;
+    }
 
     //
     // OnShowFailure - display the failure page.
