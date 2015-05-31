@@ -9280,13 +9280,13 @@ tailmatch(PyObject *self,
         PyUnicode_READY(substring) == -1)
         return -1;
 
-    if (PyUnicode_GET_LENGTH(substring) == 0)
-        return 1;
-
     ADJUST_INDICES(start, end, PyUnicode_GET_LENGTH(self));
     end -= PyUnicode_GET_LENGTH(substring);
     if (end < start)
         return 0;
+
+    if (PyUnicode_GET_LENGTH(substring) == 0)
+        return 1;
 
     kind_self = PyUnicode_KIND(self);
     data_self = PyUnicode_DATA(self);
