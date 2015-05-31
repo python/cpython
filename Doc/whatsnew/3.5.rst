@@ -1049,6 +1049,10 @@ Changes in the Python API
   program depends on patching the module level variable to capture the debug
   output, you will need to update it to capture sys.stderr instead.
 
+* The :meth:`str.startswith` and :meth:`str.endswith` methods no longer return
+  ``True`` when finding the empty string and the indexes are completely out of
+  range.  See :issue:`24284`.
+
 Changes in the C API
 --------------------
 
