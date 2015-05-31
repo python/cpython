@@ -106,6 +106,19 @@ class CoroutineTests(BaseTest):
 
         self.assertTrue(asyncio.iscoroutine(FakeCoro()))
 
+    def test_function_returning_awaitable(self):
+        class Awaitable:
+            def __await__(self):
+                return ('spam',)
+
+        @asyncio.coroutine
+        def func():
+            return Awaitable()
+
+        coro = func()
+        self.assertEquals(coro.send(None), 'spam')
+        coro.close()
+
 
 if __name__ == '__main__':
     unittest.main()
