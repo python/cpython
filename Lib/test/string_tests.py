@@ -976,6 +976,9 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal(True, 'helloworld', 'startswith', 'lowo', 3)
         self.checkequal(True, 'helloworld', 'startswith', 'lowo', 3, 7)
         self.checkequal(False, 'helloworld', 'startswith', 'lowo', 3, 6)
+        self.checkequal(True, '', 'startswith', '', 0, 1)
+        self.checkequal(True, '', 'startswith', '', 0, 0)
+        self.checkequal(False, '', 'startswith', '', 1, 0)
 
         # test negative indices
         self.checkequal(True, 'hello', 'startswith', 'he', 0, -1)
@@ -1022,6 +1025,9 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal(False, 'helloworld', 'endswith', 'lowo', 3, 8)
         self.checkequal(False, 'ab', 'endswith', 'ab', 0, 1)
         self.checkequal(False, 'ab', 'endswith', 'ab', 0, 0)
+        self.checkequal(True, '', 'endswith', '', 0, 1)
+        self.checkequal(True, '', 'endswith', '', 0, 0)
+        self.checkequal(False, '', 'endswith', '', 1, 0)
 
         # test negative indices
         self.checkequal(True, 'hello', 'endswith', 'lo', -2)
