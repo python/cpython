@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24264: Fixed buffer overflow in the imageop module.
+
 - Issue #5633: Fixed timeit when the statement is a string and the setup is not.
 
 - Issue #24326: Fixed audioop.ratecv() with non-default weightB argument.

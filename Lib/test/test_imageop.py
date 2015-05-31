@@ -61,7 +61,9 @@ class InputValidationTests(unittest.TestCase):
         self.check("rgb82rgb")
         self.check("rgb2grey")
         self.check("grey2rgb")
-
+        # Issue #24264: Buffer overflow
+        with self.assertRaises(imageop.error):
+            imageop.grey2rgb('A'*256, 1, 129)
 
 def test_main():
 

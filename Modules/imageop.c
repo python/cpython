@@ -50,8 +50,11 @@ check_multiply_size(int product, int x, const char* xname, int y, const char* yn
         return 0;
     if ( !check_coordonnate(y, yname) )
         return 0;
-    if ( size == (product / y) / x )
-        return 1;
+    if ( product % y == 0 ) {
+        product /= y;
+        if ( product % x == 0 && size == product / x )
+            return 1;
+    }
     PyErr_SetString(ImageopError, "String has incorrect length");
     return 0;
 }
