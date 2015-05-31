@@ -1,5 +1,6 @@
 from test.support import requires_IEEE_754
 from test.test_math import parse_testfile, test_file
+import test.test_math as test_math
 import unittest
 import cmath, math
 from cmath import phase, polar, rect, pi
@@ -527,6 +528,47 @@ class CMathTests(unittest.TestCase):
     def testAtanhSign(self):
         for z in complex_zeros:
             self.assertComplexIdentical(cmath.atanh(z), z)
+
+
+class IsCloseTests(test_math.IsCloseTests):
+    isclose = cmath.isclose
+
+    def test_reject_complex_tolerances(self):
+        with self.assertRaises(TypeError):
+            self.isclose(1j, 1j, rel_tol=1j)
+
+        with self.assertRaises(TypeError):
+            self.isclose(1j, 1j, abs_tol=1j)
+
+        with self.assertRaises(TypeError):
+            self.isclose(1j, 1j, rel_tol=1j, abs_tol=1j)
+
+    def test_complex_values(self):
+        # test complex values that are close to within 12 decimal places
+        complex_examples = [(1.0+1.0j, 1.000000000001+1.0j),
+                            (1.0+1.0j, 1.0+1.000000000001j),
+                            (-1.0+1.0j, -1.000000000001+1.0j),
+                            (1.0-1.0j, 1.0-0.999999999999j),
+                            ]
+
+        self.assertAllClose(complex_examples, rel_tol=1e-12)
+        self.assertAllNotClose(complex_examples, rel_tol=1e-13)
+
+    def test_complex_near_zero(self):
+        # test values near zero that are near to within three decimal places
+        near_zero_examples = [(0.001j, 0),
+                              (0.001, 0),
+                              (0.001+0.001j, 0),
+                              (-0.001+0.001j, 0),
+                              (0.001-0.001j, 0),
+                              (-0.001-0.001j, 0),
+                              ]
+
+        self.assertAllClose(near_zero_examples, abs_tol=1.5e-03)
+        self.assertAllNotClose(near_zero_examples, abs_tol=0.5e-03)
+
+        self.assertIsClose(0.001-0.001j, 0.001+0.001j, abs_tol=2e-03)
+        self.assertIsNotClose(0.001-0.001j, 0.001+0.001j, abs_tol=1e-03)
 
 
 if __name__ == "__main__":
