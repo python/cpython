@@ -23,7 +23,7 @@
     <Variable Name="ShortVersion" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)" />
     <Variable Name="ShortVersionNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)" />
 
-    <Variable Name="InstallAllUsers" Value="1" Persisted="yes" bal:Overridable="yes" />
+    <Variable Name="InstallAllUsers" Value="0" Persisted="yes" bal:Overridable="yes" />
     <Variable Name="TargetDir" Value="" Persisted="yes" bal:Overridable="yes" />
     <?if $(var.Platform)~="x64" ?>
     <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]Python [ShortVersion]" bal:Overridable="yes" />
@@ -60,7 +60,7 @@
     <Variable Name="AssociateFiles" Value="1" Persisted="yes" bal:Overridable="yes" />
     <Variable Name="Shortcuts" Value="1" Persisted="yes" bal:Overridable="yes" />
     <Variable Name="PrependPath" Value="0" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="CompileAll" Value="1" Persisted="yes" bal:Overridable="yes" />
+    <Variable Name="CompileAll" Value="0" Persisted="yes" bal:Overridable="yes" />
     
     <Variable Name="SimpleInstall" Value="0" bal:Overridable="yes" />
     
