@@ -151,8 +151,8 @@ PEP written and implemented by Yury Selivanov.
    :pep:`492` -- Coroutines with async and await syntax
 
 
-PEP 461 - Adding formatting to bytes and bytearray
---------------------------------------------------
+PEP 461 - Formatting support for bytes and bytearray
+----------------------------------------------------
 
 This PEP proposes adding % formatting operations similar to Python 2's ``str``
 type to :class:`bytes` and :class:`bytearray`.
