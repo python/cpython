@@ -1990,6 +1990,83 @@ PyDoc_STRVAR(math_isinf_doc,
 "isinf(x) -> bool\n\n\
 Return True if x is a positive or negative infinity, and False otherwise.");
 
+static PyObject *
+math_isclose(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    double a, b;
+    double rel_tol = 1e-9;
+    double abs_tol = 0.0;
+    double diff = 0.0;
+    long result = 0;
+
+    static char *keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
+
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "dd|$dd:isclose",
+                                     keywords,
+                                     &a, &b, &rel_tol, &abs_tol
+                                     ))
+        return NULL;
+
+    /* sanity check on the inputs */
+    if (rel_tol < 0.0 || abs_tol < 0.0 ) {
+        PyErr_SetString(PyExc_ValueError,
+                        "tolerances must be non-negative");
+        return NULL;
+    }
+
+    if ( a == b ) {
+        /* short circuit exact equality -- needed to catch two infinities of
+           the same sign. And perhaps speeds things up a bit sometimes.
+        */
+        Py_RETURN_TRUE;
+    }
+
+    /* This catches the case of two infinities of opposite sign, or
+       one infinity and one finite number. Two infinities of opposite
+       sign would otherwise have an infinite relative tolerance.
+       Two infinities of the same sign are caught by the equality check
+       above.
+    */
+
+    if (Py_IS_INFINITY(a) || Py_IS_INFINITY(b)) {
+        Py_RETURN_FALSE;
+    }
+
+    /* now do the regular computation
+       this is essentially the "weak" test from the Boost library
+    */
+
+    diff = fabs(b - a);
+
+    result = (((diff <= fabs(rel_tol * b)) ||
+               (diff <= fabs(rel_tol * a))) ||
+              (diff <= abs_tol));
+
+    return PyBool_FromLong(result);
+}
+
+PyDoc_STRVAR(math_isclose_doc,
+"is_close(a, b, *, rel_tol=1e-09, abs_tol=0.0) -> bool\n"
+"\n"
+"Determine whether two floating point numbers are close in value.\n"
+"\n"
+"   rel_tol\n"
+"       maximum difference for being considered \"close\", relative to the\n"
+"       magnitude of the input values\n"
+"    abs_tol\n"
+"       maximum difference for being considered \"close\", regardless of the\n"
+"       magnitude of the input values\n"
+"\n"
+"Return True if a is close in value to b, and False otherwise.\n"
+"\n"
+"For the values to be considered close, the difference between them\n"
+"must be smaller than at least one of the tolerances.\n"
+"\n"
+"-inf, inf and NaN behave similarly to the IEEE 754 Standard.  That\n"
+"is, NaN is not close to anything, even itself.  inf and -inf are\n"
+"only close to themselves.");
+
 static PyMethodDef math_methods[] = {
     {"acos",            math_acos,      METH_O,         math_acos_doc},
     {"acosh",           math_acosh,     METH_O,         math_acosh_doc},
@@ -2016,6 +2093,8 @@ static PyMethodDef math_methods[] = {
     {"gamma",           math_gamma,     METH_O,         math_gamma_doc},
     {"gcd",             math_gcd,       METH_VARARGS,   math_gcd_doc},
     {"hypot",           math_hypot,     METH_VARARGS,   math_hypot_doc},
+    {"isclose", (PyCFunction) math_isclose, METH_VARARGS | METH_KEYWORDS,
+    math_isclose_doc},
     {"isfinite",        math_isfinite,  METH_O,         math_isfinite_doc},
     {"isinf",           math_isinf,     METH_O,         math_isinf_doc},
     {"isnan",           math_isnan,     METH_O,         math_isnan_doc},
