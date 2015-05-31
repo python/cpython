@@ -689,6 +689,12 @@ subprocess
   API than :func:`~subprocess.call`, :func:`~subprocess.check_call` and
   :func:`~subprocess.check_output`.
 
+sys
+---
+
+* New :func:`~sys.set_coroutine_wrapper` and :func:`~sys.get_coroutine_wrapper`
+  functions.  (Contributed by Yury Selivanov in :issue:`24017`.)
+
 sysconfig
 ---------
 
