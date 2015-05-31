@@ -116,7 +116,7 @@ class CoroutineTests(BaseTest):
             return Awaitable()
 
         coro = func()
-        self.assertEquals(coro.send(None), 'spam')
+        self.assertEqual(coro.send(None), 'spam')
         coro.close()
 
 
