@@ -806,4 +806,55 @@ cmath_isinf(PyModuleDef *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=274f59792cf4f418 input=a9049054013a1b77]*/
+
+PyDoc_STRVAR(cmath_isclose__doc__,
+"isclose($module, /, a, b, *, rel_tol=1e-09, abs_tol=0.0)\n"
+"--\n"
+"\n"
+"Determine whether two complex numbers are close in value.\n"
+"\n"
+"  rel_tol\n"
+"    maximum difference for being considered \"close\", relative to the\n"
+"    magnitude of the input values\n"
+"  abs_tol\n"
+"    maximum difference for being considered \"close\", regardless of the\n"
+"    magnitude of the input values\n"
+"\n"
+"Return True if a is close in value to b, and False otherwise.\n"
+"\n"
+"For the values to be considered close, the difference between them must be\n"
+"smaller than at least one of the tolerances.\n"
+"\n"
+"-inf, inf and NaN behave similarly to the IEEE 754 Standard. That is, NaN is\n"
+"not close to anything, even itself. inf and -inf are only close to themselves.");
+
+#define CMATH_ISCLOSE_METHODDEF    \
+    {"isclose", (PyCFunction)cmath_isclose, METH_VARARGS|METH_KEYWORDS, cmath_isclose__doc__},
+
+static int
+cmath_isclose_impl(PyModuleDef *module, Py_complex a, Py_complex b,
+                   double rel_tol, double abs_tol);
+
+static PyObject *
+cmath_isclose(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
+    Py_complex a;
+    Py_complex b;
+    double rel_tol = 1e-09;
+    double abs_tol = 0.0;
+    int _return_value;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "DD|$dd:isclose", _keywords,
+        &a, &b, &rel_tol, &abs_tol))
+        goto exit;
+    _return_value = cmath_isclose_impl(module, a, b, rel_tol, abs_tol);
+    if ((_return_value == -1) && PyErr_Occurred())
+        goto exit;
+    return_value = PyBool_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+/*[clinic end generated code: output=229e9c48c9d27362 input=a9049054013a1b77]*/

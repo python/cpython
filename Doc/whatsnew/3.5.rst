@@ -285,6 +285,18 @@ rather than being restricted to ASCII.
 
    :pep:`488` -- Multi-phase extension module initialization
 
+PEP 485: A function for testing approximate equality
+----------------------------------------------------
+
+:pep:`485` adds the :func:`math.isclose` and :func:`cmath.isclose`
+functions which tell whether two values are approximately equal or
+"close" to each other.  Whether or not two values are considered
+close is determined according to given absolute and relative tolerances.
+
+.. seealso::
+
+   :pep:`485` -- A function for testing approximate equality
+
 Other Language Changes
 ======================
 
@@ -345,6 +357,13 @@ cgi
 
 * :class:`~cgi.FieldStorage` now supports the context management protocol.
   (Contributed by Berker Peksag in :issue:`20289`.)
+
+cmath
+-----
+
+* :func:`cmath.isclose` function added.
+  (Contributed by Chris Barker and Tal Einat in :issue:`24270`.)
+
 
 code
 ----
@@ -578,6 +597,8 @@ math
 
 * :data:`math.inf` and :data:`math.nan` constants added.  (Contributed by Mark
   Dickinson in :issue:`23185`.)
+* :func:`math.isclose` function added.
+  (Contributed by Chris Barker and Tal Einat in :issue:`24270`.)
 
 shutil
 ------
