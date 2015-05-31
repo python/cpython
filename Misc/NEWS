@@ -10,6 +10,10 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #19543: encode() and decode() methods and constructors of str,
+  unicode and bytearray classes now emit deprecation warning for known
+  non-text encodings when Python is ran with the -3 option.
+
 - Issue #24115: Update uses of PyObject_IsTrue(), PyObject_Not(),
   PyObject_IsInstance(), PyObject_RichCompareBool() and _PyDict_Contains()
   to check for and handle errors correctly.
@@ -25,6 +29,10 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #19543: io.TextIOWrapper (and hence io.open()) now uses the internal
+  codec marking system added to emit deprecation warning for known non-text
+  encodings at stream construction time when Python is ran with the -3 option.
 
 - Issue #24264: Fixed buffer overflow in the imageop module.
 

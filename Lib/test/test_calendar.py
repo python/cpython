@@ -513,8 +513,8 @@ class CommandLineTestCase(unittest.TestCase):
     def test_option_encoding(self):
         self.assertFailure('-e')
         self.assertFailure('--encoding')
-        stdout = self.run_ok('--encoding', 'rot-13', '2004')
-        self.assertEqual(stdout.strip(), conv(result_2004_text.encode('rot-13')).strip())
+        stdout = self.run_ok('--encoding', 'utf-16-le', '2004')
+        self.assertEqual(stdout.strip(), conv(result_2004_text.encode('utf-16-le')).strip())
 
     def test_option_locale(self):
         self.assertFailure('-L')

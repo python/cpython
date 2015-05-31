@@ -7,6 +7,7 @@ from __future__ import (print_function, unicode_literals)
 import os
 import abc
 import codecs
+import sys
 import warnings
 import errno
 # Import thread instead of threading to reduce startup cost
@@ -1496,6 +1497,11 @@ class TextIOWrapper(TextIOBase):
 
         if not isinstance(encoding, basestring):
             raise ValueError("invalid encoding: %r" % encoding)
+
+        if sys.py3kwarning and not codecs.lookup(encoding)._is_text_encoding:
+            msg = ("%r is not a text encoding; "
+                   "use codecs.open() to handle arbitrary codecs")
+            warnings.warnpy3k(msg % encoding, stacklevel=2)
 
         if errors is None:
             errors = "strict"

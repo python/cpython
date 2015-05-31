@@ -783,7 +783,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
     if (PyBytes_Check(arg)) {
         PyObject *new, *encoded;
         if (encoding != NULL) {
-            encoded = PyCodec_Encode(arg, encoding, errors);
+            encoded = _PyCodec_EncodeText(arg, encoding, errors);
             if (encoded == NULL)
                 return -1;
             assert(PyBytes_Check(encoded));
@@ -809,7 +809,7 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
                             "unicode argument without an encoding");
             return -1;
         }
-        encoded = PyCodec_Encode(arg, encoding, errors);
+        encoded = _PyCodec_EncodeText(arg, encoding, errors);
         if (encoded == NULL)
             return -1;
         assert(PyBytes_Check(encoded));
@@ -2567,7 +2567,7 @@ bytearray_decode(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
 #endif
     }
-    return PyCodec_Decode(self, encoding, errors);
+    return _PyCodec_DecodeText(self, encoding, errors);
 }
 
 PyDoc_STRVAR(alloc_doc,

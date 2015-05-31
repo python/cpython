@@ -211,10 +211,11 @@ class FileInputTests(unittest.TestCase):
         except ValueError:
             pass
         try:
-            t1 = writeTmp(1, ["A\nB"], mode="wb")
-            fi = FileInput(files=t1, openhook=hook_encoded("rot13"))
+            # UTF-7 is a convenient, seldom used encoding
+            t1 = writeTmp(1, ['+AEE-\n+AEI-'], mode="wb")
+            fi = FileInput(files=t1, openhook=hook_encoded("utf-7"))
             lines = list(fi)
-            self.assertEqual(lines, ["N\n", "O"])
+            self.assertEqual(lines, [u'A\n', u'B'])
         finally:
             remove_tempfiles(t1)
 

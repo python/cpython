@@ -217,20 +217,15 @@ PyObject *codec_getitem(const char *encoding, int index)
     return v;
 }
 
-/* Helper function to create an incremental codec. */
-
+/* Helper functions to create an incremental codec. */
 static
-PyObject *codec_getincrementalcodec(const char *encoding,
-                                    const char *errors,
-                                    const char *attrname)
+PyObject *codec_makeincrementalcodec(PyObject *codec_info,
+                                     const char *errors,
+                                     const char *attrname)
 {
-    PyObject *codecs, *ret, *inccodec;
+    PyObject *ret, *inccodec;
 
-    codecs = _PyCodec_Lookup(encoding);
-    if (codecs == NULL)
-        return NULL;
-    inccodec = PyObject_GetAttrString(codecs, attrname);
-    Py_DECREF(codecs);
+    inccodec = PyObject_GetAttrString(codec_info, attrname);
     if (inccodec == NULL)
         return NULL;
     if (errors)
@@ -238,6 +233,21 @@ PyObject *codec_getincrementalcodec(const char *encoding,
     else
         ret = PyObject_CallFunction(inccodec, NULL);
     Py_DECREF(inccodec);
+    return ret;
+}
+
+static
+PyObject *codec_getincrementalcodec(const char *encoding,
+                                    const char *errors,
+                                    const char *attrname)
+{
+    PyObject *codec_info, *ret;
+
+    codec_info = _PyCodec_Lookup(encoding);
+    if (codec_info == NULL)
+        return NULL;
+    ret = codec_makeincrementalcodec(codec_info, errors, attrname);
+    Py_DECREF(codec_info);
     return ret;
 }
 
@@ -263,6 +273,24 @@ PyObject *codec_getstreamcodec(const char *encoding,
     Py_DECREF(codecs);
     return streamcodec;
 }
+
+/* Helpers to work with the result of _PyCodec_Lookup
+
+ */
+PyObject *_PyCodecInfo_GetIncrementalDecoder(PyObject *codec_info,
+                                             const char *errors)
+{
+    return codec_makeincrementalcodec(codec_info, errors,
+                                      "incrementaldecoder");
+}
+
+PyObject *_PyCodecInfo_GetIncrementalEncoder(PyObject *codec_info,
+                                             const char *errors)
+{
+    return codec_makeincrementalcodec(codec_info, errors,
+                                      "incrementalencoder");
+}
+
 
 /* Convenience APIs to query the Codec registry.
 
@@ -311,17 +339,14 @@ PyObject *PyCodec_StreamWriter(const char *encoding,
 
    errors is passed to the encoder factory as argument if non-NULL. */
 
-PyObject *PyCodec_Encode(PyObject *object,
-                         const char *encoding,
-                         const char *errors)
+static PyObject *
+_PyCodec_EncodeInternal(PyObject *object,
+                        PyObject *encoder,
+                        const char *encoding,
+                        const char *errors)
 {
-    PyObject *encoder = NULL;
     PyObject *args = NULL, *result = NULL;
     PyObject *v;
-
-    encoder = PyCodec_Encoder(encoding);
-    if (encoder == NULL)
-        goto onError;
 
     args = args_tuple(object, errors);
     if (args == NULL)
@@ -358,17 +383,14 @@ PyObject *PyCodec_Encode(PyObject *object,
 
    errors is passed to the decoder factory as argument if non-NULL. */
 
-PyObject *PyCodec_Decode(PyObject *object,
-                         const char *encoding,
-                         const char *errors)
+static PyObject *
+_PyCodec_DecodeInternal(PyObject *object,
+                        PyObject *decoder,
+                        const char *encoding,
+                        const char *errors)
 {
-    PyObject *decoder = NULL;
     PyObject *args = NULL, *result = NULL;
     PyObject *v;
-
-    decoder = PyCodec_Decoder(encoding);
-    if (decoder == NULL)
-        goto onError;
 
     args = args_tuple(object, errors);
     if (args == NULL)
@@ -397,6 +419,139 @@ PyObject *PyCodec_Decode(PyObject *object,
     Py_XDECREF(decoder);
     Py_XDECREF(result);
     return NULL;
+}
+
+/* Generic encoding/decoding API */
+PyObject *PyCodec_Encode(PyObject *object,
+                         const char *encoding,
+                         const char *errors)
+{
+    PyObject *encoder;
+
+    encoder = PyCodec_Encoder(encoding);
+    if (encoder == NULL)
+        return NULL;
+
+    return _PyCodec_EncodeInternal(object, encoder, encoding, errors);
+}
+
+PyObject *PyCodec_Decode(PyObject *object,
+                         const char *encoding,
+                         const char *errors)
+{
+    PyObject *decoder;
+
+    decoder = PyCodec_Decoder(encoding);
+    if (decoder == NULL)
+        return NULL;
+
+    return _PyCodec_DecodeInternal(object, decoder, encoding, errors);
+}
+
+/* Text encoding/decoding API */
+PyObject * _PyCodec_LookupTextEncoding(const char *encoding,
+                                       const char *alternate_command)
+{
+    PyObject *codec;
+    PyObject *attr;
+    int is_text_codec;
+
+    codec = _PyCodec_Lookup(encoding);
+    if (codec == NULL)
+        return NULL;
+
+    /* Backwards compatibility: assume any raw tuple describes a text
+     * encoding, and the same for anything lacking the private
+     * attribute.
+     */
+    if (Py_Py3kWarningFlag && !PyTuple_CheckExact(codec)) {
+        attr = PyObject_GetAttrString(codec, "_is_text_encoding");
+        if (attr == NULL) {
+            if (!PyErr_ExceptionMatches(PyExc_AttributeError))
+                goto onError;
+            PyErr_Clear();
+        } else {
+            is_text_codec = PyObject_IsTrue(attr);
+            Py_DECREF(attr);
+            if (is_text_codec < 0)
+                goto onError;
+            if (!is_text_codec) {
+                PyObject *msg = PyString_FromFormat(
+                            "'%.400s' is not a text encoding; "
+                            "use %s to handle arbitrary codecs",
+                            encoding, alternate_command);
+                if (msg == NULL)
+                    goto onError;
+                if (PyErr_WarnPy3k(PyString_AS_STRING(msg), 1) < 0) {
+                    Py_DECREF(msg);
+                    goto onError;
+                }
+                Py_DECREF(msg);
+            }
+        }
+    }
+
+    /* This appears to be a valid text encoding */
+    return codec;
+
+ onError:
+    Py_DECREF(codec);
+    return NULL;
+}
+
+
+static
+PyObject *codec_getitem_checked(const char *encoding,
+                                const char *alternate_command,
+                                int index)
+{
+    PyObject *codec;
+    PyObject *v;
+
+    codec = _PyCodec_LookupTextEncoding(encoding, alternate_command);
+    if (codec == NULL)
+        return NULL;
+
+    v = PyTuple_GET_ITEM(codec, index);
+    Py_INCREF(v);
+    Py_DECREF(codec);
+    return v;
+}
+
+static PyObject * _PyCodec_TextEncoder(const char *encoding)
+{
+    return codec_getitem_checked(encoding, "codecs.encode()", 0);
+}
+
+static PyObject * _PyCodec_TextDecoder(const char *encoding)
+{
+    return codec_getitem_checked(encoding, "codecs.decode()", 1);
+}
+
+PyObject *_PyCodec_EncodeText(PyObject *object,
+                              const char *encoding,
+                              const char *errors)
+{
+    PyObject *encoder;
+
+    encoder = _PyCodec_TextEncoder(encoding);
+    if (encoder == NULL)
+        return NULL;
+
+    return _PyCodec_EncodeInternal(object, encoder, encoding, errors);
+}
+
+PyObject *_PyCodec_DecodeText(PyObject *object,
+                              const char *encoding,
+                              const char *errors)
+{
+    PyObject *decoder;
+
+    decoder = _PyCodec_TextDecoder(encoding);
+    if (decoder == NULL)
+        return NULL;
+
+    return _PyCodec_DecodeInternal(object, decoder, encoding, errors);
 }
 
 /* Register the error handling callback function error under the name

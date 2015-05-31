@@ -2001,6 +2001,15 @@ class TextIOWrapperTest(unittest.TestCase):
         t.__init__(self.MockRawIO())
         self.assertEqual(t.read(0), u'')
 
+    def test_non_text_encoding_codecs_are_rejected(self):
+        # Ensure the constructor complains if passed a codec that isn't
+        # marked as a text encoding
+        # http://bugs.python.org/issue20404
+        r = self.BytesIO()
+        b = self.BufferedWriter(r)
+        with support.check_py3k_warnings():
+            self.TextIOWrapper(b, encoding="hex_codec")
+
     def test_detach(self):
         r = self.BytesIO()
         b = self.BufferedWriter(r)
@@ -2617,19 +2626,39 @@ class TextIOWrapperTest(unittest.TestCase):
 
     def test_illegal_decoder(self):
         # Issue #17106
+        # Bypass the early encoding check added in issue 20404
+        def _make_illegal_wrapper():
+            quopri = codecs.lookup("quopri_codec")
+            quopri._is_text_encoding = True
+            try:
+                t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'),
+                                       newline='\n', encoding="quopri_codec")
+            finally:
+                quopri._is_text_encoding = False
+            return t
         # Crash when decoder returns non-string
-        t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
-                               encoding='quopri_codec')
+        with support.check_py3k_warnings():
+            t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
+                                   encoding='quopri_codec')
         with self.maybeRaises(TypeError):
             t.read(1)
-        t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
-                               encoding='quopri_codec')
+        with support.check_py3k_warnings():
+            t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
+                                   encoding='quopri_codec')
         with self.maybeRaises(TypeError):
             t.readline()
-        t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
-                               encoding='quopri_codec')
+        with support.check_py3k_warnings():
+            t = self.TextIOWrapper(self.BytesIO(b'aaaaaa'), newline='\n',
+                                   encoding='quopri_codec')
         with self.maybeRaises(TypeError):
             t.read()
+        #else:
+            #t = _make_illegal_wrapper()
+            #self.assertRaises(TypeError, t.read, 1)
+            #t = _make_illegal_wrapper()
+            #self.assertRaises(TypeError, t.readline)
+            #t = _make_illegal_wrapper()
+            #self.assertRaises(TypeError, t.read)
 
 
 class CTextIOWrapperTest(TextIOWrapperTest):
@@ -3002,9 +3031,11 @@ class MiscIOTest(unittest.TestCase):
 
 class CMiscIOTest(MiscIOTest):
     io = io
+    shutdown_error = "RuntimeError: could not find io module state"
 
 class PyMiscIOTest(MiscIOTest):
     io = pyio
+    shutdown_error = "LookupError: unknown encoding: ascii"
 
 
 @unittest.skipIf(os.name == 'nt', 'POSIX signals required for this test.')
