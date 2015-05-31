@@ -54,9 +54,10 @@ else:
                                          inspect.CO_COROUTINE)
 
 try:
-    from collections.abc import Coroutine as CoroutineABC
+    from collections.abc import Coroutine as CoroutineABC, \
+                                Awaitable as AwaitableABC
 except ImportError:
-    CoroutineABC = None
+    CoroutineABC = AwaitableABC = None
 
 
 # Check for CPython issue #21209
@@ -192,6 +193,16 @@ def coroutine(func):
             res = func(*args, **kw)
             if isinstance(res, futures.Future) or inspect.isgenerator(res):
                 res = yield from res
+            elif AwaitableABC is not None:
+                # If 'func' returns an Awaitable (new in 3.5) we
+                # want to run it.
+                try:
+                    await_meth = res.__await__
+                except AttributeError:
+                    pass
+                else:
+                    if isinstance(res, AwaitableABC):
+                        res = yield from await_meth()
             return res
 
     if not _DEBUG:
