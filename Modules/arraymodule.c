@@ -1940,8 +1940,10 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     if (PyString_Check(typecode) && PyString_GET_SIZE(typecode) == 1)
         c = (unsigned char)*PyString_AS_STRING(typecode);
+#ifdef Py_USING_UNICODE
     else if (PyUnicode_Check(typecode) && PyUnicode_GET_SIZE(typecode) == 1)
         c = *PyUnicode_AS_UNICODE(typecode);
+#endif
     else {
         PyErr_Format(PyExc_TypeError,
                      "array() argument 1 or typecode must be char (string or "
