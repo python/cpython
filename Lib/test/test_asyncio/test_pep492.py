@@ -119,6 +119,20 @@ class CoroutineTests(BaseTest):
         self.assertEqual(coro.send(None), 'spam')
         coro.close()
 
+    def test_async_ded_coroutines(self):
+        async def bar():
+            return 'spam'
+        async def foo():
+            return await bar()
+
+        # production mode
+        data = self.loop.run_until_complete(foo())
+        self.assertEqual(data, 'spam')
+
+        # debug mode
+        self.loop.set_debug(True)
+        data = self.loop.run_until_complete(foo())
+        self.assertEqual(data, 'spam')
 
 if __name__ == '__main__':
     unittest.main()
