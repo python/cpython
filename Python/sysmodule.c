@@ -655,10 +655,10 @@ sys_set_coroutine_wrapper(PyObject *self, PyObject *wrapper)
                          Py_TYPE(wrapper)->tp_name);
             return NULL;
         }
-        PyEval_SetCoroutineWrapper(wrapper);
+        _PyEval_SetCoroutineWrapper(wrapper);
     }
     else {
-        PyEval_SetCoroutineWrapper(NULL);
+        _PyEval_SetCoroutineWrapper(NULL);
     }
     Py_RETURN_NONE;
 }
@@ -672,7 +672,7 @@ Set a wrapper for coroutine objects."
 static PyObject *
 sys_get_coroutine_wrapper(PyObject *self, PyObject *args)
 {
-    PyObject *wrapper = PyEval_GetCoroutineWrapper();
+    PyObject *wrapper = _PyEval_GetCoroutineWrapper();
     if (wrapper == NULL) {
         wrapper = Py_None;
     }
