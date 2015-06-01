@@ -900,21 +900,15 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 */
 
 
-// Next opcode prediction is also enabled for Computed Gotos as well.
-#ifdef DYNAMIC_EXECUTION_PROFILE
-#define PREDICT(op)             //if (0) goto PRED_##op
-#define PREDICTED(op)
-#define PREDICTED_WITH_ARG(op)
+#if defined(DYNAMIC_EXECUTION_PROFILE) || USE_COMPUTED_GOTOS
+#define PREDICT(op)             if (0) goto PRED_##op
+#define PREDICTED(op)           PRED_##op:
+#define PREDICTED_WITH_ARG(op)  PRED_##op:
 #else
 #define PREDICT(op)             if (*next_instr == op) goto PRED_##op
 #define PREDICTED(op)           PRED_##op: next_instr++
-#ifdef USE_COMPUTED_GOTOS
-#define PREDICTED_WITH_ARG(op)  PRED_##op: next_instr++
-#else
 #define PREDICTED_WITH_ARG(op)  PRED_##op: oparg = PEEKARG(); next_instr += 3
 #endif
-#endif
-
 
 
 /* Stack manipulation macros */
