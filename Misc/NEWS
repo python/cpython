@@ -40,6 +40,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24270: Add math.isclose() and cmath.isclose() functions as per PEP 485.
+  Contributed by Chris Barker and Tal Einat.
+
 - Issue #5633: Fixed timeit when the statement is a string and the setup is not.
 
 - Issue #24326: Fixed audioop.ratecv() with non-default weightB argument.
@@ -284,9 +287,6 @@ Library
 
 - Issue #24298: Fix inspect.signature() to correctly unwrap wrappers
   around bound methods.
-
-- Issue #24270: Add math.isclose() and cmath.isclose() functions as per PEP 485.
-  Contributed by Chris Barker and Tal Einat.
 
 IDLE
 ----
