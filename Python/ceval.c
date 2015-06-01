@@ -3936,7 +3936,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
             return NULL;
 
         if (co->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE)) {
-            coroutine_wrapper = PyEval_GetCoroutineWrapper();
+            coroutine_wrapper = _PyEval_GetCoroutineWrapper();
             if (coroutine_wrapper != NULL) {
                 PyObject *wrapped =
                             PyObject_CallFunction(coroutine_wrapper, "N", gen);
@@ -4390,7 +4390,7 @@ PyEval_SetTrace(Py_tracefunc func, PyObject *arg)
 }
 
 void
-PyEval_SetCoroutineWrapper(PyObject *wrapper)
+_PyEval_SetCoroutineWrapper(PyObject *wrapper)
 {
     PyThreadState *tstate = PyThreadState_GET();
 
@@ -4401,7 +4401,7 @@ PyEval_SetCoroutineWrapper(PyObject *wrapper)
 }
 
 PyObject *
-PyEval_GetCoroutineWrapper(void)
+_PyEval_GetCoroutineWrapper(void)
 {
     PyThreadState *tstate = PyThreadState_GET();
     return tstate->coroutine_wrapper;
