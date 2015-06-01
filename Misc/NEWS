@@ -10,6 +10,8 @@ Release date: 2015-07-05
 Core and Builtins
 -----------------
 
+- Issue #24345: Add Py_tp_finalize slot for the stable ABI.
+
 Library
 -------
 
