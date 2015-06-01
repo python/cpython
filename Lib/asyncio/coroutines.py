@@ -120,7 +120,7 @@ class CoroWrapper:
         __await__ = __iter__ # make compatible with 'await' expression
 
     def __next__(self):
-        return next(self.gen)
+        return self.gen.send(None)
 
     if _YIELD_FROM_BUG:
         # For for CPython issue #21209: using "yield from" and a custom
