@@ -1746,10 +1746,6 @@ class OrderedDictTests:
         self.assertEqual(list(reversed(od.items())), list(reversed(pairs)))
 
     def test_detect_deletion_during_iteration(self):
-        # XXX This test should also work under cOrderedDict.
-        if self.module is c_coll:
-            raise unittest.SkipTest("only valid for pure Python OrderedDict")
-
         OrderedDict = self.module.OrderedDict
         od = OrderedDict.fromkeys('abc')
         it = iter(od)
