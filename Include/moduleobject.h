@@ -30,8 +30,11 @@ PyAPI_FUNC(void) _PyModule_ClearDict(PyObject *);
 PyAPI_FUNC(struct PyModuleDef*) PyModule_GetDef(PyObject*);
 PyAPI_FUNC(void*) PyModule_GetState(PyObject*);
 
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+/* New in 3.5 */
 PyAPI_FUNC(PyObject *) PyModuleDef_Init(struct PyModuleDef*);
 PyAPI_DATA(PyTypeObject) PyModuleDef_Type;
+#endif
 
 typedef struct PyModuleDef_Base {
   PyObject_HEAD
@@ -47,22 +50,13 @@ typedef struct PyModuleDef_Base {
     NULL, /* m_copy */          \
   }
 
+struct PyModuleDef_Slot;
+#if !defined(Py_LIMITED_API) || Py_LIMITED_API+0 >= 0x03050000
+/* New in 3.5 */
 typedef struct PyModuleDef_Slot{
     int slot;
     void *value;
 } PyModuleDef_Slot;
-
-typedef struct PyModuleDef{
-  PyModuleDef_Base m_base;
-  const char* m_name;
-  const char* m_doc;
-  Py_ssize_t m_size;
-  PyMethodDef *m_methods;
-  PyModuleDef_Slot* m_slots;
-  traverseproc m_traverse;
-  inquiry m_clear;
-  freefunc m_free;
-}PyModuleDef;
 
 #define Py_mod_create 1
 #define Py_mod_exec 2
@@ -70,6 +64,20 @@ typedef struct PyModuleDef{
 #ifndef Py_LIMITED_API
 #define _Py_mod_LAST_SLOT 2
 #endif
+
+#endif /* New in 3.5 */
+
+typedef struct PyModuleDef{
+  PyModuleDef_Base m_base;
+  const char* m_name;
+  const char* m_doc;
+  Py_ssize_t m_size;
+  PyMethodDef *m_methods;
+  struct PyModuleDef_Slot* m_slots;
+  traverseproc m_traverse;
+  inquiry m_clear;
+  freefunc m_free;
+}PyModuleDef;
 
 #ifdef __cplusplus
 }
