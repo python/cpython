@@ -137,7 +137,7 @@ def _uninstall_helper(*, verbosity=0):
     _disable_pip_configuration_settings()
 
     # Construct the arguments to be passed to the pip command
-    args = ["uninstall", "-y"]
+    args = ["uninstall", "-y", "--disable-pip-version-check"]
     if verbosity:
         args += ["-" + "v" * verbosity]
 
