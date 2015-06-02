@@ -2055,6 +2055,18 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         with self.assertRaises(KeyError):
             od.copy()
 
+    def test_issue24348(self):
+        OrderedDict = self.module.OrderedDict
+
+        class Key:
+            def __hash__(self):
+                return 1
+
+        od = OrderedDict()
+        od[Key()] = 0
+        # This should not crash.
+        od.popitem()
+
 
 class PurePythonGeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
 
