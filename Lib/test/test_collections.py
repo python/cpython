@@ -2045,6 +2045,24 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         del od[colliding]
         self.assertEqual(list(od.items()), [(key, ...), ('after', ...)])
 
+    def test_issue24347(self):
+        OrderedDict = self.module.OrderedDict
+
+        class Key:
+            def __hash__(self):
+                return randrange(100000)
+
+        od = OrderedDict()
+        for i in range(100):
+            key = Key()
+            od[key] = i
+
+        # These should not crash.
+        with self.assertRaises(KeyError):
+            repr(od)
+        with self.assertRaises(KeyError):
+            od.copy()
+
 
 class PurePythonGeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
 

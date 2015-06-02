@@ -30,6 +30,8 @@ PyAPI_FUNC(int) PyODict_DelItem(PyObject *od, PyObject *key);
 
 /* wrappers around PyDict* functions */
 #define PyODict_GetItem(od, key) PyDict_GetItem((PyObject *)od, key)
+#define PyODict_GetItemWithError(od, key) \
+    PyDict_GetItemWithError((PyObject *)od, key)
 #define PyODict_Contains(od, key) PyDict_Contains((PyObject *)od, key)
 #define PyODict_Size(od) PyDict_Size((PyObject *)od)
 #define PyODict_GetItemString(od, key) \
