@@ -19,6 +19,8 @@ Library
 
 - Issue #24348: Drop superfluous incref/decref.
 
+- Issue #24359: Check for changed OrderedDict size during iteration.
+
 
 What's New in Python 3.5.0 beta 2?
 ==================================
