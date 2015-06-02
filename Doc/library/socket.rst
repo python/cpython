@@ -461,14 +461,14 @@ The :mod:`socket` module also offers various network-related services:
    method.
 
    The following example fetches address information for a hypothetical TCP
-   connection to ``google.com`` on port 80 (results may differ on your
+   connection to ``example.org`` on port 80 (results may differ on your
    system if IPv6 isn't enabled)::
 
-      >>> socket.getaddrinfo("google.com", 80, proto=socket.IPPROTO_TCP)
+      >>> socket.getaddrinfo("example.org", 80, proto=socket.IPPROTO_TCP)
       [(<AddressFamily.AF_INET6: 10>, <SocketType.SOCK_STREAM: 1>,
-       6, '', ('2607:f8b0:4005:803::200e', 80, 0, 0)),
+       6, '', ('2606:2800:220:1:248:1893:25c8:1946', 80, 0, 0)),
        (<AddressFamily.AF_INET: 2>, <SocketType.SOCK_STREAM: 1>,
-       6, '', ('216.58.192.46', 80))]
+       6, '', ('93.184.216.34', 80))]
 
    .. versionchanged:: 3.2
       parameters can now be passed using keyword arguments.
