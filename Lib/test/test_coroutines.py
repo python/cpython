@@ -995,6 +995,26 @@ class SysSetCoroWrapperTest(unittest.TestCase):
             sys.set_coroutine_wrapper(1)
         self.assertIsNone(sys.get_coroutine_wrapper())
 
+    def test_set_wrapper_3(self):
+        async def foo():
+            return 'spam'
+
+        def wrapper(coro):
+            async def wrap(coro):
+                return await coro
+            return wrap(coro)
+
+        sys.set_coroutine_wrapper(wrapper)
+        try:
+            with self.assertRaisesRegex(
+                RuntimeError,
+                "coroutine wrapper.*\.wrapper at 0x.*attempted to "
+                "recursively wrap <coroutine.*\.wrap"):
+
+                foo()
+        finally:
+            sys.set_coroutine_wrapper(None)
+
 
 class CAPITest(unittest.TestCase):
 

@@ -3921,7 +3921,6 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
 
     if (co->co_flags & CO_GENERATOR) {
         PyObject *gen;
-        PyObject *coroutine_wrapper;
 
         /* Don't need to keep the reference to f_back, it will be set
          * when the generator is resumed. */
@@ -3935,14 +3934,9 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
         if (gen == NULL)
             return NULL;
 
-        if (co->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE)) {
-            coroutine_wrapper = _PyEval_GetCoroutineWrapper();
-            if (coroutine_wrapper != NULL) {
-                PyObject *wrapped =
-                            PyObject_CallFunction(coroutine_wrapper, "N", gen);
-                gen = wrapped;
-            }
-        }
+        if (co->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))
+            return _PyEval_ApplyCoroutineWrapper(gen);
+
         return gen;
     }
 
@@ -4405,6 +4399,33 @@ _PyEval_GetCoroutineWrapper(void)
 {
     PyThreadState *tstate = PyThreadState_GET();
     return tstate->coroutine_wrapper;
+}
+
+PyObject *
+_PyEval_ApplyCoroutineWrapper(PyObject *gen)
+{
+    PyObject *wrapped;
+    PyThreadState *tstate = PyThreadState_GET();
+    PyObject *wrapper = tstate->coroutine_wrapper;
+
+    if (tstate->in_coroutine_wrapper) {
+        assert(wrapper != NULL);
+        PyErr_Format(PyExc_RuntimeError,
+                     "coroutine wrapper %.150R attempted "
+                     "to recursively wrap %.150R",
+                     wrapper,
+                     gen);
+        return NULL;
+    }
+
+    if (wrapper == NULL) {
+        return gen;
+    }
+
+    tstate->in_coroutine_wrapper = 1;
+    wrapped = PyObject_CallFunction(wrapper, "N", gen);
+    tstate->in_coroutine_wrapper = 0;
+    return wrapped;
 }
 
 PyObject *
