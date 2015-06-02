@@ -216,7 +216,10 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ensurepip._uninstall_helper()
 
         self.run_pip.assert_called_once_with(
-            ["uninstall", "-y", "pip", "setuptools"]
+            [
+                "uninstall", "-y", "--disable-pip-version-check", "pip",
+                "setuptools",
+            ]
         )
 
     @requires_usable_pip
@@ -225,7 +228,10 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ensurepip._uninstall_helper(verbosity=1)
 
         self.run_pip.assert_called_once_with(
-            ["uninstall", "-y", "-v", "pip", "setuptools"]
+            [
+                "uninstall", "-y", "--disable-pip-version-check", "-v", "pip",
+                "setuptools",
+            ]
         )
 
     @requires_usable_pip
@@ -234,7 +240,10 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ensurepip._uninstall_helper(verbosity=2)
 
         self.run_pip.assert_called_once_with(
-            ["uninstall", "-y", "-vv", "pip", "setuptools"]
+            [
+                "uninstall", "-y", "--disable-pip-version-check", "-vv", "pip",
+                "setuptools",
+            ]
         )
 
     @requires_usable_pip
@@ -243,7 +252,10 @@ class TestUninstall(EnsurepipMixin, unittest.TestCase):
             ensurepip._uninstall_helper(verbosity=3)
 
         self.run_pip.assert_called_once_with(
-            ["uninstall", "-y", "-vvv", "pip", "setuptools"]
+            [
+                "uninstall", "-y", "--disable-pip-version-check", "-vvv",
+                "pip", "setuptools",
+            ]
         )
 
     @requires_usable_pip
@@ -344,7 +356,10 @@ class TestUninstallationMainFunction(EnsurepipMixin, unittest.TestCase):
             ensurepip._uninstall._main([])
 
         self.run_pip.assert_called_once_with(
-            ["uninstall", "-y", "pip", "setuptools"]
+            [
+                "uninstall", "-y", "--disable-pip-version-check", "pip",
+                "setuptools",
+            ]
         )
 
 
