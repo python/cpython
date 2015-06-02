@@ -478,7 +478,7 @@ The :mod:`socket` module also offers various network-related services:
    method.
 
    The following example fetches address information for a hypothetical TCP
-   connection to `google.com` on port 80 (results may differ on your
+   connection to ``google.com`` on port 80 (results may differ on your
    system if IPv6 isn't enabled)::
 
       >>> socket.getaddrinfo("google.com", 80, proto=socket.IPPROTO_TCP)
