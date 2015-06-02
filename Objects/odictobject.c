@@ -1796,6 +1796,7 @@ typedef struct {
     PyObject_HEAD
     int kind;
     PyODictObject *di_odict;
+    Py_ssize_t di_size;
     PyObject *di_current;
     PyObject *di_result; /* reusable result tuple for iteritems */
 } odictiterobject;
@@ -1834,6 +1835,14 @@ odictiter_nextkey(odictiterobject *di)
         return NULL;
     if (di->di_current == NULL)
         goto done;  /* We're already done. */
+
+    /* Check for unsupported changes. */
+    if (di->di_size != PyODict_SIZE(di->di_odict)) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "OrderedDict changed size during iteration");
+        di->di_size = -1; /* Make this state sticky */
+        return NULL;
+    }
 
     /* Get the key. */
     node = _odict_find_node(di->di_odict, di->di_current);
@@ -2033,6 +2042,7 @@ odictiter_new(PyODictObject *od, int kind)
     node = reversed ? _odict_LAST(od) : _odict_FIRST(od);
     di->di_current = node ? _odictnode_KEY(node) : NULL;
     Py_XINCREF(di->di_current);
+    di->di_size = PyODict_SIZE(od);
     di->di_odict = od;
     Py_INCREF(od);
 
