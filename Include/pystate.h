@@ -135,6 +135,7 @@ typedef struct _ts {
     void *on_delete_data;
 
     PyObject *coroutine_wrapper;
+    int in_coroutine_wrapper;
 
     /* XXX signal handlers should also be here */
 
