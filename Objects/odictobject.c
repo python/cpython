@@ -1073,36 +1073,32 @@ PyDoc_STRVAR(odict_setdefault__doc__,
 static PyObject *
 odict_setdefault(register PyODictObject *od, PyObject *args)
 {
-    _ODictNode *node;
     PyObject *key, *result = NULL;
     PyObject *failobj = Py_None;
 
     /* both borrowed */
     if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &failobj))
         return NULL;
-    Py_INCREF(key);
-    Py_INCREF(failobj);
 
     if (PyODict_CheckExact(od)) {
-        node = _odict_find_node(od, key);
-        if (node == NULL) {
-            if (PyErr_Occurred()) {
-                goto done;
-            }
-            else if (PyODict_SetItem((PyObject *)od, key, failobj) >= 0) {
+        result = PyODict_GetItemWithError(od, key);  /* borrowed */
+        if (result == NULL) {
+            if (PyErr_Occurred())
+                return NULL;
+            assert(_odict_find_node(od, key) == NULL);
+            if (PyODict_SetItem((PyObject *)od, key, failobj) >= 0) {
                 result = failobj;
                 Py_INCREF(failobj);
             }
         }
         else {
-            result = PyODict_GetItem(od, key);  /* borrowed reference */
-            Py_XINCREF(result);
+            Py_INCREF(result);
         }
     }
     else {
         int exists = PySequence_Contains((PyObject *)od, key);
         if (exists < 0) {
-            goto done;
+            return NULL;
         }
         else if (exists) {
             result = PyObject_GetItem((PyObject *)od, key);
@@ -1113,9 +1109,6 @@ odict_setdefault(register PyODictObject *od, PyObject *args)
         }
     }
 
-done:
-    Py_DECREF(failobj);
-    Py_DECREF(key);
     return result;
 }
 
@@ -1150,21 +1143,18 @@ _odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
     _ODictNode *node;
     PyObject *value = NULL;
 
-    Py_INCREF(key);
-    Py_XINCREF(failobj);
-
     /* Pop the node first to avoid a possible dict resize (due to
        eval loop reentrancy) and complications due to hash collision
        resolution. */
     node = _odict_find_node((PyODictObject *)od, key);
     if (node == NULL) {
         if (PyErr_Occurred())
-            goto done;
+            return NULL;
     }
     else {
         int res = _odict_clear_node((PyODictObject *)od, node, key);
         if (res < 0) {
-            goto done;
+            return NULL;
         }
     }
 
@@ -1178,7 +1168,7 @@ _odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
     else {
         int exists = PySequence_Contains(od, key);
         if (exists < 0)
-            goto done;
+            return NULL;
         if (exists) {
             value = PyObject_GetItem(od, key);
             if (value != NULL) {
@@ -1200,9 +1190,6 @@ _odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
         }
     }
 
-done:
-    Py_DECREF(key);
-    Py_XDECREF(failobj);
     return value;
 }
 
@@ -1229,19 +1216,19 @@ odict_popitem(PyObject *od, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "popitem", 0, 1, &last)) /* borrowed */
         return NULL;
-    Py_XINCREF(last);
 
     if (last == NULL || last == Py_True)
         node = _odict_LAST((PyODictObject *)od);
     else
         node = _odict_FIRST((PyODictObject *)od);
-    Py_XDECREF(last);
 
     key = _odictnode_KEY(node);
+    Py_INCREF(key);
     value = _odict_popkey(od, key, NULL);
     if (value == NULL)
         return NULL;
     item = PyTuple_Pack(2, key, value);
+    Py_DECREF(key);
     Py_DECREF(value);
     return item;
 }
@@ -1381,17 +1368,13 @@ odict_move_to_end(PyODictObject *od, PyObject *args)
     /* both borrowed */
     if (!PyArg_UnpackTuple(args, "move_to_end", 1, 2, &key, &last))
         return NULL;
-    Py_INCREF(key);
     if (_odict_EMPTY(od)) {
         PyErr_SetObject(PyExc_KeyError, key);
-        Py_DECREF(key);
         return NULL;
     }
     if (last != NULL) {
         int is_true;
-        Py_INCREF(last);
         is_true = PyObject_IsTrue(last);
-        Py_DECREF(last);
         if (is_true == -1)
             return NULL;
         pos = is_true ? -1 : 0;
@@ -1410,7 +1393,6 @@ odict_move_to_end(PyODictObject *od, PyObject *args)
             else {
                 if (!PyErr_Occurred())
                     PyErr_SetObject(PyExc_KeyError, key);
-                Py_DECREF(key);
                 return NULL;
             }
         }
@@ -1429,12 +1411,10 @@ odict_move_to_end(PyODictObject *od, PyObject *args)
             else {
                 if (!PyErr_Occurred())
                     PyErr_SetObject(PyExc_KeyError, key);
-                Py_DECREF(key);
                 return NULL;
             }
         }
     }
-    Py_DECREF(key);
     Py_RETURN_NONE;
 }
 
