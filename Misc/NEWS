@@ -21,6 +21,8 @@ Library
 
 - Issue #24359: Check for changed OrderedDict size during iteration.
 
+- Issue #24368: Support keyword arguments in OrderedDict methods.
+
 
 What's New in Python 3.5.0 beta 2?
 ==================================
