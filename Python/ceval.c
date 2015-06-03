@@ -146,6 +146,8 @@ static void format_exc_unbound(PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
                                       PyFrameObject *, unsigned char *);
 static PyObject * special_lookup(PyObject *, _Py_Identifier *);
+static PyObject * apply_coroutine_wrapper(PyObject *);
+
 
 #define NAME_ERROR_MSG \
     "name '%.200s' is not defined"
@@ -3935,7 +3937,7 @@ _PyEval_EvalCodeWithName(PyObject *_co, PyObject *globals, PyObject *locals,
             return NULL;
 
         if (co->co_flags & (CO_COROUTINE | CO_ITERABLE_COROUTINE))
-            return _PyEval_ApplyCoroutineWrapper(gen);
+            return apply_coroutine_wrapper(gen);
 
         return gen;
     }
@@ -4399,33 +4401,6 @@ _PyEval_GetCoroutineWrapper(void)
 {
     PyThreadState *tstate = PyThreadState_GET();
     return tstate->coroutine_wrapper;
-}
-
-PyObject *
-_PyEval_ApplyCoroutineWrapper(PyObject *gen)
-{
-    PyObject *wrapped;
-    PyThreadState *tstate = PyThreadState_GET();
-    PyObject *wrapper = tstate->coroutine_wrapper;
-
-    if (tstate->in_coroutine_wrapper) {
-        assert(wrapper != NULL);
-        PyErr_Format(PyExc_RuntimeError,
-                     "coroutine wrapper %.150R attempted "
-                     "to recursively wrap %.150R",
-                     wrapper,
-                     gen);
-        return NULL;
-    }
-
-    if (wrapper == NULL) {
-        return gen;
-    }
-
-    tstate->in_coroutine_wrapper = 1;
-    wrapped = PyObject_CallFunction(wrapper, "N", gen);
-    tstate->in_coroutine_wrapper = 0;
-    return wrapped;
 }
 
 PyObject *
@@ -5255,6 +5230,33 @@ unicode_concatenate(PyObject *v, PyObject *w,
     res = v;
     PyUnicode_Append(&res, w);
     return res;
+}
+
+static PyObject *
+apply_coroutine_wrapper(PyObject *gen)
+{
+    PyObject *wrapped;
+    PyThreadState *tstate = PyThreadState_GET();
+    PyObject *wrapper = tstate->coroutine_wrapper;
+
+    if (tstate->in_coroutine_wrapper) {
+        assert(wrapper != NULL);
+        PyErr_Format(PyExc_RuntimeError,
+                     "coroutine wrapper %.200R attempted "
+                     "to recursively wrap %.200R",
+                     wrapper,
+                     gen);
+        return NULL;
+    }
+
+    if (wrapper == NULL) {
+        return gen;
+    }
+
+    tstate->in_coroutine_wrapper = 1;
+    wrapped = PyObject_CallFunction(wrapper, "N", gen);
+    tstate->in_coroutine_wrapper = 0;
+    return wrapped;
 }
 
 #ifdef DYNAMIC_EXECUTION_PROFILE
