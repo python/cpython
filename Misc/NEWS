@@ -23,6 +23,8 @@ Library
 
 - Issue #24368: Support keyword arguments in OrderedDict methods.
 
+- Issue #24362: Simplify the C OrderedDict fast nodes resize logic.
+
 
 What's New in Python 3.5.0 beta 2?
 ==================================

@@ -503,12 +503,15 @@ struct _odictobject {
 
 struct _odictnode {
     PyObject *key;
+    Py_hash_t hash;
     _ODictNode *next;
     _ODictNode *prev;
 };
 
 #define _odictnode_KEY(node) \
     (node->key)
+#define _odictnode_HASH(node) \
+    (node->hash)
 /* borrowed reference */
 #define _odictnode_VALUE(node, od) \
     PyODict_GetItemWithError((PyObject *)od, _odictnode_KEY(node))
@@ -523,8 +526,6 @@ struct _odictnode {
     for (node = _odict_FIRST(od); node != NULL; node = _odictnode_NEXT(node))
 
 
-static Py_ssize_t _odict_get_index(PyODictObject *, PyObject *);  /* forward */
-
 static void
 _odict_free_fast_nodes(PyODictObject *od) {
     if (od->od_fast_nodes) {
@@ -532,9 +533,25 @@ _odict_free_fast_nodes(PyODictObject *od) {
     }
 }
 
+/* Return the index into the hash table, regardless of a valid node. */
+static Py_ssize_t
+_odict_get_index_hash(PyODictObject *od, PyObject *key, Py_hash_t hash)
+{
+    PyObject **value_addr = NULL;
+    PyDictKeyEntry *ep;
+    PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
+
+    ep = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value_addr);
+    if (ep == NULL)
+        return -1;
+    /* We use pointer arithmetic to get the entry's index into the table. */
+    return ep - keys->dk_entries;
+}
+
+/* Replace od->od_fast_nodes with a new table matching the size of dict's. */
 static int
 _odict_resize(PyODictObject *od) {
-    Py_ssize_t size, prev_size, i;
+    Py_ssize_t size, i;
     _ODictNode **fast_nodes, *node;
 
     /* Initialize a new "fast nodes" table. */
@@ -548,27 +565,20 @@ _odict_resize(PyODictObject *od) {
         fast_nodes[i] = NULL;
 
     /* Copy the current nodes into the table. */
-    prev_size = od->od_size;
-    od->od_size = size;
     _odict_FOREACH(od, node) {
-        assert(node != NULL);
-        i = _odict_get_index(od, _odictnode_KEY(node));
+        i = _odict_get_index_hash(od, _odictnode_KEY(node),
+                                  _odictnode_HASH(node));
         if (i < 0) {
-            od->od_size = prev_size;
             PyMem_FREE(fast_nodes);
             return -1;
         }
         fast_nodes[i] = node;
     }
-    if (size != ((PyDictObject *)od)->ma_keys->dk_size) {
-        /* If _odict_get_index triggered a resize then we are already done. */
-        PyMem_FREE(fast_nodes);
-        return 0;
-    }
 
     /* Replace the old fast nodes table. */
     _odict_free_fast_nodes(od);
     od->od_fast_nodes = fast_nodes;
+    od->od_size = size;
     return 0;
 }
 
@@ -577,32 +587,22 @@ static Py_ssize_t
 _odict_get_index(PyODictObject *od, PyObject *key)
 {
     Py_hash_t hash;
-    PyObject **value_addr = NULL;
-    PyDictKeyEntry *ep;
-    PyDictKeysObject *keys = ((PyDictObject *)od)->ma_keys;
+    PyDictKeysObject *keys;
 
     assert(key != NULL);
-    do {
-        /* Ensure od_fast_nodes and dk_entries are in sync. */
-        if (keys->dk_size != od->od_size) {
-            int resize_res = _odict_resize(od);
-            if (resize_res < 0)
-                return -1;
-        }
-
-        /* now get the index */
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
-        /* May have resized during the PyObject_Hash() call. */
-        keys = ((PyDictObject *)od)->ma_keys;
-    } while (keys->dk_size != od->od_size);
-
-    ep = (keys->dk_lookup)((PyDictObject *)od, key, hash, &value_addr);
-    if (ep == NULL)
+    hash = PyObject_Hash(key);
+    if (hash == -1)
         return -1;
-    /* We use pointer arithmetic to get the entry's index into the table. */
-    return ep - keys->dk_entries;
+    keys = ((PyDictObject *)od)->ma_keys;
+
+    /* Ensure od_fast_nodes and dk_entries are in sync. */
+    if (keys->dk_size != od->od_size) {
+        int resize_res = _odict_resize(od);
+        if (resize_res < 0)
+            return -1;
+    }
+
+    return _odict_get_index_hash(od, key, hash);
 }
 
 static int
@@ -665,10 +665,15 @@ _odict_add_tail(PyODictObject *od, _ODictNode *node)
 static int
 _odict_add_new_node(PyODictObject *od, PyObject *key)
 {
+    Py_hash_t hash;
     Py_ssize_t i;
     _ODictNode *node;
 
     Py_INCREF(key);
+    hash = PyObject_Hash(key);
+    if (hash == -1)
+        return -1;
+
     i = _odict_get_index(od, key);
     if (i < 0) {
         if (!PyErr_Occurred())
@@ -691,6 +696,7 @@ _odict_add_new_node(PyODictObject *od, PyObject *key)
     }
 
     _odictnode_KEY(node) = key;
+    _odictnode_HASH(node) = hash;
     _odict_add_tail(od, node);
     od->od_fast_nodes[i] = node;
     return 0;
