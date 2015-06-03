@@ -1696,6 +1696,15 @@ class OrderedDictTests:
         self.assertRaises(TypeError, OrderedDict().update, (), ())
         self.assertRaises(TypeError, OrderedDict.update)
 
+    def test_fromkeys(self):
+        OrderedDict = self.module.OrderedDict
+        od = OrderedDict.fromkeys('abc')
+        self.assertEqual(list(od.items()), [(c, None) for c in 'abc'])
+        od = OrderedDict.fromkeys('abc', value=None)
+        self.assertEqual(list(od.items()), [(c, None) for c in 'abc'])
+        od = OrderedDict.fromkeys('abc', value=0)
+        self.assertEqual(list(od.items()), [(c, 0) for c in 'abc'])
+
     def test_abc(self):
         OrderedDict = self.module.OrderedDict
         self.assertIsInstance(OrderedDict(), MutableMapping)
@@ -1801,7 +1810,8 @@ class OrderedDictTests:
         for i in range(8):
             obj.popitem(True)
         obj.popitem(True)
-        self.assertEqual(len(obj), 21)
+        obj.popitem(last=True)
+        self.assertEqual(len(obj), 20)
 
     def test_pop(self):
         OrderedDict = self.module.OrderedDict
@@ -1825,6 +1835,7 @@ class OrderedDictTests:
         self.assertEqual(m.pop('b', 5), 5)
         self.assertEqual(m.pop('a', 6), 1)
         self.assertEqual(m.pop('a', 6), 6)
+        self.assertEqual(m.pop('a', default=6), 6)
         with self.assertRaises(KeyError):
             m.pop('a')
 
@@ -1931,6 +1942,7 @@ class OrderedDictTests:
         self.assertEqual(od.setdefault('x', 10), 10)
         # make sure 'x' is added to the end
         self.assertEqual(list(od.items())[-1], ('x', 10))
+        self.assertEqual(od.setdefault('g', default=9), 9)
 
         # make sure setdefault still works when __missing__ is defined
         class Missing(OrderedDict):
@@ -1962,6 +1974,8 @@ class OrderedDictTests:
         self.assertEqual(list(od), list('cabde'))
         od.move_to_end('e')
         self.assertEqual(list(od), list('cabde'))
+        od.move_to_end('b', last=False)
+        self.assertEqual(list(od), list('bcade'))
         with self.assertRaises(KeyError):
             od.move_to_end('x')
         with self.assertRaises(KeyError):

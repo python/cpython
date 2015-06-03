@@ -930,12 +930,17 @@ PyDoc_STRVAR(odict_fromkeys__doc__,
         ");
 
 static PyObject *
-odict_fromkeys(PyObject *cls, PyObject *args)
+odict_fromkeys(PyObject *cls, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"iterable", "value", 0};
     PyObject *seq;
     PyObject *value = Py_None;
-    if (!PyArg_UnpackTuple(args, "fromkeys", 1, 2, &seq, &value)) /* borrowed */
+
+    /* both borrowed */
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:fromkeys", kwlist,
+                                     &seq, &value)) {
         return NULL;
+    }
     return _PyDict_FromKeys(cls, seq, value);
 }
 
@@ -1071,14 +1076,17 @@ PyDoc_STRVAR(odict_setdefault__doc__,
 
 /* Skips __missing__() calls. */
 static PyObject *
-odict_setdefault(register PyODictObject *od, PyObject *args)
+odict_setdefault(register PyODictObject *od, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"key", "default", 0};
     PyObject *key, *result = NULL;
     PyObject *failobj = Py_None;
 
     /* both borrowed */
-    if (!PyArg_UnpackTuple(args, "setdefault", 1, 2, &key, &failobj))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:setdefault", kwlist,
+                                     &key, &failobj)) {
         return NULL;
+    }
 
     if (PyODict_CheckExact(od)) {
         result = PyODict_GetItemWithError(od, key);  /* borrowed */
@@ -1126,11 +1134,14 @@ static PyObject * _odict_popkey(PyObject *, PyObject *, PyObject *);
 
 /* Skips __missing__() calls. */
 static PyObject *
-odict_pop(PyObject *od, PyObject *args)
+odict_pop(PyObject *od, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"key", "default", 0};
     PyObject *key, *failobj = NULL;
 
-    if (!PyArg_UnpackTuple(args, "pop", 1, 2, &key, &failobj)) { /* borrowed */
+    /* borrowed */
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:pop", kwlist,
+                                     &key, &failobj)) {
         return NULL;
     }
 
@@ -1202,10 +1213,12 @@ PyDoc_STRVAR(odict_popitem__doc__,
         ");
 
 static PyObject *
-odict_popitem(PyObject *od, PyObject *args)
+odict_popitem(PyObject *od, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"last", 0};
     PyObject *key, *value, *item = NULL, *last = NULL;
     _ODictNode *node;
+    int pos = -1;
 
     if (_odict_EMPTY((PyODictObject *)od)) {
         PyErr_SetString(PyExc_KeyError, "dictionary is empty");
@@ -1214,13 +1227,23 @@ odict_popitem(PyObject *od, PyObject *args)
 
     /* pull the item */
 
-    if (!PyArg_UnpackTuple(args, "popitem", 0, 1, &last)) /* borrowed */
+    /* borrowed */
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:popitem", kwlist,
+                                     &last)) {
         return NULL;
+    }
 
-    if (last == NULL || last == Py_True)
-        node = _odict_LAST((PyODictObject *)od);
-    else
+    if (last != NULL) {
+        int is_true;
+        is_true = PyObject_IsTrue(last);
+        if (is_true == -1)
+            return NULL;
+        pos = is_true ? -1 : 0;
+    }
+    if (pos == 0)
         node = _odict_FIRST((PyODictObject *)od);
+    else
+        node = _odict_LAST((PyODictObject *)od);
 
     key = _odictnode_KEY(node);
     Py_INCREF(key);
@@ -1360,14 +1383,17 @@ PyDoc_STRVAR(odict_move_to_end__doc__,
         ");
 
 static PyObject *
-odict_move_to_end(PyODictObject *od, PyObject *args)
+odict_move_to_end(PyODictObject *od, PyObject *args, PyObject *kwargs)
 {
+    static char *kwlist[] = {"key", "last", 0};
     PyObject *key, *last = NULL;
     Py_ssize_t pos = -1;
 
     /* both borrowed */
-    if (!PyArg_UnpackTuple(args, "move_to_end", 1, 2, &key, &last))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:move_to_end", kwlist,
+                                     &key, &last)) {
         return NULL;
+    }
     if (_odict_EMPTY(od)) {
         PyErr_SetObject(PyExc_KeyError, key);
         return NULL;
@@ -1439,20 +1465,20 @@ static PyMethodDef odict_methods[] = {
      odict_repr__doc__},
     {"__setitem__",     (PyCFunction)odict_mp_ass_sub,  METH_NOARGS,
      odict_setitem__doc__},
-    {"fromkeys",        (PyCFunction)odict_fromkeys,  METH_VARARGS | METH_CLASS,
-     odict_fromkeys__doc__},
+    {"fromkeys",        (PyCFunction)odict_fromkeys,
+     METH_VARARGS | METH_KEYWORDS | METH_CLASS, odict_fromkeys__doc__},
 
     /* overridden dict methods */
     {"__sizeof__",      (PyCFunction)odict_sizeof,      METH_NOARGS,
      odict_sizeof__doc__},
     {"__reduce__",      (PyCFunction)odict_reduce,      METH_NOARGS,
      odict_reduce__doc__},
-    {"setdefault",      (PyCFunction)odict_setdefault,  METH_VARARGS,
-     odict_setdefault__doc__},
-    {"pop",             (PyCFunction)odict_pop,         METH_VARARGS,
-     odict_pop__doc__},
-    {"popitem",         (PyCFunction)odict_popitem,     METH_VARARGS,
-     odict_popitem__doc__},
+    {"setdefault",      (PyCFunction)odict_setdefault,
+     METH_VARARGS | METH_KEYWORDS, odict_setdefault__doc__},
+    {"pop",             (PyCFunction)odict_pop,
+     METH_VARARGS | METH_KEYWORDS, odict_pop__doc__},
+    {"popitem",         (PyCFunction)odict_popitem,
+     METH_VARARGS | METH_KEYWORDS, odict_popitem__doc__},
     {"keys",            (PyCFunction)odictkeys_new,     METH_NOARGS,
      odict_keys__doc__},
     {"values",          (PyCFunction)odictvalues_new,   METH_NOARGS,
@@ -1469,8 +1495,8 @@ static PyMethodDef odict_methods[] = {
     /* new methods */
     {"__reversed__",    (PyCFunction)odict_reversed,    METH_NOARGS,
      odict_reversed__doc__},
-    {"move_to_end",     (PyCFunction)odict_move_to_end, METH_VARARGS,
-     odict_move_to_end__doc__},
+    {"move_to_end",     (PyCFunction)odict_move_to_end,
+     METH_VARARGS | METH_KEYWORDS, odict_move_to_end__doc__},
 
     {NULL,              NULL}   /* sentinel */
 };
