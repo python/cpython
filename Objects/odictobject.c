@@ -1578,7 +1578,7 @@ odict_repr(PyODictObject *self)
             if (value == NULL) {
                 if (!PyErr_Occurred())
                     PyErr_SetObject(PyExc_KeyError, key);
-                return NULL;
+                goto Done;
             }
             pair = PyTuple_Pack(2, key, value);
             if (pair == NULL)
