@@ -25,6 +25,8 @@ Library
 
 - Issue #24362: Simplify the C OrderedDict fast nodes resize logic.
 
+- Issue #24377: Fix a ref leak in OrderedDict.__repr__.
+
 
 What's New in Python 3.5.0 beta 2?
 ==================================
