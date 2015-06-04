@@ -2055,6 +2055,23 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         del od[colliding]
         self.assertEqual(list(od.items()), [(key, ...), ('after', ...)])
 
+    def test_key_change_during_iteration(self):
+        OrderedDict = self.module.OrderedDict
+
+        od = OrderedDict.fromkeys('abcde')
+        self.assertEqual(list(od), list('abcde'))
+        with self.assertRaises(RuntimeError):
+            for i, k in enumerate(od):
+                od.move_to_end(k)
+                self.assertLess(i, 5)
+        with self.assertRaises(RuntimeError):
+            for k in od:
+                od['f'] = None
+        with self.assertRaises(RuntimeError):
+            for k in od:
+                del od['c']
+        self.assertEqual(list(od), list('bdeaf'))
+
     def test_issue24347(self):
         OrderedDict = self.module.OrderedDict
 
