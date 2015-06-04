@@ -1006,10 +1006,10 @@ class SysSetCoroWrapperTest(unittest.TestCase):
 
         sys.set_coroutine_wrapper(wrapper)
         try:
-            with self.assertRaisesRegex(
+            with silence_coro_gc(), self.assertRaisesRegex(
                 RuntimeError,
                 "coroutine wrapper.*\.wrapper at 0x.*attempted to "
-                "recursively wrap <coroutine.*\.wrap"):
+                "recursively wrap .* wrap .*"):
 
                 foo()
         finally:
