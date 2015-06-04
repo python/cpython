@@ -12,11 +12,18 @@ typedef struct {
 
 /* Example methods */
 
-static void
-Example_dealloc(ExampleObject *self)
+static int
+Example_traverse(ExampleObject *self, visitproc visit, void *arg)
 {
-    Py_XDECREF(self->x_attr);
-    PyObject_Del(self);
+    Py_VISIT(self->x_attr);
+    return 0;
+}
+
+static int
+Example_finalize(ExampleObject *self)
+{
+    Py_CLEAR(self->x_attr);
+    return 0;
 }
 
 static PyObject *
@@ -74,7 +81,8 @@ Example_setattr(ExampleObject *self, char *name, PyObject *v)
 
 static PyType_Slot Example_Type_slots[] = {
     {Py_tp_doc, "The Example type"},
-    {Py_tp_dealloc, Example_dealloc},
+    {Py_tp_finalize, Example_finalize},
+    {Py_tp_traverse, Example_traverse},
     {Py_tp_getattro, Example_getattro},
     {Py_tp_setattr, Example_setattr},
     {Py_tp_methods, Example_methods},
@@ -85,7 +93,7 @@ static PyType_Spec Example_Type_spec = {
     "_testimportexec.Example",
     sizeof(ExampleObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
     Example_Type_slots
 };
 
