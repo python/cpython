@@ -40,11 +40,18 @@ newXxoObject(PyObject *arg)
 
 /* Xxo methods */
 
-static void
-Xxo_dealloc(XxoObject *self)
+static int
+Xxo_traverse(XxoObject *self, visitproc visit, void *arg)
 {
-    Py_XDECREF(self->x_attr);
-    ((freefunc)PyType_GetSlot(Py_TYPE(self), Py_tp_free))(self);
+    Py_VISIT(self->x_attr);
+    return 0;
+}
+
+static int
+Xxo_finalize(XxoObject *self)
+{
+    Py_CLEAR(self->x_attr);
+    return 0;
 }
 
 static PyObject *
@@ -102,7 +109,8 @@ Xxo_setattr(XxoObject *self, char *name, PyObject *v)
 
 static PyType_Slot Xxo_Type_slots[] = {
     {Py_tp_doc, "The Xxo type"},
-    {Py_tp_dealloc, Xxo_dealloc},
+    {Py_tp_traverse, Xxo_traverse},
+    {Py_tp_finalize, Xxo_finalize},
     {Py_tp_getattro, Xxo_getattro},
     {Py_tp_setattr, Xxo_setattr},
     {Py_tp_methods, Xxo_methods},
@@ -113,7 +121,7 @@ static PyType_Spec Xxo_Type_spec = {
     "xxlimited.Xxo",
     sizeof(XxoObject),
     0,
-    Py_TPFLAGS_DEFAULT,
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC | Py_TPFLAGS_HAVE_FINALIZE,
     Xxo_Type_slots
 };
 
@@ -246,6 +254,12 @@ xx_modexec(PyObject *m)
     }
     Py_INCREF(ErrorObject);
     PyModule_AddObject(m, "error", ErrorObject);
+
+    /* Add Xxo */
+    o = PyType_FromSpec(&Xxo_Type_spec);
+    if (o == NULL)
+        goto fail;
+    PyModule_AddObject(m, "Xxo", o);
 
     /* Add Str */
     o = PyType_FromSpec(&Str_Type_spec);
