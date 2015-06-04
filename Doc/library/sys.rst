@@ -585,7 +585,7 @@ always available.
 
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
-      for details.)  Use it only for debug purposes.
+      for details.)  Use it only for debugging purposes.
 
 
 .. data:: hash_info
@@ -1106,7 +1106,7 @@ always available.
 
    .. note::
       This function has been added on a provisional basis (see :pep:`411`
-      for details.)  Use it only for debug purposes.
+      for details.)  Use it only for debugging purposes.
 
 
 .. data:: stdin
