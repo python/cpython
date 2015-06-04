@@ -480,20 +480,15 @@ typedef struct _odictnode _ODictNode;
 
 /* PyODictObject */
 struct _odictobject {
-    /* od_dict is the underlying dict. */
-    PyDictObject od_dict;
-    /* od_first is the first node in the odict, if any. */
-    _ODictNode *od_first;
-    /* od_last is the last node in the odict, if any. */
-    _ODictNode *od_last;
-    /* od_size is the number of entries in od_fast_nodes. */
-    Py_ssize_t od_size;  /* managed by _odict_resize() */
-    /* od_fast_nodes is a hash table that mirrors the dict table. */
+    PyDictObject od_dict;        /* the underlying dict */
+    _ODictNode *od_first;        /* first node in the linked list, if any */
+    _ODictNode *od_last;         /* last node in the linked list, if any */
+    /* od_size and od_fast_nodes are managed by _odict_resize() */
+    Py_ssize_t od_size;          /* hash table that mirrors the dict table */
     _ODictNode **od_fast_nodes;  /* managed by _odict_resize() */
-    /* od_inst_dict is OrderedDict().__dict__. */
-    PyObject *od_inst_dict;
-    /* od_weakreflist holds weakrefs to the odict. */
-    PyObject *od_weakreflist;
+    size_t od_state;             /* incremented whenever the LL changes */
+    PyObject *od_inst_dict;      /* OrderedDict().__dict__ */
+    PyObject *od_weakreflist;    /* holds weakrefs to the odict */
 };
 
 
@@ -608,6 +603,7 @@ _odict_get_index(PyODictObject *od, PyObject *key)
 static int
 _odict_initialize(PyODictObject *od)
 {
+    od->od_state = 0;
     _odict_FIRST(od) = NULL;
     _odict_LAST(od) = NULL;
     return _odict_resize((PyODictObject *)od);
@@ -642,6 +638,7 @@ _odict_add_head(PyODictObject *od, _ODictNode *node)
         _odict_FIRST(od) = node;
         _odictnode_PREV(_odict_FIRST(od)) = node;
     }
+    od->od_state++;
 }
 
 static void
@@ -659,6 +656,7 @@ _odict_add_tail(PyODictObject *od, _ODictNode *node)
         _odictnode_NEXT(_odict_LAST(od)) = node;
         _odict_LAST(od) = node;
     }
+    od->od_state++;
 }
 
 /* adds the node to the end of the list */
@@ -725,6 +723,7 @@ _odict_remove_node(PyODictObject *od, _ODictNode *node)
 
     _odictnode_PREV(node) = NULL;
     _odictnode_NEXT(node) = NULL;
+    od->od_state++;
 }
 
 static _ODictNode *
@@ -1829,6 +1828,7 @@ typedef struct {
     int kind;
     PyODictObject *di_odict;
     Py_ssize_t di_size;
+    size_t di_state;
     PyObject *di_current;
     PyObject *di_result; /* reusable result tuple for iteritems */
 } odictiterobject;
@@ -1869,6 +1869,11 @@ odictiter_nextkey(odictiterobject *di)
         goto done;  /* We're already done. */
 
     /* Check for unsupported changes. */
+    if (di->di_odict->od_state != di->di_state) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "OrderedDict mutated during iteration");
+        goto done;
+    }
     if (di->di_size != PyODict_SIZE(di->di_odict)) {
         PyErr_SetString(PyExc_RuntimeError,
                         "OrderedDict changed size during iteration");
@@ -2075,6 +2080,7 @@ odictiter_new(PyODictObject *od, int kind)
     di->di_current = node ? _odictnode_KEY(node) : NULL;
     Py_XINCREF(di->di_current);
     di->di_size = PyODict_SIZE(od);
+    di->di_state = od->od_state;
     di->di_odict = od;
     Py_INCREF(od);
 
