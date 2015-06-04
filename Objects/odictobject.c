@@ -2427,12 +2427,16 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         else if (PyObject_HasAttrString(other, "keys")) {  /* never fails */
             PyObject *keys, *iterator, *key;
             keys = PyObject_CallMethod(other, "keys", NULL);
-            if (keys == NULL)
+            if (keys == NULL) {
+                Py_DECREF(other);
                 return NULL;
+            }
             iterator = PyObject_GetIter(keys);
             Py_DECREF(keys);
-            if (iterator == NULL)
+            if (iterator == NULL) {
+                Py_DECREF(other);
                 return NULL;
+            }
             while (res == 0 && (key = PyIter_Next(iterator))) {
                 PyObject *value = PyObject_GetItem(other, key);
                 if (value != NULL) {
