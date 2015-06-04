@@ -41,11 +41,9 @@ class ManagingFounder(Manager, Founder):
 
 class AnyTests(TestCase):
 
-    def test_any_instance(self):
-        self.assertIsInstance(Employee(), Any)
-        self.assertIsInstance(42, Any)
-        self.assertIsInstance(None, Any)
-        self.assertIsInstance(object(), Any)
+    def test_any_instance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance(42, Any)
 
     def test_any_subclass(self):
         self.assertTrue(issubclass(Employee, Any))
@@ -109,9 +107,6 @@ class TypeVarTests(TestCase):
 
     def test_basic_plain(self):
         T = TypeVar('T')
-        # Nothing is an instance if T.
-        with self.assertRaises(TypeError):
-            isinstance('', T)
         # Every class is a subclass of T.
         assert issubclass(int, T)
         assert issubclass(str, T)
@@ -119,12 +114,16 @@ class TypeVarTests(TestCase):
         assert T == T
         # T is a subclass of itself.
         assert issubclass(T, T)
+        # T is an instance of TypeVar
+        assert isinstance(T, TypeVar)
+
+    def test_typevar_instance_type_error(self):
+        T = TypeVar('T')
+        with self.assertRaises(TypeError):
+            isinstance(42, T)
 
     def test_basic_constrained(self):
         A = TypeVar('A', str, bytes)
-        # Nothing is an instance of A.
-        with self.assertRaises(TypeError):
-            isinstance('', A)
         # Only str and bytes are subclasses of A.
         assert issubclass(str, A)
         assert issubclass(bytes, A)
@@ -213,8 +212,6 @@ class UnionTests(TestCase):
     def test_basics(self):
         u = Union[int, float]
         self.assertNotEqual(u, Union)
-        self.assertIsInstance(42, u)
-        self.assertIsInstance(3.14, u)
         self.assertTrue(issubclass(int, u))
         self.assertTrue(issubclass(float, u))
 
@@ -247,7 +244,6 @@ class UnionTests(TestCase):
 
     def test_subclass(self):
         u = Union[int, Employee]
-        self.assertIsInstance(Manager(), u)
         self.assertTrue(issubclass(Manager, u))
 
     def test_self_subclass(self):
@@ -256,7 +252,6 @@ class UnionTests(TestCase):
 
     def test_multiple_inheritance(self):
         u = Union[int, Employee]
-        self.assertIsInstance(ManagingFounder(), u)
         self.assertTrue(issubclass(ManagingFounder, u))
 
     def test_single_class_disappears(self):
@@ -309,9 +304,6 @@ class UnionTests(TestCase):
         o = Optional[int]
         u = Union[int, None]
         self.assertEqual(o, u)
-        self.assertIsInstance(42, o)
-        self.assertIsInstance(None, o)
-        self.assertNotIsInstance(3.14, o)
 
     def test_empty(self):
         with self.assertRaises(TypeError):
@@ -321,11 +313,9 @@ class UnionTests(TestCase):
         assert issubclass(Union[int, str], Union)
         assert not issubclass(int, Union)
 
-    def test_isinstance_union(self):
-        # Nothing is an instance of bare Union.
-        assert not isinstance(42, Union)
-        assert not isinstance(int, Union)
-        assert not isinstance(Union[int, str], Union)
+    def test_union_instance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance(42, Union[int, str])
 
 
 class TypeVarUnionTests(TestCase):
@@ -352,22 +342,11 @@ class TypeVarUnionTests(TestCase):
         TU = TypeVar('TU', Union[int, float], None)
         assert issubclass(int, TU)
         assert issubclass(float, TU)
-        with self.assertRaises(TypeError):
-            isinstance(42, TU)
-        with self.assertRaises(TypeError):
-            isinstance('', TU)
 
 
 class TupleTests(TestCase):
 
     def test_basics(self):
-        self.assertIsInstance((42, 3.14, ''), Tuple)
-        self.assertIsInstance((42, 3.14, ''), Tuple[int, float, str])
-        self.assertIsInstance((42,), Tuple[int])
-        self.assertNotIsInstance((3.14,), Tuple[int])
-        self.assertNotIsInstance((42, 3.14), Tuple[int, float, str])
-        self.assertNotIsInstance((42, 3.14, 100), Tuple[int, float, str])
-        self.assertNotIsInstance((42, 3.14, 100), Tuple[int, float])
         self.assertTrue(issubclass(Tuple[int, str], Tuple))
         self.assertTrue(issubclass(Tuple[int, str], Tuple[int, str]))
         self.assertFalse(issubclass(int, Tuple))
@@ -382,14 +361,11 @@ class TupleTests(TestCase):
             pass
         self.assertTrue(issubclass(MyTuple, Tuple))
 
-    def test_tuple_ellipsis(self):
-        t = Tuple[int, ...]
-        assert isinstance((), t)
-        assert isinstance((1,), t)
-        assert isinstance((1, 2), t)
-        assert isinstance((1, 2, 3), t)
-        assert not isinstance((3.14,), t)
-        assert not isinstance((1, 2, 3.14,), t)
+    def test_tuple_instance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance((0, 0), Tuple[int, int])
+        with self.assertRaises(TypeError):
+            isinstance((0, 0), Tuple)
 
     def test_tuple_ellipsis_subclass(self):
 
@@ -419,18 +395,6 @@ class TupleTests(TestCase):
 
 class CallableTests(TestCase):
 
-    def test_basics(self):
-        c = Callable[[int, float], str]
-
-        def flub(a: int, b: float) -> str:
-            return str(a * b)
-
-        def flob(a: int, b: int) -> str:
-            return str(a * b)
-
-        self.assertIsInstance(flub, c)
-        self.assertNotIsInstance(flob, c)
-
     def test_self_subclass(self):
         self.assertTrue(issubclass(Callable[[int], int], Callable))
         self.assertFalse(issubclass(Callable, Callable[[int], int]))
@@ -453,91 +417,6 @@ class CallableTests(TestCase):
         self.assertNotEqual(Callable[[int], int], Callable[[], int])
         self.assertNotEqual(Callable[[int], int], Callable)
 
-    def test_with_none(self):
-        c = Callable[[None], None]
-
-        def flub(self: None) -> None:
-            pass
-
-        def flab(self: Any) -> None:
-            pass
-
-        def flob(self: None) -> Any:
-            pass
-
-        self.assertIsInstance(flub, c)
-        self.assertIsInstance(flab, c)
-        self.assertNotIsInstance(flob, c)  # Test contravariance.
-
-    def test_with_subclasses(self):
-        c = Callable[[Employee, Manager], Employee]
-
-        def flub(a: Employee, b: Employee) -> Manager:
-            return Manager()
-
-        def flob(a: Manager, b: Manager) -> Employee:
-            return Employee()
-
-        self.assertIsInstance(flub, c)
-        self.assertNotIsInstance(flob, c)
-
-    def test_with_default_args(self):
-        c = Callable[[int], int]
-
-        def flub(a: int, b: float = 3.14) -> int:
-            return a
-
-        def flab(a: int, *, b: float = 3.14) -> int:
-            return a
-
-        def flob(a: int = 42) -> int:
-            return a
-
-        self.assertIsInstance(flub, c)
-        self.assertIsInstance(flab, c)
-        self.assertIsInstance(flob, c)
-
-    def test_with_varargs(self):
-        c = Callable[[int], int]
-
-        def flub(*args) -> int:
-            return 42
-
-        def flab(*args: int) -> int:
-            return 42
-
-        def flob(*args: float) -> int:
-            return 42
-
-        self.assertIsInstance(flub, c)
-        self.assertIsInstance(flab, c)
-        self.assertNotIsInstance(flob, c)
-
-    def test_with_method(self):
-
-        class C:
-
-            def imethod(self, arg: int) -> int:
-                self.last_arg = arg
-                return arg + 1
-
-            @classmethod
-            def cmethod(cls, arg: int) -> int:
-                cls.last_cls_arg = arg
-                return arg + 1
-
-            @staticmethod
-            def smethod(arg: int) -> int:
-                return arg + 1
-
-        ct = Callable[[int], int]
-        self.assertIsInstance(C().imethod, ct)
-        self.assertIsInstance(C().cmethod, ct)
-        self.assertIsInstance(C.cmethod, ct)
-        self.assertIsInstance(C().smethod, ct)
-        self.assertIsInstance(C.smethod, ct)
-        self.assertIsInstance(C.imethod, Callable[[Any, int], int])
-
     def test_cannot_subclass(self):
         with self.assertRaises(TypeError):
 
@@ -556,21 +435,21 @@ class CallableTests(TestCase):
         with self.assertRaises(TypeError):
             c()
 
-    def test_varargs(self):
-        ct = Callable[..., int]
+    def test_callable_instance_works(self):
+        f = lambda: None
+        assert isinstance(f, Callable)
+        assert not isinstance(None, Callable)
 
-        def foo(a, b) -> int:
-            return 42
-
-        def bar(a=42) -> int:
-            return a
-
-        def baz(*, x, y, z) -> int:
-            return 100
-
-        self.assertIsInstance(foo, ct)
-        self.assertIsInstance(bar, ct)
-        self.assertIsInstance(baz, ct)
+    def test_callable_instance_type_error(self):
+        f = lambda: None
+        with self.assertRaises(TypeError):
+            assert isinstance(f, Callable[[], None])
+        with self.assertRaises(TypeError):
+            assert isinstance(f, Callable[[], Any])
+        with self.assertRaises(TypeError):
+            assert not isinstance(None, Callable[[], None])
+        with self.assertRaises(TypeError):
+            assert not isinstance(None, Callable[[], Any])
 
     def test_repr(self):
         ct0 = Callable[[], bool]
@@ -658,6 +537,10 @@ class ProtocolTests(TestCase):
     def test_reversible(self):
         assert issubclass(list, typing.Reversible)
         assert not issubclass(int, typing.Reversible)
+
+    def test_protocol_instance_type_error(self):
+        with self.assertRaises(TypeError):
+            isinstance([], typing.Reversible)
 
 
 class GenericTests(TestCase):
@@ -889,6 +772,11 @@ class ForwardRefTests(TestCase):
         right_hints = get_type_hints(t.add_right, globals(), locals())
         assert right_hints['node'] == Optional[Node[T]]
 
+    def test_forwardref_instance_type_error(self):
+        fr = typing._ForwardRef('int')
+        with self.assertRaises(TypeError):
+            isinstance(42, fr)
+
     def test_union_forward(self):
 
         def foo(a: Union['T']):
@@ -1069,50 +957,17 @@ class CollectionsAbcTests(TestCase):
 
     def test_list(self):
         assert issubclass(list, typing.List)
-        assert isinstance([], typing.List)
-        assert not isinstance((), typing.List)
-        t = typing.List[int]
-        assert isinstance([], t)
-        assert isinstance([42], t)
-        assert not isinstance([''], t)
 
     def test_set(self):
         assert issubclass(set, typing.Set)
         assert not issubclass(frozenset, typing.Set)
-        assert isinstance(set(), typing.Set)
-        assert not isinstance({}, typing.Set)
-        t = typing.Set[int]
-        assert isinstance(set(), t)
-        assert isinstance({42}, t)
-        assert not isinstance({''}, t)
 
     def test_frozenset(self):
         assert issubclass(frozenset, typing.FrozenSet)
         assert not issubclass(set, typing.FrozenSet)
-        assert isinstance(frozenset(), typing.FrozenSet)
-        assert not isinstance({}, typing.FrozenSet)
-        t = typing.FrozenSet[int]
-        assert isinstance(frozenset(), t)
-        assert isinstance(frozenset({42}), t)
-        assert not isinstance(frozenset({''}), t)
-        assert not isinstance({42}, t)
-
-    def test_mapping_views(self):
-        # TODO: These tests are kind of lame.
-        assert isinstance({}.keys(), typing.KeysView)
-        assert isinstance({}.items(), typing.ItemsView)
-        assert isinstance({}.values(), typing.ValuesView)
 
     def test_dict(self):
         assert issubclass(dict, typing.Dict)
-        assert isinstance({}, typing.Dict)
-        assert not isinstance([], typing.Dict)
-        t = typing.Dict[int, str]
-        assert isinstance({}, t)
-        assert isinstance({42: ''}, t)
-        assert not isinstance({42: 42}, t)
-        assert not isinstance({'': 42}, t)
-        assert not isinstance({'': ''}, t)
 
     def test_no_list_instantiation(self):
         with self.assertRaises(TypeError):
@@ -1191,8 +1046,6 @@ class CollectionsAbcTests(TestCase):
             yield 42
         g = foo()
         assert issubclass(type(g), typing.Generator)
-        assert isinstance(g, typing.Generator)
-        assert not isinstance(foo, typing.Generator)
         assert issubclass(typing.Generator[Manager, Employee, Manager],
                           typing.Generator[Employee, Manager, Employee])
         assert not issubclass(typing.Generator[Manager, Manager, Manager],
@@ -1227,12 +1080,6 @@ class CollectionsAbcTests(TestCase):
         assert len(MMB()) == 0
         assert len(MMB[str, str]()) == 0
         assert len(MMB[KT, VT]()) == 0
-
-    def test_recursive_dict(self):
-        D = typing.Dict[int, 'D']  # Uses a _ForwardRef
-        assert isinstance({}, D)  # Easy
-        assert isinstance({0: {}}, D)  # Touches _ForwardRef
-        assert isinstance({0: {0: {}}}, D)  # Etc...
 
 
 class NamedTupleTests(TestCase):
@@ -1294,8 +1141,6 @@ class RETests(TestCase):
     def test_basics(self):
         pat = re.compile('[a-z]+', re.I)
         assert issubclass(pat.__class__, Pattern)
-        assert isinstance(pat, Pattern[str])
-        assert not isinstance(pat, Pattern[bytes])
         assert issubclass(type(pat), Pattern)
         assert issubclass(type(pat), Pattern[str])
 
@@ -1307,12 +1152,10 @@ class RETests(TestCase):
         assert issubclass(type(mat), Match[str])
 
         p = Pattern[Union[str, bytes]]
-        assert isinstance(pat, p)
         assert issubclass(Pattern[str], Pattern)
         assert issubclass(Pattern[str], p)
 
         m = Match[Union[bytes, str]]
-        assert isinstance(mat, m)
         assert issubclass(Match[bytes], Match)
         assert issubclass(Match[bytes], m)
 
@@ -1327,6 +1170,12 @@ class RETests(TestCase):
         with self.assertRaises(TypeError):
             # Too complicated?
             m[str]
+        with self.assertRaises(TypeError):
+            # We don't support isinstance().
+            isinstance(42, Pattern)
+        with self.assertRaises(TypeError):
+            # We don't support isinstance().
+            isinstance(42, Pattern[str])
 
     def test_repr(self):
         assert repr(Pattern) == 'Pattern[~AnyStr]'
