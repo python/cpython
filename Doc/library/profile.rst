@@ -172,7 +172,7 @@ This will sort all the statistics by file name, and then print out statistics
 for only the class init methods (since they are spelled with ``__init__`` in
 them).  As one final example, you could try::
 
-   p.sort_stats('time', 'cum').print_stats(.5, 'init')
+   p.sort_stats('time', 'cumulative').print_stats(.5, 'init')
 
 This line sorts statistics with a primary key of time, and a secondary key of
 cumulative time, and then prints out some of the statistics. To be specific, the
