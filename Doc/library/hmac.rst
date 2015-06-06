@@ -2,7 +2,7 @@
 ========================================================
 
 .. module:: hmac
-   :synopsis: Keyed-Hashing for Message Authentication (HMAC) implementation for Python.
+   :synopsis: Keyed-Hashing for Message Authentication (HMAC) implementation
 .. moduleauthor:: Gerhard Häring <ghaering@users.sourceforge.net>
 .. sectionauthor:: Gerhard Häring <ghaering@users.sourceforge.net>
 
