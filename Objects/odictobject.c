@@ -2411,14 +2411,69 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         return NULL;
     }
 
-    
-    PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
-    if (other == NULL)
+    if (len == 1) {
+        PyObject *other = PyTuple_GET_ITEM(args, 0);  /* borrowed reference */
+        if (other == NULL)
+            return NULL;
+        Py_INCREF(other);
+        if (PyObject_HasAttrString(other, "items")) {  /* never fails */
+            PyObject *items = PyMapping_Items(other);
+            Py_DECREF(other);
+            if (items == NULL)
+                return NULL;
+            res = mutablemapping_add_pairs(self, items);
+            Py_DECREF(items);
+            if (res == -1)
+                return NULL;
+        }
+        else if (PyObject_HasAttrString(other, "keys")) {  /* never fails */
+            PyObject *keys, *iterator, *key;
+            keys = PyObject_CallMethod(other, "keys", NULL);
+            if (keys == NULL) {
+                Py_DECREF(other);
+                return NULL;
+            }
+            iterator = PyObject_GetIter(keys);
+            Py_DECREF(keys);
+            if (iterator == NULL) {
+                Py_DECREF(other);
+                return NULL;
+            }
+            while (res == 0 && (key = PyIter_Next(iterator))) {
+                PyObject *value = PyObject_GetItem(other, key);
+                if (value != NULL) {
+                    res = PyObject_SetItem(self, key, value);
+                    Py_DECREF(value);
+                }
+                else {
+                    res = -1;
+                }
+                Py_DECREF(key);
+            }
+            Py_DECREF(other);
+            Py_DECREF(iterator);
+            if (res != 0 || PyErr_Occurred())
+                return NULL;
+        }
+        else {
+            res = mutablemapping_add_pairs(self, other);
+            Py_DECREF(other);
+            if (res != 0)
+                return NULL;
+        }
+    }
+
+    /* now handle kwargs */
+    len = (kwargs != NULL) ? PyObject_Size(kwargs) : 0;
+    if (len < 0) /* PyObject_Size raised an exception. */
         return NULL;
-    Py_INCREF(other);
-    if (PyObject_HasAttrString(other, "items")) {  /* never fails */
-        PyObject *items = PyMapping_Items(other);
-        Py_DECREF(other);
+    if (len > 0) {
+        PyObject *items;
+        if (!PyMapping_Check(kwargs)) {
+            PyErr_SetString(PyExc_TypeError, "expected mapping for kwargs");
+            return NULL;
+        }
+        items = PyMapping_Items(kwargs);
         if (items == NULL)
             return NULL;
         res = mutablemapping_add_pairs(self, items);
@@ -2426,58 +2481,6 @@ mutablemapping_update(PyObject *self, PyObject *args, PyObject *kwargs)
         if (res == -1)
             return NULL;
     }
-    else if (PyObject_HasAttrString(other, "keys")) {  /* never fails */
-        PyObject *keys, *iterator, *key;
-        keys = PyObject_CallMethod(other, "keys", NULL);
-        if (keys == NULL) {
-            Py_DECREF(other);
-            return NULL;
-        }
-        iterator = PyObject_GetIter(keys);
-        Py_DECREF(keys);
-        if (iterator == NULL) {
-            Py_DECREF(other);
-            return NULL;
-        }
-        while (res == 0 && (key = PyIter_Next(iterator))) {
-            PyObject *value = PyObject_GetItem(other, key);
-            if (value != NULL) {
-                res = PyObject_SetItem(self, key, value);
-                Py_DECREF(value);
-            }
-            else {
-                res = -1;
-            }
-            Py_DECREF(key);
-        }
-        Py_DECREF(other);
-        Py_DECREF(iterator);
-        if (res != 0 || PyErr_Occurred())
-            return NULL;
-    }
-    else {
-        res = mutablemapping_add_pairs(self, other);
-        Py_DECREF(other);
-        if (res != 0)
-            return NULL;
-    }
-
-    /* now handle kwargs */
-    len = (kwargs != NULL) ? PyObject_Size(kwargs) : 0;
-    if (len < 0) /* PyObject_Size raised an exception. */
-        return NULL;
-    PyObject *items;
-    if (!PyMapping_Check(kwargs)) {
-        PyErr_SetString(PyExc_TypeError, "expected mapping for kwargs");
-        return NULL;
-    }
-    items = PyMapping_Items(kwargs);
-    if (items == NULL)
-        return NULL;
-    res = mutablemapping_add_pairs(self, items);
-    Py_DECREF(items);
-    if (res == -1)
-        return NULL;
 
     Py_RETURN_NONE;
 }
