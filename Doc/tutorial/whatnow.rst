@@ -48,6 +48,9 @@ More Python resources:
   Particularly notable contributions are collected in a book also titled Python
   Cookbook (O'Reilly & Associates, ISBN 0-596-00797-3.)
 
+* http://www.pyvideo.org collects links to Python-related videos from
+  conferences and user-group meetings.
+
 * http://scipy.org: The Scientific Python project includes modules for fast
   array computations and manipulations plus a host of packages for such
   things as linear algebra, Fourier transforms, non-linear solvers,
