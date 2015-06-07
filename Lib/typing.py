@@ -439,7 +439,6 @@ KT = TypeVar('KT')  # Key type.
 VT = TypeVar('VT')  # Value type.
 T_co = TypeVar('T_co', covariant=True)  # Any type covariant containers.
 V_co = TypeVar('V_co', covariant=True)  # Any type covariant containers.
-KT_co = TypeVar('KT_co', covariant=True)  # Key type covariant containers.
 VT_co = TypeVar('VT_co', covariant=True)  # Value type covariant containers.
 T_contra = TypeVar('T_contra', contravariant=True)  # Ditto contravariant.
 
@@ -1308,7 +1307,8 @@ class MutableSet(AbstractSet[T], extra=collections_abc.MutableSet):
     pass
 
 
-class Mapping(Sized, Iterable[KT_co], Container[KT_co], Generic[KT_co, VT_co],
+# NOTE: Only the value type is covariant.
+class Mapping(Sized, Iterable[KT], Container[KT], Generic[KT, VT_co],
               extra=collections_abc.Mapping):
     pass
 
@@ -1378,13 +1378,13 @@ class MappingView(Sized, Iterable[T_co], extra=collections_abc.MappingView):
     pass
 
 
-class KeysView(MappingView[KT_co], AbstractSet[KT_co],
+class KeysView(MappingView[KT], AbstractSet[KT],
                extra=collections_abc.KeysView):
     pass
 
 
-# TODO: Enable Set[Tuple[KT_co, VT_co]] instead of Generic[KT_co, VT_co].
-class ItemsView(MappingView, Generic[KT_co, VT_co],
+# TODO: Enable Set[Tuple[KT, VT_co]] instead of Generic[KT, VT_co].
+class ItemsView(MappingView, Generic[KT, VT_co],
                 extra=collections_abc.ItemsView):
     pass
 
