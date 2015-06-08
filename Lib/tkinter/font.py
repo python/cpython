@@ -151,7 +151,7 @@ class Font:
         args = (text,)
         if displayof:
             args = ('-displayof', displayof, text)
-        return self._root.tk.getint(self._call("font", "measure", self.name, *args))
+        return self._tk.getint(self._call("font", "measure", self.name, *args))
 
     def metrics(self, *options, **kw):
         """Return font metrics.
@@ -164,13 +164,13 @@ class Font:
             args = ('-displayof', displayof)
         if options:
             args = args + self._get(options)
-            return self._root.tk.getint(
+            return self._tk.getint(
                 self._call("font", "metrics", self.name, *args))
         else:
             res = self._split(self._call("font", "metrics", self.name, *args))
             options = {}
             for i in range(0, len(res), 2):
-                options[res[i][1:]] = self._root.tk.getint(res[i+1])
+                options[res[i][1:]] = self._tk.getint(res[i+1])
             return options
 
 
