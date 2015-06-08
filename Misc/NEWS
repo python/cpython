@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14373: C implementation of functools.lru_cache() now can be used with
+  methods.
+
 - Issue #8232: webbrowser support incomplete on Windows. Patch by Brandon
   Milam
 
