@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24408: Fixed AttributeError in measure() and metrics() methods of
+  tkinter.Font.
+
 - Issue #14373: C implementation of functools.lru_cache() now can be used with
   methods.
 
