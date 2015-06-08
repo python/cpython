@@ -140,6 +140,18 @@ The :mod:`random` module provides tools for making random selections::
    >>> random.randrange(6)    # random integer chosen from range(6)
    4
 
+The :mod:`statistics` module calculates basic statistical properties
+(the mean, median, variance, etc.) of numeric data::
+
+    >>> import statistics
+    >>> data = [2.75, 1.75, 1.25, 0.25, 0.5, 1.25, 3.5]
+    >>> statistics.mean(data)
+    1.6071428571428572
+    >>> statistics.median(data)
+    1.25
+    >>> statistics.variance(data)
+    1.3720238095238095
+
 The SciPy project <http://scipy.org> has many other modules for numerical
 computations.
 
@@ -311,13 +323,18 @@ sophisticated and robust capabilities of its larger packages. For example:
   (including attachments) and for implementing internet encoding and header
   protocols.
 
-* The :mod:`xml.dom` and :mod:`xml.sax` packages provide robust support for
-  parsing this popular data interchange format. Likewise, the :mod:`csv` module
-  supports direct reads and writes in a common database format. Together, these
-  modules and packages greatly simplify data interchange between Python
-  applications and other tools.
+* The :mod:`json` package provides robust support for parsing this
+  popular data interchange format.  The :mod:`csv` module supports
+  direct reading and writing of files in Comma-Separated Value format,
+  commonly supported by databases and spreadsheets.  XML processing is
+  supported by the :mod:`xml.etree.ElementTree`, :mod:`xml.dom` and
+  :mod:`xml.sax` packages. Together, these modules and packages
+  greatly simplify data interchange between Python applications and
+  other tools.
+
+* The :mod:`sqlite3` module is a wrapper for the SQLite database
+  library, providing a persistent database that can be updated and
+  accessed using slightly nonstandard SQL syntax.
 
 * Internationalization is supported by a number of modules including
   :mod:`gettext`, :mod:`locale`, and the :mod:`codecs` package.
-
-
