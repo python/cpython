@@ -147,7 +147,7 @@ def build_mingw_lib(dll_path, def_file, dll_file, mingw_lib):
     if msilib.Win64:
         dlltool_command += " -m i386:x86-64"
     else:
-        dlltool_command += " -m i386"
+        dlltool_command += " -m i386 --as-flags=--32"
 
     f = open(def_file,'w')
     gendef_pipe = os.popen(gendef_command)
