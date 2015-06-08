@@ -1004,6 +1004,16 @@ lru_cache_call(lru_cache_object *self, PyObject *args, PyObject *kwds)
 }
 
 static PyObject *
+lru_cache_descr_get(PyObject *self, PyObject *obj, PyObject *type)
+{
+    if (obj == Py_None || obj == NULL) {
+        Py_INCREF(self);
+        return self;
+    }
+    return PyMethod_New(self, obj);
+}
+
+static PyObject *
 lru_cache_cache_info(lru_cache_object *self, PyObject *unused)
 {
     return PyObject_CallFunction(self->cache_info_type, "nnOn",
@@ -1115,7 +1125,7 @@ static PyTypeObject lru_cache_type = {
     lru_cache_getsetlist,               /* tp_getset */
     0,                                  /* tp_base */
     0,                                  /* tp_dict */
-    0,                                  /* tp_descr_get */
+    lru_cache_descr_get,                /* tp_descr_get */
     0,                                  /* tp_descr_set */
     offsetof(lru_cache_object, dict),   /* tp_dictoffset */
     0,                                  /* tp_init */
