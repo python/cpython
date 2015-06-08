@@ -53,6 +53,7 @@ The :ref:`glossary` is also worth going through.
    classes.rst
    stdlib.rst
    stdlib2.rst
+   venv.rst
    whatnow.rst
    interactive.rst
    floatingpoint.rst
