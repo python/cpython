@@ -24,7 +24,8 @@ candidate_locales = ['es_UY', 'fr_FR', 'fi_FI', 'es_CO', 'pt_PT', 'it_IT',
     'de_DE', 'sr_YU', 'br_FR', 'nl_BE', 'sv_FI', 'pl_PL', 'fr_CA', 'fo_FO',
     'bs_BA', 'fr_LU', 'kl_GL', 'fa_IR', 'de_BE', 'sv_SE', 'it_CH', 'uk_UA',
     'eu_ES', 'vi_VN', 'af_ZA', 'nb_NO', 'en_DK', 'tg_TJ', 'ps_AF', 'en_US',
-    'es_ES.ISO8859-1', 'fr_FR.ISO8859-15', 'ru_RU.KOI8-R', 'ko_KR.eucKR']
+    'fr_FR.ISO8859-1', 'fr_FR.UTF-8', 'fr_FR.ISO8859-15@euro',
+    'ru_RU.KOI8-R', 'ko_KR.eucKR']
 
 def setUpModule():
     global candidate_locales
@@ -65,8 +66,8 @@ def setUpModule():
 # value is not known, use '' .
 known_numerics = {
     'en_US': ('.', ','),
-    'fr_FR' : (',', ' '),
     'de_DE' : (',', '.'),
+    'fr_FR.UTF-8' : (',', ' '),
     'ps_AF': ('\u066b', '\u066c'),
 }
 
