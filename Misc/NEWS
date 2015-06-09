@@ -323,6 +323,9 @@ C API
 Documentation
 -------------
 
+- Issue #24351: Clarify what is meant by "identifier" in the context of
+  string.Template instances.
+
 - Issue #22155: Add File Handlers subsection with createfilehandler to tkinter
   doc.  Remove obsolete example from FAQ.  Patch by Martin Panter.
 
