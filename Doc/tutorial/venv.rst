@@ -90,8 +90,8 @@ Managing Packages with pip
 
 Once you've activated a virtual environment, you can install, upgrade,
 and remove packages using a program called :program:`pip`.  By default
-``pip`` will install packages from the Python Packaging Index,
-<https://pypi.python.org/pypi>.  You can browse the Python Packaging Index
+``pip`` will install packages from the Python Package Index,
+<https://pypi.python.org/pypi>.  You can browse the Python Package Index
 by going to it in your web browser, or you can use ``pip``'s
 limited search feature::
 
@@ -193,5 +193,5 @@ necessary packages with ``install -r``::
 
 ``pip`` has many more options.  Consult the :ref:`installing-index`
 guide for complete documentation for ``pip``.  When you've written
-a package and want to make it available on the Python Packaging Index,
+a package and want to make it available on the Python Package Index,
 consult the :ref:`distributing-index` guide.
