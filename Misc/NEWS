@@ -45,6 +45,12 @@ Tests
   tp_finalize to avoid reference leaks encountered when combining tp_dealloc
   with PyType_FromSpec (see issue #16690 for details)
 
+Documentation
+-------------
+
+- Issue #24351: Clarify what is meant by "identifier" in the context of
+  string.Template instances.
+
 
 What's New in Python 3.5.0 beta 2?
 ==================================
