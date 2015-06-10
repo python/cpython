@@ -1,7 +1,17 @@
 @rem Used by the buildbot "compile" step.
-cmd /c Tools\buildbot\external.bat
-call "%VS100COMNTOOLS%vsvars32.bat"
-cmd /c Tools\buildbot\clean.bat
 
-msbuild PCbuild\pcbuild.sln /p:Configuration=Debug /p:Platform=Win32
+@rem Clean up
+call "%~dp0clean.bat" %*
 
+@rem If you need the buildbots to start fresh (such as when upgrading to
+@rem a new version of an external library, especially Tcl/Tk):
+@rem 1) uncomment the following line:
+
+@rem    call "%~dp0..\..\PCbuild\get_externals.bat" --clean-only
+
+@rem 2) commit and push
+@rem 3) wait for all Windows bots to start a build with that changeset
+@rem 4) re-comment, commit and push again
+
+@rem Do the build
+call "%~dp0..\..\PCbuild\build.bat" -e -d -k -v %*
