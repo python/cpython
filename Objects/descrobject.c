@@ -1268,11 +1268,11 @@ PyWrapper_New(PyObject *d, PyObject *self)
 /* A built-in 'property' type */
 
 /*
-    class property(object):
+class property(object):
 
     def __init__(self, fget=None, fset=None, fdel=None, doc=None):
         if doc is None and fget is not None and hasattr(fget, "__doc__"):
-        doc = fget.__doc__
+            doc = fget.__doc__
         self.__get = fget
         self.__set = fset
         self.__del = fdel
@@ -1280,19 +1280,19 @@ PyWrapper_New(PyObject *d, PyObject *self)
 
     def __get__(self, inst, type=None):
         if inst is None:
-        return self
+            return self
         if self.__get is None:
-        raise AttributeError, "unreadable attribute"
+            raise AttributeError, "unreadable attribute"
         return self.__get(inst)
 
     def __set__(self, inst, value):
         if self.__set is None:
-        raise AttributeError, "can't set attribute"
+            raise AttributeError, "can't set attribute"
         return self.__set(inst, value)
 
     def __delete__(self, inst):
         if self.__del is None:
-        raise AttributeError, "can't delete attribute"
+            raise AttributeError, "can't delete attribute"
         return self.__del(inst)
 
 */
