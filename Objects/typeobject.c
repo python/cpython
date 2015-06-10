@@ -4245,7 +4245,7 @@ PyDoc_STRVAR(object_subclasshook_doc,
 
    class object:
        def __format__(self, format_spec):
-       return format(str(self), format_spec)
+           return format(str(self), format_spec)
 */
 static PyObject *
 object_format(PyObject *self, PyObject *args)
