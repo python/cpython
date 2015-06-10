@@ -3725,9 +3725,9 @@ compiler_async_with(struct compiler *c, stmt_ty s, int pos)
        BLOCK
    finally:
        if an exception was raised:
-       exc = copy of (exception, instance, traceback)
+           exc = copy of (exception, instance, traceback)
        else:
-       exc = (None, None, None)
+           exc = (None, None, None)
        exit(*exc)
  */
 static int
