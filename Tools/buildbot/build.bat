@@ -1,10 +1,7 @@
 @rem Used by the buildbot "compile" step.
 
 @rem Clean up
-set PLAT=
-if '%1' EQU '-p' if '%2' EQU 'x64' (set PLAT=-amd64)
-
-call "%~dp0clean%PLAT%.bat"
+call "%~dp0clean.bat" %*
 
 @rem If you need the buildbots to start fresh (such as when upgrading to
 @rem a new version of an external library, especially Tcl/Tk):
@@ -17,4 +14,4 @@ call "%~dp0clean%PLAT%.bat"
 @rem 4) re-comment, commit and push again
 
 @rem Do the build
-call "%~dp0..\..\PCbuild\build.bat" -e -d -v %*
+call "%~dp0..\..\PCbuild\build.bat" -e -d -k -v %*
