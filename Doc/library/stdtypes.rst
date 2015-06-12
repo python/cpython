@@ -2230,6 +2230,9 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
 
       .. versionadded:: 2.7
 
+   Dictionaries compare equal if and only if they have the same ``(key,
+   value)`` pairs.
+      
 
 .. _dict-views:
 
