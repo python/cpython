@@ -1095,7 +1095,7 @@ Comparison of objects of the same type depends on the type:
 
 * Sets and frozensets define comparison operators to mean subset and superset
   tests.  Those relations do not define total orderings (the two sets ``{1,2}``
-  and {2,3} are not equal, nor subsets of one another, nor supersets of one
+  and ``{2,3}`` are not equal, nor subsets of one another, nor supersets of one
   another).  Accordingly, sets are not appropriate arguments for functions
   which depend on total ordering.  For example, :func:`min`, :func:`max`, and
   :func:`sorted` produce undefined results given a list of sets as inputs.
