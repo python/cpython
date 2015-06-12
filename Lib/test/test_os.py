@@ -12,7 +12,6 @@ import fractions
 import getpass
 import itertools
 import locale
-import math
 import mmap
 import os
 import pickle
