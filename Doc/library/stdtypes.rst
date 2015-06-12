@@ -3908,7 +3908,7 @@ pairs within braces, for example: ``{'jack': 4098, 'sjoerd': 4127}`` or ``{4098:
    Dictionaries compare equal if and only if they have the same ``(key,
    value)`` pairs. Order comparisons ('<', '<=', '>=', '>') raise
    :exc:`TypeError`.
-      
+
 .. seealso::
    :class:`types.MappingProxyType` can be used to create a read-only view
    of a :class:`dict`.
