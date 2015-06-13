@@ -710,8 +710,8 @@ This is one of the simplest mechanisms for communication between threads: one
 thread signals an event and other threads wait for it.
 
 An event object manages an internal flag that can be set to true with the
-:meth:`~Event.set` method and reset to false with the :meth:`clear` method.  The
-:meth:`wait` method blocks until the flag is true.
+:meth:`~Event.set` method and reset to false with the :meth:`~Event.clear`
+method.  The :meth:`~Event.wait` method blocks until the flag is true.
 
 
 .. class:: Event()
