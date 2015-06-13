@@ -7,8 +7,8 @@
 #        with someone who can; ask around on python-dev for help.  Fred
 #        Drake <fdrake@acm.org> will probably be listening there.
 
-# NOTE WELL: You should also follow all the steps listed in PEP 306,
-# "How to Change Python's Grammar"
+# NOTE WELL: You should also follow all the steps listed at
+# https://docs.python.org/devguide/grammar.html
 
 # Start symbols for the grammar:
 #       single_input is a single interactive statement;
