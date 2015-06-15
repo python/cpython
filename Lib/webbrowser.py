@@ -538,7 +538,7 @@ if sys.platform[:3] == "win":
         newtab = "-new-tab"
 
 
-    class WinFireFox(WindowsDefault):
+    class WinFirefox(WindowsDefault):
         """Launcher class for windows specific Firefox browser"""
 
         cmd = "start firefox.exe"
@@ -614,7 +614,7 @@ if sys.platform[:3] == "win":
         elif "chrome" in browser:
             register("chrome", None, WinChrome("chrome"))
         elif "firefox" in browser:
-            register("firefox", None, WinFireFox("firefox"))
+            register("firefox", None, WinFirefox("firefox"))
         elif "opera" in browser:
             register("opera", None, WinOpera("opera"))
         elif "seamonkey" in browser:
