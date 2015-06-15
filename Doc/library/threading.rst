@@ -630,7 +630,7 @@ item to the buffer only needs to wake up one consumer thread.
             cv.wait()
 
       Therefore, the same rules apply as with :meth:`wait`: The lock must be
-      held when called and is re-aquired on return.  The predicate is evaluated
+      held when called and is re-acquired on return.  The predicate is evaluated
       with the lock held.
 
       .. versionadded:: 3.2

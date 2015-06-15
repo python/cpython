@@ -1579,7 +1579,7 @@ os
   avoid race conditions in multi-threaded programs.
 
 * The :mod:`os` module has a new :func:`~os.sendfile` function which provides
-  an efficent "zero-copy" way for copying data from one file (or socket)
+  an efficient "zero-copy" way for copying data from one file (or socket)
   descriptor to another. The phrase "zero-copy" refers to the fact that all of
   the copying of data between the two descriptors is done entirely by the
   kernel, with no copying of data into userspace buffers. :func:`~os.sendfile`
@@ -1908,7 +1908,7 @@ socketserver
 :meth:`~socketserver.BaseServer.service_actions` that is called by the
 :meth:`~socketserver.BaseServer.serve_forever` method in the service loop.
 :class:`~socketserver.ForkingMixIn` now uses this to clean up zombie
-child proceses.  (Contributed by Justin Warkentin in :issue:`11109`.)
+child processes.  (Contributed by Justin Warkentin in :issue:`11109`.)
 
 
 sqlite3
@@ -2360,7 +2360,7 @@ Porting Python code
   bytecode file, make sure to call :func:`importlib.invalidate_caches` to clear
   out the cache for the finders to notice the new file.
 
-* :exc:`ImportError` now uses the full name of the module that was attemped to
+* :exc:`ImportError` now uses the full name of the module that was attempted to
   be imported. Doctests that check ImportErrors' message will need to be
   updated to use the full name of the module instead of just the tail of the
   name.

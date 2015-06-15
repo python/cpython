@@ -852,7 +852,7 @@ keep track of the group numbers.  There are two features which help with this
 problem.  Both of them use a common syntax for regular expression extensions, so
 we'll look at that first.
 
-Perl 5 is well-known for its powerful additions to standard regular expressions.
+Perl 5 is well known for its powerful additions to standard regular expressions.
 For these new features the Perl developers couldn't choose new single-keystroke metacharacters
 or new special sequences beginning with ``\`` without making Perl's regular
 expressions confusingly different from standard REs.  If they chose ``&`` as a
