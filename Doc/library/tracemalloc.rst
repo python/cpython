@@ -350,7 +350,7 @@ Functions
    the *nframe* parameter of the :func:`start` function to store more frames.
 
    The :mod:`tracemalloc` module must be tracing memory allocations to take a
-   snapshot, see the the :func:`start` function.
+   snapshot, see the :func:`start` function.
 
    See also the :func:`get_object_traceback` function.
 
