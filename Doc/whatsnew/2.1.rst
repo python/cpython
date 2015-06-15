@@ -219,7 +219,7 @@ comparison.  I won't cover the C API here, but will refer you to PEP 207, or to
 
 .. seealso::
 
-   :pep:`207` - Rich Comparisions
+   :pep:`207` - Rich Comparisons
       Written by Guido van Rossum, heavily based on earlier work by David Ascher, and
       implemented by Guido van Rossum.
 
