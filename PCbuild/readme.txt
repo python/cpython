@@ -123,7 +123,7 @@ bz2
 
     svn export http://svn.python.org/projects/external/bzip2-1.0.6
 
-    ** NOTE: if you use the Tools\buildbot\external(-amd64).bat approach for
+    ** NOTE: if you use the PCbuild\get_externals.bat approach for
     obtaining external sources then you don't need to manually get the source
     above via subversion. **
 
@@ -134,12 +134,12 @@ _ssl
 
     svn export http://svn.python.org/projects/external/openssl-1.0.2a
 
-    ** NOTE: if you use the Tools\buildbot\external(-amd64).bat approach for
+    ** NOTE: if you use the PCbuild\get_externals.bat approach for
     obtaining external sources then you don't need to manually get the source
     above via subversion. **
 
     The NASM assembler is required to build OpenSSL.  If you use the
-    Tools\buildbot\external(-amd64).bat method for getting sources, it also
+    PCbuild\get_externals.bat script to get external library sources, it also
     downloads a version of NASM, which the ssl build script will add to PATH.
     Otherwise, you can download the NASM installer from
         http://www.nasm.us/
@@ -174,36 +174,13 @@ _ssl
 
 The subprojects above wrap external projects Python doesn't control, and as
 such, a little more work is required in order to download the relevant source
-files for each project before they can be built.  The buildbots do this each
-time they're built, so the easiest approach is to run either external.bat or
-external-amd64.bat in the ..\Tools\buildbot directory from ..\, i.e.:
-
-    C:\..\svn.python.org\projects\python\trunk\PCbuild>cd ..
-    C:\..\svn.python.org\projects\python\trunk>Tools\buildbot\external.bat
-
-This extracts all the external subprojects from http://svn.python.org/external
-via Subversion (so you'll need an svn.exe on your PATH) and places them in
-..\externals (relative to this directory).  The external(-amd64).bat scripts
-will also build a debug build of Tcl/Tk; there aren't any equivalent batch files
-for building release versions of Tcl/Tk lying around in the Tools\buildbot
-directory.  If you need to build a release version of Tcl/Tk it isn't hard
-though, take a look at the relevant external(-amd64).bat file and find the
-two nmake lines, then call each one without the 'DEBUG=1' parameter, i.e.:
-
-The external-amd64.bat file contains this for tcl:
-    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 DEBUG=1 MACHINE=AMD64 INSTALLDIR=..\..\tcltk64 clean all install
-
-So for a release build, you'd call it as:
-    nmake -f makefile.vc COMPILERFLAGS=-DWINVER=0x0500 MACHINE=AMD64 INSTALLDIR=..\..\tcltk64 clean all install
-
-    XXX Should we compile with OPTS=threads?
-    XXX Our installer copies a lot of stuff out of the Tcl/Tk install
-    XXX directory.  Is all of that really needed for Python use of Tcl/Tk?
-
-This will be cleaned up in the future; ideally Tcl/Tk will be brought into our
-pcbuild.sln as custom .vcproj files, just as we've recently done with the
-_bsddb.vcproj and sqlite3.vcproj files, which will remove the need for
-Tcl/Tk to be built separately via a batch file.
+files for each project before they can be built.  The easiest way to do this
+is to use the `build.bat` script in this directory to build Python, and pass
+the '-e' switch to tell it to use get_externals.bat to fetch external sources
+and build Tcl/Tk and Tix.  To use get_externals.bat, you'll need to have
+Subversion installed and svn.exe on your PATH.  The script will fetch external
+library sources from http://svn.python.org/external and place them in
+..\externals (relative to this directory).
 
 Building for Itanium
 --------------------
