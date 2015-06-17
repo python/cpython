@@ -208,8 +208,9 @@ _ssl
     to be somewhere on your PATH.  More recent versions of OpenSSL may
     need a later version of NASM. If OpenSSL's self tests don't pass,
     you should first try to update NASM and do a full rebuild of
-    OpenSSL.  get_externals.py also downloads a snapshot of NASM, and the
-    libeay and ssleay sub-projects use that version of nasm.exe.
+    OpenSSL.  If you use the PCbuild\get_externals.bat method
+    for getting sources, it also downloads a version of NASM which the
+    libeay/ssleay sub-projects use.
 
     The libeay/ssleay sub-projects expect your OpenSSL sources to have
     already been configured and be ready to build.  If you get your sources
