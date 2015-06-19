@@ -6,25 +6,6 @@
             <PackageGroupRef Id="crt_14.0_v6.1" />
             <PackageGroupRef Id="crt_14.0_v6.2" />
             <PackageGroupRef Id="crt_14.0_v6.3" />
-
-            <MsiPackage Id="crt_AllUsers"
-                        SourceFile="crt.msi"
-                        Compressed="$(var.CompressMSI)"
-                        DownloadUrl="$(var.DownloadUrl)"
-                        ForcePerMachine="yes"
-                        InstallCondition="InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip)">
-                <!-- TARGETDIR will be ignored, but must still be provided -->
-                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
-            </MsiPackage>
-            
-            <MsiPackage Id="crt_JustForMe"
-                        SourceFile="crt.msi"
-                        Compressed="$(var.CompressMSI)"
-                        DownloadUrl="$(var.DownloadUrl)"
-                        ForcePerMachine="no"
-                        InstallCondition="not InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip)">
-                <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
-            </MsiPackage>
         </PackageGroup>
     </Fragment>
 
