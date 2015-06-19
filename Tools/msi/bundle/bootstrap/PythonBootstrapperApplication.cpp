@@ -2402,8 +2402,6 @@ private:
         // Check whether at least CRT v10.0.9924.0 is available.
         // It should only be installed as a Windows Update package, which means
         // we don't need to worry about 32-bit/64-bit.
-        // However, since the WU package does not include vcruntime140.dll, we
-        // still install that ourselves.
         LPCWSTR crtFile = L"api-ms-win-crt-runtime-l1-1-0.dll";
 
         DWORD cbVer = GetFileVersionInfoSizeW(crtFile, nullptr);

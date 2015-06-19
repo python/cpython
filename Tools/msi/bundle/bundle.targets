@@ -61,7 +61,6 @@
     </ItemDefinitionGroup>
     <ItemGroup>
         <Package Include="..\core\core*.wixproj" />
-        <Package Include="..\crt\crt*.wixproj" />
         <Package Include="..\dev\dev*.wixproj" />
         <Package Include="..\doc\doc*.wixproj" />
         <Package Include="..\exe\exe*.wixproj" />
