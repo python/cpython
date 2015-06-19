@@ -5,11 +5,8 @@ Additional Conditions for this Windows binary build
 
 This program is linked with and uses Microsoft Distributable Code,
 copyrighted by Microsoft Corporation. The Microsoft Distributable Code
-includes the following files:
-
-msvcr90.dll
-msvcp90.dll
-msvcm90.dll
+is embedded in each .exe, .dll and .pyd file as a result of running
+the code through a linker.
 
 If you further distribute programs that include the Microsoft
 Distributable Code, you must comply with the restrictions on
