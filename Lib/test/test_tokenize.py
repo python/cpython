@@ -5,6 +5,8 @@ The tests can be really simple. Given a small fragment of source
 code, print out a table with tokens. The ENDMARKER is omitted for
 brevity.
 
+    >>> import glob
+
     >>> dump_tokens("1 + 1")
     ENCODING   'utf-8'       (0, 0) (0, 0)
     NUMBER     '1'           (1, 0) (1, 1)
@@ -647,7 +649,7 @@ from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      open as tokenize_open, Untokenizer)
 from io import BytesIO
 from unittest import TestCase, mock
-import os, sys, glob
+import os
 import token
 
 def dump_tokens(s):
