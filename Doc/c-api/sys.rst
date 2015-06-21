@@ -110,12 +110,12 @@ These are utility functions that make functionality from the :mod:`sys` module
 accessible to C code.  They all work with the current interpreter thread's
 :mod:`sys` module's dict, which is contained in the internal thread state structure.
 
-.. c:function:: PyObject *PySys_GetObject(char *name)
+.. c:function:: PyObject *PySys_GetObject(const char *name)
 
    Return the object *name* from the :mod:`sys` module or *NULL* if it does
    not exist, without setting an exception.
 
-.. c:function:: int PySys_SetObject(char *name, PyObject *v)
+.. c:function:: int PySys_SetObject(const char *name, PyObject *v)
 
    Set *name* in the :mod:`sys` module to *v* unless *v* is *NULL*, in which
    case *name* is deleted from the sys module. Returns ``0`` on success, ``-1``

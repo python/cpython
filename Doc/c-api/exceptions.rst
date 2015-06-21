@@ -244,7 +244,7 @@ NULL pointer for use in a ``return`` statement.
    .. versionadded:: 3.4
 
 
-.. c:function:: void PyErr_SyntaxLocationEx(char *filename, int lineno, int col_offset)
+.. c:function:: void PyErr_SyntaxLocationEx(const char *filename, int lineno, int col_offset)
 
    Like :c:func:`PyErr_SyntaxLocationObject`, but *filename* is a byte string
    decoded from the filesystem encoding (:func:`os.fsdecode`).
@@ -252,7 +252,7 @@ NULL pointer for use in a ``return`` statement.
    .. versionadded:: 3.2
 
 
-.. c:function:: void PyErr_SyntaxLocation(char *filename, int lineno)
+.. c:function:: void PyErr_SyntaxLocation(const char *filename, int lineno)
 
    Like :c:func:`PyErr_SyntaxLocationEx`, but the col_offset parameter is
    omitted.
@@ -516,7 +516,7 @@ Signal Handling
 Exception Classes
 =================
 
-.. c:function:: PyObject* PyErr_NewException(char *name, PyObject *base, PyObject *dict)
+.. c:function:: PyObject* PyErr_NewException(const char *name, PyObject *base, PyObject *dict)
 
    This utility function creates and returns a new exception class. The *name*
    argument must be the name of the new exception, a C string of the form
@@ -531,7 +531,7 @@ Exception Classes
    argument can be used to specify a dictionary of class variables and methods.
 
 
-.. c:function:: PyObject* PyErr_NewExceptionWithDoc(char *name, char *doc, PyObject *base, PyObject *dict)
+.. c:function:: PyObject* PyErr_NewExceptionWithDoc(const char *name, const char *doc, PyObject *base, PyObject *dict)
 
    Same as :c:func:`PyErr_NewException`, except that the new exception class can
    easily be given a docstring: If *doc* is non-*NULL*, it will be used as the
