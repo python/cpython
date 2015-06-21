@@ -34,7 +34,7 @@ Mapping Protocol
    failure.  This is equivalent to the Python statement ``del o[key]``.
 
 
-.. c:function:: int PyMapping_HasKeyString(PyObject *o, char *key)
+.. c:function:: int PyMapping_HasKeyString(PyObject *o, const char *key)
 
    On success, return ``1`` if the mapping object has the key *key* and ``0``
    otherwise.  This is equivalent to the Python expression ``key in o``.
