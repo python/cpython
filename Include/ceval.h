@@ -77,7 +77,7 @@ PyAPI_FUNC(int) Py_GetRecursionLimit(void);
     do{ if(_Py_MakeEndRecCheck(PyThreadState_GET()->recursion_depth))  \
       PyThreadState_GET()->overflowed = 0;  \
     } while(0)
-PyAPI_FUNC(int) _Py_CheckRecursiveCall(char *where);
+PyAPI_FUNC(int) _Py_CheckRecursiveCall(const char *where);
 PyAPI_DATA(int) _Py_CheckRecursionLimit;
 
 #ifdef USE_STACKCHECK
