@@ -76,10 +76,19 @@ class FontTest(AbstractTkTest, unittest.TestCase):
 
     def test_families(self):
         families = font.families(self.root)
-        self.assertIn(self.font.actual('family'), families)
+        self.assertIsInstance(families, tuple)
+        self.assertTrue(families)
+        for family in families:
+            self.assertIsInstance(family, str)
+            self.assertTrue(family)
 
     def test_names(self):
         names = font.names(self.root)
+        self.assertIsInstance(names, tuple)
+        self.assertTrue(names)
+        for name in names:
+            self.assertIsInstance(name, str)
+            self.assertTrue(name)
         self.assertIn(fontname, names)
 
 tests_gui = (FontTest, )
