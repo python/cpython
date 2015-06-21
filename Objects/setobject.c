@@ -142,7 +142,10 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
 
     entry = &table[i];
     if (entry->key == NULL)
-        goto found_null;
+        goto found_null_first;
+
+    freeslot = NULL;
+    perturb = hash;
 
     while (1) {
         if (entry->hash == hash) {
@@ -206,6 +209,13 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
         if (entry->hash == 0 && entry->key == NULL)
             goto found_null;
     }
+
+  found_null_first:
+    so->fill++;
+    so->used++;
+    entry->key = key;
+    entry->hash = hash;
+    return 0;
 
   found_null:
     if (freeslot == NULL) {
