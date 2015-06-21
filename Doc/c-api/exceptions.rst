@@ -493,7 +493,7 @@ level, both in the core and in extension modules.  They are needed if the
 recursive code does not necessarily invoke Python code (which tracks its
 recursion depth automatically).
 
-.. c:function:: int Py_EnterRecursiveCall(char *where)
+.. c:function:: int Py_EnterRecursiveCall(const char *where)
 
    Marks a point where a recursive C-level call is about to be performed.
 
