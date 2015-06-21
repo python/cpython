@@ -24,7 +24,7 @@ PyAPI_FUNC(int) PyTraceBack_Here(struct _frame *);
 PyAPI_FUNC(int) PyTraceBack_Print(PyObject *, PyObject *);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) _Py_DisplaySourceLine(PyObject *, PyObject *, int, int);
-PyAPI_FUNC(void) _PyTraceback_Add(char *, char *, int);
+PyAPI_FUNC(void) _PyTraceback_Add(const char *, const char *, int);
 #endif
 
 /* Reveal traceback type so we can typecheck traceback objects */
