@@ -590,7 +590,7 @@ Extracting Parameters in Extension Functions
 
 The :c:func:`PyArg_ParseTuple` function is declared as follows::
 
-   int PyArg_ParseTuple(PyObject *arg, char *format, ...);
+   int PyArg_ParseTuple(PyObject *arg, const char *format, ...);
 
 The *arg* argument must be a tuple object containing an argument list passed
 from Python to a C function.  The *format* argument must be a format string,
@@ -683,7 +683,7 @@ Keyword Parameters for Extension Functions
 The :c:func:`PyArg_ParseTupleAndKeywords` function is declared as follows::
 
    int PyArg_ParseTupleAndKeywords(PyObject *arg, PyObject *kwdict,
-                                   char *format, char *kwlist[], ...);
+                                   const char *format, char *kwlist[], ...);
 
 The *arg* and *format* parameters are identical to those of the
 :c:func:`PyArg_ParseTuple` function.  The *kwdict* parameter is the dictionary of
@@ -760,7 +760,7 @@ Building Arbitrary Values
 This function is the counterpart to :c:func:`PyArg_ParseTuple`.  It is declared
 as follows::
 
-   PyObject *Py_BuildValue(char *format, ...);
+   PyObject *Py_BuildValue(const char *format, ...);
 
 It recognizes a set of format units similar to the ones recognized by
 :c:func:`PyArg_ParseTuple`, but the arguments (which are input to the function,

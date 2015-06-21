@@ -86,7 +86,7 @@ Process-wide parameters
 =======================
 
 
-.. c:function:: int Py_SetStandardStreamEncoding(char *encoding, char *errors)
+.. c:function:: int Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
 
    .. index::
       single: Py_Initialize()
