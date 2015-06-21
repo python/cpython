@@ -409,57 +409,39 @@ def _generate_overlap_table(prefix):
             table[i] = idx + 1
     return table
 
-def _compile_info(code, pattern, flags):
-    # internal: compile an info block.  in the current version,
-    # this contains min/max pattern width, and an optional literal
-    # prefix or a character map
-    lo, hi = pattern.getwidth()
-    if hi > MAXCODE:
-        hi = MAXCODE
-    if lo == 0:
-        code.extend([INFO, 4, 0, lo, hi])
-        return
-    # look for a literal prefix
+def _get_literal_prefix(pattern):
+    # look for literal prefix
     prefix = []
     prefixappend = prefix.append
-    prefix_skip = 0
+    prefix_skip = None
+    got_all = True
+    for op, av in pattern.data:
+        if op is LITERAL:
+            prefixappend(av)
+        elif op is SUBPATTERN:
+            prefix1, prefix_skip1, got_all = _get_literal_prefix(av[1])
+            if prefix_skip is None:
+                if av[0] is not None:
+                    prefix_skip = len(prefix)
+                elif prefix_skip1 is not None:
+                    prefix_skip = len(prefix) + prefix_skip1
+            prefix.extend(prefix1)
+            if not got_all:
+                break
+        else:
+            got_all = False
+            break
+    return prefix, prefix_skip, got_all
+
+def _get_charset_prefix(pattern):
     charset = [] # not used
     charsetappend = charset.append
-    if not (flags & SRE_FLAG_IGNORECASE):
-        # look for literal prefix
-        for op, av in pattern.data:
+    if pattern.data:
+        op, av = pattern.data[0]
+        if op is SUBPATTERN and av[1]:
+            op, av = av[1][0]
             if op is LITERAL:
-                if len(prefix) == prefix_skip:
-                    prefix_skip = prefix_skip + 1
-                prefixappend(av)
-            elif op is SUBPATTERN and len(av[1]) == 1:
-                op, av = av[1][0]
-                if op is LITERAL:
-                    prefixappend(av)
-                else:
-                    break
-            else:
-                break
-        # if no prefix, look for charset prefix
-        if not prefix and pattern.data:
-            op, av = pattern.data[0]
-            if op is SUBPATTERN and av[1]:
-                op, av = av[1][0]
-                if op is LITERAL:
-                    charsetappend((op, av))
-                elif op is BRANCH:
-                    c = []
-                    cappend = c.append
-                    for p in av[1]:
-                        if not p:
-                            break
-                        op, av = p[0]
-                        if op is LITERAL:
-                            cappend((op, av))
-                        else:
-                            break
-                    else:
-                        charset = c
+                charsetappend((op, av))
             elif op is BRANCH:
                 c = []
                 cappend = c.append
@@ -473,8 +455,43 @@ def _compile_info(code, pattern, flags):
                         break
                 else:
                     charset = c
-            elif op is IN:
-                charset = av
+        elif op is BRANCH:
+            c = []
+            cappend = c.append
+            for p in av[1]:
+                if not p:
+                    break
+                op, av = p[0]
+                if op is LITERAL:
+                    cappend((op, av))
+                else:
+                    break
+            else:
+                charset = c
+        elif op is IN:
+            charset = av
+    return charset
+
+def _compile_info(code, pattern, flags):
+    # internal: compile an info block.  in the current version,
+    # this contains min/max pattern width, and an optional literal
+    # prefix or a character map
+    lo, hi = pattern.getwidth()
+    if hi > MAXCODE:
+        hi = MAXCODE
+    if lo == 0:
+        code.extend([INFO, 4, 0, lo, hi])
+        return
+    # look for a literal prefix
+    prefix = []
+    prefix_skip = 0
+    charset = [] # not used
+    if not (flags & SRE_FLAG_IGNORECASE):
+        # look for literal prefix
+        prefix, prefix_skip, got_all = _get_literal_prefix(pattern)
+        # if no prefix, look for charset prefix
+        if not prefix:
+            charset = _get_charset_prefix(pattern)
 ##     if prefix:
 ##         print("*** PREFIX", prefix, prefix_skip)
 ##     if charset:
@@ -487,7 +504,7 @@ def _compile_info(code, pattern, flags):
     mask = 0
     if prefix:
         mask = SRE_INFO_PREFIX
-        if len(prefix) == prefix_skip == len(pattern.data):
+        if prefix_skip is None and got_all:
             mask = mask | SRE_INFO_LITERAL
     elif charset:
         mask = mask | SRE_INFO_CHARSET
@@ -502,6 +519,8 @@ def _compile_info(code, pattern, flags):
     # add literal prefix
     if prefix:
         emit(len(prefix)) # length
+        if prefix_skip is None:
+            prefix_skip =  len(prefix)
         emit(prefix_skip) # skip
         code.extend(prefix)
         # generate overlap table

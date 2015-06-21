@@ -62,9 +62,6 @@ static char copyright[] =
 /* -------------------------------------------------------------------- */
 /* optional features */
 
-/* enables fast searching */
-#define USE_FAST_SEARCH
-
 /* enables copy/deepcopy handling (work in progress) */
 #undef USE_BUILTIN_COPY
 
