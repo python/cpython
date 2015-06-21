@@ -1248,7 +1248,32 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
            prefix, prefix_len, prefix_skip));
     TRACE(("charset = %p\n", charset));
 
-#if defined(USE_FAST_SEARCH)
+    if (prefix_len == 1) {
+        /* pattern starts with a literal character */
+        SRE_CHAR c = (SRE_CHAR) prefix[0];
+#if SIZEOF_SRE_CHAR < 4
+        if ((SRE_CODE) c != prefix[0])
+            return 0; /* literal can't match: doesn't fit in char width */
+#endif
+        end = (SRE_CHAR *)state->end;
+        while (ptr < end) {
+            while (*ptr != c) {
+                if (++ptr >= end)
+                    return 0;
+            }
+            TRACE(("|%p|%p|SEARCH LITERAL\n", pattern, ptr));
+            state->start = ptr;
+            state->ptr = ptr + prefix_skip;
+            if (flags & SRE_INFO_LITERAL)
+                return 1; /* we got all of it */
+            status = SRE(match)(state, pattern + 2*prefix_skip, 0);
+            if (status != 0)
+                return status;
+            ++ptr;
+        }
+        return 0;
+    }
+
     if (prefix_len > 1) {
         /* pattern starts with a known prefix.  use the overlap
            table to skip forward as fast as we possibly can */
@@ -1297,32 +1322,8 @@ SRE(search)(SRE_STATE* state, SRE_CODE* pattern)
         }
         return 0;
     }
-#endif
 
-    if (pattern[0] == SRE_OP_LITERAL) {
-        /* pattern starts with a literal character.  this is used
-           for short prefixes, and if fast search is disabled */
-        SRE_CHAR c = (SRE_CHAR) pattern[1];
-#if SIZEOF_SRE_CHAR < 4
-        if ((SRE_CODE) c != pattern[1])
-            return 0; /* literal can't match: doesn't fit in char width */
-#endif
-        end = (SRE_CHAR *)state->end;
-        while (ptr < end) {
-            while (*ptr != c) {
-                if (++ptr >= end)
-                    return 0;
-            }
-            TRACE(("|%p|%p|SEARCH LITERAL\n", pattern, ptr));
-            state->start = ptr;
-            state->ptr = ++ptr;
-            if (flags & SRE_INFO_LITERAL)
-                return 1; /* we got all of it */
-            status = SRE(match)(state, pattern + 2, 0);
-            if (status != 0)
-                break;
-        }
-    } else if (charset) {
+    if (charset) {
         /* pattern starts with a character from a known set */
         end = (SRE_CHAR *)state->end;
         for (;;) {
