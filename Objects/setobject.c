@@ -118,7 +118,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         i = (i * 5 + 1 + perturb) & mask;
 
         entry = &table[i];
-        if (entry->hash == 0 && entry->key == NULL)
+        if (entry->key == NULL)
             return entry;
     }
 }
@@ -206,7 +206,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
         i = (i * 5 + 1 + perturb) & mask;
 
         entry = &table[i];
-        if (entry->hash == 0 && entry->key == NULL)
+        if (entry->key == NULL)
             goto found_null;
     }
 
