@@ -143,7 +143,7 @@ PyTraceBack_Here(PyFrameObject *frame)
 }
 
 /* Insert a frame into the traceback for (funcname, filename, lineno). */
-void _PyTraceback_Add(char *funcname, char *filename, int lineno)
+void _PyTraceback_Add(const char *funcname, const char *filename, int lineno)
 {
     PyObject *globals = NULL;
     PyCodeObject *code = NULL;
