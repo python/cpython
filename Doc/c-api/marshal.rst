@@ -88,7 +88,7 @@ written using these routines?
    :exc:`TypeError`) and returns *NULL*.
 
 
-.. c:function:: PyObject* PyMarshal_ReadObjectFromString(char *string, Py_ssize_t len)
+.. c:function:: PyObject* PyMarshal_ReadObjectFromString(const char *string, Py_ssize_t len)
 
    Return a Python object from the data stream in a character buffer
    containing *len* bytes pointed to by *string*.

@@ -115,8 +115,8 @@ call, a format string like that used with :c:func:`Py_BuildValue`, and the
 argument values::
 
    PyObject *
-   PyObject_CallMethod(PyObject *object, char *method_name,
-                       char *arg_format, ...);
+   PyObject_CallMethod(PyObject *object, const char *method_name,
+                       const char *arg_format, ...);
 
 This works for any object that has methods -- whether built-in or user-defined.
 You are responsible for eventually :c:func:`Py_DECREF`\ 'ing the return value.
