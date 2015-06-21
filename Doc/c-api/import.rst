@@ -39,7 +39,7 @@ Importing Modules
       behaviour isn't needed anymore.
 
 
-.. c:function:: PyObject* PyImport_ImportModuleEx(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
+.. c:function:: PyObject* PyImport_ImportModuleEx(const char *name, PyObject *globals, PyObject *locals, PyObject *fromlist)
 
    .. index:: builtin: __import__
 
@@ -70,7 +70,7 @@ Importing Modules
    .. versionadded:: 3.3
 
 
-.. c:function:: PyObject* PyImport_ImportModuleLevel(char *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)
+.. c:function:: PyObject* PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)
 
    Similar to :c:func:`PyImport_ImportModuleLevelObject`, but the name is an
    UTF-8 encoded string instead of a Unicode object.

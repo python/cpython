@@ -1635,7 +1635,7 @@ They all return *NULL* or ``-1`` if an exception occurs.
    respectively.
 
 
-.. c:function:: int PyUnicode_CompareWithASCIIString(PyObject *uni, char *string)
+.. c:function:: int PyUnicode_CompareWithASCIIString(PyObject *uni, const char *string)
 
    Compare a unicode object, *uni*, with *string* and return -1, 0, 1 for less
    than, equal, and greater than, respectively. It is best to pass only
