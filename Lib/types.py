@@ -19,6 +19,11 @@ def _g():
     yield 1
 GeneratorType = type(_g())
 
+async def _c(): pass
+_c = _c()
+CoroutineType = type(_c)
+_c.close()  # Prevent ResourceWarning
+
 class _C:
     def _m(self): pass
 MethodType = type(_C()._m)
@@ -40,7 +45,7 @@ except TypeError:
 GetSetDescriptorType = type(FunctionType.__code__)
 MemberDescriptorType = type(FunctionType.__globals__)
 
-del sys, _f, _g, _C,                              # Not for export
+del sys, _f, _g, _C, _c,                           # Not for export
 
 
 # Provide a PEP 3115 compliant mechanism for class creation
@@ -164,29 +169,33 @@ import collections.abc as _collections_abc
 def coroutine(func):
     """Convert regular generator function to a coroutine."""
 
-    # We don't want to import 'dis' or 'inspect' just for
-    # these constants.
-    CO_GENERATOR = 0x20
-    CO_ITERABLE_COROUTINE = 0x100
-
     if not callable(func):
         raise TypeError('types.coroutine() expects a callable')
 
-    if (isinstance(func, FunctionType) and
-        isinstance(getattr(func, '__code__', None), CodeType) and
-        (func.__code__.co_flags & CO_GENERATOR)):
+    if (func.__class__ is FunctionType and
+        getattr(func, '__code__', None).__class__ is CodeType):
 
-        # TODO: Implement this in C.
-        co = func.__code__
-        func.__code__ = CodeType(
-            co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
-            co.co_stacksize,
-            co.co_flags | CO_ITERABLE_COROUTINE,
-            co.co_code,
-            co.co_consts, co.co_names, co.co_varnames, co.co_filename,
-            co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
-            co.co_cellvars)
-        return func
+        co_flags = func.__code__.co_flags
+
+        # Check if 'func' is a coroutine function.
+        # (0x180 == CO_COROUTINE | CO_ITERABLE_COROUTINE)
+        if co_flags & 0x180:
+            return func
+
+        # Check if 'func' is a generator function.
+        # (0x20 == CO_GENERATOR)
+        if co_flags & 0x20:
+            # TODO: Implement this in C.
+            co = func.__code__
+            func.__code__ = CodeType(
+                co.co_argcount, co.co_kwonlyargcount, co.co_nlocals,
+                co.co_stacksize,
+                co.co_flags | 0x100,  # 0x100 == CO_ITERABLE_COROUTINE
+                co.co_code,
+                co.co_consts, co.co_names, co.co_varnames, co.co_filename,
+                co.co_name, co.co_firstlineno, co.co_lnotab, co.co_freevars,
+                co.co_cellvars)
+            return func
 
     # The following code is primarily to support functions that
     # return generator-like objects (for instance generators
@@ -195,11 +204,14 @@ def coroutine(func):
     class GeneratorWrapper:
         def __init__(self, gen):
             self.__wrapped__ = gen
-            self.send = gen.send
-            self.throw = gen.throw
-            self.close = gen.close
             self.__name__ = getattr(gen, '__name__', None)
             self.__qualname__ = getattr(gen, '__qualname__', None)
+        def send(self, val):
+            return self.__wrapped__.send(val)
+        def throw(self, *args):
+            return self.__wrapped__.throw(*args)
+        def close(self):
+            return self.__wrapped__.close()
         @property
         def gi_code(self):
             return self.__wrapped__.gi_code
@@ -209,24 +221,31 @@ def coroutine(func):
         @property
         def gi_running(self):
             return self.__wrapped__.gi_running
+        cr_code = gi_code
+        cr_frame = gi_frame
+        cr_running = gi_running
         def __next__(self):
             return next(self.__wrapped__)
         def __iter__(self):
             return self.__wrapped__
-        __await__ = __iter__
+        def __await__(self):
+            return self.__wrapped__
 
     @_functools.wraps(func)
     def wrapped(*args, **kwargs):
         coro = func(*args, **kwargs)
-        if coro.__class__ is GeneratorType:
+        if coro.__class__ is CoroutineType:
+            # 'coro' is a native coroutine object.
+            return coro
+        if (coro.__class__ is GeneratorType or
+                (isinstance(coro, _collections_abc.Generator) and
+                 not isinstance(coro, _collections_abc.Coroutine))):
+            # 'coro' is either a pure Python generator iterator, or it
+            # implements collections.abc.Generator (and does not implement
+            # collections.abc.Coroutine).
             return GeneratorWrapper(coro)
-        # slow checks
-        if not isinstance(coro, _collections_abc.Coroutine):
-            if isinstance(coro, _collections_abc.Generator):
-                return GeneratorWrapper(coro)
-            raise TypeError(
-                'callable wrapped with types.coroutine() returned '
-                'non-coroutine: {!r}'.format(coro))
+        # 'coro' is either an instance of collections.abc.Coroutine or
+        # some other object -- pass it through.
         return coro
 
     return wrapped

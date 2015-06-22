@@ -666,6 +666,15 @@ can be used to create instance variables with different implementation details.
 Coroutines
 ==========
 
+.. index::
+   statement: async def
+   statement: async for
+   statement: async with
+   keyword: async
+   keyword: await
+
+.. versionadded:: 3.5
+
 .. _`async def`:
 
 Coroutine function definition
@@ -683,7 +692,11 @@ even if they do not contain ``await`` or ``async`` keywords.
 
 It is a :exc:`SyntaxError` to use :keyword:`yield` expressions in coroutines.
 
-.. versionadded:: 3.5
+An example of a coroutine function::
+
+    async def func(param1, param2):
+        do_stuff()
+        await some_coroutine()
 
 
 .. _`async for`:
@@ -725,7 +738,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aiter__` and :meth:`__anext__` for details.
 
-.. versionadded:: 3.5
+It is a :exc:`SyntaxError` to use ``async for`` statement outside of an
+:keyword:`async def` function.
 
 
 .. _`async with`:
@@ -762,7 +776,8 @@ Is semantically equivalent to::
 
 See also :meth:`__aenter__` and :meth:`__aexit__` for details.
 
-.. versionadded:: 3.5
+It is a :exc:`SyntaxError` to use ``async with`` statement outside of an
+:keyword:`async def` function.
 
 .. seealso::
 

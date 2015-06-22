@@ -491,6 +491,12 @@ PyFunction_SetDefaults:PyObject*:defaults:+1:
 PyGen_New:PyObject*::+1:
 PyGen_New:PyFrameObject*:frame:0:
 
+PyGen_NewWithQualName:PyObject*::+1:
+PyGen_NewWithQualName:PyFrameObject*:frame:0:
+
+PyCoro_New:PyObject*::+1:
+PyCoro_New:PyFrameObject*:frame:0:
+
 Py_InitModule:PyObject*::0:
 Py_InitModule:const char*:name::
 Py_InitModule:PyMethodDef[]:methods::

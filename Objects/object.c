@@ -1726,6 +1726,12 @@ _Py_ReadyTypes(void)
 
     if (PyType_Ready(&PySeqIter_Type) < 0)
         Py_FatalError("Can't initialize sequence iterator type");
+
+    if (PyType_Ready(&PyCoro_Type) < 0)
+        Py_FatalError("Can't initialize coroutine type");
+
+    if (PyType_Ready(&_PyCoroWrapper_Type) < 0)
+        Py_FatalError("Can't initialize coroutine wrapper type");
 }
 
 
