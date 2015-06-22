@@ -27,8 +27,7 @@ _PyGen_Finalize(PyObject *self)
     /* If `gen` is a coroutine, and if it was never awaited on,
        issue a RuntimeWarning. */
     if (gen->gi_code != NULL
-            && ((PyCodeObject *)gen->gi_code)->co_flags & (CO_COROUTINE
-                                                       | CO_ITERABLE_COROUTINE)
+            && ((PyCodeObject *)gen->gi_code)->co_flags & CO_COROUTINE
             && gen->gi_frame != NULL
             && gen->gi_frame->f_lasti == -1
             && !PyErr_Occurred()
@@ -86,8 +85,10 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
     PyObject *result;
 
     if (gen->gi_running) {
-        PyErr_SetString(PyExc_ValueError,
-                        "generator already executing");
+        char *msg = "generator already executing";
+        if (PyCoro_CheckExact(gen))
+            msg = "coroutine already executing";
+        PyErr_SetString(PyExc_ValueError, msg);
         return NULL;
     }
     if (f == NULL || f->f_stacktop == NULL) {
@@ -99,9 +100,12 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
 
     if (f->f_lasti == -1) {
         if (arg && arg != Py_None) {
-            PyErr_SetString(PyExc_TypeError,
-                            "can't send non-None value to a "
-                            "just-started generator");
+            char *msg = "can't send non-None value to a "
+                        "just-started generator";
+            if (PyCoro_CheckExact(gen))
+                msg = "can't send non-None value to a "
+                      "just-started coroutine";
+            PyErr_SetString(PyExc_TypeError, msg);
             return NULL;
         }
     } else {
@@ -151,14 +155,16 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
               (CO_FUTURE_GENERATOR_STOP | CO_COROUTINE | CO_ITERABLE_COROUTINE))
         {
             PyObject *exc, *val, *val2, *tb;
+            char *msg = "generator raised StopIteration";
+            if (PyCoro_CheckExact(gen))
+                msg = "coroutine raised StopIteration";
             PyErr_Fetch(&exc, &val, &tb);
             PyErr_NormalizeException(&exc, &val, &tb);
             if (tb != NULL)
                 PyException_SetTraceback(val, tb);
             Py_DECREF(exc);
             Py_XDECREF(tb);
-            PyErr_SetString(PyExc_RuntimeError,
-                "generator raised StopIteration");
+            PyErr_SetString(PyExc_RuntimeError, msg);
             PyErr_Fetch(&exc, &val2, &tb);
             PyErr_NormalizeException(&exc, &val2, &tb);
             Py_INCREF(val);
@@ -288,9 +294,11 @@ gen_close(PyGenObject *gen, PyObject *args)
         PyErr_SetNone(PyExc_GeneratorExit);
     retval = gen_send_ex(gen, Py_None, 1);
     if (retval) {
+        char *msg = "generator ignored GeneratorExit";
+        if (PyCoro_CheckExact(gen))
+            msg = "coroutine ignored GeneratorExit";
         Py_DECREF(retval);
-        PyErr_SetString(PyExc_RuntimeError,
-                        "generator ignored GeneratorExit");
+        PyErr_SetString(PyExc_RuntimeError, msg);
         return NULL;
     }
     if (PyErr_ExceptionMatches(PyExc_StopIteration)
@@ -432,12 +440,6 @@ failed_throw:
 static PyObject *
 gen_iternext(PyGenObject *gen)
 {
-    if (((PyCodeObject*)gen->gi_code)->co_flags & CO_COROUTINE) {
-        PyErr_SetString(PyExc_TypeError,
-                        "coroutine-objects do not support iteration");
-        return NULL;
-    }
-
     return gen_send_ex(gen, NULL, 0);
 }
 
@@ -494,14 +496,8 @@ _PyGen_FetchStopIterationValue(PyObject **pvalue) {
 static PyObject *
 gen_repr(PyGenObject *gen)
 {
-    if (PyGen_CheckCoroutineExact(gen)) {
-        return PyUnicode_FromFormat("<coroutine object %S at %p>",
-                                    gen->gi_qualname, gen);
-    }
-    else {
-        return PyUnicode_FromFormat("<generator object %S at %p>",
-                                    gen->gi_qualname, gen);
-    }
+    return PyUnicode_FromFormat("<generator object %S at %p>",
+                                gen->gi_qualname, gen);
 }
 
 static PyObject *
@@ -535,19 +531,6 @@ gen_get_qualname(PyGenObject *op)
 {
     Py_INCREF(op->gi_qualname);
     return op->gi_qualname;
-}
-
-static PyObject *
-gen_get_iter(PyGenObject *gen)
-{
-    if (((PyCodeObject*)gen->gi_code)->co_flags & CO_COROUTINE) {
-        PyErr_SetString(PyExc_TypeError,
-                        "coroutine-objects do not support iteration");
-        return NULL;
-    }
-
-    Py_INCREF(gen);
-    return (PyObject *)gen;
 }
 
 static int
@@ -619,7 +602,7 @@ PyTypeObject PyGen_Type = {
     0,                                          /* tp_clear */
     0,                                          /* tp_richcompare */
     offsetof(PyGenObject, gi_weakreflist),      /* tp_weaklistoffset */
-    (getiterfunc)gen_get_iter,                  /* tp_iter */
+    PyObject_SelfIter,                          /* tp_iter */
     (iternextfunc)gen_iternext,                 /* tp_iternext */
     gen_methods,                                /* tp_methods */
     gen_memberlist,                             /* tp_members */
@@ -645,10 +628,11 @@ PyTypeObject PyGen_Type = {
     _PyGen_Finalize,                            /* tp_finalize */
 };
 
-PyObject *
-PyGen_NewWithQualName(PyFrameObject *f, PyObject *name, PyObject *qualname)
+static PyObject *
+gen_new_with_qualname(PyTypeObject *type, PyFrameObject *f,
+                      PyObject *name, PyObject *qualname)
 {
-    PyGenObject *gen = PyObject_GC_New(PyGenObject, &PyGen_Type);
+    PyGenObject *gen = PyObject_GC_New(PyGenObject, type);
     if (gen == NULL) {
         Py_DECREF(f);
         return NULL;
@@ -674,9 +658,15 @@ PyGen_NewWithQualName(PyFrameObject *f, PyObject *name, PyObject *qualname)
 }
 
 PyObject *
+PyGen_NewWithQualName(PyFrameObject *f, PyObject *name, PyObject *qualname)
+{
+    return gen_new_with_qualname(&PyGen_Type, f, name, qualname);
+}
+
+PyObject *
 PyGen_New(PyFrameObject *f)
 {
-    return PyGen_NewWithQualName(f, NULL, NULL);
+    return gen_new_with_qualname(&PyGen_Type, f, NULL, NULL);
 }
 
 int
@@ -697,6 +687,25 @@ PyGen_NeedsFinalizing(PyGenObject *gen)
     return 0;
 }
 
+/* Coroutine Object */
+
+typedef struct {
+    PyObject_HEAD
+    PyCoroObject *cw_coroutine;
+} PyCoroWrapper;
+
+static int
+gen_is_coroutine(PyObject *o)
+{
+    if (PyGen_CheckExact(o)) {
+        PyCodeObject *code = (PyCodeObject *)((PyGenObject*)o)->gi_code;
+        if (code->co_flags & CO_ITERABLE_COROUTINE) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
 /*
  *   This helper function returns an awaitable for `o`:
  *     - `o` if `o` is a coroutine-object;
@@ -706,13 +715,13 @@ PyGen_NeedsFinalizing(PyGenObject *gen)
  *   an awaitable and returns NULL.
  */
 PyObject *
-_PyGen_GetAwaitableIter(PyObject *o)
+_PyCoro_GetAwaitableIter(PyObject *o)
 {
     unaryfunc getter = NULL;
     PyTypeObject *ot;
 
-    if (PyGen_CheckCoroutineExact(o)) {
-        /* Fast path. It's a central function for 'await'. */
+    if (PyCoro_CheckExact(o) || gen_is_coroutine(o)) {
+        /* 'o' is a coroutine. */
         Py_INCREF(o);
         return o;
     }
@@ -724,21 +733,18 @@ _PyGen_GetAwaitableIter(PyObject *o)
     if (getter != NULL) {
         PyObject *res = (*getter)(o);
         if (res != NULL) {
-            if (!PyIter_Check(res)) {
+            if (PyCoro_CheckExact(res) || gen_is_coroutine(res)) {
+                /* __await__ must return an *iterator*, not
+                   a coroutine or another awaitable (see PEP 492) */
+                PyErr_SetString(PyExc_TypeError,
+                                "__await__() returned a coroutine");
+                Py_CLEAR(res);
+            } else if (!PyIter_Check(res)) {
                 PyErr_Format(PyExc_TypeError,
                              "__await__() returned non-iterator "
                              "of type '%.100s'",
                              Py_TYPE(res)->tp_name);
                 Py_CLEAR(res);
-            }
-            else {
-                if (PyGen_CheckCoroutineExact(res)) {
-                    /* __await__ must return an *iterator*, not
-                       a coroutine or another awaitable (see PEP 492) */
-                    PyErr_SetString(PyExc_TypeError,
-                                    "__await__() returned a coroutine");
-                    Py_CLEAR(res);
-                }
             }
         }
         return res;
@@ -747,6 +753,211 @@ _PyGen_GetAwaitableIter(PyObject *o)
     PyErr_Format(PyExc_TypeError,
                  "object %.100s can't be used in 'await' expression",
                  ot->tp_name);
-
     return NULL;
+}
+
+static PyObject *
+coro_repr(PyCoroObject *coro)
+{
+    return PyUnicode_FromFormat("<coroutine object %S at %p>",
+                                coro->cr_qualname, coro);
+}
+
+static PyObject *
+coro_await(PyCoroObject *coro)
+{
+    PyCoroWrapper *cw = PyObject_GC_New(PyCoroWrapper, &_PyCoroWrapper_Type);
+    if (cw == NULL) {
+        return NULL;
+    }
+    Py_INCREF(coro);
+    cw->cw_coroutine = coro;
+    _PyObject_GC_TRACK(cw);
+    return (PyObject *)cw;
+}
+
+static PyGetSetDef coro_getsetlist[] = {
+    {"__name__", (getter)gen_get_name, (setter)gen_set_name,
+     PyDoc_STR("name of the coroutine")},
+    {"__qualname__", (getter)gen_get_qualname, (setter)gen_set_qualname,
+     PyDoc_STR("qualified name of the coroutine")},
+    {NULL} /* Sentinel */
+};
+
+static PyMemberDef coro_memberlist[] = {
+    {"cr_frame",     T_OBJECT, offsetof(PyCoroObject, cr_frame),    READONLY},
+    {"cr_running",   T_BOOL,   offsetof(PyCoroObject, cr_running),  READONLY},
+    {"cr_code",      T_OBJECT, offsetof(PyCoroObject, cr_code),     READONLY},
+    {NULL}      /* Sentinel */
+};
+
+PyDoc_STRVAR(coro_send_doc,
+"send(arg) -> send 'arg' into coroutine,\n\
+return next yielded value or raise StopIteration.");
+
+PyDoc_STRVAR(coro_throw_doc,
+"throw(typ[,val[,tb]]) -> raise exception in coroutine,\n\
+return next yielded value or raise StopIteration.");
+
+PyDoc_STRVAR(coro_close_doc,
+"close() -> raise GeneratorExit inside coroutine.");
+
+static PyMethodDef coro_methods[] = {
+    {"send",(PyCFunction)_PyGen_Send, METH_O, coro_send_doc},
+    {"throw",(PyCFunction)gen_throw, METH_VARARGS, coro_throw_doc},
+    {"close",(PyCFunction)gen_close, METH_NOARGS, coro_close_doc},
+    {NULL, NULL}        /* Sentinel */
+};
+
+static PyAsyncMethods coro_as_async = {
+    (unaryfunc)coro_await,                      /* am_await */
+    0,                                          /* am_aiter */
+    0                                           /* am_anext */
+};
+
+PyTypeObject PyCoro_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "coroutine",                                /* tp_name */
+    sizeof(PyCoroObject),                       /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    /* methods */
+    (destructor)gen_dealloc,                    /* tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    &coro_as_async,                             /* tp_as_async */
+    (reprfunc)coro_repr,                        /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
+        Py_TPFLAGS_HAVE_FINALIZE,               /* tp_flags */
+    0,                                          /* tp_doc */
+    (traverseproc)gen_traverse,                 /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    offsetof(PyCoroObject, cr_weakreflist),     /* tp_weaklistoffset */
+    0,                                          /* tp_iter */
+    0,                                          /* tp_iternext */
+    coro_methods,                               /* tp_methods */
+    coro_memberlist,                            /* tp_members */
+    coro_getsetlist,                            /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    0,                                          /* tp_new */
+    0,                                          /* tp_free */
+    0,                                          /* tp_is_gc */
+    0,                                          /* tp_bases */
+    0,                                          /* tp_mro */
+    0,                                          /* tp_cache */
+    0,                                          /* tp_subclasses */
+    0,                                          /* tp_weaklist */
+    0,                                          /* tp_del */
+    0,                                          /* tp_version_tag */
+    _PyGen_Finalize,                            /* tp_finalize */
+};
+
+static void
+coro_wrapper_dealloc(PyCoroWrapper *cw)
+{
+    _PyObject_GC_UNTRACK((PyObject *)cw);
+    Py_CLEAR(cw->cw_coroutine);
+    PyObject_GC_Del(cw);
+}
+
+static PyObject *
+coro_wrapper_iternext(PyCoroWrapper *cw)
+{
+    return gen_send_ex((PyGenObject *)cw->cw_coroutine, NULL, 0);
+}
+
+static PyObject *
+coro_wrapper_send(PyCoroWrapper *cw, PyObject *arg)
+{
+    return gen_send_ex((PyGenObject *)cw->cw_coroutine, arg, 0);
+}
+
+static PyObject *
+coro_wrapper_throw(PyCoroWrapper *cw, PyObject *args)
+{
+    return gen_throw((PyGenObject *)cw->cw_coroutine, args);
+}
+
+static PyObject *
+coro_wrapper_close(PyCoroWrapper *cw, PyObject *args)
+{
+    return gen_close((PyGenObject *)cw->cw_coroutine, args);
+}
+
+static int
+coro_wrapper_traverse(PyCoroWrapper *cw, visitproc visit, void *arg)
+{
+    Py_VISIT((PyObject *)cw->cw_coroutine);
+    return 0;
+}
+
+static PyMethodDef coro_wrapper_methods[] = {
+    {"send",(PyCFunction)coro_wrapper_send, METH_O, send_doc},
+    {"throw",(PyCFunction)coro_wrapper_throw, METH_VARARGS, throw_doc},
+    {"close",(PyCFunction)coro_wrapper_close, METH_NOARGS, close_doc},
+    {NULL, NULL}        /* Sentinel */
+};
+
+PyTypeObject _PyCoroWrapper_Type = {
+    PyVarObject_HEAD_INIT(&PyType_Type, 0)
+    "coroutine_wrapper",
+    sizeof(PyCoroWrapper),                      /* tp_basicsize */
+    0,                                          /* tp_itemsize */
+    (destructor)coro_wrapper_dealloc,           /* destructor tp_dealloc */
+    0,                                          /* tp_print */
+    0,                                          /* tp_getattr */
+    0,                                          /* tp_setattr */
+    0,                                          /* tp_as_async */
+    0,                                          /* tp_repr */
+    0,                                          /* tp_as_number */
+    0,                                          /* tp_as_sequence */
+    0,                                          /* tp_as_mapping */
+    0,                                          /* tp_hash */
+    0,                                          /* tp_call */
+    0,                                          /* tp_str */
+    PyObject_GenericGetAttr,                    /* tp_getattro */
+    0,                                          /* tp_setattro */
+    0,                                          /* tp_as_buffer */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
+    "A wrapper object implementing __await__ for coroutines.",
+    (traverseproc)coro_wrapper_traverse,        /* tp_traverse */
+    0,                                          /* tp_clear */
+    0,                                          /* tp_richcompare */
+    0,                                          /* tp_weaklistoffset */
+    PyObject_SelfIter,                          /* tp_iter */
+    (iternextfunc)coro_wrapper_iternext,        /* tp_iternext */
+    coro_wrapper_methods,                       /* tp_methods */
+    0,                                          /* tp_members */
+    0,                                          /* tp_getset */
+    0,                                          /* tp_base */
+    0,                                          /* tp_dict */
+    0,                                          /* tp_descr_get */
+    0,                                          /* tp_descr_set */
+    0,                                          /* tp_dictoffset */
+    0,                                          /* tp_init */
+    0,                                          /* tp_alloc */
+    0,                                          /* tp_new */
+    PyObject_Del,                               /* tp_free */
+};
+
+PyObject *
+PyCoro_New(PyFrameObject *f, PyObject *name, PyObject *qualname)
+{
+    return gen_new_with_qualname(&PyCoro_Type, f, name, qualname);
 }
