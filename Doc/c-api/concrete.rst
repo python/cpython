@@ -112,5 +112,6 @@ Other Objects
    weakref.rst
    capsule.rst
    gen.rst
+   coro.rst
    datetime.rst
 

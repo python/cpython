@@ -346,6 +346,14 @@ result back on the stack.
    Implements ``TOS = iter(TOS)``.
 
 
+.. opcode:: GET_YIELD_FROM_ITER
+
+   If ``TOS`` is a :term:`generator iterator` or :term:`coroutine` object
+   it is left as is.  Otherwise, implements ``TOS = iter(TOS)``.
+
+   .. versionadded:: 3.5
+
+
 **Binary operations**
 
 Binary operations remove the top of the stack (TOS) and the second top-most
