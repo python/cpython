@@ -531,6 +531,9 @@ inspect
   and :func:`~inspect.isawaitable` functions.  (Contributed by Yury Selivanov
   in :issue:`24017`.)
 
+* New :func:`~inspect.getcoroutinelocals` and :func:`~inspect.getcoroutinestate`
+  functions.  (Contributed by Yury Selivanov in :issue:`24400`.)
+
 ipaddress
 ---------
 
@@ -733,6 +736,9 @@ types
 
 * New :func:`~types.coroutine` function.  (Contributed by Yury Selivanov
   in :issue:`24017`.)
+
+* New :class:`~types.CoroutineType`.  (Contributed by Yury Selivanov
+  in :issue:`24400`.)
 
 urllib
 ------
@@ -1101,6 +1107,7 @@ Changes in the C API
   the :attr:`__module__` attribute.  Would be an AttributeError in future.
   (:issue:`20204`)
 
-* As part of PEP 492 implementation, ``tp_reserved`` slot of
+* As part of :pep:`492` implementation, ``tp_reserved`` slot of
   :c:type:`PyTypeObject` was replaced with a
-  :c:member:`PyTypeObject.tp_as_async` slot.
+  :c:member:`PyTypeObject.tp_as_async` slot.  Refer to :ref:`coro-objects` for
+  new types, structures and functions.

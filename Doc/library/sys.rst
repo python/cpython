@@ -1075,7 +1075,10 @@ always available.
 
 .. function:: set_coroutine_wrapper(wrapper)
 
-   Allows to intercept creation of :term:`coroutine` objects.
+   Allows intercepting creation of :term:`coroutine` objects (only ones that
+   are created by an :keyword:`async def` function; generators decorated with
+   :func:`types.coroutine` or :func:`asyncio.coroutine` will not be
+   intercepted).
 
    *wrapper* must be either:
 

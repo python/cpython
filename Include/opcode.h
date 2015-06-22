@@ -45,6 +45,7 @@ extern "C" {
 #define BINARY_OR                66
 #define INPLACE_POWER            67
 #define GET_ITER                 68
+#define GET_YIELD_FROM_ITER      69
 #define PRINT_EXPR               70
 #define LOAD_BUILD_CLASS         71
 #define YIELD_FROM               72
