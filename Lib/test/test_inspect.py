@@ -141,9 +141,9 @@ class TestPredicates(IsTestBase):
         gen_coro = gen_coroutine_function_example(1)
         coro = coroutine_function_example(1)
 
-        self.assertTrue(
+        self.assertFalse(
             inspect.iscoroutinefunction(gen_coroutine_function_example))
-        self.assertTrue(inspect.iscoroutine(gen_coro))
+        self.assertFalse(inspect.iscoroutine(gen_coro))
 
         self.assertTrue(
             inspect.isgeneratorfunction(gen_coroutine_function_example))
@@ -1735,6 +1735,70 @@ class TestGetGeneratorState(unittest.TestCase):
         self.assertRaises(TypeError, inspect.getgeneratorlocals, lambda x: True)
         self.assertRaises(TypeError, inspect.getgeneratorlocals, set)
         self.assertRaises(TypeError, inspect.getgeneratorlocals, (2,3))
+
+
+class TestGetCoroutineState(unittest.TestCase):
+
+    def setUp(self):
+        @types.coroutine
+        def number_coroutine():
+            for number in range(5):
+                yield number
+        async def coroutine():
+            await number_coroutine()
+        self.coroutine = coroutine()
+
+    def tearDown(self):
+        self.coroutine.close()
+
+    def _coroutinestate(self):
+        return inspect.getcoroutinestate(self.coroutine)
+
+    def test_created(self):
+        self.assertEqual(self._coroutinestate(), inspect.CORO_CREATED)
+
+    def test_suspended(self):
+        self.coroutine.send(None)
+        self.assertEqual(self._coroutinestate(), inspect.CORO_SUSPENDED)
+
+    def test_closed_after_exhaustion(self):
+        while True:
+            try:
+                self.coroutine.send(None)
+            except StopIteration:
+                break
+
+        self.assertEqual(self._coroutinestate(), inspect.CORO_CLOSED)
+
+    def test_closed_after_immediate_exception(self):
+        with self.assertRaises(RuntimeError):
+            self.coroutine.throw(RuntimeError)
+        self.assertEqual(self._coroutinestate(), inspect.CORO_CLOSED)
+
+    def test_easy_debugging(self):
+        # repr() and str() of a coroutine state should contain the state name
+        names = 'CORO_CREATED CORO_RUNNING CORO_SUSPENDED CORO_CLOSED'.split()
+        for name in names:
+            state = getattr(inspect, name)
+            self.assertIn(name, repr(state))
+            self.assertIn(name, str(state))
+
+    def test_getcoroutinelocals(self):
+        @types.coroutine
+        def gencoro():
+            yield
+
+        gencoro = gencoro()
+        async def func(a=None):
+            b = 'spam'
+            await gencoro
+
+        coro = func()
+        self.assertEqual(inspect.getcoroutinelocals(coro),
+                         {'a': None, 'gencoro': gencoro})
+        coro.send(None)
+        self.assertEqual(inspect.getcoroutinelocals(coro),
+                         {'a': None, 'gencoro': gencoro, 'b': 'spam'})
 
 
 class MySignature(inspect.Signature):
@@ -3494,7 +3558,8 @@ def test_main():
         TestNoEOL, TestSignatureObject, TestSignatureBind, TestParameterObject,
         TestBoundArguments, TestSignaturePrivateHelpers,
         TestSignatureDefinitions,
-        TestGetClosureVars, TestUnwrap, TestMain, TestReload
+        TestGetClosureVars, TestUnwrap, TestMain, TestReload,
+        TestGetCoroutineState
     )
 
 if __name__ == "__main__":

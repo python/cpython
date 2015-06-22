@@ -1205,10 +1205,28 @@ class CoroutineTests(unittest.TestCase):
     def test_wrong_func(self):
         @types.coroutine
         def foo():
-            pass
-        with self.assertRaisesRegex(TypeError,
-                                    'callable wrapped .* non-coroutine'):
-            foo()
+            return 'spam'
+        self.assertEqual(foo(), 'spam')
+
+    def test_async_def(self):
+        # Test that types.coroutine passes 'async def' coroutines
+        # without modification
+
+        async def foo(): pass
+        foo_code = foo.__code__
+        foo_flags = foo.__code__.co_flags
+        decorated_foo = types.coroutine(foo)
+        self.assertIs(foo, decorated_foo)
+        self.assertEqual(foo.__code__.co_flags, foo_flags)
+        self.assertIs(decorated_foo.__code__, foo_code)
+
+        foo_coro = foo()
+        @types.coroutine
+        def bar(): return foo_coro
+        coro = bar()
+        self.assertIs(foo_coro, coro)
+        self.assertEqual(coro.cr_code.co_flags, foo_flags)
+        coro.close()
 
     def test_duck_coro(self):
         class CoroLike:
@@ -1221,6 +1239,23 @@ class CoroutineTests(unittest.TestCase):
         @types.coroutine
         def foo():
             return coro
+        self.assertIs(foo(), coro)
+        self.assertIs(foo().__await__(), coro)
+
+    def test_duck_corogen(self):
+        class CoroGenLike:
+            def send(self): pass
+            def throw(self): pass
+            def close(self): pass
+            def __await__(self): return self
+            def __iter__(self): return self
+            def __next__(self): pass
+
+        coro = CoroGenLike()
+        @types.coroutine
+        def foo():
+            return coro
+        self.assertIs(foo(), coro)
         self.assertIs(foo().__await__(), coro)
 
     def test_duck_gen(self):
@@ -1236,7 +1271,7 @@ class CoroutineTests(unittest.TestCase):
         def foo():
             return gen
         self.assertIs(foo().__await__(), gen)
-
+        self.assertTrue(isinstance(foo(), collections.abc.Coroutine))
         with self.assertRaises(AttributeError):
             foo().gi_code
 
@@ -1251,6 +1286,7 @@ class CoroutineTests(unittest.TestCase):
                      'gi_running', 'gi_frame'):
             self.assertIs(getattr(foo(), name),
                           getattr(gen, name))
+        self.assertIs(foo().cr_code, gen.gi_code)
 
     def test_genfunc(self):
         def gen():
@@ -1259,7 +1295,13 @@ class CoroutineTests(unittest.TestCase):
         self.assertFalse(isinstance(gen(), collections.abc.Coroutine))
         self.assertFalse(isinstance(gen(), collections.abc.Awaitable))
 
-        self.assertIs(types.coroutine(gen), gen)
+        gen_code = gen.__code__
+        decorated_gen = types.coroutine(gen)
+        self.assertIs(decorated_gen, gen)
+        self.assertIsNot(decorated_gen.__code__, gen_code)
+
+        decorated_gen2 = types.coroutine(decorated_gen)
+        self.assertIs(decorated_gen2.__code__, decorated_gen.__code__)
 
         self.assertTrue(gen.__code__.co_flags & inspect.CO_ITERABLE_COROUTINE)
         self.assertFalse(gen.__code__.co_flags & inspect.CO_COROUTINE)

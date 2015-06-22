@@ -52,6 +52,12 @@ dict_items = type({}.items())
 ## misc ##
 mappingproxy = type(type.__dict__)
 generator = type((lambda: (yield))())
+## coroutine ##
+async def _coro(): pass
+_coro = _coro()
+coroutine = type(_coro)
+_coro.close()  # Prevent ResourceWarning
+del _coro
 
 
 ### ONE-TRICK PONIES ###
@@ -78,17 +84,15 @@ class Hashable(metaclass=ABCMeta):
 class _AwaitableMeta(ABCMeta):
 
     def __instancecheck__(cls, instance):
-        # 0x80 = CO_COROUTINE
-        # 0x100 = CO_ITERABLE_COROUTINE
-        # We don't want to import 'inspect' module, as
-        # a dependency for 'collections.abc'.
-        CO_COROUTINES = 0x80 | 0x100
-
-        if (isinstance(instance, generator) and
-            instance.gi_code.co_flags & CO_COROUTINES):
-
+        # This hook is needed because we can't add
+        # '__await__' method to generator objects, and
+        # we can't register GeneratorType on Awaitable.
+        # NB: 0x100 = CO_ITERABLE_COROUTINE
+        # (We don't want to import 'inspect' module, as
+        # a dependency for 'collections.abc')
+        if (instance.__class__ is generator and
+            instance.gi_code.co_flags & 0x100):
             return True
-
         return super().__instancecheck__(instance)
 
 
@@ -157,6 +161,9 @@ class Coroutine(Awaitable):
                     return NotImplemented
             return True
         return NotImplemented
+
+
+Coroutine.register(coroutine)
 
 
 class AsyncIterable(metaclass=ABCMeta):

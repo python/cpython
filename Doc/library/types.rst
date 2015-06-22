@@ -90,6 +90,14 @@ Standard names are defined for the following types:
    generator function.
 
 
+.. data:: CoroutineType
+
+   The type of :term:`coroutine` objects, produced by calling a
+   function defined with an :keyword:`async def` statement.
+
+   .. versionadded:: 3.5
+
+
 .. data:: CodeType
 
    .. index:: builtin: compile
