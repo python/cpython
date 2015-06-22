@@ -10,39 +10,32 @@ extern "C" {
 
 struct _frame; /* Avoid including frameobject.h */
 
+/* _PyGenObject_HEAD defines the initial segment of generator
+   and coroutine objects. */
+#define _PyGenObject_HEAD(prefix)                                           \
+    PyObject_HEAD                                                           \
+    /* Note: gi_frame can be NULL if the generator is "finished" */         \
+    struct _frame *prefix##_frame;                                          \
+    /* True if generator is being executed. */                              \
+    char prefix##_running;                                                  \
+    /* The code object backing the generator */                             \
+    PyObject *prefix##_code;                                                \
+    /* List of weak reference. */                                           \
+    PyObject *prefix##_weakreflist;                                         \
+    /* Name of the generator. */                                            \
+    PyObject *prefix##_name;                                                \
+    /* Qualified name of the generator. */                                  \
+    PyObject *prefix##_qualname;
+
 typedef struct {
-    PyObject_HEAD
     /* The gi_ prefix is intended to remind of generator-iterator. */
-
-    /* Note: gi_frame can be NULL if the generator is "finished" */
-    struct _frame *gi_frame;
-
-    /* True if generator is being executed. */
-    char gi_running;
-
-    /* The code object backing the generator */
-    PyObject *gi_code;
-
-    /* List of weak reference. */
-    PyObject *gi_weakreflist;
-
-    /* Name of the generator. */
-    PyObject *gi_name;
-
-    /* Qualified name of the generator. */
-    PyObject *gi_qualname;
+    _PyGenObject_HEAD(gi)
 } PyGenObject;
 
 PyAPI_DATA(PyTypeObject) PyGen_Type;
 
 #define PyGen_Check(op) PyObject_TypeCheck(op, &PyGen_Type)
 #define PyGen_CheckExact(op) (Py_TYPE(op) == &PyGen_Type)
-
-#define PyGen_CheckCoroutineExact(op) (PyGen_CheckExact(op) && \
-                                       (((PyCodeObject*) \
-                                           ((PyGenObject*)op)->gi_code) \
-                                         ->co_flags & (CO_ITERABLE_COROUTINE | \
-                                                       CO_COROUTINE)))
 
 PyAPI_FUNC(PyObject *) PyGen_New(struct _frame *);
 PyAPI_FUNC(PyObject *) PyGen_NewWithQualName(struct _frame *,
@@ -52,7 +45,21 @@ PyAPI_FUNC(int) _PyGen_FetchStopIterationValue(PyObject **);
 PyObject *_PyGen_Send(PyGenObject *, PyObject *);
 PyAPI_FUNC(void) _PyGen_Finalize(PyObject *self);
 
-PyObject *_PyGen_GetAwaitableIter(PyObject *o);
+#ifndef Py_LIMITED_API
+typedef struct {
+    _PyGenObject_HEAD(cr)
+} PyCoroObject;
+
+PyAPI_DATA(PyTypeObject) PyCoro_Type;
+PyAPI_DATA(PyTypeObject) _PyCoroWrapper_Type;
+
+#define PyCoro_CheckExact(op) (Py_TYPE(op) == &PyCoro_Type)
+PyObject *_PyCoro_GetAwaitableIter(PyObject *o);
+PyAPI_FUNC(PyObject *) PyCoro_New(struct _frame *,
+    PyObject *name, PyObject *qualname);
+#endif
+
+#undef _PyGenObject_HEAD
 
 #ifdef __cplusplus
 }

@@ -333,14 +333,23 @@ Glossary
       .. index:: single: generator
 
    generator
-      A function which returns an iterator.  It looks like a normal function
-      except that it contains :keyword:`yield` statements for producing a series
-      of values usable in a for-loop or that can be retrieved one at a time with
-      the :func:`next` function. Each :keyword:`yield` temporarily suspends
-      processing, remembering the location execution state (including local
-      variables and pending try-statements).  When the generator resumes, it
-      picks-up where it left-off (in contrast to functions which start fresh on
-      every invocation).
+      A function which returns a :term:`generator iterator`.  It looks like a
+      normal function except that it contains :keyword:`yield` expressions
+      for producing a series of values usable in a for-loop or that can be
+      retrieved one at a time with the :func:`next` function.
+
+      Usually refers to a generator function, but may refer to a
+      *generator iterator* in some contexts.  In cases where the intended
+      meaning isn't clear, using the full terms avoids ambiguity.
+
+   generator iterator
+      An object created by a :term:`generator` function.
+
+      Each :keyword:`yield` temporarily suspends processing, remembering the
+      location execution state (including local variables and pending
+      try-statements).  When the *generator iterator* resumes, it picks-up where
+      it left-off (in contrast to functions which start fresh on every
+      invocation).
 
       .. index:: single: generator expression
 
