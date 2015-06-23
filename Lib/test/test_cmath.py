@@ -1,4 +1,4 @@
-from test.test_support import run_unittest
+from test.test_support import run_unittest, cpython_only
 from test.test_math import parse_testfile, test_file
 import unittest
 import cmath, math
@@ -351,17 +351,48 @@ class CMathTests(unittest.TestCase):
             self.rAssertAlmostEqual(expected.imag, actual.imag,
                                         msg=error_message)
 
-    def assertCISEqual(self, a, b):
-        eps = 1E-7
-        if abs(a[0] - b[0]) > eps or abs(a[1] - b[1]) > eps:
-            self.fail((a ,b))
+    def check_polar(self, func):
+        def check(arg, expected):
+            got = func(arg)
+            for e, g in zip(expected, got):
+                self.rAssertAlmostEqual(e, g)
+        check(0, (0., 0.))
+        check(1, (1., 0.))
+        check(-1, (1., pi))
+        check(1j, (1., pi / 2))
+        check(-3j, (3., -pi / 2))
+        inf = float('inf')
+        check(complex(inf, 0), (inf, 0.))
+        check(complex(-inf, 0), (inf, pi))
+        check(complex(3, inf), (inf, pi / 2))
+        check(complex(5, -inf), (inf, -pi / 2))
+        check(complex(inf, inf), (inf, pi / 4))
+        check(complex(inf, -inf), (inf, -pi / 4))
+        check(complex(-inf, inf), (inf, 3 * pi / 4))
+        check(complex(-inf, -inf), (inf, -3 * pi / 4))
+        nan = float('nan')
+        check(complex(nan, 0), (nan, nan))
+        check(complex(0, nan), (nan, nan))
+        check(complex(nan, nan), (nan, nan))
+        check(complex(inf, nan), (inf, nan))
+        check(complex(-inf, nan), (inf, nan))
+        check(complex(nan, inf), (inf, nan))
+        check(complex(nan, -inf), (inf, nan))
 
     def test_polar(self):
-        self.assertCISEqual(polar(0), (0., 0.))
-        self.assertCISEqual(polar(1.), (1., 0.))
-        self.assertCISEqual(polar(-1.), (1., pi))
-        self.assertCISEqual(polar(1j), (1., pi/2))
-        self.assertCISEqual(polar(-1j), (1., -pi/2))
+        self.check_polar(polar)
+
+    @cpython_only
+    def test_polar_errno(self):
+        # Issue #24489: check a previously set C errno doesn't disturb polar()
+        from _testcapi import set_errno
+        def polar_with_errno_set(z):
+            set_errno(11)
+            try:
+                return polar(z)
+            finally:
+                set_errno(0)
+        self.check_polar(polar_with_errno_set)
 
     def test_phase(self):
         self.assertAlmostEqual(phase(0), 0.)

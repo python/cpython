@@ -941,9 +941,10 @@ cmath_polar(PyObject *self, PyObject *args)
     double r, phi;
     if (!PyArg_ParseTuple(args, "D:polar", &z))
         return NULL;
+    errno = 0;
     PyFPE_START_PROTECT("polar function", return 0)
     phi = c_atan2(z); /* should not cause any exception */
-    r = c_abs(z); /* sets errno to ERANGE on overflow;  otherwise 0 */
+    r = c_abs(z); /* sets errno to ERANGE on overflow */
     PyFPE_END_PROTECT(r)
     if (errno != 0)
         return math_error();

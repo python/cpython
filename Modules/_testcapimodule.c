@@ -1373,6 +1373,17 @@ raise_exception(PyObject *self, PyObject *args)
     return NULL;
 }
 
+static PyObject *
+set_errno(PyObject *self, PyObject *args)
+{
+    int new_errno;
+
+    if (!PyArg_ParseTuple(args, "i:set_errno", &new_errno))
+        return NULL;
+
+    errno = new_errno;
+    Py_RETURN_NONE;
+}
 
 static int test_run_counter = 0;
 
@@ -2032,6 +2043,7 @@ pymarshal_read_object_from_file(PyObject* self, PyObject *args)
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
+    {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},

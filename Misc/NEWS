@@ -1,4 +1,4 @@
-+++++++++++
+﻿+++++++++++
 Python News
 +++++++++++
 
@@ -29,6 +29,8 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #24489: ensure a previously set C errno doesn't disturb cmath.polar().
 
 - Issue #19543: io.TextIOWrapper (and hence io.open()) now uses the internal
   codec marking system added to emit deprecation warning for known non-text
