@@ -220,7 +220,7 @@ type objects) *must* have the :attr:`ob_size` field.
    the subtype's :c:member:`~PyTypeObject.tp_setattr` and :c:member:`~PyTypeObject.tp_setattro` are both *NULL*.
 
 
-.. c:member:: void* PyTypeObject.tp_as_async
+.. c:member:: PyAsyncMethods* tp_as_async
 
    Pointer to an additional structure that contains fields relevant only to
    objects which implement :term:`awaitable` and :term:`asynchronous iterator`
