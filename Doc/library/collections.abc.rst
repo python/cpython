@@ -154,21 +154,22 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
 .. class:: Awaitable
 
-   ABC for classes that provide ``__await__`` method.  Instances
-   of such classes can be used in ``await`` expression.
+   ABC for :term:`awaitable` objects, which can be used in :keyword:`await`
+   expressions.  Custom implementations must provide the :meth:`__await__`
+   method.
 
-   :term:`coroutine` objects and instances of
-   :class:`~collections.abc.Coroutine` are too instances of this ABC.
+   :term:`Coroutine` objects and instances of the
+   :class:`~collections.abc.Coroutine` ABC are all instances of this ABC.
 
    .. versionadded:: 3.5
 
 .. class:: Coroutine
 
-   ABC for coroutine compatible classes that implement a subset of
-   generator methods defined in :pep:`342`, namely:
-   :meth:`~generator.send`, :meth:`~generator.throw`,
-   :meth:`~generator.close` methods.  :meth:`__await__` must also be
-   implemented.  All :class:`Coroutine` instances are also instances of
+   ABC for coroutine compatible classes.  These implement the
+   following methods, defined in :ref:`coroutine-objects`:
+   :meth:`~coroutine.send`, :meth:`~coroutine.throw`, and
+   :meth:`~coroutine.close`.  Custom implementations must also implement
+   :meth:`__await__`.  All :class:`Coroutine` instances are also instances of
    :class:`Awaitable`.  See also the definition of :term:`coroutine`.
 
    .. versionadded:: 3.5

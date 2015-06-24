@@ -390,6 +390,7 @@ on the right hand side of an assignment statement.
       to sub-generators easy.
 
 .. index:: object: generator
+.. _generator-methods:
 
 Generator-iterator methods
 ^^^^^^^^^^^^^^^^^^^^^^^^^^

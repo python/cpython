@@ -1080,7 +1080,7 @@ always available.
    :func:`types.coroutine` or :func:`asyncio.coroutine` will not be
    intercepted).
 
-   *wrapper* must be either:
+   The *wrapper* argument must be either:
 
    * a callable that accepts one argument (a coroutine object);
    * ``None``, to reset the wrapper.
@@ -1096,7 +1096,8 @@ always available.
             return wrap(coro)
         sys.set_coroutine_wrapper(wrapper)
 
-        async def foo(): pass
+        async def foo():
+            pass
 
         # The following line will fail with a RuntimeError, because
         # `wrapper` creates a `wrap(coro)` coroutine:
