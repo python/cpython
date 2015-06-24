@@ -169,18 +169,19 @@ Glossary
       statement by defining :meth:`__enter__` and :meth:`__exit__` methods.
       See :pep:`343`.
 
-   coroutine function
-      A function which returns a :term:`coroutine` object.  It is defined
-      with an :keyword:`async def` keyword, and may contain :keyword:`await`,
-      :keyword:`async for`, and :keyword:`async with` keywords.  Introduced
-      by :pep:`492`.
-
    coroutine
       Coroutines is a more generalized form of subroutines. Subroutines are
-      entered at one point and exited at another point.  Coroutines, can be
-      entered, exited, and resumed at many different points.  See
-      :keyword:`await` expressions, and :keyword:`async for` and
-      :keyword:`async with` statements. See also :pep:`492`.
+      entered at one point and exited at another point.  Coroutines can be
+      entered, exited, and resumed at many different points.  They can be
+      implemented with the :keyword:`async def` statement.  See also
+      :pep:`492`.
+
+   coroutine function
+      A function which returns a :term:`coroutine` object.  A coroutine
+      function may be defined with the :keyword:`async def` statement,
+      and may contain :keyword:`await`, :keyword:`async for`, and
+      :keyword:`async with` keywords.  These were introduced
+      by :pep:`492`.
 
    CPython
       The canonical implementation of the Python programming language, as

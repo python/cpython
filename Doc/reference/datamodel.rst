@@ -624,7 +624,7 @@ Callable types
       a :dfn:`coroutine function`.  Such a function, when called, returns a
       :term:`coroutine` object.  It may contain :keyword:`await` expressions,
       as well as :keyword:`async with` and :keyword:`async for` statements. See
-      also :ref:`coroutines` section.
+      also the :ref:`coroutine-objects` section.
 
    Built-in functions
       .. index::
@@ -2264,26 +2264,25 @@ special methods (the special method *must* be set on the class
 object itself in order to be consistently invoked by the interpreter).
 
 
-.. _coroutines:
+.. index::
+   single: coroutine
 
 Coroutines
 ==========
-
-.. index::
-   single: coroutine
 
 
 Awaitable Objects
 -----------------
 
-An *awaitable* object can be one of the following:
+An :term:`awaitable` object generally implements an :meth:`__await__` method.
+:term:`Coroutine` objects returned from :keyword:`async def` functions
+are awaitable.
 
-* A :term:`coroutine` object returned from a :term:`coroutine function`.
+.. note::
 
-* A :term:`generator` decorated with :func:`types.coroutine`
-  (or :func:`asyncio.coroutine`) decorator.
-
-* An object that implements an ``__await__`` method.
+   The :term:`generator iterator` objects returned from generators
+   decorated with :func:`types.coroutine` or :func:`asyncio.coroutine`
+   are also awaitable, but they do not implement :meth:`__await__`.
 
 .. method:: object.__await__(self)
 
@@ -2294,6 +2293,58 @@ An *awaitable* object can be one of the following:
 .. versionadded:: 3.5
 
 .. seealso:: :pep:`492` for additional information about awaitable objects.
+
+
+.. _coroutine-objects:
+
+Coroutine Objects
+-----------------
+
+:term:`Coroutine` objects are :term:`awaitable` objects.
+A coroutine's execution can be controlled by calling :meth:`__await__` and
+iterating over the result.  When the coroutine has finished executing and
+returns, the iterator raises :exc:`StopIteration`, and the exception's
+:attr:`~StopIteration.value` attribute holds the return value.  If the
+coroutine raises an exception, it is propagated by the iterator.  Coroutines
+should not directly raise unhandled :exc:`StopIteration` exceptions.
+
+Coroutines also have the methods listed below, which are analogous to
+those of generators (see :ref:`generator-methods`).  However, unlike
+generators, coroutines do not directly support iteration.
+
+.. method:: coroutine.send(value)
+
+   Starts or resumes execution of the coroutine.  If *value* is ``None``,
+   this is equivalent to advancing the iterator returned by
+   :meth:`__await__`.  If *value* is not ``None``, this method delegates
+   to the :meth:`~generator.send` method of the iterator that caused
+   the coroutine to suspend.  The result (return value,
+   :exc:`StopIteration`, or other exception) is the same as when
+   iterating over the :meth:`__await__` return value, described above.
+
+.. method:: coroutine.throw(type[, value[, traceback]])
+
+   Raises the specified exception in the coroutine.  This method delegates
+   to the :meth:`~generator.throw` method of the iterator that caused
+   the coroutine to suspend, if it has such a method.  Otherwise,
+   the exception is raised at the suspension point.  The result
+   (return value, :exc:`StopIteration`, or other exception) is the same as
+   when iterating over the :meth:`__await__` return value, described
+   above.  If the exception is not caught in the coroutine, it propagates
+   back to the caller.
+
+.. method:: coroutine.close()
+
+   Causes the coroutine to clean itself up and exit.  If the coroutine
+   is suspended, this method first delegates to the :meth:`~generator.close`
+   method of the iterator that caused the coroutine to suspend, if it
+   has such a method.  Then it raises :exc:`GeneratorExit` at the
+   suspension point, causing the coroutine to immediately clean itself up.
+   Finally, the coroutine is marked as having finished executing, even if
+   it was never started.
+
+   Coroutine objects are automatically closed using the above process when
+   they are about to be destroyed.
 
 
 Asynchronous Iterators

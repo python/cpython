@@ -793,11 +793,11 @@ static PyMemberDef coro_memberlist[] = {
 
 PyDoc_STRVAR(coro_send_doc,
 "send(arg) -> send 'arg' into coroutine,\n\
-return next yielded value or raise StopIteration.");
+return next iterated value or raise StopIteration.");
 
 PyDoc_STRVAR(coro_throw_doc,
 "throw(typ[,val[,tb]]) -> raise exception in coroutine,\n\
-return next yielded value or raise StopIteration.");
+return next iterated value or raise StopIteration.");
 
 PyDoc_STRVAR(coro_close_doc,
 "close() -> raise GeneratorExit inside coroutine.");
@@ -908,9 +908,9 @@ coro_wrapper_traverse(PyCoroWrapper *cw, visitproc visit, void *arg)
 }
 
 static PyMethodDef coro_wrapper_methods[] = {
-    {"send",(PyCFunction)coro_wrapper_send, METH_O, send_doc},
-    {"throw",(PyCFunction)coro_wrapper_throw, METH_VARARGS, throw_doc},
-    {"close",(PyCFunction)coro_wrapper_close, METH_NOARGS, close_doc},
+    {"send",(PyCFunction)coro_wrapper_send, METH_O, coro_send_doc},
+    {"throw",(PyCFunction)coro_wrapper_throw, METH_VARARGS, coro_throw_doc},
+    {"close",(PyCFunction)coro_wrapper_close, METH_NOARGS, coro_close_doc},
     {NULL, NULL}        /* Sentinel */
 };
 

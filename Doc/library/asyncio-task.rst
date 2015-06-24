@@ -8,17 +8,23 @@ Tasks and coroutines
 Coroutines
 ----------
 
-A coroutine is a generator that follows certain conventions.  For
-documentation purposes, all coroutines should be decorated with
-``@asyncio.coroutine``, but this cannot be strictly enforced.
+Coroutines used with :mod:`asyncio` may be implemented using the
+:keyword:`async def` statement, or by using :term:`generators <generator>`.
+The :keyword:`async def` type of coroutine was added in Python 3.5, and
+is recommended if there is no need to support older Python versions.
 
-Coroutines use the ``yield from`` syntax introduced in :pep:`380`,
+Generator-based coroutines should be decorated with :func:`@asyncio.coroutine
+<asyncio.coroutine>`, although this is not strictly enforced.
+The decorator enables compatibility with :keyword:`async def` coroutines,
+and also serves as documentation.  Generator-based
+coroutines use the ``yield from`` syntax introduced in :pep:`380`,
 instead of the original ``yield`` syntax.
 
 The word "coroutine", like the word "generator", is used for two
 different (though related) concepts:
 
-- The function that defines a coroutine (a function definition
+- The function that defines a coroutine
+  (a function definition using :keyword:`async def` or
   decorated with ``@asyncio.coroutine``).  If disambiguation is needed
   we will call this a *coroutine function* (:func:`iscoroutinefunction`
   returns ``True``).
@@ -30,27 +36,28 @@ different (though related) concepts:
 
 Things a coroutine can do:
 
-- ``result = yield from future`` -- suspends the coroutine until the
+- ``result = await future`` or ``result = yield from future`` --
+  suspends the coroutine until the
   future is done, then returns the future's result, or raises an
   exception, which will be propagated.  (If the future is cancelled,
   it will raise a ``CancelledError`` exception.)  Note that tasks are
   futures, and everything said about futures also applies to tasks.
 
-- ``result = yield from coroutine`` -- wait for another coroutine to
+- ``result = await coroutine`` or ``result = yield from coroutine`` --
+  wait for another coroutine to
   produce a result (or raise an exception, which will be propagated).
   The ``coroutine`` expression must be a *call* to another coroutine.
 
 - ``return expression`` -- produce a result to the coroutine that is
-  waiting for this one using ``yield from``.
+  waiting for this one using :keyword:`await` or ``yield from``.
 
 - ``raise exception`` -- raise an exception in the coroutine that is
-  waiting for this one using ``yield from``.
+  waiting for this one using :keyword:`await` or ``yield from``.
 
-Calling a coroutine does not start its code running -- it is just a
-generator, and the coroutine object returned by the call is really a
-generator object, which doesn't do anything until you iterate over it.
-In the case of a coroutine object, there are two basic ways to start
-it running: call ``yield from coroutine`` from another coroutine
+Calling a coroutine does not start its code running --
+the coroutine object returned by the call doesn't do anything until you
+schedule its execution.  There are two basic ways to start it running:
+call ``await coroutine`` or ``yield from coroutine`` from another coroutine
 (assuming the other coroutine is already running!), or schedule its execution
 using the :func:`async` function or the :meth:`BaseEventLoop.create_task`
 method.
@@ -60,9 +67,15 @@ Coroutines (and tasks) can only run when the event loop is running.
 
 .. decorator:: coroutine
 
-    Decorator to mark coroutines.
+    Decorator to mark generator-based coroutines.  This enables
+    the generator use :keyword:`!yield from` to call :keyword:`async
+    def` coroutines, and also enables the generator to be called by
+    :keyword:`async def` coroutines, for instance using an
+    :keyword:`await` expression.
 
-    If the coroutine is not yielded from before it is destroyed, an error
+    There is no need to decorate :keyword:`async def` coroutines themselves.
+
+    If the generator is not yielded from before it is destroyed, an error
     message is logged. See :ref:`Detect coroutines never scheduled
     <asyncio-coroutine-not-scheduled>`.
 
@@ -84,8 +97,7 @@ Example of coroutine displaying ``"Hello World"``::
 
     import asyncio
 
-    @asyncio.coroutine
-    def hello_world():
+    async def hello_world():
         print("Hello World!")
 
     loop = asyncio.get_event_loop()
@@ -111,6 +123,21 @@ using the :meth:`sleep` function::
     import asyncio
     import datetime
 
+    async def display_date(loop):
+        end_time = loop.time() + 5.0
+        while True:
+            print(datetime.datetime.now())
+            if (loop.time() + 1.0) >= end_time:
+                break
+            await asyncio.sleep(1)
+
+    loop = asyncio.get_event_loop()
+    # Blocking call which returns when the display_date() coroutine is done
+    loop.run_until_complete(display_date(loop))
+    loop.close()
+
+The same coroutine implemented using a generator::
+
     @asyncio.coroutine
     def display_date(loop):
         end_time = loop.time() + 5.0
@@ -119,11 +146,6 @@ using the :meth:`sleep` function::
             if (loop.time() + 1.0) >= end_time:
                 break
             yield from asyncio.sleep(1)
-
-    loop = asyncio.get_event_loop()
-    # Blocking call which returns when the display_date() coroutine is done
-    loop.run_until_complete(display_date(loop))
-    loop.close()
 
 .. seealso::
 
@@ -139,15 +161,13 @@ Example chaining coroutines::
 
     import asyncio
 
-    @asyncio.coroutine
-    def compute(x, y):
+    async def compute(x, y):
         print("Compute %s + %s ..." % (x, y))
-        yield from asyncio.sleep(1.0)
+        await asyncio.sleep(1.0)
         return x + y
 
-    @asyncio.coroutine
-    def print_sum(x, y):
-        result = yield from compute(x, y)
+    async def print_sum(x, y):
+        result = await compute(x, y)
         print("%s + %s = %s" % (x, y, result))
 
     loop = asyncio.get_event_loop()
@@ -550,12 +570,14 @@ Task functions
 
 .. function:: iscoroutine(obj)
 
-   Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`.
+   Return ``True`` if *obj* is a :ref:`coroutine object <coroutine>`,
+   which may be based on a generator or an :keyword:`async def` coroutine.
 
-.. function:: iscoroutinefunction(obj)
+.. function:: iscoroutinefunction(func)
 
-   Return ``True`` if *func* is a decorated :ref:`coroutine function
-   <coroutine>`.
+   Return ``True`` if *func* is determined to be a :ref:`coroutine function
+   <coroutine>`, which may be a decorated generator function or an
+   :keyword:`async def` function.
 
 .. coroutinefunction:: sleep(delay, result=None, \*, loop=None)
 
