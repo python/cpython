@@ -103,9 +103,6 @@ class CoroWrapper:
     def __iter__(self):
         return self
 
-    if _PY35:
-        __await__ = __iter__ # make compatible with 'await' expression
-
     def __next__(self):
         return self.gen.send(None)
 
@@ -143,10 +140,28 @@ class CoroWrapper:
     def gi_code(self):
         return self.gen.gi_code
 
+    if _PY35:
+
+        __await__ = __iter__ # make compatible with 'await' expression
+
+        @property
+        def cr_running(self):
+            return self.gen.cr_running
+
+        @property
+        def cr_code(self):
+            return self.gen.cr_code
+
+        @property
+        def cr_frame(self):
+            return self.gen.cr_frame
+
     def __del__(self):
         # Be careful accessing self.gen.frame -- self.gen might not exist.
         gen = getattr(self, 'gen', None)
         frame = getattr(gen, 'gi_frame', None)
+        if frame is None:
+            frame = getattr(gen, 'cr_frame', None)
         if frame is not None and frame.f_lasti == -1:
             msg = '%r was never yielded from' % self
             tb = getattr(self, '_source_traceback', ())
@@ -233,28 +248,43 @@ def iscoroutine(obj):
 def _format_coroutine(coro):
     assert iscoroutine(coro)
 
+    coro_name = None
     if isinstance(coro, CoroWrapper):
         func = coro.func
+        coro_name = coro.__qualname__
     else:
         func = coro
-    coro_name = events._format_callback(func, ())
 
-    filename = coro.gi_code.co_filename
+    if coro_name is None:
+        coro_name = events._format_callback(func, ())
+
+    try:
+        coro_code = coro.gi_code
+    except AttributeError:
+        coro_code = coro.cr_code
+
+    try:
+        coro_frame = coro.gi_frame
+    except AttributeError:
+        coro_frame = coro.cr_frame
+
+    filename = coro_code.co_filename
     if (isinstance(coro, CoroWrapper)
-    and not inspect.isgeneratorfunction(coro.func)):
+    and not inspect.isgeneratorfunction(coro.func)
+    and coro.func is not None):
         filename, lineno = events._get_function_source(coro.func)
-        if coro.gi_frame is None:
+        if coro_frame is None:
             coro_repr = ('%s done, defined at %s:%s'
                          % (coro_name, filename, lineno))
         else:
             coro_repr = ('%s running, defined at %s:%s'
                          % (coro_name, filename, lineno))
-    elif coro.gi_frame is not None:
-        lineno = coro.gi_frame.f_lineno
+    elif coro_frame is not None:
+        lineno = coro_frame.f_lineno
         coro_repr = ('%s running at %s:%s'
                      % (coro_name, filename, lineno))
     else:
-        lineno = coro.gi_code.co_firstlineno
+        lineno = coro_code.co_firstlineno
         coro_repr = ('%s done, defined at %s:%s'
                      % (coro_name, filename, lineno))
 
