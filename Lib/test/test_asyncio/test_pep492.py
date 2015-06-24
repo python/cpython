@@ -142,7 +142,7 @@ class CoroutineTests(BaseTest):
             foo_coro = foo()
             self.assertRegex(
                 repr(foo_coro),
-                r'<CoroWrapper .*\.foo running at .*pep492.*>')
+                r'<CoroWrapper .*\.foo\(\) running at .*pep492.*>')
 
             with support.check_warnings((r'.*foo.*was never',
                                          RuntimeWarning)):
