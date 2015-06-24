@@ -156,6 +156,13 @@ class CoroutineTests(BaseTest):
         self.loop.set_debug(True)
         self.loop.run_until_complete(start())
 
+        async def start():
+            foo_coro = foo()
+            task = asyncio.ensure_future(foo_coro, loop=self.loop)
+            self.assertRegex(repr(task), r'Task.*foo.*running')
+
+        self.loop.run_until_complete(start())
+
 
 if __name__ == '__main__':
     unittest.main()
