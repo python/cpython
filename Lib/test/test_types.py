@@ -1316,6 +1316,11 @@ class CoroutineTests(unittest.TestCase):
 
         wrapper.send(1)
         gen.send.assert_called_once_with(1)
+        gen.reset_mock()
+
+        next(wrapper)
+        gen.__next__.assert_called_once_with()
+        gen.reset_mock()
 
         wrapper.throw(1, 2, 3)
         gen.throw.assert_called_once_with(1, 2, 3)
@@ -1412,8 +1417,10 @@ class CoroutineTests(unittest.TestCase):
             self.fail('StopIteration was expected')
 
     def test_gen(self):
-        def gen(): yield
-        gen = gen()
+        def gen_func():
+            yield 1
+            return (yield 2)
+        gen = gen_func()
         @types.coroutine
         def foo(): return gen
         wrapper = foo()
@@ -1425,6 +1432,17 @@ class CoroutineTests(unittest.TestCase):
             self.assertIs(getattr(foo(), name),
                           getattr(gen, name))
         self.assertIs(foo().cr_code, gen.gi_code)
+
+        self.assertEqual(next(wrapper), 1)
+        self.assertEqual(wrapper.send(None), 2)
+        with self.assertRaisesRegex(StopIteration, 'spam'):
+            wrapper.send('spam')
+
+        gen = gen_func()
+        wrapper = foo()
+        wrapper.send(None)
+        with self.assertRaisesRegex(Exception, 'ham'):
+            wrapper.throw(Exception, Exception('ham'))
 
     def test_genfunc(self):
         def gen(): yield
