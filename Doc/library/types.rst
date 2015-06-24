@@ -281,15 +281,23 @@ Additional Utility Classes and Functions
    .. versionadded:: 3.4
 
 
-Coroutines Utility Functions
-----------------------------
+Coroutine Utility Functions
+---------------------------
 
 .. function:: coroutine(gen_func)
 
-   The function transforms a generator function to a :term:`coroutine function`,
-   so that it returns a :term:`coroutine` object.
+   This function transforms a :term:`generator` function into a
+   :term:`coroutine function` which returns a generator-based coroutine.
+   The generator-based coroutine is still a :term:`generator iterator`,
+   but is also considered to be a :term:`coroutine` object and is
+   :term:`awaitable`.  However, it may not necessarily implement
+   the :meth:`__await__` method.
 
-   *gen_func* is modified in-place, hence the function can be used as a
-   decorator.
+   If *gen_func* is a generator function, it will be modified in-place.
+
+   If *gen_func* is not a generator function, it will be wrapped. If it
+   returns an instance of :class:`collections.abc.Generator`, the instance
+   will be wrapped in an *awaitable* proxy object.  All other types
+   of objects will be returned as is.
 
    .. versionadded:: 3.5
