@@ -1,6 +1,7 @@
 """Tests support for new syntax introduced by PEP 492."""
 
 import collections.abc
+import types
 import unittest
 
 from test import support
@@ -162,6 +163,24 @@ class CoroutineTests(BaseTest):
             self.assertRegex(repr(task), r'Task.*foo.*running')
 
         self.loop.run_until_complete(start())
+
+
+    def test_types_coroutine(self):
+        def gen():
+            yield from ()
+            return 'spam'
+
+        @types.coroutine
+        def func():
+            return gen()
+
+        async def coro():
+            wrapper = func()
+            self.assertIsInstance(wrapper, types._GeneratorWrapper)
+            return await wrapper
+
+        data = self.loop.run_until_complete(coro())
+        self.assertEqual(data, 'spam')
 
 
 if __name__ == '__main__':
