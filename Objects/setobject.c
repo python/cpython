@@ -53,7 +53,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *table = so->table;
     setentry *entry;
-    size_t perturb = hash;
+    size_t perturb;
     size_t mask = so->mask;
     size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior */
     size_t j;
@@ -62,6 +62,8 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry = &table[i];
     if (entry->key == NULL)
         return entry;
+
+    perturb = hash;
 
     while (1) {
         if (entry->hash == hash) {
@@ -132,9 +134,9 @@ static int
 set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *table = so->table;
-    setentry *freeslot = NULL;
+    setentry *freeslot;
     setentry *entry;
-    size_t perturb = hash;
+    size_t perturb;
     size_t mask = so->mask;
     size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior */
     size_t j;
