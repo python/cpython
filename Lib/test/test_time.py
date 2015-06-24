@@ -114,13 +114,6 @@ class TimeTestCase(unittest.TestCase):
             except ValueError:
                 self.fail('conversion specifier: %r failed.' % format)
 
-        # Issue #10762: Guard against invalid/non-supported format string
-        # so that Python don't crash (Windows crashes when the format string
-        # input to [w]strftime is not kosher.
-        if sys.platform.startswith('win'):
-            with self.assertRaises(ValueError):
-                time.strftime('%f')
-
     def _bounds_checking(self, func):
         # Make sure that strftime() checks the bounds of the various parts
         # of the time tuple (0 is valid for *all* values).
