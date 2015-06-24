@@ -34,30 +34,20 @@ _DEBUG = (not sys.flags.ignore_environment
 
 
 try:
-    types.coroutine
+    _types_coroutine = types.coroutine
 except AttributeError:
-    native_coroutine_support = False
-else:
-    native_coroutine_support = True
+    _types_coroutine = None
 
 try:
-    _iscoroutinefunction = inspect.iscoroutinefunction
+    _inspect_iscoroutinefunction = inspect.iscoroutinefunction
 except AttributeError:
-    _iscoroutinefunction = lambda func: False
+    _inspect_iscoroutinefunction = lambda func: False
 
 try:
-    inspect.CO_COROUTINE
-except AttributeError:
-    _is_native_coro_code = lambda code: False
-else:
-    _is_native_coro_code = lambda code: (code.co_flags &
-                                         inspect.CO_COROUTINE)
-
-try:
-    from collections.abc import Coroutine as CoroutineABC, \
-                                Awaitable as AwaitableABC
+    from collections.abc import Coroutine as _CoroutineABC, \
+                                Awaitable as _AwaitableABC
 except ImportError:
-    CoroutineABC = AwaitableABC = None
+    _CoroutineABC = _AwaitableABC = None
 
 
 # Check for CPython issue #21209
@@ -89,10 +79,7 @@ def debug_wrapper(gen):
     # We only wrap here coroutines defined via 'async def' syntax.
     # Generator-based coroutines are wrapped in @coroutine
     # decorator.
-    if _is_native_coro_code(gen.gi_code):
-        return CoroWrapper(gen, None)
-    else:
-        return gen
+    return CoroWrapper(gen, None)
 
 
 class CoroWrapper:
@@ -177,8 +164,7 @@ def coroutine(func):
     If the coroutine is not yielded from before it is destroyed,
     an error message is logged.
     """
-    is_coroutine = _iscoroutinefunction(func)
-    if is_coroutine and _is_native_coro_code(func.__code__):
+    if _inspect_iscoroutinefunction(func):
         # In Python 3.5 that's all we need to do for coroutines
         # defiend with "async def".
         # Wrapping in CoroWrapper will happen via
@@ -193,7 +179,7 @@ def coroutine(func):
             res = func(*args, **kw)
             if isinstance(res, futures.Future) or inspect.isgenerator(res):
                 res = yield from res
-            elif AwaitableABC is not None:
+            elif _AwaitableABC is not None:
                 # If 'func' returns an Awaitable (new in 3.5) we
                 # want to run it.
                 try:
@@ -201,15 +187,15 @@ def coroutine(func):
                 except AttributeError:
                     pass
                 else:
-                    if isinstance(res, AwaitableABC):
+                    if isinstance(res, _AwaitableABC):
                         res = yield from await_meth()
             return res
 
     if not _DEBUG:
-        if native_coroutine_support:
-            wrapper = types.coroutine(coro)
-        else:
+        if _types_coroutine is None:
             wrapper = coro
+        else:
+            wrapper = _types_coroutine(coro)
     else:
         @functools.wraps(func)
         def wrapper(*args, **kwds):
@@ -231,12 +217,12 @@ def coroutine(func):
 def iscoroutinefunction(func):
     """Return True if func is a decorated coroutine function."""
     return (getattr(func, '_is_coroutine', False) or
-            _iscoroutinefunction(func))
+            _inspect_iscoroutinefunction(func))
 
 
 _COROUTINE_TYPES = (types.GeneratorType, CoroWrapper)
-if CoroutineABC is not None:
-    _COROUTINE_TYPES += (CoroutineABC,)
+if _CoroutineABC is not None:
+    _COROUTINE_TYPES += (_CoroutineABC,)
 
 
 def iscoroutine(obj):
