@@ -16,7 +16,7 @@ test the pythonic behaviour according to PEP 327.
 
 Cowlishaw's tests can be downloaded from:
 
-   www2.hursley.ibm.com/decimal/dectest.zip
+   http://speleotrove.com/decimal/dectest.zip
 
 This test module can be called from command line with one parameter (Arithmetic
 or Behaviour) to test each part, or without parameter to test both parts. If
