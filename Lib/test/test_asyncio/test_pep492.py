@@ -119,7 +119,7 @@ class CoroutineTests(BaseTest):
         self.assertEqual(coro.send(None), 'spam')
         coro.close()
 
-    def test_async_ded_coroutines(self):
+    def test_async_def_coroutines(self):
         async def bar():
             return 'spam'
         async def foo():
@@ -133,6 +133,29 @@ class CoroutineTests(BaseTest):
         self.loop.set_debug(True)
         data = self.loop.run_until_complete(foo())
         self.assertEqual(data, 'spam')
+
+    @mock.patch('asyncio.coroutines.logger')
+    def test_async_def_wrapped(self, m_log):
+        async def foo():
+            pass
+        async def start():
+            foo_coro = foo()
+            self.assertRegex(
+                repr(foo_coro),
+                r'<CoroWrapper .*\.foo running at .*pep492.*>')
+
+            with support.check_warnings((r'.*foo.*was never',
+                                         RuntimeWarning)):
+                foo_coro = None
+                support.gc_collect()
+                self.assertTrue(m_log.error.called)
+                message = m_log.error.call_args[0][0]
+                self.assertRegex(message,
+                                 r'CoroWrapper.*foo.*was never')
+
+        self.loop.set_debug(True)
+        self.loop.run_until_complete(start())
+
 
 if __name__ == '__main__':
     unittest.main()
