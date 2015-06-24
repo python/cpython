@@ -516,12 +516,14 @@ the original TOS1.
    Implements ``del TOS1[TOS]``.
 
 
-**Coroutines opcodes**
+**Coroutine opcodes**
 
 .. opcode:: GET_AWAITABLE
 
-   Implements ``TOS = get_awaitable(TOS)``; where ``get_awaitable(o)``
-   returns ``o`` if ``o`` is a coroutine object; or resolved ``o.__await__``.
+   Implements ``TOS = get_awaitable(TOS)``, where ``get_awaitable(o)``
+   returns ``o`` if ``o`` is a coroutine object or a generator object with
+   the CO_ITERABLE_COROUTINE flag, or resolves
+   ``o.__await__``.
 
 
 .. opcode:: GET_AITER
