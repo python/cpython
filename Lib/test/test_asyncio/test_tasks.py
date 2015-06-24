@@ -1715,7 +1715,8 @@ class TaskTests(test_utils.TestCase):
         self.assertTrue(m_log.error.called)
         message = m_log.error.call_args[0][0]
         func_filename, func_lineno = test_utils.get_function_source(coro_noop)
-        regex = (r'^<CoroWrapper %s\(\) .* at %s:%s, .*> '
+
+        regex = (r'^<CoroWrapper %s\(?\)? .* at %s:%s, .*> '
                     r'was never yielded from\n'
                  r'Coroutine object created at \(most recent call last\):\n'
                  r'.*\n'
