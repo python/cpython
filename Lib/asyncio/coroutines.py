@@ -252,6 +252,8 @@ def _format_coroutine(coro):
     if isinstance(coro, CoroWrapper):
         func = coro.func
         coro_name = coro.__qualname__
+        if coro_name is not None:
+            coro_name = '{}()'.format(coro_name)
     else:
         func = coro
 
