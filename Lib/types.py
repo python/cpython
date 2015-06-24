@@ -166,6 +166,39 @@ class DynamicClassAttribute:
 import functools as _functools
 import collections.abc as _collections_abc
 
+class _GeneratorWrapper:
+    # TODO: Implement this in C.
+    def __init__(self, gen):
+        self.__wrapped__ = gen
+        self.__isgen__ = gen.__class__ is GeneratorType
+        self.__name__ = getattr(gen, '__name__', None)
+        self.__qualname__ = getattr(gen, '__qualname__', None)
+    def send(self, val):
+        return self.__wrapped__.send(val)
+    def throw(self, tp, *rest):
+        return self.__wrapped__.throw(tp, *rest)
+    def close(self):
+        return self.__wrapped__.close()
+    @property
+    def gi_code(self):
+        return self.__wrapped__.gi_code
+    @property
+    def gi_frame(self):
+        return self.__wrapped__.gi_frame
+    @property
+    def gi_running(self):
+        return self.__wrapped__.gi_running
+    cr_code = gi_code
+    cr_frame = gi_frame
+    cr_running = gi_running
+    def __next__(self):
+        return next(self.__wrapped__)
+    def __iter__(self):
+        if self.__isgen__:
+            return self.__wrapped__
+        return self
+    __await__ = __iter__
+
 def coroutine(func):
     """Convert regular generator function to a coroutine."""
 
@@ -201,36 +234,6 @@ def coroutine(func):
     # return generator-like objects (for instance generators
     # compiled with Cython).
 
-    class GeneratorWrapper:
-        def __init__(self, gen):
-            self.__wrapped__ = gen
-            self.__name__ = getattr(gen, '__name__', None)
-            self.__qualname__ = getattr(gen, '__qualname__', None)
-        def send(self, val):
-            return self.__wrapped__.send(val)
-        def throw(self, *args):
-            return self.__wrapped__.throw(*args)
-        def close(self):
-            return self.__wrapped__.close()
-        @property
-        def gi_code(self):
-            return self.__wrapped__.gi_code
-        @property
-        def gi_frame(self):
-            return self.__wrapped__.gi_frame
-        @property
-        def gi_running(self):
-            return self.__wrapped__.gi_running
-        cr_code = gi_code
-        cr_frame = gi_frame
-        cr_running = gi_running
-        def __next__(self):
-            return next(self.__wrapped__)
-        def __iter__(self):
-            return self.__wrapped__
-        def __await__(self):
-            return self.__wrapped__
-
     @_functools.wraps(func)
     def wrapped(*args, **kwargs):
         coro = func(*args, **kwargs)
@@ -243,7 +246,7 @@ def coroutine(func):
             # 'coro' is either a pure Python generator iterator, or it
             # implements collections.abc.Generator (and does not implement
             # collections.abc.Coroutine).
-            return GeneratorWrapper(coro)
+            return _GeneratorWrapper(coro)
         # 'coro' is either an instance of collections.abc.Coroutine or
         # some other object -- pass it through.
         return coro
