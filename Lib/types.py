@@ -169,33 +169,33 @@ import collections.abc as _collections_abc
 class _GeneratorWrapper:
     # TODO: Implement this in C.
     def __init__(self, gen):
-        self.__wrapped__ = gen
-        self.__isgen__ = gen.__class__ is GeneratorType
+        self.__wrapped = gen
+        self.__isgen = gen.__class__ is GeneratorType
         self.__name__ = getattr(gen, '__name__', None)
         self.__qualname__ = getattr(gen, '__qualname__', None)
     def send(self, val):
-        return self.__wrapped__.send(val)
+        return self.__wrapped.send(val)
     def throw(self, tp, *rest):
-        return self.__wrapped__.throw(tp, *rest)
+        return self.__wrapped.throw(tp, *rest)
     def close(self):
-        return self.__wrapped__.close()
+        return self.__wrapped.close()
     @property
     def gi_code(self):
-        return self.__wrapped__.gi_code
+        return self.__wrapped.gi_code
     @property
     def gi_frame(self):
-        return self.__wrapped__.gi_frame
+        return self.__wrapped.gi_frame
     @property
     def gi_running(self):
-        return self.__wrapped__.gi_running
+        return self.__wrapped.gi_running
     cr_code = gi_code
     cr_frame = gi_frame
     cr_running = gi_running
     def __next__(self):
-        return next(self.__wrapped__)
+        return next(self.__wrapped)
     def __iter__(self):
-        if self.__isgen__:
-            return self.__wrapped__
+        if self.__isgen:
+            return self.__wrapped
         return self
     __await__ = __iter__
 
