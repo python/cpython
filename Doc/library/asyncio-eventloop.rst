@@ -164,8 +164,8 @@ a different clock than :func:`time.time`.
    The :func:`asyncio.sleep` function.
 
 
-Coroutines
-----------
+Tasks
+-----
 
 .. method:: BaseEventLoop.create_task(coro)
 
