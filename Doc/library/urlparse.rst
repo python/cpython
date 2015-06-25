@@ -93,7 +93,7 @@ The :mod:`urlparse` module defines the following functions:
    +------------------+-------+--------------------------+----------------------+
    | Attribute        | Index | Value                    | Value if not present |
    +==================+=======+==========================+======================+
-   | :attr:`scheme`   | 0     | URL scheme specifier     | empty string         |
+   | :attr:`scheme`   | 0     | URL scheme specifier     | *scheme* parameter   |
    +------------------+-------+--------------------------+----------------------+
    | :attr:`netloc`   | 1     | Network location part    | empty string         |
    +------------------+-------+--------------------------+----------------------+
@@ -197,7 +197,7 @@ The :mod:`urlparse` module defines the following functions:
    +------------------+-------+-------------------------+----------------------+
    | Attribute        | Index | Value                   | Value if not present |
    +==================+=======+=========================+======================+
-   | :attr:`scheme`   | 0     | URL scheme specifier    | empty string         |
+   | :attr:`scheme`   | 0     | URL scheme specifier    | *scheme* parameter   |
    +------------------+-------+-------------------------+----------------------+
    | :attr:`netloc`   | 1     | Network location part   | empty string         |
    +------------------+-------+-------------------------+----------------------+
