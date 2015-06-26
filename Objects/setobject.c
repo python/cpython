@@ -199,7 +199,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
                         goto found_active;
                     mask = so->mask;
                 }
-                if (entry->hash == -1 && freeslot == NULL)
+                else if (entry->hash == -1 && freeslot == NULL)
                     freeslot = entry;
             }
         }
