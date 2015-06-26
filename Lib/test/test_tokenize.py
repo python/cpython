@@ -1233,7 +1233,7 @@ class TestRoundtrip(TestCase):
     def roundtrip(self, code):
         if isinstance(code, str):
             code = code.encode('utf-8')
-        return untokenize(tokenize(BytesIO(code).readline))
+        return untokenize(tokenize(BytesIO(code).readline)).decode('utf-8')
 
     def test_indentation_semantics_retained(self):
         """
@@ -1241,7 +1241,7 @@ class TestRoundtrip(TestCase):
         the semantic meaning of the indentation remains consistent.
         """
         code = "if False:\n\tx=3\n\tx=3\n"
-        codelines = roundtrip(code).split('\n')
+        codelines = self.roundtrip(code).split('\n')
         self.assertEqual(codelines[1], codelines[2])
 
 
