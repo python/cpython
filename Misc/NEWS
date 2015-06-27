@@ -22,6 +22,8 @@ Core and Builtins
 Library
 -------
 
+- Fix possible integer overflows in the pickle module.
+
 - Issue #22931: Allow '[' and ']' in cookie values.
 
 - Issue #24094: Fix possible crash in json.encode with poorly behaved dict
