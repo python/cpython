@@ -439,9 +439,7 @@ Pdata_grow(Pdata *self)
     if (new_allocated > (size_t)PY_SSIZE_T_MAX - allocated)
         goto nomemory;
     new_allocated += allocated;
-    if (new_allocated > ((size_t)PY_SSIZE_T_MAX / sizeof(PyObject *)))
-        goto nomemory;
-    data = PyMem_REALLOC(data, new_allocated * sizeof(PyObject *));
+    PyMem_RESIZE(data, PyObject *, new_allocated);
     if (data == NULL)
         goto nomemory;
 
@@ -671,7 +669,7 @@ PyMemoTable_Copy(PyMemoTable *self)
     /* The table we get from _New() is probably smaller than we wanted.
        Free it and allocate one that's the right size. */
     PyMem_FREE(new->mt_table);
-    new->mt_table = PyMem_MALLOC(self->mt_allocated * sizeof(PyMemoEntry));
+    new->mt_table = PyMem_NEW(PyMemoEntry, self->mt_allocated);
     if (new->mt_table == NULL) {
         PyMem_FREE(new);
         PyErr_NoMemory();
@@ -766,7 +764,7 @@ _PyMemoTable_ResizeTable(PyMemoTable *self, Py_ssize_t min_size)
 
     /* Allocate new table. */
     oldtable = self->mt_table;
-    self->mt_table = PyMem_MALLOC(new_size * sizeof(PyMemoEntry));
+    self->mt_table = PyMem_NEW(PyMemoEntry, new_size);
     if (self->mt_table == NULL) {
         self->mt_table = oldtable;
         PyErr_NoMemory();
@@ -1272,16 +1270,14 @@ static int
 _Unpickler_ResizeMemoList(UnpicklerObject *self, Py_ssize_t new_size)
 {
     Py_ssize_t i;
-    PyObject **memo;
 
     assert(new_size > self->memo_size);
 
-    memo = PyMem_REALLOC(self->memo, new_size * sizeof(PyObject *));
-    if (memo == NULL) {
+    PyMem_RESIZE(self->memo, PyObject *, new_size);
+    if (self->memo == NULL) {
         PyErr_NoMemory();
         return -1;
     }
-    self->memo = memo;
     for (i = self->memo_size; i < new_size; i++)
         self->memo[i] = NULL;
     self->memo_size = new_size;
@@ -1325,7 +1321,7 @@ _Unpickler_MemoPut(UnpicklerObject *self, Py_ssize_t idx, PyObject *value)
 static PyObject **
 _Unpickler_NewMemo(Py_ssize_t new_size)
 {
-    PyObject **memo = PyMem_MALLOC(new_size * sizeof(PyObject *));
+    PyObject **memo = PyMem_NEW(PyObject *, new_size);
     if (memo == NULL) {
         PyErr_NoMemory();
         return NULL;
@@ -6032,7 +6028,6 @@ load_mark(UnpicklerObject *self)
 
     if ((self->num_marks + 1) >= self->marks_size) {
         size_t alloc;
-        Py_ssize_t *marks;
 
         /* Use the size_t type to check for overflow. */
         alloc = ((size_t)self->num_marks << 1) + 20;
@@ -6043,15 +6038,14 @@ load_mark(UnpicklerObject *self)
         }
 
         if (self->marks == NULL)
-            marks = (Py_ssize_t *) PyMem_Malloc(alloc * sizeof(Py_ssize_t));
+            self->marks = PyMem_NEW(Py_ssize_t, alloc);
         else
-            marks = (Py_ssize_t *) PyMem_Realloc(self->marks,
-                                                 alloc * sizeof(Py_ssize_t));
-        if (marks == NULL) {
+            PyMem_RESIZE(self->marks, Py_ssize_t, alloc);
+        if (self->marks == NULL) {
+            self->marks_size = 0;
             PyErr_NoMemory();
             return -1;
         }
-        self->marks = marks;
         self->marks_size = (Py_ssize_t)alloc;
     }
 

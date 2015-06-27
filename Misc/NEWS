@@ -444,6 +444,8 @@ Library
   lines from the code object, fixing an issue when a lambda function is used as
   decorator argument. Patch by Thomas Ballinger and Allison Kaptur.
 
+- Fix possible integer overflows in the pickle module.
+
 - Issue #22931: Allow '[' and ']' in cookie values.
 
 - The keywords attribute of functools.partial is now always a dictionary.
