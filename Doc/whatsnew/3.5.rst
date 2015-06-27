@@ -755,6 +755,13 @@ urllib
   control the encoding of query parts if needed.  (Contributed by Samwyse and
   Arnon Yaari in :issue:`13866`.)
 
+unicodedata
+-----------
+
+* The :mod:`unicodedata` module now uses data from `Unicode 8.0.0
+<http://unicode.org/versions/Unicode8.0.0/>`_.
+
+
 wsgiref
 -------
 
