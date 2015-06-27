@@ -91,7 +91,7 @@ Library
 - Issue #23796: peek and read1 methods of BufferedReader now raise ValueError
   if they called on a closed object. Patch by John Hergenroeder.
 
-- Fix possible integer overflows in the pickle module.
+- Issue #24521: Fix possible integer overflows in the pickle module.
 
 - Issue #22931: Allow '[' and ']' in cookie values.
 
