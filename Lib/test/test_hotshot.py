@@ -149,6 +149,10 @@ class HotShotTestCase(unittest.TestCase):
         stats.load(self.logfn)
         os.unlink(self.logfn)
 
+    def test_large_info(self):
+        p = self.new_profiler()
+        self.assertRaises(ValueError, p.addinfo, "A", "A" * 0xfceb)
+
 
 def test_main():
     test_support.run_unittest(HotShotTestCase)

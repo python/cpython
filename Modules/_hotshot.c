@@ -626,6 +626,10 @@ pack_string(ProfilerObject *self, const char *s, Py_ssize_t len)
     if (len + PISIZE + self->index >= BUFFERSIZE) {
         if (flush_data(self) < 0)
             return -1;
+        if (len + PISIZE + self->index >= BUFFERSIZE) {
+            PyErr_SetString(PyExc_ValueError, "string too large for internal buffer");
+            return -1;
+        }
     }
     assert(len < INT_MAX);
     if (pack_packed_int(self, (int)len) < 0)

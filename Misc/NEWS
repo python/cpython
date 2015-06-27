@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24481: Fix possible memory corruption with large profiler info strings
+  in hotshot.
+
 - Issue #24489: ensure a previously set C errno doesn't disturb cmath.polar().
 
 - Issue #19543: io.TextIOWrapper (and hence io.open()) now uses the internal
