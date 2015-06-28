@@ -559,7 +559,7 @@ Pathological whitespace (http://bugs.python.org/issue16152)
 
 from test import test_support
 from tokenize import (untokenize, generate_tokens, NUMBER, NAME, OP,
-                     STRING, ENDMARKER, tok_name, Untokenizer)
+                     STRING, ENDMARKER, tok_name, Untokenizer, tokenize)
 from StringIO import StringIO
 import os
 from unittest import TestCase
@@ -650,12 +650,30 @@ class UntokenizeTest(TestCase):
         self.assertEqual(u.untokenize(iter([token])), 'Hello ')
 
 
+class TestRoundtrip(TestCase):
+    def roundtrip(self, code):
+        if isinstance(code, str):
+            code = code.encode('utf-8')
+        tokens = generate_tokens(StringIO(code).readline)
+        return untokenize(tokens).decode('utf-8')
+
+    def test_indentation_semantics_retained(self):
+        """
+        Ensure that although whitespace might be mutated in a roundtrip,
+        the semantic meaning of the indentation remains consistent.
+        """
+        code = "if False:\n\tx=3\n\tx=3\n"
+        codelines = self.roundtrip(code).split('\n')
+        self.assertEqual(codelines[1], codelines[2])
+
+
 __test__ = {"doctests" : doctests, 'decistmt': decistmt}
 
 def test_main():
     from test import test_tokenize
     test_support.run_doctest(test_tokenize, True)
     test_support.run_unittest(UntokenizeTest)
+    test_support.run_unittest(TestRoundtrip)
 
 if __name__ == "__main__":
     test_main()
