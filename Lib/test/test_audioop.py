@@ -273,6 +273,16 @@ class TestAudioop(unittest.TestCase):
         # state must be a tuple or None, not an integer
         self.assertRaises(TypeError, audioop.adpcm2lin, b'\0', 1, 555)
         self.assertRaises(TypeError, audioop.lin2adpcm, b'\0', 1, 555)
+        # Issues #24456, #24457: index out of range
+        self.assertRaises(ValueError, audioop.adpcm2lin, b'\0', 1, (0, -1))
+        self.assertRaises(ValueError, audioop.adpcm2lin, b'\0', 1, (0, 89))
+        self.assertRaises(ValueError, audioop.lin2adpcm, b'\0', 1, (0, -1))
+        self.assertRaises(ValueError, audioop.lin2adpcm, b'\0', 1, (0, 89))
+        # value out of range
+        self.assertRaises(ValueError, audioop.adpcm2lin, b'\0', 1, (-0x8001, 0))
+        self.assertRaises(ValueError, audioop.adpcm2lin, b'\0', 1, (0x8000, 0))
+        self.assertRaises(ValueError, audioop.lin2adpcm, b'\0', 1, (-0x8001, 0))
+        self.assertRaises(ValueError, audioop.lin2adpcm, b'\0', 1, (0x8000, 0))
 
     def test_lin2alaw(self):
         self.assertEqual(audioop.lin2alaw(datas[1], 1),
