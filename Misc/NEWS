@@ -22,9 +22,11 @@ Core and Builtins
   coroutines only; add new opcode: GET_YIELD_FROM_ITER; fix generators wrapper
   used in types.coroutine to be instance of collections.abc.Generator.
 
-
 Library
 -------
+
+- Issue #24336: The contextmanager decorator now works with functions with
+  keyword arguments called "func" and "self".  Patch by Martin Panter.
 
 - Issue #24522: Fix possible integer overflow in json accelerator module.
 
