@@ -30,6 +30,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20387: Restore semantic round-trip correctness in tokenize/untokenize
+  for tab-indented blocks.
+
 - Issue #24456: Fixed possible buffer over-read in adpcm2lin() and lin2adpcm()
   functions of the audioop module.  Fixed SystemError when the state is not a
   tuple.  Fixed possible memory leak.
