@@ -25,6 +25,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24456: Fixed possible buffer over-read in adpcm2lin() and lin2adpcm()
+  functions of the audioop module.
+
 - Issue #24336: The contextmanager decorator now works with functions with
   keyword arguments called "func" and "self".  Patch by Martin Panter.
 
