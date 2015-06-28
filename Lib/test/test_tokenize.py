@@ -5,6 +5,8 @@ The tests can be really simple. Given a small fragment of source
 code, print out a table with tokens. The ENDMARKER is omitted for
 brevity.
 
+    >>> import glob
+
     >>> dump_tokens("1 + 1")
     ENCODING   'utf-8'       (0, 0) (0, 0)
     NUMBER     '1'           (1, 0) (1, 1)
@@ -835,7 +837,7 @@ from tokenize import (tokenize, _tokenize, untokenize, NUMBER, NAME, OP,
                      open as tokenize_open, Untokenizer)
 from io import BytesIO
 from unittest import TestCase, mock
-import os, sys, glob
+import os
 import token
 
 def dump_tokens(s):
@@ -1427,6 +1429,22 @@ class UntokenizeTest(TestCase):
         self.assertEqual(untokenize(iter(tokens)), b'Hello ')
 
 
+class TestRoundtrip(TestCase):
+    def roundtrip(self, code):
+        if isinstance(code, str):
+            code = code.encode('utf-8')
+        return untokenize(tokenize(BytesIO(code).readline)).decode('utf-8')
+
+    def test_indentation_semantics_retained(self):
+        """
+        Ensure that although whitespace might be mutated in a roundtrip,
+        the semantic meaning of the indentation remains consistent.
+        """
+        code = "if False:\n\tx=3\n\tx=3\n"
+        codelines = self.roundtrip(code).split('\n')
+        self.assertEqual(codelines[1], codelines[2])
+
+
 __test__ = {"doctests" : doctests, 'decistmt': decistmt}
 
 def test_main():
@@ -1437,6 +1455,7 @@ def test_main():
     support.run_unittest(TestDetectEncoding)
     support.run_unittest(TestTokenize)
     support.run_unittest(UntokenizeTest)
+    support.run_unittest(TestRoundtrip)
 
 if __name__ == "__main__":
     test_main()
