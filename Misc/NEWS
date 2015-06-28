@@ -60,6 +60,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24336: The contextmanager decorator now works with functions with
+  keyword arguments called "func" and "self".  Patch by Martin Panter.
+
 - Issue #24489: ensure a previously set C errno doesn't disturb cmath.polar().
 
 - Issue #5633: Fixed timeit when the statement is a string and the setup is not.

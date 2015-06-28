@@ -34,7 +34,7 @@ class ContextDecorator(object):
 class _GeneratorContextManager(ContextDecorator):
     """Helper for @contextmanager decorator."""
 
-    def __init__(self, func, *args, **kwds):
+    def __init__(self, func, args, kwds):
         self.gen = func(*args, **kwds)
         self.func, self.args, self.kwds = func, args, kwds
         # Issue 19330: ensure context manager instances have good docstrings
@@ -52,7 +52,7 @@ class _GeneratorContextManager(ContextDecorator):
         # _GCM instances are one-shot context managers, so the
         # CM must be recreated each time a decorated function is
         # called
-        return self.__class__(self.func, *self.args, **self.kwds)
+        return self.__class__(self.func, self.args, self.kwds)
 
     def __enter__(self):
         try:
@@ -123,7 +123,7 @@ def contextmanager(func):
     """
     @wraps(func)
     def helper(*args, **kwds):
-        return _GeneratorContextManager(func, *args, **kwds)
+        return _GeneratorContextManager(func, args, kwds)
     return helper
 
 
