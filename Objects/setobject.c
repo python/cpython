@@ -125,11 +125,6 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     }
 }
 
-/*
-Internal routine to insert a new key into the table.
-Used by the public insert routine.
-Eats a reference to key.
-*/
 static int
 set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
@@ -213,6 +208,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
     }
 
   found_null_first:
+    Py_INCREF(key);
     so->fill++;
     so->used++;
     entry->key = key;
@@ -220,6 +216,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
     return 0;
 
   found_null:
+    Py_INCREF(key);
     if (freeslot == NULL) {
         /* UNUSED */
         so->fill++;
@@ -233,7 +230,6 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
     return 0;
 
   found_active:
-    Py_DECREF(key);
     return 0;
 }
 
@@ -381,11 +377,8 @@ set_add_entry(PySetObject *so, setentry *entry)
 
     assert(so->fill <= so->mask);  /* at least one empty slot */
     n_used = so->used;
-    Py_INCREF(key);
-    if (set_insert_key(so, key, hash)) {
-        Py_DECREF(key);
+    if (set_insert_key(so, key, hash))
         return -1;
-    }
     if (!(so->used > n_used && so->fill*3 >= (so->mask+1)*2))
         return 0;
     return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
@@ -678,11 +671,8 @@ set_merge(PySetObject *so, PyObject *otherset)
     for (i = 0; i <= other->mask; i++, other_entry++) {
         key = other_entry->key;
         if (key != NULL && key != dummy) {
-            Py_INCREF(key);
-            if (set_insert_key(so, key, other_entry->hash)) {
-                Py_DECREF(key);
+            if (set_insert_key(so, key, other_entry->hash))
                 return -1;
-            }
         }
     }
     return 0;
