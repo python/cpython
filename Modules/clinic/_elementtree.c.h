@@ -619,20 +619,33 @@ PyDoc_STRVAR(_elementtree_XMLParser__parse_whole__doc__,
     {"_parse_whole", (PyCFunction)_elementtree_XMLParser__parse_whole, METH_O, _elementtree_XMLParser__parse_whole__doc__},
 
 PyDoc_STRVAR(_elementtree_XMLParser_doctype__doc__,
-"doctype($self, /)\n"
+"doctype($self, name, pubid, system, /)\n"
 "--\n"
 "\n");
 
 #define _ELEMENTTREE_XMLPARSER_DOCTYPE_METHODDEF    \
-    {"doctype", (PyCFunction)_elementtree_XMLParser_doctype, METH_NOARGS, _elementtree_XMLParser_doctype__doc__},
+    {"doctype", (PyCFunction)_elementtree_XMLParser_doctype, METH_VARARGS, _elementtree_XMLParser_doctype__doc__},
 
 static PyObject *
-_elementtree_XMLParser_doctype_impl(XMLParserObject *self);
+_elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
+                                    PyObject *pubid, PyObject *system);
 
 static PyObject *
-_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject *Py_UNUSED(ignored))
+_elementtree_XMLParser_doctype(XMLParserObject *self, PyObject *args)
 {
-    return _elementtree_XMLParser_doctype_impl(self);
+    PyObject *return_value = NULL;
+    PyObject *name;
+    PyObject *pubid;
+    PyObject *system;
+
+    if (!PyArg_UnpackTuple(args, "doctype",
+        3, 3,
+        &name, &pubid, &system))
+        goto exit;
+    return_value = _elementtree_XMLParser_doctype_impl(self, name, pubid, system);
+
+exit:
+    return return_value;
 }
 
 PyDoc_STRVAR(_elementtree_XMLParser__setevents__doc__,
@@ -663,4 +676,4 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=119aed84c1545187 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=25b8bf7e7f2151ca input=a9049054013a1b77]*/
