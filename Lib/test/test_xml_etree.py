@@ -12,6 +12,7 @@ import pickle
 import sys
 import types
 import unittest
+import warnings
 import weakref
 
 from itertools import product
@@ -2237,6 +2238,20 @@ class XMLParserTest(unittest.TestCase):
         parser.feed(self.sample1)
         self._check_sample_element(parser.close())
 
+    def test_doctype_warning(self):
+        parser = ET.XMLParser()
+        with self.assertWarns(DeprecationWarning):
+            parser.doctype('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
+                'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd')
+        parser.feed('<html/>')
+        parser.close()
+
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            parser = ET.XMLParser()
+            parser.feed(self.sample2)
+            parser.close()
+
     def test_subclass_doctype(self):
         _doctype = None
         class MyParserWithDoctype(ET.XMLParser):
@@ -2251,6 +2266,32 @@ class XMLParserTest(unittest.TestCase):
         self.assertEqual(_doctype,
             ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
              'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+
+        _doctype = _doctype2 = None
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            class DoctypeParser:
+                def doctype(self, name, pubid, system):
+                    nonlocal _doctype2
+                    _doctype2 = (name, pubid, system)
+
+            parser = MyParserWithDoctype(target=DoctypeParser())
+            parser.feed(self.sample2)
+            parser.close()
+            self.assertIsNone(_doctype)
+            self.assertEqual(_doctype2,
+                ('html', '-//W3C//DTD XHTML 1.0 Transitional//EN',
+                 'http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd'))
+
+    def test_inherited_doctype(self):
+        '''Ensure that ordinary usage is not deprecated (Issue 19176)'''
+        with warnings.catch_warnings():
+            warnings.simplefilter('error', DeprecationWarning)
+            class MyParserWithoutDoctype(ET.XMLParser):
+                pass
+            parser = MyParserWithoutDoctype()
+            parser.feed(self.sample2)
+            parser.close()
 
     def test_parse_string(self):
         parser = ET.XMLParser(target=ET.TreeBuilder())
