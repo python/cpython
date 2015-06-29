@@ -10,6 +10,10 @@ Release date: 2015-07-05
 Core and Builtins
 -----------------
 
+- Issue #24467: Fixed possible buffer over-read in bytearray. The bytearray
+  object now always allocates place for trailing null byte and it's buffer now
+  is always null-terminated.
+
 - Upgrade to Unicode 8.0.0.
 
 - Issue #24345: Add Py_tp_finalize slot for the stable ABI.
