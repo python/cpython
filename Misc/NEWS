@@ -10,6 +10,10 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #24467: Fixed possible buffer over-read in bytearray. The bytearray
+  object now always allocates place for trailing null byte and it's buffer now
+  is always null-terminated.
+
 - Issue #19543: encode() and decode() methods and constructors of str,
   unicode and bytearray classes now emit deprecation warning for known
   non-text encodings when Python is ran with the -3 option.

@@ -897,8 +897,10 @@ bytearray_init(PyByteArrayObject *self, PyObject *args, PyObject *kwds)
             goto error;
 
         /* Append the byte */
-        if (Py_SIZE(self) < self->ob_alloc)
+        if (Py_SIZE(self) + 1 < self->ob_alloc) {
             Py_SIZE(self)++;
+            PyByteArray_AS_STRING(self)[Py_SIZE(self)] = '\0';
+        }
         else if (PyByteArray_Resize((PyObject *)self, Py_SIZE(self)+1) < 0)
             goto error;
         self->ob_bytes[Py_SIZE(self)-1] = value;
