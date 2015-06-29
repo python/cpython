@@ -2791,7 +2791,7 @@ typedef struct {
 
 } XMLParserObject;
 
-#define XMLParser_CheckExact(op) (Py_TYPE(op) == &XMLParser_Type)
+static PyObject* xmlparser_doctype(XMLParserObject* self, PyObject* args);
 
 /* helpers */
 
@@ -3190,20 +3190,21 @@ expat_start_doctype_handler(XMLParserObject *self,
                                     doctype_name_obj, pubid_obj, sysid_obj);
         Py_CLEAR(res);
     }
-
-    /* Now see if the parser itself has a doctype method. If yes and it's
-     * a subclass, call it but warn about deprecation. If it's not a subclass
-     * (i.e. vanilla XMLParser), do nothing.
-     */
-    parser_doctype = PyObject_GetAttrString(self_pyobj, "doctype");
-    if (parser_doctype) {
-        if (!XMLParser_CheckExact(self_pyobj)) {
-            if (PyErr_WarnEx(PyExc_DeprecationWarning,
-                            "This method of XMLParser is deprecated.  Define"
-                            " doctype() method on the TreeBuilder target.",
-                            1) < 0) {
+    else {
+        /* Now see if the parser itself has a doctype method. If yes and it's
+         * a custom method, call it but warn about deprecation. If it's only
+         * the vanilla XMLParser method, do nothing.
+         */
+        parser_doctype = PyObject_GetAttrString(self_pyobj, "doctype");
+        if (parser_doctype &&
+            !(PyCFunction_Check(parser_doctype) &&
+              PyCFunction_GET_SELF(parser_doctype) == self_pyobj &&
+              PyCFunction_GET_FUNCTION(parser_doctype) ==
+                    (PyCFunction) xmlparser_doctype)) {
+            res = xmlparser_doctype(self, NULL);
+            if (!res)
                 goto clear;
-            }
+            Py_DECREF(res);
             res = PyObject_CallFunction(parser_doctype, "OOO",
                                         doctype_name_obj, pubid_obj, sysid_obj);
             Py_CLEAR(res);
@@ -3556,6 +3557,12 @@ xmlparser_parse_whole(XMLParserObject* self, PyObject* args)
 static PyObject*
 xmlparser_doctype(XMLParserObject *self, PyObject *args)
 {
+    if (PyErr_WarnEx(PyExc_DeprecationWarning,
+                     "This method of XMLParser is deprecated.  Define"
+                     " doctype() method on the TreeBuilder target.",
+                     1) < 0) {
+        return NULL;
+    }
     Py_RETURN_NONE;
 }
 
