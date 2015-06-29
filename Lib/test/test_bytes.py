@@ -1098,9 +1098,26 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         for i in range(100):
             b += b"x"
             alloc = b.__alloc__()
-            self.assertTrue(alloc >= len(b))
+            self.assertGreater(alloc, len(b))  # including trailing null byte
             if alloc not in seq:
                 seq.append(alloc)
+
+    def test_init_alloc(self):
+        b = bytearray()
+        def g():
+            for i in range(1, 100):
+                yield i
+                a = list(b)
+                self.assertEqual(a, list(range(1, len(a)+1)))
+                self.assertEqual(len(b), len(a))
+                self.assertLessEqual(len(b), i)
+                alloc = b.__alloc__()
+                self.assertGreater(alloc, len(b))  # including trailing null byte
+        b.__init__(g())
+        self.assertEqual(list(b), list(range(1, 100)))
+        self.assertEqual(len(b), 99)
+        alloc = b.__alloc__()
+        self.assertGreater(alloc, len(b))
 
     def test_extend(self):
         orig = b'hello'
