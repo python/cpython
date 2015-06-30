@@ -303,16 +303,6 @@ attributes:
    .. versionadded:: 3.5
 
 
-.. function:: isawaitable(object)
-
-   Return true if the object can be used in :keyword:`await`
-   expression.
-
-   See also :class:`collections.abc.Awaitable`.
-
-   .. versionadded:: 3.5
-
-
 .. function:: istraceback(object)
 
    Return true if the object is a traceback.
