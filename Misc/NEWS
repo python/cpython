@@ -24,7 +24,8 @@ Core and Builtins
   works only for 'async def' coroutines; inspect.iscoroutine no longer
   uses collections.abc.Coroutine, it's intended to test for pure 'async def'
   coroutines only; add new opcode: GET_YIELD_FROM_ITER; fix generators wrapper
-  used in types.coroutine to be instance of collections.abc.Generator.
+  used in types.coroutine to be instance of collections.abc.Generator;
+  inspect.isawaitable was removed (use collections.abc.Awaitable).
 
 Library
 -------
