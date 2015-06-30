@@ -159,31 +159,6 @@ class TestPredicates(IsTestBase):
 
         coro.close(); gen_coro.close() # silence warnings
 
-    def test_isawaitable(self):
-        def gen(): yield
-        self.assertFalse(inspect.isawaitable(gen()))
-
-        coro = coroutine_function_example(1)
-        gen_coro = gen_coroutine_function_example(1)
-
-        self.assertTrue(
-            inspect.isawaitable(coro))
-        self.assertTrue(
-            inspect.isawaitable(gen_coro))
-
-        class Future:
-            def __await__():
-                pass
-        self.assertTrue(inspect.isawaitable(Future()))
-        self.assertFalse(inspect.isawaitable(Future))
-
-        class NotFuture: pass
-        not_fut = NotFuture()
-        not_fut.__await__ = lambda: None
-        self.assertFalse(inspect.isawaitable(not_fut))
-
-        coro.close(); gen_coro.close() # silence warnings
-
     def test_isroutine(self):
         self.assertTrue(inspect.isroutine(mod.spam))
         self.assertTrue(inspect.isroutine([].count))
