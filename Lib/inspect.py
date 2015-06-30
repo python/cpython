@@ -186,10 +186,6 @@ def iscoroutinefunction(object):
     return bool((isfunction(object) or ismethod(object)) and
                 object.__code__.co_flags & CO_COROUTINE)
 
-def isawaitable(object):
-    """Return true if the object can be used in "await" expression."""
-    return isinstance(object, collections.abc.Awaitable)
-
 def isgenerator(object):
     """Return true if the object is a generator.
 
