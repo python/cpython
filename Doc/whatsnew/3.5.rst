@@ -527,9 +527,8 @@ inspect
 * New argument ``follow_wrapped`` for :func:`inspect.signature`.
   (Contributed by Yury Selivanov in :issue:`20691`.)
 
-* New :func:`~inspect.iscoroutine`, :func:`~inspect.iscoroutinefunction`,
-  and :func:`~inspect.isawaitable` functions.  (Contributed by Yury Selivanov
-  in :issue:`24017`.)
+* New :func:`~inspect.iscoroutine` and :func:`~inspect.iscoroutinefunction`
+  functions.  (Contributed by Yury Selivanov in :issue:`24017`.)
 
 * New :func:`~inspect.getcoroutinelocals` and :func:`~inspect.getcoroutinestate`
   functions.  (Contributed by Yury Selivanov in :issue:`24400`.)
