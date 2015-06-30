@@ -113,7 +113,7 @@ class AsyncBadSyntaxTest(unittest.TestCase):
                      '{await a for a in b}',
                      '{await a: c for a in b}'}:
 
-            with self.assertRaisesRegex( SyntaxError, 'await.*in comprehen'):
+            with self.assertRaisesRegex(SyntaxError, 'await.*in comprehen'):
                 exec('async def f():\n\t{}'.format(comp), ns, ns)
 
 
