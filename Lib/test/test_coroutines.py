@@ -106,6 +106,16 @@ class AsyncBadSyntaxTest(unittest.TestCase):
         with self.assertRaisesRegex(SyntaxError, 'invalid syntax'):
             import test.badsyntax_async9
 
+    def test_badsyntax_10(self):
+        ns = {}
+        for comp in {'(await a for a in b)',
+                     '[await a for a in b]',
+                     '{await a for a in b}',
+                     '{await a: c for a in b}'}:
+
+            with self.assertRaisesRegex( SyntaxError, 'await.*in comprehen'):
+                exec('async def f():\n\t{}'.format(comp), ns, ns)
+
 
 class TokenizerRegrTest(unittest.TestCase):
 
