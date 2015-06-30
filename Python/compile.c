@@ -3856,7 +3856,10 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         if (c->u->u_ste->ste_type != FunctionBlock)
             return compiler_error(c, "'await' outside function");
 
-        /* this check won't be triggered while we have AWAIT token */
+        if (c->u->u_scope_type == COMPILER_SCOPE_COMPREHENSION)
+            return compiler_error(
+                c, "'await' expressions in comprehensions are not supported");
+
         if (c->u->u_scope_type != COMPILER_SCOPE_ASYNC_FUNCTION)
             return compiler_error(c, "'await' outside async function");
 
