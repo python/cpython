@@ -99,7 +99,7 @@ To schedule a callback from a different thread, the
 :meth:`BaseEventLoop.call_soon_threadsafe` method should be used. Example to
 schedule a coroutine from a different thread::
 
-    loop.call_soon_threadsafe(asyncio.async, coro_func())
+    loop.call_soon_threadsafe(asyncio.ensure_future, coro_func())
 
 Most asyncio objects are not thread safe. You should only worry if you access
 objects outside the event loop. For example, to cancel a future, don't call
@@ -162,10 +162,10 @@ Detect coroutine objects never scheduled
 ----------------------------------------
 
 When a coroutine function is called and its result is not passed to
-:func:`async` or to the :meth:`BaseEventLoop.create_task` method, the execution
-of the coroutine object will never be scheduled which is probably a bug.
-:ref:`Enable the debug mode of asyncio <asyncio-debug-mode>` to :ref:`log a
-warning <asyncio-logger>` to detect it.
+:func:`ensure_future` or to the :meth:`BaseEventLoop.create_task` method,
+the execution of the coroutine object will never be scheduled which is
+probably a bug.  :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>`
+to :ref:`log a warning <asyncio-logger>` to detect it.
 
 Example with the bug::
 
@@ -184,7 +184,7 @@ Output in debug mode::
       File "test.py", line 7, in <module>
         test()
 
-The fix is to call the :func:`async` function or the
+The fix is to call the :func:`ensure_future` function or the
 :meth:`BaseEventLoop.create_task` method with the coroutine object.
 
 .. seealso::
