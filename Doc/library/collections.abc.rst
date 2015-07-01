@@ -161,6 +161,12 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    :term:`Coroutine` objects and instances of the
    :class:`~collections.abc.Coroutine` ABC are all instances of this ABC.
 
+   .. note::
+      In CPython, generator-based coroutines are *awaitables*, even though
+      they do not have an :meth:`__await__` method.  This ABC
+      implements an :meth:`~class.__instancecheck__` method to make them
+      instances of itself.
+
    .. versionadded:: 3.5
 
 .. class:: Coroutine
@@ -171,6 +177,12 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    :meth:`~coroutine.close`.  Custom implementations must also implement
    :meth:`__await__`.  All :class:`Coroutine` instances are also instances of
    :class:`Awaitable`.  See also the definition of :term:`coroutine`.
+
+   .. note::
+      In CPython, generator-based coroutines are *awaitables* and *coroutines*,
+      even though they do not have an :meth:`__await__` method.  This ABC
+      implements an :meth:`~class.__instancecheck__` method to make them
+      instances of itself.
 
    .. versionadded:: 3.5
 
