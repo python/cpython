@@ -519,6 +519,40 @@ class CoroutineTest(unittest.TestCase):
 
             run_async(foo())
 
+    def test_await_14(self):
+        class Wrapper:
+            # Forces the interpreter to use CoroutineType.__await__
+            def __init__(self, coro):
+                assert coro.__class__ is types.CoroutineType
+                self.coro = coro
+            def __await__(self):
+                return self.coro.__await__()
+
+        class FutureLike:
+            def __await__(self):
+                return (yield)
+
+        class Marker(Exception):
+            pass
+
+        async def coro1():
+            try:
+                return await FutureLike()
+            except ZeroDivisionError:
+                raise Marker
+        async def coro2():
+            return await Wrapper(coro1())
+
+        c = coro2()
+        c.send(None)
+        with self.assertRaisesRegex(StopIteration, 'spam'):
+            c.send('spam')
+
+        c = coro2()
+        c.send(None)
+        with self.assertRaises(Marker):
+            c.throw(ZeroDivisionError)
+
     def test_with_1(self):
         class Manager:
             def __init__(self, name):
