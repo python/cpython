@@ -44,7 +44,7 @@ exclude_patterns = ['venv/*']
 # -----------------------
 
 # Use our custom theme.
-html_theme = 'pydoctheme'
+html_theme = 'classic'
 html_theme_path = ['tools']
 html_theme_options = {'collapsiblesidebar': True}
 
