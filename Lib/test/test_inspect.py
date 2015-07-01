@@ -91,14 +91,6 @@ def gen_coroutine_function_example(self):
 
 
 class TestPredicates(IsTestBase):
-    def test_eightteen(self):
-        count = len([x for x in dir(inspect) if x.startswith('is')])
-        # This test is here for remember you to update Doc/library/inspect.rst
-        # which claims there are 18 such functions
-        expected = 18
-        err_msg = "There are %d (not %d) is* functions" % (count, expected)
-        self.assertEqual(count, expected, err_msg)
-
 
     def test_excluding_predicates(self):
         global tb
