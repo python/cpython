@@ -59,7 +59,7 @@ the coroutine object returned by the call doesn't do anything until you
 schedule its execution.  There are two basic ways to start it running:
 call ``await coroutine`` or ``yield from coroutine`` from another coroutine
 (assuming the other coroutine is already running!), or schedule its execution
-using the :func:`async` function or the :meth:`BaseEventLoop.create_task`
+using the :func:`ensure_future` function or the :meth:`BaseEventLoop.create_task`
 method.
 
 
@@ -85,7 +85,7 @@ Coroutines (and tasks) can only run when the event loop is running.
     even if they are plain Python functions returning a :class:`Future`.
     This is intentional to have a freedom of tweaking the implementation
     of these functions in the future. If such a function is needed to be
-    used in a callback-style code, wrap its result with :func:`async`.
+    used in a callback-style code, wrap its result with :func:`ensure_future`.
 
 
 .. _asyncio-hello-world-coroutine:
@@ -394,7 +394,7 @@ Task
    <coroutine>` did not complete. It is probably a bug and a warning is
    logged: see :ref:`Pending task destroyed <asyncio-pending-task-destroyed>`.
 
-   Don't directly create :class:`Task` instances: use the :func:`async`
+   Don't directly create :class:`Task` instances: use the :func:`ensure_future`
    function or the :meth:`BaseEventLoop.create_task` method.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.

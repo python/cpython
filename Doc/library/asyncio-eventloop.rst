@@ -36,7 +36,7 @@ Run an event loop
    Run until the :class:`Future` is done.
 
    If the argument is a :ref:`coroutine object <coroutine>`, it is wrapped by
-   :func:`async`.
+   :func:`ensure_future`.
 
    Return the Future's result, or raise its exception.
 
