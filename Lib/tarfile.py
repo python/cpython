@@ -178,7 +178,8 @@ def nti(s):
             n = -(256 ** (len(s) - 1) - n)
     else:
         try:
-            n = int(nts(s, "ascii", "strict") or "0", 8)
+            s = nts(s, "ascii", "strict")
+            n = int(s.strip() or "0", 8)
         except ValueError:
             raise InvalidHeaderError("invalid header")
     return n

@@ -64,6 +64,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24514: tarfile now tolerates number fields consisting of only
+  whitespace.
+
 - Issue #19176: Fixed doctype() related bugs in C implementation of ElementTree.
   A deprecation warning no longer issued by XMLParser subclass with default
   doctype() method.  Direct call of doctype() now issues a warning.  Parser's
