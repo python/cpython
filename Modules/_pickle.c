@@ -5210,10 +5210,10 @@ load_newobj_ex(UnpicklerObject *self)
     if (!PyType_Check(cls)) {
         Py_DECREF(kwargs);
         Py_DECREF(args);
-        Py_DECREF(cls);
         PyErr_Format(st->UnpicklingError,
                      "NEWOBJ_EX class argument must be a type, not %.200s",
                      Py_TYPE(cls)->tp_name);
+        Py_DECREF(cls);
         return -1;
     }
 
