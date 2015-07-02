@@ -1123,7 +1123,7 @@ multiprocessing
 .. _whatsnew-multiprocessing-no-fork:
 
 On Unix two new :ref:`start methods <multiprocessing-start-methods>`,
-(``spawn`` and ``forkserver``, have been added for starting processes using
+``spawn`` and ``forkserver``, have been added for starting processes using
 :mod:`multiprocessing`.  These make the mixing of processes with threads more
 robust, and the ``spawn`` method matches the semantics that multiprocessing has
 always used on Windows.  New function
