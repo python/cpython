@@ -3910,7 +3910,7 @@ fi],
 # **************************************
 
 AC_MSG_CHECKING(for x64 gcc inline assembler)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
   __asm__ __volatile__ ("movq %rcx, %rax");
 ]])],[have_gcc_asm_for_x64=yes],[have_gcc_asm_for_x64=no])
 AC_MSG_RESULT($have_gcc_asm_for_x64)
@@ -4008,7 +4008,7 @@ fi
 # so we try it on all platforms.
 
 AC_MSG_CHECKING(whether we can use gcc inline assembler to get and set x87 control word)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
   unsigned short cw;
   __asm__ __volatile__ ("fnstcw %0" : "=m" (cw));
   __asm__ __volatile__ ("fldcw %0" : : "m" (cw));
@@ -4021,7 +4021,7 @@ then
 fi
 
 AC_MSG_CHECKING(whether we can use gcc inline assembler to get and set mc68881 fpcr)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+AC_LINK_IFELSE(   [AC_LANG_PROGRAM([[]], [[
   unsigned int fpcr;
   __asm__ __volatile__ ("fmove.l %%fpcr,%0" : "=g" (fpcr));
   __asm__ __volatile__ ("fmove.l %0,%%fpcr" : : "g" (fpcr));
