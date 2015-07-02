@@ -1039,6 +1039,18 @@ class AbstractPickleTests(unittest.TestCase):
                 self.assertEqual(B(x), B(y), detail)
                 self.assertEqual(x.__dict__, y.__dict__, detail)
 
+    def test_newobj_not_class(self):
+        # Issue 24552
+        global SimpleNewObj
+        save = SimpleNewObj
+        o = object.__new__(SimpleNewObj)
+        b = self.dumps(o, 4)
+        try:
+            SimpleNewObj = 42
+            self.assertRaises((TypeError, pickle.UnpicklingError), self.loads, b)
+        finally:
+            SimpleNewObj = save
+
     # Register a type with copyreg, with extension code extcode.  Pickle
     # an object of that type.  Check that the resulting pickle uses opcode
     # (EXT[124]) under proto 2, and not in proto 1.
