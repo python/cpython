@@ -13397,12 +13397,13 @@ main ()
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   have_gcc_asm_for_x64=yes
 else
   have_gcc_asm_for_x64=no
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_gcc_asm_for_x64" >&5
 $as_echo "$have_gcc_asm_for_x64" >&6; }
 if test "$have_gcc_asm_for_x64" = yes
@@ -13573,12 +13574,13 @@ main ()
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   have_gcc_asm_for_x87=yes
 else
   have_gcc_asm_for_x87=no
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_gcc_asm_for_x87" >&5
 $as_echo "$have_gcc_asm_for_x87" >&6; }
 if test "$have_gcc_asm_for_x87" = yes
@@ -13605,12 +13607,13 @@ main ()
   return 0;
 }
 _ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
+if ac_fn_c_try_link "$LINENO"; then :
   have_gcc_asm_for_mc68881=yes
 else
   have_gcc_asm_for_mc68881=no
 fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_gcc_asm_for_mc68881" >&5
 $as_echo "$have_gcc_asm_for_mc68881" >&6; }
 if test "$have_gcc_asm_for_mc68881" = yes
