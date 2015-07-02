@@ -1952,6 +1952,10 @@ class MiscTest(unittest.TestCase):
         self.assertEqual(tarfile.nti(b"\xff\x00\x00\x00\x00\x00\x00\x00"),
                          -0x100000000000000)
 
+        # Issue 24514: Test if empty number fields are converted to zero.
+        self.assertEqual(tarfile.nti(b"\0"), 0)
+        self.assertEqual(tarfile.nti(b"       \0"), 0)
+
     def test_write_number_fields(self):
         self.assertEqual(tarfile.itn(1), b"0000001\x00")
         self.assertEqual(tarfile.itn(0o7777777), b"7777777\x00")
