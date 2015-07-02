@@ -1043,7 +1043,7 @@ class AbstractPickleTests(unittest.TestCase):
         # Issue 24552
         global SimpleNewObj
         save = SimpleNewObj
-        o = object.__new__(SimpleNewObj)
+        o = SimpleNewObj.__new__(SimpleNewObj)
         b = self.dumps(o, 4)
         try:
             SimpleNewObj = 42
