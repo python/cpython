@@ -1,27 +1,58 @@
 .. highlightlang:: c
 
-
 .. _building:
 
-********************************************
+*****************************
+Building C and C++ Extensions
+*****************************
+
+A C extension for CPython is a shared library (e.g. a ``.so`` file on Linux,
+``.pyd`` on Windows), which exports an *initialization function*.
+
+To be importable, the shared library must be available on :envvar:`PYTHONPATH`,
+and must be named after the module name, with an appropriate extension.
+When using distutils, the correct filename is generated automatically.
+
+The initialization function has the signature:
+
+.. c:function:: PyObject* PyInit_modulename(void)
+
+It returns either a fully-initialized module, or a :c:type:`PyModuleDef`
+instance. See :ref:`initializing-modules` for details.
+
+.. highlightlang:: python
+
+For modules with ASCII-only names, the function must be named
+``PyInit_<modulename>``, with ``<modulename>`` replaced by the name of the
+module. When using :ref:`multi-phase-initialization`, non-ASCII module names
+are allowed. In this case, the initialization function name is
+``PyInitU_<modulename>``, with ``<modulename>`` encoded using Python's
+*punycode* encoding with hyphens replaced by underscores. In Python::
+
+    def initfunc_name(name):
+        try:
+            suffix = b'_' + name.encode('ascii')
+        except UnicodeEncodeError:
+            suffix = b'U_' + name.encode('punycode').replace(b'-', b'_')
+        return b'PyInit' + suffix
+
+It is possible to export multiple modules from a single shared library by
+defining multiple initialization functions. However, importing them requires
+using symbolic links or a custom importer, because by default only the
+function corresponding to the filename is found.
+See :PEP:`489#multiple-modules-in-one-library` for details.
+
+
+.. highlightlang:: c
+
 Building C and C++ Extensions with distutils
-********************************************
+============================================
 
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
-
-Starting in Python 1.4, Python provides, on Unix, a special make file for
-building make files for building dynamically-linked extensions and custom
-interpreters.  Starting with Python 2.0, this mechanism (known as related to
-Makefile.pre.in, and Setup files) is no longer supported. Building custom
-interpreters was rarely used, and extension modules can be built using
-distutils.
-
-Building an extension module using distutils requires that distutils is
-installed on the build machine, which is included in Python 2.x and available
-separately for Python 1.5. Since distutils also supports creation of binary
-packages, users don't necessarily need a compiler and distutils to install the
-extension.
+Extension modules can be built using distutils,  which is included in Python.
+Since distutils also supports creation of binary packages, users don't
+necessarily need a compiler and distutils to install the extension.
 
 A distutils package contains a driver script, :file:`setup.py`. This is a plain
 Python file, which, in the most simple case, could look like this::

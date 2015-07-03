@@ -98,9 +98,8 @@ described here are distributed with the Python sources in the
    it.  Copy your C sources into it.  Note that the module source file name does
    not necessarily have to match the module name, but the name of the
    initialization function should match the module name --- you can only import a
-   module :mod:`spam` if its initialization function is called :c:func:`initspam`,
-   and it should call :c:func:`Py_InitModule` with the string ``"spam"`` as its
-   first argument (use the minimal :file:`example.c` in this directory as a guide).
+   module :mod:`spam` if its initialization function is called :c:func:`PyInit_spam`,
+   (see :ref:`building`, or use the minimal :file:`Modules/xxmodule.c` as a guide).
    By convention, it lives in a file called :file:`spam.c` or :file:`spammodule.c`.
    The output file should be called :file:`spam.pyd` (in Release mode) or
    :file:`spam_d.pyd` (in Debug mode). The extension :file:`.pyd` was chosen
