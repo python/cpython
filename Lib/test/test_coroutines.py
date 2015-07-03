@@ -350,6 +350,36 @@ class CoroutineTest(unittest.TestCase):
                                     "coroutine ignored GeneratorExit"):
             c.close()
 
+    def test_cr_await(self):
+        @types.coroutine
+        def a():
+            self.assertEqual(inspect.getcoroutinestate(coro_b), inspect.CORO_RUNNING)
+            self.assertIsNone(coro_b.cr_await)
+            yield
+            self.assertEqual(inspect.getcoroutinestate(coro_b), inspect.CORO_RUNNING)
+            self.assertIsNone(coro_b.cr_await)
+
+        async def c():
+            await a()
+
+        async def b():
+            self.assertIsNone(coro_b.cr_await)
+            await c()
+            self.assertIsNone(coro_b.cr_await)
+
+        coro_b = b()
+        self.assertEqual(inspect.getcoroutinestate(coro_b), inspect.CORO_CREATED)
+        self.assertIsNone(coro_b.cr_await)
+
+        coro_b.send(None)
+        self.assertEqual(inspect.getcoroutinestate(coro_b), inspect.CORO_SUSPENDED)
+        self.assertEqual(coro_b.cr_await.cr_await.gi_code.co_name, 'a')
+
+        with self.assertRaises(StopIteration):
+            coro_b.send(None)  # complete coroutine
+        self.assertEqual(inspect.getcoroutinestate(coro_b), inspect.CORO_CLOSED)
+        self.assertIsNone(coro_b.cr_await)
+
     def test_corotype_1(self):
         ct = types.CoroutineType
         self.assertIn('into coroutine', ct.send.__doc__)

@@ -552,11 +552,22 @@ gen_set_qualname(PyGenObject *op, PyObject *value)
     return 0;
 }
 
+static PyObject *
+gen_getyieldfrom(PyGenObject *gen)
+{
+    PyObject *yf = gen_yf(gen);
+    if (yf == NULL)
+        Py_RETURN_NONE;
+    return yf;
+}
+
 static PyGetSetDef gen_getsetlist[] = {
     {"__name__", (getter)gen_get_name, (setter)gen_set_name,
      PyDoc_STR("name of the generator")},
     {"__qualname__", (getter)gen_get_qualname, (setter)gen_set_qualname,
      PyDoc_STR("qualified name of the generator")},
+    {"gi_yieldfrom", (getter)gen_getyieldfrom, NULL,
+     PyDoc_STR("object being iterated by yield from, or None")},
     {NULL} /* Sentinel */
 };
 
@@ -776,11 +787,22 @@ coro_await(PyCoroObject *coro)
     return (PyObject *)cw;
 }
 
+static PyObject *
+coro_get_cr_await(PyCoroObject *coro)
+{
+    PyObject *yf = gen_yf((PyGenObject *) coro);
+    if (yf == NULL)
+        Py_RETURN_NONE;
+    return yf;
+}
+
 static PyGetSetDef coro_getsetlist[] = {
     {"__name__", (getter)gen_get_name, (setter)gen_set_name,
      PyDoc_STR("name of the coroutine")},
     {"__qualname__", (getter)gen_get_qualname, (setter)gen_set_qualname,
      PyDoc_STR("qualified name of the coroutine")},
+    {"cr_await", (getter)coro_get_cr_await, NULL,
+     PyDoc_STR("object being awaited on, or None")},
     {NULL} /* Sentinel */
 };
 
