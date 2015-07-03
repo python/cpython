@@ -211,8 +211,8 @@ class SysModuleTest(unittest.TestCase):
             for i in (50, 1000):
                 # Issue #5392: stack overflow after hitting recursion limit twice
                 sys.setrecursionlimit(i)
-                self.assertRaises(RuntimeError, f)
-                self.assertRaises(RuntimeError, f)
+                self.assertRaises(RecursionError, f)
+                self.assertRaises(RecursionError, f)
         finally:
             sys.setrecursionlimit(oldlimit)
 
@@ -225,7 +225,7 @@ class SysModuleTest(unittest.TestCase):
             def f():
                 try:
                     f()
-                except RuntimeError:
+                except RecursionError:
                     f()
 
             sys.setrecursionlimit(%d)

@@ -3342,7 +3342,7 @@ order (MRO) for bases """
         A.__call__ = A()
         try:
             A()()
-        except RuntimeError:
+        except RecursionError:
             pass
         else:
             self.fail("Recursion limit should have been reached for __call__()")
@@ -4317,8 +4317,8 @@ order (MRO) for bases """
             pass
         Foo.__repr__ = Foo.__str__
         foo = Foo()
-        self.assertRaises(RuntimeError, str, foo)
-        self.assertRaises(RuntimeError, repr, foo)
+        self.assertRaises(RecursionError, str, foo)
+        self.assertRaises(RecursionError, repr, foo)
 
     def test_mixing_slot_wrappers(self):
         class X(dict):

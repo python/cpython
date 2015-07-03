@@ -500,8 +500,9 @@ pattern_error(Py_ssize_t status)
 {
     switch (status) {
     case SRE_ERROR_RECURSION_LIMIT:
+        /* This error code seems to be unused. */
         PyErr_SetString(
-            PyExc_RuntimeError,
+            PyExc_RecursionError,
             "maximum recursion limit exceeded"
             );
         break;

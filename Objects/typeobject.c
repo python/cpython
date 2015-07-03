@@ -4142,7 +4142,7 @@ reduce_newobj(PyObject *obj, int proto)
  * were implemented in the same function:
  *  - trying to pickle an object with a custom __reduce__ method that
  *    fell back to object.__reduce__ in certain circumstances led to
- *    infinite recursion at Python level and eventual RuntimeError.
+ *    infinite recursion at Python level and eventual RecursionError.
  *  - Pickling objects that lied about their type by overwriting the
  *    __class__ descriptor could lead to infinite recursion at C level
  *    and eventual segfault.

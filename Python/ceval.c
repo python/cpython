@@ -737,7 +737,7 @@ _Py_CheckRecursiveCall(const char *where)
     if (tstate->recursion_depth > recursion_limit) {
         --tstate->recursion_depth;
         tstate->overflowed = 1;
-        PyErr_Format(PyExc_RuntimeError,
+        PyErr_Format(PyExc_RecursionError,
                      "maximum recursion depth exceeded%s",
                      where);
         return -1;

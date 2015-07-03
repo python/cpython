@@ -30,6 +30,8 @@ Core and Builtins
 - Issue #24450: Add gi_yieldfrom to generators and cr_await to coroutines.
   Contributed by Benno Leslie and Yury Selivanov.
 
+- Issue #19235: Add new RecursionError exception. Patch by Georg Brandl.
+
 Library
 -------
 

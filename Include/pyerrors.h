@@ -167,6 +167,7 @@ PyAPI_DATA(PyObject *) PyExc_MemoryError;
 PyAPI_DATA(PyObject *) PyExc_NameError;
 PyAPI_DATA(PyObject *) PyExc_OverflowError;
 PyAPI_DATA(PyObject *) PyExc_RuntimeError;
+PyAPI_DATA(PyObject *) PyExc_RecursionError;
 PyAPI_DATA(PyObject *) PyExc_NotImplementedError;
 PyAPI_DATA(PyObject *) PyExc_SyntaxError;
 PyAPI_DATA(PyObject *) PyExc_IndentationError;
