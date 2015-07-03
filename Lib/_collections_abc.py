@@ -81,22 +81,7 @@ class Hashable(metaclass=ABCMeta):
         return NotImplemented
 
 
-class _AwaitableMeta(ABCMeta):
-
-    def __instancecheck__(cls, instance):
-        # This hook is needed because we can't add
-        # '__await__' method to generator objects, and
-        # we can't register GeneratorType on Awaitable.
-        # NB: 0x100 = CO_ITERABLE_COROUTINE
-        # (We don't want to import 'inspect' module, as
-        # a dependency for 'collections.abc')
-        if (instance.__class__ is generator and
-            instance.gi_code.co_flags & 0x100):
-            return True
-        return super().__instancecheck__(instance)
-
-
-class Awaitable(metaclass=_AwaitableMeta):
+class Awaitable(metaclass=ABCMeta):
 
     __slots__ = ()
 
