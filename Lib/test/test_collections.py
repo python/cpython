@@ -511,8 +511,10 @@ class TestOneTrickPonyABCs(ABCTestCase):
             self.assertTrue(issubclass(type(x), Awaitable))
 
         c = coro()
-        self.assertIsInstance(c, Awaitable)
-        c.close() # awoid RuntimeWarning that coro() was not awaited
+        # Iterable coroutines (generators with CO_ITERABLE_COROUTINE
+        # flag don't have '__await__' method, hence can't be instances
+        # of Awaitable. Use inspect.isawaitable to detect them.
+        self.assertNotIsInstance(c, Awaitable)
 
         c = new_coro()
         self.assertIsInstance(c, Awaitable)
@@ -559,8 +561,10 @@ class TestOneTrickPonyABCs(ABCTestCase):
             self.assertTrue(issubclass(type(x), Awaitable))
 
         c = coro()
-        self.assertIsInstance(c, Coroutine)
-        c.close() # awoid RuntimeWarning that coro() was not awaited
+        # Iterable coroutines (generators with CO_ITERABLE_COROUTINE
+        # flag don't have '__await__' method, hence can't be instances
+        # of Coroutine. Use inspect.isawaitable to detect them.
+        self.assertNotIsInstance(c, Coroutine)
 
         c = new_coro()
         self.assertIsInstance(c, Coroutine)

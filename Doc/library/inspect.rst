@@ -310,6 +310,25 @@ attributes:
    .. versionadded:: 3.5
 
 
+.. function:: isawaitable(object)
+
+   Return true if the object can be used in :keyword:`await` expression.
+
+   Can also be used to distinguish generator-based coroutines from regular
+   generators::
+
+      def gen():
+          yield
+      @types.coroutine
+      def gen_coro():
+          yield
+
+      assert not isawaitable(gen())
+      assert isawaitable(gen_coro())
+
+   .. versionadded:: 3.5
+
+
 .. function:: istraceback(object)
 
    Return true if the object is a traceback.

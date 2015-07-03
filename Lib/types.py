@@ -241,12 +241,12 @@ def coroutine(func):
     @_functools.wraps(func)
     def wrapped(*args, **kwargs):
         coro = func(*args, **kwargs)
-        if coro.__class__ is CoroutineType:
-            # 'coro' is a native coroutine object.
+        if (coro.__class__ is CoroutineType or
+            coro.__class__ is GeneratorType and coro.gi_code.co_flags & 0x100):
+            # 'coro' is a native coroutine object or an iterable coroutine
             return coro
-        if (coro.__class__ is GeneratorType or
-                (isinstance(coro, _collections_abc.Generator) and
-                 not isinstance(coro, _collections_abc.Coroutine))):
+        if (isinstance(coro, _collections_abc.Generator) and
+            not isinstance(coro, _collections_abc.Coroutine)):
             # 'coro' is either a pure Python generator iterator, or it
             # implements collections.abc.Generator (and does not implement
             # collections.abc.Coroutine).
