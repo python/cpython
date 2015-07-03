@@ -343,6 +343,8 @@ Build
 - Issue #23686: Update OS X 10.5 installer and Windows builds to use
   OpenSSL 1.0.2a.
 
+- Issue #24432: Update Windows builds to use OpenSSL 1.0.2c.
+
 C API
 -----
 
