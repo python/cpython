@@ -118,6 +118,8 @@ class ExceptionTests(unittest.TestCase):
         try: x = 1/0
         except Exception as e: pass
 
+        self.raise_catch(StopAsyncIteration, "StopAsyncIteration")
+
     def testSyntaxErrorMessage(self):
         # make sure the right exception message is raised for each of
         # these code fragments
