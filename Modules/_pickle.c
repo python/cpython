@@ -3622,7 +3622,7 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
              >>> pickle.dumps(1+2j)
              Traceback (most recent call last):
                ...
-             RuntimeError: maximum recursion depth exceeded
+             RecursionError: maximum recursion depth exceeded
 
            Removing the complex class from copyreg.dispatch_table made the
            __reduce_ex__() method emit another complex object:

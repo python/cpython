@@ -84,6 +84,7 @@ class ExceptionTests(unittest.TestCase):
             x += x  # this simply shouldn't blow up
 
         self.raise_catch(RuntimeError, "RuntimeError")
+        self.raise_catch(RecursionError, "RecursionError")
 
         self.raise_catch(SyntaxError, "SyntaxError")
         try: exec('/\n')
@@ -474,14 +475,14 @@ class ExceptionTests(unittest.TestCase):
     def testInfiniteRecursion(self):
         def f():
             return f()
-        self.assertRaises(RuntimeError, f)
+        self.assertRaises(RecursionError, f)
 
         def g():
             try:
                 return g()
             except ValueError:
                 return -1
-        self.assertRaises(RuntimeError, g)
+        self.assertRaises(RecursionError, g)
 
     def test_str(self):
         # Make sure both instances and classes have a str representation.
@@ -887,10 +888,10 @@ class ExceptionTests(unittest.TestCase):
         def g():
             try:
                 return g()
-            except RuntimeError:
+            except RecursionError:
                 return sys.exc_info()
         e, v, tb = g()
-        self.assertTrue(isinstance(v, RuntimeError), type(v))
+        self.assertTrue(isinstance(v, RecursionError), type(v))
         self.assertIn("maximum recursion depth exceeded", str(v))
 
 
@@ -989,10 +990,10 @@ class ExceptionTests(unittest.TestCase):
         # We cannot use assertRaises since it manually deletes the traceback
         try:
             inner()
-        except RuntimeError as e:
+        except RecursionError as e:
             self.assertNotEqual(wr(), None)
         else:
-            self.fail("RuntimeError not raised")
+            self.fail("RecursionError not raised")
         self.assertEqual(wr(), None)
 
     def test_errno_ENOTDIR(self):

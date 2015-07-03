@@ -327,7 +327,7 @@ class TestCopy(unittest.TestCase):
         x.append(x)
         y = copy.deepcopy(x)
         for op in comparisons:
-            self.assertRaises(RuntimeError, op, y, x)
+            self.assertRaises(RecursionError, op, y, x)
         self.assertIsNot(y, x)
         self.assertIs(y[0], y)
         self.assertEqual(len(y), 1)
@@ -354,7 +354,7 @@ class TestCopy(unittest.TestCase):
         x[0].append(x)
         y = copy.deepcopy(x)
         for op in comparisons:
-            self.assertRaises(RuntimeError, op, y, x)
+            self.assertRaises(RecursionError, op, y, x)
         self.assertIsNot(y, x)
         self.assertIsNot(y[0], x[0])
         self.assertIs(y[0][0], y)
@@ -373,7 +373,7 @@ class TestCopy(unittest.TestCase):
         for op in order_comparisons:
             self.assertRaises(TypeError, op, y, x)
         for op in equality_comparisons:
-            self.assertRaises(RuntimeError, op, y, x)
+            self.assertRaises(RecursionError, op, y, x)
         self.assertIsNot(y, x)
         self.assertIs(y['foo'], y)
         self.assertEqual(len(y), 1)

@@ -534,7 +534,7 @@ if 1:
             broken = prefix + repeated * fail_depth
             details = "Compiling ({!r} + {!r} * {})".format(
                          prefix, repeated, fail_depth)
-            with self.assertRaises(RuntimeError, msg=details):
+            with self.assertRaises(RecursionError, msg=details):
                 self.compile_single(broken)
 
         check_limit("a", "()")

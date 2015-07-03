@@ -196,7 +196,7 @@ class DictSetTest(unittest.TestCase):
     def test_recursive_repr(self):
         d = {}
         d[42] = d.values()
-        self.assertRaises(RuntimeError, repr, d)
+        self.assertRaises(RecursionError, repr, d)
 
     def test_abc_registry(self):
         d = dict(a=1)
