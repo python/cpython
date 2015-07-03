@@ -87,6 +87,8 @@ New built-in features:
 * Generators have new ``gi_yieldfrom`` attribute, which returns the
   object being iterated by ``yield from`` expressions. (Contributed
   by Benno Leslie and Yury Selivanov in :issue:`24450`.)
+* New :exc:`RecursionError` exception. (Contributed by Georg Brandl
+  in :issue:`19235`.)
 
 Implementation improvements:
 

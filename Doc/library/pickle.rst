@@ -425,7 +425,7 @@ The following types can be pickled:
 Attempts to pickle unpicklable objects will raise the :exc:`PicklingError`
 exception; when this happens, an unspecified number of bytes may have already
 been written to the underlying file.  Trying to pickle a highly recursive data
-structure may exceed the maximum recursion depth, a :exc:`RuntimeError` will be
+structure may exceed the maximum recursion depth, a :exc:`RecursionError` will be
 raised in this case.  You can carefully raise this limit with
 :func:`sys.setrecursionlimit`.
 

@@ -68,11 +68,11 @@ class TestRecursion:
     def test_highly_nested_objects_decoding(self):
         # test that loading highly-nested objects doesn't segfault when C
         # accelerations are used. See #12017
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RecursionError):
             self.loads('{"a":' * 100000 + '1' + '}' * 100000)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RecursionError):
             self.loads('{"a":' * 100000 + '[1]' + '}' * 100000)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RecursionError):
             self.loads('[' * 100000 + '1' + ']' * 100000)
 
     def test_highly_nested_objects_encoding(self):
@@ -80,9 +80,9 @@ class TestRecursion:
         l, d = [], {}
         for x in range(100000):
             l, d = [l], {'k':d}
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RecursionError):
             self.dumps(l)
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RecursionError):
             self.dumps(d)
 
     def test_endless_recursion(self):
@@ -92,7 +92,7 @@ class TestRecursion:
                 """If check_circular is False, this will keep adding another list."""
                 return [o]
 
-        with self.assertRaises(RuntimeError):
+        with self.assertRaises(RecursionError):
             EndlessJSONEncoder(check_circular=False).encode(5j)
 
 
