@@ -413,6 +413,13 @@ A more substantial example module is included in the Python source distribution
 as :file:`Modules/xxmodule.c`.  This file may be used as a  template or simply
 read as an example.
 
+.. note::
+
+   Unlike our ``spam`` example, ``xxmodule`` uses *multi-phase initialization*
+   (new in Python 3.5), where a PyModuleDef structure is returned from
+   ``PyInit_spam``, and creation of the module is left to the import machinery.
+   For details on multi-phase initialization, see :PEP:`489`.
+
 
 .. _compilation:
 

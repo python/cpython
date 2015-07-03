@@ -873,6 +873,8 @@ been created.
       instead.
 
 
+.. _sub-interpreter-support:
+
 Sub-interpreter support
 =======================
 
