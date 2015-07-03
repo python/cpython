@@ -500,10 +500,10 @@ class ClassTests(unittest.TestCase):
 
         try:
             a() # This should not segfault
-        except RuntimeError:
+        except RecursionError:
             pass
         else:
-            self.fail("Failed to raise RuntimeError")
+            self.fail("Failed to raise RecursionError")
 
     def testForExceptionsRaisedInInstanceGetattr2(self):
         # Tests for exceptions raised in instance_getattr2().

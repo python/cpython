@@ -56,7 +56,7 @@ class CommonTest(seq_tests.CommonTest):
         l0 = []
         for i in range(sys.getrecursionlimit() + 100):
             l0 = [l0]
-        self.assertRaises(RuntimeError, repr, l0)
+        self.assertRaises(RecursionError, repr, l0)
 
     def test_print(self):
         d = self.type2test(range(200))
