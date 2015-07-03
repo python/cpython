@@ -145,6 +145,14 @@ class CoroWrapper:
         __await__ = __iter__ # make compatible with 'await' expression
 
         @property
+        def gi_yieldfrom(self):
+            return self.gen.gi_yieldfrom
+
+        @property
+        def cr_await(self):
+            return self.gen.cr_await
+
+        @property
         def cr_running(self):
             return self.gen.cr_running
 
