@@ -188,9 +188,13 @@ class _GeneratorWrapper:
     @property
     def gi_running(self):
         return self.__wrapped.gi_running
+    @property
+    def gi_yieldfrom(self):
+        return self.__wrapped.gi_yieldfrom
     cr_code = gi_code
     cr_frame = gi_frame
     cr_running = gi_running
+    cr_await = gi_yieldfrom
     def __next__(self):
         return next(self.__wrapped)
     def __iter__(self):
