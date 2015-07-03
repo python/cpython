@@ -84,6 +84,9 @@ New built-in features:
 * ``b'\xf0\x9f\x90\x8d'.hex()``, ``bytearray(b'\xf0\x9f\x90\x8d').hex()``,
   ``memoryview(b'\xf0\x9f\x90\x8d').hex()``: :issue:`9951` - A ``hex`` method
   has been added to bytes, bytearray, and memoryview.
+* Generators have new ``gi_yieldfrom`` attribute, which returns the
+  object being iterated by ``yield from`` expressions. (Contributed
+  by Benno Leslie and Yury Selivanov in :issue:`24450`.)
 
 Implementation improvements:
 
