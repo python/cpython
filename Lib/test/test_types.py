@@ -1295,8 +1295,8 @@ class CoroutineTests(unittest.TestCase):
         self.assertIs(wrapper.__name__, gen.__name__)
 
         # Test AttributeErrors
-        for name in {'gi_running', 'gi_frame', 'gi_code',
-                     'cr_running', 'cr_frame', 'cr_code'}:
+        for name in {'gi_running', 'gi_frame', 'gi_code', 'gi_yieldfrom',
+                     'cr_running', 'cr_frame', 'cr_code', 'cr_await'}:
             with self.assertRaises(AttributeError):
                 getattr(wrapper, name)
 
@@ -1304,12 +1304,15 @@ class CoroutineTests(unittest.TestCase):
         gen.gi_running = object()
         gen.gi_frame = object()
         gen.gi_code = object()
+        gen.gi_yieldfrom = object()
         self.assertIs(wrapper.gi_running, gen.gi_running)
         self.assertIs(wrapper.gi_frame, gen.gi_frame)
         self.assertIs(wrapper.gi_code, gen.gi_code)
+        self.assertIs(wrapper.gi_yieldfrom, gen.gi_yieldfrom)
         self.assertIs(wrapper.cr_running, gen.gi_running)
         self.assertIs(wrapper.cr_frame, gen.gi_frame)
         self.assertIs(wrapper.cr_code, gen.gi_code)
+        self.assertIs(wrapper.cr_await, gen.gi_yieldfrom)
 
         wrapper.close()
         gen.close.assert_called_once_with()
