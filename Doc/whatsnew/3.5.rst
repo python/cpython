@@ -283,7 +283,7 @@ two step module loading mechanism introduced by :pep:`451` in Python 3.4.
 
 This change brings the import semantics of extension modules that opt-in to
 using the new mechanism much closer to those of Python source and bytecode
-modules, including the ability to any valid identifier as a module name,
+modules, including the ability to use any valid identifier as a module name,
 rather than being restricted to ASCII.
 
 .. seealso::
@@ -763,7 +763,7 @@ unicodedata
 -----------
 
 * The :mod:`unicodedata` module now uses data from `Unicode 8.0.0
-<http://unicode.org/versions/Unicode8.0.0/>`_.
+  <http://unicode.org/versions/Unicode8.0.0/>`_.
 
 
 wsgiref
