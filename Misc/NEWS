@@ -92,6 +92,12 @@ Library
 
 - Issue #24134: Reverted issue #24134 changes.
 
+Build
+-----
+
+- Issue #24432: Update Windows builds to use OpenSSL 1.0.2c.
+
+
 IDLE
 ----
 
