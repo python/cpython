@@ -109,7 +109,7 @@
       </_Lines>
     </ItemGroup>
     <MakeDir Directories="$(IntDir)" />
-    <WriteLinesToFile File="$(IntDir)python3_d.def" Lines="@(_Lines->'%(New)')" />
+    <WriteLinesToFile File="$(IntDir)python3_d.def" Lines="@(_Lines->'%(New)')" Overwrite="true" />
   </Target>
   
   <Target Name="BuildStubDef" BeforeTargets="PreLinkEvent" Inputs="..\PC\python3.def" Outputs="$(IntDir)python3stub.def">
@@ -132,7 +132,7 @@
       <_Lines Include="@(_Symbols->'%(Symbol)')" />
     </ItemGroup>
     <MakeDir Directories="$(IntDir)" />
-    <WriteLinesToFile File="$(IntDir)python3stub.def" Lines="@(_Lines)" />
+    <WriteLinesToFile File="$(IntDir)python3stub.def" Lines="@(_Lines)" Overwrite="true" />
   </Target>
   <Target Name="_CleanStubDef" BeforeTargets="CoreClean">
     <ItemGroup>
