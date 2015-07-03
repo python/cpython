@@ -3,6 +3,8 @@ import sys
 import unittest
 import warnings
 import weakref
+import inspect
+import types
 
 from test import support
 
@@ -257,6 +259,39 @@ class ExceptionTest(unittest.TestCase):
             # This time StopIteration isn't raised from the generator's body,
             # hence no warning.
             next(g)
+
+
+class YieldFromTests(unittest.TestCase):
+    def test_generator_gi_yieldfrom(self):
+        def a():
+            self.assertEqual(inspect.getgeneratorstate(gen_b), inspect.GEN_RUNNING)
+            self.assertIsNone(gen_b.gi_yieldfrom)
+            yield
+            self.assertEqual(inspect.getgeneratorstate(gen_b), inspect.GEN_RUNNING)
+            self.assertIsNone(gen_b.gi_yieldfrom)
+
+        def b():
+            self.assertIsNone(gen_b.gi_yieldfrom)
+            yield from a()
+            self.assertIsNone(gen_b.gi_yieldfrom)
+            yield
+            self.assertIsNone(gen_b.gi_yieldfrom)
+
+        gen_b = b()
+        self.assertEqual(inspect.getgeneratorstate(gen_b), inspect.GEN_CREATED)
+        self.assertIsNone(gen_b.gi_yieldfrom)
+
+        gen_b.send(None)
+        self.assertEqual(inspect.getgeneratorstate(gen_b), inspect.GEN_SUSPENDED)
+        self.assertEqual(gen_b.gi_yieldfrom.gi_code.co_name, 'a')
+
+        gen_b.send(None)
+        self.assertEqual(inspect.getgeneratorstate(gen_b), inspect.GEN_SUSPENDED)
+        self.assertIsNone(gen_b.gi_yieldfrom)
+
+        [] = gen_b  # Exhaust generator
+        self.assertEqual(inspect.getgeneratorstate(gen_b), inspect.GEN_CLOSED)
+        self.assertIsNone(gen_b.gi_yieldfrom)
 
 
 tutorial_tests = """
@@ -624,7 +659,7 @@ From the Iterators list, about the types of these things.
 >>> type(i)
 <class 'generator'>
 >>> [s for s in dir(i) if not s.startswith('_')]
-['close', 'gi_code', 'gi_frame', 'gi_running', 'send', 'throw']
+['close', 'gi_code', 'gi_frame', 'gi_running', 'gi_yieldfrom', 'send', 'throw']
 >>> from test.support import HAVE_DOCSTRINGS
 >>> print(i.__next__.__doc__ if HAVE_DOCSTRINGS else 'Implement next(self).')
 Implement next(self).
