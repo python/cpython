@@ -945,7 +945,7 @@ class ThreadingExceptionTests(BaseTestCase):
             def outer():
                 try:
                     recurse()
-                except RuntimeError:
+                except RecursionError:
                     pass
 
             w = threading.Thread(target=outer)

@@ -1231,6 +1231,11 @@ SimpleExtendsException(PyExc_Exception, EOFError,
 SimpleExtendsException(PyExc_Exception, RuntimeError,
                        "Unspecified run-time error.");
 
+/*
+ *    RecursionError extends RuntimeError
+ */
+SimpleExtendsException(PyExc_RuntimeError, RecursionError,
+                       "Recursion limit exceeded.");
 
 /*
  *    NotImplementedError extends RuntimeError
@@ -2380,7 +2385,7 @@ SimpleExtendsException(PyExc_Warning, ResourceWarning,
 
 
 
-/* Pre-computed RuntimeError instance for when recursion depth is reached.
+/* Pre-computed RecursionError instance for when recursion depth is reached.
    Meant to be used when normalizing the exception for exceeding the recursion
    depth will cause its own infinite recursion.
 */
@@ -2484,6 +2489,7 @@ _PyExc_Init(PyObject *bltinmod)
     PRE_INIT(OSError)
     PRE_INIT(EOFError)
     PRE_INIT(RuntimeError)
+    PRE_INIT(RecursionError)
     PRE_INIT(NotImplementedError)
     PRE_INIT(NameError)
     PRE_INIT(UnboundLocalError)
@@ -2560,6 +2566,7 @@ _PyExc_Init(PyObject *bltinmod)
 #endif
     POST_INIT(EOFError)
     POST_INIT(RuntimeError)
+    POST_INIT(RecursionError)
     POST_INIT(NotImplementedError)
     POST_INIT(NameError)
     POST_INIT(UnboundLocalError)
@@ -2643,9 +2650,9 @@ _PyExc_Init(PyObject *bltinmod)
     preallocate_memerrors();
 
     if (!PyExc_RecursionErrorInst) {
-        PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RuntimeError, NULL, NULL);
+        PyExc_RecursionErrorInst = BaseException_new(&_PyExc_RecursionError, NULL, NULL);
         if (!PyExc_RecursionErrorInst)
-            Py_FatalError("Cannot pre-allocate RuntimeError instance for "
+            Py_FatalError("Cannot pre-allocate RecursionError instance for "
                             "recursion errors");
         else {
             PyBaseExceptionObject *err_inst =
@@ -2654,15 +2661,15 @@ _PyExc_Init(PyObject *bltinmod)
             PyObject *exc_message;
             exc_message = PyUnicode_FromString("maximum recursion depth exceeded");
             if (!exc_message)
-                Py_FatalError("cannot allocate argument for RuntimeError "
+                Py_FatalError("cannot allocate argument for RecursionError "
                                 "pre-allocation");
             args_tuple = PyTuple_Pack(1, exc_message);
             if (!args_tuple)
-                Py_FatalError("cannot allocate tuple for RuntimeError "
+                Py_FatalError("cannot allocate tuple for RecursionError "
                                 "pre-allocation");
             Py_DECREF(exc_message);
             if (BaseException_init(err_inst, args_tuple, NULL))
-                Py_FatalError("init of pre-allocated RuntimeError failed");
+                Py_FatalError("init of pre-allocated RecursionError failed");
             Py_DECREF(args_tuple);
         }
     }
