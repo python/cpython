@@ -25,7 +25,9 @@ Core and Builtins
   uses collections.abc.Coroutine, it's intended to test for pure 'async def'
   coroutines only; add new opcode: GET_YIELD_FROM_ITER; fix generators wrapper
   used in types.coroutine to be instance of collections.abc.Generator;
-  inspect.isawaitable was removed (use collections.abc.Awaitable).
+  collections.abc.Awaitable and collections.abc.Coroutine can no longer
+  be used to detect generator-based coroutines--use inspect.isawaitable
+  instead.
 
 - Issue #24450: Add gi_yieldfrom to generators and cr_await to coroutines.
   Contributed by Benno Leslie and Yury Selivanov.
