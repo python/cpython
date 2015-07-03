@@ -100,6 +100,11 @@ Documentation
 - Issue #24351: Clarify what is meant by "identifier" in the context of
   string.Template instances.
 
+Build
+-----
+
+- Issue #24432: Update Windows builds to use OpenSSL 1.0.2c.
+
 
 What's New in Python 3.5.0 beta 2?
 ==================================
