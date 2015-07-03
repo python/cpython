@@ -319,7 +319,7 @@ finally:
         Py_DECREF(*exc);
         Py_DECREF(*val);
         /* ... and use the recursion error instead */
-        *exc = PyExc_RuntimeError;
+        *exc = PyExc_RecursionError;
         *val = PyExc_RecursionErrorInst;
         Py_INCREF(*exc);
         Py_INCREF(*val);

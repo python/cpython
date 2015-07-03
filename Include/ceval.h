@@ -48,16 +48,16 @@ PyAPI_FUNC(int) Py_MakePendingCalls(void);
 
    In Python 3.0, this protection has two levels:
    * normal anti-recursion protection is triggered when the recursion level
-     exceeds the current recursion limit. It raises a RuntimeError, and sets
+     exceeds the current recursion limit. It raises a RecursionError, and sets
      the "overflowed" flag in the thread state structure. This flag
      temporarily *disables* the normal protection; this allows cleanup code
      to potentially outgrow the recursion limit while processing the
-     RuntimeError.
+     RecursionError.
    * "last chance" anti-recursion protection is triggered when the recursion
      level exceeds "current recursion limit + 50". By construction, this
      protection can only be triggered when the "overflowed" flag is set. It
      means the cleanup code has itself gone into an infinite loop, or the
-     RuntimeError has been mistakingly ignored. When this protection is
+     RecursionError has been mistakingly ignored. When this protection is
      triggered, the interpreter aborts with a Fatal Error.
 
    In addition, the "overflowed" flag is automatically reset when the

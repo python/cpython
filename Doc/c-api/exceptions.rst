@@ -683,12 +683,12 @@ recursion depth automatically).
    sets a :exc:`MemoryError` and returns a nonzero value.
 
    The function then checks if the recursion limit is reached.  If this is the
-   case, a :exc:`RuntimeError` is set and a nonzero value is returned.
+   case, a :exc:`RecursionError` is set and a nonzero value is returned.
    Otherwise, zero is returned.
 
    *where* should be a string such as ``" in instance check"`` to be
-   concatenated to the :exc:`RuntimeError` message caused by the recursion depth
-   limit.
+   concatenated to the :exc:`RecursionError` message caused by the recursion
+   depth limit.
 
 .. c:function:: void Py_LeaveRecursiveCall()
 
@@ -800,6 +800,8 @@ the variables:
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ProcessLookupError`      | :exc:`ProcessLookupError`       |          |
 +-----------------------------------------+---------------------------------+----------+
+| :c:data:`PyExc_RecursionError`          | :exc:`RecursionError`           |          |
++-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_ReferenceError`          | :exc:`ReferenceError`           | \(2)     |
 +-----------------------------------------+---------------------------------+----------+
 | :c:data:`PyExc_RuntimeError`            | :exc:`RuntimeError`             |          |
@@ -828,6 +830,9 @@ the variables:
    :c:data:`PyExc_IsADirectoryError`, :c:data:`PyExc_NotADirectoryError`,
    :c:data:`PyExc_PermissionError`, :c:data:`PyExc_ProcessLookupError`
    and :c:data:`PyExc_TimeoutError` were introduced following :pep:`3151`.
+
+.. versionadded:: 3.5
+   :c:data:`PyExc_RecursionError`.
 
 
 These are compatibility aliases to :c:data:`PyExc_OSError`:
@@ -877,6 +882,7 @@ These are compatibility aliases to :c:data:`PyExc_OSError`:
    single: PyExc_OverflowError
    single: PyExc_PermissionError
    single: PyExc_ProcessLookupError
+   single: PyExc_RecursionError
    single: PyExc_ReferenceError
    single: PyExc_RuntimeError
    single: PyExc_SyntaxError

@@ -282,6 +282,16 @@ The following exceptions are the exceptions that are usually raised.
    handling in C, most floating point operations are not checked.
 
 
+.. exception:: RecursionError
+
+   This exception is derived from :exc:`RuntimeError`.  It is raised when the
+   interpreter detects that the maximum recursion depth (see
+   :func:`sys.getrecursionlimit`) is exceeded.
+
+   .. versionadded:: 3.5
+      Previously, a plain :exc:`RuntimeError` was raised.
+
+
 .. exception:: ReferenceError
 
    This exception is raised when a weak reference proxy, created by the

@@ -39,6 +39,7 @@ BaseException
       +-- ReferenceError
       +-- RuntimeError
       |    +-- NotImplementedError
+      |    +-- RecursionError
       +-- SyntaxError
       |    +-- IndentationError
       |         +-- TabError
