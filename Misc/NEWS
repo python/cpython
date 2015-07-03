@@ -27,6 +27,9 @@ Core and Builtins
   used in types.coroutine to be instance of collections.abc.Generator;
   inspect.isawaitable was removed (use collections.abc.Awaitable).
 
+- Issue #24450: Add gi_yieldfrom to generators and cr_await to coroutines.
+  Contributed by Benno Leslie and Yury Selivanov.
+
 Library
 -------
 
