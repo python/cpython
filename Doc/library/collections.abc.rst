@@ -162,10 +162,11 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    :class:`~collections.abc.Coroutine` ABC are all instances of this ABC.
 
    .. note::
-      In CPython, generator-based coroutines are *awaitables*, even though
-      they do not have an :meth:`__await__` method.  This ABC
-      implements an :meth:`~class.__instancecheck__` method to make them
-      instances of itself.
+      In CPython, generator-based coroutines (generators decorated with
+      :func:`types.coroutine` or :func:`asyncio.coroutine`) are
+      *awaitables*, even though they do not have an :meth:`__await__` method.
+      Using ``isinstance(gencoro, Awaitable)`` for them will return ``False``.
+      Use :func:`inspect.isawaitable` to detect them.
 
    .. versionadded:: 3.5
 
@@ -179,10 +180,11 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    :class:`Awaitable`.  See also the definition of :term:`coroutine`.
 
    .. note::
-      In CPython, generator-based coroutines are *awaitables* and *coroutines*,
-      even though they do not have an :meth:`__await__` method.  This ABC
-      implements an :meth:`~class.__instancecheck__` method to make them
-      instances of itself.
+      In CPython, generator-based coroutines (generators decorated with
+      :func:`types.coroutine` or :func:`asyncio.coroutine`) are
+      *awaitables*, even though they do not have an :meth:`__await__` method.
+      Using ``isinstance(gencoro, Coroutine)`` for them will return ``False``.
+      Use :func:`inspect.isawaitable` to detect them.
 
    .. versionadded:: 3.5
 

@@ -1447,6 +1447,19 @@ class CoroutineTests(unittest.TestCase):
         with self.assertRaisesRegex(Exception, 'ham'):
             wrapper.throw(Exception, Exception('ham'))
 
+    def test_returning_itercoro(self):
+        @types.coroutine
+        def gen():
+            yield
+
+        gencoro = gen()
+
+        @types.coroutine
+        def foo():
+            return gencoro
+
+        self.assertIs(foo(), gencoro)
+
     def test_genfunc(self):
         def gen(): yield
         self.assertIs(types.coroutine(gen), gen)
@@ -1457,9 +1470,6 @@ class CoroutineTests(unittest.TestCase):
         g = gen()
         self.assertTrue(g.gi_code.co_flags & inspect.CO_ITERABLE_COROUTINE)
         self.assertFalse(g.gi_code.co_flags & inspect.CO_COROUTINE)
-        self.assertIsInstance(g, collections.abc.Coroutine)
-        self.assertIsInstance(g, collections.abc.Awaitable)
-        g.close() # silence warning
 
         self.assertIs(types.coroutine(gen), gen)
 
