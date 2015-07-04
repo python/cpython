@@ -6,23 +6,23 @@
 PYVER="@PYVER@"
 FWK="/Library/Frameworks/Python.framework/Versions/@PYVER@"
 
-"${FWK}/bin/python@PYVER@" -Wi \
-    "${FWK}/lib/python${PYVER}/compileall.py" \
+"${FWK}/bin/python@PYVER@" -E -s -Wi \
+    "${FWK}/lib/python${PYVER}/compileall.py" -q -j0 \
     -f -x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
     "${FWK}/lib/python${PYVER}"
 
-"${FWK}/bin/python@PYVER@" -Wi -O \
-    "${FWK}/lib/python${PYVER}/compileall.py" \
+"${FWK}/bin/python@PYVER@" -E -s -Wi -O \
+    "${FWK}/lib/python${PYVER}/compileall.py" -q -j0 \
     -f -x 'bad_coding|badsyntax|site-packages|lib2to3/tests/data' \
     "${FWK}/lib/python${PYVER}"
 
-"${FWK}/bin/python@PYVER@" -Wi \
-    "${FWK}/lib/python${PYVER}/compileall.py" \
+"${FWK}/bin/python@PYVER@" -E -s -Wi \
+    "${FWK}/lib/python${PYVER}/compileall.py" -q -j0 \
     -f -x badsyntax \
     "${FWK}/lib/python${PYVER}/site-packages"
 
-"${FWK}/bin/python@PYVER@" -Wi -O \
-    "${FWK}/lib/python${PYVER}/compileall.py" \
+"${FWK}/bin/python@PYVER@" -E -s -Wi -O \
+    "${FWK}/lib/python${PYVER}/compileall.py" -q -j0 \
     -f -x badsyntax \
     "${FWK}/lib/python${PYVER}/site-packages"
 
