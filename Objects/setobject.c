@@ -678,7 +678,7 @@ set_contains_entry(PySetObject *so, setentry *entry)
 static int
 set_contains_key(PySetObject *so, PyObject *key)
 {
-    setentry entry;
+    setentry *entry;
     Py_hash_t hash;
 
     if (!PyUnicode_CheckExact(key) ||
@@ -687,9 +687,10 @@ set_contains_key(PySetObject *so, PyObject *key)
         if (hash == -1)
             return -1;
     }
-    entry.key = key;
-    entry.hash = hash;
-    return set_contains_entry(so, &entry);
+    entry = set_lookkey(so, key, hash);
+    if (entry == NULL)
+        return -1;
+    return entry->key != NULL;
 }
 
 static PyObject *
