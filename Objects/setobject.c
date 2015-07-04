@@ -1506,8 +1506,8 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
         if (PyErr_Occurred())
             return -1;
     }
-    /* If more than 1/5 are dummies, then resize them away. */
-    if ((so->fill - so->used) * 5 < so->mask)
+    /* If more than 1/4th are dummies, then resize them away. */
+    if ((size_t)(so->fill - so->used) <= (size_t)so->mask / 4)
         return 0;
     return set_table_resize(so, so->used);
 }
