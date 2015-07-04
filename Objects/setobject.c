@@ -29,7 +29,6 @@
 
 #include "Python.h"
 #include "structmember.h"
-#include "stringlib/eq.h"
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
@@ -74,7 +73,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 return entry;
             if (PyUnicode_CheckExact(startkey)
                 && PyUnicode_CheckExact(key)
-                && unicode_eq(startkey, key))
+                && _PyUnicode_EQ(startkey, key))
                 return entry;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -100,7 +99,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                         return entry;
                     if (PyUnicode_CheckExact(startkey)
                         && PyUnicode_CheckExact(key)
-                        && unicode_eq(startkey, key))
+                        && _PyUnicode_EQ(startkey, key))
                         return entry;
                     Py_INCREF(startkey);
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -155,7 +154,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
                 goto found_active;
             if (PyUnicode_CheckExact(startkey)
                 && PyUnicode_CheckExact(key)
-                && unicode_eq(startkey, key))
+                && _PyUnicode_EQ(startkey, key))
                 goto found_active;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -183,7 +182,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
                         goto found_active;
                     if (PyUnicode_CheckExact(startkey)
                         && PyUnicode_CheckExact(key)
-                        && unicode_eq(startkey, key))
+                        && _PyUnicode_EQ(startkey, key))
                         goto found_active;
                     Py_INCREF(startkey);
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
