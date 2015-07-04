@@ -963,7 +963,7 @@ set_update_internal(PySetObject *so, PyObject *other)
         * incrementally resizing as we insert new keys.  Expect
         * that there will be no (or few) overlapping keys.
         */
-        if (dictsize == -1)
+        if (dictsize < 0)
             return -1;
         if ((so->fill + dictsize)*3 >= so->mask*2) {
             if (set_table_resize(so, so->used + dictsize) != 0)
@@ -1457,7 +1457,7 @@ set_isdisjoint(PySetObject *so, PyObject *other)
         entry.key = key;
         rv = set_contains_entry(so, &entry);
         Py_DECREF(key);
-        if (rv == -1) {
+        if (rv < 0) {
             Py_DECREF(it);
             return NULL;
         }
