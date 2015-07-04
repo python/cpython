@@ -226,7 +226,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry->hash = hash;
     if ((size_t)so->fill*3 < mask*2)
         return 0;
-    return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
+    return set_table_resize(so, so->used);
 
   found_active:
     return 0;
@@ -290,6 +290,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     setentry small_copy[PySet_MINSIZE];
 
     assert(minused >= 0);
+    minused = (minused > 50000) ? minused * 2 : minused * 4;
 
     /* Find the smallest table size > minused. */
     /* XXX speed-up with intrinsics */
@@ -616,7 +617,7 @@ set_merge(PySetObject *so, PyObject *otherset)
      * that there will be no (or few) overlapping keys.
      */
     if ((so->fill + other->used)*3 >= so->mask*2) {
-       if (set_table_resize(so, (so->used + other->used)*2) != 0)
+       if (set_table_resize(so, so->used + other->used) != 0)
            return -1;
     }
     so_entry = so->table;
@@ -965,7 +966,7 @@ set_update_internal(PySetObject *so, PyObject *other)
         if (dictsize == -1)
             return -1;
         if ((so->fill + dictsize)*3 >= so->mask*2) {
-            if (set_table_resize(so, (so->used + dictsize)*2) != 0)
+            if (set_table_resize(so, so->used + dictsize) != 0)
                 return -1;
         }
         while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
@@ -1508,7 +1509,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
     /* If more than 1/5 are dummies, then resize them away. */
     if ((so->fill - so->used) * 5 < so->mask)
         return 0;
-    return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
+    return set_table_resize(so, so->used);
 }
 
 static PyObject *
