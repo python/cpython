@@ -42,6 +42,7 @@ OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #include "Python.h"
 #include "ucnhash.h"
 #include "bytes_methods.h"
+#include "stringlib/eq.h"
 
 #ifdef MS_WINDOWS
 #include <windows.h>
@@ -10884,6 +10885,12 @@ PyUnicode_RichCompare(PyObject *left, PyObject *right, int op)
     }
     Py_INCREF(v);
     return v;
+}
+
+int
+_PyUnicode_EQ(PyObject *aa, PyObject *bb)
+{
+    return unicode_eq(aa, bb);
 }
 
 int
