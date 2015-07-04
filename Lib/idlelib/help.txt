@@ -129,7 +129,9 @@ Options Menu (Shell and Editor):
         Configure IDLE -- Open a configuration dialog.  Fonts, indentation,
                           keybindings, and color themes may be altered.
                           Startup Preferences may be set, and additional Help
-                          sources can be specified.
+                          sources can be specified.  On OS X, open the
+                          configuration dialog by selecting Preferences
+                          in the application menu.
 
         ---
         Code Context (toggle) -- Open a pane at the top of the edit window
