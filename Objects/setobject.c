@@ -1270,7 +1270,7 @@ set_intersection(PySetObject *so, PyObject *other)
 
         while (set_next((PySetObject *)other, &pos, &entry)) {
             int rv = set_contains_entry(so, entry);
-            if (rv == -1) {
+            if (rv < 0) {
                 Py_DECREF(result);
                 return NULL;
             }
@@ -1304,7 +1304,7 @@ set_intersection(PySetObject *so, PyObject *other)
         entry.hash = hash;
         entry.key = key;
         rv = set_contains_entry(so, &entry);
-        if (rv == -1) {
+        if (rv < 0) {
             Py_DECREF(it);
             Py_DECREF(result);
             Py_DECREF(key);
@@ -1431,7 +1431,7 @@ set_isdisjoint(PySetObject *so, PyObject *other)
         }
         while (set_next((PySetObject *)other, &pos, &entry)) {
             int rv = set_contains_entry(so, entry);
-            if (rv == -1)
+            if (rv < 0)
                 return NULL;
             if (rv)
                 Py_RETURN_FALSE;
@@ -1486,7 +1486,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
         Py_ssize_t pos = 0;
 
         while (set_next((PySetObject *)other, &pos, &entry))
-            if (set_discard_entry(so, entry) == -1)
+            if (set_discard_entry(so, entry) < 0)
                 return -1;
     } else {
         PyObject *key, *it;
@@ -1495,7 +1495,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
             return -1;
 
         while ((key = PyIter_Next(it)) != NULL) {
-            if (set_discard_key(so, key) == -1) {
+            if (set_discard_key(so, key) < 0) {
                 Py_DECREF(it);
                 Py_DECREF(key);
                 return -1;
@@ -1536,7 +1536,7 @@ set_copy_and_difference(PySetObject *so, PyObject *other)
     result = set_copy(so);
     if (result == NULL)
         return NULL;
-    if (set_difference_update_internal((PySetObject *) result, other) != -1)
+    if (set_difference_update_internal((PySetObject *) result, other) == 0)
         return result;
     Py_DECREF(result);
     return NULL;
@@ -1586,7 +1586,7 @@ set_difference(PySetObject *so, PyObject *other)
     /* Iterate over so, checking for common elements in other. */
     while (set_next(so, &pos, &entry)) {
         int rv = set_contains_entry((PySetObject *)other, entry);
-        if (rv == -1) {
+        if (rv < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1670,7 +1670,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
             an_entry.key = key;
 
             rv = set_discard_entry(so, &an_entry);
-            if (rv == -1) {
+            if (rv < 0) {
                 Py_DECREF(key);
                 return NULL;
             }
@@ -1696,7 +1696,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 
     while (set_next(otherset, &pos, &entry)) {
         int rv = set_discard_entry(so, entry);
-        if (rv == -1) {
+        if (rv < 0) {
             Py_DECREF(otherset);
             return NULL;
         }
@@ -1778,7 +1778,7 @@ set_issubset(PySetObject *so, PyObject *other)
 
     while (set_next(so, &pos, &entry)) {
         int rv = set_contains_entry((PySetObject *)other, entry);
-        if (rv == -1)
+        if (rv < 0)
             return NULL;
         if (!rv)
             Py_RETURN_FALSE;
@@ -1869,7 +1869,7 @@ set_contains(PySetObject *so, PyObject *key)
     int rv;
 
     rv = set_contains_key(so, key);
-    if (rv == -1) {
+    if (rv < 0) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return -1;
         PyErr_Clear();
@@ -1888,7 +1888,7 @@ set_direct_contains(PySetObject *so, PyObject *key)
     long result;
 
     result = set_contains(so, key);
-    if (result == -1)
+    if (result < 0)
         return NULL;
     return PyBool_FromLong(result);
 }
@@ -1902,7 +1902,7 @@ set_remove(PySetObject *so, PyObject *key)
     int rv;
 
     rv = set_discard_key(so, key);
-    if (rv == -1) {
+    if (rv < 0) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
@@ -1911,7 +1911,7 @@ set_remove(PySetObject *so, PyObject *key)
             return NULL;
         rv = set_discard_key(so, tmpkey);
         Py_DECREF(tmpkey);
-        if (rv == -1)
+        if (rv < 0)
             return NULL;
     }
 
@@ -1934,7 +1934,7 @@ set_discard(PySetObject *so, PyObject *key)
     int rv;
 
     rv = set_discard_key(so, key);
-    if (rv == -1) {
+    if (rv < 0) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
@@ -1943,7 +1943,7 @@ set_discard(PySetObject *so, PyObject *key)
             return NULL;
         rv = set_discard_key(so, tmpkey);
         Py_DECREF(tmpkey);
-        if (rv == -1)
+        if (rv < 0)
             return NULL;
     }
     Py_RETURN_NONE;
