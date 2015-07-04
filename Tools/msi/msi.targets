@@ -24,7 +24,7 @@
         </ItemGroup>
     </Target>
 
-    <Target Name="_TransformWxlTemplates" AfterTargets="PrepareForBuild" Inputs="@(WxlTemplate)" Outputs="$(IntermediateOutputPath)%(Filename).wxl">
+    <Target Name="_TransformWxlTemplates" AfterTargets="PrepareForBuild">
         <PropertyGroup>
             <_Content>$([System.IO.File]::ReadAllText(%(WxlTemplate.FullPath)).Replace(`{{ShortVersion}}`, `$(MajorVersionNumber).$(MinorVersionNumber)`).Replace(`{{LongVersion}}`, `$(PythonVersion)`).Replace(`{{Bitness}}`, `$(Bitness)`))</_Content>
             <_ExistingContent Condition="Exists('$(IntermediateOutputPath)%(WxlTemplate.Filename).wxl')">$([System.IO.File]::ReadAllText($(IntermediateOutputPath)%(WxlTemplate.Filename).wxl))</_ExistingContent>
