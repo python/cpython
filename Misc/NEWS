@@ -32,6 +32,8 @@ Core and Builtins
 - Issue #23757:  PySequence_Tuple() incorrectly called the concrete list API
   when the data was a list subclass.
 
+- Issue #24407: Fix crash when dict is mutated while being updated.
+
 - Issue #24096: Make warnings.warn_explicit more robust against mutation of the
   warnings.filters list.
 
