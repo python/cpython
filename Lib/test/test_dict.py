@@ -937,6 +937,20 @@ class DictTest(unittest.TestCase):
                 d.popitem()
         self.check_reentrant_insertion(mutate)
 
+    def test_merge_and_mutate(self):
+        class X:
+            def __hash__(self):
+                return 0
+
+            def __eq__(self, o):
+                other.clear()
+                return False
+
+        l = [(i,0) for i in range(1, 1337)]
+        other = dict(l)
+        other[X()] = 0
+        d = {X(): 0, 1: 1}
+        self.assertRaises(RuntimeError, d.update, other)
 
 from test import mapping_tests
 
