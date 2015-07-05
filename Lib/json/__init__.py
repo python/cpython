@@ -195,9 +195,10 @@ def dumps(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
         encoding='utf-8', default=None, sort_keys=False, **kw):
     """Serialize ``obj`` to a JSON formatted ``str``.
 
-    If ``skipkeys`` is false then ``dict`` keys that are not basic types
+    If ``skipkeys`` is true then ``dict`` keys that are not basic types
     (``str``, ``unicode``, ``int``, ``long``, ``float``, ``bool``, ``None``)
     will be skipped instead of raising a ``TypeError``.
+
 
     If ``ensure_ascii`` is false, all non-ASCII characters are not escaped, and
     the return value may be a ``unicode`` instance. See ``dump`` for details.
