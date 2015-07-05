@@ -10,6 +10,8 @@ What's New in Python 3.3.7?
 Core and Builtins
 -----------------
 
+- Issue #24407: Fix crash when dict is mutated while being updated.
+
 - Issue #24096: Make warnings.warn_explicit more robust against mutation of the
   warnings.filters list.
 

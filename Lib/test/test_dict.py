@@ -906,6 +906,21 @@ class DictTest(unittest.TestCase):
         f.a = 'a'
         self.assertEqual(f.__dict__, {1:1, 'a':'a'})
 
+    def test_merge_and_mutate(self):
+        class X:
+            def __hash__(self):
+                return 0
+
+            def __eq__(self, o):
+                other.clear()
+                return False
+
+        l = [(i,0) for i in range(1, 1337)]
+        other = dict(l)
+        other[X()] = 0
+        d = {X(): 0, 1: 1}
+        self.assertRaises(RuntimeError, d.update, other)
+
 from test import mapping_tests
 
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
