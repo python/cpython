@@ -3723,7 +3723,7 @@ fi
 # so we try it on all platforms.
 
 AC_MSG_CHECKING(whether we can use gcc inline assembler to get and set x87 control word)
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
   unsigned short cw;
   __asm__ __volatile__ ("fnstcw %0" : "=m" (cw));
   __asm__ __volatile__ ("fldcw %0" : : "m" (cw));

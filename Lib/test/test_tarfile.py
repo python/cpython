@@ -1566,6 +1566,14 @@ class LimitsTest(unittest.TestCase):
         tarinfo.tobuf(tarfile.PAX_FORMAT)
 
 
+class MiscTest(unittest.TestCase):
+
+    def test_read_number_fields(self):
+        # Issue 24514: Test if empty number fields are converted to zero.
+        self.assertEqual(tarfile.nti("\0"), 0)
+        self.assertEqual(tarfile.nti("       \0"), 0)
+
+
 class ContextManagerTest(unittest.TestCase):
 
     def test_basic(self):
@@ -1730,6 +1738,7 @@ def test_main():
         PaxUnicodeTest,
         AppendTest,
         LimitsTest,
+        MiscTest,
         ContextManagerTest,
     ]
 

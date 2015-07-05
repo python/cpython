@@ -1420,18 +1420,29 @@ audioop_lin2adpcm(PyObject *self, PyObject *args)
     if (!audioop_check_parameters(len, size))
         return NULL;
 
-    str = PyString_FromStringAndSize(NULL, len/(size*2));
-    if ( str == 0 )
-        return 0;
-    ncp = (signed char *)PyString_AsString(str);
-
     /* Decode state, should have (value, step) */
     if ( state == Py_None ) {
         /* First time, it seems. Set defaults */
         valpred = 0;
         index = 0;
-    } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
+    }
+    else if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state must be a tuple or None");
+        return NULL;
+    }
+    else if (!PyArg_ParseTuple(state, "ii", &valpred, &index)) {
+        return NULL;
+    }
+    else if (valpred >= 0x8000 || valpred < -0x8000 ||
+             (size_t)index >= sizeof(stepsizeTable)/sizeof(stepsizeTable[0])) {
+        PyErr_SetString(PyExc_ValueError, "bad state");
+        return NULL;
+    }
+
+    str = PyString_FromStringAndSize(NULL, len/(size*2));
+    if ( str == 0 )
         return 0;
+    ncp = (signed char *)PyString_AsString(str);
 
     step = stepsizeTable[index];
     bufferstep = 1;
@@ -1529,8 +1540,19 @@ audioop_adpcm2lin(PyObject *self, PyObject *args)
         /* First time, it seems. Set defaults */
         valpred = 0;
         index = 0;
-    } else if ( !PyArg_ParseTuple(state, "ii", &valpred, &index) )
-        return 0;
+    }
+    else if (!PyTuple_Check(state)) {
+        PyErr_SetString(PyExc_TypeError, "state must be a tuple or None");
+        return NULL;
+    }
+    else if (!PyArg_ParseTuple(state, "ii", &valpred, &index)) {
+        return NULL;
+    }
+    else if (valpred >= 0x8000 || valpred < -0x8000 ||
+             (size_t)index >= sizeof(stepsizeTable)/sizeof(stepsizeTable[0])) {
+        PyErr_SetString(PyExc_ValueError, "bad state");
+        return NULL;
+    }
 
     if (len > (INT_MAX/2)/size) {
         PyErr_SetString(PyExc_MemoryError,

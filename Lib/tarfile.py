@@ -186,7 +186,7 @@ def nti(s):
     # itn() below.
     if s[0] != chr(0200):
         try:
-            n = int(nts(s) or "0", 8)
+            n = int(nts(s).strip() or "0", 8)
         except ValueError:
             raise InvalidHeaderError("invalid header")
     else:
