@@ -1,3 +1,4 @@
+#! /usr/bin/env python3
 # Script for preparing OpenSSL for building on Windows.
 # Uses Perl to create nmake makefiles and otherwise prepare the way
 # for building on 32 or 64 bit platforms.
