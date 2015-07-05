@@ -10,6 +10,10 @@ Release date: 2015-07-26
 Core and Builtins
 -----------------
 
+- Issue #24569: Make PEP 448 dictionary evaluation more consistent.
+
+- Issue #24407: Fix crash when dict is mutated while being updated.
+
 Library
 -------
 
