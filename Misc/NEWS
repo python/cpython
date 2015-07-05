@@ -138,7 +138,7 @@ Library
 
 - Issue #23008: Fixed resolving attributes with boolean value is False in pydoc.
 
-- Issues #24099, #24100, and #24101: Fix free-after-use bug in heapq's siftup
+- Issues #24099, #24100, and #24101: Fix use-after-use bug in heapq's siftup
   and siftdown functions.
 
 - Backport collections.deque fixes from Python 3.5.  Prevents reentrant badness
