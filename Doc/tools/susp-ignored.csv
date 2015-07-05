@@ -163,7 +163,6 @@ library/profile,,:lineno,filename:lineno(function)
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
 library/smtplib,,:port,method must support that as well as a regular host:port
-library/socket,,::,"(10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]"
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
 library/socket,,:len,fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
@@ -290,3 +289,5 @@ library/zipapp,31,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,82,:fn,"argument should have the form ""pkg.mod:fn"", where ""pkg.mod"" is a"
 library/zipapp,155,:callable,"""pkg.module:callable"" and the archive will be run by importing"
 library/stdtypes,3767,::,>>> m[::2].tolist()
+library/sys,1115,`,# `wrapper` creates a `wrap(coro)` coroutine:
+tutorial/venv,77,:c7b9645a6f35,"Python 3.4.3+ (3.4:c7b9645a6f35+, May 22 2015, 09:31:25)"
