@@ -29,7 +29,6 @@
 
 #include "Python.h"
 #include "structmember.h"
-#include "stringlib/eq.h"
 
 /* Object used as dummy key to fill deleted entries */
 static PyObject _dummy_struct;
@@ -74,7 +73,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 return entry;
             if (PyUnicode_CheckExact(startkey)
                 && PyUnicode_CheckExact(key)
-                && unicode_eq(startkey, key))
+                && _PyUnicode_EQ(startkey, key))
                 return entry;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -100,7 +99,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                         return entry;
                     if (PyUnicode_CheckExact(startkey)
                         && PyUnicode_CheckExact(key)
-                        && unicode_eq(startkey, key))
+                        && _PyUnicode_EQ(startkey, key))
                         return entry;
                     Py_INCREF(startkey);
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -125,6 +124,8 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     }
 }
 
+static int set_table_resize(PySetObject *, Py_ssize_t);
+
 static int
 set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
@@ -139,7 +140,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
 
     entry = &table[i];
     if (entry->key == NULL)
-        goto found_null_first;
+        goto found_unused;
 
     freeslot = NULL;
     perturb = hash;
@@ -153,7 +154,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
                 goto found_active;
             if (PyUnicode_CheckExact(startkey)
                 && PyUnicode_CheckExact(key)
-                && unicode_eq(startkey, key))
+                && _PyUnicode_EQ(startkey, key))
                 goto found_active;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -173,7 +174,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
             for (j = 0 ; j < LINEAR_PROBES ; j++) {
                 entry++;
                 if (entry->hash == 0 && entry->key == NULL)
-                    goto found_null;
+                    goto found_unused_or_dummy;
                 if (entry->hash == hash) {
                     PyObject *startkey = entry->key;
                     assert(startkey != dummy);
@@ -181,7 +182,7 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
                         goto found_active;
                     if (PyUnicode_CheckExact(startkey)
                         && PyUnicode_CheckExact(key)
-                        && unicode_eq(startkey, key))
+                        && _PyUnicode_EQ(startkey, key))
                         goto found_active;
                     Py_INCREF(startkey);
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
@@ -204,30 +205,27 @@ set_insert_key(PySetObject *so, PyObject *key, Py_hash_t hash)
 
         entry = &table[i];
         if (entry->key == NULL)
-            goto found_null;
+            goto found_unused_or_dummy;
     }
 
-  found_null_first:
+  found_unused_or_dummy:
+    if (freeslot == NULL)
+        goto found_unused;
+    Py_INCREF(key);
+    so->used++;
+    freeslot->key = key;
+    freeslot->hash = hash;
+    return 0;
+
+  found_unused:
     Py_INCREF(key);
     so->fill++;
     so->used++;
     entry->key = key;
     entry->hash = hash;
-    return 0;
-
-  found_null:
-    Py_INCREF(key);
-    if (freeslot == NULL) {
-        /* UNUSED */
-        so->fill++;
-    } else {
-        /* DUMMY */
-        entry = freeslot;
-    }
-    so->used++;
-    entry->key = key;
-    entry->hash = hash;
-    return 0;
+    if ((size_t)so->fill*3 < mask*2)
+        return 0;
+    return set_table_resize(so, so->used);
 
   found_active:
     return 0;
@@ -291,6 +289,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     setentry small_copy[PySet_MINSIZE];
 
     assert(minused >= 0);
+    minused = (minused > 50000) ? minused * 2 : minused * 4;
 
     /* Find the smallest table size > minused. */
     /* XXX speed-up with intrinsics */
@@ -366,28 +365,15 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     return 0;
 }
 
-/* CAUTION: set_add_key/entry() must guarantee it won't resize the table */
-
 static int
 set_add_entry(PySetObject *so, setentry *entry)
 {
-    Py_ssize_t n_used;
-    PyObject *key = entry->key;
-    Py_hash_t hash = entry->hash;
-
-    assert(so->fill <= so->mask);  /* at least one empty slot */
-    n_used = so->used;
-    if (set_insert_key(so, key, hash))
-        return -1;
-    if (!(so->used > n_used && so->fill*3 >= (so->mask+1)*2))
-        return 0;
-    return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
+    return set_insert_key(so, entry->key, entry->hash);
 }
 
 static int
 set_add_key(PySetObject *so, PyObject *key)
 {
-    setentry entry;
     Py_hash_t hash;
 
     if (!PyUnicode_CheckExact(key) ||
@@ -396,9 +382,7 @@ set_add_key(PySetObject *so, PyObject *key)
         if (hash == -1)
             return -1;
     }
-    entry.key = key;
-    entry.hash = hash;
-    return set_add_entry(so, &entry);
+    return set_insert_key(so, key, hash);
 }
 
 #define DISCARD_NOTFOUND 0
@@ -631,8 +615,8 @@ set_merge(PySetObject *so, PyObject *otherset)
      * incrementally resizing as we insert new keys.  Expect
      * that there will be no (or few) overlapping keys.
      */
-    if ((so->fill + other->used)*3 >= (so->mask+1)*2) {
-       if (set_table_resize(so, (so->used + other->used)*2) != 0)
+    if ((so->fill + other->used)*3 >= so->mask*2) {
+       if (set_table_resize(so, so->used + other->used) != 0)
            return -1;
     }
     so_entry = so->table;
@@ -694,7 +678,7 @@ set_contains_entry(PySetObject *so, setentry *entry)
 static int
 set_contains_key(PySetObject *so, PyObject *key)
 {
-    setentry entry;
+    setentry *entry;
     Py_hash_t hash;
 
     if (!PyUnicode_CheckExact(key) ||
@@ -703,9 +687,10 @@ set_contains_key(PySetObject *so, PyObject *key)
         if (hash == -1)
             return -1;
     }
-    entry.key = key;
-    entry.hash = hash;
-    return set_contains_entry(so, &entry);
+    entry = set_lookkey(so, key, hash);
+    if (entry == NULL)
+        return -1;
+    return entry->key != NULL;
 }
 
 static PyObject *
@@ -977,18 +962,14 @@ set_update_internal(PySetObject *so, PyObject *other)
         * incrementally resizing as we insert new keys.  Expect
         * that there will be no (or few) overlapping keys.
         */
-        if (dictsize == -1)
+        if (dictsize < 0)
             return -1;
-        if ((so->fill + dictsize)*3 >= (so->mask+1)*2) {
-            if (set_table_resize(so, (so->used + dictsize)*2) != 0)
+        if ((so->fill + dictsize)*3 >= so->mask*2) {
+            if (set_table_resize(so, so->used + dictsize) != 0)
                 return -1;
         }
         while (_PyDict_Next(other, &pos, &key, &value, &hash)) {
-            setentry an_entry;
-
-            an_entry.hash = hash;
-            an_entry.key = key;
-            if (set_add_entry(so, &an_entry))
+            if (set_insert_key(so, key, hash))
                 return -1;
         }
         return 0;
@@ -1288,7 +1269,7 @@ set_intersection(PySetObject *so, PyObject *other)
 
         while (set_next((PySetObject *)other, &pos, &entry)) {
             int rv = set_contains_entry(so, entry);
-            if (rv == -1) {
+            if (rv < 0) {
                 Py_DECREF(result);
                 return NULL;
             }
@@ -1322,7 +1303,7 @@ set_intersection(PySetObject *so, PyObject *other)
         entry.hash = hash;
         entry.key = key;
         rv = set_contains_entry(so, &entry);
-        if (rv == -1) {
+        if (rv < 0) {
             Py_DECREF(it);
             Py_DECREF(result);
             Py_DECREF(key);
@@ -1449,7 +1430,7 @@ set_isdisjoint(PySetObject *so, PyObject *other)
         }
         while (set_next((PySetObject *)other, &pos, &entry)) {
             int rv = set_contains_entry(so, entry);
-            if (rv == -1)
+            if (rv < 0)
                 return NULL;
             if (rv)
                 Py_RETURN_FALSE;
@@ -1475,7 +1456,7 @@ set_isdisjoint(PySetObject *so, PyObject *other)
         entry.key = key;
         rv = set_contains_entry(so, &entry);
         Py_DECREF(key);
-        if (rv == -1) {
+        if (rv < 0) {
             Py_DECREF(it);
             return NULL;
         }
@@ -1504,7 +1485,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
         Py_ssize_t pos = 0;
 
         while (set_next((PySetObject *)other, &pos, &entry))
-            if (set_discard_entry(so, entry) == -1)
+            if (set_discard_entry(so, entry) < 0)
                 return -1;
     } else {
         PyObject *key, *it;
@@ -1513,7 +1494,7 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
             return -1;
 
         while ((key = PyIter_Next(it)) != NULL) {
-            if (set_discard_key(so, key) == -1) {
+            if (set_discard_key(so, key) < 0) {
                 Py_DECREF(it);
                 Py_DECREF(key);
                 return -1;
@@ -1524,10 +1505,10 @@ set_difference_update_internal(PySetObject *so, PyObject *other)
         if (PyErr_Occurred())
             return -1;
     }
-    /* If more than 1/5 are dummies, then resize them away. */
-    if ((so->fill - so->used) * 5 < so->mask)
+    /* If more than 1/4th are dummies, then resize them away. */
+    if ((size_t)(so->fill - so->used) <= (size_t)so->mask / 4)
         return 0;
-    return set_table_resize(so, so->used>50000 ? so->used*2 : so->used*4);
+    return set_table_resize(so, so->used);
 }
 
 static PyObject *
@@ -1554,7 +1535,7 @@ set_copy_and_difference(PySetObject *so, PyObject *other)
     result = set_copy(so);
     if (result == NULL)
         return NULL;
-    if (set_difference_update_internal((PySetObject *) result, other) != -1)
+    if (set_difference_update_internal((PySetObject *) result, other) == 0)
         return result;
     Py_DECREF(result);
     return NULL;
@@ -1583,17 +1564,16 @@ set_difference(PySetObject *so, PyObject *other)
 
     if (PyDict_CheckExact(other)) {
         while (set_next(so, &pos, &entry)) {
-            setentry entrycopy;
+            PyObject *key = entry->key;
+            Py_hash_t hash = entry->hash;
             int rv;
-            entrycopy.hash = entry->hash;
-            entrycopy.key = entry->key;
-            rv = _PyDict_Contains(other, entry->key, entry->hash);
+            rv = _PyDict_Contains(other, key, hash);
             if (rv < 0) {
                 Py_DECREF(result);
                 return NULL;
             }
             if (!rv) {
-                if (set_add_entry((PySetObject *)result, &entrycopy)) {
+                if (set_insert_key((PySetObject *)result, key, hash)) {
                     Py_DECREF(result);
                     return NULL;
                 }
@@ -1605,7 +1585,7 @@ set_difference(PySetObject *so, PyObject *other)
     /* Iterate over so, checking for common elements in other. */
     while (set_next(so, &pos, &entry)) {
         int rv = set_contains_entry((PySetObject *)other, entry);
-        if (rv == -1) {
+        if (rv < 0) {
             Py_DECREF(result);
             return NULL;
         }
@@ -1689,7 +1669,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
             an_entry.key = key;
 
             rv = set_discard_entry(so, &an_entry);
-            if (rv == -1) {
+            if (rv < 0) {
                 Py_DECREF(key);
                 return NULL;
             }
@@ -1715,7 +1695,7 @@ set_symmetric_difference_update(PySetObject *so, PyObject *other)
 
     while (set_next(otherset, &pos, &entry)) {
         int rv = set_discard_entry(so, entry);
-        if (rv == -1) {
+        if (rv < 0) {
             Py_DECREF(otherset);
             return NULL;
         }
@@ -1797,7 +1777,7 @@ set_issubset(PySetObject *so, PyObject *other)
 
     while (set_next(so, &pos, &entry)) {
         int rv = set_contains_entry((PySetObject *)other, entry);
-        if (rv == -1)
+        if (rv < 0)
             return NULL;
         if (!rv)
             Py_RETURN_FALSE;
@@ -1888,7 +1868,7 @@ set_contains(PySetObject *so, PyObject *key)
     int rv;
 
     rv = set_contains_key(so, key);
-    if (rv == -1) {
+    if (rv < 0) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return -1;
         PyErr_Clear();
@@ -1907,7 +1887,7 @@ set_direct_contains(PySetObject *so, PyObject *key)
     long result;
 
     result = set_contains(so, key);
-    if (result == -1)
+    if (result < 0)
         return NULL;
     return PyBool_FromLong(result);
 }
@@ -1921,7 +1901,7 @@ set_remove(PySetObject *so, PyObject *key)
     int rv;
 
     rv = set_discard_key(so, key);
-    if (rv == -1) {
+    if (rv < 0) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
@@ -1930,7 +1910,7 @@ set_remove(PySetObject *so, PyObject *key)
             return NULL;
         rv = set_discard_key(so, tmpkey);
         Py_DECREF(tmpkey);
-        if (rv == -1)
+        if (rv < 0)
             return NULL;
     }
 
@@ -1953,7 +1933,7 @@ set_discard(PySetObject *so, PyObject *key)
     int rv;
 
     rv = set_discard_key(so, key);
-    if (rv == -1) {
+    if (rv < 0) {
         if (!PySet_Check(key) || !PyErr_ExceptionMatches(PyExc_TypeError))
             return NULL;
         PyErr_Clear();
@@ -1962,7 +1942,7 @@ set_discard(PySetObject *so, PyObject *key)
             return NULL;
         rv = set_discard_key(so, tmpkey);
         Py_DECREF(tmpkey);
-        if (rv == -1)
+        if (rv < 0)
             return NULL;
     }
     Py_RETURN_NONE;
