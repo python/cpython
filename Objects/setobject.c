@@ -366,17 +366,14 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
 }
 
 static int
-set_add_key(PySetObject *so, PyObject *key)
+set_contains_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
-    Py_hash_t hash;
+    setentry *entry;
 
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
-    }
-    return set_add_entry(so, key, hash);
+    entry = set_lookkey(so, key, hash);
+    if (entry != NULL)
+        return entry->key != NULL;
+    return -1;
 }
 
 #define DISCARD_NOTFOUND 0
@@ -402,11 +399,37 @@ set_discard_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 }
 
 static int
-set_discard_key(PySetObject *so, PyObject *key)
+set_add_key(PySetObject *so, PyObject *key)
 {
     Py_hash_t hash;
 
-    assert (PyAnySet_Check(so));
+    if (!PyUnicode_CheckExact(key) ||
+        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+        hash = PyObject_Hash(key);
+        if (hash == -1)
+            return -1;
+    }
+    return set_add_entry(so, key, hash);
+}
+
+static int
+set_contains_key(PySetObject *so, PyObject *key)
+{
+    Py_hash_t hash;
+
+    if (!PyUnicode_CheckExact(key) ||
+        (hash = ((PyASCIIObject *) key)->hash) == -1) {
+        hash = PyObject_Hash(key);
+        if (hash == -1)
+            return -1;
+    }
+    return set_contains_entry(so, key, hash);
+}
+
+static int
+set_discard_key(PySetObject *so, PyObject *key)
+{
+    Py_hash_t hash;
 
     if (!PyUnicode_CheckExact(key) ||
         (hash = ((PyASCIIObject *) key)->hash) == -1) {
@@ -651,35 +674,6 @@ set_merge(PySetObject *so, PyObject *otherset)
         }
     }
     return 0;
-}
-
-static int
-set_contains_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
-{
-    setentry *lu_entry;
-
-    lu_entry = set_lookkey(so, key, hash);
-    if (lu_entry != NULL)
-        return lu_entry->key != NULL;
-    return -1;
-}
-
-static int
-set_contains_key(PySetObject *so, PyObject *key)
-{
-    setentry *entry;
-    Py_hash_t hash;
-
-    if (!PyUnicode_CheckExact(key) ||
-        (hash = ((PyASCIIObject *) key)->hash) == -1) {
-        hash = PyObject_Hash(key);
-        if (hash == -1)
-            return -1;
-    }
-    entry = set_lookkey(so, key, hash);
-    if (entry == NULL)
-        return -1;
-    return entry->key != NULL;
 }
 
 static PyObject *
