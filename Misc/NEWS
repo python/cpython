@@ -10,6 +10,8 @@ What's New in Python 3.5.0 beta 4?
 Core and Builtins
 -----------------
 
+- Issue #24569: Make PEP 448 dictionary evaluation more consistent.
+
 Library
 -------
 

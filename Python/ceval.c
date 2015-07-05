@@ -2561,21 +2561,24 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         }
 
         TARGET(BUILD_MAP) {
+            int i;
             PyObject *map = _PyDict_NewPresized((Py_ssize_t)oparg);
             if (map == NULL)
                 goto error;
-            while (--oparg >= 0) {
+            for (i = oparg; i > 0; i--) {
                 int err;
-                PyObject *value = TOP();
-                PyObject *key = SECOND();
-                STACKADJ(-2);
+                PyObject *key = PEEK(2*i);
+                PyObject *value = PEEK(2*i - 1);
                 err = PyDict_SetItem(map, key, value);
-                Py_DECREF(value);
-                Py_DECREF(key);
                 if (err != 0) {
                     Py_DECREF(map);
                     goto error;
                 }
+            }
+
+            while (oparg--) {
+                Py_DECREF(POP());
+                Py_DECREF(POP());
             }
             PUSH(map);
             DISPATCH();
