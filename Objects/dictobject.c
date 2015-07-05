@@ -1973,20 +1973,32 @@ PyDict_Merge(PyObject *a, PyObject *b, int override)
             if (dictresize(mp, (mp->ma_used + other->ma_used)*2) != 0)
                return -1;
         for (i = 0, n = DK_SIZE(other->ma_keys); i < n; i++) {
-            PyObject *value;
+            PyObject *key, *value;
+            Py_hash_t hash;
             entry = &other->ma_keys->dk_entries[i];
+            key = entry->me_key;
+            hash = entry->me_hash;
             if (other->ma_values)
                 value = other->ma_values[i];
             else
                 value = entry->me_value;
 
-            if (value != NULL &&
-                (override ||
-                 PyDict_GetItem(a, entry->me_key) == NULL)) {
-                if (insertdict(mp, entry->me_key,
-                               entry->me_hash,
-                               value) != 0)
+            if (value != NULL) {
+                int err = 0;
+                Py_INCREF(key);
+                Py_INCREF(value);
+                if (override || PyDict_GetItem(a, key) == NULL)
+                    err = insertdict(mp, key, hash, value);
+                Py_DECREF(value);
+                Py_DECREF(key);
+                if (err != 0)
                     return -1;
+
+                if (n != DK_SIZE(other->ma_keys)) {
+                    PyErr_SetString(PyExc_RuntimeError,
+                                    "dict mutated during update");
+                    return -1;
+                }
             }
         }
     }
