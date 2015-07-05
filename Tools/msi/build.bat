@@ -8,9 +8,10 @@ set BUILDX64=
 set BUILDDOC=
 
 :CheckOpts
-if '%1'=='-x86' (set BUILDX86=1) && shift && goto CheckOpts
-if '%1'=='-x64' (set BUILDX64=1) && shift && goto CheckOpts
-if '%1'=='--doc' (set BUILDDOC=1) && shift && goto CheckOpts
+if "%1" EQU "-h" goto Help
+if "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
+if "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
+if "%1" EQU "--doc" (set BUILDDOC=1) && shift && goto CheckOpts
 
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
@@ -44,3 +45,12 @@ if defined BUILDX64 (
     msbuild "%D%bundle\snapshot.wixproj" /p:Platform=x64
     if errorlevel 1 goto :eof
 )
+
+exit /B 0
+
+:Help
+echo build.bat [-x86] [-x64] [--doc] [-h]
+echo.
+echo    -x86                Build x86 installers
+echo    -x64                Build x64 installers
+echo    --doc               Build CHM documentation
