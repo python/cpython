@@ -36,7 +36,7 @@
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
             </MsiPackage>
             
-            <?define CompileAllCommand=-$(var.ShortVersion)$(var.Suffix32) -Wi "[TargetDir]\Lib\compileall.py" -f -x "bad_coding|badsyntax|site-packages|py2_|lib2to3\\tests|venv\\scripts" "[TargetDir]\Lib"?>
+            <?define CompileAllCommand=-$(var.ShortVersion)$(var.Suffix32) -E -s -Wi "[TargetDir]\Lib\compileall.py" -f -x "bad_coding|badsyntax|site-packages|py2_|lib2to3\\tests|venv\\scripts" "[TargetDir]\Lib"?>
             <ExePackage Id="compileall_AllUsers"
                         SourceFile="py.exe"
                         Compressed="yes"
