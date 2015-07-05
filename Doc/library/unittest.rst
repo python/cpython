@@ -47,7 +47,7 @@ test runner
    Module :mod:`doctest`
       Another test-support module with a very different flavor.
 
-   `Simple Smalltalk Testing: With Patterns <http://www.XProgramming.com/testfram.htm>`_
+   `Simple Smalltalk Testing: With Patterns <https://web.archive.org/web/20150315073817/http://www.xprogramming.com/testfram.htm>`_
       Kent Beck's original paper on testing frameworks using the pattern shared
       by :mod:`unittest`.
 
