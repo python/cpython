@@ -518,20 +518,22 @@ set_next(PySetObject *so, Py_ssize_t *pos_ptr, setentry **entry_ptr)
 {
     Py_ssize_t i;
     Py_ssize_t mask;
-    setentry *table;
+    setentry *entry;
 
     assert (PyAnySet_Check(so));
     i = *pos_ptr;
     assert(i >= 0);
-    table = so->table;
     mask = so->mask;
-    while (i <= mask && (table[i].key == NULL || table[i].key == dummy))
+    entry = &so->table[i];
+    while (i <= mask && (entry->key == NULL || entry->key == dummy)) {
         i++;
+        entry++;
+    }
     *pos_ptr = i+1;
     if (i > mask)
         return 0;
-    assert(table[i].key != NULL);
-    *entry_ptr = &table[i];
+    assert(entry != NULL);
+    *entry_ptr = entry;
     return 1;
 }
 
