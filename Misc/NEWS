@@ -778,13 +778,11 @@ Windows
 
 - Issue #22644: The bundled version of OpenSSL has been updated to 1.0.1j.
 
+
 What's New in Python 3.4.2?
 ===========================
 
 Release date: 2014-10-06
-
-Core and Builtins
------------------
 
 Library
 -------
@@ -1523,6 +1521,7 @@ Extension Modules
 -----------------
 
 - Issue #21276: posixmodule: Don't define USE_XATTRS on KFreeBSD and the Hurd.
+
 - Issue #21226: Set up modules properly in PyImport_ExecCodeModuleObject
   (and friends).
 
@@ -2259,6 +2258,7 @@ Build
 - Issue #12837: Silence a tautological comparison warning on OS X under Clang in
   socketmodule.c.
 
+
 What's New in Python 3.4.0 Beta 2?
 ==================================
 
@@ -2633,6 +2633,7 @@ Tools/Demos
 
 - Issue #19976: Argument Clinic METH_NOARGS functions now always
   take two parameters.
+
 
 What's New in Python 3.4.0 Beta 1?
 ==================================
@@ -3104,6 +3105,7 @@ Tools/Demos
 - Issue #19390: Argument Clinic no longer accepts malformed Python
   and C ids.
 
+
 What's New in Python 3.4.0 Alpha 4?
 ===================================
 
@@ -3332,6 +3334,7 @@ Build
   of OPT for special build options.  By setting OPT, some compiler-specific
   options like -fwrapv were overridden and thus not used, which could result
   in broken interpreters when building with clang.
+
 
 What's New in Python 3.4.0 Alpha 3?
 ===================================
@@ -3716,6 +3719,7 @@ Tools/Demos
 
 - Issue #18922: Now The Lib/smtpd.py and Tools/i18n/msgfmt.py scripts write
   their version strings to stdout, and not to sderr.
+
 
 What's New in Python 3.4.0 Alpha 1?
 ===================================
@@ -4286,6 +4290,7 @@ Library
   when \r\n appears at end of 65535 bytes without other newlines.
 
 - Issue #18076: Introduce importlib.util.decode_source().
+
 - Issue #18357: add tests for dictview set difference.
   Patch by Fraser Tweedale.
 
