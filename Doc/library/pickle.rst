@@ -26,7 +26,7 @@ avoid confusion, the terms used here are "pickling" and "unpickling".
 
 .. warning::
 
-   The :mod:`pickle` module is secure against erroneous or maliciously
+   The :mod:`pickle` module is not secure against erroneous or maliciously
    constructed data.  Never unpickle data received from an untrusted or
    unauthenticated source.
 
