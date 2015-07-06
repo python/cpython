@@ -1,4 +1,4 @@
-﻿+++++++++++
++++++++++++
 Python News
 +++++++++++
 
@@ -125,6 +125,7 @@ Library
 -------
 
 - Issue #22931: Allow '[' and ']' in cookie values.
+
 
 What's New in Python 2.7.10 release candidate 1?
 ================================================
@@ -828,7 +829,6 @@ Windows
 - Issue #22644: The bundled version of OpenSSL has been updated to 1.0.1j.
 
 
-
 What's New in Python 2.7.8?
 ===========================
 
@@ -980,6 +980,7 @@ Windows
 
 - Issue #21671, CVE-2014-0224: The bundled version of OpenSSL has been
   updated to 1.0.1h.
+
 
 What's New in Python 2.7.7
 ==========================
