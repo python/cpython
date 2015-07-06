@@ -991,7 +991,7 @@ _sre_SRE_Pattern_split_impl(PatternObject *self, PyObject *string,
         }
 
         if (state.start == state.ptr) {
-            if (last == state.end)
+            if (last == state.end || state.ptr == state.end)
                 break;
             /* skip one character */
             state.start = (void*) ((char*) state.ptr + state.charsize);
@@ -1188,6 +1188,8 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
 
 next:
         /* move on */
+        if (state.ptr == state.end)
+            break;
         if (state.ptr == state.start)
             state.start = (void*) ((char*) state.ptr + state.charsize);
         else
@@ -2561,6 +2563,9 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self)
     PyObject* match;
     Py_ssize_t status;
 
+    if (state->start == NULL)
+        Py_RETURN_NONE;
+
     state_reset(state);
 
     state->ptr = state->start;
@@ -2572,10 +2577,14 @@ _sre_SRE_Scanner_match_impl(ScannerObject *self)
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);
 
-    if (status == 0 || state->ptr == state->start)
+    if (status == 0)
+        state->start = NULL;
+    else if (state->ptr != state->start)
+        state->start = state->ptr;
+    else if (state->ptr != state->end)
         state->start = (void*) ((char*) state->ptr + state->charsize);
     else
-        state->start = state->ptr;
+        state->start = NULL;
 
     return match;
 }
@@ -2594,6 +2603,9 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self)
     PyObject* match;
     Py_ssize_t status;
 
+    if (state->start == NULL)
+        Py_RETURN_NONE;
+
     state_reset(state);
 
     state->ptr = state->start;
@@ -2605,10 +2617,14 @@ _sre_SRE_Scanner_search_impl(ScannerObject *self)
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);
 
-    if (status == 0 || state->ptr == state->start)
+    if (status == 0)
+        state->start = NULL;
+    else if (state->ptr != state->start)
+        state->start = state->ptr;
+    else if (state->ptr != state->end)
         state->start = (void*) ((char*) state->ptr + state->charsize);
     else
-        state->start = state->ptr;
+        state->start = NULL;
 
     return match;
 }
