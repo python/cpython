@@ -626,7 +626,6 @@ Library
 - Issue #23310: Fix MagicMock's initializer to work with __methods__, just
   like configure_mock().  Patch by Kasia Jachim.
 
-
 Build
 -----
 
@@ -1623,6 +1622,7 @@ Library
   in its showtraceback method, to match the built in interactive interpreter.
 
 - Issue #23392: Added tests for marshal C API that works with FILE*.
+
 
 - Issue #10510: distutils register and upload methods now use HTML standards
   compliant CRLF line endings.
@@ -2812,6 +2812,7 @@ Windows
 - Issue #22980: .pyd files with a version and platform tag (for example,
   ".cp35-win32.pyd") will now be loaded in preference to those without tags.
 
+
 What's New in Python 3.4.0?
 ===========================
 
@@ -3447,6 +3448,7 @@ Build
 - Issue #12837: Silence a tautological comparison warning on OS X under Clang in
   socketmodule.c.
 
+
 What's New in Python 3.4.0 Beta 2?
 ==================================
 
@@ -3821,6 +3823,7 @@ Tools/Demos
 
 - Issue #19976: Argument Clinic METH_NOARGS functions now always
   take two parameters.
+
 
 What's New in Python 3.4.0 Beta 1?
 ==================================
@@ -4292,6 +4295,7 @@ Tools/Demos
 - Issue #19390: Argument Clinic no longer accepts malformed Python
   and C ids.
 
+
 What's New in Python 3.4.0 Alpha 4?
 ===================================
 
@@ -4520,6 +4524,7 @@ Build
   of OPT for special build options.  By setting OPT, some compiler-specific
   options like -fwrapv were overridden and thus not used, which could result
   in broken interpreters when building with clang.
+
 
 What's New in Python 3.4.0 Alpha 3?
 ===================================
@@ -4904,6 +4909,7 @@ Tools/Demos
 
 - Issue #18922: Now The Lib/smtpd.py and Tools/i18n/msgfmt.py scripts write
   their version strings to stdout, and not to sderr.
+
 
 What's New in Python 3.4.0 Alpha 1?
 ===================================
@@ -5474,6 +5480,7 @@ Library
   when \r\n appears at end of 65535 bytes without other newlines.
 
 - Issue #18076: Introduce importlib.util.decode_source().
+
 - Issue #18357: add tests for dictview set difference.
   Patch by Fraser Tweedale.
 
