@@ -27,9 +27,9 @@ This documentation describes both the :mod:`pickle` module and the
 
 .. warning::
 
-   The :mod:`pickle` module is not intended to be secure against erroneous or
-   maliciously constructed data.  Never unpickle data received from an untrusted
-   or unauthenticated source.
+   The :mod:`pickle` module is secure against erroneous or maliciously
+   constructed data.  Never unpickle data received from an untrusted or
+   unauthenticated source.
 
 
 Relationship to other Python modules
