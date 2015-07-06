@@ -351,7 +351,7 @@ SRE_AT(SRE_STATE* state, SRE_CHAR* ptr, SRE_CODE at)
                 SRE_IS_LINEBREAK((int) ptr[-1]));
 
     case SRE_AT_END:
-        return (((void*) (ptr+1) == state->end &&
+        return (((SRE_CHAR *)state->end - ptr == 1 &&
                  SRE_IS_LINEBREAK((int) ptr[0])) ||
                 ((void*) ptr == state->end));
 
@@ -1404,9 +1404,9 @@ entrance:
             /* <ASSERT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT %d\n", ctx->pattern,
                    ctx->ptr, ctx->pattern[1]));
-            state->ptr = ctx->ptr - ctx->pattern[1];
-            if (state->ptr < state->beginning)
+            if (ctx->ptr - (SRE_CHAR *)state->beginning < (Py_ssize_t)ctx->pattern[1])
                 RETURN_FAILURE;
+            state->ptr = ctx->ptr - ctx->pattern[1];
             DO_JUMP(JUMP_ASSERT, jump_assert, ctx->pattern+2);
             RETURN_ON_FAILURE(ret);
             ctx->pattern += ctx->pattern[0];
@@ -1417,8 +1417,8 @@ entrance:
             /* <ASSERT_NOT> <skip> <back> <pattern> */
             TRACE(("|%p|%p|ASSERT_NOT %d\n", ctx->pattern,
                    ctx->ptr, ctx->pattern[1]));
-            state->ptr = ctx->ptr - ctx->pattern[1];
-            if (state->ptr >= state->beginning) {
+            if (ctx->ptr - (SRE_CHAR *)state->beginning >= (Py_ssize_t)ctx->pattern[1]) {
+                state->ptr = ctx->ptr - ctx->pattern[1];
                 DO_JUMP(JUMP_ASSERT_NOT, jump_assert_not, ctx->pattern+2);
                 if (ret) {
                     RETURN_ON_ERROR(ret);
@@ -1510,12 +1510,20 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
     SRE_CODE* overlap = NULL;
     int flags = 0;
 
+    if (ptr > end)
+        return 0;
+
     if (pattern[0] == SRE_OP_INFO) {
         /* optimization info block */
         /* <INFO> <1=skip> <2=flags> <3=min> <4=max> <5=prefix info>  */
 
         flags = pattern[2];
 
+        if (pattern[3] && end - ptr < (Py_ssize_t)pattern[3]) {
+            TRACE(("reject (got %u chars, need %u)\n",
+                   (unsigned int)(end - ptr), pattern[3]));
+            return 0;
+        }
         if (pattern[3] > 1) {
             /* adjust end point (but make sure we leave at least one
                character in there, so literal search will work) */
@@ -1614,15 +1622,18 @@ SRE_SEARCH(SRE_STATE* state, SRE_CODE* pattern)
                 break;
             ptr++;
         }
-    } else
+    } else {
         /* general case */
-        while (ptr <= end) {
+        assert(ptr <= end);
+        while (1) {
             TRACE(("|%p|%p|SEARCH\n", pattern, ptr));
-            state->start = state->ptr = ptr++;
+            state->start = state->ptr = ptr;
             status = SRE_MATCH(state, pattern);
-            if (status != 0)
+            if (status != 0 || ptr >= end)
                 break;
+            ptr++;
         }
+    }
 
     return status;
 }
@@ -2295,7 +2306,7 @@ pattern_split(PatternObject* self, PyObject* args, PyObject* kw)
         }
 
         if (state.start == state.ptr) {
-            if (last == state.end)
+            if (last == state.end || state.ptr == state.end)
                 break;
             /* skip one character */
             state.start = (void*) ((char*) state.ptr + state.charsize);
@@ -2497,6 +2508,8 @@ pattern_subx(PatternObject* self, PyObject* ptemplate, PyObject* string,
 
 next:
         /* move on */
+        if (state.ptr == state.end)
+            break;
         if (state.ptr == state.start)
             state.start = (void*) ((char*) state.ptr + state.charsize);
         else
@@ -3843,6 +3856,9 @@ scanner_match(ScannerObject* self, PyObject *unused)
     PyObject* match;
     int status;
 
+    if (state->start == NULL)
+        Py_RETURN_NONE;
+
     state_reset(state);
 
     state->ptr = state->start;
@@ -3860,10 +3876,14 @@ scanner_match(ScannerObject* self, PyObject *unused)
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);
 
-    if (status == 0 || state->ptr == state->start)
+    if (status == 0)
+        state->start = NULL;
+    else if (state->ptr != state->start)
+        state->start = state->ptr;
+    else if (state->ptr != state->end)
         state->start = (void*) ((char*) state->ptr + state->charsize);
     else
-        state->start = state->ptr;
+        state->start = NULL;
 
     return match;
 }
@@ -3875,6 +3895,9 @@ scanner_search(ScannerObject* self, PyObject *unused)
     SRE_STATE* state = &self->state;
     PyObject* match;
     int status;
+
+    if (state->start == NULL)
+        Py_RETURN_NONE;
 
     state_reset(state);
 
@@ -3893,10 +3916,14 @@ scanner_search(ScannerObject* self, PyObject *unused)
     match = pattern_new_match((PatternObject*) self->pattern,
                                state, status);
 
-    if (status == 0 || state->ptr == state->start)
+    if (status == 0)
+        state->start = NULL;
+    else if (state->ptr != state->start)
+        state->start = state->ptr;
+    else if (state->ptr != state->end)
         state->start = (void*) ((char*) state->ptr + state->charsize);
     else
-        state->start = state->ptr;
+        state->start = NULL;
 
     return match;
 }
