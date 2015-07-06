@@ -349,6 +349,29 @@ class CommonReadTest(ReadTest):
             finally:
                 tar.close()
 
+    def test_premature_end_of_archive(self):
+        for size in (512, 600, 1024, 1200):
+            with tarfile.open(tmpname, "w:") as tar:
+                t = tarfile.TarInfo("foo")
+                t.size = 1024
+                tar.addfile(t, io.BytesIO(b"a" * 1024))
+
+            with open(tmpname, "r+b") as fobj:
+                fobj.truncate(size)
+
+            with tarfile.open(tmpname) as tar:
+                with self.assertRaisesRegex(tarfile.ReadError, "unexpected end of data"):
+                    for t in tar:
+                        pass
+
+            with tarfile.open(tmpname) as tar:
+                t = tar.next()
+
+                with self.assertRaisesRegex(tarfile.ReadError, "unexpected end of data"):
+                    tar.extract(t, TEMPDIR)
+
+                with self.assertRaisesRegex(tarfile.ReadError, "unexpected end of data"):
+                    tar.extractfile(t).read()
 
 class MiscReadTestBase(CommonReadTest):
     def requires_name_attribute(self):
