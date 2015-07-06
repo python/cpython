@@ -285,6 +285,30 @@ class CommonReadTest(ReadTest):
                     "ignore_zeros=True should have skipped the %r-blocks" % char)
             tar.close()
 
+    def test_premature_end_of_archive(self):
+        for size in (512, 600, 1024, 1200):
+            with tarfile.open(tmpname, "w:") as tar:
+                t = tarfile.TarInfo("foo")
+                t.size = 1024
+                tar.addfile(t, StringIO.StringIO("a" * 1024))
+
+            with open(tmpname, "r+b") as fobj:
+                fobj.truncate(size)
+
+            with tarfile.open(tmpname) as tar:
+                with self.assertRaisesRegexp(tarfile.ReadError, "unexpected end of data"):
+                    for t in tar:
+                        pass
+
+            with tarfile.open(tmpname) as tar:
+                t = tar.next()
+
+                with self.assertRaisesRegexp(tarfile.ReadError, "unexpected end of data"):
+                    tar.extract(t, TEMPDIR)
+
+                with self.assertRaisesRegexp(tarfile.ReadError, "unexpected end of data"):
+                    tar.extractfile(t).read()
+
 
 class MiscReadTest(CommonReadTest):
     taropen = tarfile.TarFile.taropen

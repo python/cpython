@@ -744,12 +744,18 @@ class _FileInFile(object):
         else:
             return self.readsparse(size)
 
+    def __read(self, size):
+        buf = self.fileobj.read(size)
+        if len(buf) != size:
+            raise ReadError("unexpected end of data")
+        return buf
+
     def readnormal(self, size):
         """Read operation for regular files.
         """
         self.fileobj.seek(self.offset + self.position)
         self.position += size
-        return self.fileobj.read(size)
+        return self.__read(size)
 
     def readsparse(self, size):
         """Read operation for sparse files.
@@ -777,7 +783,7 @@ class _FileInFile(object):
             realpos = section.realpos + self.position - section.offset
             self.fileobj.seek(self.offset + realpos)
             self.position += size
-            return self.fileobj.read(size)
+            return self.__read(size)
         else:
             self.position += size
             return NUL * size
@@ -2336,8 +2342,13 @@ class TarFile(object):
             self.firstmember = None
             return m
 
+        # Advance the file pointer.
+        if self.offset != self.fileobj.tell():
+            self.fileobj.seek(self.offset - 1)
+            if not self.fileobj.read(1):
+                raise ReadError("unexpected end of data")
+
         # Read the next block.
-        self.fileobj.seek(self.offset)
         tarinfo = None
         while True:
             try:
