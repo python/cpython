@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24259: tarfile now raises a ReadError if an archive is truncated
+  inside a data segment.
+
 
 What's New in Python 3.5.0 beta 3?
 ==================================
