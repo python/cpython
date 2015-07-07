@@ -1271,26 +1271,14 @@ set_intersection(PySetObject *so, PyObject *other)
 
     while ((key = PyIter_Next(it)) != NULL) {
         hash = PyObject_Hash(key);
-        if (hash == -1) {
-            Py_DECREF(it);
-            Py_DECREF(result);
-            Py_DECREF(key);
-            return NULL;
-        }
+        if (hash == -1)
+            goto error;
         rv = set_contains_entry(so, key, hash);
-        if (rv < 0) {
-            Py_DECREF(it);
-            Py_DECREF(result);
-            Py_DECREF(key);
-            return NULL;
-        }
+        if (rv < 0)
+            goto error;
         if (rv) {
-            if (set_add_entry(result, key, hash)) {
-                Py_DECREF(it);
-                Py_DECREF(result);
-                Py_DECREF(key);
-                return NULL;
-            }
+            if (set_add_entry(result, key, hash))
+                goto error;
         }
         Py_DECREF(key);
     }
@@ -1300,6 +1288,11 @@ set_intersection(PySetObject *so, PyObject *other)
         return NULL;
     }
     return (PyObject *)result;
+  error:
+    Py_DECREF(it);
+    Py_DECREF(result);
+    Py_DECREF(key);
+    return NULL;
 }
 
 static PyObject *
