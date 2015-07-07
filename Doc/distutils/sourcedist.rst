@@ -41,7 +41,7 @@ to create a gzipped tarball and a zip file.  The available formats are:
 | ``tar``   | tar file (:file:`.tar`) |         |
 +-----------+-------------------------+---------+
 
-.. versionchanged: 3.5
+.. versionchanged:: 3.5
    Added support for the ``xztar`` format.
 
 Notes:
