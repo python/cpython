@@ -1587,7 +1587,7 @@ The full list of supported magic methods is:
 * Context manager: ``__enter__`` and ``__exit__``
 * Unary numeric methods: ``__neg__``, ``__pos__`` and ``__invert__``
 * The numeric methods (including right hand and in-place variants):
-  ``__add__``, ``__sub__``, ``__mul__``, ``__div__``,``__truediv__``,
+  ``__add__``, ``__sub__``, ``__mul__``, ``__div__``, ``__truediv__``,
   ``__floordiv__``, ``__mod__``, ``__divmod__``, ``__lshift__``,
   ``__rshift__``, ``__and__``, ``__xor__``, ``__or__``, and ``__pow__``
 * Numeric conversion methods: ``__complex__``, ``__int__``, ``__float__``
