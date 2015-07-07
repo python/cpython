@@ -570,9 +570,9 @@ The :mod:`test.support` module defines the following functions:
 
 .. function:: detect_api_mismatch(ref_api, other_api, *, ignore=()):
 
-   Returns the set of attributes, functions or methods of `ref_api` not
-   found on `other_api`, except for a defined list of items to be
-   ignored in this check specified in `ignore`.
+   Returns the set of attributes, functions or methods of *ref_api* not
+   found on *other_api*, except for a defined list of items to be
+   ignored in this check specified in *ignore*.
 
    By default this skips private attributes beginning with '_' but
    includes all magic methods, i.e. those starting and ending in '__'.
