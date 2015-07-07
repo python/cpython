@@ -100,7 +100,7 @@ The available formats for built distributions are:
 | ``msi``     | Microsoft Installer.         |         |
 +-------------+------------------------------+---------+
 
-.. versionchanged: 3.5
+.. versionchanged:: 3.5
    Added support for the ``xztar`` format.
 
 
