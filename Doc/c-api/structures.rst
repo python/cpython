@@ -60,7 +60,7 @@ the definition of all other Python objects.
 
 .. c:macro:: Py_TYPE(o)
 
-   This macro is used to access the `ob_type` member of a Python object.
+   This macro is used to access the :attr:`ob_type` member of a Python object.
    It expands to::
 
       (((PyObject*)(o))->ob_type)
@@ -68,7 +68,8 @@ the definition of all other Python objects.
 
 .. c:macro:: Py_REFCNT(o)
 
-   This macro is used to access the `ob_refcnt` member of a Python object.
+   This macro is used to access the :attr:`ob_refcnt` member of a Python
+   object.
    It expands to::
 
       (((PyObject*)(o))->ob_refcnt)
@@ -76,7 +77,7 @@ the definition of all other Python objects.
 
 .. c:macro:: Py_SIZE(o)
 
-   This macro is used to access the `ob_size` member of a Python object.
+   This macro is used to access the :attr:`ob_size` member of a Python object.
    It expands to::
 
       (((PyVarObject*)(o))->ob_size)
