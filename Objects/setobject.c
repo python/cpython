@@ -766,8 +766,8 @@ typedef struct {
     PyObject_HEAD
     PySetObject *si_set; /* Set to NULL when iterator is exhausted */
     Py_ssize_t si_used;
-    Py_ssize_t si_pos;
     Py_ssize_t len;
+    setentry *entry;
 } setiterobject;
 
 static void
@@ -845,8 +845,6 @@ static PyMethodDef setiter_methods[] = {
 
 static PyObject *setiter_iternext(setiterobject *si)
 {
-    PyObject *key;
-    Py_ssize_t i, mask;
     setentry *entry;
     PySetObject *so = si->si_set;
 
@@ -860,25 +858,18 @@ static PyObject *setiter_iternext(setiterobject *si)
         si->si_used = -1; /* Make this state sticky */
         return NULL;
     }
-
-    i = si->si_pos;
-    assert(i>=0);
-    entry = so->table;
-    mask = so->mask;
-    while (i <= mask && (entry[i].key == NULL || entry[i].key == dummy))
-        i++;
-    si->si_pos = i+1;
-    if (i > mask)
-        goto fail;
+    if (si->len <= 0) {
+        Py_DECREF(so);
+        si->si_set = NULL;
+        return NULL;
+    }
+    entry = si->entry;
+    while (entry->key == NULL || entry->key == dummy)
+        entry++;
     si->len--;
-    key = entry[i].key;
-    Py_INCREF(key);
-    return key;
-
-fail:
-    Py_DECREF(so);
-    si->si_set = NULL;
-    return NULL;
+    si->entry = entry + 1;
+    Py_INCREF(entry->key);
+    return entry->key;
 }
 
 PyTypeObject PySetIter_Type = {
@@ -923,8 +914,8 @@ set_iter(PySetObject *so)
     Py_INCREF(so);
     si->si_set = so;
     si->si_used = so->used;
-    si->si_pos = 0;
     si->len = so->used;
+    si->entry = so->table;
     _PyObject_GC_TRACK(si);
     return (PyObject *)si;
 }
