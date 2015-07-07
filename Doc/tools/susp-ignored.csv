@@ -136,12 +136,11 @@ library/ipaddress,,:db00,2001:db00::0/ffff:ff00::
 library/ipaddress,,::,2001:db00::0/ffff:ff00::
 library/itertools,,:step,elements from seq[start:stop:step]
 library/itertools,,:stop,elements from seq[start:stop:step]
-library/linecache,,:sys,"sys:x:3:3:sys:/dev:/bin/sh"
 library/logging.handlers,,:port,host:port
 library/mmap,,:i2,obj[i1:i2]
 library/multiprocessing,,`,# Add more tasks using `put()`
 library/multiprocessing,,`,">>> l._callmethod('__getitem__', (20,))     # equiv to `l[20]`"
-library/multiprocessing,,`,">>> l._callmethod('__getslice__', (2, 7))   # equiv to `l[2:7]`"
+library/multiprocessing,,`,">>> l._callmethod('__getitem__', (slice(2, 7),))  # equiv to `l[2:7]`"
 library/multiprocessing,,:queue,">>> QueueManager.register('get_queue', callable=lambda:queue)"
 library/multiprocessing,,`,# register the Foo class; make `f()` and `g()` accessible via proxy
 library/multiprocessing,,`,# register the Foo class; make `g()` and `_h()` accessible via proxy
@@ -164,7 +163,6 @@ library/profile,,:lineno,filename:lineno(function)
 library/pyexpat,,:elem1,<py:elem1 />
 library/pyexpat,,:py,"xmlns:py = ""http://www.python.org/ns/"">"
 library/smtplib,,:port,method must support that as well as a regular host:port
-library/socket,,::,"(10, 1, 6, '', ('2001:888:2000:d::a2', 80, 0, 0))]"
 library/socket,,::,'5aef:2b::8'
 library/socket,,:can,"return (can_id, can_dlc, data[:can_dlc])"
 library/socket,,:len,fds.fromstring(cmsg_data[:len(cmsg_data) - (len(cmsg_data) % fds.itemsize)])
@@ -210,6 +208,16 @@ library/venv,,:param,":param nodist: If True, setuptools and pip are not install
 library/venv,,:param,":param progress: If setuptools or pip are installed, the progress of the"
 library/venv,,:param,":param nopip: If True, pip is not installed into the created"
 library/venv,,:param,:param context: The information for the environment creation request
+library/xml.etree.elementtree,,:sometag,prefix:sometag
+library/xml.etree.elementtree,,:fictional,"<actors xmlns:fictional=""http://characters.example.com"""
+library/xml.etree.elementtree,,:character,<fictional:character>Lancelot</fictional:character>
+library/xml.etree.elementtree,,:character,<fictional:character>Archie Leach</fictional:character>
+library/xml.etree.elementtree,,:character,<fictional:character>Sir Robin</fictional:character>
+library/xml.etree.elementtree,,:character,<fictional:character>Gunther</fictional:character>
+library/xml.etree.elementtree,,:character,<fictional:character>Commander Clement</fictional:character>
+library/xml.etree.elementtree,,:actor,"for actor in root.findall('real_person:actor', ns):"
+library/xml.etree.elementtree,,:name,"name = actor.find('real_person:name', ns)"
+library/xml.etree.elementtree,,:character,"for char in actor.findall('role:character', ns):"
 library/xmlrpc.client,,:pass,http://user:pass@host:port/path
 library/xmlrpc.client,,:pass,user:pass
 library/xmlrpc.client,,:port,http://user:pass@host:port/path
@@ -236,6 +244,7 @@ tutorial/stdlib2,,:start,extra = data[start:start+extra_size]
 tutorial/stdlib2,,:start,"fields = struct.unpack('<IIIHH', data[start:start+16])"
 tutorial/stdlib2,,:start,filename = data[start:start+filenamesize]
 tutorial/stdlib2,,:Warning,WARNING:root:Warning:config file server.conf not found
+tutorial/venv,,:c7b9645a6f35,"Python 3.4.3+ (3.4:c7b9645a6f35+, May 22 2015, 09:31:25)"
 using/cmdline,,:category,action:message:category:module:line
 using/cmdline,,:errorhandler,:errorhandler
 using/cmdline,,:line,action:message:category:module:line
