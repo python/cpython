@@ -1086,7 +1086,7 @@ Changes in the Python API
 * The :mod:`socket` module now exports the CAN_RAW_FD_FRAMES constant on linux
   3.6 and greater.
 
-* The `pygettext.py` Tool now uses the standard +NNNN format for timezones in
+* The ``pygettext.py`` Tool now uses the standard +NNNN format for timezones in
   the POT-Creation-Date header.
 
 * The :mod:`smtplib` module now uses :data:`sys.stderr` instead of previous
