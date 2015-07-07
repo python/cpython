@@ -1100,7 +1100,7 @@ always available.
             pass
 
         # The following line will fail with a RuntimeError, because
-        # `wrapper` creates a `wrap(coro)` coroutine:
+        # ``wrapper`` creates a ``wrap(coro)`` coroutine:
         foo()
 
    See also :func:`get_coroutine_wrapper`.
