@@ -2399,10 +2399,10 @@ private:
             return FALSE;
         }
         
-        // Check whether at least CRT v10.0.9924.0 is available.
+        // Check whether at least CRT v10.0.10137.0 is available.
         // It should only be installed as a Windows Update package, which means
         // we don't need to worry about 32-bit/64-bit.
-        LPCWSTR crtFile = L"api-ms-win-crt-runtime-l1-1-0.dll";
+        LPCWSTR crtFile = L"ucrtbase.dll";
 
         DWORD cbVer = GetFileVersionInfoSizeW(crtFile, nullptr);
         if (!cbVer) {
@@ -2427,7 +2427,7 @@ private:
         BOOL result = FALSE;
 
         if (VerQueryValueW(pData, L"\\", (LPVOID*)&ffi, &cb) &&
-            ffi->dwFileVersionMS == 0x000A0000 && ffi->dwFileVersionLS >= 0x26C40000) {
+            ffi->dwFileVersionMS == 0x000A0000 && ffi->dwFileVersionLS >= 0x27990000) {
             result = TRUE;
         }
         
