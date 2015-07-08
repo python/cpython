@@ -902,7 +902,7 @@ PyTypeObject PySetIter_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)setiter_traverse,             /* tp_traverse */
     0,                                          /* tp_clear */
@@ -2145,7 +2145,7 @@ static PyMethodDef frozenset_methods[] = {
      copy_doc},
     {"difference",      (PyCFunction)set_difference_multi,      METH_VARARGS,
      difference_doc},
-    {"intersection",(PyCFunction)set_intersection_multi,        METH_VARARGS,
+    {"intersection",    (PyCFunction)set_intersection_multi,    METH_VARARGS,
      intersection_doc},
     {"isdisjoint",      (PyCFunction)set_isdisjoint,    METH_O,
      isdisjoint_doc},
@@ -2216,7 +2216,7 @@ PyTypeObject PyFrozenSet_Type = {
     (traverseproc)set_traverse,         /* tp_traverse */
     (inquiry)set_clear_internal,        /* tp_clear */
     (richcmpfunc)set_richcompare,       /* tp_richcompare */
-    offsetof(PySetObject, weakreflist),         /* tp_weaklistoffset */
+    offsetof(PySetObject, weakreflist), /* tp_weaklistoffset */
     (getiterfunc)set_iter,              /* tp_iter */
     0,                                  /* tp_iternext */
     frozenset_methods,                  /* tp_methods */
