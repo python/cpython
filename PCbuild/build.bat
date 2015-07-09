@@ -25,16 +25,17 @@ set verbose=/nologo /v:m
 set kill=
 
 :CheckOpts
-if '%1'=='-c' (set conf=%2) & shift & shift & goto CheckOpts
-if '%1'=='-p' (set platf=%2) & shift & shift & goto CheckOpts
-if '%1'=='-r' (set target=Rebuild) & shift & goto CheckOpts
-if '%1'=='-t' (set target=%2) & shift & shift & goto CheckOpts
-if '%1'=='-d' (set conf=Debug) & shift & goto CheckOpts
-if '%1'=='-e' call "%dir%get_externals.bat" & shift & goto CheckOpts
-if '%1'=='-m' (set parallel=/m) & shift & goto CheckOpts
-if '%1'=='-M' (set parallel=) & shift & goto CheckOpts
-if '%1'=='-v' (set verbose=/v:n) & shift & goto CheckOpts
-if '%1'=='-k' (set kill=true) & shift & goto CheckOpts
+if '%~1'=='-c' (set conf=%2) & shift & shift & goto CheckOpts
+if '%~1'=='-p' (set platf=%2) & shift & shift & goto CheckOpts
+if '%~1'=='-r' (set target=Rebuild) & shift & goto CheckOpts
+if '%~1'=='-t' (set target=%2) & shift & shift & goto CheckOpts
+if '%~1'=='-d' (set conf=Debug) & shift & goto CheckOpts
+if '%~1'=='-e' call "%dir%get_externals.bat" & shift & goto CheckOpts
+if '%~1'=='-m' (set parallel=/m) & shift & goto CheckOpts
+if '%~1'=='-M' (set parallel=) & shift & goto CheckOpts
+if '%~1'=='-v' (set verbose=/v:n) & shift & goto CheckOpts
+if '%~1'=='-k' (set kill=true) & shift & goto CheckOpts
+if '%~1'=='-V' shift & goto Version
 
 if '%platf%'=='x64' (set vs_platf=x86_amd64)
 
@@ -50,3 +51,9 @@ rem Passing %1-9 is not the preferred option, but argument parsing in
 rem batch is, shall we say, "lackluster"
 echo on
 msbuild "%dir%pcbuild.proj" /t:%target% %parallel% %verbose% /p:Configuration=%conf% /p:Platform=%platf% %1 %2 %3 %4 %5 %6 %7 %8 %9
+
+@goto :eof
+
+:Version
+rem Display the current build version information
+msbuild "%dir%python.props" /t:ShowVersionInfo /v:m /nologo %1 %2 %3 %4 %5 %6 %7 %8 %9

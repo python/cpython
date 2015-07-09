@@ -23,14 +23,18 @@
     <Variable Name="ShortVersion" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)" />
     <Variable Name="ShortVersionNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)" />
 
-    <Variable Name="InstallAllUsers" Value="0" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="TargetDir" Value="" Persisted="yes" bal:Overridable="yes" />
+    <Variable Name="InstallAllUsers" Value="0" bal:Overridable="yes" />
+    <Variable Name="TargetDir" Value="" bal:Overridable="yes" />
     <?if $(var.Platform)~="x64" ?>
     <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]Python [ShortVersion]" bal:Overridable="yes" />
+    <Variable Name="TargetPlatform" Value="x64" />
     <?else ?>
     <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesFolder]Python [ShortVersion]" bal:Overridable="yes" />
+    <Variable Name="TargetPlatform" Value="x86" />
     <?endif ?>
     <Variable Name="DefaultJustForMeTargetDir" Value="[LocalAppDataFolder]Programs\Python\Python[ShortVersionNoDot]$(var.Suffix32)" bal:Overridable="yes" />
+    <Variable Name="OptionalFeaturesRegistryKey" Value="Software\$(var.TestPrefix)Python\PythonCore\[ShortVersion]$(var.Suffix32)\InstalledFeatures" />
+    <Variable Name="TargetDirRegistryKey" Value="Software\$(var.TestPrefix)Python\PythonCore\[ShortVersion]$(var.Suffix32)\InstallPath" />
     
     <!--
     An empty string will use the other defaults based on InstallAllUsers
@@ -44,23 +48,23 @@
     <Variable Name="TargetDirState" Value="enabled" />
     <Variable Name="CustomBrowseButtonState" Value="enabled" />
 
-    <Variable Name="Include_core" Value="1" Persisted="yes" />
-    <Variable Name="Include_exe" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_dev" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_lib" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_test" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_doc" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_tools" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_tcltk" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_pip" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_launcher" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_symbols" Value="0" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Include_debug" Value="0" Persisted="yes" bal:Overridable="yes" />
+    <Variable Name="Include_core" Value="1" />
+    <Variable Name="Include_exe" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_dev" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_lib" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_test" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_doc" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_tools" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_launcher" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_symbols" Value="0" bal:Overridable="yes" />
+    <Variable Name="Include_debug" Value="0" bal:Overridable="yes" />
     
-    <Variable Name="AssociateFiles" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="Shortcuts" Value="1" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="PrependPath" Value="0" Persisted="yes" bal:Overridable="yes" />
-    <Variable Name="CompileAll" Value="0" Persisted="yes" bal:Overridable="yes" />
+    <Variable Name="AssociateFiles" Value="1" bal:Overridable="yes" />
+    <Variable Name="Shortcuts" Value="1" bal:Overridable="yes" />
+    <Variable Name="PrependPath" Value="0" bal:Overridable="yes" />
+    <Variable Name="CompileAll" Value="0" bal:Overridable="yes" />
     
     <Variable Name="SimpleInstall" Value="0" bal:Overridable="yes" />
     

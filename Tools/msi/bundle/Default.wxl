@@ -21,6 +21,8 @@ Continue?</String>
   <String Id="InstallHeader">Install [WixBundleName]</String>
   <String Id="InstallMessage">Select Install Now to install Python with default settings, or choose Customize to enable or disable features.</String>
   <String Id="InstallVersion">Version [WixBundleVersion]</String>
+  <String Id="InstallUpgradeHeader">Upgrade to [WixBundleName]</String>
+  <String Id="InstallUpgradeMessage">Select Upgrade Now to keep your current settings, or choose Customize to enable or disable features.</String>
   <String Id="ConfirmCancelMessage">Are you sure you want to cancel?</String>
   <String Id="ExecuteUpgradeRelatedBundleMessage">Previous version</String>
   <String Id="HelpHeader">Setup Help</String>
@@ -40,8 +42,8 @@ Continue?</String>
     Logs to a specific file. By default, log files are created in %TEMP%.</String>
   <String Id="InstallLicenseLinkText">[WixBundleName] &lt;a href="#"&gt;license terms&lt;/a&gt;.</String>
   <String Id="InstallAcceptCheckbox">I &amp;agree to the license terms and conditions</String>
-  <String Id="InstallJustForMeButton">&amp;Install Now</String>
-  <String Id="InstallJustForMeButtonNote">[DefaultJustForMeTargetDir]
+  <String Id="InstallButton">&amp;Install Now</String>
+  <String Id="InstallButtonNote">[DefaultJustForMeTargetDir]
 
 Includes IDLE, pip and documentation
 Creates shortcuts and file associations</String>
@@ -49,6 +51,13 @@ Creates shortcuts and file associations</String>
   <String Id="InstallCustomButtonNote">Choose location and features</String>
   <String Id="InstallSimpleButton">&amp;Install</String>
   <String Id="InstallSimpleButtonNote">Uses setting preselected by your administrator</String>
+  <String Id="InstallUpgradeButton">&amp;Upgrade Now</String>
+  <String Id="InstallUpgradeButtonNote">[TargetDir]
+
+Replaces your existing installation without changing settings.
+Select Customize to review current options.</String>
+  <String Id="InstallUpgradeCustomButton">C&amp;ustomize installation</String>
+  <String Id="InstallUpgradeCustomButtonNote">Choose location and features</String>
   <String Id="Custom1Header">Optional Features</String>
   <String Id="Custom2Header">Advanced Options</String>
   <String Id="CustomLocationLabel">Customize install location</String>
@@ -107,4 +116,5 @@ Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@pyt
   <String Id="FailureHyperlinkLogText">One or more issues caused the setup to fail. Please fix the issues and then retry setup. For more information see the &lt;a href="#"&gt;log file&lt;/a&gt;.</String>
   <String Id="FailureRestartText">You must restart your computer to complete the rollback of the software.</String>
   <String Id="FailureRestartButton">&amp;Restart</String>
+  <String Id="FailureExistingInstall">Unable to install [WixBundleName] due to an existing install. Use Programs and Features to modify, repair or remove [WixBundleName].</String>
 </WixLocalization>

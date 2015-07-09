@@ -9,13 +9,16 @@
         
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="doc" Primary="yes" />
+            <ComponentRef Id="OptionalFeature" />
         </Feature>
         <Feature Id="Shortcuts" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="doc" />
             
             <?ifdef DocFilename ?>
             <Component Id="doc_shortcut" Directory="MenuDir" Guid="*">
-                <RegistryValue Root="HKMU" Key="[REGISTRYKEY]\DocShortcuts" Type="integer" Value="1" KeyPath="yes" />
+                <RegistryKey Root="HKMU" Key="[OPTIONALFEATURESREGISTRYKEY]">
+                    <RegistryValue Name="$(var.OptionalFeatureName)_shortcut" Type="string" Value="$(var.Version)" KeyPath="yes" />
+                </RegistryKey>
                 <Shortcut Id="python.chm"
                           Target="[#python.chm]"
                           Name="!(loc.ShortcutName)"

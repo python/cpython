@@ -42,7 +42,9 @@
     
     <!-- Full path of the resulting python.exe binary -->
     <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
-
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(OverrideVersion)' == ''">
     <!--
     Read version information from Include\patchlevel.h. The following properties are set:
     
@@ -70,7 +72,40 @@
     <ReleaseLevelName Condition="$(_ReleaseLevel) == 'ALPHA'">a$(ReleaseSerial)</ReleaseLevelName>
     <ReleaseLevelName Condition="$(_ReleaseLevel) == 'BETA'">b$(ReleaseSerial)</ReleaseLevelName>
     <ReleaseLevelName Condition="$(_ReleaseLevel) == 'GAMMA'">rc$(ReleaseSerial)</ReleaseLevelName>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(OverrideVersion)' != ''">
+    <!--
+    Override the version number when building by specifying OverrideVersion.
+    For example:
     
+        PCBuild\build.bat "/p:OverrideVersion=3.5.2a1"
+    
+    Use the -V option to check your version is valid:
+    
+        PCBuild\build.bat -V "/p:OverrideVersion=3.5.2a1"
+          PythonVersionNumber: 3.5.2
+          PythonVersion:       3.5.2a1
+          PythonVersionHex:    0x030502A1
+          Field3Value:         2101
+    
+    Note that this only affects the version numbers embedded in resources and
+    installers, but not sys.version.
+    -->
+    <MajorVersionNumber>$([System.Text.RegularExpressions.Regex]::Match($(OverrideVersion), `(\d+)\.(\d+)\.(\d+)((a|b|rc)(\d))?`).Groups[1].Value)</MajorVersionNumber>
+    <MinorVersionNumber>$([System.Text.RegularExpressions.Regex]::Match($(OverrideVersion), `(\d+)\.(\d+)\.(\d+)((a|b|rc)(\d))?`).Groups[2].Value)</MinorVersionNumber>
+    <MicroVersionNumber>$([System.Text.RegularExpressions.Regex]::Match($(OverrideVersion), `(\d+)\.(\d+)\.(\d+)((a|b|rc)(\d))?`).Groups[3].Value)</MicroVersionNumber>
+    <ReleaseLevelName>$([System.Text.RegularExpressions.Regex]::Match($(OverrideVersion), `(\d+)\.(\d+)\.(\d+)((a|b|rc)(\d))?`).Groups[4].Value)</ReleaseLevelName>
+    <_ReleaseLevel>$([System.Text.RegularExpressions.Regex]::Match($(OverrideVersion), `(\d+)\.(\d+)\.(\d+)((a|b|rc)(\d))?`).Groups[5].Value)</_ReleaseLevel>
+    <ReleaseSerial>$([System.Text.RegularExpressions.Regex]::Match($(OverrideVersion), `(\d+)\.(\d+)\.(\d+)((a|b|rc)(\d))?`).Groups[6].Value)</ReleaseSerial>
+    <ReleaseSerial Condition="'$(ReleaseSerial)' == ''">0</ReleaseSerial>
+    <ReleaseLevelNumber>15</ReleaseLevelNumber>
+    <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'a'">10</ReleaseLevelNumber>
+    <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'b'">11</ReleaseLevelNumber>
+    <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'rc'">12</ReleaseLevelNumber>
+  </PropertyGroup>
+  
+  <PropertyGroup>
     <PythonVersionNumber>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</PythonVersionNumber>
     <PythonVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)$(ReleaseLevelName)</PythonVersion>
     <PythonVersionHex>$([msbuild]::BitwiseOr(
@@ -110,7 +145,7 @@
   <Target Name="ShowVersionInfo">
     <Message Importance="high" Text="PythonVersionNumber: $(PythonVersionNumber)" />
     <Message Importance="high" Text="PythonVersion:       $(PythonVersion)" />
-    <Message Importance="high" Text="$([System.String]::Format(`PythonVersionHex:    0x{0:x}`, $([System.UInt32]::Parse($(PythonVersionHex)))))" />
+    <Message Importance="high" Text="PythonVersionHex:    0x$([System.UInt32]::Parse($(PythonVersionHex)).ToString(`X08`))" />
     <Message Importance="high" Text="Field3Value:         $(Field3Value)" />
   </Target>
 </Project>

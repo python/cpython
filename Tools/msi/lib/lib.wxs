@@ -11,6 +11,7 @@
             <ComponentGroupRef Id="lib_py" />
             <ComponentGroupRef Id="lib_files" />
             <ComponentGroupRef Id="lib_extensions" />
+            <ComponentRef Id="OptionalFeature" />
         </Feature>
     </Product>
 </Wix>
