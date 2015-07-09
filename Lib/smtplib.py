@@ -601,7 +601,7 @@ class SMTP:
                 if not (200 <= code <= 299):
                     raise SMTPHeloError(code, resp)
 
-    def auth(self, mechanism, authobject):
+    def auth(self, mechanism, authobject, *, initial_response_ok=True):
         """Authentication command - requires response processing.
 
         'mechanism' specifies which authentication mechanism is to
@@ -615,32 +615,46 @@ class SMTP:
         It will be called to process the server's challenge response; the
         challenge argument it is passed will be a bytes.  It should return
         bytes data that will be base64 encoded and sent to the server.
-        """
 
+        Keyword arguments:
+            - initial_response_ok: Allow sending the RFC 4954 initial-response
+              to the AUTH command, if the authentication methods supports it.
+        """
+        # RFC 4954 allows auth methods to provide an initial response.  Not all
+        # methods support it.  By definition, if they return something other
+        # than None when challenge is None, then they do.  See issue #15014.
         mechanism = mechanism.upper()
-        (code, resp) = self.docmd("AUTH", mechanism)
-        # Server replies with 334 (challenge) or 535 (not supported)
-        if code == 334:
-            challenge = base64.decodebytes(resp)
-            response = encode_base64(
-                authobject(challenge).encode('ascii'), eol='')
-            (code, resp) = self.docmd(response)
-            if code in (235, 503):
-                return (code, resp)
+        initial_response = (authobject() if initial_response_ok else None)
+        if initial_response is not None:
+            response = encode_base64(initial_response.encode('ascii'), eol='')
+            (code, resp) = self.docmd("AUTH", mechanism + " " + response)
+        else:
+            (code, resp) = self.docmd("AUTH", mechanism)
+            # Server replies with 334 (challenge) or 535 (not supported)
+            if code == 334:
+                challenge = base64.decodebytes(resp)
+                response = encode_base64(
+                    authobject(challenge).encode('ascii'), eol='')
+                (code, resp) = self.docmd(response)
+        if code in (235, 503):
+            return (code, resp)
         raise SMTPAuthenticationError(code, resp)
 
-    def auth_cram_md5(self, challenge):
+    def auth_cram_md5(self, challenge=None):
         """ Authobject to use with CRAM-MD5 authentication. Requires self.user
         and self.password to be set."""
+        # CRAM-MD5 does not support initial-response.
+        if challenge is None:
+            return None
         return self.user + " " + hmac.HMAC(
             self.password.encode('ascii'), challenge, 'md5').hexdigest()
 
-    def auth_plain(self, challenge):
+    def auth_plain(self, challenge=None):
         """ Authobject to use with PLAIN authentication. Requires self.user and
         self.password to be set."""
         return "\0%s\0%s" % (self.user, self.password)
 
-    def auth_login(self, challenge):
+    def auth_login(self, challenge=None):
         """ Authobject to use with LOGIN authentication. Requires self.user and
         self.password to be set."""
         (code, resp) = self.docmd(
@@ -649,12 +663,16 @@ class SMTP:
             return self.password
         raise SMTPAuthenticationError(code, resp)
 
-    def login(self, user, password):
+    def login(self, user, password, *, initial_response_ok=True):
         """Log in on an SMTP server that requires authentication.
 
         The arguments are:
             - user:         The user name to authenticate with.
             - password:     The password for the authentication.
+
+        Keyword arguments:
+            - initial_response_ok: Allow sending the RFC 4954 initial-response
+              to the AUTH command, if the authentication methods supports it.
 
         If there has been no previous EHLO or HELO command this session, this
         method tries ESMTP EHLO first.
@@ -698,7 +716,9 @@ class SMTP:
         for authmethod in authlist:
             method_name = 'auth_' + authmethod.lower().replace('-', '_')
             try:
-                (code, resp) = self.auth(authmethod, getattr(self, method_name))
+                (code, resp) = self.auth(
+                    authmethod, getattr(self, method_name),
+                    initial_response_ok=initial_response_ok)
                 # 235 == 'Authentication successful'
                 # 503 == 'Error: already authenticated'
                 if code in (235, 503):
