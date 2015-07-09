@@ -72,8 +72,18 @@
         <Package Include="..\tools\tools*.wixproj" />
     </ItemGroup>
     
+    <PropertyGroup>
+        <BuildPackagesTargets>Build</BuildPackagesTargets>
+    </PropertyGroup>
+    
+    <Target Name="_SetRebuildTarget" BeforeTargets="BeforeRebuild">
+        <PropertyGroup>
+            <BuildPackagesTargets>Rebuild</BuildPackagesTargets>
+        </PropertyGroup>
+    </Target>
+    
     <Target Name="BuildPackages" BeforeTargets="BeforeBuild" Condition="'$(RebuildAll)' != 'false'">
-        <MSBuild Projects="@(Package)" BuildInParallel="true" />
+        <MSBuild Projects="@(Package)" Targets="$(BuildPackagesTargets)" BuildInParallel="true" />
     </Target>
     
     <Target Name="BuildLauncher" BeforeTargets="BeforeBuild" Condition="'$(RebuildAll)' != 'false'">

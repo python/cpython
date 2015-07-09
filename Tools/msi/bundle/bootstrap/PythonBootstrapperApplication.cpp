@@ -291,6 +291,7 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             hr = BalGetStringVariable(L"TargetDir", &targetDir);
             if (FAILED(hr) || !targetDir || !targetDir[0]) {
                 ReleaseStr(targetDir);
+                targetDir = nullptr;
 
                 hr = BalGetStringVariable(
                     installAllUsers ? L"DefaultAllUsersTargetDir" : L"DefaultJustForMeTargetDir",

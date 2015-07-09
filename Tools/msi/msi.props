@@ -53,8 +53,13 @@
         <CRTRedist Condition="!Exists($(CRTRedist))"></CRTRedist>
         <DocFilename>python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
 
-        <RevisionNumber>$(ReleaseLevelNumber)</RevisionNumber>
-        <RevisionNumber Condition="!$(BuildForRelease)">$([System.Math]::Floor($([System.DateTime]::Now.Subtract($([System.DateTime]::new(2001, 1, 1))).TotalDays)))</RevisionNumber>
+        <InstallerVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value).0</InstallerVersion>
+    </PropertyGroup>
+    
+    <PropertyGroup Condition="!$(BuildForRelease)">
+        <RevisionNumber Condition="'$(RevisionNumber)' == ''">$([System.Math]::Floor($([System.DateTime]::Now.Subtract($([System.DateTime]::new(2001, 1, 1))).TotalDays)))</RevisionNumber>
+        <PythonVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)dev$(RevisionNumber)</PythonVersion>
+        <InstallerVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(RevisionNumber).0</InstallerVersion>
     </PropertyGroup>
     
     <PropertyGroup>
@@ -62,7 +67,7 @@
         <Bitness Condition="$(Platform) == 'x64'">64-bit</Bitness>
         <DefineConstants>
             $(DefineConstants);
-            Version=$(MajorVersionNumber).$(MinorVersionNumber).$(Field3Value).0;
+            Version=$(InstallerVersion);
             ShortVersion=$(MajorVersionNumber).$(MinorVersionNumber);
             LongVersion=$(PythonVersion);
             MajorVersionNumber=$(MajorVersionNumber);
