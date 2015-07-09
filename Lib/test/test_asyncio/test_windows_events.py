@@ -132,7 +132,8 @@ class ProactorTests(test_utils.TestCase):
         self.assertTrue(fut.result())
         self.assertTrue(0 <= elapsed < 0.3, elapsed)
 
-        # Tulip issue #195: cancelling a done _WaitHandleFuture must not crash
+        # asyncio issue #195: cancelling a done _WaitHandleFuture
+        # must not crash
         fut.cancel()
 
     def test_wait_for_handle_cancel(self):
@@ -149,7 +150,8 @@ class ProactorTests(test_utils.TestCase):
         elapsed = self.loop.time() - start
         self.assertTrue(0 <= elapsed < 0.1, elapsed)
 
-        # Tulip issue #195: cancelling a _WaitHandleFuture twice must not crash
+        # asyncio issue #195: cancelling a _WaitHandleFuture twice
+        # must not crash
         fut = self.loop._proactor.wait_for_handle(event)
         fut.cancel()
         fut.cancel()
