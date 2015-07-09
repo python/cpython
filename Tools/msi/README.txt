@@ -9,7 +9,7 @@ script:
 For an official release, the installer should be built with the
 Tools/msi/buildrelease.bat script and environment variables:
 
-    set PYTHON=<path to Python 2.7>
+    set PYTHON=<path to Python 2.7 or 3.4>
     set SPHINXBUILD=<path to sphinx-build.exe>
     set PATH=<path to Mercurial (hg.exe)>;
              <path to HTML Help Compiler (hhc.exe)>;%PATH%
@@ -87,7 +87,7 @@ and extracted to the externals/ directory.
 For an official release, the installer should be built with the
 Tools/msi/buildrelease.bat script:
 
-    set PYTHON=<path to Python 2.7>
+    set PYTHON=<path to Python 2.7 or 3.4>
     set SPHINXBUILD=<path to sphinx-build.exe>
     set PATH=<path to Mercurial (hg.exe)>;
              <path to HTML Help Compiler (hhc.exe)>;%PATH%
@@ -229,6 +229,11 @@ interest:
     Every package should reference this property to include upgrade
     information.
 
+  OptionalFeature (Component)
+    Packages that may be enabled or disabled should reference this component
+    and have an OPTIONAL_FEATURES entry in the bootstrap application to
+    properly handle Modify and Upgrade.
+
 The .wxl_template file is specially handled by the build system for this
 project to perform {{substitutions}} as defined in msi.targets. They
 should be included in projects as <WxlTemplate> items, where .wxl files
@@ -326,14 +331,11 @@ install directory.
 
 .\python3x.dll      The core interpreter
 .\python3.dll       The stable ABI reference
-.\appcrt140.dll     Microsoft Visual C Runtime
-.\desktopcrt140.dll Microsoft Visual C Runtime
-.\vcruntime140.dll  Microsoft Visual C Runtime
 
 When installed for all users, the following files are installed to
 "%SystemRoot%" (typically "C:\Windows") to ensure they are always
 available on PATH. (See Launching Python below.) For the current user,
-they are installed in the Python install directory.
+they are installed in "%LocalAppData%\Programs\Python\PyLauncher".
 
 .\py[w].exe         PEP 397 launcher
 
@@ -363,8 +365,10 @@ For 32-bit interpreters installed for the current user:
 
 When the core Python executables are installed, a key "InstallPath" is
 created within the root key with its default value set to the
-executable's install directory. Within this key, a key "InstallGroup" is
-created with its default value set to the product name "Python 3.X".
+executable's install directory. A value named "ExecutablePath" is added
+with the full path to the main Python interpreter, and a key
+"InstallGroup" is created with its default value set to the product
+name "Python 3.X".
 
 When the Python standard library is installed, a key "PythonPath" is
 created within the root key with its default value set to the full path
