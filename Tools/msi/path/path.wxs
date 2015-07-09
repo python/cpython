@@ -9,7 +9,9 @@
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <Component Id="PrependPath_CU" Directory="InstallDirectory" Guid="*">
                 <Condition>NOT ALLUSERS=1</Condition>
-                <RegistryValue KeyPath="yes" Root="HKCU" Key="[REGISTRYKEY]\PrependPath" Value="1" Type="integer" />
+                <RegistryKey Root="HKCU" Key="[REGISTRYKEY]">
+                    <RegistryValue KeyPath="yes" Key="InstalledFeatures" Name="$(var.OptionalFeatureName)" Value="$(var.Version)" Type="string" />
+                </RegistryKey>
                 
                 <CreateFolder Directory="Scripts" />
                 <RemoveFolder Id="Remove_Scripts_CU" Directory="Scripts" On="uninstall" />
@@ -19,7 +21,9 @@
             </Component>
             <Component Id="PrependPath_LM" Directory="InstallDirectory" Guid="*">
                 <Condition>ALLUSERS=1</Condition>
-                <RegistryValue KeyPath="yes" Root="HKLM" Key="[REGISTRYKEY]\PrependPath" Value="1" Type="integer" />
+                <RegistryKey Root="HKLM" Key="[REGISTRYKEY]">
+                    <RegistryValue KeyPath="yes" Key="InstalledFeatures" Name="$(var.OptionalFeatureName)" Value="$(var.Version)" Type="string" />
+                </RegistryKey>
                 
                 <CreateFolder Directory="Scripts" />
                 <RemoveFolder Id="Remove_Scripts_LM" Directory="Scripts" On="uninstall" />

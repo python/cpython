@@ -30,6 +30,7 @@
             <Component Id="idle_reg" Directory="InstallDirectory">
                 <RegistryValue KeyPath="yes" Root="HKMU" Key="[REGISTRYKEY]\Idle" Type="string" Value="[#Lib_idlelib_idle.pyw]" />
             </Component>
+            <ComponentRef Id="OptionalFeature" />
         </Feature>
         <Feature Id="AssociateFiles" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="tkinter_lib" />

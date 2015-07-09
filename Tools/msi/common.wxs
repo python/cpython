@@ -5,6 +5,15 @@
     </Fragment>
     
     <Fragment>
+        <Component Id="OptionalFeature" Guid="*" Directory="InstallDirectory">
+            <Condition>OPTIONALFEATURESREGISTRYKEY</Condition>
+            <RegistryKey Root="HKMU" Key="[OPTIONALFEATURESREGISTRYKEY]">
+                <RegistryValue Type="string" Name="$(var.OptionalFeatureName)" Value="$(var.Version)" KeyPath="yes" />
+            </RegistryKey>
+        </Component>
+    </Fragment>
+    
+    <Fragment>
         <Property Id="UpgradeTable" Value="1" />
         
         <Upgrade Id="$(var.UpgradeCode)">

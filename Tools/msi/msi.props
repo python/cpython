@@ -43,7 +43,7 @@
     </ItemGroup>
 
     <PropertyGroup>
-        <IntermediateOutputPath>$(MSBuildThisFileDirectory)\obj\$(Configuration)_$(Platform)\$(OutputName)</IntermediateOutputPath>
+        <IntermediateOutputPath>$(PySourcePath)PCBuild\obj\$(Configuration)_$(Platform)_Setup\$(OutputName)</IntermediateOutputPath>
         <IntermediateOutputPath Condition="'$(OutputSuffix)' != ''">$(IntermediateOutputPath)_$(OutputSuffix)</IntermediateOutputPath>
         <OutputPath Condition="'$(OutputPath)' == ''">$(BuildPath)</OutputPath>
         <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
@@ -71,6 +71,7 @@
             NextMajorVersionNumber=$(MajorVersionNumber).$([msbuild]::Add($(MinorVersionNumber), 1)).0.0;
             Bitness=$(Bitness);
             PyDebugExt=$(PyDebugExt);
+            OptionalFeatureName=$(OutputName);
         </DefineConstants>
         <DefineConstants Condition="'$(CRTRedist)' != ''">
             $(DefineConstants);CRTRedist=$(CRTRedist);
@@ -111,9 +112,6 @@
         </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(CRTRedist)" Condition="'$(CRTRedist)' != ''">
             <BindName>redist</BindName>
-        </LinkerBindInputPaths>
-        <LinkerBindInputPaths Include="$(CRTRedist)\$(Platform)" Condition="'$(CRTRedist)' != ''">
-            <BindName>crt</BindName>
         </LinkerBindInputPaths>
     </ItemGroup>
 
