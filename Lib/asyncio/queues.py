@@ -9,7 +9,7 @@ import heapq
 from . import events
 from . import futures
 from . import locks
-from .tasks import coroutine
+from .coroutines import coroutine
 
 
 class QueueEmpty(Exception):
