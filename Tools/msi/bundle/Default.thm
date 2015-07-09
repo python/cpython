@@ -21,10 +21,21 @@
 
         <Text X="185" Y="50" Width="-11" Height="50" FontId="3" TabStop="yes">#(loc.InstallMessage)</Text>
 
-        <Button Name="InstallJustForMeButton" X="175" Y="101" Width="-11" Height="129" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallJustForMeButton)</Button>
+        <Button Name="InstallButton" X="175" Y="101" Width="-11" Height="129" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallButton)</Button>
         <Button Name="InstallCustomButton" X="175" Y="241" Width="-11" Height="59" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallCustomButton)</Button>
 
         <Checkbox Name="PrependPath" X="185" Y="-13" Width="-100" Height="20" TabStop="yes" FontId="3">#(loc.ShortPrependPathLabel)</Checkbox>
+
+        <Button Name="InstallCancelButton" X="-11" Y="-11" Width="75" Height="23" TabStop="yes" FontId="0">#(loc.CancelButton)</Button>
+    </Page>
+    <Page Name="Upgrade">
+        <Text X="185" Y="11" Width="-11" Height="32" FontId="1" DisablePrefix="yes">#(loc.InstallUpgradeHeader)</Text>
+        <Image X="0" Y="0" Width="162" Height="352" ImageFile="SideBar.png"/>
+
+        <Text X="185" Y="50" Width="-11" Height="50" FontId="3" TabStop="yes">#(loc.InstallUpgradeMessage)</Text>
+
+        <Button Name="InstallUpgradeButton" X="175" Y="101" Width="-11" Height="129" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallUpgradeButton)</Button>
+        <Button Name="InstallUpgradeCustomButton" X="175" Y="241" Width="-11" Height="59" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallUpgradeCustomButton)</Button>
 
         <Button Name="InstallCancelButton" X="-11" Y="-11" Width="75" Height="23" TabStop="yes" FontId="0">#(loc.CancelButton)</Button>
     </Page>

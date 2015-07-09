@@ -9,6 +9,7 @@
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="tools_py" />
             <ComponentGroupRef Id="tools_scripts" />
+            <ComponentRef Id="OptionalFeature" />
         </Feature>
     </Product>
 </Wix>

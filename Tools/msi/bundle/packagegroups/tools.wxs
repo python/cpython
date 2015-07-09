@@ -9,6 +9,7 @@
                         ForcePerMachine="yes"
                         InstallCondition="InstallAllUsers and Include_tools">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             
             <MsiPackage Id="tools_JustForMe"
@@ -18,6 +19,7 @@
                         ForcePerMachine="no"
                         InstallCondition="not InstallAllUsers and Include_tools">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
         </PackageGroup>
     </Fragment>
