@@ -22,6 +22,9 @@ Library
 - Issue #24259: tarfile now raises a ReadError if an archive is truncated
   inside a data segment.
 
+- Issue #15014: SMTP.auth() and SMTP.login() now support RFC 4954's optional
+  initial-response argument to the SMTP AUTH command.
+
 
 What's New in Python 3.5.0 beta 3?
 ==================================
