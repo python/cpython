@@ -9,6 +9,7 @@
                         ForcePerMachine="yes"
                         InstallCondition="InstallAllUsers and Include_dev">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="dev_AllUsers_d"
                         SourceFile="dev_d.msi"
@@ -17,6 +18,7 @@
                         ForcePerMachine="yes"
                         InstallCondition="InstallAllUsers and Include_dev and Include_debug">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
 
             <MsiPackage Id="dev_JustForMe"
@@ -26,6 +28,7 @@
                         ForcePerMachine="no"
                         InstallCondition="not InstallAllUsers and Include_dev">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="dev_JustForMe_d"
                         SourceFile="dev_d.msi"
@@ -34,6 +37,7 @@
                         ForcePerMachine="no"
                         InstallCondition="not InstallAllUsers and Include_dev and Include_debug">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
         </PackageGroup>
     </Fragment>
