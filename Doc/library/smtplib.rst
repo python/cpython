@@ -288,7 +288,7 @@ An :class:`SMTP` instance has the following methods:
       Many sites disable SMTP ``VRFY`` in order to foil spammers.
 
 
-.. method:: SMTP.login(user, password)
+.. method:: SMTP.login(user, password, *, initial_response_ok=True)
 
    Log in on an SMTP server that requires authentication. The arguments are the
    username and the password to authenticate with. If there has been no previous
@@ -309,14 +309,21 @@ An :class:`SMTP` instance has the following methods:
       No suitable authentication method was found.
 
    Each of the authentication methods supported by :mod:`smtplib` are tried in
-   turn if they are advertised as supported by the server (see :meth:`auth`
-   for a list of supported authentication methods).
+   turn if they are advertised as supported by the server.  See :meth:`auth`
+   for a list of supported authentication methods.  *initial_response_ok* is
+   passed through to :meth:`auth`.
+
+   Optional keyword argument *initial_response_ok* specifies whether, for
+   authentication methods that support it, an "initial response" as specified
+   in :rfc:`4954` can be sent along with the ``AUTH`` command, rather than
+   requiring a challenge/response.
 
    .. versionchanged:: 3.5
-      :exc:`SMTPNotSupportedError` may be raised.
+      :exc:`SMTPNotSupportedError` may be raised, and the
+      *initial_response_ok* parameter was added.
 
 
-.. method:: SMTP.auth(mechanism, authobject)
+.. method:: SMTP.auth(mechanism, authobject, *, initial_response_ok=True)
 
    Issue an ``SMTP`` ``AUTH`` command for the specified authentication
    *mechanism*, and handle the challenge response via *authobject*.
@@ -325,13 +332,23 @@ An :class:`SMTP` instance has the following methods:
    be used as argument to the ``AUTH`` command; the valid values are
    those listed in the ``auth`` element of :attr:`esmtp_features`.
 
-   *authobject* must be a callable object taking a single argument:
+   *authobject* must be a callable object taking an optional single argument:
 
-     data = authobject(challenge)
+     data = authobject(challenge=None)
 
-   It will be called to process the server's challenge response; the
-   *challenge* argument it is passed will be a ``bytes``.  It should return
-   ``bytes`` *data* that will be base64 encoded and sent to the server.
+   If optional keyword argument *initial_response_ok* is true,
+   ``authobject()`` will be called first with no argument.  It can return the
+   :rfc:`4954` "initial response" bytes which will be encoded and sent with
+   the ``AUTH`` command as below.  If the ``authobject()`` does not support an
+   initial response (e.g. because it requires a challenge), it should return
+   None when called with ``challenge=None``.  If *initial_response_ok* is
+   false, then ``authobject()`` will not be called first with None.
+
+   If the initial response check returns None, or if *initial_response_ok* is
+   false, ``authobject()`` will be called to process the server's challenge
+   response; the *challenge* argument it is passed will be a ``bytes``.  It
+   should return ``bytes`` *data* that will be base64 encoded and sent to the
+   server.
 
    The ``SMTP`` class provides ``authobjects`` for the ``CRAM-MD5``, ``PLAIN``,
    and ``LOGIN`` mechanisms; they are named ``SMTP.auth_cram_md5``,
@@ -340,10 +357,10 @@ An :class:`SMTP` instance has the following methods:
    set to appropriate values.
 
    User code does not normally need to call ``auth`` directly, but can instead
-   call the :meth:`login` method, which will try each of the above mechanisms in
-   turn, in the order listed.  ``auth`` is exposed to facilitate the
-   implementation of authentication methods not (or not yet) supported directly
-   by :mod:`smtplib`.
+   call the :meth:`login` method, which will try each of the above mechanisms
+   in turn, in the order listed.  ``auth`` is exposed to facilitate the
+   implementation of authentication methods not (or not yet) supported
+   directly by :mod:`smtplib`.
 
    .. versionadded:: 3.5
 
