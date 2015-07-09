@@ -8,10 +8,10 @@ set BUILDX64=
 set BUILDDOC=
 
 :CheckOpts
-if "%1" EQU "-h" goto Help
-if "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
-if "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
-if "%1" EQU "--doc" (set BUILDDOC=1) && shift && goto CheckOpts
+if "%~1" EQU "-h" goto Help
+if "%~1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
+if "%~1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
+if "%~1" EQU "--doc" (set BUILDDOC=1) && shift && goto CheckOpts
 
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 

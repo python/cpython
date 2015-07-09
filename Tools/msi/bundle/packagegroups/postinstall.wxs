@@ -9,6 +9,7 @@
                         ForcePerMachine="yes"
                         InstallCondition="InstallAllUsers and Include_pip">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="pip_JustForMe"
                         SourceFile="pip.msi"
@@ -17,6 +18,7 @@
                         ForcePerMachine="no"
                         InstallCondition="not InstallAllUsers and Include_pip">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             
             <MsiPackage Id="path_AllUsers"
@@ -26,6 +28,7 @@
                         ForcePerMachine="yes"
                         InstallCondition="InstallAllUsers and PrependPath">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="path_JustForMe"
                         SourceFile="path.msi"
@@ -34,6 +37,7 @@
                         ForcePerMachine="no"
                         InstallCondition="not InstallAllUsers and PrependPath">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             
             <?define CompileAllCommand=-$(var.ShortVersion)$(var.Suffix32) -E -s -Wi "[TargetDir]\Lib\compileall.py" -f -x "bad_coding|badsyntax|site-packages|py2_|lib2to3\\tests|venv\\scripts" "[TargetDir]\Lib"?>

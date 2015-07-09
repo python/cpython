@@ -10,6 +10,7 @@
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="test_py" />
             <ComponentGroupRef Id="test_extensions" />
+            <ComponentRef Id="OptionalFeature" />
         </Feature>
     </Product>
 </Wix>

@@ -10,6 +10,7 @@
                         ForcePerMachine="yes"
                         InstallCondition="InstallAllUsers and Include_doc">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             
             <MsiPackage Id="doc_JustForMe"
@@ -20,6 +21,7 @@
                         ForcePerMachine="no"
                         InstallCondition="not InstallAllUsers and Include_doc">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
         </PackageGroup>
     </Fragment>

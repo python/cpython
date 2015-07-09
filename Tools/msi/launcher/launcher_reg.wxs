@@ -3,7 +3,7 @@
     <Fragment>
         <ComponentGroup Id="launcher_reg">
             <Component Id="file_association" Directory="LauncherInstallDirectory" Guid="{5AF84D9A-D820-456B-B230-6E0105A50276}">
-                <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\Python\PyLauncher\AssociateFiles" Value="1" Type="integer" />
+                <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\Python\PyLauncher" Name="AssociateFiles" Value="1" Type="integer" />
                 
                 <ProgId Id="$(var.TestPrefix)Python.File" Description="!(loc.PythonFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
                     <Extension Id="$(var.FileExtension)" ContentType="text/plain">
