@@ -13,6 +13,7 @@
 <?ifdef IncludeMinGWLib ?>
             <ComponentGroupRef Id="dev_mingw" />
 <?endif ?>
+            <ComponentRef Id="OptionalFeature" />
         </Feature>
     </Product>
 </Wix>

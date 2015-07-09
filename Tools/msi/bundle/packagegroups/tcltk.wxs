@@ -10,6 +10,7 @@
                         EnableFeatureSelection="yes"
                         InstallCondition="InstallAllUsers and Include_tcltk">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="tcltk_AllUsers_pdb"
                         SourceFile="tcltk_pdb.msi"
@@ -19,6 +20,7 @@
                         EnableFeatureSelection="yes"
                         InstallCondition="InstallAllUsers and Include_tcltk and Include_symbols">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="tcltk_AllUsers_d"
                         SourceFile="tcltk_d.msi"
@@ -28,6 +30,7 @@
                         EnableFeatureSelection="yes"
                         InstallCondition="InstallAllUsers and Include_tcltk and Include_debug">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
 
             <MsiPackage Id="tcltk_JustForMe"
@@ -38,6 +41,7 @@
                         EnableFeatureSelection="yes"
                         InstallCondition="not InstallAllUsers and Include_tcltk">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="tcltk_JustForMe_pdb"
                         SourceFile="tcltk_pdb.msi"
@@ -47,6 +51,7 @@
                         EnableFeatureSelection="yes"
                         InstallCondition="not InstallAllUsers and Include_tcltk and Include_symbols">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="tcltk_JustForMe_d"
                         SourceFile="tcltk_d.msi"
@@ -56,6 +61,7 @@
                         EnableFeatureSelection="yes"
                         InstallCondition="not InstallAllUsers and Include_tcltk and Include_debug">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
         </PackageGroup>
     </Fragment>

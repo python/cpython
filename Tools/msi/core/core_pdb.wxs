@@ -8,6 +8,7 @@
         
         <Feature Id="Symbols" AllowAdvertise="no" Title="!(loc.TitlePdb)" Description="!(loc.DescriptionPdb)">
             <ComponentGroupRef Id="core_symbols" />
+            <ComponentRef Id="OptionalFeature" />
         </Feature>
     </Product>
 </Wix>

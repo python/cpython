@@ -10,6 +10,7 @@
                         EnableFeatureSelection="yes"
                         InstallCondition="InstallAllUsers and (Include_exe or Include_launcher or Include_pip)">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="exe_AllUsers_pdb"
                         SourceFile="exe_pdb.msi"
@@ -18,6 +19,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         InstallCondition="InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and Include_symbols">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="exe_AllUsers_d"
                         SourceFile="exe_d.msi"
@@ -26,6 +28,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         InstallCondition="InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and Include_debug">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             
             <MsiPackage Id="exe_JustForMe"
@@ -36,6 +39,7 @@
                         EnableFeatureSelection="yes"
                         InstallCondition="not InstallAllUsers and (Include_exe or Include_launcher or Include_pip)">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="exe_JustForMe_pdb"
                         SourceFile="exe_pdb.msi"
@@ -44,6 +48,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         InstallCondition="not InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and Include_symbols">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
             <MsiPackage Id="exe_JustForMe_d"
                         SourceFile="exe_d.msi"
@@ -52,6 +57,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         InstallCondition="not InstallAllUsers and (Include_exe or Include_launcher or Include_pip) and Include_debug">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
+                <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
         </PackageGroup>
     </Fragment>

@@ -23,6 +23,7 @@
                 
                 <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
                     <RegistryValue Key="InstallPath" Type="string" Value="[InstallDirectory]" KeyPath="no" />
+                    <RegistryValue Key="InstallPath" Name="ExecutablePath" Type="string" Value="[#python.exe]" KeyPath="no" />
                 </RegistryKey>
             </Component>
             <Component Id="pythonw.exe" Directory="InstallDirectory" Guid="$(var.PythonwExeComponentGuid)">
