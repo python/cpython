@@ -580,7 +580,7 @@ class StreamReaderTests(test_utils.TestCase):
 
     @unittest.skipIf(sys.platform == 'win32', "Don't have pipes")
     def test_read_all_from_pipe_reader(self):
-        # See Tulip issue 168.  This test is derived from the example
+        # See asyncio issue 168.  This test is derived from the example
         # subprocess_attach_read_pipe.py, but we configure the
         # StreamReader's limit so that twice it is less than the size
         # of the data writter.  Also we must explicitly attach a child
@@ -621,7 +621,7 @@ os.close(fd)
         self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
 
-        # Tulip issue #184: Ensure that StreamReaderProtocol constructor
+        # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         reader = asyncio.StreamReader()
         self.assertIs(reader._loop, self.loop)
@@ -630,7 +630,7 @@ os.close(fd)
         self.addCleanup(asyncio.set_event_loop, None)
         asyncio.set_event_loop(self.loop)
 
-        # Tulip issue #184: Ensure that StreamReaderProtocol constructor
+        # asyncio issue #184: Ensure that StreamReaderProtocol constructor
         # retrieves the current loop if the loop parameter is not set
         reader = mock.Mock()
         protocol = asyncio.StreamReaderProtocol(reader)

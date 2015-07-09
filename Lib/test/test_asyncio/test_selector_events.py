@@ -348,7 +348,7 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
             self.loop._sock_connect.call_args[0])
 
     def test_sock_connect_timeout(self):
-        # Tulip issue #205: sock_connect() must unregister the socket on
+        # asyncio issue #205: sock_connect() must unregister the socket on
         # timeout error
 
         # prepare mocks
