@@ -266,7 +266,7 @@ class SubprocessMixin:
         self.assertTrue(transport.resume_reading.called)
 
     def test_stdin_not_inheritable(self):
-        # Tulip issue #209: stdin must not be inheritable, otherwise
+        # asyncio issue #209: stdin must not be inheritable, otherwise
         # the Process.communicate() hangs
         @asyncio.coroutine
         def len_message(message):
