@@ -65,7 +65,7 @@ but when it is set to the correct value, the header does not have to
 be patched up.
 It is best to first set all parameters, perhaps possibly the
 compression type, and then write audio frames using writeframesraw.
-When all frames have been written, either call writeframes('') or
+When all frames have been written, either call writeframes(b'') or
 close() to patch up the sizes in the header.
 The close() method is called automatically when the class instance
 is destroyed.
