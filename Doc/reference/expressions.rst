@@ -1381,7 +1381,7 @@ precedence and have a left-to-right chaining feature as described in the
 
 .. [#] While comparisons between strings make sense at the byte level, they may
    be counter-intuitive to users.  For example, the strings ``"\u00C7"`` and
-   ``"\u0327\u0043"`` compare differently, even though they both represent the
+   ``"\u0043\u0327"`` compare differently, even though they both represent the
    same unicode character (LATIN CAPITAL LETTER C WITH CEDILLA).  To compare
    strings in a human recognizable way, compare using
    :func:`unicodedata.normalize`.
