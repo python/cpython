@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18622: unittest.mock.mock_open().reset_mock would recurse infinitely.
+  Patch from Nicola Palumbo and Laurent De Buyst.
+
 - Issue #24608: chunk.Chunk.read() now always returns bytes, not str.
 
 - Issue #18684: Fixed reading out of the buffer in the re module.

@@ -237,6 +237,9 @@ class MockTest(unittest.TestCase):
         # used to cause recursion
         mock.reset_mock()
 
+    def test_reset_mock_on_mock_open_issue_18622(self):
+        a = mock.mock_open()
+        a.reset_mock()
 
     def test_call(self):
         mock = Mock()
