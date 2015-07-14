@@ -506,7 +506,8 @@ class NonCallableMock(Base):
         if delegated is None:
             return self._mock_side_effect
         sf = delegated.side_effect
-        if sf is not None and not callable(sf) and not isinstance(sf, _MockIter):
+        if (sf is not None and not callable(sf)
+                and not isinstance(sf, _MockIter) and not _is_exception(sf)):
             sf = _MockIter(sf)
             delegated.side_effect = sf
         return sf
