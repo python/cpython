@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18622: unittest.mock.mock_open().reset_mock would recurse infinitely.
+  Patch from Nicola Palumbo and Laurent De Buyst.
+
 - Issue #24426: Fast searching optimization in regular expressions now works
   for patterns that starts with capturing groups.  Fast searching optimization
   now can't be disabled at compile time.
