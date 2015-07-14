@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23661: unittest.mock side_effects can now be exceptions again. This
+  was a regression vs Python 3.4. Patch from Ignacio Rossi
+
 - Issue #24608: chunk.Chunk.read() now always returns bytes, not str.
 
 - Issue #18684: Fixed reading out of the buffer in the re module.

@@ -173,6 +173,15 @@ class MockTest(unittest.TestCase):
         self.assertEqual([mock(), mock(), mock()], [3, 2, 1],
                           "callable side effect not used correctly")
 
+    def test_autospec_side_effect_exception(self):
+        # Test for issue 23661
+        def f():
+            pass
+
+        mock = create_autospec(f)
+        mock.side_effect = ValueError('Bazinga!')
+        self.assertRaisesRegex(ValueError, 'Bazinga!', mock)
+
     @unittest.skipUnless('java' in sys.platform,
                           'This test only applies to Jython')
     def test_java_exception_side_effect(self):
