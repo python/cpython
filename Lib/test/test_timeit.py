@@ -88,8 +88,8 @@ class TestTimeit(unittest.TestCase):
         self.assertRaises(SyntaxError, timeit.Timer, setup='continue')
         self.assertRaises(SyntaxError, timeit.Timer, setup='from timeit import *')
 
-    fake_setup = "import timeit; timeit._fake_timer.setup()"
-    fake_stmt = "import timeit; timeit._fake_timer.inc()"
+    fake_setup = "import timeit\ntimeit._fake_timer.setup()"
+    fake_stmt = "import timeit\ntimeit._fake_timer.inc()"
 
     def fake_callable_setup(self):
         self.fake_timer.setup()
@@ -269,6 +269,12 @@ class TestTimeit(unittest.TestCase):
     def test_main_setup(self):
         s = self.run_main(seconds_per_increment=2.0,
                 switches=['-n35', '-s', 'print("CustomSetup")'])
+        self.assertEqual(s, "CustomSetup\n" * 3 +
+                "35 loops, best of 3: 2 sec per loop\n")
+
+    def test_main_multiple_setups(self):
+        s = self.run_main(seconds_per_increment=2.0,
+                switches=['-n35', '-s', 'a = "CustomSetup"', '-s', 'print(a)'])
         self.assertEqual(s, "CustomSetup\n" * 3 +
                 "35 loops, best of 3: 2 sec per loop\n")
 
