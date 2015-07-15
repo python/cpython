@@ -109,19 +109,18 @@ class Timer:
         if isinstance(setup, str):
             # Check that the code can be compiled outside a function
             compile(setup, dummy_src_name, "exec")
+            stmtprefix = setup + '\n'
             setup = reindent(setup, 4)
         elif callable(setup):
             local_ns['_setup'] = setup
             init += ', _setup=_setup'
+            stmtprefix = ''
             setup = '_setup()'
         else:
             raise ValueError("setup is neither a string nor callable")
         if isinstance(stmt, str):
             # Check that the code can be compiled outside a function
-            if isinstance(setup, str):
-                compile(setup + '\n' + stmt, dummy_src_name, "exec")
-            else:
-                compile(stmt, dummy_src_name, "exec")
+            compile(stmtprefix + stmt, dummy_src_name, "exec")
             stmt = reindent(stmt, 8)
         elif callable(stmt):
             local_ns['_stmt'] = stmt
