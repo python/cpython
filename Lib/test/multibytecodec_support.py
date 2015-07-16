@@ -270,6 +270,13 @@ class TestBase:
 
                 self.assertEqual(ostream.getvalue(), self.tstring[0])
 
+    def test_streamwriter_reset_no_pending(self):
+        # Issue #23247: Calling reset() on a fresh StreamWriter instance
+        # (without pending data) must not crash
+        stream = BytesIO()
+        writer = self.writer(stream)
+        writer.reset()
+
 
 class TestBase_Mapping(unittest.TestCase):
     pass_enctest = []
