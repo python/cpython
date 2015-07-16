@@ -668,7 +668,8 @@ set_merge(PySetObject *so, PyObject *otherset)
     }
 
     /* We can't assure there are no duplicates, so do normal insertions */
-    for (i = 0; i <= other->mask; i++, other_entry++) {
+    for (i = 0; i <= other->mask; i++) {
+        other_entry = &other->table[i];
         key = other_entry->key;
         if (key != NULL && key != dummy) {
             if (set_add_entry(so, key, other_entry->hash))
