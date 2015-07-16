@@ -81,10 +81,10 @@
         <DefineConstants Condition="'$(CRTRedist)' != ''">
             $(DefineConstants);CRTRedist=$(CRTRedist);
         </DefineConstants>
-        <DefineConstants Condition="$(Configuration) != 'Debug'">
+        <DefineConstants Condition="$(UseTestMarker) != 'true'">
             $(DefineConstants);TestPrefix=;FileExtension=py;
         </DefineConstants>
-        <DefineConstants Condition="$(Configuration) == 'Debug'">
+        <DefineConstants Condition="$(UseTestMarker) == 'true'">
             $(DefineConstants);TestPrefix=x;FileExtension=px;
         </DefineConstants>
         <DefineConstants Condition="$(Platform) != 'x64'">

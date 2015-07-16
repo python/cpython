@@ -9,7 +9,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
                         EnableFeatureSelection="yes"
-                        InstallCondition="InstallAllUsers and Include_launcher" />
+                        InstallCondition="(InstallAllUsers or InstallLauncherAllUsers) and Include_launcher" />
 
             <MsiPackage Id="launcher_JustForMe"
                         SourceFile="launcher.msi"
@@ -17,7 +17,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
                         EnableFeatureSelection="yes"
-                        InstallCondition="not InstallAllUsers and Include_launcher" />
+                        InstallCondition="not (InstallAllUsers or InstallLauncherAllUsers) and Include_launcher" />
         </PackageGroup>
     </Fragment>
 </Wix>
