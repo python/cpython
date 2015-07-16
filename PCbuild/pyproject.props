@@ -1,0 +1,159 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup Label="Globals">
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
+    <OutDir>$(BuildPath)</OutDir>
+    <IntDir>$(SolutionDir)obj\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)' == 'PGInstrument' or '$(Configuration)' == 'PGUpdate'">$(SolutionDir)obj\$(ArchName)\$(ProjectName)\</IntDir>
+    <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
+    <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
+    <GenerateManifest Condition="'$(GenerateManifest)' == ''">false</GenerateManifest>
+    <EmbedManifest Condition="'$(EmbedManifest)' == ''">false</EmbedManifest>
+    <!-- For VS2008, we have to embed the manifest to be able to run -->
+    <GenerateManifest Condition="'$(PlatformToolset)' == 'v90'">true</GenerateManifest>
+    <EmbedManifest Condition="'$(PlatformToolset)' == 'v90'">true</EmbedManifest>
+    <SupportPGO Condition="'$(SupportPGO)' == ''">true</SupportPGO>
+    <SupportSigning Condition="'$(SupportSigning)' == ''">true</SupportSigning>
+    <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>
+    <SupportSigning Condition="'$(ConfigurationType)' == 'StaticLibrary'">false</SupportSigning>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <_DebugPreprocessorDefinition>NDEBUG;</_DebugPreprocessorDefinition>
+    <_DebugPreprocessorDefinition Condition="$(Configuration) == 'Debug'">_DEBUG;</_DebugPreprocessorDefinition>
+    <_PlatformPreprocessorDefinition>_WIN32;</_PlatformPreprocessorDefinition>
+    <_PlatformPreprocessorDefinition Condition="$(Platform) == 'x64'">_WIN64;_M_X64;</_PlatformPreprocessorDefinition>
+    <_PydPreprocessorDefinition Condition="$(TargetExt) == '.pyd'">Py_BUILD_CORE_MODULE;</_PydPreprocessorDefinition>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+
+      <Optimization>MaxSpeed</Optimization>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <StringPooling>true</StringPooling>
+      <ExceptionHandling></ExceptionHandling>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <CompileAs>Default</CompileAs>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <WholeProgramOptimization>true</WholeProgramOptimization>
+    </ClCompile>
+    <ClCompile Condition="$(Configuration) == 'Debug'">
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <AdditionalLibraryDirectories>$(OutDir);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ProgramDatabaseFile>$(OutDir)$(TargetName).pdb</ProgramDatabaseFile>
+      <SubSystem>Windows</SubSystem>
+      <RandomizedBaseAddress>true</RandomizedBaseAddress>
+      <DataExecutionPrevention>true</DataExecutionPrevention>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <IgnoreSpecificDefaultLibraries>LIBC;%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
+      <TargetMachine>MachineX86</TargetMachine>
+      <TargetMachine Condition="'$(Platform)' == 'x64'">MachineX64</TargetMachine>
+      <ProfileGuidedDatabase Condition="$(SupportPGO)">$(OutDir)$(TargetName).pgd</ProfileGuidedDatabase>
+      <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">PGInstrument</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">PGUpdate</LinkTimeCodeGeneration>
+    </Link>
+    <Lib>
+      <LinkTimeCodeGeneration Condition="$(Configuration) == 'Release'">true</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGInstrument'">true</LinkTimeCodeGeneration>
+      <LinkTimeCodeGeneration Condition="$(SupportPGO) and $(Configuration) == 'PGUpdate'">true</LinkTimeCodeGeneration>
+    </Lib>
+    <ResourceCompile>
+      <AdditionalIncludeDirectories>$(PySourcePath)PC;$(PySourcePath)Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>$(_DebugPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <Culture>0x0409</Culture>
+    </ResourceCompile>
+    <Midl>
+      <PreprocessorDefinitions>$(_DebugPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MkTypLibCompatible>true</MkTypLibCompatible>
+      <SuppressStartupBanner>true</SuppressStartupBanner>
+      <TargetEnvironment>Win32</TargetEnvironment>
+      <TargetEnvironment Condition="'$(Platform)' == 'x64'">X64</TargetEnvironment>
+      <TypeLibraryName>$(OutDir)wininst.tlb</TypeLibraryName>
+      <HeaderFileName>
+      </HeaderFileName>
+    </Midl>
+  </ItemDefinitionGroup>
+
+  <Target Name="GeneratePythonNtRcH"
+          BeforeTargets="$(MakeVersionInfoBeforeTarget)"
+          Inputs="$(PySourcePath)Include\patchlevel.h"
+          Outputs="$(PySourcePath)PC\pythonnt_rc$(PyDebugExt).h">
+    <WriteLinesToFile File="$(PySourcePath)PC\pythonnt_rc$(PyDebugExt).h" Overwrite="true" Encoding="ascii"
+                      Lines='/* This file created by python.props /t:GeneratePythonNtRcH */
+#define FIELD3 $(Field3Value)
+#define MS_DLL_ID "$(SysWinVer)"
+#define PYTHON_DLL_NAME "$(PyDllName).dll"
+' />
+    <ItemGroup>
+        <FileWrites Include="$(PySourcePath)PC\pythonnt_rc$(PyDebugExt).h" />
+    </ItemGroup>
+  </Target>
+
+  <UsingTask TaskName="KillPython" TaskFactory="CodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
+    <ParameterGroup>
+      <FileName Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Code Type="Fragment" Language="cs">
+<![CDATA[
+string fullPath = System.IO.Path.GetFullPath(FileName);
+Log.LogMessage("Looking for " + fullPath, MessageImportance.Normal);
+foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses()) {
+    try {
+        Log.LogMessage("Found running process: " + p.MainModule.FileName, MessageImportance.Low);
+        if (fullPath.Equals(System.IO.Path.GetFullPath(p.MainModule.FileName), StringComparison.OrdinalIgnoreCase)) {
+            Log.LogMessage("Terminating " + p.MainModule.FileName, MessageImportance.High);
+            p.Kill();
+        }
+    } catch {
+    }
+}
+]]>
+      </Code>
+    </Task>
+  </UsingTask>
+
+  <Target Name="KillPython" BeforeTargets="PrepareForBuild" Condition="'$(KillPython)' == 'true'">
+    <Message Text="Killing any running python.exe instances..." Importance="high" />
+    <KillPython FileName="$(OutDir)python$(PyDebugExt).exe" />
+  </Target>
+
+  <!--
+  A default target to handle msbuild pcbuild.proj /t:CleanAll.
+
+  Some externals projects don't respond to /t:Clean, so we invoke
+  CleanAll on them when we really want to clean up.
+  -->
+  <Target Name="CleanAll" DependsOnTargets="Clean">
+    <MSBuild Projects="@(ProjectReference->'%(FullPath)')"
+             Properties="Configuration=$(Configuration);Platform=$(Platform)"
+             BuildInParallel="true"
+             StopOnFirstFailure="false"
+             Condition="Exists(%(FullPath))"
+             Targets="CleanAll" />
+  </Target>
+
+  <PropertyGroup Condition="'$(SigningCertificate)' != '' and $(SupportSigning)">
+    <SignToolPath Condition="'$(SignToolPath)' == '' or !Exists($(SignToolPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot81)\bin\x86\signtool.exe</SignToolPath>
+    <SignToolPath Condition="!Exists($(SignToolPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot)\bin\x86\signtool.exe</SignToolPath>
+    <SignToolPath Condition="!Exists($(SignToolPath))">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A@InstallationFolder)\Bin\signtool.exe</SignToolPath>
+    <_SignCommand Condition="Exists($(SignToolPath))">"$(SignToolPath)" sign /q /n "$(SigningCertificate)" /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
+  </PropertyGroup>
+
+  <Target Name="_SignBuild" AfterTargets="AfterBuild" Condition="'$(SigningCertificate)' != '' and $(SupportSigning)">
+    <Error Text="Unable to locate signtool.exe. Set /p:SignToolPath and rebuild" Condition="'$(_SignCommand)' == ''" />
+    <Exec Command='$(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)" || $(_SignCommand) "$(TargetPath)"' ContinueOnError="false" />
+  </Target>
+</Project>

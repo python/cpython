@@ -1,0 +1,112 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Platform Condition="'$(Platform)' == ''">Win32</Platform>
+    <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
+    <!--
+    Use only MSVC 9.0, unless explicitly overridden
+    -->
+    <PlatformToolset Condition="'$(PlatformToolset)' == ''">v90</PlatformToolset>
+
+    <!--
+    Convincing MSVC/MSBuild to prefer our platform names is too difficult,
+    so we define our own constant ArchName and use wherever we need it.
+    -->
+    <ArchName Condition="'$(ArchName)' == '' and $(Platform) == 'x64'">amd64</ArchName>
+    <ArchName Condition="'$(ArchName)' == ''">win32</ArchName>
+    <ArchName Condition="$(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate'">$(ArchName)-pgo</ArchName>
+
+    <!-- Root directory of the repository -->
+    <PySourcePath Condition="'$(PySourcePath)' == ''">$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)\..\))</PySourcePath>
+    <PySourcePath Condition="!HasTrailingSlash($(PySourcePath))">$(PySourcePath)\</PySourcePath>
+
+    <!-- Directory where build outputs are put -->
+    <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCBuild\</BuildPath>
+    <BuildPath Condition="'$(ArchName)' != 'win32'">$(BuildPath)\$(ArchName)\</BuildPath>
+    <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
+
+    <!-- Directories of external projects. tcltk is handled in tcltk.props -->
+    <ExternalsDir>$([System.IO.Path]::GetFullPath(`$(PySourcePath)externals\`))</ExternalsDir>
+    <sqlite3Dir>$(ExternalsDir)sqlite-3.6.21\</sqlite3Dir>
+    <bz2Dir>$(ExternalsDir)bzip2-1.0.6\</bz2Dir>
+    <bsddbDir>$(ExternalsDir)db-4.7.25.0</bsddbDir>
+    <opensslDir>$(ExternalsDir)openssl-1.0.2a\</opensslDir>
+    <nasmDir>$(ExternalsDir)\nasm-2.11.06\</nasmDir>
+
+    <!-- Suffix for all binaries when building for debug -->
+    <PyDebugExt Condition="'$(PyDebugExt)' == '' and $(Configuration) == 'Debug'">_d</PyDebugExt>
+
+    <!-- Full path of the resulting python.exe binary -->
+    <PythonExe Condition="'$(PythonExe)' == ''">$(BuildPath)python$(PyDebugExt).exe</PythonExe>
+
+    <!--
+    Read version information from Include\patchlevel.h. The following properties are set:
+
+        MajorVersionNumber  -   the '3' in '3.5.2a1'
+        MinorVersionNumber  -   the '5' in '3.5.2a1'
+        MicroVersionNumber  -   the '2' in '3.5.2a1'
+        ReleaseSerial       -   the '1' in '3.5.2a1'
+        ReleaseLevelName    -   the 'a1' in '3.5.2a1'
+        PythonVersionNumber -   '3.5.2' for '3.5.2a1'
+        PythonVersion       -   '3.5.2a1'
+        PythonVersionHex    -   0x030502a1 for '3.5.2a1'
+        ReleaseLevelNumber  -   10 for alpha, 11 for beta, 12 for RC (gamma), and 15 for final
+        Field3Value         -   2101 for '3.5.2a1' (== 1000*2 + 10*10 ('a') + 1)
+    -->
+    <_PatchLevelContent>$([System.IO.File]::ReadAllText(`$(PySourcePath)Include\patchlevel.h`))</_PatchLevelContent>
+    <MajorVersionNumber>$([System.Text.RegularExpressions.Regex]::Match($(_PatchLevelContent), `define\s+PY_MAJOR_VERSION\s+(\d+)`).Groups[1].Value)</MajorVersionNumber>
+    <MinorVersionNumber>$([System.Text.RegularExpressions.Regex]::Match($(_PatchLevelContent), `define\s+PY_MINOR_VERSION\s+(\d+)`).Groups[1].Value)</MinorVersionNumber>
+    <MicroVersionNumber>$([System.Text.RegularExpressions.Regex]::Match($(_PatchLevelContent), `define\s+PY_MICRO_VERSION\s+(\d+)`).Groups[1].Value)</MicroVersionNumber>
+    <_ReleaseLevel>$([System.Text.RegularExpressions.Regex]::Match($(_PatchLevelContent), `define\s+PY_RELEASE_LEVEL\s+PY_RELEASE_LEVEL_(\w+)`).Groups[1].Value)</_ReleaseLevel>
+    <ReleaseSerial>$([System.Text.RegularExpressions.Regex]::Match($(_PatchLevelContent), `define\s+PY_RELEASE_SERIAL\s+(\d+)`).Groups[1].Value)</ReleaseSerial>
+    <ReleaseLevelNumber>15</ReleaseLevelNumber>
+    <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'ALPHA'">10</ReleaseLevelNumber>
+    <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'BETA'">11</ReleaseLevelNumber>
+    <ReleaseLevelNumber Condition="$(_ReleaseLevel) == 'GAMMA'">12</ReleaseLevelNumber>
+    <ReleaseLevelName Condition="$(_ReleaseLevel) == 'ALPHA'">a$(ReleaseSerial)</ReleaseLevelName>
+    <ReleaseLevelName Condition="$(_ReleaseLevel) == 'BETA'">b$(ReleaseSerial)</ReleaseLevelName>
+    <ReleaseLevelName Condition="$(_ReleaseLevel) == 'GAMMA'">rc$(ReleaseSerial)</ReleaseLevelName>
+
+    <PythonVersionNumber>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</PythonVersionNumber>
+    <PythonVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)$(ReleaseLevelName)</PythonVersion>
+    <PythonVersionHex>$([msbuild]::BitwiseOr(
+        $([msbuild]::Multiply($(MajorVersionNumber), 16777216)),
+        $([msbuild]::BitwiseOr(
+            $([msbuild]::Multiply($(MinorVersionNumber), 65536)),
+            $([msbuild]::BitwiseOr(
+                $([msbuild]::Multiply($(MicroVersionNumber), 256)),
+                $([msbuild]::BitwiseOr(
+                    $([msbuild]::Multiply($(ReleaseLevelNumber), 16)),
+                    $(ReleaseSerial)
+                ))
+            ))
+        ))
+    ))</PythonVersionHex>
+    <Field3Value>$([msbuild]::Add(
+        $(ReleaseSerial),
+        $([msbuild]::Add(
+            $([msbuild]::Multiply($(ReleaseLevelNumber), 10)),
+            $([msbuild]::Multiply($(MicroVersionNumber), 1000))
+        ))
+    ))</Field3Value>
+
+    <!-- The name of the resulting pythonXY.dll (without the extension) -->
+    <PyDllName>python$(MajorVersionNumber)$(MinorVersionNumber)$(PyDebugExt)</PyDllName>
+
+    <!-- The version and platform tag to include in .pyd filenames -->
+    <PydTag Condition="$(Platform) == 'Win32' or $(Platform) == 'x86'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win32</PydTag>
+    <PydTag Condition="$(Platform) == 'x64'">.cp$(MajorVersionNumber)$(MinorVersionNumber)-win_amd64</PydTag>
+
+    <!-- The version number for sys.winver -->
+    <SysWinVer>$(MajorVersionNumber).$(MinorVersionNumber)</SysWinVer>
+    <SysWinVer Condition="$(Platform) == 'Win32' or $(Platform) == 'x86'">$(SysWinVer)-32</SysWinVer>
+  </PropertyGroup>
+
+  <!-- Displays the calculated version info -->
+  <Target Name="ShowVersionInfo">
+    <Message Importance="high" Text="PythonVersionNumber: $(PythonVersionNumber)" />
+    <Message Importance="high" Text="PythonVersion:       $(PythonVersion)" />
+    <Message Importance="high" Text="$([System.String]::Format(`PythonVersionHex:    0x{0:x}`, $([System.UInt32]::Parse($(PythonVersionHex)))))" />
+    <Message Importance="high" Text="Field3Value:         $(Field3Value)" />
+  </Target>
+</Project>

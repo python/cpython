@@ -51,6 +51,9 @@ if ERRORLEVEL 9009 (
 
 echo.Fetching external libraries...
 
+rem When updating these versions, remember to update the relevant property
+rem files in both this dir and PC\VS9.0
+
 for %%e in (
             bzip2-1.0.6
             db-4.7.25.0

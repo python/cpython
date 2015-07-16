@@ -8,9 +8,7 @@ from subprocess import Popen, PIPE
 # Skip this test if the _tkinter module wasn't built.
 _tkinter = test_support.import_module('_tkinter')
 
-# Make sure tkinter._fix runs to set up the environment
-tkinter = test_support.import_fresh_module('Tkinter')
-
+import Tkinter as tkinter
 from Tkinter import Tcl
 from _tkinter import TclError
 

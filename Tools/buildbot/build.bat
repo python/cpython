@@ -15,4 +15,4 @@ call "%~dp0clean.bat" %*
 @rem 4) re-comment, commit and push again
 
 @rem Do the build
-call "%~dp0..\..\PCbuild\build.bat" -e -d -k %*
+call "%~dp0..\..\PCbuild\build.bat" -v -e -d -k %*

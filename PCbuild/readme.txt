@@ -1,15 +1,29 @@
-Building Python using VC++ 9.0
-------------------------------
+Building Python using MSVC 9.0 via MSBuild
+------------------------------------------
 
 This directory is used to build Python for Win32 and x64 platforms, e.g.
-Windows 2000, XP, Vista and Windows Server 2008.  In order to build 32-bit
-debug and release executables, Microsoft Visual C++ 2008 Express Edition is
-required at the very least.  In order to build 64-bit debug and release
-executables, Visual Studio 2008 Standard Edition is required at the very
-least.  In order to build all of the above, as well as generate release builds
-that make use of Profile Guided Optimisation (PG0), Visual Studio 2008
-Professional Edition is required at the very least.  The official Python
-releases are built with this version of Visual Studio.
+Windows 2000 and later.  In order to use the project files in this
+directory, you must have installed the MSVC 9.0 compilers, the v90
+PlatformToolset project files for MSBuild, and MSBuild version 4.0 or later.
+The easiest way to make sure you have all of these components is to install
+Visual Studio 2008 and Visual Studio 2010.  Another configuration proven
+to work is Visual Studio 2008, Windows SDK 7.1, and Visual Studio 2013.
+
+If you only have Visual Studio 2008 available, use the project files in
+../PC/VS9.0 which are fully supported and specifically for VS 2008.
+
+If you do not have Visual Studio 2008 available, you can use these project
+files to build using a different version of MSVC.  For example, use
+
+   PCbuild\build.bat "/p:PlatformToolset=v100"
+
+to build using MSVC10 (Visual Studio 2010).
+
+***WARNING***
+Building Python 2.7 for Windows using any toolchain that doesn't link
+against MSVCRT90.dll is *unsupported* as the resulting python.exe will
+not be able to use precompiled extension modules that do link against
+MSVCRT90.dll.
 
 For other Windows platforms and compilers, see ../PC/readme.txt.
 

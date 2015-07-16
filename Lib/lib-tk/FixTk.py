@@ -49,7 +49,10 @@ else:
 prefix = os.path.join(sys.prefix,"tcl")
 if not os.path.exists(prefix):
     # devdir/externals/tcltk/lib
-    prefix = os.path.join(sys.prefix, "externals", "tcltk", "lib")
+    tcltk = 'tcltk'
+    if sys.maxsize > 2**31 - 1:
+        tcltk = 'tcltk64'
+    prefix = os.path.join(sys.prefix, "externals", tcltk, "lib")
     prefix = os.path.abspath(prefix)
 # if this does not exist, no further search is needed
 if os.path.exists(prefix):

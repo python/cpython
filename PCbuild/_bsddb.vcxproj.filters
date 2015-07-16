@@ -1,0 +1,702 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{82655853-5a03-4804-a421-44510138071e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{c52be92f-9033-4a0f-bf55-1b65c7e7b015}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Berkeley DB 4.7.25 Source Files">
+      <UniqueIdentifier>{49074366-917a-4969-88c7-0f6ec09c7021}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Modules\bsddb.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Modules\_bsddb.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\crypto\aes_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_compact.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_compare.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_conv.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_curadj.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_cursor.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_delete.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_open.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_put.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_rec.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_reclaim.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_recno.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_rsearch.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_search.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_split.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_upgrade.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\bt_verify.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\btree\btree_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\crdel_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\crdel_rec.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\crypto\crypto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_am.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\db_byteorder.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_cam.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_cds.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_conv.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_dispatch.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_dup.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\db_err.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\db_getlong.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\db_idspace.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_iface.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_join.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\db_log2.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_meta.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_open.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_overflow.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_ovfl_vrfy.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_pr.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_rec.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_reclaim.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_remove.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_rename.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_ret.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_setid.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_setlsn.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\db_shash.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_stati.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_truncate.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_upg.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_upg_opd.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_vrfy.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\db\db_vrfyutil.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\dbm\dbm.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg_rec.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg_util.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\dbt.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_alloc.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_config.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_failchk.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_file.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_globals.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_name.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_open.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_recover.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_region.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_register.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_sig.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\env\env_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\fileops\fileops_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\fileops\fop_basic.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\fileops\fop_rec.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\fileops\fop_util.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_conv.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_dup.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_func.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_meta.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_open.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_page.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_rec.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_reclaim.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_upgrade.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hash\hash_verify.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hmac\hmac.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hsearch\hsearch.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock_deadlock.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock_failchk.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock_id.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock_list.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock_region.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock_timer.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\lock\lock_util.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\log\log.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\log\log_archive.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\log\log_compare.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\log\log_debug.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\log\log_get.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\log\log_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\log\log_put.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\log\log_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\mkpath.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_alloc.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_bh.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_fget.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_fmethod.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_fopen.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_fput.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_fset.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_mvcc.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_region.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_register.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_resize.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_sync.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mp\mp_trickle.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\crypto\mersenne\mt19937db.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mutex\mut_alloc.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mutex\mut_failchk.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mutex\mut_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mutex\mut_region.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mutex\mut_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\mutex\mut_win32.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\openflags.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_abort.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_abs.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_addrinfo.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_alloc.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_clock.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_config.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_cpu.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_ctime.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_dir.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_errno.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_fid.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_flock.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_fsync.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_getenv.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_handle.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_map.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\os_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_mkdir.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_open.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_pid.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_rename.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_root.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_rpath.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_rw.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_seek.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_stack.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_tmpdir.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_truncate.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os\os_uid.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_unlink.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\os_windows\os_yield.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam_conv.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam_files.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam_open.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam_rec.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam_upgrade.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\qam\qam_verify.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_backup.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_elect.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_lease.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_log.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_record.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_region.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_util.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\rep\rep_verify.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_elect.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_msg.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_net.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_queue.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_sel.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_util.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_windows.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\crypto\rijndael\rijndael-alg-fst.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\crypto\rijndael\rijndael-api-fst.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\sequence\seq_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\sequence\sequence.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\hmac\sha1.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\clib\strsep.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn_auto.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn_chkpt.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn_failchk.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn_method.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn_rec.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn_recover.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn_region.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn_stat.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\txn\txn_util.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\util_cache.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\util_log.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\util_sig.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\xa\xa.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\xa\xa_db.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\xa\xa_map.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="$(bsddbDir)\common\zerofill.c">
+      <Filter>Berkeley DB 4.7.25 Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

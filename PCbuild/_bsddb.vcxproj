@@ -1,0 +1,314 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|Win32">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGInstrument|x64">
+      <Configuration>PGInstrument</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|Win32">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="PGUpdate|x64">
+      <Configuration>PGUpdate</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{B4D38F3F-68FB-42EC-A45D-E00657BB3627}</ProjectGuid>
+    <RootNamespace>_bsddb</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="python.props" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <CharacterSet>NotSet</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration" />
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <PropertyGroup>
+    <TargetExt>.pyd</TargetExt>
+  </PropertyGroup>
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="pyproject.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(bsddbDir)\build_windows;$(bsddbDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <BaseAddress>0x1e180000</BaseAddress>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Modules\bsddb.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Modules\_bsddb.c" />
+    <ClCompile Include="$(bsddbDir)\crypto\aes_method.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_compact.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_compare.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_conv.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_curadj.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_cursor.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_delete.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_method.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_open.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_put.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_rec.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_reclaim.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_recno.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_rsearch.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_search.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_split.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_stat.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_upgrade.c" />
+    <ClCompile Include="$(bsddbDir)\btree\bt_verify.c" />
+    <ClCompile Include="$(bsddbDir)\btree\btree_auto.c" />
+    <ClCompile Include="$(bsddbDir)\db\crdel_auto.c" />
+    <ClCompile Include="$(bsddbDir)\db\crdel_rec.c" />
+    <ClCompile Include="$(bsddbDir)\crypto\crypto.c" />
+    <ClCompile Include="$(bsddbDir)\db\db.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_am.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_auto.c" />
+    <ClCompile Include="$(bsddbDir)\common\db_byteorder.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_cam.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_cds.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_conv.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_dispatch.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_dup.c" />
+    <ClCompile Include="$(bsddbDir)\common\db_err.c" />
+    <ClCompile Include="$(bsddbDir)\common\db_getlong.c" />
+    <ClCompile Include="$(bsddbDir)\common\db_idspace.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_iface.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_join.c" />
+    <ClCompile Include="$(bsddbDir)\common\db_log2.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_meta.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_method.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_open.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_overflow.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_ovfl_vrfy.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_pr.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_rec.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_reclaim.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_remove.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_rename.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_ret.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_setid.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_setlsn.c" />
+    <ClCompile Include="$(bsddbDir)\common\db_shash.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_stati.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_truncate.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_upg.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_upg_opd.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_vrfy.c" />
+    <ClCompile Include="$(bsddbDir)\db\db_vrfyutil.c" />
+    <ClCompile Include="$(bsddbDir)\dbm\dbm.c" />
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg.c" />
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg_auto.c" />
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg_rec.c" />
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg_stat.c" />
+    <ClCompile Include="$(bsddbDir)\dbreg\dbreg_util.c" />
+    <ClCompile Include="$(bsddbDir)\common\dbt.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_alloc.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_config.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_failchk.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_file.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_globals.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_method.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_name.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_open.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_recover.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_region.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_register.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_sig.c" />
+    <ClCompile Include="$(bsddbDir)\env\env_stat.c" />
+    <ClCompile Include="$(bsddbDir)\fileops\fileops_auto.c" />
+    <ClCompile Include="$(bsddbDir)\fileops\fop_basic.c" />
+    <ClCompile Include="$(bsddbDir)\fileops\fop_rec.c" />
+    <ClCompile Include="$(bsddbDir)\fileops\fop_util.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_auto.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_conv.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_dup.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_func.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_meta.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_method.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_open.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_page.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_rec.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_reclaim.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_stat.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_upgrade.c" />
+    <ClCompile Include="$(bsddbDir)\hash\hash_verify.c" />
+    <ClCompile Include="$(bsddbDir)\hmac\hmac.c" />
+    <ClCompile Include="$(bsddbDir)\hsearch\hsearch.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock_deadlock.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock_failchk.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock_id.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock_list.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock_method.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock_region.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock_stat.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock_timer.c" />
+    <ClCompile Include="$(bsddbDir)\lock\lock_util.c" />
+    <ClCompile Include="$(bsddbDir)\log\log.c" />
+    <ClCompile Include="$(bsddbDir)\log\log_archive.c" />
+    <ClCompile Include="$(bsddbDir)\log\log_compare.c" />
+    <ClCompile Include="$(bsddbDir)\log\log_debug.c" />
+    <ClCompile Include="$(bsddbDir)\log\log_get.c" />
+    <ClCompile Include="$(bsddbDir)\log\log_method.c" />
+    <ClCompile Include="$(bsddbDir)\log\log_put.c" />
+    <ClCompile Include="$(bsddbDir)\log\log_stat.c" />
+    <ClCompile Include="$(bsddbDir)\common\mkpath.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_alloc.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_bh.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_fget.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_fmethod.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_fopen.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_fput.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_fset.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_method.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_mvcc.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_region.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_register.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_resize.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_stat.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_sync.c" />
+    <ClCompile Include="$(bsddbDir)\mp\mp_trickle.c" />
+    <ClCompile Include="$(bsddbDir)\crypto\mersenne\mt19937db.c" />
+    <ClCompile Include="$(bsddbDir)\mutex\mut_alloc.c" />
+    <ClCompile Include="$(bsddbDir)\mutex\mut_failchk.c" />
+    <ClCompile Include="$(bsddbDir)\mutex\mut_method.c" />
+    <ClCompile Include="$(bsddbDir)\mutex\mut_region.c" />
+    <ClCompile Include="$(bsddbDir)\mutex\mut_stat.c" />
+    <ClCompile Include="$(bsddbDir)\mutex\mut_win32.c" />
+    <ClCompile Include="$(bsddbDir)\common\openflags.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_abort.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_abs.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_addrinfo.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_alloc.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_clock.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_config.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_cpu.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_ctime.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_dir.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_errno.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_fid.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_flock.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_fsync.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_getenv.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_handle.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_map.c" />
+    <ClCompile Include="$(bsddbDir)\common\os_method.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_mkdir.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_open.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_pid.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_rename.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_root.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_rpath.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_rw.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_seek.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_stack.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_stat.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_tmpdir.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_truncate.c" />
+    <ClCompile Include="$(bsddbDir)\os\os_uid.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_unlink.c" />
+    <ClCompile Include="$(bsddbDir)\os_windows\os_yield.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam_auto.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam_conv.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam_files.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam_method.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam_open.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam_rec.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam_stat.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam_upgrade.c" />
+    <ClCompile Include="$(bsddbDir)\qam\qam_verify.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_auto.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_backup.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_elect.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_lease.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_log.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_method.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_record.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_region.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_stat.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_util.c" />
+    <ClCompile Include="$(bsddbDir)\rep\rep_verify.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_auto.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_elect.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_method.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_msg.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_net.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_queue.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_sel.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_stat.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_util.c" />
+    <ClCompile Include="$(bsddbDir)\repmgr\repmgr_windows.c" />
+    <ClCompile Include="$(bsddbDir)\crypto\rijndael\rijndael-alg-fst.c" />
+    <ClCompile Include="$(bsddbDir)\crypto\rijndael\rijndael-api-fst.c" />
+    <ClCompile Include="$(bsddbDir)\sequence\seq_stat.c" />
+    <ClCompile Include="$(bsddbDir)\sequence\sequence.c" />
+    <ClCompile Include="$(bsddbDir)\hmac\sha1.c" />
+    <ClCompile Include="$(bsddbDir)\clib\strsep.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn_auto.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn_chkpt.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn_failchk.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn_method.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn_rec.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn_recover.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn_region.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn_stat.c" />
+    <ClCompile Include="$(bsddbDir)\txn\txn_util.c" />
+    <ClCompile Include="$(bsddbDir)\common\util_cache.c" />
+    <ClCompile Include="$(bsddbDir)\common\util_log.c" />
+    <ClCompile Include="$(bsddbDir)\common\util_sig.c" />
+    <ClCompile Include="$(bsddbDir)\xa\xa.c" />
+    <ClCompile Include="$(bsddbDir)\xa\xa_db.c" />
+    <ClCompile Include="$(bsddbDir)\xa\xa_map.c" />
+    <ClCompile Include="$(bsddbDir)\common\zerofill.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="pythoncore.vcxproj">
+      <Project>{cf7ac3d1-e2df-41d2-bea6-1e2556cdea26}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

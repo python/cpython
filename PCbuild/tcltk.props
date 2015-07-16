@@ -1,0 +1,43 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="pyproject.props" />
+  <PropertyGroup>
+    <TclMajorVersion>8</TclMajorVersion>
+    <TclMinorVersion>5</TclMinorVersion>
+    <TclPatchLevel>15</TclPatchLevel>
+    <TclRevision>0</TclRevision>
+    <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
+    <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
+    <TkPatchLevel>$(TclPatchLevel)</TkPatchLevel>
+    <TkRevision>$(TclRevision)</TkRevision>
+    <TixMajorVersion>8</TixMajorVersion>
+    <TixMinorVersion>4</TixMinorVersion>
+    <TixPatchLevel>3</TixPatchLevel>
+    <TixRevision>5</TixRevision>
+    <tclDir>$(ExternalsDir)tcl-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\</tclDir>
+    <tkDir>$(ExternalsDir)tk-$(TkMajorVersion).$(TkMinorVersion).$(TkPatchLevel).$(TkRevision)\</tkDir>
+    <tixDir>$(ExternalsDir)tix-$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel).$(TixRevision)\</tixDir>
+    <tcltkDir>$(ExternalsDir)tcltk\</tcltkDir>
+    <tcltkDir Condition="'$(Platform)' == 'x64'">$(ExternalsDir)tcltk64\</tcltkDir>
+    <TclDebugExt Condition="'$(Configuration)' == 'Debug'">g</TclDebugExt>
+    <tclDLLName>tcl$(TclMajorVersion)$(TclMinorVersion)$(TclDebugExt).dll</tclDLLName>
+    <tclLibName>tcl$(TclMajorVersion)$(TclMinorVersion)$(TclDebugExt).lib</tclLibName>
+    <tclShExeName>tclsh$(TclMajorVersion)$(TclMinorVersion)$(TclDebugExt).exe</tclShExeName>
+    <tkDLLName>tk$(TkMajorVersion)$(TkMinorVersion)$(TclDebugExt).dll</tkDLLName>
+    <tkLibName>tk$(TkMajorVersion)$(TkMinorVersion)$(TclDebugExt).lib</tkLibName>
+    <tixDLLName>tix$(TixMajorVersion)$(TixMinorVersion)$(TclDebugExt).dll</tixDLLName>
+    <tixDLLPath>$(tcltkDir)lib\tix$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel)\$(tixDLLName)</tixDLLPath>
+    <tcltkLib>$(tcltkDir)lib\tcl$(TclMajorVersion)$(TclMinorVersion)$(TclDebugExt).lib;$(tcltkDir)lib\tk$(TkMajorVersion)$(TkMinorVersion)$(TclDebugExt).lib</tcltkLib>
+    <TclMachine>IX86</TclMachine>
+    <TclMachine Condition="'$(Platform)' == 'x64'">AMD64</TclMachine>
+    <TclVersions>TCL_MAJOR_VERSION=$(TclMajorVersion) TCL_MINOR_VERSION=$(TclMinorVersion) TCL_PATCH_LEVEL=$(TclPatchLevel)</TclVersions>
+    <TclShortVersions>TCL_MAJOR=$(TclMajorVersion) TCL_MINOR=$(TclMinorVersion) TCL_PATCH=$(TclPatchLevel)</TclShortVersions>
+    <TkVersions>TK_MAJOR_VERSION=$(TkMajorVersion) TK_MINOR_VERSION=$(TkMinorVersion) TK_PATCH_LEVEL=$(TkPatchLevel)</TkVersions>
+
+    <BuildDirTop>Release</BuildDirTop>
+    <BuildDirTop Condition="$(Configuration) == 'Debug'">Debug</BuildDirTop>
+    <BuildDirTop Condition="$(TclMachine) != 'IX86'">$(BuildDirTop)_$(TclMachine)</BuildDirTop>
+    <!-- This completely breaks building Tix for any toolset but v90 and should be fixed -->
+    <BuildDirTop>$(BuildDirTop)_VC9</BuildDirTop>
+  </PropertyGroup>
+</Project>

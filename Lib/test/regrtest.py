@@ -203,6 +203,15 @@ if sys.platform == 'darwin':
         newsoft = min(hard, max(soft, 1024*2048))
         resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
 
+# Windows, Tkinter, and resetting the environment after each test don't
+# mix well.  To alleviate test failures due to Tcl/Tk not being able to
+# find its library, get the necessary environment massage done once early.
+if sys.platform == 'win32':
+    try:
+        import FixTk
+    except Exception:
+        pass
+
 # Test result constants.
 PASSED = 1
 FAILED = 0
