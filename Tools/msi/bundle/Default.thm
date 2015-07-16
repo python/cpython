@@ -21,10 +21,11 @@
 
         <Text X="185" Y="50" Width="-11" Height="50" FontId="3" TabStop="yes">#(loc.InstallMessage)</Text>
 
-        <Button Name="InstallButton" X="175" Y="101" Width="-11" Height="129" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallButton)</Button>
-        <Button Name="InstallCustomButton" X="175" Y="241" Width="-11" Height="59" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallCustomButton)</Button>
+        <Button Name="InstallButton" X="175" Y="101" Width="-11" Height="109" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallButton)</Button>
+        <Button Name="InstallCustomButton" X="175" Y="221" Width="-11" Height="59" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallCustomButton)</Button>
 
         <Checkbox Name="PrependPath" X="185" Y="-13" Width="-100" Height="20" TabStop="yes" FontId="3">#(loc.ShortPrependPathLabel)</Checkbox>
+        <Checkbox Name="InstallLauncherAllUsers" X="185" Y="-33" Width="-100" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.ShortInstallLauncherAllUsersLabel)</Checkbox>
 
         <Button Name="InstallCancelButton" X="-11" Y="-11" Width="75" Height="23" TabStop="yes" FontId="0">#(loc.CancelButton)</Button>
     </Page>
@@ -43,7 +44,7 @@
         <Text X="185" Y="11" Width="-11" Height="32" FontId="1" DisablePrefix="yes">#(loc.InstallHeader)</Text>
         <Image X="0" Y="0" Width="162" Height="352" ImageFile="SideBar.png"/>
 
-        <Button Name="InstallSimpleButton" X="175" Y="101" Width="-11" Height="59" TabStop="yes" FontId="3" HideWhenDisabled="yes" HexStyle="0xF">#(loc.InstallSimpleButton)</Button>
+        <Button Name="InstallSimpleButton" X="175" Y="101" Width="-11" Height="129" TabStop="yes" FontId="3" HideWhenDisabled="yes" HexStyle="0xF">#(loc.InstallSimpleButton)</Button>
 
         <Button Name="InstallCancelButton" X="-11" Y="-11" Width="75" Height="23" TabStop="yes" FontId="0">#(loc.CancelButton)</Button>
     </Page>
@@ -63,7 +64,8 @@
         <Checkbox Name="Include_test" X="185" Y="186" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_testLabel)</Checkbox>
         <Text X="205" Y="206" Width="-11" Height="20" TabStop="no" FontId="5">#(loc.Include_testHelpLabel)</Text>
 
-        <Checkbox Name="Include_launcher" X="185" Y="231" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_launcherLabel)</Checkbox>
+        <Checkbox Name="Include_launcher" X="185" Y="231" Width="100" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_launcherLabel)</Checkbox>
+        <Checkbox Name="CustomInstallLauncherAllUsers" X="285" Y="231" Width="-11" Height="20" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.InstallLauncherAllUsersLabel)</Checkbox>
         <Text X="205" Y="251" Width="-11" Height="20" TabStop="no" FontId="5">#(loc.Include_launcherHelpLabel)</Text>
 
         <Button Name="Custom1BackButton" X="185" Y="-11" Width="75" Height="23" TabStop="yes" FontId="0">#(loc.CustomBackButton)</Button>
