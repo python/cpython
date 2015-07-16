@@ -88,7 +88,7 @@
     
     <Target Name="BuildLauncher" BeforeTargets="BeforeBuild" Condition="'$(RebuildAll)' != 'false'">
         <!-- Build the launcher MSI using Exec rather than MSBuild -->
-        <Exec Command='msbuild ..\launcher\launcher.wixproj /p:Platform=x86 /p:OutputPath="$(BuildPath.TrimEnd(`\`))" /p:OutputSuffix=$(Platform) /p:BuildForRelease=$(BuildForRelease)'
+        <Exec Command='msbuild ..\launcher\launcher.wixproj /p:Platform=x86 /p:OutputPath="$(BuildPath.TrimEnd(`\`))" /p:OutputSuffix=$(Platform) /p:BuildForRelease=$(BuildForRelease) /p:UseTestMarker=$(UseTestMarker)'
               ContinueOnError="false" />
     </Target>
     

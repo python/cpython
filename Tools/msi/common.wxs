@@ -103,7 +103,7 @@
     <Fragment>
         <DirectoryRef Id="TARGETDIR">
             <Directory Id="ProgramMenuFolder">
-                <Directory Id="MenuDir" Name="!(loc.ProductName)" />
+                <Directory Id="MenuDir" Name="$(var.TestPrefix)!(loc.ProductName)" />
             </Directory>
         </DirectoryRef>
     </Fragment>
