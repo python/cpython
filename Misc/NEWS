@@ -12,6 +12,8 @@ Core and Builtins
 
 - Issue #24569: Make PEP 448 dictionary evaluation more consistent.
 
+- Issue #24583: Fix crash when set is mutated while being updated.
+
 - Issue #24407: Fix crash when dict is mutated while being updated.
 
 Library
