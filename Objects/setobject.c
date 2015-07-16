@@ -127,7 +127,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 static int set_table_resize(PySetObject *, Py_ssize_t);
 
 static int
-set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
+_set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
     setentry *table = so->table;
     setentry *freeslot;
@@ -162,7 +162,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
             if (cmp < 0)                                          /* unlikely */
                 return -1;
             if (table != so->table || entry->key != startkey)     /* unlikely */
-                return set_add_entry(so, key, hash);
+                return _set_add_entry(so, key, hash);
             if (cmp > 0)                                          /* likely */
                 goto found_active;
             mask = so->mask;                 /* help avoid a register spill */
@@ -190,7 +190,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                     if (cmp < 0)
                         return -1;
                     if (table != so->table || entry->key != startkey)
-                        return set_add_entry(so, key, hash);
+                        return _set_add_entry(so, key, hash);
                     if (cmp > 0)
                         goto found_active;
                     mask = so->mask;
@@ -211,14 +211,12 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
   found_unused_or_dummy:
     if (freeslot == NULL)
         goto found_unused;
-    Py_INCREF(key);
     so->used++;
     freeslot->key = key;
     freeslot->hash = hash;
     return 0;
 
   found_unused:
-    Py_INCREF(key);
     so->fill++;
     so->used++;
     entry->key = key;
@@ -229,6 +227,16 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 
   found_active:
     return 0;
+}
+
+static int
+set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
+{
+    Py_INCREF(key);
+    if (!_set_add_entry(so, key, hash))
+        return 0;
+    Py_DECREF(key);
+    return -1;
 }
 
 /*
