@@ -130,6 +130,9 @@ of available options is shown below.
 +---------------------------+--------------------------------------+--------------------------+
 | Include_launcher          | Install :ref:`launcher`.             | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
+| InstallLauncherAllUsers   | Installs :ref:`launcher` for all     | 1                        |
+|                           | users.                               |                          |
++---------------------------+--------------------------------------+--------------------------+
 | Include_lib               | Install standard library and         | 1                        |
 |                           | extension modules                    |                          |
 +---------------------------+--------------------------------------+--------------------------+
@@ -145,6 +148,9 @@ of available options is shown below.
 +---------------------------+--------------------------------------+--------------------------+
 | SimpleInstall             | Disable most install UI              | 0                        |
 +---------------------------+--------------------------------------+--------------------------+
+| SimpleInstallDescription  | A custom message to display when the | (empty)                  |
+|                           | simplified install UI is used.       |                          |
++---------------------------+--------------------------------------+--------------------------+
 
 For example, to silently install a default, system-wide Python installation,
 you could use the following command (from an elevated command prompt)::
@@ -152,9 +158,11 @@ you could use the following command (from an elevated command prompt)::
     python-3.5.0.exe /quiet InstallAllUsers=1 PrependPath=1 Include_test=0
 
 To allow users to easily install a personal copy of Python without the test
-suite, you could provide a shortcut with the following command::
+suite, you could provide a shortcut with the following command. This will
+display a simplified initial page and disallow customization::
 
-    python-3.5.0.exe /passive InstallAllUsers=0 Include_launcher=0 Include_test=0 SimpleInstall=1
+    python-3.5.0.exe InstallAllUsers=0 Include_launcher=0 Include_test=0
+        SimpleInstall=1 SimpleInstallDescription="Just for me, no test suite."
 
 (Note that omitting the launcher also omits file associations, and is only
 recommended for per-user installs when there is also a system-wide installation

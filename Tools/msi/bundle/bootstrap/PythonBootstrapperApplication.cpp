@@ -87,11 +87,13 @@ enum CONTROL_ID {
     ID_INSTALL_UPGRADE_BUTTON,
     ID_INSTALL_UPGRADE_CUSTOM_BUTTON,
     ID_INSTALL_CANCEL_BUTTON,
-    
+    ID_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX,
+
     // Customize Page
     ID_TARGETDIR_EDITBOX,
     ID_CUSTOM_ASSOCIATE_FILES_CHECKBOX,
     ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX,
+    ID_CUSTOM_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX,
     ID_CUSTOM_COMPILE_ALL_CHECKBOX,
     ID_CUSTOM_BROWSE_BUTTON,
     ID_CUSTOM_BROWSE_BUTTON_LABEL,
@@ -150,10 +152,12 @@ static THEME_ASSIGN_CONTROL_ID CONTROL_ID_NAMES[] = {
     { ID_INSTALL_UPGRADE_BUTTON, L"InstallUpgradeButton" },
     { ID_INSTALL_UPGRADE_CUSTOM_BUTTON, L"InstallUpgradeCustomButton" },
     { ID_INSTALL_CANCEL_BUTTON, L"InstallCancelButton" },
+    { ID_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX, L"InstallLauncherAllUsers" },
 
     { ID_TARGETDIR_EDITBOX, L"TargetDir" },
     { ID_CUSTOM_ASSOCIATE_FILES_CHECKBOX, L"AssociateFiles" },
     { ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX, L"InstallAllUsers" },
+    { ID_CUSTOM_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX, L"CustomInstallLauncherAllUsers" },
     { ID_CUSTOM_COMPILE_ALL_CHECKBOX, L"CompileAll" },
     { ID_CUSTOM_BROWSE_BUTTON, L"CustomBrowseButton" },
     { ID_CUSTOM_BROWSE_BUTTON_LABEL, L"CustomBrowseButtonLabel" },
@@ -261,10 +265,11 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         LPWSTR defaultDir = nullptr;
         LPWSTR targetDir = nullptr;
         LONGLONG elevated, crtInstalled, installAllUsers;
-        BOOL checked;
+        BOOL checked, launcherChecked;
         WCHAR wzPath[MAX_PATH] = { };
         BROWSEINFOW browseInfo = { };
         PIDLIST_ABSOLUTE pidl = nullptr;
+        DWORD pageId;
         HRESULT hr = S_OK;
 
         switch(id) {
@@ -278,7 +283,7 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         case ID_INSTALL_BUTTON:
             SavePageSettings();
 
-            if (!QueryElevateForCrtInstall()) {
+            if (!WillElevate() && !QueryElevateForCrtInstall()) {
                 break;
             }
 
@@ -344,18 +349,32 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
                 ReleaseStr(targetDir);
             }
 
-            checked = ThemeIsControlChecked(_theme, ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX);
-            if (!checked && !QueryElevateForCrtInstall()) {
+            if (!WillElevate() && !QueryElevateForCrtInstall()) {
                 break;
             }
 
             OnPlan(_command.action);
             break;
 
+        case ID_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX:
+            checked = ThemeIsControlChecked(_theme, ID_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX);
+            _engine->SetVariableNumeric(L"InstallLauncherAllUsers", checked);
+
+            ThemeControlElevates(_theme, ID_INSTALL_BUTTON, WillElevate());
+            break;
+
+        case ID_CUSTOM_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX:
+            checked = ThemeIsControlChecked(_theme, ID_CUSTOM_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX);
+            _engine->SetVariableNumeric(L"InstallLauncherAllUsers", checked);
+
+            ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, WillElevate());
+            break;
+
         case ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX:
-            hr = BalGetNumericVariable(L"WixBundleElevated", &elevated);
             checked = ThemeIsControlChecked(_theme, ID_CUSTOM_INSTALL_ALL_USERS_CHECKBOX);
-            ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, checked && (FAILED(hr) || !elevated));
+            _engine->SetVariableNumeric(L"InstallAllUsers", checked);
+
+            ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, WillElevate());
             ThemeControlEnable(_theme, ID_CUSTOM_BROWSE_BUTTON_LABEL, !checked);
             if (checked) {
                 _engine->SetVariableNumeric(L"CompileAll", 1);
@@ -416,6 +435,7 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
         case ID_MODIFY_BUTTON:
             // Some variables cannot be modified
             _engine->SetVariableString(L"InstallAllUsersState", L"disable");
+            _engine->SetVariableString(L"InstallLauncherAllUsersState", L"disable");
             _engine->SetVariableString(L"TargetDirState", L"disable");
             _engine->SetVariableString(L"CustomBrowseButtonState", L"disable");
             _modifying = TRUE;
@@ -437,35 +457,36 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
 
     void InstallPage_Show() {
         // Ensure the All Users install button has a UAC shield
-        LONGLONG elevated, installAll;
-
-        if (FAILED(BalGetNumericVariable(L"WixBundleElevated", &elevated))) {
-            elevated = 0;
-        }
-
-
-        if (SUCCEEDED(BalGetNumericVariable(L"InstallAllUsers", &installAll)) && installAll && !elevated) {
-            ThemeControlElevates(_theme, ID_INSTALL_BUTTON, TRUE);
-            ThemeControlElevates(_theme, ID_INSTALL_SIMPLE_BUTTON, TRUE);
-            ThemeControlElevates(_theme, ID_INSTALL_UPGRADE_BUTTON, TRUE);
-        }
+        BOOL elevated = WillElevate();
+        ThemeControlElevates(_theme, ID_INSTALL_BUTTON, elevated);
+        ThemeControlElevates(_theme, ID_INSTALL_SIMPLE_BUTTON, elevated);
+        ThemeControlElevates(_theme, ID_INSTALL_UPGRADE_BUTTON, elevated);
     }
 
     void Custom1Page_Show() {
+        LONGLONG installLauncherAllUsers;
+
+        if (FAILED(BalGetNumericVariable(L"InstallLauncherAllUsers", &installLauncherAllUsers))) {
+            installLauncherAllUsers = 0;
+        }
+
+        ThemeSendControlMessage(_theme, ID_CUSTOM_INSTALL_LAUNCHER_ALL_USERS_CHECKBOX, BM_SETCHECK,
+            installLauncherAllUsers ? BST_CHECKED : BST_UNCHECKED, 0);
     }
 
     void Custom2Page_Show() {
         HRESULT hr;
-        LONGLONG installAll, elevated, includeLauncher;
+        LONGLONG installAll, includeLauncher;
         
-        if (FAILED(BalGetNumericVariable(L"WixBundleElevated", &elevated))) {
-            elevated = 0;
+        if (FAILED(BalGetNumericVariable(L"InstallAllUsers", &installAll))) {
+            installAll = 0;
         }
-        if (SUCCEEDED(BalGetNumericVariable(L"InstallAllUsers", &installAll))) {
-            ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, installAll && !elevated);
+
+        if (WillElevate()) {
+            ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, TRUE);
             ThemeShowControl(_theme, ID_CUSTOM_BROWSE_BUTTON_LABEL, SW_HIDE);
         } else {
-            installAll = 0;
+            ThemeControlElevates(_theme, ID_CUSTOM_INSTALL_BUTTON, FALSE);
             ThemeShowControl(_theme, ID_CUSTOM_BROWSE_BUTTON_LABEL, SW_SHOW);
         }
 
@@ -1839,8 +1860,8 @@ private:
             COLORREF fg = fnt->crForeground, bg = fnt->crBackground;
             *brush = fnt->hBackground;
             RemapColor(&fg, &bg, brush);
-            SetTextColor(hDC, fg);
-            SetBkColor(hDC, bg);
+            ::SetTextColor(hDC, fg);
+            ::SetBkColor(hDC, bg);
 
             return TRUE;
         }
@@ -2080,6 +2101,7 @@ private:
 
         for (DWORD i = 0; i < pPage->cControlIndices; ++i) {
             THEME_CONTROL* pControl = _theme->rgControls + pPage->rgdwControlIndices[i];
+            BOOL enableControl = TRUE;
 
             // If this is a named control, try to set its default state.
             if (pControl->sczName && *pControl->sczName) {
@@ -2091,7 +2113,7 @@ private:
 
                     // If the control value isn't set then disable it.
                     if (!SUCCEEDED(hr)) {
-                        ThemeControlEnable(_theme, pControl->wId, FALSE);
+                        enableControl = FALSE;
                     } else {
                         ThemeSendControlMessage(
                             _theme,
@@ -2110,19 +2132,33 @@ private:
                     LPWSTR controlState = nullptr;
                     hr = BalGetStringVariable(controlName, &controlState);
                     if (SUCCEEDED(hr) && controlState && *controlState) {
+                        if (controlState[0] == '[') {
+                            LPWSTR formatted = nullptr;
+                            if (SUCCEEDED(BalFormatString(controlState, &formatted))) {
+                                StrFree(controlState);
+                                controlState = formatted;
+                            }
+                        }
+
                         if (CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, controlState, -1, L"disable", -1)) {
                             BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Disable control %ls", pControl->sczName);
-                            ThemeControlEnable(_theme, pControl->wId, FALSE);
+                            enableControl = FALSE;
                         } else if (CSTR_EQUAL == ::CompareStringW(LOCALE_NEUTRAL, 0, controlState, -1, L"hide", -1)) {
                             BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Hide control %ls", pControl->sczName);
                             // TODO: This doesn't work
                             ThemeShowControl(_theme, pControl->wId, SW_HIDE);
+                        } else {
+                            // An explicit state can override the lack of a
+                            // backing variable.
+                            enableControl = TRUE;
                         }
                     }
                     StrFree(controlState);
                 }
                 StrFree(controlName);
             }
+
+            ThemeControlEnable(_theme, pControl->wId, enableControl);
 
             // Format the text in each of the new page's controls
             if (pControl->sczText && *pControl->sczText) {
@@ -2403,6 +2439,16 @@ private:
                 break;
             }
         }
+    }
+
+    BOOL WillElevate() {
+        static BAL_CONDITION WILL_ELEVATE_CONDITION = {
+            L"not WixBundleElevated and (InstallAllUsers or (InstallLauncherAllUsers and Include_launcher))",
+            L""
+        };
+        BOOL result;
+
+        return SUCCEEDED(BalConditionEvaluate(&WILL_ELEVATE_CONDITION, _engine, &result, nullptr)) && result;
     }
 
     BOOL IsCrtInstalled() {
