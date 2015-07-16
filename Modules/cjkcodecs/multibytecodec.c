@@ -1629,6 +1629,9 @@ mbstreamwriter_reset(MultibyteStreamWriterObject *self)
 {
     PyObject *pwrt;
 
+    if (!self->pending)
+        Py_RETURN_NONE;
+
     pwrt = multibytecodec_encode(self->codec, &self->state,
                     self->pending, NULL, self->errors,
                     MBENC_FLUSH | MBENC_RESET);
