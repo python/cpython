@@ -1742,6 +1742,19 @@ class TestWeirdBugs(unittest.TestCase):
         s.update(range(100))
         list(si)
 
+    def test_merge_and_mutate(self):
+        class X:
+            def __hash__(self):
+                return hash(0)
+            def __eq__(self, o):
+                other.clear()
+                return False
+
+        other = set()
+        other = {X() for i in range(10)}
+        s = {0}
+        s.update(other)
+
 # Application tests (based on David Eppstein's graph recipes ====================================
 
 def powerset(U):
