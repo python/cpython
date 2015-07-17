@@ -476,6 +476,12 @@ def venv(known_paths):
                         system_site = value.lower()
                     elif key == 'home':
                         sys._home = value
+                    elif key == 'applocal' and value.lower() == 'true':
+                        # App-local installs use the exe_dir as prefix,
+                        # not one level higher, and do not use system
+                        # site packages.
+                        site_prefix = exe_dir
+                        system_site = 'false'
 
         sys.prefix = sys.exec_prefix = site_prefix
 
