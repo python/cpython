@@ -117,6 +117,14 @@ Security improvements:
 
 * None yet.
 
+Windows improvements:
+
+* A new installer for Windows has replaced the old MSI. See :ref:`using-on-windows`
+  for more information.
+* Windows builds now use Microsoft Visual C++ 14.0, and extension modules
+  should use the same.
+
+
 Please read on for a comprehensive list of user-facing changes.
 
 
@@ -850,6 +858,8 @@ Changes to Python's build process and to the C API include:
   * :c:func:`PyObject_Calloc`
   * :c:func:`_PyObject_GC_Calloc`
 
+* Windows builds now require Microsoft Visual C++ 14.0, which
+  is available as part of `Visual Studio 2015 <http://www.visualstudio.com>`_.
 
 Deprecated
 ==========
