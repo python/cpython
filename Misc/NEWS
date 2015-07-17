@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21750: mock_open.read_data can now be read from each instance, as it
+  could in Python 3.3.
+
 - Issue #23247: Fix a crash in the StreamWriter.reset() of CJK codecs.
 
 - Issue #18622: unittest.mock.mock_open().reset_mock would recurse infinitely.
