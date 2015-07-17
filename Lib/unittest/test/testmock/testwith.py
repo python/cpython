@@ -141,7 +141,6 @@ class TestMockOpen(unittest.TestCase):
 
     def test_mock_open_context_manager(self):
         mock = mock_open()
-        handle = mock.return_value
         with patch('%s.open' % __name__, mock, create=True):
             with open('foo') as f:
                 f.read()
@@ -149,8 +148,23 @@ class TestMockOpen(unittest.TestCase):
         expected_calls = [call('foo'), call().__enter__(), call().read(),
                           call().__exit__(None, None, None)]
         self.assertEqual(mock.mock_calls, expected_calls)
-        self.assertIs(f, handle)
+        # mock_open.return_value is no longer static, because
+        # readline support requires that it mutate state
 
+    def test_mock_open_context_manager_multiple_times(self):
+        mock = mock_open()
+        with patch('%s.open' % __name__, mock, create=True):
+            with open('foo') as f:
+                f.read()
+            with open('bar') as f:
+                f.read()
+
+        expected_calls = [
+            call('foo'), call().__enter__(), call().read(),
+            call().__exit__(None, None, None),
+            call('bar'), call().__enter__(), call().read(),
+            call().__exit__(None, None, None)]
+        self.assertEqual(mock.mock_calls, expected_calls)
 
     def test_explicit_mock(self):
         mock = MagicMock()

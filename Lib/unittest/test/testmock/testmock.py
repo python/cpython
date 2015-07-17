@@ -1371,6 +1371,11 @@ class MockTest(unittest.TestCase):
             self.assertEqual(m.mock_calls, [call.__int__(), call.__float__()])
             self.assertEqual(m.method_calls, [])
 
+    def test_mock_open_reuse_issue_21750(self):
+        mocked_open = mock.mock_open(read_data='data')
+        f1 = mocked_open('a-name')
+        f2 = mocked_open('another-name')
+        self.assertEqual(f1.read(), f2.read())
 
     def test_mock_parents(self):
         for Klass in Mock, MagicMock:
