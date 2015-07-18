@@ -224,6 +224,8 @@ class ReTests(unittest.TestCase):
         self.checkPatternError('(?P<a>)(?P<a>)',
                                "redefinition of group name 'a' as group 2; "
                                "was group 1")
+        self.checkPatternError('(?P<a>(?P=a))',
+                               "cannot refer to an open group", 10)
         self.checkPatternError('(?Pxy)', 'unknown extension ?Px')
         self.checkPatternError('(?P<a>)(?P=a', 'missing ), unterminated name', 11)
         self.checkPatternError('(?P=', 'missing group name', 4)
