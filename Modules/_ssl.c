@@ -3426,19 +3426,19 @@ PySSL_get_default_verify_paths(PyObject *self)
     PyObject *odir_env = NULL;
     PyObject *odir = NULL;
 
-#define convert(info, target) { \
+#define CONVERT(info, target) { \
         const char *tmp = (info); \
         target = NULL; \
         if (!tmp) { Py_INCREF(Py_None); target = Py_None; } \
         else { target = PyBytes_FromString(tmp); } \
         if (!target) goto error; \
-    } while(0)
+    } 
 
-    convert(X509_get_default_cert_file_env(), ofile_env);
-    convert(X509_get_default_cert_file(), ofile);
-    convert(X509_get_default_cert_dir_env(), odir_env);
-    convert(X509_get_default_cert_dir(), odir);
-#undef convert
+    CONVERT(X509_get_default_cert_file_env(), ofile_env);
+    CONVERT(X509_get_default_cert_file(), ofile);
+    CONVERT(X509_get_default_cert_dir_env(), odir_env);
+    CONVERT(X509_get_default_cert_dir(), odir);
+#undef CONVERT
 
     return Py_BuildValue("NNNN", ofile_env, ofile, odir_env, odir);
 
