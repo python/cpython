@@ -26,20 +26,19 @@ Continue?</String>
   <String Id="ConfirmCancelMessage">Are you sure you want to cancel?</String>
   <String Id="ExecuteUpgradeRelatedBundleMessage">Previous version</String>
   <String Id="HelpHeader">Setup Help</String>
-  <String Id="HelpText">/uninstall
-    Uninstalls Python without prompting for confirmation.
+  <String Id="HelpText">Visit &lt;a href="http://docs.python.org/[ShortVersion]/using/windows.html"&gt;docs.python.org/[ShortVersion]/using/windows.html&lt;/a&gt; for the full list of options, including the ability to enable and disable specific features.
 
-/layout [\[]directory[\]]
-    Downloads all components for offline installation.
+"/passive" to display progress without requiring user interaction
 
-/passive
-    Displays progress without requiring user interaction.
+"/quiet" to install/uninstall without displaying any UI
 
-/quiet
-    Performs the requested action without displaying any UI.
+"/simple" to prevent user customization
 
-/log [\[]filename[\]]
-    Logs to a specific file. By default, log files are created in %TEMP%.</String>
+"/uninstall" to remove Python (without confirmation)
+
+"/layout [\[]directory[\]]" to pre-download all components
+
+"/log [\[]filename[\]]" to specify log files location</String>
   <String Id="InstallLicenseLinkText">[WixBundleName] &lt;a href="#"&gt;license terms&lt;/a&gt;.</String>
   <String Id="InstallAcceptCheckbox">I &amp;agree to the license terms and conditions</String>
   <String Id="InstallButton">&amp;Install Now</String>
