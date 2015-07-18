@@ -171,6 +171,20 @@ display a simplified initial page and disallow customization::
 recommended for per-user installs when there is also a system-wide installation
 that included the launcher.)
 
+The options listed above can also be provided in a file named ``unattend.xml``
+alongside the executable. This file specifies a list of options and values.
+When a value is provided as an attribute, it will be converted to a number if
+possible. Values provided as element text are always left as strings. This
+example file sets the same options and the previous example::
+
+    <Options>
+        <Option Name="InstallAllUsers" Value="no" />
+        <Option Name="Include_launcher" Value="0" />
+        <Option Name="Include_test" Value="no" />
+        <Option Name="SimpleInstall" Value="yes" />
+        <Option Name="SimpleInstallDescription">Just for me, no test suite</Option>
+    </Options>
+
 .. _install-layout-option:
 
 Installing Without Downloading
