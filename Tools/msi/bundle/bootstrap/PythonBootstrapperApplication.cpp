@@ -1249,6 +1249,92 @@ private:
         return hr;
     }
 
+    //
+    // ParseVariablesFromUnattendXml - reads options from unattend.xml if it
+    // exists
+    //
+    HRESULT ParseVariablesFromUnattendXml() {
+        HRESULT hr = S_OK;
+        LPWSTR sczUnattendXmlPath = nullptr;
+        IXMLDOMDocument *pixdUnattend = nullptr;
+        IXMLDOMNodeList *pNodes = nullptr;
+        IXMLDOMNode *pNode = nullptr;
+        long cNodes;
+        DWORD dwAttr;
+        LPWSTR scz = nullptr;
+        BOOL bValue;
+        int iValue;
+        BOOL tryConvert;
+        BSTR bstrValue = nullptr;
+
+        hr = BalFormatString(L"[WixBundleOriginalSourceFolder]unattend.xml", &sczUnattendXmlPath);
+        BalExitOnFailure(hr, "Failed to calculate path to unattend.xml");
+
+        if (!FileExistsEx(sczUnattendXmlPath, &dwAttr)) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_VERBOSE, "Did not find %ls", sczUnattendXmlPath);
+            hr = S_FALSE;
+            goto LExit;
+        }
+
+        hr = XmlLoadDocumentFromFile(sczUnattendXmlPath, &pixdUnattend);
+        BalExitOnFailure1(hr, "Failed to read %ls", sczUnattendXmlPath);
+
+        // get the list of variables users have overridden
+        hr = XmlSelectNodes(pixdUnattend, L"/Options/Option", &pNodes);
+        if (S_FALSE == hr) {
+            ExitFunction1(hr = S_OK);
+        }
+        BalExitOnFailure(hr, "Failed to select option nodes.");
+
+        hr = pNodes->get_length((long*)&cNodes);
+        BalExitOnFailure(hr, "Failed to get option node count.");
+
+        BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Reading settings from %ls", sczUnattendXmlPath);
+
+        for (DWORD i = 0; i < cNodes; ++i) {
+            hr = XmlNextElement(pNodes, &pNode, nullptr);
+            BalExitOnFailure(hr, "Failed to get next node.");
+
+            // @Name
+            hr = XmlGetAttributeEx(pNode, L"Name", &scz);
+            BalExitOnFailure(hr, "Failed to get @Name.");
+
+            tryConvert = TRUE;
+            hr = XmlGetAttribute(pNode, L"Value", &bstrValue);
+            if (FAILED(hr) || !bstrValue || !*bstrValue) {
+                hr = XmlGetText(pNode, &bstrValue);
+                tryConvert = FALSE;
+            }
+            BalExitOnFailure(hr, "Failed to get @Value.");
+
+            if (tryConvert &&
+                CSTR_EQUAL == ::CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, bstrValue, -1, L"yes", -1)) {
+                _engine->SetVariableNumeric(scz, 1);
+            } else if (tryConvert &&
+                       CSTR_EQUAL == ::CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, bstrValue, -1, L"no", -1)) {
+                _engine->SetVariableNumeric(scz, 0);
+            } else if (tryConvert && ::StrToIntExW(bstrValue, STIF_DEFAULT, &iValue)) {
+                _engine->SetVariableNumeric(scz, iValue);
+            } else {
+                _engine->SetVariableString(scz, bstrValue);
+            }
+
+            ReleaseNullBSTR(bstrValue);
+            ReleaseNullStr(scz);
+            ReleaseNullObject(pNode);
+        }
+
+        BalLog(BOOTSTRAPPER_LOG_LEVEL_STANDARD, "Finished reading from %ls", sczUnattendXmlPath);
+
+    LExit:
+        ReleaseObject(pNode);
+        ReleaseObject(pNodes);
+        ReleaseObject(pixdUnattend);
+        ReleaseStr(sczUnattendXmlPath);
+
+        return hr;
+    }
+
 
     //
     // InitializeData - initializes all the package information.
@@ -1263,6 +1349,9 @@ private:
 
         hr = ParseOverridableVariablesFromXml(pixdManifest);
         BalExitOnFailure(hr, "Failed to read overridable variables.");
+
+        hr = ParseVariablesFromUnattendXml();
+        ExitOnFailure(hr, "Failed to read unattend.ini file.");
 
         hr = ProcessCommandLine(&_language);
         ExitOnFailure(hr, "Unknown commandline parameters.");
@@ -1323,7 +1412,9 @@ private:
 
                         hr = StrAllocString(psczLanguage, &argv[i][0], 0);
                         BalExitOnFailure(hr, "Failed to copy language.");
-                    } 
+                    } else if (CSTR_EQUAL == ::CompareStringW(LOCALE_INVARIANT, NORM_IGNORECASE, &argv[i][1], -1, L"simple", -1)) {
+                        _engine->SetVariableNumeric(L"SimpleInstall", 1);
+                    }
                 } else if (_overridableVariables) {
                     int value;
                     const wchar_t* pwc = wcschr(argv[i], L'=');
