@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24206: Fixed __eq__ and __ne__ methods of inspect classes.
+
 - Issue #24631: Fixed regression in the timeit module with multiline setup.
 
 - Issue #18622: unittest.mock.mock_open().reset_mock would recurse infinitely.
