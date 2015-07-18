@@ -7,7 +7,7 @@
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
-                        InstallCondition="InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip)">
+                        InstallCondition="InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -16,7 +16,7 @@
                         Compressed="$(var.CompressPDB)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
-                        InstallCondition="InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and Include_symbols">
+                        InstallCondition="InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and Include_symbols and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -25,7 +25,7 @@
                         Compressed="$(var.CompressMSI_D)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
-                        InstallCondition="InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and Include_debug">
+                        InstallCondition="InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and Include_debug and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -35,7 +35,7 @@
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
-                        InstallCondition="not InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip)">
+                        InstallCondition="not InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -44,7 +44,7 @@
                         Compressed="$(var.CompressPDB)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
-                        InstallCondition="not InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and Include_symbols">
+                        InstallCondition="not InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and Include_symbols and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -53,7 +53,7 @@
                         Compressed="$(var.CompressMSI_D)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
-                        InstallCondition="not InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and Include_debug">
+                        InstallCondition="not InstallAllUsers and (Include_core or Include_exe or Include_launcher or Include_pip) and Include_debug and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
