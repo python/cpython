@@ -2206,14 +2206,12 @@ class Parameter:
                                            id(self), self.name)
 
     def __eq__(self, other):
-        return (issubclass(other.__class__, Parameter) and
-                self._name == other._name and
+        if not isinstance(other, Parameter):
+            return NotImplemented
+        return (self._name == other._name and
                 self._kind == other._kind and
                 self._default == other._default and
                 self._annotation == other._annotation)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
 
 class BoundArguments:
@@ -2295,12 +2293,10 @@ class BoundArguments:
         return kwargs
 
     def __eq__(self, other):
-        return (issubclass(other.__class__, BoundArguments) and
-                self.signature == other.signature and
+        if not isinstance(other, BoundArguments):
+            return NotImplemented
+        return (self.signature == other.signature and
                 self.arguments == other.arguments)
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
 
 class Signature:
@@ -2493,9 +2489,10 @@ class Signature:
                           return_annotation=return_annotation)
 
     def __eq__(self, other):
-        if (not issubclass(type(other), Signature) or
-                    self.return_annotation != other.return_annotation or
-                    len(self.parameters) != len(other.parameters)):
+        if not isinstance(other, Signature):
+            return NotImplemented
+        if (self.return_annotation != other.return_annotation or
+            len(self.parameters) != len(other.parameters)):
             return False
 
         other_positions = {param: idx
@@ -2521,9 +2518,6 @@ class Signature:
                         return False
 
         return True
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
 
     def _bind(self, args, kwargs, *, partial=False):
         '''Private method.  Don't use directly.'''
