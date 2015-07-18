@@ -146,6 +146,9 @@ of available options is shown below.
 +---------------------------+--------------------------------------+--------------------------+
 | Include_tools             | Install utility scripts              | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
+| LauncherOnly              | Only installs the launcher. This     | 0                        |
+|                           | will override most other options.    |                          |
++---------------------------+--------------------------------------+--------------------------+
 | SimpleInstall             | Disable most install UI              | 0                        |
 +---------------------------+--------------------------------------+--------------------------+
 | SimpleInstallDescription  | A custom message to display when the | (empty)                  |

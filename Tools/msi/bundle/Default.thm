@@ -12,7 +12,7 @@
         <Text X="185" Y="11" Width="-11" Height="32" FontId="1" DisablePrefix="yes">#(loc.HelpHeader)</Text>
         <Image X="0" Y="0" Width="162" Height="352" ImageFile="SideBar.png"/>
 
-        <Text X="185" Y="50" Width="-11" Height="-35" FontId="3" DisablePrefix="yes">#(loc.HelpText)</Text>
+        <Hypertext X="185" Y="50" Width="-11" Height="-35" FontId="3" DisablePrefix="yes">#(loc.HelpText)</Hypertext>
         <Button Name="SuccessCancelButton" X="-11" Y="-11" Width="75" Height="23" TabStop="yes" FontId="0">#(loc.CloseButton)</Button>
     </Page>
     <Page Name="Install">

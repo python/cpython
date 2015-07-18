@@ -7,7 +7,7 @@
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
-                        InstallCondition="InstallAllUsers and Include_dev">
+                        InstallCondition="InstallAllUsers and Include_dev and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -16,7 +16,7 @@
                         Compressed="$(var.CompressMSI_D)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
-                        InstallCondition="InstallAllUsers and Include_dev and Include_debug">
+                        InstallCondition="InstallAllUsers and Include_dev and Include_debug and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -26,7 +26,7 @@
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
-                        InstallCondition="not InstallAllUsers and Include_dev">
+                        InstallCondition="not InstallAllUsers and Include_dev and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -35,7 +35,7 @@
                         Compressed="$(var.CompressMSI_D)"
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
-                        InstallCondition="not InstallAllUsers and Include_dev and Include_debug">
+                        InstallCondition="not InstallAllUsers and Include_dev and Include_debug and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
