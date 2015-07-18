@@ -64,6 +64,8 @@
     <Variable Name="Include_symbols" Value="0" bal:Overridable="yes" />
     <Variable Name="Include_debug" Value="0" bal:Overridable="yes" />
     
+    <Variable Name="LauncherOnly" Value="0" bal:Overridable="yes" />
+    
     <Variable Name="AssociateFiles" Value="1" bal:Overridable="yes" />
     <Variable Name="Shortcuts" Value="1" bal:Overridable="yes" />
     <Variable Name="PrependPath" Value="0" bal:Overridable="yes" />

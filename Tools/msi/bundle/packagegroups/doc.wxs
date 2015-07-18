@@ -8,7 +8,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         EnableFeatureSelection="yes"
                         ForcePerMachine="yes"
-                        InstallCondition="InstallAllUsers and Include_doc">
+                        InstallCondition="InstallAllUsers and Include_doc and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -19,7 +19,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         EnableFeatureSelection="yes"
                         ForcePerMachine="no"
-                        InstallCondition="not InstallAllUsers and Include_doc">
+                        InstallCondition="not InstallAllUsers and Include_doc and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>

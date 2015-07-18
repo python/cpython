@@ -146,6 +146,9 @@ of available options is shown below.
 +---------------------------+--------------------------------------+--------------------------+
 | Include_tools             | Install utility scripts              | 1                        |
 +---------------------------+--------------------------------------+--------------------------+
+| LauncherOnly              | Only installs the launcher. This     | 0                        |
+|                           | will override most other options.    |                          |
++---------------------------+--------------------------------------+--------------------------+
 | SimpleInstall             | Disable most install UI              | 0                        |
 +---------------------------+--------------------------------------+--------------------------+
 | SimpleInstallDescription  | A custom message to display when the | (empty)                  |
@@ -167,6 +170,20 @@ display a simplified initial page and disallow customization::
 (Note that omitting the launcher also omits file associations, and is only
 recommended for per-user installs when there is also a system-wide installation
 that included the launcher.)
+
+The options listed above can also be provided in a file named ``unattend.xml``
+alongside the executable. This file specifies a list of options and values.
+When a value is provided as an attribute, it will be converted to a number if
+possible. Values provided as element text are always left as strings. This
+example file sets the same options and the previous example::
+
+    <Options>
+        <Option Name="InstallAllUsers" Value="no" />
+        <Option Name="Include_launcher" Value="0" />
+        <Option Name="Include_test" Value="no" />
+        <Option Name="SimpleInstall" Value="yes" />
+        <Option Name="SimpleInstallDescription">Just for me, no test suite</Option>
+    </Options>
 
 .. _install-layout-option:
 

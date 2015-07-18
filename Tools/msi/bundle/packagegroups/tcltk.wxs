@@ -8,7 +8,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
                         EnableFeatureSelection="yes"
-                        InstallCondition="InstallAllUsers and Include_tcltk">
+                        InstallCondition="InstallAllUsers and Include_tcltk and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -18,7 +18,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
                         EnableFeatureSelection="yes"
-                        InstallCondition="InstallAllUsers and Include_tcltk and Include_symbols">
+                        InstallCondition="InstallAllUsers and Include_tcltk and Include_symbols and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -28,7 +28,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
                         EnableFeatureSelection="yes"
-                        InstallCondition="InstallAllUsers and Include_tcltk and Include_debug">
+                        InstallCondition="InstallAllUsers and Include_tcltk and Include_debug and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -39,7 +39,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
                         EnableFeatureSelection="yes"
-                        InstallCondition="not InstallAllUsers and Include_tcltk">
+                        InstallCondition="not InstallAllUsers and Include_tcltk and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -49,7 +49,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
                         EnableFeatureSelection="yes"
-                        InstallCondition="not InstallAllUsers and Include_tcltk and Include_symbols">
+                        InstallCondition="not InstallAllUsers and Include_tcltk and Include_symbols and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>
@@ -59,7 +59,7 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
                         EnableFeatureSelection="yes"
-                        InstallCondition="not InstallAllUsers and Include_tcltk and Include_debug">
+                        InstallCondition="not InstallAllUsers and Include_tcltk and Include_debug and not LauncherOnly">
                 <MsiProperty Name="TARGETDIR" Value="[TargetDir]" />
                 <MsiProperty Name="OPTIONALFEATURESREGISTRYKEY" Value="[OptionalFeaturesRegistryKey]" />
             </MsiPackage>

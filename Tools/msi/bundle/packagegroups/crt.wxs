@@ -31,7 +31,7 @@
                         Description="!(loc.CRTDescription)"
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
-                        InstallCondition="not CRTInstalled and VersionNT = $(var.ver) and not VersionNT64 and (Include_core or Include_exe or Include_launcher or Include_pip)" />
+                        InstallCondition="not CRTInstalled and VersionNT = $(var.ver) and not VersionNT64 and (Include_core or Include_exe or Include_launcher or Include_pip) and not LauncherOnly" />
 
             <MsuPackage Id="crt_14.0_$(var.ver)_x64"
                         KB="2999226"
@@ -40,7 +40,7 @@
                         Description="!(loc.CRTDescription)"
                         Compressed="$(var.CompressMSI)"
                         DownloadUrl="$(var.DownloadUrl)"
-                        InstallCondition="not CRTInstalled and VersionNT64 = $(var.ver) and (Include_core or Include_exe or Include_launcher or Include_pip)" />
+                        InstallCondition="not CRTInstalled and VersionNT64 = $(var.ver) and (Include_core or Include_exe or Include_launcher or Include_pip) and not LauncherOnly" />
         </PackageGroup>
     </Fragment>
 
