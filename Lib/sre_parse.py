@@ -675,6 +675,9 @@ def _parse(source, state):
                         if gid is None:
                             msg = "unknown group name %r" % name
                             raise source.error(msg, len(name) + 1)
+                        if not state.checkgroup(gid):
+                            raise source.error("cannot refer to an open group",
+                                               len(name) + 1)
                         state.checklookbehindgroup(gid, source)
                         subpatternappend((GROUPREF, gid))
                         continue
