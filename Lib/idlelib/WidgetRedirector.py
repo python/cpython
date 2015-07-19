@@ -1,3 +1,4 @@
+from __future__ import print_function
 from Tkinter import TclError
 
 class WidgetRedirector:
@@ -161,7 +162,7 @@ def _widget_redirector(parent):  # htest #
     text.focus_set()
     redir = WidgetRedirector(text)
     def my_insert(*args):
-        print "insert", args
+        print("insert", args)
         original_insert(*args)
     original_insert = redir.register("insert", my_insert)
     root.mainloop()
