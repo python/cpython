@@ -1595,7 +1595,7 @@ defdict_init(PyObject *self, PyObject *args, PyObject *kwds)
             newdefault = PyTuple_GET_ITEM(args, 0);
             if (!PyCallable_Check(newdefault) && newdefault != Py_None) {
                 PyErr_SetString(PyExc_TypeError,
-                    "first argument must be callable");
+                    "first argument must be callable or None");
                 return -1;
             }
         }
