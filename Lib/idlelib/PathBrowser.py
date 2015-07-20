@@ -17,6 +17,7 @@ class PathBrowser(ClassBrowser):
         self.init(flist)
 
     def settitle(self):
+        "Set window titles."
         self.top.wm_title("Path Browser")
         self.top.wm_iconname("Path Browser")
 
@@ -69,16 +70,17 @@ class DirBrowserTreeItem(TreeItem):
         return sublist
 
     def ispackagedir(self, file):
+        " Return true for directories that are packages."
         if not os.path.isdir(file):
-            return 0
+            return False
         init = os.path.join(file, "__init__.py")
         return os.path.exists(init)
 
     def listmodules(self, allnames):
         modules = {}
         suffixes = importlib.machinery.EXTENSION_SUFFIXES[:]
-        suffixes += importlib.machinery.SOURCE_SUFFIXES[:]
-        suffixes += importlib.machinery.BYTECODE_SUFFIXES[:]
+        suffixes += importlib.machinery.SOURCE_SUFFIXES
+        suffixes += importlib.machinery.BYTECODE_SUFFIXES
         sorted = []
         for suff in suffixes:
             i = -len(suff)
@@ -93,7 +95,7 @@ class DirBrowserTreeItem(TreeItem):
         sorted.sort()
         return sorted
 
-def _path_browser(parent):
+def _path_browser(parent):  # htest #
     flist = PyShellFileList(parent)
     PathBrowser(flist, _htest=True)
     parent.mainloop()
