@@ -127,16 +127,26 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 static int set_table_resize(PySetObject *, Py_ssize_t);
 
 static int
-_set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
+set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
-    setentry *table = so->table;
+    setentry *table;
     setentry *freeslot;
     setentry *entry;
     size_t perturb;
-    size_t mask = so->mask;
-    size_t i = (size_t)hash & mask; /* Unsigned for defined overflow behavior */
+    size_t mask;
+    size_t i;                       /* Unsigned for defined overflow behavior */
     size_t j;
     int cmp;
+
+    /* Pre-increment is necessary to prevent arbitrary code in the rich
+       comparison from deallocating the key just before the insertion. */
+    Py_INCREF(key);
+
+  restart:
+
+    table = so->table;
+    mask = so->mask;
+    i = (size_t)hash & mask;
 
     entry = &table[i];
     if (entry->key == NULL)
@@ -160,9 +170,9 @@ _set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
             Py_DECREF(startkey);
             if (cmp < 0)                                          /* unlikely */
-                return -1;
+                goto comparison_error;
             if (table != so->table || entry->key != startkey)     /* unlikely */
-                return _set_add_entry(so, key, hash);
+                goto restart;
             if (cmp > 0)                                          /* likely */
                 goto found_active;
             mask = so->mask;                 /* help avoid a register spill */
@@ -188,9 +198,9 @@ _set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
                     Py_DECREF(startkey);
                     if (cmp < 0)
-                        return -1;
+                        goto comparison_error;
                     if (table != so->table || entry->key != startkey)
-                        return _set_add_entry(so, key, hash);
+                        goto restart;
                     if (cmp > 0)
                         goto found_active;
                     mask = so->mask;
@@ -223,22 +233,13 @@ _set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry->hash = hash;
     if ((size_t)so->fill*3 < mask*2)
         return 0;
-    if (!set_table_resize(so, so->used))
-        return 0;
-    Py_INCREF(key);
-    return -1;
+    return set_table_resize(so, so->used);
 
   found_active:
     Py_DECREF(key);
     return 0;
-}
 
-static int
-set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
-{
-    Py_INCREF(key);
-    if (!_set_add_entry(so, key, hash))
-        return 0;
+  comparison_error:
     Py_DECREF(key);
     return -1;
 }
