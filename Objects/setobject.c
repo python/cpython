@@ -223,9 +223,13 @@ _set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
     entry->hash = hash;
     if ((size_t)so->fill*3 < mask*2)
         return 0;
-    return set_table_resize(so, so->used);
+    if (!set_table_resize(so, so->used))
+        return 0;
+    Py_INCREF(key);
+    return -1;
 
   found_active:
+    Py_DECREF(key);
     return 0;
 }
 
