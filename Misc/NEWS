@@ -10,6 +10,9 @@ Release date: 2015-07-26
 Core and Builtins
 -----------------
 
+- Issue #23573: Restored optimization of bytes.rfind() and bytearray.rfind()
+  for single-byte argument on Linux.
+
 - Issue #24569: Make PEP 448 dictionary evaluation more consistent.
 
 - Issue #24583: Fix crash when set is mutated while being updated.
