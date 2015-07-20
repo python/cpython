@@ -66,7 +66,7 @@ siftup(PyListObject *heap, Py_ssize_t pos)
 
     /* Bubble up the smaller child until hitting a leaf. */
     arr = _PyList_ITEMS(heap);
-    limit = endpos / 2;          /* smallest pos that has no child */
+    limit = endpos >> 1;         /* smallest pos that has no child */
     while (pos < limit) {
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */
@@ -347,7 +347,7 @@ heapify_internal(PyObject *heap, int siftup_func(PyListObject *, Py_ssize_t))
        n is odd = 2*j+1, this is (2*j+1-1)/2 = j so j-1 is the largest,
        and that's again n//2-1.
     */
-    for (i = n/2 - 1 ; i >= 0 ; i--)
+    for (i = (n >> 1) - 1 ; i >= 0 ; i--)
         if (siftup_func((PyListObject *)heap, i))
             return NULL;
     Py_RETURN_NONE;
@@ -420,7 +420,7 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
 
     /* Bubble up the smaller child until hitting a leaf. */
     arr = _PyList_ITEMS(heap);
-    limit = endpos / 2;          /* smallest pos that has no child */
+    limit = endpos >> 1;         /* smallest pos that has no child */
     while (pos < limit) {
         /* Set childpos to index of smaller child.   */
         childpos = 2*pos + 1;    /* leftmost child position  */

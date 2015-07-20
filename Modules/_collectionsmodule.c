@@ -788,7 +788,7 @@ deque_reverse(dequeobject *deque, PyObject *unused)
     block *rightblock = deque->rightblock;
     Py_ssize_t leftindex = deque->leftindex;
     Py_ssize_t rightindex = deque->rightindex;
-    Py_ssize_t n = Py_SIZE(deque) / 2;
+    Py_ssize_t n = Py_SIZE(deque) >> 1;
     Py_ssize_t i;
     PyObject *tmp;
 
