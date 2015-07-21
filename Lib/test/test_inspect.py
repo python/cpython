@@ -336,6 +336,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getfunctions(self):
         functions = inspect.getmembers(mod, inspect.isfunction)
         self.assertEqual(functions, [('eggs', mod.eggs),
+                                     ('lobbest', mod.lobbest),
                                      ('spam', mod.spam)])
 
     @unittest.skipIf(sys.flags.optimize >= 2,
@@ -393,6 +394,7 @@ class TestRetrievingSourceCode(GetSourceBase):
     def test_getsource(self):
         self.assertSourceEqual(git.abuse, 29, 39)
         self.assertSourceEqual(mod.StupidGit, 21, 50)
+        self.assertSourceEqual(mod.lobbest, 70, 71)
 
     def test_getsourcefile(self):
         self.assertEqual(normcase(inspect.getsourcefile(mod.spam)), modfile)
