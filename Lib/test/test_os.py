@@ -1079,7 +1079,8 @@ class MakedirTests(unittest.TestCase):
 @unittest.skipUnless(hasattr(os, 'chown'), "Test needs chown")
 class ChownFileTests(unittest.TestCase):
 
-    def setUpClass():
+    @classmethod
+    def setUpClass(cls):
         os.mkdir(support.TESTFN)
 
     def test_chown_uid_gid_arguments_must_be_index(self):
@@ -1124,7 +1125,8 @@ class ChownFileTests(unittest.TestCase):
             os.chown(support.TESTFN, uid_1, gid)
             os.chown(support.TESTFN, uid_2, gid)
 
-    def tearDownClass():
+    @classmethod
+    def tearDownClass(cls):
         os.rmdir(support.TESTFN)
 
 
