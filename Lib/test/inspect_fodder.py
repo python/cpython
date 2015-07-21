@@ -66,3 +66,6 @@ class FesteringGob(MalodorousPervert, ParrotDroppings):
         pass
     def contradiction(self):
         pass
+
+async def lobbest(grenade):
+    pass

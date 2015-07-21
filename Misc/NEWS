@@ -64,6 +64,8 @@ Library
 - Issue #6549: Remove hyphen from ttk.Style().element options.  Only return result
   from ttk.Style().configure if a result was generated or a query submitted.
 
+- Issue #24669: Fix inspect.getsource() for 'async def' functions.
+  Patch by Kai Groner.
 
 What's New in Python 3.5.0 beta 3?
 ==================================
