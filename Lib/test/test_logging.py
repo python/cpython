@@ -41,7 +41,8 @@ import sys
 import tempfile
 from test.script_helper import assert_python_ok
 from test.support import (captured_stdout, run_with_locale, run_unittest,
-                          patch, requires_zlib, TestHandler, Matcher, HOST)
+                          patch, requires_zlib, TestHandler, Matcher, HOST,
+                          swap_attr)
 import textwrap
 import time
 import unittest
@@ -3748,18 +3749,12 @@ class LoggerTest(BaseTest):
                          (exc.__class__, exc, exc.__traceback__))
 
     def test_log_invalid_level_with_raise(self):
-        old_raise = logging.raiseExceptions
-        self.addCleanup(setattr, logging, 'raiseExecptions', old_raise)
-
-        logging.raiseExceptions = True
-        self.assertRaises(TypeError, self.logger.log, '10', 'test message')
+        with swap_attr(logging, 'raiseExceptions', True):
+            self.assertRaises(TypeError, self.logger.log, '10', 'test message')
 
     def test_log_invalid_level_no_raise(self):
-        old_raise = logging.raiseExceptions
-        self.addCleanup(setattr, logging, 'raiseExecptions', old_raise)
-
-        logging.raiseExceptions = False
-        self.logger.log('10', 'test message')  # no exception happens
+        with swap_attr(logging, 'raiseExceptions', False):
+            self.logger.log('10', 'test message')  # no exception happens
 
     def test_find_caller_with_stack_info(self):
         called = []
