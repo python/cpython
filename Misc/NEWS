@@ -45,6 +45,9 @@ Library
 - Issue #15014: SMTP.auth() and SMTP.login() now support RFC 4954's optional
   initial-response argument to the SMTP AUTH command.
 
+- Issue #24669: Fix inspect.getsource() for 'async def' functions.
+  Patch by Kai Groner.
+
 
 What's New in Python 3.5.0 beta 3?
 ==================================
