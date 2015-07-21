@@ -13,7 +13,7 @@ from subprocess import Popen
 from zipfile import ZipFile
 
 EXTERNALS_DIR = None
-for p in Path(__file__).parents:
+for p in (Path.cwd() / __file__).parents:
     if any(p.glob("PCBuild/*.vcxproj")):
         EXTERNALS_DIR = p / "externals"
         break
@@ -22,7 +22,7 @@ if not EXTERNALS_DIR:
     print("Cannot find project root")
     sys.exit(1)
 
-WIX_BINARIES_ZIP = 'http://wixtoolset.org/downloads/v3.10.0.1519/wix310-binaries.zip'
+WIX_BINARIES_ZIP = 'http://wixtoolset.org/downloads/v3.10.0.1823/wix310-binaries.zip'
 TARGET_BIN_ZIP = EXTERNALS_DIR / "wix.zip"
 TARGET_BIN_DIR = EXTERNALS_DIR / "wix"
 
