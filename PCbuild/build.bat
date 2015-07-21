@@ -25,24 +25,24 @@ set verbose=/nologo /v:m
 set kill=
 
 :CheckOpts
-if '%~1'=='-c' (set conf=%2) & shift & shift & goto CheckOpts
-if '%~1'=='-p' (set platf=%2) & shift & shift & goto CheckOpts
-if '%~1'=='-r' (set target=Rebuild) & shift & goto CheckOpts
-if '%~1'=='-t' (set target=%2) & shift & shift & goto CheckOpts
-if '%~1'=='-d' (set conf=Debug) & shift & goto CheckOpts
-if '%~1'=='-e' call "%dir%get_externals.bat" & shift & goto CheckOpts
-if '%~1'=='-m' (set parallel=/m) & shift & goto CheckOpts
-if '%~1'=='-M' (set parallel=) & shift & goto CheckOpts
-if '%~1'=='-v' (set verbose=/v:n) & shift & goto CheckOpts
-if '%~1'=='-k' (set kill=true) & shift & goto CheckOpts
-if '%~1'=='-V' shift & goto Version
+if "%~1"=="-c" (set conf=%2) & shift & shift & goto CheckOpts
+if "%~1"=="-p" (set platf=%2) & shift & shift & goto CheckOpts
+if "%~1"=="-r" (set target=Rebuild) & shift & goto CheckOpts
+if "%~1"=="-t" (set target=%2) & shift & shift & goto CheckOpts
+if "%~1"=="-d" (set conf=Debug) & shift & goto CheckOpts
+if "%~1"=="-e" call "%dir%get_externals.bat" & shift & goto CheckOpts
+if "%~1"=="-m" (set parallel=/m) & shift & goto CheckOpts
+if "%~1"=="-M" (set parallel=) & shift & goto CheckOpts
+if "%~1"=="-v" (set verbose=/v:n) & shift & goto CheckOpts
+if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
+if "%~1"=="-V" shift & goto Version
 
-if '%platf%'=='x64' (set vs_platf=x86_amd64)
+if "%platf%"=="x64" (set vs_platf=x86_amd64)
 
 rem Setup the environment
 call "%dir%env.bat" %vs_platf% >nul
 
-if '%kill%'=='true' (
+if "%kill%"=="true" (
     msbuild /v:m /nologo /target:KillPython "%pcbuild%\pythoncore.vcxproj" /p:Configuration=%conf% /p:Platform=%platf% /p:KillPython=true
 )
 
