@@ -381,7 +381,9 @@ class Style(object):
         a sequence identifying the value for that option."""
         if query_opt is not None:
             kw[query_opt] = None
-        return _val_or_dict(self.tk, kw, self._name, "configure", style)
+        result = _val_or_dict(self.tk, kw, self._name, "configure", style)
+        if result or query_opt:
+            return result
 
 
     def map(self, style, query_opt=None, **kw):
@@ -466,12 +468,14 @@ class Style(object):
 
     def element_names(self):
         """Returns the list of elements defined in the current theme."""
-        return self.tk.splitlist(self.tk.call(self._name, "element", "names"))
+        return tuple(n.lstrip('-') for n in self.tk.splitlist(
+            self.tk.call(self._name, "element", "names")))
 
 
     def element_options(self, elementname):
         """Return the list of elementname's options."""
-        return self.tk.splitlist(self.tk.call(self._name, "element", "options", elementname))
+        return tuple(o.lstrip('-') for o in self.tk.splitlist(
+            self.tk.call(self._name, "element", "options", elementname)))
 
 
     def theme_create(self, themename, parent=None, settings=None):
