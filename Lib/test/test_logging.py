@@ -3779,18 +3779,12 @@ class LoggerTest(BaseTest):
                          (exc.__class__, exc, exc.__traceback__))
 
     def test_log_invalid_level_with_raise(self):
-        old_raise = logging.raiseExceptions
-        self.addCleanup(setattr, logging, 'raiseExecptions', old_raise)
-
-        logging.raiseExceptions = True
-        self.assertRaises(TypeError, self.logger.log, '10', 'test message')
+        with support.swap_attr(logging, 'raiseExceptions', True):
+            self.assertRaises(TypeError, self.logger.log, '10', 'test message')
 
     def test_log_invalid_level_no_raise(self):
-        old_raise = logging.raiseExceptions
-        self.addCleanup(setattr, logging, 'raiseExecptions', old_raise)
-
-        logging.raiseExceptions = False
-        self.logger.log('10', 'test message')  # no exception happens
+        with support.swap_attr(logging, 'raiseExceptions', False):
+            self.logger.log('10', 'test message')  # no exception happens
 
     def test_find_caller_with_stack_info(self):
         called = []
