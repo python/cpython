@@ -501,6 +501,7 @@ def _tokenize(readline, encoding):
     # 'stashed' and 'ctx' are used for async/await parsing
     stashed = None
     ctx = [('sync', 0)]
+    in_async = 0
 
     if encoding is not None:
         if encoding == "utf-8-sig":
@@ -580,6 +581,9 @@ def _tokenize(readline, encoding):
 
                 cur_indent = indents[-1]
                 while len(ctx) > 1 and ctx[-1][1] >= cur_indent:
+                    if ctx[-1][0] == 'async':
+                        in_async -= 1
+                        assert in_async >= 0
                     ctx.pop()
 
                 yield TokenInfo(DEDENT, '', (lnum, pos), (lnum, pos), line)
@@ -640,7 +644,7 @@ def _tokenize(readline, encoding):
                         yield TokenInfo(STRING, token, spos, epos, line)
                 elif initial.isidentifier():               # ordinary name
                     if token in ('async', 'await'):
-                        if ctx[-1][0] == 'async' and ctx[-1][1] < indents[-1]:
+                        if in_async:
                             yield TokenInfo(
                                 ASYNC if token == 'async' else AWAIT,
                                 token, spos, epos, line)
@@ -657,6 +661,7 @@ def _tokenize(readline, encoding):
                                 and stashed.string == 'async'):
 
                             ctx.append(('async', indents[-1]))
+                            in_async += 1
 
                             yield TokenInfo(ASYNC, stashed.string,
                                             stashed.start, stashed.end,
