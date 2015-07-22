@@ -1,2 +1,2 @@
-async def foo(a:await something()):
+async def foo(a=await something()):
     pass

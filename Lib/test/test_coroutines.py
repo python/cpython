@@ -205,12 +205,14 @@ class AsyncBadSyntaxTest(unittest.TestCase):
                    return lambda a: await
             """,
 
-            """async def foo(a: await b):
+            """await a()""",
+
+            """async def foo(a=await b):
                    pass
             """,
 
             """def baz():
-                   async def foo(a: await b):
+                   async def foo(a=await b):
                        pass
             """,
 
@@ -271,10 +273,9 @@ class AsyncBadSyntaxTest(unittest.TestCase):
                         pass\nawait a
             """]
 
-        ns = {}
         for code in samples:
             with self.subTest(code=code), self.assertRaises(SyntaxError):
-                exec(code, ns, ns)
+                compile(code, "<test>", "exec")
 
     def test_goodsyntax_1(self):
         # Tests for issue 24619
