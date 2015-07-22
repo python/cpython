@@ -66,12 +66,21 @@ struct tok_state {
     const char* str;
     const char* input; /* Tokenizer's newline translated copy of the string. */
 
-    int defstack[MAXINDENT];     /* stack if funcs & indents where they
-                                    were defined */
-    int deftypestack[MAXINDENT]; /* stack of func types
-                                    (0 not func; 1: "def name";
-                                     2: "async def name") */
-    int def;                     /* Length of stack of func types */
+    /* `def*` fields are for parsing async/await in a backwards compatible
+       way.  They should be removed in 3.7, when they will become
+       regular constants.  See PEP 492 for more details. */
+    int defstack[MAXINDENT];     /* Stack of funcs & indents where they
+                                    were defined. */
+    int deftypestack[MAXINDENT]; /* Stack of func flags, see DEFTYPE_*
+                                    constants. */
+    int def;                     /* Length of stack of func types/flags. */
+    int def_async_behind;        /* 1 if there was an 'async' token before
+                                    a 'def' token. */
+    int def_in_async;            /* Counter of how deep 'async def's
+                                    are nested.  If greater than 0,
+                                    we are somewhere in an 'async def'
+                                    body, so 'async' and 'await' should
+                                    be parsed as keywords.*/
 };
 
 extern struct tok_state *PyTokenizer_FromString(const char *, int);

@@ -685,9 +685,7 @@ Execution of Python coroutines can be suspended and resumed at many points
 (see :term:`coroutine`).  In the body of a coroutine, any ``await`` and
 ``async`` identifiers become reserved keywords; :keyword:`await` expressions,
 :keyword:`async for` and :keyword:`async with` can only be used in
-coroutine bodies.  However, to simplify the parser, these keywords cannot
-be used on the same line as a function or coroutine (:keyword:`def`
-statement) header.
+coroutine bodies.
 
 Functions defined with ``async def`` syntax are always coroutine functions,
 even if they do not contain ``await`` or ``async`` keywords.
