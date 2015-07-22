@@ -644,10 +644,8 @@ Test cases
    kinds of failure.
 
    Each instance of :class:`TestCase` will run a single base method: the method
-   named *methodName*.  However, the standard implementation of the default
-   *methodName*, ``runTest()``, will run every method starting with ``test``
-   as an individual test, and count successes and failures accordingly.
-   Therefore, in most uses of :class:`TestCase`, you will neither change
+   named *methodName*.
+   In most uses of :class:`TestCase`, you will neither change
    the *methodName* nor reimplement the default ``runTest()`` method.
 
    .. versionchanged:: 3.2
@@ -1550,6 +1548,12 @@ Loading and running tests
 
       Return a suite of all tests cases contained in the :class:`TestCase`\ -derived
       :class:`testCaseClass`.
+
+      A test case instance is created for each method named by
+      :meth:`getTestCaseNames`. By default these are the method names
+      beginning with ``test``. If :meth:`getTestCaseNames` returns no
+      methods, but the :meth:`runTest` method is implemented, a single test
+      case is created for that method instead.
 
 
    .. method:: loadTestsFromModule(module)
