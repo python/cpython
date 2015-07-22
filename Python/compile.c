@@ -1749,12 +1749,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     arglength = asdl_seq_LEN(args->defaults);
     arglength |= kw_default_count << 8;
     arglength |= num_annotations << 16;
+    if (is_async)
+        co->co_flags |= CO_COROUTINE;
     compiler_make_closure(c, co, arglength, qualname);
     Py_DECREF(qualname);
     Py_DECREF(co);
-
-    if (is_async)
-        co->co_flags |= CO_COROUTINE;
 
     /* decorators */
     for (i = 0; i < asdl_seq_LEN(decos); i++) {
