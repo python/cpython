@@ -25,6 +25,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #22153: Improve unittest docs. Patch from Martin Panter and evilzero.
+
 - Issue #24580: Symbolic group references to open group in re patterns now are
   explicitly forbidden as well as numeric group references.
 
