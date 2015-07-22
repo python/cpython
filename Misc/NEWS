@@ -34,6 +34,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13938: 2to3 converts StringTypes to a tuple. Patch from Mark Hammond.
+
 - Issue #24611: Fixed compiling the posix module on non-Windows platforms
   without mknod() or makedev() (e.g. on Unixware).
 
