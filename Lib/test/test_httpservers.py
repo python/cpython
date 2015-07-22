@@ -298,12 +298,28 @@ class SimpleHTTPServerTestCase(BaseTestCase):
             BaseTestCase.tearDown(self)
 
     def check_status_and_reason(self, response, status, data=None):
+        def close_conn():
+            """Don't close reader yet so we can check if there was leftover
+            buffered input"""
+            nonlocal reader
+            reader = response.fp
+            response.fp = None
+        reader = None
+        response._close_conn = close_conn
+
         body = response.read()
         self.assertTrue(response)
         self.assertEqual(response.status, status)
         self.assertIsNotNone(response.reason)
         if data:
             self.assertEqual(data, body)
+        # Ensure the server has not set up a persistent connection, and has
+        # not sent any extra data
+        self.assertEqual(response.version, 10)
+        self.assertEqual(response.msg.get("Connection", "close"), "close")
+        self.assertEqual(reader.read(30), b'', 'Connection should be closed')
+
+        reader.close()
         return body
 
     @support.requires_mac_ver(10, 5)
@@ -353,15 +369,21 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
         response = self.request('/' + 'ThisDoesNotExist' + '/')
         self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
-        with open(os.path.join(self.tempdir_name, 'index.html'), 'w') as f:
-            response = self.request('/' + self.tempdir_name + '/')
-            self.check_status_and_reason(response, HTTPStatus.OK)
-            # chmod() doesn't work as expected on Windows, and filesystem
-            # permissions are ignored by root on Unix.
-            if os.name == 'posix' and os.geteuid() != 0:
-                os.chmod(self.tempdir, 0)
+
+        data = b"Dummy index file\r\n"
+        with open(os.path.join(self.tempdir_name, 'index.html'), 'wb') as f:
+            f.write(data)
+        response = self.request('/' + self.tempdir_name + '/')
+        self.check_status_and_reason(response, HTTPStatus.OK, data)
+
+        # chmod() doesn't work as expected on Windows, and filesystem
+        # permissions are ignored by root on Unix.
+        if os.name == 'posix' and os.geteuid() != 0:
+            os.chmod(self.tempdir, 0)
+            try:
                 response = self.request(self.tempdir_name + '/')
                 self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
+            finally:
                 os.chmod(self.tempdir, 0o755)
 
     def test_head(self):
