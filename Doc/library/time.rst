@@ -47,8 +47,6 @@ An explanation of some terminology and conventions is in order.
   years for all year input.  When 2-digit years are accepted, they are converted
   according to the POSIX or X/Open standard: values 69-99 are mapped to 1969-1999,
   and values 0--68 are mapped to 2000--2068. Values 100--1899 are always illegal.
-  Note that this is new as of Python 1.5.2(a2); earlier versions, up to Python
-  1.5.1 and 1.5.2a1, would add 1900 to year values below 1900.
 
 .. index::
    single: UTC
