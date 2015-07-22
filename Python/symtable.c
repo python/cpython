@@ -1542,7 +1542,7 @@ symtable_visit_annotations(struct symtable *st, stmt_ty s,
     if (a->kwonlyargs && !symtable_visit_argannotations(st, a->kwonlyargs))
         return 0;
     if (returns)
-        VISIT(st, expr, s->v.FunctionDef.returns);
+        VISIT(st, expr, returns);
     return 1;
 }
 
