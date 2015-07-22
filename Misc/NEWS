@@ -19,6 +19,9 @@ Core and Builtins
 
 - Issue #24407: Fix crash when dict is mutated while being updated.
 
+- Issue #24619: New approach for tokenizing async/await. As a consequence,
+  is is now possible to have one-line 'async def foo(): await ..' functions.
+
 Library
 -------
 

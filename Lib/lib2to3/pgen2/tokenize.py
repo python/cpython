@@ -369,6 +369,7 @@ def generate_tokens(readline):
     # 'stashed' and 'ctx' are used for async/await parsing
     stashed = None
     ctx = [('sync', 0)]
+    in_async = 0
 
     while 1:                                   # loop over lines in stream
         try:
@@ -436,6 +437,14 @@ def generate_tokens(readline):
                         "unindent does not match any outer indentation level",
                         ("<tokenize>", lnum, pos, line))
                 indents = indents[:-1]
+
+                cur_indent = indents[-1]
+                while len(ctx) > 1 and ctx[-1][1] >= cur_indent:
+                    if ctx[-1][0] == 'async':
+                        in_async -= 1
+                        assert in_async >= 0
+                    ctx.pop()
+
                 yield (DEDENT, '', (lnum, pos), (lnum, pos), line)
 
         else:                                  # continued statement
@@ -499,7 +508,7 @@ def generate_tokens(readline):
                         yield (STRING, token, spos, epos, line)
                 elif initial in namechars:                 # ordinary name
                     if token in ('async', 'await'):
-                        if ctx[-1][0] == 'async' and ctx[-1][1] < indents[-1]:
+                        if in_async:
                             yield (ASYNC if token == 'async' else AWAIT,
                                    token, spos, epos, line)
                             continue
@@ -515,6 +524,7 @@ def generate_tokens(readline):
                                 and stashed[1] == 'async'):
 
                             ctx.append(('async', indents[-1]))
+                            in_async += 1
 
                             yield (ASYNC, stashed[1],
                                    stashed[2], stashed[3],
