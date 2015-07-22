@@ -3322,6 +3322,10 @@ class Test_types(FixerTestCase):
         a = """type(None)"""
         self.check(b, a)
 
+        b = "types.StringTypes"
+        a = "(str,)"
+        self.check(b, a)
+
 class Test_idioms(FixerTestCase):
     fixer = "idioms"
 

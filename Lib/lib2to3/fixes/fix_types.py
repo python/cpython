@@ -42,7 +42,7 @@ _TYPE_MAPPING = {
         'NotImplementedType' : 'type(NotImplemented)',
         'SliceType' : 'slice',
         'StringType': 'bytes', # XXX ?
-        'StringTypes' : 'str', # XXX ?
+        'StringTypes' : '(str,)', # XXX ?
         'TupleType': 'tuple',
         'TypeType' : 'type',
         'UnicodeType': 'str',
