@@ -196,10 +196,10 @@ library/time,,:mm,
 library/time,,:ss,
 library/tracemalloc,,:limit,"for index, stat in enumerate(top_stats[:limit], 1):"
 library/turtle,,::,Example::
-library/unittest,1406,:foo,"self.assertEqual(cm.output, ['INFO:foo:first message',"
-library/unittest,1406,:first,"self.assertEqual(cm.output, ['INFO:foo:first message',"
-library/unittest,1406,:foo,'ERROR:foo.bar:second message'])
-library/unittest,1406,:second,'ERROR:foo.bar:second message'])
+library/unittest,,:foo,"self.assertEqual(cm.output, ['INFO:foo:first message',"
+library/unittest,,:first,"self.assertEqual(cm.output, ['INFO:foo:first message',"
+library/unittest,,:foo,'ERROR:foo.bar:second message'])
+library/unittest,,:second,'ERROR:foo.bar:second message'])
 library/urllib.request,,:close,Connection:close
 library/urllib.request,,:lang,"xmlns=""http://www.w3.org/1999/xhtml"" xml:lang=""en"" lang=""en"">\n\n<head>\n"
 library/urllib.request,,:password,"""joe:password@python.org"""
