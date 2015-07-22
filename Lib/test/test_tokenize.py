@@ -786,12 +786,12 @@ Async/await extension:
     NAME       'def'         (2, 2) (2, 5)
     NAME       'foo'         (2, 6) (2, 9)
     OP         '('           (2, 9) (2, 10)
-    NAME       'await'       (2, 10) (2, 15)
+    AWAIT      'await'       (2, 10) (2, 15)
     OP         ')'           (2, 15) (2, 16)
     OP         ':'           (2, 16) (2, 17)
     NEWLINE    '\\n'          (2, 17) (2, 18)
     INDENT     '    '        (3, 0) (3, 4)
-    NAME       'await'       (3, 4) (3, 9)
+    AWAIT      'await'       (3, 4) (3, 9)
     OP         '='           (3, 10) (3, 11)
     NUMBER     '1'           (3, 12) (3, 13)
     NEWLINE    '\\n'          (3, 13) (3, 14)
@@ -829,6 +829,17 @@ Async/await extension:
     OP         ':'           (2, 18) (2, 19)
     NAME       'pass'        (2, 20) (2, 24)
     DEDENT     ''            (3, 0) (3, 0)
+
+    >>> dump_tokens('''async def foo(async): await''')
+    ENCODING   'utf-8'       (0, 0) (0, 0)
+    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'def'         (1, 6) (1, 9)
+    NAME       'foo'         (1, 10) (1, 13)
+    OP         '('           (1, 13) (1, 14)
+    ASYNC      'async'       (1, 14) (1, 19)
+    OP         ')'           (1, 19) (1, 20)
+    OP         ':'           (1, 20) (1, 21)
+    AWAIT      'await'       (1, 22) (1, 27)
 """
 
 from test import support
