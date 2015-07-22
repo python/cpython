@@ -196,7 +196,7 @@ Options:  -v       verbose (print all checked file names)
                 print('Checking %s...' % fn)
 
             try:
-                with open(fn, 'r') as f:
+                with open(fn, 'r', encoding='utf-8') as f:
                     lines = list(f)
             except (IOError, OSError) as err:
                 print('%s: cannot open: %s' % (fn, err))
