@@ -56,7 +56,7 @@ documentation in :ref:`distutils-index` to learn more about the features of
 distutils; this section explains building extension modules only.
 
 It is common to pre-compute arguments to :func:`setup`, to better structure the
-driver script. In the example above, the\ ``ext_modules`` argument to
+driver script. In the example above, the ``ext_modules`` argument to
 :func:`setup` is a list of extension modules, each of which is an instance of
 the :class:`~distutils.extension.Extension`. In the example, the instance
 defines an extension named ``demo`` which is build by compiling a single source
