@@ -48,6 +48,11 @@ Library
 - Issue #24669: Fix inspect.getsource() for 'async def' functions.
   Patch by Kai Groner.
 
+Build
+-----
+
+- Issue #24603: Update the Windows build to use OpenSSL 1.0.2d.
+
 
 What's New in Python 3.5.0 beta 3?
 ==================================
