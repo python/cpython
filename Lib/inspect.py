@@ -902,14 +902,6 @@ def getblock(lines):
         pass
     return lines[:blockfinder.last]
 
-def _line_number_helper(code_obj, lines, lnum):
-    """Return a list of source lines and starting line number for a code object.
-
-    The arguments must be a code object with lines and lnum from findsource.
-    """
-    _, end_line = list(dis.findlinestarts(code_obj))[-1]
-    return lines[lnum:end_line], lnum + 1
-
 def getsourcelines(object):
     """Return a list of source lines and starting line number for an object.
 
@@ -921,16 +913,8 @@ def getsourcelines(object):
     object = unwrap(object)
     lines, lnum = findsource(object)
 
-    if ismodule(object):
-        return lines, 0
-    elif iscode(object):
-        return _line_number_helper(object, lines, lnum)
-    elif isfunction(object):
-        return _line_number_helper(object.__code__, lines, lnum)
-    elif ismethod(object):
-        return _line_number_helper(object.__func__.__code__, lines, lnum)
-    else:
-        return getblock(lines[lnum:]), lnum + 1
+    if ismodule(object): return lines, 0
+    else: return getblock(lines[lnum:]), lnum + 1
 
 def getsource(object):
     """Return the text of the source code for an object.
