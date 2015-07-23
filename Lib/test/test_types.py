@@ -1213,6 +1213,10 @@ class CoroutineTests(unittest.TestCase):
             return aw
         self.assertIs(aw, foo())
 
+        # decorate foo second time
+        foo = types.coroutine(foo)
+        self.assertIs(aw, foo())
+
     def test_async_def(self):
         # Test that types.coroutine passes 'async def' coroutines
         # without modification
@@ -1226,12 +1230,13 @@ class CoroutineTests(unittest.TestCase):
         self.assertIs(decorated_foo.__code__, foo_code)
 
         foo_coro = foo()
-        @types.coroutine
         def bar(): return foo_coro
-        coro = bar()
-        self.assertIs(foo_coro, coro)
-        self.assertEqual(coro.cr_code.co_flags, foo_flags)
-        coro.close()
+        for _ in range(2):
+            bar = types.coroutine(bar)
+            coro = bar()
+            self.assertIs(foo_coro, coro)
+            self.assertEqual(coro.cr_code.co_flags, foo_flags)
+            coro.close()
 
     def test_duck_coro(self):
         class CoroLike:
@@ -1447,6 +1452,10 @@ class CoroutineTests(unittest.TestCase):
         with self.assertRaisesRegex(Exception, 'ham'):
             wrapper.throw(Exception, Exception('ham'))
 
+        # decorate foo second time
+        foo = types.coroutine(foo)
+        self.assertIs(foo().__await__(), gen)
+
     def test_returning_itercoro(self):
         @types.coroutine
         def gen():
@@ -1460,9 +1469,14 @@ class CoroutineTests(unittest.TestCase):
 
         self.assertIs(foo(), gencoro)
 
+        # decorate foo second time
+        foo = types.coroutine(foo)
+        self.assertIs(foo(), gencoro)
+
     def test_genfunc(self):
         def gen(): yield
         self.assertIs(types.coroutine(gen), gen)
+        self.assertIs(types.coroutine(types.coroutine(gen)), gen)
 
         self.assertTrue(gen.__code__.co_flags & inspect.CO_ITERABLE_COROUTINE)
         self.assertFalse(gen.__code__.co_flags & inspect.CO_COROUTINE)
