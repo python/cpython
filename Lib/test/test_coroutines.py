@@ -330,6 +330,7 @@ class AsyncBadSyntaxTest(unittest.TestCase):
         async def f():
             async def g(): pass
             await z
+        await = 1
         self.assertTrue(inspect.iscoroutinefunction(f))
 
 

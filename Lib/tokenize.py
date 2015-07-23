@@ -498,10 +498,11 @@ def _tokenize(readline, encoding):
     contline = None
     indents = [0]
 
-    # 'stashed' and 'ctx' are used for async/await parsing
+    # 'stashed' and 'async_*' are used for async/await parsing
     stashed = None
-    ctx = [('sync', 0)]
-    in_async = 0
+    async_def = False
+    async_def_indent = 0
+    async_def_nl = False
 
     if encoding is not None:
         if encoding == "utf-8-sig":
@@ -579,14 +580,17 @@ def _tokenize(readline, encoding):
                         ("<tokenize>", lnum, pos, line))
                 indents = indents[:-1]
 
-                cur_indent = indents[-1]
-                while len(ctx) > 1 and ctx[-1][1] >= cur_indent:
-                    if ctx[-1][0] == 'async':
-                        in_async -= 1
-                        assert in_async >= 0
-                    ctx.pop()
+                if async_def and async_def_indent >= indents[-1]:
+                    async_def = False
+                    async_def_nl = False
+                    async_def_indent = 0
 
                 yield TokenInfo(DEDENT, '', (lnum, pos), (lnum, pos), line)
+
+            if async_def and async_def_nl and async_def_indent >= indents[-1]:
+                async_def = False
+                async_def_nl = False
+                async_def_indent = 0
 
         else:                                  # continued statement
             if not line:
@@ -609,8 +613,13 @@ def _tokenize(readline, encoding):
                     if stashed:
                         yield stashed
                         stashed = None
-                    yield TokenInfo(NL if parenlev > 0 else NEWLINE,
-                           token, spos, epos, line)
+                    if parenlev > 0:
+                        yield TokenInfo(NL, token, spos, epos, line)
+                    else:
+                        yield TokenInfo(NEWLINE, token, spos, epos, line)
+                        if async_def:
+                            async_def_nl = True
+
                 elif initial == '#':
                     assert not token.endswith("\n")
                     if stashed:
@@ -644,7 +653,7 @@ def _tokenize(readline, encoding):
                         yield TokenInfo(STRING, token, spos, epos, line)
                 elif initial.isidentifier():               # ordinary name
                     if token in ('async', 'await'):
-                        if in_async:
+                        if async_def:
                             yield TokenInfo(
                                 ASYNC if token == 'async' else AWAIT,
                                 token, spos, epos, line)
@@ -660,15 +669,13 @@ def _tokenize(readline, encoding):
                                 and stashed.type == NAME
                                 and stashed.string == 'async'):
 
-                            ctx.append(('async', indents[-1]))
-                            in_async += 1
+                            async_def = True
+                            async_def_indent = indents[-1]
 
                             yield TokenInfo(ASYNC, stashed.string,
                                             stashed.start, stashed.end,
                                             stashed.line)
                             stashed = None
-                        else:
-                            ctx.append(('sync', indents[-1]))
 
                     if stashed:
                         yield stashed

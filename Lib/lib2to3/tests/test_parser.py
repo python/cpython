@@ -67,9 +67,31 @@ class TestAsyncAwait(GrammarTest):
                              await x
                       """)
 
+        self.validate("""async def foo():
+
+            def foo(): pass
+
+            def foo(): pass
+
+            await x
+        """)
+
+        self.validate("""async def foo(): return await a""")
+
+        self.validate("""def foo():
+            def foo(): pass
+            async def foo(): await x
+        """)
+
         self.invalid_syntax("await x")
         self.invalid_syntax("""def foo():
                                    await x""")
+
+        self.invalid_syntax("""def foo():
+            def foo(): pass
+            async def foo(): pass
+            await x
+        """)
 
     def test_async_var(self):
         self.validate("""async = 1""")

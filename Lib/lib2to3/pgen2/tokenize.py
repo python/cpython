@@ -366,10 +366,11 @@ def generate_tokens(readline):
     contline = None
     indents = [0]
 
-    # 'stashed' and 'ctx' are used for async/await parsing
+    # 'stashed' and 'async_*' are used for async/await parsing
     stashed = None
-    ctx = [('sync', 0)]
-    in_async = 0
+    async_def = False
+    async_def_indent = 0
+    async_def_nl = False
 
     while 1:                                   # loop over lines in stream
         try:
@@ -438,14 +439,17 @@ def generate_tokens(readline):
                         ("<tokenize>", lnum, pos, line))
                 indents = indents[:-1]
 
-                cur_indent = indents[-1]
-                while len(ctx) > 1 and ctx[-1][1] >= cur_indent:
-                    if ctx[-1][0] == 'async':
-                        in_async -= 1
-                        assert in_async >= 0
-                    ctx.pop()
+                if async_def and async_def_indent >= indents[-1]:
+                    async_def = False
+                    async_def_nl = False
+                    async_def_indent = 0
 
                 yield (DEDENT, '', (lnum, pos), (lnum, pos), line)
+
+            if async_def and async_def_nl and async_def_indent >= indents[-1]:
+                async_def = False
+                async_def_nl = False
+                async_def_indent = 0
 
         else:                                  # continued statement
             if not line:
@@ -466,10 +470,13 @@ def generate_tokens(readline):
                     newline = NEWLINE
                     if parenlev > 0:
                         newline = NL
+                    elif async_def:
+                        async_def_nl = True
                     if stashed:
                         yield stashed
                         stashed = None
                     yield (newline, token, spos, epos, line)
+
                 elif initial == '#':
                     assert not token.endswith("\n")
                     if stashed:
@@ -508,7 +515,7 @@ def generate_tokens(readline):
                         yield (STRING, token, spos, epos, line)
                 elif initial in namechars:                 # ordinary name
                     if token in ('async', 'await'):
-                        if in_async:
+                        if async_def:
                             yield (ASYNC if token == 'async' else AWAIT,
                                    token, spos, epos, line)
                             continue
@@ -523,15 +530,13 @@ def generate_tokens(readline):
                                 and stashed[0] == NAME
                                 and stashed[1] == 'async'):
 
-                            ctx.append(('async', indents[-1]))
-                            in_async += 1
+                            async_def = True
+                            async_def_indent = indents[-1]
 
                             yield (ASYNC, stashed[1],
                                    stashed[2], stashed[3],
                                    stashed[4])
                             stashed = None
-                        else:
-                            ctx.append(('sync', indents[-1]))
 
                     if stashed:
                         yield stashed
