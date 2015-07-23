@@ -2001,6 +2001,14 @@ mock_open
     is insufficient, one of the in-memory filesystem packages on `PyPI
     <https://pypi.python.org/pypi>`_ can offer a realistic filesystem for testing.
 
+   .. versionchanged:: 3.4
+      Added :meth:`~io.IOBase.readline` and :meth:`~io.IOBase.readlines` support.
+      The mock of :meth:`~io.IOBase.read` changed to consume *read_data* rather
+      than returning it on each call.
+
+   .. versionchanged:: 3.4.4
+      *read_data* is now reset on each call to the *mock*.
+
 Using :func:`open` as a context manager is a great way to ensure your file handles
 are closed properly and is becoming common::
 
