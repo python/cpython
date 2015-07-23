@@ -50,7 +50,7 @@ static PyObject _dummy_struct;
 static setentry *
 set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
 {
-    setentry *table = so->table;
+    setentry *table;
     setentry *entry;
     size_t perturb;
     size_t mask = so->mask;
@@ -58,7 +58,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t j;
     int cmp;
 
-    entry = &table[i];
+    entry = &so->table[i];
     if (entry->key == NULL)
         return entry;
 
@@ -75,6 +75,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                 && PyUnicode_CheckExact(key)
                 && _PyUnicode_EQ(startkey, key))
                 return entry;
+            table = so->table;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
             Py_DECREF(startkey);
@@ -101,6 +102,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
                         && PyUnicode_CheckExact(key)
                         && _PyUnicode_EQ(startkey, key))
                         return entry;
+                    table = so->table;
                     Py_INCREF(startkey);
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
                     Py_DECREF(startkey);
@@ -118,7 +120,7 @@ set_lookkey(PySetObject *so, PyObject *key, Py_hash_t hash)
         perturb >>= PERTURB_SHIFT;
         i = (i * 5 + 1 + perturb) & mask;
 
-        entry = &table[i];
+        entry = &so->table[i];
         if (entry->key == NULL)
             return entry;
     }
@@ -144,11 +146,10 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 
   restart:
 
-    table = so->table;
     mask = so->mask;
     i = (size_t)hash & mask;
 
-    entry = &table[i];
+    entry = &so->table[i];
     if (entry->key == NULL)
         goto found_unused;
 
@@ -166,6 +167,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                 && PyUnicode_CheckExact(key)
                 && _PyUnicode_EQ(startkey, key))
                 goto found_active;
+            table = so->table;
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
             Py_DECREF(startkey);
@@ -177,7 +179,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                 goto found_active;
             mask = so->mask;                 /* help avoid a register spill */
         }
-        if (entry->hash == -1 && freeslot == NULL)
+        else if (entry->hash == -1 && freeslot == NULL)
             freeslot = entry;
 
         if (i + LINEAR_PROBES <= mask) {
@@ -194,6 +196,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                         && PyUnicode_CheckExact(key)
                         && _PyUnicode_EQ(startkey, key))
                         goto found_active;
+                    table = so->table;
                     Py_INCREF(startkey);
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
                     Py_DECREF(startkey);
@@ -213,7 +216,7 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
         perturb >>= PERTURB_SHIFT;
         i = (i * 5 + 1 + perturb) & mask;
 
-        entry = &table[i];
+        entry = &so->table[i];
         if (entry->key == NULL)
             goto found_unused_or_dummy;
     }
