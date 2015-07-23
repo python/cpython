@@ -31,12 +31,6 @@
                || c == '_'\
                || (c >= 128))
 
-/* The following DEFTYPE* flags are used in 'tok_state->deftypestack',
-   and should be removed in 3.7, when async/await are regular
-   keywords. */
-#define DEFTYPE_ASYNC           1
-#define DEFTYPE_HAS_NL          2
-
 extern char *PyOS_Readline(FILE *, FILE *, const char *);
 /* Return malloc'ed string including trailing \n;
    empty malloc'ed string for EOF;
@@ -133,12 +127,6 @@ tok_new(void)
     tok->indent = 0;
     tok->indstack[0] = 0;
 
-    tok->def = 0;
-    tok->defstack[0] = 0;
-    tok->deftypestack[0] = 0;
-    tok->def_async_behind = 0;
-    tok->def_in_async = 0;
-
     tok->atbol = 1;
     tok->pendin = 0;
     tok->prompt = tok->nextprompt = NULL;
@@ -159,6 +147,11 @@ tok_new(void)
     tok->decoding_readline = NULL;
     tok->decoding_buffer = NULL;
 #endif
+
+    tok->async_def = 0;
+    tok->async_def_indent = 0;
+    tok->async_def_nl = 0;
+
     return tok;
 }
 
@@ -1350,11 +1343,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     int c;
     int blankline, nonascii;
 
-    int tok_len;
-    struct tok_state ahead_tok;
-    char *ahead_tok_start = NULL, *ahead_top_end = NULL;
-    int ahead_tok_kind;
-
     *p_start = *p_end = NULL;
   nextline:
     tok->start = NULL;
@@ -1442,16 +1430,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     if (tok->pendin != 0) {
         if (tok->pendin < 0) {
             tok->pendin++;
-
-            while (tok->def && tok->defstack[tok->def] >= tok->indent) {
-                if (tok->deftypestack[tok->def] & DEFTYPE_ASYNC) {
-                    tok->def_in_async--;
-                    assert(tok->def_in_async >= 0);
-                }
-                tok->def--;
-                assert(tok->def >= 0);
-            }
-
             return DEDENT;
         }
         else {
@@ -1460,20 +1438,19 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         }
     }
 
-    if (!blankline && tok->level == 0
-        && tok->def && tok->deftypestack[tok->def] & DEFTYPE_HAS_NL
-        && tok->defstack[tok->def] >= tok->indent)
+    if (tok->async_def
+        && !blankline
+        && tok->level == 0
+        /* There was a NEWLINE after ASYNC DEF,
+           so we're past the signature. */
+        && tok->async_def_nl
+        /* Current indentation level is less than where
+           the async function was defined */
+        && tok->async_def_indent >= tok->indent)
     {
-        /* The top function on the stack did have a NEWLINE
-        token, but didn't have an INDENT.  That means that
-        it's a one-line function and it should now be removed
-        from the stack. */
-        if (tok->deftypestack[tok->def] & DEFTYPE_ASYNC) {
-            tok->def_in_async--;
-            assert(tok->def_in_async >= 0);
-        }
-        tok->def--;
-        assert(tok->def >= 0);
+        tok->async_def = 0;
+        tok->async_def_indent = 0;
+        tok->async_def_nl = 0;
     }
 
  again:
@@ -1528,38 +1505,27 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur;
 
-        tok_len = tok->cur - tok->start;
-        if (tok_len == 3 && memcmp(tok->start, "def", 3) == 0) {
-            /* The current token is 'def'. */
-            if (tok->def + 1 >= MAXINDENT) {
-                tok->done = E_TOODEEP;
-                tok->cur = tok->inp;
-                return ERRORTOKEN;
+        /* async/await parsing block. */
+        if (tok->cur - tok->start == 5) {
+            /* Current token length is 5. */
+            if (tok->async_def) {
+                /* We're inside an 'async def' function. */
+                if (memcmp(tok->start, "async", 5) == 0)
+                    return ASYNC;
+                if (memcmp(tok->start, "await", 5) == 0)
+                    return AWAIT;
             }
+            else if (memcmp(tok->start, "async", 5) == 0) {
+                /* The current token is 'async'.
+                   Look ahead one token.*/
 
-            /* Advance defs stack. */
-            tok->def++;
-            tok->defstack[tok->def] = tok->indent;
+                struct tok_state ahead_tok;
+                char *ahead_tok_start = NULL, *ahead_tok_end = NULL;
+                int ahead_tok_kind;
 
-            if (tok->def_async_behind) {
-                /* The previous token was 'async'. */
-                tok->def_async_behind = 0;
-                tok->deftypestack[tok->def] = DEFTYPE_ASYNC;
-                tok->def_in_async++;
-            }
-            else {
-                /* This is a regular function (not async def). */
-                tok->deftypestack[tok->def] = 0;
-            }
-        }
-        else if (tok_len == 5) {
-            if (memcmp(tok->start, "async", 5) == 0) {
-                /* The current token is 'async'. */
                 memcpy(&ahead_tok, tok, sizeof(ahead_tok));
-
-                /* Try to look ahead one token. */
                 ahead_tok_kind = tok_get(&ahead_tok, &ahead_tok_start,
-                                         &ahead_top_end);
+                                         &ahead_tok_end);
 
                 if (ahead_tok_kind == NAME
                     && ahead_tok.cur - ahead_tok.start == 3
@@ -1567,22 +1533,10 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
                 {
                     /* The next token is going to be 'def', so instead of
                        returning 'async' NAME token, we return ASYNC. */
-                    tok->def_async_behind = 1;
+                    tok->async_def_indent = tok->indent;
+                    tok->async_def = 1;
                     return ASYNC;
                 }
-                else if (tok->def_in_async)
-                {
-                    /* We're inside an 'async def' function, so we treat
-                    'async' token as ASYNC, instead of NAME. */
-                    return ASYNC;
-                }
-
-            }
-            else if (memcmp(tok->start, "await", 5) == 0 && tok->def_in_async)
-            {
-                /* We're inside an 'async def' function, so we treat
-                'await' token as AWAIT, instead of NAME. */
-                return AWAIT;
             }
         }
 
@@ -1597,12 +1551,10 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         *p_start = tok->start;
         *p_end = tok->cur - 1; /* Leave '\n' out of the string */
         tok->cont_line = 0;
-        if (tok->def) {
-            /* Mark the top function on the stack that it had
-               at least one NEWLINE.  That will help us to
-               distinguish one-line functions from functions
-               with multiple statements. */
-            tok->deftypestack[tok->def] |= DEFTYPE_HAS_NL;
+        if (tok->async_def) {
+            /* We're somewhere inside an 'async def' function, and
+               we've encountered a NEWLINE after its signature. */
+            tok->async_def_nl = 1;
         }
         return NEWLINE;
     }
