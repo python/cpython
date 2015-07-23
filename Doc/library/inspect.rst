@@ -227,24 +227,6 @@ attributes:
       listed in the metaclass' custom :meth:`__dir__`.
 
 
-.. function:: getmoduleinfo(path)
-
-   Returns a :term:`named tuple` ``ModuleInfo(name, suffix, mode, module_type)``
-   of values that describe how Python will interpret the file identified by
-   *path* if it is a module, or ``None`` if it would not be identified as a
-   module.  In that tuple, *name* is the name of the module without the name of
-   any enclosing package, *suffix* is the trailing part of the file name (which
-   may not be a dot-delimited extension), *mode* is the :func:`open` mode that
-   would be used (``'r'`` or ``'rb'``), and *module_type* is an integer giving
-   the type of the module.  *module_type* will have a value which can be
-   compared to the constants defined in the :mod:`imp` module; see the
-   documentation for that module for more information on module types.
-
-   .. deprecated:: 3.3
-      You may check the file path's suffix against the supported suffixes
-      listed in :mod:`importlib.machinery` to infer the same information.
-
-
 .. function:: getmodulename(path)
 
    Return the name of the module named by the file *path*, without including the
@@ -258,8 +240,7 @@ attributes:
    still return ``None``.
 
    .. versionchanged:: 3.3
-      This function is now based directly on :mod:`importlib` rather than the
-      deprecated :func:`getmoduleinfo`.
+      The function is based directly on :mod:`importlib`.
 
 
 .. function:: ismodule(object)
