@@ -2278,6 +2278,24 @@ def mock_open(mock=None, read_data=''):
     `read_data` is a string for the `read` methoddline`, and `readlines` of the
     file handle to return.  This is an empty string by default.
     """
+    def _readlines_side_effect(*args, **kwargs):
+        if handle.readlines.return_value is not None:
+            return handle.readlines.return_value
+        return list(_state[0])
+
+    def _read_side_effect(*args, **kwargs):
+        if handle.read.return_value is not None:
+            return handle.read.return_value
+        return ''.join(_state[0])
+
+    def _readline_side_effect():
+        if handle.readline.return_value is not None:
+            while True:
+                yield handle.readline.return_value
+        for line in _state[0]:
+            yield line
+
+
     global file_spec
     if file_spec is None:
         import _io
@@ -2286,42 +2304,31 @@ def mock_open(mock=None, read_data=''):
     if mock is None:
         mock = MagicMock(name='open', spec=open)
 
-    def make_handle(*args, **kwargs):
-        # Arg checking is handled by __call__
-        def _readlines_side_effect(*args, **kwargs):
-            if handle.readlines.return_value is not None:
-                return handle.readlines.return_value
-            return list(_data)
+    handle = MagicMock(spec=file_spec)
+    handle.__enter__.return_value = handle
 
-        def _read_side_effect(*args, **kwargs):
-            if handle.read.return_value is not None:
-                return handle.read.return_value
-            return ''.join(_data)
+    _state = [_iterate_read_data(read_data), None]
 
-        def _readline_side_effect():
-            if handle.readline.return_value is not None:
-                while True:
-                    yield handle.readline.return_value
-            for line in _data:
-                yield line
+    handle.write.return_value = None
+    handle.read.return_value = None
+    handle.readline.return_value = None
+    handle.readlines.return_value = None
 
-        handle = MagicMock(spec=file_spec)
-        handle.__enter__.return_value = handle
+    handle.read.side_effect = _read_side_effect
+    _state[1] = _readline_side_effect()
+    handle.readline.side_effect = _state[1]
+    handle.readlines.side_effect = _readlines_side_effect
 
-        _data = _iterate_read_data(read_data)
+    def reset_data(*args, **kwargs):
+        _state[0] = _iterate_read_data(read_data)
+        if handle.readline.side_effect == _state[1]:
+            # Only reset the side effect if the user hasn't overridden it.
+            _state[1] = _readline_side_effect()
+            handle.readline.side_effect = _state[1]
+        return DEFAULT
 
-        handle.write.return_value = None
-        handle.read.return_value = None
-        handle.readline.return_value = None
-        handle.readlines.return_value = None
-
-        handle.read.side_effect = _read_side_effect
-        handle.readline.side_effect = _readline_side_effect()
-        handle.readlines.side_effect = _readlines_side_effect
-        _check_and_set_parent(mock, handle, None, '()')
-        return handle
-
-    mock.side_effect = make_handle
+    mock.side_effect = reset_data
+    mock.return_value = handle
     return mock
 
 
