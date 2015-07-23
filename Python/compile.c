@@ -1559,32 +1559,31 @@ compiler_visit_argannotation(struct compiler *c, identifier id,
         VISIT(c, expr, annotation);
         mangled = _Py_Mangle(c->u->u_private, id);
         if (!mangled)
-            return -1;
+            return 0;
         if (PyList_Append(names, mangled) < 0) {
             Py_DECREF(mangled);
-            return -1;
+            return 0;
         }
         Py_DECREF(mangled);
     }
-    return 0;
+    return 1;
 }
 
 static int
 compiler_visit_argannotations(struct compiler *c, asdl_seq* args,
                               PyObject *names)
 {
-    int i, error;
+    int i;
     for (i = 0; i < asdl_seq_LEN(args); i++) {
         arg_ty arg = (arg_ty)asdl_seq_GET(args, i);
-        error = compiler_visit_argannotation(
+        if (!compiler_visit_argannotation(
                         c,
                         arg->arg,
                         arg->annotation,
-                        names);
-        if (error)
-            return error;
+                        names))
+            return 0;
     }
-    return 0;
+    return 1;
 }
 
 static int
@@ -1604,16 +1603,16 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
     if (!names)
         return -1;
 
-    if (compiler_visit_argannotations(c, args->args, names))
+    if (!compiler_visit_argannotations(c, args->args, names))
         goto error;
     if (args->vararg && args->vararg->annotation &&
-        compiler_visit_argannotation(c, args->vararg->arg,
+        !compiler_visit_argannotation(c, args->vararg->arg,
                                      args->vararg->annotation, names))
         goto error;
-    if (compiler_visit_argannotations(c, args->kwonlyargs, names))
+    if (!compiler_visit_argannotations(c, args->kwonlyargs, names))
         goto error;
     if (args->kwarg && args->kwarg->annotation &&
-        compiler_visit_argannotation(c, args->kwarg->arg,
+        !compiler_visit_argannotation(c, args->kwarg->arg,
                                      args->kwarg->annotation, names))
         goto error;
 
@@ -1622,7 +1621,7 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
         if (!return_str)
             goto error;
     }
-    if (compiler_visit_argannotation(c, return_str, returns, names)) {
+    if (!compiler_visit_argannotation(c, return_str, returns, names)) {
         goto error;
     }
 
