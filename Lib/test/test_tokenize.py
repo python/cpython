@@ -840,6 +840,79 @@ Async/await extension:
     OP         ')'           (1, 19) (1, 20)
     OP         ':'           (1, 20) (1, 21)
     AWAIT      'await'       (1, 22) (1, 27)
+
+    >>> dump_tokens('''def f():
+    ...
+    ...   def baz(): pass
+    ...   async def bar(): pass
+    ...
+    ...   await = 2''')
+    ENCODING   'utf-8'       (0, 0) (0, 0)
+    NAME       'def'         (1, 0) (1, 3)
+    NAME       'f'           (1, 4) (1, 5)
+    OP         '('           (1, 5) (1, 6)
+    OP         ')'           (1, 6) (1, 7)
+    OP         ':'           (1, 7) (1, 8)
+    NEWLINE    '\\n'          (1, 8) (1, 9)
+    NL         '\\n'          (2, 0) (2, 1)
+    INDENT     '  '          (3, 0) (3, 2)
+    NAME       'def'         (3, 2) (3, 5)
+    NAME       'baz'         (3, 6) (3, 9)
+    OP         '('           (3, 9) (3, 10)
+    OP         ')'           (3, 10) (3, 11)
+    OP         ':'           (3, 11) (3, 12)
+    NAME       'pass'        (3, 13) (3, 17)
+    NEWLINE    '\\n'          (3, 17) (3, 18)
+    ASYNC      'async'       (4, 2) (4, 7)
+    NAME       'def'         (4, 8) (4, 11)
+    NAME       'bar'         (4, 12) (4, 15)
+    OP         '('           (4, 15) (4, 16)
+    OP         ')'           (4, 16) (4, 17)
+    OP         ':'           (4, 17) (4, 18)
+    NAME       'pass'        (4, 19) (4, 23)
+    NEWLINE    '\\n'          (4, 23) (4, 24)
+    NL         '\\n'          (5, 0) (5, 1)
+    NAME       'await'       (6, 2) (6, 7)
+    OP         '='           (6, 8) (6, 9)
+    NUMBER     '2'           (6, 10) (6, 11)
+    DEDENT     ''            (7, 0) (7, 0)
+
+    >>> dump_tokens('''async def f():
+    ...
+    ...   def baz(): pass
+    ...   async def bar(): pass
+    ...
+    ...   await = 2''')
+    ENCODING   'utf-8'       (0, 0) (0, 0)
+    ASYNC      'async'       (1, 0) (1, 5)
+    NAME       'def'         (1, 6) (1, 9)
+    NAME       'f'           (1, 10) (1, 11)
+    OP         '('           (1, 11) (1, 12)
+    OP         ')'           (1, 12) (1, 13)
+    OP         ':'           (1, 13) (1, 14)
+    NEWLINE    '\\n'          (1, 14) (1, 15)
+    NL         '\\n'          (2, 0) (2, 1)
+    INDENT     '  '          (3, 0) (3, 2)
+    NAME       'def'         (3, 2) (3, 5)
+    NAME       'baz'         (3, 6) (3, 9)
+    OP         '('           (3, 9) (3, 10)
+    OP         ')'           (3, 10) (3, 11)
+    OP         ':'           (3, 11) (3, 12)
+    NAME       'pass'        (3, 13) (3, 17)
+    NEWLINE    '\\n'          (3, 17) (3, 18)
+    ASYNC      'async'       (4, 2) (4, 7)
+    NAME       'def'         (4, 8) (4, 11)
+    NAME       'bar'         (4, 12) (4, 15)
+    OP         '('           (4, 15) (4, 16)
+    OP         ')'           (4, 16) (4, 17)
+    OP         ':'           (4, 17) (4, 18)
+    NAME       'pass'        (4, 19) (4, 23)
+    NEWLINE    '\\n'          (4, 23) (4, 24)
+    NL         '\\n'          (5, 0) (5, 1)
+    AWAIT      'await'       (6, 2) (6, 7)
+    OP         '='           (6, 8) (6, 9)
+    NUMBER     '2'           (6, 10) (6, 11)
+    DEDENT     ''            (7, 0) (7, 0)
 """
 
 from test import support
