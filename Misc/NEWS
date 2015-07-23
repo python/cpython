@@ -53,6 +53,8 @@ Library
 - Issue #24669: Fix inspect.getsource() for 'async def' functions.
   Patch by Kai Groner.
 
+- Issue #24688: ast.get_docstring() for 'async def' functions.
+
 Build
 -----
 
