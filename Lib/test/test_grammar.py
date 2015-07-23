@@ -534,7 +534,8 @@ class GrammarTests(unittest.TestCase):
         # Not allowed at class scope
         check_syntax_error(self, "class foo:yield 1")
         check_syntax_error(self, "class foo:yield from ()")
-
+        # Check annotation refleak on SyntaxError
+        check_syntax_error(self, "def g(a:(yield)): pass")
 
     def test_raise(self):
         # 'raise' test [',' test]
