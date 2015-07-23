@@ -464,6 +464,7 @@ class TestDecorators(GetSourceBase):
     def test_getsource_unwrap(self):
         self.assertSourceEqual(mod2.real, 130, 132)
 
+    @unittest.expectedFailure
     def test_decorator_with_lambda(self):
         self.assertSourceEqual(mod2.func114, 113, 115)
 
@@ -562,6 +563,10 @@ class TestBuggyCases(GetSourceBase):
 
     def test_getsource_on_method(self):
         self.assertSourceEqual(mod2.ClassWithMethod.method, 118, 119)
+
+    def test_nested_func(self):
+        self.assertSourceEqual(mod2.cls135.func136, 136, 139)
+
 
 class TestNoEOL(GetSourceBase):
     def setUp(self):

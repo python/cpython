@@ -130,3 +130,10 @@ def decorator(func):
 @decorator
 def real():
     return 20
+
+#line 134
+class cls135:
+    def func136():
+        def func137():
+            never_reached1
+            never_reached2
