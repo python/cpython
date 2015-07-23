@@ -145,7 +145,8 @@ Removed
 API and Feature Removals
 ------------------------
 
-* None yet.
+* ``inspect.getargspec()`` was removed (was deprecated since CPython 3.0).
+  :func:`inspect.getfullargspec` is an almost drop in replacement.
 
 
 Porting to Python 3.6

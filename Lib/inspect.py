@@ -1002,31 +1002,6 @@ def _getfullargs(co):
         varkw = co.co_varnames[nargs]
     return args, varargs, kwonlyargs, varkw
 
-
-ArgSpec = namedtuple('ArgSpec', 'args varargs keywords defaults')
-
-def getargspec(func):
-    """Get the names and default values of a function's arguments.
-
-    A tuple of four things is returned: (args, varargs, keywords, defaults).
-    'args' is a list of the argument names, including keyword-only argument names.
-    'varargs' and 'keywords' are the names of the * and ** arguments or None.
-    'defaults' is an n-tuple of the default values of the last n arguments.
-
-    Use the getfullargspec() API for Python 3 code, as annotations
-    and keyword arguments are supported. getargspec() will raise ValueError
-    if the func has either annotations or keyword arguments.
-    """
-    warnings.warn("inspect.getargspec() is deprecated, "
-                  "use inspect.signature() instead", DeprecationWarning,
-                  stacklevel=2)
-    args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, ann = \
-        getfullargspec(func)
-    if kwonlyargs or ann:
-        raise ValueError("Function has keyword-only arguments or annotations"
-                         ", use getfullargspec() API which can support them")
-    return ArgSpec(args, varargs, varkw, defaults)
-
 FullArgSpec = namedtuple('FullArgSpec',
     'args, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations')
 
