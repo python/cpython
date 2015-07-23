@@ -22,6 +22,9 @@ Core and Builtins
 - Issue #24619: New approach for tokenizing async/await. As a consequence,
   is is now possible to have one-line 'async def foo(): await ..' functions.
 
+- Issue #24687: Plug refleak on SyntaxError in function parameters
+  annotations.
+
 Library
 -------
 
