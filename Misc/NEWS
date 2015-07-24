@@ -70,7 +70,8 @@ Library
 Build
 -----
 
-- Issue #24603: Update the Windows build to use OpenSSL 1.0.2d.
+- Issue #24603: Update Windows builds and OS X 10.5 installer to use OpenSSL
+  1.0.2d.
 
 
 What's New in Python 3.5.0 beta 3?
