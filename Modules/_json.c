@@ -2419,6 +2419,8 @@ init_json(void)
     if (PyType_Ready(&PyEncoderType) < 0)
         return;
     m = Py_InitModule3("_json", speedups_methods, module_doc);
+    if (m == NULL)
+        return;
     Py_INCREF((PyObject*)&PyScannerType);
     PyModule_AddObject(m, "make_scanner", (PyObject*)&PyScannerType);
     Py_INCREF((PyObject*)&PyEncoderType);
