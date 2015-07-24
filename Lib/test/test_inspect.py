@@ -464,7 +464,6 @@ class TestDecorators(GetSourceBase):
     def test_getsource_unwrap(self):
         self.assertSourceEqual(mod2.real, 130, 132)
 
-    @unittest.expectedFailure
     def test_decorator_with_lambda(self):
         self.assertSourceEqual(mod2.func114, 113, 115)
 
