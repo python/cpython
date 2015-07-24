@@ -340,6 +340,10 @@ random_setstate(RandomObject *self, PyObject *state)
     index = PyLong_AsLong(PyTuple_GET_ITEM(state, i));
     if (index == -1 && PyErr_Occurred())
         return NULL;
+    if (index < 0 || index > N) {
+        PyErr_SetString(PyExc_ValueError, "invalid state");
+        return NULL;
+    }
     self->index = (int)index;
 
     Py_INCREF(Py_None);
