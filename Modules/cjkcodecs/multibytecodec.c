@@ -478,6 +478,7 @@ multibytecodec_encode(MultibyteCodec *codec,
         return PyString_FromString("");
 
     buf.excobj = NULL;
+    buf.outobj = NULL;
     buf.inbuf = buf.inbuf_top = *data;
     buf.inbuf_end = buf.inbuf_top + datalen;
 
