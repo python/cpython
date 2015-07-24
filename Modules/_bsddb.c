@@ -3454,9 +3454,11 @@ DB_verify(DBObject* self, PyObject* args, PyObject* kwargs)
 
         error=DB_close_internal(self, 0, 1);
         if (error) {
-          return error;
+            if (outFile)
+                fclose(outFile);
+            return error;
         }
-     }
+    }
 
     MYDB_BEGIN_ALLOW_THREADS;
     err = self->db->verify(self->db, fileName, dbName, outFile, flags);
