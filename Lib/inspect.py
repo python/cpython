@@ -859,21 +859,37 @@ class BlockFinder:
         self.islambda = False
         self.started = False
         self.passline = False
+        self.indecorator = False
+        self.decoratorhasargs = False
         self.last = 1
 
     def tokeneater(self, type, token, srowcol, erowcol, line):
-        if not self.started:
+        if not self.started and not self.indecorator:
+            # skip any decorators
+            if token == "@":
+                self.indecorator = True
             # look for the first "def", "class" or "lambda"
-            if token in ("def", "class", "lambda"):
+            elif token in ("def", "class", "lambda"):
                 if token == "lambda":
                     self.islambda = True
                 self.started = True
             self.passline = True    # skip to the end of the line
+        elif token == "(":
+            if self.indecorator:
+                self.decoratorhasargs = True
+        elif token == ")":
+            if self.indecorator:
+                self.indecorator = False
+                self.decoratorhasargs = False
         elif type == tokenize.NEWLINE:
             self.passline = False   # stop skipping when a NEWLINE is seen
             self.last = srowcol[0]
             if self.islambda:       # lambdas always end at the first NEWLINE
                 raise EndOfBlock
+            # hitting a NEWLINE when in a decorator without args
+            # ends the decorator
+            if self.indecorator and not self.decoratorhasargs:
+                self.indecorator = False
         elif self.passline:
             pass
         elif type == tokenize.INDENT:
@@ -913,8 +929,10 @@ def getsourcelines(object):
     object = unwrap(object)
     lines, lnum = findsource(object)
 
-    if ismodule(object): return lines, 0
-    else: return getblock(lines[lnum:]), lnum + 1
+    if ismodule(object):
+        return lines, 0
+    else:
+        return getblock(lines[lnum:]), lnum + 1
 
 def getsource(object):
     """Return the text of the source code for an object.
