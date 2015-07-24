@@ -66,6 +66,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24620: Random.setstate() now validates the value of state last element.
+
 - Issue #22153: Improve unittest docs. Patch from Martin Panter and evilzero.
 
 - Issue #24206: Fixed __eq__ and __ne__ methods of inspect classes.
