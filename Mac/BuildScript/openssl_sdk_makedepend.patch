@@ -2,7 +2,7 @@
 # Parent  25a9af415e8c3faf591c360d5f0e361d049b2b43
 # openssl_sdk_makedepend.patch
 #
-# 	using openssl 1.0.2c
+# 	using openssl 1.0.2d
 #
 # - support building with an OS X SDK
 # - allow "make depend" to use compilers with names other than "gcc"
