@@ -901,6 +901,26 @@ class TestShutil(unittest.TestCase):
         shutil.copytree(src_dir, dst_dir, symlinks=True)
         self.assertIn('test.txt', os.listdir(dst_dir))
 
+    @support.skip_unless_symlink
+    def test_copytree_symlink_dir(self):
+        src_dir = self.mkdtemp()
+        dst_dir = os.path.join(self.mkdtemp(), 'destination')
+        os.mkdir(os.path.join(src_dir, 'real_dir'))
+        with open(os.path.join(src_dir, 'real_dir', 'test.txt'), 'w'):
+            pass
+        os.symlink(os.path.join(src_dir, 'real_dir'),
+                   os.path.join(src_dir, 'link_to_dir'),
+                   target_is_directory=True)
+
+        shutil.copytree(src_dir, dst_dir, symlinks=False)
+        self.assertFalse(os.path.islink(os.path.join(dst_dir, 'link_to_dir')))
+        self.assertIn('test.txt', os.listdir(os.path.join(dst_dir, 'link_to_dir')))
+
+        dst_dir = os.path.join(self.mkdtemp(), 'destination2')
+        shutil.copytree(src_dir, dst_dir, symlinks=True)
+        self.assertTrue(os.path.islink(os.path.join(dst_dir, 'link_to_dir')))
+        self.assertIn('test.txt', os.listdir(os.path.join(dst_dir, 'link_to_dir')))
+
     def _copy_file(self, method):
         fname = 'test.txt'
         tmpdir = self.mkdtemp()
