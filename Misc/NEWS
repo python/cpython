@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21697: shutil.copytree() now correctly handles symbolic links that
+  point to directories.  Patch by Eduardo Seabra and Thomas Kluyver.
+
 - Issue #24620: Random.setstate() now validates the value of state last element.
 
 - Issue #22153: Improve unittest docs. Patch from Martin Panter and evilzero.
