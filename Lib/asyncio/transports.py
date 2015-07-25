@@ -1,8 +1,6 @@
 """Abstract Transport class."""
 
-import sys
-
-_PY34 = sys.version_info >= (3, 4)
+from asyncio import compat
 
 __all__ = ['BaseTransport', 'ReadTransport', 'WriteTransport',
            'Transport', 'DatagramTransport', 'SubprocessTransport',
@@ -94,12 +92,8 @@ class WriteTransport(BaseTransport):
         The default implementation concatenates the arguments and
         calls write() on the result.
         """
-        if not _PY34:
-            # In Python 3.3, bytes.join() doesn't handle memoryview.
-            list_of_data = (
-                bytes(data) if isinstance(data, memoryview) else data
-                for data in list_of_data)
-        self.write(b''.join(list_of_data))
+        data = compat.flatten_list_bytes(list_of_data)
+        self.write(data)
 
     def write_eof(self):
         """Close the write end after flushing buffered data.
