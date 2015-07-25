@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21697: shutil.copytree() now correctly handles symbolic links that
+  point to directories.  Patch by Eduardo Seabra and Thomas Kluyver.
+
 - Issue #14373: Fixed segmentation fault when gc.collect() is called during
   constructing lru_cache (C implementation).
 
