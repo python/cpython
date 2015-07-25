@@ -3,14 +3,11 @@
 __all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
 
 import collections
-import sys
 
+from . import compat
 from . import events
 from . import futures
 from .coroutines import coroutine
-
-
-_PY35 = sys.version_info >= (3, 5)
 
 
 class _ContextManager:
@@ -70,7 +67,7 @@ class _ContextManagerMixin:
         yield from self.acquire()
         return _ContextManager(self)
 
-    if _PY35:
+    if compat.PY35:
 
         def __await__(self):
             # To make "with await lock" work.
