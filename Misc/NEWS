@@ -34,6 +34,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24708: Fix possible integer overflow in strop.replace().
+
 - Issue #24620: Random.setstate() now validates the value of state last element.
 
 - Issue #13938: 2to3 converts StringTypes to a tuple. Patch from Mark Hammond.
