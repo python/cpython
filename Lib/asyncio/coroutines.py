@@ -9,12 +9,10 @@ import sys
 import traceback
 import types
 
+from . import compat
 from . import events
 from . import futures
 from .log import logger
-
-
-_PY35 = sys.version_info >= (3, 5)
 
 
 # Opcode of "yield from" instruction
@@ -140,7 +138,7 @@ class CoroWrapper:
     def gi_code(self):
         return self.gen.gi_code
 
-    if _PY35:
+    if compat.PY35:
 
         __await__ = __iter__ # make compatible with 'await' expression
 
