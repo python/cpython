@@ -899,7 +899,7 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
 static PyObject *
 lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
 {
-    PyObject *func, *maxsize_O, *cache_info_type;
+    PyObject *func, *maxsize_O, *cache_info_type, *cachedict;
     int typed;
     lru_cache_object *obj;
     Py_ssize_t maxsize;
@@ -937,15 +937,16 @@ lru_cache_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return NULL;
     }
 
-    obj = (lru_cache_object *)type->tp_alloc(type, 0);
-    if (obj == NULL)
+    if (!(cachedict = PyDict_New()))
         return NULL;
 
-    if (!(obj->cache = PyDict_New())) {
-        Py_DECREF(obj);
+    obj = (lru_cache_object *)type->tp_alloc(type, 0);
+    if (obj == NULL) {
+        Py_DECREF(cachedict);
         return NULL;
     }
 
+    obj->cache = cachedict;
     obj->root.prev = &obj->root;
     obj->root.next = &obj->root;
     obj->maxsize = maxsize;
