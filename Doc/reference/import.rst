@@ -200,7 +200,7 @@ of the module to result in an :exc:`ImportError`.
 Beware though, as if you keep a reference to the module object,
 invalidate its cache entry in :data:`sys.modules`, and then re-import the
 named module, the two module objects will *not* be the same. By contrast,
-:func:`imp.reload` will reuse the *same* module object, and simply
+:func:`importlib.reload` will reuse the *same* module object, and simply
 reinitialise the module contents by rerunning the module's code.
 
 
