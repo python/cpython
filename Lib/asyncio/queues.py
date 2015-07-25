@@ -1,11 +1,11 @@
 """Queues"""
 
-__all__ = ['Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty',
-           'JoinableQueue']
+__all__ = ['Queue', 'PriorityQueue', 'LifoQueue', 'QueueFull', 'QueueEmpty']
 
 import collections
 import heapq
 
+from . import compat
 from . import events
 from . import futures
 from . import locks
@@ -289,5 +289,7 @@ class LifoQueue(Queue):
         return self._queue.pop()
 
 
-JoinableQueue = Queue
-"""Deprecated alias for Queue."""
+if not compat.PY35:
+    JoinableQueue = Queue
+    """Deprecated alias for Queue."""
+    __all__.append('JoinableQueue')
