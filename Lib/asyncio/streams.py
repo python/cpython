@@ -12,6 +12,7 @@ if hasattr(socket, 'AF_UNIX'):
     __all__.extend(['open_unix_connection', 'start_unix_server'])
 
 from . import coroutines
+from . import compat
 from . import events
 from . import futures
 from . import protocols
@@ -20,7 +21,6 @@ from .log import logger
 
 
 _DEFAULT_LIMIT = 2**16
-_PY35 = sys.version_info >= (3, 5)
 
 
 class IncompleteReadError(EOFError):
@@ -488,7 +488,7 @@ class StreamReader:
 
         return b''.join(blocks)
 
-    if _PY35:
+    if compat.PY35:
         @coroutine
         def __aiter__(self):
             return self
