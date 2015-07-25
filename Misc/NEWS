@@ -40,8 +40,8 @@ Library
 
 - Issue #24620: Random.setstate() now validates the value of state last element.
 
-- Issue #22485: Fixed an issue that caused `inspect.getsource` to return incorrect
-  results on nested functions.
+- Issue #22485: Fixed an issue that caused `inspect.getsource` to return
+  incorrect results on nested functions.
 
 - Issue #22153: Improve unittest docs. Patch from Martin Panter and evilzero.
 
