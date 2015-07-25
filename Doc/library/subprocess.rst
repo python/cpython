@@ -825,13 +825,18 @@ calls these functions.
 .. function:: call(args, *, stdin=None, stdout=None, stderr=None, shell=False, timeout=None)
 
    Run the command described by *args*.  Wait for command to complete, then
-   return the :attr:`returncode` attribute.
+   return the :attr:`~Popen.returncode` attribute.
 
    This is equivalent to::
 
        run(...).returncode
 
    (except that the *input* and *check* parameters are not supported)
+
+   The arguments shown above are merely the most
+   common ones. The full function signature is largely the
+   same as that of the :class:`Popen` constructor - this function passes all
+   supplied arguments other than *timeout* directly through to that interface.
 
    .. note::
 
@@ -856,6 +861,11 @@ calls these functions.
 
    (except that the *input* parameter is not supported)
 
+   The arguments shown above are merely the most
+   common ones. The full function signature is largely the
+   same as that of the :class:`Popen` constructor - this function passes all
+   supplied arguments other than *timeout* directly through to that interface.
+
    .. note::
 
       Do not use ``stdout=PIPE`` or ``stderr=PIPE`` with this
@@ -867,7 +877,7 @@ calls these functions.
       *timeout* was added.
 
 
-.. function:: check_output(args, *, input=None, stdin=None, stderr=None, shell=False, universal_newlines=False, timeout=None)
+.. function:: check_output(args, *, stdin=None, stderr=None, shell=False, universal_newlines=False, timeout=None)
 
    Run command with arguments and return its output.
 
@@ -879,6 +889,12 @@ calls these functions.
    This is equivalent to::
 
        run(..., check=True, stdout=PIPE).stdout
+
+   The arguments shown above are merely the most common ones.
+   The full function signature is largely the same as that of :func:`run` -
+   most arguments are passed directly through to that interface.
+   However, explicitly passing ``input=None`` to inherit the parent's
+   standard input file handle is not supported.
 
    By default, this function will return the data as encoded bytes. The actual
    encoding of the output data may depend on the command being invoked, so the
@@ -902,7 +918,7 @@ calls these functions.
       *timeout* was added.
 
    .. versionchanged:: 3.4
-      *input* was added.
+      Support for the *input* keyword argument was added.
 
 .. _subprocess-replacements:
 
