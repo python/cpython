@@ -16,12 +16,11 @@ import traceback
 import warnings
 import weakref
 
+from . import compat
 from . import coroutines
 from . import events
 from . import futures
 from .coroutines import coroutine
-
-_PY34 = (sys.version_info >= (3, 4))
 
 
 class Task(futures.Future):
@@ -83,7 +82,7 @@ class Task(futures.Future):
     # On Python 3.3 or older, objects with a destructor that are part of a
     # reference cycle are never destroyed. That's not the case any more on
     # Python 3.4 thanks to the PEP 442.
-    if _PY34:
+    if compat.PY34:
         def __del__(self):
             if self._state == futures._PENDING and self._log_destroy_pending:
                 context = {
