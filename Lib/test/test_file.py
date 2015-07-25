@@ -139,7 +139,7 @@ class OtherFileTests:
 
     def testModeStrings(self):
         # check invalid mode strings
-        for mode in ("", "aU", "wU+"):
+        for mode in ("", "aU", "wU+", "U+", "+U", "rU+"):
             try:
                 f = self.open(TESTFN, mode)
             except ValueError:

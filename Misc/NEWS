@@ -15,6 +15,9 @@ Library
 
 - Issue #13938: 2to3 converts StringTypes to a tuple. Patch from Mark Hammond.
 
+- Issue #2091: open() accepted a 'U' mode string containing '+', but 'U' can
+  only be used with 'r'. Patch from Jeff Balogh and John O'Connor.
+
 - Issue #8585: improved tests for zipimporter2. Patch from Mark Lawrence.
 
 - Issue #18622: unittest.mock.mock_open().reset_mock would recurse infinitely.
