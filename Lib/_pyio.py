@@ -181,8 +181,8 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     text = "t" in modes
     binary = "b" in modes
     if "U" in modes:
-        if creating or writing or appending:
-            raise ValueError("can't use U and writing mode at once")
+        if creating or writing or appending or updating:
+            raise ValueError("mode U cannot be combined with 'x', 'w', 'a', or '+'")
         import warnings
         warnings.warn("'U' mode is deprecated",
                       DeprecationWarning, 2)

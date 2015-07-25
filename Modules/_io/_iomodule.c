@@ -248,8 +248,8 @@ _io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
     _Py_IDENTIFIER(close);
 
     if (!PyUnicode_Check(file) &&
-	!PyBytes_Check(file) &&
-	!PyNumber_Check(file)) {
+        !PyBytes_Check(file) &&
+        !PyNumber_Check(file)) {
         PyErr_Format(PyExc_TypeError, "invalid file: %R", file);
         return NULL;
     }
@@ -307,9 +307,9 @@ _io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
 
     /* Parameters validation */
     if (universal) {
-        if (writing || appending) {
+        if (creating || writing || appending || updating) {
             PyErr_SetString(PyExc_ValueError,
-                            "can't use U and writing mode at once");
+                            "mode U cannot be combined with x', 'w', 'a', or '+'");
             return NULL;
         }
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
@@ -437,10 +437,10 @@ _io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
 
     /* wraps into a TextIOWrapper */
     wrapper = PyObject_CallFunction((PyObject *)&PyTextIOWrapper_Type,
-				    "Osssi",
-				    buffer,
-				    encoding, errors, newline,
-				    line_buffering);
+                                    "Osssi",
+                                    buffer,
+                                    encoding, errors, newline,
+                                    line_buffering);
     if (wrapper == NULL)
         goto error;
     result = wrapper;
