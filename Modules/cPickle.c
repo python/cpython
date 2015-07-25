@@ -2910,7 +2910,7 @@ Pickle_getvalue(Picklerobject *self, PyObject *args)
             if (ik >= lm || ik == 0) {
                 PyErr_SetString(PicklingError,
                                 "Invalid get data");
-                return NULL;
+                goto err;
             }
             have_get[ik] = 1;
             rsize += ik < 256 ? 2 : 5;
