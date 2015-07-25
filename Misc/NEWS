@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #14373: Fixed segmentation fault when gc.collect() is called during
+  constructing lru_cache (C implementation).
+
 - Issue #24695: Fix a regression in traceback.print_exception().  If
   exc_traceback is None we shouldn't print a traceback header like described
   in the documentation.
