@@ -3,7 +3,6 @@
 __all__ = ['Lock', 'Event', 'Condition', 'Semaphore', 'BoundedSemaphore']
 
 import collections
-import sys
 
 from . import compat
 from . import events

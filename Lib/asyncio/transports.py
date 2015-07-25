@@ -1,7 +1,5 @@
 """Abstract Transport class."""
 
-import sys
-
 from asyncio import compat
 
 __all__ = ['BaseTransport', 'ReadTransport', 'WriteTransport',

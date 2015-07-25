@@ -10,8 +10,6 @@ import concurrent.futures
 import functools
 import inspect
 import linecache
-import sys
-import types
 import traceback
 import warnings
 import weakref
