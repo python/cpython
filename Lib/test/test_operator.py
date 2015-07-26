@@ -120,63 +120,63 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.add)
         self.assertRaises(TypeError, operator.add, None, None)
-        self.assertTrue(operator.add(3, 4) == 7)
+        self.assertEqual(operator.add(3, 4), 7)
 
     def test_bitwise_and(self):
         operator = self.module
         self.assertRaises(TypeError, operator.and_)
         self.assertRaises(TypeError, operator.and_, None, None)
-        self.assertTrue(operator.and_(0xf, 0xa) == 0xa)
+        self.assertEqual(operator.and_(0xf, 0xa), 0xa)
 
     def test_concat(self):
         operator = self.module
         self.assertRaises(TypeError, operator.concat)
         self.assertRaises(TypeError, operator.concat, None, None)
-        self.assertTrue(operator.concat('py', 'thon') == 'python')
-        self.assertTrue(operator.concat([1, 2], [3, 4]) == [1, 2, 3, 4])
-        self.assertTrue(operator.concat(Seq1([5, 6]), Seq1([7])) == [5, 6, 7])
-        self.assertTrue(operator.concat(Seq2([5, 6]), Seq2([7])) == [5, 6, 7])
+        self.assertEqual(operator.concat('py', 'thon'), 'python')
+        self.assertEqual(operator.concat([1, 2], [3, 4]), [1, 2, 3, 4])
+        self.assertEqual(operator.concat(Seq1([5, 6]), Seq1([7])), [5, 6, 7])
+        self.assertEqual(operator.concat(Seq2([5, 6]), Seq2([7])), [5, 6, 7])
         self.assertRaises(TypeError, operator.concat, 13, 29)
 
     def test_countOf(self):
         operator = self.module
         self.assertRaises(TypeError, operator.countOf)
         self.assertRaises(TypeError, operator.countOf, None, None)
-        self.assertTrue(operator.countOf([1, 2, 1, 3, 1, 4], 3) == 1)
-        self.assertTrue(operator.countOf([1, 2, 1, 3, 1, 4], 5) == 0)
+        self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 3), 1)
+        self.assertEqual(operator.countOf([1, 2, 1, 3, 1, 4], 5), 0)
 
     def test_delitem(self):
         operator = self.module
         a = [4, 3, 2, 1]
         self.assertRaises(TypeError, operator.delitem, a)
         self.assertRaises(TypeError, operator.delitem, a, None)
-        self.assertTrue(operator.delitem(a, 1) is None)
-        self.assertTrue(a == [4, 2, 1])
+        self.assertIsNone(operator.delitem(a, 1))
+        self.assertEqual(a, [4, 2, 1])
 
     def test_floordiv(self):
         operator = self.module
         self.assertRaises(TypeError, operator.floordiv, 5)
         self.assertRaises(TypeError, operator.floordiv, None, None)
-        self.assertTrue(operator.floordiv(5, 2) == 2)
+        self.assertEqual(operator.floordiv(5, 2), 2)
 
     def test_truediv(self):
         operator = self.module
         self.assertRaises(TypeError, operator.truediv, 5)
         self.assertRaises(TypeError, operator.truediv, None, None)
-        self.assertTrue(operator.truediv(5, 2) == 2.5)
+        self.assertEqual(operator.truediv(5, 2), 2.5)
 
     def test_getitem(self):
         operator = self.module
         a = range(10)
         self.assertRaises(TypeError, operator.getitem)
         self.assertRaises(TypeError, operator.getitem, a, None)
-        self.assertTrue(operator.getitem(a, 2) == 2)
+        self.assertEqual(operator.getitem(a, 2), 2)
 
     def test_indexOf(self):
         operator = self.module
         self.assertRaises(TypeError, operator.indexOf)
         self.assertRaises(TypeError, operator.indexOf, None, None)
-        self.assertTrue(operator.indexOf([4, 3, 2, 1], 3) == 1)
+        self.assertEqual(operator.indexOf([4, 3, 2, 1], 3), 1)
         self.assertRaises(ValueError, operator.indexOf, [4, 3, 2, 1], 0)
 
     def test_invert(self):
@@ -189,21 +189,21 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.lshift)
         self.assertRaises(TypeError, operator.lshift, None, 42)
-        self.assertTrue(operator.lshift(5, 1) == 10)
-        self.assertTrue(operator.lshift(5, 0) == 5)
+        self.assertEqual(operator.lshift(5, 1), 10)
+        self.assertEqual(operator.lshift(5, 0), 5)
         self.assertRaises(ValueError, operator.lshift, 2, -1)
 
     def test_mod(self):
         operator = self.module
         self.assertRaises(TypeError, operator.mod)
         self.assertRaises(TypeError, operator.mod, None, 42)
-        self.assertTrue(operator.mod(5, 2) == 1)
+        self.assertEqual(operator.mod(5, 2), 1)
 
     def test_mul(self):
         operator = self.module
         self.assertRaises(TypeError, operator.mul)
         self.assertRaises(TypeError, operator.mul, None, None)
-        self.assertTrue(operator.mul(5, 2) == 10)
+        self.assertEqual(operator.mul(5, 2), 10)
 
     def test_matmul(self):
         operator = self.module
@@ -227,7 +227,7 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.or_)
         self.assertRaises(TypeError, operator.or_, None, None)
-        self.assertTrue(operator.or_(0xa, 0x5) == 0xf)
+        self.assertEqual(operator.or_(0xa, 0x5), 0xf)
 
     def test_pos(self):
         operator = self.module
@@ -250,8 +250,8 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.rshift)
         self.assertRaises(TypeError, operator.rshift, None, 42)
-        self.assertTrue(operator.rshift(5, 1) == 2)
-        self.assertTrue(operator.rshift(5, 0) == 5)
+        self.assertEqual(operator.rshift(5, 1), 2)
+        self.assertEqual(operator.rshift(5, 0), 5)
         self.assertRaises(ValueError, operator.rshift, 2, -1)
 
     def test_contains(self):
@@ -266,15 +266,15 @@ class OperatorTestCase:
         a = list(range(3))
         self.assertRaises(TypeError, operator.setitem, a)
         self.assertRaises(TypeError, operator.setitem, a, None, None)
-        self.assertTrue(operator.setitem(a, 0, 2) is None)
-        self.assertTrue(a == [2, 1, 2])
+        self.assertIsNone(operator.setitem(a, 0, 2))
+        self.assertEqual(a, [2, 1, 2])
         self.assertRaises(IndexError, operator.setitem, a, 4, 2)
 
     def test_sub(self):
         operator = self.module
         self.assertRaises(TypeError, operator.sub)
         self.assertRaises(TypeError, operator.sub, None, None)
-        self.assertTrue(operator.sub(5, 2) == 3)
+        self.assertEqual(operator.sub(5, 2), 3)
 
     def test_truth(self):
         operator = self.module
@@ -292,7 +292,7 @@ class OperatorTestCase:
         operator = self.module
         self.assertRaises(TypeError, operator.xor)
         self.assertRaises(TypeError, operator.xor, None, None)
-        self.assertTrue(operator.xor(0xb, 0xc) == 0x7)
+        self.assertEqual(operator.xor(0xb, 0xc), 0x7)
 
     def test_is(self):
         operator = self.module
