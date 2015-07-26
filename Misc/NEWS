@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #17527: Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
+
 
 What's New in Python 3.5.0 beta 4?
 ==================================
