@@ -247,6 +247,7 @@ class BaseTest(unittest.TestCase):
         self.assertRaises(TypeError, a.tostring, 42)
         self.assertRaises(TypeError, b.fromstring)
         self.assertRaises(TypeError, b.fromstring, 42)
+        self.assertRaises(ValueError, a.fromstring, a)
         b.fromstring(a.tostring())
         self.assertEqual(a, b)
         if a.itemsize>1:

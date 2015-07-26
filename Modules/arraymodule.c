@@ -1380,6 +1380,11 @@ array_fromstring(arrayobject *self, PyObject *args)
     int itemsize = self->ob_descr->itemsize;
     if (!PyArg_ParseTuple(args, "s#:fromstring", &str, &n))
         return NULL;
+    if (str == self->ob_item) {
+        PyErr_SetString(PyExc_ValueError,
+                        "array.fromstring(x): x cannot be self");
+        return NULL;
+    }
     if (n % itemsize != 0) {
         PyErr_SetString(PyExc_ValueError,
                    "string length not a multiple of item size");
