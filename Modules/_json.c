@@ -1344,10 +1344,18 @@ encoder_init(PyObject *self, PyObject *args, PyObject *kwds)
     assert(PyEncoder_Check(self));
     s = (PyEncoderObject *)self;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOOOOOp:make_encoder", kwlist,
-        &markers, &defaultfn, &encoder, &indent, &key_separator, &item_separator,
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "OOOOUUOOp:make_encoder", kwlist,
+        &markers, &defaultfn, &encoder, &indent,
+        &key_separator, &item_separator,
         &sort_keys, &skipkeys, &allow_nan))
         return -1;
+
+    if (markers != Py_None && !PyDict_Check(markers)) {
+        PyErr_Format(PyExc_TypeError,
+                     "make_encoder() argument 1 must be dict or None, "
+                     "not %.200s", Py_TYPE(markers)->tp_name);
+        return -1;
+    }
 
     s->markers = markers;
     s->defaultfn = defaultfn;
