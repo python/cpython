@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24683: Fixed crashes in _json functions called with arguments of
+  inappropriate type.
+
 - Issue #21697: shutil.copytree() now correctly handles symbolic links that
   point to directories.  Patch by Eduardo Seabra and Thomas Kluyver.
 
