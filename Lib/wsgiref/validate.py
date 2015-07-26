@@ -329,7 +329,7 @@ def check_environ(environ):
 
     # @@: these need filling out:
     if environ['REQUEST_METHOD'] not in (
-        'GET', 'HEAD', 'POST', 'OPTIONS','PUT','DELETE','TRACE'):
+        'GET', 'HEAD', 'POST', 'OPTIONS', 'PATCH', 'PUT', 'DELETE', 'TRACE'):
         warnings.warn(
             "Unknown REQUEST_METHOD: %r" % environ['REQUEST_METHOD'],
             WSGIWarning)
