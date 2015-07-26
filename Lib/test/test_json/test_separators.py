@@ -39,6 +39,12 @@ class TestSeparators:
         self.assertEqual(h2, h)
         self.assertEqual(d2, expect)
 
+    def test_illegal_separators(self):
+        h = {1: 2, 3: 4}
+        self.assertRaises(TypeError, self.dumps, h, separators=(b', ', ': '))
+        self.assertRaises(TypeError, self.dumps, h, separators=(', ', b': '))
+        self.assertRaises(TypeError, self.dumps, h, separators=(b', ', b': '))
+
 
 class TestPySeparators(TestSeparators, PyTest): pass
 class TestCSeparators(TestSeparators, CTest): pass
