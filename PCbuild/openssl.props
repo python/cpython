@@ -1,11 +1,13 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(opensslDir)tmp\</Py_IntDir>
+  </PropertyGroup>
+  
   <Import Project="pyproject.props" />
 
   <PropertyGroup Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
-    <IntDir>$(opensslDir)tmp\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IntDir Condition="$(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate'">$(opensslDir)tmp\$(ArchName)\$(ProjectName)\</IntDir>
   </PropertyGroup>
 
   <ItemGroup>
