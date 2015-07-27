@@ -64,5 +64,13 @@ class TestRlcompleter(unittest.TestCase):
                          ['egg.{}('.format(x) for x in dir(str)
                           if x.startswith('s')])
 
+    def test_complete(self):
+        completer = rlcompleter.Completer()
+        self.assertEqual(completer.complete('', 0), '\t')
+        self.assertEqual(completer.complete('a', 0), 'and')
+        self.assertEqual(completer.complete('a', 1), 'as')
+        self.assertEqual(completer.complete('as', 2), 'assert')
+        self.assertEqual(completer.complete('an', 0), 'and')
+
 if __name__ == '__main__':
     unittest.main()
