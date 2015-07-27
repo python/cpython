@@ -73,6 +73,12 @@ class Completer:
         if self.use_main_ns:
             self.namespace = __main__.__dict__
 
+        if not text.strip():
+            if state == 0:
+                return '\t'
+            else:
+                return None
+
         if state == 0:
             if "." in text:
                 self.matches = self.attr_matches(text)
