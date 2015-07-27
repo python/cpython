@@ -1146,8 +1146,10 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 
     v = PyDict_GetItem(dict, t);
     if (!v) {
-        if (PyErr_Occurred())
+        if (PyErr_Occurred()) {
+            Py_DECREF(t);
             return -1;
+        }
         arg = PyDict_Size(dict);
         v = PyLong_FromSsize_t(arg);
         if (!v) {
