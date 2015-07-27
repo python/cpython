@@ -2211,7 +2211,12 @@ sock_accept_impl(PySocketSockObject *s, void *data)
 #else
     ctx->result = accept(s->sock_fd, SAS2SA(ctx->addrbuf), ctx->addrlen);
 #endif
+
+#ifdef MS_WINDOWS
+    return (ctx->result != INVALID_SOCKET);
+#else
     return (ctx->result >= 0);
+#endif
 }
 
 /* s._accept() -> (fd, address) */
