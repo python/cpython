@@ -26,7 +26,8 @@
     <PySourcePath Condition="!HasTrailingSlash($(PySourcePath))">$(PySourcePath)\</PySourcePath>
     
     <!-- Directory where build outputs are put -->
-    <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCBuild\$(ArchName)\</BuildPath>
+    <BuildPath Condition="'$(PyBuildPath)' == ''">$(PySourcePath)PCBuild\$(ArchName)\</BuildPath>
+    <BuildPath Condition="'$(PyBuildPath)' != ''">$(PyBuildPath)</BuildPath>
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
     
     <!-- Directories of external projects. tcltk is handled in tcltk.props -->
