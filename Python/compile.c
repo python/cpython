@@ -1979,9 +1979,12 @@ compiler_import(struct compiler *c, stmt_ty s)
             identifier tmp = alias->name;
             const char *base = PyString_AS_STRING(alias->name);
             char *dot = strchr(base, '.');
-            if (dot)
+            if (dot) {
                 tmp = PyString_FromStringAndSize(base,
                                                  dot - base);
+                if (tmp == NULL)
+                    return 0;
+            }
             r = compiler_nameop(c, tmp, Store);
             if (dot) {
                 Py_DECREF(tmp);
