@@ -2642,8 +2642,12 @@ _Py_PrintFatalError(int fd)
         return;
 
 display_stack:
+#ifdef WITH_THREAD
     /* PyGILState_GetThisThreadState() works even if the GIL was released */
     tstate = PyGILState_GetThisThreadState();
+#else
+    tstate = PyThreadState_GET();
+#endif
     if (tstate == NULL) {
         /* _Py_DumpTracebackThreads() requires the thread state to display
          * frames */
