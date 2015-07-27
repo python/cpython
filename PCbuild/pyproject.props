@@ -1,11 +1,15 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" TreatAsLocalProperty="Py_IntDir">
   <PropertyGroup Label="Globals">
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <OutDir>$(BuildPath)</OutDir>
-    <IntDir>$(SolutionDir)obj\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
-    <IntDir Condition="$(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate'">$(SolutionDir)obj\$(ArchName)\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)</OutDir>
+    <OutDir Condition="!HasTrailingSlash($(OutDir))">$(OutDir)\</OutDir>
+    <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(SolutionDir)obj\</Py_IntDir>
+    <IntDir Condition="!HasTrailingSlash($(IntDir))">$(IntDir)\</IntDir>
+    <IntDir>$(Py_IntDir)\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="$(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate'">$(Py_IntDir)\$(ArchName)_PGO\$(ProjectName)\</IntDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
     <TargetName>$(TargetName)$(PyDebugExt)</TargetName>
     <GenerateManifest>false</GenerateManifest>
