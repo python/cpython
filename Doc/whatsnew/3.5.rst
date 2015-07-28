@@ -768,6 +768,10 @@ socket
   :meth:`socket.socket.send`.
   (Contributed by Giampaolo Rodola' in :issue:`17552`.)
 
+* The :meth:`socket.socket.sendall` method don't reset the socket timeout
+  anymore each time bytes are received or sent. The socket timeout is now the
+  maximum total duration to send all data.
+
 subprocess
 ----------
 
