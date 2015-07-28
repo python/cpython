@@ -204,16 +204,15 @@ def run_setup (script_name, script_args=None, stop_after="run"):
     global _setup_stop_after, _setup_distribution
     _setup_stop_after = stop_after
 
-    save_argv = sys.argv
+    save_argv = sys.argv.copy()
     g = {'__file__': script_name}
-    l = {}
     try:
         try:
             sys.argv[0] = script_name
             if script_args is not None:
                 sys.argv[1:] = script_args
             with open(script_name, 'rb') as f:
-                exec(f.read(), g, l)
+                exec(f.read(), g)
         finally:
             sys.argv = save_argv
             _setup_stop_after = None
