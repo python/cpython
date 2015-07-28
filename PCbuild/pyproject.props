@@ -11,8 +11,9 @@
     <GenerateManifest Condition="'$(GenerateManifest)' == ''">false</GenerateManifest>
     <EmbedManifest Condition="'$(EmbedManifest)' == ''">false</EmbedManifest>
     <!-- For VS2008, we have to embed the manifest to be able to run -->
-    <GenerateManifest Condition="'$(PlatformToolset)' == 'v90'">true</GenerateManifest>
-    <EmbedManifest Condition="'$(PlatformToolset)' == 'v90'">true</EmbedManifest>
+    <!-- BasePlatformToolset is for ICC support -->
+    <GenerateManifest Condition="'$(PlatformToolset)' == 'v90' or '$(BasePlatformToolset)' == 'v90'">true</GenerateManifest>
+    <EmbedManifest Condition="'$(PlatformToolset)' == 'v90' or '$(BasePlatformToolset)' == 'v90'">true</EmbedManifest>
     <SupportPGO Condition="'$(SupportPGO)' == ''">true</SupportPGO>
     <SupportSigning Condition="'$(SupportSigning)' == ''">true</SupportSigning>
     <SupportSigning Condition="'$(Configuration)' == 'Debug'">false</SupportSigning>

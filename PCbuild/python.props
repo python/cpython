@@ -7,7 +7,10 @@
     Use only MSVC 9.0, unless explicitly overridden
     -->
     <PlatformToolset Condition="'$(PlatformToolset)' == ''">v90</PlatformToolset>
-
+    <!--
+    Give a default for BasePlatformToolset as well, it's used by ICC and ignored otherwise
+    -->
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(PlatformToolset)' != 'v90'">v90</BasePlatformToolset>
     <!--
     Convincing MSVC/MSBuild to prefer our platform names is too difficult,
     so we define our own constant ArchName and use wherever we need it.
