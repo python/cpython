@@ -58,7 +58,7 @@ for %%e in (
             tcl-8.6.1.0
             tk-8.6.1.0
             tix-8.4.3.4
-            sqlite-3.8.3.1
+            sqlite-3.8.11.0
             xz-5.0.5
             ) do (
     if exist %%e (
