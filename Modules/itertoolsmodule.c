@@ -2787,11 +2787,13 @@ cwr_next(cwrobject *co)
         if (result == NULL)
             goto empty;
         co->result = result;
-        elem = PyTuple_GET_ITEM(pool, 0);
-        for (i=0; i<r ; i++) {
-            assert(indices[i] == 0);
-            Py_INCREF(elem);
-            PyTuple_SET_ITEM(result, i, elem);
+        if (n > 0) {
+            elem = PyTuple_GET_ITEM(pool, 0);
+            for (i=0; i<r ; i++) {
+                assert(indices[i] == 0);
+                Py_INCREF(elem);
+                PyTuple_SET_ITEM(result, i, elem);
+            }
         }
     } else {
         /* Copy the previous result tuple or re-use it if available */
