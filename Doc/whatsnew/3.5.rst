@@ -750,6 +750,15 @@ sndhdr
   :func:`~collections.namedtuple`.
   (Contributed by Claudiu Popa in :issue:`18615`.)
 
+ssl
+---
+
+The :meth:`~ssl.SSLSocket.do_handshake`, :meth:`~ssl.SSLSocket.read`,
+:meth:`~ssl.SSLSocket.shutdown`, and :meth:`~ssl.SSLSocket.write` methods of
+:class:`ssl.SSLSocket` don't reset the socket timeout anymore each time bytes
+are received or sent. The socket timeout is now the maximum total duration of
+the method.
+
 socket
 ------
 
