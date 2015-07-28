@@ -28,6 +28,21 @@ from distutils.core import setup
 setup()
 """
 
+setup_does_nothing = """\
+from distutils.core import setup
+setup()
+"""
+
+
+setup_defines_subclass = """\
+from distutils.core import setup
+from distutils.command.install import install as _install
+
+class install(_install):
+    sub_commands = _install.sub_commands + ['cmd']
+
+setup(cmdclass={'install': install})
+"""
 
 class CoreTestCase(support.EnvironGuard, unittest.TestCase):
 
@@ -64,6 +79,21 @@ class CoreTestCase(support.EnvironGuard, unittest.TestCase):
         # setup.py script will raise NameError.
         distutils.core.run_setup(
             self.write_setup(setup_using___file__))
+
+    def test_run_setup_preserves_sys_argv(self):
+        # Make sure run_setup does not clobber sys.argv
+        argv_copy = sys.argv.copy()
+        distutils.core.run_setup(
+            self.write_setup(setup_does_nothing))
+        self.assertEqual(sys.argv, argv_copy)
+
+    def test_run_setup_defines_subclass(self):
+        # Make sure the script can use __file__; if that's missing, the test
+        # setup.py script will raise NameError.
+        dist = distutils.core.run_setup(
+            self.write_setup(setup_defines_subclass))
+        install = dist.get_command_obj('install')
+        self.assertIn('cmd', install.sub_commands)
 
     def test_run_setup_uses_current_dir(self):
         # This tests that the setup script is run with the current directory
