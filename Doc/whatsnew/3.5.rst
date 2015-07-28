@@ -227,6 +227,68 @@ PEP 475: Retry system calls failing with EINTR
 EINTR or :exc:`InterruptedError` manually, and should make it more robust
 against asynchronous signal reception.
 
+Examples of functions which are now retried when interrupted by a signal
+instead of raising :exc:`InterruptedError` if the Python signal handler does
+not raise an exception:
+
+* :func:`open`, :func:`os.open`, :func:`io.open`
+* functions of the :mod:`faulthandler` module
+* :mod:`os` functions:
+
+  - :func:`os.fchdir`
+  - :func:`os.fchmod`
+  - :func:`os.fchown`
+  - :func:`os.fdatasync`
+  - :func:`os.fstat`
+  - :func:`os.fstatvfs`
+  - :func:`os.fsync`
+  - :func:`os.ftruncate`
+  - :func:`os.mkfifo`
+  - :func:`os.mknod`
+  - :func:`os.posix_fadvise`
+  - :func:`os.posix_fallocate`
+  - :func:`os.pread`
+  - :func:`os.pwrite`
+  - :func:`os.read`
+  - :func:`os.readv`
+  - :func:`os.sendfile`
+  - :func:`os.wait3`
+  - :func:`os.wait4`
+  - :func:`os.wait`
+  - :func:`os.waitid`
+  - :func:`os.waitpid`
+  - :func:`os.write`
+  - :func:`os.writev`
+  - special cases: :func:`os.close` and :func:`os.dup2` now ignore
+    :py:data:`~errno.EINTR` error, the syscall is not retried (see the PEP
+    for the rationale)
+
+* :mod:`select` functions:
+
+  - :func:`select.devpoll.poll`
+  - :func:`select.epoll.poll`
+  - :func:`select.kqueue.control`
+  - :func:`select.poll.poll`
+  - :func:`select.select`
+
+* :func:`socket.socket` methods:
+
+  - :meth:`~socket.socket.accept`
+  - :meth:`~socket.socket.connect` (except for non-blocking sockets)
+  - :meth:`~socket.socket.recv`
+  - :meth:`~socket.socket.recvfrom`
+  - :meth:`~socket.socket.recvmsg`
+  - :meth:`~socket.socket.send`
+  - :meth:`~socket.socket.sendall`
+  - :meth:`~socket.socket.sendmsg`
+  - :meth:`~socket.socket.sendto`
+
+* :func:`signal.sigtimedwait`, :func:`signal.sigwaitinfo`
+* :func:`time.sleep`
+
+PEP and implementation written by Charles-François Natali and Victor Stinner,
+with the help of Antoine Pitrou (the french connection).
+
 .. seealso::
 
    :pep:`475` -- Retry system calls failing with EINTR
@@ -966,58 +1028,9 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* :pep:`475`: Examples of functions which are now retried when interrupted
-  instead of raising :exc:`InterruptedError` if the signal handler does not
-  raise an exception:
-
-  - :func:`open`, :func:`os.open`, :func:`io.open`
-  - functions of the :mod:`faulthandler` module
-  - :mod:`os` functions:
-
-    * :func:`os.fchdir`
-    * :func:`os.fchmod`
-    * :func:`os.fchown`
-    * :func:`os.fdatasync`
-    * :func:`os.fstat`
-    * :func:`os.fstatvfs`
-    * :func:`os.fsync`
-    * :func:`os.ftruncate`
-    * :func:`os.mkfifo`
-    * :func:`os.mknod`
-    * :func:`os.posix_fadvise`
-    * :func:`os.posix_fallocate`
-    * :func:`os.pread`
-    * :func:`os.pwrite`
-    * :func:`os.read`
-    * :func:`os.readv`
-    * :func:`os.sendfile`
-    * :func:`os.wait3`
-    * :func:`os.wait4`
-    * :func:`os.wait`
-    * :func:`os.waitid`
-    * :func:`os.waitpid`
-    * :func:`os.write`
-    * :func:`os.writev`
-    * special cases: :func:`os.close` and :func:`os.dup2` now ignore
-      :py:data:`~errno.EINTR` error, the syscall is not retried (see the PEP
-      for the rationale)
-
-  - :func:`select.select`, :func:`select.poll.poll`, :func:`select.epoll.poll`,
-    :func:`select.kqueue.control`, :func:`select.devpoll.poll`
-  - :func:`socket.socket` methods:
-
-    * :meth:`~socket.socket.accept`
-    * :meth:`~socket.socket.connect` (except for non-blocking sockets)
-    * :meth:`~socket.socket.recv`
-    * :meth:`~socket.socket.recvfrom`
-    * :meth:`~socket.socket.recvmsg`
-    * :meth:`~socket.socket.send`
-    * :meth:`~socket.socket.sendall`
-    * :meth:`~socket.socket.sendmsg`
-    * :meth:`~socket.socket.sendto`
-
-  - :func:`signal.sigtimedwait`, :func:`signal.sigwaitinfo`
-  - :func:`time.sleep`
+* :pep:`475`: System calls are now retried when interrupted by a signal instead
+  of raising :exc:`InterruptedError` if the Python signal handler does not
+  raise an exception.
 
 * Before Python 3.5, a :class:`datetime.time` object was considered to be false
   if it represented midnight in UTC.  This behavior was considered obscure and
