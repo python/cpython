@@ -765,6 +765,7 @@ I_set_sw(void *ptr, PyObject *value, Py_ssize_t size)
     if (get_ulong(value, &val) < 0)
         return  NULL;
     memcpy(&field, ptr, sizeof(field));
+    field = SWAP_INT(field);
     field = SET(unsigned int, field, (unsigned int)val, size);
     field = SWAP_INT(field);
     memcpy(ptr, &field, sizeof(field));
