@@ -28,6 +28,9 @@ Documentation
 
 - Issue #23589: Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
 
+- Issue #24729: Correct IO tutorial to match implementation regarding
+  encoding parameter to open function.
+
 
 What's New in Python 3.5.0 beta 4?
 ==================================
