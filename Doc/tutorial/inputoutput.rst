@@ -247,8 +247,9 @@ writing. The *mode* argument is optional; ``'r'`` will be assumed if it's
 omitted.
 
 Normally, files are opened in :dfn:`text mode`, that means, you read and write
-strings from and to the file, which are encoded in a specific encoding (the
-default being UTF-8).  ``'b'`` appended to the mode opens the file in
+strings from and to the file, which are encoded in a specific encoding. If
+encoding is not specified, the default is platform dependent (see
+:func:`open`). ``'b'`` appended to the mode opens the file in
 :dfn:`binary mode`: now the data is read and written in the form of bytes
 objects.  This mode should be used for all files that don't contain text.
 
@@ -437,4 +438,3 @@ The reference for the :mod:`json` module contains an explanation of this.
    written in other languages.  It is also insecure by default:
    deserializing pickle data coming from an untrusted source can execute
    arbitrary code, if the data was crafted by a skilled attacker.
-
