@@ -23,6 +23,11 @@ Library
 
 - Issue #17527: Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
 
+Documentation
+-------------
+
+- Issue #23589: Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
+
 
 What's New in Python 3.5.0 beta 4?
 ==================================
