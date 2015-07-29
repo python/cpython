@@ -33,7 +33,7 @@ package creation are the same as for 3.4.1 below.
 
         * libcrypto and libssl from OpenSSL 1.0.1 (new, as of 3.4.3)
         * NCurses 5.9 (http://bugs.python.org/issue15037)
-        * SQLite 3.8.3.1
+        * SQLite 3.8.11
         * XZ 5.0.5
 
     - uses system-supplied versions of third-party libraries
@@ -68,7 +68,7 @@ package creation are the same as for 3.4.1 below.
     - builds the following third-party libraries
 
         * NCurses 5.9 (http://bugs.python.org/issue15037)
-        * SQLite 3.8.3.1
+        * SQLite 3.8.11
         * XZ 5.0.5
 
     - uses system-supplied versions of third-party libraries
