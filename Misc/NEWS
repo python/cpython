@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23254: Document how to close the TCPServer listening socket.
+  Patch from Martin Panter.
+
 - Issue #19450: Update Windows builds to use SQLite 3.8.11.0
 
 - Issue #23441: rcompleter now prints a tab character instead of displaying
