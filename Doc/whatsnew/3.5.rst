@@ -648,6 +648,11 @@ os
 * :class:`os.stat_result` now has a :attr:`~os.stat_result.st_file_attributes`
   attribute on Windows.  (Contributed by Ben Hoyt in :issue:`21719`.)
 
+* :func:`os.urandom`: On Linux 3.17 and newer, the ``getrandom()`` syscall is
+  now used when available. On OpenBSD 5.6 and newer, the C ``getentropy()``
+  function is now used. These functions avoid the usage of an internal file
+  descriptor.
+
 os.path
 -------
 
