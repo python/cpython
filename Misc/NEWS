@@ -136,6 +136,8 @@ IDLE
 Documentation
 -------------
 
+- Issue #23589: Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
+
 - Issue #22155: Add File Handlers subsection with createfilehandler to Tkinter
   doc.  Remove obsolete example from FAQ.  Patch by Martin Panter.
 
