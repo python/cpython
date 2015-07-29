@@ -259,5 +259,33 @@ class BitFieldTest(unittest.TestCase):
         x.a = 0xFEDCBA9876543211
         self.assertEqual(x.a, 0xFEDCBA9876543211)
 
+    @need_symbol('c_uint32')
+    def test_uint32_swap_little_endian(self):
+        # Issue #23319
+        class Little(LittleEndianStructure):
+            _fields_ = [("a", c_uint32, 24),
+                        ("b", c_uint32, 4),
+                        ("c", c_uint32, 4)]
+        b = bytearray(4)
+        x = Little.from_buffer(b)
+        x.a = 0xabcdef
+        x.b = 1
+        x.c = 2
+        self.assertEqual(b, b'\xef\xcd\xab\x21')
+
+    @need_symbol('c_uint32')
+    def test_uint32_swap_big_endian(self):
+        # Issue #23319
+        class Big(BigEndianStructure):
+            _fields_ = [("a", c_uint32, 24),
+                        ("b", c_uint32, 4),
+                        ("c", c_uint32, 4)]
+        b = bytearray(4)
+        x = Big.from_buffer(b)
+        x.a = 0xabcdef
+        x.b = 1
+        x.c = 2
+        self.assertEqual(b, b'\xab\xcd\xef\x12')
+
 if __name__ == "__main__":
     unittest.main()
