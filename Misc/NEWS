@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24360: Improve __repr__ of argparse.Namespace() for invalid
+  identifiers.  Patch by Matthias Bussonnier.
+
 - Issue #23319: Fix ctypes.BigEndianStructure, swap correctly bytes. Patch
   written by Matthieu Gautier.
 
