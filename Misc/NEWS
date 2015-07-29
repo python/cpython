@@ -46,6 +46,11 @@ Library
 - Issue #13248: Remove deprecated inspect.getargspec and inspect.getmoduleinfo
   functions.
 
+Documentation
+-------------
+
+- Issue #23589: Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
+
 
 What's New in Python 3.5.0 beta 4?
 ==================================
