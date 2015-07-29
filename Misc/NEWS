@@ -398,6 +398,9 @@ Documentation
 
 - Issue #23589: Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
 
+- Issue #24729: Correct IO tutorial to match implementation regarding
+  encoding parameter to open function.
+
 - Issue #24351: Clarify what is meant by "identifier" in the context of
   string.Template instances.
 
