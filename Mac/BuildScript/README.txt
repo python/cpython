@@ -22,7 +22,7 @@ for each release.
     - builds the following third-party libraries
 
         * NCurses 5.9 (http://bugs.python.org/issue15037)
-        * SQLite 3.8.3.1
+        * SQLite 3.8.11
         * XZ 5.0.5
 
     - uses system-supplied versions of third-party libraries
@@ -57,7 +57,7 @@ for each release.
     - builds the following third-party libraries
 
         * NCurses 5.9 (http://bugs.python.org/issue15037)
-        * SQLite 3.8.3.1
+        * SQLite 3.8.11
         * XZ 5.0.5
 
     - uses system-supplied versions of third-party libraries
