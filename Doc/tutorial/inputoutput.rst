@@ -248,8 +248,8 @@ omitted.
 
 Normally, files are opened in :dfn:`text mode`, that means, you read and write
 strings from and to the file, which are encoded in a specific encoding. If
-encoding is not specified the default is platform dependent (see :func:`~functions.open`).
-``'b'`` appended to the mode opens the file in
+encoding is not specified, the default is platform dependent (see
+:func:`open`). ``'b'`` appended to the mode opens the file in
 :dfn:`binary mode`: now the data is read and written in the form of bytes
 objects.  This mode should be used for all files that don't contain text.
 
