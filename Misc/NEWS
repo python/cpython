@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23254: Document how to close the TCPServer listening socket.
+  Patch from Martin Panter.
+
 - Issue #17527: Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
 
 - Issue #24613: Calling array.fromstring() with self is no longer allowed

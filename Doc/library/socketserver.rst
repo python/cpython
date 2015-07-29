@@ -39,9 +39,10 @@ Creating a server requires several steps.  First, you must create a request
 handler class by subclassing the :class:`BaseRequestHandler` class and
 overriding its :meth:`handle` method; this method will process incoming
 requests.  Second, you must instantiate one of the server classes, passing it
-the server's address and the request handler class.  Finally, call the
+the server's address and the request handler class.  Then call the
 :meth:`handle_request` or :meth:`serve_forever` method of the server object to
-process one or many requests.
+process one or many requests.  Finally, call :meth:`~BaseServer.server_close`
+to close the socket.
 
 When inheriting from :class:`ThreadingMixIn` for threaded connection behavior,
 you should explicitly declare how you want your threads to behave on an abrupt
@@ -166,6 +167,13 @@ Server Objects
 .. method:: BaseServer.shutdown()
 
    Tell the :meth:`serve_forever` loop to stop and wait until it does.
+
+   .. versionadded:: 2.6
+
+
+.. method:: BaseServer.server_close()
+
+   Clean up the server. May be overridden.
 
    .. versionadded:: 2.6
 
@@ -540,6 +548,7 @@ An example for the :class:`ThreadingMixIn` class::
        client(ip, port, "Hello World 3")
 
        server.shutdown()
+       server.server_close()
 
 
 The output of the example should look something like this::

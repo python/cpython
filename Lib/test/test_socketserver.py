@@ -158,6 +158,8 @@ class SocketServerTest(unittest.TestCase):
         if verbose: print "waiting for server"
         server.shutdown()
         t.join()
+        server.server_close()
+        self.assertRaises(socket.error, server.socket.fileno)
         if verbose: print "done"
 
     def stream_examine(self, proto, addr):
