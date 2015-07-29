@@ -144,6 +144,7 @@ class SocketServerTest(unittest.TestCase):
         server.shutdown()
         t.join()
         server.server_close()
+        self.assertEqual(-1, server.socket.fileno())
         if verbose: print("done")
 
     def stream_examine(self, proto, addr):
