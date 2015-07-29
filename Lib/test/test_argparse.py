@@ -4512,6 +4512,21 @@ class TestStrings(TestCase):
         string = "Namespace(bar='spam', foo=42)"
         self.assertStringEqual(ns, string)
 
+    def test_namespace_starkwargs_notidentifier(self):
+        ns = argparse.Namespace(**{'"': 'quote'})
+        string = """Namespace(**{'"': 'quote'})"""
+        self.assertStringEqual(ns, string)
+
+    def test_namespace_kwargs_and_starkwargs_notidentifier(self):
+        ns = argparse.Namespace(a=1, **{'"': 'quote'})
+        string = """Namespace(a=1, **{'"': 'quote'})"""
+        self.assertStringEqual(ns, string)
+
+    def test_namespace_starkwargs_identifier(self):
+        ns = argparse.Namespace(**{'valid': True})
+        string = "Namespace(valid=True)"
+        self.assertStringEqual(ns, string)
+
     def test_parser(self):
         parser = argparse.ArgumentParser(prog='PROG')
         string = (
