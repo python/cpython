@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19450: Update Windows and OS X installer builds to use SQLite 3.8.11.
+
 - Issue #23254: Document how to close the TCPServer listening socket.
   Patch from Martin Panter.
 
