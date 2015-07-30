@@ -316,7 +316,7 @@ class EditorWindow(object):
         io.set_filename_change_hook(self.filename_change_hook)
 
         # Create the recent files submenu
-        self.recent_files_menu = Menu(self.menubar)
+        self.recent_files_menu = Menu(self.menubar, tearoff=0)
         self.menudict['file'].insert_cascade(3, label='Recent Files',
                                              underline=0,
                                              menu=self.recent_files_menu)
@@ -477,12 +477,13 @@ class EditorWindow(object):
         self.menudict = menudict = {}
         for name, label in self.menu_specs:
             underline, label = prepstr(label)
-            menudict[name] = menu = Menu(mbar, name=name)
+            menudict[name] = menu = Menu(mbar, name=name, tearoff=0)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
 
         if macosxSupport.isCarbonTk():
             # Insert the application menu
-            menudict['application'] = menu = Menu(mbar, name='apple')
+            menudict['application'] = menu = Menu(mbar, name='apple',
+                                                tearoff=0)
             mbar.add_cascade(label='IDLE', menu=menu)
 
         self.fill_menus()

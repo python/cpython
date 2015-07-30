@@ -1,8 +1,5 @@
 [See the end of this file for ** TIPS ** on using IDLE !!]
 
-Click on the dotted line at the top of a menu to "tear it off": a
-separate window containing the menu is created.
-
 File Menu:
 
 	New File         -- Create a new editing window
