@@ -207,10 +207,10 @@ class MSVCCompiler(CCompiler) :
         ]
 
         self.ldflags_shared = [
-            '/nologo', '/DLL', '/INCREMENTAL:NO'
+            '/nologo', '/DLL', '/INCREMENTAL:NO', '/LTCG', '/nodefaultlib:libucrt.lib', 'ucrt.lib'
         ]
         self.ldflags_shared_debug = [
-            '/nologo', '/DLL', '/INCREMENTAL:no', '/DEBUG:FULL'
+            '/nologo', '/DLL', '/INCREMENTAL:no', '/LTCG', '/DEBUG:FULL', '/nodefaultlib:libucrtd.lib', 'ucrtd.lib'
         ]
         self.ldflags_static = [
             '/nologo'
