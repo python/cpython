@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23779: imaplib raises TypeError if authenticator tries to abort.
+  Patch from Craig Holmquist.
+
 - Issue #23319: Fix ctypes.BigEndianStructure, swap correctly bytes. Patch
   written by Matthieu Gautier.
 
