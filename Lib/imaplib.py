@@ -1353,7 +1353,7 @@ class _Authenticator:
     def process(self, data):
         ret = self.mech(self.decode(data))
         if ret is None:
-            return '*'      # Abort conversation
+            return b'*'     # Abort conversation
         return self.encode(ret)
 
     def encode(self, inp):
