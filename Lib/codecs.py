@@ -143,8 +143,8 @@ class Codec:
             'strict' handling.
 
             The method may not store state in the Codec instance. Use
-            StreamCodec for codecs which have to keep state in order to
-            make encoding/decoding efficient.
+            StreamWriter for codecs which have to keep state in order to
+            make encoding efficient.
 
             The encoder must be able to handle zero length input and
             return an empty object of the output object type in this
@@ -166,8 +166,8 @@ class Codec:
             'strict' handling.
 
             The method may not store state in the Codec instance. Use
-            StreamCodec for codecs which have to keep state in order to
-            make encoding/decoding efficient.
+            StreamReader for codecs which have to keep state in order to
+            make decoding efficient.
 
             The decoder must be able to handle zero length input and
             return an empty object of the output object type in this
