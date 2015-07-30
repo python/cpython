@@ -1139,6 +1139,13 @@ Changes in the Python API
   ``True`` when finding the empty string and the indexes are completely out of
   range.  See :issue:`24284`.
 
+* The :func:`inspect.getdoc` function now returns documentation strings
+  inherited from base classes.  Documentation strings no longer need to be
+  duplicated if the inherited documentation is appropriate.  To suppress an
+  inherited string, an empty string must be specified (or the documentation
+  may be filled in).  This change affects the output of the :mod:`pydoc`
+  module and the :func:`help` function.  See :issue:`15582`.
+
 Changes in the C API
 --------------------
 
