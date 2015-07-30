@@ -436,8 +436,8 @@ function interfaces of the stateless encoder and decoder:
    It defaults to ``'strict'`` handling.
 
    The method may not store state in the :class:`Codec` instance. Use
-   :class:`StreamCodec` for codecs which have to keep state in order to make
-   encoding/decoding efficient.
+   :class:`StreamWriter` for codecs which have to keep state in order to make
+   encoding efficient.
 
    The encoder must be able to handle zero length input and return an empty object
    of the output object type in this situation.
@@ -458,8 +458,8 @@ function interfaces of the stateless encoder and decoder:
    It defaults to ``'strict'`` handling.
 
    The method may not store state in the :class:`Codec` instance. Use
-   :class:`StreamCodec` for codecs which have to keep state in order to make
-   encoding/decoding efficient.
+   :class:`StreamReader` for codecs which have to keep state in order to make
+   decoding efficient.
 
    The decoder must be able to handle zero length input and return an empty object
    of the output object type in this situation.
