@@ -423,6 +423,9 @@ Retrieving source code
    a class, a method, a property or a descriptor, retrieve the documentation
    string from the inheritance hierarchy.
 
+   .. versionchanged:: 3.5
+      Documentation strings are now inherited if not overridden.
+
 
 .. function:: getcomments(object)
 
