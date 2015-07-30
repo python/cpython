@@ -37,8 +37,6 @@ context menu.
 
 IDLE's menus dynamically change based on which window is currently selected.
 Each menu documented below indicates which window type it is associated with.
-Click on the dotted line at the top of a menu to "tear it off": a separate
-window containing the menu is created (for Unix and Windows only).
 
 File menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
