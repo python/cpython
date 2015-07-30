@@ -7,6 +7,7 @@
 
 import re
 import struct
+import string
 import binascii
 
 
@@ -52,7 +53,7 @@ def b64encode(s, altchars=None):
     # Strip off the trailing newline
     encoded = binascii.b2a_base64(s)[:-1]
     if altchars is not None:
-        return _translate(encoded, {'+': altchars[0], '/': altchars[1]})
+        return encoded.translate(string.maketrans(b'+/', altchars[:2]))
     return encoded
 
 
@@ -68,7 +69,7 @@ def b64decode(s, altchars=None):
     string.
     """
     if altchars is not None:
-        s = _translate(s, {altchars[0]: '+', altchars[1]: '/'})
+        s = s.translate(string.maketrans(altchars[:2], '+/'))
     try:
         return binascii.a2b_base64(s)
     except binascii.Error, msg:
@@ -92,13 +93,16 @@ def standard_b64decode(s):
     """
     return b64decode(s)
 
+_urlsafe_encode_translation = string.maketrans(b'+/', b'-_')
+_urlsafe_decode_translation = string.maketrans(b'-_', b'+/')
+
 def urlsafe_b64encode(s):
     """Encode a string using a url-safe Base64 alphabet.
 
     s is the string to encode.  The encoded string is returned.  The alphabet
     uses '-' instead of '+' and '_' instead of '/'.
     """
-    return b64encode(s, '-_')
+    return b64encode(s).translate(_urlsafe_encode_translation)
 
 def urlsafe_b64decode(s):
     """Decode a string encoded with the standard Base64 alphabet.
@@ -109,7 +113,7 @@ def urlsafe_b64decode(s):
 
     The alphabet uses '-' instead of '+' and '_' instead of '/'.
     """
-    return b64decode(s, '-_')
+    return b64decode(s.translate(_urlsafe_decode_translation))
 
 
 
@@ -200,7 +204,7 @@ def b32decode(s, casefold=False, map01=None):
     # False, or the character to map the digit 1 (one) to.  It should be
     # either L (el) or I (eye).
     if map01:
-        s = _translate(s, {'0': 'O', '1': map01})
+        s = s.translate(string.maketrans(b'01', b'O' + map01))
     if casefold:
         s = s.upper()
     # Strip off pad characters from the right.  We need to count the pad
