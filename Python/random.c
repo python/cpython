@@ -142,7 +142,6 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
             }
 
             if (errno == EINTR) {
-                /* Note: EINTR should not occur with flags=0 */
                 if (PyErr_CheckSignals()) {
                     if (!raise)
                         Py_FatalError("getrandom() interrupted by a signal");
