@@ -167,7 +167,7 @@ static int running_on_valgrind = -1;
  * this value according to your application behaviour and memory needs.
  *
  * The following invariants must hold:
- *      1) ALIGNMENT <= SMALL_REQUEST_THRESHOLD <= 256
+ *      1) ALIGNMENT <= SMALL_REQUEST_THRESHOLD <= 512
  *      2) SMALL_REQUEST_THRESHOLD is evenly divisible by ALIGNMENT
  *
  * Note: a size threshold of 512 guarantees that newly created dictionaries
