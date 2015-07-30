@@ -15,9 +15,7 @@ Menus:
 IDLE has two window types the Shell window and the Editor window. It is
 possible to have multiple editor windows simultaneously. IDLE's
 menus dynamically change based on which window is currently selected. Each menu
-documented below indicates which window type it is associated with. Click on
-the dotted line at the top of a menu to "tear it off": a separate window
-containing the menu is created (for Unix and Windows only).
+documented below indicates which window type it is associated with. 
 
 File Menu (Shell and Editor):
 
