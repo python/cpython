@@ -16,7 +16,7 @@ Here are some of the useful functions provided by this module:
     getmodule() - determine the module that an object came from
     getclasstree() - arrange classes so as to represent their hierarchy
 
-    getargspec(), getargvalues(), getcallargs() - get info about function arguments
+    getargvalues(), getcallargs() - get info about function arguments
     getfullargspec() - same, with support for Python 3 features
     formatargspec(), formatargvalues() - format an argument spec
     getouterframes(), getinnerframes() - get info about frames
@@ -1018,8 +1018,6 @@ def getfullargspec(func):
     'kwonlydefaults' is a dictionary mapping names from kwonlyargs to defaults.
     'annotations' is a dictionary mapping argument names to annotations.
 
-    The first four items in the tuple correspond to getargspec().
-
     This function is deprecated, use inspect.signature() instead.
     """
 
@@ -1130,8 +1128,7 @@ def formatargspec(args, varargs=None, varkw=None, defaults=None,
                   formatvalue=lambda value: '=' + repr(value),
                   formatreturns=lambda text: ' -> ' + text,
                   formatannotation=formatannotation):
-    """Format an argument spec from the values returned by getargspec
-    or getfullargspec.
+    """Format an argument spec from the values returned by getfullargspec.
 
     The first seven arguments are (args, varargs, varkw, defaults,
     kwonlyargs, kwonlydefaults, annotations).  The other five arguments
