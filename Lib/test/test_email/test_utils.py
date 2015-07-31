@@ -136,5 +136,25 @@ class LocaltimeTests(unittest.TestCase):
         t1 = utils.localtime(t0)
         self.assertEqual(t1.tzname(), 'EET')
 
+class FormatDateTests(unittest.TestCase):
+
+    @test.support.run_with_tz('Europe/Minsk')
+    def test_formatdate(self):
+        timeval = time.mktime((2011, 12, 1, 18, 0, 0, 4, 335, 0))
+        string = utils.formatdate(timeval, localtime=False, usegmt=False)
+        self.assertEqual(string, 'Thu, 01 Dec 2011 15:00:00 -0000')
+        string = utils.formatdate(timeval, localtime=False, usegmt=True)
+        self.assertEqual(string, 'Thu, 01 Dec 2011 15:00:00 GMT')
+
+    @test.support.run_with_tz('Europe/Minsk')
+    def test_formatdate_with_localtime(self):
+        timeval = time.mktime((2011, 1, 1, 18, 0, 0, 6, 1, 0))
+        string = utils.formatdate(timeval, localtime=True)
+        self.assertEqual(string, 'Sat, 01 Jan 2011 18:00:00 +0200')
+        # Minsk moved from +0200 (with DST) to +0300 (without DST) in 2011
+        timeval = time.mktime((2011, 12, 1, 18, 0, 0, 4, 335, 0))
+        string = utils.formatdate(timeval, localtime=True)
+        self.assertEqual(string, 'Thu, 01 Dec 2011 18:00:00 +0300')
+
 if __name__ == '__main__':
     unittest.main()
