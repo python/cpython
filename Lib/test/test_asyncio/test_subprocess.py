@@ -1,6 +1,7 @@
 import signal
 import sys
 import unittest
+import warnings
 from unittest import mock
 
 import asyncio
@@ -412,6 +413,20 @@ class SubprocessMixin:
         # transport.close() must not kill the process if it finished, even if
         # the transport was not notified yet
         self.assertFalse(killed)
+
+    def test_popen_error(self):
+        # Issue #24763: check that the subprocess transport is closed
+        # when BaseSubprocessTransport fails
+        with mock.patch('subprocess.Popen') as popen:
+            exc = ZeroDivisionError
+            popen.side_effect = exc
+
+            create = asyncio.create_subprocess_exec(sys.executable, '-c',
+                                                    'pass', loop=self.loop)
+            with warnings.catch_warnings(record=True) as warns:
+                with self.assertRaises(exc):
+                    self.loop.run_until_complete(create)
+                self.assertEqual(warns, [])
 
 
 if sys.platform != 'win32':

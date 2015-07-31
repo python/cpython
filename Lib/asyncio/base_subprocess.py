@@ -35,8 +35,13 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
             self._pipes[2] = None
 
         # Create the child process: set the _proc attribute
-        self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
-                    stderr=stderr, bufsize=bufsize, **kwargs)
+        try:
+            self._start(args=args, shell=shell, stdin=stdin, stdout=stdout,
+                        stderr=stderr, bufsize=bufsize, **kwargs)
+        except:
+            self.close()
+            raise
+
         self._pid = self._proc.pid
         self._extra['subprocess'] = self._proc
 
