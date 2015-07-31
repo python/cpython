@@ -171,12 +171,15 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
             Py_INCREF(startkey);
             cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
             Py_DECREF(startkey);
-            if (cmp < 0)                                          /* unlikely */
-                goto comparison_error;
-            if (table != so->table || entry->key != startkey)     /* unlikely */
-                goto restart;
             if (cmp > 0)                                          /* likely */
                 goto found_active;
+            if (cmp < 0)
+                goto comparison_error;
+            /* Continuing the search from the current entry only makes
+               sense if the table and entry are unchanged; otherwise,
+               we have to restart from the beginning */
+            if (table != so->table || entry->key != startkey)
+                goto restart;
             mask = so->mask;                 /* help avoid a register spill */
         }
         else if (entry->hash == -1 && freeslot == NULL)
@@ -200,12 +203,12 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
                     Py_INCREF(startkey);
                     cmp = PyObject_RichCompareBool(startkey, key, Py_EQ);
                     Py_DECREF(startkey);
+                    if (cmp > 0)
+                        goto found_active;
                     if (cmp < 0)
                         goto comparison_error;
                     if (table != so->table || entry->key != startkey)
                         goto restart;
-                    if (cmp > 0)
-                        goto found_active;
                     mask = so->mask;
                 }
                 else if (entry->hash == -1 && freeslot == NULL)
