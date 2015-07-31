@@ -805,8 +805,6 @@ Classes and functions
    from kwonlyargs to defaults.  *annotations* is a dictionary mapping argument
    names to annotations.
 
-   The first four items in the tuple correspond to :func:`getargspec`.
-
    .. versionchanged:: 3.4
       This function is now based on :func:`signature`, but still ignores
       ``__wrapped__`` attributes and includes the already bound first
@@ -835,7 +833,7 @@ Classes and functions
 .. function:: formatargspec(args[, varargs, varkw, defaults, kwonlyargs, kwonlydefaults, annotations[, formatarg, formatvarargs, formatvarkw, formatvalue, formatreturns, formatannotations]])
 
    Format a pretty argument spec from the values returned by
-   :func:`getargspec` or :func:`getfullargspec`.
+   :func:`getfullargspec`.
 
    The first seven arguments are (``args``, ``varargs``, ``varkw``,
    ``defaults``, ``kwonlyargs``, ``kwonlydefaults``, ``annotations``).
