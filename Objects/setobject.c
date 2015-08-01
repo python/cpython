@@ -763,7 +763,7 @@ frozenset_hash(PyObject *self)
     Py_uhash_t hash = 1927868237UL;
     setentry *entry;
 
-    /* Make hash(frozenset({0})) distinct from hash(frozenset()) */
+    /* Initial dispersion based on the number of active entries */
     hash *= (Py_uhash_t)PySet_GET_SIZE(self) + 1;
 
     /* Xor-in shuffled bits from every entry's hash field because xor is
@@ -790,8 +790,10 @@ frozenset_hash(PyObject *self)
     /* Disperse patterns arising in nested frozensets */
     hash = hash * 69069U + 907133923UL;
 
+    /* -1 is reserved as an error code */
     if (hash == (Py_uhash_t)-1)
         hash = 590923713UL;
+
     so->hash = hash;
     return hash;
 }
