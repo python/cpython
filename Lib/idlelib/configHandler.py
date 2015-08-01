@@ -23,6 +23,7 @@ import os
 import sys
 
 from ConfigParser import ConfigParser
+from tkFont import Font, nametofont
 
 class InvalidConfigType(Exception): pass
 class InvalidConfigSet(Exception): pass
@@ -670,6 +671,32 @@ class IdleConf:
         allHelpSources = (self.GetExtraHelpSourceList('default') +
                 self.GetExtraHelpSourceList('user') )
         return allHelpSources
+
+    def GetFont(self, root, configType, section):
+        """Retrieve a font from configuration (font, font-size, font-bold)
+        Intercept the special value 'TkFixedFont' and substitute
+        the actual font, factoring in some tweaks if needed for
+        appearance sakes.
+
+        The 'root' parameter can normally be any valid Tkinter widget.
+
+        Return a tuple (family, size, weight) suitable for passing
+        to tkinter.Font
+        """
+        family = self.GetOption(configType, section, 'font', default='courier')
+        size = self.GetOption(configType, section, 'font-size', type='int',
+                              default='10')
+        bold = self.GetOption(configType, section, 'font-bold', default=0,
+                              type='bool')
+        if (family == 'TkFixedFont'):
+            f = Font(name='TkFixedFont', exists=True, root=root)
+            actualFont = Font.actual(f)
+            family = actualFont['family']
+            size = actualFont['size']
+            if size < 0:
+                size = 10  # if font in pixels, ignore actual size
+            bold = actualFont['weight']=='bold'
+        return (family, size, 'bold' if bold else 'normal')
 
     def LoadCfgFiles(self):
         "Load all configuration files."

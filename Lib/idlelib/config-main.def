@@ -53,7 +53,7 @@ delete-exitfunc= 1
 [EditorWindow]
 width= 80
 height= 40
-font= courier
+font= TkFixedFont
 font-size= 10
 font-bold= 0
 encoding= none
