@@ -739,41 +739,57 @@ set_traverse(PySetObject *so, visitproc visit, void *arg)
     return 0;
 }
 
+/* Work to increase the bit dispersion for closely spaced hash values.
+   This is important because some use cases have many combinations of a
+   small number of elements with nearby hashes so that many distinct
+   combinations collapse to only a handful of distinct hash values. */
+
+static Py_uhash_t
+_shuffle_bits(Py_uhash_t h)
+{
+    return ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
+}
+
+/* Most of the constants in this hash algorithm are randomly chosen
+   large primes with "interesting bit patterns" and that passed tests
+   for good collision statistics on a variety of problematic datasets
+   including powersets and graph structures (such as David Eppstein's
+   graph recipes in Lib/test/test_set.py) */
+
 static Py_hash_t
 frozenset_hash(PyObject *self)
 {
-    /* Most of the constants in this hash algorithm are randomly choosen
-       large primes with "interesting bit patterns" and that passed
-       tests for good collision statistics on a variety of problematic
-       datasets such as:
-
-          ps = []
-          for r in range(21):
-              ps += itertools.combinations(range(20), r)
-          num_distinct_hashes = len({hash(frozenset(s)) for s in ps})
-
-    */
     PySetObject *so = (PySetObject *)self;
-    Py_uhash_t h, hash = 1927868237UL;
+    Py_uhash_t hash = 1927868237UL;
     setentry *entry;
-    Py_ssize_t pos = 0;
 
-    if (so->hash != -1)
-        return so->hash;
-
+    /* Make hash(frozenset({0})) distinct from hash(frozenset()) */
     hash *= (Py_uhash_t)PySet_GET_SIZE(self) + 1;
-    while (set_next(so, &pos, &entry)) {
-        /* Work to increase the bit dispersion for closely spaced hash
-           values.  This is important because some use cases have many
-           combinations of a small number of elements with nearby
-           hashes so that many distinct combinations collapse to only
-           a handful of distinct hash values. */
-        h = entry->hash;
-        hash ^= ((h ^ 89869747UL) ^ (h << 16)) * 3644798167UL;
-    }
-    /* Make the final result spread-out in a different pattern
-       than the algorithm for tuples or other python objects. */
+
+    /* Xor-in shuffled bits from every entry's hash field because xor is
+       commutative and a frozenset hash should be independent of order.
+
+       For speed, include null entries and dummy entries and then
+       subtract out their effect afterwards so that the final hash
+       depends only on active entries.  This allows the code to be
+       vectorized by the compiler and it saves the unpredictable
+       branches that would arise when trying to exclude null and dummy
+       entries on every iteration. */
+
+    for (entry = so->table; entry <= &so->table[so->mask]; entry++)
+        hash ^= _shuffle_bits(entry->hash);
+
+    /* Remove the effect of an odd number NULL entries */
+    if ((so->mask + 1 - so->fill) & 1)
+        hash ^= _shuffle_bits(0);
+
+    /* Remove the effect of an odd number of dummy entries */
+    if ((so->fill - so->used) & 1)
+        hash ^= _shuffle_bits(-1);
+
+    /* Disperse patterns arising in nested frozensets */
     hash = hash * 69069U + 907133923UL;
+
     if (hash == (Py_uhash_t)-1)
         hash = 590923713UL;
     so->hash = hash;
