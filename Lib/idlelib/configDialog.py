@@ -465,9 +465,9 @@ class ConfigDialog(Toplevel):
         return frame
 
     def AttachVarCallbacks(self):
-        self.fontSize.trace_variable('w', self.VarChanged_fontSize)
-        self.fontName.trace_variable('w', self.VarChanged_fontName)
-        self.fontBold.trace_variable('w', self.VarChanged_fontBold)
+        self.fontSize.trace_variable('w', self.VarChanged_font)
+        self.fontName.trace_variable('w', self.VarChanged_font)
+        self.fontBold.trace_variable('w', self.VarChanged_font)
         self.spaceNum.trace_variable('w', self.VarChanged_spaceNum)
         self.colour.trace_variable('w', self.VarChanged_colour)
         self.builtinTheme.trace_variable('w', self.VarChanged_builtinTheme)
@@ -484,15 +484,15 @@ class ConfigDialog(Toplevel):
         self.autoSave.trace_variable('w', self.VarChanged_autoSave)
         self.encoding.trace_variable('w', self.VarChanged_encoding)
 
-    def VarChanged_fontSize(self, *params):
-        value = self.fontSize.get()
-        self.AddChangedItem('main', 'EditorWindow', 'font-size', value)
-
-    def VarChanged_fontName(self, *params):
+    def VarChanged_font(self, *params):
+        '''When one font attribute changes, save them all, as they are
+        not independent from each other. In particular, when we are
+        overriding the default font, we need to write out everything.
+        '''
         value = self.fontName.get()
         self.AddChangedItem('main', 'EditorWindow', 'font', value)
-
-    def VarChanged_fontBold(self, *params):
+        value = self.fontSize.get()
+        self.AddChangedItem('main', 'EditorWindow', 'font-size', value)
         value = self.fontBold.get()
         self.AddChangedItem('main', 'EditorWindow', 'font-bold', value)
 
@@ -958,24 +958,24 @@ class ConfigDialog(Toplevel):
         fonts.sort()
         for font in fonts:
             self.listFontName.insert(END, font)
-        configuredFont = idleConf.GetOption(
-                'main', 'EditorWindow', 'font', default='courier')
-        lc_configuredFont = configuredFont.lower()
-        self.fontName.set(lc_configuredFont)
+        configuredFont = idleConf.GetFont(self, 'main', 'EditorWindow')
+        fontName = configuredFont[0].lower()
+        fontSize = configuredFont[1]
+        fontBold  = configuredFont[2]=='bold'
+        self.fontName.set(fontName)
         lc_fonts = [s.lower() for s in fonts]
-        if lc_configuredFont in lc_fonts:
-            currentFontIndex = lc_fonts.index(lc_configuredFont)
+        try:
+            currentFontIndex = lc_fonts.index(fontName)
             self.listFontName.see(currentFontIndex)
             self.listFontName.select_set(currentFontIndex)
             self.listFontName.select_anchor(currentFontIndex)
+        except ValueError:
+            pass
         ##font size dropdown
-        fontSize = idleConf.GetOption(
-                'main', 'EditorWindow', 'font-size', type='int', default='10')
         self.optMenuFontSize.SetMenu(('7', '8', '9', '10', '11', '12', '13',
                                       '14', '16', '18', '20', '22'), fontSize )
         ##fontWeight
-        self.fontBold.set(idleConf.GetOption(
-                'main', 'EditorWindow', 'font-bold', default=0, type='bool'))
+        self.fontBold.set(fontBold)
         ##font sample
         self.SetFontSample()
 
