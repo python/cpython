@@ -10,12 +10,13 @@ extern "C" {
 
 /* There are three kinds of entries in the table:
 
-1. Unused:  key == NULL
-2. Active:  key != NULL and key != dummy
-3. Dummy:   key == dummy
+1. Unused:  key == NULL and hash == 0
+2. Dummy:   key == dummy and hash == -1
+3. Active:  key != NULL and key != dummy and hash != -1
 
-The hash field of Unused slots have no meaning.
-The hash field of Dummny slots are set to -1
+The hash field of Unused slots is always zero.
+
+The hash field of Dummy slots are set to -1
 meaning that dummy entries can be detected by
 either entry->key==dummy or by entry->hash==-1.
 */
