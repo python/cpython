@@ -675,7 +675,7 @@ Coroutine function definition
 -----------------------------
 
 .. productionlist::
-   async_funcdef: "async" `funcdef`
+   async_funcdef: [`decorators`] "async" "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`] ":" `suite`
 
 .. index::
    keyword: async
