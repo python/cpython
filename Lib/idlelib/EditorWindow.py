@@ -230,13 +230,7 @@ class EditorWindow(object):
         vbar['command'] = text.yview
         vbar.pack(side=RIGHT, fill=Y)
         text['yscrollcommand'] = vbar.set
-        fontWeight = 'normal'
-        if idleConf.GetOption('main', 'EditorWindow', 'font-bold', type='bool'):
-            fontWeight='bold'
-        text.config(font=(idleConf.GetOption('main', 'EditorWindow', 'font'),
-                          idleConf.GetOption('main', 'EditorWindow',
-                                             'font-size', type='int'),
-                          fontWeight))
+        text['font'] = idleConf.GetFont(self.root, 'main', 'EditorWindow')
         text_frame.pack(side=LEFT, fill=BOTH, expand=1)
         text.pack(side=TOP, fill=BOTH, expand=1)
         text.focus_set()
@@ -797,13 +791,8 @@ class EditorWindow(object):
     def ResetFont(self):
         "Update the text widgets' font if it is changed"
         # Called from configDialog.py
-        fontWeight='normal'
-        if idleConf.GetOption('main','EditorWindow','font-bold',type='bool'):
-            fontWeight='bold'
-        self.text.config(font=(idleConf.GetOption('main','EditorWindow','font'),
-                idleConf.GetOption('main','EditorWindow','font-size',
-                                   type='int'),
-                fontWeight))
+
+        self.text['font'] = idleConf.GetFont(self.root, 'main','EditorWindow')
 
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."
