@@ -147,7 +147,7 @@ class ScriptBinding:
             return 'break'
         interp = self.shell.interp
         if PyShell.use_subprocess:
-            interp.restart_subprocess(with_cwd=False)
+            interp.restart_subprocess(with_cwd=False, filename=code.co_filename)
         dirname = os.path.dirname(filename)
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:

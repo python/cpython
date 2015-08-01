@@ -482,7 +482,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         self.poll_subprocess()
         return self.rpcclt
 
-    def restart_subprocess(self, with_cwd=False):
+    def restart_subprocess(self, with_cwd=False, filename=''):
         if self.restarting:
             return self.rpcclt
         self.restarting = True
@@ -510,14 +510,13 @@ class ModifiedInterpreter(InteractiveInterpreter):
         console.stop_readline()
         # annotate restart in shell window and mark it
         console.text.delete("iomark", "end-1c")
-        if was_executing:
-            console.write('\n')
-            console.showprompt()
-        halfbar = ((int(console.width) - 16) // 2) * '='
-        console.write(halfbar + ' RESTART ' + halfbar)
+        tag = 'RUN ' + filename if filename else 'RESTART Shell'
+        halfbar = ((int(console.width) -len(tag) - 4) // 2) * '='
+        console.write("\n{0} {1} {0}".format(halfbar, tag))
         console.text.mark_set("restart", "end-1c")
         console.text.mark_gravity("restart", "left")
-        console.showprompt()
+        if not filename:
+            console.showprompt()
         # restart subprocess debugger
         if debug:
             # Restarted debugger connects to current instance of debug GUI
