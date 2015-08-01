@@ -779,7 +779,7 @@ frozenset_hash(PyObject *self)
     for (entry = so->table; entry <= &so->table[so->mask]; entry++)
         hash ^= _shuffle_bits(entry->hash);
 
-    /* Remove the effect of an odd number NULL entries */
+    /* Remove the effect of an odd number of NULL entries */
     if ((so->mask + 1 - so->fill) & 1)
         hash ^= _shuffle_bits(0);
 
