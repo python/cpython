@@ -2479,11 +2479,22 @@ PyInit_select(void)
     PyModule_AddIntMacro(m, EPOLLONESHOT);
 #endif
     /* PyModule_AddIntConstant(m, "EPOLL_RDHUP", EPOLLRDHUP); */
+
+#ifdef EPOLLRDNORM
     PyModule_AddIntMacro(m, EPOLLRDNORM);
+#endif
+#ifdef EPOLLRDBAND
     PyModule_AddIntMacro(m, EPOLLRDBAND);
+#endif
+#ifdef EPOLLWRNORM
     PyModule_AddIntMacro(m, EPOLLWRNORM);
+#endif
+#ifdef EPOLLWRBAND
     PyModule_AddIntMacro(m, EPOLLWRBAND);
+#endif
+#ifdef EPOLLMSG
     PyModule_AddIntMacro(m, EPOLLMSG);
+#endif
 
 #ifdef EPOLL_CLOEXEC
     PyModule_AddIntMacro(m, EPOLL_CLOEXEC);
