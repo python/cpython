@@ -24,9 +24,9 @@
 
 #ifndef MS_WINDOWS
 #define UNIX
-# ifdef __APPLE__
+# ifdef HAVE_FCNTL_H
 #  include <fcntl.h>
-# endif
+# endif /* HAVE_FCNTL_H */
 #endif
 
 #ifdef MS_WINDOWS
