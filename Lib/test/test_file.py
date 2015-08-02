@@ -88,8 +88,8 @@ class AutoFileTests(unittest.TestCase):
     def testErrors(self):
         f = self.f
         self.assertEqual(f.name, TESTFN)
-        self.assertTrue(not f.isatty())
-        self.assertTrue(not f.closed)
+        self.assertFalse(f.isatty())
+        self.assertFalse(f.closed)
 
         if hasattr(f, "readinto"):
             self.assertRaises((IOError, TypeError), f.readinto, "")

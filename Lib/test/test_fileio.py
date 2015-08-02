@@ -112,15 +112,15 @@ class AutoFileTests(unittest.TestCase):
 
     def testErrors(self):
         f = self.f
-        self.assertTrue(not f.isatty())
-        self.assertTrue(not f.closed)
+        self.assertFalse(f.isatty())
+        self.assertFalse(f.closed)
         #self.assertEqual(f.name, TESTFN)
         self.assertRaises(ValueError, f.read, 10) # Open for reading
         f.close()
         self.assertTrue(f.closed)
         f = _FileIO(TESTFN, 'r')
         self.assertRaises(TypeError, f.readinto, "")
-        self.assertTrue(not f.closed)
+        self.assertFalse(f.closed)
         f.close()
         self.assertTrue(f.closed)
 
