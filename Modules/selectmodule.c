@@ -1874,11 +1874,21 @@ initselect(void)
     PyModule_AddIntConstant(m, "EPOLLONESHOT", EPOLLONESHOT);
 #endif
     /* PyModule_AddIntConstant(m, "EPOLL_RDHUP", EPOLLRDHUP); */
+#ifdef EPOLLRDNORM
     PyModule_AddIntConstant(m, "EPOLLRDNORM", EPOLLRDNORM);
+#endif
+#ifdef EPOLLRDBAND
     PyModule_AddIntConstant(m, "EPOLLRDBAND", EPOLLRDBAND);
+#endif
+#ifdef EPOLLWRNORM
     PyModule_AddIntConstant(m, "EPOLLWRNORM", EPOLLWRNORM);
+#endif
+#ifdef EPOLLWRBAND
     PyModule_AddIntConstant(m, "EPOLLWRBAND", EPOLLWRBAND);
+#endif
+#ifdef EPOLLMSG
     PyModule_AddIntConstant(m, "EPOLLMSG", EPOLLMSG);
+#endif
 #endif /* HAVE_EPOLL */
 
 #ifdef HAVE_KQUEUE
