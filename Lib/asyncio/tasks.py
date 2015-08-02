@@ -249,8 +249,9 @@ class Task(futures.Future):
                     result._blocking = False
                     result.add_done_callback(self._wakeup)
                     self._fut_waiter = result
-                    if self._must_cancel and self._fut_waiter.cancel():
-                        self._must_cancel = False
+                    if self._must_cancel:
+                        if self._fut_waiter.cancel():
+                            self._must_cancel = False
                 else:
                     self._loop.call_soon(
                         self._step, None,
