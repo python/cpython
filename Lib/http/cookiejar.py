@@ -758,7 +758,7 @@ class Cookie:
                  ):
 
         if version is not None: version = int(version)
-        if expires is not None: expires = int(expires)
+        if expires is not None: expires = int(float(expires))
         if port is None and port_specified is True:
             raise ValueError("if port is None, port_specified must be false")
 
