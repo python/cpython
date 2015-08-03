@@ -566,6 +566,15 @@ class CookieTests(unittest.TestCase):
         self.assertEqual(len(c), 1)
         self.assertIn('spam="bar"', h)
 
+        # test if fractional expiry is accepted
+        cookie  = Cookie(0, "name", "value",
+                         None, False, "www.python.org",
+                         True, False, "/",
+                         False, False, "1444312383.018307",
+                         False, None, None,
+                         {})
+        self.assertEqual(cookie.expires, 1444312383)
+
         # XXX RFC 2965 expiry rules (some apply to V0 too)
 
     def test_default_path(self):

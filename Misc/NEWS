@@ -66,6 +66,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23888: Handle fractional time in cookie expiry. Patch by ssh.
+
 - Issue #23652: Make it possible to compile the select module against the
   libc headers from the Linux Standard Base, which do not include some
   EPOLL macros.  Patch by Matt Frank.
