@@ -23,16 +23,6 @@ except ImportError:
           "Your Python may not be configured for Tk. **", file=sys.__stderr__)
     sys.exit(1)
 import tkinter.messagebox as tkMessageBox
-try:
-    from tkinter import ttk
-except:
-    root = Tk()
-    root.withdraw()
-    tkMessageBox.showerror("Idle Cannot Start",
-            "Idle now requires the tkinter.ttk module from tcl/tk 8.5+.\n"
-            + "It found tk %s and no ttk." % TkVersion,
-            parent=root)
-    sys.exit(1)
 
 from idlelib.EditorWindow import EditorWindow, fixwordbreaks
 from idlelib.FileList import FileList
