@@ -230,6 +230,7 @@ def urlretrieve(url, filename=None, reporthook=None, data=None):
     return result
 
 def urlcleanup():
+    """Clean up temporary files from urlretrieve calls."""
     for temp_file in _url_tempfiles:
         try:
             os.unlink(temp_file)
