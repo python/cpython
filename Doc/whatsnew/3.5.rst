@@ -246,6 +246,28 @@ In dictionaries, later values will always override earlier ones::
    :pep:`448` -- Additional Unpacking Generalizations
 
 
+PEP 484 - Type Hints
+--------------------
+
+This PEP introduces a provisional module to provide these standard
+definitions and tools, along with some conventions for situations
+where annotations are not available.
+
+For example, here is a simple function whose argument and return type
+are declared in the annotations::
+
+  def greeting(name: str) -> str:
+      return 'Hello ' + name
+
+The type system supports unions, generic types, and a special type
+named ``Any`` which is consistent with (i.e. assignable to and from) all
+types.
+
+.. seealso::
+
+   :pep:`484` -- Type Hints
+
+
 PEP 471 - os.scandir() function -- a better and faster directory iterator
 -------------------------------------------------------------------------
 
