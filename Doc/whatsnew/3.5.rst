@@ -203,6 +203,49 @@ called ``@``. (Mnemonic: ``@`` is ``*`` for mATrices.)
    :pep:`465` -- A dedicated infix operator for matrix multiplication
 
 
+PEP 448 - Additional Unpacking Generalizations
+----------------------------------------------
+
+This PEP proposes extended usages of the ``*`` iterable unpacking
+operator and ``**`` dictionary unpacking operators
+to allow unpacking in more positions, an arbitrary number of
+times, and in additional circumstances.  Specifically,
+in function calls, in comprehensions and generator expressions, and
+in displays.
+
+Function calls are proposed to support an arbitrary number of
+unpackings rather than just one::
+
+    >>> print(*[1], *[2], 3)
+    1 2 3
+    >>> dict(**{'x': 1}, y=2, **{'z': 3})
+    {'x': 1, 'y': 2, 'z': 3}
+
+Unpacking is proposed to be allowed inside tuple, list, set,
+and dictionary displays::
+
+    >>> *range(4), 4
+    (0, 1, 2, 3, 4)
+    >>> [*range(4), 4]
+    [0, 1, 2, 3, 4]
+    >>> {*range(4), 4}
+    {0, 1, 2, 3, 4}
+    >>> {'x': 1, **{'y': 2}}
+    {'x': 1, 'y': 2}
+
+In dictionaries, later values will always override earlier ones::
+
+    >>> {'x': 1, **{'x': 2}}
+    {'x': 2}
+
+    >>> {**{'x': 2}, 'x': 1}
+    {'x': 1}
+
+.. seealso::
+
+   :pep:`448` -- Additional Unpacking Generalizations
+
+
 PEP 471 - os.scandir() function -- a better and faster directory iterator
 -------------------------------------------------------------------------
 
