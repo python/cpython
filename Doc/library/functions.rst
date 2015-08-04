@@ -1191,10 +1191,11 @@ section.
       except NameError:
           cache = {}
 
-   It is legal though generally not very useful to reload built-in or dynamically
-   loaded modules, except for :mod:`sys`, :mod:`__main__` and :mod:`__builtin__`.
-   In many cases, however, extension modules are not designed to be initialized
-   more than once, and may fail in arbitrary ways when reloaded.
+   It is generally not very useful to reload built-in or dynamically loaded
+   modules.  Reloading :mod:`sys`, :mod:`__main__`, :mod:`builtins` and other
+   key modules is not recommended.  In many cases extension modules are not
+   designed to be initialized more than once, and may fail in arbitrary ways
+   when reloaded.
 
    If a module imports objects from another module using :keyword:`from` ...
    :keyword:`import` ..., calling :func:`reload` for the other module does not

@@ -142,6 +142,8 @@ IDLE
 Documentation
 -------------
 
+- Issue #20769: Improve reload() docs. Patch by Dorian Pula.
+
 - Issue #23589: Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
 
 - Issue #22155: Add File Handlers subsection with createfilehandler to Tkinter
