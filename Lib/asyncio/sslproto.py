@@ -1,11 +1,11 @@
 import collections
-import sys
 import warnings
 try:
     import ssl
 except ImportError:  # pragma: no cover
     ssl = None
 
+from . import compat
 from . import protocols
 from . import transports
 from .log import logger
@@ -317,7 +317,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
     # On Python 3.3 and older, objects with a destructor part of a reference
     # cycle are never destroyed. It's not more the case on Python 3.4 thanks
     # to the PEP 442.
-    if sys.version_info >= (3, 4):
+    if compat.PY34:
         def __del__(self):
             if not self._closed:
                 warnings.warn("unclosed transport %r" % self, ResourceWarning)
