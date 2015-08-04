@@ -3448,7 +3448,7 @@ calc_binint(char *s, int x)
      * to extend a BININT's sign bit to the full width.
      */
     if (x == 4 && l & (1L << 31))
-        l |= (~0L) << 32;
+        l |= (~0UL) << 32;
 #endif
     return l;
 }
