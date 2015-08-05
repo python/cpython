@@ -114,6 +114,10 @@ Significantly Improved Library Modules:
   :func:`gettempdirb` and :func:`gettempprefixb`, have been added to go along
   with this.  This behavior matches that of the :mod:`os` APIs.
 
+* :mod:`ssl` module gained support for Memory BIO, which decouples SSL
+  protocol handling from network IO.  (Contributed by Geert Jansen in
+  :issue:`21965`.)
+
 Security improvements:
 
 * None yet.
@@ -825,11 +829,16 @@ sndhdr
 ssl
 ---
 
-The :meth:`~ssl.SSLSocket.do_handshake`, :meth:`~ssl.SSLSocket.read`,
-:meth:`~ssl.SSLSocket.shutdown`, and :meth:`~ssl.SSLSocket.write` methods of
-:class:`ssl.SSLSocket` don't reset the socket timeout anymore each time bytes
-are received or sent. The socket timeout is now the maximum total duration of
-the method.
+* The :meth:`~ssl.SSLSocket.do_handshake`, :meth:`~ssl.SSLSocket.read`,
+  :meth:`~ssl.SSLSocket.shutdown`, and :meth:`~ssl.SSLSocket.write` methods of
+  :class:`ssl.SSLSocket` don't reset the socket timeout anymore each time bytes
+  are received or sent. The socket timeout is now the maximum total duration of
+  the method.
+
+* Memory BIO Support: new classes :class:`~ssl.SSLObject`,
+  :class:`~ssl.MemoryBIO`, and new
+  :meth:`SSLContext.wrap_bio <ssl.SSLContext.wrap_bio>` method.
+  (Contributed by Geert Jansen in :issue:`21965`.)
 
 socket
 ------
