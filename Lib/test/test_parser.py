@@ -350,9 +350,11 @@ class RoundtripLegalSyntaxTestCase(unittest.TestCase):
         self.check_expr('{**{}, 3:4, **{5:6, 7:8}}')
 
     def test_argument_unpacking(self):
+        self.check_expr("f(*a, **b)")
         self.check_expr('f(a, *b, *c, *d)')
         self.check_expr('f(**a, **b)')
         self.check_expr('f(2, *a, *b, **b, **c, **d)')
+        self.check_expr("f(*b, *() or () and (), **{} and {}, **() or {})")
 
     def test_set_comprehensions(self):
         self.check_expr('{x for x in seq}')
