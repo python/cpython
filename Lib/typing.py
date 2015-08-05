@@ -128,6 +128,8 @@ class TypingMeta(type):
 class Final:
     """Mix-in class to prevent instantiation."""
 
+    __slots__ = ()
+
     def __new__(self, *args, **kwds):
         raise TypeError("Cannot instantiate %r" % self.__class__)
 
@@ -203,6 +205,8 @@ class _TypeAlias:
     some arbitrary class C) raises TypeError rather than returning
     False.
     """
+
+    __slots__ = ('name', 'type_var', 'impl_type', 'type_checker')
 
     def __new__(cls, *args, **kwds):
         """Constructor.
@@ -340,6 +344,8 @@ class Any(Final, metaclass=AnyMeta, _root=True):
     - Any class is a subclass of Any.
     - As a special case, Any and object are subclasses of each other.
     """
+
+    __slots__ = ()
 
 
 class TypeVar(TypingMeta, metaclass=TypingMeta, _root=True):
@@ -635,6 +641,8 @@ class Optional(Final, metaclass=OptionalMeta, _root=True):
     Optional[X] is equivalent to Union[X, type(None)].
     """
 
+    __slots__ = ()
+
 
 class TupleMeta(TypingMeta):
     """Metaclass for Tuple."""
@@ -734,6 +742,8 @@ class Tuple(Final, metaclass=TupleMeta, _root=True):
     To specify a variable-length tuple of homogeneous type, use Sequence[T].
     """
 
+    __slots__ = ()
+
 
 class CallableMeta(TypingMeta):
     """Metaclass for Callable."""
@@ -767,7 +777,10 @@ class CallableMeta(TypingMeta):
     def _eval_type(self, globalns, localns):
         if self.__args__ is None and self.__result__ is None:
             return self
-        args = [_eval_type(t, globalns, localns) for t in self.__args__]
+        if self.__args__ is Ellipsis:
+            args = self.__args__
+        else:
+            args = [_eval_type(t, globalns, localns) for t in self.__args__]
         result = _eval_type(self.__result__, globalns, localns)
         if args == self.__args__ and result == self.__result__:
             return self
@@ -836,6 +849,8 @@ class Callable(Final, metaclass=CallableMeta, _root=True):
     There is no syntax to indicate optional or keyword arguments,
     such function types are rarely used as callback types.
     """
+
+    __slots__ = ()
 
 
 def _gorg(a):
@@ -947,6 +962,8 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
                 if not isinstance(p, TypeVar):
                     raise TypeError("Initial parameters must be "
                                     "type variables; got %s" % p)
+            if len(set(params)) != len(params):
+                raise TypeError("All type variables in Generic[...] must be distinct.")
         else:
             if len(params) != len(self.__parameters__):
                 raise TypeError("Cannot change parameter count from %d to %d" %
@@ -1038,6 +1055,8 @@ class Generic(metaclass=GenericMeta):
       def lookup_name(mapping: Mapping[X, Y], key: X, default: Y) -> Y:
           # Same body as above.
     """
+
+    __slots__ = ()
 
     def __new__(cls, *args, **kwds):
         next_in_mro = object
@@ -1205,6 +1224,7 @@ class _ProtocolMeta(GenericMeta):
                         attr != '__abstractmethods__' and
                         attr != '_is_protocol' and
                         attr != '__dict__' and
+                        attr != '__slots__' and
                         attr != '_get_protocol_attrs' and
                         attr != '__parameters__' and
                         attr != '__origin__' and
@@ -1222,6 +1242,8 @@ class _Protocol(metaclass=_ProtocolMeta):
     such as Hashable).
     """
 
+    __slots__ = ()
+
     _is_protocol = True
 
 
@@ -1232,14 +1254,15 @@ Hashable = collections_abc.Hashable  # Not generic.
 
 
 class Iterable(Generic[T_co], extra=collections_abc.Iterable):
-    pass
+    __slots__ = ()
 
 
 class Iterator(Iterable[T_co], extra=collections_abc.Iterator):
-    pass
+    __slots__ = ()
 
 
 class SupportsInt(_Protocol):
+    __slots__ = ()
 
     @abstractmethod
     def __int__(self) -> int:
@@ -1247,6 +1270,7 @@ class SupportsInt(_Protocol):
 
 
 class SupportsFloat(_Protocol):
+    __slots__ = ()
 
     @abstractmethod
     def __float__(self) -> float:
@@ -1254,6 +1278,7 @@ class SupportsFloat(_Protocol):
 
 
 class SupportsComplex(_Protocol):
+    __slots__ = ()
 
     @abstractmethod
     def __complex__(self) -> complex:
@@ -1261,30 +1286,34 @@ class SupportsComplex(_Protocol):
 
 
 class SupportsBytes(_Protocol):
+    __slots__ = ()
 
     @abstractmethod
     def __bytes__(self) -> bytes:
         pass
 
 
-class SupportsAbs(_Protocol[T]):
+class SupportsAbs(_Protocol[T_co]):
+    __slots__ = ()
 
     @abstractmethod
-    def __abs__(self) -> T:
+    def __abs__(self) -> T_co:
         pass
 
 
-class SupportsRound(_Protocol[T]):
+class SupportsRound(_Protocol[T_co]):
+    __slots__ = ()
 
     @abstractmethod
-    def __round__(self, ndigits: int = 0) -> T:
+    def __round__(self, ndigits: int = 0) -> T_co:
         pass
 
 
-class Reversible(_Protocol[T]):
+class Reversible(_Protocol[T_co]):
+    __slots__ = ()
 
     @abstractmethod
-    def __reversed__(self) -> 'Iterator[T]':
+    def __reversed__(self) -> 'Iterator[T_co]':
         pass
 
 
@@ -1292,7 +1321,7 @@ Sized = collections_abc.Sized  # Not generic.
 
 
 class Container(Generic[T_co], extra=collections_abc.Container):
-    pass
+    __slots__ = ()
 
 
 # Callable was defined earlier.
@@ -1308,7 +1337,7 @@ class MutableSet(AbstractSet[T], extra=collections_abc.MutableSet):
 
 
 # NOTE: Only the value type is covariant.
-class Mapping(Sized, Iterable[KT], Container[KT], Generic[KT, VT_co],
+class Mapping(Sized, Iterable[KT], Container[KT], Generic[VT_co],
               extra=collections_abc.Mapping):
     pass
 
@@ -1366,6 +1395,7 @@ class _FrozenSetMeta(GenericMeta):
 
 
 class FrozenSet(frozenset, AbstractSet[T_co], metaclass=_FrozenSetMeta):
+    __slots__ = ()
 
     def __new__(cls, *args, **kwds):
         if _geqv(cls, FrozenSet):
@@ -1413,6 +1443,7 @@ else:
 
 class Generator(Iterator[T_co], Generic[T_co, T_contra, V_co],
                 extra=_G_base):
+    __slots__ = ()
 
     def __new__(cls, *args, **kwds):
         if _geqv(cls, Generator):
@@ -1455,6 +1486,8 @@ class IO(Generic[AnyStr]):
     pervasive in the interface; however we currently do not offer a
     way to track the other distinctions in the type system.
     """
+
+    __slots__ = ()
 
     @abstractproperty
     def mode(self) -> str:
@@ -1540,6 +1573,8 @@ class IO(Generic[AnyStr]):
 class BinaryIO(IO[bytes]):
     """Typed version of the return of open() in binary mode."""
 
+    __slots__ = ()
+
     @abstractmethod
     def write(self, s: Union[bytes, bytearray]) -> int:
         pass
@@ -1551,6 +1586,8 @@ class BinaryIO(IO[bytes]):
 
 class TextIO(IO[str]):
     """Typed version of the return of open() in text mode."""
+
+    __slots__ = ()
 
     @abstractproperty
     def buffer(self) -> BinaryIO:
