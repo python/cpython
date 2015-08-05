@@ -2664,45 +2664,44 @@ ast_for_call(struct compiling *c, const node *n, expr_ty func)
             expr_ty e;
             node *chch = CHILD(ch, 0);
             if (NCH(ch) == 1) {
-                if (TYPE(chch) == star_expr) {
-                    /* an iterable argument unpacking */
-                    expr_ty starred;
+                /* a positional argument */
+                if (nkeywords) {
                     if (ndoublestars) {
                         ast_error(c, chch,
-                                "iterable argument unpacking follows "
+                                "positional argument follows "
                                 "keyword argument unpacking");
-                        return NULL;
                     }
-                    e = ast_for_expr(c, CHILD(chch, 1));
-                    if (!e)
-                        return NULL;
-                    starred = Starred(e, Load, LINENO(chch),
-                            chch->n_col_offset,
-                            c->c_arena);
-                    if (!starred)
-                        return NULL;
-                    asdl_seq_SET(args, nargs++, starred);
-                }
-                else {
-                    /* a positional argument */
-                    if (nkeywords) {
-                        if (ndoublestars) {
-                            ast_error(c, chch,
-                                    "positional argument follows "
-                                    "keyword argument unpacking");
-                        }
-                        else {
-                            ast_error(c, chch,
-                                    "positional argument follows "
-                                    "keyword argument");
-                        }
-                        return NULL;
+                    else {
+                        ast_error(c, chch,
+                                "positional argument follows "
+                                "keyword argument");
                     }
-                    e = ast_for_expr(c, chch);
-                    if (!e)
-                        return NULL;
-                    asdl_seq_SET(args, nargs++, e);
+                    return NULL;
                 }
+                e = ast_for_expr(c, chch);
+                if (!e)
+                    return NULL;
+                asdl_seq_SET(args, nargs++, e);
+            }
+            else if (TYPE(chch) == STAR) {
+                /* an iterable argument unpacking */
+                expr_ty starred;
+                if (ndoublestars) {
+                    ast_error(c, chch,
+                            "iterable argument unpacking follows "
+                            "keyword argument unpacking");
+                    return NULL;
+                }
+                e = ast_for_expr(c, CHILD(ch, 1));
+                if (!e)
+                    return NULL;
+                starred = Starred(e, Load, LINENO(chch),
+                        chch->n_col_offset,
+                        c->c_arena);
+                if (!starred)
+                    return NULL;
+                asdl_seq_SET(args, nargs++, starred);
+
             }
             else if (TYPE(chch) == DOUBLESTAR) {
                 /* a keyword argument unpacking */

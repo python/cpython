@@ -2859,8 +2859,8 @@ validate_arglist(node *tree)
 
 /*  argument: ( test [comp_for] |
  *              test '=' test |
- *              '**' expr |
- *              star_expr )
+ *              '**' test |
+ *              '*' test )
  */
 static int
 validate_argument(node *tree)
@@ -2873,8 +2873,11 @@ validate_argument(node *tree)
         if (TYPE(CHILD(tree, 0)) == DOUBLESTAR) {
             res = validate_test(CHILD(tree, 1));
         }
+        else if (TYPE(CHILD(tree, 0)) == STAR) {
+            res = validate_test(CHILD(tree, 1));
+        }
         else if (nch == 1) {
-            res = validate_test_or_star_expr(CHILD(tree, 0));
+            res = validate_test(CHILD(tree, 0));
         }
         else if (nch == 2) {
             res = (validate_test(CHILD(tree, 0))
