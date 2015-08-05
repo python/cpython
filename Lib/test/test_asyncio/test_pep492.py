@@ -107,6 +107,10 @@ class CoroutineTests(BaseTest):
 
         self.assertTrue(asyncio.iscoroutine(FakeCoro()))
 
+    def test_iscoroutinefunction(self):
+        async def foo(): pass
+        self.assertTrue(asyncio.iscoroutinefunction(foo))
+
     def test_function_returning_awaitable(self):
         class Awaitable:
             def __await__(self):
