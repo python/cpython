@@ -171,7 +171,7 @@ class QueueGetTests(_QueueTestBase):
         q.put_nowait(1)
 
         waiter = asyncio.Future(loop=self.loop)
-        q._putters.append((2, waiter))
+        q._putters.append(waiter)
 
         res = self.loop.run_until_complete(q.get())
         self.assertEqual(1, res)
@@ -322,6 +322,64 @@ class QueuePutTests(_QueueTestBase):
         q.put_nowait(1)
         self.assertEqual(1, q.get_nowait())
 
+    def test_get_cancel_drop(self):
+        def gen():
+            yield 0.01
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+
+        q = asyncio.Queue(loop=loop)
+
+        reader = loop.create_task(q.get())
+
+        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+
+        q.put_nowait(1)
+        q.put_nowait(2)
+        reader.cancel()
+
+        try:
+            loop.run_until_complete(reader)
+        except asyncio.CancelledError:
+            # try again
+            reader = loop.create_task(q.get())
+            loop.run_until_complete(reader)
+
+        result = reader.result()
+        # if we get 2, it means 1 got dropped!
+        self.assertEqual(1, result)
+
+    def test_put_cancel_drop(self):
+
+        def gen():
+            yield 0.01
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+        q = asyncio.Queue(1, loop=loop)
+
+        q.put_nowait(1)
+
+        # putting a second item in the queue has to block (qsize=1)
+        writer = loop.create_task(q.put(2))
+        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+
+        value1 = q.get_nowait()
+        self.assertEqual(value1, 1)
+
+        writer.cancel()
+        try:
+            loop.run_until_complete(writer)
+        except asyncio.CancelledError:
+            # try again
+            writer = loop.create_task(q.put(2))
+            loop.run_until_complete(writer)
+
+        value2 = q.get_nowait()
+        self.assertEqual(value2, 2)
+        self.assertEqual(q.qsize(), 0)
+
     def test_nonblocking_put_exception(self):
         q = asyncio.Queue(maxsize=1, loop=self.loop)
         q.put_nowait(1)
@@ -374,6 +432,7 @@ class QueuePutTests(_QueueTestBase):
         test_utils.run_briefly(self.loop)
         self.assertTrue(put_c.done())
         self.assertEqual(q.get_nowait(), 'a')
+        test_utils.run_briefly(self.loop)
         self.assertEqual(q.get_nowait(), 'b')
 
         self.loop.run_until_complete(put_b)
