@@ -37,6 +37,9 @@ Library
 
 - Issue #17527: Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
 
+- Issue #23812: Fix asyncio.Queue.get() to avoid loosing items on cancellation.
+  Patch by Gustavo J. A. M. Carneiro.
+
 Documentation
 -------------
 
