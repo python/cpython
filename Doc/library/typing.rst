@@ -47,8 +47,8 @@ For example::
                    on_error: Callable[[int, Exception], None]) -> None:
        # Body
 
-It is possible to declare the return type of a callable without specifying 
-the call signature by substituting a literal ellipsis 
+It is possible to declare the return type of a callable without specifying
+the call signature by substituting a literal ellipsis
 for the list of arguments in the type hint: `Callable[..., ReturnType]`.
 `None` as a type hint is a special case and is replaced by `type(None)`.
 
@@ -182,7 +182,7 @@ Default argument values
 Use a literal ellipsis `...` to declare an argument as having a default value::
 
    from typing import AnyStr
-   
+
    def foo(x: AnyStr, y: AnyStr = ...) -> AnyStr: ...
 
 
@@ -277,14 +277,14 @@ The module defines the following classes, functions and decorators:
 
 .. class:: Tuple
 
-  Tuple type; `Tuple[X, Y]` is the is the type of a tuple of two items 
+  Tuple type; `Tuple[X, Y]` is the is the type of a tuple of two items
   with the first item of type X and the second of type Y.
 
   Example: `Tuple[T1, T2]` is a tuple of two elements corresponding
   to type variables T1 and T2.  `Tuple[int, float, str]` is a tuple
   of an int, a float and a string.
 
-  To specify a variable-length tuple of homogeneous type, 
+  To specify a variable-length tuple of homogeneous type,
   use literal ellipsis, e.g. `Tuple[int, ...]`.
 
 .. class:: Callable
@@ -296,9 +296,9 @@ The module defines the following classes, functions and decorators:
    must be a list of types; the return type must be a single type.
 
    There is no syntax to indicate optional or keyword arguments,
-   such function types are rarely used as callback types. 
-   `Callable[..., ReturnType]` could be used to type hint a callable 
-   taking any number of arguments and returning `ReturnType`. 
+   such function types are rarely used as callback types.
+   `Callable[..., ReturnType]` could be used to type hint a callable
+   taking any number of arguments and returning `ReturnType`.
    A plain `Callable` is equivalent to `Callable[..., Any]`.
 
 .. class:: Generic
@@ -322,7 +322,7 @@ The module defines the following classes, functions and decorators:
           try:
               return mapping[key]
           except KeyError:
-              return default          
+              return default
 
 .. class:: Iterable(Generic[T_co])
 
