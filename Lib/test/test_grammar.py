@@ -204,7 +204,9 @@ class GrammarTests(unittest.TestCase):
         d01()
         d01(1)
         d01(*(1,))
+        d01(*[] or [2])
         d01(**{'a':2})
+        d01(**{'a':2} or {})
         def d11(a, b=1): pass
         d11(1)
         d11(1, 2)
