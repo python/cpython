@@ -266,7 +266,8 @@ types.
 
 .. seealso::
 
-   :pep:`484` -- Type Hints
+   * :pep:`484` -- Type Hints
+   * :mod:`typing` module documentation
 
 
 PEP 471 - os.scandir() function -- a better and faster directory iterator
