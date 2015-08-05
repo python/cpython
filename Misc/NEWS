@@ -45,6 +45,13 @@ Documentation
 - Issue #24729: Correct IO tutorial to match implementation regarding
   encoding parameter to open function.
 
+Tests
+-----
+
+- Issue #24751: When running regrtest with the ``-w`` command line option,
+  a test run is no longer marked as a failure if all tests succeed when
+  re-run.
+
 
 What's New in Python 3.5.0 beta 4?
 ==================================
