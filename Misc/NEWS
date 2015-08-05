@@ -149,6 +149,13 @@ Documentation
 - Issue #22155: Add File Handlers subsection with createfilehandler to Tkinter
   doc.  Remove obsolete example from FAQ.  Patch by Martin Panter.
 
+Tests
+-----
+
+- Issue #24751: When running regrtest with the ``-w`` command line option,
+  a test run is no longer marked as a failure if all tests succeed when
+  re-run.
+
 
 What's New in Python 2.7.10?
 ============================
