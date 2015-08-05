@@ -812,7 +812,7 @@ def main(tests=None, **kwargs):
 
     if ns.verbose2 and bad:
         print("Re-running failed tests in verbose mode")
-        for test in bad:
+        for test in bad[:]:
             print("Re-running test %r in verbose mode" % test)
             sys.stdout.flush()
             try:
@@ -823,8 +823,13 @@ def main(tests=None, **kwargs):
                 # print a newline separate from the ^C
                 print()
                 break
-            except:
-                raise
+            else:
+                if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
+                    bad.remove(test)
+        else:
+            if bad:
+                print(count(len(bad), 'test'), "failed again:")
+                printlist(bad)
 
     if ns.single:
         if next_single_test:
