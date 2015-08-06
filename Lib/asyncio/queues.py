@@ -228,7 +228,7 @@ class Queue:
                 'queue non-empty, why are getters waiting?')
 
             getter = self._getters.popleft()
-            self._put_internal(item)
+            self.__put_internal(item)
 
             # getter cannot be cancelled, we just removed done getters
             getter.set_result(item)
