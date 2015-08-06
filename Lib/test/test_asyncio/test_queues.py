@@ -322,7 +322,7 @@ class QueuePutTests(_QueueTestBase):
         q.put_nowait(1)
         self.assertEqual(1, q.get_nowait())
 
-    def test_get_cancel_drop(self):
+    def test_get_cancel_drop_one_pending_reader(self):
         def gen():
             yield 0.01
             yield 0.1
@@ -349,6 +349,41 @@ class QueuePutTests(_QueueTestBase):
         result = reader.result()
         # if we get 2, it means 1 got dropped!
         self.assertEqual(1, result)
+
+    def test_get_cancel_drop_many_pending_readers(self):
+        def gen():
+            yield 0.01
+            yield 0.1
+
+        loop = self.new_test_loop(gen)
+        loop.set_debug(True)
+
+        q = asyncio.Queue(loop=loop)
+
+        reader1 = loop.create_task(q.get())
+        reader2 = loop.create_task(q.get())
+        reader3 = loop.create_task(q.get())
+
+        loop.run_until_complete(asyncio.sleep(0.01, loop=loop))
+
+        q.put_nowait(1)
+        q.put_nowait(2)
+        reader1.cancel()
+
+        try:
+            loop.run_until_complete(reader1)
+        except asyncio.CancelledError:
+            pass
+
+        loop.run_until_complete(reader3)
+
+        # reader2 will receive `2`, because it was added to the
+        # queue of pending readers *before* put_nowaits were called.
+        self.assertEqual(reader2.result(), 2)
+        # reader3 will receive `1`, because reader1 was cancelled
+        # before is had a chance to execute, and `2` was already
+        # pushed to reader2 by second `put_nowait`.
+        self.assertEqual(reader3.result(), 1)
 
     def test_put_cancel_drop(self):
 
