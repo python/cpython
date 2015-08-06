@@ -81,7 +81,9 @@ Encoding declarations
 If a comment in the first or second line of the Python script matches the
 regular expression ``coding[=:]\s*([-\w.]+)``, this comment is processed as an
 encoding declaration; the first group of this expression names the encoding of
-the source code file. The recommended forms of this expression are ::
+the source code file. The encoding declaration must appear on a line of its
+own. If it is the second line, the first line must also be a comment-only line.
+The recommended forms of an encoding expression are ::
 
    # -*- coding: <encoding-name> -*-
 
@@ -98,7 +100,7 @@ among others, by Microsoft's :program:`notepad`).
 
 If an encoding is declared, the encoding name must be recognized by Python. The
 encoding is used for all lexical analysis, including string literals, comments
-and identifiers. The encoding declaration must appear on a line of its own.
+and identifiers.
 
 .. XXX there should be a list of supported encodings.
 
