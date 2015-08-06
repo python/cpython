@@ -224,6 +224,34 @@ class TestMockOpen(unittest.TestCase):
         self.assertEqual(result, ['foo\n', 'bar\n', 'baz'])
 
 
+    def test_read_bytes(self):
+        mock = mock_open(read_data=b'\xc6')
+        with patch('%s.open' % __name__, mock, create=True):
+            with open('abc', 'rb') as f:
+                result = f.read()
+        self.assertEqual(result, b'\xc6')
+
+
+    def test_readline_bytes(self):
+        m = mock_open(read_data=b'abc\ndef\nghi\n')
+        with patch('%s.open' % __name__, m, create=True):
+            with open('abc', 'rb') as f:
+                line1 = f.readline()
+                line2 = f.readline()
+                line3 = f.readline()
+        self.assertEqual(line1, b'abc\n')
+        self.assertEqual(line2, b'def\n')
+        self.assertEqual(line3, b'ghi\n')
+
+
+    def test_readlines_bytes(self):
+        m = mock_open(read_data=b'abc\ndef\nghi\n')
+        with patch('%s.open' % __name__, m, create=True):
+            with open('abc', 'rb') as f:
+                result = f.readlines()
+        self.assertEqual(result, [b'abc\n', b'def\n', b'ghi\n'])
+
+
     def test_mock_open_read_with_argument(self):
         # At one point calling read with an argument was broken
         # for mocks returned by mock_open
