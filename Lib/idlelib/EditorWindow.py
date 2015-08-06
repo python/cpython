@@ -344,19 +344,19 @@ class EditorWindow(object):
 
 
     def _filename_to_unicode(self, filename):
-        """convert filename to unicode in order to display it in Tk"""
-        if isinstance(filename, str) or not filename:
-            return filename
-        else:
+        """Return filename as BMP unicode so diplayable in Tk."""
+        # Decode bytes to unicode.
+        if isinstance(filename, bytes):
             try:
-                return filename.decode(self.filesystemencoding)
+                filename = filename.decode(self.filesystemencoding)
             except UnicodeDecodeError:
-                # XXX
                 try:
-                    return filename.decode(self.encoding)
+                    filename = filename.decode(self.encoding)
                 except UnicodeDecodeError:
                     # byte-to-byte conversion
-                    return filename.decode('iso8859-1')
+                    filename = filename.decode('iso8859-1')
+        # Replace non-BMP char with diamond questionmark.
+        return re.sub('[\U00010000-\U0010FFFF]', '\ufffd', filename)
 
     def new_callback(self, event):
         dirname, basename = self.io.defaultfilename()
