@@ -2271,9 +2271,10 @@ def _iterate_read_data(read_data):
     # Helper for mock_open:
     # Retrieve lines from read_data via a generator so that separate calls to
     # readline, read, and readlines are properly interleaved
-    data_as_list = ['{}\n'.format(l) for l in read_data.split('\n')]
+    sep = b'\n' if isinstance(read_data, bytes) else '\n'
+    data_as_list = [l + sep for l in read_data.split(sep)]
 
-    if data_as_list[-1] == '\n':
+    if data_as_list[-1] == sep:
         # If the last line ended in a newline, the list comprehension will have an
         # extra entry that's just a newline.  Remove this.
         data_as_list = data_as_list[:-1]
@@ -2307,7 +2308,7 @@ def mock_open(mock=None, read_data=''):
     def _read_side_effect(*args, **kwargs):
         if handle.read.return_value is not None:
             return handle.read.return_value
-        return ''.join(_state[0])
+        return type(read_data)().join(_state[0])
 
     def _readline_side_effect():
         if handle.readline.return_value is not None:
