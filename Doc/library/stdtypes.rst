@@ -1976,21 +1976,22 @@ expression support in the :mod:`re` module).
         "They're Bill's Friends."
 
 
-.. method:: str.translate(map)
+.. method:: str.translate(table)
 
-   Return a copy of the *s* where all characters have been mapped through the
-   *map* which must be a dictionary of Unicode ordinals (integers) to Unicode
-   ordinals, strings or ``None``.  Unmapped characters are left untouched.
-   Characters mapped to ``None`` are deleted.
+   Return a copy of the string in which each character has been mapped through
+   the given translation table.  The table must be an object that implements
+   indexing via :meth:`__getitem__`, typically a :term:`mapping` or
+   :term:`sequence`.  When indexed by a Unicode ordinal (an integer), the
+   table object can do any of the following: return a Unicode ordinal or a
+   string, to map the character to one or more other characters; return
+   ``None``, to delete the character from the return string; or raise a
+   :exc:`LookupError` exception, to map the character to itself.
 
    You can use :meth:`str.maketrans` to create a translation map from
    character-to-character mappings in different formats.
 
-   .. note::
-
-      An even more flexible approach is to create a custom character mapping
-      codec using the :mod:`codecs` module (see :mod:`encodings.cp1251` for an
-      example).
+   See also the :mod:`codecs` module for a more flexible approach to custom
+   character mappings.
 
 
 .. method:: str.upper()
