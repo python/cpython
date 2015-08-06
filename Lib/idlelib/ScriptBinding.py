@@ -36,6 +36,7 @@ To fix case 2, change all tabs to spaces by using Edit->Select All followed \
 by Format->Untabify Region and specify the number of columns used by each tab.
 """
 
+
 class ScriptBinding:
 
     menudefs = [
@@ -142,7 +143,8 @@ class ScriptBinding:
             return 'break'
         interp = self.shell.interp
         if PyShell.use_subprocess:
-            interp.restart_subprocess(with_cwd=False, filename=code.co_filename)
+            interp.restart_subprocess(with_cwd=False, filename=
+                        self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
         # XXX Too often this discards arguments the user just set...
         interp.runcommand("""if 1:
