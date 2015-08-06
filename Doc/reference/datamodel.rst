@@ -1266,10 +1266,14 @@ Basic customization
    context (e.g., in the condition of an ``if`` statement), Python will call
    :func:`bool` on the value to determine if the result is true or false.
 
-   There are no implied relationships among the comparison operators. The truth
-   of ``x==y`` does not imply that ``x!=y`` is false.  Accordingly, when
-   defining :meth:`__eq__`, one should also define :meth:`__ne__` so that the
-   operators will behave as expected.  See the paragraph on :meth:`__hash__` for
+   By default, :meth:`__ne__` delegates to :meth:`__eq__` and
+   inverts the result unless it is ``NotImplemented``.  There are no other
+   implied relationships among the comparison operators, for example,
+   the truth of ``(x<y or x==y)`` does not imply ``x<=y``.
+   To automatically generate ordering operations from a single root operation,
+   see :func:`functools.total_ordering`.
+
+   See the paragraph on :meth:`__hash__` for
    some important notes on creating :term:`hashable` objects which support
    custom comparison operations and are usable as dictionary keys.
 
@@ -1278,11 +1282,11 @@ Basic customization
    rather, :meth:`__lt__` and :meth:`__gt__` are each other's reflection,
    :meth:`__le__` and :meth:`__ge__` are each other's reflection, and
    :meth:`__eq__` and :meth:`__ne__` are their own reflection.
-
-   Arguments to rich comparison methods are never coerced.
-
-   To automatically generate ordering operations from a single root operation,
-   see :func:`functools.total_ordering`.
+   If the operands are of different types, and right operand's type is
+   a direct or indirect subclass of the left operand's type,
+   the reflected method of the right operand has priority, otherwise
+   the left operand's method has priority.  Virtual subclassing is
+   not considered.
 
 .. method:: object.__hash__(self)
 
