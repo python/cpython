@@ -3,6 +3,7 @@
 import unittest
 from test import support
 from operator import eq, ne, lt, gt, le, ge
+from abc import ABCMeta
 
 def gcd(a, b):
     """Greatest common divisor using Euclid's algorithm."""
@@ -332,7 +333,7 @@ class A(OperationLogger):
         self.log_operation('A.__ge__')
         return NotImplemented
 
-class B(OperationLogger):
+class B(OperationLogger, metaclass=ABCMeta):
     def __eq__(self, other):
         self.log_operation('B.__eq__')
         return NotImplemented
@@ -354,6 +355,20 @@ class C(B):
         self.log_operation('C.__ge__')
         return NotImplemented
 
+class V(OperationLogger):
+    """Virtual subclass of B"""
+    def __eq__(self, other):
+        self.log_operation('V.__eq__')
+        return NotImplemented
+    def __le__(self, other):
+        self.log_operation('V.__le__')
+        return NotImplemented
+    def __ge__(self, other):
+        self.log_operation('V.__ge__')
+        return NotImplemented
+B.register(V)
+
+
 class OperationOrderTests(unittest.TestCase):
     def test_comparison_orders(self):
         self.assertEqual(op_sequence(eq, A, A), ['A.__eq__', 'A.__eq__'])
@@ -368,6 +383,11 @@ class OperationOrderTests(unittest.TestCase):
         self.assertEqual(op_sequence(le, B, A), ['B.__le__', 'A.__ge__'])
         self.assertEqual(op_sequence(le, B, C), ['C.__ge__', 'B.__le__'])
         self.assertEqual(op_sequence(le, C, B), ['C.__le__', 'B.__ge__'])
+
+        self.assertTrue(issubclass(V, B))
+        self.assertEqual(op_sequence(eq, B, V), ['B.__eq__', 'V.__eq__'])
+        self.assertEqual(op_sequence(le, B, V), ['B.__le__', 'V.__ge__'])
+
 
 if __name__ == "__main__":
     unittest.main()
