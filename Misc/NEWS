@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #4395: Better testing and documentation of binary operators.
+  Patch by Martin Panter.
+
 - Issue #24467: Fixed possible buffer over-read in bytearray. The bytearray
   object now always allocates place for trailing null byte and it's buffer now
   is always null-terminated.
