@@ -13031,11 +13031,12 @@ unicode_maketrans_impl(PyObject *x, PyObject *y, PyObject *z)
 PyDoc_STRVAR(translate__doc__,
              "S.translate(table) -> str\n\
 \n\
-Return a copy of the string S, where all characters have been mapped\n\
-through the given translation table, which must be a mapping of\n\
-Unicode ordinals to Unicode ordinals, strings, or None.\n\
-Unmapped characters are left untouched. Characters mapped to None\n\
-are deleted.");
+Return a copy of the string S in which each character has been mapped\n\
+through the given translation table. The table must implement\n\
+lookup/indexing via __getitem__, for instance a dictionary or list,\n\
+mapping Unicode ordinals to Unicode ordinals, strings, or None. If\n\
+this operation raises LookupError, the character is left untouched.\n\
+Characters mapped to None are deleted.");
 
 static PyObject*
 unicode_translate(PyObject *self, PyObject *table)
