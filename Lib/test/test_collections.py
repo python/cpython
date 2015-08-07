@@ -2106,6 +2106,29 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         # This should not crash.
         od.popitem()
 
+    def test_issue24667(self):
+        """
+        dict resizes after a certain number of insertion operations,
+        whether or not there were deletions that freed up slots in the
+        hash table.  During fast node lookup, OrderedDict must correctly
+        respond to all resizes, even if the current "size" is the same
+        as the old one.  We verify that here by forcing a dict resize
+        on a sparse odict and then perform an operation that should
+        trigger an odict resize (e.g. popitem).  One key aspect here is
+        that we will keep the size of the odict the same at each popitem
+        call.  This verifies that we handled the dict resize properly.
+        """
+        OrderedDict = self.module.OrderedDict
+
+        od = OrderedDict()
+        for c0 in '0123456789ABCDEF':
+            for c1 in '0123456789ABCDEF':
+                if len(od) == 4:
+                    # This should not raise a KeyError.
+                    od.popitem(last=False)
+                key = c0 + c1
+                od[key] = key
+
 
 class PurePythonGeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
 
