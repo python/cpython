@@ -763,6 +763,9 @@ frozenset_hash(PyObject *self)
     Py_uhash_t hash = 1927868237UL;
     setentry *entry;
 
+    if (so->hash != -1)
+        return so->hash;
+
     /* Initial dispersion based on the number of active entries */
     hash *= (Py_uhash_t)PySet_GET_SIZE(self) + 1;
 
