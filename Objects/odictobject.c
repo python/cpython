@@ -483,9 +483,11 @@ struct _odictobject {
     PyDictObject od_dict;        /* the underlying dict */
     _ODictNode *od_first;        /* first node in the linked list, if any */
     _ODictNode *od_last;         /* last node in the linked list, if any */
-    /* od_size and od_fast_nodes are managed by _odict_resize() */
-    Py_ssize_t od_size;          /* hash table that mirrors the dict table */
-    _ODictNode **od_fast_nodes;  /* managed by _odict_resize() */
+    /* od_fast_nodes and od_resize_sentinel are managed by _odict_resize()
+     * Note that we rely on implementation details of dict for both. */
+    _ODictNode **od_fast_nodes;  /* hash table that mirrors the dict table */
+    Py_uintptr_t od_resize_sentinel;  /* changes if odict should be resized */
+
     size_t od_state;             /* incremented whenever the LL changes */
     PyObject *od_inst_dict;      /* OrderedDict().__dict__ */
     PyObject *od_weakreflist;    /* holds weakrefs to the odict */
@@ -510,7 +512,6 @@ struct _odictnode {
 /* borrowed reference */
 #define _odictnode_VALUE(node, od) \
     PyODict_GetItemWithError((PyObject *)od, _odictnode_KEY(node))
-/* If needed we could also have _odictnode_HASH. */
 #define _odictnode_PREV(node) (node->prev)
 #define _odictnode_NEXT(node) (node->next)
 
@@ -520,6 +521,7 @@ struct _odictnode {
 #define _odict_FOREACH(od, node) \
     for (node = _odict_FIRST(od); node != NULL; node = _odictnode_NEXT(node))
 
+#define _odict_FAST_SIZE(od) ((PyDictObject *)od)->ma_keys->dk_size
 
 static void
 _odict_free_fast_nodes(PyODictObject *od) {
@@ -573,7 +575,7 @@ _odict_resize(PyODictObject *od) {
     /* Replace the old fast nodes table. */
     _odict_free_fast_nodes(od);
     od->od_fast_nodes = fast_nodes;
-    od->od_size = size;
+    od->od_resize_sentinel = (Py_uintptr_t)(((PyDictObject *)od)->ma_keys);
     return 0;
 }
 
@@ -591,7 +593,7 @@ _odict_get_index(PyODictObject *od, PyObject *key)
     keys = ((PyDictObject *)od)->ma_keys;
 
     /* Ensure od_fast_nodes and dk_entries are in sync. */
-    if (keys->dk_size != od->od_size) {
+    if (od->od_resize_sentinel != (Py_uintptr_t)keys) {
         int resize_res = _odict_resize(od);
         if (resize_res < 0)
             return -1;
@@ -656,6 +658,7 @@ _odict_add_tail(PyODictObject *od, _ODictNode *node)
         _odictnode_NEXT(_odict_LAST(od)) = node;
         _odict_LAST(od) = node;
     }
+
     od->od_state++;
 }
 
@@ -980,7 +983,7 @@ odict_sizeof(PyODictObject *od)
         return NULL;
     res += temp;
 
-    res += sizeof(_ODictNode) * od->od_size;  /* od_fast_nodes */
+    res += sizeof(_ODictNode) * _odict_FAST_SIZE(od);  /* od_fast_nodes */
     if (!_odict_EMPTY(od)) {
         res += sizeof(_ODictNode) * PyODict_SIZE(od);  /* linked-list */
     }
