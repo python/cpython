@@ -96,8 +96,8 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       block of the exporter. For example, with negative :c:member:`~Py_buffer.strides`
       the value may point to the end of the memory block.
 
-      For contiguous arrays, the value points to the beginning of the memory
-      block.
+      For :term:`contiguous` arrays, the value points to the beginning of
+      the memory block.
 
    .. c:member:: void \*obj
 
@@ -281,11 +281,14 @@ of the flags below it.
 +-----------------------------+-------+---------+------------+
 
 
+.. index:: contiguous, C-contiguous, Fortran contiguous
+
 contiguity requests
 ~~~~~~~~~~~~~~~~~~~
 
-C or Fortran contiguity can be explicitly requested, with and without stride
-information. Without stride information, the buffer must be C-contiguous.
+C or Fortran :term:`contiguity <contiguous>` can be explicitly requested,
+with and without stride information. Without stride information, the buffer
+must be C-contiguous.
 
 .. tabularcolumns:: |p{0.35\linewidth}|l|l|l|l|
 
@@ -466,13 +469,13 @@ Buffer-related functions
 .. c:function:: int PyBuffer_IsContiguous(Py_buffer *view, char order)
 
    Return 1 if the memory defined by the *view* is C-style (*order* is
-   ``'C'``) or Fortran-style (*order* is ``'F'``) contiguous or either one
+   ``'C'``) or Fortran-style (*order* is ``'F'``) :term:`contiguous` or either one
    (*order* is ``'A'``).  Return 0 otherwise.
 
 
 .. c:function:: void PyBuffer_FillContiguousStrides(int ndim, Py_ssize_t *shape, Py_ssize_t *strides, Py_ssize_t itemsize, char order)
 
-   Fill the *strides* array with byte-strides of a contiguous (C-style if
+   Fill the *strides* array with byte-strides of a :term:`contiguous` (C-style if
    *order* is ``'C'`` or Fortran-style if *order* is ``'F'``) array of the
    given shape with the given number of bytes per element.
 
