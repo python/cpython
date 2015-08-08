@@ -2559,8 +2559,7 @@ class TestBufferProtocol(unittest.TestCase):
             ex = ndarray(sitems, shape=[1], format=sfmt)
             msrc = memoryview(ex)
             for dfmt, _, _ in iter_format(1):
-                if (not is_memoryview_format(sfmt) or
-                    not is_memoryview_format(dfmt)):
+                if not is_memoryview_format(dfmt):
                     self.assertRaises(ValueError, msrc.cast, dfmt,
                                       [32//dsize])
                 else:
@@ -2772,6 +2771,32 @@ class TestBufferProtocol(unittest.TestCase):
                                 itemsize=size, fmt=fmt, readonly=1,
                                 ndim=ndim, shape=shape, strides=strides,
                                 lst=lst, cast=True)
+
+        if ctypes:
+            # format: "T{>l:x:>d:y:}"
+            class BEPoint(ctypes.BigEndianStructure):
+                _fields_ = [("x", ctypes.c_long), ("y", ctypes.c_double)]
+            point = BEPoint(100, 200.1)
+            m1 = memoryview(point)
+            m2 = m1.cast('B')
+            self.assertEqual(m2.obj, point)
+            self.assertEqual(m2.itemsize, 1)
+            self.assertEqual(m2.readonly, 0)
+            self.assertEqual(m2.ndim, 1)
+            self.assertEqual(m2.shape, (m2.nbytes,))
+            self.assertEqual(m2.strides, (1,))
+            self.assertEqual(m2.suboffsets, ())
+
+            x = ctypes.c_double(1.2)
+            m1 = memoryview(x)
+            m2 = m1.cast('c')
+            self.assertEqual(m2.obj, x)
+            self.assertEqual(m2.itemsize, 1)
+            self.assertEqual(m2.readonly, 0)
+            self.assertEqual(m2.ndim, 1)
+            self.assertEqual(m2.shape, (m2.nbytes,))
+            self.assertEqual(m2.strides, (1,))
+            self.assertEqual(m2.suboffsets, ())
 
     def test_memoryview_tolist(self):
 

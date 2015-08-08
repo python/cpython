@@ -1197,13 +1197,6 @@ cast_to_1D(PyMemoryViewObject *mv, PyObject *format)
     assert(view->strides == mv->ob_array + view->ndim);
     assert(view->suboffsets == mv->ob_array + 2*view->ndim);
 
-    if (get_native_fmtchar(&srcchar, view->format) < 0) {
-        PyErr_SetString(PyExc_ValueError,
-            "memoryview: source format must be a native single character "
-            "format prefixed with an optional '@'");
-        return ret;
-    }
-
     asciifmt = PyUnicode_AsASCIIString(format);
     if (asciifmt == NULL)
         return ret;
@@ -1216,7 +1209,8 @@ cast_to_1D(PyMemoryViewObject *mv, PyObject *format)
         goto out;
     }
 
-    if (!IS_BYTE_FORMAT(srcchar) && !IS_BYTE_FORMAT(destchar)) {
+    if ((get_native_fmtchar(&srcchar, view->format) < 0 ||
+         !IS_BYTE_FORMAT(srcchar)) && !IS_BYTE_FORMAT(destchar)) {
         PyErr_SetString(PyExc_TypeError,
             "memoryview: cannot cast between two non-byte formats");
         goto out;
