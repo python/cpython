@@ -3561,7 +3561,7 @@ copying.
       Cast a memoryview to a new format or shape. *shape* defaults to
       ``[byte_length//new_itemsize]``, which means that the result view
       will be one-dimensional. The return value is a new memoryview, but
-      the buffer itself is not copied. Supported casts are 1D -> C-contiguous
+      the buffer itself is not copied. Supported casts are 1D -> C-:term:`contiguous`
       and C-contiguous -> 1D.
 
       The destination format is restricted to a single element native format in
@@ -3752,19 +3752,19 @@ copying.
 
    .. attribute:: c_contiguous
 
-      A bool indicating whether the memory is C-contiguous.
+      A bool indicating whether the memory is C-:term:`contiguous`.
 
       .. versionadded:: 3.3
 
    .. attribute:: f_contiguous
 
-      A bool indicating whether the memory is Fortran contiguous.
+      A bool indicating whether the memory is Fortran :term:`contiguous`.
 
       .. versionadded:: 3.3
 
    .. attribute:: contiguous
 
-      A bool indicating whether the memory is contiguous.
+      A bool indicating whether the memory is :term:`contiguous`.
 
       .. versionadded:: 3.3
 
