@@ -459,10 +459,14 @@ def _netbios_getnode():
 _uuid_generate_random = _uuid_generate_time = _UuidCreate = None
 try:
     import ctypes, ctypes.util
+    import sys
 
     # The uuid_generate_* routines are provided by libuuid on at least
     # Linux and FreeBSD, and provided by libc on Mac OS X.
-    for libname in ['uuid', 'c']:
+    _libnames = ['uuid']
+    if not sys.platform.startswith('win'):
+        _libnames.append('c')
+    for libname in _libnames:
         try:
             lib = ctypes.CDLL(ctypes.util.find_library(libname))
         except Exception:
@@ -473,6 +477,7 @@ try:
             _uuid_generate_time = lib.uuid_generate_time
             if _uuid_generate_random is not None:
                 break  # found everything we were looking for
+    del _libnames
 
     # The uuid_generate_* functions are broken on MacOS X 10.5, as noted
     # in issue #8621 the function generates the same sequence of values
@@ -481,7 +486,6 @@ try:
     #
     # Assume that the uuid_generate functions are broken from 10.5 onward,
     # the test can be adjusted when a later version is fixed.
-    import sys
     if sys.platform == 'darwin':
         import os
         if int(os.uname().release.split('.')[0]) >= 9:
