@@ -413,7 +413,7 @@ class MSVCCompiler(CCompiler) :
         self.ldflags_shared = ['/DLL', '/nologo', '/INCREMENTAL:NO']
         if self.__version >= 7:
             self.ldflags_shared_debug = [
-                '/DLL', '/nologo', '/INCREMENTAL:no', '/DEBUG', '/pdb:None'
+                '/DLL', '/nologo', '/INCREMENTAL:no', '/DEBUG'
                 ]
         self.ldflags_static = [ '/nologo']
 
