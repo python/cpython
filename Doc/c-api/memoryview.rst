@@ -35,7 +35,7 @@ any other object.
 
 .. c:function:: PyObject *PyMemoryView_GetContiguous(PyObject *obj, int buffertype, char order)
 
-   Create a memoryview object to a contiguous chunk of memory (in either
+   Create a memoryview object to a :term:`contiguous` chunk of memory (in either
    'C' or 'F'ortran *order*) from an object that defines the buffer
    interface. If memory is contiguous, the memoryview object points to the
    original memory. Otherwise, a copy is made and the memoryview points to a
