@@ -98,6 +98,9 @@ Core and Builtins
 - Issue #24687: Plug refleak on SyntaxError in function parameters
   annotations.
 
+- Issue #15944: memoryview: Allow arbitrary formats when casting to bytes.
+  Patch by Martin Panter.
+
 Library
 -------
 
