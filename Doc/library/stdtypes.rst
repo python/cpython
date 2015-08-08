@@ -3564,7 +3564,7 @@ copying.
       the buffer itself is not copied. Supported casts are 1D -> C-contiguous
       and C-contiguous -> 1D.
 
-      Both formats are restricted to single element native formats in
+      The destination format is restricted to a single element native format in
       :mod:`struct` syntax. One of the formats must be a byte format
       ('B', 'b' or 'c'). The byte length of the result must be the same
       as the original length.
@@ -3644,6 +3644,9 @@ copying.
          [[0, 1, 2], [3, 4, 5]]
 
       .. versionadded:: 3.3
+
+      .. versionchanged:: 3.5
+         The source format is no longer restricted when casting to a byte view.
 
    There are also several readonly attributes available:
 
