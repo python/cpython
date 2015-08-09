@@ -796,10 +796,8 @@ def main(tests=None, **kwargs):
         for time, test in test_times[:10]:
             print("%s: %.1fs" % (test, time))
     if bad:
-        bad = sorted(set(bad) - set(environment_changed))
-        if bad:
-            print(count(len(bad), "test"), "failed:")
-            printlist(bad)
+        print(count(len(bad), "test"), "failed:")
+        printlist(bad)
     if environment_changed:
         print("{} altered the execution environment:".format(
                  count(len(environment_changed), "test")))
