@@ -417,7 +417,11 @@ class SubprocessMixin:
     def test_popen_error(self):
         # Issue #24763: check that the subprocess transport is closed
         # when BaseSubprocessTransport fails
-        with mock.patch('subprocess.Popen') as popen:
+        if sys.platform == 'win32':
+            target = 'asyncio.windows_utils.Popen'
+        else:
+            target = 'subprocess.Popen'
+        with mock.patch(target) as popen:
             exc = ZeroDivisionError
             popen.side_effect = exc
 
