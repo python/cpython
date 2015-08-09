@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24824: Signatures of codecs.encode() and codecs.decode() now are
+  compatible with pydoc.
+
 - Issue #4395: Better testing and documentation of binary operators.
   Patch by Martin Panter.
 

@@ -42,13 +42,12 @@ exit:
 }
 
 PyDoc_STRVAR(_codecs_encode__doc__,
-"encode($module, /, obj, encoding=sys.getdefaultencoding(),\n"
-"       errors=\'strict\')\n"
+"encode($module, /, obj, encoding=\'utf-8\', errors=\'strict\')\n"
 "--\n"
 "\n"
 "Encodes obj using the codec registered for encoding.\n"
 "\n"
-"encoding defaults to the default encoding.  errors may be given to set a\n"
+"The default encoding is \'utf-8\'.  errors may be given to set a\n"
 "different error handling scheme.  Default is \'strict\' meaning that encoding\n"
 "errors raise a ValueError.  Other possible values are \'ignore\', \'replace\'\n"
 "and \'backslashreplace\' as well as any other name registered with\n"
@@ -80,13 +79,12 @@ exit:
 }
 
 PyDoc_STRVAR(_codecs_decode__doc__,
-"decode($module, /, obj, encoding=sys.getdefaultencoding(),\n"
-"       errors=\'strict\')\n"
+"decode($module, /, obj, encoding=\'utf-8\', errors=\'strict\')\n"
 "--\n"
 "\n"
 "Decodes obj using the codec registered for encoding.\n"
 "\n"
-"encoding defaults to the default encoding.  errors may be given to set a\n"
+"Default encoding is \'utf-8\'.  errors may be given to set a\n"
 "different error handling scheme.  Default is \'strict\' meaning that encoding\n"
 "errors raise a ValueError.  Other possible values are \'ignore\', \'replace\'\n"
 "and \'backslashreplace\' as well as any other name registered with\n"
@@ -1395,4 +1393,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=713a4081788da1bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9c9967048027c1c7 input=a9049054013a1b77]*/
