@@ -99,7 +99,7 @@ Library
 - Issue #24257: Fixed segmentation fault in sqlite3.Row constructor with faked
   cursor type.
 
-- Issue #24286:  Dict view were not registered with the MappingView abstract
+- Issue #24286: Dict view were not registered with the MappingView abstract
   base classes.  This caused key and item views in OrderedDict to not be equal
   to their regular dict counterparts.
 
@@ -178,9 +178,9 @@ What's New in Python 2.7.10 release candidate 1?
 Core and Builtins
 -----------------
 
-- Issue #23971:  Fix underestimated presizing in dict.fromkeys().
+- Issue #23971: Fix underestimated presizing in dict.fromkeys().
 
-- Issue #23757:  PySequence_Tuple() incorrectly called the concrete list API
+- Issue #23757: PySequence_Tuple() incorrectly called the concrete list API
   when the data was a list subclass.
 
 - Issue #23629: Fix the default __sizeof__ implementation for variable-sized
@@ -771,7 +771,7 @@ IDLE
 - Issue #16233: A module browser (File : Class Browser, Alt+C) requires a
   editor window with a filename.  When Class Browser is requested otherwise,
   from a shell, output window, or 'Untitled' editor, Idle no longer displays
-  an error box.  It now pops up an  Open Module box (Alt+M). If a valid name
+  an error box.  It now pops up an Open Module box (Alt+M). If a valid name
   is entered and a module is opened, a corresponding browser is also opened.
 
 - Issue #4832: Save As to type Python files automatically adds .py to the
@@ -909,18 +909,18 @@ Library
 
 - Issue #21672: Fix the behavior of ntpath.join on UNC-style paths.
 
-- Issue #19145:  The times argument for itertools.repeat now handles
+- Issue #19145: The times argument for itertools.repeat now handles
   negative values the same way for keyword arguments as it does for
   positional arguments.
 
-- Issue #21832:  Require named tuple inputs to be exact strings.
+- Issue #21832: Require named tuple inputs to be exact strings.
 
-- Issue #8343:  Named group error messages in the re module did not show
+- Issue #8343: Named group error messages in the re module did not show
   the name of the erroneous group.
 
 - Issue #21491: SocketServer: Fix a race condition in child processes reaping.
 
-- Issue #21635:  The difflib SequenceMatcher.get_matching_blocks() method
+- Issue #21635: The difflib SequenceMatcher.get_matching_blocks() method
   cache didn't match the actual result.  The former was a list of tuples
   and the latter was a list of named tuples.
 
@@ -957,7 +957,7 @@ Library
 - Issue #8743: Fix interoperability between set objects and the
   collections.Set() abstract base class.
 
-- Issue #21481:  Argparse equality and inequality tests now return
+- Issue #21481: Argparse equality and inequality tests now return
   NotImplemented when comparing to an unknown type.
 
 IDLE
@@ -1099,7 +1099,7 @@ Library
 - Issue #21470: Do a better job seeding the random number generator by
   using enough bytes to span the full state space of the Mersenne Twister.
 
-- Issue #21469:  Reduced the risk of false positives in robotparser by
+- Issue #21469: Reduced the risk of false positives in robotparser by
   checking to make sure that robots.txt has been read or does not exist
   prior to returning True in can_fetch().
 
@@ -1596,7 +1596,7 @@ Library
 - Issue #19131: The aifc module now correctly reads and writes sampwidth of
   compressed streams.
 
-- Issue #19158:  a rare race in BoundedSemaphore could allow .release() too
+- Issue #19158: A rare race in BoundedSemaphore could allow .release() too
   often.
 
 - Issue #18037: 2to3 now escapes '\u' and '\U' in native strings.
@@ -3597,7 +3597,7 @@ Library
   greater or equal to the default value, the value with which the interpreter
   was built.
 
-- Issue #11802:  The cache in filecmp now has a maximum size of 100 so that
+- Issue #11802: The cache in filecmp now has a maximum size of 100 so that
   it won't grow without bound.
 
 - Issue #12404: Remove C89 incompatible code from mmap module. Patch by Akira
@@ -3983,7 +3983,7 @@ Library
 - Issue #11277: mmap.mmap() calls fcntl(fd, F_FULLFSYNC) on Mac OS X to get
   around a mmap bug with sparse files. Patch written by Steffen Daode Nurpmeso.
 
-- Issue #10761: Fix tarfile.extractall failure  when symlinked files are
+- Issue #10761: Fix tarfile.extractall failure when symlinked files are
   present. Initial patch by Scott Leerssen.
 
 - Issue #11763: don't use difflib in TestCase.assertMultiLineEqual if the
@@ -4494,7 +4494,7 @@ Core and Builtins
 - Issue #8530: Prevent stringlib fastsearch from reading beyond the front
   of an array.
 
-- Issue #83755:  Implicit set-to-frozenset conversion was not thread-safe.
+- Issue #83755: Implicit set-to-frozenset conversion was not thread-safe.
 
 - Issue #9416: Fix some issues with complex formatting where the
   output with no type specifier failed to match the str output:
@@ -4891,7 +4891,7 @@ Extension Modules
   os.getgroups() can now return more than 16 groups on MacOSX.
 
 - Issue #9277: Fix bug in struct.pack for bools in standard mode
-  (e.g., struct.pack('>?')):  if conversion to bool raised an exception
+  (e.g., struct.pack('>?')): if conversion to bool raised an exception
   then that exception wasn't properly propagated on machines where
   char is unsigned.
 
@@ -4939,7 +4939,7 @@ Build
 - Issue #9275: The OSX installer once again installs links to binaries in
   ``/usr/local/bin``.
 
-- Issue #9392: A framework build on OSX  will once again use a versioned name
+- Issue #9392: A framework build on OSX will once again use a versioned name
   of the ``2to3`` tool, that is you can use ``2to3-2.7`` to select the Python
   2.7 edition of 2to3.
 
@@ -6898,7 +6898,7 @@ Library
 
 - Issue #6851: Fix urllib.urlopen crash on secondairy threads on OSX 10.6
 
-- Issue #4606: Passing 'None' if ctypes argtype is set to POINTER(...)  does now
+- Issue #4606: Passing 'None' if ctypes argtype is set to POINTER(...) does now
   always result in NULL.
 
 - Issue #5042: ctypes Structure sub-subclass does now initialize correctly with
@@ -7743,7 +7743,7 @@ IDLE
   wasn't working with file paths containing spaces.
 
 - Issue #5783: Windows: Version string for the .chm help file changed,
-  file not being accessed  Patch by Guilherme Polo/
+  file not being accessed.  Patch by Guilherme Polo/
 
 - Issue #1529142: Allow multiple IDLE GUI/subprocess pairs to exist
   simultaneously. Thanks to David Scherer for suggesting the use of an
@@ -8439,7 +8439,7 @@ Library
 
 - Issue #3437: Bug fix in robotparser parsing of Allow: lines.
 
-- Issue #1592:  Improve error reporting when operations are attempted
+- Issue #1592: Improve error reporting when operations are attempted
   on a closed shelf.
 
 - Deprecate the "ast" parser function aliases.
@@ -8661,7 +8661,7 @@ Core and Builtins
 
 - Add future_builtins.ascii().
 
-- Several set methods now accept multiple arguments:  update(), union(),
+- Several set methods now accept multiple arguments: update(), union(),
   intersection(), intersection_update(), difference(), and difference_update().
 
 - Issue #2898: Added sys.getsizeof() to retrieve size of objects in bytes.
@@ -8697,7 +8697,7 @@ Extension Modules
 -----------------
 - Issue #1179: [CVE-2007-4965] Integer overflow in imageop module.
 
-- Issue #3116:  marshal.dumps() had quadratic behavior for strings > 32Mb.
+- Issue #3116: marshal.dumps() had quadratic behavior for strings > 32Mb.
 
 - Issue #2138: Add factorial() to the math module.
 
@@ -9679,9 +9679,9 @@ Core and builtins
 - When __slots__ are set to a unicode string, make it work the same as
   setting a plain string, ie don't expand to single letter identifiers.
 
-- Request #1191699:  Slices can now be pickled.
+- Request #1191699: Slices can now be pickled.
 
-- Request #1193128:  str.translate() now allows a None argument for
+- Request #1193128: str.translate() now allows a None argument for
   translations that only remove characters without re-mapping the
   remaining characters.
 
