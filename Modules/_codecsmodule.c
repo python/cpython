@@ -91,12 +91,12 @@ _codecs_lookup_impl(PyModuleDef *module, const char *encoding)
 /*[clinic input]
 _codecs.encode
     obj: object
-    encoding: str(c_default="NULL") = sys.getdefaultencoding()
+    encoding: str(c_default="NULL") = "utf-8"
     errors: str(c_default="NULL") = "strict"
 
 Encodes obj using the codec registered for encoding.
 
-encoding defaults to the default encoding.  errors may be given to set a
+The default encoding is 'utf-8'.  errors may be given to set a
 different error handling scheme.  Default is 'strict' meaning that encoding
 errors raise a ValueError.  Other possible values are 'ignore', 'replace'
 and 'backslashreplace' as well as any other name registered with
@@ -106,7 +106,7 @@ codecs.register_error that can handle ValueErrors.
 static PyObject *
 _codecs_encode_impl(PyModuleDef *module, PyObject *obj, const char *encoding,
                     const char *errors)
-/*[clinic end generated code: output=5c073f62249c8d7c input=2440d769df020a0e]*/
+/*[clinic end generated code: output=5c073f62249c8d7c input=cd5b685040ff61f0]*/
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
@@ -118,12 +118,12 @@ _codecs_encode_impl(PyModuleDef *module, PyObject *obj, const char *encoding,
 /*[clinic input]
 _codecs.decode
     obj: object
-    encoding: str(c_default="NULL") = sys.getdefaultencoding()
+    encoding: str(c_default="NULL") = "utf-8"
     errors: str(c_default="NULL") = "strict"
 
 Decodes obj using the codec registered for encoding.
 
-encoding defaults to the default encoding.  errors may be given to set a
+Default encoding is 'utf-8'.  errors may be given to set a
 different error handling scheme.  Default is 'strict' meaning that encoding
 errors raise a ValueError.  Other possible values are 'ignore', 'replace'
 and 'backslashreplace' as well as any other name registered with
@@ -133,7 +133,7 @@ codecs.register_error that can handle ValueErrors.
 static PyObject *
 _codecs_decode_impl(PyModuleDef *module, PyObject *obj, const char *encoding,
                     const char *errors)
-/*[clinic end generated code: output=c81cbf6189a7f878 input=a351e5f5baad1544]*/
+/*[clinic end generated code: output=c81cbf6189a7f878 input=7702c0cc2fa1add6]*/
 {
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();

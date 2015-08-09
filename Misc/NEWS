@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24824: Signatures of codecs.encode() and codecs.decode() now are
+  compatible with pydoc.
+
 - Issue #24634: Importing uuid should not try to load libc on Windows
 
 - Issue #24798: _msvccompiler.py doesn't properly support manifests
