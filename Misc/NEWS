@@ -10,6 +10,50 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+Library
+-------
+
+- Issue #24360: Improve __repr__ of argparse.Namespace() for invalid
+  identifiers.  Patch by Matthias Bussonnier.
+
+- Issue #23426: run_setup was broken in distutils.
+  Patch from Alexander Belopolsky.
+
+- Issue #13938: 2to3 converts StringTypes to a tuple. Patch from Mark Hammond.
+
+- Issue #2091: open() accepted a 'U' mode string containing '+', but 'U' can
+  only be used with 'r'. Patch from Jeff Balogh and John O'Connor.
+
+- Issue #8585: improved tests for zipimporter2. Patch from Mark Lawrence.
+
+- Issue #18622: unittest.mock.mock_open().reset_mock would recurse infinitely.
+  Patch from Nicola Palumbo and Laurent De Buyst.
+
+- Issue #24426: Fast searching optimization in regular expressions now works
+  for patterns that starts with capturing groups.  Fast searching optimization
+  now can't be disabled at compile time.
+
+- Issue #23661: unittest.mock side_effects can now be exceptions again. This
+  was a regression vs Python 3.4. Patch from Ignacio Rossi
+
+- Issue #13248: Remove deprecated inspect.getargspec and inspect.getmoduleinfo
+  functions.
+
+Documentation
+-------------
+
+Tests
+-----
+
+
+What's New in Python 3.5.0 release candidate 1?
+===============================================
+
+Release date: 2015-08-09
+
+Core and Builtins
+-----------------
+
 - Issue #24667: Resize odict in all cases that the underlying dict resizes.
 
 Library
@@ -17,6 +61,10 @@ Library
 
 - Issue #24824: Signatures of codecs.encode() and codecs.decode() now are
   compatible with pydoc.
+
+- Issue #24634: Importing uuid should not try to load libc on Windows
+
+- Issue #24798: _msvccompiler.py doesn't properly support manifests
 
 - Issue #4395: Better testing and documentation of binary operators.
   Patch by Martin Panter.
@@ -38,41 +86,20 @@ Library
 - Issue #23779: imaplib raises TypeError if authenticator tries to abort.
   Patch from Craig Holmquist.
 
-- Issue #24360: Improve __repr__ of argparse.Namespace() for invalid
-  identifiers.  Patch by Matthias Bussonnier.
-
 - Issue #23319: Fix ctypes.BigEndianStructure, swap correctly bytes. Patch
   written by Matthieu Gautier.
-
-- Issue #19450: Update Windows and OS X installer builds to use SQLite 3.8.11.
 
 - Issue #23254: Document how to close the TCPServer listening socket.
   Patch from Martin Panter.
 
-- Issue #23426: run_setup was broken in distutils.
-  Patch from Alexander Belopolsky.
+- Issue #19450: Update Windows and OS X installer builds to use SQLite 3.8.11.
 
 - Issue #17527: Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
 
-- Issue #13938: 2to3 converts StringTypes to a tuple. Patch from Mark Hammond.
+- Issue #23812: Fix asyncio.Queue.get() to avoid loosing items on cancellation.
+  Patch by Gustavo J. A. M. Carneiro.
 
-- Issue #2091: open() accepted a 'U' mode string containing '+', but 'U' can
-  only be used with 'r'. Patch from Jeff Balogh and John O'Connor.
-
-- Issue #8585: improved tests for zipimporter2. Patch from Mark Lawrence.
-
-- Issue #18622: unittest.mock.mock_open().reset_mock would recurse infinitely.
-  Patch from Nicola Palumbo and Laurent De Buyst.
-
-- Issue #24426: Fast searching optimization in regular expressions now works
-  for patterns that starts with capturing groups.  Fast searching optimization
-  now can't be disabled at compile time.
-
-- Issue #23661: unittest.mock side_effects can now be exceptions again. This
-  was a regression vs Python 3.4. Patch from Ignacio Rossi
-
-- Issue #13248: Remove deprecated inspect.getargspec and inspect.getmoduleinfo
-  functions.
+- Issue #24791: Fix grammar regression for call syntax: 'g(*a or b)'.
 
 Documentation
 -------------
