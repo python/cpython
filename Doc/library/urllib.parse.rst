@@ -115,8 +115,9 @@ or on combining URL components into a URL string.
    |                  |       | if present               |                      |
    +------------------+-------+--------------------------+----------------------+
 
-   See section :ref:`urlparse-result-object` for more information on the result
-   object.
+   Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
+   an invalid port is specified in the URL.  See section
+   :ref:`urlparse-result-object` for more information on the result object.
 
    .. versionchanged:: 3.2
       Added IPv6 URL parsing capabilities.
@@ -125,6 +126,10 @@ or on combining URL components into a URL string.
       The fragment is now parsed for all URL schemes (unless *allow_fragment* is
       false), in accordance with :rfc:`3986`.  Previously, a whitelist of
       schemes that support fragments existed.
+
+   .. versionchanged:: 3.6
+      Out-of-range port numbers now raise :exc:`ValueError`, instead of
+      returning :const:`None`.
 
 
 .. function:: parse_qs(qs, keep_blank_values=False, strict_parsing=False, encoding='utf-8', errors='replace')
@@ -228,8 +233,13 @@ or on combining URL components into a URL string.
    |                  |       | if present              |                      |
    +------------------+-------+-------------------------+----------------------+
 
-   See section :ref:`urlparse-result-object` for more information on the result
-   object.
+   Reading the :attr:`port` attribute will raise a :exc:`ValueError` if
+   an invalid port is specified in the URL.  See section
+   :ref:`urlparse-result-object` for more information on the result object.
+
+   .. versionchanged:: 3.6
+      Out-of-range port numbers now raise :exc:`ValueError`, instead of
+      returning :const:`None`.
 
 
 .. function:: urlunsplit(parts)

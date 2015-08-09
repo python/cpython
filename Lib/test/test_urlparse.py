@@ -554,29 +554,27 @@ class UrlParseTestCase(unittest.TestCase):
         self.assertEqual(p.port, 80)
         self.assertEqual(p.geturl(), url)
 
-        # Verify an illegal port is returned as None
+        # Verify an illegal port raises ValueError
         url = b"HTTP://WWW.PYTHON.ORG:65536/doc/#frag"
         p = urllib.parse.urlsplit(url)
-        self.assertEqual(p.port, None)
+        with self.assertRaisesRegex(ValueError, "out of range"):
+            p.port
 
     def test_attributes_bad_port(self):
-        """Check handling of non-integer ports."""
-        p = urllib.parse.urlsplit("http://www.example.net:foo")
-        self.assertEqual(p.netloc, "www.example.net:foo")
-        self.assertRaises(ValueError, lambda: p.port)
-
-        p = urllib.parse.urlparse("http://www.example.net:foo")
-        self.assertEqual(p.netloc, "www.example.net:foo")
-        self.assertRaises(ValueError, lambda: p.port)
-
-        # Once again, repeat ourselves to test bytes
-        p = urllib.parse.urlsplit(b"http://www.example.net:foo")
-        self.assertEqual(p.netloc, b"www.example.net:foo")
-        self.assertRaises(ValueError, lambda: p.port)
-
-        p = urllib.parse.urlparse(b"http://www.example.net:foo")
-        self.assertEqual(p.netloc, b"www.example.net:foo")
-        self.assertRaises(ValueError, lambda: p.port)
+        """Check handling of invalid ports."""
+        for bytes in (False, True):
+            for parse in (urllib.parse.urlsplit, urllib.parse.urlparse):
+                for port in ("foo", "1.5", "-1", "0x10"):
+                    with self.subTest(bytes=bytes, parse=parse, port=port):
+                        netloc = "www.example.net:" + port
+                        url = "http://" + netloc
+                        if bytes:
+                            netloc = netloc.encode("ascii")
+                            url = url.encode("ascii")
+                        p = parse(url)
+                        self.assertEqual(p.netloc, netloc)
+                        with self.assertRaises(ValueError):
+                            p.port
 
     def test_attributes_without_netloc(self):
         # This example is straight from RFC 3261.  It looks like it
