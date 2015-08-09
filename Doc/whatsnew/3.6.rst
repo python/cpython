@@ -162,7 +162,10 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
-* None yet.
+* Reading the :attr:`~urllib.parse.SplitResult.port` attribute of
+  :func:`urllib.parse.urlsplit` and :func:`~urllib.parse.urlparse` results
+  now raises :exc:`ValueError` for out-of-range values, rather than
+  returning :const:`None`.  See :issue:`20059`.
 
 
 Changes in the C API

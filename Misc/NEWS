@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20059: urllib.parse raises ValueError on all invalid ports.
+  Patch by Martin Panter.
+
 - Issue #24824: Signatures of codecs.encode() and codecs.decode() now are
   compatible with pydoc.
 
