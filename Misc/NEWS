@@ -32,7 +32,7 @@ Core and Builtins
 
 - Issue #24102: Fixed exception type checking in standard error handlers.
 
-- Issue #23757:  PySequence_Tuple() incorrectly called the concrete list API
+- Issue #23757: PySequence_Tuple() incorrectly called the concrete list API
   when the data was a list subclass.
 
 - Issue #24407: Fix crash when dict is mutated while being updated.
@@ -758,7 +758,7 @@ IDLE
 - Issue #16233: A module browser (File : Class Browser, Alt+C) requires a
   editor window with a filename.  When Class Browser is requested otherwise,
   from a shell, output window, or 'Untitled' editor, Idle no longer displays
-  an error box.  It now pops up an  Open Module box (Alt+M). If a valid name
+  an error box.  It now pops up an Open Module box (Alt+M). If a valid name
   is entered and a module is opened, a corresponding browser is also opened.
 
 - Issue #4832: Save As to type Python files automatically adds .py to the
@@ -1009,7 +1009,7 @@ Library
 - Issue #21448: Changed FeedParser feed() to avoid O(N**2) behavior when
   parsing long line.  Original patch by Raymond Hettinger.
 
-- Issue #22184:  The functools LRU Cache decorator factory now gives an earlier
+- Issue #22184: The functools LRU Cache decorator factory now gives an earlier
   and clearer error message when the user forgets the required parameters.
 
 - Issue #17923: glob() patterns ending with a slash no longer match non-dirs on
@@ -1051,7 +1051,7 @@ Library
 - Issue #21044: tarfile.open() now handles fileobj with an integer 'name'
   attribute.  Based on patch by Antoine Pietri.
 
-- Issue #21867:  Prevent turtle crash due to invalid undo buffer size.
+- Issue #21867: Prevent turtle crash due to invalid undo buffer size.
 
 - Issue #19076: Don't pass the redundant 'file' argument to self.error().
 
@@ -1097,16 +1097,16 @@ Library
 
 - Issue #21491: socketserver: Fix a race condition in child processes reaping.
 
-- Issue #21832:  Require named tuple inputs to be exact strings.
+- Issue #21832: Require named tuple inputs to be exact strings.
 
-- Issue #19145:  The times argument for itertools.repeat now handles
+- Issue #19145: The times argument for itertools.repeat now handles
   negative values the same way for keyword arguments as it does for
   positional arguments.
 
 - Issue #21812: turtle.shapetransform did not tranform the turtle on the
   first call.  (Issue identified and fixed by Lita Cho.)
 
-- Issue #21635:  The difflib SequenceMatcher.get_matching_blocks() method
+- Issue #21635: The difflib SequenceMatcher.get_matching_blocks() method
   cache didn't match the actual result.  The former was a list of tuples
   and the latter was a list of named tuples.
 
@@ -1167,7 +1167,7 @@ Library
 - Issue #14710: pkgutil.find_loader() no longer raises an exception when a
   module doesn't exist.
 
-- Issue #21481:  Argparse equality and inequality tests now return
+- Issue #21481: Argparse equality and inequality tests now return
   NotImplemented when comparing to an unknown type.
 
 - Issue #8743: Fix interoperability between set objects and the
@@ -1253,7 +1253,7 @@ IDLE
 Tests
 -----
 
-- Issue #22166:  with the assistance of a new internal _codecs._forget_codec
+- Issue #22166: With the assistance of a new internal _codecs._forget_codec
   helping function, test_codecs now clears the encoding caches to avoid the
   appearance of a reference leak
 
@@ -1425,7 +1425,7 @@ Library
 - Issue #21088: Bugfix for curses.window.addch() regression in 3.4.0.
   In porting to Argument Clinic, the first two arguments were reversed.
 
-- Issue #21469:  Reduced the risk of false positives in robotparser by
+- Issue #21469: Reduced the risk of false positives in robotparser by
   checking to make sure that robots.txt has been read or does not exist
   prior to returning True in can_fetch().
 
@@ -2244,7 +2244,7 @@ Tools/Demos
   "{dirname}/clinic/{basename}.h".
 
 - Issue #20390: Argument Clinic's "class" directive syntax has been extended
-  with two new required  arguments: "typedef" and "type_object".
+  with two new required arguments: "typedef" and "type_object".
 
 - Issue #20390: Argument Clinic: If __new__ or __init__ functions didn't use
   kwargs (or args), the PyArg_NoKeywords (or PyArg_NoPositional) calls
@@ -3311,10 +3311,10 @@ Library
 - Issue #9548: Add a minimal "_bootlocale" module that is imported by the
   _io module instead of the full locale module.
 
-- Issue #18764: remove the 'print' alias for the PDB 'p' command so that it no
+- Issue #18764: Remove the 'print' alias for the PDB 'p' command so that it no
   longer shadows the print function.
 
-- Issue #19158:  a rare race in BoundedSemaphore could allow .release() too
+- Issue #19158: A rare race in BoundedSemaphore could allow .release() too
   often.
 
 - Issue #15805: Add contextlib.redirect_stdout().
@@ -7935,7 +7935,7 @@ Core and Builtins
   and bytearray.split may now be passed as keyword arguments.
 
 - Issue #13012: The 'keepends' parameter to str.splitlines may now be passed
-  as a keyword argument:  "my_string.splitlines(keepends=True)".  The same
+  as a keyword argument: "my_string.splitlines(keepends=True)".  The same
   change also applies to bytes.splitlines and bytearray.splitlines.
 
 - Issue #7732: Don't open a directory as a file anymore while importing a
@@ -8926,7 +8926,7 @@ Library
   of the text mode (using the locale encoding) to avoid encoding issues.
 
 - Issue #12147: Adjust the new-in-3.2 smtplib.send_message method for better
-  conformance to the RFCs:  correctly handle Sender and Resent- headers.
+  conformance to the RFCs: correctly handle Sender and Resent- headers.
 
 - Issue #12352: Fix a deadlock in multiprocessing.Heap when a block is freed by
   the garbage collector while the Heap lock is held.
@@ -9330,7 +9330,7 @@ Library
   multipart subparts with an 8-bit CTE into unicode instead of preserving the
   bytes.
 
-- Issue #1690608: email.util.formataddr is now RFC 2047 aware:  it now has a
+- Issue #1690608: email.util.formataddr is now RFC 2047 aware: it now has a
   charset parameter that defaults to utf-8 and is used as the charset for RFC
   2047 encoding when the realname contains non-ASCII characters.
 
@@ -9925,7 +9925,7 @@ Tests
   Patch by Garrett Cooper.
 
 - Issue #10736: Fix test_ttk test_widgets failures with Cocoa Tk 8.5.9
-  2.8 +  on Mac OS X.  (Patch by Ronald Oussoren)
+  2.8+ on Mac OS X.  (Patch by Ronald Oussoren)
 
 - Issue #12057: Add tests for ISO 2022 codecs (iso2022_jp, iso2022_jp_2,
   iso2022_kr).
