@@ -13,6 +13,7 @@ Core and Builtins
 Library
 -------
 
+- Issue #24839: platform._syscmd_ver raises DeprecationWarning
 
 What's New in Python 3.5.0 release candidate 1?
 ===============================================
