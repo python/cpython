@@ -295,6 +295,10 @@ class GrammarTests(unittest.TestCase):
         pos2key2dict(1,2,k2=100,tokwarg1=100,tokwarg2=200)
         pos2key2dict(1,2,tokwarg1=100,tokwarg2=200, k2=100)
 
+        self.assertRaises(SyntaxError, eval, "def f(*): pass")
+        self.assertRaises(SyntaxError, eval, "def f(*,): pass")
+        self.assertRaises(SyntaxError, eval, "def f(*, **kwds): pass")
+
         # keyword arguments after *arglist
         def f(*args, **kwargs):
             return args, kwargs
@@ -352,6 +356,23 @@ class GrammarTests(unittest.TestCase):
         check_syntax_error(self, "f(*g(1=2))")
         check_syntax_error(self, "f(**g(1=2))")
 
+        # Check trailing commas are permitted in funcdef argument list
+        def f(a,): pass
+        def f(*args,): pass
+        def f(**kwds,): pass
+        def f(a, *args,): pass
+        def f(a, **kwds,): pass
+        def f(*args, b,): pass
+        def f(*, b,): pass
+        def f(*args, **kwds,): pass
+        def f(a, *args, b,): pass
+        def f(a, *, b,): pass
+        def f(a, *args, **kwds,): pass
+        def f(*args, b, **kwds,): pass
+        def f(*, b, **kwds,): pass
+        def f(a, *args, b, **kwds,): pass
+        def f(a, *, b, **kwds,): pass
+
     def test_lambdef(self):
         ### lambdef: 'lambda' [varargslist] ':' test
         l1 = lambda : 0
@@ -369,6 +390,23 @@ class GrammarTests(unittest.TestCase):
         l6 = lambda x, y, *, k=20: x+y+k
         self.assertEqual(l6(1,2), 1+2+20)
         self.assertEqual(l6(1,2,k=10), 1+2+10)
+
+        # check that trailing commas are permitted
+        l10 = lambda a,: 0
+        l11 = lambda *args,: 0
+        l12 = lambda **kwds,: 0
+        l13 = lambda a, *args,: 0
+        l14 = lambda a, **kwds,: 0
+        l15 = lambda *args, b,: 0
+        l16 = lambda *, b,: 0
+        l17 = lambda *args, **kwds,: 0
+        l18 = lambda a, *args, b,: 0
+        l19 = lambda a, *, b,: 0
+        l20 = lambda a, *args, **kwds,: 0
+        l21 = lambda *args, b, **kwds,: 0
+        l22 = lambda *, b, **kwds,: 0
+        l23 = lambda a, *args, b, **kwds,: 0
+        l24 = lambda a, *, b, **kwds,: 0
 
 
     ### stmt: simple_stmt | compound_stmt

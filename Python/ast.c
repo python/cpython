@@ -1260,16 +1260,20 @@ ast_for_arguments(struct compiling *c, const node *n)
        and varargslist (lambda definition).
 
        parameters: '(' [typedargslist] ')'
-       typedargslist: ((tfpdef ['=' test] ',')*
-           ('*' [tfpdef] (',' tfpdef ['=' test])* [',' '**' tfpdef]
-           | '**' tfpdef)
-           | tfpdef ['=' test] (',' tfpdef ['=' test])* [','])
+       typedargslist: (tfpdef ['=' test] (',' tfpdef ['=' test])* [',' [
+               '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
+             | '**' tfpdef [',']]]
+         | '*' [tfpdef] (',' tfpdef ['=' test])* [',' ['**' tfpdef [',']]]
+         | '**' tfpdef [','])
        tfpdef: NAME [':' test]
-       varargslist: ((vfpdef ['=' test] ',')*
-           ('*' [vfpdef] (',' vfpdef ['=' test])*  [',' '**' vfpdef]
-           | '**' vfpdef)
-           | vfpdef ['=' test] (',' vfpdef ['=' test])* [','])
+       varargslist: (vfpdef ['=' test] (',' vfpdef ['=' test])* [',' [
+               '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
+             | '**' vfpdef [',']]]
+         | '*' [vfpdef] (',' vfpdef ['=' test])* [',' ['**' vfpdef [',']]]
+         | '**' vfpdef [',']
+       )
        vfpdef: NAME
+
     */
     int i, j, k, nposargs = 0, nkwonlyargs = 0;
     int nposdefaults = 0, found_default = 0;
@@ -1371,7 +1375,8 @@ ast_for_arguments(struct compiling *c, const node *n)
                 i += 2; /* the name and the comma */
                 break;
             case STAR:
-                if (i+1 >= NCH(n)) {
+                if (i+1 >= NCH(n) ||
+                    (i+2 == NCH(n) && TYPE(CHILD(n, i+1)) == COMMA)) {
                     ast_error(c, CHILD(n, i),
                         "named arguments must follow bare *");
                     return NULL;
