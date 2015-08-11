@@ -440,7 +440,7 @@ def _syscmd_ver(system='', release='', version='',
     # Try some common cmd strings
     for cmd in ('ver', 'command /c ver', 'cmd /c ver'):
         try:
-            pipe = popen(cmd)
+            pipe = os.popen(cmd)
             info = pipe.read()
             if pipe.close():
                 raise OSError('command failed')
