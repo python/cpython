@@ -10,6 +10,10 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #9232: Modify Python's grammar to allow trailing commas in the
+  argument list of a function declaration.  For example, "def f(*, a =
+  3,): pass" is now legal. Patch from Mark Dickinson.
+
 - Issue #24667: Resize odict in all cases that the underlying dict resizes.
 
 Library
