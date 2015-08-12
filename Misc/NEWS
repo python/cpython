@@ -23,6 +23,10 @@ Release date: 2015-08-09
 Core and Builtins
 -----------------
 
+- Issue #24492: A "package" lacking a __name__ attribute when trying to perform
+  a ``from .. import ...`` statement will trigger an ImportError instead of an
+  AttributeError.
+
 - Issue #24667: Resize odict in all cases that the underlying dict resizes.
 
 Library
