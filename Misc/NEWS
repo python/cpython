@@ -17,6 +17,12 @@ Library
 
 - Issue #24839: platform._syscmd_ver raises DeprecationWarning
 
+Documentation
+-------------
+
+- Issue #23725: Overhaul tempfile docs. Note deprecated status of mktemp.
+  Patch from Zbigniew Jędrzejewski-Szmek.
+
 What's New in Python 3.5.0 release candidate 1?
 ===============================================
 
