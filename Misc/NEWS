@@ -84,6 +84,9 @@ Library
 Documentation
 -------------
 
+- Issue #23725: Overhaul tempfile docs. Note deprecated status of mktemp.
+  Patch from Zbigniew Jędrzejewski-Szmek.
+
 - Issue #24129: Clarify the reference documentation for name resolution.
   This includes removing the assumption that readers will be familiar with the
   name resolution scheme Python used prior to the introduction of lexical
