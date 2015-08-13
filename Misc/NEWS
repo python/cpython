@@ -75,6 +75,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
+  Patch from Łukasz Langa.
+
 - Issue #23888: Handle fractional time in cookie expiry. Patch by ssh.
 
 - Issue #23004: mock_open() now reads binary data correctly when the type of
