@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #21167: NAN operations are now handled correctly when python is
+  compiled with ICC even if -fp-model strict is not specified.
+
 - Issue #4395: Better testing and documentation of binary operators.
   Patch by Martin Panter.
 
