@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
+  Patch from Łukasz Langa.
+
 - Issue #20059: urllib.parse raises ValueError on all invalid ports.
   Patch by Martin Panter.
 
