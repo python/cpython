@@ -5767,7 +5767,7 @@ The affinity is returned as a set of CPU identifiers.
 
 static PyObject *
 os_sched_getaffinity_impl(PyModuleDef *module, pid_t pid)
-/*[clinic end generated code: output=b431a8f310e369e7 input=eaf161936874b8a1]*/
+/*[clinic end generated code: output=b431a8f310e369e7 input=983ce7cb4a565980]*/
 {
     int cpu, ncpus, count;
     size_t setsize;
@@ -11201,14 +11201,16 @@ get_terminal_size(PyObject *self, PyObject *args)
 /*[clinic input]
 os.cpu_count
 
-Return the number of CPUs in the system; return None if indeterminable.  This
-number is not equivalent to the number of CPUs the current process can use.
-The number of usable CPUs can be obtained with ``len(os.sched_getaffinity(0))``
+Return the number of CPUs in the system; return None if indeterminable.
+
+This number is not equivalent to the number of CPUs the current process can
+use.  The number of usable CPUs can be obtained with
+``len(os.sched_getaffinity(0))``
 [clinic start generated code]*/
 
 static PyObject *
 os_cpu_count_impl(PyModuleDef *module)
-/*[clinic end generated code: output=c59ee7f6bce832b8 input=d55e2f8f3823a628]*/
+/*[clinic end generated code: output=c59ee7f6bce832b8 input=e7c8f4ba6dbbadd3]*/
 {
     int ncpu = 0;
 #ifdef MS_WINDOWS
