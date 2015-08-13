@@ -847,7 +847,8 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
            "something with lots of interpolation (10 steps)")
         e = self.get_error(cf, configparser.InterpolationDepthError, "Foo", "bar11")
         if self.interpolation == configparser._UNSET:
-            self.assertEqual(e.args, ("bar11", "Foo", "%(with1)s"))
+            self.assertEqual(e.args, ("bar11", "Foo",
+                "something %(with11)s lots of interpolation (11 steps)"))
         elif isinstance(self.interpolation, configparser.LegacyInterpolation):
             self.assertEqual(e.args, ("bar11", "Foo",
                 "something %(with11)s lots of interpolation (11 steps)"))
@@ -861,7 +862,7 @@ class ConfigParserTestCase(BasicTestCase, unittest.TestCase):
         self.assertEqual(e.option, "name")
         if self.interpolation == configparser._UNSET:
             self.assertEqual(e.args, ('name', 'Interpolation Error',
-                                    '', 'reference'))
+                                    '%(reference)s', 'reference'))
         elif isinstance(self.interpolation, configparser.LegacyInterpolation):
             self.assertEqual(e.args, ('name', 'Interpolation Error',
                                     '%(reference)s', 'reference'))
@@ -1177,7 +1178,7 @@ class ConfigParserTestCaseExtendedInterpolation(BasicTestCase, unittest.TestCase
         with self.assertRaises(exception_class) as cm:
             cf['interpolated']['$trying']
         self.assertEqual(cm.exception.reference, 'dollars:${sick')
-        self.assertEqual(cm.exception.args[2], '}') #rawval
+        self.assertEqual(cm.exception.args[2], '${dollars:${sick}}') #rawval
 
     def test_case_sensitivity_basic(self):
         ini = textwrap.dedent("""

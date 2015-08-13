@@ -263,12 +263,9 @@ class InterpolationMissingOptionError(InterpolationError):
     """A string substitution required a setting which was not available."""
 
     def __init__(self, option, section, rawval, reference):
-        msg = ("Bad value substitution:\n"
-               "\tsection: [%s]\n"
-               "\toption : %s\n"
-               "\tkey    : %s\n"
-               "\trawval : %s\n"
-               % (section, option, reference, rawval))
+        msg = ("Bad value substitution: option {!r} in section {!r} contains "
+               "an interpolation key {!r} which is not a valid option name. "
+               "Raw value: {!r}".format(option, section, reference, rawval))
         InterpolationError.__init__(self, option, section, msg)
         self.reference = reference
         self.args = (option, section, rawval, reference)
@@ -286,11 +283,11 @@ class InterpolationDepthError(InterpolationError):
     """Raised when substitutions are nested too deeply."""
 
     def __init__(self, option, section, rawval):
-        msg = ("Value interpolation too deeply recursive:\n"
-               "\tsection: [%s]\n"
-               "\toption : %s\n"
-               "\trawval : %s\n"
-               % (section, option, rawval))
+        msg = ("Recursion limit exceeded in value substitution: option {!r} "
+               "in section {!r} contains an interpolation key which "
+               "cannot be substituted in {} steps. Raw value: {!r}"
+               "".format(option, section, MAX_INTERPOLATION_DEPTH,
+                         rawval))
         InterpolationError.__init__(self, option, section, msg)
         self.args = (option, section, rawval)
 
@@ -406,8 +403,9 @@ class BasicInterpolation(Interpolation):
 
     def _interpolate_some(self, parser, option, accum, rest, section, map,
                           depth):
+        rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
-            raise InterpolationDepthError(option, section, rest)
+            raise InterpolationDepthError(option, section, rawval)
         while rest:
             p = rest.find("%")
             if p < 0:
@@ -432,7 +430,7 @@ class BasicInterpolation(Interpolation):
                     v = map[var]
                 except KeyError:
                     raise InterpolationMissingOptionError(
-                        option, section, rest, var) from None
+                        option, section, rawval, var) from None
                 if "%" in v:
                     self._interpolate_some(parser, option, accum, v,
                                            section, map, depth + 1)
@@ -466,8 +464,9 @@ class ExtendedInterpolation(Interpolation):
 
     def _interpolate_some(self, parser, option, accum, rest, section, map,
                           depth):
+        rawval = parser.get(section, option, raw=True, fallback=rest)
         if depth > MAX_INTERPOLATION_DEPTH:
-            raise InterpolationDepthError(option, section, rest)
+            raise InterpolationDepthError(option, section, rawval)
         while rest:
             p = rest.find("$")
             if p < 0:
@@ -504,7 +503,7 @@ class ExtendedInterpolation(Interpolation):
                             "More than one ':' found: %r" % (rest,))
                 except (KeyError, NoSectionError, NoOptionError):
                     raise InterpolationMissingOptionError(
-                        option, section, rest, ":".join(path)) from None
+                        option, section, rawval, ":".join(path)) from None
                 if "$" in v:
                     self._interpolate_some(parser, opt, accum, v, sect,
                                            dict(parser.items(sect, raw=True)),
