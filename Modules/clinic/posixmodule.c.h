@@ -2116,7 +2116,7 @@ PyDoc_STRVAR(os_sched_getaffinity__doc__,
 "sched_getaffinity($module, pid, /)\n"
 "--\n"
 "\n"
-"Return the affinity of the process identified by pid.\n"
+"Return the affinity of the process identified by pid (or the current process if zero).\n"
 "\n"
 "The affinity is returned as a set of CPU identifiers.");
 
@@ -5178,7 +5178,11 @@ PyDoc_STRVAR(os_cpu_count__doc__,
 "cpu_count($module, /)\n"
 "--\n"
 "\n"
-"Return the number of CPUs in the system; return None if indeterminable.");
+"Return the number of CPUs in the system; return None if indeterminable.\n"
+"\n"
+"This number is not equivalent to the number of CPUs the current process can\n"
+"use.  The number of usable CPUs can be obtained with\n"
+"``len(os.sched_getaffinity(0))``");
 
 #define OS_CPU_COUNT_METHODDEF    \
     {"cpu_count", (PyCFunction)os_cpu_count, METH_NOARGS, os_cpu_count__doc__},
@@ -5788,4 +5792,4 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=f3f92b2d2e2c3fe3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=35b50461dbecd65d input=a9049054013a1b77]*/
