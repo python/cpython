@@ -887,8 +887,8 @@ the more significant byte last.
    Creates a new function object, sets its *__closure__* slot, and pushes it on
    the stack.  TOS is the :term:`qualified name` of the function, TOS1 is the
    code associated with the function, and TOS2 is the tuple containing cells for
-   the closure's free variables.  The function also has *argc* default
-   parameters, which are found below the cells.
+   the closure's free variables.  *argc* is interpreted as in ``MAKE_FUNCTION``;
+   the annotations and defaults are also in the same order below TOS2.
 
 
 .. opcode:: BUILD_SLICE (argc)
