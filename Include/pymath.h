@@ -150,7 +150,29 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
  * doesn't support NaNs.
  */
 #if !defined(Py_NAN) && !defined(Py_NO_NAN)
-#define Py_NAN (Py_HUGE_VAL * 0.)
+#if !defined(__INTEL_COMPILER)
+    #define Py_NAN (Py_HUGE_VAL * 0.)
+#else /* __INTEL_COMPILER */
+    #if defined(ICC_NAN_STRICT)
+        #pragma float_control(push)
+        #pragma float_control(precise, on)
+        #pragma float_control(except,  on)
+        #if defined(_MSC_VER)
+            __declspec(noinline)
+        #else /* Linux */
+            __attribute__((noinline))
+        #endif /* _MSC_VER */
+        static double __icc_nan()
+        {
+            return sqrt(-1.0);
+        }
+        #pragma float_control (pop)
+        #define Py_NAN __icc_nan()
+    #else /* ICC_NAN_RELAXED as default for Intel Compiler */
+        static union { unsigned char buf[8]; double __icc_nan; } __nan_store = {0,0,0,0,0,0,0xf8,0x7f};
+        #define Py_NAN (__nan_store.__icc_nan)
+    #endif /* ICC_NAN_STRICT */
+#endif /* __INTEL_COMPILER */
 #endif
 
 /* Py_OVERFLOWED(X)
