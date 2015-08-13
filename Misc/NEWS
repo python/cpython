@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #21167: NAN operations are now handled correctly when python is
+  compiled with ICC even if -fp-model strict is not specified.
+
 - Issue #9232: Modify Python's grammar to allow trailing commas in the
   argument list of a function declaration.  For example, "def f(*, a =
   3,): pass" is now legal. Patch from Mark Dickinson.
