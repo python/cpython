@@ -178,7 +178,7 @@ static PyMethodDef groupby_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)groupby_setstate,    METH_O,
      setstate_doc},
-    {NULL,              NULL}   /* sentinel */
+    {NULL,              NULL}           /* sentinel */
 };
 
 PyDoc_STRVAR(groupby_doc,
@@ -364,7 +364,7 @@ static PyTypeObject _grouper_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
     0,                                  /* tp_doc */
-    (traverseproc)_grouper_traverse,/* tp_traverse */
+    (traverseproc)_grouper_traverse,    /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
@@ -582,7 +582,7 @@ static PyMethodDef teedataobject_methods[] = {
 PyDoc_STRVAR(teedataobject_doc, "Data container common to multiple tee objects.");
 
 static PyTypeObject teedataobject_type = {
-    PyVarObject_HEAD_INIT(0, 0)         /* Must fill in type value later */
+    PyVarObject_HEAD_INIT(0, 0)                 /* Must fill in type value later */
     "itertools._tee_dataobject",                /* tp_name */
     sizeof(teedataobject),                      /* tp_basicsize */
     0,                                          /* tp_itemsize */
@@ -602,7 +602,7 @@ static PyTypeObject teedataobject_type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,            /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     teedataobject_doc,                          /* tp_doc */
     (traverseproc)teedataobject_traverse,       /* tp_traverse */
     (inquiry)teedataobject_clear,               /* tp_clear */
@@ -791,7 +791,7 @@ static PyTypeObject tee_type = {
     (traverseproc)tee_traverse,         /* tp_traverse */
     (inquiry)tee_clear,                 /* tp_clear */
     0,                                  /* tp_richcompare */
-    offsetof(teeobject, weakreflist),           /* tp_weaklistoffset */
+    offsetof(teeobject, weakreflist),   /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
     (iternextfunc)tee_next,             /* tp_iternext */
     tee_methods,                        /* tp_methods */
@@ -1189,13 +1189,13 @@ static PyTypeObject dropwhile_type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     dropwhile_doc,                      /* tp_doc */
-    (traverseproc)dropwhile_traverse,    /* tp_traverse */
+    (traverseproc)dropwhile_traverse,   /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
     (iternextfunc)dropwhile_next,       /* tp_iternext */
-    dropwhile_methods,                                  /* tp_methods */
+    dropwhile_methods,                  /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
     0,                                  /* tp_base */
@@ -1353,7 +1353,7 @@ static PyTypeObject takewhile_type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     takewhile_doc,                      /* tp_doc */
-    (traverseproc)takewhile_traverse,    /* tp_traverse */
+    (traverseproc)takewhile_traverse,   /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
@@ -2287,7 +2287,7 @@ product((0,1), (0,1), (0,1)) --> (0,0,0) (0,0,1) (0,1,0) (0,1,1) (1,0,0) ...");
 static PyTypeObject product_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.product",                /* tp_name */
-    sizeof(productobject),      /* tp_basicsize */
+    sizeof(productobject),              /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
     (destructor)product_dealloc,        /* tp_dealloc */
@@ -2334,8 +2334,8 @@ static PyTypeObject product_type = {
 typedef struct {
     PyObject_HEAD
     PyObject *pool;                     /* input converted to a tuple */
-    Py_ssize_t *indices;            /* one index per result element */
-    PyObject *result;               /* most recently returned result tuple */
+    Py_ssize_t *indices;                /* one index per result element */
+    PyObject *result;                   /* most recently returned result tuple */
     Py_ssize_t r;                       /* size of result tuple */
     int stopped;                        /* set to 1 when the combinations iterator is exhausted */
 } combinationsobject;
@@ -2675,8 +2675,8 @@ static PyTypeObject combinations_type = {
 typedef struct {
     PyObject_HEAD
     PyObject *pool;                     /* input converted to a tuple */
-    Py_ssize_t *indices;    /* one index per result element */
-    PyObject *result;       /* most recently returned result tuple */
+    Py_ssize_t *indices;                /* one index per result element */
+    PyObject *result;                   /* most recently returned result tuple */
     Py_ssize_t r;                       /* size of result tuple */
     int stopped;                        /* set to 1 when the cwr iterator is exhausted */
 } cwrobject;
@@ -3326,11 +3326,11 @@ permutations(range(3), 2) --> (0,1), (0,2), (1,0), (1,2), (2,0), (2,1)");
 
 static PyTypeObject permutations_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
-    "itertools.permutations",                   /* tp_name */
+    "itertools.permutations",           /* tp_name */
     sizeof(permutationsobject),         /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)permutations_dealloc,           /* tp_dealloc */
+    (destructor)permutations_dealloc,   /* tp_dealloc */
     0,                                  /* tp_print */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -3347,13 +3347,13 @@ static PyTypeObject permutations_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    permutations_doc,                           /* tp_doc */
-    (traverseproc)permutations_traverse,        /* tp_traverse */
+    permutations_doc,                   /* tp_doc */
+    (traverseproc)permutations_traverse,/* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
-    (iternextfunc)permutations_next,            /* tp_iternext */
+    (iternextfunc)permutations_next,    /* tp_iternext */
     permuations_methods,                /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
@@ -3364,7 +3364,7 @@ static PyTypeObject permutations_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    permutations_new,                           /* tp_new */
+    permutations_new,                   /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
@@ -3664,44 +3664,44 @@ static PyTypeObject compress_type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "itertools.compress",               /* tp_name */
     sizeof(compressobject),             /* tp_basicsize */
-    0,                                                          /* tp_itemsize */
+    0,                                  /* tp_itemsize */
     /* methods */
     (destructor)compress_dealloc,       /* tp_dealloc */
-    0,                                                                  /* tp_print */
-    0,                                                                  /* tp_getattr */
-    0,                                                                  /* tp_setattr */
-    0,                                                                  /* tp_reserved */
-    0,                                                                  /* tp_repr */
-    0,                                                                  /* tp_as_number */
-    0,                                                                  /* tp_as_sequence */
-    0,                                                                  /* tp_as_mapping */
-    0,                                                                  /* tp_hash */
-    0,                                                                  /* tp_call */
-    0,                                                                  /* tp_str */
-    PyObject_GenericGetAttr,                    /* tp_getattro */
-    0,                                                                  /* tp_setattro */
-    0,                                                                  /* tp_as_buffer */
+    0,                                  /* tp_print */
+    0,                                  /* tp_getattr */
+    0,                                  /* tp_setattr */
+    0,                                  /* tp_reserved */
+    0,                                  /* tp_repr */
+    0,                                  /* tp_as_number */
+    0,                                  /* tp_as_sequence */
+    0,                                  /* tp_as_mapping */
+    0,                                  /* tp_hash */
+    0,                                  /* tp_call */
+    0,                                  /* tp_str */
+    PyObject_GenericGetAttr,            /* tp_getattro */
+    0,                                  /* tp_setattro */
+    0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,                    /* tp_flags */
-    compress_doc,                                       /* tp_doc */
-    (traverseproc)compress_traverse,            /* tp_traverse */
-    0,                                                                  /* tp_clear */
-    0,                                                                  /* tp_richcompare */
-    0,                                                                  /* tp_weaklistoffset */
-    PyObject_SelfIter,                                  /* tp_iter */
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
+    compress_doc,                       /* tp_doc */
+    (traverseproc)compress_traverse,    /* tp_traverse */
+    0,                                  /* tp_clear */
+    0,                                  /* tp_richcompare */
+    0,                                  /* tp_weaklistoffset */
+    PyObject_SelfIter,                  /* tp_iter */
     (iternextfunc)compress_next,        /* tp_iternext */
-    compress_methods,                                                   /* tp_methods */
-    0,                                                                  /* tp_members */
-    0,                                                                  /* tp_getset */
-    0,                                                                  /* tp_base */
-    0,                                                                  /* tp_dict */
-    0,                                                                  /* tp_descr_get */
-    0,                                                                  /* tp_descr_set */
-    0,                                                                  /* tp_dictoffset */
-    0,                                                                  /* tp_init */
-    0,                                                                  /* tp_alloc */
-    compress_new,                                       /* tp_new */
-    PyObject_GC_Del,                                    /* tp_free */
+    compress_methods,                   /* tp_methods */
+    0,                                  /* tp_members */
+    0,                                  /* tp_getset */
+    0,                                  /* tp_base */
+    0,                                  /* tp_dict */
+    0,                                  /* tp_descr_get */
+    0,                                  /* tp_descr_set */
+    0,                                  /* tp_dictoffset */
+    0,                                  /* tp_init */
+    0,                                  /* tp_alloc */
+    compress_new,                       /* tp_new */
+    PyObject_GC_Del,                    /* tp_free */
 };
 
 
@@ -3824,7 +3824,7 @@ static PyTypeObject filterfalse_type = {
     sizeof(filterfalseobject),          /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)filterfalse_dealloc,            /* tp_dealloc */
+    (destructor)filterfalse_dealloc,    /* tp_dealloc */
     0,                                  /* tp_print */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -3842,7 +3842,7 @@ static PyTypeObject filterfalse_type = {
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
     filterfalse_doc,                    /* tp_doc */
-    (traverseproc)filterfalse_traverse,         /* tp_traverse */
+    (traverseproc)filterfalse_traverse, /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
@@ -4081,15 +4081,15 @@ static PyTypeObject count_type = {
     0,                                  /* tp_setattro */
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
-        Py_TPFLAGS_BASETYPE,                    /* tp_flags */
+        Py_TPFLAGS_BASETYPE,            /* tp_flags */
     count_doc,                          /* tp_doc */
-    (traverseproc)count_traverse,                               /* tp_traverse */
+    (traverseproc)count_traverse,       /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
     PyObject_SelfIter,                  /* tp_iter */
     (iternextfunc)count_next,           /* tp_iternext */
-    count_methods,                              /* tp_methods */
+    count_methods,                      /* tp_methods */
     0,                                  /* tp_members */
     0,                                  /* tp_getset */
     0,                                  /* tp_base */
@@ -4488,7 +4488,7 @@ static PyTypeObject ziplongest_type = {
     sizeof(ziplongestobject),           /* tp_basicsize */
     0,                                  /* tp_itemsize */
     /* methods */
-    (destructor)zip_longest_dealloc,            /* tp_dealloc */
+    (destructor)zip_longest_dealloc,    /* tp_dealloc */
     0,                                  /* tp_print */
     0,                                  /* tp_getattr */
     0,                                  /* tp_setattr */
@@ -4505,8 +4505,8 @@ static PyTypeObject ziplongest_type = {
     0,                                  /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC |
         Py_TPFLAGS_BASETYPE,            /* tp_flags */
-    zip_longest_doc,                            /* tp_doc */
-    (traverseproc)zip_longest_traverse,    /* tp_traverse */
+    zip_longest_doc,                    /* tp_doc */
+    (traverseproc)zip_longest_traverse, /* tp_traverse */
     0,                                  /* tp_clear */
     0,                                  /* tp_richcompare */
     0,                                  /* tp_weaklistoffset */
@@ -4522,7 +4522,7 @@ static PyTypeObject ziplongest_type = {
     0,                                  /* tp_dictoffset */
     0,                                  /* tp_init */
     0,                                  /* tp_alloc */
-    zip_longest_new,                            /* tp_new */
+    zip_longest_new,                    /* tp_new */
     PyObject_GC_Del,                    /* tp_free */
 };
 
