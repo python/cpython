@@ -5085,19 +5085,24 @@ import_from(PyObject *v, PyObject *name)
        sys.modules. */
     PyErr_Clear();
     pkgname = _PyObject_GetAttrId(v, &PyId___name__);
-    if (pkgname == NULL)
-        return NULL;
+    if (pkgname == NULL) {
+        goto error;
+    }
     fullmodname = PyUnicode_FromFormat("%U.%U", pkgname, name);
     Py_DECREF(pkgname);
-    if (fullmodname == NULL)
+    if (fullmodname == NULL) {
         return NULL;
+    }
     x = PyDict_GetItem(PyImport_GetModuleDict(), fullmodname);
-    if (x == NULL)
-        PyErr_Format(PyExc_ImportError, "cannot import name %R", name);
-    else
-        Py_INCREF(x);
     Py_DECREF(fullmodname);
+    if (x == NULL) {
+        goto error;
+    }
+    Py_INCREF(x);
     return x;
+ error:
+    PyErr_Format(PyExc_ImportError, "cannot import name %R", name);
+    return NULL;
 }
 
 static int
