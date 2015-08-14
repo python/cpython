@@ -69,7 +69,7 @@ class ScriptBinding:
             try:
                 tabnanny.process_tokens(tokenize.generate_tokens(f.readline))
             except tokenize.TokenError as msg:
-                msgtxt, (lineno, start) = msg
+                msgtxt, (lineno, start) = msg.args
                 self.editwin.gotoline(lineno)
                 self.errorbox("Tabnanny Tokenizing Error",
                               "Token Error: %s" % msgtxt)
