@@ -324,6 +324,19 @@ class ImportTests(unittest.TestCase):
         with self.assertRaisesRegex(ImportError, "^cannot import name 'bogus'"):
             from re import bogus
 
+    def test_from_import_AttributeError(self):
+        # Issue #24492: trying to import an attribute that raises an
+        # AttributeError should lead to an ImportError.
+        class AlwaysAttributeError:
+            def __getattr__(self, _):
+                raise AttributeError
+
+        module_name = 'test_from_import_AttributeError'
+        self.addCleanup(unload, module_name)
+        sys.modules[module_name] = AlwaysAttributeError()
+        with self.assertRaises(ImportError):
+            from test_from_import_AttributeError import does_not_exist
+
 
 @skip_if_dont_write_bytecode
 class FilePermissionTests(unittest.TestCase):
