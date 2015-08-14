@@ -87,6 +87,8 @@ Library
 - Issue #13248: Remove deprecated inspect.getargspec and inspect.getmoduleinfo
   functions.
 
+- Issue #24867: Fix Task.get_stack() for 'async def' coroutines
+
 Documentation
 -------------
 
