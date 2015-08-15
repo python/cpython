@@ -9,9 +9,14 @@
     <Import Project="..\msi.props" />
 
     <PropertyGroup>
+        <DefineConstants Condition="'$(Pack)' != 'true'">
+            $(DefineConstants);CompressMSI=no;
+        </DefineConstants>
+        <DefineConstants Condition="'$(Pack)' == 'true'">
+            $(DefineConstants);CompressMSI=yes;
+        </DefineConstants>
         <DefineConstants>
             $(DefineConstants);
-            CompressMSI=no;
             CompressPDB=no;
             CompressMSI_D=no;
         </DefineConstants>
