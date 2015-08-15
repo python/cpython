@@ -617,7 +617,7 @@ class TestBasicOps(unittest.TestCase):
             # test with partial consumed input iterable
             it = iter('abcde')
             c = cycle(it)
-            _ = [next(c) for i in range(2)]      # consume to 2 of 5 inputs
+            _ = [next(c) for i in range(2)]      # consume 2 of 5 inputs
             p = pickle.dumps(c, proto)
             d = pickle.loads(p)                  # rebuild the cycle object
             self.assertEqual(take(20, d), list('cdeabcdeabcdeabcdeab'))
@@ -625,7 +625,7 @@ class TestBasicOps(unittest.TestCase):
             # test with completely consumed input iterable
             it = iter('abcde')
             c = cycle(it)
-            _ = [next(c) for i in range(7)]      # consume to 7 of 5 inputs
+            _ = [next(c) for i in range(7)]      # consume 7 of 5 inputs
             p = pickle.dumps(c, proto)
             d = pickle.loads(p)                  # rebuild the cycle object
             self.assertEqual(take(20, d), list('cdeabcdeabcdeabcdeab'))
