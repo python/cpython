@@ -940,12 +940,9 @@ cycle_next(cycleobject *lz)
             }
             return item;
         }
-        if (PyErr_Occurred()) {
-            if (PyErr_ExceptionMatches(PyExc_StopIteration))
-                PyErr_Clear();
-            else
+        /* Note:  StopIteration is already cleared by PyIter_Next() */
+        if (PyErr_Occurred())
                 return NULL;
-        }
         if (PyList_Size(lz->saved) == 0)
             return NULL;
         it = PyObject_GetIter(lz->saved);
