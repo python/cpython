@@ -963,7 +963,7 @@ cycle_reduce(cycleobject *lz)
      */
     return Py_BuildValue("O(O)(Oi)", Py_TYPE(lz),
         lz->it, lz->saved, lz->firstpass);
-    }
+}
 
 static PyObject *
 cycle_setstate(cycleobject *lz, PyObject *state)
