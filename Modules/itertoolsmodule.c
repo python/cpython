@@ -973,7 +973,7 @@ cycle_setstate(cycleobject *lz, PyObject *state)
 {
     PyObject *saved=NULL;
     int firstpass;
-    if (!PyArg_ParseTuple(state, "Oi", &saved, &firstpass))
+    if (!PyArg_ParseTuple(state, "O!i", &PyList_Type, &saved, &firstpass))
         return NULL;
     Py_CLEAR(lz->saved);
     lz->saved = saved;
