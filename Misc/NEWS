@@ -25,6 +25,9 @@ Library
 - Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
   Patch from Łukasz Langa.
 
+- Fix crash in itertools.cycle.__setstate__() when the first argument wasn't
+  a list.
+
 - Issue #20059: urllib.parse raises ValueError on all invalid ports.
   Patch by Martin Panter.
 
