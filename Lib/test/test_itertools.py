@@ -613,6 +613,23 @@ class TestBasicOps(unittest.TestCase):
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             self.pickletest(proto, cycle('abc'))
 
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            # test with partial consumed input iterable
+            it = iter('abcde')
+            c = cycle(it)
+            _ = [next(c) for i in range(2)]      # consume to 2 of 5 inputs
+            p = pickle.dumps(c, proto)
+            d = pickle.loads(p)                  # rebuild the cycle object
+            self.assertEqual(take(20, d), list('cdeabcdeabcdeabcdeab'))
+
+            # test with completely consumed input iterable
+            it = iter('abcde')
+            c = cycle(it)
+            _ = [next(c) for i in range(7)]      # consume to 7 of 5 inputs
+            p = pickle.dumps(c, proto)
+            d = pickle.loads(p)                  # rebuild the cycle object
+            self.assertEqual(take(20, d), list('cdeabcdeabcdeabcdeab'))
+
     def test_cycle_setstate(self):
         # Verify both modes for restoring state
 
