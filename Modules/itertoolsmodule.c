@@ -759,9 +759,9 @@ PyDoc_STRVAR(teeobject_doc,
 "Iterator wrapped to make it copyable");
 
 static PyMethodDef tee_methods[] = {
-    {"__copy__",        (PyCFunction)tee_copy,  METH_NOARGS, teecopy_doc},
-    {"__reduce__",      (PyCFunction)tee_reduce,      METH_NOARGS, reduce_doc},
-    {"__setstate__",    (PyCFunction)tee_setstate,    METH_O, setstate_doc},
+    {"__copy__",        (PyCFunction)tee_copy,     METH_NOARGS, teecopy_doc},
+    {"__reduce__",      (PyCFunction)tee_reduce,   METH_NOARGS, reduce_doc},
+    {"__setstate__",    (PyCFunction)tee_setstate, METH_O,      setstate_doc},
     {NULL,              NULL}           /* sentinel */
 };
 
@@ -1407,7 +1407,8 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 if (PyErr_Occurred())
                     PyErr_Clear();
                 PyErr_SetString(PyExc_ValueError,
-                   "Stop argument for islice() must be None or an integer: 0 <= x <= sys.maxsize.");
+                   "Stop argument for islice() must be None or "
+                   "an integer: 0 <= x <= sys.maxsize.");
                 return NULL;
             }
         }
@@ -1422,14 +1423,16 @@ islice_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
                 if (PyErr_Occurred())
                     PyErr_Clear();
                 PyErr_SetString(PyExc_ValueError,
-                   "Stop argument for islice() must be None or an integer: 0 <= x <= sys.maxsize.");
+                   "Stop argument for islice() must be None or "
+                   "an integer: 0 <= x <= sys.maxsize.");
                 return NULL;
             }
         }
     }
     if (start<0 || stop<-1) {
         PyErr_SetString(PyExc_ValueError,
-           "Indices for islice() must be None or an integer: 0 <= x <= sys.maxsize.");
+           "Indices for islice() must be None or "
+           "an integer: 0 <= x <= sys.maxsize.");
         return NULL;
     }
 
@@ -1845,19 +1848,19 @@ chain_next(chainobject *lz)
     PyObject *item;
 
     if (lz->source == NULL)
-        return NULL;                                    /* already stopped */
+        return NULL;                    /* already stopped */
 
     if (lz->active == NULL) {
         PyObject *iterable = PyIter_Next(lz->source);
         if (iterable == NULL) {
             Py_CLEAR(lz->source);
-            return NULL;                                /* no more input sources */
+            return NULL;                /* no more input sources */
         }
         lz->active = PyObject_GetIter(iterable);
         Py_DECREF(iterable);
         if (lz->active == NULL) {
             Py_CLEAR(lz->source);
-            return NULL;                                /* input not iterable */
+            return NULL;                /* input not iterable */
         }
     }
     item = (*Py_TYPE(lz->active)->tp_iternext)(lz->active);
@@ -1867,10 +1870,10 @@ chain_next(chainobject *lz)
         if (PyErr_ExceptionMatches(PyExc_StopIteration))
             PyErr_Clear();
         else
-            return NULL;                                /* input raised an exception */
+            return NULL;                /* input raised an exception */
     }
     Py_CLEAR(lz->active);
-    return chain_next(lz);                      /* recurse and use next active */
+    return chain_next(lz);              /* recurse and use next active */
 }
 
 static PyObject *
@@ -1928,7 +1931,7 @@ static PyMethodDef chain_methods[] = {
      reduce_doc},
     {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
      setstate_doc},
-    {NULL,              NULL}   /* sentinel */
+    {NULL,              NULL}           /* sentinel */
 };
 
 static PyTypeObject chain_type = {
@@ -1980,7 +1983,7 @@ static PyTypeObject chain_type = {
 
 typedef struct {
     PyObject_HEAD
-    PyObject *pools;                    /* tuple of pool tuples */
+    PyObject *pools;                /* tuple of pool tuples */
     Py_ssize_t *indices;            /* one index per pool */
     PyObject *result;               /* most recently returned result tuple */
     int stopped;                    /* set to 1 when the product iterator is exhausted */
@@ -3779,8 +3782,7 @@ filterfalse_next(filterfalseobject *lz)
             ok = PyObject_IsTrue(item);
         } else {
             PyObject *good;
-            good = PyObject_CallFunctionObjArgs(lz->func,
-                                                item, NULL);
+            good = PyObject_CallFunctionObjArgs(lz->func, item, NULL);
             if (good == NULL) {
                 Py_DECREF(item);
                 return NULL;
