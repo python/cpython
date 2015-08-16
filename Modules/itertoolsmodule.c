@@ -1,4 +1,6 @@
 
+#define PY_SSIZE_T_CLEAN
+
 #include "Python.h"
 #include "structmember.h"
 
@@ -863,6 +865,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *it;
     PyObject *saved;
+    Py_ssize_t index;
     int firstpass;
 } cycleobject;
 
@@ -902,6 +905,7 @@ cycle_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     }
     lz->it = it;
     lz->saved = saved;
+    lz->index = 0;
     lz->firstpass = 0;
 
     return (PyObject *)lz;
@@ -911,15 +915,16 @@ static void
 cycle_dealloc(cycleobject *lz)
 {
     PyObject_GC_UnTrack(lz);
-    Py_XDECREF(lz->saved);
     Py_XDECREF(lz->it);
+    Py_XDECREF(lz->saved);
     Py_TYPE(lz)->tp_free(lz);
 }
 
 static int
 cycle_traverse(cycleobject *lz, visitproc visit, void *arg)
 {
-    Py_VISIT(lz->it);
+    if (lz->it)
+        Py_VISIT(lz->it);
     Py_VISIT(lz->saved);
     return 0;
 }
@@ -928,13 +933,13 @@ static PyObject *
 cycle_next(cycleobject *lz)
 {
     PyObject *item;
-    PyObject *it;
-    PyObject *tmp;
 
-    while (1) {
+    if (lz->it != NULL) {
         item = PyIter_Next(lz->it);
         if (item != NULL) {
-            if (!lz->firstpass && PyList_Append(lz->saved, item)) {
+            if (lz->firstpass)
+                return item;
+            if (PyList_Append(lz->saved, item)) {
                 Py_DECREF(item);
                 return NULL;
             }
@@ -942,27 +947,41 @@ cycle_next(cycleobject *lz)
         }
         /* Note:  StopIteration is already cleared by PyIter_Next() */
         if (PyErr_Occurred())
-                return NULL;
-        if (PyList_Size(lz->saved) == 0)
             return NULL;
-        it = PyObject_GetIter(lz->saved);
-        if (it == NULL)
-            return NULL;
-        tmp = lz->it;
-        lz->it = it;
-        lz->firstpass = 1;
-        Py_DECREF(tmp);
+        Py_CLEAR(lz->it);
     }
+    if (Py_SIZE(lz->saved) == 0)
+        return NULL;
+    item = PyList_GET_ITEM(lz->saved, lz->index);
+    lz->index++;
+    if (lz->index >= Py_SIZE(lz->saved))
+        lz->index = 0;
+    Py_INCREF(item);
+    return item;
 }
 
 static PyObject *
 cycle_reduce(cycleobject *lz)
 {
-    /* Create a new cycle with the iterator tuple, then set
-     * the saved state on it.
-     */
-    return Py_BuildValue("O(O)(Oi)", Py_TYPE(lz),
-        lz->it, lz->saved, lz->firstpass);
+    /* Create a new cycle with the iterator tuple, then set the saved state */
+    if (lz->it == NULL) {
+        PyObject *it = PyObject_GetIter(lz->saved);
+        if (it == NULL)
+            return NULL;
+        if (lz->index != 0) {
+            _Py_IDENTIFIER(__setstate__);
+            PyObject *res = _PyObject_CallMethodId(it, &PyId___setstate__,
+                                                   "n", lz->index);
+            if (res == NULL) {
+                Py_DECREF(it);
+                return NULL;
+            }
+            Py_DECREF(res);
+        }
+        return Py_BuildValue("O(N)(Oi)", Py_TYPE(lz), it, lz->saved, 1);
+    }
+    return Py_BuildValue("O(O)(Oi)", Py_TYPE(lz), lz->it, lz->saved,
+                         lz->firstpass);
 }
 
 static PyObject *
@@ -972,10 +991,11 @@ cycle_setstate(cycleobject *lz, PyObject *state)
     int firstpass;
     if (!PyArg_ParseTuple(state, "O!i", &PyList_Type, &saved, &firstpass))
         return NULL;
+    Py_INCREF(saved);
     Py_CLEAR(lz->saved);
     lz->saved = saved;
-    Py_XINCREF(lz->saved);
     lz->firstpass = firstpass != 0;
+    lz->index = 0;
     Py_RETURN_NONE;
 }
 
