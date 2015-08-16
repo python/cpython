@@ -962,6 +962,9 @@ and more efficient to use a simple :class:`~enum.Enum`:
       constructor that is convenient for use cases where named tuples are being
       subclassed.
 
+    * :meth:`types.SimpleNamespace` for a mutable namespace based on an underlying
+      dictionary instead of a tuple.
+
 
 :class:`OrderedDict` objects
 ----------------------------
