@@ -1860,7 +1860,7 @@ chain_next(chainobject *lz)
             return NULL;                                /* input not iterable */
         }
     }
-    item = PyIter_Next(lz->active);
+    item = (*Py_TYPE(lz->active)->tp_iternext)(lz->active);
     if (item != NULL)
         return item;
     if (PyErr_Occurred()) {
@@ -3434,7 +3434,7 @@ accumulate_next(accumulateobject *lz)
 {
     PyObject *val, *oldtotal, *newtotal;
 
-    val = PyIter_Next(lz->it);
+    val = (*Py_TYPE(lz->it)->tp_iternext)(lz->it);
     if (val == NULL)
         return NULL;
 
