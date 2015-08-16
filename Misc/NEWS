@@ -25,6 +25,9 @@ Library
 - Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
   Patch from Łukasz Langa.
 
+- Issue #24874:  Improve speed of itertools.cycle() and make its
+  pickle more compact.
+
 - Fix crash in itertools.cycle.__setstate__() when the first argument wasn't
   a list.
 
