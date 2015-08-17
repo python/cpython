@@ -74,6 +74,8 @@ Library
 
 - Issue #24791: Fix grammar regression for call syntax: 'g(*a or b)'.
 
+- Issue #24867: Fix Task.get_stack() for 'async def' coroutines
+
 Documentation
 -------------
 

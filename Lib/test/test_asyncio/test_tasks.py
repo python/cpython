@@ -2,6 +2,7 @@
 
 import contextlib
 import functools
+import io
 import os
 import re
 import sys
@@ -161,6 +162,37 @@ class TaskTests(test_utils.TestCase):
         with self.assertWarnsRegex(DeprecationWarning,
                                    'function is deprecated, use ensure_'):
             self.assertIs(f, asyncio.async(f))
+
+    def test_get_stack(self):
+        T = None
+
+        @asyncio.coroutine
+        def foo():
+            yield from bar()
+
+        @asyncio.coroutine
+        def bar():
+            # test get_stack()
+            f = T.get_stack(limit=1)
+            try:
+                self.assertEqual(f[0].f_code.co_name, 'foo')
+            finally:
+                f = None
+
+            # test print_stack()
+            file = io.StringIO()
+            T.print_stack(limit=1, file=file)
+            file.seek(0)
+            tb = file.read()
+            self.assertRegex(tb, r'foo\(\) running')
+
+        @asyncio.coroutine
+        def runner():
+            nonlocal T
+            T = asyncio.ensure_future(foo(), loop=self.loop)
+            yield from T
+
+        self.loop.run_until_complete(runner())
 
     def test_task_repr(self):
         self.loop.set_debug(False)
