@@ -17,7 +17,7 @@ __all__ = ['abs', 'add', 'and_', 'attrgetter', 'concat', 'contains', 'countOf',
            'is_', 'is_not', 'isub', 'itemgetter', 'itruediv', 'ixor', 'le',
            'length_hint', 'lshift', 'lt', 'matmul', 'methodcaller', 'mod',
            'mul', 'ne', 'neg', 'not_', 'or_', 'pos', 'pow', 'rshift',
-           'setitem', 'sub', 'truediv', 'truth', 'xor']
+           'setitem', 'sub', 'subscript', 'truediv', 'truth', 'xor']
 
 from builtins import abs as _abs
 
@@ -406,6 +406,32 @@ def ixor(a, b):
     "Same as a ^= b."
     a ^= b
     return a
+
+
+@object.__new__  # create a singleton instance
+class subscript:
+    """
+    A helper to turn subscript notation into indexing objects.  This can be
+    used to create item access patterns ahead of time to pass them into
+    various subscriptable objects.
+
+    For example:
+    subscript[5] == 5
+    subscript[3:7:2] == slice(3, 7, 2)
+    subscript[5, 8] == (5, 8)
+    """
+    __slots__ = ()
+
+    def __new__(cls):
+        raise TypeError("cannot create '{}' instances".format(cls.__name__))
+
+    @staticmethod
+    def __getitem__(key):
+        return key
+
+    @staticmethod
+    def __reduce__():
+        return 'subscript'
 
 
 try:

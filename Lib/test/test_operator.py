@@ -596,5 +596,38 @@ class CCOperatorPickleTestCase(OperatorPickleTestCase, unittest.TestCase):
     module2 = c_operator
 
 
+class SubscriptTestCase:
+    def test_subscript(self):
+        subscript = self.module.subscript
+        self.assertIsNone(subscript[None])
+        self.assertEqual(subscript[0], 0)
+        self.assertEqual(subscript[0:1:2], slice(0, 1, 2))
+        self.assertEqual(
+            subscript[0, ..., :2, ...],
+            (0, Ellipsis, slice(2), Ellipsis),
+        )
+
+    def test_pickle(self):
+        from operator import subscript
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.subTest(proto=proto):
+                self.assertIs(
+                    pickle.loads(pickle.dumps(subscript, proto)),
+                    subscript,
+                )
+
+    def test_singleton(self):
+        with self.assertRaises(TypeError):
+            type(self.module.subscript)()
+
+    def test_immutable(self):
+        with self.assertRaises(AttributeError):
+            self.module.subscript.attr = None
+
+
+class PySubscriptTestCase(SubscriptTestCase, PyOperatorTestCase):
+    pass
+
+
 if __name__ == "__main__":
     unittest.main()
