@@ -209,9 +209,10 @@ attributes:
 
 .. versionchanged:: 3.5
 
-   Add ``__qualname__`` attribute to generators. The ``__name__`` attribute of
-   generators is now set from the function name, instead of the code name, and
-   it can now be modified.
+   Add ``__qualname__`` and ``gi_yieldfrom`` attributes to generators.
+
+   The ``__name__`` attribute of generators is now set from the function
+   name, instead of the code name, and it can now be modified.
 
 
 .. function:: getmembers(object[, predicate])
