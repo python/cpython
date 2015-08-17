@@ -38,7 +38,10 @@ class TestSymbolGeneration(unittest.TestCase):
         self.assertFalse(filecmp.cmp(SYMBOL_FILE, TEST_PY_FILE))
         self.assertEqual((0, b''), self._generate_symbols(GRAMMAR_FILE,
                                                           TEST_PY_FILE))
-        self.assertTrue(filecmp.cmp(SYMBOL_FILE, TEST_PY_FILE))
+        self.assertTrue(filecmp.cmp(SYMBOL_FILE, TEST_PY_FILE),
+                        'symbol stat: %r\ntest_py stat: %r\n' %
+                        (os.stat(SYMBOL_FILE),
+                         os.stat(TEST_PY_FILE)))
 
 
 if __name__ == "__main__":
