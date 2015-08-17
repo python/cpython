@@ -186,6 +186,23 @@ class CoroutineTests(BaseTest):
         data = self.loop.run_until_complete(coro())
         self.assertEqual(data, 'spam')
 
+    def test_task_print_stack(self):
+        T = None
+
+        async def foo():
+            f = T.get_stack(limit=1)
+            try:
+                self.assertEqual(f[0].f_code.co_name, 'foo')
+            finally:
+                f = None
+
+        async def runner():
+            nonlocal T
+            T = asyncio.ensure_future(foo(), loop=self.loop)
+            await T
+
+        self.loop.run_until_complete(runner())
+
 
 if __name__ == '__main__':
     unittest.main()
