@@ -1211,8 +1211,7 @@ def test(HandlerClass=BaseHTTPRequestHandler,
          ServerClass=HTTPServer, protocol="HTTP/1.0", port=8000, bind=""):
     """Test the HTTP request handler class.
 
-    This runs an HTTP server on port 8000 (or the first command line
-    argument).
+    This runs an HTTP server on port 8000 (or the port argument).
 
     """
     server_address = (bind, port)
