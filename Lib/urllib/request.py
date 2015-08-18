@@ -138,6 +138,71 @@ __version__ = sys.version[:3]
 _opener = None
 def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
             *, cafile=None, capath=None, cadefault=False, context=None):
+    '''Open the URL url, which can be either a string or a Request object.
+
+    *data* must be a bytes object specifying additional data to be sent to the
+    server, or None if no such data is needed. data may also be an iterable
+    object and in that case Content-Length value must be specified in the
+    headers. Currently HTTP requests are the only ones that use data; the HTTP
+    request will be a POST instead of a GET when the data parameter is
+    provided.
+
+    *data* should be a buffer in the standard application/x-www-form-urlencoded
+    format. The urllib.parse.urlencode() function takes a mapping or sequence
+    of 2-tuples and returns a string in this format. It should be encoded to
+    bytes before being used as the data parameter. The charset parameter in
+    Content-Type header may be used to specify the encoding. If charset
+    parameter is not sent with the Content-Type header, the server following
+    the HTTP 1.1 recommendation may assume that the data is encoded in
+    ISO-8859-1 encoding. It is advisable to use charset parameter with encoding
+    used in Content-Type header with the Request.
+
+    urllib.request module uses HTTP/1.1 and includes a "Connection:close"
+    header in its HTTP requests.
+
+    The optional *timeout* parameter specifies a timeout in seconds for
+    blocking operations like the connection attempt (if not specified, the
+    global default timeout setting will be used). This only works for HTTP,
+    HTTPS and FTP connections.
+
+    If *context* is specified, it must be a ssl.SSLContext instance describing
+    the various SSL options. See HTTPSConnection for more details.
+
+    The optional *cafile* and *capath* parameters specify a set of trusted CA
+    certificates for HTTPS requests. cafile should point to a single file
+    containing a bundle of CA certificates, whereas capath should point to a
+    directory of hashed certificate files. More information can be found in
+    ssl.SSLContext.load_verify_locations().
+
+    The *cadefault* parameter is ignored.
+
+    For http and https urls, this function returns a http.client.HTTPResponse
+    object which has the following HTTPResponse Objects methods.
+
+    For ftp, file, and data urls and requests explicitly handled by legacy
+    URLopener and FancyURLopener classes, this function returns a
+    urllib.response.addinfourl object which can work as context manager and has
+    methods such as:
+
+    * geturl() — return the URL of the resource retrieved, commonly used to
+      determine if a redirect was followed
+
+    * info() — return the meta-information of the page, such as headers, in the
+      form of an email.message_from_string() instance (see Quick Reference to
+      HTTP Headers)
+
+    * getcode() – return the HTTP status code of the response.  Raises URLError
+      on errors.
+
+    Note that *None& may be returned if no handler handles the request (though
+    the default installed global OpenerDirector uses UnknownHandler to ensure
+    this never happens).
+
+    In addition, if proxy settings are detected (for example, when a *_proxy
+    environment variable like http_proxy is set), ProxyHandler is default
+    installed and makes sure the requests are handled through the proxy.
+
+    '''
     global _opener
     if cafile or capath or cadefault:
         if context is not None:
