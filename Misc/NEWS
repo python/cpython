@@ -75,6 +75,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #24764: cgi.FieldStorage.read_multi() now ignores the Content-Length
+  header in part headers. Patch written by Peter Landry and reviewed by Pierre
+  Quentel.
+
 - Issue #24774: Fix docstring in http.server.test. Patch from Chiu-Hsiang Hsu.
 
 - Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
