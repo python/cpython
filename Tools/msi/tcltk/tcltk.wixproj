@@ -27,13 +27,6 @@
             <Target_>DLLs\</Target_>
             <Group>tcltk_dlls</Group>
         </InstallFiles>
-        <InstallFiles Include="$(VCInstallDir)redist\$(Platform)\Microsoft.VC$(PlatformToolset.Substring(1)).CRT\vcruntime$(PlatformToolset.Substring(1)).dll">
-            <SourceBase>$(VCInstallDir)redist\$(Platform)\Microsoft.VC$(PlatformToolset.Substring(1)).CRT\</SourceBase>
-            <Source>$(VCInstallDir)redist\$(Platform)\Microsoft.VC$(PlatformToolset.Substring(1)).CRT\</Source>
-            <TargetBase>$(VCInstallDir)redist\$(Platform)\Microsoft.VC$(PlatformToolset.Substring(1)).CRT\</TargetBase>
-            <Target_>DLLs\</Target_>
-            <Group>tcltk_dlls</Group>
-        </InstallFiles>
 
         <InstallFiles Include="$(tcltkDir)lib\**\*">
             <SourceBase>$(tcltkDir)</SourceBase>
