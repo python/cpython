@@ -551,7 +551,7 @@ def _c3_merge(sequences):
                     break      # reject the current head, it appears later
             else:
                 break
-        if not candidate:
+        if candidate is None:
             raise RuntimeError("Inconsistent hierarchy")
         result.append(candidate)
         # remove the chosen candidate
