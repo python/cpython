@@ -714,6 +714,11 @@ class FieldStorage:
             self.bytes_read += len(hdr_text)
             parser.feed(hdr_text.decode(self.encoding, self.errors))
             headers = parser.close()
+
+            # Some clients add Content-Length for part headers, ignore them
+            if 'content-length' in headers:
+                del headers['content-length']
+
             part = klass(self.fp, headers, ib, environ, keep_blank_values,
                          strict_parsing,self.limit-self.bytes_read,
                          self.encoding, self.errors)
