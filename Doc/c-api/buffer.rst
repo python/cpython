@@ -133,15 +133,15 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
       called on non-NULL :c:member:`~Py_buffer.format` values.
 
       Important exception: If a consumer requests a buffer without the
-      :c:macro:`PyBUF_FORMAT` flag, :c:member:`~Py_Buffer.format` will
+      :c:macro:`PyBUF_FORMAT` flag, :c:member:`~Py_buffer.format` will
       be set to  *NULL*,  but :c:member:`~Py_buffer.itemsize` still has
       the value for the original format.
 
-      If :c:member:`~Py_Buffer.shape` is present, the equality
+      If :c:member:`~Py_buffer.shape` is present, the equality
       ``product(shape) * itemsize == len`` still holds and the consumer
       can use :c:member:`~Py_buffer.itemsize` to navigate the buffer.
 
-      If :c:member:`~Py_Buffer.shape` is *NULL* as a result of a :c:macro:`PyBUF_SIMPLE`
+      If :c:member:`~Py_buffer.shape` is *NULL* as a result of a :c:macro:`PyBUF_SIMPLE`
       or a :c:macro:`PyBUF_WRITABLE` request, the consumer must disregard
       :c:member:`~Py_buffer.itemsize` and assume ``itemsize == 1``.
 
@@ -156,7 +156,7 @@ a buffer, see :c:func:`PyObject_GetBuffer`.
    .. c:member:: int ndim
 
       The number of dimensions the memory represents as an n-dimensional array.
-      If it is 0, :c:member:`~Py_Buffer.buf` points to a single item representing
+      If it is 0, :c:member:`~Py_buffer.buf` points to a single item representing
       a scalar. In this case, :c:member:`~Py_buffer.shape`, :c:member:`~Py_buffer.strides`
       and :c:member:`~Py_buffer.suboffsets` MUST be *NULL*.
 
