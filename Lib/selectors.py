@@ -43,9 +43,17 @@ def _fileobj_to_fd(fileobj):
 
 
 SelectorKey = namedtuple('SelectorKey', ['fileobj', 'fd', 'events', 'data'])
-"""Object used to associate a file object to its backing file descriptor,
-selected event mask and attached data."""
 
+SelectorKey.__doc__ = """SelectorKey(fileobj, fd, events, data)
+
+    Object used to associate a file object to its backing
+    file descriptor, selected event mask, and attached data.
+"""
+SelectorKey.fileobj.__doc__ = 'File object registered.'
+SelectorKey.fd.__doc__ = 'Underlying file descriptor.'
+SelectorKey.events.__doc__ = 'Events that must be waited for on this file object.'
+SelectorKey.data.__doc__ = ('''Optional opaque data associated to this file object.
+For example, this could be used to store a per-client session ID.''')
 
 class _SelectorMapping(Mapping):
     """Mapping of file objects to selector keys."""
