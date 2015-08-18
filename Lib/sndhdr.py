@@ -37,6 +37,18 @@ from collections import namedtuple
 SndHeaders = namedtuple('SndHeaders',
                         'filetype framerate nchannels nframes sampwidth')
 
+SndHeaders.filetype.__doc__ = ("""The value for type indicates the data type
+and will be one of the strings 'aifc', 'aiff', 'au','hcom',
+'sndr', 'sndt', 'voc', 'wav', '8svx', 'sb', 'ub', or 'ul'.""")
+SndHeaders.framerate.__doc__ = ("""The sampling_rate will be either the actual
+value or 0 if unknown or difficult to decode.""")
+SndHeaders.nchannels.__doc__ = ("""The number of channels or 0 if it cannot be
+determined or if the value is difficult to decode.""")
+SndHeaders.nframes.__doc__ = ("""The value for frames will be either the number
+of frames or -1.""")
+SndHeaders.sampwidth.__doc__ = ("""Either the sample size in bits or
+'A' for A-LAW or 'U' for u-LAW.""")
+
 def what(filename):
     """Guess the type of a sound file."""
     res = whathdr(filename)
