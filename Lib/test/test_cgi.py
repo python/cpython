@@ -326,6 +326,24 @@ Content-Type: text/plain
                 got = getattr(files[x], k)
                 self.assertEqual(got, exp)
 
+    def test_fieldstorage_part_content_length(self):
+        BOUNDARY = "JfISa01"
+        POSTDATA = """--JfISa01
+Content-Disposition: form-data; name="submit-name"
+Content-Length: 5
+
+Larry
+--JfISa01"""
+        env = {
+            'REQUEST_METHOD': 'POST',
+            'CONTENT_TYPE': 'multipart/form-data; boundary={}'.format(BOUNDARY),
+            'CONTENT_LENGTH': str(len(POSTDATA))}
+        fp = BytesIO(POSTDATA.encode('latin-1'))
+        fs = cgi.FieldStorage(fp, environ=env, encoding="latin-1")
+        self.assertEqual(len(fs.list), 1)
+        self.assertEqual(fs.list[0].name, 'submit-name')
+        self.assertEqual(fs.list[0].value, 'Larry')
+
     def test_fieldstorage_as_context_manager(self):
         fp = BytesIO(b'x' * 10)
         env = {'REQUEST_METHOD': 'PUT'}
