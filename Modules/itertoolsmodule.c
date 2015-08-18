@@ -1,17 +1,16 @@
 
 #define PY_SSIZE_T_CLEAN
-
 #include "Python.h"
 #include "structmember.h"
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
-   Copyright (c) 2003-2013 Python Software Foundation.
+   Copyright (c) 2003-2015 Python Software Foundation.
    All rights reserved.
 */
 
 
-/* groupby object ***********************************************************/
+/* groupby object ************************************************************/
 
 typedef struct {
     PyObject_HEAD
@@ -89,8 +88,7 @@ groupby_next(groupbyobject *gbo)
         else {
             int rcmp;
 
-            rcmp = PyObject_RichCompareBool(gbo->tgtkey,
-                                            gbo->currkey, Py_EQ);
+            rcmp = PyObject_RichCompareBool(gbo->tgtkey, gbo->currkey, Py_EQ);
             if (rcmp == -1)
                 return NULL;
             else if (rcmp == 0)
@@ -105,8 +103,7 @@ groupby_next(groupbyobject *gbo)
             newkey = newvalue;
             Py_INCREF(newvalue);
         } else {
-            newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc,
-                                                  newvalue, NULL);
+            newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc, newvalue, NULL);
             if (newkey == NULL) {
                 Py_DECREF(newvalue);
                 return NULL;
@@ -303,8 +300,7 @@ _grouper_next(_grouperobject *igo)
             newkey = newvalue;
             Py_INCREF(newvalue);
         } else {
-            newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc,
-                                                  newvalue, NULL);
+            newkey = PyObject_CallFunctionObjArgs(gbo->keyfunc, newvalue, NULL);
             if (newkey == NULL) {
                 Py_DECREF(newvalue);
                 return NULL;
@@ -332,8 +328,7 @@ _grouper_next(_grouperobject *igo)
 static PyObject *
 _grouper_reduce(_grouperobject *lz)
 {
-    return Py_BuildValue("O(OO)", Py_TYPE(lz),
-            lz->parent, lz->tgtkey);
+    return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->parent, lz->tgtkey);
 }
 
 static PyMethodDef _grouper_methods[] = {
@@ -387,8 +382,7 @@ static PyTypeObject _grouper_type = {
 };
 
 
-
-/* tee object and with supporting function and objects ***************/
+/* tee object and with supporting function and objects ***********************/
 
 /* The teedataobject pre-allocates space for LINKCELLS number of objects.
    To help the object fit neatly inside cache lines (space for 16 to 32
@@ -403,7 +397,7 @@ static PyTypeObject _grouper_type = {
 typedef struct {
     PyObject_HEAD
     PyObject *it;
-    int numread;  /* 0 <= numread <= LINKCELLS */
+    int numread;                /* 0 <= numread <= LINKCELLS */
     PyObject *nextlink;
     PyObject *(values[LINKCELLS]);
 } teedataobject;
@@ -411,7 +405,7 @@ typedef struct {
 typedef struct {
     PyObject_HEAD
     teedataobject *dataobj;
-    int index;    /* 0 <= index <= LINKCELLS */
+    int index;                  /* 0 <= index <= LINKCELLS */
     PyObject *weakreflist;
 } teeobject;
 
@@ -468,6 +462,7 @@ static int
 teedataobject_traverse(teedataobject *tdo, visitproc visit, void * arg)
 {
     int i;
+
     Py_VISIT(tdo->it);
     for (i = 0; i < tdo->numread; i++)
         Py_VISIT(tdo->values[i]);
@@ -517,6 +512,7 @@ teedataobject_reduce(teedataobject *tdo)
     int i;
     /* create a temporary list of already iterated values */
     PyObject *values = PyList_New(tdo->numread);
+
     if (!values)
         return NULL;
     for (i=0 ; i<tdo->numread ; i++) {
@@ -859,7 +855,7 @@ PyDoc_STRVAR(tee_doc,
 "tee(iterable, n=2) --> tuple of n independent iterators.");
 
 
-/* cycle object **********************************************************/
+/* cycle object **************************************************************/
 
 typedef struct {
     PyObject_HEAD
@@ -989,6 +985,7 @@ cycle_setstate(cycleobject *lz, PyObject *state)
 {
     PyObject *saved=NULL;
     int firstpass;
+
     if (!PyArg_ParseTuple(state, "O!i", &PyList_Type, &saved, &firstpass))
         return NULL;
     Py_INCREF(saved);
@@ -1064,7 +1061,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *func;
     PyObject *it;
-    long         start;
+    long start;
 } dropwhileobject;
 
 static PyTypeObject dropwhile_type;
@@ -1154,8 +1151,7 @@ dropwhile_next(dropwhileobject *lz)
 static PyObject *
 dropwhile_reduce(dropwhileobject *lz)
 {
-    return Py_BuildValue("O(OO)l", Py_TYPE(lz),
-                         lz->func, lz->it, lz->start);
+    return Py_BuildValue("O(OO)l", Py_TYPE(lz), lz->func, lz->it, lz->start);
 }
 
 static PyObject *
@@ -1233,7 +1229,7 @@ typedef struct {
     PyObject_HEAD
     PyObject *func;
     PyObject *it;
-    long         stop;
+    long stop;
 } takewhileobject;
 
 static PyTypeObject takewhile_type;
@@ -1308,7 +1304,7 @@ takewhile_next(takewhileobject *lz)
     }
     ok = PyObject_IsTrue(good);
     Py_DECREF(good);
-    if (ok == 1)
+    if (ok > 0)
         return item;
     Py_DECREF(item);
     if (ok == 0)
@@ -1319,14 +1315,14 @@ takewhile_next(takewhileobject *lz)
 static PyObject *
 takewhile_reduce(takewhileobject *lz)
 {
-    return Py_BuildValue("O(OO)l", Py_TYPE(lz),
-                         lz->func, lz->it, lz->stop);
+    return Py_BuildValue("O(OO)l", Py_TYPE(lz), lz->func, lz->it, lz->stop);
 }
 
 static PyObject *
 takewhile_reduce_setstate(takewhileobject *lz, PyObject *state)
 {
     int stop = PyObject_IsTrue(state);
+
     if (stop < 0)
         return NULL;
     lz->stop = stop;
@@ -1391,7 +1387,7 @@ static PyTypeObject takewhile_type = {
 };
 
 
-/* islice object ************************************************************/
+/* islice object *************************************************************/
 
 typedef struct {
     PyObject_HEAD
@@ -1549,6 +1545,7 @@ islice_reduce(isliceobject *lz)
      * then 'setstate' with the next and count
      */
     PyObject *stop;
+
     if (lz->it == NULL) {
         PyObject *empty_list;
         PyObject *empty_it;
@@ -1578,6 +1575,7 @@ static PyObject *
 islice_setstate(isliceobject *lz, PyObject *state)
 {
     Py_ssize_t cnt = PyLong_AsSsize_t(state);
+
     if (cnt == -1 && PyErr_Occurred())
         return NULL;
     lz->cnt = cnt;
@@ -1792,7 +1790,7 @@ static PyTypeObject starmap_type = {
 };
 
 
-/* chain object ************************************************************/
+/* chain object **************************************************************/
 
 typedef struct {
     PyObject_HEAD
@@ -1919,6 +1917,7 @@ static PyObject *
 chain_setstate(chainobject *lz, PyObject *state)
 {
     PyObject *source, *active=NULL;
+
     if (! PyArg_ParseTuple(state, "O|O", &source, &active))
         return NULL;
 
@@ -1945,8 +1944,8 @@ Alternate chain() contructor taking a single iterable argument\n\
 that evaluates lazily.");
 
 static PyMethodDef chain_methods[] = {
-    {"from_iterable", (PyCFunction) chain_new_from_iterable,            METH_O | METH_CLASS,
-        chain_from_iterable_doc},
+    {"from_iterable", (PyCFunction) chain_new_from_iterable, METH_O | METH_CLASS,
+     chain_from_iterable_doc},
     {"__reduce__",      (PyCFunction)chain_reduce,      METH_NOARGS,
      reduce_doc},
     {"__setstate__",    (PyCFunction)chain_setstate,    METH_O,
@@ -2003,10 +2002,10 @@ static PyTypeObject chain_type = {
 
 typedef struct {
     PyObject_HEAD
-    PyObject *pools;                /* tuple of pool tuples */
-    Py_ssize_t *indices;            /* one index per pool */
-    PyObject *result;               /* most recently returned result tuple */
-    int stopped;                    /* set to 1 when the product iterator is exhausted */
+    PyObject *pools;        /* tuple of pool tuples */
+    Py_ssize_t *indices;    /* one index per pool */
+    PyObject *result;       /* most recently returned result tuple */
+    int stopped;            /* set to 1 when the iterator is exhausted */
 } productobject;
 
 static PyTypeObject product_type;
@@ -2025,7 +2024,8 @@ product_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         PyObject *tmpargs = PyTuple_New(0);
         if (tmpargs == NULL)
             return NULL;
-        if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|n:product", kwlist, &repeat)) {
+        if (!PyArg_ParseTupleAndKeywords(tmpargs, kwds, "|n:product",
+                                         kwlist, &repeat)) {
             Py_DECREF(tmpargs);
             return NULL;
         }
@@ -2349,15 +2349,15 @@ static PyTypeObject product_type = {
 };
 
 
-/* combinations object ************************************************************/
+/* combinations object *******************************************************/
 
 typedef struct {
     PyObject_HEAD
-    PyObject *pool;                     /* input converted to a tuple */
-    Py_ssize_t *indices;                /* one index per result element */
-    PyObject *result;                   /* most recently returned result tuple */
-    Py_ssize_t r;                       /* size of result tuple */
-    int stopped;                        /* set to 1 when the combinations iterator is exhausted */
+    PyObject *pool;         /* input converted to a tuple */
+    Py_ssize_t *indices;    /* one index per result element */
+    PyObject *result;       /* most recently returned result tuple */
+    Py_ssize_t r;           /* size of result tuple */
+    int stopped;            /* set to 1 when the iterator is exhausted */
 } combinationsobject;
 
 static PyTypeObject combinations_type;
@@ -2567,17 +2567,16 @@ combinations_setstate(combinationsobject *lz, PyObject *state)
     Py_ssize_t i;
     Py_ssize_t n = PyTuple_GET_SIZE(lz->pool);
 
-    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) != lz->r)
-    {
+    if (!PyTuple_Check(state) || PyTuple_GET_SIZE(state) != lz->r) {
         PyErr_SetString(PyExc_ValueError, "invalid arguments");
         return NULL;
     }
 
-    for (i=0; i<lz->r; i++)
-    {
+    for (i=0; i<lz->r; i++) {
         Py_ssize_t max;
         PyObject* indexObject = PyTuple_GET_ITEM(state, i);
         Py_ssize_t index = PyLong_AsSsize_t(indexObject);
+
         if (index == -1 && PyErr_Occurred())
             return NULL; /* not an integer */
         max = i + n - lz->r;
@@ -2664,7 +2663,7 @@ static PyTypeObject combinations_type = {
 };
 
 
-/* combinations with replacement object *******************************************/
+/* combinations with replacement object **************************************/
 
 /* Equivalent to:
 
@@ -2694,11 +2693,11 @@ static PyTypeObject combinations_type = {
 */
 typedef struct {
     PyObject_HEAD
-    PyObject *pool;                     /* input converted to a tuple */
-    Py_ssize_t *indices;                /* one index per result element */
-    PyObject *result;                   /* most recently returned result tuple */
-    Py_ssize_t r;                       /* size of result tuple */
-    int stopped;                        /* set to 1 when the cwr iterator is exhausted */
+    PyObject *pool;         /* input converted to a tuple */
+    Py_ssize_t *indices;    /* one index per result element */
+    PyObject *result;       /* most recently returned result tuple */
+    Py_ssize_t r;           /* size of result tuple */
+    int stopped;            /* set to 1 when the cwr iterator is exhausted */
 } cwrobject;
 
 static PyTypeObject cwr_type;
@@ -2715,8 +2714,9 @@ cwr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     Py_ssize_t i;
     static char *kwargs[] = {"iterable", "r", NULL};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "On:combinations_with_replacement", kwargs,
-                                     &iterable, &r))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds,
+                                     "On:combinations_with_replacement",
+                                     kwargs, &iterable, &r))
         return NULL;
 
     pool = PySequence_Tuple(iterable);
@@ -2881,8 +2881,7 @@ cwr_reduce(cwrobject *lz)
         indices = PyTuple_New(lz->r);
         if (!indices)
             return NULL;
-        for (i=0; i<lz->r; i++)
-        {
+        for (i=0; i<lz->r; i++) {
             PyObject* index = PyLong_FromSsize_t(lz->indices[i]);
             if (!index) {
                 Py_DECREF(indices);
@@ -2908,10 +2907,10 @@ cwr_setstate(cwrobject *lz, PyObject *state)
     }
 
     n = PyTuple_GET_SIZE(lz->pool);
-    for (i=0; i<lz->r; i++)
-    {
+    for (i=0; i<lz->r; i++) {
         PyObject* indexObject = PyTuple_GET_ITEM(state, i);
         Py_ssize_t index = PyLong_AsSsize_t(indexObject);
+
         if (index < 0 && PyErr_Occurred())
             return NULL; /* not an integer */
         /* clamp the index */
@@ -2996,7 +2995,7 @@ static PyTypeObject cwr_type = {
 };
 
 
-/* permutations object ************************************************************
+/* permutations object ********************************************************
 
 def permutations(iterable, r=None):
     'permutations(range(3), 2) --> (0,1) (0,2) (1,0) (1,2) (2,0) (2,1)'
@@ -3023,12 +3022,12 @@ def permutations(iterable, r=None):
 
 typedef struct {
     PyObject_HEAD
-    PyObject *pool;                     /* input converted to a tuple */
-    Py_ssize_t *indices;            /* one index per element in the pool */
-    Py_ssize_t *cycles;                 /* one rollover counter per element in the result */
-    PyObject *result;               /* most recently returned result tuple */
-    Py_ssize_t r;                       /* size of result tuple */
-    int stopped;                        /* set to 1 when the permutations iterator is exhausted */
+    PyObject *pool;         /* input converted to a tuple */
+    Py_ssize_t *indices;    /* one index per element in the pool */
+    Py_ssize_t *cycles;     /* one rollover counter per element in the result */
+    PyObject *result;       /* most recently returned result tuple */
+    Py_ssize_t r;           /* size of result tuple */
+    int stopped;            /* set to 1 when the iterator is exhausted */
 } permutationsobject;
 
 static PyTypeObject permutations_type;
@@ -3243,7 +3242,7 @@ permutations_reduce(permutationsobject *po)
         indices = PyTuple_New(n);
         if (indices == NULL)
             goto err;
-        for (i=0; i<n; i++){
+        for (i=0; i<n; i++) {
             PyObject* index = PyLong_FromSsize_t(po->indices[i]);
             if (!index)
                 goto err;
@@ -3253,8 +3252,7 @@ permutations_reduce(permutationsobject *po)
         cycles = PyTuple_New(po->r);
         if (cycles == NULL)
             goto err;
-        for (i=0; i<po->r; i++)
-        {
+        for (i=0 ; i<po->r ; i++) {
             PyObject* index = PyLong_FromSsize_t(po->cycles[i]);
             if (!index)
                 goto err;
@@ -3282,15 +3280,12 @@ permutations_setstate(permutationsobject *po, PyObject *state)
         return NULL;
 
     n = PyTuple_GET_SIZE(po->pool);
-    if (PyTuple_GET_SIZE(indices) != n ||
-        PyTuple_GET_SIZE(cycles) != po->r)
-    {
+    if (PyTuple_GET_SIZE(indices) != n || PyTuple_GET_SIZE(cycles) != po->r) {
         PyErr_SetString(PyExc_ValueError, "invalid arguments");
         return NULL;
     }
 
-    for (i=0; i<n; i++)
-    {
+    for (i=0; i<n; i++) {
         PyObject* indexObject = PyTuple_GET_ITEM(indices, i);
         Py_ssize_t index = PyLong_AsSsize_t(indexObject);
         if (index < 0 && PyErr_Occurred())
@@ -3303,8 +3298,7 @@ permutations_setstate(permutationsobject *po, PyObject *state)
         po->indices[i] = index;
     }
 
-    for (i=0; i<po->r; i++)
-    {
+    for (i=0; i<po->r; i++) {
         PyObject* indexObject = PyTuple_GET_ITEM(cycles, i);
         Py_ssize_t index = PyLong_AsSsize_t(indexObject);
         if (index < 0 && PyErr_Occurred())
@@ -3388,7 +3382,7 @@ static PyTypeObject permutations_type = {
     PyObject_GC_Del,                    /* tp_free */
 };
 
-/* accumulate object ************************************************************/
+/* accumulate object ********************************************************/
 
 typedef struct {
     PyObject_HEAD
@@ -3489,7 +3483,7 @@ accumulate_reduce(accumulateobject *lz)
     return Py_BuildValue("O(OO)O", Py_TYPE(lz),
                             lz->it, lz->binop?lz->binop:Py_None,
                             lz->total?lz->total:Py_None);
- }
+}
 
 static PyObject *
 accumulate_setstate(accumulateobject *lz, PyObject *state)
@@ -3652,7 +3646,7 @@ compress_next(compressobject *lz)
 
         ok = PyObject_IsTrue(selector);
         Py_DECREF(selector);
-        if (ok == 1)
+        if (ok > 0)
             return datum;
         Py_DECREF(datum);
         if (ok < 0)
@@ -3665,7 +3659,7 @@ compress_reduce(compressobject *lz)
 {
     return Py_BuildValue("O(OO)", Py_TYPE(lz),
         lz->data, lz->selectors);
-    }
+}
 
 static PyMethodDef compress_methods[] = {
     {"__reduce__",      (PyCFunction)compress_reduce,      METH_NOARGS,
@@ -3821,9 +3815,8 @@ filterfalse_next(filterfalseobject *lz)
 static PyObject *
 filterfalse_reduce(filterfalseobject *lz)
 {
-    return Py_BuildValue("O(OO)", Py_TYPE(lz),
-        lz->func, lz->it);
-    }
+    return Py_BuildValue("O(OO)", Py_TYPE(lz), lz->func, lz->it);
+}
 
 static PyMethodDef filterfalse_methods[] = {
     {"__reduce__",      (PyCFunction)filterfalse_reduce,      METH_NOARGS,
@@ -4274,9 +4267,7 @@ static PyTypeObject repeat_type = {
     PyObject_GC_Del,                    /* tp_free */
 };
 
-/* ziplongest object ************************************************************/
-
-#include "Python.h"
+/* ziplongest object *********************************************************/
 
 typedef struct {
     PyObject_HEAD
@@ -4315,7 +4306,7 @@ zip_longest_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     ittuple = PyTuple_New(tuplesize);
     if (ittuple == NULL)
         return NULL;
-    for (i=0; i < tuplesize; ++i) {
+    for (i=0; i < tuplesize; i++) {
         PyObject *item = PyTuple_GET_ITEM(args, i);
         PyObject *it = PyObject_GetIter(item);
         if (it == NULL) {
@@ -4456,6 +4447,7 @@ zip_longest_reduce(ziplongestobject *lz)
      */
     int i;
     PyObject *args = PyTuple_New(PyTuple_GET_SIZE(lz->ittuple));
+
     if (args == NULL)
         return NULL;
     for (i=0; i<PyTuple_GET_SIZE(lz->ittuple); i++) {
