@@ -1164,7 +1164,8 @@ map_next(mapobject *lz)
         return NULL;
 
     for (i=0 ; i<numargs ; i++) {
-        val = PyIter_Next(PyTuple_GET_ITEM(lz->iters, i));
+        PyObject *it = PyTuple_GET_ITEM(lz->iters, i);
+        val = Py_TYPE(it)->tp_iternext(it);
         if (val == NULL) {
             Py_DECREF(argtuple);
             return NULL;
