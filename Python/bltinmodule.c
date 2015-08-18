@@ -1158,7 +1158,7 @@ map_next(mapobject *lz)
     PyObject *result;
     Py_ssize_t numargs, i;
 
-    numargs = PyTuple_Size(lz->iters);
+    numargs = PyTuple_GET_SIZE(lz->iters);
     argtuple = PyTuple_New(numargs);
     if (argtuple == NULL)
         return NULL;
