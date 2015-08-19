@@ -4,6 +4,7 @@ import linecache
 import unittest
 import os.path
 import tempfile
+import tokenize
 from test import support
 
 
@@ -54,7 +55,7 @@ class GetLineTestsGoodData(TempFile):
         super().setUp()
 
     def test_getline(self):
-        with open(self.file_name) as fp:
+        with tokenize.open(self.file_name) as fp:
             for index, line in enumerate(fp):
                 if not line.endswith('\n'):
                     line += '\n'
