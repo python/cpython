@@ -209,6 +209,18 @@ def classify_class_attrs(object):
         results.append((name, kind, cls, value))
     return results
 
+def sort_attributes(attrs, object):
+    'Sort the attrs list in-place by _fields and then alphabetically by name'
+    # This allows data descriptors to be ordered according
+    # to a _fields attribute if present.
+    fields = getattr(object, '_fields', [])
+    try:
+        field_order = {name : i-len(fields) for (i, name) in enumerate(fields)}
+    except TypeError:
+        field_order = {}
+    keyfunc = lambda attr: (field_order.get(attr[0], 0), attr[0])
+    attrs.sort(key=keyfunc)
+
 # ----------------------------------------------------- module manipulation
 
 def ispackage(path):
@@ -867,8 +879,7 @@ class HTMLDoc(Doc):
                                                            object.__module__)
             tag += ':<br>\n'
 
-            # Sort attrs by name.
-            attrs.sort(key=lambda t: t[0])
+            sort_attributes(attrs, object)
 
             # Pump out the attrs, segregated by kind.
             attrs = spill('Methods %s' % tag, attrs,
@@ -1286,8 +1297,8 @@ location listed above.
             else:
                 tag = "inherited from %s" % classname(thisclass,
                                                       object.__module__)
-            # Sort attrs by name.
-            attrs.sort()
+
+            sort_attributes(attrs, object)
 
             # Pump out the attrs, segregated by kind.
             attrs = spill("Methods %s:\n" % tag, attrs,
