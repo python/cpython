@@ -26,6 +26,10 @@ Library
   header in part headers. Patch written by Peter Landry and reviewed by Pierre
   Quentel.
 
+- Issue #24879:  help() and pydoc can now list named tuple fields in the
+  order they were defined rather than alphabetically.  The ordering is
+  determined by the _fields attribute if present.
+
 - Issue #24774: Fix docstring in http.server.test. Patch from Chiu-Hsiang Hsu.
 
 - Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
