@@ -57,7 +57,7 @@ for %%e in (
             openssl-1.0.2d
             tcl-core-8.6.4.2
             tk-8.6.4.2
-            tix-8.4.3.5
+            tix-8.4.3.6
             sqlite-3.8.11.0
             xz-5.0.5
             ) do (
