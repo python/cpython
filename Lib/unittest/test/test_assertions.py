@@ -133,7 +133,6 @@ class Test_Assertions(unittest.TestCase):
         try:
             self.assertNotRegex('Ala ma kota', r'k.t', 'Message')
         except self.failureException as e:
-            self.assertIn("'kot'", e.args[0])
             self.assertIn('Message', e.args[0])
         else:
             self.fail('assertNotRegex should have failed.')
@@ -328,6 +327,20 @@ class TestLongMessage(unittest.TestCase):
                             ["^unexpectedly identical: None$", "^oops$",
                              "^unexpectedly identical: None$",
                              "^unexpectedly identical: None : oops$"])
+
+    def testAssertRegex(self):
+        self.assertMessages('assertRegex', ('foo', 'bar'),
+                            ["^Regex didn't match:",
+                             "^oops$",
+                             "^Regex didn't match:",
+                             "^Regex didn't match: (.*) : oops$"])
+
+    def testAssertNotRegex(self):
+        self.assertMessages('assertNotRegex', ('foo', 'foo'),
+                            ["^Regex matched:",
+                             "^oops$",
+                             "^Regex matched:",
+                             "^Regex matched: (.*) : oops$"])
 
 
     def assertMessagesCM(self, methodName, args, func, errors):
