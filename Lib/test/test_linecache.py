@@ -3,6 +3,7 @@
 import linecache
 import unittest
 import os.path
+import tempfile
 from test import support
 
 
@@ -10,8 +11,6 @@ FILENAME = linecache.__file__
 NONEXISTENT_FILENAME = FILENAME + '.missing'
 INVALID_NAME = '!@$)(!@#_1'
 EMPTY = ''
-TESTS = 'inspect_fodder inspect_fodder2 mapping_tests'
-TESTS = TESTS.split()
 TEST_PATH = os.path.dirname(__file__)
 MODULES = "linecache abc".split()
 MODULE_PATH = os.path.dirname(FILENAME)
@@ -37,6 +36,65 @@ def f():
     return 3''' # No ending newline
 
 
+class TempFile:
+
+    def setUp(self):
+        super().setUp()
+        with tempfile.NamedTemporaryFile(delete=False) as fp:
+            self.file_name = fp.name
+            fp.write(self.file_byte_string)
+        self.addCleanup(support.unlink, self.file_name)
+
+
+class GetLineTestsGoodData(TempFile):
+    # file_list   = ['list\n', 'of\n', 'good\n', 'strings\n']
+
+    def setUp(self):
+        self.file_byte_string = ''.join(self.file_list).encode('utf-8')
+        super().setUp()
+
+    def test_getline(self):
+        with open(self.file_name) as fp:
+            for index, line in enumerate(fp):
+                if not line.endswith('\n'):
+                    line += '\n'
+
+                cached_line = linecache.getline(self.file_name, index + 1)
+                self.assertEqual(line, cached_line)
+
+    def test_getlines(self):
+        lines = linecache.getlines(self.file_name)
+        self.assertEqual(lines, self.file_list)
+
+
+class GetLineTestsBadData(TempFile):
+    # file_byte_string = b'Bad data goes here'
+
+    def test_getline(self):
+        self.assertRaises((SyntaxError, UnicodeDecodeError),
+                          linecache.getline, self.file_name, 1)
+
+    def test_getlines(self):
+        self.assertRaises((SyntaxError, UnicodeDecodeError),
+                          linecache.getlines, self.file_name)
+
+
+class EmptyFile(GetLineTestsGoodData, unittest.TestCase):
+    file_list = []
+
+
+class SingleEmptyLine(GetLineTestsGoodData, unittest.TestCase):
+    file_list = ['\n']
+
+
+class GoodUnicode(GetLineTestsGoodData, unittest.TestCase):
+    file_list = ['á\n', 'b\n', 'abcdef\n', 'ááááá\n']
+
+
+class BadUnicode(GetLineTestsBadData, unittest.TestCase):
+    file_byte_string = b'\x80abc'
+
+
 class LineCacheTests(unittest.TestCase):
 
     def test_getline(self):
@@ -52,13 +110,6 @@ class LineCacheTests(unittest.TestCase):
         # Bad filenames should return an empty string
         self.assertEqual(getline(EMPTY, 1), EMPTY)
         self.assertEqual(getline(INVALID_NAME, 1), EMPTY)
-
-        # Check whether lines correspond to those from file iteration
-        for entry in TESTS:
-            filename = os.path.join(TEST_PATH, entry) + '.py'
-            with open(filename) as file:
-                for index, line in enumerate(file):
-                    self.assertEqual(line, getline(filename, index + 1))
 
         # Check module loading
         for entry in MODULES:
@@ -80,12 +131,13 @@ class LineCacheTests(unittest.TestCase):
 
     def test_clearcache(self):
         cached = []
-        for entry in TESTS:
-            filename = os.path.join(TEST_PATH, entry) + '.py'
+        for entry in MODULES:
+            filename = os.path.join(MODULE_PATH, entry) + '.py'
             cached.append(filename)
             linecache.getline(filename, 1)
 
         # Are all files cached?
+        self.assertNotEqual(cached, [])
         cached_empty = [fn for fn in cached if fn not in linecache.cache]
         self.assertEqual(cached_empty, [])
 
