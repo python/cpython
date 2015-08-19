@@ -92,11 +92,11 @@ the :mod:`glob` module.)
 
       ::
 
-        >>> os.path.commonprefix(['/dir1/dir2', '/dir3/dir4'])
-        '/dir'
+        >>> os.path.commonprefix(['/usr/lib', '/usr/local/lib'])
+        '/usr/l'
 
-        >>> os.path.commonpath(['/dir1/dir2', '/dir3/dir4'])
-        '/'
+        >>> os.path.commonpath(['/usr/lib', '/usr/local/lib'])
+        '/usr'
 
 
 .. function:: dirname(path)
