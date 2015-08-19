@@ -811,6 +811,22 @@ class TestDescriptions(unittest.TestCase):
         self.assertEqual(self._get_summary_line(t.wrap),
             "wrap(text) method of textwrap.TextWrapper instance")
 
+    def test_field_order_for_named_tuples(self):
+        Person = namedtuple('Person', ['nickname', 'firstname', 'agegroup'])
+        s = pydoc.render_doc(Person)
+        self.assertLess(s.index('nickname'), s.index('firstname'))
+        self.assertLess(s.index('firstname'), s.index('agegroup'))
+
+        class NonIterableFields:
+            _fields = None
+
+        class NonHashableFields:
+            _fields = [[]]
+
+        # Make sure these doesn't fail
+        pydoc.render_doc(NonIterableFields)
+        pydoc.render_doc(NonHashableFields)
+
     @requires_docstrings
     def test_bound_builtin_method(self):
         s = StringIO()
