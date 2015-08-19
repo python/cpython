@@ -405,6 +405,7 @@ class HTTPResponse(io.BufferedIOBase):
             self.fp.flush()
 
     def readable(self):
+        """Always returns True"""
         return True
 
     # End of "raw stream" methods
@@ -452,6 +453,10 @@ class HTTPResponse(io.BufferedIOBase):
             return s
 
     def readinto(self, b):
+        """Read up to len(b) bytes into bytearray b and return the number
+        of bytes read.
+        """
+
         if self.fp is None:
             return 0
 
@@ -683,6 +688,17 @@ class HTTPResponse(io.BufferedIOBase):
         return self.fp.fileno()
 
     def getheader(self, name, default=None):
+        '''Returns the value of the header matching *name*.
+
+        If there are multiple matching headers, the values are
+        combined into a single string separated by commas and spaces.
+
+        If no matching header is found, returns *default* or None if
+        the *default* is not specified.
+
+        If the headers are unknown, raises http.client.ResponseNotReady.
+
+        '''
         if self.headers is None:
             raise ResponseNotReady()
         headers = self.headers.get_all(name) or default
@@ -705,12 +721,45 @@ class HTTPResponse(io.BufferedIOBase):
     # For compatibility with old-style urllib responses.
 
     def info(self):
+        '''Returns an instance of the class mimetools.Message containing
+        meta-information associated with the URL.
+
+        When the method is HTTP, these headers are those returned by
+        the server at the head of the retrieved HTML page (including
+        Content-Length and Content-Type).
+
+        When the method is FTP, a Content-Length header will be
+        present if (as is now usual) the server passed back a file
+        length in response to the FTP retrieval request. A
+        Content-Type header will be present if the MIME type can be
+        guessed.
+
+        When the method is local-file, returned headers will include
+        a Date representing the file’s last-modified time, a
+        Content-Length giving file size, and a Content-Type
+        containing a guess at the file’s type. See also the
+        description of the mimetools module.
+
+        '''
         return self.headers
 
     def geturl(self):
+        '''Return the real URL of the page.
+
+        In some cases, the HTTP server redirects a client to another
+        URL. The urlopen() function handles this transparently, but in
+        some cases the caller needs to know which URL the client was
+        redirected to. The geturl() method can be used to get at this
+        redirected URL.
+
+        '''
         return self.url
 
     def getcode(self):
+        '''Return the HTTP status code that was sent with the response,
+        or None if the URL is not an HTTP URL.
+
+        '''
         return self.status
 
 class HTTPConnection:
