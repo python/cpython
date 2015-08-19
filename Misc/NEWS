@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20362: Honour TestCase.longMessage correctly in assertRegex.
+  Patch from Ilia Kurenkov.
+
 - Issue #24847: Removes vcruntime140.dll dependency from Tcl/Tk.
 
 - Issue #23572: Fixed functools.singledispatch on classes with falsy
