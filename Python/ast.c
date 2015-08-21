@@ -511,7 +511,7 @@ PyAST_Validate(mod_ty mod)
 /* Data structure used internally */
 struct compiling {
     char *c_encoding; /* source encoding */
-    PyArena *c_arena; /* arena for allocating memeory */
+    PyArena *c_arena; /* Arena for allocating memory. */
     PyObject *c_filename; /* filename */
     PyObject *c_normalize; /* Normalization function from unicodedata. */
     PyObject *c_normalize_args; /* Normalization argument tuple. */
