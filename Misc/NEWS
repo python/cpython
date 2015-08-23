@@ -22,6 +22,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24633: site-packages/README -> README.txt.
+
 - Issue #20362: Honour TestCase.longMessage correctly in assertRegex.
   Patch from Ilia Kurenkov.
 
