@@ -258,12 +258,13 @@ _aifc_params = namedtuple('_aifc_params',
                           'nchannels sampwidth framerate nframes comptype compname')
 
 _aifc_params.nchannels.__doc__ = 'Number of audio channels (1 for mono, 2 for stereo)'
-_aifc_params.sampwidth.__doc__ = 'Ample width in bytes'
+_aifc_params.sampwidth.__doc__ = 'Sample width in bytes'
 _aifc_params.framerate.__doc__ = 'Sampling frequency'
 _aifc_params.nframes.__doc__ = 'Number of audio frames'
 _aifc_params.comptype.__doc__ = 'Compression type ("NONE" for AIFF files)'
-_aifc_params.compname.__doc__ = ("""A human-readable version ofcompression type
-('not compressed' for AIFF files)'""")
+_aifc_params.compname.__doc__ = ("""\
+A human-readable version of the compression type
+('not compressed' for AIFF files)""")
 
 
 class Aifc_read:
