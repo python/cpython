@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22812: Fix unittest discovery examples.
+  Patch from Pam McA'Nulty.
+
 - Issue #23652: Make it possible to compile the select module against the
   libc headers from the Linux Standard Base, which do not include some
   EPOLL macros.  Initial patch by Matt Frank.
