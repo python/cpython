@@ -449,6 +449,9 @@ C API
 Documentation
 -------------
 
+- Issue #22812: Fix unittest discovery examples.
+  Patch from Pam McA'Nulty.
+
 - Issue #24129: Clarify the reference documentation for name resolution.
   This includes removing the assumption that readers will be familiar with the
   name resolution scheme Python used prior to the introduction of lexical
