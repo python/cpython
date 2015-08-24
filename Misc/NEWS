@@ -129,6 +129,9 @@ IDLE
 Documentation
 -------------
 
+- Issue #22812: Fix unittest discovery examples.
+  Patch from Pam McA'Nulty.
+
 - Issue #23725: Overhaul tempfile docs. Note deprecated status of mktemp.
   Patch from Zbigniew Jędrzejewski-Szmek.
 
