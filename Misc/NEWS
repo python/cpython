@@ -10,6 +10,9 @@ Release date: 2015-08-23
 Core and Builtins
 -----------------
 
+- Issue #21167: NAN operations are now handled correctly when python is
+  compiled with ICC even if -fp-model strict is not specified.
+
 Library
 -------
 
