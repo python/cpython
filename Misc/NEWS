@@ -16,6 +16,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24847: Removes vcruntime140.dll dependency from Tcl/Tk.
+
 - Issue #24839: platform._syscmd_ver raises DeprecationWarning
 
 What's New in Python 3.5.0 release candidate 1?

@@ -5,7 +5,7 @@
     <TclMajorVersion>8</TclMajorVersion>
     <TclMinorVersion>6</TclMinorVersion>
     <TclPatchLevel>4</TclPatchLevel>
-    <TclRevision>1</TclRevision>
+    <TclRevision>2</TclRevision>
     <TkMajorVersion>$(TclMajorVersion)</TkMajorVersion>
     <TkMinorVersion>$(TclMinorVersion)</TkMinorVersion>
     <TkPatchLevel>$(TclPatchLevel)</TkPatchLevel>
@@ -13,7 +13,7 @@
     <TixMajorVersion>8</TixMajorVersion>
     <TixMinorVersion>4</TixMinorVersion>
     <TixPatchLevel>3</TixPatchLevel>
-    <TixRevision>4</TixRevision>
+    <TixRevision>6</TixRevision>
     <tclDir>$(ExternalsDir)tcl-core-$(TclMajorVersion).$(TclMinorVersion).$(TclPatchLevel).$(TclRevision)\</tclDir>
     <tkDir>$(ExternalsDir)tk-$(TkMajorVersion).$(TkMinorVersion).$(TkPatchLevel).$(TkRevision)\</tkDir>
     <tixDir>$(ExternalsDir)tix-$(TixMajorVersion).$(TixMinorVersion).$(TixPatchLevel).$(TixRevision)\</tixDir>
