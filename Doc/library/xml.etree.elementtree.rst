@@ -600,21 +600,29 @@ Element Objects
 
 
    .. attribute:: text
+                  tail
 
-      The *text* attribute can be used to hold additional data associated with
-      the element.  As the name implies this attribute is usually a string but
-      may be any application-specific object.  If the element is created from
-      an XML file the attribute will contain any text found between the element
-      tags.
+      These attributes can be used to hold additional data associated with
+      the element.  Their values are usually strings but may be any
+      application-specific object.  If the element is created from
+      an XML file, the *text* attribute holds either the text between
+      the element's start tag and its first child or end tag, or ``None``, and
+      the *tail* attribute holds either the text between the element's
+      end tag and the next tag, or ``None``.  For the XML data
 
+      .. code-block:: xml
 
-   .. attribute:: tail
+         <a><b>1<c>2<d/>3</c></b>4</a>
 
-      The *tail* attribute can be used to hold additional data associated with
-      the element.  This attribute is usually a string but may be any
-      application-specific object.  If the element is created from an XML file
-      the attribute will contain any text found after the element's end tag and
-      before the next tag.
+      the *a* element has ``None`` for both *text* and *tail* attributes,
+      the *b* element has *text* ``"1"`` and *tail* ``"4"``,
+      the *c* element has *text* ``"2"`` and *tail* ``None``,
+      and the *d* element has *text* ``None`` and *tail* ``"3"``.
+
+      To collect the inner text of an element, see :meth:`itertext`, for
+      example ``"".join(element.itertext())``.
+
+      Applications may store arbitrary objects in these attributes.
 
 
    .. attribute:: attrib

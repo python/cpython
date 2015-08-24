@@ -624,14 +624,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for time, test in test_times[:10]:
             print "%s: %.1fs" % (test, time)
     if bad:
-        bad = set(bad) - set(environment_changed)
-        if bad:
-            print count(len(bad), "test"), "failed:"
-            printlist(bad)
-        if environment_changed:
-            print "{} altered the execution environment:".format(
-                count(len(environment_changed), "test"))
-            printlist(environment_changed)
+        print count(len(bad), "test"), "failed:"
+        printlist(bad)
+    if environment_changed:
+        print "{} altered the execution environment:".format(
+            count(len(environment_changed), "test"))
+        printlist(environment_changed)
     if skipped and not quiet:
         print count(len(skipped), "test"), "skipped:"
         printlist(skipped)
