@@ -729,7 +729,7 @@ os.path
 
 * New :func:`~os.path.commonpath` function that extracts common path prefix.
   Unlike the :func:`~os.path.commonprefix` function, it always returns a valid
-  patch.  (Contributed by Rafik Draoui and Serhiy Storchaka in :issue:`10395`.)
+  path.  (Contributed by Rafik Draoui and Serhiy Storchaka in :issue:`10395`.)
 
 pickle
 ------
