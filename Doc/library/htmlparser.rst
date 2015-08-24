@@ -201,7 +201,7 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
 
    The content of Internet Explorer conditional comments (condcoms) will also be
    sent to this method, so, for ``<!--[if IE 9]>IE9-specific content<![endif]-->``,
-   this method will receive ``'[if IE 9]>IE-specific content<![endif]'``.
+   this method will receive ``'[if IE 9]>IE9-specific content<![endif]'``.
 
 
 .. method:: HTMLParser.handle_decl(decl)
