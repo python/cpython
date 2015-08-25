@@ -103,7 +103,7 @@ IDLE
 - Issue #23672: Allow Idle to edit and run files with astral chars in name.
   Patch by Mohd Sanad Zaki Rizvi.
 
-- Issue 24745: Idle editor default font. Switch from Courier to
+- Issue #24745: Idle editor default font. Switch from Courier to
   platform-sensitive TkFixedFont.  This should not affect current customized
   font selections.  If there is a problem, edit $HOME/.idlerc/config-main.cfg
   and remove 'fontxxx' entries from [Editor Window].  Patch by Mark Roseman.
@@ -434,14 +434,14 @@ Library
 - Issue #14373: Added C implementation of functools.lru_cache().  Based on
   patches by Matt Joiner and Alexey Kachayev.
 
-- Issue 24230: The tempfile module now accepts bytes for prefix, suffix and dir
+- Issue #24230: The tempfile module now accepts bytes for prefix, suffix and dir
   parameters and returns bytes in such situations (matching the os module APIs).
 
 - Issue #22189: collections.UserString now supports __getnewargs__(),
   __rmod__(), casefold(), format_map(), isprintable(), and maketrans().
   Patch by Joe Jevnik.
 
-- Issue 24244: Prevents termination when an invalid format string is
+- Issue #24244: Prevents termination when an invalid format string is
   encountered on Windows in strftime.
 
 - Issue #23973: PEP 484: Add the typing module.
@@ -579,26 +579,26 @@ Library
 
 - asyncio: async() function is deprecated in favour of ensure_future().
 
-- Issue 24178: asyncio.Lock, Condition, Semaphore, and BoundedSemaphore
+- Issue #24178: asyncio.Lock, Condition, Semaphore, and BoundedSemaphore
   support new 'async with' syntax.  Contributed by Yury Selivanov.
 
-- Issue 24179: Support 'async for' for asyncio.StreamReader.
+- Issue #24179: Support 'async for' for asyncio.StreamReader.
   Contributed by Yury Selivanov.
 
-- Issue 24184: Add AsyncIterator and AsyncIterable ABCs to
+- Issue #24184: Add AsyncIterator and AsyncIterable ABCs to
   collections.abc.  Contributed by Yury Selivanov.
 
-- Issue 22547: Implement informative __repr__ for inspect.BoundArguments.
+- Issue #22547: Implement informative __repr__ for inspect.BoundArguments.
   Contributed by Yury Selivanov.
 
-- Issue 24190: Implement inspect.BoundArgument.apply_defaults() method.
+- Issue #24190: Implement inspect.BoundArgument.apply_defaults() method.
   Contributed by Yury Selivanov.
 
-- Issue 20691: Add 'follow_wrapped' argument to
+- Issue #20691: Add 'follow_wrapped' argument to
   inspect.Signature.from_callable() and inspect.signature().
   Contributed by Yury Selivanov.
 
-- Issue 24248: Deprecate inspect.Signature.from_function() and
+- Issue #24248: Deprecate inspect.Signature.from_function() and
   inspect.Signature.from_builtin().
 
 - Issue #23898: Fix inspect.classify_class_attrs() to support attributes
@@ -700,7 +700,7 @@ Library
 
 - Issue #4254: Adds _curses.update_lines_cols() Patch by Arnon Yaari
 
-- Issue 19933: Provide default argument for ndigits in round. Patch by
+- Issue #19933: Provide default argument for ndigits in round. Patch by
   Vajrasky Kok.
 
 - Issue #23193: Add a numeric_owner parameter to
@@ -2516,7 +2516,7 @@ Library
 - Issue #13936: Remove the ability of datetime.time instances to be considered
   false in boolean contexts.
 
-- Issue 18931: selectors module now supports /dev/poll on Solaris.
+- Issue #18931: selectors module now supports /dev/poll on Solaris.
   Patch by Giampaolo Rodola'.
 
 - Issue #19977: When the ``LC_TYPE`` locale is the POSIX locale (``C`` locale),
