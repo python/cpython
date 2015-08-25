@@ -94,7 +94,7 @@ type objects) *must* have the :attr:`ob_size` field.
    This field is not inherited by subtypes.
 
 
-.. c:member:: char* PyTypeObject.tp_name
+.. c:member:: const char* PyTypeObject.tp_name
 
    Pointer to a NUL-terminated string containing the name of the type. For types
    that are accessible as module globals, the string should be the full module
@@ -372,7 +372,7 @@ type objects) *must* have the :attr:`ob_size` field.
    inherited individually.
 
 
-.. c:member:: long PyTypeObject.tp_flags
+.. c:member:: unsigned long PyTypeObject.tp_flags
 
    This field is a bit mask of various flags.  Some flags indicate variant
    semantics for certain situations; others are used to indicate that certain
@@ -472,7 +472,7 @@ type objects) *must* have the :attr:`ob_size` field.
       .. versionadded:: 3.4
 
 
-.. c:member:: char* PyTypeObject.tp_doc
+.. c:member:: const char* PyTypeObject.tp_doc
 
    An optional pointer to a NUL-terminated C string giving the docstring for this
    type object.  This is exposed as the :attr:`__doc__` attribute on the type and
@@ -619,7 +619,7 @@ type objects) *must* have the :attr:`ob_size` field.
    +----------------+------------+
 
 
-.. c:member:: long PyTypeObject.tp_weaklistoffset
+.. c:member:: Py_ssize_t PyTypeObject.tp_weaklistoffset
 
    If the instances of this type are weakly referenceable, this field is greater
    than zero and contains the offset in the instance structure of the weak
@@ -786,7 +786,7 @@ type objects) *must* have the :attr:`ob_size` field.
    .. XXX explain.
 
 
-.. c:member:: long PyTypeObject.tp_dictoffset
+.. c:member:: Py_ssize_t PyTypeObject.tp_dictoffset
 
    If the instances of this type have a dictionary containing instance variables,
    this field is non-zero and contains the offset in the instances of the type of
