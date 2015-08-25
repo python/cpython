@@ -10,6 +10,9 @@ Release date: 2015-08-23
 Core and Builtins
 -----------------
 
+- Issue #24769: Interpreter now starts properly when dynamic loading
+  is disabled.  Patch by Petr Viktorin.
+
 - Issue #21167: NAN operations are now handled correctly when python is
   compiled with ICC even if -fp-model strict is not specified.
 
@@ -19,6 +22,7 @@ Library
 - Issue #24847: Removes vcruntime140.dll dependency from Tcl/Tk.
 
 - Issue #24839: platform._syscmd_ver raises DeprecationWarning
+
 
 What's New in Python 3.5.0 release candidate 1?
 ===============================================
