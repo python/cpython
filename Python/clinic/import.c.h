@@ -318,6 +318,33 @@ exit:
 
 #endif /* defined(HAVE_DYNAMIC_LOADING) */
 
+PyDoc_STRVAR(_imp_exec_builtin__doc__,
+"exec_builtin($module, mod, /)\n"
+"--\n"
+"\n"
+"Initialize a built-in module.");
+
+#define _IMP_EXEC_BUILTIN_METHODDEF    \
+    {"exec_builtin", (PyCFunction)_imp_exec_builtin, METH_O, _imp_exec_builtin__doc__},
+
+static int
+_imp_exec_builtin_impl(PyModuleDef *module, PyObject *mod);
+
+static PyObject *
+_imp_exec_builtin(PyModuleDef *module, PyObject *mod)
+{
+    PyObject *return_value = NULL;
+    int _return_value;
+
+    _return_value = _imp_exec_builtin_impl(module, mod);
+    if ((_return_value == -1) && PyErr_Occurred())
+        goto exit;
+    return_value = PyLong_FromLong((long)_return_value);
+
+exit:
+    return return_value;
+}
+
 #ifndef _IMP_CREATE_DYNAMIC_METHODDEF
     #define _IMP_CREATE_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_CREATE_DYNAMIC_METHODDEF) */
@@ -325,4 +352,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=0f1059766dd58f88 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=32324a5e46cdfc4b input=a9049054013a1b77]*/
