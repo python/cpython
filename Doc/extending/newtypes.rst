@@ -893,20 +893,20 @@ fields in the right order!  It's often easiest to find an example that includes
 all the fields you need (even if they're initialized to ``0``) and then change
 the values to suit your new type. ::
 
-   char *tp_name; /* For printing */
+   const char *tp_name; /* For printing */
 
 The name of the type - as mentioned in the last section, this will appear in
 various places, almost entirely for diagnostic purposes. Try to choose something
 that will be helpful in such a situation! ::
 
-   int tp_basicsize, tp_itemsize; /* For allocation */
+   Py_ssize_t tp_basicsize, tp_itemsize; /* For allocation */
 
 These fields tell the runtime how much memory to allocate when new objects of
 this type are created.  Python has some built-in support for variable length
 structures (think: strings, lists) which is where the :c:member:`~PyTypeObject.tp_itemsize` field
 comes in.  This will be dealt with later. ::
 
-   char *tp_doc;
+   const char *tp_doc;
 
 Here you can put a string (or its address) that you want returned when the
 Python script references ``obj.__doc__`` to retrieve the doc string.
