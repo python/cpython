@@ -1943,6 +1943,34 @@ _imp_is_frozen_impl(PyModuleDef *module, PyObject *name)
     return PyBool_FromLong((long) (p == NULL ? 0 : p->size));
 }
 
+/* Common implementation for _imp.exec_dynamic and _imp.exec_builtin */
+static int
+exec_builtin_or_dynamic(PyObject *mod) {
+    PyModuleDef *def;
+    void *state;
+
+    if (!PyModule_Check(mod)) {
+        return 0;
+    }
+
+    def = PyModule_GetDef(mod);
+    if (def == NULL) {
+        if (PyErr_Occurred()) {
+            return -1;
+        }
+        return 0;
+    }
+    state = PyModule_GetState(mod);
+    if (PyErr_Occurred()) {
+        return -1;
+    }
+    if (state) {
+        /* Already initialized; skip reload */
+        return 0;
+    }
+    return PyModule_ExecDef(mod, def);
+}
+
 #ifdef HAVE_DYNAMIC_LOADING
 
 /*[clinic input]
@@ -2014,33 +2042,27 @@ static int
 _imp_exec_dynamic_impl(PyModuleDef *module, PyObject *mod)
 /*[clinic end generated code: output=4b84f1301b22d4bd input=9fdbfcb250280d3a]*/
 {
-    PyModuleDef *def;
-    void *state;
-
-    if (!PyModule_Check(mod)) {
-        return 0;
-    }
-
-    def = PyModule_GetDef(mod);
-    if (def == NULL) {
-        if (PyErr_Occurred()) {
-            return -1;
-        }
-        return 0;
-    }
-    state = PyModule_GetState(mod);
-    if (PyErr_Occurred()) {
-        return -1;
-    }
-    if (state) {
-        /* Already initialized; skip reload */
-        return 0;
-    }
-    return PyModule_ExecDef(mod, def);
+    return exec_builtin_or_dynamic(mod);
 }
 
 
 #endif /* HAVE_DYNAMIC_LOADING */
+
+/*[clinic input]
+_imp.exec_builtin -> int
+
+    mod: object
+    /
+
+Initialize a built-in module.
+[clinic start generated code]*/
+
+static int
+_imp_exec_builtin_impl(PyModuleDef *module, PyObject *mod)
+/*[clinic end generated code: output=215e99876a27e284 input=7beed5a2f12a60ca]*/
+{
+    return exec_builtin_or_dynamic(mod);
+}
 
 /*[clinic input]
 dump buffer
@@ -2064,6 +2086,7 @@ static PyMethodDef imp_methods[] = {
     _IMP_IS_FROZEN_METHODDEF
     _IMP_CREATE_DYNAMIC_METHODDEF
     _IMP_EXEC_DYNAMIC_METHODDEF
+    _IMP_EXEC_BUILTIN_METHODDEF
     _IMP__FIX_CO_FILENAME_METHODDEF
     {NULL, NULL}  /* sentinel */
 };
