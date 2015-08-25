@@ -2059,7 +2059,7 @@ Initialize a built-in module.
 
 static int
 _imp_exec_builtin_impl(PyModuleDef *module, PyObject *mod)
-/*[clinic end generated code: output=215e99876a27e284 input=77ebec0c2a10ecca]*/
+/*[clinic end generated code: output=215e99876a27e284 input=7beed5a2f12a60ca]*/
 {
     return exec_builtin_or_dynamic(mod);
 }

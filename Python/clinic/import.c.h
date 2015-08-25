@@ -322,7 +322,7 @@ PyDoc_STRVAR(_imp_exec_builtin__doc__,
 "exec_builtin($module, mod, /)\n"
 "--\n"
 "\n"
-"Initialize an extension module.");
+"Initialize a built-in module.");
 
 #define _IMP_EXEC_BUILTIN_METHODDEF    \
     {"exec_builtin", (PyCFunction)_imp_exec_builtin, METH_O, _imp_exec_builtin__doc__},
@@ -352,4 +352,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=c38749cebcadbc3b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=32324a5e46cdfc4b input=a9049054013a1b77]*/
