@@ -745,7 +745,7 @@ class BuiltinImporter:
     @classmethod
     def exec_module(self, module):
         """Exec a built-in module"""
-        _call_with_frames_removed(_imp.exec_dynamic, module)
+        _call_with_frames_removed(_imp.exec_builtin, module)
 
     @classmethod
     @_requires_builtin
