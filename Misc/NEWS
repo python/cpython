@@ -449,6 +449,9 @@ C API
 Documentation
 -------------
 
+- Issue #24808: Update the types of some PyTypeObject fields. Patch by
+  Joseph Weston.
+
 - Issue #22812: Fix unittest discovery examples.
   Patch from Pam McA'Nulty.
 
