@@ -289,6 +289,11 @@ class TestBasic(unittest.TestCase):
                     else:
                         self.assertEqual(d.index(element, start, stop), target)
 
+    def test_insert_bug_24913(self):
+        d = deque('A' * 3)
+        with self.assertRaises(ValueError):
+            i = d.index("Hello world", 0, 4)
+
     def test_insert(self):
         # Test to make sure insert behaves like lists
         elements = 'ABCDEFGHI'
