@@ -67,7 +67,7 @@ SubString_new_object(SubString *str)
     return PyUnicode_Substring(str->str, str->start, str->end);
 }
 
-/* return a new string.  if str->str is NULL, return None */
+/* return a new string.  if str->str is NULL, return a new empty string */
 Py_LOCAL_INLINE(PyObject *)
 SubString_new_object_or_empty(SubString *str)
 {
