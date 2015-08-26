@@ -317,20 +317,26 @@ def main(args=None, *, _wrap_timer=None):
     print("%d loops," % number, end=' ')
     usec = best * 1e6 / number
     if time_unit is not None:
-        print("best of %d: %.*g %s per loop" % (repeat, precision,
-                                             usec/units[time_unit], time_unit))
+        scale = units[time_unit]
     else:
-        if usec < 1000:
-            print("best of %d: %.*g usec per loop" % (repeat, precision, usec))
-        else:
-            msec = usec / 1000
-            if msec < 1000:
-                print("best of %d: %.*g msec per loop" % (repeat,
-                                                          precision, msec))
-            else:
-                sec = msec / 1000
-                print("best of %d: %.*g sec per loop" % (repeat,
-                                                         precision, sec))
+        scales = [(scale, unit) for unit, scale in units.items()]
+        scales.sort(reverse=True)
+        for scale, time_unit in scales:
+            if usec >= scale:
+                break
+    print("best of %d: %.*g %s per loop" % (repeat, precision,
+                                            usec/scale, time_unit))
+    best = min(r)
+    usec = best * 1e6 / number
+    worst = max(r)
+    if worst >= best * 4:
+        usec = worst * 1e6 / number
+        import warnings
+        warnings.warn_explicit(
+            "The test results are likely unreliable. The worst\n"
+            "time (%.*g %s) was more than four times slower than the best time." %
+            (precision, usec/scale, time_unit),
+             UserWarning, '', 0)
     return None
 
 if __name__ == "__main__":
