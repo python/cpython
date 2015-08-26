@@ -18,6 +18,9 @@ Library
   header in part headers. Patch written by Peter Landry and reviewed by Pierre
   Quentel.
 
+- Issue #24913: Fix overrun error in deque.index().
+  Found by John Leitch and Bryce Darling.
+
 - Issue #24774: Fix docstring in http.server.test. Patch from Chiu-Hsiang Hsu.
 
 - Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
