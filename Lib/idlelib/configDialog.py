@@ -1201,9 +1201,6 @@ class VerticalScrolledFrame(Frame):
             # update the scrollbars to match the size of the inner frame
             size = (interior.winfo_reqwidth(), interior.winfo_reqheight())
             canvas.config(scrollregion="0 0 %s %s" % size)
-            if interior.winfo_reqwidth() != canvas.winfo_width():
-                # update the canvas's width to fit the inner frame
-                canvas.config(width=interior.winfo_reqwidth())
         interior.bind('<Configure>', _configure_interior)
 
         def _configure_canvas(event):
@@ -1323,38 +1320,56 @@ class ConfigExtensionsDialog(Toplevel):
 
     def create_widgets(self):
         """Create the dialog's widgets."""
+        self.extension_names = StringVar(self)
         self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, weight=0)
-        self.columnconfigure(0, weight=1)
+        self.columnconfigure(2, weight=1)
+        self.extension_list = Listbox(self, listvariable=self.extension_names,
+                                      selectmode='browse')
+        self.extension_list.bind('<<ListboxSelect>>', self.extension_selected)
+        scroll = Scrollbar(self, command=self.extension_list.yview)
+        self.extension_list.yscrollcommand=scroll.set
+        self.details_frame = LabelFrame(self, width=250, height=250)
+        self.extension_list.grid(column=0, row=0, sticky='nws')
+        scroll.grid(column=1, row=0, sticky='ns')
+        self.details_frame.grid(column=2, row=0, sticky='nsew', padx=[10, 0])
+        self.configure(padx=10, pady=10)
+        self.config_frame = {}
+        self.current_extension = None
 
-        # create the tabbed pages
-        self.tabbed_page_set = TabbedPageSet(
-                self, page_names=self.extensions.keys(),
-                n_rows=None, max_tabs_per_row=5,
-                page_class=TabbedPageSet.PageRemove)
-        self.tabbed_page_set.grid(row=0, column=0, sticky=NSEW)
-        for ext_name in self.extensions:
-            self.create_tab_page(ext_name)
+        self.outerframe = self                      # TEMPORARY
+        self.tabbed_page_set = self.extension_list  # TEMPORARY
 
-        self.create_action_buttons().grid(row=1)
+        # create the individual pages
+        ext_names = ''
+        for ext_name in sorted(self.extensions):
+            self.create_extension_frame(ext_name)
+            ext_names = ext_names + '{' + ext_name + '} '
+        self.extension_names.set(ext_names)
+        self.extension_list.selection_set(0)
+        self.extension_selected(None)
+        self.create_action_buttons().grid(row=1, columnspan=3)
+
+    def extension_selected(self, event):
+        newsel = self.extension_list.curselection()
+        if newsel:
+            newsel = self.extension_list.get(newsel)
+        if newsel is None or newsel != self.current_extension:
+            if self.current_extension:
+                self.details_frame.config(text='')
+                self.config_frame[self.current_extension].grid_forget()
+                self.current_extension = None
+        if newsel:
+            self.details_frame.config(text=newsel)
+            self.config_frame[newsel].grid(column=0, row=0, sticky='nsew')
+            self.current_extension = newsel
 
     create_action_buttons = ConfigDialog.create_action_buttons
 
-    def create_tab_page(self, ext_name):
-        """Create the page for an extension."""
-
-        page = LabelFrame(self.tabbed_page_set.pages[ext_name].frame,
-                          border=2, padx=2, relief=GROOVE,
-                          text=' %s ' % ext_name)
-        page.pack(fill=BOTH, expand=True, padx=12, pady=2)
-
-        # create the scrollable frame which will contain the entries
-        scrolled_frame = VerticalScrolledFrame(page, pady=2, height=250)
-        scrolled_frame.pack(side=BOTTOM, fill=BOTH, expand=TRUE)
-        entry_area = scrolled_frame.interior
-        entry_area.columnconfigure(0, weight=0)
-        entry_area.columnconfigure(1, weight=1)
-
+    def create_extension_frame(self, ext_name):
+        """Create a frame holding the widgets to configure one extension"""
+        f = VerticalScrolledFrame(self.details_frame, height=250, width=250)
+        self.config_frame[ext_name] = f
+        entry_area = f.interior
         # create an entry for each configuration option
         for row, opt in enumerate(self.extensions[ext_name]):
             # create a row with a label and entry/checkbutton
@@ -1365,15 +1380,15 @@ class ConfigExtensionsDialog(Toplevel):
                 Checkbutton(entry_area, textvariable=var, variable=var,
                             onvalue='True', offvalue='False',
                             indicatoron=FALSE, selectcolor='', width=8
-                    ).grid(row=row, column=1, sticky=W, padx=7)
+                            ).grid(row=row, column=1, sticky=W, padx=7)
             elif opt['type'] == 'int':
                 Entry(entry_area, textvariable=var, validate='key',
-                    validatecommand=(self.is_int, '%P')
-                    ).grid(row=row, column=1, sticky=NSEW, padx=7)
+                      validatecommand=(self.is_int, '%P')
+                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
 
             else:
                 Entry(entry_area, textvariable=var
-                    ).grid(row=row, column=1, sticky=NSEW, padx=7)
+                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
         return
 
 
