@@ -583,8 +583,11 @@ class TestCase(object):
             finally:
                 result.stopTest(self)
             return
-        expecting_failure = getattr(testMethod,
-                                    "__unittest_expecting_failure__", False)
+        expecting_failure_method = getattr(testMethod,
+                                           "__unittest_expecting_failure__", False)
+        expecting_failure_class = getattr(self,
+                                          "__unittest_expecting_failure__", False)
+        expecting_failure = expecting_failure_class or expecting_failure_method
         outcome = _Outcome(result)
         try:
             self._outcome = outcome
