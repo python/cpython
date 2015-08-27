@@ -14,6 +14,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21112: Fix regression in unittest.expectedFailure on subclasses.
+  Patch from Berker Peksag.
+
 - Issue #24764: cgi.FieldStorage.read_multi() now ignores the Content-Length
   header in part headers. Patch written by Peter Landry and reviewed by Pierre
   Quentel.
