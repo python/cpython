@@ -634,11 +634,11 @@ The module defines the following functions and data items:
          it is possible to refer to February 29.
 
       :samp:`M{m}.{n}.{d}`
-         The *d*'th day (0 <= *d* <= 6) or week *n* of month *m* of the year (1
+         The *d*'th day (0 <= *d* <= 6) of week *n* of month *m* of the year (1
          <= *n* <= 5, 1 <= *m* <= 12, where week 5 means "the last *d* day in
          month *m*" which may occur in either the fourth or the fifth
          week). Week 1 is the first week in which the *d*'th day occurs. Day
-         zero is Sunday.
+         zero is a Sunday.
 
       ``time`` has the same format as ``offset`` except that no leading sign
       ('-' or '+') is allowed. The default, if time is not given, is 02:00:00.
