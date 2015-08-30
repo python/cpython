@@ -550,7 +550,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
       single-address network, with the network address being *address* and
       the mask being ``/128``.
 
-   3. An integer packed into a :class:`bytes` object of length 16, bit-endian.
+   3. An integer packed into a :class:`bytes` object of length 16, big-endian.
       The interpretation is similar to an integer *address*.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
