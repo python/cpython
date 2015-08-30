@@ -257,7 +257,6 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual(p._fields, ('x', 'y'))                             # test _fields attribute
         self.assertEqual(p._replace(x=1), (1, 22))                          # test _replace method
         self.assertEqual(p._asdict(), dict(x=11, y=22))                     # test _asdict method
-        self.assertEqual(vars(p), p._asdict())                              # verify that vars() works
 
         try:
             p._replace(x=1, error=2)
@@ -410,6 +409,17 @@ class TestNamedTuple(unittest.TestCase):
         self.assertEqual((c.red, c.green, c.blue), (10, 20, 30))
         self.assertEqual(NTColor._fields, ('red', 'green', 'blue'))
         globals().pop('NTColor', None)          # clean-up after this test
+
+
+    def test_namedtuple_subclass_issue_24931(self):
+        class Point(namedtuple('_Point', ['x', 'y'])):
+            pass
+
+        a = Point(3, 4)
+        self.assertEqual(a._asdict(), OrderedDict([('x', 3), ('y', 4)]))
+
+        a.w = 5
+        self.assertEqual(a.__dict__, {'w': 5})
 
 
 ################################################################################
