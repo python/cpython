@@ -6,7 +6,9 @@ from distutils import debug
 from distutils.log import WARN
 from distutils.errors import DistutilsTemplateError
 from distutils.filelist import glob_to_re, translate_pattern, FileList
+from distutils import filelist
 
+import test.support
 from test.support import captured_stdout
 from distutils.tests import support
 
@@ -290,6 +292,14 @@ class FileListTestCase(support.LoggingSilencer,
         file_list.process_template_line('prune e')
         self.assertEqual(file_list.files, ['a.py', l('f/f.py')])
         self.assertWarnings()
+
+
+class FindAllTestCase(unittest.TestCase):
+    @test.support.skip_unless_symlink
+    def test_missing_symlink(self):
+        with test.support.temp_cwd():
+            os.symlink('foo', 'bar')
+            self.assertEqual(filelist.findall(), [])
 
 
 if __name__ == "__main__":
