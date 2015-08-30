@@ -696,6 +696,7 @@ field names, the method and attribute names start with an underscore.
    Return a new :class:`OrderedDict` which maps field names to their corresponding
    values::
 
+      >>> p = Point(x=11, y=22)
       >>> p._asdict()
       OrderedDict([('x', 11), ('y', 22)])
 
