@@ -816,10 +816,10 @@ field names, the method and attribute names start with an underscore.
 .. method:: somenamedtuple._asdict()
 
     Return a new :class:`OrderedDict` which maps field names to their corresponding
-    values.  Note, this method is no longer needed now that the same effect can
-    be achieved by using the built-in :func:`vars` function::
+    values::
 
-        >>> vars(p)
+        >>> p = Point(x=11, y=22)
+        >>> p._asdict()
         OrderedDict([('x', 11), ('y', 22)])
 
     .. versionchanged:: 3.1
