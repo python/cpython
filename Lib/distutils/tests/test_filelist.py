@@ -7,7 +7,7 @@ from distutils.log import WARN
 from distutils.errors import DistutilsTemplateError
 from distutils.filelist import glob_to_re, translate_pattern, FileList
 
-from test.support import captured_stdout, run_unittest
+from test.support import captured_stdout
 from distutils.tests import support
 
 MANIFEST_IN = """\
@@ -292,8 +292,5 @@ class FileListTestCase(support.LoggingSilencer,
         self.assertWarnings()
 
 
-def test_suite():
-    return unittest.makeSuite(FileListTestCase)
-
 if __name__ == "__main__":
-    run_unittest(test_suite())
+    unittest.main()
