@@ -20,8 +20,9 @@ The function below takes and returns a string and is annotated as follows::
    def greeting(name: str) -> str:
        return 'Hello ' + name
 
-In the function `greeting`, the argument `name` is expected to by of type `str`
-and the return type `str`. Subtypes are accepted as arguments.
+In the function ``greeting``, the argument ``name`` is expected to by of type
+:class:`str` and the return type :class:`str`. Subtypes are accepted as
+arguments.
 
 Type aliases
 ------------
@@ -49,8 +50,8 @@ For example::
 
 It is possible to declare the return type of a callable without specifying
 the call signature by substituting a literal ellipsis
-for the list of arguments in the type hint: `Callable[..., ReturnType]`.
-`None` as a type hint is a special case and is replaced by `type(None)`.
+for the list of arguments in the type hint: ``Callable[..., ReturnType]``.
+``None`` as a type hint is a special case and is replaced by ``type(None)``.
 
 Generics
 --------
@@ -108,11 +109,12 @@ A user-defined class can be defined as a generic class.
        def log(self, message: str) -> None:
            self.logger.info('{}: {}'.format(self.name, message))
 
-`Generic[T]` as a base class defines that the class `LoggedVar` takes a single
-type parameter `T` . This also makes `T` valid as a type within the class body.
+``Generic[T]`` as a base class defines that the class ``LoggedVar`` takes a
+single type parameter ``T`` . This also makes ``T`` valid as a type within the
+class body.
 
-The `Generic` base class uses a metaclass that defines `__getitem__` so that
-`LoggedVar[t]` is valid as a type::
+The :class:`Generic` base class uses a metaclass that defines
+:meth:`__getitem__` so that ``LoggedVar[t]`` is valid as a type::
 
    from typing import Iterable
 
@@ -132,7 +134,7 @@ be constrained::
    class StrangePair(Generic[T, S]):
        ...
 
-Each type variable argument to `Generic` must be distinct.
+Each type variable argument to :class:`Generic` must be distinct.
 This is thus invalid::
 
    from typing import TypeVar, Generic
@@ -152,9 +154,9 @@ You can use multiple inheritance with `Generic`::
    class LinkedList(Sized, Generic[T]):
        ...
 
-Subclassing a generic class without specifying type parameters assumes `Any`
-for each position. In the following example, `MyIterable` is not generic but
-implicitly inherits from `Iterable[Any]`::
+Subclassing a generic class without specifying type parameters assumes
+:class:`Any` for each position. In the following example, ``MyIterable`` is
+not generic but implicitly inherits from ``Iterable[Any]``::
 
    from typing import Iterable
 
@@ -162,24 +164,24 @@ implicitly inherits from `Iterable[Any]`::
 
 Generic metaclasses are not supported.
 
-The `Any` type
---------------
+The :class:`Any` type
+---------------------
 
-A special kind of type is `Any`. Every type is a subtype of `Any`.
-This is also true for the builtin type object. However, to the static type
-checker these are completely different.
+A special kind of type is :class:`Any`. Every type is a subtype of
+:class:`Any`. This is also true for the builtin type object. However, to the
+static type checker these are completely different.
 
-When the type of a value is `object`, the type checker will reject almost all
-operations on it, and assigning it to a variable (or using it as a return value)
-of a more specialized type is a type error. On the other hand, when a value has
-type `Any`, the type checker will allow all operations on it, and a value of
-type `Any` can be assigned to a variable (or used as a return value) of a more
-constrained type.
+When the type of a value is :class:`object`, the type checker will reject
+almost all operations on it, and assigning it to a variable (or using it as a
+return value) of a more specialized type is a type error. On the other hand,
+when a value has type :class:`Any`, the type checker will allow all operations
+on it, and a value of type :class:`Any` can be assigned to a variable (or used
+as a return value) of a more constrained type.
 
 Default argument values
 -----------------------
 
-Use a literal ellipsis `...` to declare an argument as having a default value::
+Use a literal ellipsis ``...`` to declare an argument as having a default value::
 
    from typing import AnyStr
 
@@ -195,9 +197,10 @@ The module defines the following classes, functions and decorators:
 
    Special type indicating an unconstrained type.
 
-   * Any object is an instance of `Any`.
-   * Any class is a subclass of `Any`.
-   * As a special case, `Any` and `object` are subclasses of each other.
+   * Any object is an instance of :class:`Any`.
+   * Any class is a subclass of :class:`Any`.
+   * As a special case, :class:`Any` and :class:`object` are subclasses of
+     each other.
 
 .. class:: TypeVar
 
@@ -224,22 +227,22 @@ The module defines the following classes, functions and decorators:
            return x if len(x) >= len(y) else y
 
     The latter example's signature is essentially the overloading
-    of `(str, str) -> str` and `(bytes, bytes) -> bytes`.  Also note
-    that if the arguments are instances of some subclass of `str`,
-    the return type is still plain `str`.
+    of ``(str, str) -> str`` and ``(bytes, bytes) -> bytes``.  Also note
+    that if the arguments are instances of some subclass of :class:`str`,
+    the return type is still plain :class:`str`.
 
-    At runtime, `isinstance(x, T)` will raise `TypeError`.  In general,
-    `isinstance` and `issublass` should not be used with types.
+    At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
+    :func:`isinstance` and :func:`issublass` should not be used with types.
 
     Type variables may be marked covariant or contravariant by passing
-    `covariant=True` or `contravariant=True`.  See :pep:`484` for more
+    ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
     details.  By default type variables are invariant.
 
 .. class:: Union
 
-   Union type; `Union[X, Y]` means either X or Y.
+   Union type; ``Union[X, Y]`` means either X or Y.
 
-   To define a union, use e.g. `Union[int, str]`.  Details:
+   To define a union, use e.g. ``Union[int, str]``.  Details:
 
    * The arguments must be types and there must be at least one.
 
@@ -259,37 +262,37 @@ The module defines the following classes, functions and decorators:
 
        Union[int, str] == Union[str, int]
 
-   * If `Any` is present it is the sole survivor, e.g.::
+   * If :class:`Any` is present it is the sole survivor, e.g.::
 
        Union[int, Any] == Any
 
    * You cannot subclass or instantiate a union.
 
-   * You cannot write `Union[X][Y]`
+   * You cannot write ``Union[X][Y]``
 
-   * You can use `Optional[X]` as a shorthand for `Union[X, None]`.
+   * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
 
 .. class:: Optional
 
    Optional type.
 
-   `Optional[X]` is equivalent to `Union[X, type(None)]`.
+   ``Optional[X]`` is equivalent to ``Union[X, type(None)]``.
 
 .. class:: Tuple
 
-  Tuple type; `Tuple[X, Y]` is the is the type of a tuple of two items
+  Tuple type; ``Tuple[X, Y]`` is the is the type of a tuple of two items
   with the first item of type X and the second of type Y.
 
-  Example: `Tuple[T1, T2]` is a tuple of two elements corresponding
-  to type variables T1 and T2.  `Tuple[int, float, str]` is a tuple
+  Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding
+  to type variables T1 and T2.  ``Tuple[int, float, str]`` is a tuple
   of an int, a float and a string.
 
   To specify a variable-length tuple of homogeneous type,
-  use literal ellipsis, e.g. `Tuple[int, ...]`.
+  use literal ellipsis, e.g. ``Tuple[int, ...]``.
 
 .. class:: Callable
 
-   Callable type; `Callable[[int], str]` is a function of (int) -> str.
+   Callable type; ``Callable[[int], str]`` is a function of (int) -> str.
 
    The subscription syntax must always be used with exactly two
    values: the argument list and the return type.  The argument list
@@ -297,9 +300,9 @@ The module defines the following classes, functions and decorators:
 
    There is no syntax to indicate optional or keyword arguments,
    such function types are rarely used as callback types.
-   `Callable[..., ReturnType]` could be used to type hint a callable
-   taking any number of arguments and returning `ReturnType`.
-   A plain `Callable` is equivalent to `Callable[..., Any]`.
+   ``Callable[..., ReturnType]`` could be used to type hint a callable
+   taking any number of arguments and returning ``ReturnType``.
+   A plain :class:`Callable` is equivalent to ``Callable[..., Any]``.
 
 .. class:: Generic
 
