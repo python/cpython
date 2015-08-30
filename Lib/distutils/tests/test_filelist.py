@@ -301,6 +301,17 @@ class FindAllTestCase(unittest.TestCase):
             os.symlink('foo', 'bar')
             self.assertEqual(filelist.findall(), [])
 
+    def test_basic_discovery(self):
+        with test.support.temp_cwd():
+            os.mkdir('foo')
+            file1 = os.path.join('foo', 'file1.txt')
+            test.support.create_empty_file(file1)
+            os.mkdir('bar')
+            file2 = os.path.join('bar', 'file2.txt')
+            test.support.create_empty_file(file2)
+            expected = [file1, file2]
+            self.assertEqual(filelist.findall(), expected)
+
 
 if __name__ == "__main__":
     unittest.main()
