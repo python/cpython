@@ -314,8 +314,8 @@ class FindAllTestCase(unittest.TestCase):
             os.mkdir('bar')
             file2 = os.path.join('bar', 'file2.txt')
             test.support.create_empty_file(file2)
-            expected = [file1, file2]
-            self.assertEqual(filelist.findall(), expected)
+            expected = [file2, file1]
+            self.assertEqual(sorted(filelist.findall()), expected)
 
     def test_non_local_discovery(self):
         """
