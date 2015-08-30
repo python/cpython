@@ -78,6 +78,10 @@ Library
 - Issue #21112: Fix regression in unittest.expectedFailure on subclasses.
   Patch from Berker Peksag.
 
+- Issue #24931: Instances of subclasses of namedtuples have their own __dict__
+  which breaks the inherited __dict__ property and breaks the _asdict() method.
+  Removed the __dict__ property to prevent the conflict and fixed _asdict().
+
 - Issue #24764: cgi.FieldStorage.read_multi() now ignores the Content-Length
   header in part headers. Patch written by Peter Landry and reviewed by Pierre
   Quentel.
