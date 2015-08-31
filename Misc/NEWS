@@ -41,6 +41,9 @@ Library
 Documentation
 -------------
 
+- Issue #24952: Clarify the default size argument of stack_size() in
+  the "threading" and "_thread" modules. Patch from Mattip.
+
 - Issue #23725: Overhaul tempfile docs. Note deprecated status of mktemp.
   Patch from Zbigniew Jędrzejewski-Szmek.
 
