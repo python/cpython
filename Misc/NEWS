@@ -163,6 +163,9 @@ IDLE
 Documentation
 -------------
 
+- Issue #24952: Clarify the default size argument of stack_size() in
+  the "threading" and "thread" modules. Patch from Mattip.
+
 - Issue #20769: Improve reload() docs. Patch by Dorian Pula.
 
 - Issue #23589: Remove duplicate sentence from the FAQ.  Patch by Yongzhi Pan.
