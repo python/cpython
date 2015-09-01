@@ -4100,7 +4100,6 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
     if (_PyTime_ObjectToTimeval(timestamp,
                                 &timet, &us, _PyTime_ROUND_FLOOR) == -1)
         return NULL;
-    assert(0 <= us && us <= 999999);
 
     return datetime_from_timet_and_us(cls, f, timet, (int)us, tzinfo);
 }
