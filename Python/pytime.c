@@ -61,43 +61,51 @@ _PyLong_FromTime_t(time_t t)
 }
 
 static int
+_PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
+                            double denominator, _PyTime_round_t round)
+{
+    double intpart, err;
+    /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
+    volatile double floatpart;
+
+    floatpart = modf(d, &intpart);
+    if (floatpart < 0) {
+        floatpart = 1.0 + floatpart;
+        intpart -= 1.0;
+    }
+
+    floatpart *= denominator;
+    if (round == _PyTime_ROUND_CEILING) {
+        floatpart = ceil(floatpart);
+        if (floatpart >= denominator) {
+            floatpart = 0.0;
+            intpart += 1.0;
+        }
+    }
+    else {
+        floatpart = floor(floatpart);
+    }
+
+    *sec = (time_t)intpart;
+    err = intpart - (double)*sec;
+    if (err <= -1.0 || err >= 1.0) {
+        error_time_t_overflow();
+        return -1;
+    }
+
+    *numerator = (long)floatpart;
+    return 0;
+}
+
+static int
 _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
                             double denominator, _PyTime_round_t round)
 {
     assert(denominator <= LONG_MAX);
     if (PyFloat_Check(obj)) {
-        double d, intpart, err;
-        /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
-        volatile double floatpart;
-
-        d = PyFloat_AsDouble(obj);
-        floatpart = modf(d, &intpart);
-        if (floatpart < 0) {
-            floatpart = 1.0 + floatpart;
-            intpart -= 1.0;
-        }
-
-        floatpart *= denominator;
-        if (round == _PyTime_ROUND_CEILING) {
-            floatpart = ceil(floatpart);
-            if (floatpart >= denominator) {
-                floatpart = 0.0;
-                intpart += 1.0;
-            }
-        }
-        else {
-            floatpart = floor(floatpart);
-        }
-
-        *sec = (time_t)intpart;
-        err = intpart - (double)*sec;
-        if (err <= -1.0 || err >= 1.0) {
-            error_time_t_overflow();
-            return -1;
-        }
-
-        *numerator = (long)floatpart;
-        return 0;
+        double d = PyFloat_AsDouble(obj);
+        return _PyTime_DoubleToDenominator(d, sec, numerator,
+                                           denominator, round);
     }
     else {
         *sec = _PyLong_AsTime_t(obj);
@@ -221,29 +229,38 @@ _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
 #endif
 
 static int
+_PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
+                        long to_nanoseconds)
+{
+    /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
+    volatile double d, err;
+
+    /* convert to a number of nanoseconds */
+    d = value;
+    d *= to_nanoseconds;
+
+    if (round == _PyTime_ROUND_CEILING)
+        d = ceil(d);
+    else
+        d = floor(d);
+
+    *t = (_PyTime_t)d;
+    err = d - (double)*t;
+    if (fabs(err) >= 1.0) {
+        _PyTime_overflow();
+        return -1;
+    }
+    return 0;
+}
+
+static int
 _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
                    long to_nanoseconds)
 {
     if (PyFloat_Check(obj)) {
-        /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
-        volatile double d, err;
-
-        /* convert to a number of nanoseconds */
+        double d;
         d = PyFloat_AsDouble(obj);
-        d *= to_nanoseconds;
-
-        if (round == _PyTime_ROUND_CEILING)
-            d = ceil(d);
-        else
-            d = floor(d);
-
-        *t = (_PyTime_t)d;
-        err = d - (double)*t;
-        if (fabs(err) >= 1.0) {
-            _PyTime_overflow();
-            return -1;
-        }
-        return 0;
+        return _PyTime_FromFloatObject(t, d, round, to_nanoseconds);
     }
     else {
 #ifdef HAVE_LONG_LONG
