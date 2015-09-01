@@ -17,6 +17,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #23517: datetime.datetime.fromtimestamp() and
+  datetime.datetime.utcfromtimestamp() now rounds to nearest with ties going
+  away from zero, instead of rounding towards minus infinity (-inf), as Python
+  2 and Python older than 3.3.
+
 - Issue #23552: Timeit now warns when there is substantial (4x) variance
   between best and worst times. Patch from Serhiy Storchaka.
 
