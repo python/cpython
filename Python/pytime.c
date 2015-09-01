@@ -60,6 +60,17 @@ _PyLong_FromTime_t(time_t t)
 #endif
 }
 
+static double
+_PyTime_RoundHalfUp(double x)
+{
+    if (x >= 0.0)
+        x = floor(x + 0.5);
+    else
+        x = ceil(x - 0.5);
+    return x;
+}
+
+
 static int
 _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
                             double denominator, _PyTime_round_t round)
@@ -75,7 +86,9 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
     }
 
     floatpart *= denominator;
-    if (round == _PyTime_ROUND_CEILING) {
+    if (round == _PyTime_ROUND_HALF_UP)
+        floatpart = _PyTime_RoundHalfUp(floatpart);
+    else if (round == _PyTime_ROUND_CEILING) {
         floatpart = ceil(floatpart);
         if (floatpart >= denominator) {
             floatpart = 0.0;
@@ -124,7 +137,9 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         double d, intpart, err;
 
         d = PyFloat_AsDouble(obj);
-        if (round == _PyTime_ROUND_CEILING)
+        if (round == _PyTime_ROUND_HALF_UP)
+            d = _PyTime_RoundHalfUp(d);
+        else if (round == _PyTime_ROUND_CEILING)
             d = ceil(d);
         else
             d = floor(d);
@@ -247,7 +262,9 @@ _PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
     d = value;
     d *= to_nanoseconds;
 
-    if (round == _PyTime_ROUND_CEILING)
+    if (round == _PyTime_ROUND_HALF_UP)
+        d = _PyTime_RoundHalfUp(d);
+    else if (round == _PyTime_ROUND_CEILING)
         d = ceil(d);
     else
         d = floor(d);
@@ -333,7 +350,19 @@ static _PyTime_t
 _PyTime_Divide(_PyTime_t t, _PyTime_t k, _PyTime_round_t round)
 {
     assert(k > 1);
-    if (round == _PyTime_ROUND_CEILING) {
+    if (round == _PyTime_ROUND_HALF_UP) {
+        _PyTime_t x, r;
+        x = t / k;
+        r = t % k;
+        if (Py_ABS(r) >= k / 2) {
+            if (t >= 0)
+                x++;
+            else
+                x--;
+        }
+        return x;
+    }
+    else if (round == _PyTime_ROUND_CEILING) {
         if (t >= 0)
             return (t + k - 1) / k;
         else
@@ -359,8 +388,10 @@ static int
 _PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
                        int raise)
 {
+    const long k = US_TO_NS;
     _PyTime_t secs, ns;
     int res = 0;
+    int usec;
 
     secs = t / SEC_TO_NS;
     ns = t % SEC_TO_NS;
@@ -392,20 +423,33 @@ _PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
         res = -1;
 #endif
 
-    if (round == _PyTime_ROUND_CEILING)
-        tv->tv_usec = (int)((ns + US_TO_NS - 1) / US_TO_NS);
+    if (round == _PyTime_ROUND_HALF_UP) {
+        _PyTime_t r;
+        usec = (int)(ns / k);
+        r = ns % k;
+        if (Py_ABS(r) >= k / 2) {
+            if (ns >= 0)
+                usec++;
+            else
+                usec--;
+        }
+    }
+    else if (round == _PyTime_ROUND_CEILING)
+        usec = (int)((ns + k - 1) / k);
     else
-        tv->tv_usec = (int)(ns / US_TO_NS);
+        usec = (int)(ns / k);
 
-    if (tv->tv_usec >= SEC_TO_US) {
-        tv->tv_usec -= SEC_TO_US;
+    if (usec >= SEC_TO_US) {
+        usec -= SEC_TO_US;
         tv->tv_sec += 1;
     }
 
     if (res && raise)
         _PyTime_overflow();
 
-    assert(0 <= tv->tv_usec && tv->tv_usec <= 999999);
+    assert(0 <= usec && usec <= 999999);
+
+    tv->tv_usec = usec;
     return res;
 }
 
