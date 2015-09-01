@@ -101,7 +101,8 @@ static int
 _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
                             double denominator, _PyTime_round_t round)
 {
-    assert(denominator <= LONG_MAX);
+    assert(denominator <= (double)LONG_MAX);
+
     if (PyFloat_Check(obj)) {
         double d = PyFloat_AsDouble(obj);
         return _PyTime_DoubleToDenominator(d, sec, numerator,
@@ -149,14 +150,20 @@ int
 _PyTime_ObjectToTimespec(PyObject *obj, time_t *sec, long *nsec,
                          _PyTime_round_t round)
 {
-    return _PyTime_ObjectToDenominator(obj, sec, nsec, 1e9, round);
+    int res;
+    res = _PyTime_ObjectToDenominator(obj, sec, nsec, 1e9, round);
+    assert(0 <= *nsec && *nsec < SEC_TO_NS );
+    return res;
 }
 
 int
 _PyTime_ObjectToTimeval(PyObject *obj, time_t *sec, long *usec,
                         _PyTime_round_t round)
 {
-    return _PyTime_ObjectToDenominator(obj, sec, usec, 1e6, round);
+    int res;
+    res = _PyTime_ObjectToDenominator(obj, sec, usec, 1e6, round);
+    assert(0 <= *usec && *usec < SEC_TO_US );
+    return res;
 }
 
 static void
@@ -170,12 +177,13 @@ _PyTime_t
 _PyTime_FromSeconds(int seconds)
 {
     _PyTime_t t;
+    t = (_PyTime_t)seconds;
     /* ensure that integer overflow cannot happen, int type should have 32
        bits, whereas _PyTime_t type has at least 64 bits (SEC_TO_MS takes 30
        bits). */
-    assert((seconds >= 0 && seconds <= _PyTime_MAX / SEC_TO_NS)
-           || (seconds < 0 && seconds >= _PyTime_MIN / SEC_TO_NS));
-    t = (_PyTime_t)seconds * SEC_TO_NS;
+    assert((t >= 0 && t <= _PyTime_MAX / SEC_TO_NS)
+           || (t < 0 && t >= _PyTime_MIN / SEC_TO_NS));
+    t *= SEC_TO_NS;
     return t;
 }
 
