@@ -10,6 +10,8 @@ Release date: 2015-09-06
 Core and Builtins
 -----------------
 
+- Issue #24975: Fix AST compilation for PEP 448 syntax.
+
 Library
 -------
 
