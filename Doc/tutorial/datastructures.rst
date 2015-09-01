@@ -612,18 +612,18 @@ returns a new sorted list while leaving the source unaltered. ::
    orange
    pear
 
-To change a sequence you are iterating over while inside the loop (for
-example to duplicate certain items), it is recommended that you first make
-a copy.  Looping over a sequence does not implicitly make a copy.  The slice
-notation makes this especially convenient::
+It is sometimes tempting to change a list while you are looping over it;
+however, it is often simpler and safer to create a new list instead. ::
 
-   >>> words = ['cat', 'window', 'defenestrate']
-   >>> for w in words[:]:  # Loop over a slice copy of the entire list.
-   ...     if len(w) > 6:
-   ...         words.insert(0, w)
+   >>> import math
+   >>> raw_data = [56.2, float('NaN'), 51.7, 55.3, 52.5, float('NaN'), 47.8]
+   >>> filtered_data = []
+   >>> for value in raw_data:
+   ...     if not math.isnan(value):
+   ...         filtered_data.append(value)
    ...
-   >>> words
-   ['defenestrate', 'cat', 'window', 'defenestrate']
+   >>> filtered_data
+   [56.2, 51.7, 55.3, 52.5, 47.8]
 
 
 .. _tut-conditions:
