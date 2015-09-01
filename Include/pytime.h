@@ -30,7 +30,10 @@ typedef enum {
     _PyTime_ROUND_FLOOR=0,
     /* Round towards infinity (+inf).
        For example, used for timeout to wait "at least" N seconds. */
-    _PyTime_ROUND_CEILING
+    _PyTime_ROUND_CEILING=1,
+    /* Round to nearest with ties going away from zero.
+       For example, used to round from a Python float. */
+    _PyTime_ROUND_HALF_UP
 } _PyTime_round_t;
 
 /* Convert a time_t to a PyLong. */

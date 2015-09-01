@@ -2646,7 +2646,9 @@ run_in_subinterp(PyObject *self, PyObject *args)
 static int
 check_time_rounding(int round)
 {
-    if (round != _PyTime_ROUND_FLOOR && round != _PyTime_ROUND_CEILING) {
+    if (round != _PyTime_ROUND_FLOOR
+        && round != _PyTime_ROUND_CEILING
+        && round != _PyTime_ROUND_HALF_UP) {
         PyErr_SetString(PyExc_ValueError, "invalid rounding");
         return -1;
     }
