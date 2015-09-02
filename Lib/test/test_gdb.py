@@ -28,9 +28,13 @@ except OSError:
     # This is what "no gdb" looks like.  There may, however, be other
     # errors that manifest this way too.
     raise unittest.SkipTest("Couldn't find gdb on the path")
-gdb_version_number = re.search(b"^GNU gdb [^\d]*(\d+)\.(\d)", gdb_version)
-gdb_major_version = int(gdb_version_number.group(1))
-gdb_minor_version = int(gdb_version_number.group(2))
+try:
+    gdb_version_number = re.search(b"^GNU gdb [^\d]*(\d+)\.(\d)", gdb_version)
+    gdb_major_version = int(gdb_version_number.group(1))
+    gdb_minor_version = int(gdb_version_number.group(2))
+except Exception:
+    raise ValueError("unable to parse GDB version: %r" % gdb_version)
+
 if gdb_major_version < 7:
     raise unittest.SkipTest("gdb versions before 7.0 didn't support python embedding"
                             " Saw:\n" + gdb_version.decode('ascii', 'replace'))
