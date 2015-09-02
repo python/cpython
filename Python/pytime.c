@@ -531,7 +531,7 @@ _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 
 
 static int
-pymonotonic_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 {
 #if defined(MS_WINDOWS)
     ULONGLONG result;
@@ -631,7 +631,7 @@ _PyTime_t
 _PyTime_GetMonotonicClock(void)
 {
     _PyTime_t t;
-    if (pymonotonic_new(&t, NULL, 0) < 0) {
+    if (pymonotonic(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked that monotonic clock at
            startup */
         assert(0);
@@ -645,7 +645,7 @@ _PyTime_GetMonotonicClock(void)
 int
 _PyTime_GetMonotonicClockWithInfo(_PyTime_t *tp, _Py_clock_info_t *info)
 {
-    return pymonotonic_new(tp, info, 1);
+    return pymonotonic(tp, info, 1);
 }
 
 int
