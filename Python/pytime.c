@@ -60,8 +60,7 @@ _PyLong_FromTime_t(time_t t)
 #endif
 }
 
-/* Round to nearest with ties going away from zero (_PyTime_ROUND_HALF_UP). */
-static double
+double
 _PyTime_RoundHalfUp(double x)
 {
     /* volatile avoids optimization changing how numbers are rounded */
