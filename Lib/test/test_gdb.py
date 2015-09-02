@@ -21,23 +21,32 @@ except ImportError:
 from test import support
 from test.support import run_unittest, findfile, python_is_optimized
 
-try:
-    gdb_version, _ = subprocess.Popen(["gdb", "-nx", "--version"],
-                                      stdout=subprocess.PIPE).communicate()
-except OSError:
-    # This is what "no gdb" looks like.  There may, however, be other
-    # errors that manifest this way too.
-    raise unittest.SkipTest("Couldn't find gdb on the path")
-try:
-    gdb_version_number = re.search(b"^GNU gdb [^\d]*(\d+)\.(\d)", gdb_version)
-    gdb_major_version = int(gdb_version_number.group(1))
-    gdb_minor_version = int(gdb_version_number.group(2))
-except Exception:
-    raise ValueError("unable to parse GDB version: %r" % gdb_version)
+def get_gdb_version():
+    try:
+        proc = subprocess.Popen(["gdb", "-nx", "--version"],
+                                stdout=subprocess.PIPE,
+                                universal_newlines=True)
+        with proc:
+            version = proc.communicate()[0]
+    except OSError:
+        # This is what "no gdb" looks like.  There may, however, be other
+        # errors that manifest this way too.
+        raise unittest.SkipTest("Couldn't find gdb on the path")
 
+    # Regex to parse:
+    # 'GNU gdb (GDB; SUSE Linux Enterprise 12) 7.7\n' -> 7.7
+    # 'GNU gdb (GDB) Fedora 7.9.1-17.fc22\n' -> 7.9
+    match = re.search("^GNU gdb .*? (\d+)\.(\d)", version)
+    if match is None:
+        raise Exception("unable to parse GDB version: %r" % version)
+    return (version, int(match.group(1)), int(match.group(2)))
+
+gdb_version, gdb_major_version, gdb_minor_version = get_gdb_version()
 if gdb_major_version < 7:
-    raise unittest.SkipTest("gdb versions before 7.0 didn't support python embedding"
-                            " Saw:\n" + gdb_version.decode('ascii', 'replace'))
+    raise unittest.SkipTest("gdb versions before 7.0 didn't support python "
+                            "embedding. Saw %s.%s:\n%s"
+                            % (gdb_major_version, gdb_minor_version,
+                               gdb_version))
 
 if not sysconfig.is_python_build():
     raise unittest.SkipTest("test_gdb only works on source builds at the moment.")
@@ -65,7 +74,8 @@ def run_gdb(*args, **env_vars):
         base_cmd += ('-iex', 'add-auto-load-safe-path ' + checkout_hook_path)
     proc = subprocess.Popen(base_cmd + args,
                             stdout=subprocess.PIPE,
-                            stderr=subprocess.PIPE, env=env)
+                            stderr=subprocess.PIPE,
+                            env=env)
     with proc:
         out, err = proc.communicate()
     return out.decode('utf-8', 'replace'), err.decode('utf-8', 'replace')
@@ -886,8 +896,8 @@ class PyLocalsTests(DebuggerTests):
 
 def test_main():
     if support.verbose:
-        print("GDB version:")
-        for line in os.fsdecode(gdb_version).splitlines():
+        print("GDB version %s.%s:" % (gdb_major_version, gdb_minor_version))
+        for line in gdb_version.splitlines():
             print(" " * 4 + line)
     run_unittest(PrettyPrintTests,
                  PyListTests,
