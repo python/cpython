@@ -44,6 +44,10 @@ PyAPI_FUNC(PyObject *) _PyLong_FromTime_t(
 PyAPI_FUNC(time_t) _PyLong_AsTime_t(
     PyObject *obj);
 
+/* Round to nearest with ties going away from zero (_PyTime_ROUND_HALF_UP). */
+PyAPI_FUNC(double) _PyTime_RoundHalfUp(
+    double x);
+
 /* Convert a number of seconds, int or float, to time_t. */
 PyAPI_FUNC(int) _PyTime_ObjectToTime_t(
     PyObject *obj,
