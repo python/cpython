@@ -533,10 +533,6 @@ _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 static int
 pymonotonic_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 {
-#ifdef Py_DEBUG
-    static int last_set = 0;
-    static _PyTime_t last = 0;
-#endif
 #if defined(MS_WINDOWS)
     ULONGLONG result;
 
@@ -627,12 +623,6 @@ pymonotonic_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     }
     if (_PyTime_FromTimespec(tp, &ts, raise) < 0)
         return -1;
-#endif
-#ifdef Py_DEBUG
-    /* monotonic clock cannot go backward */
-    assert(!last_set || last <= *tp);
-    last = *tp;
-    last_set = 1;
 #endif
     return 0;
 }
