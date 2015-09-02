@@ -199,8 +199,10 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
                             "Dict doesn't have the same number of keys as values");
             return 0;
         }
-        return validate_exprs(exp->v.Dict.keys, Load, 0) &&
-            validate_exprs(exp->v.Dict.values, Load, 0);
+        /* null_ok=1 for keys expressions to allow dict unpacking to work in
+           dict literals, i.e. ``{**{a:b}}`` */
+        return validate_exprs(exp->v.Dict.keys, Load, /*null_ok=*/ 1) &&
+            validate_exprs(exp->v.Dict.values, Load, /*null_ok=*/ 0);
     case Set_kind:
         return validate_exprs(exp->v.Set.elts, Load, 0);
 #define COMP(NAME) \
