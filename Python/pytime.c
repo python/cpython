@@ -60,6 +60,7 @@ _PyLong_FromTime_t(time_t t)
 #endif
 }
 
+/* Round to nearest with ties going away from zero (_PyTime_ROUND_HALF_UP). */
 static double
 _PyTime_RoundHalfUp(double x)
 {
@@ -81,32 +82,31 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
 
     floatpart = modf(d, &intpart);
     if (floatpart < 0) {
-        floatpart = 1.0 + floatpart;
+        floatpart += 1.0;
         intpart -= 1.0;
     }
 
     floatpart *= denominator;
     if (round == _PyTime_ROUND_HALF_UP)
         floatpart = _PyTime_RoundHalfUp(floatpart);
-    else if (round == _PyTime_ROUND_CEILING) {
+    else if (round == _PyTime_ROUND_CEILING)
         floatpart = ceil(floatpart);
-        if (floatpart >= denominator) {
-            floatpart = 0.0;
-            intpart += 1.0;
-        }
-    }
-    else {
+    else
         floatpart = floor(floatpart);
+    if (floatpart >= denominator) {
+        floatpart -= denominator;
+        intpart += 1.0;
     }
+    assert(0.0 <= floatpart && floatpart < denominator);
 
     *sec = (time_t)intpart;
+    *numerator = (long)floatpart;
+
     err = intpart - (double)*sec;
     if (err <= -1.0 || err >= 1.0) {
         error_time_t_overflow();
         return -1;
     }
-
-    *numerator = (long)floatpart;
     return 0;
 }
 
@@ -123,9 +123,9 @@ _PyTime_ObjectToDenominator(PyObject *obj, time_t *sec, long *numerator,
     }
     else {
         *sec = _PyLong_AsTime_t(obj);
+        *numerator = 0;
         if (*sec == (time_t)-1 && PyErr_Occurred())
             return -1;
-        *numerator = 0;
         return 0;
     }
 }
@@ -167,7 +167,7 @@ _PyTime_ObjectToTimespec(PyObject *obj, time_t *sec, long *nsec,
 {
     int res;
     res = _PyTime_ObjectToDenominator(obj, sec, nsec, 1e9, round);
-    assert(0 <= *nsec && *nsec < SEC_TO_NS );
+    assert(0 <= *nsec && *nsec < SEC_TO_NS);
     return res;
 }
 
@@ -177,7 +177,7 @@ _PyTime_ObjectToTimeval(PyObject *obj, time_t *sec, long *usec,
 {
     int res;
     res = _PyTime_ObjectToDenominator(obj, sec, usec, 1e6, round);
-    assert(0 <= *usec && *usec < SEC_TO_US );
+    assert(0 <= *usec && *usec < SEC_TO_US);
     return res;
 }
 
@@ -444,12 +444,11 @@ _PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
         tv->tv_sec += 1;
     }
 
+    assert(0 <= usec && usec < SEC_TO_US);
+    tv->tv_usec = usec;
+
     if (res && raise)
         _PyTime_overflow();
-
-    assert(0 <= usec && usec <= 999999);
-
-    tv->tv_usec = usec;
     return res;
 }
 
@@ -484,7 +483,7 @@ _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
     }
     ts->tv_nsec = nsec;
 
-    assert(0 <= ts->tv_nsec && ts->tv_nsec <= 999999999);
+    assert(0 <= ts->tv_nsec && ts->tv_nsec < SEC_TO_NS);
     return 0;
 }
 #endif
