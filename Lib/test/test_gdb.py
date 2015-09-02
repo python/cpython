@@ -28,12 +28,19 @@ except OSError:
     # This is what "no gdb" looks like.  There may, however, be other
     # errors that manifest this way too.
     raise unittest.SkipTest("Couldn't find gdb on the path")
-gdb_version_number = re.search(b"^GNU gdb [^\d]*(\d+)\.(\d)", gdb_version)
+# Regex to parse:
+# 'GNU gdb (GDB; SUSE Linux Enterprise 12) 7.7\n' -> 7.7
+# 'GNU gdb (GDB) Fedora 7.9.1-17.fc22\n' -> 7.9
+gdb_version_number = re.search(b"^GNU gdb .*? (\d+)\.(\d)", gdb_version)
+if not gdb_version_number:
+    raise Exception("unable to parse GDB version: %a" % gdb_version)
 gdb_major_version = int(gdb_version_number.group(1))
 gdb_minor_version = int(gdb_version_number.group(2))
 if gdb_major_version < 7:
-    raise unittest.SkipTest("gdb versions before 7.0 didn't support python embedding"
-                            " Saw:\n" + gdb_version.decode('ascii', 'replace'))
+    raise unittest.SkipTest("gdb versions before 7.0 didn't support python "
+                            "embedding. Saw %s.%s:\n%s"
+                            % (gdb_major_version, gdb_minor_version,
+                               gdb_version.decode('ascii', 'replace')))
 
 if not sysconfig.is_python_build():
     raise unittest.SkipTest("test_gdb only works on source builds at the moment.")
@@ -878,7 +885,7 @@ class PyLocalsTests(DebuggerTests):
 
 def test_main():
     if support.verbose:
-        print("GDB version:")
+        print("GDB version %s.%s:" % (gdb_major_version, gdb_minor_version))
         for line in os.fsdecode(gdb_version).splitlines():
             print(" " * 4 + line)
     run_unittest(PrettyPrintTests,
