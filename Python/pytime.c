@@ -64,11 +64,13 @@ _PyLong_FromTime_t(time_t t)
 static double
 _PyTime_RoundHalfUp(double x)
 {
-    if (x >= 0.0)
-        x = floor(x + 0.5);
+    /* volatile avoids optimization changing how numbers are rounded */
+    volatile double d = x;
+    if (d >= 0.0)
+        d = floor(d + 0.5);
     else
-        x = ceil(x - 0.5);
-    return x;
+        d = ceil(d - 0.5);
+    return d;
 }
 
 
@@ -77,7 +79,7 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
                             double denominator, _PyTime_round_t round)
 {
     double intpart, err;
-    /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
+    /* volatile avoids optimization changing how numbers are rounded */
     volatile double floatpart;
 
     floatpart = modf(d, &intpart);
@@ -134,7 +136,8 @@ int
 _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
 {
     if (PyFloat_Check(obj)) {
-        double d, intpart, err;
+        /* volatile avoids optimization changing how numbers are rounded */
+        volatile double d, intpart, err;
 
         d = PyFloat_AsDouble(obj);
         if (round == _PyTime_ROUND_HALF_UP)
@@ -255,7 +258,7 @@ static int
 _PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
                         long to_nanoseconds)
 {
-    /* volatile avoids unsafe optimization on float enabled by gcc -O3 */
+    /* volatile avoids optimization changing how numbers are rounded */
     volatile double d, err;
 
     /* convert to a number of nanoseconds */
