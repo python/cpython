@@ -1082,9 +1082,18 @@ class TestOldPyTime(unittest.TestCase):
             (-1.9, -2, FLOOR),
             (-1.9, -2, HALF_UP),
             (-1.9, -1, CEILING),
+
             (1.9, 1, FLOOR),
             (1.9, 2, HALF_UP),
             (1.9, 2, CEILING),
+
+            (-0.6, -1, HALF_UP),
+            (-0.5, -1, HALF_UP),
+            (-0.4, 0, HALF_UP),
+
+            (0.4, 0, HALF_UP),
+            (0.5, 1, HALF_UP),
+            (0.6, 1, HALF_UP),
         ):
             self.assertEqual(pytime_object_to_time_t(obj, rnd), time_t)
 
@@ -1127,13 +1136,19 @@ class TestOldPyTime(unittest.TestCase):
             (1e-7, (0, 1), CEILING),
             (1e-7, (0, 0), HALF_UP),
 
-            (0.4e-6, (0, 0), HALF_UP),
-            (0.5e-6, (0, 1), HALF_UP),
-            (0.6e-6, (0, 1), HALF_UP),
-
             (0.9999999, (0, 999999), FLOOR),
             (0.9999999, (1, 0), CEILING),
             (0.9999999, (1, 0), HALF_UP),
+
+            (-0.6e-6, (-1, 999999), HALF_UP),
+            # skipped, -0.5e-6 is inexact in base 2
+            #(-0.5e-6, (-1, 999999), HALF_UP),
+            (-0.4e-6, (0, 0), HALF_UP),
+
+            (0.4e-6, (0, 0), HALF_UP),
+            # skipped, 0.5e-6 is inexact in base 2
+            #(0.5e-6, (0, 1), HALF_UP),
+            (0.6e-6, (0, 1), HALF_UP),
         ):
             with self.subTest(obj=obj, round=rnd, timeval=timeval):
                 self.assertEqual(pytime_object_to_timeval(obj, rnd), timeval)
@@ -1177,13 +1192,18 @@ class TestOldPyTime(unittest.TestCase):
             (1e-10, (0, 1), CEILING),
             (1e-10, (0, 0), HALF_UP),
 
-            (0.4e-9, (0, 0), HALF_UP),
-            (0.5e-9, (0, 1), HALF_UP),
-            (0.6e-9, (0, 1), HALF_UP),
-
             (0.9999999999, (0, 999999999), FLOOR),
             (0.9999999999, (1, 0), CEILING),
             (0.9999999999, (1, 0), HALF_UP),
+
+            (-0.6e-9, (-1, 999999999), HALF_UP),
+            # skipped, 0.5e-6 is inexact in base 2
+            #(-0.5e-9, (-1, 999999999), HALF_UP),
+            (-0.4e-9, (0, 0), HALF_UP),
+
+            (0.4e-9, (0, 0), HALF_UP),
+            (0.5e-9, (0, 1), HALF_UP),
+            (0.6e-9, (0, 1), HALF_UP),
         ):
             with self.subTest(obj=obj, round=rnd, timespec=timespec):
                 self.assertEqual(pytime_object_to_timespec(obj, rnd), timespec)
