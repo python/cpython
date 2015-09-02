@@ -63,9 +63,11 @@ def run_gdb(*args, **env_vars):
     base_cmd = ('gdb', '--batch', '-nx')
     if (gdb_major_version, gdb_minor_version) >= (7, 4):
         base_cmd += ('-iex', 'add-auto-load-safe-path ' + checkout_hook_path)
-    out, err = subprocess.Popen(base_cmd + args,
-        stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env,
-        ).communicate()
+    proc = subprocess.Popen(base_cmd + args,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE, env=env)
+    with proc:
+        out, err = proc.communicate()
     return out.decode('utf-8', 'replace'), err.decode('utf-8', 'replace')
 
 # Verify that "gdb" was built with the embedded python support enabled:
