@@ -78,9 +78,9 @@ exec_tests = [
     # Pass,
     "pass",
     # Break
-    "break",
+    "for v in v:break",
     # Continue
-    "continue",
+    "for v in v:continue",
     # for statements with naked tuples (see http://bugs.python.org/issue6704)
     "for a,b in c: pass",
     "[(a,b) for a,b in c]",
@@ -112,6 +112,9 @@ exec_tests = [
     "async def f():\n async for e in i: 1\n else: 2",
     # AsyncWith
     "async def f():\n async with a as b: 1",
+    # PEP 448: Additional Unpacking Generalizations
+    "{**{1:2}, 2:3}",
+    "{*{1, 2}, 3}",
 ]
 
 # These are compiled through "single"
@@ -231,9 +234,12 @@ class AST_Tests(unittest.TestCase):
                                     (single_tests, single_results, "single"),
                                     (eval_tests, eval_results, "eval")):
             for i, o in zip(input, output):
-                ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
-                self.assertEqual(to_tuple(ast_tree), o)
-                self._assertTrueorder(ast_tree, (0, 0))
+                with self.subTest(action="parsing", input=i):
+                    ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
+                    self.assertEqual(to_tuple(ast_tree), o)
+                    self._assertTrueorder(ast_tree, (0, 0))
+                with self.subTest(action="compiling", input=i):
+                    compile(ast_tree, "?", kind)
 
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
@@ -780,8 +786,6 @@ class ASTValidatorTests(unittest.TestCase):
     def test_dict(self):
         d = ast.Dict([], [ast.Name("x", ast.Load())])
         self.expr(d, "same number of keys as values")
-        d = ast.Dict([None], [ast.Name("x", ast.Load())])
-        self.expr(d, "None disallowed")
         d = ast.Dict([ast.Name("x", ast.Load())], [None])
         self.expr(d, "None disallowed")
 
@@ -972,8 +976,8 @@ exec_results = [
 ('Module', [('Global', (1, 0), ['v'])]),
 ('Module', [('Expr', (1, 0), ('Num', (1, 0), 1))]),
 ('Module', [('Pass', (1, 0))]),
-('Module', [('Break', (1, 0))]),
-('Module', [('Continue', (1, 0))]),
+('Module', [('For', (1, 0), ('Name', (1, 4), 'v', ('Store',)), ('Name', (1, 9), 'v', ('Load',)), [('Break', (1, 11))], [])]),
+('Module', [('For', (1, 0), ('Name', (1, 4), 'v', ('Store',)), ('Name', (1, 9), 'v', ('Load',)), [('Continue', (1, 11))], [])]),
 ('Module', [('For', (1, 0), ('Tuple', (1, 4), [('Name', (1, 4), 'a', ('Store',)), ('Name', (1, 6), 'b', ('Store',))], ('Store',)), ('Name', (1, 11), 'c', ('Load',)), [('Pass', (1, 14))], [])]),
 ('Module', [('Expr', (1, 0), ('ListComp', (1, 1), ('Tuple', (1, 2), [('Name', (1, 2), 'a', ('Load',)), ('Name', (1, 4), 'b', ('Load',))], ('Load',)), [('comprehension', ('Tuple', (1, 11), [('Name', (1, 11), 'a', ('Store',)), ('Name', (1, 13), 'b', ('Store',))], ('Store',)), ('Name', (1, 18), 'c', ('Load',)), [])]))]),
 ('Module', [('Expr', (1, 0), ('GeneratorExp', (1, 1), ('Tuple', (1, 2), [('Name', (1, 2), 'a', ('Load',)), ('Name', (1, 4), 'b', ('Load',))], ('Load',)), [('comprehension', ('Tuple', (1, 11), [('Name', (1, 11), 'a', ('Store',)), ('Name', (1, 13), 'b', ('Store',))], ('Store',)), ('Name', (1, 18), 'c', ('Load',)), [])]))]),
@@ -986,6 +990,8 @@ exec_results = [
 ('Module', [('AsyncFunctionDef', (1, 6), 'f', ('arguments', [], None, [], [], None, []), [('Expr', (2, 1), ('Await', (2, 1), ('Call', (2, 7), ('Name', (2, 7), 'something', ('Load',)), [], [])))], [], None)]),
 ('Module', [('AsyncFunctionDef', (1, 6), 'f', ('arguments', [], None, [], [], None, []), [('AsyncFor', (2, 7), ('Name', (2, 11), 'e', ('Store',)), ('Name', (2, 16), 'i', ('Load',)), [('Expr', (2, 19), ('Num', (2, 19), 1))], [('Expr', (3, 7), ('Num', (3, 7), 2))])], [], None)]),
 ('Module', [('AsyncFunctionDef', (1, 6), 'f', ('arguments', [], None, [], [], None, []), [('AsyncWith', (2, 7), [('withitem', ('Name', (2, 12), 'a', ('Load',)), ('Name', (2, 17), 'b', ('Store',)))], [('Expr', (2, 20), ('Num', (2, 20), 1))])], [], None)]),
+('Module', [('Expr', (1, 0), ('Dict', (1, 1), [None, ('Num', (1, 10), 2)], [('Dict', (1, 4), [('Num', (1, 4), 1)], [('Num', (1, 6), 2)]), ('Num', (1, 12), 3)]))]),
+('Module', [('Expr', (1, 0), ('Set', (1, 1), [('Starred', (1, 1), ('Set', (1, 3), [('Num', (1, 3), 1), ('Num', (1, 6), 2)]), ('Load',)), ('Num', (1, 10), 3)]))]),
 ]
 single_results = [
 ('Interactive', [('Expr', (1, 0), ('BinOp', (1, 0), ('Num', (1, 0), 1), ('Add',), ('Num', (1, 2), 2)))]),
