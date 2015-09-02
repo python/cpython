@@ -662,27 +662,23 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         # Single-field rounding.
         eq(td(milliseconds=0.4/1000), td(0))    # rounds to 0
         eq(td(milliseconds=-0.4/1000), td(0))    # rounds to 0
-        eq(td(milliseconds=0.5/1000), td(microseconds=0))
-        eq(td(milliseconds=-0.5/1000), td(microseconds=0))
+        eq(td(milliseconds=0.5/1000), td(microseconds=1))
+        eq(td(milliseconds=-0.5/1000), td(microseconds=-1))
         eq(td(milliseconds=0.6/1000), td(microseconds=1))
         eq(td(milliseconds=-0.6/1000), td(microseconds=-1))
-        eq(td(seconds=0.5/10**6), td(microseconds=0))
-        eq(td(seconds=-0.5/10**6), td(microseconds=0))
+        eq(td(seconds=0.5/10**6), td(microseconds=1))
+        eq(td(seconds=-0.5/10**6), td(microseconds=-1))
 
         # Rounding due to contributions from more than one field.
         us_per_hour = 3600e6
         us_per_day = us_per_hour * 24
         eq(td(days=.4/us_per_day), td(0))
         eq(td(hours=.2/us_per_hour), td(0))
-        eq(td(days=.4/us_per_day, hours=.2/us_per_hour), td(microseconds=1))
+        eq(td(days=.4/us_per_day, hours=.2/us_per_hour), td(microseconds=1), td)
 
         eq(td(days=-.4/us_per_day), td(0))
         eq(td(hours=-.2/us_per_hour), td(0))
         eq(td(days=-.4/us_per_day, hours=-.2/us_per_hour), td(microseconds=-1))
-
-        # Test for a patch in Issue 8860
-        eq(td(microseconds=0.5), 0.5*td(microseconds=1.0))
-        eq(td(microseconds=0.5)//td.resolution, 0.5*td.resolution//td.resolution)
 
     def test_massive_normalization(self):
         td = timedelta(microseconds=-1)

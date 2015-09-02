@@ -316,6 +316,14 @@ def _divide_and_round(a, b):
 
     return q
 
+def _round_half_up(x):
+    """Round to nearest with ties going away from zero."""
+    if x >= 0.0:
+        return _math.floor(x + 0.5)
+    else:
+        return _math.ceil(x - 0.5)
+
+
 class timedelta:
     """Represent the difference between two datetime objects.
 
@@ -399,7 +407,7 @@ class timedelta:
         # secondsfrac isn't referenced again
 
         if isinstance(microseconds, float):
-            microseconds = round(microseconds + usdouble)
+            microseconds = _round_half_up(microseconds + usdouble)
             seconds, microseconds = divmod(microseconds, 1000000)
             days, seconds = divmod(seconds, 24*3600)
             d += days
@@ -410,7 +418,7 @@ class timedelta:
             days, seconds = divmod(seconds, 24*3600)
             d += days
             s += seconds
-            microseconds = round(microseconds + usdouble)
+            microseconds = _round_half_up(microseconds + usdouble)
         assert isinstance(s, int)
         assert isinstance(microseconds, int)
         assert abs(s) <= 3 * 24 * 3600

@@ -17,6 +17,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #23517: datetime.timedelta constructor now rounds microseconds to
+  nearest with ties going away from zero (ROUND_HALF_UP), as Python 2 and
+  Python older than 3.3, instead of rounding to nearest with ties going to
+  nearest even integer (ROUND_HALF_EVEN).
+
 - Issue #23552: Timeit now warns when there is substantial (4x) variance
   between best and worst times. Patch from Serhiy Storchaka.
 
