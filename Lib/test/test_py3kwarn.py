@@ -2,6 +2,7 @@ import unittest
 import sys
 from test.test_support import check_py3k_warnings, CleanImport, run_unittest
 import warnings
+from test import test_support
 
 if not sys.py3kwarning:
     raise unittest.SkipTest('%s must be run with the -3 flag' % __name__)
@@ -356,6 +357,21 @@ class TestStdlibRemovals(unittest.TestCase):
     def check_removal(self, module_name, optional=False):
         """Make sure the specified module, when imported, raises a
         DeprecationWarning and specifies itself in the message."""
+        if module_name in sys.modules:
+            mod = sys.modules[module_name]
+            filename = getattr(mod, '__file__', '')
+            mod = None
+            # the module is not implemented in C?
+            if not filename.endswith(('.py', '.pyc', '.pyo')):
+                # Issue #23375: If the module was already loaded, reimporting
+                # the module will not emit again the warning. The warning is
+                # emited when the module is loaded, but C modules cannot
+                # unloaded.
+                if test_support.verbose:
+                    print("Cannot test the Python 3 DeprecationWarning of the "
+                          "%s module, the C module is already loaded"
+                          % module_name)
+                return
         with CleanImport(module_name), warnings.catch_warnings():
             warnings.filterwarnings("error", ".+ (module|package) .+ removed",
                                     DeprecationWarning, __name__)
