@@ -1,14 +1,14 @@
-from __future__ import nested_scopes    # Backward compat for 2.1
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
 from wsgiref.headers import Headers
 from wsgiref.handlers import BaseHandler, BaseCGIHandler
 from wsgiref import util
 from wsgiref.validate import validator
-from wsgiref.simple_server import WSGIServer, WSGIRequestHandler, demo_app
+from wsgiref.simple_server import WSGIServer, WSGIRequestHandler
 from wsgiref.simple_server import make_server
 from StringIO import StringIO
 from SocketServer import BaseServer
+
 import os
 import re
 import sys
