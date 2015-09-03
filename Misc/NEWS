@@ -14,6 +14,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24992: Fix error handling and a race condition (related to garbage
+  collection) in collections.OrderedDict constructor.
+
 - Issue #24881: Fixed setting binary mode in Python implementation of FileIO
   on Windows and Cygwin.  Patch from Akira Li.
 
