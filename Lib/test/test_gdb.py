@@ -10,21 +10,42 @@ import sys
 import unittest
 import sysconfig
 
+from test import test_support
 from test.test_support import run_unittest, findfile
 
+# Is this Python configured to support threads?
 try:
-    gdb_version, _ = subprocess.Popen(["gdb", "-nx", "--version"],
-                                      stdout=subprocess.PIPE).communicate()
-except OSError:
-    # This is what "no gdb" looks like.  There may, however, be other
-    # errors that manifest this way too.
-    raise unittest.SkipTest("Couldn't find gdb on the path")
-gdb_version_number = re.search("^GNU gdb [^\d]*(\d+)\.(\d)", gdb_version)
-gdb_major_version = int(gdb_version_number.group(1))
-gdb_minor_version = int(gdb_version_number.group(2))
+    import thread
+except ImportError:
+    thread = None
+
+def get_gdb_version():
+    try:
+        proc = subprocess.Popen(["gdb", "-nx", "--version"],
+                                stdout=subprocess.PIPE,
+                                universal_newlines=True)
+        version = proc.communicate()[0]
+    except OSError:
+        # This is what "no gdb" looks like.  There may, however, be other
+        # errors that manifest this way too.
+        raise unittest.SkipTest("Couldn't find gdb on the path")
+
+    # Regex to parse:
+    # 'GNU gdb (GDB; SUSE Linux Enterprise 12) 7.7\n' -> 7.7
+    # 'GNU gdb (GDB) Fedora 7.9.1-17.fc22\n' -> 7.9
+    # 'GNU gdb 6.1.1 [FreeBSD]\n'
+    match = re.search("^GNU gdb.*? (\d+)\.(\d)", version)
+    if match is None:
+        raise Exception("unable to parse GDB version: %r" % version)
+    return (version, int(match.group(1)), int(match.group(2)))
+
+gdb_version, gdb_major_version, gdb_minor_version = get_gdb_version()
 if gdb_major_version < 7:
-    raise unittest.SkipTest("gdb versions before 7.0 didn't support python embedding"
-                            " Saw:\n" + gdb_version)
+    raise unittest.SkipTest("gdb versions before 7.0 didn't support python "
+                            "embedding. Saw %s.%s:\n%s"
+                            % (gdb_major_version, gdb_minor_version,
+                               gdb_version))
+
 if sys.platform.startswith("sunos"):
     raise unittest.SkipTest("test doesn't work very well on Solaris")
 
@@ -713,19 +734,132 @@ $''')
 class PyBtTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
                      "Python was compiled with optimizations")
-    def test_basic_command(self):
+    def test_bt(self):
         'Verify that the "py-bt" command works'
         bt = self.get_stack_trace(script=self.get_sample_script(),
                                   cmds_after_breakpoint=['py-bt'])
         self.assertMultilineMatches(bt,
                                     r'''^.*
-#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+Traceback \(most recent call first\):
+  File ".*gdb_sample.py", line 10, in baz
+    print\(42\)
+  File ".*gdb_sample.py", line 7, in bar
     baz\(a, b, c\)
-#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
+  File ".*gdb_sample.py", line 4, in foo
     bar\(a, b, c\)
-#[0-9]+ Frame 0x[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
+  File ".*gdb_sample.py", line 12, in <module>
     foo\(1, 2, 3\)
 ''')
+
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    def test_bt_full(self):
+        'Verify that the "py-bt-full" command works'
+        bt = self.get_stack_trace(script=self.get_sample_script(),
+                                  cmds_after_breakpoint=['py-bt-full'])
+        self.assertMultilineMatches(bt,
+                                    r'''^.*
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 7, in bar \(a=1, b=2, c=3\)
+    baz\(a, b, c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 4, in foo \(a=1, b=2, c=3\)
+    bar\(a, b, c\)
+#[0-9]+ Frame 0x-?[0-9a-f]+, for file .*gdb_sample.py, line 12, in <module> \(\)
+    foo\(1, 2, 3\)
+''')
+
+    @unittest.skipUnless(thread,
+                         "Python was compiled without thread support")
+    def test_threads(self):
+        'Verify that "py-bt" indicates threads that are waiting for the GIL'
+        cmd = '''
+from threading import Thread
+
+class TestThread(Thread):
+    # These threads would run forever, but we'll interrupt things with the
+    # debugger
+    def run(self):
+        i = 0
+        while 1:
+             i += 1
+
+t = {}
+for i in range(4):
+   t[i] = TestThread()
+   t[i].start()
+
+# Trigger a breakpoint on the main thread
+print 42
+
+'''
+        # Verify with "py-bt":
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=['thread apply all py-bt'])
+        self.assertIn('Waiting for the GIL', gdb_output)
+
+        # Verify with "py-bt-full":
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=['thread apply all py-bt-full'])
+        self.assertIn('Waiting for the GIL', gdb_output)
+
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    # Some older versions of gdb will fail with
+    #  "Cannot find new threads: generic error"
+    # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
+    @unittest.skipUnless(thread,
+                         "Python was compiled without thread support")
+    def test_gc(self):
+        'Verify that "py-bt" indicates if a thread is garbage-collecting'
+        cmd = ('from gc import collect\n'
+               'print 42\n'
+               'def foo():\n'
+               '    collect()\n'
+               'def bar():\n'
+               '    foo()\n'
+               'bar()\n')
+        # Verify with "py-bt":
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=['break update_refs', 'continue', 'py-bt'],
+                                          )
+        self.assertIn('Garbage-collecting', gdb_output)
+
+        # Verify with "py-bt-full":
+        gdb_output = self.get_stack_trace(cmd,
+                                          cmds_after_breakpoint=['break update_refs', 'continue', 'py-bt-full'],
+                                          )
+        self.assertIn('Garbage-collecting', gdb_output)
+
+    @unittest.skipIf(python_is_optimized(),
+                     "Python was compiled with optimizations")
+    # Some older versions of gdb will fail with
+    #  "Cannot find new threads: generic error"
+    # unless we add LD_PRELOAD=PATH-TO-libpthread.so.1 as a workaround
+    @unittest.skipUnless(thread,
+                         "Python was compiled without thread support")
+    def test_pycfunction(self):
+        'Verify that "py-bt" displays invocations of PyCFunction instances'
+        # Tested function must not be defined with METH_NOARGS or METH_O,
+        # otherwise call_function() doesn't call PyCFunction_Call()
+        cmd = ('from time import gmtime\n'
+               'def foo():\n'
+               '    gmtime(1)\n'
+               'def bar():\n'
+               '    foo()\n'
+               'bar()\n')
+        # Verify with "py-bt":
+        gdb_output = self.get_stack_trace(cmd,
+                                          breakpoint='time_gmtime',
+                                          cmds_after_breakpoint=['bt', 'py-bt'],
+                                          )
+        self.assertIn('<built-in function gmtime', gdb_output)
+
+        # Verify with "py-bt-full":
+        gdb_output = self.get_stack_trace(cmd,
+                                          breakpoint='time_gmtime',
+                                          cmds_after_breakpoint=['py-bt-full'],
+                                          )
+        self.assertIn('#0 <built-in function gmtime', gdb_output)
+
 
 class PyPrintTests(DebuggerTests):
     @unittest.skipIf(python_is_optimized(),
@@ -781,6 +915,10 @@ class PyLocalsTests(DebuggerTests):
                                     r".*\na = 1\nb = 2\nc = 3\n.*")
 
 def test_main():
+    if test_support.verbose:
+        print("GDB version %s.%s:" % (gdb_major_version, gdb_minor_version))
+        for line in gdb_version.splitlines():
+            print(" " * 4 + line)
     run_unittest(PrettyPrintTests,
                  PyListTests,
                  StackNavigationTests,
