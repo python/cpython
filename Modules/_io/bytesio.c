@@ -57,14 +57,18 @@ scan_eol(bytesio *self, Py_ssize_t len)
     Py_ssize_t maxlen;
 
     assert(self->buf != NULL);
+    assert(self->pos >= 0);
+
+    if (self->pos >= self->string_size)
+        return 0;
 
     /* Move to the end of the line, up to the end of the string, s. */
-    start = PyBytes_AS_STRING(self->buf) + self->pos;
     maxlen = self->string_size - self->pos;
     if (len < 0 || len > maxlen)
         len = maxlen;
 
     if (len) {
+        start = PyBytes_AS_STRING(self->buf) + self->pos;
         n = memchr(start, '\n', len);
         if (n)
             /* Get the length from the current position to the end of
