@@ -487,7 +487,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
         console.stop_readline()
         # annotate restart in shell window and mark it
         console.text.delete("iomark", "end-1c")
-        tag = 'RUN ' + filename if filename else 'RESTART Shell'
+        tag = 'RESTART: ' + (filename if filename else 'Shell')
         halfbar = ((int(console.width) -len(tag) - 4) // 2) * '='
         console.write("\n{0} {1} {0}".format(halfbar, tag))
         console.text.mark_set("restart", "end-1c")
