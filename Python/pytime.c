@@ -479,13 +479,13 @@ _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
         secs -= 1;
     }
     ts->tv_sec = (time_t)secs;
+    assert(0 <= nsec && nsec < SEC_TO_NS);
+    ts->tv_nsec = nsec;
+
     if ((_PyTime_t)ts->tv_sec != secs) {
         _PyTime_overflow();
         return -1;
     }
-    ts->tv_nsec = nsec;
-
-    assert(0 <= ts->tv_nsec && ts->tv_nsec < SEC_TO_NS);
     return 0;
 }
 #endif
