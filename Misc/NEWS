@@ -17,6 +17,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #23517: fromtimestamp() and utcfromtimestamp() methods of
+  datetime.datetime now round microseconds to nearest with ties going away from
+  zero (ROUND_HALF_UP), as Python 2 and Python older than 3.3, instead of
+  rounding towards -Infinity (ROUND_FLOOR).
+
 - Issue #23517: datetime.timedelta constructor now rounds microseconds to
   nearest with ties going away from zero (ROUND_HALF_UP), as Python 2 and
   Python older than 3.3, instead of rounding to nearest with ties going to
