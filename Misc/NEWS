@@ -70,6 +70,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24913: Fix overrun error in deque.index().
+  Found by John Leitch and Bryce Darling.
+
 
 What's New in Python 3.5.0 release candidate 2?
 ===============================================
