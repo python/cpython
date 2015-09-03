@@ -135,8 +135,9 @@ int
 _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
 {
     if (PyFloat_Check(obj)) {
+        double intpart, err;
         /* volatile avoids optimization changing how numbers are rounded */
-        volatile double d, intpart, err;
+        volatile double d;
 
         d = PyFloat_AsDouble(obj);
         if (round == _PyTime_ROUND_HALF_UP)
@@ -257,8 +258,9 @@ static int
 _PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
                         long to_nanoseconds)
 {
+    double err;
     /* volatile avoids optimization changing how numbers are rounded */
-    volatile double d, err;
+    volatile double d;
 
     /* convert to a number of nanoseconds */
     d = value;
