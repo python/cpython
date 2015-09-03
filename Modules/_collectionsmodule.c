@@ -924,6 +924,8 @@ deque_index(dequeobject *deque, PyObject *args)
         if (stop < 0)
             stop = 0;
     }
+    if (stop > Py_SIZE(deque))
+        stop = Py_SIZE(deque);
 
     for (i=0 ; i<stop ; i++) {
         if (i >= start) {
