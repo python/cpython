@@ -98,7 +98,6 @@ For removing nodes:
 
 Others:
 
-* _odict_initialize(od)
 * _odict_find_node(od, key)
 * _odict_keys_equal(od1, od2)
 
@@ -602,15 +601,6 @@ _odict_get_index(PyODictObject *od, PyObject *key)
     return _odict_get_index_hash(od, key, hash);
 }
 
-static int
-_odict_initialize(PyODictObject *od)
-{
-    od->od_state = 0;
-    _odict_FIRST(od) = NULL;
-    _odict_LAST(od) = NULL;
-    return _odict_resize((PyODictObject *)od);
-}
-
 /* Returns NULL if there was some error or the key was not found. */
 static _ODictNode *
 _odict_find_node(PyODictObject *od, PyObject *key)
@@ -744,7 +734,7 @@ _odict_pop_node(PyODictObject *od, _ODictNode *node, PyObject *key)
 /* If someone calls PyDict_DelItem() directly on an OrderedDict, we'll
    get all sorts of problems here.  In PyODict_DelItem we make sure to
    call _odict_clear_node first.
- 
+
    This matters in the case of colliding keys.  Suppose we add 3 keys:
    [A, B, C], where the hash of C collides with A and the next possible
    index in the hash table is occupied by B.  If we remove B then for C
@@ -1739,14 +1729,28 @@ odict_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 odict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *od = PyDict_Type.tp_new(type, args, kwds);
-    if (od != NULL) {
-        if (_odict_initialize((PyODictObject *)od) < 0)
-            return NULL;
-        ((PyODictObject *)od)->od_inst_dict = PyDict_New();
-        ((PyODictObject *)od)->od_weakreflist = NULL;
+    PyObject *dict;
+    PyODictObject *od;
+
+    dict = PyDict_New();
+    if (dict == NULL)
+        return NULL;
+
+    od = (PyODictObject *)PyDict_Type.tp_new(type, args, kwds);
+    if (od == NULL) {
+        Py_DECREF(dict);
+        return NULL;
     }
-    return od;
+
+    od->od_inst_dict = dict;
+    /* type constructor fills the memory with zeros (see
+       PyType_GenericAlloc()), there is no need to set them to zero again */
+    if (_odict_resize(od) < 0) {
+        Py_DECREF(od);
+        return NULL;
+    }
+
+    return (PyObject*)od;
 }
 
 /* PyODict_Type */
