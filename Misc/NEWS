@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24989: Fixed buffer overread in BytesIO.readline() if a position is
+  set beyond size.  Based on patch by John Leitch.
+
 - Issue #24847: Removes vcruntime140.dll dependency from Tcl/Tk.
 
 - Issue #24839: platform._syscmd_ver raises DeprecationWarning
