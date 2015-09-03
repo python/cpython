@@ -15,6 +15,8 @@ import re
 import sys
 import unittest
 
+from test import support
+
 
 class MockServer(WSGIServer):
     """Non-socket HTTP server"""
