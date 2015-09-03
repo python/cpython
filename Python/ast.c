@@ -2040,6 +2040,7 @@ ast_for_atom(struct compiling *c, const node *n)
                     PyOS_snprintf(buf, sizeof(buf), "(%s) %s", errtype, s);
                     Py_DECREF(errstr);
                 } else {
+                    PyErr_Clear();
                     PyOS_snprintf(buf, sizeof(buf), "(%s) unknown error", errtype);
                 }
                 ast_error(c, n, buf);
