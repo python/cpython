@@ -43,6 +43,7 @@
 #ifdef PPRO
   #if defined(_MSC_VER)
     #include <float.h>
+    #pragma float_control(precise, on)
     #pragma fenv_access(on)
   #elif !defined(__OpenBSD__) && !defined(__NetBSD__)
     /* C99 */
