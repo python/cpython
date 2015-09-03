@@ -4781,9 +4781,7 @@ typedef struct {
     } \
 
 
-#define UTIME_HAVE_DIR_FD (defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT))
-
-#if UTIME_HAVE_DIR_FD
+#if defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT)
 
 static int
 utime_dir_fd(utime_t *ut, int dir_fd, char *path, int follow_symlinks)
@@ -4806,9 +4804,7 @@ utime_dir_fd(utime_t *ut, int dir_fd, char *path, int follow_symlinks)
 
 #endif
 
-#define UTIME_HAVE_FD (defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS))
-
-#if UTIME_HAVE_FD
+#if defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS)
 
 static int
 utime_fd(utime_t *ut, int fd)
@@ -4912,14 +4908,14 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
     memset(&path, 0, sizeof(path));
     path.function_name = "utime";
     memset(&utime, 0, sizeof(utime_t));
-#if UTIME_HAVE_FD
+#if defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS)
     path.allow_fd = 1;
 #endif
     if (!PyArg_ParseTupleAndKeywords(args, kwargs,
             "O&|O$OO&p:utime", keywords,
             path_converter, &path,
             &times, &ns,
-#if UTIME_HAVE_DIR_FD
+#if defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT)
             dir_fd_converter, &dir_fd,
 #else
             dir_fd_unavailable, &dir_fd,
@@ -5035,13 +5031,13 @@ posix_utime(PyObject *self, PyObject *args, PyObject *kwargs)
     else
 #endif
 
-#if UTIME_HAVE_DIR_FD
+#if defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT)
     if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks))
         result = utime_dir_fd(&utime, dir_fd, path.narrow, follow_symlinks);
     else
 #endif
 
-#if UTIME_HAVE_FD
+#if defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS)
     if (path.fd != -1)
         result = utime_fd(&utime, path.fd);
     else
