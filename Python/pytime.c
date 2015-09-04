@@ -82,10 +82,6 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
     volatile double floatpart;
 
     floatpart = modf(d, &intpart);
-    if (floatpart < 0) {
-        floatpart += 1.0;
-        intpart -= 1.0;
-    }
 
     floatpart *= denominator;
     if (round == _PyTime_ROUND_HALF_UP)
@@ -97,6 +93,10 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
     if (floatpart >= denominator) {
         floatpart -= denominator;
         intpart += 1.0;
+    }
+    else if (floatpart < 0) {
+        floatpart += denominator;
+        intpart -= 1.0;
     }
     assert(0.0 <= floatpart && floatpart < denominator);
 
