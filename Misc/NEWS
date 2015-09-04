@@ -88,6 +88,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24635: Fixed a bug in typing.py where isinstance([], typing.Iterable)
+  would return True once, then False on subsequent calls.
+
 - Issue #24989: Fixed buffer overread in BytesIO.readline() if a position is
   set beyond size.  Based on patch by John Leitch.
 
