@@ -66,13 +66,15 @@ if "%~1"=="-V" shift & goto Version
 rem These use the actual property names used by MSBuild.  We could just let
 rem them in through the environment, but we specify them on the command line
 rem anyway for visibility so set defaults after this
-if "%~1"=="-e" (set IncludeExternals=true) & call "%dir%get_externals.bat" & shift & goto CheckOpts
+if "%~1"=="-e" (set IncludeExternals=true) & shift & goto CheckOpts
 if "%~1"=="--no-ssl" (set IncludeSSL=false) & shift & goto CheckOpts
 if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
 
 if "%IncludeExternals%"=="" set IncludeExternals=false
 if "%IncludeSSL%"=="" set IncludeSSL=true
 if "%IncludeTkinter%"=="" set IncludeTkinter=true
+
+if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
 
 if "%platf%"=="x64" (set vs_platf=x86_amd64)
 
