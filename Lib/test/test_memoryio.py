@@ -166,6 +166,10 @@ class MemoryTestMixin:
         memio.seek(0)
         self.assertEqual(memio.read(None), buf)
         self.assertRaises(TypeError, memio.read, '')
+        memio.seek(len(buf) + 1)
+        self.assertEqual(memio.read(1), self.EOF)
+        memio.seek(len(buf) + 1)
+        self.assertEqual(memio.read(), self.EOF)
         memio.close()
         self.assertRaises(ValueError, memio.read)
 
@@ -185,6 +189,9 @@ class MemoryTestMixin:
         self.assertEqual(memio.readline(-1), buf)
         memio.seek(0)
         self.assertEqual(memio.readline(0), self.EOF)
+        # Issue #24989: Buffer overread
+        memio.seek(len(buf) * 2 + 1)
+        self.assertEqual(memio.readline(), self.EOF)
 
         buf = self.buftype("1234567890\n")
         memio = self.ioclass((buf * 3)[:-1])
@@ -217,6 +224,9 @@ class MemoryTestMixin:
         memio.seek(0)
         self.assertEqual(memio.readlines(None), [buf] * 10)
         self.assertRaises(TypeError, memio.readlines, '')
+        # Issue #24989: Buffer overread
+        memio.seek(len(buf) * 10 + 1)
+        self.assertEqual(memio.readlines(), [])
         memio.close()
         self.assertRaises(ValueError, memio.readlines)
 
@@ -238,6 +248,9 @@ class MemoryTestMixin:
             self.assertEqual(line, buf)
             i += 1
         self.assertEqual(i, 10)
+        # Issue #24989: Buffer overread
+        memio.seek(len(buf) * 10 + 1)
+        self.assertEqual(list(memio), [])
         memio = self.ioclass(buf * 2)
         memio.close()
         self.assertRaises(ValueError, memio.__next__)
