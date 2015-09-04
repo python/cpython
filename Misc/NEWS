@@ -15,6 +15,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24989: Fixed buffer overread in BytesIO.readline() if a position is
+  set beyond size.  Based on patch by John Leitch.
+
 - Issue #24913: Fix overrun error in deque.index().
   Found by John Leitch and Bryce Darling.
 
