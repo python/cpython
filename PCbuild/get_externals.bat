@@ -51,16 +51,17 @@ if ERRORLEVEL 9009 (
 
 echo.Fetching external libraries...
 
-for %%e in (
-            bzip2-1.0.6
-            nasm-2.11.06
-            openssl-1.0.2d
-            tcl-core-8.6.4.2
-            tk-8.6.4.2
-            tix-8.4.3.6
-            sqlite-3.8.11.0
-            xz-5.0.5
-            ) do (
+set libraries=
+set libraries=%libraries%                                    bzip2-1.0.6
+if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     nasm-2.11.06
+if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     openssl-1.0.2d
+set libraries=%libraries%                                    sqlite-3.8.11.0
+if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tcl-core-8.6.4.2
+if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tk-8.6.4.2
+if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tix-8.4.3.6
+set libraries=%libraries%                                    xz-5.0.5
+
+for %%e in (%libraries%) do (
     if exist %%e (
         echo.%%e already exists, skipping.
     ) else (
