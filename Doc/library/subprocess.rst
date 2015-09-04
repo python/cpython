@@ -852,7 +852,7 @@ Return code handling translates as follows::
    if rc is not None and rc >> 8:
        print "There were some errors"
    ==>
-   process = Popen("cmd", 'w', shell=True, stdin=PIPE)
+   process = Popen("cmd", shell=True, stdin=PIPE)
    ...
    process.stdin.close()
    if process.wait() != 0:
