@@ -1068,7 +1068,7 @@ Return code handling translates as follows::
    if rc is not None and rc >> 8:
        print("There were some errors")
    ==>
-   process = Popen(cmd, 'w', stdin=PIPE)
+   process = Popen(cmd, stdin=PIPE)
    ...
    process.stdin.close()
    if process.wait() != 0:
