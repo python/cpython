@@ -10,6 +10,12 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #24891: Fix a race condition at Python startup if the file descriptor
+  of stdin (0), stdout (1) or stderr (2) is closed while Python is creating
+  sys.stdin, sys.stdout and sys.stderr objects. These attributes are now set
+  to None if the creation of the object failed, instead of raising an OSError
+  exception. Initial patch written by Marco Paolini.
+
 - Issue #21167: NAN operations are now handled correctly when python is
   compiled with ICC even if -fp-model strict is not specified.
 
