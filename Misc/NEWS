@@ -62,6 +62,12 @@ Tests
 - PCbuild\rt.bat now accepts an unlimited number of arguments to pass along
   to regrtest.py.  Previously there was a limit of 9.
 
+Build
+-----
+
+- Issue #24986: It is now possible to build Python on Windows without errors
+  when external libraries are not available.
+
 
 What's New in Python 3.5.0 release candidate 3?
 ===============================================
