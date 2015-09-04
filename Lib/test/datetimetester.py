@@ -668,6 +668,8 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         eq(td(milliseconds=-0.6/1000), td(microseconds=-1))
         eq(td(seconds=0.5/10**6), td(microseconds=1))
         eq(td(seconds=-0.5/10**6), td(microseconds=-1))
+        eq(td(seconds=1/2**7), td(microseconds=7813))
+        eq(td(seconds=-1/2**7), td(microseconds=-7813))
 
         # Rounding due to contributions from more than one field.
         us_per_hour = 3600e6
@@ -1842,8 +1844,8 @@ class TestDateTime(TestDate):
                          18000 + 3600 + 2*60 + 3 + 4*1e-6)
 
     def test_microsecond_rounding(self):
-        for fts in [self.theclass.fromtimestamp,
-                    self.theclass.utcfromtimestamp]:
+        for fts in (datetime.fromtimestamp,
+                    self.theclass.utcfromtimestamp):
             zero = fts(0)
             self.assertEqual(zero.second, 0)
             self.assertEqual(zero.microsecond, 0)
@@ -1874,6 +1876,12 @@ class TestDateTime(TestDate):
             t = fts(0.9999999)
             self.assertEqual(t.second, 1)
             self.assertEqual(t.microsecond, 0)
+            t = fts(1/2**7)
+            self.assertEqual(t.second, 0)
+            self.assertEqual(t.microsecond, 7813)
+            t = fts(-1/2**7)
+            self.assertEqual(t.second, 59)
+            self.assertEqual(t.microsecond, 992187)
 
     def test_insane_fromtimestamp(self):
         # It's possible that some platform maps time_t to double,

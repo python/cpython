@@ -655,7 +655,7 @@ class TestPytime(unittest.TestCase):
                               pytime_object_to_time_t, invalid, rnd)
 
     @support.cpython_only
-    def test_timespec(self):
+    def test_object_to_timespec(self):
         from _testcapi import pytime_object_to_timespec
 
         # Conversion giving the same result for all rounding methods
@@ -666,7 +666,7 @@ class TestPytime(unittest.TestCase):
                 (-1, (-1, 0)),
 
                 # float
-                (-1.2, (-2, 800000000)),
+                (-1/2**7, (-1, 992187500)),
                 (-1.0, (-1, 0)),
                 (-1e-9, (-1, 999999999)),
                 (1e-9, (0, 1)),
@@ -693,7 +693,7 @@ class TestPytime(unittest.TestCase):
 
             (1.1234567890, (1, 123456789), FLOOR),
             (1.1234567899, (1, 123456789), FLOOR),
-            (-1.1234567890, (-2, 876543211), FLOOR),
+            (-1.1234567890, (-2, 876543210), FLOOR),
             (-1.1234567891, (-2, 876543210), FLOOR),
             # Round towards infinity (+inf)
             (1.1234567890, (1, 123456790), CEILING),
@@ -1155,7 +1155,7 @@ class TestOldPyTime(unittest.TestCase):
             self.assertRaises(OverflowError,
                               pytime_object_to_time_t, invalid, rnd)
 
-    def test_timeval(self):
+    def test_object_to_timeval(self):
         from _testcapi import pytime_object_to_timeval
 
         # Conversion giving the same result for all rounding methods
@@ -1167,7 +1167,8 @@ class TestOldPyTime(unittest.TestCase):
 
                 # float
                 (-1.0, (-1, 0)),
-                (-1.2, (-2, 800000)),
+                (1/2**6, (0, 15625)),
+                (-1/2**6, (-1, 984375)),
                 (-1e-6, (-1, 999999)),
                 (1e-6, (0, 1)),
             ):
@@ -1225,7 +1226,7 @@ class TestOldPyTime(unittest.TestCase):
                 (-1.0, (-1, 0)),
                 (-1e-9, (-1, 999999999)),
                 (1e-9, (0, 1)),
-                (-1.2, (-2, 800000000)),
+                (-1/2**9, (-1, 998046875)),
             ):
                 with self.subTest(obj=obj, round=rnd, timespec=timespec):
                     self.assertEqual(pytime_object_to_timespec(obj, rnd),
