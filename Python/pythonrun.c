@@ -1003,6 +1003,21 @@ initsite(void)
     }
 }
 
+/* Check if a file descriptor is valid or not.
+   Return 0 if the file descriptor is invalid, return non-zero otherwise. */
+static int
+is_valid_fd(int fd)
+{
+    int fd2;
+    if (fd < 0 || !_PyVerify_fd(fd))
+        return 0;
+    fd2 = dup(fd);
+    if (fd2 >= 0)
+        close(fd2);
+    return fd2 >= 0;
+}
+
+/* returns Py_None if the fd is not valid */
 static PyObject*
 create_stdio(PyObject* io,
     int fd, int write_mode, char* name,
@@ -1017,6 +1032,9 @@ create_stdio(PyObject* io,
     _Py_IDENTIFIER(isatty);
     _Py_IDENTIFIER(TextIOWrapper);
     _Py_IDENTIFIER(mode);
+
+    if (!is_valid_fd(fd))
+        Py_RETURN_NONE;
 
     /* stdin is always opened in buffered mode, first because it shouldn't
        make a difference in common use cases, second because TextIOWrapper
@@ -1099,20 +1117,15 @@ error:
     Py_XDECREF(stream);
     Py_XDECREF(text);
     Py_XDECREF(raw);
-    return NULL;
-}
 
-static int
-is_valid_fd(int fd)
-{
-    int dummy_fd;
-    if (fd < 0 || !_PyVerify_fd(fd))
-        return 0;
-    dummy_fd = dup(fd);
-    if (dummy_fd < 0)
-        return 0;
-    close(dummy_fd);
-    return 1;
+    if (PyErr_ExceptionMatches(PyExc_OSError) && !is_valid_fd(fd)) {
+        /* Issue #24891: the file descriptor was closed after the first
+           is_valid_fd() check was called. Ignore the OSError and set the
+           stream to None. */
+        PyErr_Clear();
+        Py_RETURN_NONE;
+    }
+    return NULL;
 }
 
 /* Initialize sys.stdin, stdout, stderr and builtins.open */
@@ -1188,30 +1201,18 @@ initstdio(void)
      * and fileno() may point to an invalid file descriptor. For example
      * GUI apps don't have valid standard streams by default.
      */
-    if (!is_valid_fd(fd)) {
-        std = Py_None;
-        Py_INCREF(std);
-    }
-    else {
-        std = create_stdio(iomod, fd, 0, "<stdin>", encoding, errors);
-        if (std == NULL)
-            goto error;
-    } /* if (fd < 0) */
+    std = create_stdio(iomod, fd, 0, "<stdin>", encoding, errors);
+    if (std == NULL)
+        goto error;
     PySys_SetObject("__stdin__", std);
     _PySys_SetObjectId(&PyId_stdin, std);
     Py_DECREF(std);
 
     /* Set sys.stdout */
     fd = fileno(stdout);
-    if (!is_valid_fd(fd)) {
-        std = Py_None;
-        Py_INCREF(std);
-    }
-    else {
-        std = create_stdio(iomod, fd, 1, "<stdout>", encoding, errors);
-        if (std == NULL)
-            goto error;
-    } /* if (fd < 0) */
+    std = create_stdio(iomod, fd, 1, "<stdout>", encoding, errors);
+    if (std == NULL)
+        goto error;
     PySys_SetObject("__stdout__", std);
     _PySys_SetObjectId(&PyId_stdout, std);
     Py_DECREF(std);
@@ -1219,15 +1220,9 @@ initstdio(void)
 #if 1 /* Disable this if you have trouble debugging bootstrap stuff */
     /* Set sys.stderr, replaces the preliminary stderr */
     fd = fileno(stderr);
-    if (!is_valid_fd(fd)) {
-        std = Py_None;
-        Py_INCREF(std);
-    }
-    else {
-        std = create_stdio(iomod, fd, 1, "<stderr>", encoding, "backslashreplace");
-        if (std == NULL)
-            goto error;
-    } /* if (fd < 0) */
+    std = create_stdio(iomod, fd, 1, "<stderr>", encoding, "backslashreplace");
+    if (std == NULL)
+        goto error;
 
     /* Same as hack above, pre-import stderr's codec to avoid recursion
        when import.c tries to write to stderr in verbose mode. */
