@@ -17,11 +17,19 @@ echo.  -h  Display this help message
 echo.  -r  Target Rebuild instead of Build
 echo.  -d  Set the configuration to Debug
 echo.  -e  Build external libraries fetched by get_externals.bat
+echo.      Extension modules that depend on external libraries will not attempt
+echo.      to build if this flag is not present
 echo.  -m  Enable parallel build
 echo.  -M  Disable parallel build (disabled by default)
 echo.  -v  Increased output messages
 echo.  -k  Attempt to kill any running Pythons before building (usually done
 echo.      automatically by the pythoncore project)
+echo.
+echo.Available flags to avoid building certain modules.
+echo.These flags have no effect if '-e' is not given:
+echo.  --no-ssl      Do not attempt to build _ssl
+echo.  --no-tkinter  Do not attempt to build Tkinter
+echo.  --no-bsddb    Do not attempt to build _bsddb
 echo.
 echo.Available arguments:
 echo.  -c Release ^| Debug ^| PGInstrument ^| PGUpdate
@@ -50,11 +58,22 @@ if "%~1"=="-p" (set platf=%2) & shift & shift & goto CheckOpts
 if "%~1"=="-r" (set target=Rebuild) & shift & goto CheckOpts
 if "%~1"=="-t" (set target=%2) & shift & shift & goto CheckOpts
 if "%~1"=="-d" (set conf=Debug) & shift & goto CheckOpts
-if "%~1"=="-e" call "%dir%get_externals.bat" & shift & goto CheckOpts
 if "%~1"=="-m" (set parallel=/m) & shift & goto CheckOpts
 if "%~1"=="-M" (set parallel=) & shift & goto CheckOpts
 if "%~1"=="-v" (set verbose=/v:n) & shift & goto CheckOpts
 if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
+rem These use the actual property names used by MSBuild.  We could just let
+rem them in through the environment, but we specify them on the command line
+rem anyway for visibility so set defaults after this
+if "%~1"=="-e" (set IncludeExternals=true) & call "%dir%get_externals.bat" & shift & goto CheckOpts
+if "%~1"=="--no-ssl" (set IncludeSSL=false) & shift & goto CheckOpts
+if "%~1"=="--no-tkinter" (set IncludeTkinter=false) & shift & goto CheckOpts
+if "%~1"=="--no-bsddb" (set IncludeBsddb=false) & shift & goto CheckOpts
+
+if "%IncludeExternals%"=="" set IncludeExternals=false
+if "%IncludeSSL%"=="" set IncludeSSL=true
+if "%IncludeTkinter%"=="" set IncludeTkinter=true
+if "%IncludeBsddb%"=="" set IncludeBsddb=true
 
 if "%platf%"=="x64" (set vs_platf=x86_amd64)
 
@@ -69,4 +88,9 @@ rem Call on MSBuild to do the work, echo the command.
 rem Passing %1-9 is not the preferred option, but argument parsing in
 rem batch is, shall we say, "lackluster"
 echo on
-msbuild "%dir%pcbuild.proj" /t:%target% %parallel% %verbose% /p:Configuration=%conf% /p:Platform=%platf% %1 %2 %3 %4 %5 %6 %7 %8 %9
+msbuild "%dir%pcbuild.proj" /t:%target% %parallel% %verbose%^
+ /p:Configuration=%conf% /p:Platform=%platf%^
+ /p:IncludeExternals=%IncludeExternals%^
+ /p:IncludeSSL=%IncludeSSL% /p:IncludeTkinter=%IncludeTkinter%^
+ /p:IncludeBsddb=%IncludeBsddb%^
+ %1 %2 %3 %4 %5 %6 %7 %8 %9

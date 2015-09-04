@@ -134,6 +134,9 @@ Library
 Build
 -----
 
+- Issue #24986: It is now possible to build Python on Windows without errors
+  when external libraries are not available.
+
 - Issue #24508: Backported the MSBuild project files from Python 3.5.  The
   backported files replace the old project files in PCbuild; the old files moved
   to PC/VS9.0 and remain supported.

@@ -5,8 +5,11 @@
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <IncludeExtensions Condition="'$(IncludeExtensions)' == ''">true</IncludeExtensions>
+    <IncludeExternals Condition="'$(IncludeExternals)' == ''">true</IncludeExternals>
     <IncludeTests Condition="'$(IncludeTest)' == ''">true</IncludeTests>
     <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
+    <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
+    <IncludeBsddb Condition="'$(IncludeBsddb)' == ''">true</IncludeBsddb>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -34,10 +37,15 @@
     <!-- python[w].exe -->
     <Projects Include="python.vcxproj;pythonw.vcxproj" />
     <!-- Extension modules -->
-    <ExtensionModules Include="_bsddb;bz2;_ctypes;_elementtree;_msi;_multiprocessing;_sqlite3;_tkinter;tix;pyexpat;select;unicodedata;winsound" />
+    <ExtensionModules Include="_ctypes;_elementtree;_msi;_multiprocessing;pyexpat;select;unicodedata;winsound" />
+    <!-- Extension modules that require external sources -->
+    <ExternalModules Include="bz2;_sqlite3" />
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
-    <ExtensionModules Include="_socket" Condition="!$(IncludeSSL)" />
-    <ExtensionModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
+    <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
+    <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
+    <ExternalModules Include="_tkinter;tix" Condition="$(IncludeTkinter)" />
+    <ExternalModules Include="_bsddb" Condition="$(IncludeBsddb)" />
+    <ExtensionModules Include="@(ExternalModules->'%(Identity)')" Condition="$(IncludeExternals)" />
     <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
     <!-- Test modules -->
     <TestModules Include="_ctypes_test;_testcapi" />
