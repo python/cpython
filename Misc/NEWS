@@ -56,6 +56,12 @@ Documentation
 - Issue #22812: Fix unittest discovery examples.
   Patch from Pam McA'Nulty.
 
+Tests
+-----
+
+- PCbuild\rt.bat now accepts an unlimited number of arguments to pass along
+  to regrtest.py.  Previously there was a limit of 9.
+
 
 What's New in Python 3.5.0 release candidate 3?
 ===============================================
