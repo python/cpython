@@ -312,9 +312,6 @@ Library
 - Issue #14373: C implementation of functools.lru_cache() now can be used with
   methods.
 
-- Issue #8232: webbrowser support incomplete on Windows. Patch by Brandon
-  Milam
-
 - Issue #24347: Set KeyError if PyDict_GetItemWithError returns NULL.
 
 - Issue #24348: Drop superfluous incref/decref.
