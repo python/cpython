@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16180: Exit pdb if file has syntax error, instead of trapping user
+  in an infinite loop.  Patch by Xavier de Gaye.
+
 - Issue #22812: Fix unittest discovery examples.
   Patch from Pam McA'Nulty.
 
