@@ -1036,6 +1036,51 @@ order (MRO) for bases """
         self.assertTrue(m.__class__ is types.ModuleType)
         self.assertFalse(hasattr(m, "a"))
 
+        # Make sure that builtin immutable objects don't support __class__
+        # assignment, because the object instances may be interned.
+        # We set __slots__ = () to ensure that the subclasses are
+        # memory-layout compatible, and thus otherwise reasonable candidates
+        # for __class__ assignment.
+
+        # The following types have immutable instances, but are not
+        # subclassable and thus don't need to be checked:
+        #   NoneType, bool
+
+        class MyInt(int):
+            __slots__ = ()
+        with self.assertRaises(TypeError):
+            (1).__class__ = MyInt
+
+        class MyFloat(float):
+            __slots__ = ()
+        with self.assertRaises(TypeError):
+            (1.0).__class__ = MyFloat
+
+        class MyComplex(complex):
+            __slots__ = ()
+        with self.assertRaises(TypeError):
+            (1 + 2j).__class__ = MyComplex
+
+        class MyStr(str):
+            __slots__ = ()
+        with self.assertRaises(TypeError):
+            "a".__class__ = MyStr
+
+        class MyBytes(bytes):
+            __slots__ = ()
+        with self.assertRaises(TypeError):
+            b"a".__class__ = MyBytes
+
+        class MyTuple(tuple):
+            __slots__ = ()
+        with self.assertRaises(TypeError):
+            ().__class__ = MyTuple
+
+        class MyFrozenSet(frozenset):
+            __slots__ = ()
+        with self.assertRaises(TypeError):
+            frozenset().__class__ = MyFrozenSet
+
     def test_slots(self):
         # Testing __slots__...
         class C0(object):
