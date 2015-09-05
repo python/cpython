@@ -1865,6 +1865,9 @@ class TestDateTime(TestDate):
                 self.assertEqual(t, minus_one)
                 t = fts(-1e-7)
                 self.assertEqual(t, zero)
+                t = fts(-1/2**7)
+                self.assertEqual(t.second, 59)
+                self.assertEqual(t.microsecond, 992187)
 
             t = fts(1e-7)
             self.assertEqual(t, zero)
@@ -1879,9 +1882,6 @@ class TestDateTime(TestDate):
             t = fts(1/2**7)
             self.assertEqual(t.second, 0)
             self.assertEqual(t.microsecond, 7813)
-            t = fts(-1/2**7)
-            self.assertEqual(t.second, 59)
-            self.assertEqual(t.microsecond, 992187)
 
     def test_insane_fromtimestamp(self):
         # It's possible that some platform maps time_t to double,
