@@ -3666,6 +3666,65 @@ object_set_class(PyObject *self, PyObject *value, void *closure)
         return -1;
     }
     newto = (PyTypeObject *)value;
+    /* In versions of CPython prior to 3.5, the code in
+       compatible_for_assignment was not set up to correctly check for memory
+       layout / slot / etc. compatibility for non-HEAPTYPE classes, so we just
+       disallowed __class__ assignment in any case that wasn't HEAPTYPE ->
+       HEAPTYPE.
+
+       During the 3.5 development cycle, we fixed the code in
+       compatible_for_assignment to correctly check compatibility between
+       arbitrary types, and started allowing __class__ assignment in all cases
+       where the old and new types did in fact have compatible slots and
+       memory layout (regardless of whether they were implemented as HEAPTYPEs
+       or not).
+
+       Just before 3.5 was released, though, we discovered that this led to
+       problems with immutable types like int, where the interpreter assumes
+       they are immutable and interns some values. Formerly this wasn't a
+       problem, because they really were immutable -- in particular, all the
+       types where the interpreter applied this interning trick happened to
+       also be statically allocated, so the old HEAPTYPE rules were
+       "accidentally" stopping them from allowing __class__ assignment. But
+       with the changes to __class__ assignment, we started allowing code like
+
+         class MyInt(int):
+             ...
+         # Modifies the type of *all* instances of 1 in the whole program,
+         # including future instances (!), because the 1 object is interned.
+         (1).__class__ = MyInt
+
+       (see https://bugs.python.org/issue24912).
+
+       In theory the proper fix would be to identify which classes rely on
+       this invariant and somehow disallow __class__ assignment only for them,
+       perhaps via some mechanism like a new Py_TPFLAGS_IMMUTABLE flag (a
+       "blacklisting" approach). But in practice, since this problem wasn't
+       noticed late in the 3.5 RC cycle, we're taking the conservative
+       approach and reinstating the same HEAPTYPE->HEAPTYPE check that we used
+       to have, plus a "whitelist". For now, the whitelist consists only of
+       ModuleType subtypes, since those are the cases that motivated the patch
+       in the first place -- see https://bugs.python.org/issue22986 -- and
+       since module objects are mutable we can be sure that they are
+       definitely not being interned. So now we allow HEAPTYPE->HEAPTYPE *or*
+       ModuleType subtype -> ModuleType subtype.
+
+       So far as we know, all the code beyond the following 'if' statement
+       will correctly handle non-HEAPTYPE classes, and the HEAPTYPE check is
+       needed only to protect that subset of non-HEAPTYPE classes for which
+       the interpreter has baked in the assumption that all instances are
+       truly immutable.
+    */
+    if (!(PyType_IsSubtype(newto, &PyModule_Type) &&
+          PyType_IsSubtype(oldto, &PyModule_Type)) &&
+        (!(newto->tp_flags & Py_TPFLAGS_HEAPTYPE) ||
+         !(oldto->tp_flags & Py_TPFLAGS_HEAPTYPE))) {
+        PyErr_Format(PyExc_TypeError,
+                     "__class__ assignment only supported for heap types "
+                     "or ModuleType subclasses");
+        return -1;
+    }
+
     if (compatible_for_assignment(oldto, newto, "__class__")) {
         if (newto->tp_flags & Py_TPFLAGS_HEAPTYPE)
             Py_INCREF(newto);
