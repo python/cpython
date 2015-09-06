@@ -898,7 +898,7 @@ static int obj2ast_int(PyObject* obj, int* out, PyArena* arena)
         return 1;
     }
 
-    i = (int)PyLong_AsLong(obj);
+    i = _PyLong_AsInt(obj);
     if (i == -1 && PyErr_Occurred())
         return 1;
     *out = i;
