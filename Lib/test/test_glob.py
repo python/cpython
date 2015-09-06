@@ -242,9 +242,7 @@ class GlobTests(unittest.TestCase):
             ('a', 'bcd', 'EF'), ('a', 'bcd', 'efg')))
         eq(self.rglob('a', '**', 'bcd'), self.joins(('a', 'bcd')))
 
-        predir = os.path.abspath(os.curdir)
-        try:
-            os.chdir(self.tempdir)
+        with change_cwd(self.tempdir):
             join = os.path.join
             eq(glob.glob('**', recursive=True), [join(*i) for i in full])
             eq(glob.glob(join('**', ''), recursive=True),
@@ -256,8 +254,6 @@ class GlobTests(unittest.TestCase):
             if can_symlink():
                 expect += [join('sym3', 'EF')]
             eq(glob.glob(join('**', 'EF'), recursive=True), expect)
-        finally:
-            os.chdir(predir)
 
 
 @skip_unless_symlink
