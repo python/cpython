@@ -72,9 +72,6 @@ class EventCollectorExtra(EventCollector):
 
 class EventCollectorCharrefs(EventCollector):
 
-    def get_events(self):
-        return self.events
-
     def handle_charref(self, data):
         self.fail('This should never be called with convert_charrefs=True')
 
@@ -684,6 +681,18 @@ class HTMLParserTolerantTestCase(HTMLParserStrictTestCase):
             ('unknown decl', 'endif')
         ]
         self._run_check(html, expected)
+
+    def test_convert_charrefs_dropped_text(self):
+        # #23144: make sure that all the events are triggered when
+        # convert_charrefs is True, even if we don't call .close()
+        parser = EventCollector(convert_charrefs=True)
+        # before the fix, bar & baz was missing
+        parser.feed("foo <a>link</a> bar &amp; baz")
+        self.assertEqual(
+            parser.get_events(),
+            [('data', 'foo '), ('starttag', 'a', []), ('data', 'link'),
+             ('endtag', 'a'), ('data', ' bar & baz')]
+        )
 
 
 class AttributesStrictTestCase(TestCaseBase):
