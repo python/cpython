@@ -7,7 +7,7 @@ import unittest
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
-from test import warning_tests
+from test.test_warnings.data import stacklevel as warning_tests
 
 import warnings as original_warnings
 
@@ -188,11 +188,11 @@ class FilterTests(BaseTest):
             self.module.resetwarnings()
             self.module.filterwarnings("once", category=UserWarning)
             message = UserWarning("FilterTests.test_once")
-            self.module.warn_explicit(message, UserWarning, "test_warnings.py",
+            self.module.warn_explicit(message, UserWarning, "__init__.py",
                                     42)
             self.assertEqual(w[-1].message, message)
             del w[:]
-            self.module.warn_explicit(message, UserWarning, "test_warnings.py",
+            self.module.warn_explicit(message, UserWarning, "__init__.py",
                                     13)
             self.assertEqual(len(w), 0)
             self.module.warn_explicit(message, UserWarning, "test_warnings2.py",
@@ -298,10 +298,10 @@ class WarnTests(BaseTest):
                     module=self.module) as w:
                 warning_tests.inner("spam1")
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "warning_tests.py")
+                                    "stacklevel.py")
                 warning_tests.outer("spam2")
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "warning_tests.py")
+                                    "stacklevel.py")
 
     def test_stacklevel(self):
         # Test stacklevel argument
@@ -311,24 +311,35 @@ class WarnTests(BaseTest):
                     module=self.module) as w:
                 warning_tests.inner("spam3", stacklevel=1)
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "warning_tests.py")
+                                    "stacklevel.py")
                 warning_tests.outer("spam4", stacklevel=1)
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "warning_tests.py")
+                                    "stacklevel.py")
 
                 warning_tests.inner("spam5", stacklevel=2)
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "test_warnings.py")
+                                    "__init__.py")
                 warning_tests.outer("spam6", stacklevel=2)
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "warning_tests.py")
+                                    "stacklevel.py")
                 warning_tests.outer("spam6.5", stacklevel=3)
                 self.assertEqual(os.path.basename(w[-1].filename),
-                                    "test_warnings.py")
+                                    "__init__.py")
 
                 warning_tests.inner("spam7", stacklevel=9999)
                 self.assertEqual(os.path.basename(w[-1].filename),
                                     "sys")
+
+    def test_stacklevel_import(self):
+        # Issue #24305: With stacklevel=2, module-level warnings should work.
+        support.unload('test.test_warnings.data.import_warning')
+        with warnings_state(self.module):
+            with original_warnings.catch_warnings(record=True,
+                    module=self.module) as w:
+                self.module.simplefilter('always')
+                import test.test_warnings.data.import_warning
+                self.assertEqual(len(w), 1)
+                self.assertEqual(w[0].filename, __file__)
 
     def test_missing_filename_not_main(self):
         # If __file__ is not specified and __main__ is not the module name,
