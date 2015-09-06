@@ -158,17 +158,11 @@ class UnicodeFileTests(unittest.TestCase):
     def test_directory(self):
         dirname = os.path.join(support.TESTFN, 'Gr\xfc\xdf-\u66e8\u66e9\u66eb')
         filename = '\xdf-\u66e8\u66e9\u66eb'
-        oldwd = os.getcwd()
-        os.mkdir(dirname)
-        os.chdir(dirname)
-        try:
+        with support.temp_cwd(dirname):
             with open(filename, 'wb') as f:
                 f.write((filename + '\n').encode("utf-8"))
             os.access(filename,os.R_OK)
             os.remove(filename)
-        finally:
-            os.chdir(oldwd)
-            os.rmdir(dirname)
 
 
 class UnicodeNFCFileTests(UnicodeFileTests):
