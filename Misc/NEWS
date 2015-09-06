@@ -1,4 +1,4 @@
-+++++++++++
+﻿+++++++++++
 Python News
 +++++++++++
 
@@ -95,8 +95,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #23144: Make sure that HTMLParser.feed() returns all the data, even
+  when convert_charrefs is True.
+
 - Issue #24635: Fixed a bug in typing.py where isinstance([], typing.Iterable)
   would return True once, then False on subsequent calls.
+
 
 - Issue #24989: Fixed buffer overread in BytesIO.readline() if a position is
   set beyond size.  Based on patch by John Leitch.
