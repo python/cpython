@@ -1920,6 +1920,8 @@ class timezone(tzinfo):
 
     @staticmethod
     def _name_from_offset(delta):
+        if not delta:
+            return 'UTC'
         if delta < timedelta(0):
             sign = '-'
             delta = -delta

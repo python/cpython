@@ -3267,6 +3267,11 @@ timezone_str(PyDateTime_TimeZone *self)
         Py_INCREF(self->name);
         return self->name;
     }
+    if (self == PyDateTime_TimeZone_UTC ||
+           (GET_TD_DAYS(self->offset) == 0 &&
+            GET_TD_SECONDS(self->offset) == 0 &&
+            GET_TD_MICROSECONDS(self->offset) == 0))
+        return PyUnicode_FromString("UTC");
     /* Offset is normalized, so it is negative if days < 0 */
     if (GET_TD_DAYS(self->offset) < 0) {
         sign = '-';
