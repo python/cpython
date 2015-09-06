@@ -198,7 +198,15 @@ class HTMLParser(_markupbase.ParserBase):
             if self.convert_charrefs and not self.cdata_elem:
                 j = rawdata.find('<', i)
                 if j < 0:
-                    if not end:
+                    # if we can't find the next <, either we are at the end
+                    # or there's more text incoming.  If the latter is True,
+                    # we can't pass the text to handle_data in case we have
+                    # a charref cut in half at end.  Try to determine if
+                    # this is the case before proceding by looking for an
+                    # & near the end and see if it's followed by a space or ;.
+                    amppos = rawdata.rfind('&', max(i, n-34))
+                    if (amppos >= 0 and
+                        not re.compile(r'[\s;]').search(rawdata, amppos)):
                         break  # wait till we get all the text
                     j = n
             else:
