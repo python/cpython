@@ -3,6 +3,7 @@ try:
 except ImportError:
     _thread = None
 import importlib
+import importlib.util
 import os
 import os.path
 import shutil
@@ -274,6 +275,29 @@ class ImportTests(unittest.TestCase):
         if found[2][2] != imp.C_EXTENSION:
             self.skipTest("found module doesn't appear to be a C extension")
         imp.load_module(name, None, *found[1:])
+
+    @requires_load_dynamic
+    def test_issue24748_load_module_skips_sys_modules_check(self):
+        name = 'test.imp_dummy'
+        try:
+            del sys.modules[name]
+        except KeyError:
+            pass
+        try:
+            module = importlib.import_module(name)
+            spec = importlib.util.find_spec('_testmultiphase')
+            module = imp.load_dynamic(name, spec.origin)
+            self.assertEqual(module.__name__, name)
+            self.assertEqual(module.__spec__.name, name)
+            self.assertEqual(module.__spec__.origin, spec.origin)
+            self.assertRaises(AttributeError, getattr, module, 'dummy_name')
+            self.assertEqual(module.int_const, 1969)
+            self.assertIs(sys.modules[name], module)
+        finally:
+            try:
+                del sys.modules[name]
+            except KeyError:
+                pass
 
     @unittest.skipIf(sys.dont_write_bytecode,
         "test meaningful only when writing bytecode")
