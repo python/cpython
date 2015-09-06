@@ -662,6 +662,12 @@ time_strftime(PyObject *self, PyObject *args)
                             "format %y requires year >= 1900 on AIX");
             return NULL;
         }
+        else if (outbuf[1] == '\0')
+        {
+            PyErr_SetString(PyExc_ValueError, "Incomplete format string");
+            Py_DECREF(format);
+            return NULL;
+        }
     }
 #endif
 
