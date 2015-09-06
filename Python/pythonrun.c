@@ -431,7 +431,7 @@ static int
 parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
                    int *lineno, int *offset, PyObject **text)
 {
-    long hold;
+    int hold;
     PyObject *v;
     _Py_IDENTIFIER(msg);
     _Py_IDENTIFIER(filename);
@@ -464,11 +464,11 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
     v = _PyObject_GetAttrId(err, &PyId_lineno);
     if (!v)
         goto finally;
-    hold = PyLong_AsLong(v);
+    hold = _PyLong_AsInt(v);
     Py_DECREF(v);
     if (hold < 0 && PyErr_Occurred())
         goto finally;
-    *lineno = (int)hold;
+    *lineno = hold;
 
     v = _PyObject_GetAttrId(err, &PyId_offset);
     if (!v)
@@ -477,11 +477,11 @@ parse_syntax_error(PyObject *err, PyObject **message, PyObject **filename,
         *offset = -1;
         Py_DECREF(v);
     } else {
-        hold = PyLong_AsLong(v);
+        hold = _PyLong_AsInt(v);
         Py_DECREF(v);
         if (hold < 0 && PyErr_Occurred())
             goto finally;
-        *offset = (int)hold;
+        *offset = hold;
     }
 
     v = _PyObject_GetAttrId(err, &PyId_text);
