@@ -5,7 +5,7 @@ import os, glob, time, shutil
 import unicodedata
 
 import unittest
-from test.support import (run_unittest, rmtree,
+from test.support import (run_unittest, rmtree, change_cwd,
     TESTFN_ENCODING, TESTFN_UNICODE, TESTFN_UNENCODABLE, create_empty_file)
 
 if not os.path.supports_unicode_filenames:
@@ -82,13 +82,11 @@ class TestUnicodeFiles(unittest.TestCase):
         self.assertFalse(os.path.exists(filename2 + '.new'))
 
     def _do_directory(self, make_name, chdir_name):
-        cwd = os.getcwd()
         if os.path.isdir(make_name):
             rmtree(make_name)
         os.mkdir(make_name)
         try:
-            os.chdir(chdir_name)
-            try:
+            with change_cwd(chdir_name):
                 cwd_result = os.getcwd()
                 name_result = make_name
 
@@ -96,8 +94,6 @@ class TestUnicodeFiles(unittest.TestCase):
                 name_result = unicodedata.normalize("NFD", name_result)
 
                 self.assertEqual(os.path.basename(cwd_result),name_result)
-            finally:
-                os.chdir(cwd)
         finally:
             os.rmdir(make_name)
 

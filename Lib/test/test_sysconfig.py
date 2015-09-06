@@ -6,7 +6,7 @@ import shutil
 from copy import copy
 
 from test.support import (run_unittest, TESTFN, unlink, check_warnings,
-                          captured_stdout, skip_unless_symlink)
+                          captured_stdout, skip_unless_symlink, change_cwd)
 
 import sysconfig
 from sysconfig import (get_paths, get_platform, get_config_vars,
@@ -361,12 +361,8 @@ class TestSysConfig(unittest.TestCase):
         # srcdir should be independent of the current working directory
         # See Issues #15322, #15364.
         srcdir = sysconfig.get_config_var('srcdir')
-        cwd = os.getcwd()
-        try:
-            os.chdir('..')
+        with change_cwd(os.pardir):
             srcdir2 = sysconfig.get_config_var('srcdir')
-        finally:
-            os.chdir(cwd)
         self.assertEqual(srcdir, srcdir2)
 
     @unittest.skipIf(sysconfig.get_config_var('EXT_SUFFIX') is None,
