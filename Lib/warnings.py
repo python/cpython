@@ -160,6 +160,20 @@ def _getcategory(category):
     return cat
 
 
+def _is_internal_frame(frame):
+    """Signal whether the frame is an internal CPython implementation detail."""
+    filename = frame.f_code.co_filename
+    return 'importlib' in filename and '_bootstrap' in filename
+
+
+def _next_external_frame(frame):
+    """Find the next frame that doesn't involve CPython internals."""
+    frame = frame.f_back
+    while frame is not None and _is_internal_frame(frame):
+        frame = frame.f_back
+    return frame
+
+
 # Code typically replaced by _warnings
 def warn(message, category=None, stacklevel=1):
     """Issue a warning, or maybe ignore it or raise an exception."""
@@ -174,13 +188,23 @@ def warn(message, category=None, stacklevel=1):
                         "not '{:s}'".format(type(category).__name__))
     # Get context information
     try:
-        caller = sys._getframe(stacklevel)
+        if stacklevel <= 1 or _is_internal_frame(sys._getframe(1)):
+            # If frame is too small to care or if the warning originated in
+            # internal code, then do not try to hide any frames.
+            frame = sys._getframe(stacklevel)
+        else:
+            frame = sys._getframe(1)
+            # Look for one frame less since the above line starts us off.
+            for x in range(stacklevel-1):
+                frame = _next_external_frame(frame)
+                if frame is None:
+                    raise ValueError
     except ValueError:
         globals = sys.__dict__
         lineno = 1
     else:
-        globals = caller.f_globals
-        lineno = caller.f_lineno
+        globals = frame.f_globals
+        lineno = frame.f_lineno
     if '__name__' in globals:
         module = globals['__name__']
     else:
@@ -374,7 +398,6 @@ try:
     defaultaction = _defaultaction
     onceregistry = _onceregistry
     _warnings_defaults = True
-
 except ImportError:
     filters = []
     defaultaction = "default"
