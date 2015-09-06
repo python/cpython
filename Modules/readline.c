@@ -840,7 +840,7 @@ on_hook(PyObject *func)
         if (r == Py_None)
             result = 0;
         else {
-            result = PyLong_AsLong(r);
+            result = _PyLong_AsInt(r);
             if (result == -1 && PyErr_Occurred())
                 goto error;
         }

@@ -4692,7 +4692,7 @@ local_timezone(PyDateTime_DateTime *utc_time)
     if (seconds == NULL)
         goto error;
     Py_DECREF(delta);
-    timestamp = PyLong_AsLong(seconds);
+    timestamp = _PyLong_AsTime_t(seconds);
     Py_DECREF(seconds);
     if (timestamp == -1 && PyErr_Occurred())
         return NULL;
