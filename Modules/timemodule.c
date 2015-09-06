@@ -623,6 +623,12 @@ time_strftime(PyObject *self, PyObject *args)
             Py_DECREF(format);
             return NULL;
         }
+        else if (outbuf[1] == '\0')
+        {
+            PyErr_SetString(PyExc_ValueError, "Incomplete format string");
+            Py_DECREF(format);
+            return NULL;
+        }
     }
 #elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
     for(outbuf = wcschr(fmt, '%');
@@ -634,6 +640,12 @@ time_strftime(PyObject *self, PyObject *args)
         if (outbuf[1] == L'y' && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
                             "format %y requires year >= 1900 on AIX");
+            return NULL;
+        }
+        else if (outbuf[1] == '\0')
+        {
+            PyErr_SetString(PyExc_ValueError, "Incomplete format string");
+            Py_DECREF(format);
             return NULL;
         }
     }
