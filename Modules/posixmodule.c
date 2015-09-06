@@ -9481,7 +9481,7 @@ os__getdiskusage_impl(PyModuleDef *module, Py_UNICODE *path)
  */
 struct constdef {
     char *name;
-    long value;
+    int value;
 };
 
 static int
@@ -9489,7 +9489,10 @@ conv_confname(PyObject *arg, int *valuep, struct constdef *table,
               size_t tablesize)
 {
     if (PyLong_Check(arg)) {
-        *valuep = PyLong_AS_LONG(arg);
+        int value = _PyLong_AsInt(arg);
+        if (value == -1 && PyErr_Occurred())
+            return 0;
+        *valuep = value;
         return 1;
     }
     else {
