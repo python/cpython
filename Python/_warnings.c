@@ -513,6 +513,64 @@ warn_explicit(PyObject *category, PyObject *message,
     return result;  /* Py_None or NULL. */
 }
 
+static int
+is_internal_frame(PyFrameObject *frame)
+{
+    static PyObject *importlib_string = NULL;
+    static PyObject *bootstrap_string = NULL;
+    PyObject *filename;
+    int contains;
+
+    if (importlib_string == NULL) {
+        importlib_string = PyUnicode_FromString("importlib");
+        if (importlib_string == NULL) {
+            return 0;
+        }
+
+        bootstrap_string = PyUnicode_FromString("_bootstrap");
+        if (bootstrap_string == NULL) {
+            Py_DECREF(importlib_string);
+            return 0;
+        }
+        Py_INCREF(importlib_string);
+        Py_INCREF(bootstrap_string);
+    }
+
+    if (frame == NULL || frame->f_code == NULL ||
+            frame->f_code->co_filename == NULL) {
+        return 0;
+    }
+    filename = frame->f_code->co_filename;
+    if (!PyUnicode_Check(filename)) {
+        return 0;
+    }
+    contains = PyUnicode_Contains(filename, importlib_string);
+    if (contains < 0) {
+        return 0;
+    }
+    else if (contains > 0) {
+        contains = PyUnicode_Contains(filename, bootstrap_string);
+        if (contains < 0) {
+            return 0;
+        }
+        else if (contains > 0) {
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static PyFrameObject *
+next_external_frame(PyFrameObject *frame)
+{
+    do {
+        frame = frame->f_back;
+    } while (frame != NULL && is_internal_frame(frame));
+
+    return frame;
+}
+
 /* filename, module, and registry are new refs, globals is borrowed */
 /* Returns 0 on error (no new refs), 1 on success */
 static int
@@ -523,8 +581,18 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
 
     /* Setup globals and lineno. */
     PyFrameObject *f = PyThreadState_GET()->frame;
-    while (--stack_level > 0 && f != NULL)
-        f = f->f_back;
+    // Stack level comparisons to Python code is off by one as there is no
+    // warnings-related stack level to avoid.
+    if (stack_level <= 0 || is_internal_frame(f)) {
+        while (--stack_level > 0 && f != NULL) {
+            f = f->f_back;
+        }
+    }
+    else {
+        while (--stack_level > 0 && f != NULL) {
+            f = next_external_frame(f);
+        }
+    }
 
     if (f == NULL) {
         globals = PyThreadState_Get()->interp->sysdict;
