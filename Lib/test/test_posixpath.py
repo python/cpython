@@ -328,7 +328,6 @@ class PosixPathTest(unittest.TestCase):
         # Bug #930024, return the path unchanged if we get into an infinite
         # symlink loop.
         try:
-            old_path = abspath('.')
             os.symlink(ABSTFN, ABSTFN)
             self.assertEqual(realpath(ABSTFN), ABSTFN)
 
@@ -354,10 +353,9 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(realpath(ABSTFN+"c"), ABSTFN+"c")
 
             # Test using relative path as well.
-            os.chdir(dirname(ABSTFN))
-            self.assertEqual(realpath(basename(ABSTFN)), ABSTFN)
+            with support.change_cwd(dirname(ABSTFN)):
+                self.assertEqual(realpath(basename(ABSTFN)), ABSTFN)
         finally:
-            os.chdir(old_path)
             support.unlink(ABSTFN)
             support.unlink(ABSTFN+"1")
             support.unlink(ABSTFN+"2")
@@ -385,7 +383,6 @@ class PosixPathTest(unittest.TestCase):
     @skip_if_ABSTFN_contains_backslash
     def test_realpath_deep_recursion(self):
         depth = 10
-        old_path = abspath('.')
         try:
             os.mkdir(ABSTFN)
             for i in range(depth):
@@ -394,10 +391,9 @@ class PosixPathTest(unittest.TestCase):
             self.assertEqual(realpath(ABSTFN + '/%d' % depth), ABSTFN)
 
             # Test using relative path as well.
-            os.chdir(ABSTFN)
-            self.assertEqual(realpath('%d' % depth), ABSTFN)
+            with support.change_cwd(ABSTFN):
+                self.assertEqual(realpath('%d' % depth), ABSTFN)
         finally:
-            os.chdir(old_path)
             for i in range(depth + 1):
                 support.unlink(ABSTFN + '/%d' % i)
             safe_rmdir(ABSTFN)
@@ -411,15 +407,13 @@ class PosixPathTest(unittest.TestCase):
         # /usr/doc with 'doc' being a symlink to /usr/share/doc. We call
         # realpath("a"). This should return /usr/share/doc/a/.
         try:
-            old_path = abspath('.')
             os.mkdir(ABSTFN)
             os.mkdir(ABSTFN + "/y")
             os.symlink(ABSTFN + "/y", ABSTFN + "/k")
 
-            os.chdir(ABSTFN + "/k")
-            self.assertEqual(realpath("a"), ABSTFN + "/y/a")
+            with support.change_cwd(ABSTFN + "/k"):
+                self.assertEqual(realpath("a"), ABSTFN + "/y/a")
         finally:
-            os.chdir(old_path)
             support.unlink(ABSTFN + "/k")
             safe_rmdir(ABSTFN + "/y")
             safe_rmdir(ABSTFN)
@@ -436,7 +430,6 @@ class PosixPathTest(unittest.TestCase):
         # and a symbolic link 'link-y' pointing to 'y' in directory 'a',
         # then realpath("link-y/..") should return 'k', not 'a'.
         try:
-            old_path = abspath('.')
             os.mkdir(ABSTFN)
             os.mkdir(ABSTFN + "/k")
             os.mkdir(ABSTFN + "/k/y")
@@ -445,11 +438,10 @@ class PosixPathTest(unittest.TestCase):
             # Absolute path.
             self.assertEqual(realpath(ABSTFN + "/link-y/.."), ABSTFN + "/k")
             # Relative path.
-            os.chdir(dirname(ABSTFN))
-            self.assertEqual(realpath(basename(ABSTFN) + "/link-y/.."),
-                             ABSTFN + "/k")
+            with support.change_cwd(dirname(ABSTFN)):
+                self.assertEqual(realpath(basename(ABSTFN) + "/link-y/.."),
+                                 ABSTFN + "/k")
         finally:
-            os.chdir(old_path)
             support.unlink(ABSTFN + "/link-y")
             safe_rmdir(ABSTFN + "/k/y")
             safe_rmdir(ABSTFN + "/k")
@@ -463,17 +455,14 @@ class PosixPathTest(unittest.TestCase):
         # must be resolved too.
 
         try:
-            old_path = abspath('.')
             os.mkdir(ABSTFN)
             os.mkdir(ABSTFN + "/k")
             os.symlink(ABSTFN, ABSTFN + "link")
-            os.chdir(dirname(ABSTFN))
-
-            base = basename(ABSTFN)
-            self.assertEqual(realpath(base + "link"), ABSTFN)
-            self.assertEqual(realpath(base + "link/k"), ABSTFN + "/k")
+            with support.change_cwd(dirname(ABSTFN)):
+                base = basename(ABSTFN)
+                self.assertEqual(realpath(base + "link"), ABSTFN)
+                self.assertEqual(realpath(base + "link/k"), ABSTFN + "/k")
         finally:
-            os.chdir(old_path)
             support.unlink(ABSTFN + "link")
             safe_rmdir(ABSTFN + "/k")
             safe_rmdir(ABSTFN)
