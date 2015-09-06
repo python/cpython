@@ -1132,10 +1132,8 @@ class WriteTest(WriteTestBase, unittest.TestCase):
             self.assertEqual(tar.getnames(), [],
                     "added the archive to itself")
 
-            cwd = os.getcwd()
-            os.chdir(TEMPDIR)
-            tar.add(dstname)
-            os.chdir(cwd)
+            with support.change_cwd(TEMPDIR):
+                tar.add(dstname)
             self.assertEqual(tar.getnames(), [],
                     "added the archive to itself")
         finally:
@@ -1292,9 +1290,7 @@ class WriteTest(WriteTestBase, unittest.TestCase):
 
     def test_cwd(self):
         # Test adding the current working directory.
-        cwd = os.getcwd()
-        os.chdir(TEMPDIR)
-        try:
+        with support.change_cwd(TEMPDIR):
             tar = tarfile.open(tmpname, self.mode)
             try:
                 tar.add(".")
@@ -1308,8 +1304,6 @@ class WriteTest(WriteTestBase, unittest.TestCase):
                         self.assertTrue(t.name.startswith("./"), t.name)
             finally:
                 tar.close()
-        finally:
-            os.chdir(cwd)
 
     def test_open_nonwritable_fileobj(self):
         for exctype in OSError, EOFError, RuntimeError:
