@@ -1734,10 +1734,7 @@ made to civil time.
   otherwise :exc:`ValueError` is raised.
 
   The *name* argument is optional.  If specified it must be a string that
-  is used as the value returned by the ``tzname(dt)`` method.  Otherwise,
-  ``tzname(dt)`` returns a string 'UTCsHH:MM', where s is the sign of
-  *offset*, HH and MM are two digits of ``offset.hours`` and
-  ``offset.minutes`` respectively.
+  will be used as the value returned by the :meth:`datetime.tzname` method.
 
   .. versionadded:: 3.2
 
@@ -1750,10 +1747,18 @@ made to civil time.
 
 .. method:: timezone.tzname(dt)
 
-  Return the fixed value specified when the :class:`timezone` instance is
-  constructed or a string 'UTCsHH:MM', where s is the sign of
-  *offset*, HH and MM are two digits of ``offset.hours`` and
+  Return the fixed value specified when the :class:`timezone` instance
+  is constructed.  If *name* is not provided in the constructor, the
+  name returned by ``tzname(dt)`` is generated from the value of the
+  ``offset`` as follows.  If *offset* is ``timedelta(0)``, the name
+  is "UTC", otherwise it is a string 'UTC±HH:MM', where ± is the sign
+  of ``offset``, HH and MM are two digits of ``offset.hours`` and
   ``offset.minutes`` respectively.
+
+  .. versionchanged:: 3.6
+  Name generated from ``offset=timedelta(0)`` is now plain 'UTC', not
+  'UTC+00:00'.
+
 
 .. method:: timezone.dst(dt)
 
