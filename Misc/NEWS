@@ -95,6 +95,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24917: time_strftime() Buffer Over-read. Patch by John Leitch.
+
 - Issue #24635: Fixed a bug in typing.py where isinstance([], typing.Iterable)
   would return True once, then False on subsequent calls.
 
