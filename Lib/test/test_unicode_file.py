@@ -5,7 +5,7 @@ import os, glob, time, shutil
 import unicodedata
 
 import unittest
-from test.test_support import run_unittest, TESTFN_UNICODE
+from test.test_support import run_unittest, change_cwd, TESTFN_UNICODE
 from test.test_support import TESTFN_ENCODING, TESTFN_UNENCODABLE
 try:
     TESTFN_ENCODED = TESTFN_UNICODE.encode(TESTFN_ENCODING)
@@ -114,13 +114,11 @@ class TestUnicodeFiles(unittest.TestCase):
         os.unlink(filename1 + ".new")
 
     def _do_directory(self, make_name, chdir_name, encoded):
-        cwd = os.getcwd()
         if os.path.isdir(make_name):
             os.rmdir(make_name)
         os.mkdir(make_name)
         try:
-            os.chdir(chdir_name)
-            try:
+            with change_cwd(chdir_name):
                 if not encoded:
                     cwd_result = os.getcwdu()
                     name_result = make_name
@@ -132,8 +130,6 @@ class TestUnicodeFiles(unittest.TestCase):
                 name_result = unicodedata.normalize("NFD", name_result)
 
                 self.assertEqual(os.path.basename(cwd_result),name_result)
-            finally:
-                os.chdir(cwd)
         finally:
             os.rmdir(make_name)
 

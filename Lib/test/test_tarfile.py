@@ -11,6 +11,7 @@ import unittest
 import tarfile
 
 from test import test_support
+from test import test_support as support
 
 # Check for our compression modules.
 try:
@@ -972,9 +973,7 @@ class WriteTest(WriteTestBase):
 
     def test_cwd(self):
         # Test adding the current working directory.
-        cwd = os.getcwd()
-        os.chdir(TEMPDIR)
-        try:
+        with support.change_cwd(TEMPDIR):
             open("foo", "w").close()
 
             tar = tarfile.open(tmpname, self.mode)
@@ -985,8 +984,6 @@ class WriteTest(WriteTestBase):
             for t in tar:
                 self.assertTrue(t.name == "." or t.name.startswith("./"))
             tar.close()
-        finally:
-            os.chdir(cwd)
 
     @unittest.skipUnless(hasattr(os, 'symlink'), "needs os.symlink")
     def test_extractall_symlinks(self):

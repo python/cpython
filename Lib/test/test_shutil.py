@@ -16,7 +16,7 @@ from shutil import (_make_tarball, _make_zipfile, make_archive,
 import tarfile
 import warnings
 
-from test import test_support
+from test import test_support as support
 from test.test_support import TESTFN, check_warnings, captured_stdout
 
 TESTFN2 = TESTFN + "2"
@@ -389,12 +389,8 @@ class TestShutil(unittest.TestCase):
         base_name = os.path.join(tmpdir2, 'archive')
 
         # working with relative paths to avoid tar warnings
-        old_dir = os.getcwd()
-        os.chdir(tmpdir)
-        try:
+        with support.change_cwd(tmpdir):
             _make_tarball(splitdrive(base_name)[1], '.')
-        finally:
-            os.chdir(old_dir)
 
         # check if the compressed tarball was created
         tarball = base_name + '.tar.gz'
@@ -402,12 +398,8 @@ class TestShutil(unittest.TestCase):
 
         # trying an uncompressed one
         base_name = os.path.join(tmpdir2, 'archive')
-        old_dir = os.getcwd()
-        os.chdir(tmpdir)
-        try:
+        with support.change_cwd(tmpdir):
             _make_tarball(splitdrive(base_name)[1], '.', compress=None)
-        finally:
-            os.chdir(old_dir)
         tarball = base_name + '.tar'
         self.assertTrue(os.path.exists(tarball))
 
@@ -439,12 +431,8 @@ class TestShutil(unittest.TestCase):
                          'Need the tar command to run')
     def test_tarfile_vs_tar(self):
         tmpdir, tmpdir2, base_name =  self._create_files()
-        old_dir = os.getcwd()
-        os.chdir(tmpdir)
-        try:
+        with support.change_cwd(tmpdir):
             _make_tarball(base_name, 'dist')
-        finally:
-            os.chdir(old_dir)
 
         # check if the compressed tarball was created
         tarball = base_name + '.tar.gz'
@@ -454,14 +442,10 @@ class TestShutil(unittest.TestCase):
         tarball2 = os.path.join(tmpdir, 'archive2.tar.gz')
         tar_cmd = ['tar', '-cf', 'archive2.tar', 'dist']
         gzip_cmd = ['gzip', '-f9', 'archive2.tar']
-        old_dir = os.getcwd()
-        os.chdir(tmpdir)
-        try:
+        with support.change_cwd(tmpdir):
             with captured_stdout() as s:
                 spawn(tar_cmd)
                 spawn(gzip_cmd)
-        finally:
-            os.chdir(old_dir)
 
         self.assertTrue(os.path.exists(tarball2))
         # let's compare both tarballs
@@ -469,23 +453,15 @@ class TestShutil(unittest.TestCase):
 
         # trying an uncompressed one
         base_name = os.path.join(tmpdir2, 'archive')
-        old_dir = os.getcwd()
-        os.chdir(tmpdir)
-        try:
+        with support.change_cwd(tmpdir):
             _make_tarball(base_name, 'dist', compress=None)
-        finally:
-            os.chdir(old_dir)
         tarball = base_name + '.tar'
         self.assertTrue(os.path.exists(tarball))
 
         # now for a dry_run
         base_name = os.path.join(tmpdir2, 'archive')
-        old_dir = os.getcwd()
-        os.chdir(tmpdir)
-        try:
+        with support.change_cwd(tmpdir):
             _make_tarball(base_name, 'dist', compress=None, dry_run=True)
-        finally:
-            os.chdir(old_dir)
         tarball = base_name + '.tar'
         self.assertTrue(os.path.exists(tarball))
 
@@ -544,15 +520,11 @@ class TestShutil(unittest.TestCase):
     @unittest.skipUnless(UID_GID_SUPPORT, "Requires grp and pwd support")
     def test_tarfile_root_owner(self):
         tmpdir, tmpdir2, base_name =  self._create_files()
-        old_dir = os.getcwd()
-        os.chdir(tmpdir)
         group = grp.getgrgid(0)[0]
         owner = pwd.getpwuid(0)[0]
-        try:
+        with support.change_cwd(tmpdir):
             archive_name = _make_tarball(base_name, 'dist', compress=None,
                                          owner=owner, group=group)
-        finally:
-            os.chdir(old_dir)
 
         # check if the compressed tarball was created
         self.assertTrue(os.path.exists(archive_name))
@@ -889,7 +861,7 @@ class TestCopyFile(unittest.TestCase):
 
 
 def test_main():
-    test_support.run_unittest(TestShutil, TestMove, TestCopyFile)
+    support.run_unittest(TestShutil, TestMove, TestCopyFile)
 
 if __name__ == '__main__':
     test_main()
