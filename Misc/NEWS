@@ -20,6 +20,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24917: time_strftime() buffer over-read.
+
 - Issue #24748: To resolve a compatibility problem found with py2exe and
   pywin32, imp.load_dynamic() once again ignores previously loaded modules
   to support Python modules replacing themselves with extension modules.

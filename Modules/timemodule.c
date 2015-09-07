@@ -610,14 +610,15 @@ time_strftime(PyObject *self, PyObject *args)
 
 #if defined(MS_WINDOWS) && !defined(HAVE_WCSFTIME)
     /* check that the format string contains only valid directives */
-    for(outbuf = strchr(fmt, '%');
+    for (outbuf = strchr(fmt, '%');
         outbuf != NULL;
         outbuf = strchr(outbuf+2, '%'))
     {
-        if (outbuf[1]=='#')
+        if (outbuf[1] == '#')
             ++outbuf; /* not documented by python, */
-        if ((outbuf[1] == 'y') && buf.tm_year < 0)
-        {
+        if (outbuf[1] == '\0')
+            break;
+        if ((outbuf[1] == 'y') && buf.tm_year < 0) {
             PyErr_SetString(PyExc_ValueError,
                         "format %y requires year >= 1900 on Windows");
             Py_DECREF(format);
@@ -625,10 +626,12 @@ time_strftime(PyObject *self, PyObject *args)
         }
     }
 #elif (defined(_AIX) || defined(sun)) && defined(HAVE_WCSFTIME)
-    for(outbuf = wcschr(fmt, '%');
+    for (outbuf = wcschr(fmt, '%');
         outbuf != NULL;
         outbuf = wcschr(outbuf+2, '%'))
     {
+        if (outbuf[1] == L'\0')
+            break;
         /* Issue #19634: On AIX, wcsftime("y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
            returns "0/" instead of "99" */
         if (outbuf[1] == L'y' && buf.tm_year < 0) {
@@ -659,7 +662,8 @@ time_strftime(PyObject *self, PyObject *args)
 #if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
         err = errno;
 #endif
-        if (buflen > 0 || i >= 256 * fmtlen) {
+        if (buflen > 0 || fmtlen == 0 ||
+            (fmtlen > 4 && i >= 256 * fmtlen)) {
             /* If the buffer is 256 times as long as the format,
                it's probably not failing for lack of room!
                More likely, the format yields an empty result,
