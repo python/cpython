@@ -980,10 +980,10 @@ class TestShutil(unittest.TestCase):
         base_name = os.path.join(tmpdir2, 'archive')
 
         # working with relative paths to avoid tar warnings
-        make_archive(splitdrive(base_name)[1], 'gztar', root_dir, '.')
+        tarball = make_archive(splitdrive(base_name)[1], 'gztar', root_dir, '.')
 
         # check if the compressed tarball was created
-        tarball = base_name + '.tar.gz'
+        self.assertEqual(tarball, base_name + '.tar.gz')
         self.assertTrue(os.path.isfile(tarball))
         self.assertTrue(tarfile.is_tarfile(tarball))
         with tarfile.open(tarball, 'r:gz') as tf:
@@ -992,9 +992,8 @@ class TestShutil(unittest.TestCase):
                                    './file1', './file2', './sub/file3'])
 
         # trying an uncompressed one
-        base_name = os.path.join(tmpdir2, 'archive')
-        make_archive(splitdrive(base_name)[1], 'tar', root_dir, '.')
-        tarball = base_name + '.tar'
+        tarball = make_archive(splitdrive(base_name)[1], 'tar', root_dir, '.')
+        self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
         self.assertTrue(tarfile.is_tarfile(tarball))
         with tarfile.open(tarball, 'r') as tf:
@@ -1028,10 +1027,10 @@ class TestShutil(unittest.TestCase):
     def test_tarfile_vs_tar(self):
         root_dir, base_dir = self._create_files()
         base_name = os.path.join(self.mkdtemp(), 'archive')
-        make_archive(base_name, 'gztar', root_dir, base_dir)
+        tarball = make_archive(base_name, 'gztar', root_dir, base_dir)
 
         # check if the compressed tarball was created
-        tarball = base_name + '.tar.gz'
+        self.assertEqual(tarball, base_name + '.tar.gz')
         self.assertTrue(os.path.isfile(tarball))
 
         # now create another tarball using `tar`
@@ -1045,13 +1044,14 @@ class TestShutil(unittest.TestCase):
         self.assertEqual(self._tarinfo(tarball), self._tarinfo(tarball2))
 
         # trying an uncompressed one
-        make_archive(base_name, 'tar', root_dir, base_dir)
-        tarball = base_name + '.tar'
+        tarball = make_archive(base_name, 'tar', root_dir, base_dir)
+        self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
 
         # now for a dry_run
-        make_archive(base_name, 'tar', root_dir, base_dir, dry_run=True)
-        tarball = base_name + '.tar'
+        tarball = make_archive(base_name, 'tar', root_dir, base_dir,
+                               dry_run=True)
+        self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
 
     @requires_zlib
