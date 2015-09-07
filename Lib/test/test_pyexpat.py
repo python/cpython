@@ -13,27 +13,42 @@ from test.test_support import sortdict, run_unittest
 class SetAttributeTest(unittest.TestCase):
     def setUp(self):
         self.parser = expat.ParserCreate(namespace_separator='!')
-        self.set_get_pairs = [
-            [0, 0],
-            [1, 1],
-            [2, 1],
-            [0, 0],
-            ]
+
+    def test_buffer_text(self):
+        self.assertIs(self.parser.buffer_text, False)
+        for x in 0, 1, 2, 0:
+            self.parser.buffer_text = x
+            self.assertIs(self.parser.buffer_text, bool(x))
+
+    def test_namespace_prefixes(self):
+        self.assertIs(self.parser.namespace_prefixes, False)
+        for x in 0, 1, 2, 0:
+            self.parser.namespace_prefixes = x
+            self.assertIs(self.parser.namespace_prefixes, bool(x))
 
     def test_returns_unicode(self):
-        for x, y in self.set_get_pairs:
+        self.assertIs(self.parser.returns_unicode, test_support.have_unicode)
+        for x in 0, 1, 2, 0:
             self.parser.returns_unicode = x
-            self.assertEqual(self.parser.returns_unicode, y)
+            self.assertIs(self.parser.returns_unicode, bool(x))
 
     def test_ordered_attributes(self):
-        for x, y in self.set_get_pairs:
+        self.assertIs(self.parser.ordered_attributes, False)
+        for x in 0, 1, 2, 0:
             self.parser.ordered_attributes = x
-            self.assertEqual(self.parser.ordered_attributes, y)
+            self.assertIs(self.parser.ordered_attributes, bool(x))
 
     def test_specified_attributes(self):
-        for x, y in self.set_get_pairs:
+        self.assertIs(self.parser.specified_attributes, False)
+        for x in 0, 1, 2, 0:
             self.parser.specified_attributes = x
-            self.assertEqual(self.parser.specified_attributes, y)
+            self.assertIs(self.parser.specified_attributes, bool(x))
+
+    def test_invalid_attributes(self):
+        with self.assertRaises(AttributeError):
+            self.parser.foo = 1
+        with self.assertRaises(AttributeError):
+            self.parser.foo
 
 
 data = '''\
@@ -469,12 +484,14 @@ class ChardataBufferTest(unittest.TestCase):
     def test_wrong_size(self):
         parser = expat.ParserCreate()
         parser.buffer_text = 1
-        def f(size):
-            parser.buffer_size = size
-
-        self.assertRaises(TypeError, f, sys.maxint+1)
-        self.assertRaises(ValueError, f, -1)
-        self.assertRaises(ValueError, f, 0)
+        with self.assertRaises(ValueError):
+            parser.buffer_size = -1
+        with self.assertRaises(ValueError):
+            parser.buffer_size = 0
+        with self.assertRaises(TypeError):
+            parser.buffer_size = 512.0
+        with self.assertRaises(TypeError):
+            parser.buffer_size = sys.maxint+1
 
     def test_unchanged_size(self):
         xml1 = ("<?xml version='1.0' encoding='iso8859'?><s>%s" % ('a' * 512))
