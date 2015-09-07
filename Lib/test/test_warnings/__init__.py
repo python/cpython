@@ -44,6 +44,7 @@ class BaseTest:
     """Basic bookkeeping required for testing."""
 
     def setUp(self):
+        self.old_unittest_module = unittest.case.warnings
         # The __warningregistry__ needs to be in a pristine state for tests
         # to work properly.
         if '__warningregistry__' in globals():
@@ -55,10 +56,15 @@ class BaseTest:
         # The 'warnings' module must be explicitly set so that the proper
         # interaction between _warnings and 'warnings' can be controlled.
         sys.modules['warnings'] = self.module
+        # Ensure that unittest.TestCase.assertWarns() uses the same warnings
+        # module than warnings.catch_warnings(). Otherwise,
+        # warnings.catch_warnings() will be unable to remove the added filter.
+        unittest.case.warnings = self.module
         super(BaseTest, self).setUp()
 
     def tearDown(self):
         sys.modules['warnings'] = original_warnings
+        unittest.case.warnings = self.old_unittest_module
         super(BaseTest, self).tearDown()
 
 class PublicAPITests(BaseTest):
