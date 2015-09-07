@@ -727,7 +727,10 @@ class LargeMmapTests(unittest.TestCase):
             f.write(tail)
             f.flush()
         except (OSError, OverflowError):
-            f.close()
+            try:
+                f.close()
+            except (OSError, OverflowError):
+                pass
             raise unittest.SkipTest("filesystem does not have largefile support")
         return f
 
