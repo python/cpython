@@ -3,6 +3,7 @@
 
 from io import BytesIO
 import os
+import sys
 import sysconfig
 import unittest
 import traceback
@@ -543,6 +544,8 @@ class ChardataBufferTest(unittest.TestCase):
             parser.buffer_size = -1
         with self.assertRaises(ValueError):
             parser.buffer_size = 0
+        with self.assertRaises((ValueError, OverflowError)):
+            parser.buffer_size = sys.maxsize + 1
         with self.assertRaises(TypeError):
             parser.buffer_size = 512.0
 
