@@ -37,6 +37,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #17849: Raise a sensible exception if an invalid response is
+  received for a HTTP tunnel request, as seen with some servers that
+  do not support tunnelling.  Initial patch from Cory Benfield.
+
 - Issue #16180: Exit pdb if file has syntax error, instead of trapping user
   in an infinite loop.  Patch by Xavier de Gaye.
 

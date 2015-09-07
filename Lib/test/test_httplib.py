@@ -578,6 +578,16 @@ class BasicTest(TestCase):
         #self.assertTrue(response[0].closed)
         self.assertTrue(conn.sock.file_closed)
 
+    def test_proxy_tunnel_without_status_line(self):
+        # Issue 17849: If a proxy tunnel is created that does not return
+        # a status code, fail.
+        body = 'hello world'
+        conn = httplib.HTTPConnection('example.com', strict=False)
+        conn.set_tunnel('foo')
+        conn.sock = FakeSocket(body)
+        with self.assertRaisesRegexp(socket.error, "Invalid response"):
+            conn._tunnel()
+
 class OfflineTest(TestCase):
     def test_responses(self):
         self.assertEqual(httplib.responses[httplib.NOT_FOUND], "Not Found")

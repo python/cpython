@@ -810,6 +810,11 @@ class HTTPConnection:
                                        method = self._method)
         (version, code, message) = response._read_status()
 
+        if version == "HTTP/0.9":
+            # HTTP/0.9 doesn't support the CONNECT verb, so if httplib has
+            # concluded HTTP/0.9 is being used something has gone wrong.
+            self.close()
+            raise socket.error("Invalid response from tunnel request")
         if code != 200:
             self.close()
             raise socket.error("Tunnel connection failed: %d %s" % (code,
