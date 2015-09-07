@@ -303,7 +303,7 @@ Process
 .. _asyncio-subprocess-threads:
 
 Subprocess and threads
-======================
+----------------------
 
 asyncio supports running subprocesses from different threads, but there
 are limits:
@@ -322,10 +322,10 @@ The :class:`asyncio.subprocess.Process` class is not thread safe.
 
 
 Subprocess examples
-===================
+-------------------
 
 Subprocess using transport and protocol
----------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Example of a subprocess protocol using to get the output of a subprocess and to
 wait for the subprocess exit. The subprocess is created by the
@@ -381,7 +381,7 @@ wait for the subprocess exit. The subprocess is created by the
 
 
 Subprocess using streams
-------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 Example using the :class:`~asyncio.subprocess.Process` class to control the
 subprocess and the :class:`StreamReader` class to read from the standard
