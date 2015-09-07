@@ -1,4 +1,4 @@
-﻿+++++++++++
++++++++++++
 Python News
 +++++++++++
 
@@ -88,6 +88,9 @@ Release date: 2015-09-06
 Core and Builtins
 -----------------
 
+- Issue #24305: Prevent import subsystem stack frames from being counted
+  by the warnings.warn(stacklevel=) parameter.
+
 - Issue #24912: Prevent __class__ assignment to immutable built-in objects.
 
 - Issue #24975: Fix AST compilation for PEP 448 syntax.
@@ -95,8 +98,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #24917: time_strftime() buffer over-read.
 - Issue #23144: Make sure that HTMLParser.feed() returns all the data, even
   when convert_charrefs is True.
+
+- Issue #24748: To resolve a compatibility problem found with py2exe and
+  pywin32, imp.load_dynamic() once again ignores previously loaded modules
+  to support Python modules replacing themselves with extension modules.
+  Patch by Petr Viktorin.
 
 - Issue #24635: Fixed a bug in typing.py where isinstance([], typing.Iterable)
   would return True once, then False on subsequent calls.
@@ -385,9 +394,6 @@ Library
 
 - Issue #14373: C implementation of functools.lru_cache() now can be used with
   methods.
-
-- Issue #8232: webbrowser support incomplete on Windows. Patch by Brandon
-  Milam
 
 - Issue #24347: Set KeyError if PyDict_GetItemWithError returns NULL.
 
