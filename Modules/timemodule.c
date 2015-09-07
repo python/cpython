@@ -655,6 +655,8 @@ time_strftime(PyObject *self, PyObject *args)
         outbuf != NULL;
         outbuf = wcschr(outbuf+2, '%'))
     {
+        if (outbuf[1] == L'\0')
+            break;
         /* Issue #19634: On AIX, wcsftime("y", (1899, 1, 1, 0, 0, 0, 0, 0, 0))
            returns "0/" instead of "99" */
         if (outbuf[1] == L'y' && buf.tm_year < 0) {
