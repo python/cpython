@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25019: Fixed a crash caused by setting non-string key of expat parser.
+  Based on patch by John Leitch.
+
 - Issue #24917: time_strftime() buffer over-read.
 
 - Issue #23144: Make sure that HTMLParser.feed() returns all the data, even

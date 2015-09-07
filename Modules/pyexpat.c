@@ -1341,11 +1341,16 @@ static int
 xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
 {
     /* Set attribute 'name' to value 'v'. v==NULL means delete */
+    if (!PyUnicode_Check(name)) {
+        PyErr_Format(PyExc_TypeError,
+                     "attribute name must be string, not '%.200s'",
+                     name->ob_type->tp_name);
+        return -1;
+    }
     if (v == NULL) {
         PyErr_SetString(PyExc_RuntimeError, "Cannot delete attribute");
         return -1;
     }
-    assert(PyUnicode_Check(name));
     if (PyUnicode_CompareWithASCIIString(name, "buffer_text") == 0) {
         int b = PyObject_IsTrue(v);
         if (b < 0)
