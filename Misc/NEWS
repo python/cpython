@@ -81,6 +81,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24917: time_strftime() buffer over-read.
+
 - Issue #23144: Make sure that HTMLParser.feed() returns all the data, even
   when convert_charrefs is True.
 
