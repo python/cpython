@@ -177,6 +177,19 @@ class TimeTestCase(unittest.TestCase):
     def test_strftime_bounding_check(self):
         self._bounds_checking(lambda tup: time.strftime('', tup))
 
+    def test_strftime_format_check(self):
+        # Test that strftime does not crash on invalid format strings
+        # that may trigger a buffer overread. When not triggered,
+        # strftime may succeed or raise ValueError depending on
+        # the platform.
+        for x in [ '', 'A', '%A', '%AA' ]:
+            for y in range(0x0, 0x10):
+                for z in [ '%', 'A%', 'AA%', '%A%', 'A%A%', '%#' ]:
+                    try:
+                        time.strftime(x * y + z)
+                    except ValueError:
+                        pass
+
     def test_default_values_for_zero(self):
         # Make sure that using all zeros uses the proper default
         # values.  No test for daylight savings since strftime() does
