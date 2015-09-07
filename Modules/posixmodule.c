@@ -4560,9 +4560,7 @@ typedef struct {
     } \
 
 
-#define UTIME_HAVE_DIR_FD (defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT))
-
-#if UTIME_HAVE_DIR_FD
+#if defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT)
 
 static int
 utime_dir_fd(utime_t *ut, int dir_fd, char *path, int follow_symlinks)
@@ -4588,9 +4586,7 @@ utime_dir_fd(utime_t *ut, int dir_fd, char *path, int follow_symlinks)
     #define FUTIMENSAT_DIR_FD_CONVERTER dir_fd_unavailable
 #endif
 
-#define UTIME_HAVE_FD (defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS))
-
-#if UTIME_HAVE_FD
+#if defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS)
 
 static int
 utime_fd(utime_t *ut, int fd)
@@ -4835,13 +4831,13 @@ os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times,
     else
 #endif
 
-#if UTIME_HAVE_DIR_FD
+#if defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT)
     if ((dir_fd != DEFAULT_DIR_FD) || (!follow_symlinks))
         result = utime_dir_fd(&utime, dir_fd, path->narrow, follow_symlinks);
     else
 #endif
 
-#if UTIME_HAVE_FD
+#if defined(HAVE_FUTIMES) || defined(HAVE_FUTIMENS)
     if (path->fd != -1)
         result = utime_fd(&utime, path->fd);
     else

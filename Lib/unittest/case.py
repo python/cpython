@@ -583,8 +583,11 @@ class TestCase(object):
             finally:
                 result.stopTest(self)
             return
-        expecting_failure = getattr(testMethod,
-                                    "__unittest_expecting_failure__", False)
+        expecting_failure_method = getattr(testMethod,
+                                           "__unittest_expecting_failure__", False)
+        expecting_failure_class = getattr(self,
+                                          "__unittest_expecting_failure__", False)
+        expecting_failure = expecting_failure_class or expecting_failure_method
         outcome = _Outcome(result)
         try:
             self._outcome = outcome
@@ -1279,8 +1282,10 @@ class TestCase(object):
             assert expected_regex, "expected_regex must not be empty."
             expected_regex = re.compile(expected_regex)
         if not expected_regex.search(text):
-            msg = msg or "Regex didn't match"
-            msg = '%s: %r not found in %r' % (msg, expected_regex.pattern, text)
+            standardMsg = "Regex didn't match: %r not found in %r" % (
+                expected_regex.pattern, text)
+            # _formatMessage ensures the longMessage option is respected
+            msg = self._formatMessage(msg, standardMsg)
             raise self.failureException(msg)
 
     def assertNotRegex(self, text, unexpected_regex, msg=None):
@@ -1289,11 +1294,12 @@ class TestCase(object):
             unexpected_regex = re.compile(unexpected_regex)
         match = unexpected_regex.search(text)
         if match:
-            msg = msg or "Regex matched"
-            msg = '%s: %r matches %r in %r' % (msg,
-                                               text[match.start():match.end()],
-                                               unexpected_regex.pattern,
-                                               text)
+            standardMsg = 'Regex matched: %r matches %r in %r' % (
+                text[match.start() : match.end()],
+                unexpected_regex.pattern,
+                text)
+            # _formatMessage ensures the longMessage option is respected
+            msg = self._formatMessage(msg, standardMsg)
             raise self.failureException(msg)
 
 
@@ -1315,6 +1321,7 @@ class TestCase(object):
     failIf = _deprecate(assertFalse)
     assertRaisesRegexp = _deprecate(assertRaisesRegex)
     assertRegexpMatches = _deprecate(assertRegex)
+    assertNotRegexpMatches = _deprecate(assertNotRegex)
 
 
 

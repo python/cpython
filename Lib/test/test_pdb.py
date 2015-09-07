@@ -1043,6 +1043,18 @@ class PdbTestCase(unittest.TestCase):
         self.assertNotIn('Error', stdout.decode(),
                          "Got an error running test script under PDB")
 
+    def test_issue16180(self):
+        # A syntax error in the debuggee.
+        script = "def f: pass\n"
+        commands = ''
+        expected = "SyntaxError:"
+        stdout, stderr = self.run_pdb(script, commands)
+        self.assertIn(expected, stdout,
+            '\n\nExpected:\n{}\nGot:\n{}\n'
+            'Fail to handle a syntax error in the debuggee.'
+            .format(expected, stdout))
+
+
     def tearDown(self):
         support.unlink(support.TESTFN)
 

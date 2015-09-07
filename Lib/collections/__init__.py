@@ -320,22 +320,13 @@ class {typename}(tuple):
         'Return a nicely formatted representation string'
         return self.__class__.__name__ + '({repr_fmt})' % self
 
-    @property
-    def __dict__(self):
-        'A new OrderedDict mapping field names to their values'
-        return OrderedDict(zip(self._fields, self))
-
     def _asdict(self):
         'Return a new OrderedDict which maps field names to their values.'
-        return self.__dict__
+        return OrderedDict(zip(self._fields, self))
 
     def __getnewargs__(self):
         'Return self as a plain tuple.  Used by copy and pickle.'
         return tuple(self)
-
-    def __getstate__(self):
-        'Exclude the OrderedDict from pickling'
-        return None
 
 {field_defs}
 """

@@ -1,7 +1,7 @@
 typedef struct _typeobject {
     PyObject_VAR_HEAD
-    char *tp_name; /* For printing, in format "<module>.<name>" */
-    int tp_basicsize, tp_itemsize; /* For allocation */
+    const char *tp_name; /* For printing, in format "<module>.<name>" */
+    Py_ssize_t tp_basicsize, tp_itemsize; /* For allocation */
 
     /* Methods to implement standard operations */
 
@@ -9,7 +9,8 @@ typedef struct _typeobject {
     printfunc tp_print;
     getattrfunc tp_getattr;
     setattrfunc tp_setattr;
-    PyAsyncMethods *tp_as_async;
+    PyAsyncMethods *tp_as_async; /* formerly known as tp_compare (Python 2)
+                                    or tp_reserved (Python 3) */
     reprfunc tp_repr;
 
     /* Method suites for standard classes */
@@ -30,9 +31,9 @@ typedef struct _typeobject {
     PyBufferProcs *tp_as_buffer;
 
     /* Flags to define presence of optional/expanded features */
-    long tp_flags;
+    unsigned long tp_flags;
 
-    char *tp_doc; /* Documentation string */
+    const char *tp_doc; /* Documentation string */
 
     /* call function for all accessible objects */
     traverseproc tp_traverse;
@@ -44,7 +45,7 @@ typedef struct _typeobject {
     richcmpfunc tp_richcompare;
 
     /* weak reference enabler */
-    long tp_weaklistoffset;
+    Py_ssize_t tp_weaklistoffset;
 
     /* Iterators */
     getiterfunc tp_iter;
@@ -58,7 +59,7 @@ typedef struct _typeobject {
     PyObject *tp_dict;
     descrgetfunc tp_descr_get;
     descrsetfunc tp_descr_set;
-    long tp_dictoffset;
+    Py_ssize_t tp_dictoffset;
     initproc tp_init;
     allocfunc tp_alloc;
     newfunc tp_new;
@@ -69,7 +70,6 @@ typedef struct _typeobject {
     PyObject *tp_cache;
     PyObject *tp_subclasses;
     PyObject *tp_weaklist;
-
     destructor tp_del;
 
     /* Type attribute cache version tag. Added in version 2.6 */

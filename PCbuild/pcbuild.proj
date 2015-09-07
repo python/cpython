@@ -5,8 +5,10 @@
     <Platform Condition="'$(Platform)' == ''">Win32</Platform>
     <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
     <IncludeExtensions Condition="'$(IncludeExtensions)' == ''">true</IncludeExtensions>
+    <IncludeExternals Condition="'$(IncludeExternals)' == ''">true</IncludeExternals>
     <IncludeTests Condition="'$(IncludeTest)' == ''">true</IncludeTests>
     <IncludeSSL Condition="'$(IncludeSSL)' == ''">true</IncludeSSL>
+    <IncludeTkinter Condition="'$(IncludeTkinter)' == ''">true</IncludeTkinter>
   </PropertyGroup>
 
   <ItemDefinitionGroup>
@@ -25,7 +27,7 @@
     <!--
     Parallel build is explicitly disabled for this project because it
     causes many conflicts between pythoncore and projects that depend
-    in pythoncore. Once the core DLL has been built, subsequent
+    on pythoncore. Once the core DLL has been built, subsequent
     projects will be built in parallel.
     -->
     <Projects Include="pythoncore.vcxproj">
@@ -40,10 +42,14 @@
     <!-- _freeze_importlib -->
     <Projects Include="_freeze_importlib.vcxproj" />
     <!-- Extension modules -->
-    <ExtensionModules Include="_bz2;_ctypes;_decimal;_elementtree;_lzma;_msi;_multiprocessing;_overlapped;_sqlite3;_tkinter;tix;pyexpat;select;unicodedata;winsound" />
+    <ExtensionModules Include="_ctypes;_decimal;_elementtree;_msi;_multiprocessing;_overlapped;pyexpat;select;unicodedata;winsound" />
+    <!-- Extension modules that require external sources -->
+    <ExternalModules Include="_bz2;_lzma;_sqlite3" />
     <!-- _ssl will build _socket as well, which may cause conflicts in parallel builds -->
-    <ExtensionModules Include="_socket" Condition="!$(IncludeSSL)" />
-    <ExtensionModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
+    <ExtensionModules Include="_socket" Condition="!$(IncludeSSL) or !$(IncludeExternals)" />
+    <ExternalModules Include="_ssl;_hashlib" Condition="$(IncludeSSL)" />
+    <ExternalModules Include="_tkinter;tix" Condition="$(IncludeTkinter)" />
+    <ExtensionModules Include="@(ExternalModules->'%(Identity)')" Condition="$(IncludeExternals)" />
     <Projects Include="@(ExtensionModules->'%(Identity).vcxproj')" Condition="$(IncludeExtensions)" />
     <!-- Test modules -->
     <TestModules Include="_ctypes_test;_testbuffer;_testcapi;_testembed;_testimportmultiple;_testmultiphase" />

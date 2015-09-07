@@ -82,8 +82,21 @@ the :mod:`glob` module.)
 
    Return the longest path prefix (taken character-by-character) that is a
    prefix of all paths in  *list*.  If *list* is empty, return the empty string
-   (``''``).  Note that this may return invalid paths because it works a
-   character at a time.  To obtain a valid path, see :func:`commonpath`.
+   (``''``).
+
+   .. note::
+
+      This function may return invalid paths because it works a
+      character at a time.  To obtain a valid path, see
+      :func:`commonpath`.
+
+      ::
+
+        >>> os.path.commonprefix(['/usr/lib', '/usr/local/lib'])
+        '/usr/l'
+
+        >>> os.path.commonpath(['/usr/lib', '/usr/local/lib'])
+        '/usr'
 
 
 .. function:: dirname(path)
