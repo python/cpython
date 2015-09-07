@@ -974,13 +974,13 @@ class TestShutil(unittest.TestCase):
         tmpdir2 = self.mkdtemp()
         # force shutil to create the directory
         os.rmdir(tmpdir2)
-        unittest.skipUnless(splitdrive(root_dir)[0] == splitdrive(tmpdir2)[0],
-                            "source and target should be on same drive")
+        # working with relative paths
+        work_dir = os.path.dirname(tmpdir2)
+        rel_base_name = os.path.join(os.path.basename(tmpdir2), 'archive')
+        base_name = os.path.join(work_dir, rel_base_name)
 
-        base_name = os.path.join(tmpdir2, 'archive')
-
-        # working with relative paths to avoid tar warnings
-        tarball = make_archive(splitdrive(base_name)[1], 'gztar', root_dir, '.')
+        with support.change_cwd(work_dir):
+            tarball = make_archive(rel_base_name, 'gztar', root_dir, '.')
 
         # check if the compressed tarball was created
         self.assertEqual(tarball, base_name + '.tar.gz')
@@ -992,7 +992,8 @@ class TestShutil(unittest.TestCase):
                                    './file1', './file2', './sub/file3'])
 
         # trying an uncompressed one
-        tarball = make_archive(splitdrive(base_name)[1], 'tar', root_dir, '.')
+        with support.change_cwd(work_dir):
+            tarball = make_archive(rel_base_name, 'tar', root_dir, '.')
         self.assertEqual(tarball, base_name + '.tar')
         self.assertTrue(os.path.isfile(tarball))
         self.assertTrue(tarfile.is_tarfile(tarball))
@@ -1059,8 +1060,17 @@ class TestShutil(unittest.TestCase):
     def test_make_zipfile(self):
         # creating something to zip
         root_dir, base_dir = self._create_files()
-        base_name = os.path.join(self.mkdtemp(), 'archive')
-        res = make_archive(base_name, 'zip', root_dir, 'dist')
+
+        tmpdir2 = self.mkdtemp()
+        # force shutil to create the directory
+        os.rmdir(tmpdir2)
+        # working with relative paths
+        work_dir = os.path.dirname(tmpdir2)
+        rel_base_name = os.path.join(os.path.basename(tmpdir2), 'archive')
+        base_name = os.path.join(work_dir, rel_base_name)
+
+        with support.change_cwd(work_dir):
+            res = make_archive(rel_base_name, 'zip', root_dir, 'dist')
 
         self.assertEqual(res, base_name + '.zip')
         self.assertTrue(os.path.isfile(res))
