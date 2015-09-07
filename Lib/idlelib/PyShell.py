@@ -1054,6 +1054,7 @@ class PyShell(OutputWindow):
             nosub = "==== No Subprocess ===="
         self.write("Python %s on %s\n%s\n%s" %
                    (sys.version, sys.platform, self.COPYRIGHT, nosub))
+        self.text.focus_force()
         self.showprompt()
         import Tkinter
         Tkinter._default_root = None # 03Jan04 KBK What's this?
