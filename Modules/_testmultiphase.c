@@ -582,3 +582,13 @@ PyInit__testmultiphase_exec_unreported_exception(PyObject *spec)
 {
     return PyModuleDef_Init(&def_exec_unreported_exception);
 }
+
+/*** Helper for imp test ***/
+
+static PyModuleDef imp_dummy_def = TEST_MODULE_DEF("imp_dummy", main_slots, testexport_methods);
+
+PyMODINIT_FUNC
+PyInit_imp_dummy(PyObject *spec)
+{
+    return PyModuleDef_Init(&imp_dummy_def);
+}

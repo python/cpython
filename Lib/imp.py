@@ -334,6 +334,12 @@ if create_dynamic:
         """
         import importlib.machinery
         loader = importlib.machinery.ExtensionFileLoader(name, path)
-        return loader.load_module()
+
+        # Issue #24748: Skip the sys.modules check in _load_module_shim;
+        # always load new extension
+        spec = importlib.machinery.ModuleSpec(
+            name=name, loader=loader, origin=path)
+        return _load(spec)
+
 else:
     load_dynamic = None
