@@ -1440,15 +1440,16 @@ xmlparse_setattro(xmlparseobject *self, PyObject *name, PyObject *v)
         return -1;
       }
 
-      new_buffer_size=PyLong_AS_LONG(v);
+      new_buffer_size = PyLong_AsLong(v);
+      if (new_buffer_size <= 0) {
+        if (!PyErr_Occurred())
+          PyErr_SetString(PyExc_ValueError, "buffer_size must be greater than zero");
+        return -1;
+      }
+
       /* trivial case -- no change */
       if (new_buffer_size == self->buffer_size) {
         return 0;
-      }
-
-      if (new_buffer_size <= 0) {
-        PyErr_SetString(PyExc_ValueError, "buffer_size must be greater than zero");
-        return -1;
       }
 
       /* check maximum */
