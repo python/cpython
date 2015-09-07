@@ -736,8 +736,8 @@ In the table, *s* and *t* are sequences of the same type; *n*, *i* and *j* are i
 | ``s + t``        | the concatenation of *s* and   | \(6)     |
 |                  | *t*                            |          |
 +------------------+--------------------------------+----------+
-| ``s * n, n * s`` | *n* shallow copies of *s*      | \(2)     |
-|                  | concatenated                   |          |
+| ``s * n, n * s`` | equivalent to adding *s* to    | \(2)     |
+|                  | itself *n* times               |          |
 +------------------+--------------------------------+----------+
 | ``s[i]``         | *i*\ th item of *s*, origin 0  | \(3)     |
 +------------------+--------------------------------+----------+
@@ -789,9 +789,9 @@ Notes:
 
 (2)
    Values of *n* less than ``0`` are treated as ``0`` (which yields an empty
-   sequence of the same type as *s*).  Note also that the copies are shallow;
-   nested structures are not copied.  This often haunts new Python programmers;
-   consider:
+   sequence of the same type as *s*).  Note that items in the sequence *s*
+   are not copied; they are referenced multiple times.  This often haunts
+   new Python programmers; consider:
 
       >>> lists = [[]] * 3
       >>> lists
@@ -801,7 +801,7 @@ Notes:
       [[3], [3], [3]]
 
    What has happened is that ``[[]]`` is a one-element list containing an empty
-   list, so all three elements of ``[[]] * 3`` are (pointers to) this single empty
+   list, so all three elements of ``[[]] * 3`` are references to this single empty
    list.  Modifying any of the elements of ``lists`` modifies this single list.
    You can create a list of different lists this way:
 
@@ -811,6 +811,9 @@ Notes:
       >>> lists[2].append(7)
       >>> lists
       [[3], [5], [7]]
+
+   Further explanation is available in the FAQ entry
+   :ref:`faq-multidimensional-list`.
 
 (3)
    If *i* or *j* is negative, the index is relative to the end of the string:
