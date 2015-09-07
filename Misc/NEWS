@@ -14,6 +14,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25019: Fixed a crash caused by setting non-string key of expat parser.
+  Based on patch by John Leitch.
+
 - Issue #16180: Exit pdb if file has syntax error, instead of trapping user
   in an infinite loop.  Patch by Xavier de Gaye.
 
