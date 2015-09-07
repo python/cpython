@@ -317,11 +317,8 @@ class ProcessTestCase(BaseTestCase):
         # Normalize an expected cwd (for Tru64 support).
         # We can't use os.path.realpath since it doesn't expand Tru64 {memb}
         # strings.  See bug #1063571.
-        original_cwd = os.getcwd()
-        os.chdir(cwd)
-        cwd = os.getcwd()
-        os.chdir(original_cwd)
-        return cwd
+        with support.change_cwd(cwd):
+            return os.getcwd()
 
     # For use in the test_cwd* tests below.
     def _split_python_path(self):

@@ -10,8 +10,7 @@ from idlelib.PyShell import PyShellFileList
 
 def StackBrowser(root, flist=None, tb=None, top=None):
     if top is None:
-        from tkinter import Toplevel
-        top = Toplevel(root)
+        top = tk.Toplevel(root)
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0)
     sc.frame.pack(expand=1, fill="both")
     item = StackTreeItem(flist, tb)
@@ -108,12 +107,9 @@ class VariablesTreeItem(ObjectTreeItem):
     def IsExpandable(self):
         return len(self.object) > 0
 
-    def keys(self):
-        return list(self.object.keys())
-
     def GetSubList(self):
         sublist = []
-        for key in self.keys():
+        for key in self.object.keys():
             try:
                 value = self.object[key]
             except KeyError:
@@ -123,6 +119,9 @@ class VariablesTreeItem(ObjectTreeItem):
             item = make_objecttreeitem(key + " =", value, setfunction)
             sublist.append(item)
         return sublist
+
+    def keys(self):  # unused, left for possible 3rd party use
+        return list(self.object.keys())
 
 def _stack_viewer(parent):
     root = tk.Tk()

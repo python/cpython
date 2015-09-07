@@ -419,9 +419,11 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         deque->rightblock->data[deque->rightindex] = item;
         deque_trim_left(deque);
     }
-    Py_DECREF(it);
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
+        Py_DECREF(it);
         return NULL;
+    }
+    Py_DECREF(it);
     Py_RETURN_NONE;
 }
 
@@ -480,9 +482,11 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         deque->leftblock->data[deque->leftindex] = item;
         deque_trim_right(deque);
     }
-    Py_DECREF(it);
-    if (PyErr_Occurred())
+    if (PyErr_Occurred()) {
+        Py_DECREF(it);
         return NULL;
+    }
+    Py_DECREF(it);
     Py_RETURN_NONE;
 }
 
@@ -497,8 +501,8 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
     result = deque_extend(deque, other);
     if (result == NULL)
         return result;
-    Py_DECREF(result);
     Py_INCREF(deque);
+    Py_DECREF(result);
     return (PyObject *)deque;
 }
 
@@ -1260,8 +1264,8 @@ deque_repr(PyObject *deque)
                                       aslist, ((dequeobject *)deque)->maxlen);
     else
         result = PyUnicode_FromFormat("deque(%R)", aslist);
-    Py_DECREF(aslist);
     Py_ReprLeave(deque);
+    Py_DECREF(aslist);
     return result;
 }
 

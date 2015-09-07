@@ -2,6 +2,84 @@
 Python News
 +++++++++++
 
+
+What's New in Python 3.5.1
+==========================
+
+Release date: TBA
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #16180: Exit pdb if file has syntax error, instead of trapping user
+  in an infinite loop.  Patch by Xavier de Gaye.
+
+- Issue #24891: Fix a race condition at Python startup if the file descriptor
+  of stdin (0), stdout (1) or stderr (2) is closed while Python is creating
+  sys.stdin, sys.stdout and sys.stderr objects. These attributes are now set
+  to None if the creation of the object failed, instead of raising an OSError
+  exception. Initial patch written by Marco Paolini.
+
+- Issue #24992: Fix error handling and a race condition (related to garbage
+  collection) in collections.OrderedDict constructor.
+
+- Issue #24881: Fixed setting binary mode in Python implementation of FileIO
+  on Windows and Cygwin.  Patch from Akira Li.
+
+- Issue #21112: Fix regression in unittest.expectedFailure on subclasses.
+  Patch from Berker Peksag.
+
+- Issue #24764: cgi.FieldStorage.read_multi() now ignores the Content-Length
+  header in part headers. Patch written by Peter Landry and reviewed by Pierre
+  Quentel.
+
+- Issue #24913: Fix overrun error in deque.index().
+  Found by John Leitch and Bryce Darling.
+
+- Issue #24774: Fix docstring in http.server.test. Patch from Chiu-Hsiang Hsu.
+
+- Issue #21159: Improve message in configparser.InterpolationMissingOptionError.
+  Patch from Łukasz Langa.
+
+- Issue #20362: Honour TestCase.longMessage correctly in assertRegex.
+  Patch from Ilia Kurenkov.
+
+- Issue #23572: Fixed functools.singledispatch on classes with falsy
+  metaclasses.  Patch by Ethan Furman.
+
+Documentation
+-------------
+
+- Issue #24952: Clarify the default size argument of stack_size() in
+  the "threading" and "_thread" modules. Patch from Mattip.
+
+- Issue #23725: Overhaul tempfile docs. Note deprecated status of mktemp.
+  Patch from Zbigniew Jędrzejewski-Szmek.
+
+- Issue #24808: Update the types of some PyTypeObject fields.  Patch by
+  Joseph Weston.
+
+- Issue #22812: Fix unittest discovery examples.
+  Patch from Pam McA'Nulty.
+
+Tests
+-----
+
+- PCbuild\rt.bat now accepts an unlimited number of arguments to pass along
+  to regrtest.py.  Previously there was a limit of 9.
+
+Build
+-----
+
+- Issue #24910: Windows MSIs now have unique display names.
+
+- Issue #24986: It is now possible to build Python on Windows without errors
+  when external libraries are not available.
+
+
 What's New in Python 3.5.0 release candidate 3?
 ===============================================
 
@@ -21,6 +99,8 @@ Library
 -------
 
 - Issue #24917: time_strftime() buffer over-read.
+- Issue #23144: Make sure that HTMLParser.feed() returns all the data, even
+  when convert_charrefs is True.
 
 - Issue #24748: To resolve a compatibility problem found with py2exe and
   pywin32, imp.load_dynamic() once again ignores previously loaded modules
@@ -29,6 +109,7 @@ Library
 
 - Issue #24635: Fixed a bug in typing.py where isinstance([], typing.Iterable)
   would return True once, then False on subsequent calls.
+
 
 - Issue #24989: Fixed buffer overread in BytesIO.readline() if a position is
   set beyond size.  Based on patch by John Leitch.

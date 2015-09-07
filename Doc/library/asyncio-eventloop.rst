@@ -6,7 +6,7 @@ Base Event Loop
 ===============
 
 The event loop is the central execution device provided by :mod:`asyncio`.
-It provides multiple facilities, amongst which:
+It provides multiple facilities, including:
 
 * Registering, executing and cancelling delayed calls (timeouts).
 
