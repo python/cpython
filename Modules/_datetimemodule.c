@@ -4103,7 +4103,7 @@ datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
     long us;
 
     if (_PyTime_ObjectToTimeval(timestamp,
-                                &timet, &us, _PyTime_ROUND_HALF_UP) == -1)
+                                &timet, &us, _PyTime_ROUND_HALF_EVEN) == -1)
         return NULL;
 
     return datetime_from_timet_and_us(cls, f, timet, (int)us, tzinfo);

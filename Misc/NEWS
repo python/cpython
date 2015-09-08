@@ -20,9 +20,9 @@ Library
 - Issue #22241: timezone.utc name is now plain 'UTC', not 'UTC-00:00'.
 
 - Issue #23517: fromtimestamp() and utcfromtimestamp() methods of
-  datetime.datetime now round microseconds to nearest with ties going away from
-  zero (ROUND_HALF_UP), as Python 2 and Python older than 3.3, instead of
-  rounding towards -Infinity (ROUND_FLOOR).
+  datetime.datetime now round microseconds to nearest with ties going to
+  nearest even integer (ROUND_HALF_EVEN), as round(float), instead of rounding
+  towards -Infinity (ROUND_FLOOR).
 
 - Issue #23552: Timeit now warns when there is substantial (4x) variance
   between best and worst times. Patch from Serhiy Storchaka.
