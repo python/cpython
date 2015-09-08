@@ -5,6 +5,8 @@
 :Release: |release|
 :Date: |today|
 
+:Author: Elvis Pranskevichus <elprans@gmail.com> (Editor)
+
 .. Rules for maintenance:
 
    * Anyone can add text to this document.  Do not spend very much time
@@ -149,31 +151,183 @@ Please read on for a comprehensive list of user-facing changes.
        PEP written by Carl Meyer
 
 
+New Features
+============
+
+.. _whatsnew-pep-492:
+
 PEP 492 - Coroutines with async and await syntax
 ------------------------------------------------
 
-The PEP added dedicated syntax for declaring :term:`coroutines <coroutine>`,
-:keyword:`await` expressions, new asynchronous :keyword:`async for`
-and :keyword:`async with` statements.
+:pep:`492` greatly improves support for asynchronous programming in Python
+by adding :term:`awaitable objects <awaitable>`,
+:term:`coroutine functions <coroutine function>`,
+:term:`asynchronous iteration <asynchronous iterable>`,
+and :term:`asynchronous context managers <asynchronous context manager>`.
 
-Example::
+Coroutine functions are declared using the new :keyword:`async def` syntax::
 
-    async def read_data(db):
-        async with db.transaction():
-            data = await db.fetch('SELECT ...')
+    >>> async def coro():
+    ...     return 'spam'
 
-PEP written and implemented by Yury Selivanov.
+Inside a coroutine function, a new :keyword:`await` expression can be used
+to suspend coroutine execution until the result is available.  Any object
+can be *awaited*, as long as it implements the :term:`awaitable` protocol by
+defining the :meth:`__await__` method.
+
+PEP 492 also adds :keyword:`async for` statement for convenient iteration
+over asynchronous iterables.
+
+An example of a simple HTTP client written using the new syntax::
+
+    import asyncio
+
+    async def http_get(domain):
+        reader, writer = await asyncio.open_connection(domain, 80)
+
+        writer.write(b'\r\n'.join([
+            b'GET / HTTP/1.1',
+            b'Host: %b' % domain.encode('latin-1'),
+            b'Connection: close',
+            b'', b''
+        ]))
+
+        async for line in reader:
+            print('>>>', line)
+
+        writer.close()
+
+    loop = asyncio.get_event_loop()
+    try:
+        loop.run_until_complete(http_get('example.com'))
+    finally:
+        loop.close()
+
+
+Similarly to asynchronous iteration, there is a new syntax for asynchronous
+context managers::
+
+    >>> import asyncio
+    >>> async def coro1(lock):
+    ...     print('coro1: waiting for lock')
+    ...     async with lock:
+    ...         print('coro1: holding the lock')
+    ...         await asyncio.sleep(1)
+    ...         print('coro1: releasing the lock')
+    ...
+    >>> async def coro2(lock):
+    ...     print('coro2: waiting for lock')
+    ...     async with lock:
+    ...         print('coro2: holding the lock')
+    ...         await asyncio.sleep(1)
+    ...         print('coro2: releasing the lock')
+    ...
+    >>> loop = asyncio.get_event_loop()
+    >>> lock = asyncio.Lock()
+    >>> coros = asyncio.gather(coro1(lock), coro2(lock), loop=loop)
+    >>> loop.run_until_complete(coros)
+    coro1: waiting for lock
+    coro1: holding the lock
+    coro2: waiting for lock
+    coro1: releasing the lock
+    coro2: holding the lock
+    coro2: releasing the lock
+    >>> loop.close()
+
+Note that both :keyword:`async for` and :keyword:`async with` can only
+be used inside a coroutine function declared with :keyword:`async def`.
+
+Coroutine functions are intended to be ran inside a compatible event loop,
+such as :class:`asyncio.Loop`.
 
 .. seealso::
 
    :pep:`492` -- Coroutines with async and await syntax
+      PEP written and implemented by Yury Selivanov.
 
 
-PEP 461 - Formatting support for bytes and bytearray
-----------------------------------------------------
+PEP 465 - A dedicated infix operator for matrix multiplication
+--------------------------------------------------------------
 
-This PEP proposes adding % formatting operations similar to Python 2's ``str``
-type to :class:`bytes` and :class:`bytearray`.
+:pep:`465` adds the ``@`` infix operator for matrix multiplication.
+Currently, no builtin Python types implement the new operator, however, it
+can be implemented by defining :meth:`__matmul__`, :meth:`__rmatmul__`,
+and :meth:`__imatmul__` for regular, reflected, and in-place matrix
+multiplication.  The semantics of these methods is similar to that of
+methods defining other infix arithmetic operators.
+
+Matrix multiplication is a notably common operation in many fields of
+mathematics, science, engineering, and the addition of ``@`` allows writing
+cleaner code::
+
+    >>> S = (H @ beta - r).T @ inv(H @ V @ H.T) @ (H @ beta - r)
+
+An upcoming release of NumPy 1.10 will add support for the new operator::
+
+    >>> import numpy
+
+    >>> x = numpy.ones(3)
+    >>> x
+    array([ 1., 1., 1.])
+
+    >>> m = numpy.eye(3)
+    >>> m
+    array([[ 1., 0., 0.],
+           [ 0., 1., 0.],
+           [ 0., 0., 1.]])
+
+    >>> x @ m
+    array([ 1., 1., 1.])
+
+
+.. seealso::
+
+   :pep:`465` -- A dedicated infix operator for matrix multiplication
+      PEP written by Nathaniel J. Smith; implemented by Benjamin Peterson.
+
+
+PEP 448 - Additional Unpacking Generalizations
+----------------------------------------------
+
+:pep:`448` extends the allowed uses of the ``*`` iterable unpacking
+operator and ``**`` dictionary unpacking operator.  It is now possible
+to use an arbitrary number of unpackings in function calls::
+
+    >>> print(*[1], *[2], 3, *[4, 5])
+    1 2 3 4 5
+
+    >>> def fn(a, b, c, d):
+    ...     print(a, b, c, d)
+    ...
+
+    >>> fn(**{'a': 1, 'c': 3}, **{'b': 2, 'd': 4})
+    1 2 3 4
+
+Similarly, tuple, list, set, and dictionary displays allow multiple
+unpackings::
+
+    >>> *range(4), 4
+    (0, 1, 2, 3, 4)
+    >>> [*range(4), 4]
+    [0, 1, 2, 3, 4]
+    >>> {*range(4), 4, *(5, 6, 7)}
+    {0, 1, 2, 3, 4, 5, 6, 7}
+    >>> {'x': 1, **{'y': 2}}
+    {'x': 1, 'y': 2}
+
+.. seealso::
+
+   :pep:`448` -- Additional Unpacking Generalizations
+      PEP written by Joshua Landau; implemented by Neil Girdhar,
+      Thomas Wouters, and Joshua Landau.
+
+
+PEP 461 - % formatting support for bytes and bytearray
+------------------------------------------------------
+
+PEP 461 adds % formatting to :class:`bytes` and :class:`bytearray`, aiding in
+handling data that is a mixture of binary and ASCII compatible text.  This
+feature also eases porting such code from Python 2.
 
 Examples::
 
@@ -195,60 +349,8 @@ Unicode is not allowed for ``%s``, but it is accepted by ``%a`` (equivalent of
 .. seealso::
 
    :pep:`461` -- Adding % formatting to bytes and bytearray
-
-
-PEP 465 - A dedicated infix operator for matrix multiplication
---------------------------------------------------------------
-
-This PEP proposes a new binary operator to be used for matrix multiplication,
-called ``@``. (Mnemonic: ``@`` is ``*`` for mATrices.)
-
-.. seealso::
-
-   :pep:`465` -- A dedicated infix operator for matrix multiplication
-
-
-PEP 448 - Additional Unpacking Generalizations
-----------------------------------------------
-
-This PEP proposes extended usages of the ``*`` iterable unpacking
-operator and ``**`` dictionary unpacking operators
-to allow unpacking in more positions, an arbitrary number of
-times, and in additional circumstances.  Specifically,
-in function calls, in comprehensions and generator expressions, and
-in displays.
-
-Function calls are proposed to support an arbitrary number of
-unpackings rather than just one::
-
-    >>> print(*[1], *[2], 3)
-    1 2 3
-    >>> dict(**{'x': 1}, y=2, **{'z': 3})
-    {'x': 1, 'y': 2, 'z': 3}
-
-Unpacking is proposed to be allowed inside tuple, list, set,
-and dictionary displays::
-
-    >>> *range(4), 4
-    (0, 1, 2, 3, 4)
-    >>> [*range(4), 4]
-    [0, 1, 2, 3, 4]
-    >>> {*range(4), 4}
-    {0, 1, 2, 3, 4}
-    >>> {'x': 1, **{'y': 2}}
-    {'x': 1, 'y': 2}
-
-In dictionaries, later values will always override earlier ones::
-
-    >>> {'x': 1, **{'x': 2}}
-    {'x': 2}
-
-    >>> {**{'x': 2}, 'x': 1}
-    {'x': 1}
-
-.. seealso::
-
-   :pep:`448` -- Additional Unpacking Generalizations
+      PEP written by Ethan Furman; implemented by Neil Schemenauer and
+      Ethan Furman.
 
 
 PEP 484 - Type Hints
@@ -261,8 +363,8 @@ where annotations are not available.
 For example, here is a simple function whose argument and return type
 are declared in the annotations::
 
-  def greeting(name: str) -> str:
-      return 'Hello ' + name
+    def greeting(name: str) -> str:
+        return 'Hello ' + name
 
 The type system supports unions, generic types, and a special type
 named ``Any`` which is consistent with (i.e. assignable to and from) all
@@ -270,8 +372,10 @@ types.
 
 .. seealso::
 
-   * :pep:`484` -- Type Hints
    * :mod:`typing` module documentation
+   * :pep:`484` -- Type Hints
+        PEP written by Guido van Rossum, Jukka Lehtosalo, and Łukasz Langa;
+        implemented by Guido van Rossum.
 
 
 PEP 471 - os.scandir() function -- a better and faster directory iterator
@@ -282,12 +386,10 @@ to the standard library. Additionally, :func:`os.walk` is now
 implemented using :func:`os.scandir`, which speeds it up by 3-5 times
 on POSIX systems and by 7-20 times on Windows systems.
 
-PEP and implementation written by Ben Hoyt with the help of Victor Stinner.
-
 .. seealso::
 
-   :pep:`471` -- os.scandir() function -- a better and faster directory
-   iterator
+   :pep:`471` -- os.scandir() function -- a better and faster directory iterator
+      PEP written and implemented by Ben Hoyt with the help of Victor Stinner.
 
 
 PEP 475: Retry system calls failing with EINTR
@@ -357,12 +459,11 @@ not raise an exception:
 * :func:`signal.sigtimedwait`, :func:`signal.sigwaitinfo`
 * :func:`time.sleep`
 
-PEP and implementation written by Charles-François Natali and Victor Stinner,
-with the help of Antoine Pitrou (the french connection).
-
 .. seealso::
 
    :pep:`475` -- Retry system calls failing with EINTR
+      PEP and implementation written by Charles-François Natali and
+      Victor Stinner, with the help of Antoine Pitrou (the french connection).
 
 
 PEP 479: Change StopIteration handling inside generators
@@ -378,12 +479,11 @@ be used::
 Without a ``__future__`` import, a :exc:`PendingDeprecationWarning` will be
 raised.
 
-PEP written by Chris Angelico and Guido van Rossum. Implemented by
-Chris Angelico, Yury Selivanov and Nick Coghlan.
-
 .. seealso::
 
    :pep:`479` -- Change StopIteration handling inside generators
+      PEP written by Chris Angelico and Guido van Rossum. Implemented by
+      Chris Angelico, Yury Selivanov and Nick Coghlan.
 
 
 PEP 486: Make the Python Launcher aware of virtual environments
@@ -397,6 +497,7 @@ environment will be used.
 .. seealso::
 
     :pep:`486` -- Make the Python Launcher aware of virtual environments
+        PEP written and implemented by Paul Moore.
 
 
 PEP 488: Elimination of PYO files
@@ -414,6 +515,7 @@ has an updated API to help with this change.
 .. seealso::
 
    :pep:`488` -- Elimination of PYO files
+      PEP written and implemented by Brett Cannon.
 
 
 PEP 489: Multi-phase extension module initialization
@@ -429,7 +531,10 @@ rather than being restricted to ASCII.
 
 .. seealso::
 
-   :pep:`488` -- Multi-phase extension module initialization
+   :pep:`489` -- Multi-phase extension module initialization
+      PEP written by Petr Viktorin, Stefan Behnel, and Nick Coghlan;
+      implementation by Petr Viktorin.
+
 
 PEP 485: A function for testing approximate equality
 ----------------------------------------------------
@@ -442,6 +547,9 @@ close is determined according to given absolute and relative tolerances.
 .. seealso::
 
    :pep:`485` -- A function for testing approximate equality
+      PEP written by Christopher Barker; implemented by Chris Barker and
+      Tal Einat.
+
 
 Other Language Changes
 ======================
