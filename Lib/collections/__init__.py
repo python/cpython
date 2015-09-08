@@ -892,9 +892,8 @@ class ChainMap(MutableMapping):
     __copy__ = copy
 
     def new_child(self, m=None):                # like Django's Context.push()
-        '''
-        New ChainMap with a new map followed by all previous maps. If no
-        map is provided, an empty dict is used.
+        '''New ChainMap with a new map followed by all previous maps.
+        If no map is provided, an empty dict is used.
         '''
         if m is None:
             m = {}
