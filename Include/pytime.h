@@ -31,9 +31,9 @@ typedef enum {
     /* Round towards infinity (+inf).
        For example, used for timeout to wait "at least" N seconds. */
     _PyTime_ROUND_CEILING=1,
-    /* Round to nearest with ties going away from zero.
+    /* Round to nearest with ties going to nearest even integer.
        For example, used to round from a Python float. */
-    _PyTime_ROUND_HALF_UP
+    _PyTime_ROUND_HALF_EVEN
 } _PyTime_round_t;
 
 /* Convert a time_t to a PyLong. */
@@ -44,8 +44,9 @@ PyAPI_FUNC(PyObject *) _PyLong_FromTime_t(
 PyAPI_FUNC(time_t) _PyLong_AsTime_t(
     PyObject *obj);
 
-/* Round to nearest with ties going away from zero (_PyTime_ROUND_HALF_UP). */
-PyAPI_FUNC(double) _PyTime_RoundHalfUp(
+/* Round to nearest with ties going to nearest even integer
+   (_PyTime_ROUND_HALF_EVEN) */
+PyAPI_FUNC(double) _PyTime_RoundHalfEven(
     double x);
 
 /* Convert a number of seconds, int or float, to time_t. */
