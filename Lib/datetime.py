@@ -316,13 +316,6 @@ def _divide_and_round(a, b):
 
     return q
 
-def _round_half_up(x):
-    """Round to nearest with ties going away from zero."""
-    if x >= 0.0:
-        return _math.floor(x + 0.5)
-    else:
-        return _math.ceil(x - 0.5)
-
 
 class timedelta:
     """Represent the difference between two datetime objects.
