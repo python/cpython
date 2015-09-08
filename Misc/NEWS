@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24982: shutil.make_archive() with the "zip" format now adds entries
+  for directories (including empty directories) in ZIP file.
+
 - Issue #17849: Raise a sensible exception if an invalid response is
   received for a HTTP tunnel request, as seen with some servers that
   do not support tunnelling.  Initial patch from Cory Benfield.

@@ -449,7 +449,16 @@ def _make_zipfile(base_name, base_dir, verbose=0, dry_run=0, logger=None):
         if not dry_run:
             with zipfile.ZipFile(zip_filename, "w",
                                  compression=zipfile.ZIP_DEFLATED) as zf:
+                path = os.path.normpath(base_dir)
+                zf.write(path, path)
+                if logger is not None:
+                    logger.info("adding '%s'", path)
                 for dirpath, dirnames, filenames in os.walk(base_dir):
+                    for name in sorted(dirnames):
+                        path = os.path.normpath(os.path.join(dirpath, name))
+                        zf.write(path, path)
+                        if logger is not None:
+                            logger.info("adding '%s'", path)
                     for name in filenames:
                         path = os.path.normpath(os.path.join(dirpath, name))
                         if os.path.isfile(path):
