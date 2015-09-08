@@ -977,9 +977,9 @@ class TestShutil(unittest.TestCase):
         # working with relative paths
         work_dir = os.path.dirname(tmpdir2)
         rel_base_name = os.path.join(os.path.basename(tmpdir2), 'archive')
-        base_name = os.path.join(work_dir, rel_base_name)
 
         with support.change_cwd(work_dir):
+            base_name = os.path.abspath(rel_base_name)
             tarball = make_archive(rel_base_name, 'gztar', root_dir, '.')
 
         # check if the compressed tarball was created
@@ -1067,9 +1067,9 @@ class TestShutil(unittest.TestCase):
         # working with relative paths
         work_dir = os.path.dirname(tmpdir2)
         rel_base_name = os.path.join(os.path.basename(tmpdir2), 'archive')
-        base_name = os.path.join(work_dir, rel_base_name)
 
         with support.change_cwd(work_dir):
+            base_name = os.path.abspath(rel_base_name)
             res = make_archive(rel_base_name, 'zip', root_dir, base_dir)
 
         self.assertEqual(res, base_name + '.zip')
