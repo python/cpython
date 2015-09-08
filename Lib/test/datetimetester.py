@@ -679,7 +679,7 @@ class TestTimeDelta(HarmlessMixedComparison, unittest.TestCase):
         us_per_day = us_per_hour * 24
         eq(td(days=.4/us_per_day), td(0))
         eq(td(hours=.2/us_per_hour), td(0))
-        eq(td(days=.4/us_per_day, hours=.2/us_per_hour), td(microseconds=1), td)
+        eq(td(days=.4/us_per_day, hours=.2/us_per_hour), td(microseconds=1))
 
         eq(td(days=-.4/us_per_day), td(0))
         eq(td(hours=-.2/us_per_hour), td(0))
