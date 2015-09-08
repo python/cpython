@@ -407,7 +407,7 @@ class timedelta:
         # secondsfrac isn't referenced again
 
         if isinstance(microseconds, float):
-            microseconds = _round_half_up(microseconds + usdouble)
+            microseconds = round(microseconds + usdouble)
             seconds, microseconds = divmod(microseconds, 1000000)
             days, seconds = divmod(seconds, 24*3600)
             d += days
@@ -418,7 +418,7 @@ class timedelta:
             days, seconds = divmod(seconds, 24*3600)
             d += days
             s += seconds
-            microseconds = _round_half_up(microseconds + usdouble)
+            microseconds = round(microseconds + usdouble)
         assert isinstance(s, int)
         assert isinstance(microseconds, int)
         assert abs(s) <= 3 * 24 * 3600
