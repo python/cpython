@@ -41,8 +41,7 @@ The solution currently supports two platforms.  The Win32 platform is
 used to build standard x86-compatible 32-bit binaries, output into the
 win32 sub-directory.  The x64 platform is used for building 64-bit AMD64
 (aka x86_64 or EM64T) binaries, output into the amd64 sub-directory.
-The Itanium (IA-64) platform is no longer supported.  See the "Building
-for AMD64" section below for more information about 64-bit builds.
+The Itanium (IA-64) platform is no longer supported.
 
 Four configuration options are supported by the solution:
 Debug
@@ -76,29 +75,7 @@ officially supported.
 
 By default, build.bat will build Python in Release configuration for
 the 32-bit Win32 platform.  It accepts several arguments to change
-this behavior:
-
-   -c <configuration>  Set the configuration (see above)
-   -d                  Shortcut for "-c Debug"
-   -p <platform>       Set the platform to build for ("Win32" or "x64")
-   -r                  Rebuild instead of just building
-   -t <target>         Set the target (Build, Rebuild, Clean or CleanAll)
-   -e                  Use get_externals.bat to fetch external sources
-   -M                  Don't build in parallel
-   -v                  Increased output messages
-
-Up to 9 MSBuild switches can also be passed, though they must be passed
-after specifying any of the above switches.  For example, use:
-
-   build.bat -e -d /fl
-
-to do a debug build with externals fetched as needed and write detailed
-build logs to a file.  If the MSBuild switch requires an equal sign
-("="), the entire switch must be quoted:
-
-   build.bat -e -d "/p:ExternalsDir=P:\cpython-externals"
-
-There may also be other situations where quotes are necessary.
+this behavior, try `build.bat -h` to learn more.
 
 
 C Runtime
@@ -129,8 +106,6 @@ pythoncore
     .dll and .lib
 python
     .exe
-make_buildinfo, make_versioninfo
-    helpers to provide necessary information to the build process
 
 These sub-projects provide extra executables that are useful for running
 CPython in different ways:
@@ -152,9 +127,6 @@ categories:
 _freeze_importlib
     _freeze_importlib.exe, used to regenerate Python\importlib.h after
     changes have been made to Lib\importlib\_bootstrap.py
-bdist_wininst
-    ..\Lib\distutils\command\wininst-14.0[-amd64].exe, the base
-    executable used by the distutils bdist_wininst command
 python3dll
     python3.dll, the PEP 384 Stable ABI dll
 xxlimited
@@ -274,14 +246,8 @@ as the values of certain properties in order for the build solution to
 find them.  This is an advanced topic and not necessarily fully
 supported.
 
-
-Building for AMD64
-------------------
-
-The build process for AMD64 / x64 is very similar to standard builds,
-you just have to set x64 as platform. In addition, the HOST_PYTHON
-environment variable must point to a Python interpreter (at least 2.4),
-to support cross-compilation from Win32.
+The get_externals.bat script is called automatically by build.bat when
+you pass the '-e' option to it.
 
 
 Profile Guided Optimization
@@ -298,7 +264,7 @@ It creates the PGI files, runs the unit test suite or PyBench with the
 PGI python, and finally creates the optimized files.
 
 See
-    http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.100).aspx
+    http://msdn.microsoft.com/en-us/library/e7k32f4k(VS.140).aspx
 for more on this topic.
 
 
