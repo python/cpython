@@ -318,5 +318,5 @@ Your Own Extension DLLs
 -----------------------
 
 If you want to create your own extension module DLL (.pyd), there's an
-example with easy-to-follow instructions in ..\PC\example\; read the
+example with easy-to-follow instructions in ..\PC\example_nt\; read the
 file readme.txt there first.
