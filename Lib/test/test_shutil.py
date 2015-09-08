@@ -1064,15 +1064,42 @@ class TestShutil(unittest.TestCase):
         base_name = os.path.join(work_dir, rel_base_name)
 
         with support.change_cwd(work_dir):
-            res = make_archive(rel_base_name, 'zip', root_dir, 'dist')
+            res = make_archive(rel_base_name, 'zip', root_dir, base_dir)
 
         self.assertEqual(res, base_name + '.zip')
         self.assertTrue(os.path.isfile(res))
         self.assertTrue(zipfile.is_zipfile(res))
         with zipfile.ZipFile(res) as zf:
             self.assertCountEqual(zf.namelist(),
-                    ['dist/file1', 'dist/file2', 'dist/sub/file3'])
+                    ['dist/', 'dist/sub/', 'dist/sub2/',
+                     'dist/file1', 'dist/file2', 'dist/sub/file3'])
 
+    @requires_zlib
+    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    @unittest.skipUnless(find_executable('zip'),
+                         'Need the zip command to run')
+    def test_zipfile_vs_zip(self):
+        root_dir, base_dir = self._create_files()
+        base_name = os.path.join(self.mkdtemp(), 'archive')
+        archive = make_archive(base_name, 'zip', root_dir, base_dir)
+
+        # check if ZIP file  was created
+        self.assertEqual(archive, base_name + '.zip')
+        self.assertTrue(os.path.isfile(archive))
+
+        # now create another ZIP file using `zip`
+        archive2 = os.path.join(root_dir, 'archive2.zip')
+        zip_cmd = ['zip', '-q', '-r', 'archive2.zip', base_dir]
+        with support.change_cwd(root_dir):
+            spawn(zip_cmd)
+
+        self.assertTrue(os.path.isfile(archive2))
+        # let's compare both ZIP files
+        with zipfile.ZipFile(archive) as zf:
+            names = zf.namelist()
+        with zipfile.ZipFile(archive2) as zf:
+            names2 = zf.namelist()
+        self.assertEqual(sorted(names), sorted(names2))
 
     def test_make_archive(self):
         tmpdir = self.mkdtemp()
@@ -1183,11 +1210,9 @@ class TestShutil(unittest.TestCase):
             formats.append('bztar')
 
         root_dir, base_dir = self._create_files()
+        expected = rlistdir(root_dir)
+        expected.remove('outer')
         for format in formats:
-            expected = rlistdir(root_dir)
-            expected.remove('outer')
-            if format == 'zip':
-                expected.remove('dist/sub2/')
             base_name = os.path.join(self.mkdtemp(), 'archive')
             filename = make_archive(base_name, format, root_dir, base_dir)
 
