@@ -122,7 +122,14 @@ Significantly Improved Library Modules:
 
 Security improvements:
 
-* None yet.
+* SSLv3 is now disabled throughout the standard library.
+  It can still be enabled by instantiating a :class:`ssl.SSLContext`
+  manually.  (See :issue:`22638` for more details; this change was
+  backported to CPython 3.4 and 2.7.)
+
+* HTTP cookie parsing is now stricter, in order to protect
+  against potential injection attacks. (Contributed by Antoine Pitrou
+  in :issue:`22796`.)
 
 Windows improvements:
 
@@ -606,6 +613,13 @@ argparse
   :ref:`allow_abbrev` to ``False``.
   (Contributed by Jonathan Paugh, Steven Bethard, paul j3 and Daniel Eriksson.)
 
+bz2
+---
+
+* New option *max_length* for :meth:`~bz2.BZ2Decompressor.decompress`
+  to limit the maximum size of decompressed data.
+  (Contributed by Nikolaus Rath in :issue:`15955`.)
+
 cgi
 ---
 
@@ -644,6 +658,20 @@ compileall
 * :func:`compileall.compile_dir` and :mod:`compileall`'s command-line interface
   can now do parallel bytecode compilation.
   (Contributed by Claudiu Popa in :issue:`16104`.)
+
+* *quiet* parameter of :func:`compileall.compile_dir`,
+  :func:`compileall.compile_file`, and :func:`compileall.compile_path`
+  functions now has a multilevel value.  New ``-qq`` command line option
+  is available for suppressing the output.
+  (Contributed by Thomas Kluyver in :issue:`21338`.)
+
+concurrent.futures
+------------------
+
+* :meth:`~concurrent.futures.Executor.map` now takes a *chunksize*
+  argument to allow batching of tasks in child processes and improve
+  performance of ProcessPoolExecutor.
+  (Contributed by Dan O'Reilly in :issue:`11271`.)
 
 contextlib
 ----------
@@ -714,6 +742,12 @@ glob
   subdirectories using the "``**``" pattern.
   (Contributed by Serhiy Storchaka in :issue:`13968`.)
 
+heapq
+-----
+
+* :func:`~heapq.merge` has two new optional parameters ``reverse`` and
+  ``key``.  (Contributed by  Raymond Hettinger in :issue:`13742`.)
+
 idlelib and IDLE
 ----------------
 
@@ -746,7 +780,9 @@ imghdr
 ------
 
 * :func:`~imghdr.what` now recognizes the `OpenEXR <http://www.openexr.com>`_
-  format.  (Contributed by Martin Vignali and Claudiu Popa in :issue:`20295`.)
+  format (contributed by Martin Vignali and Claudiu Popa in :issue:`20295`),
+  and the `WebP <https://en.wikipedia.org/wiki/WebP>`_ format (contributed
+  by Fabrice Aneche and Claudiu Popa in :issue:`20197`.)
 
 importlib
 ---------
@@ -763,6 +799,7 @@ importlib
 * :func:`importlib.util.module_from_spec` is now the preferred way to create a
   new module. Compared to :class:`types.ModuleType`, this new function will set
   the various import-controlled attributes based on the passed-in spec object.
+  (Contributed by Brett Cannon in :issue:`20383`.)
 
 inspect
 -------
@@ -788,6 +825,10 @@ inspect
 * New :func:`~inspect.getcoroutinelocals` and :func:`~inspect.getcoroutinestate`
   functions.  (Contributed by Yury Selivanov in :issue:`24400`.)
 
+* :func:`~inspect.stack`, :func:`~inspect.trace`, :func:`~inspect.getouterframes`,
+  and :func:`~inspect.getinnerframes` now return a list of named tuples.
+  (Contributed by Daniel Shahaf in :issue:`16808`.)
+
 ipaddress
 ---------
 
@@ -806,6 +847,35 @@ json
 
 * JSON decoder now raises :exc:`json.JSONDecodeError` instead of
   :exc:`ValueError`.   (Contributed by Serhiy Storchaka in :issue:`19361`.)
+
+locale
+------
+
+ * New :func:`~locale.delocalize` function to convert a string into a
+   normalized number string, following the ``LC_NUMERIC`` settings.
+   (Contributed by Cédric Krier in :issue:`13918`.)
+
+logging
+-------
+
+* All logging methods :meth:`~logging.Logger.log`, :meth:`~logging.Logger.exception`,
+  :meth:`~logging.Logger.critical`, :meth:`~logging.Logger.debug`, etc,
+  now accept exception instances for ``exc_info`` parameter, in addition
+  to boolean values and exception tuples.
+  (Contributed by Yury Selivanov in :issue:`20537`.)
+
+* :class:`~logging.handlers.HTTPHandler` now accepts optional
+  :class:`ssl.SSLContext` instance to configure the SSL settings used
+  for HTTP connection.
+  (Contributed by Alex Gaynor in :issue:`22788`.)
+
+lzma
+----
+
+* New option *max_length* for :meth:`~lzma.LZMADecompressor.decompress`
+  to limit the maximum size of decompressed data.
+  (Contributed by Martin Panter in :issue:`15955`.)
+
 
 math
 ----
@@ -832,12 +902,35 @@ os
   function is now used. These functions avoid the usage of an internal file
   descriptor.
 
+* New :func:`os.get_blocking` and :func:`os.set_blocking` functions to
+  get and set the blocking mode of file descriptors.
+  (Contributed by Victor Stinner in :issue:`22054`.)
+
 os.path
 -------
 
 * New :func:`~os.path.commonpath` function that extracts common path prefix.
   Unlike the :func:`~os.path.commonprefix` function, it always returns a valid
   path.  (Contributed by Rafik Draoui and Serhiy Storchaka in :issue:`10395`.)
+
+pathlib
+-------
+
+* New :meth:`~pathlib.Path.samefile` method to check if other path object
+  points to the same file.  (Contributed by Vajrasky Kok and Antoine Pitrou
+  in :issue:`19775`.)
+
+* :meth:`~pathlib.Path.mkdir` has a new optional parameter ``exist_ok``
+  to mimic ``mkdir -p`` and :func:`os.makrdirs` functionality.
+  (Contributed by Berker Peksag in :issue:`21539`.)
+
+* New :meth:`~pathlib.Path.expanduser` to expand ``~`` and ``~user``
+  constructs.
+  (Contributed by Serhiy Storchaka and Claudiu Popa in :issue:`19776`.)
+
+* New class method :meth:`~pathlib.Path.home` to get an instance of
+  :class:`~pathlib.Path` object representing the user’s home directory.
+  (Contributed by Victor Salgado and Mayank Tripathi in :issue:`19777`.)
 
 pickle
 ------
@@ -862,6 +955,12 @@ re
 * Now unmatched groups are replaced with empty strings in :func:`re.sub`
   and :func:`re.subn`.  (Contributed by Serhiy Storchaka in :issue:`1519638`.)
 
+readline
+--------
+
+* New :func:`~readline.append_history_file` function.
+  (Contributed by Bruno Cauet in :issue:`22940`.)
+
 shutil
 ------
 
@@ -869,6 +968,9 @@ shutil
   for example, :func:`~shutil.copy` to be used instead of the default
   :func:`~shutil.copy2` if there is a need to ignore metadata.  (Contributed by
   Claudiu Popa in :issue:`19840`.)
+
+* :func:`~shutil.make_archive` now supports *xztar* format.
+  (Contributed by Serhiy Storchaka in :issue:`5411`.)
 
 signal
 ------
@@ -948,6 +1050,14 @@ ssl
   :meth:`SSLContext.wrap_bio <ssl.SSLContext.wrap_bio>` method.
   (Contributed by Geert Jansen in :issue:`21965`.)
 
+* New :meth:`~ssl.SSLSocket.version` to query the actual protocol version
+  in use.  (Contributed by Antoine Pitrou in :issue:`20421`.)
+
+* New :meth:`~ssl.SSLObject.shared_ciphers` and
+  :meth:`~ssl.SSLSocket.shared_ciphers` methods to fetch the client's
+  list of ciphers sent at handshake.
+  (Contributed by Benjamin Peterson in :issue:`23186`.)
+
 socket
 ------
 
@@ -960,6 +1070,9 @@ socket
 * The :meth:`socket.socket.sendall` method don't reset the socket timeout
   anymore each time bytes are received or sent. The socket timeout is now the
   maximum total duration to send all data.
+
+* Functions with timeouts now use a monotonic clock, instead of a
+  system clock.  (Contributed by Victor Stinner in :issue:`22043`.)
 
 subprocess
 ----------
@@ -974,6 +1087,9 @@ sys
 
 * New :func:`~sys.set_coroutine_wrapper` and :func:`~sys.get_coroutine_wrapper`
   functions.  (Contributed by Yury Selivanov in :issue:`24017`.)
+
+* New :func:`~sys.is_finalizing` to check for :term:`interpreter shutdown`.
+  (Contributed by Antoine Pitrou in :issue:`22696`.)
 
 sysconfig
 ---------
@@ -991,8 +1107,15 @@ tarfile
   methods now take a keyword parameter *numeric_only*. If set to ``True``,
   the extracted files and directories will be owned by the numeric uid and gid
   from the tarfile. If set to ``False`` (the default, and the behavior in
-  versions prior to 3.5), they will be owned bythe named user and group in the
+  versions prior to 3.5), they will be owned by the named user and group in the
   tarfile.  (Contributed by Michael Vogt and Eric Smith in :issue:`23193`.)
+
+threading
+---------
+
+* :meth:`~threading.Lock.acquire` and :meth:`~threading.RLock.acquire`
+   now use a monotonic clock for managing timeouts.
+   (Contributed by Victor Stinner in :issue:`22043`.)
 
 time
 ----
@@ -1007,6 +1130,17 @@ tkinter
   on Windows has been replaced by a private function in the :mod:`_tkinter`
   module which makes no permanent changes to environment variables.
   (Contributed by Zachary Ware in :issue:`20035`.)
+
+traceback
+---------
+
+* New :func:`~traceback.walk_stack` and :func:`~traceback.walk_tb`
+  functions to conveniently traverse frame and traceback objects.
+  (Contributed by Robert Collins in :issue:`17911`.)
+
+* New lightweight classes: :class:`~traceback.TracebackException`,
+  :class:`~traceback.StackSummary`, and :class:`traceback.FrameSummary`.
+  (Contributed by Robert Collins in :issue:`17911`.)
 
 types
 -----
@@ -1032,6 +1166,10 @@ urllib
   control the encoding of query parts if needed.  (Contributed by Samwyse and
   Arnon Yaari in :issue:`13866`.)
 
+* :func:`~urllib.request.urlopen` accepts an :class:`ssl.SSLContext`
+  object as a *context* argument, which will be used for the HTTPS
+  connection.  (Contributed by Alex Gaynor in :issue:`22366`.)
+
 unicodedata
 -----------
 
@@ -1050,6 +1188,10 @@ xmlrpc
 
 * :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`.
   (Contributed by Claudiu Popa in :issue:`20627`.)
+
+* :class:`~xmlrpc.client.ServerProxy` constructor now accepts an optional
+  :class:`ssl.SSLContext` instance.
+  (Contributed by Alex Gaynor in :issue:`22960`.)
 
 xml.sax
 -------
@@ -1096,7 +1238,10 @@ The following performance enhancements have been added:
   :meth:`~ipaddress.IPv4Network.subnets`, :meth:`~ipaddress.IPv4Network.supernet`,
   :func:`~ipaddress.summarize_address_range`, :func:`~ipaddress.collapse_addresses`.
   The speed up can range from 3x to 15x.
-  (:issue:`21486`, :issue:`21487`, :issue:`20826`)
+  (See :issue:`21486`, :issue:`21487`, :issue:`20826`, :issue:`23266`.)
+
+* Pickling of :mod:`ipaddress` classes was optimized to produce significantly
+  smaller output.  (Contributed by Serhiy Storchaka in :issue:`23133`.)
 
 * Many operations on :class:`io.BytesIO` are now 50% to 100% faster.
   (Contributed by Serhiy Storchaka in :issue:`15381` and David Wilson in
@@ -1108,6 +1253,13 @@ The following performance enhancements have been added:
 
 * The UTF-32 encoder is now 3x to 7x faster.  (Contributed by Serhiy Storchaka
   in :issue:`15027`.)
+
+* Regular expressions are now parsed up to 10% faster.
+  (Contributed by Serhiy Storchaka in :issue:`19380`.)
+
+* :func:`json.dumps` was optimized to run with ``ensure_ascii=False``
+  as fast as with ``ensure_ascii=True``.
+  (Contributed by Naoki Inada in :issue:`23206`.)
 
 
 Build and C API Changes
@@ -1184,6 +1336,9 @@ Deprecated Python modules, functions and methods
   :func:`~inspect.formatargspec`, and :func:`~inspect.formatargvalues` are
   deprecated in favor of :func:`inspect.signature` API.  (See :issue:`20438`
   for details.)
+
+* Use of ``re.LOCALE`` flag with str patterns or ``re.ASCII`` is now
+  deprecated.  (Contributed by Serhiy Storchaka in :issue:`22407`.)
 
 
 Deprecated functions and types of the C API

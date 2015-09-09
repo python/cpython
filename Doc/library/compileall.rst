@@ -88,14 +88,12 @@ compile Python sources.
    Added the ``-i``, ``-b`` and ``-h`` options.
 
 .. versionchanged:: 3.5
-   Added the  ``-j`` and ``-r`` options.
 
-.. versionchanged:: 3.5
-   ``-q`` option was changed to a multilevel value.
-
-.. versionchanged:: 3.5
-   ``-b`` will always produce a byte-code file ending in ``.pyc``, never
-   ``.pyo``.
+   * Added the  ``-j`` and ``-r`` options.
+   * ``-q`` option was changed to a multilevel value.
+   * ``-qq`` option.
+   * ``-b`` will always produce a byte-code file ending in ``.pyc``,
+     never ``.pyo``.
 
 
 There is no command-line option to control the optimization level used by the
