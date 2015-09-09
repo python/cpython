@@ -84,6 +84,9 @@ Library
 - Issue #24982: shutil.make_archive() with the "zip" format now adds entries
   for directories (including empty directories) in ZIP file.
 
+- Issue #24857: Comparing call_args to a long sequence now correctly returns a
+  boolean result instead of raising an exception.  Patch by A Kaptur.
+
 - Issue #25019: Fixed a crash caused by setting non-string key of expat parser.
   Based on patch by John Leitch.
 
