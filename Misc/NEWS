@@ -7,6 +7,10 @@ What's New in Python 3.5.0 final?
 
 Release date: 2015-09-13
 
+Library
+-------
+
+- Issue #25029: Fixes MemoryError in test_strptime
 
 What's New in Python 3.5.0 release candidate 3?
 ===============================================
