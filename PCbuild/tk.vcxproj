@@ -60,8 +60,8 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   
   <PropertyGroup>
-    <TkOpts>ucrt</TkOpts>
-    <TkOpts Condition="$(Configuration) == 'Debug'">symbols,ucrt</TkOpts>
+    <TkOpts>msvcrt</TkOpts>
+    <TkOpts Condition="$(Configuration) == 'Debug'">symbols,msvcrt</TkOpts>
     <TkDirs>TCLDIR="$(tclDir.TrimEnd(`\`))" INSTALLDIR="$(OutDir.TrimEnd(`\`))"</TkDirs>
     <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUGFLAGS="-wd4456 -wd4457 -wd4458 -wd4459 -wd4996"</DebugFlags>
     <NMakeBuildCommandLine>setlocal
