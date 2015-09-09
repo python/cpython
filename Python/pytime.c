@@ -60,7 +60,9 @@ _PyLong_FromTime_t(time_t t)
 #endif
 }
 
-double
+/* Round to nearest with ties going to nearest even integer
+   (_PyTime_ROUND_HALF_EVEN) */
+static double
 _PyTime_RoundHalfEven(double x)
 {
     double rounded = round(x);
