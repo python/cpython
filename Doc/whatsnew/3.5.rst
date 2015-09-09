@@ -596,12 +596,8 @@ argparse
 * :class:`~argparse.ArgumentParser` now allows to disable
   :ref:`abbreviated usage <prefix-matching>` of long options by setting
   :ref:`allow_abbrev` to ``False``.
-  (Contributed by Jonathan Paugh, Steven Bethard, paul j3 and Daniel Eriksson.)
-
-* New *allow_abbrev* parameter for :class:`~argparse.ArgumentParser` to
-  allow long options to be abbreviated if the abbreviation is unambiguous.
-  (Contributed by Jonathan Paugh, Steven Bethard, paul j3 and
-  Daniel Eriksson in :issue:`14910`.)
+  (Contributed by Jonathan Paugh, Steven Bethard, paul j3 and Daniel Eriksson
+  in :issue:`14910`.)
 
 bz2
 ---
