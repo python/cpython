@@ -1157,3 +1157,7 @@ attribute.
     be an instance of :class:`bytes`, :class:`str`, :class:`UserString` (or a
     subclass) or an arbitrary sequence which can be converted into a string using
     the built-in :func:`str` function.
+
+    .. versionchanged:: 3.5
+       New methods ``__getnewargs__``, ``__rmod__``, ``casefold``,
+       ``format_map``, ``isprintable``, and ``maketrans``.

@@ -112,11 +112,13 @@ Significantly Improved Library Modules:
   :issue:`16991`.
 
 * You may now pass bytes to the :mod:`tempfile` module's APIs and it will
-  return the temporary pathname as bytes instead of str.  It also accepts
-  a value of ``None`` on parameters where only str was accepted in the past to
-  do the right thing based on the types of the other inputs.  Two functions,
-  :func:`gettempdirb` and :func:`gettempprefixb`, have been added to go along
-  with this.  This behavior matches that of the :mod:`os` APIs.
+  return the temporary pathname as :class:`bytes` instead of :class:`str`.
+  It also accepts a value of ``None`` on parameters where only str was
+  accepted in the past to do the right thing based on the types of the
+  other inputs.  Two functions, :func:`gettempdirb` and
+  :func:`gettempprefixb`, have been added to go along with this.
+  This behavior matches that of the :mod:`os` APIs.
+  (Contributed by Gregory P. Smith in :issue:`24230`.)
 
 * :mod:`ssl` module gained support for Memory BIO, which decouples SSL
   protocol handling from network IO.  (Contributed by Geert Jansen in
@@ -126,6 +128,10 @@ Significantly Improved Library Modules:
   classes :class:`~traceback.TracebackException`,
   :class:`~traceback.StackSummary`, and :class:`traceback.FrameSummary`.
   (Contributed by Robert Collins in :issue:`17911`.)
+
+* Most of :func:`functools.lru_cache` machinery is now implemented in C.
+  (Contributed by Matt Joiner, Alexey Kachayev, and Serhiy Storchaka
+  in :issue:`14373`.)
 
 Security improvements:
 
@@ -428,14 +434,14 @@ not raise an exception:
   for the rationale);
 
 * :mod:`select` functions: :func:`~select.devpoll.poll`,
-  :func:`~select.epoll.poll`,  :func:`~select.kqueue.control`,
-  :func:`~select.poll.poll`,  :func:`~select.select`;
+  :func:`~select.epoll.poll`, :func:`~select.kqueue.control`,
+  :func:`~select.poll.poll`, :func:`~select.select`;
 
 * :func:`socket.socket` methods: :meth:`~socket.socket.accept`,
   :meth:`~socket.socket.connect` (except for non-blocking sockets),
-  :meth:`~socket.socket.recv`,  :meth:`~socket.socket.recvfrom`,
-  :meth:`~socket.socket.recvmsg`,  :meth:`~socket.socket.send`,
-  :meth:`~socket.socket.sendall`,  :meth:`~socket.socket.sendmsg`,
+  :meth:`~socket.socket.recv`, :meth:`~socket.socket.recvfrom`,
+  :meth:`~socket.socket.recvmsg`, :meth:`~socket.socket.send`,
+  :meth:`~socket.socket.sendall`, :meth:`~socket.socket.sendmsg`,
   :meth:`~socket.socket.sendto`;
 
 * :func:`signal.sigtimedwait`, :func:`signal.sigwaitinfo`;
@@ -556,6 +562,9 @@ Some smaller changes made to the core Python language are:
 * New Tajik :ref:`codec <standard-encodings>` ``koi8_t``.  (Contributed by
   Serhiy Storchaka in :issue:`22681`.)
 
+* Circular imports involving relative imports are now supported.
+  (Contributed by Brett Cannon and Antoine Pitrou in :issue:`17636`.)
+
 
 New Modules
 ===========
@@ -588,6 +597,11 @@ argparse
   :ref:`abbreviated usage <prefix-matching>` of long options by setting
   :ref:`allow_abbrev` to ``False``.
   (Contributed by Jonathan Paugh, Steven Bethard, paul j3 and Daniel Eriksson.)
+
+* New *allow_abbrev* parameter for :class:`~argparse.ArgumentParser` to
+  allow long options to be abbreviated if the abbreviation is unambiguous.
+  (Contributed by Jonathan Paugh, Steven Bethard, paul j3 and
+  Daniel Eriksson in :issue:`14910`.)
 
 bz2
 ---
@@ -627,6 +641,33 @@ collections
     Point.y.__doc__ = 'ordinate'
 
   (Contributed by Berker Peksag in :issue:`24064`.)
+
+* :class:`~collections.deque` has new methods:
+  :meth:`~collections.deque.index`, :meth:`~collections.deque.insert`, and
+  :meth:`~collections.deque.copy`.  This allows deques to be registered as a
+  :class:`~collections.abc.MutableSequence` and improves their
+  substitutablity for lists.
+  (Contributed by Raymond Hettinger :issue:`23704`.)
+
+* :class:`~collections.UserString` now supports ``__getnewargs__``,
+  ``__rmod__``, ``casefold``, ``format_map``, ``isprintable``, and
+  ``maketrans`` methods.
+  (Contributed by Joe Jevnik in :issue:`22189`.)
+
+* :class:`collections.OrderedDict` is now implemented in C, which improves
+  its performance between 4x to 100x times.
+  (Contributed by Eric Snow in :issue:`16991`.)
+
+collections.abc
+---------------
+
+* New :class:`~collections.abc.Generator` abstract base class.
+  (Contributed by Stefan Behnel in :issue:`24018`.)
+
+* New :class:`~collections.abc.Coroutine`,
+  :class:`~collections.abc.AsyncIterator`, and
+  :class:`~collections.abc.AsyncIterable` abstract base classes.
+  (Contributed by Yury Selivanov in :issue:`24184`.)
 
 compileall
 ----------
@@ -672,7 +713,8 @@ difflib
   (Contributed by Berker Peksag in :issue:`2052`.)
 
 * It's now possible to compare lists of byte strings with
-  :func:`difflib.diff_bytes` (fixes a regression from Python 2).
+  :func:`difflib.diff_bytes`. This fixes a regression from Python 2.
+  (Contributed by Terry J. Reedy and Greg Ward in :issue:`17445`.)
 
 distutils
 ---------
@@ -711,8 +753,25 @@ email
   :rfc:`6532` and used with an SMTP server that supports the :rfc:`6531`
   ``SMTPUTF8`` extension.  (Contributed by R. David Murray in :issue:`24211`.)
 
+faulthandler
+------------
+
+* :func:`~faulthandler.enable`, :func:`~faulthandler.register`,
+  :func:`~faulthandler.dump_traceback` and
+  :func:`~faulthandler.dump_traceback_later` functions now accept file
+  descriptors.  (Contributed by Wei Wu in :issue:`23566`.)
+
+functools
+---------
+
+* Most of :func:`~functools.lru_cache` machinery is now implemented in C.
+  (Contributed by Matt Joiner, Alexey Kachayev, and Serhiy Storchaka
+  in :issue:`14373`.)
+
 glob
 ----
+
+00002-5938667
 
 * :func:`~glob.iglob` and :func:`~glob.glob` now support recursive search in
   subdirectories using the "``**``" pattern.
@@ -805,6 +864,13 @@ inspect
   and :func:`~inspect.getinnerframes` now return a list of named tuples.
   (Contributed by Daniel Shahaf in :issue:`16808`.)
 
+io
+--
+
+* New Python implementation of :class:`io.FileIO` to make dependency on
+  ``_io`` module optional.
+  (Contributed by  Serhiy Storchaka in :issue:`21859`.)
+
 ipaddress
 ---------
 
@@ -845,6 +911,10 @@ logging
   for HTTP connection.
   (Contributed by Alex Gaynor in :issue:`22788`.)
 
+* :class:`~logging.handlers.QueueListener` now takes a *respect_handler_level*
+  keyword argument which, if set to ``True``, will pass messages to handlers
+  taking handler levels into account.  (Contributed by Vinay Sajip.)
+
 lzma
 ----
 
@@ -852,14 +922,25 @@ lzma
   to limit the maximum size of decompressed data.
   (Contributed by Martin Panter in :issue:`15955`.)
 
-
 math
 ----
 
 * :data:`math.inf` and :data:`math.nan` constants added.  (Contributed by Mark
   Dickinson in :issue:`23185`.)
-* :func:`math.isclose` function added.
+
+* New :func:`~math.isclose` function.
   (Contributed by Chris Barker and Tal Einat in :issue:`24270`.)
+
+* New :func:`~math.gcd` function.  The :func:`fractions.gcd` function now is
+  deprecated.
+  (Contributed by Mark Dickinson and Serhiy Storchaka in :issue:`22486`.)
+
+operator
+--------
+
+* :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
+  :func:`~operator.methodcaller` objects now support pickling.
+  (Contributed by Josh Rosenberg and Serhiy Storchaka in :issue:`22955`.)
 
 os
 --
@@ -877,10 +958,14 @@ os
   now used when available. On OpenBSD 5.6 and newer, the C ``getentropy()``
   function is now used. These functions avoid the usage of an internal file
   descriptor.
+  (Contributed by Victor Stinner in :issue:`22181`.)
 
 * New :func:`os.get_blocking` and :func:`os.set_blocking` functions to
   get and set the blocking mode of file descriptors.
   (Contributed by Victor Stinner in :issue:`22054`.)
+
+* :func:`~os.truncate` and :func:`~os.ftruncate` are now supported on
+  Windows.  (Contributed by Steve Dower in :issue:`23668`.)
 
 os.path
 -------
@@ -1034,6 +1119,9 @@ ssl
   list of ciphers sent at handshake.
   (Contributed by Benjamin Peterson in :issue:`23186`.)
 
+* :func:`~ssl.match_hostname` now supports matching of IP addresses.
+  (Contributed by Antoine Pitrou in :issue:`23239`.)
+
 socket
 ------
 
@@ -1099,6 +1187,13 @@ time
 * The :func:`time.monotonic` function is now always available.  (Contributed by
   Victor Stinner in :issue:`22043`.)
 
+timeit
+------
+
+* New command line option ``-u`` or ``--unit=U`` to specify a time unit for
+  the timer output. Supported options are ``usec``, ``msec``, or ``sec``.
+  (Contributed by Julian Gindi in :issue:`18983`.)
+
 tkinter
 -------
 
@@ -1117,6 +1212,11 @@ traceback
 * New lightweight classes: :class:`~traceback.TracebackException`,
   :class:`~traceback.StackSummary`, and :class:`traceback.FrameSummary`.
   (Contributed by Robert Collins in :issue:`17911`.)
+
+* :func:`~traceback.print_tb` and :func:`~traceback.print_stack` now support
+  negative values for the *limit* argument.
+  (Contributed by Dmitry Kazakov in :issue:`22619`.)
+
 
 types
 -----
@@ -1152,6 +1252,12 @@ unicodedata
 * The :mod:`unicodedata` module now uses data from `Unicode 8.0.0
   <http://unicode.org/versions/Unicode8.0.0/>`_.
 
+unittest
+--------
+
+* New command line option ``--locals`` to show local variables in
+  tracebacks.
+  (Contributed by Robert Collins in :issue:`22936`.)
 
 wsgiref
 -------
@@ -1176,14 +1282,6 @@ xml.sax
   :class:`~xml.sax.xmlreader.InputSource` object.
   (Contributed by Serhiy Storchaka in :issue:`2175`.)
 
-faulthandler
-------------
-
-* :func:`~faulthandler.enable`, :func:`~faulthandler.register`,
-  :func:`~faulthandler.dump_traceback` and
-  :func:`~faulthandler.dump_traceback_later` functions now accept file
-  descriptors.  (Contributed by Wei Wu in :issue:`23566`.)
-
 zipfile
 -------
 
@@ -1192,6 +1290,14 @@ zipfile
 
 * The :func:`zipfile.ZipFile.open` function now supports ``'x'`` (exclusive
   creation) mode.  (Contributed by Serhiy Storchaka in :issue:`21717`.)
+
+
+Other module-level changes
+==========================
+
+* Many functions in modules :mod:`mmap`, :mod:`ossaudiodev`, :mod:`socket`,
+  :mod:`ssl`, and :mod:`codecs`, now accept writable bytes-like objects.
+  (Contributed by Serhiy Storchaka in :issue:`23001`.)
 
 
 Optimizations
@@ -1237,6 +1343,22 @@ The following performance enhancements have been added:
   as fast as with ``ensure_ascii=True``.
   (Contributed by Naoki Inada in :issue:`23206`.)
 
+* :c:func:`PyObject_IsInstance` and :c:func:`PyObject_IsSubclass` have
+  been sped up in the common case that the second argument has metaclass
+  :class:`type`.
+  (Contributed Georg Brandl by in :issue:`22540`.)
+
+* Method caching was slightly improved, yielding up to 5% performance
+  improvement in some benchmarks.
+  (Contributed by Antoine Pitrou in :issue:`22847`.)
+
+* Objects from :mod:`random` module now use 2x less memory on 64-bit
+  builds.
+  (Contributed by Serhiy Storchaka in :issue:`23488`.)
+
+* property() getter calls are up to 25% faster.
+  (Contributed by Joe Jevnik in :issue:`23910`.)
+
 
 Build and C API Changes
 =======================
@@ -1275,6 +1397,9 @@ Deprecated Python modules, functions and methods
 
 * The :mod:`formatter` module has now graduated to full deprecation and is still
   slated for removal in Python 3.6.
+
+* :func:`~asyncio.async` was deprecated in favour of
+  :func:`~asyncio.ensure_future`.
 
 * :mod:`smtpd` has in the past always decoded the DATA portion of email
   messages using the ``utf-8`` codec.  This can now be controlled by the new
@@ -1319,12 +1444,6 @@ Deprecated Python modules, functions and methods
 
 Deprecated functions and types of the C API
 -------------------------------------------
-
-* None yet.
-
-
-Deprecated features
--------------------
 
 * None yet.
 
@@ -1486,3 +1605,5 @@ Changes in the C API
   :c:type:`PyTypeObject` was replaced with a
   :c:member:`tp_as_async` slot.  Refer to :ref:`coro-objects` for
   new types, structures and functions.
+
+* :c:member:`PyTypeObject.tp_finalize` is now part of stable ABI.
