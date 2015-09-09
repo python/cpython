@@ -8236,7 +8236,7 @@ os_write_impl(PyModuleDef *module, int fd, Py_buffer *data)
 #ifdef HAVE_SENDFILE
 PyDoc_STRVAR(posix_sendfile__doc__,
 "sendfile(out, in, offset, count) -> byteswritten\n\
-sendfile(out, in, offset, count, headers=None, trailers=None, flags=0)\n\
+sendfile(out, in, offset, count[, headers][, trailers], flags=0)\n\
             -> byteswritten\n\
 Copy count bytes from file descriptor in to file descriptor out.");
 
@@ -8278,7 +8278,7 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     if (headers != NULL) {
         if (!PySequence_Check(headers)) {
             PyErr_SetString(PyExc_TypeError,
-                "sendfile() headers must be a sequence or None");
+                "sendfile() headers must be a sequence");
             return NULL;
         } else {
             Py_ssize_t i = 0; /* Avoid uninitialized warning */
@@ -8295,7 +8295,7 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     if (trailers != NULL) {
         if (!PySequence_Check(trailers)) {
             PyErr_SetString(PyExc_TypeError,
-                "sendfile() trailers must be a sequence or None");
+                "sendfile() trailers must be a sequence");
             return NULL;
         } else {
             Py_ssize_t i = 0; /* Avoid uninitialized warning */
