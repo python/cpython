@@ -106,8 +106,30 @@ created.  Socket addresses are represented as follows:
 
   .. versionadded:: 3.3
 
-- Certain other address families (:const:`AF_BLUETOOTH`, :const:`AF_PACKET`,
-  :const:`AF_CAN`) support specific representations.
+- :const:`AF_BLUETOOTH` supports the following protocols and address
+  formats:
+
+  - :const:`BTPROTO_L2CAP` accepts ``(bdaddr, psm)`` where ``bdaddr`` is
+    the Bluetooth address as a string and ``psm`` is an integer.
+
+  - :const:`BTPROTO_RFCOMM` accepts ``(bdaddr, channel)`` where ``bdaddr``
+    is the Bluetooth address as a string and ``channel`` is an integer.
+
+  - :const:`BTPROTO_HCI` accepts ``(device_id,)`` where ``device_id`` is
+    either an integer or a string with the Bluetooth address of the
+    interface. (This depends on your OS; NetBSD and DragonFlyBSD expect
+    a Bluetooth address while everything else expects an integer.)
+
+    .. versionchanged:: 3.2
+       NetBSD and DragonFlyBSD support added.
+
+  - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
+    :term:`bytes-like object` containing the Bluetooth address in a
+    string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
+    supported under FreeBSD.
+
+- Certain other address families (:const:`AF_PACKET`, :const:`AF_CAN`)
+  support specific representations.
 
   .. XXX document them!
 
