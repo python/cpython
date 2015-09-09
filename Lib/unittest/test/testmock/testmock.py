@@ -291,6 +291,9 @@ class MockTest(unittest.TestCase):
         self.assertEqual(mock.call_args,
                          ((sentinel.Arg,), {"kw": sentinel.Kwarg}))
 
+        # Comparing call_args to a long sequence should not raise
+        # an exception. See issue 24857.
+        self.assertFalse(mock.call_args == "a long sequence")
 
     def test_assert_called_with(self):
         mock = Mock()
