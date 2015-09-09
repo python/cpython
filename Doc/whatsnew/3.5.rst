@@ -48,7 +48,6 @@
    when researching a change.
 
 This article explains the new features in Python 3.5, compared to 3.4.
-
 For full details, see the :source:`Misc/NEWS` file.
 
 .. note::
@@ -148,24 +147,9 @@ Windows improvements:
 * Windows builds now use Microsoft Visual C++ 14.0, and extension modules
   should use the same.
 
-
-Please read on for a comprehensive list of user-facing changes.
-
-
-.. PEP-sized items next.
-
-.. _pep-4XX:
-
-.. PEP 4XX: Virtual Environments
-.. =============================
-
-
-.. (Implemented by Foo Bar.)
-
-.. .. seealso::
-
-    :pep:`4XX` - Python Virtual Environments
-       PEP written by Carl Meyer
+Please read on for a comprehensive list of user-facing changes, including many
+other smaller improvements, CPython optimizations, deprecations, and potential
+porting issues.
 
 
 New Features
@@ -277,7 +261,12 @@ Matrix multiplication is a notably common operation in many fields of
 mathematics, science, engineering, and the addition of ``@`` allows writing
 cleaner code::
 
-    >>> S = (H @ beta - r).T @ inv(H @ V @ H.T) @ (H @ beta - r)
+    S = (H @ beta - r).T @ inv(H @ V @ H.T) @ (H @ beta - r)
+
+instead of::
+
+    S = dot((dot(H, beta) - r).T,
+            dot(inv(dot(dot(H, V), H.T)), dot(H, beta) - r))
 
 An upcoming release of NumPy 1.10 will add support for the new operator::
 
@@ -421,60 +410,38 @@ Examples of functions which are now retried when interrupted by a signal
 instead of raising :exc:`InterruptedError` if the Python signal handler does
 not raise an exception:
 
-* :func:`open`, :func:`os.open`, :func:`io.open`
-* functions of the :mod:`faulthandler` module
-* :mod:`os` functions:
+* :func:`open`, :func:`os.open`, :func:`io.open`;
 
-  - :func:`os.fchdir`
-  - :func:`os.fchmod`
-  - :func:`os.fchown`
-  - :func:`os.fdatasync`
-  - :func:`os.fstat`
-  - :func:`os.fstatvfs`
-  - :func:`os.fsync`
-  - :func:`os.ftruncate`
-  - :func:`os.mkfifo`
-  - :func:`os.mknod`
-  - :func:`os.posix_fadvise`
-  - :func:`os.posix_fallocate`
-  - :func:`os.pread`
-  - :func:`os.pwrite`
-  - :func:`os.read`
-  - :func:`os.readv`
-  - :func:`os.sendfile`
-  - :func:`os.wait3`
-  - :func:`os.wait4`
-  - :func:`os.wait`
-  - :func:`os.waitid`
-  - :func:`os.waitpid`
-  - :func:`os.write`
-  - :func:`os.writev`
-  - special cases: :func:`os.close` and :func:`os.dup2` now ignore
-    :py:data:`~errno.EINTR` error, the syscall is not retried (see the PEP
-    for the rationale)
+* functions of the :mod:`faulthandler` module;
 
-* :mod:`select` functions:
+* :mod:`os` functions: :func:`~os.fchdir`, :func:`~os.fchmod`,
+  :func:`~os.fchown`, :func:`~os.fdatasync`, :func:`~os.fstat`,
+  :func:`~os.fstatvfs`, :func:`~os.fsync`, :func:`~os.ftruncate`,
+  :func:`~os.mkfifo`, :func:`~os.mknod`, :func:`~os.posix_fadvise`,
+  :func:`~os.posix_fallocate`, :func:`~os.pread`, :func:`~os.pwrite`,
+  :func:`~os.read`, :func:`~os.readv`, :func:`~os.sendfile`,
+  :func:`~os.wait3`, :func:`~os.wait4`, :func:`~os.wait`,
+  :func:`~os.waitid`, :func:`~os.waitpid`, :func:`~os.write`,
+  :func:`~os.writev`;
 
-  - :func:`select.devpoll.poll`
-  - :func:`select.epoll.poll`
-  - :func:`select.kqueue.control`
-  - :func:`select.poll.poll`
-  - :func:`select.select`
+* special cases: :func:`os.close` and :func:`os.dup2` now ignore
+  :py:data:`~errno.EINTR` error, the syscall is not retried (see the PEP
+  for the rationale);
 
-* :func:`socket.socket` methods:
+* :mod:`select` functions: :func:`~select.devpoll.poll`,
+  :func:`~select.epoll.poll`,  :func:`~select.kqueue.control`,
+  :func:`~select.poll.poll`,  :func:`~select.select`;
 
-  - :meth:`~socket.socket.accept`
-  - :meth:`~socket.socket.connect` (except for non-blocking sockets)
-  - :meth:`~socket.socket.recv`
-  - :meth:`~socket.socket.recvfrom`
-  - :meth:`~socket.socket.recvmsg`
-  - :meth:`~socket.socket.send`
-  - :meth:`~socket.socket.sendall`
-  - :meth:`~socket.socket.sendmsg`
-  - :meth:`~socket.socket.sendto`
+* :func:`socket.socket` methods: :meth:`~socket.socket.accept`,
+  :meth:`~socket.socket.connect` (except for non-blocking sockets),
+  :meth:`~socket.socket.recv`,  :meth:`~socket.socket.recvfrom`,
+  :meth:`~socket.socket.recvmsg`,  :meth:`~socket.socket.send`,
+  :meth:`~socket.socket.sendall`,  :meth:`~socket.socket.sendmsg`,
+  :meth:`~socket.socket.sendto`;
 
-* :func:`signal.sigtimedwait`, :func:`signal.sigwaitinfo`
-* :func:`time.sleep`
+* :func:`signal.sigtimedwait`, :func:`signal.sigwaitinfo`;
+
+* :func:`time.sleep`.
 
 .. seealso::
 
