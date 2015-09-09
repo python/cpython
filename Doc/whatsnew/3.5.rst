@@ -4,8 +4,7 @@
 
 :Release: |release|
 :Date: |today|
-
-:Author: Elvis Pranskevichus <elprans@gmail.com> (Editor)
+:Editor: Elvis Pranskevichus <elprans@gmail.com>
 
 .. Rules for maintenance:
 
@@ -517,7 +516,7 @@ rather than being restricted to ASCII.
 
    :pep:`489` -- Multi-phase extension module initialization
       PEP written by Petr Viktorin, Stefan Behnel, and Nick Coghlan;
-      implementation by Petr Viktorin.
+      implemented by Petr Viktorin.
 
 
 PEP 485: A function for testing approximate equality
