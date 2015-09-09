@@ -121,7 +121,7 @@ if not "%CERTNAME%" EQU "" (
 if not "%SKIPBUILD%" EQU "1" (
     call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -d -t %TARGET% %CERTOPTS%
     if errorlevel 1 exit /B
-    call "%PCBUILD%build.bat" -p %BUILD_PLAT% -t %TARGET% %CERTOPTS%
+    call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %CERTOPTS%
     if errorlevel 1 exit /B
     @rem build.bat turns echo back on, so we disable it again
     @echo off

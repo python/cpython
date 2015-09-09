@@ -64,15 +64,18 @@ FULL_LAYOUT = [
     ('Tools/', 'Tools', '**/*', include_in_tools),
 ]
 
-if os.getenv('DOC_FILENAME'):
-    FULL_LAYOUT.append(('Doc/', 'Doc/build/htmlhelp', os.getenv('DOC_FILENAME'), None))
-
 EMBED_LAYOUT = [
     ('/', 'PCBuild/$arch', 'python*.exe', is_not_debug),
     ('/', 'PCBuild/$arch', '*.pyd', is_not_debug),
     ('/', 'PCBuild/$arch', '*.dll', is_not_debug),
     ('python35.zip', 'Lib', '**/*', include_in_lib),
 ]
+
+if os.getenv('DOC_FILENAME'):
+    FULL_LAYOUT.append(('Doc/', 'Doc/build/htmlhelp', os.getenv('DOC_FILENAME'), None))
+if os.getenv('VCREDIST_PATH'):
+    FULL_LAYOUT.append(('/', os.getenv('VCREDIST_PATH'), 'vcruntime*.dll', None))
+    EMBED_LAYOUT.append(('/', os.getenv('VCREDIST_PATH'), 'vcruntime*.dll', None))
 
 def copy_to_layout(target, rel_sources):
     count = 0
