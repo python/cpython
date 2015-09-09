@@ -22,15 +22,15 @@ if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX6
 call "%PCBUILD%env.bat" x86
 
 if defined BUILDX86 (
-    call "%PCBUILD%build.bat" -d
+    call "%PCBUILD%build.bat" -d -e
     if errorlevel 1 goto :eof
-    call "%PCBUILD%build.bat"
+    call "%PCBUILD%build.bat" -e
     if errorlevel 1 goto :eof
 )
 if defined BUILDX64 (
-    call "%PCBUILD%build.bat" -p x64 -d
+    call "%PCBUILD%build.bat" -p x64 -d -e
     if errorlevel 1 goto :eof
-    call "%PCBUILD%build.bat" -p x64
+    call "%PCBUILD%build.bat" -p x64 -e
     if errorlevel 1 goto :eof
 )
 
