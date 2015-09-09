@@ -1000,6 +1000,11 @@ line.
    returned list represents *frame*; the last entry represents the outermost call
    on *frame*'s stack.
 
+   .. versionchanged:: 3.5
+      A list of :term:`named tuples <named tuple>`
+      ``FrameInfo(frame, filename, lineno, function, code_context, index)``
+      is returned.
+
 
 .. function:: getinnerframes(traceback, context=1)
 
@@ -1007,6 +1012,11 @@ line.
    frames represent calls made as a consequence of *frame*.  The first entry in the
    list represents *traceback*; the last entry represents where the exception was
    raised.
+
+   .. versionchanged:: 3.5
+      A list of :term:`named tuples <named tuple>`
+      ``FrameInfo(frame, filename, lineno, function, code_context, index)``
+      is returned.
 
 
 .. function:: currentframe()
@@ -1027,6 +1037,11 @@ line.
    returned list represents the caller; the last entry represents the outermost
    call on the stack.
 
+   .. versionchanged:: 3.5
+      A list of :term:`named tuples <named tuple>`
+      ``FrameInfo(frame, filename, lineno, function, code_context, index)``
+      is returned.
+
 
 .. function:: trace(context=1)
 
@@ -1034,6 +1049,11 @@ line.
    frame in which an exception currently being handled was raised in.  The first
    entry in the list represents the caller; the last entry represents where the
    exception was raised.
+
+   .. versionchanged:: 3.5
+      A list of :term:`named tuples <named tuple>`
+      ``FrameInfo(frame, filename, lineno, function, code_context, index)``
+      is returned.
 
 
 Fetching attributes statically
