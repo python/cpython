@@ -54,10 +54,8 @@ from :func:`what`:
 +------------+-----------------------------------+
 
 .. versionadded:: 3.5
-   The *exr* format was added.
+   The *exr* and *webp* formats were added.
 
-.. versionchanged:: 3.5
-   The *webp* type was added.
 
 You can extend the list of file types :mod:`imghdr` can recognize by appending
 to this variable:
