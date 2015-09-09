@@ -3,8 +3,6 @@ import sys
 import unittest
 import os
 
-import distutils._msvccompiler as _msvccompiler
-
 from distutils.errors import DistutilsPlatformError
 from distutils.tests import support
 from test.support import run_unittest
@@ -18,6 +16,7 @@ class msvccompilerTestCase(support.TempdirManager,
                             unittest.TestCase):
 
     def test_no_compiler(self):
+        import distutils._msvccompiler as _msvccompiler
         # makes sure query_vcvarsall raises
         # a DistutilsPlatformError if the compiler
         # is not found
@@ -34,6 +33,7 @@ class msvccompilerTestCase(support.TempdirManager,
             _msvccompiler._find_vcvarsall = old_find_vcvarsall
 
     def test_compiler_options(self):
+        import distutils._msvccompiler as _msvccompiler
         # suppress path to vcruntime from _find_vcvarsall to
         # check that /MT is added to compile options
         old_find_vcvarsall = _msvccompiler._find_vcvarsall
@@ -50,6 +50,7 @@ class msvccompilerTestCase(support.TempdirManager,
             _msvccompiler._find_vcvarsall = old_find_vcvarsall
 
     def test_vcruntime_copy(self):
+        import distutils._msvccompiler as _msvccompiler
         # force path to a known file - it doesn't matter
         # what we copy as long as its name is not in
         # _msvccompiler._BUNDLED_DLLS
@@ -69,6 +70,8 @@ class msvccompilerTestCase(support.TempdirManager,
             _msvccompiler._find_vcvarsall = old_find_vcvarsall
 
     def test_vcruntime_skip_copy(self):
+        import distutils._msvccompiler as _msvccompiler
+
         tempdir = self.mkdtemp()
         compiler = _msvccompiler.MSVCCompiler()
         compiler.initialize()
