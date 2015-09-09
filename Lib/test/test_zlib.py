@@ -222,15 +222,19 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         level = 2
         method = zlib.DEFLATED
         wbits = -12
-        memlevel = 9
+        memLevel = 9
         strategy = zlib.Z_FILTERED
-        co = zlib.compressobj(level, method, wbits, memlevel, strategy)
+        co = zlib.compressobj(level, method, wbits, memLevel, strategy)
         x1 = co.compress(HAMLET_SCENE)
         x2 = co.flush()
         dco = zlib.decompressobj(wbits)
         y1 = dco.decompress(x1 + x2)
         y2 = dco.flush()
         self.assertEqual(HAMLET_SCENE, y1 + y2)
+
+        # keyword arguments should also be supported
+        zlib.compressobj(level=level, method=method, wbits=wbits,
+            memLevel=memLevel, strategy=strategy, zdict=b"")
 
     def test_compressincremental(self):
         # compress object in steps, decompress object as one-shot
