@@ -83,13 +83,16 @@ New library modules:
 New built-in features:
 
 * ``bytes % args``, ``bytearray % args``: :pep:`461` - Adding ``%`` formatting
-  to bytes and bytearray
+  to bytes and bytearray.
+
 * ``b'\xf0\x9f\x90\x8d'.hex()``, ``bytearray(b'\xf0\x9f\x90\x8d').hex()``,
   ``memoryview(b'\xf0\x9f\x90\x8d').hex()``: :issue:`9951` - A ``hex`` method
   has been added to bytes, bytearray, and memoryview.
+
 * Generators have new ``gi_yieldfrom`` attribute, which returns the
   object being iterated by ``yield from`` expressions. (Contributed
   by Benno Leslie and Yury Selivanov in :issue:`24450`.)
+
 * New :exc:`RecursionError` exception. (Contributed by Georg Brandl
   in :issue:`19235`.)
 
@@ -101,6 +104,7 @@ Implementation improvements:
   (:issue:`19977`).
 
 * :pep:`488`, the elimination of ``.pyo`` files.
+
 * :pep:`489`, multi-phase initialization of extension modules.
 
 Significantly Improved Library Modules:
@@ -120,6 +124,11 @@ Significantly Improved Library Modules:
   protocol handling from network IO.  (Contributed by Geert Jansen in
   :issue:`21965`.)
 
+* :mod:`traceback` has new lightweight and convenient to work with
+  classes :class:`~traceback.TracebackException`,
+  :class:`~traceback.StackSummary`, and :class:`traceback.FrameSummary`.
+  (Contributed by Robert Collins in :issue:`17911`.)
+
 Security improvements:
 
 * SSLv3 is now disabled throughout the standard library.
@@ -135,6 +144,7 @@ Windows improvements:
 
 * A new installer for Windows has replaced the old MSI. See :ref:`using-on-windows`
   for more information.
+
 * Windows builds now use Microsoft Visual C++ 14.0, and extension modules
   should use the same.
 
