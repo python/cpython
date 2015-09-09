@@ -443,6 +443,14 @@ class PosixTester(unittest.TestCase):
         else:
             self.assertTrue(stat.S_ISFIFO(posix.stat(support.TESTFN).st_mode))
 
+        # Keyword arguments are also supported
+        support.unlink(support.TESTFN)
+        try:
+            posix.mknod(path=support.TESTFN, mode=mode, device=0,
+                dir_fd=None)
+        except OSError as e:
+            self.assertIn(e.errno, (errno.EPERM, errno.EINVAL))
+
     @unittest.skipUnless(hasattr(posix, 'stat'), 'test needs posix.stat()')
     @unittest.skipUnless(hasattr(posix, 'makedev'), 'test needs posix.makedev()')
     def test_makedev(self):
