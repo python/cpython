@@ -14,6 +14,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23144: Make sure that HTMLParser.feed() returns all the data, even
+  when convert_charrefs is True.
+
 - Issue #24982: shutil.make_archive() with the "zip" format now adds entries
   for directories (including empty directories) in ZIP file.
 
@@ -86,6 +89,23 @@ Build
   when external libraries are not available.
 
 
+What's New in Python 3.5.0 release candidate 4?
+===============================================
+
+Release date: 2015-09-09
+
+Library
+-------
+
+- Issue #25029: Fixes MemoryError in test_strptime.
+
+Build
+-----
+
+- Issue #25027: Reverts partial-static build options and adds
+  vcruntime140.dll to Windows installation.
+
+
 What's New in Python 3.5.0 release candidate 3?
 ===============================================
 
@@ -105,8 +125,6 @@ Library
 -------
 
 - Issue #24917: time_strftime() buffer over-read.
-- Issue #23144: Make sure that HTMLParser.feed() returns all the data, even
-  when convert_charrefs is True.
 
 - Issue #24748: To resolve a compatibility problem found with py2exe and
   pywin32, imp.load_dynamic() once again ignores previously loaded modules
@@ -115,7 +133,6 @@ Library
 
 - Issue #24635: Fixed a bug in typing.py where isinstance([], typing.Iterable)
   would return True once, then False on subsequent calls.
-
 
 - Issue #24989: Fixed buffer overread in BytesIO.readline() if a position is
   set beyond size.  Based on patch by John Leitch.

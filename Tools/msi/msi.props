@@ -118,6 +118,9 @@
         <LinkerBindInputPaths Include="$(CRTRedist)" Condition="'$(CRTRedist)' != ''">
             <BindName>redist</BindName>
         </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.CRT">
+            <BindName>redist</BindName>
+        </LinkerBindInputPaths>
     </ItemGroup>
 
     <Target Name="_ValidateMsiProps" BeforeTargets="PrepareForBuild">
