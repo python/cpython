@@ -58,7 +58,7 @@ The available exception and functions in this module are:
    Raises the :exc:`error` exception if any error occurs.
 
 
-.. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memlevel=8, strategy=Z_DEFAULT_STRATEGY[, zdict])
+.. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memLevel=8, strategy=Z_DEFAULT_STRATEGY[, zdict])
 
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
@@ -75,9 +75,9 @@ The available exception and functions in this module are:
    should be an integer from ``8`` to ``15``. Higher values give better
    compression, but use more memory.
 
-   *memlevel* controls the amount of memory used for internal compression state.
-   Valid values range from ``1`` to ``9``. Higher values using more memory,
-   but are faster and produce smaller output.
+   The *memLevel* argument controls the amount of memory used for the
+   internal compression state. Valid values range from ``1`` to ``9``.
+   Higher values use more memory, but are faster and produce smaller output.
 
    *strategy* is used to tune the compression algorithm. Possible values are
    ``Z_DEFAULT_STRATEGY``, ``Z_FILTERED``, and ``Z_HUFFMAN_ONLY``.
