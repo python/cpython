@@ -1756,8 +1756,8 @@ made to civil time.
   ``offset.minutes`` respectively.
 
   .. versionchanged:: 3.6
-  Name generated from ``offset=timedelta(0)`` is now plain 'UTC', not
-  'UTC+00:00'.
+     Name generated from ``offset=timedelta(0)`` is now plain 'UTC', not
+     'UTC+00:00'.
 
 
 .. method:: timezone.dst(dt)
