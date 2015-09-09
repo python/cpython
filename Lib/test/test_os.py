@@ -2170,7 +2170,7 @@ class TestSendfile(unittest.TestCase):
             **{'in': self.fileno})
         if self.SUPPORT_HEADERS_TRAILERS:
             os.sendfile(self.sockno, self.fileno, offset=0, count=4096,
-                headers=None, trailers=None, flags=0)
+                headers=(), trailers=(), flags=0)
 
     # --- headers / trailers tests
 
