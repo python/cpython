@@ -72,6 +72,17 @@ _PyTime_RoundHalfEven(double x)
     return rounded;
 }
 
+static double
+_PyTime_Round(double x, _PyTime_round_t round)
+{
+    if (round == _PyTime_ROUND_HALF_EVEN)
+        return _PyTime_RoundHalfEven(x);
+    else if (round == _PyTime_ROUND_CEILING)
+        return ceil(x);
+    else
+        return floor(x);
+}
+
 static int
 _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
                             double denominator, _PyTime_round_t round)
@@ -83,12 +94,7 @@ _PyTime_DoubleToDenominator(double d, time_t *sec, long *numerator,
     floatpart = modf(d, &intpart);
 
     floatpart *= denominator;
-    if (round == _PyTime_ROUND_HALF_EVEN)
-        floatpart = _PyTime_RoundHalfEven(floatpart);
-    else if (round == _PyTime_ROUND_CEILING)
-        floatpart = ceil(floatpart);
-    else
-        floatpart = floor(floatpart);
+    floatpart = _PyTime_Round(floatpart, round);
     if (floatpart >= denominator) {
         floatpart -= denominator;
         intpart += 1.0;
@@ -139,12 +145,7 @@ _PyTime_ObjectToTime_t(PyObject *obj, time_t *sec, _PyTime_round_t round)
         volatile double d;
 
         d = PyFloat_AsDouble(obj);
-        if (round == _PyTime_ROUND_HALF_EVEN)
-            d = _PyTime_RoundHalfEven(d);
-        else if (round == _PyTime_ROUND_CEILING)
-            d = ceil(d);
-        else
-            d = floor(d);
+        d = _PyTime_Round(d, round);
         (void)modf(d, &intpart);
 
         *sec = (time_t)intpart;
@@ -255,7 +256,7 @@ _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
 
 static int
 _PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
-                        long to_nanoseconds)
+                        long unit_to_ns)
 {
     double err;
     /* volatile avoids optimization changing how numbers are rounded */
@@ -263,14 +264,8 @@ _PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
 
     /* convert to a number of nanoseconds */
     d = value;
-    d *= to_nanoseconds;
-
-    if (round == _PyTime_ROUND_HALF_EVEN)
-        d = _PyTime_RoundHalfEven(d);
-    else if (round == _PyTime_ROUND_CEILING)
-        d = ceil(d);
-    else
-        d = floor(d);
+    d *= (double)unit_to_ns;
+    d = _PyTime_Round(d, round);
 
     *t = (_PyTime_t)d;
     err = d - (double)*t;
@@ -283,12 +278,12 @@ _PyTime_FromFloatObject(_PyTime_t *t, double value, _PyTime_round_t round,
 
 static int
 _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
-                   long to_nanoseconds)
+                   long unit_to_ns)
 {
     if (PyFloat_Check(obj)) {
         double d;
         d = PyFloat_AsDouble(obj);
-        return _PyTime_FromFloatObject(t, d, round, to_nanoseconds);
+        return _PyTime_FromFloatObject(t, d, round, unit_to_ns);
     }
     else {
 #ifdef HAVE_LONG_LONG
@@ -305,8 +300,8 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
                 _PyTime_overflow();
             return -1;
         }
-        *t = sec * to_nanoseconds;
-        if (*t / to_nanoseconds != sec) {
+        *t = sec * unit_to_ns;
+        if (*t / unit_to_ns != sec) {
             _PyTime_overflow();
             return -1;
         }
