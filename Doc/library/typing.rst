@@ -355,31 +355,84 @@ The module defines the following classes, functions and decorators:
 
 .. class:: MutableSequence(Sequence[T])
 
+   A generic version of :class:`collections.abc.MutableSequence`.
+
 .. class:: ByteString(Sequence[int])
+
+   A generic version of :class:`collections.abc.ByteString`.
+
+   This type represents the types :class:`bytes`, :class:`bytearray`,
+   and :class:`memoryview`.
+
+   As a shorthand for this type, :class:`bytes` can be used to
+   annotate arguments of any of the types mentioned above.
 
 .. class:: List(list, MutableSequence[T])
 
-.. class:: Set(set, MutableSet[T])
+   Generic version of :class:`list`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use abstract collection types such as :class:`Mapping`, :class:`Sequence`,
+   or :class:`AbstractSet`.
+
+   This type may be used as follows::
+
+      T = TypeVar('T', int, float)
+
+      def vec2(x: T, y: T) -> List[T]:
+          return [x, y]
+
+      def slice__to_4(vector: Sequence[T]) -> List[T]:
+          return vector[0:4]
+
+.. class:: AbstractSet(set, MutableSet[T])
+
+   A generic version of :class:`collections.abc.Set`.
 
 .. class:: MappingView(Sized, Iterable[T_co])
 
+   A generic version of :class:`collections.abc.MappingView`.
+
 .. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
+
+   A generic version of :class:`collections.abc.KeysView`.
 
 .. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
 
+   A generic version of :class:`collections.abc.ItemsView`.
+
 .. class:: ValuesView(MappingView[VT_co])
 
+   A generic version of :class:`collections.abc.ValuesView`.
+
 .. class:: Dict(dict, MutableMapping[KT, VT])
+
+   A generic version of :class:`dict`.
+   The usage of this type is as follows::
+
+      def get_position_in_index(word_list: Dict[str, int], word: str) -> int:
+          return word_list[word]
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
 .. class:: io
 
-   Wrapper namespace for IO generic classes.
+   Wrapper namespace for I/O stream types.
+
+   This defines the generic type ``IO[AnyStr]`` and aliases ``TextIO``
+   and ``BinaryIO`` for respectively ``IO[str]`` and ``IO[bytes]``.
+   These representing the types of I/O streams such as returned by
+   :func:`open`.
 
 .. class:: re
 
-   Wrapper namespace for re type classes.
+   Wrapper namespace for regular expression matching types.
+
+   This defines the type aliases ``Pattern`` and ``Match`` which
+   correspond to the return types from :func:`re.compile` and
+   :func:`re.match`.  These types (and the corresponding functions)
+   are generic in ``AnyStr`` and can be made specific by writing
+   ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
+   ``Match[bytes]``.
 
 .. function:: NamedTuple(typename, fields)
 
