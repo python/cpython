@@ -29,6 +29,9 @@
             <Component Id="pythonw.exe" Directory="InstallDirectory" Guid="$(var.PythonwExeComponentGuid)">
                 <File Name="pythonw.exe" KeyPath="yes" />
             </Component>
+            <Component Id="vcruntime140.dll" Directory="InstallDirectory" Guid="*">
+                <File Name="vcruntime140.dll" Source="!(bindpath.redist)vcruntime140.dll" KeyPath="yes" />
+            </Component>
         </ComponentGroup>
     </Fragment>
 
