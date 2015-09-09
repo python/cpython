@@ -57,8 +57,8 @@
   
   <PropertyGroup>
     <TixDirs>BUILDDIRTOP="$(BuildDirTop)" TCL_DIR="$(tclDir.TrimEnd(`\`))" TK_DIR="$(tkDir.TrimEnd(`\`))" INSTALL_DIR="$(OutDir.TrimEnd(`\`))"</TixDirs>
-    <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUG=1 NODEBUG=0 UCRT=1 TCL_DBGX=g TK_DBGX=g</DebugFlags>
-    <DebugFlags Condition="'$(Configuration)' != 'Debug'">DEBUG=0 NODEBUG=1 UCRT=1</DebugFlags>
+    <DebugFlags Condition="'$(Configuration)' == 'Debug'">DEBUG=1 NODEBUG=0 TCL_DBGX=g TK_DBGX=g</DebugFlags>
+    <DebugFlags Condition="'$(Configuration)' != 'Debug'">DEBUG=0 NODEBUG=1</DebugFlags>
     <NMakeBuildCommandLine>setlocal
 @(ExpectedOutputs->'if not exist "%(FullPath)" goto build','
 ')
