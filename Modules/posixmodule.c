@@ -4695,7 +4695,7 @@ posix_uname(PyObject *self, PyObject *noargs)
 
 
 PyDoc_STRVAR(posix_utime__doc__,
-"utime(path, times=None, *, ns=None, dir_fd=None, follow_symlinks=True)\n\
+"utime(path, times=None, *[, ns], dir_fd=None, follow_symlinks=True)\n\
 Set the access and modified time of path.\n\
 \n\
 path may always be specified as a string.\n\
@@ -4704,10 +4704,10 @@ On some platforms, path may also be specified as an open file descriptor.\n\
 \n\
 If times is not None, it must be a tuple (atime, mtime);\n\
     atime and mtime should be expressed as float seconds since the epoch.\n\
-If ns is not None, it must be a tuple (atime_ns, mtime_ns);\n\
+If ns is specified, it must be a tuple (atime_ns, mtime_ns);\n\
     atime_ns and mtime_ns should be expressed as integer nanoseconds\n\
     since the epoch.\n\
-If both times and ns are None, utime uses the current time.\n\
+If times is None and ns is unspecified, utime uses the current time.\n\
 Specifying tuples for both times and ns is an error.\n\
 \n\
 If dir_fd is not None, it should be a file descriptor open to a directory,\n\
@@ -8245,10 +8245,10 @@ posix_write(PyObject *self, PyObject *args)
 
 #ifdef HAVE_SENDFILE
 PyDoc_STRVAR(posix_sendfile__doc__,
-"sendfile(out, in, offset, nbytes) -> byteswritten\n\
-sendfile(out, in, offset, nbytes, headers=None, trailers=None, flags=0)\n\
+"sendfile(out, in, offset, count) -> byteswritten\n\
+sendfile(out, in, offset, count, headers=None, trailers=None, flags=0)\n\
             -> byteswritten\n\
-Copy nbytes bytes from file descriptor in to file descriptor out.");
+Copy count bytes from file descriptor in to file descriptor out.");
 
 static PyObject *
 posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
@@ -8266,6 +8266,7 @@ posix_sendfile(PyObject *self, PyObject *args, PyObject *kwdict)
     off_t sbytes;
     struct sf_hdtr sf;
     int flags = 0;
+    /* Beware that "in" clashes with Python's own "in" operator keyword */
     static char *keywords[] = {"out", "in",
                                 "offset", "count",
                                 "headers", "trailers", "flags", NULL};
@@ -8655,9 +8656,9 @@ exit:
 
 #if defined(HAVE_MKNOD) && defined(HAVE_MAKEDEV)
 PyDoc_STRVAR(posix_mknod__doc__,
-"mknod(filename, mode=0o600, device=0, *, dir_fd=None)\n\n\
+"mknod(path, mode=0o600, device=0, *, dir_fd=None)\n\n\
 Create a filesystem node (file, device special file or named pipe)\n\
-named filename. mode specifies both the permissions to use and the\n\
+named path. mode specifies both the permissions to use and the\n\
 type of node to be created, being combined (bitwise OR) with one of\n\
 S_IFREG, S_IFCHR, S_IFBLK, and S_IFIFO. For S_IFCHR and S_IFBLK,\n\
 device defines the newly created device special file (probably using\n\
