@@ -1,6 +1,8 @@
 from test import support
+import decimal
 import enum
 import locale
+import math
 import platform
 import sys
 import sysconfig
@@ -21,9 +23,11 @@ SIZEOF_INT = sysconfig.get_config_var('SIZEOF_INT') or 4
 TIME_MAXYEAR = (1 << 8 * SIZEOF_INT - 1) - 1
 TIME_MINYEAR = -TIME_MAXYEAR - 1
 
+SEC_TO_US = 10 ** 6
 US_TO_NS = 10 ** 3
 MS_TO_NS = 10 ** 6
 SEC_TO_NS = 10 ** 9
+NS_TO_SEC = 10 ** 9
 
 class _PyTime(enum.IntEnum):
     # Round towards minus infinity (-inf)
@@ -33,8 +37,13 @@ class _PyTime(enum.IntEnum):
     # Round to nearest with ties going to nearest even integer
     ROUND_HALF_EVEN = 2
 
-ALL_ROUNDING_METHODS = (_PyTime.ROUND_FLOOR, _PyTime.ROUND_CEILING,
-                        _PyTime.ROUND_HALF_EVEN)
+# Rounding modes supported by PyTime
+ROUNDING_MODES = (
+    # (PyTime rounding method, decimal rounding method)
+    (_PyTime.ROUND_FLOOR, decimal.ROUND_FLOOR),
+    (_PyTime.ROUND_CEILING, decimal.ROUND_CEILING),
+    (_PyTime.ROUND_HALF_EVEN, decimal.ROUND_HALF_EVEN),
+)
 
 
 class TimeTestCase(unittest.TestCase):
@@ -610,126 +619,6 @@ class TestStrftime4dyear(_TestStrftimeYear, _Test4dYear, unittest.TestCase):
 
 
 class TestPytime(unittest.TestCase):
-    def setUp(self):
-        self.invalid_values = (
-            -(2 ** 100), 2 ** 100,
-            -(2.0 ** 100.0), 2.0 ** 100.0,
-        )
-
-    @support.cpython_only
-    def test_time_t(self):
-        from _testcapi import pytime_object_to_time_t
-
-        # Conversion giving the same result for all rounding methods
-        for rnd in ALL_ROUNDING_METHODS:
-            for obj, seconds in (
-                # int
-                (-1, -1),
-                (0, 0),
-                (1, 1),
-
-                # float
-                (-1.0, -1),
-                (1.0, 1),
-            ):
-                with self.subTest(obj=obj, round=rnd, seconds=seconds):
-                    self.assertEqual(pytime_object_to_time_t(obj, rnd),
-                                     seconds)
-
-        # Conversion giving different results depending on the rounding method
-        FLOOR = _PyTime.ROUND_FLOOR
-        CEILING = _PyTime.ROUND_CEILING
-        HALF_EVEN =  _PyTime.ROUND_HALF_EVEN
-        for obj, seconds, rnd in (
-            (-1.9, -2, FLOOR),
-            (-1.9, -1, CEILING),
-            (-1.9, -2, HALF_EVEN),
-
-            (1.9, 1, FLOOR),
-            (1.9, 2, CEILING),
-            (1.9, 2, HALF_EVEN),
-
-            # half even
-            (-1.5, -2, HALF_EVEN),
-            (-0.9, -1, HALF_EVEN),
-            (-0.5,  0, HALF_EVEN),
-            ( 0.5,  0, HALF_EVEN),
-            ( 0.9,  1, HALF_EVEN),
-            ( 1.5,  2, HALF_EVEN),
-        ):
-            with self.subTest(obj=obj, round=rnd, seconds=seconds):
-                self.assertEqual(pytime_object_to_time_t(obj, rnd), seconds)
-
-        # Test OverflowError
-        rnd = _PyTime.ROUND_FLOOR
-        for invalid in self.invalid_values:
-            self.assertRaises(OverflowError,
-                              pytime_object_to_time_t, invalid, rnd)
-
-    @support.cpython_only
-    def test_object_to_timespec(self):
-        from _testcapi import pytime_object_to_timespec
-
-        # Conversion giving the same result for all rounding methods
-        for rnd in ALL_ROUNDING_METHODS:
-            for obj, timespec in (
-                # int
-                (0, (0, 0)),
-                (-1, (-1, 0)),
-
-                # float
-                (-1/2**7, (-1, 992187500)),
-                (-1.0, (-1, 0)),
-                (-1e-9, (-1, 999999999)),
-                (1e-9, (0, 1)),
-                (1.0, (1, 0)),
-            ):
-                with self.subTest(obj=obj, round=rnd, timespec=timespec):
-                    self.assertEqual(pytime_object_to_timespec(obj, rnd), timespec)
-
-        # Conversion giving different results depending on the rounding method
-        FLOOR = _PyTime.ROUND_FLOOR
-        CEILING = _PyTime.ROUND_CEILING
-        HALF_EVEN =  _PyTime.ROUND_HALF_EVEN
-        for obj, timespec, rnd in (
-            # Round towards minus infinity (-inf)
-            (-1e-10, (0, 0), CEILING),
-            (-1e-10, (-1, 999999999), FLOOR),
-            (-1e-10, (0, 0), HALF_EVEN),
-            (1e-10, (0, 0), FLOOR),
-            (1e-10, (0, 1), CEILING),
-            (1e-10, (0, 0), HALF_EVEN),
-
-            (0.9999999999, (0, 999999999), FLOOR),
-            (0.9999999999, (1, 0), CEILING),
-
-            (1.1234567890, (1, 123456789), FLOOR),
-            (1.1234567899, (1, 123456789), FLOOR),
-            (-1.1234567890, (-2, 876543210), FLOOR),
-            (-1.1234567891, (-2, 876543210), FLOOR),
-            # Round towards infinity (+inf)
-            (1.1234567890, (1, 123456790), CEILING),
-            (1.1234567899, (1, 123456790), CEILING),
-            (-1.1234567890, (-2, 876543211), CEILING),
-            (-1.1234567891, (-2, 876543211), CEILING),
-
-            # half even
-            (-1.5e-9, (-1, 999999998), HALF_EVEN),
-            (-0.9e-9, (-1, 999999999), HALF_EVEN),
-            (-0.5e-9, (0, 0), HALF_EVEN),
-            (0.5e-9, (0, 0), HALF_EVEN),
-            (0.9e-9, (0, 1), HALF_EVEN),
-            (1.5e-9, (0, 2), HALF_EVEN),
-        ):
-            with self.subTest(obj=obj, round=rnd, timespec=timespec):
-                self.assertEqual(pytime_object_to_timespec(obj, rnd), timespec)
-
-        # Test OverflowError
-        rnd = _PyTime.ROUND_FLOOR
-        for invalid in self.invalid_values:
-            self.assertRaises(OverflowError,
-                              pytime_object_to_timespec, invalid, rnd)
-
     @unittest.skipUnless(time._STRUCT_TM_ITEMS == 11, "needs tm_zone support")
     def test_localtime_timezone(self):
 
@@ -784,476 +673,259 @@ class TestPytime(unittest.TestCase):
         self.assertIs(lt.tm_zone, None)
 
 
-@unittest.skipUnless(_testcapi is not None,
-                     'need the _testcapi module')
-class TestPyTime_t(unittest.TestCase):
+@unittest.skipIf(_testcapi is None, 'need the _testcapi module')
+class CPyTimeTestCase:
     """
-    Test the _PyTime_t API.
+    Base class to test the C _PyTime_t API.
     """
+    OVERFLOW_SECONDS = None
+
+    def _rounding_values(self, use_float):
+        "Build timestamps used to test rounding."
+
+        units = [1, US_TO_NS, MS_TO_NS, SEC_TO_NS]
+        if use_float:
+            # picoseconds are only tested to pytime_converter accepting floats
+            units.append(1e-3)
+
+        values = (
+            # small values
+            1, 2, 5, 7, 123, 456, 1234,
+            # 10^k - 1
+            9,
+            99,
+            999,
+            9999,
+            99999,
+            999999,
+            # test half even rounding near 0.5, 1.5, 2.5, 3.5, 4.5
+            499, 500, 501,
+            1499, 1500, 1501,
+            2500,
+            3500,
+            4500,
+        )
+
+        ns_timestamps = [0]
+        for unit in units:
+            for value in values:
+                ns = value * unit
+                ns_timestamps.extend((-ns, ns))
+        for pow2 in (0, 5, 10, 15, 22, 23, 24, 30, 33):
+            ns = (2 ** pow2) * SEC_TO_NS
+            ns_timestamps.extend((
+                -ns-1, -ns, -ns+1,
+                ns-1, ns, ns+1
+            ))
+        for seconds in (_testcapi.INT_MIN, _testcapi.INT_MAX):
+            ns_timestamps.append(seconds * SEC_TO_NS)
+        if use_float:
+            # numbers with an extract representation in IEEE 754 (base 2)
+            for pow2 in (3, 7, 10, 15):
+                ns = 2.0 ** (-pow2)
+                ns_timestamps.extend((-ns, ns))
+
+        # seconds close to _PyTime_t type limit
+        ns = (2 ** 63 // SEC_TO_NS) * SEC_TO_NS
+        ns_timestamps.extend((-ns, ns))
+
+        return ns_timestamps
+
+    def _check_rounding(self, pytime_converter, expected_func,
+                        use_float, unit_to_sec, value_filter=None):
+
+        def convert_values(ns_timestamps):
+            if use_float:
+                unit_to_ns = SEC_TO_NS / float(unit_to_sec)
+                values = [ns / unit_to_ns for ns in ns_timestamps]
+            else:
+                unit_to_ns = SEC_TO_NS // unit_to_sec
+                values = [ns // unit_to_ns for ns in ns_timestamps]
+
+            if value_filter:
+                values = filter(value_filter, values)
+
+            # remove duplicates and sort
+            return sorted(set(values))
+
+        # test rounding
+        ns_timestamps = self._rounding_values(use_float)
+        valid_values = convert_values(ns_timestamps)
+        for time_rnd, decimal_rnd in ROUNDING_MODES :
+            context = decimal.getcontext()
+            context.rounding = decimal_rnd
+
+            for value in valid_values:
+                expected = expected_func(value)
+                self.assertEqual(pytime_converter(value, time_rnd),
+                                 expected,
+                                 {'value': value, 'rounding': decimal_rnd})
+
+        # test overflow
+        ns = self.OVERFLOW_SECONDS * SEC_TO_NS
+        ns_timestamps = (-ns, ns)
+        overflow_values = convert_values(ns_timestamps)
+        for time_rnd, _ in ROUNDING_MODES :
+            for value in overflow_values:
+                with self.assertRaises(OverflowError):
+                    pytime_converter(value, time_rnd)
+
+    def check_int_rounding(self, pytime_converter, expected_func, unit_to_sec=1,
+                           value_filter=None):
+        self._check_rounding(pytime_converter, expected_func,
+                             False, unit_to_sec, value_filter)
+
+    def check_float_rounding(self, pytime_converter, expected_func, unit_to_sec=1):
+        self._check_rounding(pytime_converter, expected_func,
+                             True, unit_to_sec)
+
+    def decimal_round(self, x):
+        d = decimal.Decimal(x)
+        d = d.quantize(1)
+        return int(d)
+
+
+class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
+    """
+    Test the C _PyTime_t API.
+    """
+    # _PyTime_t is a 64-bit signed integer
+    OVERFLOW_SECONDS = math.ceil((2**63 + 1) / SEC_TO_NS)
+
     def test_FromSeconds(self):
         from _testcapi import PyTime_FromSeconds
-        for seconds in (0, 3, -456, _testcapi.INT_MAX, _testcapi.INT_MIN):
-            with self.subTest(seconds=seconds):
-                self.assertEqual(PyTime_FromSeconds(seconds),
-                                 seconds * SEC_TO_NS)
+
+        # PyTime_FromSeconds() expects a C int, reject values out of range
+        def c_int_filter(secs):
+            return (_testcapi.INT_MIN <= secs <= _testcapi.INT_MAX)
+
+        self.check_int_rounding(lambda secs, rnd: PyTime_FromSeconds(secs),
+                                lambda secs: secs * SEC_TO_NS,
+                                value_filter=c_int_filter)
 
     def test_FromSecondsObject(self):
         from _testcapi import PyTime_FromSecondsObject
 
-        # Conversion giving the same result for all rounding methods
-        for rnd in ALL_ROUNDING_METHODS:
-            for obj, ts in (
-                # integers
-                (0, 0),
-                (1, SEC_TO_NS),
-                (-3, -3 * SEC_TO_NS),
+        self.check_int_rounding(
+            PyTime_FromSecondsObject,
+            lambda secs: secs * SEC_TO_NS)
 
-                # float: subseconds
-                (0.0, 0),
-                (1e-9, 1),
-                (1e-6, 10 ** 3),
-                (1e-3, 10 ** 6),
-
-                # float: seconds
-                (2.0, 2 * SEC_TO_NS),
-                (123.0, 123 * SEC_TO_NS),
-                (-7.0, -7 * SEC_TO_NS),
-
-                # nanosecond are kept for value <= 2^23 seconds,
-                (2**22 - 1e-9,  4194303999999999),
-                (2**22,         4194304000000000),
-                (2**22 + 1e-9,  4194304000000001),
-                (2**23 - 1e-9,  8388607999999999),
-                (2**23,         8388608000000000),
-
-                # start loosing precision for value > 2^23 seconds
-                (2**23 + 1e-9,  8388608000000002),
-
-                # nanoseconds are lost for value > 2^23 seconds
-                (2**24 - 1e-9, 16777215999999998),
-                (2**24,        16777216000000000),
-                (2**24 + 1e-9, 16777216000000000),
-                (2**25 - 1e-9, 33554432000000000),
-                (2**25       , 33554432000000000),
-                (2**25 + 1e-9, 33554432000000000),
-
-                # close to 2^63 nanoseconds (_PyTime_t limit)
-                (9223372036, 9223372036 * SEC_TO_NS),
-                (9223372036.0, 9223372036 * SEC_TO_NS),
-                (-9223372036, -9223372036 * SEC_TO_NS),
-                (-9223372036.0, -9223372036 * SEC_TO_NS),
-            ):
-                with self.subTest(obj=obj, round=rnd, timestamp=ts):
-                    self.assertEqual(PyTime_FromSecondsObject(obj, rnd), ts)
-
-            with self.subTest(round=rnd):
-                with self.assertRaises(OverflowError):
-                    PyTime_FromSecondsObject(9223372037, rnd)
-                    PyTime_FromSecondsObject(9223372037.0, rnd)
-                    PyTime_FromSecondsObject(-9223372037, rnd)
-                    PyTime_FromSecondsObject(-9223372037.0, rnd)
-
-        # Conversion giving different results depending on the rounding method
-        FLOOR = _PyTime.ROUND_FLOOR
-        CEILING = _PyTime.ROUND_CEILING
-        HALF_EVEN =  _PyTime.ROUND_HALF_EVEN
-        for obj, ts, rnd in (
-            # close to zero
-            ( 1e-10,  0, FLOOR),
-            ( 1e-10,  1, CEILING),
-            ( 1e-10,  0, HALF_EVEN),
-            (-1e-10, -1, FLOOR),
-            (-1e-10,  0, CEILING),
-            (-1e-10,  0, HALF_EVEN),
-
-            # test rounding of the last nanosecond
-            ( 1.1234567899,  1123456789, FLOOR),
-            ( 1.1234567899,  1123456790, CEILING),
-            ( 1.1234567899,  1123456790, HALF_EVEN),
-            (-1.1234567899, -1123456790, FLOOR),
-            (-1.1234567899, -1123456789, CEILING),
-            (-1.1234567899, -1123456790, HALF_EVEN),
-
-            # close to 1 second
-            ( 0.9999999999,   999999999, FLOOR),
-            ( 0.9999999999,  1000000000, CEILING),
-            ( 0.9999999999,  1000000000, HALF_EVEN),
-            (-0.9999999999, -1000000000, FLOOR),
-            (-0.9999999999,  -999999999, CEILING),
-            (-0.9999999999, -1000000000, HALF_EVEN),
-        ):
-            with self.subTest(obj=obj, round=rnd, timestamp=ts):
-                self.assertEqual(PyTime_FromSecondsObject(obj, rnd), ts)
+        self.check_float_rounding(
+            PyTime_FromSecondsObject,
+            lambda ns: self.decimal_round(ns * SEC_TO_NS))
 
     def test_AsSecondsDouble(self):
         from _testcapi import PyTime_AsSecondsDouble
 
-        for nanoseconds, seconds in (
-            # near 1 nanosecond
-            ( 0,  0.0),
-            ( 1,  1e-9),
-            (-1, -1e-9),
+        def float_converter(ns):
+            if abs(ns) % SEC_TO_NS == 0:
+                return float(ns // SEC_TO_NS)
+            else:
+                return float(ns) / SEC_TO_NS
 
-            # near 1 second
-            (SEC_TO_NS + 1, 1.0 + 1e-9),
-            (SEC_TO_NS,     1.0),
-            (SEC_TO_NS - 1, 1.0 - 1e-9),
+        self.check_int_rounding(lambda ns, rnd: PyTime_AsSecondsDouble(ns),
+                                float_converter,
+                                NS_TO_SEC)
 
-            # a few seconds
-            (123 * SEC_TO_NS, 123.0),
-            (-567 * SEC_TO_NS, -567.0),
+    def create_decimal_converter(self, denominator):
+        denom = decimal.Decimal(denominator)
 
-            # nanosecond are kept for value <= 2^23 seconds
-            (4194303999999999, 2**22 - 1e-9),
-            (4194304000000000, 2**22),
-            (4194304000000001, 2**22 + 1e-9),
+        def converter(value):
+            d = decimal.Decimal(value) / denom
+            return self.decimal_round(d)
 
-            # start loosing precision for value > 2^23 seconds
-            (8388608000000002, 2**23 + 1e-9),
+        return converter
 
-            # nanoseconds are lost for value > 2^23 seconds
-            (16777215999999998, 2**24 - 1e-9),
-            (16777215999999999, 2**24 - 1e-9),
-            (16777216000000000, 2**24       ),
-            (16777216000000001, 2**24       ),
-            (16777216000000002, 2**24 + 2e-9),
-
-            (33554432000000000, 2**25       ),
-            (33554432000000002, 2**25       ),
-            (33554432000000004, 2**25 + 4e-9),
-
-            # close to 2^63 nanoseconds (_PyTime_t limit)
-            (9223372036 * SEC_TO_NS, 9223372036.0),
-            (-9223372036 * SEC_TO_NS, -9223372036.0),
-        ):
-            with self.subTest(nanoseconds=nanoseconds, seconds=seconds):
-                self.assertEqual(PyTime_AsSecondsDouble(nanoseconds),
-                                 seconds)
-
-    def test_timeval(self):
+    def test_AsTimeval(self):
         from _testcapi import PyTime_AsTimeval
-        for rnd in ALL_ROUNDING_METHODS:
-            for ns, tv in (
-                # microseconds
-                (0, (0, 0)),
-                (1000, (0, 1)),
-                (-1000, (-1, 999999)),
 
-                # seconds
-                (2 * SEC_TO_NS, (2, 0)),
-                (-3 * SEC_TO_NS, (-3, 0)),
-            ):
-                with self.subTest(nanoseconds=ns, timeval=tv, round=rnd):
-                    self.assertEqual(PyTime_AsTimeval(ns, rnd), tv)
+        us_converter = self.create_decimal_converter(US_TO_NS)
 
-        FLOOR = _PyTime.ROUND_FLOOR
-        CEILING = _PyTime.ROUND_CEILING
-        HALF_EVEN = _PyTime.ROUND_HALF_EVEN
-        for ns, tv, rnd in (
-            # nanoseconds
-            (1, (0, 0), FLOOR),
-            (1, (0, 1), CEILING),
-            (1, (0, 0), HALF_EVEN),
-            (-1, (-1, 999999), FLOOR),
-            (-1, (0, 0), CEILING),
-            (-1, (0, 0), HALF_EVEN),
+        def timeval_converter(ns):
+            us = us_converter(ns)
+            return divmod(us, SEC_TO_US)
 
-            # half even
-            (-1500, (-1, 999998), HALF_EVEN),
-            (-999, (-1, 999999), HALF_EVEN),
-            (-500, (0, 0), HALF_EVEN),
-            (500, (0, 0), HALF_EVEN),
-            (999, (0, 1), HALF_EVEN),
-            (1500, (0, 2), HALF_EVEN),
-        ):
-            with self.subTest(nanoseconds=ns, timeval=tv, round=rnd):
-                self.assertEqual(PyTime_AsTimeval(ns, rnd), tv)
+        self.check_int_rounding(PyTime_AsTimeval,
+                                timeval_converter,
+                                NS_TO_SEC)
 
     @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimespec'),
                          'need _testcapi.PyTime_AsTimespec')
-    def test_timespec(self):
+    def test_AsTimespec(self):
         from _testcapi import PyTime_AsTimespec
-        for ns, ts in (
-            # nanoseconds
-            (0, (0, 0)),
-            (1, (0, 1)),
-            (-1, (-1, 999999999)),
 
-            # seconds
-            (2 * SEC_TO_NS, (2, 0)),
-            (-3 * SEC_TO_NS, (-3, 0)),
+        def timespec_converter(ns):
+            return divmod(ns, SEC_TO_NS)
 
-            # seconds + nanoseconds
-            (1234567890, (1, 234567890)),
-            (-1234567890, (-2, 765432110)),
-        ):
-            with self.subTest(nanoseconds=ns, timespec=ts):
-                self.assertEqual(PyTime_AsTimespec(ns), ts)
+        self.check_int_rounding(lambda ns, rnd: PyTime_AsTimespec(ns),
+                                timespec_converter,
+                                NS_TO_SEC)
 
-    def test_milliseconds(self):
+    def test_AsMilliseconds(self):
         from _testcapi import PyTime_AsMilliseconds
-        for rnd in ALL_ROUNDING_METHODS:
-            for ns, tv in (
-                # milliseconds
-                (1 * MS_TO_NS, 1),
-                (-2 * MS_TO_NS, -2),
 
-                # seconds
-                (2 * SEC_TO_NS, 2000),
-                (-3 * SEC_TO_NS, -3000),
-            ):
-                with self.subTest(nanoseconds=ns, timeval=tv, round=rnd):
-                    self.assertEqual(PyTime_AsMilliseconds(ns, rnd), tv)
+        self.check_int_rounding(PyTime_AsMilliseconds,
+                                self.create_decimal_converter(MS_TO_NS),
+                                NS_TO_SEC)
 
-        FLOOR = _PyTime.ROUND_FLOOR
-        CEILING = _PyTime.ROUND_CEILING
-        HALF_EVEN = _PyTime.ROUND_HALF_EVEN
-        for ns, ms, rnd in (
-            # nanoseconds
-            (1, 0, FLOOR),
-            (1, 1, CEILING),
-            (1, 0, HALF_EVEN),
-            (-1, -1, FLOOR),
-            (-1, 0, CEILING),
-            (-1, 0, HALF_EVEN),
-
-            # seconds + nanoseconds
-            (1234 * MS_TO_NS + 1, 1234, FLOOR),
-            (1234 * MS_TO_NS + 1, 1235, CEILING),
-            (1234 * MS_TO_NS + 1, 1234, HALF_EVEN),
-            (-1234 * MS_TO_NS - 1, -1235, FLOOR),
-            (-1234 * MS_TO_NS - 1, -1234, CEILING),
-            (-1234 * MS_TO_NS - 1, -1234, HALF_EVEN),
-
-            # half up
-            (-1500000, -2, HALF_EVEN),
-            (-999999, -1, HALF_EVEN),
-            (-500000, 0, HALF_EVEN),
-            (500000, 0, HALF_EVEN),
-            (999999, 1, HALF_EVEN),
-            (1500000, 2, HALF_EVEN),
-        ):
-            with self.subTest(nanoseconds=ns, milliseconds=ms, round=rnd):
-                self.assertEqual(PyTime_AsMilliseconds(ns, rnd), ms)
-
-    def test_microseconds(self):
+    def test_AsMicroseconds(self):
         from _testcapi import PyTime_AsMicroseconds
-        for rnd in ALL_ROUNDING_METHODS:
-            for ns, tv in (
-                # microseconds
-                (1 * US_TO_NS, 1),
-                (-2 * US_TO_NS, -2),
 
-                # milliseconds
-                (1 * MS_TO_NS, 1000),
-                (-2 * MS_TO_NS, -2000),
-
-                # seconds
-                (2 * SEC_TO_NS, 2000000),
-                (-3 * SEC_TO_NS, -3000000),
-            ):
-                with self.subTest(nanoseconds=ns, timeval=tv, round=rnd):
-                    self.assertEqual(PyTime_AsMicroseconds(ns, rnd), tv)
-
-        FLOOR = _PyTime.ROUND_FLOOR
-        CEILING = _PyTime.ROUND_CEILING
-        HALF_EVEN = _PyTime.ROUND_HALF_EVEN
-        for ns, ms, rnd in (
-            # nanoseconds
-            (1, 0, FLOOR),
-            (1, 1, CEILING),
-            (1, 0, HALF_EVEN),
-            (-1, -1, FLOOR),
-            (-1, 0, CEILING),
-            (-1, 0, HALF_EVEN),
-
-            # seconds + nanoseconds
-            (1234 * US_TO_NS + 1, 1234, FLOOR),
-            (1234 * US_TO_NS + 1, 1235, CEILING),
-            (1234 * US_TO_NS + 1, 1234, HALF_EVEN),
-            (-1234 * US_TO_NS - 1, -1235, FLOOR),
-            (-1234 * US_TO_NS - 1, -1234, CEILING),
-            (-1234 * US_TO_NS - 1, -1234, HALF_EVEN),
-
-            # half up
-            (-1500, -2, HALF_EVEN),
-            (-999, -1, HALF_EVEN),
-            (-500, 0, HALF_EVEN),
-            (500, 0, HALF_EVEN),
-            (999, 1, HALF_EVEN),
-            (1500, 2, HALF_EVEN),
-        ):
-            with self.subTest(nanoseconds=ns, milliseconds=ms, round=rnd):
-                self.assertEqual(PyTime_AsMicroseconds(ns, rnd), ms)
+        self.check_int_rounding(PyTime_AsMicroseconds,
+                                self.create_decimal_converter(US_TO_NS),
+                                NS_TO_SEC)
 
 
-@unittest.skipUnless(_testcapi is not None,
-                     'need the _testcapi module')
-class TestOldPyTime(unittest.TestCase):
+class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
     """
-    Test the old _PyTime_t API: _PyTime_ObjectToXXX() functions.
+    Test the old C _PyTime_t API: _PyTime_ObjectToXXX() functions.
     """
-    def setUp(self):
-        self.invalid_values = (
-            -(2 ** 100), 2 ** 100,
-            -(2.0 ** 100.0), 2.0 ** 100.0,
-        )
 
-    @support.cpython_only
-    def test_time_t(self):
+    # time_t is a 32-bit or 64-bit signed integer
+    OVERFLOW_SECONDS = 2 ** 64
+
+    def test_object_to_time_t(self):
         from _testcapi import pytime_object_to_time_t
 
-        # Conversion giving the same result for all rounding methods
-        for rnd in ALL_ROUNDING_METHODS:
-            for obj, time_t in (
-                # int
-                (0, 0),
-                (-1, -1),
+        self.check_int_rounding(pytime_object_to_time_t,
+                                lambda secs: secs)
 
-                # float
-                (1.0, 1),
-                (-1.0, -1),
-            ):
-                self.assertEqual(pytime_object_to_time_t(obj, rnd), time_t)
+        self.check_float_rounding(pytime_object_to_time_t,
+                                  self.decimal_round)
 
-
-        # Conversion giving different results depending on the rounding method
-        FLOOR = _PyTime.ROUND_FLOOR
-        CEILING = _PyTime.ROUND_CEILING
-        HALF_EVEN = _PyTime.ROUND_HALF_EVEN
-        for obj, time_t, rnd in (
-            (-1.9, -2, FLOOR),
-            (-1.9, -2, HALF_EVEN),
-            (-1.9, -1, CEILING),
-
-            (1.9, 1, FLOOR),
-            (1.9, 2, HALF_EVEN),
-            (1.9, 2, CEILING),
-
-            # half even
-            (-1.5, -2, HALF_EVEN),
-            (-0.9, -1, HALF_EVEN),
-            (-0.5,  0, HALF_EVEN),
-            ( 0.5,  0, HALF_EVEN),
-            ( 0.9,  1, HALF_EVEN),
-            ( 1.5,  2, HALF_EVEN),
-        ):
-            self.assertEqual(pytime_object_to_time_t(obj, rnd), time_t)
-
-        # Test OverflowError
-        rnd = _PyTime.ROUND_FLOOR
-        for invalid in self.invalid_values:
-            self.assertRaises(OverflowError,
-                              pytime_object_to_time_t, invalid, rnd)
+    def create_converter(self, sec_to_unit):
+        def converter(secs):
+            floatpart, intpart = math.modf(secs)
+            intpart = int(intpart)
+            floatpart *= sec_to_unit
+            floatpart = self.decimal_round(floatpart)
+            if floatpart < 0:
+                floatpart += sec_to_unit
+                intpart -= 1
+            elif floatpart >= sec_to_unit:
+                floatpart -= sec_to_unit
+                intpart += 1
+            return (intpart, floatpart)
+        return converter
 
     def test_object_to_timeval(self):
         from _testcapi import pytime_object_to_timeval
 
-        # Conversion giving the same result for all rounding methods
-        for rnd in ALL_ROUNDING_METHODS:
-            for obj, timeval in (
-                # int
-                (0, (0, 0)),
-                (-1, (-1, 0)),
+        self.check_int_rounding(pytime_object_to_timeval,
+                                lambda secs: (secs, 0))
 
-                # float
-                (-1.0, (-1, 0)),
-                (1/2**6, (0, 15625)),
-                (-1/2**6, (-1, 984375)),
-                (-1e-6, (-1, 999999)),
-                (1e-6, (0, 1)),
-            ):
-                with self.subTest(obj=obj, round=rnd, timeval=timeval):
-                    self.assertEqual(pytime_object_to_timeval(obj, rnd),
-                                     timeval)
+        self.check_float_rounding(pytime_object_to_timeval,
+                                  self.create_converter(SEC_TO_US))
 
-        # Conversion giving different results depending on the rounding method
-        FLOOR = _PyTime.ROUND_FLOOR
-        CEILING = _PyTime.ROUND_CEILING
-        HALF_EVEN = _PyTime.ROUND_HALF_EVEN
-        for obj, timeval, rnd in (
-            (-1e-7, (-1, 999999), FLOOR),
-            (-1e-7, (0, 0), CEILING),
-            (-1e-7, (0, 0), HALF_EVEN),
-
-            (1e-7, (0, 0), FLOOR),
-            (1e-7, (0, 1), CEILING),
-            (1e-7, (0, 0), HALF_EVEN),
-
-            (0.9999999, (0, 999999), FLOOR),
-            (0.9999999, (1, 0), CEILING),
-            (0.9999999, (1, 0), HALF_EVEN),
-
-            # half even
-            (-1.5e-6, (-1, 999998), HALF_EVEN),
-            (-0.9e-6, (-1, 999999), HALF_EVEN),
-            (-0.5e-6, (0, 0), HALF_EVEN),
-            (0.5e-6, (0, 0), HALF_EVEN),
-            (0.9e-6, (0, 1), HALF_EVEN),
-            (1.5e-6, (0, 2), HALF_EVEN),
-        ):
-            with self.subTest(obj=obj, round=rnd, timeval=timeval):
-                self.assertEqual(pytime_object_to_timeval(obj, rnd), timeval)
-
-        rnd = _PyTime.ROUND_FLOOR
-        for invalid in self.invalid_values:
-            self.assertRaises(OverflowError,
-                              pytime_object_to_timeval, invalid, rnd)
-
-    @support.cpython_only
-    def test_timespec(self):
+    def test_object_to_timespec(self):
         from _testcapi import pytime_object_to_timespec
 
-        # Conversion giving the same result for all rounding methods
-        for rnd in ALL_ROUNDING_METHODS:
-            for obj, timespec in (
-                # int
-                (0, (0, 0)),
-                (-1, (-1, 0)),
+        self.check_int_rounding(pytime_object_to_timespec,
+                                lambda secs: (secs, 0))
 
-                # float
-                (-1.0, (-1, 0)),
-                (-1e-9, (-1, 999999999)),
-                (1e-9, (0, 1)),
-                (-1/2**9, (-1, 998046875)),
-            ):
-                with self.subTest(obj=obj, round=rnd, timespec=timespec):
-                    self.assertEqual(pytime_object_to_timespec(obj, rnd),
-                                     timespec)
+        self.check_float_rounding(pytime_object_to_timespec,
+                                  self.create_converter(SEC_TO_NS))
 
-        # Conversion giving different results depending on the rounding method
-        FLOOR = _PyTime.ROUND_FLOOR
-        CEILING = _PyTime.ROUND_CEILING
-        HALF_EVEN = _PyTime.ROUND_HALF_EVEN
-        for obj, timespec, rnd in (
-            (-1e-10, (-1, 999999999), FLOOR),
-            (-1e-10, (0, 0), CEILING),
-            (-1e-10, (0, 0), HALF_EVEN),
-
-            (1e-10, (0, 0), FLOOR),
-            (1e-10, (0, 1), CEILING),
-            (1e-10, (0, 0), HALF_EVEN),
-
-            (0.9999999999, (0, 999999999), FLOOR),
-            (0.9999999999, (1, 0), CEILING),
-            (0.9999999999, (1, 0), HALF_EVEN),
-
-            # half even
-            (-1.5e-9, (-1, 999999998), HALF_EVEN),
-            (-0.9e-9, (-1, 999999999), HALF_EVEN),
-            (-0.5e-9, (0, 0), HALF_EVEN),
-            (0.5e-9, (0, 0), HALF_EVEN),
-            (0.9e-9, (0, 1), HALF_EVEN),
-            (1.5e-9, (0, 2), HALF_EVEN),
-        ):
-            with self.subTest(obj=obj, round=rnd, timespec=timespec):
-                self.assertEqual(pytime_object_to_timespec(obj, rnd), timespec)
-
-        # Test OverflowError
-        rnd = FLOOR
-        for invalid in self.invalid_values:
-            self.assertRaises(OverflowError,
-                              pytime_object_to_timespec, invalid, rnd)
 
 
 if __name__ == "__main__":

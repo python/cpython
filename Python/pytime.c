@@ -324,12 +324,16 @@ _PyTime_FromMillisecondsObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t roun
 double
 _PyTime_AsSecondsDouble(_PyTime_t t)
 {
-    _PyTime_t sec, ns;
-    /* Divide using integers to avoid rounding issues on the integer part.
-       1e-9 cannot be stored exactly in IEEE 64-bit. */
-    sec = t / SEC_TO_NS;
-    ns = t % SEC_TO_NS;
-    return (double)sec + (double)ns * 1e-9;
+    if (t % SEC_TO_NS == 0) {
+        _PyTime_t secs;
+        /* Divide using integers to avoid rounding issues on the integer part.
+           1e-9 cannot be stored exactly in IEEE 64-bit. */
+        secs = t / SEC_TO_NS;
+        return (double)secs;
+    }
+    else {
+        return (double)t / 1e9;
+    }
 }
 
 PyObject *
