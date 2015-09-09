@@ -77,7 +77,7 @@ class msvccompilerTestCase(support.TempdirManager,
         compiler.initialize()
         dll = compiler._vcruntime_redist
         self.assertTrue(os.path.isfile(dll))
-        
+
         compiler._copy_vcruntime(tempdir)
 
         self.assertFalse(os.path.isfile(os.path.join(

@@ -100,7 +100,7 @@ def _get_vc_env(plat_spec):
         (line.partition('=') for line in out.splitlines())
         if key and value
     }
-    
+
     if vcruntime:
         env['py_vcruntime_redist'] = vcruntime
     return env
@@ -236,7 +236,7 @@ class MSVCCompiler(CCompiler) :
             '/nologo', '/Ox', '/W3', '/GL', '/DNDEBUG'
         ]
         self.compile_options.append('/MD' if self._vcruntime_redist else '/MT')
-        
+
         self.compile_options_debug = [
             '/nologo', '/Od', '/MDd', '/Zi', '/W3', '/D_DEBUG'
         ]
