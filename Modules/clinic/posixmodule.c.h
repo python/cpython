@@ -1487,10 +1487,10 @@ PyDoc_STRVAR(os_utime__doc__,
 "\n"
 "If times is not None, it must be a tuple (atime, mtime);\n"
 "    atime and mtime should be expressed as float seconds since the epoch.\n"
-"If ns is not None, it must be a tuple (atime_ns, mtime_ns);\n"
+"If ns is specified, it must be a tuple (atime_ns, mtime_ns);\n"
 "    atime_ns and mtime_ns should be expressed as integer nanoseconds\n"
 "    since the epoch.\n"
-"If both times and ns are None, utime uses the current time.\n"
+"If times is None and ns is unspecified, utime uses the current time.\n"
 "Specifying tuples for both times and ns is an error.\n"
 "\n"
 "If dir_fd is not None, it should be a file descriptor open to a directory,\n"
@@ -5788,4 +5788,4 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=f3f92b2d2e2c3fe3 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=95824c52fd034654 input=a9049054013a1b77]*/
