@@ -1355,6 +1355,9 @@ The following performance enhancements have been added:
 * property() getter calls are up to 25% faster.
   (Contributed by Joe Jevnik in :issue:`23910`.)
 
+* Instantiation of :class:`fractions.Fraction` is now up to 30% faster.
+  (Contributed by Stefan Behnel in :issue:`22464`.)
+
 
 Build and C API Changes
 =======================
