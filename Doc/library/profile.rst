@@ -33,7 +33,7 @@ profiling interface:
 2. :mod:`profile`, a pure Python module whose interface is imitated by
    :mod:`cProfile`, but which adds significant overhead to profiled programs.
    If you're trying to extend the profiler in some way, the task might be easier
-   with this module.
+   with this module.  Originally designed and written by Jim Roskind.
 
 .. note::
 
