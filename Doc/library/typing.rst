@@ -35,7 +35,7 @@ Callable
 --------
 
 Frameworks expecting callback functions of specific signatures might be
-type hinted using `Callable[[Arg1Type, Arg2Type], ReturnType]`.
+type hinted using ``Callable[[Arg1Type, Arg2Type], ReturnType]``.
 
 For example::
 
@@ -68,7 +68,7 @@ subscription to denote expected types for container elements.
                        overrides: Mapping[str, str]) -> None: ...
 
 Generics can be parametrized by using a new factory available in typing
-called TypeVar.
+called :class:`TypeVar`.
 
 .. code-block:: python
 
@@ -145,7 +145,7 @@ This is thus invalid::
    class Pair(Generic[T, T]):   # INVALID
        ...
 
-You can use multiple inheritance with `Generic`::
+You can use multiple inheritance with :class:`Generic`::
 
    from typing import TypeVar, Generic, Sized
 
@@ -153,6 +153,17 @@ You can use multiple inheritance with `Generic`::
 
    class LinkedList(Sized, Generic[T]):
        ...
+
+When inheriting from generic classes, some type variables could fixed::
+
+    from typing import TypeVar, Mapping
+
+    T = TypeVar('T')
+
+    class MyDict(Mapping[str, T]):
+        ...
+
+In this case ``MyDict`` has a single parameter, ``T``.
 
 Subclassing a generic class without specifying type parameters assumes
 :class:`Any` for each position. In the following example, ``MyIterable`` is
@@ -162,7 +173,11 @@ not generic but implicitly inherits from ``Iterable[Any]``::
 
    class MyIterable(Iterable): # Same as Iterable[Any]
 
-Generic metaclasses are not supported.
+The metaclass used by :class:`Generic` is a subclass of :class:`abc.ABCMeta`.
+A generic class can be an ABC by including abstract methods or properties,
+and generic classes can also have ABCs as base classes without a metaclass
+conflict.  Generic metaclasses are not supported.
+
 
 The :class:`Any` type
 ---------------------
@@ -177,15 +192,6 @@ return value) of a more specialized type is a type error. On the other hand,
 when a value has type :class:`Any`, the type checker will allow all operations
 on it, and a value of type :class:`Any` can be assigned to a variable (or used
 as a return value) of a more constrained type.
-
-Default argument values
------------------------
-
-Use a literal ellipsis ``...`` to declare an argument as having a default value::
-
-   from typing import AnyStr
-
-   def foo(x: AnyStr, y: AnyStr = ...) -> AnyStr: ...
 
 
 Classes, functions, and decorators
@@ -236,7 +242,11 @@ The module defines the following classes, functions and decorators:
 
     Type variables may be marked covariant or contravariant by passing
     ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
-    details.  By default type variables are invariant.
+    details.  By default type variables are invariant.  Alternatively,
+    a type variable may specify an upper bound using ``bound=<type>``.
+    This means that an actual type substituted (explicitly or implictly)
+    for the type variable must be a subclass of the boundary type,
+    see :pep:`484`.
 
 .. class:: Union
 
@@ -329,57 +339,139 @@ The module defines the following classes, functions and decorators:
 
 .. class:: Iterable(Generic[T_co])
 
+    A generic version of the :class:`collections.abc.Iterable`.
+
 .. class:: Iterator(Iterable[T_co])
+
+    A generic version of the :class:`collections.abc.Iterator`.
 
 .. class:: SupportsInt
 
+    An ABC with one abstract method `__int__`.
+
 .. class:: SupportsFloat
+
+    An ABC with one abstract method `__float__`.
 
 .. class:: SupportsAbs
 
+    An ABC with one abstract method `__abs__` that is covariant
+    in its return type.
+
 .. class:: SupportsRound
+
+    An ABC with one abstract method `__round__`
+    that is covariant in its return type.
 
 .. class:: Reversible
 
+    An ABC with one abstract method `__reversed__` returning
+    an `Iterator[T_co]`.
+
 .. class:: Container(Generic[T_co])
+
+    A generic version of :class:`collections.abc.Container`.
 
 .. class:: AbstractSet(Sized, Iterable[T_co], Container[T_co])
 
+    A generic version of :class:`collections.abc.Set`.
+
 .. class:: MutableSet(AbstractSet[T])
 
-.. class:: Mapping(Sized, Iterable[KT_co], Container[KT_co], Generic[KT_co, VT_co])
+    A generic version of :class:`collections.abc.MutableSet`.
+
+.. class:: Mapping(Sized, Iterable[KT], Container[KT], Generic[VT_co])
+
+    A generic version of :class:`collections.abc.Mapping`.
 
 .. class:: MutableMapping(Mapping[KT, VT])
 
+    A generic version of :class:`collections.abc.MutableMapping`.
+
 .. class:: Sequence(Sized, Iterable[T_co], Container[T_co])
+
+    A generic version of :class:`collections.abc.Sequence`.
 
 .. class:: MutableSequence(Sequence[T])
 
+   A generic version of :class:`collections.abc.MutableSequence`.
+
 .. class:: ByteString(Sequence[int])
+
+   A generic version of :class:`collections.abc.ByteString`.
+
+   This type represents the types :class:`bytes`, :class:`bytearray`,
+   and :class:`memoryview`.
+
+   As a shorthand for this type, :class:`bytes` can be used to
+   annotate arguments of any of the types mentioned above.
 
 .. class:: List(list, MutableSequence[T])
 
-.. class:: Set(set, MutableSet[T])
+   Generic version of :class:`list`.
+   Useful for annotating return types. To annotate arguments it is preferred
+   to use abstract collection types such as :class:`Mapping`, :class:`Sequence`,
+   or :class:`AbstractSet`.
+
+   This type may be used as follows::
+
+      T = TypeVar('T', int, float)
+
+      def vec2(x: T, y: T) -> List[T]:
+          return [x, y]
+
+      def slice__to_4(vector: Sequence[T]) -> List[T]:
+          return vector[0:4]
+
+.. class:: AbstractSet(set, MutableSet[T])
+
+   A generic version of :class:`collections.abc.Set`.
 
 .. class:: MappingView(Sized, Iterable[T_co])
 
+   A generic version of :class:`collections.abc.MappingView`.
+
 .. class:: KeysView(MappingView[KT_co], AbstractSet[KT_co])
+
+   A generic version of :class:`collections.abc.KeysView`.
 
 .. class:: ItemsView(MappingView, Generic[KT_co, VT_co])
 
+   A generic version of :class:`collections.abc.ItemsView`.
+
 .. class:: ValuesView(MappingView[VT_co])
 
+   A generic version of :class:`collections.abc.ValuesView`.
+
 .. class:: Dict(dict, MutableMapping[KT, VT])
+
+   A generic version of :class:`dict`.
+   The usage of this type is as follows::
+
+      def get_position_in_index(word_list: Dict[str, int], word: str) -> int:
+          return word_list[word]
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
 .. class:: io
 
-   Wrapper namespace for IO generic classes.
+   Wrapper namespace for I/O stream types.
+
+   This defines the generic type ``IO[AnyStr]`` and aliases ``TextIO``
+   and ``BinaryIO`` for respectively ``IO[str]`` and ``IO[bytes]``.
+   These representing the types of I/O streams such as returned by
+   :func:`open`.
 
 .. class:: re
 
-   Wrapper namespace for re type classes.
+   Wrapper namespace for regular expression matching types.
+
+   This defines the type aliases ``Pattern`` and ``Match`` which
+   correspond to the return types from :func:`re.compile` and
+   :func:`re.match`.  These types (and the corresponding functions)
+   are generic in ``AnyStr`` and can be made specific by writing
+   ``Pattern[str]``, ``Pattern[bytes]``, ``Match[str]``, or
+   ``Match[bytes]``.
 
 .. function:: NamedTuple(typename, fields)
 
