@@ -75,12 +75,17 @@ _PyTime_RoundHalfEven(double x)
 static double
 _PyTime_Round(double x, _PyTime_round_t round)
 {
+    /* volatile avoids optimization changing how numbers are rounded */
+    volatile double d;
+
+    d = x;
     if (round == _PyTime_ROUND_HALF_EVEN)
-        return _PyTime_RoundHalfEven(x);
+        d = _PyTime_RoundHalfEven(d);
     else if (round == _PyTime_ROUND_CEILING)
-        return ceil(x);
+        d = ceil(d);
     else
-        return floor(x);
+        d = floor(d);
+    return d;
 }
 
 static int
