@@ -7,6 +7,11 @@
 #include <mach/mach_time.h>   /* mach_absolute_time(), mach_timebase_info() */
 #endif
 
+#define _PyTime_check_mul_overflow(a, b) \
+    (assert(b > 0), \
+     (_PyTime_t)(a) < _PyTime_MIN / (_PyTime_t)(b) \
+     || _PyTime_MAX / (_PyTime_t)(b) < (_PyTime_t)(a))
+
 /* To millisecond (10^-3) */
 #define SEC_TO_MS 1000
 
@@ -226,12 +231,15 @@ _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts, int raise)
     _PyTime_t t;
     int res = 0;
 
-    t = (_PyTime_t)ts->tv_sec * SEC_TO_NS;
-    if (t / SEC_TO_NS != ts->tv_sec) {
+    assert(sizeof(ts->tv_sec) <= sizeof(_PyTime_t));
+    t = (_PyTime_t)ts->tv_sec;
+
+    if (_PyTime_check_mul_overflow(t, SEC_TO_NS)) {
         if (raise)
             _PyTime_overflow();
         res = -1;
     }
+    t = t * SEC_TO_NS;
 
     t += ts->tv_nsec;
 
@@ -245,12 +253,15 @@ _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
     _PyTime_t t;
     int res = 0;
 
-    t = (_PyTime_t)tv->tv_sec * SEC_TO_NS;
-    if (t / SEC_TO_NS != tv->tv_sec) {
+    assert(sizeof(ts->tv_sec) <= sizeof(_PyTime_t));
+    t = (_PyTime_t)tv->tv_sec;
+
+    if (_PyTime_check_mul_overflow(t, SEC_TO_NS)) {
         if (raise)
             _PyTime_overflow();
         res = -1;
     }
+    t = t * SEC_TO_NS;
 
     t += (_PyTime_t)tv->tv_usec * US_TO_NS;
 
@@ -308,11 +319,11 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
             return -1;
         }
 
-        *t = sec * unit_to_ns;
-        if (*t / unit_to_ns != sec) {
+        if (_PyTime_check_mul_overflow(sec, unit_to_ns)) {
             _PyTime_overflow();
             return -1;
         }
+        *t = sec * unit_to_ns;
         return 0;
     }
 }
@@ -587,19 +598,20 @@ _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
     return pygettimeofday_new(t, info, 1);
 }
 
-
 static int
 pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 {
 #if defined(MS_WINDOWS)
-    ULONGLONG result;
+    ULONGLONG ticks;
+    _PyTime_t t;
 
     assert(info == NULL || raise);
 
-    result = GetTickCount64();
+    ticks = GetTickCount64();
+    assert(sizeof(result) <= sizeof(_PyTime_t));
+    t = (_PyTime_t)ticks;
 
-    *tp = result * MS_TO_NS;
-    if (*tp / MS_TO_NS != result) {
+    if (_PyTime_check_mul_overflow(t, MS_TO_NS)) {
         if (raise) {
             _PyTime_overflow();
             return -1;
@@ -607,6 +619,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
         /* Hello, time traveler! */
         assert(0);
     }
+    *tp = t * MS_TO_NS;
 
     if (info) {
         DWORD timeAdjustment, timeIncrement;

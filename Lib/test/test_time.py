@@ -781,7 +781,8 @@ class CPyTimeTestCase:
         overflow_values = convert_values(ns_timestamps)
         for time_rnd, _ in ROUNDING_MODES :
             for value in overflow_values:
-                with self.assertRaises(OverflowError):
+                debug_info = {'value': value, 'rounding': time_rnd}
+                with self.assertRaises(OverflowError, msg=debug_info):
                     pytime_converter(value, time_rnd)
 
     def check_int_rounding(self, pytime_converter, expected_func,
