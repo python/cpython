@@ -71,8 +71,6 @@ getpathp.c     Default sys.path calculations (for all PC platforms).
 dllbase_nt.txt A (manually maintained) list of base addresses for
                various DLLs, to avoid run-time relocation.
 
-example_nt     A subdirectory showing how to build an extension as a
-               DLL.
 
 Legacy support for older versions of Visual Studio
 ==================================================

@@ -312,11 +312,3 @@ project, with some projects overriding certain specific values. The GUI
 doesn't always reflect the correct settings and may confuse the user
 with false information, especially for settings that automatically adapt
 for diffirent configurations.
-
-
-Your Own Extension DLLs
------------------------
-
-If you want to create your own extension module DLL (.pyd), there's an
-example with easy-to-follow instructions in ..\PC\example_nt\; read the
-file readme.txt there first.
