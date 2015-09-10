@@ -918,7 +918,8 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                                 value_filter=self.time_t_filter)
 
         self.check_float_rounding(pytime_object_to_time_t,
-                                  self.decimal_round)
+                                  self.decimal_round,
+                                  value_filter=self.time_t_filter)
 
     def create_converter(self, sec_to_unit):
         def converter(secs):
@@ -943,7 +944,8 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                                 value_filter=self.time_t_filter)
 
         self.check_float_rounding(pytime_object_to_timeval,
-                                  self.create_converter(SEC_TO_US))
+                                  self.create_converter(SEC_TO_US),
+                                  value_filter=self.time_t_filter)
 
     def test_object_to_timespec(self):
         from _testcapi import pytime_object_to_timespec
@@ -953,7 +955,8 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
                                 value_filter=self.time_t_filter)
 
         self.check_float_rounding(pytime_object_to_timespec,
-                                  self.create_converter(SEC_TO_NS))
+                                  self.create_converter(SEC_TO_NS),
+                                  value_filter=self.time_t_filter)
 
 
 if __name__ == "__main__":
