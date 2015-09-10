@@ -929,14 +929,6 @@ functions now return a list of named tuples.
 (Contributed by Daniel Shahaf in :issue:`16808`.)
 
 
-io
---
-
-The :class:`~io.FileIO` class has been implemented in Python which makes
-the C implementation of the :mod:`io` module entirely optional.
-(Contributed by Serhiy Storchaka in :issue:`21859`.)
-
-
 ipaddress
 ---------
 
