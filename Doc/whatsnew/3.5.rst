@@ -1380,11 +1380,15 @@ now support negative values for the *limit* argument.
 types
 -----
 
-New :func:`~types.coroutine` function.  (Contributed by Yury Selivanov
-in :issue:`24017`.)
+A new :func:`~types.coroutine` function to transform
+:term:`generator <generator iterator>` and
+:class:`generator-like <collections.abc.Generator>` objects into
+:term:`awaitables <awaitable>`.
+(Contributed by Yury Selivanov in :issue:`24017`.)
 
-New :class:`~types.CoroutineType`.  (Contributed by Yury Selivanov
-in :issue:`24400`.)
+A new :class:`~types.CoroutineType` is the type of :term:`coroutine` objects,
+produced by calling a function defined with an :keyword:`async def` statement.
+(Contributed by Yury Selivanov in :issue:`24400`.)
 
 
 urllib
