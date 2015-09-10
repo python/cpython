@@ -1542,7 +1542,7 @@ Instantiation of :class:`fractions.Fraction` is now up to 30% faster.
 Build and C API Changes
 =======================
 
-New ``calloc`` functions:
+New ``calloc`` functions were added:
 
   * :c:func:`PyMem_RawCalloc`
   * :c:func:`PyMem_Calloc`
@@ -1551,6 +1551,49 @@ New ``calloc`` functions:
 
 Windows builds now require Microsoft Visual C++ 14.0, which
 is available as part of `Visual Studio 2015 <http://www.visualstudio.com>`_.
+
+Extension modules now include platform information tag in their filename on
+some platforms (the tag is optional, and CPython will import extensions without
+it; although if the tag is present and mismatched, the extension won't be
+loaded):
+
+* On Linux, extension module filenames end with
+  ``.cpython-<major><minor>m-<architecture>-<os>.pyd``:
+
+  * ``<major>`` is the major number of the Python version;
+    for Python 3.5 this is ``3``.
+
+  * ``<minor>`` is the minor number of the Python version;
+    for Python 3.5 this is ``5``.
+
+  * ``<architecture>`` is the hardware architecture the extension module
+    was built to run on. It's most commonly either ``i386`` for 32-bit Intel
+    platforms or ``x86_64`` for 64-bit Intel (and AMD) platforms.
+
+  * ``<os>`` is always ``linux-gnu``, except for extensions built to
+    talk to the 32-bit ABI on 64-bit platforms, in which case it is
+    ``linux-gnu32`` (and ``<architecture>`` will be ``x86_64``).
+
+* On Windows, extension module filenames end with
+  ``.<debug>.cp<major><minor>-<platform>.pyd``:
+
+  * ``<major>`` is the major number of the Python version;
+    for Python 3.5 this is ``3``.
+
+  * ``<minor>`` is the minor number of the Python version;
+    for Python 3.5 this is ``5``.
+
+  * ``<platform>`` is the platform the extension module was built for,
+    either ``win32`` for Win32, ``win_amd64`` for Win64, ``win_ia64`` for
+    Windows Itanium 64, and ``win_arm`` for Windows on ARM.
+
+  * If built in debug mode, ``<debug>`` will be ``_d``,
+    otherwise it will be blank.
+
+* On OS X platforms, extension module filenames now end with ``-darwin.so``.
+
+* On all other platforms, extension module filenames are the same as they were
+  with Python 3.4.
 
 
 Deprecated
