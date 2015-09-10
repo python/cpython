@@ -312,11 +312,3 @@ The pyproject property file defines _WIN32 and x64 defines _WIN64 and
 _M_X64 although the macros are set by the compiler, too. The GUI doesn't
 always know about the macros and confuse the user with false
 information.
-
-
-Your Own Extension DLLs
------------------------
-
-If you want to create your own extension module DLL (.pyd), there's an
-example with easy-to-follow instructions in ..\PC\example_nt\; read the
-file readme.txt there first.
