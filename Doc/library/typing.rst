@@ -60,7 +60,7 @@ Since type information about objects kept in containers cannot be statically
 inferred in a generic way, abstract base classes have been extended to support
 subscription to denote expected types for container elements.
 
-.. code-block:: python
+::
 
    from typing import Mapping, Sequence
 
@@ -70,7 +70,7 @@ subscription to denote expected types for container elements.
 Generics can be parametrized by using a new factory available in typing
 called :class:`TypeVar`.
 
-.. code-block:: python
+::
 
    from typing import Sequence, TypeVar
 
@@ -85,7 +85,7 @@ User-defined generic types
 
 A user-defined class can be defined as a generic class.
 
-.. code-block:: python
+::
 
    from typing import TypeVar, Generic
    from logging import Logger
@@ -220,9 +220,7 @@ The module defines the following classes, functions and decorators:
     Type variables exist primarily for the benefit of static type
     checkers.  They serve as the parameters for generic types as well
     as for generic function definitions.  See class Generic for more
-    information on generic types.  Generic functions work as follows:
-
-    .. code-block:: python
+    information on generic types.  Generic functions work as follows::
 
        def repeat(x: T, n: int) -> Sequence[T]:
            """Return a list containing n references to x."""
@@ -238,13 +236,13 @@ The module defines the following classes, functions and decorators:
     the return type is still plain :class:`str`.
 
     At runtime, ``isinstance(x, T)`` will raise :exc:`TypeError`.  In general,
-    :func:`isinstance` and :func:`issublass` should not be used with types.
+    :func:`isinstance` and :func:`issubclass` should not be used with types.
 
     Type variables may be marked covariant or contravariant by passing
     ``covariant=True`` or ``contravariant=True``.  See :pep:`484` for more
     details.  By default type variables are invariant.  Alternatively,
     a type variable may specify an upper bound using ``bound=<type>``.
-    This means that an actual type substituted (explicitly or implictly)
+    This means that an actual type substituted (explicitly or implicitly)
     for the type variable must be a subclass of the boundary type,
     see :pep:`484`.
 
@@ -278,7 +276,7 @@ The module defines the following classes, functions and decorators:
 
    * You cannot subclass or instantiate a union.
 
-   * You cannot write ``Union[X][Y]``
+   * You cannot write ``Union[X][Y]``.
 
    * You can use ``Optional[X]`` as a shorthand for ``Union[X, None]``.
 
@@ -331,6 +329,7 @@ The module defines the following classes, functions and decorators:
 
       X = TypeVar('X')
       Y = TypeVar('Y')
+
       def lookup_name(mapping: Mapping[X, Y], key: X, default: Y) -> Y:
           try:
               return mapping[key]
@@ -347,26 +346,26 @@ The module defines the following classes, functions and decorators:
 
 .. class:: SupportsInt
 
-    An ABC with one abstract method `__int__`.
+    An ABC with one abstract method ``__int__``.
 
 .. class:: SupportsFloat
 
-    An ABC with one abstract method `__float__`.
+    An ABC with one abstract method ``__float__``.
 
 .. class:: SupportsAbs
 
-    An ABC with one abstract method `__abs__` that is covariant
+    An ABC with one abstract method ``__abs__`` that is covariant
     in its return type.
 
 .. class:: SupportsRound
 
-    An ABC with one abstract method `__round__`
+    An ABC with one abstract method ``__round__``
     that is covariant in its return type.
 
 .. class:: Reversible
 
-    An ABC with one abstract method `__reversed__` returning
-    an `Iterator[T_co]`.
+    An ABC with one abstract method ``__reversed__`` returning
+    an ``Iterator[T_co]``.
 
 .. class:: Container(Generic[T_co])
 
@@ -503,9 +502,9 @@ The module defines the following classes, functions and decorators:
 
    Return type hints for a function or method object.
 
-   This is often the same as obj.__annotations__, but it handles
+   This is often the same as ``obj.__annotations__``, but it handles
    forward references encoded as string literals, and if necessary
-   adds Optional[t] if a default value equal to None is set.
+   adds ``Optional[t]`` if a default value equal to None is set.
 
 .. decorator:: no_type_check(arg)
 
@@ -519,7 +518,7 @@ The module defines the following classes, functions and decorators:
 
 .. decorator:: no_type_check_decorator(decorator)
 
-   Decorator to give another decorator the @no_type_check effect.
+   Decorator to give another decorator the :func:`no_type_check` effect.
 
    This wraps the decorator with something that wraps the decorated
-   function in @no_type_check.
+   function in :func:`no_type_check`.
