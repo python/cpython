@@ -877,19 +877,20 @@ and the `WebP <https://en.wikipedia.org/wiki/WebP>`_ format
 importlib
 ---------
 
-The :class:`importlib.util.LazyLoader` class allows for lazy loading of modules
-in applications where startup time is important.  (Contributed by Brett Cannon
-in :issue:`17621`.)
+The :class:`util.LazyLoader <importlib.util.LazyLoader>` class allows for
+lazy loading of modules in applications where startup time is important.
+(Contributed by Brett Cannon in :issue:`17621`.)
 
-The :func:`importlib.abc.InspectLoader.source_to_code` method is now a
-static method.  This makes it easier to initialize a module object with
-code compiled from a string by running ``exec(code, module.__dict__)``.
+The :func:`abc.InspectLoader.source_to_code <importlib.abc.InspectLoader.source_to_code>`
+method is now a static method.  This makes it easier to initialize a module
+object with code compiled from a string by running
+``exec(code, module.__dict__)``.
 (Contributed by Brett Cannon in :issue:`21156`.)
 
-The new :func:`importlib.util.module_from_spec` function is now the preferred
-way to create a new module.  Compared to the :class:`types.ModuleType` class,
-this new function will set the various import-controlled attributes based
-on the passed-in spec object.
+The new :func:`util.module_from_spec <importlib.util.module_from_spec>`
+function is now the preferred way to create a new module.  Compared to the
+:class:`types.ModuleType` class, this new function will set the various
+import-controlled attributes based on the passed-in spec object.
 (Contributed by Brett Cannon in :issue:`20383`.)
 
 
