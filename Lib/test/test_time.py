@@ -680,6 +680,15 @@ class CPyTimeTestCase:
     """
     OVERFLOW_SECONDS = None
 
+    def setUp(self):
+        from _testcapi import SIZEOF_TIME_T
+        bits = SIZEOF_TIME_T * 8 - 1
+        self.time_t_min = -2 ** bits
+        self.time_t_max = 2 ** bits - 1
+
+    def time_t_filter(self, seconds):
+        return (self.time_t_min <= seconds <= self.time_t_max)
+
     def _rounding_values(self, use_float):
         "Build timestamps used to test rounding."
 
@@ -858,7 +867,7 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             def seconds_filter(secs):
                 return LONG_MIN <= secs <= LONG_MAX
         else:
-            seconds_filter = None
+            seconds_filter = self.time_t_filter
 
         self.check_int_rounding(PyTime_AsTimeval,
                                 timeval_converter,
@@ -875,7 +884,8 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
 
         self.check_int_rounding(lambda ns, rnd: PyTime_AsTimespec(ns),
                                 timespec_converter,
-                                NS_TO_SEC)
+                                NS_TO_SEC,
+                                value_filter=self.time_t_filter)
 
     def test_AsMilliseconds(self):
         from _testcapi import PyTime_AsMilliseconds
@@ -904,7 +914,8 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
         from _testcapi import pytime_object_to_time_t
 
         self.check_int_rounding(pytime_object_to_time_t,
-                                lambda secs: secs)
+                                lambda secs: secs,
+                                value_filter=self.time_t_filter)
 
         self.check_float_rounding(pytime_object_to_time_t,
                                   self.decimal_round)
@@ -928,7 +939,8 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
         from _testcapi import pytime_object_to_timeval
 
         self.check_int_rounding(pytime_object_to_timeval,
-                                lambda secs: (secs, 0))
+                                lambda secs: (secs, 0),
+                                value_filter=self.time_t_filter)
 
         self.check_float_rounding(pytime_object_to_timeval,
                                   self.create_converter(SEC_TO_US))
@@ -937,7 +949,8 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
         from _testcapi import pytime_object_to_timespec
 
         self.check_int_rounding(pytime_object_to_timespec,
-                                lambda secs: (secs, 0))
+                                lambda secs: (secs, 0),
+                                value_filter=self.time_t_filter)
 
         self.check_float_rounding(pytime_object_to_timespec,
                                   self.create_converter(SEC_TO_NS))
