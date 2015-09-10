@@ -253,7 +253,7 @@ _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
     _PyTime_t t;
     int res = 0;
 
-    assert(sizeof(ts->tv_sec) <= sizeof(_PyTime_t));
+    assert(sizeof(tv->tv_sec) <= sizeof(_PyTime_t));
     t = (_PyTime_t)tv->tv_sec;
 
     if (_PyTime_check_mul_overflow(t, SEC_TO_NS)) {
@@ -608,7 +608,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     assert(info == NULL || raise);
 
     ticks = GetTickCount64();
-    assert(sizeof(result) <= sizeof(_PyTime_t));
+    assert(sizeof(ticks) <= sizeof(_PyTime_t));
     t = (_PyTime_t)ticks;
 
     if (_PyTime_check_mul_overflow(t, MS_TO_NS)) {
