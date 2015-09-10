@@ -3,6 +3,7 @@ import py_compile
 import re
 import sys
 import shutil
+import stat
 import os
 import tempfile
 
@@ -101,11 +102,16 @@ def copy_to_layout(target, rel_sources):
 
     else:
         for s, rel in rel_sources:
+            dest = target / rel
             try:
-                (target / rel).parent.mkdir(parents=True)
+                dest.parent.mkdir(parents=True)
             except FileExistsError:
                 pass
-            shutil.copy(str(s), str(target / rel))
+            if dest.is_file():
+                dest.chmod(stat.S_IWRITE)
+            shutil.copy(str(s), str(dest))
+            if dest.is_file():
+                dest.chmod(stat.S_IWRITE)
             count += 1
 
     return count
