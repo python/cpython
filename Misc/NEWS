@@ -517,6 +517,11 @@ Tools/Demos
 
 - Issue #24031: make patchcheck now supports git checkouts, too.
 
+Windows
+-------
+
+- Issue #25022: Removed very outdated PC/example_nt/ directory.
+
 
 What's New in Python 3.4.3?
 ===========================
