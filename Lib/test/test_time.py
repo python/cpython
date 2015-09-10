@@ -756,10 +756,15 @@ class CPyTimeTestCase:
             context.rounding = decimal_rnd
 
             for value in valid_values:
-                expected = expected_func(value)
-                self.assertEqual(pytime_converter(value, time_rnd),
+                debug_info = {'value': value, 'rounding': decimal_rnd}
+                try:
+                    result = pytime_converter(value, time_rnd)
+                    expected = expected_func(value)
+                except Exception as exc:
+                    self.fail("Error on timestamp conversion: %s" % debug_info)
+                self.assertEqual(result,
                                  expected,
-                                 {'value': value, 'rounding': decimal_rnd})
+                                 debug_info)
 
         # test overflow
         ns = self.OVERFLOW_SECONDS * SEC_TO_NS
@@ -770,14 +775,15 @@ class CPyTimeTestCase:
                 with self.assertRaises(OverflowError):
                     pytime_converter(value, time_rnd)
 
-    def check_int_rounding(self, pytime_converter, expected_func, unit_to_sec=1,
-                           value_filter=None):
+    def check_int_rounding(self, pytime_converter, expected_func,
+                           unit_to_sec=1, value_filter=None):
         self._check_rounding(pytime_converter, expected_func,
                              False, unit_to_sec, value_filter)
 
-    def check_float_rounding(self, pytime_converter, expected_func, unit_to_sec=1):
+    def check_float_rounding(self, pytime_converter, expected_func,
+                             unit_to_sec=1, value_filter=None):
         self._check_rounding(pytime_converter, expected_func,
-                             True, unit_to_sec)
+                             True, unit_to_sec, value_filter)
 
     def decimal_round(self, x):
         d = decimal.Decimal(x)
@@ -845,9 +851,19 @@ class TestCPyTime(CPyTimeTestCase, unittest.TestCase):
             us = us_converter(ns)
             return divmod(us, SEC_TO_US)
 
+        if sys.platform == 'win32':
+            from _testcapi import LONG_MIN, LONG_MAX
+
+            # On Windows, timeval.tv_sec type is a C long
+            def seconds_filter(secs):
+                return LONG_MIN <= secs <= LONG_MAX
+        else:
+            seconds_filter = None
+
         self.check_int_rounding(PyTime_AsTimeval,
                                 timeval_converter,
-                                NS_TO_SEC)
+                                NS_TO_SEC,
+                                value_filter=seconds_filter)
 
     @unittest.skipUnless(hasattr(_testcapi, 'PyTime_AsTimespec'),
                          'need _testcapi.PyTime_AsTimespec')
@@ -925,7 +941,6 @@ class TestOldPyTime(CPyTimeTestCase, unittest.TestCase):
 
         self.check_float_rounding(pytime_object_to_timespec,
                                   self.create_converter(SEC_TO_NS))
-
 
 
 if __name__ == "__main__":

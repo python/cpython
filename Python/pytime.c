@@ -288,18 +288,21 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
     else {
 #ifdef HAVE_LONG_LONG
         PY_LONG_LONG sec;
-        sec = PyLong_AsLongLong(obj);
         assert(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
+
+        sec = PyLong_AsLongLong(obj);
 #else
         long sec;
-        sec = PyLong_AsLong(obj);
         assert(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
+
+        sec = PyLong_AsLong(obj);
 #endif
         if (sec == -1 && PyErr_Occurred()) {
             if (PyErr_ExceptionMatches(PyExc_OverflowError))
                 _PyTime_overflow();
             return -1;
         }
+
         *t = sec * unit_to_ns;
         if (*t / unit_to_ns != sec) {
             _PyTime_overflow();
@@ -404,27 +407,12 @@ _PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
     ns = t % SEC_TO_NS;
 
 #ifdef MS_WINDOWS
-    /* On Windows, timeval.tv_sec is a long (32 bit),
-       whereas time_t can be 64-bit. */
-    assert(sizeof(tv->tv_sec) == sizeof(long));
-#if SIZEOF_TIME_T > SIZEOF_LONG
-    if (secs > LONG_MAX) {
-        secs = LONG_MAX;
-        res = -1;
-    }
-    else if (secs < LONG_MIN) {
-        secs = LONG_MIN;
-        res = -1;
-    }
-#endif
     tv->tv_sec = (long)secs;
 #else
-    /* On OpenBSD 5.4, timeval.tv_sec is a long.
-       Example: long is 64-bit, whereas time_t is 32-bit. */
     tv->tv_sec = secs;
+#endif
     if ((_PyTime_t)tv->tv_sec != secs)
         res = -1;
-#endif
 
     usec = (int)_PyTime_Divide(ns, US_TO_NS, round);
     if (usec < 0) {
@@ -440,7 +428,7 @@ _PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
     tv->tv_usec = usec;
 
     if (res && raise)
-        _PyTime_overflow();
+        error_time_t_overflow();
     return res;
 }
 
@@ -473,7 +461,7 @@ _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
     ts->tv_nsec = nsec;
 
     if ((_PyTime_t)ts->tv_sec != secs) {
-        _PyTime_overflow();
+        error_time_t_overflow();
         return -1;
     }
     return 0;
