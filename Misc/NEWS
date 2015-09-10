@@ -196,6 +196,11 @@ Tests
 - PCbuild\rt.bat now accepts an unlimited number of arguments to pass along
   to regrtest.py.  Previously there was a limit of 9.
 
+Windows
+-------
+
+- Issue #25022: Removed very outdated PC/example_nt/ directory.
+
 
 What's New in Python 2.7.10?
 ============================
