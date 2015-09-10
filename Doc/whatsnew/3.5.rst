@@ -69,8 +69,8 @@ Summary -- Release highlights
 
 New syntax features:
 
-* :pep:`465`, a new matrix multiplication operator: ``a @ b``.
 * :pep:`492`, coroutines with async and await syntax.
+* :pep:`465`, a new matrix multiplication operator: ``a @ b``.
 * :pep:`448`, additional unpacking generalizations.
 
 New library modules:
@@ -94,22 +94,24 @@ New built-in features:
 * New :exc:`RecursionError` exception. (Contributed by Georg Brandl
   in :issue:`19235`.)
 
-Implementation improvements:
+CPython implementation improvements:
 
 * When the ``LC_TYPE`` locale is the POSIX locale (``C`` locale),
   :py:data:`sys.stdin` and :py:data:`sys.stdout` are now using the
   ``surrogateescape`` error handler, instead of the ``strict`` error handler
   (:issue:`19977`).
 
-* :pep:`488`, the elimination of ``.pyo`` files.
+* ``.pyo`` files are no longer used and have been replaced by a more flexible
+  scheme that inclides the optimization level explicitly in ``.pyc`` name.
+  (:pep:`488`)
 
-* :pep:`489`, multi-phase initialization of extension modules.
+* Builtin and extension modules are now initialized in a multi-phase process,
+  which is similar to how Python modules are loaded. (:pep:`489`).
 
 Significantly Improved Library Modules:
 
-* :class:`collections.OrderedDict` is now implemented in C, which improves
-  its performance between 4x to 100x times.  Contributed by Eric Snow in
-  :issue:`16991`.
+* :class:`collections.OrderedDict` is now implemented in C, which makes it
+  4 to 100 times faster.  Contributed by Eric Snow in :issue:`16991`.
 
 * You may now pass bytes to the :mod:`tempfile` module's APIs and it will
   return the temporary pathname as :class:`bytes` instead of :class:`str`.
@@ -146,8 +148,8 @@ Security improvements:
 
 Windows improvements:
 
-* A new installer for Windows has replaced the old MSI. See :ref:`using-on-windows`
-  for more information.
+* A new installer for Windows has replaced the old MSI.
+  See :ref:`using-on-windows` for more information.
 
 * Windows builds now use Microsoft Visual C++ 14.0, and extension modules
   should use the same.
@@ -252,6 +254,8 @@ such as :class:`asyncio.Loop`.
       PEP written and implemented by Yury Selivanov.
 
 
+.. _whatsnew-pep-465:
+
 PEP 465 - A dedicated infix operator for matrix multiplication
 --------------------------------------------------------------
 
@@ -297,6 +301,8 @@ An upcoming release of NumPy 1.10 will add support for the new operator::
       PEP written by Nathaniel J. Smith; implemented by Benjamin Peterson.
 
 
+.. _whatsnew-pep-448:
+
 PEP 448 - Additional Unpacking Generalizations
 ----------------------------------------------
 
@@ -333,6 +339,8 @@ unpackings::
       Thomas Wouters, and Joshua Landau.
 
 
+.. _whatsnew-pep-461:
+
 PEP 461 - % formatting support for bytes and bytearray
 ------------------------------------------------------
 
@@ -364,6 +372,8 @@ Unicode is not allowed for ``%s``, but it is accepted by ``%a`` (equivalent of
       Ethan Furman.
 
 
+.. _whatsnew-pep-484:
+
 PEP 484 - Type Hints
 --------------------
 
@@ -389,11 +399,13 @@ types.
         implemented by Guido van Rossum.
 
 
+.. _whatsnew-pep-471:
+
 PEP 471 - os.scandir() function -- a better and faster directory iterator
 -------------------------------------------------------------------------
 
 :pep:`471` adds a new directory iteration function, :func:`os.scandir`,
-to the standard library. Additionally, :func:`os.walk` is now
+to the standard library.  Additionally, :func:`os.walk` is now
 implemented using :func:`os.scandir`, which speeds it up by 3-5 times
 on POSIX systems and by 7-20 times on Windows systems.
 
@@ -402,6 +414,8 @@ on POSIX systems and by 7-20 times on Windows systems.
    :pep:`471` -- os.scandir() function -- a better and faster directory iterator
       PEP written and implemented by Ben Hoyt with the help of Victor Stinner.
 
+
+.. _whatsnew-pep-475:
 
 PEP 475: Retry system calls failing with EINTR
 ----------------------------------------------
@@ -455,6 +469,8 @@ not raise an exception:
       Victor Stinner, with the help of Antoine Pitrou (the french connection).
 
 
+.. _whatsnew-pep-479:
+
 PEP 479: Change StopIteration handling inside generators
 --------------------------------------------------------
 
@@ -475,6 +491,8 @@ raised.
       Chris Angelico, Yury Selivanov and Nick Coghlan.
 
 
+.. _whatsnew-pep-486:
+
 PEP 486: Make the Python Launcher aware of virtual environments
 ---------------------------------------------------------------
 
@@ -489,6 +507,8 @@ environment will be used.
         PEP written and implemented by Paul Moore.
 
 
+.. _whatsnew-pep-488:
+
 PEP 488: Elimination of PYO files
 ---------------------------------
 
@@ -497,15 +517,18 @@ PEP 488: Elimination of PYO files
 need to constantly regenerate bytecode files, ``.pyc`` files now have an
 optional ``opt-`` tag in their name when the bytecode is optimized. This has the
 side-effect of no more bytecode file name clashes when running under either
-``-O`` or ``-OO``. Consequently, bytecode files generated from ``-O``, and
-``-OO`` may now exist simultaneously. :func:`importlib.util.cache_from_source`
-has an updated API to help with this change.
+:option:`-O` or :option:`-OO`. Consequently, bytecode files generated from
+:option:`-O`, and :option:`-OO` may now exist simultaneously.
+:func:`importlib.util.cache_from_source` has an updated API to help with
+this change.
 
 .. seealso::
 
    :pep:`488` -- Elimination of PYO files
       PEP written and implemented by Brett Cannon.
 
+
+.. _whatsnew-pep-489:
 
 PEP 489: Multi-phase extension module initialization
 ----------------------------------------------------
@@ -524,6 +547,8 @@ rather than being restricted to ASCII.
       PEP written by Petr Viktorin, Stefan Behnel, and Nick Coghlan;
       implemented by Petr Viktorin.
 
+
+.. _whatsnew-pep-485:
 
 PEP 485: A function for testing approximate equality
 ----------------------------------------------------
@@ -576,8 +601,8 @@ zipapp
 
 The new :mod:`zipapp` module (specified in :pep:`441`) provides an API and
 command line tool for creating executable Python Zip Applications, which
-were introduced in Python 2.6 in :issue:`1739468` but which were not well
-publicised, either at the time or since.
+were introduced in Python 2.6 in :issue:`1739468`, but which were not well
+publicized, either at the time or since.
 
 With the new module, bundling your application is as simple as putting all
 the files, including a ``__main__.py`` file, into a directory ``myapp``
@@ -586,6 +611,13 @@ and running::
     $ python -m zipapp myapp
     $ python myapp.pyz
 
+The module implementation has been contributed by Paul Moore in
+:issue:`23491`.
+
+.. seealso::
+
+   :pep:`441` -- Improving Python ZIP Application Support
+
 
 Improved Modules
 ================
@@ -593,191 +625,209 @@ Improved Modules
 argparse
 --------
 
-* :class:`~argparse.ArgumentParser` now allows to disable
-  :ref:`abbreviated usage <prefix-matching>` of long options by setting
-  :ref:`allow_abbrev` to ``False``.
-  (Contributed by Jonathan Paugh, Steven Bethard, paul j3 and Daniel Eriksson
-  in :issue:`14910`.)
+:class:`~argparse.ArgumentParser` now allows to disable
+:ref:`abbreviated usage <prefix-matching>` of long options by setting
+:ref:`allow_abbrev` to ``False``. (Contributed by Jonathan Paugh,
+Steven Bethard, paul j3 and Daniel Eriksson in :issue:`14910`.)
+
 
 bz2
 ---
 
-* New option *max_length* for :meth:`~bz2.BZ2Decompressor.decompress`
-  to limit the maximum size of decompressed data.
-  (Contributed by Nikolaus Rath in :issue:`15955`.)
+:meth:`~bz2.BZ2Decompressor.decompress` now accepts an optional *max_length*
+argument to limit the maximum size of decompressed data. (Contributed by
+Nikolaus Rath in :issue:`15955`.)
+
 
 cgi
 ---
 
-* :class:`~cgi.FieldStorage` now supports the context management protocol.
-  (Contributed by Berker Peksag in :issue:`20289`.)
+:class:`~cgi.FieldStorage` now supports the context management protocol.
+(Contributed by Berker Peksag in :issue:`20289`.)
+
 
 cmath
 -----
 
-* :func:`cmath.isclose` function added.
-  (Contributed by Chris Barker and Tal Einat in :issue:`24270`.)
+A new function :func:`cmath.isclose` provides a way to test for approximate
+equality. (Contributed by Chris Barker and Tal Einat in :issue:`24270`.)
 
 
 code
 ----
 
-* The :func:`code.InteractiveInterpreter.showtraceback` method now prints
-  the full chained traceback, just like the interactive interpreter.
-  (Contributed by Claudiu Popa in :issue:`17442`.)
+The :func:`code.InteractiveInterpreter.showtraceback` method now prints
+the full chained traceback, just like the interactive interpreter.
+(Contributed by Claudiu Popa in :issue:`17442`.)
+
 
 collections
 -----------
 
-* You can now update docstrings produced by :func:`collections.namedtuple`::
+Docstrings produced by :func:`collections.namedtuple` can now be updated::
 
     Point = namedtuple('Point', ['x', 'y'])
     Point.__doc__ = 'ordered pair'
     Point.x.__doc__ = 'abscissa'
     Point.y.__doc__ = 'ordinate'
 
-  (Contributed by Berker Peksag in :issue:`24064`.)
+(Contributed by Berker Peksag in :issue:`24064`.)
 
-* :class:`~collections.deque` has new methods:
-  :meth:`~collections.deque.index`, :meth:`~collections.deque.insert`, and
-  :meth:`~collections.deque.copy`.  This allows deques to be registered as a
-  :class:`~collections.abc.MutableSequence` and improves their
-  substitutablity for lists.
-  (Contributed by Raymond Hettinger :issue:`23704`.)
+The :class:`~collections.deque` now defines
+:meth:`~collections.deque.index`, :meth:`~collections.deque.insert`, and
+:meth:`~collections.deque.copy`.  This allows deques to be recognized as a
+:class:`~collections.abc.MutableSequence` and improves their substitutablity
+for lists. (Contributed by Raymond Hettinger :issue:`23704`.)
 
-* :class:`~collections.UserString` now supports ``__getnewargs__``,
-  ``__rmod__``, ``casefold``, ``format_map``, ``isprintable``, and
-  ``maketrans`` methods.
-  (Contributed by Joe Jevnik in :issue:`22189`.)
+:class:`~collections.UserString` now implements :meth:`__getnewargs__`,
+:meth:`__rmod__`, :meth:`casefold`, :meth:`format_map`, :meth:`isprintable`, and
+:meth:`maketrans` methods to match corresponding methods of :class:`str`.
+(Contributed by Joe Jevnik in :issue:`22189`.)
 
-* :class:`collections.OrderedDict` is now implemented in C, which improves
-  its performance between 4x to 100x times.
-  (Contributed by Eric Snow in :issue:`16991`.)
+:class:`collections.OrderedDict` is now implemented in C, which makes it 4x to
+100x faster. (Contributed by Eric Snow in :issue:`16991`.)
+
 
 collections.abc
 ---------------
 
-* New :class:`~collections.abc.Generator` abstract base class.
-  (Contributed by Stefan Behnel in :issue:`24018`.)
+New :class:`~collections.abc.Generator` abstract base class. (Contributed
+by Stefan Behnel in :issue:`24018`.)
 
-* New :class:`~collections.abc.Coroutine`,
-  :class:`~collections.abc.AsyncIterator`, and
-  :class:`~collections.abc.AsyncIterable` abstract base classes.
-  (Contributed by Yury Selivanov in :issue:`24184`.)
+New :class:`~collections.abc.Coroutine`,
+:class:`~collections.abc.AsyncIterator`, and
+:class:`~collections.abc.AsyncIterable` abstract base classes.
+(Contributed by Yury Selivanov in :issue:`24184`.)
+
 
 compileall
 ----------
 
-* :func:`compileall.compile_dir` and :mod:`compileall`'s command-line interface
-  can now do parallel bytecode compilation.
-  (Contributed by Claudiu Popa in :issue:`16104`.)
+A new :mod:`compileall` option, :option:`-j N`, allows to run ``N`` workers
+sumultaneously to perform parallel bytecode compilation.  :func:`compileall.compile_dir` has a corresponding ``workers`` parameter. (Contributed by
+Claudiu Popa in :issue:`16104`.)
 
-* *quiet* parameter of :func:`compileall.compile_dir`,
-  :func:`compileall.compile_file`, and :func:`compileall.compile_path`
-  functions now has a multilevel value.  New ``-qq`` command line option
-  is available for suppressing the output.
-  (Contributed by Thomas Kluyver in :issue:`21338`.)
+The :option:`-q` command line option can now be specified more than once, in
+which case all output, including errors, will be suppressed.  The corresponding
+``quiet`` parameter in :func:`compileall.compile_dir`, :func:`compileall.
+compile_file`, and :func:`compileall.compile_path` can now accept
+an integer value indicating the level of output suppression.
+(Contributed by Thomas Kluyver in :issue:`21338`.)
+
 
 concurrent.futures
 ------------------
 
-* :meth:`~concurrent.futures.Executor.map` now takes a *chunksize*
-  argument to allow batching of tasks in child processes and improve
-  performance of ProcessPoolExecutor.
-  (Contributed by Dan O'Reilly in :issue:`11271`.)
+:meth:`~concurrent.futures.Executor.map` now accepts a *chunksize*
+argument to allow batching of tasks in child processes and improve performance
+of ProcessPoolExecutor. (Contributed by Dan O'Reilly in :issue:`11271`.)
+
 
 contextlib
 ----------
 
-* The new :func:`contextlib.redirect_stderr` context manager(similar to
-  :func:`contextlib.redirect_stdout`) makes it easier for utility scripts to
-  handle inflexible APIs that write their output to :data:`sys.stderr` and
-  don't provide any options to redirect it.
-  (Contributed by Berker Peksag in :issue:`22389`.)
+The new :func:`contextlib.redirect_stderr` context manager (similar to
+:func:`contextlib.redirect_stdout`) makes it easier for utility scripts to
+handle inflexible APIs that write their output to :data:`sys.stderr` and
+don't provide any options to redirect it. (Contributed by Berker Peksag in
+:issue:`22389`.)
+
 
 curses
 ------
-* The new :func:`curses.update_lines_cols` function updates the variables
-  :envvar:`curses.LINES` and :envvar:`curses.COLS`.
+
+The new :func:`curses.update_lines_cols` function updates the variables
+:envvar:`curses.LINES` and :envvar:`curses.COLS`.
+
 
 difflib
 -------
 
-* The charset of the HTML document generated by :meth:`difflib.HtmlDiff.make_file`
-  can now be customized by using *charset* keyword-only parameter.  The default
-  charset of HTML document changed from ``'ISO-8859-1'`` to ``'utf-8'``.
-  (Contributed by Berker Peksag in :issue:`2052`.)
+The charset of the HTML document generated by :meth:`difflib.HtmlDiff.make_file`
+can now be customized by using *charset* keyword-only parameter.  The default
+charset of HTML document changed from ``'ISO-8859-1'`` to ``'utf-8'``.
+(Contributed by Berker Peksag in :issue:`2052`.)
 
-* It's now possible to compare lists of byte strings with
-  :func:`difflib.diff_bytes`. This fixes a regression from Python 2.
-  (Contributed by Terry J. Reedy and Greg Ward in :issue:`17445`.)
+It is now possible to compare lists of byte strings with
+:func:`difflib.diff_bytes`.  This fixes a regression from Python 2.
+(Contributed by Terry J. Reedy and Greg Ward in :issue:`17445`.)
+
 
 distutils
 ---------
 
-* The ``build`` and ``build_ext`` commands now accept a ``-j``
-  option to enable parallel building of extension modules.
-  (Contributed by Antoine Pitrou in :issue:`5309`.)
+The ``build`` and ``build_ext`` commands now accept a :option:`-j` option to
+enable parallel building of extension modules.
+(Contributed by Antoine Pitrou in :issue:`5309`.)
 
-* Added support for the LZMA compression.
-  (Contributed by Serhiy Storchaka in :issue:`16314`.)
+:mod:`distutils` now supports ``xz`` compression, and can be enabled by
+passing ``xztar`` as an argument to ``bdist --format``.
+(Contributed by Serhiy Storchaka in :issue:`16314`.)
+
 
 doctest
 -------
 
-* :func:`doctest.DocTestSuite` returns an empty :class:`unittest.TestSuite` if
-  *module* contains no docstrings instead of raising :exc:`ValueError`.
-  (Contributed by Glenn Jones in :issue:`15916`.)
+:func:`doctest.DocTestSuite` returns an empty :class:`unittest.TestSuite` if
+*module* contains no docstrings instead of raising :exc:`ValueError`.
+(Contributed by Glenn Jones in :issue:`15916`.)
+
 
 email
 -----
 
-* A new policy option :attr:`~email.policy.Policy.mangle_from_` controls
-  whether or not lines that start with "From " in email bodies are prefixed with
-  a '>' character by generators.  The default is ``True`` for
-  :attr:`~email.policy.compat32` and ``False`` for all other policies.
-  (Contributed by Milan Oberkirch in :issue:`20098`.)
+A new policy option :attr:`~email.policy.Policy.mangle_from_` controls
+whether or not lines that start with ``"From "`` in email bodies are prefixed
+with a ``'>'`` character by generators.  The default is ``True`` for
+:attr:`~email.policy.compat32` and ``False`` for all other policies.
+(Contributed by Milan Oberkirch in :issue:`20098`.)
 
-* A new method :meth:`~email.message.Message.get_content_disposition` provides
-  easy access to a canonical value for the :mailheader:`Content-Disposition`
-  header (``None`` if there is no such header).  (Contributed by Abhilash Raj
-  in :issue:`21083`.)
+A new method :meth:`~email.message.Message.get_content_disposition` provides
+easy access to a canonical value for the :mailheader:`Content-Disposition`
+header (``None`` if there is no such header).  (Contributed by Abhilash Raj
+in :issue:`21083`.)
 
-* A new policy option :attr:`~email.policy.EmailPolicy.utf8` can be set
-  ``True`` to encode email headers using the utf8 charset instead of using
-  encoded words.  This allows ``Messages`` to be formatted according to
-  :rfc:`6532` and used with an SMTP server that supports the :rfc:`6531`
-  ``SMTPUTF8`` extension.  (Contributed by R. David Murray in :issue:`24211`.)
+A new policy option :attr:`~email.policy.EmailPolicy.utf8` can be set
+to ``True`` to encode email headers using the UTF-8 charset instead of using
+encoded words.  This allows ``Messages`` to be formatted according to
+:rfc:`6532` and used with an SMTP server that supports the :rfc:`6531`
+``SMTPUTF8`` extension.  (Contributed by R. David Murray in :issue:`24211`.)
+
 
 faulthandler
 ------------
 
-* :func:`~faulthandler.enable`, :func:`~faulthandler.register`,
-  :func:`~faulthandler.dump_traceback` and
-  :func:`~faulthandler.dump_traceback_later` functions now accept file
-  descriptors.  (Contributed by Wei Wu in :issue:`23566`.)
+:func:`~faulthandler.enable`, :func:`~faulthandler.register`,
+:func:`~faulthandler.dump_traceback` and
+:func:`~faulthandler.dump_traceback_later` functions now accept file
+descriptors in addition to file-like objects.
+(Contributed by Wei Wu in :issue:`23566`.)
+
 
 functools
 ---------
 
-* Most of :func:`~functools.lru_cache` machinery is now implemented in C.
-  (Contributed by Matt Joiner, Alexey Kachayev, and Serhiy Storchaka
-  in :issue:`14373`.)
+Most of :func:`~functools.lru_cache` machinery is now implemented in C, making
+it significantly faster. (Contributed by Matt Joiner, Alexey Kachayev, and
+Serhiy Storchaka in :issue:`14373`.)
+
 
 glob
 ----
 
-00002-5938667
+:func:`~glob.iglob` and :func:`~glob.glob` now support recursive search in
+subdirectories using the "``**``" pattern. (Contributed by Serhiy Storchaka
+in :issue:`13968`.)
 
-* :func:`~glob.iglob` and :func:`~glob.glob` now support recursive search in
-  subdirectories using the "``**``" pattern.
-  (Contributed by Serhiy Storchaka in :issue:`13968`.)
 
 heapq
 -----
 
-* :func:`~heapq.merge` has two new optional parameters ``reverse`` and
-  ``key``.  (Contributed by  Raymond Hettinger in :issue:`13742`.)
+Element comparison in :func:`~heapq.merge` can now be customized by
+passing a :term:`key function` in a new optional ``key`` keyword argument.
+A new optional ``reverse`` keyword argument can be used to reverse element
+comparison.  (Contributed by  Raymond Hettinger in :issue:`13742`.)
+
 
 idlelib and IDLE
 ----------------
@@ -788,512 +838,613 @@ import by other programs, it gets improvements with every release. See
 as well as changes made in future 3.5.x releases. This file is also available
 from the IDLE Help -> About Idle dialog.
 
+
 imaplib
 -------
 
-* :class:`IMAP4` now supports the context management protocol.  When used in a
-  :keyword:`with` statement, the IMAP4 ``LOGOUT`` command will be called
-  automatically at the end of the block.  (Contributed by Tarek Ziadé and
-  Serhiy Storchaka in :issue:`4972`.)
+:class:`~imaplib.IMAP4` now supports context manager protocol.
+When used in a :keyword:`with` statement, the IMAP4 ``LOGOUT``
+command will be called automatically at the end of the block.
+(Contributed by Tarek Ziadé and Serhiy Storchaka in :issue:`4972`.)
 
-* :mod:`imaplib` now supports :rfc:`5161`: the :meth:`~imaplib.IMAP4.enable`
-  extension), and :rfc:`6855`: utf-8 support (internationalized email, via the
-  ``UTF8=ACCEPT`` argument to :meth:`~imaplib.IMAP4.enable`).  A new attribute,
-  :attr:`~imaplib.IMAP4.utf8_enabled`, tracks whether or not :rfc:`6855`
-  support is enabled.  Milan Oberkirch, R. David Murray, and Maciej Szulik in
-  :issue:`21800`.)
+:mod:`imaplib` now supports :rfc:`5161` (``ENABLE`` extension) via
+:meth:`~imaplib.IMAP4.enable`, and :rfc:`6855` (UTF-8 support) via the
+``UTF8=ACCEPT`` argument to :meth:`~imaplib.IMAP4.enable`.  A new attribute,
+:attr:`~imaplib.IMAP4.utf8_enabled`, tracks whether or not :rfc:`6855`
+support is enabled.  (Contributed by Milan Oberkirch, R. David Murray,
+and Maciej Szulik in :issue:`21800`.)
 
-* :mod:`imaplib` now automatically encodes non-ASCII string usernames and
-  passwords using ``UTF8``, as recommended by the RFCs.  (Contributed by Milan
-  Oberkirch in :issue:`21800`.)
+:mod:`imaplib` now automatically encodes non-ASCII string usernames and
+passwords using UTF-8, as recommended by the RFCs.  (Contributed by Milan
+Oberkirch in :issue:`21800`.)
+
 
 imghdr
 ------
 
-* :func:`~imghdr.what` now recognizes the `OpenEXR <http://www.openexr.com>`_
-  format (contributed by Martin Vignali and Claudiu Popa in :issue:`20295`),
-  and the `WebP <https://en.wikipedia.org/wiki/WebP>`_ format (contributed
-  by Fabrice Aneche and Claudiu Popa in :issue:`20197`.)
+:func:`~imghdr.what` now recognizes the `OpenEXR <http://www.openexr.com>`_
+format (contributed by Martin Vignali and Claudiu Popa in :issue:`20295`),
+and the `WebP <https://en.wikipedia.org/wiki/WebP>`_ format (contributed
+by Fabrice Aneche and Claudiu Popa in :issue:`20197`.)
+
 
 importlib
 ---------
 
-* :class:`importlib.util.LazyLoader` allows for the lazy loading of modules in
-  applications where startup time is paramount.
-  (Contributed by Brett Cannon in :issue:`17621`.)
+:class:`importlib.util.LazyLoader` allows for lazy loading of modules in
+applications where startup time is important.  (Contributed by Brett Cannon
+in :issue:`17621`.)
 
-* :func:`importlib.abc.InspectLoader.source_to_code` is now a
-  static method to make it easier to work with source code in a string.
-  With a module object that you want to initialize you can then use
-  ``exec(code, module.__dict__)`` to execute the code in the module.
+:func:`importlib.abc.InspectLoader.source_to_code` is now a
+static method.  This makes it easier to initialize a module object with
+code compiled from a string by runnning ``exec(code, module.__dict__)``.
+(Contributed by Brett Cannon in :issue:`21156`.)
 
-* :func:`importlib.util.module_from_spec` is now the preferred way to create a
-  new module. Compared to :class:`types.ModuleType`, this new function will set
-  the various import-controlled attributes based on the passed-in spec object.
-  (Contributed by Brett Cannon in :issue:`20383`.)
+:func:`importlib.util.module_from_spec` is now the preferred way to create a
+new module.  Compared to :class:`types.ModuleType`, this new function will set
+the various import-controlled attributes based on the passed-in spec object.
+(Contributed by Brett Cannon in :issue:`20383`.)
+
 
 inspect
 -------
 
-* :class:`inspect.Signature` and :class:`inspect.Parameter` are now
-  picklable and hashable.  (Contributed by Yury Selivanov in :issue:`20726`
-  and :issue:`20334`.)
+:class:`inspect.Signature` and :class:`inspect.Parameter` are now
+picklable and hashable.  (Contributed by Yury Selivanov in :issue:`20726`
+and :issue:`20334`.)
 
-* New method :meth:`inspect.BoundArguments.apply_defaults`.  (Contributed
-  by Yury Selivanov in :issue:`24190`.)
+A new method :meth:`inspect.BoundArguments.apply_defaults` provides a way
+to set default values for missing arguments.  (Contributed by Yury Selivanov
+in :issue:`24190`.)
 
-* New class method :meth:`inspect.Signature.from_callable`, which makes
-  subclassing of :class:`~inspect.Signature` easier.  (Contributed
-  by Yury Selivanov and Eric Snow in :issue:`17373`.)
+A new class method :meth:`inspect.Signature.from_callable`  makes
+subclassing of :class:`~inspect.Signature` easier.  (Contributed
+by Yury Selivanov and Eric Snow in :issue:`17373`.)
 
-* New argument ``follow_wrapped`` for :func:`inspect.signature`.
-  (Contributed by Yury Selivanov in :issue:`20691`.)
+:func:`inspect.signature` now accepts a ``follow_wrapped`` optional keyword
+argument, which, when set to ``False``, disables automatic following of
+``__wrapped__`` links.  (Contributed by Yury Selivanov in :issue:`20691`.)
 
-* New :func:`~inspect.iscoroutine`, :func:`~inspect.iscoroutinefunction`
-  and :func:`~inspect.isawaitable` functions.  (Contributed by
-  Yury Selivanov in :issue:`24017`.)
+A set of new functions to inspect
+:term:`coroutine functions <coroutine function>` and
+``coroutine objects`` as been added:
+:func:`~inspect.iscoroutine`, :func:`~inspect.iscoroutinefunction`,
+:func:`~inspect.isawaitable`, :func:`~inspect.getcoroutinelocals`,
+and :func:`~inspect.getcoroutinestate`.
+(Contributed by Yury Selivanov in :issue:`24017` and :issue:`24400`.)
 
-* New :func:`~inspect.getcoroutinelocals` and :func:`~inspect.getcoroutinestate`
-  functions.  (Contributed by Yury Selivanov in :issue:`24400`.)
+:func:`~inspect.stack`, :func:`~inspect.trace`, :func:`~inspect.getouterframes`,
+and :func:`~inspect.getinnerframes` now return a list of named tuples.
+(Contributed by Daniel Shahaf in :issue:`16808`.)
 
-* :func:`~inspect.stack`, :func:`~inspect.trace`, :func:`~inspect.getouterframes`,
-  and :func:`~inspect.getinnerframes` now return a list of named tuples.
-  (Contributed by Daniel Shahaf in :issue:`16808`.)
 
 io
 --
 
-* New Python implementation of :class:`io.FileIO` to make dependency on
-  ``_io`` module optional.
-  (Contributed by  Serhiy Storchaka in :issue:`21859`.)
+:class:`io.FileIO` has been implemented in Python which makes C implementation
+of :mod:`io` module entirely optional. (Contributed by  Serhiy Storchaka
+in :issue:`21859`.)
+
 
 ipaddress
 ---------
 
-* :class:`ipaddress.IPv4Network` and :class:`ipaddress.IPv6Network` now
-  accept an ``(address, netmask)`` tuple argument, so as to easily construct
-  network objects from existing addresses.  (Contributed by Peter Moody
-  and Antoine Pitrou in :issue:`16531`.)
+:class:`ipaddress.IPv4Network` and :class:`ipaddress.IPv6Network` now
+accept an ``(address, netmask)`` tuple argument, so as to easily construct
+network objects from existing addresses.  (Contributed by Peter Moody
+and Antoine Pitrou in :issue:`16531`.)
+
 
 json
 ----
 
-* The output of :mod:`json.tool` command line interface is now in the same
-  order as the input. Use the :option:`--sort-keys` option to sort the output
-  of dictionaries alphabetically by key.  (Contributed by Berker Peksag in
-  :issue:`21650`.)
+:mod:`json.tool` command line interface now preserves the order of keys in
+JSON objects passed in input.  The new :option:`--sort-keys` option can be used
+to sort the keys alphabetically. (Contributed by Berker Peksag
+in :issue:`21650`.)
 
-* JSON decoder now raises :exc:`json.JSONDecodeError` instead of
-  :exc:`ValueError`.   (Contributed by Serhiy Storchaka in :issue:`19361`.)
+JSON decoder now raises :exc:`json.JSONDecodeError` instead of
+:exc:`ValueError`.   (Contributed by Serhiy Storchaka in :issue:`19361`.)
+
 
 locale
 ------
 
- * New :func:`~locale.delocalize` function to convert a string into a
-   normalized number string, following the ``LC_NUMERIC`` settings.
-   (Contributed by Cédric Krier in :issue:`13918`.)
+A new :func:`~locale.delocalize` function can be used to convert a string into
+a normalized number string, taking the ``LC_NUMERIC`` settings into account.
+(Contributed by Cédric Krier in :issue:`13918`.)
+
 
 logging
 -------
 
-* All logging methods :meth:`~logging.Logger.log`, :meth:`~logging.Logger.exception`,
-  :meth:`~logging.Logger.critical`, :meth:`~logging.Logger.debug`, etc,
-  now accept exception instances for ``exc_info`` parameter, in addition
-  to boolean values and exception tuples.
-  (Contributed by Yury Selivanov in :issue:`20537`.)
+All logging methods (:meth:`~logging.Logger.log`,
+:meth:`~logging.Logger.exception`, :meth:`~logging.Logger.critical`,
+:meth:`~logging.Logger.debug`, etc.), now accept exception instances
+in ``exc_info`` parameter, in addition to boolean values and exception
+tuples.  (Contributed by Yury Selivanov in :issue:`20537`.)
 
-* :class:`~logging.handlers.HTTPHandler` now accepts optional
-  :class:`ssl.SSLContext` instance to configure the SSL settings used
-  for HTTP connection.
-  (Contributed by Alex Gaynor in :issue:`22788`.)
+:class:`~logging.handlers.HTTPHandler` now accepts an optional
+:class:`ssl.SSLContext` instance to configure the SSL settings used
+in an HTTP connection.  (Contributed by Alex Gaynor in :issue:`22788`.)
 
-* :class:`~logging.handlers.QueueListener` now takes a *respect_handler_level*
-  keyword argument which, if set to ``True``, will pass messages to handlers
-  taking handler levels into account.  (Contributed by Vinay Sajip.)
+:class:`~logging.handlers.QueueListener` now takes a *respect_handler_level*
+keyword argument which, if set to ``True``, will pass messages to handlers
+taking handler levels into account.  (Contributed by Vinay Sajip.)
+
 
 lzma
 ----
 
-* New option *max_length* for :meth:`~lzma.LZMADecompressor.decompress`
-  to limit the maximum size of decompressed data.
-  (Contributed by Martin Panter in :issue:`15955`.)
+:meth:`~lzma.LZMADecompressor.decompress` now accepts an optional *max_length*
+argument to limit the maximum size of decompressed data.
+(Contributed by Martin Panter in :issue:`15955`.)
+
 
 math
 ----
 
-* :data:`math.inf` and :data:`math.nan` constants added.  (Contributed by Mark
-  Dickinson in :issue:`23185`.)
+Two new constants have been added to :mod:`math`: :data:`math.inf`
+and :data:`math.nan`.  (Contributed by Mark Dickinson in :issue:`23185`.)
 
-* New :func:`~math.isclose` function.
-  (Contributed by Chris Barker and Tal Einat in :issue:`24270`.)
+A new function :func:`math.isclose` provides a way to test for approximate
+equality. (Contributed by Chris Barker and Tal Einat in :issue:`24270`.)
 
-* New :func:`~math.gcd` function.  The :func:`fractions.gcd` function now is
-  deprecated.
-  (Contributed by Mark Dickinson and Serhiy Storchaka in :issue:`22486`.)
+A new :func:`~math.gcd` function has been added.  The :func:`fractions.gcd`
+function is now deprecated. (Contributed by Mark Dickinson and Serhiy
+Storchaka in :issue:`22486`.)
+
 
 operator
 --------
 
-* :func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
-  :func:`~operator.methodcaller` objects now support pickling.
-  (Contributed by Josh Rosenberg and Serhiy Storchaka in :issue:`22955`.)
+:func:`~operator.attrgetter`, :func:`~operator.itemgetter`, and
+:func:`~operator.methodcaller` objects now support pickling.
+(Contributed by Josh Rosenberg and Serhiy Storchaka in :issue:`22955`.)
+
 
 os
 --
 
-* New :func:`os.scandir` function that exposes file information from
-  the operating system when listing a directory. :func:`os.scandir`
-  returns an iterator of :class:`os.DirEntry` objects corresponding to
-  the entries in the directory given by *path*. (Contributed by Ben
-  Hoyt with the help of Victor Stinner in :issue:`22524`.)
+The new :func:`os.scandir` returning an iterator of :class:`os.DirEntry`
+objects has been added.  If possible, :func:`os.scandir` extracts file
+attributes while scanning a directory, removing the need to perform
+subsequent system calls to determine file type or attributes, which may
+significantly improve performance.  (Contributed by Ben Hoyt with the help
+of Victor Stinner in :issue:`22524`.)
 
-* :class:`os.stat_result` now has a :attr:`~os.stat_result.st_file_attributes`
-  attribute on Windows.  (Contributed by Ben Hoyt in :issue:`21719`.)
+On Windows, a new :attr:`~os.stat_result.st_file_attributes` attribute is
+now available.  It corresponds to ``dwFileAttributes`` member of the
+``BY_HANDLE_FILE_INFORMATION`` structure returned by
+``GetFileInformationByHandle()``.  (Contributed by Ben Hoyt in :issue:`21719`.)
 
-* :func:`os.urandom`: On Linux 3.17 and newer, the ``getrandom()`` syscall is
-  now used when available. On OpenBSD 5.6 and newer, the C ``getentropy()``
-  function is now used. These functions avoid the usage of an internal file
-  descriptor.
-  (Contributed by Victor Stinner in :issue:`22181`.)
+:func:`os.urandom` now uses ``getrandom()`` syscall on Linux 3.17 or newer,
+and ``getentropy()`` on OpenBSD 5.6 and newer, removing the need to use
+``/dev/urandom`` and avoiding failures due to potential file descriptor
+exhaustion.  (Contributed by Victor Stinner in :issue:`22181`.)
 
-* New :func:`os.get_blocking` and :func:`os.set_blocking` functions to
-  get and set the blocking mode of file descriptors.
-  (Contributed by Victor Stinner in :issue:`22054`.)
+New :func:`os.get_blocking` and :func:`os.set_blocking` functions allow to
+get and set the file descriptor blocking mode (:data:`~os.O_NONBLOCK`.)
+(Contributed by Victor Stinner in :issue:`22054`.)
 
-* :func:`~os.truncate` and :func:`~os.ftruncate` are now supported on
-  Windows.  (Contributed by Steve Dower in :issue:`23668`.)
+:func:`~os.truncate` and :func:`~os.ftruncate` are now supported on
+Windows.  (Contributed by Steve Dower in :issue:`23668`.)
+
 
 os.path
 -------
 
-* New :func:`~os.path.commonpath` function that extracts common path prefix.
-  Unlike the :func:`~os.path.commonprefix` function, it always returns a valid
-  path.  (Contributed by Rafik Draoui and Serhiy Storchaka in :issue:`10395`.)
+There is a new :func:`~os.path.commonpath` function returning the longest
+common sub-path of each passed pathname.  Unlike the
+:func:`~os.path.commonprefix` function, it always returns a valid
+path.  (Contributed by Rafik Draoui and Serhiy Storchaka in :issue:`10395`.)
+
 
 pathlib
 -------
 
-* New :meth:`~pathlib.Path.samefile` method to check if other path object
-  points to the same file.  (Contributed by Vajrasky Kok and Antoine Pitrou
-  in :issue:`19775`.)
+The new :meth:`~pathlib.Path.samefile` method can be used to check if the
+passed :class:`~pathlib.Path` object, or a string, point to the same file as
+the :class:`~pathlib.Path` on which :meth:`~pathlib.Path.samefile` is called.
+(Contributed by Vajrasky Kok and Antoine Pitrou in :issue:`19775`.)
 
-* :meth:`~pathlib.Path.mkdir` has a new optional parameter ``exist_ok``
-  to mimic ``mkdir -p`` and :func:`os.makrdirs` functionality.
-  (Contributed by Berker Peksag in :issue:`21539`.)
+:meth:`~pathlib.Path.mkdir` how accepts a new optional ``exist_ok`` argument
+to match ``mkdir -p`` and :func:`os.makrdirs` functionality.
+(Contributed by Berker Peksag in :issue:`21539`.)
 
-* New :meth:`~pathlib.Path.expanduser` to expand ``~`` and ``~user``
-  constructs.
-  (Contributed by Serhiy Storchaka and Claudiu Popa in :issue:`19776`.)
+There is a new :meth:`~pathlib.Path.expanduser` method to expand ``~``
+and ``~user`` prefixes.  (Contributed by Serhiy Storchaka and Claudiu
+Popa in :issue:`19776`.)
 
-* New class method :meth:`~pathlib.Path.home` to get an instance of
-  :class:`~pathlib.Path` object representing the user’s home directory.
-  (Contributed by Victor Salgado and Mayank Tripathi in :issue:`19777`.)
+A new :meth:`~pathlib.Path.home` class method can be used to get an instance
+of :class:`~pathlib.Path` object representing the user’s home directory.
+(Contributed by Victor Salgado and Mayank Tripathi in :issue:`19777`.)
+
 
 pickle
 ------
 
-* Serializing more "lookupable" objects (such as unbound methods or nested
-  classes) now are supported with pickle protocols < 4.
-  (Contributed by Serhiy Storchaka in :issue:`23611`.)
+Nested objects, such as unbound methods or nested classes, can now be pickled using :ref:`pickle protocols <pickle-protocols>` older than protocol version 4,
+which already supported these cases.  (Contributed by Serhiy Storchaka in
+:issue:`23611`.)
+
 
 poplib
 ------
 
-* A new command :meth:`~poplib.POP3.utf8` enables :rfc:`6856`
-  (internationalized email) support if the POP server supports it.  (Contributed
-  by Milan OberKirch in :issue:`21804`.)
+A new command :meth:`~poplib.POP3.utf8` enables :rfc:`6856`
+(internationalized email) support, if the POP server supports it.
+(Contributed by Milan OberKirch in :issue:`21804`.)
+
 
 re
 --
 
-* Number of capturing groups in regular expression is no longer limited by 100.
-  (Contributed by Serhiy Storchaka in :issue:`22437`.)
+The number of capturing groups in regular expression is no longer limited by
+100.  (Contributed by Serhiy Storchaka in :issue:`22437`.)
 
-* Now unmatched groups are replaced with empty strings in :func:`re.sub`
-  and :func:`re.subn`.  (Contributed by Serhiy Storchaka in :issue:`1519638`.)
+:func:`re.sub` and :func:`re.subn` now replace unmatched groups with empty
+strings instead of rising an exception.  (Contributed by Serhiy Storchaka
+in :issue:`1519638`.)
+
 
 readline
 --------
 
-* New :func:`~readline.append_history_file` function.
-  (Contributed by Bruno Cauet in :issue:`22940`.)
+The new :func:`~readline.append_history_file` function can be used to append
+the specified number of trailing elements in history to a given file.
+(Contributed by Bruno Cauet in :issue:`22940`.)
+
 
 shutil
 ------
 
-* :func:`~shutil.move` now accepts a *copy_function* argument, allowing,
-  for example, :func:`~shutil.copy` to be used instead of the default
-  :func:`~shutil.copy2` if there is a need to ignore metadata.  (Contributed by
-  Claudiu Popa in :issue:`19840`.)
+:func:`~shutil.move` now accepts a *copy_function* argument, allowing,
+for example, :func:`~shutil.copy` to be used instead of the default
+:func:`~shutil.copy2` there is a need to ignore file metadata when moving.
+(Contributed by Claudiu Popa in :issue:`19840`.)
 
-* :func:`~shutil.make_archive` now supports *xztar* format.
-  (Contributed by Serhiy Storchaka in :issue:`5411`.)
+:func:`~shutil.make_archive` now supports *xztar* format.
+(Contributed by Serhiy Storchaka in :issue:`5411`.)
+
 
 signal
 ------
 
-* On Windows, :func:`signal.set_wakeup_fd` now also supports socket handles.
-  (Contributed by Victor Stinner in :issue:`22018`.)
+On Windows, :func:`signal.set_wakeup_fd` now also supports socket handles.
+(Contributed by Victor Stinner in :issue:`22018`.)
 
-* Different constants of :mod:`signal` module are now enumeration values using
-  the :mod:`enum` module. This allows meaningful names to be printed during
-  debugging, instead of integer “magic numbers”.  (Contributed by Giampaolo
-  Rodola' in :issue:`21076`.)
+Various ``SIG*`` constants in :mod:`signal` module have been converted into
+:mod:`Enums <enum>`.  This allows meaningful names to be printed
+during debugging, instead of integer "magic numbers".
+(Contributed by Giampaolo Rodola' in :issue:`21076`.)
+
 
 smtpd
 -----
 
-* Both :class:`~smtpd.SMTPServer` and :class:`smtpd.SMTPChannel` now accept a
-  *decode_data* keyword to determine if the DATA portion of the SMTP
-  transaction is decoded using the ``utf-8`` codec or is instead provided to
-  :meth:`~smtpd.SMTPServer.process_message` as a byte string.  The default
-  is ``True`` for backward compatibility reasons, but will change to ``False``
-  in Python 3.6.  If *decode_data* is set to ``False``, the
-  :meth:`~smtpd.SMTPServer.process_message` method must be prepared to accept
-  keyword arguments.  (Contributed by Maciej Szulik in :issue:`19662`.)
+Both :class:`~smtpd.SMTPServer` and :class:`smtpd.SMTPChannel` now accept a
+*decode_data* keyword argument to determine if the ``DATA`` portion of the SMTP
+transaction is decoded using the ``"utf-8"`` codec or is instead provided to
+:meth:`~smtpd.SMTPServer.process_message` as a byte string.  The default
+is ``True`` for backward compatibility reasons, but will change to ``False``
+in Python 3.6.  If *decode_data* is set to ``False``, the
+:meth:`~smtpd.SMTPServer.process_message` method must be prepared to accept
+keyword arguments.  (Contributed by Maciej Szulik in :issue:`19662`.)
 
-* :class:`~smtpd.SMTPServer` now advertises the ``8BITMIME`` extension
-  (:rfc:`6152`) if if *decode_data* has been set ``True``.  If the client
-  specifies ``BODY=8BITMIME`` on the ``MAIL`` command, it is passed to
-  :meth:`~smtpd.SMTPServer.process_message` via the ``mail_options`` keyword.
-  (Contributed by Milan Oberkirch and R.  David Murray in :issue:`21795`.)
+:class:`~smtpd.SMTPServer` now advertises the ``8BITMIME`` extension
+(:rfc:`6152`) if if *decode_data* has been set ``True``.  If the client
+specifies ``BODY=8BITMIME`` on the ``MAIL`` command, it is passed to
+:meth:`~smtpd.SMTPServer.process_message` via the ``mail_options`` keyword.
+(Contributed by Milan Oberkirch and R.  David Murray in :issue:`21795`.)
 
-* :class:`~smtpd.SMTPServer` now supports the ``SMTPUTF8`` extension
-  (:rfc:`6531`: Internationalized Email).  If the client specified ``SMTPUTF8
-  BODY=8BITMIME`` on the ``MAIL`` command, they are passed to
-  :meth:`~smtpd.SMTPServer.process_message` via the ``mail_options`` keyword.
-  It is the responsibility of the :meth:`~smtpd.SMTPServer.process_message`
-  method to correctly handle the ``SMTPUTF8`` data.  (Contributed by Milan
-  Oberkirch in :issue:`21725`.)
+:class:`~smtpd.SMTPServer` now supports the ``SMTPUTF8`` extension
+(:rfc:`6531`: Internationalized Email).  If the client specified ``SMTPUTF8
+BODY=8BITMIME`` on the ``MAIL`` command, they are passed to
+:meth:`~smtpd.SMTPServer.process_message` via the ``mail_options`` keyword.
+It is the responsibility of the :meth:`~smtpd.SMTPServer.process_message`
+method to correctly handle the ``SMTPUTF8`` data.  (Contributed by Milan
+Oberkirch in :issue:`21725`.)
 
-* It is now possible to provide, directly or via name resolution, IPv6
-  addresses in the :class:`~smtpd.SMTPServer` constructor, and have it
-  successfully connect.  (Contributed by Milan Oberkirch in :issue:`14758`.)
+It is now possible to provide, directly or via name resolution, IPv6
+addresses in the :class:`~smtpd.SMTPServer` constructor, and have it
+successfully connect.  (Contributed by Milan Oberkirch in :issue:`14758`.)
+
 
 smtplib
 -------
 
-* A new :meth:`~smtplib.SMTP.auth` method provides a convenient way to
-  implement custom authentication mechanisms.
-  (Contributed by Milan Oberkirch in :issue:`15014`.)
+A new :meth:`~smtplib.SMTP.auth` method provides a convenient way to
+implement custom authentication mechanisms. (Contributed by Milan
+Oberkirch in :issue:`15014`.)
 
-* Additional debuglevel (2) shows timestamps for debug messages in
-  :class:`smtplib.SMTP`.  (Contributed by Gavin Chappell and Maciej Szulik in
-  :issue:`16914`.)
+Additional debuglevel (2) shows timestamps for debug messages in
+:class:`smtplib.SMTP`.  (Contributed by Gavin Chappell and Maciej Szulik in
+:issue:`16914`.)
 
-* :mod:`smtplib` now supports :rfc:`6531` (SMTPUTF8) in both the
-  :meth:`~smtplib.SMTP.sendmail` and :meth:`~smtplib.SMTP.send_message`
-  commands.  (Contributed by Milan Oberkirch and R. David Murray in
-  :issue:`22027`.)
+:mod:`smtplib` now supports :rfc:`6531` (SMTPUTF8) in both the
+:meth:`~smtplib.SMTP.sendmail` and :meth:`~smtplib.SMTP.send_message`
+commands.  (Contributed by Milan Oberkirch and R. David Murray in
+:issue:`22027`.)
+
 
 sndhdr
 ------
 
-* :func:`~sndhdr.what` and :func:`~sndhdr.whathdr` now return
-  :func:`~collections.namedtuple`.
-  (Contributed by Claudiu Popa in :issue:`18615`.)
+:func:`~sndhdr.what` and :func:`~sndhdr.whathdr` now return
+:func:`~collections.namedtuple`. (Contributed by Claudiu Popa in
+:issue:`18615`.)
+
 
 ssl
 ---
 
-* The :meth:`~ssl.SSLSocket.do_handshake`, :meth:`~ssl.SSLSocket.read`,
-  :meth:`~ssl.SSLSocket.shutdown`, and :meth:`~ssl.SSLSocket.write` methods of
-  :class:`ssl.SSLSocket` don't reset the socket timeout anymore each time bytes
-  are received or sent. The socket timeout is now the maximum total duration of
-  the method.
+Memory BIO Support
+~~~~~~~~~~~~~~~~~~
 
-* Memory BIO Support: new classes :class:`~ssl.SSLObject`,
-  :class:`~ssl.MemoryBIO`, and new
-  :meth:`SSLContext.wrap_bio <ssl.SSLContext.wrap_bio>` method.
-  (Contributed by Geert Jansen in :issue:`21965`.)
+(Contributed by Geert Jansen in :issue:`21965`.)
 
-* New :meth:`~ssl.SSLSocket.version` to query the actual protocol version
-  in use.  (Contributed by Antoine Pitrou in :issue:`20421`.)
+The new :class:`~ssl.SSLObject` class has been added to provide SSL protocol
+support for cases when the network IO capabilities of :class:`~ssl.SSLSocket`
+are not necessary or inappropriate.  :class:`~ssl.SSLObject` represents
+an SSL protocol instance, but does not implement any network IO methods, and
+instead provides a memory buffer interface.  The new :class:`~ssl.MemoryBIO`
+class can be used to pass data between Python and an SSL protocol instance.
 
-* New :meth:`~ssl.SSLObject.shared_ciphers` and
-  :meth:`~ssl.SSLSocket.shared_ciphers` methods to fetch the client's
-  list of ciphers sent at handshake.
-  (Contributed by Benjamin Peterson in :issue:`23186`.)
+The memory BIO SSL support is primarily intended to be used in frameworks
+implementing asynchronous IO for which :class:`~ssl.SSLObject` IO readiness
+model ("select/poll") is inappropriate or inefficient.
 
-* :func:`~ssl.match_hostname` now supports matching of IP addresses.
-  (Contributed by Antoine Pitrou in :issue:`23239`.)
+A new :meth:`~ssl.SSLContext.wrap_bio` method can be used to create a new
+:class:`~ssl.SSLObject` instance.
+
+
+Application-Layer Protocol Negotiation Support
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+(Contributed by Benjamin Peterson in :issue:`20188`.)
+
+Where OpenSSL support is present, :mod:`ssl` module now implements *
+Application-Layer Protocol Negotiation* TLS extension as described
+in :rfc:`7301`.
+The new :meth:`SSLContext.set_alpn_protocols <ssl.SSLContext.set_alpn_protocols>`
+can be used to specify which protocols the socket should advertise during
+the TLS handshake.  The new
+:meth:`SSLSocket.selected_alpn_protocol <ssl.SSLSocket.selected_alpn_protocol>`
+returns the protocol that was selected during the TLS handshake.  :data:`ssl.HAS_ALPN` flag indicates whether APLN support is present.
+
+
+Other Changes
+~~~~~~~~~~~~~
+
+There is a new :meth:`~ssl.SSLSocket.version` method to query the actual
+protocol version in use.  (Contributed by Antoine Pitrou in :issue:`20421`.)
+
+:class:`~ssl.SSLSocket` now implementes :meth:`~ssl.SSLSocket.sendfile`
+method. (Contributed by Giampaolo Rodola' in :issue:`17552`.)
+
+:meth:`ssl.SSLSocket.send()` now raises either :exc:`ssl.SSLWantReadError`
+or :exc:`ssl.SSLWantWriteError` on a non-blocking socket if the operation
+would block. Previously, it would return 0. (Contributed by Nikolaus Rath
+in :issue:`20951`.)
+
+The :func:`~ssl.cert_time_to_seconds` function now interprets the input time
+as UTC and not as local time, per :rfc:`5280`.  Additionally, the return
+value is always an :class:`int`. (Contributed by Akira Li in :issue:`19940`.)
+
+New :meth:`~ssl.SSLObject.shared_ciphers` and
+:meth:`~ssl.SSLSocket.shared_ciphers` methods return the list of ciphers
+sent by the client during the handshake. (Contributed by Benjamin Peterson
+in :issue:`23186`.)
+
+The :meth:`~ssl.SSLSocket.do_handshake`, :meth:`~ssl.SSLSocket.read`,
+:meth:`~ssl.SSLSocket.shutdown`, and :meth:`~ssl.SSLSocket.write` methods of
+:class:`ssl.SSLSocket` no longer reset the socket timeout every time bytes
+are received or sent. The socket timeout is now the maximum total duration of
+the method.  (Contributed by Victor Stinner in :issue:`23853`.)
+
+The :func:`~ssl.match_hostname` function now supports matching of IP addresses.
+(Contributed by Antoine Pitrou in :issue:`23239`.)
+
 
 socket
 ------
 
-* New :meth:`socket.socket.sendfile` method allows to send a file over a socket
-  by using high-performance :func:`os.sendfile` function on UNIX resulting in
-  uploads being from 2x to 3x faster than when using plain
-  :meth:`socket.socket.send`.
-  (Contributed by Giampaolo Rodola' in :issue:`17552`.)
+A new :meth:`socket.socket.sendfile` method allows to send a file over a
+socket by using high-performance :func:`os.sendfile` function on UNIX
+resulting in uploads being from 2x to 3x faster than when using plain
+:meth:`socket.socket.send`.  (Contributed by Giampaolo Rodola' in
+:issue:`17552`.)
 
-* The :meth:`socket.socket.sendall` method don't reset the socket timeout
-  anymore each time bytes are received or sent. The socket timeout is now the
-  maximum total duration to send all data.
+The :meth:`socket.socket.sendall` method no longer resets the socket timeout
+every time bytes are received or sent.  The socket timeout is now the
+maximum total duration to send all data.  (Contributed by Victor Stinner in
+:issue:`23853`.)
 
-* Functions with timeouts now use a monotonic clock, instead of a
-  system clock.  (Contributed by Victor Stinner in :issue:`22043`.)
+Functions with timeouts now use a monotonic clock, instead of a system clock.
+(Contributed by Victor Stinner in :issue:`22043`.)
+
 
 subprocess
 ----------
 
-* The new :func:`subprocess.run` function runs subprocesses and returns a
-  :class:`subprocess.CompletedProcess` object.  It Provides a more consistent
-  API than :func:`~subprocess.call`, :func:`~subprocess.check_call` and
-  :func:`~subprocess.check_output`.
+The new :func:`subprocess.run` function has been added and is the recommended
+approach to invoking subprocesses.  It runs the specified command and
+and returns a :class:`subprocess.CompletedProcess` object.  (Contributed by
+Thomas Kluyver in :issue:`23342`.)
+
 
 sys
 ---
 
-* New :func:`~sys.set_coroutine_wrapper` and :func:`~sys.get_coroutine_wrapper`
-  functions.  (Contributed by Yury Selivanov in :issue:`24017`.)
+A new :func:`~sys.set_coroutine_wrapper` function allows setting a global
+hook that will be called whenever a :ref:`coro object <coro-objects>`
+is created.  Essentially, it works like a global coroutine decorator.  A
+corresponding :func:`~sys.get_coroutine_wrapper` can be used to obtain
+a currently set wrapper.  Both functions are provisional, and are intended
+for debugging purposes only. (Contributed by Yury Selivanov in :issue:`24017`.)
 
-* New :func:`~sys.is_finalizing` to check for :term:`interpreter shutdown`.
-  (Contributed by Antoine Pitrou in :issue:`22696`.)
+There is a new :func:`~sys.is_finalizing` function to check if the Python
+interpreter is :term:`shutting down <interpreter shutdown>`.
+(Contributed by Antoine Pitrou in :issue:`22696`.)
+
 
 sysconfig
 ---------
 
-* The user scripts directory on Windows is now versioned.
-  (Contributed by Paul Moore in :issue:`23437`.)
+The name of the user scripts directory on Windows now includes the first
+two components of Python version. (Contributed by Paul Moore
+in :issue:`23437`.)
+
 
 tarfile
 -------
 
-* The :func:`tarfile.open` function now supports ``'x'`` (exclusive creation)
-  mode.  (Contributed by Berker Peksag in :issue:`21717`.)
+The *mode* argument of :func:`tarfile.open` function now accepts ``'x'`` to request exclusive creation.  (Contributed by Berker Peksag in :issue:`21717`.)
 
-* The :meth:`~tarfile.TarFile.extractall` and :meth:`~tarfile.TarFile.extract`
-  methods now take a keyword parameter *numeric_only*. If set to ``True``,
-  the extracted files and directories will be owned by the numeric uid and gid
-  from the tarfile. If set to ``False`` (the default, and the behavior in
-  versions prior to 3.5), they will be owned by the named user and group in the
-  tarfile.  (Contributed by Michael Vogt and Eric Smith in :issue:`23193`.)
+The :meth:`~tarfile.TarFile.extractall` and :meth:`~tarfile.TarFile.extract`
+methods now take a keyword argument *numeric_only*.  If set to ``True``,
+the extracted files and directories will be owned by the numeric uid and gid
+from the tarfile.  If set to ``False`` (the default, and the behavior in
+versions prior to 3.5), they will be owned by the named user and group in the
+tarfile.  (Contributed by Michael Vogt and Eric Smith in :issue:`23193`.)
+
 
 threading
 ---------
 
-* :meth:`~threading.Lock.acquire` and :meth:`~threading.RLock.acquire`
-   now use a monotonic clock for managing timeouts.
-   (Contributed by Victor Stinner in :issue:`22043`.)
+:meth:`~threading.Lock.acquire` and :meth:`~threading.RLock.acquire`
+now use a monotonic clock for timeout management.  (Contributed by Victor
+Stinner in :issue:`22043`.)
+
 
 time
 ----
 
-* The :func:`time.monotonic` function is now always available.  (Contributed by
-  Victor Stinner in :issue:`22043`.)
+The :func:`time.monotonic` function is now always available.  (Contributed by
+Victor Stinner in :issue:`22043`.)
+
 
 timeit
 ------
 
-* New command line option ``-u`` or ``--unit=U`` to specify a time unit for
-  the timer output. Supported options are ``usec``, ``msec``, or ``sec``.
-  (Contributed by Julian Gindi in :issue:`18983`.)
+New command line option :option:`-u` or :option:`--unit=U` to specify a time
+unit for the timer output. Supported options are ``usec``, ``msec``, or ``sec``.
+(Contributed by Julian Gindi in :issue:`18983`.)
+
 
 tkinter
 -------
 
-* The :mod:`tkinter._fix` module used for setting up the Tcl/Tk environment
-  on Windows has been replaced by a private function in the :mod:`_tkinter`
-  module which makes no permanent changes to environment variables.
-  (Contributed by Zachary Ware in :issue:`20035`.)
+The :mod:`tkinter._fix` module used for setting up the Tcl/Tk environment
+on Windows has been replaced by a private function in the :mod:`_tkinter`
+module which makes no permanent changes to environment variables.
+(Contributed by Zachary Ware in :issue:`20035`.)
+
 
 traceback
 ---------
 
-* New :func:`~traceback.walk_stack` and :func:`~traceback.walk_tb`
-  functions to conveniently traverse frame and traceback objects.
-  (Contributed by Robert Collins in :issue:`17911`.)
+New :func:`~traceback.walk_stack` and :func:`~traceback.walk_tb`
+functions to conveniently traverse frame and traceback objects.
+(Contributed by Robert Collins in :issue:`17911`.)
 
-* New lightweight classes: :class:`~traceback.TracebackException`,
-  :class:`~traceback.StackSummary`, and :class:`traceback.FrameSummary`.
-  (Contributed by Robert Collins in :issue:`17911`.)
+New lightweight classes: :class:`~traceback.TracebackException`,
+:class:`~traceback.StackSummary`, and :class:`traceback.FrameSummary`.
+(Contributed by Robert Collins in :issue:`17911`.)
 
-* :func:`~traceback.print_tb` and :func:`~traceback.print_stack` now support
-  negative values for the *limit* argument.
-  (Contributed by Dmitry Kazakov in :issue:`22619`.)
+:func:`~traceback.print_tb` and :func:`~traceback.print_stack` now support
+negative values for the *limit* argument.
+(Contributed by Dmitry Kazakov in :issue:`22619`.)
 
 
 types
 -----
 
-* New :func:`~types.coroutine` function.  (Contributed by Yury Selivanov
-  in :issue:`24017`.)
+New :func:`~types.coroutine` function.  (Contributed by Yury Selivanov
+in :issue:`24017`.)
 
-* New :class:`~types.CoroutineType`.  (Contributed by Yury Selivanov
-  in :issue:`24400`.)
+New :class:`~types.CoroutineType`.  (Contributed by Yury Selivanov
+in :issue:`24400`.)
+
 
 urllib
 ------
 
-* A new :class:`~urllib.request.HTTPPasswordMgrWithPriorAuth` allows HTTP Basic
-  Authentication credentials to be managed so as to eliminate unnecessary
-  ``401`` response handling, or to unconditionally send credentials
-  on the first request in order to communicate with servers that return a
-  ``404`` response instead of a ``401`` if the ``Authorization`` header is not
-  sent.  (Contributed by Matej Cepl in :issue:`19494` and Akshit Khurana in
-  :issue:`7159`.)
+A new :class:`~urllib.request.HTTPPasswordMgrWithPriorAuth` allows HTTP Basic
+Authentication credentials to be managed so as to eliminate unnecessary
+``401`` response handling, or to unconditionally send credentials
+on the first request in order to communicate with servers that return a
+``404`` response instead of a ``401`` if the ``Authorization`` header is not
+sent.  (Contributed by Matej Cepl in :issue:`19494` and Akshit Khurana in
+:issue:`7159`.)
 
-* A new :func:`~urllib.parse.urlencode` parameter *quote_via* provides a way to
-  control the encoding of query parts if needed.  (Contributed by Samwyse and
-  Arnon Yaari in :issue:`13866`.)
+A new :func:`~urllib.parse.urlencode` parameter *quote_via* provides a way to
+control the encoding of query parts if needed.  (Contributed by Samwyse and
+Arnon Yaari in :issue:`13866`.)
 
-* :func:`~urllib.request.urlopen` accepts an :class:`ssl.SSLContext`
-  object as a *context* argument, which will be used for the HTTPS
-  connection.  (Contributed by Alex Gaynor in :issue:`22366`.)
+:func:`~urllib.request.urlopen` accepts an :class:`ssl.SSLContext`
+object as a *context* argument, which will be used for the HTTPS
+connection.  (Contributed by Alex Gaynor in :issue:`22366`.)
+
 
 unicodedata
 -----------
 
-* The :mod:`unicodedata` module now uses data from `Unicode 8.0.0
-  <http://unicode.org/versions/Unicode8.0.0/>`_.
+The :mod:`unicodedata` module now uses data from `Unicode 8.0.0
+<http://unicode.org/versions/Unicode8.0.0/>`_.
+
 
 unittest
 --------
 
-* New command line option ``--locals`` to show local variables in
-  tracebacks.
-  (Contributed by Robert Collins in :issue:`22936`.)
+New command line option :option:`--locals` to show local variables in
+tracebacks.  (Contributed by Robert Collins in :issue:`22936`.)
+
 
 wsgiref
 -------
 
-* *headers* parameter of :class:`wsgiref.headers.Headers` is now optional.
-  (Contributed by Pablo Torres Navarrete and SilentGhost in :issue:`5800`.)
+*headers* parameter of :class:`wsgiref.headers.Headers` is now optional.
+(Contributed by Pablo Torres Navarrete and SilentGhost in :issue:`5800`.)
+
 
 xmlrpc
 ------
 
-* :class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`.
-  (Contributed by Claudiu Popa in :issue:`20627`.)
+:class:`xmlrpc.client.ServerProxy` is now a :term:`context manager`.
+(Contributed by Claudiu Popa in :issue:`20627`.)
 
-* :class:`~xmlrpc.client.ServerProxy` constructor now accepts an optional
-  :class:`ssl.SSLContext` instance.
-  (Contributed by Alex Gaynor in :issue:`22960`.)
+:class:`~xmlrpc.client.ServerProxy` constructor now accepts an optional
+:class:`ssl.SSLContext` instance.
+(Contributed by Alex Gaynor in :issue:`22960`.)
+
 
 xml.sax
 -------
 
-* SAX parsers now support a character stream of
-  :class:`~xml.sax.xmlreader.InputSource` object.
-  (Contributed by Serhiy Storchaka in :issue:`2175`.)
+SAX parsers now support a character stream of
+:class:`~xml.sax.xmlreader.InputSource` object.
+(Contributed by Serhiy Storchaka in :issue:`2175`.)
+
 
 zipfile
 -------
 
-* Added support for writing ZIP files to unseekable streams.
-  (Contributed by Serhiy Storchaka in :issue:`23252`.)
+ZIP output can now be written to unseekable streams.
+(Contributed by Serhiy Storchaka in :issue:`23252`.)
 
-* The :func:`zipfile.ZipFile.open` function now supports ``'x'`` (exclusive
-  creation) mode.  (Contributed by Serhiy Storchaka in :issue:`21717`.)
+The *mode* argument of :func:`zipfile.ZipFile.open` function now
+accepts ``'x'`` to request exclusive creation.
+(Contributed by Serhiy Storchaka in :issue:`21717`.)
 
 
 Other module-level changes
 ==========================
 
-* Many functions in modules :mod:`mmap`, :mod:`ossaudiodev`, :mod:`socket`,
-  :mod:`ssl`, and :mod:`codecs`, now accept writable bytes-like objects.
-  (Contributed by Serhiy Storchaka in :issue:`23001`.)
+Many functions in :mod:`mmap`, :mod:`ossaudiodev`, :mod:`socket`,
+:mod:`ssl`, and :mod:`codecs` modules now accept writable bytes-like objects.
+(Contributed by Serhiy Storchaka in :issue:`23001`.)
 
 
 Optimizations
@@ -1373,6 +1524,7 @@ Changes to Python's build process and to the C API include:
 
 * Windows builds now require Microsoft Visual C++ 14.0, which
   is available as part of `Visual Studio 2015 <http://www.visualstudio.com>`_.
+
 
 Deprecated
 ==========
