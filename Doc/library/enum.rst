@@ -466,7 +466,7 @@ The complete signature is::
 
 :type: type to mix in to new Enum class.
 
-:start: number to start counting at if only names are passed in
+:start: number to start counting at if only names are passed in.
 
 .. versionchanged:: 3.5
    The *start* parameter was added.
