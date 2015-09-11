@@ -7,7 +7,6 @@ extending/embedding,,:numargs,"if(!PyArg_ParseTuple(args, "":numargs""))"
 extending/extending,,:set,"if (PyArg_ParseTuple(args, ""O:set_callback"", &temp)) {"
 extending/extending,,:myfunction,"PyArg_ParseTuple(args, ""D:myfunction"", &c);"
 extending/newtypes,,:call,"if (!PyArg_ParseTuple(args, ""sss:call"", &arg1, &arg2, &arg3)) {"
-extending/windows,,:initspam,/export:initspam
 faq/programming,,:reduce,"print (lambda Ru,Ro,Iu,Io,IM,Sx,Sy:reduce(lambda x,y:x+y,map(lambda y,"
 faq/programming,,:reduce,"Sx=Sx,Sy=Sy:reduce(lambda x,y:x+y,map(lambda x,xc=Ru,yc=yc,Ru=Ru,Ro=Ro,"
 faq/programming,,:chr,">=4.0) or 1+f(xc,yc,x*x-y*y+xc,2.0*x*y+yc,k-1,f):f(xc,yc,x,y,k,f):chr("
