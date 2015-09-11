@@ -37,6 +37,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #24684: socket.socket.getaddrinfo() now calls
+  PyUnicode_AsEncodedString() instead of calling the encode() method of the
+  host, to handle correctly custom unicode string with an encode() method
+  which doesn't return a byte string. The encoder of the IDNA codec is now
+  called directly instead of calling the encode() method of the string.
+
 - Issue #24982: shutil.make_archive() with the "zip" format now adds entries
   for directories (including empty directories) in ZIP file.
 
