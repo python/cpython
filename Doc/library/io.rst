@@ -299,11 +299,11 @@ I/O Base Classes
       Note that it's already possible to iterate on file objects using ``for
       line in file: ...`` without calling ``file.readlines()``.
 
-   .. method:: seek(offset, whence=SEEK_SET)
+   .. method:: seek(offset[, whence])
 
       Change the stream position to the given byte *offset*.  *offset* is
-      interpreted relative to the position indicated by *whence*.  Values for
-      *whence* are:
+      interpreted relative to the position indicated by *whence*.  The default
+      value for *whence* is :data:`SEEK_SET`.  Values for *whence* are:
 
       * :data:`SEEK_SET` or ``0`` -- start of the stream (the default);
         *offset* should be zero or positive
@@ -716,10 +716,11 @@ Text I/O
 
       If *limit* is specified, at most *limit* characters will be read.
 
-   .. method:: seek(offset, whence=SEEK_SET)
+   .. method:: seek(offset[, whence])
 
-      Change the stream position to the given *offset*.  Behaviour depends
-      on the *whence* parameter:
+      Change the stream position to the given *offset*.  Behaviour depends on
+      the *whence* parameter.  The default value for *whence* is
+      :data:`SEEK_SET`.
 
       * :data:`SEEK_SET` or ``0``: seek from the start of the stream
         (the default); *offset* must either be a number returned by

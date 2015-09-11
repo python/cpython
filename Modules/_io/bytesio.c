@@ -490,7 +490,7 @@ bytesio_iternext(bytesio *self)
 }
 
 PyDoc_STRVAR(seek_doc,
-"seek(pos, whence=0) -> int.  Change stream position.\n"
+"seek(pos[, whence]) -> int.  Change stream position.\n"
 "\n"
 "Seek to byte offset pos relative to position indicated by whence:\n"
 "     0  Start of stream (the default).  pos should be >= 0;\n"
