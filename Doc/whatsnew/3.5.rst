@@ -104,8 +104,8 @@ CPython implementation improvements:
 
 * When the ``LC_TYPE`` locale is the POSIX locale (``C`` locale),
   :py:data:`sys.stdin` and :py:data:`sys.stdout` are now using the
-  ``surrogateescape`` error handler, instead of the ``strict`` error handler
-  (:issue:`19977`).
+  ``surrogateescape`` error handler, instead of the ``strict`` error handler.
+  (Contributed by Victor Stinner in :issue:`19977`.)
 
 * ``.pyo`` files are no longer used and have been replaced by a more flexible
   scheme that inclides the optimization level explicitly in ``.pyc`` name.
@@ -585,7 +585,7 @@ Some smaller changes made to the core Python language are:
   (Contributed by Serhiy Storchaka in :issue:`19676` and :issue:`22286`.)
 
 * The :option:`-b` option now affects comparisons of :class:`bytes` with
-  :class:`int`.  (Contributed by Serhiy Storchaka in :issue:`23681`)
+  :class:`int`.  (Contributed by Serhiy Storchaka in :issue:`23681`.)
 
 * New Kazakh :ref:`codec <standard-encodings>` ``kz1048``.  (Contributed by
   Serhiy Storchaka in :issue:`22682`.)
@@ -1376,7 +1376,7 @@ sqlite3
 -------
 
 The :class:`~sqlite3.Row` class now fully supports sequence protocol,
-in particular :func:`reverse` and slice indexing.
+in particular :func:`reversed` iteration and slice indexing.
 (Contributed by Claudiu Popa in :issue:`10203`; by Lucas Sinclair,
 Jessica McKellar, and  Serhiy Storchaka in :issue:`13583`.)
 
@@ -1602,7 +1602,8 @@ Other module-level changes
 ==========================
 
 Many functions in :mod:`mmap`, :mod:`ossaudiodev`, :mod:`socket`,
-:mod:`ssl`, and :mod:`codecs` modules now accept writable bytes-like objects.
+:mod:`ssl`, and :mod:`codecs` modules now accept writable
+:term:`bytes-like objects <bytes-like object>`.
 (Contributed by Serhiy Storchaka in :issue:`23001`.)
 
 
@@ -1853,7 +1854,8 @@ removed:
 * The concept of ``.pyo`` files has been removed.
 
 * The JoinableQueue class in the provisional asyncio module was deprecated
-  in 3.4.4 and is now removed (:issue:`23464`).
+  in 3.4.4 and is now removed.
+  (Contributed by A. Jesse Jiryu Davis in :issue:`23464`.)
 
 
 Porting to Python 3.5
@@ -1876,14 +1878,15 @@ Changes in the Python API
 
 * The :meth:`ssl.SSLSocket.send()` method now raises either
   :exc:`ssl.SSLWantReadError` or :exc:`ssl.SSLWantWriteError`
-  on a non-blocking socket if the operation would block. Previously,
-  it would return ``0``.  See :issue:`20951`.
+  on a non-blocking socket if the operation would block.  Previously,
+  it would return ``0``.  (Contributed by Nikolaus Rath in :issue:`20951`.)
 
 * The ``__name__`` attribute of generator is now set from the function name,
   instead of being set from the code name. Use ``gen.gi_code.co_name`` to
   retrieve the code name. Generators also have a new ``__qualname__``
   attribute, the qualified name, which is now used for the representation
-  of a generator (``repr(gen)``). See :issue:`21205`.
+  of a generator (``repr(gen)``).
+  (Contributed by Victor Stinner in :issue:`21205`.)
 
 * The deprecated "strict" mode and argument of :class:`~html.parser.HTMLParser`,
   :meth:`HTMLParser.error`, and the :exc:`HTMLParserError` exception have been
@@ -1894,8 +1897,8 @@ Changes in the Python API
 * Although it is not formally part of the API, it is worth noting for porting
   purposes (ie: fixing tests) that error messages that were previously of the
   form "'sometype' does not support the buffer protocol" are now of the form "a
-  bytes-like object is required, not 'sometype'".  (Contributed by Ezio Melotti
-  in :issue:`16518`.)
+  :term:`bytes-like object` is required, not 'sometype'".
+  (Contributed by Ezio Melotti in :issue:`16518`.)
 
 * If the current directory is set to a directory that no longer exists then
   :exc:`FileNotFoundError` will no longer be raised and instead
@@ -1914,7 +1917,7 @@ Changes in the Python API
   :exc:`DeprecationWarning` now, will be an error in Python 3.6). If the loader
   inherits from :class:`importlib.abc.Loader` then there is nothing to do, else
   simply define :meth:`~importlib.machinery.Loader.create_module` to return
-  ``None`` (:issue:`23014`).
+  ``None``.  (Contributed by Brett Cannon in :issue:`23014`.)
 
 * The :func:`re.split` function always ignored empty pattern matches, so the
   ``"x*"`` pattern worked the same as ``"x+"``, and the ``"\b"`` pattern never
@@ -1931,7 +1934,7 @@ Changes in the Python API
   :meth:`~http.cookies.Morsel.update` will now raise an exception if any of the
   keys in the update dictionary are invalid.  In addition, the undocumented
   *LegalChars* parameter of :func:`~http.cookies.Morsel.set` is deprecated and
-  is now ignored.  (:issue:`2211`)
+  is now ignored.  (Contributed by Demian Brecht in :issue:`2211`.)
 
 * :pep:`488` has removed ``.pyo`` files from Python and introduced the optional
   ``opt-`` tag in ``.pyc`` file names. The
@@ -1961,14 +1964,15 @@ Changes in the Python API
 
 * The :meth:`str.startswith` and :meth:`str.endswith` methods no longer return
   ``True`` when finding the empty string and the indexes are completely out of
-  range.  See :issue:`24284`.
+  range.  (Contributed by Serhiy Storchaka in :issue:`24284`.)
 
 * The :func:`inspect.getdoc` function now returns documentation strings
   inherited from base classes.  Documentation strings no longer need to be
   duplicated if the inherited documentation is appropriate.  To suppress an
   inherited string, an empty string must be specified (or the documentation
   may be filled in).  This change affects the output of the :mod:`pydoc`
-  module and the :func:`help` function.  See :issue:`15582`.
+  module and the :func:`help` function.
+  (Contributed by Serhiy Storchaka in :issue:`15582`.)
 
 Changes in the C API
 --------------------
@@ -1989,7 +1993,7 @@ Changes in the C API
 * Because the lack of the :attr:`__module__` attribute breaks pickling and
   introspection, a deprecation warning now is raised for builtin type without
   the :attr:`__module__` attribute.  Would be an AttributeError in future.
-  (:issue:`20204`)
+  (Contributed by Serhiy Storchaka in :issue:`20204`.)
 
 * As part of :pep:`492` implementation, ``tp_reserved`` slot of
   :c:type:`PyTypeObject` was replaced with a
