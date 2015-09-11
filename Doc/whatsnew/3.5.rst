@@ -87,12 +87,18 @@ New built-in features:
   ``memoryview(b'\xf0\x9f\x90\x8d').hex()``: :issue:`9951` - A ``hex`` method
   has been added to bytes, bytearray, and memoryview.
 
+* :class:`memoryview` (including multi-dimensional) now supports tuple indexing.
+  (Contributed by Antoine Pitrou in :issue:`23632`.)
+
 * Generators have new ``gi_yieldfrom`` attribute, which returns the
   object being iterated by ``yield from`` expressions. (Contributed
   by Benno Leslie and Yury Selivanov in :issue:`24450`.)
 
-* New :exc:`RecursionError` exception. (Contributed by Georg Brandl
+* New :exc:`RecursionError` exception.  (Contributed by Georg Brandl
   in :issue:`19235`.)
+
+* New :exc:`StopAsyncIteration` exception.  (Contributed by
+  Yury Selivanov in :issue:`24017`.  See also :pep:`492`.)
 
 CPython implementation improvements:
 
@@ -813,6 +819,21 @@ of using encoded words.  This allows ``Messages`` to be formatted according to
 :issue:`24211`.)
 
 
+enum
+----
+
+The :class:`~enum.Enum` callable has a new parameter *start* to
+specify the initial number of enum values if only *names* are provided::
+
+    >>> Animal = enum.Enum('Animal', 'cat dog', start=10)
+    >>> Animal.cat
+    <Animal.cat: 10>
+    >>> Animal.dog
+    <Animal.dog: 11>
+
+(Contributed by Ethan Furman in :issue:`21706`.)
+
+
 faulthandler
 ------------
 
@@ -846,6 +867,14 @@ Element comparison in :func:`~heapq.merge` can now be customized by
 passing a :term:`key function` in a new optional ``key`` keyword argument.
 A new optional ``reverse`` keyword argument can be used to reverse element
 comparison.  (Contributed by Raymond Hettinger in :issue:`13742`.)
+
+
+http
+----
+
+A new :class:`HTTPStatus <http.HTTPStatus>` enum that defines a set of
+HTTP status codes, reason phrases and long descriptions written in English.
+(Contributed by Demian Brecht in :issue:`21793`.)
 
 
 idlelib and IDLE
@@ -944,6 +973,16 @@ functions now return a list of named tuples.
 (Contributed by Daniel Shahaf in :issue:`16808`.)
 
 
+io
+--
+
+A new :meth:`BufferedIOBase.readinto1 <io.BufferedIOBase.readinto1>`
+method, that uses at most one call to the underlying raw stream's
+:meth:`RawIOBase.read <io.RawIOBase.read>` (or
+:meth:`RawIOBase.readinto <io.RawIOBase.readinto>`) method.
+(Contributed by Nikolaus Rath in :issue:`20578`.)
+
+
 ipaddress
 ---------
 
@@ -1028,6 +1067,10 @@ operator
 and :func:`~operator.methodcaller` objects now support pickling.
 (Contributed by Josh Rosenberg and Serhiy Storchaka in :issue:`22955`.)
 
+New :func:`~operator.matmul` and :func:`~operator.imatmul` functions
+to perform matrix multiplication.
+(Contributed by Benjamin Peterson in :issue:`21176`.)
+
 
 os
 --
@@ -1084,6 +1127,13 @@ an instance of :class:`~pathlib.Path` object representing the user’s home
 directory.
 (Contributed by Victor Salgado and Mayank Tripathi in :issue:`19777`.)
 
+New :meth:`Path.write_text <pathlib.Path.write_text>`,
+:meth:`Path.read_text <pathlib.Path.read_text>`,
+:meth:`Path.write_bytes <pathlib.Path.write_bytes>`,
+:meth:`Path.read_bytes <pathlib.Path.read_bytes>` methods to simplify
+read/write operations on files.
+(Contributed by Christopher Welborn in :issue:`20218`.)
+
 
 pickle
 ------
@@ -1131,7 +1181,8 @@ the specified number of trailing elements in history to the given file.
 selectors
 ---------
 
-The module now supports efficient ``/dev/poll`` on Solaris.
+The new :class:`~selectors.DevpollSelector` supports efficient
+``/dev/poll`` polling on Solaris.
 (Contributed by Giampaolo Rodola' in :issue:`18931`.)
 
 
@@ -1642,6 +1693,28 @@ New encoding/decoding helper functions:
 
 (Contributed by Victor Stinner in :issue:`18395`.)
 
+New :c:func:`PyCodec_NameReplaceErrors` function to replace the unicode
+encode error with ``\N{...}`` escapes.
+(Contributed by Serhiy Storchaka in :issue:`19676`.)
+
+New :c:func:`PyErr_FormatV` similar to :c:func:`PyErr_Format`,
+but accepts a ``va_list`` argument.
+(Contributed by Antoine Pitrou in :issue:`18711`.)
+
+New :c:data:`PyExc_RecursionError` exception.
+(Contributed by Georg Brandl in :issue:`19235`.)
+
+New :c:func:`PyModule_FromDefAndSpec`, :c:func:`PyModule_FromDefAndSpec2`,
+and :c:func:`PyModule_ExecDef` introduced by :pep:`489` -- multi-phase
+extension module initialization.
+(Contributed by Petr Viktorin in :issue:`24268`.)
+
+New :c:func:`PyNumber_MatrixMultiply` and
+:c:func:`PyNumber_InPlaceMatrixMultiply` functions to perform matrix
+multiplication.
+(Contributed by Benjamin Peterson in :issue:`21176`.  See also :pep:`465`
+for details.)
+
 The :c:member:`PyTypeObject.tp_finalize` slot is now part of stable ABI.
 
 Windows builds now require Microsoft Visual C++ 14.0, which
@@ -1878,8 +1951,8 @@ Changes in the Python API
   in Python 3.5, all old `.pyo` files from previous versions of Python are
   invalid regardless of this PEP.
 
-* The :mod:`socket` module now exports the CAN_RAW_FD_FRAMES constant on linux
-  3.6 and greater.
+* The :mod:`socket` module now exports the :data:`~socket.CAN_RAW_FD_FRAMES`
+  constant on linux 3.6 and greater.
 
 * The :func:`~ssl.cert_time_to_seconds` function now interprets the input time
   as UTC and not as local time, per :rfc:`5280`.  Additionally, the return
