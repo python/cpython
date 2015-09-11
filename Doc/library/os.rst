@@ -1102,7 +1102,7 @@ or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Window
    .. note::
 
       For a higher-level wrapper of :func:`sendfile`, see
-      :mod:`socket.socket.sendfile`.
+      :meth:`socket.socket.sendfile`.
 
    .. versionadded:: 3.3
 
