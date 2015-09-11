@@ -723,6 +723,36 @@ public: // IBootstrapperApplication
             hrStatus = EvaluateConditions();
         }
 
+        if (SUCCEEDED(hrStatus)) {
+            // Ensure the default path has been set
+            LONGLONG installAll;
+            LPWSTR targetDir = nullptr;
+            LPWSTR defaultTargetDir = nullptr;
+
+            hrStatus = BalGetStringVariable(L"TargetDir", &targetDir);
+            if (FAILED(hrStatus) || !targetDir || !targetDir[0]) {
+                ReleaseStr(targetDir);
+                targetDir = nullptr;
+
+                if (FAILED(BalGetNumericVariable(L"InstallAllUsers", &installAll))) {
+                    installAll = 0;
+                }
+
+                hrStatus = BalGetStringVariable(
+                    installAll ? L"DefaultAllUsersTargetDir" : L"DefaultJustForMeTargetDir",
+                    &defaultTargetDir
+                );
+
+                if (SUCCEEDED(hrStatus) && defaultTargetDir) {
+                    if (defaultTargetDir[0] && SUCCEEDED(BalFormatString(defaultTargetDir, &targetDir))) {
+                        hrStatus = _engine->SetVariableString(L"TargetDir", targetDir);
+                        ReleaseStr(targetDir);
+                    }
+                    ReleaseStr(defaultTargetDir);
+                }
+            }
+        }
+
         SetState(PYBA_STATE_DETECTED, hrStatus);
 
         // If we're not interacting with the user or we're doing a layout or we're just after a force restart
