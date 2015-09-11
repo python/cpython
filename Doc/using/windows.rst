@@ -77,8 +77,8 @@ machines without user interaction.  These options may also be set without
 suppressing the UI in order to change some of the defaults.
 
 To completely hide the installer UI and install Python silently, pass the
-``/quiet`` (``/q``) option. To skip past the user interaction but still display
-progress and errors, pass the ``/passive`` (``/p``) option. The ``/uninstall``
+``/quiet`` option. To skip past the user interaction but still display
+progress and errors, pass the ``/passive`` option. The ``/uninstall``
 option may be passed to immediately begin removing Python - no prompt will be
 displayed.
 
