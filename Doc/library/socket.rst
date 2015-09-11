@@ -121,7 +121,7 @@ created.  Socket addresses are represented as follows:
        NetBSD and DragonFlyBSD support added.
 
   - :const:`BTPROTO_SCO` accepts ``bdaddr`` where ``bdaddr`` is a
-    :term:`bytes-like object` containing the Bluetooth address in a
+    :class:`bytes` object containing the Bluetooth address in a
     string format. (ex. ``b'12:23:34:45:56:67'``) This protocol is not
     supported under FreeBSD.
 
