@@ -985,7 +985,7 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
         case BUILD_MAP_UNPACK_WITH_CALL:
             return 1 - (oparg & 0xFF);
         case BUILD_MAP:
-            return 1;
+            return 1 - 2*oparg;
         case LOAD_ATTR:
             return 0;
         case COMPARE_OP:
