@@ -678,8 +678,8 @@ The :class:`~collections.OrderedDict` class is now implemented in C, which
 makes it 4 to 100 times faster.  (Contributed by Eric Snow in :issue:`16991`.)
 
 :meth:`OrderedDict.items <collections.OrderedDict.items>`,
-:meth:`OrderedDict.items <collections.OrderedDict.keys>`,
-:meth:`OrderedDict.items <collections.OrderedDict.values>` views now support
+:meth:`OrderedDict.keys <collections.OrderedDict.keys>`,
+:meth:`OrderedDict.values <collections.OrderedDict.values>` views now support
 :func:`reversed` iteration.
 (Contributed by Serhiy Storchaka in :issue:`19505`.)
 
@@ -991,7 +991,7 @@ now accept an ``(address, netmask)`` tuple argument, so as to easily construct
 network objects from existing addresses.  (Contributed by Peter Moody
 and Antoine Pitrou in :issue:`16531`.)
 
-New :attr:`~ipaddress.IPv4Network.reverse_pointer>` attribute for
+A new :attr:`~ipaddress.IPv4Network.reverse_pointer>` attribute for
 :class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` classes
 returns the name of the reverse DNS PTR record.
 (Contributed by Leon Weber in :issue:`20480`.)
@@ -1450,7 +1450,7 @@ The :func:`~time.monotonic` function is now always available.
 timeit
 ------
 
-New command line option ``-u`` or ``--unit=U`` can be used to specify the time
+A new command line option ``-u`` or ``--unit=U`` can be used to specify the time
 unit for the timer output.  Supported options are ``usec``, ``msec``,
 or ``sec``.  (Contributed by Julian Gindi in :issue:`18983`.)
 
@@ -1535,7 +1535,7 @@ The :mod:`unicodedata` module now uses data from `Unicode 8.0.0
 unittest
 --------
 
-New command line option ``--locals`` to show local variables in
+A new command line option ``--locals`` to show local variables in
 tracebacks.  (Contributed by Robert Collins in :issue:`22936`.)
 
 
@@ -1693,15 +1693,15 @@ New encoding/decoding helper functions:
 
 (Contributed by Victor Stinner in :issue:`18395`.)
 
-New :c:func:`PyCodec_NameReplaceErrors` function to replace the unicode
+A new :c:func:`PyCodec_NameReplaceErrors` function to replace the unicode
 encode error with ``\N{...}`` escapes.
 (Contributed by Serhiy Storchaka in :issue:`19676`.)
 
-New :c:func:`PyErr_FormatV` similar to :c:func:`PyErr_Format`,
+A new :c:func:`PyErr_FormatV` function similar to :c:func:`PyErr_Format`,
 but accepts a ``va_list`` argument.
 (Contributed by Antoine Pitrou in :issue:`18711`.)
 
-New :c:data:`PyExc_RecursionError` exception.
+A new :c:data:`PyExc_RecursionError` exception.
 (Contributed by Georg Brandl in :issue:`19235`.)
 
 New :c:func:`PyModule_FromDefAndSpec`, :c:func:`PyModule_FromDefAndSpec2`,
