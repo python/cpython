@@ -189,6 +189,22 @@ Build
   when external libraries are not available.
 
 
+Windows
+-------
+
+- Issue #25022: Removed very outdated PC/example_nt/ directory.
+
+What's New in Python 3.5.0 final?
+=================================
+
+Release date: 2015-09-13
+
+Build
+-----
+
+- Issue #25071: Windows installer should not require TargetDir
+  parameter when installing quietly
+
 What's New in Python 3.5.0 release candidate 4?
 ===============================================
 
