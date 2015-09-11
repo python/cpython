@@ -14,6 +14,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #24684: socket.socket.getaddrinfo() now calls
+  PyUnicode_AsEncodedString() instead of calling the encode() method of the
+  host, to handle correctly custom string with an encode() method which doesn't
+  return a byte string. The encoder of the IDNA codec is now called directly
+  instead of calling the encode() method of the string.
+
 - Issue #25060: Correctly compute stack usage of the BUILD_MAP opcode.
 
 - Issue #24857: Comparing call_args to a long sequence now correctly returns a
