@@ -338,7 +338,7 @@ Dialects support the following attributes:
 
 .. attribute:: Dialect.doublequote
 
-   Controls how instances of *quotechar* appearing inside a field should be
+   Controls how instances of *quotechar* appearing inside a field should
    themselves be quoted.  When :const:`True`, the character is doubled. When
    :const:`False`, the *escapechar* is used as a prefix to the *quotechar*.  It
    defaults to :const:`True`.
