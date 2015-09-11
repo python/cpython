@@ -111,7 +111,7 @@ CPython implementation improvements:
 Significantly Improved Library Modules:
 
 * :class:`collections.OrderedDict` is now implemented in C, which makes it
-  4 to 100 times faster.  Contributed by Eric Snow in :issue:`16991`.
+  4 to 100 times faster.  (Contributed by Eric Snow in :issue:`16991`.)
 
 * You may now pass bytes to the :mod:`tempfile` module's APIs and it will
   return the temporary pathname as :class:`bytes` instead of :class:`str`.
@@ -213,34 +213,33 @@ An example of a simple HTTP client written using the new syntax::
 
 
 Similarly to asynchronous iteration, there is a new syntax for asynchronous
-context managers::
+context managers.  The following script::
 
-    >>> import asyncio
-    >>> async def coro1(lock):
-    ...     print('coro1: waiting for lock')
-    ...     async with lock:
-    ...         print('coro1: holding the lock')
-    ...         await asyncio.sleep(1)
-    ...         print('coro1: releasing the lock')
-    ...
-    >>> async def coro2(lock):
-    ...     print('coro2: waiting for lock')
-    ...     async with lock:
-    ...         print('coro2: holding the lock')
-    ...         await asyncio.sleep(1)
-    ...         print('coro2: releasing the lock')
-    ...
-    >>> loop = asyncio.get_event_loop()
-    >>> lock = asyncio.Lock()
-    >>> coros = asyncio.gather(coro1(lock), coro2(lock), loop=loop)
-    >>> loop.run_until_complete(coros)
-    coro1: waiting for lock
-    coro1: holding the lock
-    coro2: waiting for lock
-    coro1: releasing the lock
-    coro2: holding the lock
-    coro2: releasing the lock
-    >>> loop.close()
+    import asyncio
+
+    async def coro(name, lock):
+        print('coro {}: waiting for lock'.format(name))
+        async with lock:
+            print('coro {}: holding the lock'.format(name))
+            await asyncio.sleep(1)
+            print('coro {}: releasing the lock'.format(name))
+
+    loop = asyncio.get_event_loop()
+    lock = asyncio.Lock()
+    coros = asyncio.gather(coro(1, lock), coro(2, lock))
+    try:
+        loop.run_until_complete(coros)
+    finally:
+        loop.close()
+
+will print::
+
+    coro 2: waiting for lock
+    coro 2: holding the lock
+    coro 1: waiting for lock
+    coro 2: releasing the lock
+    coro 1: holding the lock
+    coro 1: releasing the lock
 
 Note that both :keyword:`async for` and :keyword:`async with` can only
 be used inside a coroutine function declared with :keyword:`async def`.
@@ -325,10 +324,13 @@ unpackings::
 
     >>> *range(4), 4
     (0, 1, 2, 3, 4)
+
     >>> [*range(4), 4]
     [0, 1, 2, 3, 4]
+
     >>> {*range(4), 4, *(5, 6, 7)}
     {0, 1, 2, 3, 4, 5, 6, 7}
+
     >>> {'x': 1, **{'y': 2}}
     {'x': 1, 'y': 2}
 
@@ -352,6 +354,7 @@ Examples::
 
     >>> b'Hello %s!' % b'World'
     b'Hello World!'
+
     >>> b'x=%i y=%f' % (1, 2.5)
     b'x=1 y=2.500000'
 
@@ -362,6 +365,7 @@ Unicode is not allowed for ``%s``, but it is accepted by ``%a`` (equivalent of
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
     TypeError: %b requires bytes, or an object that implements __bytes__, not 'str'
+
     >>> b'price: %a' % '10€'
     b"price: '10\\u20ac'"
 
