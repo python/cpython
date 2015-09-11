@@ -487,7 +487,7 @@ I/O Base Classes
 
    .. method:: readinto1(b)
 
-      Read up to ``len(b)`` bytes into bytearray *b*, ,using at most one call to
+      Read up to ``len(b)`` bytes into bytearray *b*, using at most one call to
       the underlying raw stream's :meth:`~RawIOBase.read` (or
       :meth:`~RawIOBase.readinto`) method. Return the number of bytes read.
 
