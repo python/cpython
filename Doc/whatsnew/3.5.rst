@@ -1832,13 +1832,6 @@ The :mod:`inspect` :func:`~inspect.getfullargspec`,
 Use of ``re.LOCALE`` flag with str patterns or ``re.ASCII`` is now
 deprecated.  (Contributed by Serhiy Storchaka in :issue:`22407`.)
 
-.. XXX:
-
-    Deprecated functions and types of the C API
-    -------------------------------------------
-
-    * None yet.
-
 
 Removed
 =======
