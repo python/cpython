@@ -4,7 +4,7 @@
 
 :Release: |release|
 :Date: |today|
-:Editor: Elvis Pranskevichus <elprans@gmail.com>
+:Editors: Elvis Pranskevichus <elprans@gmail.com>, Yury Selivanov <yselivanov@gmail.com>
 
 .. Rules for maintenance:
 
@@ -671,11 +671,18 @@ collections
 The :class:`~collections.OrderedDict` class is now implemented in C, which
 makes it 4 to 100 times faster.  (Contributed by Eric Snow in :issue:`16991`.)
 
+:meth:`OrderedDict.items <collections.OrderedDict.items>`,
+:meth:`OrderedDict.items <collections.OrderedDict.keys>`,
+:meth:`OrderedDict.items <collections.OrderedDict.values>` views now support
+:func:`reversed` iteration.
+(Contributed by Serhiy Storchaka in :issue:`19505`.)
+
 The :class:`~collections.deque` class now defines
 :meth:`~collections.deque.index`, :meth:`~collections.deque.insert`, and
-:meth:`~collections.deque.copy`.  This allows deques to be recognized as a
-:class:`~collections.abc.MutableSequence` and improves their substitutability
-for lists. (Contributed by Raymond Hettinger :issue:`23704`.)
+:meth:`~collections.deque.copy`, as well as supports ``+`` and ``*`` operators.
+This allows deques to be recognized as a :class:`~collections.abc.MutableSequence`
+and improves their substitutability for lists.
+(Contributed by Raymond Hettinger :issue:`23704`.)
 
 Docstrings produced by :func:`~collections.namedtuple` can now be updated::
 
@@ -945,6 +952,11 @@ now accept an ``(address, netmask)`` tuple argument, so as to easily construct
 network objects from existing addresses.  (Contributed by Peter Moody
 and Antoine Pitrou in :issue:`16531`.)
 
+New :attr:`~ipaddress.IPv4Network.reverse_pointer>` attribute for
+:class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` classes
+returns the name of the reverse DNS PTR record.
+(Contributed by Leon Weber in :issue:`20480`.)
+
 
 json
 ----
@@ -1100,6 +1112,13 @@ The :func:`~re.sub` and :func:`~re.subn` functions now replace unmatched
 groups with empty strings instead of raising an exception.
 (Contributed by Serhiy Storchaka in :issue:`1519638`.)
 
+The :class:`re.error` exceptions have new attributes:
+:attr:`~re.error.msg`, :attr:`~re.error.pattern`,
+:attr:`~re.error.pos`, :attr:`~re.error.lineno`,
+and :attr:`~re.error.colno` that provide better context
+information about the error.
+(Contributed by Serhiy Storchaka in :issue:`22578`.)
+
 
 readline
 --------
@@ -1107,6 +1126,13 @@ readline
 A new :func:`~readline.append_history_file` function can be used to append
 the specified number of trailing elements in history to the given file.
 (Contributed by Bruno Cauet in :issue:`22940`.)
+
+
+selectors
+---------
+
+The module now supports efficient ``/dev/poll`` on Solaris.
+(Contributed by Giampaolo Rodola' in :issue:`18931`.)
 
 
 shutil
@@ -1244,7 +1270,7 @@ the actual protocol version in use.
 
 The :class:`~ssl.SSLSocket` class now implements
 a :meth:`SSLSocket.sendfile <ssl.SSLSocket.sendfile>` method.
-(Contributed by Giampaolo Rodola in :issue:`17552`.)
+(Contributed by Giampaolo Rodola' in :issue:`17552`.)
 
 The :meth:`SSLSocket.send <ssl.SSLSocket.send>` method now raises either
 :exc:`ssl.SSLWantReadError` or :exc:`ssl.SSLWantWriteError` exception on a
@@ -1288,6 +1314,20 @@ The :meth:`socket.sendall <socket.socket.sendall>` method no longer resets the
 socket timeout every time bytes are received or sent.  The socket timeout is
 now the maximum total duration to send all data.
 (Contributed by Victor Stinner in :issue:`23853`.)
+
+The *backlog* argument of the :meth:`socket.listen <socket.socket.listen>`
+method is now optional.  By default it is set to
+:data:`SOMAXCONN <socket.SOMAXCONN>` or to ``128`` whichever is less.
+(Contributed by Charles-François Natali in :issue:`21455`.)
+
+
+sqlite3
+-------
+
+The :class:`~sqlite3.Row` class now fully supports sequence protocol,
+in particular :func:`reverse` and slice indexing.
+(Contributed by Claudiu Popa in :issue:`10203`; by Lucas Sinclair,
+Jessica McKellar, and  Serhiy Storchaka in :issue:`13583`.)
 
 
 subprocess
@@ -1363,6 +1403,10 @@ New command line option ``-u`` or ``--unit=U`` can be used to specify the time
 unit for the timer output.  Supported options are ``usec``, ``msec``,
 or ``sec``.  (Contributed by Julian Gindi in :issue:`18983`.)
 
+The :func:`~timeit.timeit` function has a new *globals* parameter for
+specifying the namespace in which the code will be running.
+(Contributed by Ben Roberts in :issue:`2527`.)
+
 
 tkinter
 -------
@@ -1424,6 +1468,11 @@ The :func:`request.urlopen <urllib.request.urlopen>` function accepts an
 :class:`ssl.SSLContext` object as a *context* argument, which will be used for
 the HTTPS connection.  (Contributed by Alex Gaynor in :issue:`22366`.)
 
+The :func:`parse.urljoin <urllib.parse.urljoin>` was updated to use the
+:rfc:`3986` semantics for the resolution of relative URLs, rather than
+:rfc:`1808` and :rfc:`2396`.
+(Contributed by Demian Brecht and Senthil Kumaran in :issue:`22118`.)
+
 
 unicodedata
 -----------
@@ -1437,6 +1486,26 @@ unittest
 
 New command line option ``--locals`` to show local variables in
 tracebacks.  (Contributed by Robert Collins in :issue:`22936`.)
+
+
+unittest.mock
+-------------
+
+The :class:`~unittest.mock.Mock` has the following improvements:
+
+* Class constructor has a new *unsafe* parameter, which causes mock
+  objects to raise :exc:`AttributeError` on attribute names starting
+  with ``"assert"``.
+  (Contributed by Kushal Das in :issue:`21238`.)
+
+* A new :meth:`Mock.assert_not_called <unittest.mock.Mock.assert_not_called>`
+  method to check if the mock object was called.
+  (Contributed by Kushal Das in :issue:`21262`.)
+
+The :class:`~unittest.mock.MagicMock` class now supports :meth:`__truediv__`,
+:meth:`__divmod__` and :meth:`__matmul__` operators.
+(Contributed by Johannes Baiter in :issue:`20968`, and Håkan Lövdahl
+in :issue:`23581` and :issue:`23568`.)
 
 
 wsgiref
@@ -1548,16 +1617,32 @@ The :func:`property` getter calls are up to 25% faster.
 Instantiation of :class:`fractions.Fraction` is now up to 30% faster.
 (Contributed by Stefan Behnel in :issue:`22464`.)
 
+String methods :meth:`~str.find`, :meth:`~str.rfind`, :meth:`~str.split`,
+:meth:`~str.partition` and :keyword:`in` string operator are now significantly
+faster for searching 1-character substrings.
+(Contributed by Serhiy Storchaka in :issue:`23573`.)
+
 
 Build and C API Changes
 =======================
 
 New ``calloc`` functions were added:
 
-  * :c:func:`PyMem_RawCalloc`
-  * :c:func:`PyMem_Calloc`
-  * :c:func:`PyObject_Calloc`
-  * :c:func:`_PyObject_GC_Calloc`
+  * :c:func:`PyMem_RawCalloc`,
+  * :c:func:`PyMem_Calloc`,
+  * :c:func:`PyObject_Calloc`,
+  * :c:func:`_PyObject_GC_Calloc`.
+
+(Contributed by Victor Stinner in :issue:`21233`.)
+
+New encoding/decoding helper functions:
+
+  * :c:func:`Py_DecodeLocale` (replaced ``_Py_char2wchar()``),
+  * :c:func:`Py_EncodeLocale` (replaced ``_Py_wchar2char()``).
+
+(Contributed by Victor Stinner in :issue:`18395`.)
+
+The :c:member:`PyTypeObject.tp_finalize` slot is now part of stable ABI.
 
 Windows builds now require Microsoft Visual C++ 14.0, which
 is available as part of `Visual Studio 2015 <http://www.visualstudio.com>`_.
@@ -1833,6 +1918,7 @@ Changes in the C API
 * Removed non-documented macro :c:macro:`PyObject_REPR` which leaked references.
   Use format character ``%R`` in :c:func:`PyUnicode_FromFormat`-like functions
   to format the :func:`repr` of the object.
+  (Contributed by Serhiy Storchaka in :issue:`22453`.)
 
 * Because the lack of the :attr:`__module__` attribute breaks pickling and
   introspection, a deprecation warning now is raised for builtin type without
@@ -1844,4 +1930,3 @@ Changes in the C API
   :c:member:`tp_as_async` slot.  Refer to :ref:`coro-objects` for
   new types, structures and functions.
 
-* :c:member:`PyTypeObject.tp_finalize` is now part of stable ABI.
