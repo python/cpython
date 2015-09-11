@@ -86,14 +86,14 @@ Standard names are defined for the following types:
 
 .. data:: GeneratorType
 
-   The type of :term:`generator`-iterator objects, produced by calling a
-   generator function.
+   The type of :term:`generator`-iterator objects, created by
+   generator functions.
 
 
 .. data:: CoroutineType
 
-   The type of :term:`coroutine` objects, produced by calling a
-   function defined with an :keyword:`async def` statement.
+   The type of :term:`coroutine` objects, created by
+   :keyword:`async def` functions.
 
    .. versionadded:: 3.5
 
