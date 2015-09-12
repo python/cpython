@@ -2205,13 +2205,21 @@ product_setstate(productobject *lz, PyObject *state)
     {
         PyObject* indexObject = PyTuple_GET_ITEM(state, i);
         Py_ssize_t index = PyLong_AsSsize_t(indexObject);
+        PyObject* pool;
+        Py_ssize_t poolsize;
         if (index < 0 && PyErr_Occurred())
             return NULL; /* not an integer */
+        pool = PyTuple_GET_ITEM(lz->pools, i);
+        poolsize = PyTuple_GET_SIZE(pool);
+        if (poolsize == 0) {
+            lz->stopped = 1;
+            Py_RETURN_NONE;
+        }
         /* clamp the index */
         if (index < 0)
             index = 0;
-        else if (index > n-1)
-            index = n-1;
+        else if (index > poolsize-1)
+            index = poolsize-1;
         lz->indices[i] = index;
     }
 
