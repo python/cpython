@@ -25,7 +25,7 @@ some cases of running out of memory.  All error messages are written to the
 standard error stream; normal output from executed commands is written to
 standard output.
 
-Typing the interrupt character (usually Control-C or DEL) to the primary or
+Typing the interrupt character (usually :kbd:`Control-C` or :kbd:`Delete`) to the primary or
 secondary prompt cancels the input and returns to the primary prompt. [#]_
 Typing an interrupt while a command is executing raises the
 :exc:`KeyboardInterrupt` exception, which may be handled by a :keyword:`try`
