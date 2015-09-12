@@ -1174,8 +1174,8 @@ partial list:
 
 * In the editor window, there is now a line/column bar at the bottom.
 
-* Three new keystroke commands: Check module (Alt-F5), Import module (F5) and
-  Run script (Ctrl-F5).
+* Three new keystroke commands: Check module (:kbd:`Alt-F5`), Import module (:kbd:`F5`) and
+  Run script (:kbd:`Ctrl-F5`).
 
 .. ======================================================================
 

@@ -312,7 +312,7 @@ TCP echo server using the :func:`asyncio.start_server` function::
     coro = asyncio.start_server(handle_echo, '127.0.0.1', 8888, loop=loop)
     server = loop.run_until_complete(coro)
 
-    # Serve requests until CTRL+c is pressed
+    # Serve requests until Ctrl+C is pressed
     print('Serving on {}'.format(server.sockets[0].getsockname()))
     try:
         loop.run_forever()

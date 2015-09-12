@@ -156,8 +156,8 @@ access further features, you have to do this yourself:
    that matches one of these patterns. [1]_
 
    By default, Pdb sets a handler for the SIGINT signal (which is sent when the
-   user presses Ctrl-C on the console) when you give a ``continue`` command.
-   This allows you to break into the debugger again by pressing Ctrl-C.  If you
+   user presses :kbd:`Ctrl-C` on the console) when you give a ``continue`` command.
+   This allows you to break into the debugger again by pressing :kbd:`Ctrl-C`.  If you
    want Pdb not to touch the SIGINT handler, set *nosigint* tot true.
 
    Example call to enable tracing with *skip*::
