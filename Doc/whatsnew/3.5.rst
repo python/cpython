@@ -4,7 +4,7 @@
 
 :Release: |release|
 :Date: |today|
-:Editors: Elvis Pranskevichus <elprans@gmail.com>, Yury Selivanov <yselivanov@gmail.com>
+:Editors: Elvis Pranskevichus <elvis@magic.io>, Yury Selivanov <yury@magic.io>
 
 .. Rules for maintenance:
 
