@@ -853,7 +853,7 @@ the :meth:`BaseEventLoop.add_signal_handler` method::
         loop.add_signal_handler(getattr(signal, signame),
                                 functools.partial(ask_exit, signame))
 
-    print("Event loop running forever, press CTRL+c to interrupt.")
+    print("Event loop running forever, press Ctrl+C to interrupt.")
     print("pid %s: send SIGINT or SIGTERM to exit." % os.getpid())
     try:
         loop.run_forever()
