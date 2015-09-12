@@ -174,7 +174,7 @@ class TestProgram(object):
                               action='store_true')
         if self.catchbreak != False:
             parser.add_option('-c', '--catch', dest='catchbreak', default=False,
-                              help='Catch ctrl-C and display results so far',
+                              help='Catch Ctrl-C and display results so far',
                               action='store_true')
         if self.buffer != False:
             parser.add_option('-b', '--buffer', dest='buffer', default=False,

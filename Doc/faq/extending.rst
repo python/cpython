@@ -345,7 +345,7 @@ complete example using the GNU readline library (you may want to ignore
      {
        line = readline (prompt);
 
-       if (NULL == line)                          /* CTRL-D pressed */
+       if (NULL == line)                          /* Ctrl-D pressed */
        {
          done = 1;
        }

@@ -226,8 +226,8 @@ Command-line options
 
 .. cmdoption:: -c, --catch
 
-   Control-C during the test run waits for the current test to end and then
-   reports all the results so far. A second control-C raises the normal
+   :kbd:`Control-C` during the test run waits for the current test to end and then
+   reports all the results so far. A second :kbd:`Control-C` raises the normal
    :exc:`KeyboardInterrupt` exception.
 
    See `Signal Handling`_ for the functions that provide this functionality.

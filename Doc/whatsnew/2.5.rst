@@ -827,7 +827,7 @@ inheritance relationships are::
 This rearrangement was done because people often want to catch all exceptions
 that indicate program errors.  :exc:`KeyboardInterrupt` and :exc:`SystemExit`
 aren't errors, though, and usually represent an explicit action such as the user
-hitting Control-C or code calling :func:`sys.exit`.  A bare ``except:`` will
+hitting :kbd:`Control-C` or code calling :func:`sys.exit`.  A bare ``except:`` will
 catch all exceptions, so you commonly need to list :exc:`KeyboardInterrupt` and
 :exc:`SystemExit` in order to re-raise them.  The usual pattern is::
 

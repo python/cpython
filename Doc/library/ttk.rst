@@ -544,9 +544,9 @@ ttk.Notebook
       This will extend the bindings for the toplevel window containing the
       notebook as follows:
 
-      * Control-Tab: selects the tab following the currently selected one.
-      * Shift-Control-Tab: selects the tab preceding the currently selected one.
-      * Alt-K: where K is the mnemonic (underlined) character of any tab, will
+      * :kbd:`Control-Tab`: selects the tab following the currently selected one.
+      * :kbd:`Shift-Control-Tab`: selects the tab preceding the currently selected one.
+      * :kbd:`Alt-K`: where *K* is the mnemonic (underlined) character of any tab, will
         select that tab.
 
       Multiple notebooks in a single toplevel may be enabled for traversal,

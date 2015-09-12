@@ -77,14 +77,14 @@ by entering a few expressions of your choice and seeing the results::
     'HelloHelloHello'
 
 Many people use the interactive mode as a convenient yet highly programmable
-calculator.  When you want to end your interactive Python session, hold the Ctrl
-key down while you enter a Z, then hit the "Enter" key to get back to your
+calculator.  When you want to end your interactive Python session, hold the :kbd:`Ctrl`
+key down while you enter a :kbd:`Z`, then hit the ":kbd:`Enter`" key to get back to your
 Windows command prompt.
 
 You may also find that you have a Start-menu entry such as :menuselection:`Start
 --> Programs --> Python 2.7 --> Python (command line)` that results in you
 seeing the ``>>>`` prompt in a new window.  If so, the window will disappear
-after you enter the Ctrl-Z character; Windows is running a single "python"
+after you enter the :kbd:`Ctrl-Z` character; Windows is running a single "python"
 command in the window, and closes it when you terminate the interpreter.
 
 If the ``python`` command, instead of displaying the interpreter prompt ``>>>``,
@@ -127,8 +127,8 @@ you should make sure that entering the command ::
 
    c:\Python27\python
 
-starts up the interpreter as above (and don't forget you'll need a "CTRL-Z" and
-an "Enter" to get out of it). Once you have verified the directory, you can
+starts up the interpreter as above (and don't forget you'll need a ":kbd:`Ctrl-Z`" and
+an ":kbd:`Enter`" to get out of it). Once you have verified the directory, you can
 add it to the system path to make it easier to start Python by just running
 the ``python`` command. This is currently an option in the installer as of
 CPython 2.7.
@@ -321,7 +321,7 @@ Prior to Python 2.7 and 3.2, to terminate a process, you can use :mod:`ctypes`::
        return (0 != kernel32.TerminateProcess(handle, 0))
 
 In 2.7 and 3.2, :func:`os.kill` is implemented similar to the above function,
-with the additional feature of being able to send CTRL+C and CTRL+BREAK
+with the additional feature of being able to send :kbd:`Ctrl+C` and :kbd:`Ctrl+Break`
 to console subprocesses which are designed to handle those signals. See
 :func:`os.kill` for further details.
 

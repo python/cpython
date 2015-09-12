@@ -2320,7 +2320,7 @@ Port-Specific Changes: Windows
 * The :func:`os.kill` function now works on Windows.  The signal value
   can be the constants :const:`CTRL_C_EVENT`,
   :const:`CTRL_BREAK_EVENT`, or any integer.  The first two constants
-  will send Control-C and Control-Break keystroke events to
+  will send :kbd:`Control-C` and :kbd:`Control-Break` keystroke events to
   subprocesses; any other value will use the :c:func:`TerminateProcess`
   API.  (Contributed by Miki Tebeka; :issue:`1220212`.)
 
