@@ -73,10 +73,13 @@ New syntax features:
 * :pep:`465`, a new matrix multiplication operator: ``a @ b``.
 * :pep:`448`, additional unpacking generalizations.
 
+
 New library modules:
 
+* :mod:`typing`: :ref:`Type Hints <whatsnew-pep-484>` (:pep:`484`).
 * :mod:`zipapp`: :ref:`Improving Python ZIP Application Support
   <whatsnew-zipapp>` (:pep:`441`).
+
 
 New built-in features:
 
@@ -100,6 +103,7 @@ New built-in features:
 * New :exc:`StopAsyncIteration` exception.  (Contributed by
   Yury Selivanov in :issue:`24017`.  See also :pep:`492`.)
 
+
 CPython implementation improvements:
 
 * When the ``LC_TYPE`` locale is the POSIX locale (``C`` locale),
@@ -114,32 +118,32 @@ CPython implementation improvements:
 * Builtin and extension modules are now initialized in a multi-phase process,
   which is similar to how Python modules are loaded. (:pep:`489`).
 
-Significantly improved library modules:
 
-* :class:`collections.OrderedDict` is now implemented in C, which makes it
-  4 to 100 times faster.  (Contributed by Eric Snow in :issue:`16991`.)
+Significant improvements in standard library:
 
-* You may now pass bytes to the :mod:`tempfile` module's APIs and it will
-  return the temporary pathname as :class:`bytes` instead of :class:`str`.
-  It also accepts a value of ``None`` on parameters where only str was
-  accepted in the past to do the right thing based on the types of the
-  other inputs.  Two functions, :func:`gettempdirb` and
-  :func:`gettempprefixb`, have been added to go along with this.
-  This behavior matches that of the :mod:`os` APIs.
-  (Contributed by Gregory P. Smith in :issue:`24230`.)
+* :class:`collections.OrderedDict` is now
+  :ref:`implemented in C <whatsnew-ordereddict>`, which makes it
+  4 to 100 times faster.
 
-* :mod:`ssl` module gained support for Memory BIO, which decouples SSL
-  protocol handling from network IO.  (Contributed by Geert Jansen in
-  :issue:`21965`.)
+* :mod:`ssl` module gained
+  :ref:`support for Memory BIO <whatsnew-sslmemorybio>`, which decouples SSL
+  protocol handling from network IO.
 
-* :mod:`traceback` has new lightweight and convenient to work with
-  classes :class:`~traceback.TracebackException`,
-  :class:`~traceback.StackSummary`, and :class:`~traceback.FrameSummary`.
-  (Contributed by Robert Collins in :issue:`17911`.)
+* :mod:`traceback` module has been significantly
+  :ref:`enhanced <whatsnew-traceback>` for improved
+  performance and developer convenience.
 
-* Most of :func:`functools.lru_cache` machinery is now implemented in C.
-  (Contributed by Matt Joiner, Alexey Kachayev, and Serhiy Storchaka
-  in :issue:`14373`.)
+* The new :func:`os.scandir` function provides a
+  :ref:`better and significantly faster way <whatsnew-pep-471>`
+  of directory traversal.
+
+* :func:`functools.lru_cache` has been largely
+  :ref:`reimplemented in C <whatsnew-lrucache>`, yielding much better
+  performance.
+
+* The new :func:`subprocess.run` function provides a
+  :ref:`streamlined way to run subprocesses <whatsnew-subprocess>`.
+
 
 Security improvements:
 
@@ -152,6 +156,7 @@ Security improvements:
   against potential injection attacks. (Contributed by Antoine Pitrou
   in :issue:`22796`.)
 
+
 Windows improvements:
 
 * A new installer for Windows has replaced the old MSI.
@@ -159,6 +164,7 @@ Windows improvements:
 
 * Windows builds now use Microsoft Visual C++ 14.0, and extension modules
   should use the same.
+
 
 Please read on for a comprehensive list of user-facing changes, including many
 other smaller improvements, CPython optimizations, deprecations, and potential
@@ -238,7 +244,7 @@ context managers.  The following script::
     finally:
         loop.close()
 
-will print::
+will output::
 
     coro 2: waiting for lock
     coro 2: holding the lock
@@ -352,28 +358,38 @@ unpackings::
 PEP 461 - % formatting support for bytes and bytearray
 ------------------------------------------------------
 
-PEP 461 adds % formatting to :class:`bytes` and :class:`bytearray`, aiding in
-handling data that is a mixture of binary and ASCII compatible text.  This
-feature also eases porting such code from Python 2.
+PEP 461 adds support for ``%``
+:ref:`interpolation operator <bytes-formatting>` to :class:`bytes`
+and :class:`bytearray`.
+
+While interpolation is usually thought of as a string operation, there are
+cases where interpolation on ``bytes`` or ``bytearrays`` make sense, and the
+work needed to make up for this missing functionality detracts from the
+overall readability of the code.  This issue is particularly important when
+dealing with wire format protocols, which are often a mixture of binary
+and ASCII compatible text.
 
 Examples::
 
-    >>> b'Hello %s!' % b'World'
+    >>> b'Hello %b!' % b'World'
     b'Hello World!'
 
     >>> b'x=%i y=%f' % (1, 2.5)
     b'x=1 y=2.500000'
 
-Unicode is not allowed for ``%s``, but it is accepted by ``%a`` (equivalent of
+Unicode is not allowed for ``%b``, but it is accepted by ``%a`` (equivalent of
 ``repr(obj).encode('ascii', 'backslashreplace')``)::
 
-    >>> b'Hello %s!' % 'World'
+    >>> b'Hello %b!' % 'World'
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
     TypeError: %b requires bytes, or an object that implements __bytes__, not 'str'
 
     >>> b'price: %a' % '10€'
     b"price: '10\\u20ac'"
+
+Note that ``%s`` and ``%r`` conversion types, although supported, should
+only be used in codebases that need compatibility with Python 2.
 
 .. seealso::
 
@@ -387,9 +403,17 @@ Unicode is not allowed for ``%s``, but it is accepted by ``%a`` (equivalent of
 PEP 484 - Type Hints
 --------------------
 
-This PEP introduces a provisional module to provide these standard
-definitions and tools, along with some conventions for situations
-where annotations are not available.
+Function annotation syntax has been a Python feature since version 3.0
+(:pep:`3107`), however the semantics of annotations has been left undefined.
+
+Experience has shown that the majority of function annotation
+uses were to provide type hints to function parameters and return values.  It
+became evident that it would be beneficial for Python users, if the
+standard library included the base definitions and tools for type annotations.
+
+:pep:`484` introduces a :term:`provisional module <provisional api>` to
+provide these standard definitions and tools, along with some conventions
+for situations where annotations are not available.
 
 For example, here is a simple function whose argument and return type
 are declared in the annotations::
@@ -397,9 +421,14 @@ are declared in the annotations::
     def greeting(name: str) -> str:
         return 'Hello ' + name
 
+While these annotations are available at runtime through the usual
+:attr:`__annotations__` attribute, *no automatic type checking happens at
+runtime*.  Instead, it is assumed that a separate off-line type checker will
+be used for on-demand source code analysis.
+
 The type system supports unions, generic types, and a special type
-named ``Any`` which is consistent with (i.e. assignable to and from) all
-types.
+named :class:`~typing.Any` which is consistent with (i.e. assignable to
+and from) all types.
 
 .. seealso::
 
@@ -407,6 +436,8 @@ types.
    * :pep:`484` -- Type Hints
         PEP written by Guido van Rossum, Jukka Lehtosalo, and Łukasz Langa;
         implemented by Guido van Rossum.
+   * :pep:`483` -- The Theory of Type Hints
+        PEP written by Guido van Rossum
 
 
 .. _whatsnew-pep-471:
@@ -416,8 +447,14 @@ PEP 471 - os.scandir() function -- a better and faster directory iterator
 
 :pep:`471` adds a new directory iteration function, :func:`os.scandir`,
 to the standard library.  Additionally, :func:`os.walk` is now
-implemented using :func:`os.scandir`, which speeds it up by 3-5 times
-on POSIX systems and by 7-20 times on Windows systems.
+implemented using ``os.scandir()``, which makes it 3 to 5 times faster
+on POSIX systems and 7 to 20 times faster on Windows systems.  This is
+largely achieved by greatly reducing the number of calls to :func:`os.stat`
+required to walk a directory tree.
+
+Additionally, ``os.scandir()`` returns an iterator, as opposed to returning
+a list of file names, which improves memory efficiency when iterating
+over very large directories.
 
 .. seealso::
 
@@ -430,14 +467,39 @@ on POSIX systems and by 7-20 times on Windows systems.
 PEP 475: Retry system calls failing with EINTR
 ----------------------------------------------
 
-:pep:`475` adds support for automatic retry of system calls failing with
-:py:data:`~errno.EINTR`: this means that user code doesn't have to deal with
-``EINTR`` or :exc:`InterruptedError` manually, and should make it more robust
-against asynchronous signal reception.
+A :py:data:`~errno.EINTR` error code is returned whenever a system call, that
+is waiting for I/O, is interrupted by a signal.  Previously, Python would
+raise :exc:`InterruptedError` in such case.  This meant that, when writing a
+Python application, the developer had two choices:
 
-Examples of functions which are now retried when interrupted by a signal
-instead of raising :exc:`InterruptedError` if the Python signal handler does
-not raise an exception:
+#. Ignore the ``InterruptedError``.
+#. Handle the ``InterruptedError`` and attempt to restart the interrupted
+   system call at every call site.
+
+The first option makes an application fail intermittently.
+The second option adds a large amount of boilerplate that makes the
+code nearly unreadable.  Compare::
+
+    print("Hello World")
+
+and::
+
+    while True:
+        try:
+            print("Hello World")
+            break
+        except InterruptedError:
+            continue
+
+:pep:`475` implements automatic retry of system calls on
+``EINTR``.  This removes the burden of dealing with ``EINTR``
+or :exc:`InterruptedError` in user code in most situations and makes
+Python programs, including the standard library, more robust.  Note that
+the system call is only retried if the signal handler does not raise an
+exception.
+
+Below is a list of functions which are now retried when interrupted
+by a signal:
 
 * :func:`open`, :func:`os.open`, :func:`io.open`;
 
@@ -476,7 +538,7 @@ not raise an exception:
 
    :pep:`475` -- Retry system calls failing with EINTR
       PEP and implementation written by Charles-François Natali and
-      Victor Stinner, with the help of Antoine Pitrou (the french connection).
+      Victor Stinner, with the help of Antoine Pitrou (the French connection).
 
 
 .. _whatsnew-pep-479:
@@ -484,15 +546,27 @@ not raise an exception:
 PEP 479: Change StopIteration handling inside generators
 --------------------------------------------------------
 
-:pep:`479` changes the behavior of generators: when a :exc:`StopIteration`
+The interaction of generators and :exc:`StopIteration` in Python 3.4 and
+earlier was somewhat surprising, and could conceal obscure bugs.   Previously,
+``StopIteration`` raised accidentally inside a generator function was
+interpreted as the end of the iteration by the loop construct driving the
+generator.
+
+:pep:`479` changes the behavior of generators: when a ``StopIteration``
 exception is raised inside a generator, it is replaced with a
-:exc:`RuntimeError`.  To enable the feature a ``__future__`` import should
-be used::
+:exc:`RuntimeError` before it exits the generator frame.  The main goal of
+this change is to ease debugging in the situation where an unguarded
+:func:`next` call raises ``StopIteration`` and causes the iteration controlled
+by the generator to terminate silently. This is particularly pernicious in
+combination with the ``yield from`` construct.
+
+This is a backwards incompatible change, so to enable the new behavior,
+a :term:`__future__` import is necessary::
 
     from __future__ import generator_stop
 
 Without a ``__future__`` import, a :exc:`PendingDeprecationWarning` will be
-raised.
+raised whenever a ``StopIteration`` exception is raised inside a generator.
 
 .. seealso::
 
@@ -641,6 +715,18 @@ The :class:`~argparse.ArgumentParser` class now allows to disable
 Steven Bethard, paul j3 and Daniel Eriksson in :issue:`14910`.)
 
 
+asyncio
+-------
+
+Since :mod:`asyncio` module is :term:`provisional <provisional api>`,
+all changes introduced in Python 3.5 have also been backported to Python 3.4.x.
+
+Notable changes in :mod:`asyncio` module since Python 3.4.0:
+
+* The proactor event loop now supports SSL.
+  (Contributed by Antoine Pitrou and Victor Stinner in :issue:`22560`.)
+
+
 bz2
 ---
 
@@ -680,6 +766,8 @@ interpreter.  (Contributed by Claudiu Popa in :issue:`17442`.)
 
 collections
 -----------
+
+.. _whatsnew-ordereddict:
 
 The :class:`~collections.OrderedDict` class is now implemented in C, which
 makes it 4 to 100 times faster.  (Contributed by Eric Snow in :issue:`16991`.)
@@ -885,6 +973,8 @@ descriptors in addition to file-like objects.
 
 functools
 ---------
+
+.. _whatsnew-lrucache:
 
 Most of :func:`~functools.lru_cache` machinery is now implemented in C, making
 it significantly faster.  (Contributed by Matt Joiner, Alexey Kachayev, and
@@ -1355,6 +1445,8 @@ a :func:`~collections.namedtuple`.  (Contributed by Claudiu Popa in
 ssl
 ---
 
+.. _whatsnew-sslmemorybio:
+
 Memory BIO Support
 ~~~~~~~~~~~~~~~~~~
 
@@ -1463,6 +1555,8 @@ in particular :func:`reversed` iteration and slice indexing.
 Jessica McKellar, and  Serhiy Storchaka in :issue:`13583`.)
 
 
+.. _whatsnew-subprocess:
+
 subprocess
 ----------
 
@@ -1482,7 +1576,7 @@ A new :func:`~sys.set_coroutine_wrapper` function allows setting a global
 hook that will be called whenever a :term:`coroutine object <coroutine>`
 is created by an :keyword:`async def` function.  A corresponding
 :func:`~sys.get_coroutine_wrapper` can be used to obtain a currently set
-wrapper.  Both functions are :term:`provisional <provisional package>`,
+wrapper.  Both functions are :term:`provisional <provisional api>`,
 and are intended for debugging purposes only.  (Contributed by Yury Selivanov
 in :issue:`24017`.)
 
@@ -1555,6 +1649,8 @@ on Windows has been replaced by a private function in the :mod:`_tkinter`
 module which makes no permanent changes to environment variables.
 (Contributed by Zachary Ware in :issue:`20035`.)
 
+
+.. _whatsnew-traceback:
 
 traceback
 ---------
@@ -1883,6 +1979,16 @@ function or module names.  Introduced by :pep:`492` in Python 3.5, they will
 become proper keywords in Python 3.7.
 
 
+Deprecated Python Behavior
+--------------------------
+
+Raising :exc:`StopIteration` inside a generator will now generate a silent
+:exc:`PendingDeprecationWarning`, which will become a non-silent deprecation
+warning in Python 3.6 and will trigger a :exc:`RuntimeError` in Python 3.7.
+See :ref:`PEP 479: Change StopIteration handling inside generators <whatsnew-pep-479>`
+for details.
+
+
 Unsupported Operating Systems
 -----------------------------
 
@@ -1981,6 +2087,20 @@ Porting to Python 3.5
 
 This section lists previously described changes and other bugfixes
 that may require changes to your code.
+
+
+Changes in Python behavior
+--------------------------
+
+* Due to an oversight, earlier Python versions erroneously accepted the
+  following syntax::
+
+      f(1 for x in [1], *args)
+      f(1 for x in [1], **kwargs)
+
+  Python 3.5 now correctly raises a :exc:`SyntaxError`, as generator
+  expressions must be put in parentheses if not a sole argument to a function.
+
 
 Changes in the Python API
 -------------------------
