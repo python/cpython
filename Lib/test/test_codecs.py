@@ -2101,6 +2101,13 @@ class BomTest(unittest.TestCase):
                 self.assertEqual(f.read(), data * 2)
 
 
+class TransformCodecTest(unittest.TestCase):
+
+    def test_uu_invalid(self):
+        # Missing "begin" line
+        self.assertRaises(ValueError, codecs.decode, "", "uu-codec")
+
+
 def test_main():
     test_support.run_unittest(
         UTF32Test,
@@ -2132,52 +2139,8 @@ def test_main():
         UnicodeEscapeTest,
         RawUnicodeEscapeTest,
         BomTest,
+        TransformCodecTest,
     )
-
-    def test_uu_invalid(self):
-        # Missing "begin" line
-        self.assertRaises(ValueError, codecs.decode, "", "uu-codec")
-
-    def test_text_to_binary_blacklists_binary_transforms(self):
-        # Check binary -> binary codecs give a good error for str input
-        bad_input = "bad input type"
-        for encoding in bytes_transform_encodings:
-            fmt = (r"{!r} is not a text encoding; "
-                   r"use codecs.encode\(\) to handle arbitrary codecs")
-            msg = fmt.format(encoding)
-            with self.assertRaisesRegex(LookupError, msg) as failure:
-                bad_input.encode(encoding)
-            self.assertIsNone(failure.exception.__cause__)
-
-    def test_text_to_binary_blacklists_text_transforms(self):
-        # Check str.encode gives a good error message for str -> str codecs
-        msg = (r"^'rot_13' is not a text encoding; "
-               r"use codecs.encode\(\) to handle arbitrary codecs")
-        with self.assertRaisesRegex(LookupError, msg):
-            "just an example message".encode("rot_13")
-
-    def test_binary_to_text_blacklists_binary_transforms(self):
-        # Check bytes.decode and bytearray.decode give a good error
-        # message for binary -> binary codecs
-        data = b"encode first to ensure we meet any format restrictions"
-        for encoding in bytes_transform_encodings:
-            encoded_data = codecs.encode(data, encoding)
-            fmt = (r"{!r} is not a text encoding; "
-                   r"use codecs.decode\(\) to handle arbitrary codecs")
-            msg = fmt.format(encoding)
-            with self.assertRaisesRegex(LookupError, msg):
-                encoded_data.decode(encoding)
-            with self.assertRaisesRegex(LookupError, msg):
-                bytearray(encoded_data).decode(encoding)
-
-    def test_binary_to_text_blacklists_text_transforms(self):
-        # Check str -> str codec gives a good error for binary input
-        for bad_input in (b"immutable", bytearray(b"mutable")):
-            msg = (r"^'rot_13' is not a text encoding; "
-                   r"use codecs.decode\(\) to handle arbitrary codecs")
-            with self.assertRaisesRegex(LookupError, msg) as failure:
-                bad_input.decode("rot_13")
-            self.assertIsNone(failure.exception.__cause__)
 
 
 if __name__ == "__main__":
