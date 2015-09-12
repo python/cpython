@@ -1741,7 +1741,7 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
             else {
                 end_quote_size = 0;
                 if (c == '\\')
-                c = tok_nextc(tok);  /* skip escaped char */
+                    c = tok_nextc(tok);  /* skip escaped char */
             }
         }
 
