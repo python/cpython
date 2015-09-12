@@ -330,8 +330,8 @@ Go to file/line
 Editing and navigation
 ----------------------
 
-In this section, 'C' refers to the Control key on Windows and Unix and
-the Command key on Mac OSX.
+In this section, 'C' refers to the :kbd:`Control` key on Windows and Unix and
+the :kbd:`Command` key on Mac OSX.
 
 * :kbd:`Backspace` deletes to the left; :kbd:`Del` deletes to the right
 
