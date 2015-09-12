@@ -2103,6 +2103,14 @@ class BomTest(unittest.TestCase):
 
 class TransformCodecTest(unittest.TestCase):
 
+    def test_quopri_stateless(self):
+        # Should encode with quotetabs=True
+        encoded = codecs.encode(b"space tab\teol \n", "quopri-codec")
+        self.assertEqual(encoded, b"space=20tab=09eol=20\n")
+        # But should still support unescaped tabs and spaces
+        unescaped = b"space tab eol\n"
+        self.assertEqual(codecs.decode(unescaped, "quopri-codec"), unescaped)
+
     def test_uu_invalid(self):
         # Missing "begin" line
         self.assertRaises(ValueError, codecs.decode, "", "uu-codec")

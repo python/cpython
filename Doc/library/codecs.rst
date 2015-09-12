@@ -1193,21 +1193,22 @@ The following codecs provide str-to-str encoding and decoding
 +--------------------+---------------------------+---------------------------+------------------------------+
 | Codec              | Aliases                   | Purpose                   | Encoder/decoder              |
 +====================+===========================+===========================+==============================+
-| base64_codec       | base64, base-64           | Convert operand to MIME   | :meth:`base64.b64encode`,    |
-|                    |                           | base64 (the result always | :meth:`base64.b64decode`     |
-|                    |                           | includes a trailing       |                              |
-|                    |                           | ``'\n'``)                 |                              |
+| base64_codec       | base64, base-64           | Convert operand to        | :meth:`base64.encodestring`, |
+|                    |                           | multiline MIME base64 (the| :meth:`base64.decodestring`  |
+|                    |                           | result always includes a  |                              |
+|                    |                           | trailing ``'\n'``)        |                              |
 +--------------------+---------------------------+---------------------------+------------------------------+
 | bz2_codec          | bz2                       | Compress the operand      | :meth:`bz2.compress`,        |
 |                    |                           | using bz2                 | :meth:`bz2.decompress`       |
 +--------------------+---------------------------+---------------------------+------------------------------+
-| hex_codec          | hex                       | Convert operand to        | :meth:`base64.b16encode`,    |
-|                    |                           | hexadecimal               | :meth:`base64.b16decode`     |
+| hex_codec          | hex                       | Convert operand to        | :meth:`binascii.b2a_hex`,    |
+|                    |                           | hexadecimal               | :meth:`binascii.a2b_hex`     |
 |                    |                           | representation, with two  |                              |
 |                    |                           | digits per byte           |                              |
 +--------------------+---------------------------+---------------------------+------------------------------+
-| quopri_codec       | quopri, quoted-printable, | Convert operand to MIME   | :meth:`quopri.encodestring`, |
-|                    | quotedprintable           | quoted printable          | :meth:`quopri.decodestring`  |
+| quopri_codec       | quopri, quoted-printable, | Convert operand to MIME   | :meth:`quopri.encode` with   |
+|                    | quotedprintable           | quoted printable          | ``quotetabs=True``,          |
+|                    |                           |                           | :meth:`quopri.decode`        |
 +--------------------+---------------------------+---------------------------+------------------------------+
 | string_escape      |                           | Produce a string that is  |                              |
 |                    |                           | suitable as string        |                              |
