@@ -1035,6 +1035,16 @@ class TestBasicOps(unittest.TestCase):
             for proto in range(pickle.HIGHEST_PROTOCOL + 1):
                 self.pickletest(proto, product(*args))
 
+    def test_product_issue_25021(self):
+        # test that indices are properly clamped to the length of the tuples
+        p = product((1, 2),(3,))
+        p.__setstate__((0, 0x1000))  # will access tuple element 1 if not clamped
+        self.assertEqual(next(p), (2, 3))
+        # test that empty tuple in the list will result in an immediate StopIteration
+        p = product((1, 2), (), (3,))
+        p.__setstate__((0, 0, 0x1000))  # will access tuple element 1 if not clamped
+        self.assertRaises(StopIteration, next, p)
+
     def test_repeat(self):
         self.assertEqual(list(repeat(object='a', times=3)), ['a', 'a', 'a'])
         self.assertEqual(lzip(range(3),repeat('a')),
