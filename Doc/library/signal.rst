@@ -95,7 +95,7 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: CTRL_C_EVENT
 
-   The signal corresponding to the CTRL+C keystroke event. This signal can
+   The signal corresponding to the :kbd:`Ctrl+C` keystroke event. This signal can
    only be used with :func:`os.kill`.
 
    Availability: Windows.
@@ -105,7 +105,7 @@ The variables defined in the :mod:`signal` module are:
 
 .. data:: CTRL_BREAK_EVENT
 
-   The signal corresponding to the CTRL+BREAK keystroke event. This signal can
+   The signal corresponding to the :kbd:`Ctrl+Break` keystroke event. This signal can
    only be used with :func:`os.kill`.
 
    Availability: Windows.

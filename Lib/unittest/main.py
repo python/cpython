@@ -168,7 +168,7 @@ class TestProgram(object):
         if self.catchbreak is None:
             parser.add_argument('-c', '--catch', dest='catchbreak',
                                 action='store_true',
-                                help='Catch ctrl-C and display results so far')
+                                help='Catch Ctrl-C and display results so far')
             self.catchbreak = False
         if self.buffer is None:
             parser.add_argument('-b', '--buffer', dest='buffer',
