@@ -114,7 +114,7 @@ CPython implementation improvements:
 * Builtin and extension modules are now initialized in a multi-phase process,
   which is similar to how Python modules are loaded. (:pep:`489`).
 
-Significantly Improved Library Modules:
+Significantly improved library modules:
 
 * :class:`collections.OrderedDict` is now implemented in C, which makes it
   4 to 100 times faster.  (Contributed by Eric Snow in :issue:`16991`.)
@@ -432,7 +432,7 @@ PEP 475: Retry system calls failing with EINTR
 
 :pep:`475` adds support for automatic retry of system calls failing with
 :py:data:`~errno.EINTR`: this means that user code doesn't have to deal with
-EINTR or :exc:`InterruptedError` manually, and should make it more robust
+``EINTR`` or :exc:`InterruptedError` manually, and should make it more robust
 against asynchronous signal reception.
 
 Examples of functions which are now retried when interrupted by a signal
@@ -656,6 +656,13 @@ The :class:`~cgi.FieldStorage` class now supports the context management
 protocol.  (Contributed by Berker Peksag in :issue:`20289`.)
 
 
+csv
+---
+
+:meth:`Writer.writerow <csv.Writer.writerow>` now supports arbitrary iterables,
+not just sequences.  (Contributed by Serhiy Storchaka in :issue:`23171`.)
+
+
 cmath
 -----
 
@@ -709,10 +716,15 @@ methods to match corresponding methods of :class:`str`.
 collections.abc
 ---------------
 
+The :meth:`Sequence.index <collections.abc.Sequence.index>` method now
+accepts *start* and *stop* arguments to match the corresponding methods
+of :class:`tuple`, :class:`list`, etc.
+(Contributed by Devin Jeanpierre in :issue:`23086`.)
+
 A new :class:`~collections.abc.Generator` abstract base class. (Contributed
 by Stefan Behnel in :issue:`24018`.)
 
-New :class:`~collections.abc.Coroutine`,
+New :class:`~collections.abc.Awaitable` :class:`~collections.abc.Coroutine`,
 :class:`~collections.abc.AsyncIterator`, and
 :class:`~collections.abc.AsyncIterable` abstract base classes.
 (Contributed by Yury Selivanov in :issue:`24184`.)
@@ -725,6 +737,9 @@ A new :mod:`compileall` option, ``-j N``, allows to run ``N`` workers
 sumultaneously to perform parallel bytecode compilation.
 The :func:`~compileall.compile_dir` function has a corresponding ``workers``
 parameter.  (Contributed by Claudiu Popa in :issue:`16104`.)
+
+Another new option, ``-r``, allows to control the maximum recursion
+level for subdirectories.  (Contributed by Claudiu Popa in :issue:`19628`.)
 
 The ``-q`` command line option can now be specified more than once, in
 which case all output, including errors, will be suppressed.  The corresponding
@@ -741,6 +756,19 @@ The :meth:`Executor.map <concurrent.futures.Executor.map>` method now accepts a
 *chunksize* argument to allow batching of tasks to improve performance when
 :meth:`~concurrent.futures.ProcessPoolExecutor` is used.
 (Contributed by Dan O'Reilly in :issue:`11271`.)
+
+A number of workers in :class:`~concurrent.futures.ThreadPoolExecutor` is
+optional now.  The default value equals to 5 times the number of CPUs.
+(Contributed by Claudiu Popa in :issue:`21527`.)
+
+
+configparser
+------------
+
+Config parsers can be customized by providing a dictionary of converters in the
+constructor.  All converters defined in config parser (either by subclassing or
+by providing in a constructor) will be available on all section proxies.
+(Contributed by Łukasz Langa in :issue:`18159`.)
 
 
 contextlib
@@ -759,6 +787,13 @@ curses
 The new :func:`~curses.update_lines_cols` function updates :envvar:`LINES`
 and :envvar:`COLS` environment variables.  This is useful for detecting
 manual screen resize.  (Contributed by Arnon Yaari in :issue:`4254`.)
+
+
+dbm
+---
+
+:func:`dumb.open <dbm.dumb.open>` always creates a new database when the flag
+has the value ``'n'``.  (Contributed by Claudiu Popa in :issue:`18039`.)
 
 
 difflib
@@ -818,6 +853,10 @@ of using encoded words.  This allows ``Messages`` to be formatted according to
 ``SMTPUTF8`` extension.  (Contributed by R. David Murray in
 :issue:`24211`.)
 
+:class:`email.mime.text.MIMEText` constructor now accepts a
+:class:`~email.charset.Charset` instance.
+(Contributed by Claude Paroz and Berker Peksag in :issue:`16324`.)
+
 
 enum
 ----
@@ -860,12 +899,20 @@ search in subdirectories using the ``"**"`` pattern.
 (Contributed by Serhiy Storchaka in :issue:`13968`.)
 
 
+gzip
+----
+
+The *mode* argument of :class:`~gzip.GzipFile` constructor now
+accepts ``"x"`` to request exclusive creation.
+(Contributed by Tim Heaney in :issue:`19222`.)
+
+
 heapq
 -----
 
 Element comparison in :func:`~heapq.merge` can now be customized by
-passing a :term:`key function` in a new optional ``key`` keyword argument.
-A new optional ``reverse`` keyword argument can be used to reverse element
+passing a :term:`key function` in a new optional *key* keyword argument.
+A new optional *reverse* keyword argument can be used to reverse element
 comparison.  (Contributed by Raymond Hettinger in :issue:`13742`.)
 
 
@@ -875,6 +922,18 @@ http
 A new :class:`HTTPStatus <http.HTTPStatus>` enum that defines a set of
 HTTP status codes, reason phrases and long descriptions written in English.
 (Contributed by Demian Brecht in :issue:`21793`.)
+
+
+http.client
+-----------
+
+:meth:`HTTPConnection.getresponse() <http.client.HTTPConnection.getresponse>`
+now raises a :exc:`~http.client.RemoteDisconnected` exception when a
+remote server connection is closed unexpectedly.  Additionally, if a
+:exc:`ConnectionError` (of which ``RemoteDisconnected``
+is a subclass) is raised, the client socket is now closed automatically,
+and will reconnect on the next request.
+(Contributed by Martin Panter in :issue:`3566`.)
 
 
 idlelib and IDLE
@@ -1006,7 +1065,18 @@ to sort the keys alphabetically. (Contributed by Berker Peksag
 in :issue:`21650`.)
 
 JSON decoder now raises :exc:`json.JSONDecodeError` instead of
-:exc:`ValueError`.   (Contributed by Serhiy Storchaka in :issue:`19361`.)
+:exc:`ValueError` to provide better context information about the error.
+(Contributed by Serhiy Storchaka in :issue:`19361`.)
+
+
+linecache
+---------
+
+A new :func:`~linecache.lazycache` function can be used to capture information
+about a non-file based module to permit getting its lines later via
+:func:`~linecache.getline`. This avoids doing I/O until a line is actually
+needed, without having to carry the module globals around indefinitely.
+(Contributed by Robert Collins in :issue:`17911`.)
 
 
 locale
@@ -1058,6 +1128,14 @@ equality. (Contributed by Chris Barker and Tal Einat in :issue:`24270`.)
 A new :func:`~math.gcd` function has been added.  The :func:`fractions.gcd`
 function is now deprecated. (Contributed by Mark Dickinson and Serhiy
 Storchaka in :issue:`22486`.)
+
+
+multiprocessing
+---------------
+
+:func:`~multiprocessing.synchronized` objects now support the
+:term:`context manager` protocol.  (Contributed by Charles-François Natali in
+:issue:`21565`.)
 
 
 operator
@@ -1154,6 +1232,10 @@ A new :meth:`POP3.utf8 <poplib.POP3.utf8>` command enables :rfc:`6856`
 
 re
 --
+
+References and conditional references to groups with fixed length are now
+allowed in lookbehind assertions.
+(Contributed by Serhiy Storchaka in :issue:`9179`.)
 
 The number of capturing groups in regular expression is no longer limited by
 100.  (Contributed by Serhiy Storchaka in :issue:`22437`.)
@@ -1400,8 +1482,9 @@ A new :func:`~sys.set_coroutine_wrapper` function allows setting a global
 hook that will be called whenever a :term:`coroutine object <coroutine>`
 is created by an :keyword:`async def` function.  A corresponding
 :func:`~sys.get_coroutine_wrapper` can be used to obtain a currently set
-wrapper.  Both functions are provisional, and are intended for debugging
-purposes only.  (Contributed by Yury Selivanov in :issue:`24017`.)
+wrapper.  Both functions are :term:`provisional <provisional package>`,
+and are intended for debugging purposes only.  (Contributed by Yury Selivanov
+in :issue:`24017`.)
 
 A new :func:`~sys.is_finalizing` function can be used to check if the Python
 interpreter is :term:`shutting down <interpreter shutdown>`.
@@ -1429,6 +1512,11 @@ directories will be owned by the numeric ``uid`` and ``gid`` from the tarfile.
 If set to ``False`` (the default, and the behavior in versions prior to 3.5),
 they will be owned by the named user and group in the tarfile.
 (Contributed by Michael Vogt and Eric Smith in :issue:`23193`.)
+
+The :meth:`TarFile.list <tarfile.TarFile.list>` now accepts an optional
+*members* keyword argument that can be set to a subset of the list returned
+by :meth:`TarFile.getmembers <tarfile.TarFile.getmembers>`.
+(Contributed by Serhiy Storchaka in :issue:`21549`.)
 
 
 threading
@@ -1535,6 +1623,18 @@ The :mod:`unicodedata` module now uses data from `Unicode 8.0.0
 unittest
 --------
 
+The :meth:`TestLoader.loadTestsFromModule <unittest.TestLoader.loadTestsFromModule>`
+method now accepts a keyword-only argument *pattern* which is passed to
+``load_tests`` as the third argument.  Found packages are now checked for
+``load_tests`` regardless of whether their path matches *pattern*, because it
+is impossible for a package name to match the default pattern.
+(Contributed by Robert Collins and Barry A. Warsaw in :issue:`16662`.)
+
+Unittest discovery errors now are exposed in
+:data:`TestLoader.errors <unittest.TestLoader.errors>` attribute of the
+:class:`~unittest.TestLoader` instance.
+(Contributed by Robert Collins in :issue:`19746`.)
+
 A new command line option ``--locals`` to show local variables in
 tracebacks.  (Contributed by Robert Collins in :issue:`22936`.)
 
@@ -1557,6 +1657,10 @@ The :class:`~unittest.mock.MagicMock` class now supports :meth:`__truediv__`,
 :meth:`__divmod__` and :meth:`__matmul__` operators.
 (Contributed by Johannes Baiter in :issue:`20968`, and Håkan Lövdahl
 in :issue:`23581` and :issue:`23568`.)
+
+It is no longer necessary to explicitly pass ``create=True`` to the
+:func:`~unittest.mock.patch` function when patching builtin names.
+(Contributed by Kushal Das in :issue:`17660`.)
 
 
 wsgiref
@@ -1585,6 +1689,9 @@ xml.sax
 SAX parsers now support a character stream of the
 :class:`xmlreader.InputSource <xml.sax.xmlreader.InputSource>` object.
 (Contributed by Serhiy Storchaka in :issue:`2175`.)
+
+:func:`~xml.sax.parseString` now accepts a :class:`str` instance.
+(Contributed by Serhiy Storchaka in :issue:`10590`.)
 
 
 zipfile
@@ -1808,6 +1915,7 @@ instead.  In addition, the undocumented *LegalChars* parameter of
 Passing a format string as keyword argument *format_string* to the
 :meth:`~string.Formatter.format` method of the :class:`string.Formatter`
 class has been deprecated.
+(Contributed by Serhiy Storchaka in :issue:`23671`.)
 
 The :func:`platform.dist` and :func:`platform.linux_distribution` functions
 are now deprecated and will be removed in Python 3.7.  Linux distributions use
@@ -1833,6 +1941,16 @@ The :mod:`inspect` :func:`~inspect.getfullargspec`,
 Use of ``re.LOCALE`` flag with str patterns or ``re.ASCII`` is now
 deprecated.  (Contributed by Serhiy Storchaka in :issue:`22407`.)
 
+Use of unrecognized special sequences consisting of ``'\'`` and an ASCII letter
+in regular expression patterns and replacement patterns now raises a
+deprecation warning and will be forbidden in Python 3.6.
+(Contributed by Serhiy Storchaka in :issue:`23622`.)
+
+The undocumented and unofficial *use_load_tests* default argument of the
+:meth:`unittest.TestLoader.loadTestsFromModule` method now is
+deprecated and ignored.
+(Contributed by Robert Collins and Barry A. Warsaw in :issue:`16662`.)
+
 
 Removed
 =======
@@ -1853,8 +1971,8 @@ removed:
 
 * The concept of ``.pyo`` files has been removed.
 
-* The JoinableQueue class in the provisional asyncio module was deprecated
-  in 3.4.4 and is now removed.
+* The JoinableQueue class in the provisional :mod:`asyncio` module was
+  deprecated in 3.4.4 and is now removed.
   (Contributed by A. Jesse Jiryu Davis in :issue:`23464`.)
 
 
@@ -1925,6 +2043,7 @@ Changes in the Python API
   an empty string.  For compatibility use patterns that never match an empty
   string (e.g. ``"x+"`` instead of ``"x*"``).  Patterns that could only match
   an empty string (such as ``"\b"``) now raise an error.
+  (Contributed by Serhiy Storchaka in :issue:`22818`.)
 
 * The :class:`~http.cookies.Morsel` dict-like interface has been made self
   consistent:  morsel comparison now takes the :attr:`~http.cookies.Morsel.key`
