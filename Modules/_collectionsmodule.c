@@ -567,12 +567,26 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
         if (n > MAX_DEQUE_LEN)
             return PyErr_NoMemory();
 
+        deque->state++;
         for (i = 0 ; i < n-1 ; i++) {
-            rv = deque_append(deque, item);
-            if (rv == NULL)
-                return NULL;
-            Py_DECREF(rv);
+            if (deque->rightindex == BLOCKLEN - 1) {
+                block *b = newblock(Py_SIZE(deque) + i);
+                if (b == NULL) {
+                    Py_SIZE(deque) += i;
+                    return NULL;
+                }
+                b->leftlink = deque->rightblock;
+                CHECK_END(deque->rightblock->rightlink);
+                deque->rightblock->rightlink = b;
+                deque->rightblock = b;
+                MARK_END(b->rightlink);
+                deque->rightindex = -1;
+            }
+            deque->rightindex++;
+            Py_INCREF(item);
+            deque->rightblock->data[deque->rightindex] = item;
         }
+        Py_SIZE(deque) += i;
         Py_INCREF(deque);
         return (PyObject *)deque;
     }
