@@ -11,7 +11,7 @@ def quopri_encode(input, errors='strict'):
     assert errors == 'strict'
     f = BytesIO(input)
     g = BytesIO()
-    quopri.encode(f, g, 1)
+    quopri.encode(f, g, quotetabs=True)
     return (g.getvalue(), len(input))
 
 def quopri_decode(input, errors='strict'):

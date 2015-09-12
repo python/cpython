@@ -1284,9 +1284,9 @@ to :class:`bytes` mappings.  They are not supported by :meth:`bytes.decode`
 +----------------------+------------------+------------------------------+------------------------------+
 | Codec                | Aliases          | Purpose                      | Encoder / decoder            |
 +======================+==================+==============================+==============================+
-| base64_codec [#b64]_ | base64, base_64  | Convert operand to MIME      | :meth:`base64.b64encode` /   |
-|                      |                  | base64 (the result always    | :meth:`base64.b64decode`     |
-|                      |                  | includes a trailing          |                              |
+| base64_codec [#b64]_ | base64, base_64  | Convert operand to multiline | :meth:`base64.encodebytes` / |
+|                      |                  | MIME base64 (the result      | :meth:`base64.decodebytes`   |
+|                      |                  | always includes a trailing   |                              |
 |                      |                  | ``'\n'``)                    |                              |
 |                      |                  |                              |                              |
 |                      |                  | .. versionchanged:: 3.4      |                              |
@@ -1298,14 +1298,14 @@ to :class:`bytes` mappings.  They are not supported by :meth:`bytes.decode`
 | bz2_codec            | bz2              | Compress the operand         | :meth:`bz2.compress` /       |
 |                      |                  | using bz2                    | :meth:`bz2.decompress`       |
 +----------------------+------------------+------------------------------+------------------------------+
-| hex_codec            | hex              | Convert operand to           | :meth:`base64.b16encode` /   |
-|                      |                  | hexadecimal                  | :meth:`base64.b16decode`     |
+| hex_codec            | hex              | Convert operand to           | :meth:`binascii.b2a_hex` /   |
+|                      |                  | hexadecimal                  | :meth:`binascii.a2b_hex`     |
 |                      |                  | representation, with two     |                              |
 |                      |                  | digits per byte              |                              |
 +----------------------+------------------+------------------------------+------------------------------+
-| quopri_codec         | quopri,          | Convert operand to MIME      | :meth:`quopri.encodestring` /|
-|                      | quotedprintable, | quoted printable             | :meth:`quopri.decodestring`  |
-|                      | quoted_printable |                              |                              |
+| quopri_codec         | quopri,          | Convert operand to MIME      | :meth:`quopri.encode` with   |
+|                      | quotedprintable, | quoted printable             | ``quotetabs=True`` /         |
+|                      | quoted_printable |                              | :meth:`quopri.decode`        |
 +----------------------+------------------+------------------------------+------------------------------+
 | uu_codec             | uu               | Convert the operand using    | :meth:`uu.encode` /          |
 |                      |                  | uuencode                     | :meth:`uu.decode`            |
