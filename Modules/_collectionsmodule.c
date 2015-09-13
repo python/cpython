@@ -1205,6 +1205,22 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 static PyObject *
 deque_copy(PyObject *deque)
 {
+    if (Py_TYPE(deque) == &deque_type) {
+        dequeobject *new_deque;
+        PyObject *rv;
+
+        new_deque = (dequeobject *)deque_new(&deque_type, (PyObject *)NULL, (PyObject *)NULL);
+        if (new_deque == NULL)
+            return NULL;
+        new_deque->maxlen = ((dequeobject *)deque)->maxlen;
+        rv = deque_extend(new_deque, deque);
+        if (rv != NULL) {
+            Py_DECREF(rv);
+            return (PyObject *)new_deque;
+        }
+        Py_DECREF(new_deque);
+        return NULL;
+    }
     if (((dequeobject *)deque)->maxlen == -1)
         return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "O", deque, NULL);
     else
