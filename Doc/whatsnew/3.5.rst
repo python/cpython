@@ -44,12 +44,10 @@
    This saves the maintainer the effort of going through the Mercurial log
    when researching a change.
 
-Python 3.5 was released on September 13, 2015.
-
 This article explains the new features in Python 3.5, compared to 3.4.
-For full details, see the
-`changelog <https://docs.python.org/3.5/whatsnew/changelog.html>`_.
-
+Python 3.4 was released on September 13, 2015.  See the
+`changelog <https://docs.python.org/3.5/whatsnew/changelog.html>`_ for a full
+list of changes.
 
 .. seealso::
 
