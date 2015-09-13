@@ -616,11 +616,14 @@ static PyObject *
 deque_repeat(dequeobject *deque, Py_ssize_t n)
 {
     dequeobject *new_deque;
+    PyObject *rv;
 
     new_deque = (dequeobject *)deque_copy((PyObject *) deque);
     if (new_deque == NULL)
         return NULL;
-    return deque_inplace_repeat(new_deque, n);
+    rv = deque_inplace_repeat(new_deque, n);
+    Py_DECREF(new_deque);
+    return rv;
 }
 
 /* The rotate() method is part of the public API and is used internally
