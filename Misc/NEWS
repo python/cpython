@@ -3,8 +3,8 @@ Python News
 +++++++++++
 
 
-What's New in Python 3.5.1
-==========================
+What's New in Python 3.5.1 release candidate 1?
+===============================================
 
 Release date: TBA
 
@@ -113,7 +113,8 @@ Build
 -----
 
 - Issue #25071: Windows installer should not require TargetDir
-  parameter when installing quietly
+  parameter when installing quietly.
+
 
 What's New in Python 3.5.0 release candidate 4?
 ===============================================
