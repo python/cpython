@@ -118,10 +118,6 @@ Significant improvements in standard library:
   :ref:`support for Memory BIO <whatsnew-sslmemorybio>`, which decouples SSL
   protocol handling from network IO.
 
-* :mod:`traceback` module has been significantly
-  :ref:`enhanced <whatsnew-traceback>` for improved
-  performance and developer convenience.
-
 * The new :func:`os.scandir` function provides a
   :ref:`better and significantly faster way <whatsnew-pep-471>`
   of directory traversal.
@@ -132,6 +128,10 @@ Significant improvements in standard library:
 
 * The new :func:`subprocess.run` function provides a
   :ref:`streamlined way to run subprocesses <whatsnew-subprocess>`.
+
+* :mod:`traceback` module has been significantly
+  :ref:`enhanced <whatsnew-traceback>` for improved
+  performance and developer convenience.
 
 
 Security improvements:
@@ -806,13 +806,6 @@ The :class:`~cgi.FieldStorage` class now supports the :term:`context manager`
 protocol.  (Contributed by Berker Peksag in :issue:`20289`.)
 
 
-csv
----
-
-The :meth:`~csv.csvwriter.writerow` method now supports arbitrary iterables,
-not just sequences.  (Contributed by Serhiy Storchaka in :issue:`23171`.)
-
-
 cmath
 -----
 
@@ -957,6 +950,13 @@ don't provide any options to redirect it::
     'WARNING:root:warning\n'
 
 (Contributed by Berker Peksag in :issue:`22389`.)
+
+
+csv
+---
+
+The :meth:`~csv.csvwriter.writerow` method now supports arbitrary iterables,
+not just sequences.  (Contributed by Serhiy Storchaka in :issue:`23171`.)
 
 
 curses
@@ -1636,6 +1636,29 @@ a :func:`~collections.namedtuple`.  (Contributed by Claudiu Popa in
 :issue:`18615`.)
 
 
+socket
+------
+
+Functions with timeouts now use a monotonic clock, instead of a system clock.
+(Contributed by Victor Stinner in :issue:`22043`.)
+
+A new :meth:`socket.sendfile <socket.socket.sendfile>` method allows to
+send a file over a socket by using the high-performance :func:`os.sendfile`
+function on UNIX resulting in uploads being from 2 to 3 times faster than when
+using plain :meth:`socket.send <socket.socket.send>`.
+(Contributed by Giampaolo Rodola' in :issue:`17552`.)
+
+The :meth:`socket.sendall <socket.socket.sendall>` method no longer resets the
+socket timeout every time bytes are received or sent.  The socket timeout is
+now the maximum total duration to send all data.
+(Contributed by Victor Stinner in :issue:`23853`.)
+
+The *backlog* argument of the :meth:`socket.listen <socket.socket.listen>`
+method is now optional.  By default it is set to
+:data:`SOMAXCONN <socket.SOMAXCONN>` or to ``128`` whichever is less.
+(Contributed by Charles-François Natali in :issue:`21455`.)
+
+
 ssl
 ---
 
@@ -1715,29 +1738,6 @@ The socket timeout is now the maximum total duration of the method.
 
 The :func:`~ssl.match_hostname` function now supports matching of IP addresses.
 (Contributed by Antoine Pitrou in :issue:`23239`.)
-
-
-socket
-------
-
-Functions with timeouts now use a monotonic clock, instead of a system clock.
-(Contributed by Victor Stinner in :issue:`22043`.)
-
-A new :meth:`socket.sendfile <socket.socket.sendfile>` method allows to
-send a file over a socket by using the high-performance :func:`os.sendfile`
-function on UNIX resulting in uploads being from 2 to 3 times faster than when
-using plain :meth:`socket.send <socket.socket.send>`.
-(Contributed by Giampaolo Rodola' in :issue:`17552`.)
-
-The :meth:`socket.sendall <socket.socket.sendall>` method no longer resets the
-socket timeout every time bytes are received or sent.  The socket timeout is
-now the maximum total duration to send all data.
-(Contributed by Victor Stinner in :issue:`23853`.)
-
-The *backlog* argument of the :meth:`socket.listen <socket.socket.listen>`
-method is now optional.  By default it is set to
-:data:`SOMAXCONN <socket.SOMAXCONN>` or to ``128`` whichever is less.
-(Contributed by Charles-François Natali in :issue:`21455`.)
 
 
 sqlite3
@@ -1890,33 +1890,6 @@ created by :keyword:`async def` functions.
 (Contributed by Yury Selivanov in :issue:`24400`.)
 
 
-urllib
-------
-
-A new
-:class:`request.HTTPPasswordMgrWithPriorAuth <urllib.request.HTTPPasswordMgrWithPriorAuth>`
-class allows HTTP Basic Authentication credentials to be managed so as to
-eliminate unnecessary ``401`` response handling, or to unconditionally send
-credentials on the first request in order to communicate with servers that
-return a ``404`` response instead of a ``401`` if the ``Authorization`` header
-is not sent. (Contributed by Matej Cepl in :issue:`19494` and Akshit Khurana in
-:issue:`7159`.)
-
-A new *quote_via* argument for the
-:func:`parse.urlencode <urllib.parse.urlencode>`
-function provides a way to control the encoding of query parts if needed.
-(Contributed by Samwyse and Arnon Yaari in :issue:`13866`.)
-
-The :func:`request.urlopen <urllib.request.urlopen>` function accepts an
-:class:`ssl.SSLContext` object as a *context* argument, which will be used for
-the HTTPS connection.  (Contributed by Alex Gaynor in :issue:`22366`.)
-
-The :func:`parse.urljoin <urllib.parse.urljoin>` was updated to use the
-:rfc:`3986` semantics for the resolution of relative URLs, rather than
-:rfc:`1808` and :rfc:`2396`.
-(Contributed by Demian Brecht and Senthil Kumaran in :issue:`22118`.)
-
-
 unicodedata
 -----------
 
@@ -1965,6 +1938,33 @@ in :issue:`23581` and :issue:`23568`.)
 It is no longer necessary to explicitly pass ``create=True`` to the
 :func:`~unittest.mock.patch` function when patching builtin names.
 (Contributed by Kushal Das in :issue:`17660`.)
+
+
+urllib
+------
+
+A new
+:class:`request.HTTPPasswordMgrWithPriorAuth <urllib.request.HTTPPasswordMgrWithPriorAuth>`
+class allows HTTP Basic Authentication credentials to be managed so as to
+eliminate unnecessary ``401`` response handling, or to unconditionally send
+credentials on the first request in order to communicate with servers that
+return a ``404`` response instead of a ``401`` if the ``Authorization`` header
+is not sent. (Contributed by Matej Cepl in :issue:`19494` and Akshit Khurana in
+:issue:`7159`.)
+
+A new *quote_via* argument for the
+:func:`parse.urlencode <urllib.parse.urlencode>`
+function provides a way to control the encoding of query parts if needed.
+(Contributed by Samwyse and Arnon Yaari in :issue:`13866`.)
+
+The :func:`request.urlopen <urllib.request.urlopen>` function accepts an
+:class:`ssl.SSLContext` object as a *context* argument, which will be used for
+the HTTPS connection.  (Contributed by Alex Gaynor in :issue:`22366`.)
+
+The :func:`parse.urljoin <urllib.parse.urljoin>` was updated to use the
+:rfc:`3986` semantics for the resolution of relative URLs, rather than
+:rfc:`1808` and :rfc:`2396`.
+(Contributed by Demian Brecht and Senthil Kumaran in :issue:`22118`.)
 
 
 wsgiref
