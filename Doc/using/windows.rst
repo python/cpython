@@ -89,7 +89,7 @@ of available options is shown below.
 +---------------------------+--------------------------------------+--------------------------+
 | Name                      | Description                          | Default                  |
 +===========================+======================================+==========================+
-| InstallAllUsers           | Perform a system-wide installation.  | 1                        |
+| InstallAllUsers           | Perform a system-wide installation.  | 0                        |
 +---------------------------+--------------------------------------+--------------------------+
 | TargetDir                 | The installation directory           | Selected based on        |
 |                           |                                      | InstallAllUsers          |
