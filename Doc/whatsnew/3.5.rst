@@ -358,7 +358,7 @@ unpackings::
 PEP 461 - % formatting support for bytes and bytearray
 ------------------------------------------------------
 
-PEP 461 adds support for ``%``
+:pep:`461` adds support for ``%``
 :ref:`interpolation operator <bytes-formatting>` to :class:`bytes`
 and :class:`bytearray`.
 
@@ -447,14 +447,23 @@ PEP 471 - os.scandir() function -- a better and faster directory iterator
 
 :pep:`471` adds a new directory iteration function, :func:`os.scandir`,
 to the standard library.  Additionally, :func:`os.walk` is now
-implemented using ``os.scandir()``, which makes it 3 to 5 times faster
+implemented using ``scandir``, which makes it 3 to 5 times faster
 on POSIX systems and 7 to 20 times faster on Windows systems.  This is
 largely achieved by greatly reducing the number of calls to :func:`os.stat`
 required to walk a directory tree.
 
-Additionally, ``os.scandir()`` returns an iterator, as opposed to returning
+Additionally, ``scandir`` returns an iterator, as opposed to returning
 a list of file names, which improves memory efficiency when iterating
 over very large directories.
+
+The following example shows a simple use of :func:`os.scandir` to display all
+the files (excluding directories) in the given *path* that don't start with
+``'.'``. The :meth:`entry.is_file <os.DirEntry.is_file>` call will generally
+not make an additional system call::
+
+    for entry in os.scandir(path):
+        if not entry.name.startswith('.') and entry.is_file():
+            print(entry.name)
 
 .. seealso::
 
@@ -641,6 +650,27 @@ PEP 485: A function for testing approximate equality
 functions which tell whether two values are approximately equal or
 "close" to each other.  Whether or not two values are considered
 close is determined according to given absolute and relative tolerances.
+Relative tolerance is the maximum allowed difference between ``isclose()``
+arguments, relative to the larger absolute value::
+
+    >>> import math
+    >>> a = 5.0
+    >>> b = 4.99998
+    >>> math.isclose(a, b, rel_tol=1e-5)
+    True
+    >>> math.isclose(a, b, rel_tol=1e-6)
+    False
+
+It is also possible to compare two values using absolute tolerance, which
+must be a non-negative value::
+
+    >>> import math
+    >>> a = 5.0
+    >>> b = 4.99998
+    >>> math.isclose(a, b, abs_tol=0.00003)
+    True
+    >>> math.isclose(a, b, abs_tol=0.00001)
+    False
 
 .. seealso::
 
@@ -677,6 +707,13 @@ Some smaller changes made to the core Python language are:
 
 New Modules
 ===========
+
+typing
+------
+
+The new :mod:`typing` :term:`provisional <provisional api>` module
+provides standard definitions and tools for function type annotations.
+See :ref:`Type Hints <whatsnew-pep-484>` for more information.
 
 .. _whatsnew-zipapp:
 
@@ -854,8 +891,25 @@ configparser
 ------------
 
 Config parsers can be customized by providing a dictionary of converters in the
-constructor.  All converters defined in config parser (either by subclassing or
+constructor, or  All converters defined in config parser (either by subclassing or
 by providing in a constructor) will be available on all section proxies.
+
+Example::
+
+    >>> import configparser
+    >>> conv = {}
+    >>> conv['list'] = lambda v: [e.strip() for e in v.split() if e.strip()]
+    >>> cfg = configparser.ConfigParser(converters=conv)
+    >>> cfg.read_string("""
+    ... [s]
+    ... list = a b c d e f g
+    ... """)
+    >>> cfg.get('s', 'list')
+    'a b c d e f g'
+    >>> cfg.getlist('s', 'list')
+    ['a', 'b', 'c', 'd', 'e', 'f', 'g']
+
+
 (Contributed by Łukasz Langa in :issue:`18159`.)
 
 
@@ -865,8 +919,17 @@ contextlib
 The new :func:`~contextlib.redirect_stderr` context manager (similar to
 :func:`~contextlib.redirect_stdout`) makes it easier for utility scripts to
 handle inflexible APIs that write their output to :data:`sys.stderr` and
-don't provide any options to redirect it.  (Contributed by Berker Peksag in
-:issue:`22389`.)
+don't provide any options to redirect it::
+
+    >>> import contextlib, io, logging
+    >>> f = io.StringIO()
+    >>> with contextlib.redirect_stderr(f):
+    ...     logging.warning('warning')
+    ...
+    >>> f.getvalue()
+    'WARNING:root:warning\n'
+
+(Contributed by Berker Peksag in :issue:`22389`.)
 
 
 curses
@@ -1001,9 +1064,19 @@ heapq
 -----
 
 Element comparison in :func:`~heapq.merge` can now be customized by
-passing a :term:`key function` in a new optional *key* keyword argument.
-A new optional *reverse* keyword argument can be used to reverse element
-comparison.  (Contributed by Raymond Hettinger in :issue:`13742`.)
+passing a :term:`key function` in a new optional *key* keyword argument,
+and a new optional *reverse* keyword argument can be used to reverse element
+comparison::
+
+    >>> import heapq
+    >>> a = ['9', '777', '55555']
+    >>> b = ['88', '6666']
+    >>> list(heapq.merge(a, b, key=len))
+    ['9', '88', '777', '6666', '55555']
+    >>> list(heapq.merge(reversed(a), reversed(b), key=len, reverse=True))
+    ['55555', '6666', '777', '88', '9']
+
+(Contributed by Raymond Hettinger in :issue:`13742`.)
 
 
 http
@@ -1022,7 +1095,17 @@ now raises a :exc:`~http.client.RemoteDisconnected` exception when a
 remote server connection is closed unexpectedly.  Additionally, if a
 :exc:`ConnectionError` (of which ``RemoteDisconnected``
 is a subclass) is raised, the client socket is now closed automatically,
-and will reconnect on the next request.
+and will reconnect on the next request::
+
+    import http.client
+    conn = http.client.HTTPConnection('www.python.org')
+    for retries in range(3):
+        try:
+            conn.request('GET', '/')
+            resp = conn.getresponse()
+        except http.client.RemoteDisconnected:
+            pass
+
 (Contributed by Martin Panter in :issue:`3566`.)
 
 
@@ -1095,7 +1178,14 @@ and :issue:`20334`.)
 
 A new
 :meth:`BoundArguments.apply_defaults <inspect.BoundArguments.apply_defaults>`
-method provides a way to set default values for missing arguments.
+method provides a way to set default values for missing arguments::
+
+    >>> def foo(a, b='ham', *args): pass
+    >>> ba = inspect.signature(foo).bind('spam')
+    >>> ba.apply_defaults()
+    >>> ba.arguments
+    OrderedDict([('a', 'spam'), ('b', 'ham'), ('args', ())])
+
 (Contributed by Yury Selivanov in :issue:`24190`.)
 
 A new class method
@@ -1137,12 +1227,28 @@ ipaddress
 
 Both :class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` classes
 now accept an ``(address, netmask)`` tuple argument, so as to easily construct
-network objects from existing addresses.  (Contributed by Peter Moody
-and Antoine Pitrou in :issue:`16531`.)
+network objects from existing addresses::
+
+    >>> import ipaddress
+    >>> ipaddress.IPv4Network(('127.0.0.0', 8))
+    IPv4Network('127.0.0.0/8')
+    >>> ipaddress.IPv4Network(('127.0.0.0', '255.0.0.0'))
+    IPv4Network('127.0.0.0/8')
+
+(Contributed by Peter Moody and Antoine Pitrou in :issue:`16531`.)
 
 A new :attr:`~ipaddress.IPv4Network.reverse_pointer>` attribute for
 :class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` classes
-returns the name of the reverse DNS PTR record.
+returns the name of the reverse DNS PTR record::
+
+    >>> import ipaddress
+    >>> addr = ipaddress.IPv4Address('127.0.0.1')
+    >>> addr.reverse_pointer
+    '1.0.0.127.in-addr.arpa'
+    >>> addr6 = ipaddress.IPv6Address('::1')
+    >>> addr6.reverse_pointer
+    '1.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.0.ip6.arpa'
+
 (Contributed by Leon Weber in :issue:`20480`.)
 
 
@@ -1173,7 +1279,18 @@ locale
 ------
 
 A new :func:`~locale.delocalize` function can be used to convert a string into
-a normalized number string, taking the ``LC_NUMERIC`` settings into account.
+a normalized number string, taking the ``LC_NUMERIC`` settings into account::
+
+    >>> import locale
+    >>> locale.setlocale(locale.LC_NUMERIC, 'de_DE.UTF-8')
+    'de_DE.UTF-8'
+    >>> locale.delocalize('1.234,56')
+    '1234.56'
+    >>> locale.setlocale(locale.LC_NUMERIC, 'en_US.UTF-8')
+    'en_US.UTF-8'
+    >>> locale.delocalize('1,234.56')
+    '1234.56'
+
 (Contributed by Cédric Krier in :issue:`13918`.)
 
 
@@ -1223,9 +1340,9 @@ Storchaka in :issue:`22486`.)
 multiprocessing
 ---------------
 
-:func:`~multiprocessing.synchronized` objects now support the
-:term:`context manager` protocol.  (Contributed by Charles-François Natali in
-:issue:`21565`.)
+:func:`sharedctypes.synchronized <multiprocessing.sharedctypes.synchronized>`
+objects now support the :term:`context manager` protocol.
+(Contributed by Charles-François Natali in :issue:`21565`.)
 
 
 operator
@@ -1271,7 +1388,15 @@ on Windows.  (Contributed by Steve Dower in :issue:`23668`.)
 There is a new :func:`os.path.commonpath` function returning the longest
 common sub-path of each passed pathname.  Unlike the
 :func:`os.path.commonprefix` function, it always returns a valid
-path.  (Contributed by Rafik Draoui and Serhiy Storchaka in :issue:`10395`.)
+path::
+
+    >>> os.path.commonprefix(['/usr/lib', '/usr/local/lib'])
+    '/usr/l'
+
+    >>> os.path.commonpath(['/usr/lib', '/usr/local/lib'])
+    '/usr'
+
+(Contributed by Rafik Draoui and Serhiy Storchaka in :issue:`10395`.)
 
 
 pathlib
@@ -1324,7 +1449,15 @@ re
 --
 
 References and conditional references to groups with fixed length are now
-allowed in lookbehind assertions.
+allowed in lookbehind assertions::
+
+    >>> import re
+    >>> pat = re.compile(r'(a|b).(?<=\1)c')
+    >>> pat.match('aac')
+    <_sre.SRE_Match object; span=(0, 3), match='aac'>
+    >>> pat.match('bbc')
+    <_sre.SRE_Match object; span=(0, 3), match='bbc'>
+
 (Contributed by Serhiy Storchaka in :issue:`9179`.)
 
 The number of capturing groups in regular expression is no longer limited by
@@ -1338,7 +1471,16 @@ The :class:`re.error` exceptions have new attributes:
 :attr:`~re.error.msg`, :attr:`~re.error.pattern`,
 :attr:`~re.error.pos`, :attr:`~re.error.lineno`,
 and :attr:`~re.error.colno` that provide better context
-information about the error.
+information about the error::
+
+    >>> re.compile("""
+    ...     (?x)
+    ...     .++
+    ... """)
+    Traceback (most recent call last):
+       ...
+    sre_constants.error: multiple repeat at position 16 (line 3, column 7)
+
 (Contributed by Serhiy Storchaka in :issue:`22578`.)
 
 
@@ -1567,6 +1709,20 @@ process.  The new API is more consistent and is the recommended approach
 to invoking subprocesses in Python code that does not need to maintain
 compatibility with earlier Python versions.
 (Contributed by Thomas Kluyver in :issue:`23342`.)
+
+Examples::
+
+    >>> subprocess.run(["ls", "-l"])  # doesn't capture output
+    CompletedProcess(args=['ls', '-l'], returncode=0)
+
+    >>> subprocess.run("exit 1", shell=True, check=True)
+    Traceback (most recent call last):
+      ...
+    subprocess.CalledProcessError: Command 'exit 1' returned non-zero exit status 1
+
+    >>> subprocess.run(["ls", "-l", "/dev/null"], stdout=subprocess.PIPE)
+    CompletedProcess(args=['ls', '-l', '/dev/null'], returncode=0,
+    stdout=b'crw-rw-rw- 1 root root 1, 3 Jan 23 16:23 /dev/null\n')
 
 
 sys
