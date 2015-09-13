@@ -683,12 +683,12 @@ Some smaller changes made to the core Python language are:
 * New Kazakh :ref:`codec <standard-encodings>` ``kz1048``.  (Contributed by
   Serhiy Storchaka in :issue:`22682`.)
 
+* New Tajik :ref:`codec <standard-encodings>` ``koi8_t``.  (Contributed by
+  Serhiy Storchaka in :issue:`22681`.)
+
 * Property docstrings are now writable. This is especially useful for
   :func:`collections.namedtuple` docstrings.
   (Contributed by Berker Peksag in :issue:`24064`.)
-
-* New Tajik :ref:`codec <standard-encodings>` ``koi8_t``.  (Contributed by
-  Serhiy Storchaka in :issue:`22681`.)
 
 * Circular imports involving relative imports are now supported.
   (Contributed by Brett Cannon and Antoine Pitrou in :issue:`17636`.)
@@ -802,14 +802,14 @@ size of decompressed data. (Contributed by Nikolaus Rath in :issue:`15955`.)
 cgi
 ---
 
-The :class:`~cgi.FieldStorage` class now supports the context management
+The :class:`~cgi.FieldStorage` class now supports the :term:`context manager`
 protocol.  (Contributed by Berker Peksag in :issue:`20289`.)
 
 
 csv
 ---
 
-:meth:`Writer.writerow <csv.Writer.writerow>` now supports arbitrary iterables,
+The :meth:`~csv.csvwriter.writerow` method now supports arbitrary iterables,
 not just sequences.  (Contributed by Serhiy Storchaka in :issue:`23171`.)
 
 
@@ -885,7 +885,7 @@ New :class:`~collections.abc.Awaitable` :class:`~collections.abc.Coroutine`,
 compileall
 ----------
 
-A new :mod:`compileall` option, ``-j N``, allows to run ``N`` workers
+A new :mod:`compileall` option, :samp:`-j {N}`, allows to run *N* workers
 sumultaneously to perform parallel bytecode compilation.
 The :func:`~compileall.compile_dir` function has a corresponding ``workers``
 parameter.  (Contributed by Claudiu Popa in :issue:`16104`.)
@@ -909,7 +909,7 @@ The :meth:`Executor.map <concurrent.futures.Executor.map>` method now accepts a
 :meth:`~concurrent.futures.ProcessPoolExecutor` is used.
 (Contributed by Dan O'Reilly in :issue:`11271`.)
 
-A number of workers in :class:`~concurrent.futures.ThreadPoolExecutor` is
+A number of workers in :class:`~concurrent.futures.ThreadPoolExecutor` constructor is
 optional now.  The default value equals to 5 times the number of CPUs.
 (Contributed by Claudiu Popa in :issue:`21527`.)
 
@@ -943,7 +943,7 @@ Example::
 contextlib
 ----------
 
-The new :func:`~contextlib.redirect_stderr` context manager (similar to
+The new :func:`~contextlib.redirect_stderr` :term:`context manager` (similar to
 :func:`~contextlib.redirect_stdout`) makes it easier for utility scripts to
 handle inflexible APIs that write their output to :data:`sys.stderr` and
 don't provide any options to redirect it::
@@ -1031,7 +1031,7 @@ of using encoded words.  This allows ``Messages`` to be formatted according to
 ``SMTPUTF8`` extension.  (Contributed by R. David Murray in
 :issue:`24211`.)
 
-:class:`email.mime.text.MIMEText` constructor now accepts a
+:class:`~email.mime.text.MIMEText` constructor now accepts a
 :class:`~email.charset.Charset` instance.
 (Contributed by Claude Paroz and Berker Peksag in :issue:`16324`.)
 
@@ -1143,13 +1143,13 @@ Since idlelib implements the IDLE shell and editor and is not intended for
 import by other programs, it gets improvements with every release.  See
 :file:`Lib/idlelib/NEWS.txt` for a cumulative list of changes since 3.4.0,
 as well as changes made in future 3.5.x releases. This file is also available
-from the IDLE Help -> About Idle dialog.
+from the IDLE :menuselection:`Help --> About IDLE` dialog.
 
 
 imaplib
 -------
 
-The :class:`~imaplib.IMAP4` class now supports context manager protocol.
+The :class:`~imaplib.IMAP4` class now supports :term:`context manager` protocol.
 When used in a :keyword:`with` statement, the IMAP4 ``LOGOUT``
 command will be called automatically at the end of the block.
 (Contributed by Tarek Ziadé and Serhiy Storchaka in :issue:`4972`.)
@@ -1220,7 +1220,7 @@ A new class method
 subclassing of :class:`~inspect.Signature` easier.  (Contributed
 by Yury Selivanov and Eric Snow in :issue:`17373`.)
 
-The :func:`~inspect.signature` function now accepts a ``follow_wrapped``
+The :func:`~inspect.signature` function now accepts a *follow_wrapped*
 optional keyword argument, which, when set to ``False``, disables automatic
 following of ``__wrapped__`` links.
 (Contributed by Yury Selivanov in :issue:`20691`.)
@@ -1264,7 +1264,7 @@ network objects from existing addresses::
 
 (Contributed by Peter Moody and Antoine Pitrou in :issue:`16531`.)
 
-A new :attr:`~ipaddress.IPv4Network.reverse_pointer>` attribute for
+A new :attr:`~ipaddress.IPv4Network.reverse_pointer` attribute for
 :class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` classes
 returns the name of the reverse DNS PTR record::
 
@@ -1287,7 +1287,7 @@ JSON objects passed in input.  The new ``--sort-keys`` option can be used
 to sort the keys alphabetically. (Contributed by Berker Peksag
 in :issue:`21650`.)
 
-JSON decoder now raises :exc:`json.JSONDecodeError` instead of
+JSON decoder now raises :exc:`~json.JSONDecodeError` instead of
 :exc:`ValueError` to provide better context information about the error.
 (Contributed by Serhiy Storchaka in :issue:`19361`.)
 
@@ -1327,7 +1327,7 @@ logging
 All logging methods (:class:`~logging.Logger` :meth:`~logging.Logger.log`,
 :meth:`~logging.Logger.exception`, :meth:`~logging.Logger.critical`,
 :meth:`~logging.Logger.debug`, etc.), now accept exception instances
-as an ``exc_info`` argument, in addition to boolean values and exception
+as an *exc_info* argument, in addition to boolean values and exception
 tuples::
 
     >>> import logging
@@ -1451,7 +1451,7 @@ either an another :class:`~pathlib.Path` object, or a string::
 (Contributed by Vajrasky Kok and Antoine Pitrou in :issue:`19775`.)
 
 The :meth:`Path.mkdir <pathlib.Path.mkdir>` method how accepts a new optional
-``exist_ok`` argument to match ``mkdir -p`` and :func:`os.makrdirs`
+*exist_ok* argument to match ``mkdir -p`` and :func:`os.makrdirs`
 functionality.  (Contributed by Berker Peksag in :issue:`21539`.)
 
 There is a new :meth:`Path.expanduser <pathlib.Path.expanduser>` method to
@@ -1595,14 +1595,14 @@ The :class:`~smtpd.SMTPServer` class now advertises the ``8BITMIME`` extension
 (:rfc:`6152`) if *decode_data* has been set ``True``.  If the client
 specifies ``BODY=8BITMIME`` on the ``MAIL`` command, it is passed to
 :meth:`SMTPServer.process_message <smtpd.SMTPServer.process_message>`
-via the ``mail_options`` keyword.
+via the *mail_options* keyword.
 (Contributed by Milan Oberkirch and R.  David Murray in :issue:`21795`.)
 
 The :class:`~smtpd.SMTPServer` class now also supports the ``SMTPUTF8``
 extension (:rfc:`6531`: Internationalized Email).  If the client specified
 ``SMTPUTF8 BODY=8BITMIME`` on the ``MAIL`` command, they are passed to
 :meth:`SMTPServer.process_message <smtpd.SMTPServer.process_message>`
-via the ``mail_options`` keyword.  It is the responsibility of the
+via the *mail_options* keyword.  It is the responsibility of the
 :meth:`~smtpd.SMTPServer.process_message` method to correctly handle the
 ``SMTPUTF8`` data.  (Contributed by Milan Oberkirch in :issue:`21725`.)
 
@@ -1840,7 +1840,7 @@ The :func:`~time.monotonic` function is now always available.
 timeit
 ------
 
-A new command line option ``-u`` or ``--unit=U`` can be used to specify the time
+A new command line option ``-u`` or :samp:`--unit={U}` can be used to specify the time
 unit for the timer output.  Supported options are ``usec``, ``msec``,
 or ``sec``.  (Contributed by Julian Gindi in :issue:`18983`.)
 
@@ -1868,7 +1868,7 @@ functions to conveniently traverse frame and traceback objects.
 (Contributed by Robert Collins in :issue:`17911`.)
 
 New lightweight classes: :class:`~traceback.TracebackException`,
-:class:`~traceback.StackSummary`, and :class:`traceback.FrameSummary`.
+:class:`~traceback.StackSummary`, and :class:`~traceback.FrameSummary`.
 (Contributed by Robert Collins in :issue:`17911`.)
 
 Both :func:`~traceback.print_tb` and :func:`~traceback.print_stack` functions
@@ -1978,8 +1978,8 @@ class constructor is now optional.
 xmlrpc
 ------
 
-The :class:`client.ServerProxy <xmlrpc.client.ServerProxy>` class is now a
-:term:`context manager`.
+The :class:`client.ServerProxy <xmlrpc.client.ServerProxy>` class now supports
+:term:`context manager` protocol.
 (Contributed by Claudiu Popa in :issue:`20627`.)
 
 :class:`client.ServerProxy <xmlrpc.client.ServerProxy>` constructor now accepts
@@ -2252,7 +2252,7 @@ The :mod:`inspect` :func:`~inspect.getfullargspec`,
 :func:`inspect.signature` API.
 (Contributed by Yury Selivanov in :issue:`20438`.)
 
-Use of ``re.LOCALE`` flag with str patterns or ``re.ASCII`` is now
+Use of :const:`re.LOCALE` flag with str patterns or :const:`re.ASCII` is now
 deprecated.  (Contributed by Serhiy Storchaka in :issue:`22407`.)
 
 Use of unrecognized special sequences consisting of ``'\'`` and an ASCII letter
