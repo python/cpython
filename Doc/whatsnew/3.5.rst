@@ -1339,7 +1339,16 @@ All logging methods (:class:`~logging.Logger` :meth:`~logging.Logger.log`,
 :meth:`~logging.Logger.exception`, :meth:`~logging.Logger.critical`,
 :meth:`~logging.Logger.debug`, etc.), now accept exception instances
 as an ``exc_info`` argument, in addition to boolean values and exception
-tuples.  (Contributed by Yury Selivanov in :issue:`20537`.)
+tuples::
+
+    >>> import logging
+    >>> try:
+    ...     1/0
+    ... except ZeroDivisionError as ex:
+    ...     logging.error('exception', exc_info=ex)
+    ERROR:root:exception
+
+(Contributed by Yury Selivanov in :issue:`20537`.)
 
 The :class:`handlers.HTTPHandler <logging.handlers.HTTPHandler>` class now
 accepts an optional :class:`ssl.SSLContext` instance to configure SSL
@@ -1442,7 +1451,14 @@ pathlib
 
 The new :meth:`Path.samefile <pathlib.Path.samefile>` method can be used
 to check whether the path points to the same file as other path, which can be
-either an another :class:`~pathlib.Path` object, or a string.
+either an another :class:`~pathlib.Path` object, or a string::
+
+    >>> import pathlib
+    >>> p1 = pathlib.Path('/etc/hosts')
+    >>> p2 = pathlib.Path('/etc/../etc/hosts')
+    >>> p1.samefile(p2)
+    True
+
 (Contributed by Vajrasky Kok and Antoine Pitrou in :issue:`19775`.)
 
 The :meth:`Path.mkdir <pathlib.Path.mkdir>` method how accepts a new optional
@@ -1463,6 +1479,15 @@ New :meth:`Path.write_text <pathlib.Path.write_text>`,
 :meth:`Path.write_bytes <pathlib.Path.write_bytes>`,
 :meth:`Path.read_bytes <pathlib.Path.read_bytes>` methods to simplify
 read/write operations on files.
+
+The following code snippet will create or rewrite existing file
+``~/spam42``::
+
+    >>> import pathlib
+    >>> p = pathlib.Path('~/spam42')
+    >>> p.expanduser().write_text('ham')
+    3
+
 (Contributed by Christopher Welborn in :issue:`20218`.)
 
 
