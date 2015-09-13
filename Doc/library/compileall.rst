@@ -89,7 +89,7 @@ compile Python sources.
 
 .. versionchanged:: 3.5
    Added the  ``-j``, ``-r``, and ``-qq`` options.  ``-q`` option
-   was changed to a multilevel value.  ``b`` will always produce a
+   was changed to a multilevel value.  ``-b`` will always produce a
    byte-code file ending in ``.pyc``, never ``.pyo``.
 
 
