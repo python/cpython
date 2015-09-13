@@ -2102,17 +2102,17 @@ Build and C API Changes
 
 New ``calloc`` functions were added:
 
-  * :c:func:`PyMem_RawCalloc`,
-  * :c:func:`PyMem_Calloc`,
-  * :c:func:`PyObject_Calloc`,
-  * :c:func:`_PyObject_GC_Calloc`.
+* :c:func:`PyMem_RawCalloc`,
+* :c:func:`PyMem_Calloc`,
+* :c:func:`PyObject_Calloc`,
+* :c:func:`_PyObject_GC_Calloc`.
 
 (Contributed by Victor Stinner in :issue:`21233`.)
 
 New encoding/decoding helper functions:
 
-  * :c:func:`Py_DecodeLocale` (replaced ``_Py_char2wchar()``),
-  * :c:func:`Py_EncodeLocale` (replaced ``_Py_wchar2char()``).
+* :c:func:`Py_DecodeLocale` (replaced ``_Py_char2wchar()``),
+* :c:func:`Py_EncodeLocale` (replaced ``_Py_wchar2char()``).
 
 (Contributed by Victor Stinner in :issue:`18395`.)
 
