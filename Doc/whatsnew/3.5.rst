@@ -760,8 +760,46 @@ all changes introduced in Python 3.5 have also been backported to Python 3.4.x.
 
 Notable changes in :mod:`asyncio` module since Python 3.4.0:
 
+* A new debugging APIs: :meth:`loop.set_debug() <asyncio.BaseEventLoop.set_debug>`
+  and :meth:`loop.get_debug() <asyncio.BaseEventLoop.get_debug>`.
+  (Contributed by Victor Stinner.)
+
 * The proactor event loop now supports SSL.
   (Contributed by Antoine Pitrou and Victor Stinner in :issue:`22560`.)
+
+* A new :meth:`loop.is_closed() <asyncio.BaseEventLoop.is_closed>` to
+  check if the event loop is closed.
+  (Contributed by Victor Stinner in :issue:`21326`.)
+
+* A new :meth:`loop.create_task() <asyncio.BaseEventLoop.create_task>`
+  to conveniently create and schedule a new :class:`~asyncio.Task`
+  for a coroutine.  The ``create_task`` method is also used by all
+  asyncio functions that wrap coroutines into tasks: :func:`asyncio.wait`,
+  :func:`asyncio.gather`, etc.
+  (Contributed by Victor Stinner.)
+
+* A new :meth:`WriteTransport.get_write_buffer_limits <asyncio.WriteTransport.get_write_buffer_limits>`
+  method to inquire for *high-* and *low-* water limits of the flow
+  control.
+  (Contributed by Victor Stinner.)
+
+* The :func:`~asyncio.async` function is deprecated in favor of
+  :func:`~asyncio.ensure_future`.
+  (Contributed by Yury Selivanov.)
+
+* New :meth:`loop.set_task_factory <asyncio.BaseEventLoop.set_task_factory>`
+  and :meth:`loop.set_task_factory <asyncio.BaseEventLoop.get_task_factory>`
+  to customize the task factory that
+  :meth:`loop.create_task() <asyncio.BaseEventLoop.create_task>` method uses.
+  (Contributed by Yury Selivanov.)
+
+* New :meth:`Queue.join <asyncio.Queue.join>` and
+  :meth:`Queue.task_done <asyncio.Queue.task_done>` queue methods.
+  (Contributed by Victor Stinner.)
+
+* The ``JoinableQueue`` class was removed, in favor of the
+  :class:`asyncio.Queue` class.
+  (Contributed by Victor Stinner.)
 
 
 bz2
