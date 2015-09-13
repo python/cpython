@@ -516,7 +516,7 @@ This module provides the following functions.
 
    .. method:: CCompiler.library_option(lib)
 
-      Return the compiler option to add *dir* to the list of libraries linked into the
+      Return the compiler option to add *lib* to the list of libraries linked into the
       shared library or executable.
 
 
