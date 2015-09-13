@@ -911,7 +911,7 @@ configparser
 ------------
 
 Config parsers can be customized by providing a dictionary of converters in the
-constructor, or  All converters defined in config parser (either by subclassing or
+constructor.  All converters defined in config parser (either by subclassing or
 by providing in a constructor) will be available on all section proxies.
 
 Example::
