@@ -568,7 +568,7 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
             return PyErr_NoMemory();
 
         deque->state++;
-        for (i = 0 ; i < n-1 ; i++) {
+        for (i = 0 ; i < n-1 ; ) {
             if (deque->rightindex == BLOCKLEN - 1) {
                 block *b = newblock(Py_SIZE(deque) + i);
                 if (b == NULL) {
@@ -582,9 +582,11 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
                 MARK_END(b->rightlink);
                 deque->rightindex = -1;
             }
-            deque->rightindex++;
-            Py_INCREF(item);
-            deque->rightblock->data[deque->rightindex] = item;
+            for ( ; i < n-1 && deque->rightindex != BLOCKLEN - 1 ; i++) {
+                deque->rightindex++;
+                Py_INCREF(item);
+                deque->rightblock->data[deque->rightindex] = item;
+            }
         }
         Py_SIZE(deque) += i;
         Py_INCREF(deque);
