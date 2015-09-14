@@ -33,8 +33,9 @@ def get_gdb_version():
     # Regex to parse:
     # 'GNU gdb (GDB; SUSE Linux Enterprise 12) 7.7\n' -> 7.7
     # 'GNU gdb (GDB) Fedora 7.9.1-17.fc22\n' -> 7.9
-    # 'GNU gdb 6.1.1 [FreeBSD]\n'
-    match = re.search("^GNU gdb.*? (\d+)\.(\d)", version)
+    # 'GNU gdb 6.1.1 [FreeBSD]\n' -> 6.1
+    # 'GNU gdb (GDB) Fedora (7.5.1-37.fc18)\n' -> 7.5
+    match = re.search(r"^GNU gdb.*?\b(\d+)\.(\d+)", version)
     if match is None:
         raise Exception("unable to parse GDB version: %r" % version)
     return (version, int(match.group(1)), int(match.group(2)))
