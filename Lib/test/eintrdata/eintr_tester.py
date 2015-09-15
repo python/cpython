@@ -8,6 +8,7 @@ Signals are generated in-process using setitimer(ITIMER_REAL), which allows
 sub-second periodicity (contrarily to signal()).
 """
 
+import faulthandler
 import io
 import os
 import select
@@ -36,12 +37,19 @@ class EINTRBaseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.orig_handler = signal.signal(signal.SIGALRM, lambda *args: None)
+        if hasattr(faulthandler, 'dump_traceback_later'):
+            # Most tests take less than 30 seconds, so 15 minutes should be
+            # enough. dump_traceback_later() is implemented with a thread, but
+            # pthread_sigmask() is used to mask all signaled on this thread.
+            faulthandler.dump_traceback_later(5 * 60, exit=True)
         signal.setitimer(signal.ITIMER_REAL, cls.signal_delay,
                          cls.signal_period)
 
     @classmethod
     def stop_alarm(cls):
         signal.setitimer(signal.ITIMER_REAL, 0, 0)
+        if hasattr(faulthandler, 'cancel_dump_traceback_later'):
+            faulthandler.cancel_dump_traceback_later()
 
     @classmethod
     def tearDownClass(cls):
