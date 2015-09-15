@@ -20,7 +20,7 @@ class EINTRTests(unittest.TestCase):
         # FIXME: Issue #25122, always run in verbose mode to debug hang on FreeBSD
         if True: #support.verbose:
             args = [sys.executable, tester]
-            with subprocess.Popen(args, stdout=sys.stderr) as proc:
+            with subprocess.Popen(args) as proc:
                 exitcode = proc.wait()
             self.assertEqual(exitcode, 0)
         else:
