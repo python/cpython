@@ -7021,7 +7021,7 @@ os_waitpid_impl(PyModuleDef *module, Py_intptr_t pid, int options)
         res = _cwait(&status, pid, options);
         Py_END_ALLOW_THREADS
     } while (res < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
-    if (res != 0)
+    if (res < 0)
         return (!async_err) ? posix_error() : NULL;
 
     /* shift the status left a byte so this is more like the POSIX waitpid */
@@ -7731,7 +7731,7 @@ os_open_impl(PyModuleDef *module, path_t *path, int flags, int mode,
     } while (fd < 0 && errno == EINTR && !(async_err = PyErr_CheckSignals()));
     _Py_END_SUPPRESS_IPH
 
-    if (fd == -1) {
+    if (fd < 0) {
         if (!async_err)
             PyErr_SetFromErrnoWithFilenameObject(PyExc_OSError, path->object);
         return -1;
