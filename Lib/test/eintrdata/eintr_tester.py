@@ -8,6 +8,7 @@ Signals are generated in-process using setitimer(ITIMER_REAL), which allows
 sub-second periodicity (contrarily to signal()).
 """
 
+import contextlib
 import faulthandler
 import io
 import os
@@ -20,6 +21,16 @@ import time
 import unittest
 
 from test import support
+
+@contextlib.contextmanager
+def kill_on_error(proc):
+    """Context manager killing the subprocess if a Python exception is raised."""
+    with proc:
+        try:
+            yield proc
+        except:
+            proc.kill()
+            raise
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
@@ -38,7 +49,7 @@ class EINTRBaseTest(unittest.TestCase):
     def setUpClass(cls):
         cls.orig_handler = signal.signal(signal.SIGALRM, lambda *args: None)
         if hasattr(faulthandler, 'dump_traceback_later'):
-            # Most tests take less than 30 seconds, so 15 minutes should be
+            # Most tests take less than 30 seconds, so 5 minutes should be
             # enough. dump_traceback_later() is implemented with a thread, but
             # pthread_sigmask() is used to mask all signaled on this thread.
             faulthandler.dump_traceback_later(5 * 60, exit=True)
@@ -120,7 +131,8 @@ class OSEINTRTest(EINTRBaseTest):
             '    os.write(wr, data)',
         ))
 
-        with self.subprocess(code, str(wr), pass_fds=[wr]) as proc:
+        proc = self.subprocess(code, str(wr), pass_fds=[wr])
+        with kill_on_error(proc):
             os.close(wr)
             for data in datas:
                 self.assertEqual(data, os.read(rd, len(data)))
@@ -156,7 +168,8 @@ class OSEINTRTest(EINTRBaseTest):
             '                    % (len(value), data_len))',
         ))
 
-        with self.subprocess(code, str(rd), pass_fds=[rd]) as proc:
+        proc = self.subprocess(code, str(rd), pass_fds=[rd])
+        with kill_on_error(proc):
             os.close(rd)
             written = 0
             while written < len(data):
@@ -198,7 +211,7 @@ class SocketEINTRTest(EINTRBaseTest):
 
         fd = wr.fileno()
         proc = self.subprocess(code, str(fd), pass_fds=[fd])
-        with proc:
+        with kill_on_error(proc):
             wr.close()
             for data in datas:
                 self.assertEqual(data, recv_func(rd, len(data)))
@@ -248,7 +261,7 @@ class SocketEINTRTest(EINTRBaseTest):
 
         fd = rd.fileno()
         proc = self.subprocess(code, str(fd), pass_fds=[fd])
-        with proc:
+        with kill_on_error(proc):
             rd.close()
             written = 0
             while written < len(data):
@@ -288,7 +301,8 @@ class SocketEINTRTest(EINTRBaseTest):
             '    time.sleep(sleep_time)',
         ))
 
-        with self.subprocess(code) as proc:
+        proc = self.subprocess(code)
+        with kill_on_error(proc):
             client_sock, _ = sock.accept()
             client_sock.close()
             self.assertEqual(proc.wait(), 0)
@@ -315,7 +329,8 @@ class SocketEINTRTest(EINTRBaseTest):
             do_open_close_reader,
         ))
 
-        with self.subprocess(code) as proc:
+        proc = self.subprocess(code)
+        with kill_on_error(proc):
             do_open_close_writer(filename)
 
             self.assertEqual(proc.wait(), 0)
@@ -372,7 +387,8 @@ class SignalEINTRTest(EINTRBaseTest):
         ))
 
         t0 = time.monotonic()
-        with self.subprocess(code) as proc:
+        proc = self.subprocess(code)
+        with kill_on_error(proc):
             # parent
             signal.sigwaitinfo([signum])
             dt = time.monotonic() - t0
