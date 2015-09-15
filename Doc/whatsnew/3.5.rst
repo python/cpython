@@ -1940,7 +1940,7 @@ tracebacks.  (Contributed by Robert Collins in :issue:`22936`.)
 unittest.mock
 -------------
 
-The :class:`~unittest.mock.Mock` has the following improvements:
+The :class:`~unittest.mock.Mock` class has the following improvements:
 
 * Class constructor has a new *unsafe* parameter, which causes mock
   objects to raise :exc:`AttributeError` on attribute names starting
