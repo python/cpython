@@ -275,7 +275,9 @@ Creating connections
      to bind the socket to locally.  The *local_host* and *local_port*
      are looked up using getaddrinfo(), similarly to *host* and *port*.
 
-   On Windows with :class:`ProactorEventLoop`, SSL/TLS is not supported.
+   .. versionchanged:: 3.5
+
+      On Windows with :class:`ProactorEventLoop`, SSL/TLS is now supported.
 
    .. seealso::
 
@@ -358,7 +360,9 @@ Creating listening connections
 
    This method is a :ref:`coroutine <coroutine>`.
 
-   On Windows with :class:`ProactorEventLoop`, SSL/TLS is not supported.
+   .. versionchanged:: 3.5
+
+      On Windows with :class:`ProactorEventLoop`, SSL/TLS is now supported.
 
    .. seealso::
 
