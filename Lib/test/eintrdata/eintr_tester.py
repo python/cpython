@@ -144,14 +144,14 @@ class OSEINTRTest(EINTRBaseTest):
         # rd closed explicitly by parent
 
         # we must write enough data for the write() to block
-        data = b"xyz" * support.PIPE_MAX_SIZE
+        data = b"x" * support.PIPE_MAX_SIZE
 
         code = '\n'.join((
             'import io, os, sys, time',
             '',
             'rd = int(sys.argv[1])',
             'sleep_time = %r' % self.sleep_time,
-            'data = b"xyz" * %s' % support.PIPE_MAX_SIZE,
+            'data = b"x" * %s' % support.PIPE_MAX_SIZE,
             'data_len = len(data)',
             '',
             '# let the parent block on write()',
