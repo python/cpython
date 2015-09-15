@@ -2077,6 +2077,12 @@ class PidTests(unittest.TestCase):
         # We are the parent of our subprocess
         self.assertEqual(int(stdout), os.getpid())
 
+    def test_waitpid(self):
+        args = [sys.executable, '-c', 'pass']
+        pid = os.spawnv(os.P_NOWAIT, args[0], args)
+        status = os.waitpid(pid, 0)
+        self.assertEqual(status, (pid, 0))
+
 
 # The introduction of this TestCase caused at least two different errors on
 # *nix buildbots. Temporarily skip this to let the buildbots move along.
