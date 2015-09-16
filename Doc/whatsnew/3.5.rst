@@ -76,9 +76,8 @@ New built-in features:
 * ``bytes % args``, ``bytearray % args``: :ref:`PEP 461 <whatsnew-pep-461>` --
   Adding ``%`` formatting to bytes and bytearray.
 
-* ``b'\xf0\x9f\x90\x8d'.hex()``, ``bytearray(b'\xf0\x9f\x90\x8d').hex()``,
-  ``memoryview(b'\xf0\x9f\x90\x8d').hex()``: :issue:`9951` - A ``hex`` method
-  has been added to bytes, bytearray, and memoryview.
+* New :meth:`bytes.hex`, :meth:`bytearray.hex` and :meth:`memoryview.hex`
+  methods. (Contributed by Arnon Yaari in :issue:`9951`.)
 
 * :class:`memoryview` now supports tuple indexing (including multi-dimensional).
   (Contributed by Antoine Pitrou in :issue:`23632`.)
