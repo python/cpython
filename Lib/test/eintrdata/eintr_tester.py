@@ -326,12 +326,26 @@ class SocketEINTRTest(EINTRBaseTest):
             '# let the parent block',
             'time.sleep(sleep_time)',
             '',
+            'print("try to open %a fifo for reading, pid %s, ppid %s"'
+            '      % (path, os.getpid(), os.getppid()),'
+            '      flush=True)',
+            '',
             do_open_close_reader,
+            '',
+            'print("%a fifo opened for reading and closed, pid %s, ppid %s"'
+            '      % (path, os.getpid(), os.getppid()),'
+            '      flush=True)',
         ))
 
         proc = self.subprocess(code)
         with kill_on_error(proc):
+            print("try to open %a fifo for writing, pid %s"
+                  % (filename, os.getpid()),
+                  flush=True)
             do_open_close_writer(filename)
+            print("%a fifo opened for writing and closed, pid %s"
+                  % (filename, os.getpid()),
+                  flush=True)
 
             self.assertEqual(proc.wait(), 0)
 
