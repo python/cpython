@@ -117,6 +117,18 @@ PyAPI_FUNC(int) _PyTime_AsTimeval_noraise(_PyTime_t t,
     struct timeval *tv,
     _PyTime_round_t round);
 
+/* Convert a timestamp to a number of seconds (secs) and microseconds (us).
+   us is always positive. This function is similar to _PyTime_AsTimeval()
+   except that secs is always a time_t type, whereas the timeval structure
+   uses a C long for tv_sec on Windows.
+   Raise an exception and return -1 if the conversion overflowed,
+   return 0 on success. */
+PyAPI_FUNC(int) _PyTime_AsTimevalTime_t(
+    _PyTime_t t,
+    time_t *secs,
+    int *us,
+    _PyTime_round_t round);
+
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
 /* Convert a timestamp to a timespec structure (nanosecond resolution).
    tv_nsec is always positive.
