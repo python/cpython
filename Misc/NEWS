@@ -151,7 +151,8 @@ Build
 -----
 
 - Issue #24915: When doing a PGO build, the test suite is now used instead of
-  pybench; Clang support was also added as part off this work.
+  pybench; Clang support was also added as part off this work. Initial patch by
+  Alecsandru Patrascu of Intel.
 
 - Issue #24986: It is now possible to build Python on Windows without errors
   when external libraries are not available.
