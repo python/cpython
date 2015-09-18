@@ -103,6 +103,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25108: Omitted internal frames in traceback functions print_stack(),
+  format_stack(), and extract_stack() called without arguments.
+
 - Issue #25118: Fix a regression of Python 3.5.0 in os.waitpid() on Windows.
 
 - Issue #24684: socket.socket.getaddrinfo() now calls

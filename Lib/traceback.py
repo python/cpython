@@ -181,11 +181,15 @@ def print_stack(f=None, limit=None, file=None):
     stack frame at which to start. The optional 'limit' and 'file'
     arguments have the same meaning as for print_exception().
     """
+    if f is None:
+        f = sys._getframe().f_back
     print_list(extract_stack(f, limit=limit), file=file)
 
 
 def format_stack(f=None, limit=None):
     """Shorthand for 'format_list(extract_stack(f, limit))'."""
+    if f is None:
+        f = sys._getframe().f_back
     return format_list(extract_stack(f, limit=limit))
 
 
@@ -198,6 +202,8 @@ def extract_stack(f=None, limit=None):
     line number, function name, text), and the entries are in order
     from oldest to newest stack frame.
     """
+    if f is None:
+        f = sys._getframe().f_back
     stack = StackSummary.extract(walk_stack(f), limit=limit)
     stack.reverse()
     return stack
