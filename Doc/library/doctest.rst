@@ -950,15 +950,11 @@ and :ref:`doctest-simple-testfile`.
    .. versionchanged:: 2.5
       The optional argument *isprivate*, deprecated in 2.4, was removed.
 
-There's also a function to run the doctests associated with a single object.
-This function is provided for backward compatibility.  There are no plans to
-deprecate it, but it's rarely useful:
-
 
 .. function:: run_docstring_examples(f, globs[, verbose][, name][, compileflags][, optionflags])
 
-   Test examples associated with object *f*; for example, *f* may be a module,
-   function, or class object.
+   Test examples associated with object *f*; for example, *f* may be a string,
+   a module, a function, or a class object.
 
    A shallow copy of dictionary argument *globs* is used for the execution context.
 
@@ -1898,6 +1894,27 @@ several options for organizing tests:
 
 * Define a ``__test__`` dictionary mapping from regression test topics to
   docstrings containing test cases.
+
+When you have placed your tests in a module, the module can itself be the test
+runner.  When a test fails, you can arrange for your test runner to re-run only
+the failing doctest while you debug the problem.  Here is a minimal example of
+such a test runner::
+
+    if __name__ == '__main__':
+        import doctest
+        flags = doctest.REPORT_NDIFF|doctest.REPORT_ONLY_FIRST_FAILURE
+        if len(sys.argv) > 1:
+            name = sys.argv[1]
+            if name in globals():
+                obj = globals()[name]
+            else:
+                obj = __test__[name]
+            doctest.run_docstring_examples(obj, globals(), name=name,
+                                           optionflags=flags)
+        else:
+            fail, total = doctest.testmod(optionflags=flags)
+            print("{} failures out of {} tests".format(fail, total))
+
 
 .. rubric:: Footnotes
 
