@@ -11,6 +11,9 @@
 *.rej
 *.swp
 *~
+*.gc??
+*.profclang?
+*.profraw
 .gdb_history
 Doc/build/
 Doc/venv/
