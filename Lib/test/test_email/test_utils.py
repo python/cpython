@@ -136,6 +136,9 @@ class LocaltimeTests(unittest.TestCase):
         t1 = utils.localtime(t0)
         self.assertEqual(t1.tzname(), 'EET')
 
+# Issue #24836: The timezone files are out of date (pre 2011k)
+# on Mac OS X Snow Leopard.
+@test.support.requires_mac_ver(10, 7)
 class FormatDateTests(unittest.TestCase):
 
     @test.support.run_with_tz('Europe/Minsk')
