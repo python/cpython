@@ -4,7 +4,8 @@ from StringIO import StringIO
 import sys
 import unittest
 from imp import reload
-from test.test_support import run_unittest, is_jython, Error, cpython_only
+from test.test_support import (run_unittest, is_jython, Error, cpython_only,
+                               captured_output)
 
 import traceback
 
@@ -206,9 +207,50 @@ class TracebackFormatTests(unittest.TestCase):
         self.assertTrue(location.startswith('  File'))
         self.assertTrue(source_line.startswith('    raise'))
 
+    def test_print_stack(self):
+        def prn():
+            traceback.print_stack()
+        with captured_output("stderr") as stderr:
+            prn()
+        lineno = prn.__code__.co_firstlineno
+        self.assertEqual(stderr.getvalue().splitlines()[-4:], [
+            '  File "%s", line %d, in test_print_stack' % (__file__, lineno+3),
+            '    prn()',
+            '  File "%s", line %d, in prn' % (__file__, lineno+1),
+            '    traceback.print_stack()',
+        ])
+
+    def test_format_stack(self):
+        def fmt():
+            return traceback.format_stack()
+        result = fmt()
+        lineno = fmt.__code__.co_firstlineno
+        self.assertEqual(result[-2:], [
+            '  File "%s", line %d, in test_format_stack\n'
+            '    result = fmt()\n' % (__file__, lineno+2),
+            '  File "%s", line %d, in fmt\n'
+            '    return traceback.format_stack()\n' % (__file__, lineno+1),
+        ])
+
+
+class MiscTracebackCases(unittest.TestCase):
+    #
+    # Check non-printing functions in traceback module
+    #
+
+    def test_extract_stack(self):
+        def extract():
+            return traceback.extract_stack()
+        result = extract()
+        lineno = extract.__code__.co_firstlineno
+        self.assertEqual(result[-2:], [
+            (__file__, lineno+2, 'test_extract_stack', 'result = extract()'),
+            (__file__, lineno+1, 'extract', 'return traceback.extract_stack()'),
+        ])
+
 
 def test_main():
-    run_unittest(TracebackCases, TracebackFormatTests)
+    run_unittest(TracebackCases, TracebackFormatTests, MiscTracebackCases)
 
 
 if __name__ == "__main__":
