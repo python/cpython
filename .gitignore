@@ -6,6 +6,9 @@
 *.pyo
 *.rej
 *~
+*.gc??
+*.profclang?
+*.profraw
 Doc/build/
 Doc/tools/docutils/
 Doc/tools/jinja2/

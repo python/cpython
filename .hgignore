@@ -45,6 +45,9 @@ libpython*.so*
 *.pyd
 *.cover
 *~
+*.gc??
+*.profclang?
+*.profraw
 Lib/distutils/command/*.pdb
 Lib/lib2to3/*.pickle
 Lib/test/data/*
