@@ -1,8 +1,6 @@
-/* Issue #23644: <stdatomic.h> is incompatible with C++, see:
-   https://gcc.gnu.org/bugzilla/show_bug.cgi?id=60932 */
-#if !defined(Py_LIMITED_API) && !defined(__cplusplus)
 #ifndef Py_ATOMIC_H
 #define Py_ATOMIC_H
+#ifdef Py_BUILD_CORE
 
 #include "dynamic_annotations.h"
 
@@ -248,5 +246,5 @@ _Py_ANNOTATE_MEMORY_ORDER(const volatile void *address, _Py_memory_order order)
 #define _Py_atomic_load_relaxed(ATOMIC_VAL) \
     _Py_atomic_load_explicit(ATOMIC_VAL, _Py_memory_order_relaxed)
 
+#endif  /* Py_BUILD_CORE */
 #endif  /* Py_ATOMIC_H */
-#endif  /* Py_LIMITED_API */
