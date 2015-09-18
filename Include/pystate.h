@@ -177,20 +177,13 @@ PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject *);
 /* Variable and macro for in-line access to current thread state */
 
 /* Assuming the current thread holds the GIL, this is the
-   PyThreadState for the current thread.
-
-   Issue #23644: pyatomic.h is incompatible with C++ (yet). Disable
-   PyThreadState_GET() optimization: declare it as an alias to
-   PyThreadState_Get(), as done for limited API. */
-#if !defined(Py_LIMITED_API) && !defined(__cplusplus)
+   PyThreadState for the current thread. */
+#ifdef Py_BUILD_CORE
 PyAPI_DATA(_Py_atomic_address) _PyThreadState_Current;
-#endif
-
-#if defined(Py_DEBUG) || defined(Py_LIMITED_API) || defined(__cplusplus)
-#define PyThreadState_GET() PyThreadState_Get()
+#  define PyThreadState_GET() \
+             ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
 #else
-#define PyThreadState_GET() \
-    ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
+#  define PyThreadState_GET() PyThreadState_Get()
 #endif
 
 typedef

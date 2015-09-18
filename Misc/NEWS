@@ -100,6 +100,10 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #25150: Hide the private _Py_atomic_xxx symbols from the public
+  Python.h header to fix a compilation error with OpenMP. PyThreadState_GET()
+  becomes an alias to PyThreadState_Get() to avoid ABI incompatibilies.
+
 Library
 -------
 
