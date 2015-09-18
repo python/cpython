@@ -946,14 +946,14 @@ class TestPyTime_t(unittest.TestCase):
             # nanoseconds
             (1, 0, FLOOR),
             (1, 1, CEILING),
-            (-1, 0, FLOOR),
-            (-1, -1, CEILING),
+            (-1, -1, FLOOR),
+            (-1, 0, CEILING),
 
             # seconds + nanoseconds
             (1234 * MS_TO_NS + 1, 1234, FLOOR),
             (1234 * MS_TO_NS + 1, 1235, CEILING),
-            (-1234 * MS_TO_NS - 1, -1234, FLOOR),
-            (-1234 * MS_TO_NS - 1, -1235, CEILING),
+            (-1234 * MS_TO_NS - 1, -1235, FLOOR),
+            (-1234 * MS_TO_NS - 1, -1234, CEILING),
         ):
             with self.subTest(nanoseconds=ns, milliseconds=ms, round=rnd):
                 self.assertEqual(PyTime_AsMilliseconds(ns, rnd), ms)
@@ -983,14 +983,14 @@ class TestPyTime_t(unittest.TestCase):
             # nanoseconds
             (1, 0, FLOOR),
             (1, 1, CEILING),
-            (-1, 0, FLOOR),
-            (-1, -1, CEILING),
+            (-1, -1, FLOOR),
+            (-1, 0, CEILING),
 
             # seconds + nanoseconds
             (1234 * US_TO_NS + 1, 1234, FLOOR),
             (1234 * US_TO_NS + 1, 1235, CEILING),
-            (-1234 * US_TO_NS - 1, -1234, FLOOR),
-            (-1234 * US_TO_NS - 1, -1235, CEILING),
+            (-1234 * US_TO_NS - 1, -1235, FLOOR),
+            (-1234 * US_TO_NS - 1, -1234, CEILING),
         ):
             with self.subTest(nanoseconds=ns, milliseconds=ms, round=rnd):
                 self.assertEqual(PyTime_AsMicroseconds(ns, rnd), ms)
