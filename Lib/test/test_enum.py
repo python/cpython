@@ -270,6 +270,13 @@ class TestEnum(unittest.TestCase):
             class Wrong(Enum):
                 _any_name_ = 9
 
+    def test_bool(self):
+        class Logic(Enum):
+            true = True
+            false = False
+        self.assertTrue(Logic.true)
+        self.assertFalse(Logic.false)
+
     def test_contains(self):
         Season = self.Season
         self.assertIn(Season.AUTUMN, Season)
