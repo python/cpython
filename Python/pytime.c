@@ -305,17 +305,22 @@ _PyTime_AsNanosecondsObject(_PyTime_t t)
 }
 
 static _PyTime_t
-_PyTime_Divide(_PyTime_t t, _PyTime_t k, _PyTime_round_t round)
+_PyTime_Divide(const _PyTime_t t, const _PyTime_t k,
+               const _PyTime_round_t round)
 {
     assert(k > 1);
     if (round == _PyTime_ROUND_CEILING) {
         if (t >= 0)
             return (t + k - 1) / k;
         else
+            return t / k;
+    }
+    else {
+        if (t >= 0)
+            return t / k;
+        else
             return (t - (k - 1)) / k;
     }
-    else
-        return t / k;
 }
 
 _PyTime_t
