@@ -14,6 +14,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #25155: Fix datetime.datetime.now() and datetime.datetime.utcnow() on
+  Windows to support date after year 2038. It was a regression introduced in
+  Python 3.5.0.
+
 - Issue #25108: Omitted internal frames in traceback functions print_stack(),
   format_stack(), and extract_stack() called without arguments.
 
