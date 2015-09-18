@@ -10,6 +10,11 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25003: On Solaris 11.3 or newer, os.urandom() now uses the
+  getrandom() function instead of the getentropy() function. The getentropy()
+  function is blocking to generate very good quality entropy, os.urandom()
+  doesn't need such high-quality entropy.
+
 - Issue #9232: Modify Python's grammar to allow trailing commas in the
   argument list of a function declaration.  For example, "def f(*, a =
   3,): pass" is now legal. Patch from Mark Dickinson.
