@@ -417,53 +417,94 @@ _PyTime_AsMicroseconds(_PyTime_t t, _PyTime_round_t round)
 }
 
 static int
-_PyTime_AsTimeval_impl(_PyTime_t t, struct timeval *tv, _PyTime_round_t round,
-                       int raise)
+_PyTime_AsTimeval_impl(_PyTime_t t, _PyTime_t *p_secs, int *p_us,
+                       _PyTime_round_t round)
 {
     _PyTime_t secs, ns;
-    int res = 0;
     int usec;
+    int res = 0;
 
     secs = t / SEC_TO_NS;
     ns = t % SEC_TO_NS;
+
+    usec = (int)_PyTime_Divide(ns, US_TO_NS, round);
+    if (usec < 0) {
+        usec += SEC_TO_US;
+        if (secs != _PyTime_MIN)
+            secs -= 1;
+        else
+            res = -1;
+    }
+    else if (usec >= SEC_TO_US) {
+        usec -= SEC_TO_US;
+        if (secs != _PyTime_MAX)
+            secs += 1;
+        else
+            res = -1;
+    }
+    assert(0 <= usec && usec < SEC_TO_US);
+
+    *p_secs = secs;
+    *p_us = usec;
+
+    return res;
+}
+
+static int
+_PyTime_AsTimevalStruct_impl(_PyTime_t t, struct timeval *tv,
+                             _PyTime_round_t round, int raise)
+{
+    _PyTime_t secs;
+    int us;
+    int res;
+
+    res = _PyTime_AsTimeval_impl(t, &secs, &us, round);
 
 #ifdef MS_WINDOWS
     tv->tv_sec = (long)secs;
 #else
     tv->tv_sec = secs;
 #endif
-    if ((_PyTime_t)tv->tv_sec != secs)
-        res = -1;
+    tv->tv_usec = us;
 
-    usec = (int)_PyTime_Divide(ns, US_TO_NS, round);
-    if (usec < 0) {
-        usec += SEC_TO_US;
-        tv->tv_sec -= 1;
+    if (res < 0 || (_PyTime_t)tv->tv_sec != secs) {
+        if (raise)
+            error_time_t_overflow();
+        return -1;
     }
-    else if (usec >= SEC_TO_US) {
-        usec -= SEC_TO_US;
-        tv->tv_sec += 1;
-    }
-
-    assert(0 <= usec && usec < SEC_TO_US);
-    tv->tv_usec = usec;
-
-    if (res && raise)
-        error_time_t_overflow();
-    return res;
+    return 0;
 }
 
 int
 _PyTime_AsTimeval(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
 {
-    return _PyTime_AsTimeval_impl(t, tv, round, 1);
+    return _PyTime_AsTimevalStruct_impl(t, tv, round, 1);
 }
 
 int
 _PyTime_AsTimeval_noraise(_PyTime_t t, struct timeval *tv, _PyTime_round_t round)
 {
-    return _PyTime_AsTimeval_impl(t, tv, round, 0);
+    return _PyTime_AsTimevalStruct_impl(t, tv, round, 0);
 }
+
+int
+_PyTime_AsTimevalTime_t(_PyTime_t t, time_t *p_secs, int *us,
+                        _PyTime_round_t round)
+{
+    _PyTime_t secs;
+    int res;
+
+    res = _PyTime_AsTimeval_impl(t, &secs, us, round);
+
+    *p_secs = secs;
+
+    if (res < 0 || (_PyTime_t)*p_secs != secs) {
+        error_time_t_overflow();
+        return -1;
+    }
+    return 0;
+}
+
 
 #if defined(HAVE_CLOCK_GETTIME) || defined(HAVE_KQUEUE)
 int
