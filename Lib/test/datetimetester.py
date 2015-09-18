@@ -1851,8 +1851,8 @@ class TestDateTime(TestDate):
                          18000 + 3600 + 2*60 + 3 + 4*1e-6)
 
     def test_microsecond_rounding(self):
-        for fts in (datetime.fromtimestamp,
-                    self.theclass.utcfromtimestamp):
+        for fts in [self.theclass.fromtimestamp,
+                    self.theclass.utcfromtimestamp]:
             zero = fts(0)
             self.assertEqual(zero.second, 0)
             self.assertEqual(zero.microsecond, 0)
