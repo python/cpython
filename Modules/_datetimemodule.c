@@ -4113,6 +4113,44 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
                                  tzinfo);
 }
 
+static time_t
+_PyTime_DoubleToTimet(double x)
+{
+    time_t result;
+    double diff;
+
+    result = (time_t)x;
+    /* How much info did we lose?  time_t may be an integral or
+     * floating type, and we don't know which.  If it's integral,
+     * we don't know whether C truncates, rounds, returns the floor,
+     * etc.  If we lost a second or more, the C rounding is
+     * unreasonable, or the input just doesn't fit in a time_t;
+     * call it an error regardless.  Note that the original cast to
+     * time_t can cause a C error too, but nothing we can do to
+     * worm around that.
+     */
+    diff = x - (double)result;
+    if (diff <= -1.0 || diff >= 1.0) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "timestamp out of range for platform time_t");
+        result = (time_t)-1;
+    }
+    return result;
+}
+
+/* Round a double to the nearest long.  |x| must be small enough to fit
+ * in a C long; this is not checked.
+ */
+static double
+_PyTime_RoundHalfEven(double x)
+{
+    double rounded = round(x);
+    if (fabs(x-rounded) == 0.5)
+        /* halfway case: round to even */
+        rounded = 2.0*round(x/2.0);
+    return rounded;
+}
+
 /* Internal helper.
  * Build datetime from a Python timestamp.  Pass localtime or gmtime for f,
  * to control the interpretation of the timestamp.  Since a double doesn't
@@ -4121,15 +4159,32 @@ datetime_from_timet_and_us(PyObject *cls, TM_FUNC f, time_t timet, int us,
  * to get that much precision (e.g., C time() isn't good enough).
  */
 static PyObject *
-datetime_from_timestamp(PyObject *cls, TM_FUNC f, PyObject *timestamp,
+datetime_from_timestamp(PyObject *cls, TM_FUNC f, double timestamp,
                         PyObject *tzinfo)
 {
     time_t timet;
-    long us;
+    double fraction;
+    int us;
 
-    if (_PyTime_ObjectToTimeval(timestamp, &timet, &us, _PyTime_ROUND_DOWN) == -1)
+    timet = _PyTime_DoubleToTimet(timestamp);
+    if (timet == (time_t)-1 && PyErr_Occurred())
         return NULL;
-    return datetime_from_timet_and_us(cls, f, timet, (int)us, tzinfo);
+    fraction = timestamp - (double)timet;
+    us = (int)_PyTime_RoundHalfEven(fraction * 1e6);
+    if (us < 0) {
+        /* Truncation towards zero is not what we wanted
+           for negative numbers (Python's mod semantics) */
+        timet -= 1;
+        us += 1000000;
+    }
+    /* If timestamp is less than one microsecond smaller than a
+     * full second, round up. Otherwise, ValueErrors are raised
+     * for some floats. */
+    if (us == 1000000) {
+        timet += 1;
+        us = 0;
+    }
+    return datetime_from_timet_and_us(cls, f, timet, us, tzinfo);
 }
 
 /* Internal helper.
@@ -4231,11 +4286,11 @@ static PyObject *
 datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 {
     PyObject *self;
-    PyObject *timestamp;
+    double timestamp;
     PyObject *tzinfo = Py_None;
     static char *keywords[] = {"timestamp", "tz", NULL};
 
-    if (! PyArg_ParseTupleAndKeywords(args, kw, "O|O:fromtimestamp",
+    if (! PyArg_ParseTupleAndKeywords(args, kw, "d|O:fromtimestamp",
                                       keywords, &timestamp, &tzinfo))
         return NULL;
     if (check_tzinfo_subclass(tzinfo) < 0)
@@ -4259,10 +4314,10 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
 static PyObject *
 datetime_utcfromtimestamp(PyObject *cls, PyObject *args)
 {
-    PyObject *timestamp;
+    double timestamp;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTuple(args, "O:utcfromtimestamp", &timestamp))
+    if (PyArg_ParseTuple(args, "d:utcfromtimestamp", &timestamp))
         result = datetime_from_timestamp(cls, gmtime, timestamp,
                                          Py_None);
     return result;
