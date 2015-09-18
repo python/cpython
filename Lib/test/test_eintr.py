@@ -17,8 +17,7 @@ class EINTRTests(unittest.TestCase):
         # thread (for reliable signal delivery).
         tester = support.findfile("eintr_tester.py", subdir="eintrdata")
 
-        # FIXME: Issue #25122, always run in verbose mode to debug hang on FreeBSD
-        if True: #support.verbose:
+        if support.verbose:
             args = [sys.executable, tester]
             with subprocess.Popen(args) as proc:
                 exitcode = proc.wait()

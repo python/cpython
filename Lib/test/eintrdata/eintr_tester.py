@@ -9,7 +9,6 @@ sub-second periodicity (contrarily to signal()).
 """
 
 import contextlib
-import faulthandler
 import io
 import os
 import select
@@ -48,19 +47,12 @@ class EINTRBaseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.orig_handler = signal.signal(signal.SIGALRM, lambda *args: None)
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            # Most tests take less than 30 seconds, so 5 minutes should be
-            # enough. dump_traceback_later() is implemented with a thread, but
-            # pthread_sigmask() is used to mask all signaled on this thread.
-            faulthandler.dump_traceback_later(5 * 60, exit=True)
         signal.setitimer(signal.ITIMER_REAL, cls.signal_delay,
                          cls.signal_period)
 
     @classmethod
     def stop_alarm(cls):
         signal.setitimer(signal.ITIMER_REAL, 0, 0)
-        if hasattr(faulthandler, 'cancel_dump_traceback_later'):
-            faulthandler.cancel_dump_traceback_later()
 
     @classmethod
     def tearDownClass(cls):
@@ -307,6 +299,11 @@ class SocketEINTRTest(EINTRBaseTest):
             client_sock.close()
             self.assertEqual(proc.wait(), 0)
 
+    # Issue #25122: There is a race condition in the FreeBSD kernel on
+    # handling signals in the FIFO device. Skip the test until the bug is
+    # fixed in the kernel. Bet that the bug will be fixed in FreeBSD 11.
+    # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=203162
+    @support.requires_freebsd_version(11)
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'needs mkfifo()')
     def _test_open(self, do_open_close_reader, do_open_close_writer):
         filename = support.TESTFN
@@ -326,36 +323,29 @@ class SocketEINTRTest(EINTRBaseTest):
             '# let the parent block',
             'time.sleep(sleep_time)',
             '',
-            'print("try to open %a fifo for reading, pid %s, ppid %s"'
-            '      % (path, os.getpid(), os.getppid()),'
-            '      flush=True)',
-            '',
             do_open_close_reader,
-            '',
-            'print("%a fifo opened for reading and closed, pid %s, ppid %s"'
-            '      % (path, os.getpid(), os.getppid()),'
-            '      flush=True)',
         ))
 
         proc = self.subprocess(code)
         with kill_on_error(proc):
-            print("try to open %a fifo for writing, pid %s"
-                  % (filename, os.getpid()),
-                  flush=True)
             do_open_close_writer(filename)
-            print("%a fifo opened for writing and closed, pid %s"
-                  % (filename, os.getpid()),
-                  flush=True)
-
             self.assertEqual(proc.wait(), 0)
 
+    def python_open(self, path):
+        fp = open(path, 'w')
+        fp.close()
+
     def test_open(self):
-        self._test_open("open(path, 'r').close()",
-                        lambda path: open(path, 'w').close())
+        self._test_open("fp = open(path, 'r')\nfp.close()",
+                        self.python_open)
+
+    def os_open(self, path):
+        fd = os.open(path, os.O_WRONLY)
+        os.close(fd)
 
     def test_os_open(self):
-        self._test_open("os.close(os.open(path, os.O_RDONLY))",
-                        lambda path: os.close(os.open(path, os.O_WRONLY)))
+        self._test_open("fd = os.open(path, os.O_RDONLY)\nos.close(fd)",
+                        self.os_open)
 
 
 @unittest.skipUnless(hasattr(signal, "setitimer"), "requires setitimer()")
