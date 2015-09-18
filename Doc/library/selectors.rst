@@ -50,8 +50,8 @@ Classes hierarchy::
 
 
 In the following, *events* is a bitwise mask indicating which I/O events should
-be waited for on a given file object. It can be a combination of the constants
-below:
+be waited for on a given file object. It can be a combination of the modules
+constants below:
 
    +-----------------------+-----------------------------------------------+
    | Constant              | Meaning                                       |
