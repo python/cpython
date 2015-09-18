@@ -998,7 +998,7 @@ odict_reduce(register PyODictObject *od)
         goto Done;
     else {
         PyObject *empty, *od_vars, *iterator, *key;
-        int ns_len;
+        Py_ssize_t ns_len;
 
         /* od.__dict__ isn't necessarily a dict... */
         ns = PyObject_CallMethod((PyObject *)vars, "copy", NULL);
