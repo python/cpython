@@ -1,6 +1,11 @@
 import sys
-from collections import OrderedDict
 from types import MappingProxyType, DynamicClassAttribute
+
+try:
+    from _collections import OrderedDict
+except ImportError:
+    from collections import OrderedDict
+
 
 __all__ = ['Enum', 'IntEnum', 'unique']
 
