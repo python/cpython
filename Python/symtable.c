@@ -1439,6 +1439,14 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
         VISIT_SEQ(st, expr, e->v.Call.args);
         VISIT_SEQ_WITH_NULL(st, keyword, e->v.Call.keywords);
         break;
+    case FormattedValue_kind:
+        VISIT(st, expr, e->v.FormattedValue.value);
+        if (e->v.FormattedValue.format_spec)
+            VISIT(st, expr, e->v.FormattedValue.format_spec);
+        break;
+    case JoinedStr_kind:
+        VISIT_SEQ(st, expr, e->v.JoinedStr.values);
+        break;
     case Num_kind:
     case Str_kind:
     case Bytes_kind:

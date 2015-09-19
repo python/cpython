@@ -71,6 +71,8 @@ module Python
          | Call(expr func, expr* args, keyword* keywords)
          | Num(object n) -- a number as a PyObject.
          | Str(string s) -- need to specify raw, unicode, etc?
+         | FormattedValue(expr value, int? conversion, expr? format_spec)
+         | JoinedStr(expr* values)
          | Bytes(bytes s)
          | NameConstant(singleton value)
          | Ellipsis

@@ -285,6 +285,18 @@ _Py_IDENTIFIER(s);
 static char *Str_fields[]={
     "s",
 };
+static PyTypeObject *FormattedValue_type;
+_Py_IDENTIFIER(conversion);
+_Py_IDENTIFIER(format_spec);
+static char *FormattedValue_fields[]={
+    "value",
+    "conversion",
+    "format_spec",
+};
+static PyTypeObject *JoinedStr_type;
+static char *JoinedStr_fields[]={
+    "values",
+};
 static PyTypeObject *Bytes_type;
 static char *Bytes_fields[]={
     "s",
@@ -917,6 +929,11 @@ static int init_types(void)
     if (!Num_type) return 0;
     Str_type = make_type("Str", expr_type, Str_fields, 1);
     if (!Str_type) return 0;
+    FormattedValue_type = make_type("FormattedValue", expr_type,
+                                    FormattedValue_fields, 3);
+    if (!FormattedValue_type) return 0;
+    JoinedStr_type = make_type("JoinedStr", expr_type, JoinedStr_fields, 1);
+    if (!JoinedStr_type) return 0;
     Bytes_type = make_type("Bytes", expr_type, Bytes_fields, 1);
     if (!Bytes_type) return 0;
     NameConstant_type = make_type("NameConstant", expr_type,
@@ -2063,6 +2080,42 @@ Str(string s, int lineno, int col_offset, PyArena *arena)
 }
 
 expr_ty
+FormattedValue(expr_ty value, int conversion, expr_ty format_spec, int lineno,
+               int col_offset, PyArena *arena)
+{
+    expr_ty p;
+    if (!value) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field value is required for FormattedValue");
+        return NULL;
+    }
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = FormattedValue_kind;
+    p->v.FormattedValue.value = value;
+    p->v.FormattedValue.conversion = conversion;
+    p->v.FormattedValue.format_spec = format_spec;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    return p;
+}
+
+expr_ty
+JoinedStr(asdl_seq * values, int lineno, int col_offset, PyArena *arena)
+{
+    expr_ty p;
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = JoinedStr_kind;
+    p->v.JoinedStr.values = values;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    return p;
+}
+
+expr_ty
 Bytes(bytes s, int lineno, int col_offset, PyArena *arena)
 {
     expr_ty p;
@@ -3158,6 +3211,34 @@ ast2obj_expr(void* _o)
         value = ast2obj_string(o->v.Str.s);
         if (!value) goto failed;
         if (_PyObject_SetAttrId(result, &PyId_s, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case FormattedValue_kind:
+        result = PyType_GenericNew(FormattedValue_type, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_expr(o->v.FormattedValue.value);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_int(o->v.FormattedValue.conversion);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_conversion, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        value = ast2obj_expr(o->v.FormattedValue.format_spec);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_format_spec, value) == -1)
+            goto failed;
+        Py_DECREF(value);
+        break;
+    case JoinedStr_kind:
+        result = PyType_GenericNew(JoinedStr_type, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_list(o->v.JoinedStr.values, ast2obj_expr);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_values, value) == -1)
             goto failed;
         Py_DECREF(value);
         break;
@@ -6022,6 +6103,86 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
+    isinstance = PyObject_IsInstance(obj, (PyObject*)FormattedValue_type);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        expr_ty value;
+        int conversion;
+        expr_ty format_spec;
+
+        if (_PyObject_HasAttrId(obj, &PyId_value)) {
+            int res;
+            tmp = _PyObject_GetAttrId(obj, &PyId_value);
+            if (tmp == NULL) goto failed;
+            res = obj2ast_expr(tmp, &value, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        } else {
+            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from FormattedValue");
+            return 1;
+        }
+        if (exists_not_none(obj, &PyId_conversion)) {
+            int res;
+            tmp = _PyObject_GetAttrId(obj, &PyId_conversion);
+            if (tmp == NULL) goto failed;
+            res = obj2ast_int(tmp, &conversion, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        } else {
+            conversion = 0;
+        }
+        if (exists_not_none(obj, &PyId_format_spec)) {
+            int res;
+            tmp = _PyObject_GetAttrId(obj, &PyId_format_spec);
+            if (tmp == NULL) goto failed;
+            res = obj2ast_expr(tmp, &format_spec, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        } else {
+            format_spec = NULL;
+        }
+        *out = FormattedValue(value, conversion, format_spec, lineno,
+                              col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
+    isinstance = PyObject_IsInstance(obj, (PyObject*)JoinedStr_type);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        asdl_seq* values;
+
+        if (_PyObject_HasAttrId(obj, &PyId_values)) {
+            int res;
+            Py_ssize_t len;
+            Py_ssize_t i;
+            tmp = _PyObject_GetAttrId(obj, &PyId_values);
+            if (tmp == NULL) goto failed;
+            if (!PyList_Check(tmp)) {
+                PyErr_Format(PyExc_TypeError, "JoinedStr field \"values\" must be a list, not a %.200s", tmp->ob_type->tp_name);
+                goto failed;
+            }
+            len = PyList_GET_SIZE(tmp);
+            values = _Py_asdl_seq_new(len, arena);
+            if (values == NULL) goto failed;
+            for (i = 0; i < len; i++) {
+                expr_ty value;
+                res = obj2ast_expr(PyList_GET_ITEM(tmp, i), &value, arena);
+                if (res != 0) goto failed;
+                asdl_seq_SET(values, i, value);
+            }
+            Py_CLEAR(tmp);
+        } else {
+            PyErr_SetString(PyExc_TypeError, "required field \"values\" missing from JoinedStr");
+            return 1;
+        }
+        *out = JoinedStr(values, lineno, col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     isinstance = PyObject_IsInstance(obj, (PyObject*)Bytes_type);
     if (isinstance == -1) {
         return 1;
@@ -7319,6 +7480,10 @@ PyInit__ast(void)
     if (PyDict_SetItemString(d, "Call", (PyObject*)Call_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "Num", (PyObject*)Num_type) < 0) return NULL;
     if (PyDict_SetItemString(d, "Str", (PyObject*)Str_type) < 0) return NULL;
+    if (PyDict_SetItemString(d, "FormattedValue",
+        (PyObject*)FormattedValue_type) < 0) return NULL;
+    if (PyDict_SetItemString(d, "JoinedStr", (PyObject*)JoinedStr_type) < 0)
+        return NULL;
     if (PyDict_SetItemString(d, "Bytes", (PyObject*)Bytes_type) < 0) return
         NULL;
     if (PyDict_SetItemString(d, "NameConstant", (PyObject*)NameConstant_type) <
