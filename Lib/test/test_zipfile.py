@@ -653,6 +653,13 @@ class PyZipFileTests(unittest.TestCase):
         if not os.access(path, os.W_OK,
                          effective_ids=os.access in os.supports_effective_ids):
             self.skipTest('requires write access to the installed location')
+        filename = os.path.join(path, 'test_zipfile.try')
+        try:
+            fd = os.open(filename, os.O_WRONLY | os.O_CREAT)
+            os.close(fd)
+        except Exception:
+            self.skipTest('requires write access to the installed location')
+        unlink(filename)
 
     def test_write_pyfile(self):
         self.requiresWriteAccess(os.path.dirname(__file__))
