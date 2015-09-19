@@ -4495,11 +4495,13 @@ _PyLong_GCD(PyObject *aarg, PyObject *barg)
 simple:
     assert(Py_REFCNT(a) > 0);
     assert(Py_REFCNT(b) > 0);
-#if LONG_MAX >> 2*PyLong_SHIFT
+/* Issue #24999: use two shifts instead of ">> 2*PyLong_SHIFT" to avoid
+   undefined behaviour when LONG_MAX type is smaller than 60 bits */
+#if LONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     /* a fits into a long, so b must too */
     x = PyLong_AsLong((PyObject *)a);
     y = PyLong_AsLong((PyObject *)b);
-#elif defined(PY_LONG_LONG) && PY_LLONG_MAX >> 2*PyLong_SHIFT
+#elif defined(PY_LONG_LONG) && PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     x = PyLong_AsLongLong((PyObject *)a);
     y = PyLong_AsLongLong((PyObject *)b);
 #else
@@ -4516,9 +4518,9 @@ simple:
         y = x % y;
         x = t;
     }
-#if LONG_MAX >> 2*PyLong_SHIFT
+#if LONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLong(x);
-#elif defined(PY_LONG_LONG) && PY_LLONG_MAX >> 2*PyLong_SHIFT
+#elif defined(PY_LONG_LONG) && PY_LLONG_MAX >> PyLong_SHIFT >> PyLong_SHIFT
     return PyLong_FromLongLong(x);
 #else
 # error "_PyLong_GCD"
