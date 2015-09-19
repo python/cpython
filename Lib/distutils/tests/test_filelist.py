@@ -302,6 +302,11 @@ class FindAllTestCase(unittest.TestCase):
             self.assertEqual(filelist.findall(), [])
 
     def test_basic_discovery(self):
+        """
+        When findall is called with no parameters or with
+        '.' as the parameter, the dot should be omitted from
+        the results.
+        """
         with test.support.temp_cwd():
             os.mkdir('foo')
             file1 = os.path.join('foo', 'file1.txt')
@@ -311,6 +316,17 @@ class FindAllTestCase(unittest.TestCase):
             test.support.create_empty_file(file2)
             expected = [file1, file2]
             self.assertEqual(filelist.findall(), expected)
+
+    def test_non_local_discovery(self):
+        """
+        When findall is called with another path, the full
+        path name should be returned.
+        """
+        with test.support.temp_dir() as temp_dir:
+            file1 = os.path.join(temp_dir, 'file1.txt')
+            test.support.create_empty_file(file1)
+            expected = [file1]
+            self.assertEqual(filelist.findall(temp_dir), expected)
 
 
 if __name__ == "__main__":
