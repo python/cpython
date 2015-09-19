@@ -6,6 +6,7 @@ and building lists of files.
 
 import os, re
 import fnmatch
+import functools
 from distutils.util import convert_path
 from distutils.errors import DistutilsTemplateError, DistutilsInternalError
 from distutils import log
@@ -242,35 +243,28 @@ class FileList:
 # ----------------------------------------------------------------------
 # Utility functions
 
-def findall(dir=os.curdir):
-    """Find all files under 'dir' and return the list of full filenames
-    (relative to 'dir').
+def _find_all_simple(path):
     """
-    from stat import ST_MODE, S_ISREG, S_ISDIR, S_ISLNK
+    Find all files under 'path'
+    """
+    results = (
+        os.path.join(base, file)
+        for base, dirs, files in os.walk(path, followlinks=True)
+        for file in files
+    )
+    return filter(os.path.isfile, results)
 
-    list = []
-    stack = [dir]
-    pop = stack.pop
-    push = stack.append
 
-    while stack:
-        dir = pop()
-        names = os.listdir(dir)
-
-        for name in names:
-            if dir != os.curdir:        # avoid the dreaded "./" syndrome
-                fullname = os.path.join(dir, name)
-            else:
-                fullname = name
-
-            # Avoid excess stat calls -- just one will do, thank you!
-            stat = os.stat(fullname)
-            mode = stat[ST_MODE]
-            if S_ISREG(mode):
-                list.append(fullname)
-            elif S_ISDIR(mode) and not S_ISLNK(mode):
-                push(fullname)
-    return list
+def findall(dir=os.curdir):
+    """
+    Find all files under 'dir' and return the list of full filenames.
+    Unless dir is '.', return full filenames with dir prepended.
+    """
+    files = _find_all_simple(dir)
+    if dir == os.curdir:
+        make_rel = functools.partial(os.path.relpath, start=dir)
+        files = map(make_rel, files)
+    return list(files)
 
 
 def glob_to_re(pattern):
