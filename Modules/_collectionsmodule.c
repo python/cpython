@@ -1211,6 +1211,7 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 static PyObject *
 deque_copy(PyObject *deque)
 {
+    dequeobject *old_deque = (dequeobject *)deque;
     if (Py_TYPE(deque) == &deque_type) {
         dequeobject *new_deque;
         PyObject *rv;
@@ -1218,8 +1219,14 @@ deque_copy(PyObject *deque)
         new_deque = (dequeobject *)deque_new(&deque_type, (PyObject *)NULL, (PyObject *)NULL);
         if (new_deque == NULL)
             return NULL;
-        new_deque->maxlen = ((dequeobject *)deque)->maxlen;
-        rv = deque_extend(new_deque, deque);
+        new_deque->maxlen = old_deque->maxlen;
+        /* Fast path for the deque_repeat() common case where len(deque) == 1 */
+        if (Py_SIZE(deque) == 1 && new_deque->maxlen != 0) {
+            PyObject *item = old_deque->leftblock->data[old_deque->leftindex];
+            rv = deque_append(new_deque, item);
+        } else {
+            rv = deque_extend(new_deque, deque);
+        }
         if (rv != NULL) {
             Py_DECREF(rv);
             return (PyObject *)new_deque;
@@ -1227,11 +1234,11 @@ deque_copy(PyObject *deque)
         Py_DECREF(new_deque);
         return NULL;
     }
-    if (((dequeobject *)deque)->maxlen == -1)
+    if (old_deque->maxlen == -1)
         return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "O", deque, NULL);
     else
         return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
-            deque, ((dequeobject *)deque)->maxlen, NULL);
+            deque, old_deque->maxlen, NULL);
 }
 
 PyDoc_STRVAR(copy_doc, "Return a shallow copy of a deque.");
