@@ -1477,17 +1477,19 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
     nonascii = 0;
     if (is_potential_identifier_start(c)) {
         /* Process b"", r"", u"", br"" and rb"" */
-        int saw_b = 0, saw_r = 0, saw_u = 0;
+        int saw_b = 0, saw_r = 0, saw_u = 0, saw_f = 0;
         while (1) {
-            if (!(saw_b || saw_u) && (c == 'b' || c == 'B'))
+            if (!(saw_b || saw_u || saw_f) && (c == 'b' || c == 'B'))
                 saw_b = 1;
             /* Since this is a backwards compatibility support literal we don't
                want to support it in arbitrary order like byte literals. */
-            else if (!(saw_b || saw_u || saw_r) && (c == 'u' || c == 'U'))
+            else if (!(saw_b || saw_u || saw_r || saw_f) && (c == 'u' || c == 'U'))
                 saw_u = 1;
             /* ur"" and ru"" are not supported */
             else if (!(saw_r || saw_u) && (c == 'r' || c == 'R'))
                 saw_r = 1;
+            else if (!(saw_f || saw_b || saw_u) && (c == 'f' || c == 'F'))
+                saw_f = 1;
             else
                 break;
             c = tok_nextc(tok);

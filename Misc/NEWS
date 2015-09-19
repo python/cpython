@@ -19,6 +19,11 @@ Core and Builtins
   argument list of a function declaration.  For example, "def f(*, a =
   3,): pass" is now legal. Patch from Mark Dickinson.
 
+- Issue #24965: Implement PEP 498 "Literal String Interpolation". This
+  allows you to embed expressions inside f-strings, which are
+  converted to normal strings at run time. Given x=3, then
+  f'value={x}' == 'value=3'. Patch by Eric V. Smith.
+
 Library
 -------
 
