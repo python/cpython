@@ -201,9 +201,10 @@ enum _expr_kind {BoolOp_kind=1, BinOp_kind=2, UnaryOp_kind=3, Lambda_kind=4,
                   SetComp_kind=9, DictComp_kind=10, GeneratorExp_kind=11,
                   Await_kind=12, Yield_kind=13, YieldFrom_kind=14,
                   Compare_kind=15, Call_kind=16, Num_kind=17, Str_kind=18,
-                  Bytes_kind=19, NameConstant_kind=20, Ellipsis_kind=21,
-                  Attribute_kind=22, Subscript_kind=23, Starred_kind=24,
-                  Name_kind=25, List_kind=26, Tuple_kind=27};
+                  FormattedValue_kind=19, JoinedStr_kind=20, Bytes_kind=21,
+                  NameConstant_kind=22, Ellipsis_kind=23, Attribute_kind=24,
+                  Subscript_kind=25, Starred_kind=26, Name_kind=27,
+                  List_kind=28, Tuple_kind=29};
 struct _expr {
     enum _expr_kind kind;
     union {
@@ -295,6 +296,16 @@ struct _expr {
         struct {
             string s;
         } Str;
+        
+        struct {
+            expr_ty value;
+            int conversion;
+            expr_ty format_spec;
+        } FormattedValue;
+        
+        struct {
+            asdl_seq *values;
+        } JoinedStr;
         
         struct {
             bytes s;
@@ -543,6 +554,12 @@ expr_ty _Py_Call(expr_ty func, asdl_seq * args, asdl_seq * keywords, int
 expr_ty _Py_Num(object n, int lineno, int col_offset, PyArena *arena);
 #define Str(a0, a1, a2, a3) _Py_Str(a0, a1, a2, a3)
 expr_ty _Py_Str(string s, int lineno, int col_offset, PyArena *arena);
+#define FormattedValue(a0, a1, a2, a3, a4, a5) _Py_FormattedValue(a0, a1, a2, a3, a4, a5)
+expr_ty _Py_FormattedValue(expr_ty value, int conversion, expr_ty format_spec,
+                           int lineno, int col_offset, PyArena *arena);
+#define JoinedStr(a0, a1, a2, a3) _Py_JoinedStr(a0, a1, a2, a3)
+expr_ty _Py_JoinedStr(asdl_seq * values, int lineno, int col_offset, PyArena
+                      *arena);
 #define Bytes(a0, a1, a2, a3) _Py_Bytes(a0, a1, a2, a3)
 expr_ty _Py_Bytes(bytes s, int lineno, int col_offset, PyArena *arena);
 #define NameConstant(a0, a1, a2, a3) _Py_NameConstant(a0, a1, a2, a3)

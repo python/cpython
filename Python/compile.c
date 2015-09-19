@@ -731,6 +731,7 @@ compiler_set_qualname(struct compiler *c)
     return 1;
 }
 
+
 /* Allocate a new block and return a pointer to it.
    Returns NULL on error.
 */
@@ -3209,6 +3210,117 @@ compiler_call(struct compiler *c, expr_ty e)
                                 e->v.Call.keywords);
 }
 
+static int
+compiler_joined_str(struct compiler *c, expr_ty e)
+{
+    /* Concatenate parts of a string using ''.join(parts). There are
+       probably better ways of doing this.
+
+       This is used for constructs like "'x=' f'{42}'", which have to
+       be evaluated at compile time. */
+
+    static PyObject *empty_string;
+    static PyObject *join_string;
+
+    if (!empty_string) {
+        empty_string = PyUnicode_FromString("");
+        if (!empty_string)
+            return 0;
+    }
+    if (!join_string) {
+        join_string = PyUnicode_FromString("join");
+        if (!join_string)
+            return 0;
+    }
+
+    ADDOP_O(c, LOAD_CONST, empty_string, consts);
+    ADDOP_NAME(c, LOAD_ATTR, join_string, names);
+    VISIT_SEQ(c, expr, e->v.JoinedStr.values);
+    ADDOP_I(c, BUILD_LIST, asdl_seq_LEN(e->v.JoinedStr.values));
+    ADDOP_I(c, CALL_FUNCTION, 1);
+    return 1;
+}
+
+/* Note that this code uses the builtin functions format(), str(),
+   repr(), and ascii(). You can break this code, or make it do odd
+   things, by redefining those functions. */
+static int
+compiler_formatted_value(struct compiler *c, expr_ty e)
+{
+    PyObject *conversion_name = NULL;
+
+    static PyObject *format_string;
+    static PyObject *str_string;
+    static PyObject *repr_string;
+    static PyObject *ascii_string;
+
+    if (!format_string) {
+        format_string = PyUnicode_InternFromString("format");
+        if (!format_string)
+            return 0;
+    }
+
+    if (!str_string) {
+        str_string = PyUnicode_InternFromString("str");
+        if (!str_string)
+            return 0;
+    }
+
+    if (!repr_string) {
+        repr_string = PyUnicode_InternFromString("repr");
+        if (!repr_string)
+            return 0;
+    }
+    if (!ascii_string) {
+        ascii_string = PyUnicode_InternFromString("ascii");
+        if (!ascii_string)
+            return 0;
+    }
+
+    ADDOP_NAME(c, LOAD_GLOBAL, format_string, names);
+
+    /* If needed, convert via str, repr, or ascii. */
+    if (e->v.FormattedValue.conversion != -1) {
+        switch (e->v.FormattedValue.conversion) {
+        case 's':
+            conversion_name = str_string;
+            break;
+        case 'r':
+            conversion_name = repr_string;
+            break;
+        case 'a':
+            conversion_name = ascii_string;
+            break;
+        default:
+            PyErr_SetString(PyExc_SystemError,
+                            "Unrecognized conversion character");
+            return 0;
+        }
+        ADDOP_NAME(c, LOAD_GLOBAL, conversion_name, names);
+    }
+
+    /* Evaluate the value. */
+    VISIT(c, expr, e->v.FormattedValue.value);
+
+    /* If needed, convert via str, repr, or ascii. */
+    if (conversion_name) {
+        /* Call the function we previously pushed. */
+        ADDOP_I(c, CALL_FUNCTION, 1);
+    }
+
+    /* If we have a format spec, use format(value, format_spec). Otherwise,
+       use the single argument form. */
+    if (e->v.FormattedValue.format_spec) {
+        VISIT(c, expr, e->v.FormattedValue.format_spec);
+        ADDOP_I(c, CALL_FUNCTION, 2);
+    } else {
+        /* No format spec specified, call format(value). */
+        ADDOP_I(c, CALL_FUNCTION, 1);
+    }
+
+    return 1;
+}
+
 /* shared code between compiler_call and compiler_class */
 static int
 compiler_call_helper(struct compiler *c,
@@ -3878,6 +3990,10 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
     case Str_kind:
         ADDOP_O(c, LOAD_CONST, e->v.Str.s, consts);
         break;
+    case JoinedStr_kind:
+        return compiler_joined_str(c, e);
+    case FormattedValue_kind:
+        return compiler_formatted_value(c, e);
     case Bytes_kind:
         ADDOP_O(c, LOAD_CONST, e->v.Bytes.s, consts);
         break;
@@ -4784,4 +4900,3 @@ PyAST_Compile(mod_ty mod, const char *filename, PyCompilerFlags *flags,
 {
     return PyAST_CompileEx(mod, filename, flags, -1, arena);
 }
-
