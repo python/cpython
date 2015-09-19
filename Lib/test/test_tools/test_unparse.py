@@ -264,6 +264,8 @@ class DirectoryTestCase(ASTTestCase):
         for d in self.test_directories:
             test_dir = os.path.join(basepath, d)
             for n in os.listdir(test_dir):
+                if n == 'test_fstring.py':
+                    continue
                 if n.endswith('.py') and not n.startswith('bad'):
                     names.append(os.path.join(test_dir, n))
 
