@@ -371,6 +371,7 @@ static PyObject *
 deque_extend(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
+    int trim = (deque->maxlen != -1);
 
     /* Handle case where id(deque) == id(iterable) */
     if ((PyObject *)deque == iterable) {
@@ -417,7 +418,8 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         Py_SIZE(deque)++;
         deque->rightindex++;
         deque->rightblock->data[deque->rightindex] = item;
-        deque_trim_left(deque);
+        if (trim)
+            deque_trim_left(deque);
     }
     if (PyErr_Occurred()) {
         Py_DECREF(it);
@@ -434,6 +436,7 @@ static PyObject *
 deque_extendleft(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
+    int trim = (deque->maxlen != -1);
 
     /* Handle case where id(deque) == id(iterable) */
     if ((PyObject *)deque == iterable) {
@@ -480,7 +483,8 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         Py_SIZE(deque)++;
         deque->leftindex--;
         deque->leftblock->data[deque->leftindex] = item;
-        deque_trim_right(deque);
+        if (trim)
+            deque_trim_right(deque);
     }
     if (PyErr_Occurred()) {
         Py_DECREF(it);
