@@ -174,7 +174,7 @@ Explorer [#]_. ::
     import urllib.request
 
     url = 'http://www.someserver.com/cgi-bin/register.cgi'
-    user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+    user_agent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'
     values = {'name' : 'Michael Foord',
               'location' : 'Northampton',
               'language' : 'Python' }
@@ -572,8 +572,7 @@ Footnotes
 
 This document was reviewed and revised by John Lee.
 
-.. [#] Like Google for example. The *proper* way to use google from a program
-       is to use `PyGoogle <http://pygoogle.sourceforge.net>`_ of course.
+.. [#] Google for example.
 .. [#] Browser sniffing is a very bad practise for website design - building
        sites using web standards is much more sensible. Unfortunately a lot of
        sites still send different versions to different browsers.
