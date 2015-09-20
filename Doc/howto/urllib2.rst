@@ -164,7 +164,7 @@ Explorer [#]_. ::
     import urllib2
 
     url = 'http://www.someserver.com/cgi-bin/register.cgi'
-    user_agent = 'Mozilla/4.0 (compatible; MSIE 5.5; Windows NT)'
+    user_agent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'
     values = {'name' : 'Michael Foord',
               'location' : 'Northampton',
               'language' : 'Python' }
