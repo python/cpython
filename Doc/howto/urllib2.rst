@@ -559,8 +559,7 @@ This document was reviewed and revised by John Lee.
 
 .. [#] For an introduction to the CGI protocol see
        `Writing Web Applications in Python <http://www.pyzine.com/Issue008/Section_Articles/article_CGIOne.html>`_.
-.. [#] Like Google for example. The *proper* way to use google from a program
-       is to use `PyGoogle <http://pygoogle.sourceforge.net>`_ of course.
+.. [#] Google for example.
 .. [#] Browser sniffing is a very bad practise for website design - building
        sites using web standards is much more sensible. Unfortunately a lot of
        sites still send different versions to different browsers.
