@@ -213,10 +213,11 @@ class TracebackFormatTests(unittest.TestCase):
         with captured_output("stderr") as stderr:
             prn()
         lineno = prn.__code__.co_firstlineno
+        file = prn.__code__.co_filename
         self.assertEqual(stderr.getvalue().splitlines()[-4:], [
-            '  File "%s", line %d, in test_print_stack' % (__file__, lineno+3),
+            '  File "%s", line %d, in test_print_stack' % (file, lineno+3),
             '    prn()',
-            '  File "%s", line %d, in prn' % (__file__, lineno+1),
+            '  File "%s", line %d, in prn' % (file, lineno+1),
             '    traceback.print_stack()',
         ])
 
@@ -225,11 +226,12 @@ class TracebackFormatTests(unittest.TestCase):
             return traceback.format_stack()
         result = fmt()
         lineno = fmt.__code__.co_firstlineno
+        file = fmt.__code__.co_filename
         self.assertEqual(result[-2:], [
             '  File "%s", line %d, in test_format_stack\n'
-            '    result = fmt()\n' % (__file__, lineno+2),
+            '    result = fmt()\n' % (file, lineno+2),
             '  File "%s", line %d, in fmt\n'
-            '    return traceback.format_stack()\n' % (__file__, lineno+1),
+            '    return traceback.format_stack()\n' % (file, lineno+1),
         ])
 
 
@@ -243,9 +245,10 @@ class MiscTracebackCases(unittest.TestCase):
             return traceback.extract_stack()
         result = extract()
         lineno = extract.__code__.co_firstlineno
+        file = extract.__code__.co_filename
         self.assertEqual(result[-2:], [
-            (__file__, lineno+2, 'test_extract_stack', 'result = extract()'),
-            (__file__, lineno+1, 'extract', 'return traceback.extract_stack()'),
+            (file, lineno+2, 'test_extract_stack', 'result = extract()'),
+            (file, lineno+1, 'extract', 'return traceback.extract_stack()'),
         ])
 
 
