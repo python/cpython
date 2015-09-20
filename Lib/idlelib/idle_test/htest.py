@@ -194,13 +194,6 @@ _grep_dialog_spec = {
            "should open that file \nin a new EditorWindow."
     }
 
-_help_dialog_spec = {
-    'file': 'EditorWindow',
-    'kwds': {},
-    'msg': "If the help text displays, this works.\n"
-           "Text is selectable. Window is scrollable."
-    }
-
 _io_binding_spec = {
     'file': 'IOBinding',
     'kwds': {},
@@ -277,6 +270,13 @@ _scrolled_list_spec = {
            "Selecting (clicking) or double clicking an item "
            "prints the name to the console or Idle shell.\n"
            "Right clicking an item will display a popup."
+    }
+
+show_idlehelp_spec = {
+    'file': 'help',
+    'kwds': {},
+    'msg': "If the help text displays, this works.\n"
+           "Text is selectable. Window is scrollable."
     }
 
 _stack_viewer_spec = {

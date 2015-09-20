@@ -17,6 +17,7 @@ from idlelib import PyParse
 from idlelib.configHandler import idleConf
 from idlelib import aboutDialog, textView, configDialog
 from idlelib import macosxSupport
+from idlelib import help
 
 # The default tab setting for a Text widget, in average-width characters.
 TK_TABWIDTH_DEFAULT = 8
@@ -71,6 +72,11 @@ def _find_module(fullname, path=None):
 class HelpDialog(object):
 
     def __init__(self):
+        import warnings as w
+        w.warn("EditorWindow.HelpDialog is no longer used by Idle.\n"
+               "It will be removed in 3.6 or later.\n"
+               "It has been replaced by private help.HelpWindow\n",
+               DeprecationWarning, stacklevel=2)
         self.parent = None      # parent of help window
         self.dlg = None         # the help window iteself
 
@@ -566,11 +572,13 @@ class EditorWindow(object):
         configDialog.ConfigExtensionsDialog(self.top)
 
     def help_dialog(self, event=None):
+        "Handle help doc event."
+        # edit maxosxSupport.overrideRootMenu.help_dialog to match
         if self.root:
             parent = self.root
         else:
             parent = self.top
-        helpDialog.display(parent, near=self.top)
+        help.show_idlehelp(parent)
 
     def python_docs(self, event=None):
         if sys.platform[:3] == 'win':
@@ -1717,4 +1725,4 @@ def _editor_window(parent):  # htest #
 
 if __name__ == '__main__':
     from idlelib.idle_test.htest import run
-    run(_help_dialog, _editor_window)
+    run(_editor_window)

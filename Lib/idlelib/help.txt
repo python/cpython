@@ -1,3 +1,7 @@
+This file, idlelib/help.txt is out-of-date and no longer used by Idle.
+It is deprecated and will be removed in the future, possibly in 3.6
+----------------------------------------------------------------------
+
 [See the end of this file for ** TIPS ** on using IDLE !!]
 
 File Menu:
