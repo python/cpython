@@ -292,7 +292,7 @@ algorithms implemented in this module in other circumstances.
 
 .. function:: parse_qsl(qs, keep_blank_values=False, strict_parsing=False)
 
-   This function is deprecated in this module. Use :func:`urllib.parse.parse_qs`
+   This function is deprecated in this module. Use :func:`urllib.parse.parse_qsl`
    instead. It is maintained here only for backward compatibility.
 
 .. function:: parse_multipart(fp, pdict)
