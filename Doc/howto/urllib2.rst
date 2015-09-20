@@ -572,8 +572,7 @@ Footnotes
 
 This document was reviewed and revised by John Lee.
 
-.. [#] Like Google for example. The *proper* way to use google from a program
-       is to use `PyGoogle <http://pygoogle.sourceforge.net>`_ of course.
+.. [#] Google for example.
 .. [#] Browser sniffing is a very bad practise for website design - building
        sites using web standards is much more sensible. Unfortunately a lot of
        sites still send different versions to different browsers.
