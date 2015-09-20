@@ -322,6 +322,45 @@ class Unparser:
     def _Str(self, tree):
         self.write(repr(tree.s))
 
+    def _JoinedStr(self, t):
+        self.write("f")
+        string = io.StringIO()
+        self._fstring_JoinedStr(t, string.write)
+        self.write(repr(string.getvalue()))
+
+    def _FormattedValue(self, t):
+        self.write("f")
+        string = io.StringIO()
+        self._fstring_FormattedValue(t, string.write)
+        self.write(repr(string.getvalue()))
+
+    def _fstring_JoinedStr(self, t, write):
+        for value in t.values:
+            meth = getattr(self, "_fstring_" + type(value).__name__)
+            meth(value, write)
+
+    def _fstring_Str(self, t, write):
+        value = t.s.replace("{", "{{").replace("}", "}}")
+        write(value)
+
+    def _fstring_FormattedValue(self, t, write):
+        write("{")
+        expr = io.StringIO()
+        Unparser(t.value, expr)
+        expr = expr.getvalue().rstrip("\n")
+        if expr.startswith("{"):
+            write(" ")  # Separate pair of opening brackets as "{ {"
+        write(expr)
+        if t.conversion != -1:
+            conversion = chr(t.conversion)
+            assert conversion in "sra"
+            write(f"!{conversion}")
+        if t.format_spec:
+            write(":")
+            meth = getattr(self, "_fstring_" + type(t.format_spec).__name__)
+            meth(t.format_spec, write)
+        write("}")
+
     def _Name(self, t):
         self.write(t.id)
 

@@ -134,6 +134,15 @@ class ASTTestCase(unittest.TestCase):
 class UnparseTestCase(ASTTestCase):
     # Tests for specific bugs found in earlier versions of unparse
 
+    def test_fstrings(self):
+        # See issue 25180
+        self.check_roundtrip(r"""f'{f"{0}"*3}'""")
+        self.check_roundtrip(r"""f'{f"{y}"*3}'""")
+        self.check_roundtrip(r"""f'{f"{\'x\'}"*3}'""")
+
+        self.check_roundtrip(r'''f"{r'x' f'{\"s\"}'}"''')
+        self.check_roundtrip(r'''f"{r'x'rf'{\"s\"}'}"''')
+
     def test_del_statement(self):
         self.check_roundtrip("del x, y, z")
 
@@ -264,8 +273,6 @@ class DirectoryTestCase(ASTTestCase):
         for d in self.test_directories:
             test_dir = os.path.join(basepath, d)
             for n in os.listdir(test_dir):
-                if n == 'test_fstring.py':
-                    continue
                 if n.endswith('.py') and not n.startswith('bad'):
                     names.append(os.path.join(test_dir, n))
 
