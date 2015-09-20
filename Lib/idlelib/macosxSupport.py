@@ -174,9 +174,8 @@ def overrideRootMenu(root, flist):
         configDialog.ConfigDialog(root, 'Settings')
 
     def help_dialog(event=None):
-        from idlelib import textView
-        fn = path.join(path.abspath(path.dirname(__file__)), 'help.txt')
-        textView.view_file(root, 'Help', fn)
+        from idlelib import help
+        help.show_idlehelp(root)
 
     root.bind('<<about-idle>>', about_dialog)
     root.bind('<<open-config-dialog>>', config_dialog)
