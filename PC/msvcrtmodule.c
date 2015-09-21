@@ -541,7 +541,6 @@ PyInit_msvcrt(void)
 #endif
 
     /* constants for the crt versions */
-    (void)st;
 #ifdef _VC_ASSEMBLY_PUBLICKEYTOKEN
     st = PyModule_AddStringConstant(m, "VC_ASSEMBLY_PUBLICKEYTOKEN",
                                     _VC_ASSEMBLY_PUBLICKEYTOKEN);
@@ -567,6 +566,8 @@ PyInit_msvcrt(void)
     st = PyModule_AddObject(m, "CRT_ASSEMBLY_VERSION", version);
     if (st < 0) return NULL;
 #endif
+    /* make compiler warning quiet if st is unused */
+    (void)st;
 
     return m;
 }
