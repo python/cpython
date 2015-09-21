@@ -908,10 +908,16 @@ object -- see :ref:`multiprocessing-managers`.
 
 .. class:: BoundedSemaphore([value])
 
-   A bounded semaphore object: a clone of :class:`threading.BoundedSemaphore`.
+   A bounded semaphore object: a close analog of
+   :class:`threading.BoundedSemaphore`.
 
-   (On Mac OS X, this is indistinguishable from :class:`Semaphore` because
-   ``sem_getvalue()`` is not implemented on that platform).
+   A solitary difference from its close analog exists: its ``acquire`` method's
+   first argument is named *block* and it supports an optional second argument
+   *timeout*, as is consistent with :meth:`Lock.acquire`.
+
+   .. note::
+      On Mac OS X, this is indistinguishable from :class:`Semaphore` because
+      ``sem_getvalue()`` is not implemented on that platform.
 
 .. class:: Condition([lock])
 
@@ -930,17 +936,124 @@ object -- see :ref:`multiprocessing-managers`.
    .. versionchanged:: 2.7
       Previously, the method always returned ``None``.
 
+
 .. class:: Lock()
 
-   A non-recursive lock object: a clone of :class:`threading.Lock`.
+   A non-recursive lock object: a close analog of :class:`threading.Lock`.
+   Once a process or thread has acquired a lock, subsequent attempts to
+   acquire it from any process or thread will block until it is released;
+   any process or thread may release it.  The concepts and behaviors of
+   :class:`threading.Lock` as it applies to threads are replicated here in
+   :class:`multiprocessing.Lock` as it applies to either processes or threads,
+   except as noted.
+
+   Note that :class:`Lock` is actually a factory function which returns an
+   instance of ``multiprocessing.synchronize.Lock`` initialized with a
+   default context.
+
+   :class:`Lock` supports the :term:`context manager` protocol and thus may be
+   used in :keyword:`with` statements.
+
+   .. method:: acquire(block=True, timeout=None)
+
+      Acquire a lock, blocking or non-blocking.
+
+      With the *block* argument set to ``True`` (the default), the method call
+      will block until the lock is in an unlocked state, then set it to locked
+      and return ``True``.  Note that the name of this first argument differs
+      from that in :meth:`threading.Lock.acquire`.
+
+      With the *block* argument set to ``False``, the method call does not
+      block.  If the lock is currently in a locked state, return ``False``;
+      otherwise set the lock to a locked state and return ``True``.
+
+      When invoked with a positive, floating-point value for *timeout*, block
+      for at most the number of seconds specified by *timeout* as long as
+      the lock can not be acquired.  Invocations with a negative value for
+      *timeout* are equivalent to a *timeout* of zero.  Invocations with a
+      *timeout* value of ``None`` (the default) set the timeout period to
+      infinite.  The *timeout* argument has no practical implications if the
+      *block* argument is set to ``False`` and is thus ignored.  Returns
+      ``True`` if the lock has been acquired or ``False`` if the timeout period
+      has elapsed.  Note that the *timeout* argument does not exist in this
+      method's analog, :meth:`threading.Lock.acquire`.
+
+   .. method:: release()
+
+      Release a lock.  This can be called from any process or thread, not only
+      the process or thread which originally acquired the lock.
+
+      Behavior is the same as in :meth:`threading.Lock.release` except that
+      when invoked on an unlocked lock, a :exc:`ValueError` is raised.
+
 
 .. class:: RLock()
 
-   A recursive lock object: a clone of :class:`threading.RLock`.
+   A recursive lock object: a close analog of :class:`threading.RLock`.  A
+   recursive lock must be released by the process or thread that acquired it.
+   Once a process or thread has acquired a recursive lock, the same process
+   or thread may acquire it again without blocking; that process or thread
+   must release it once for each time it has been acquired.
+
+   Note that :class:`RLock` is actually a factory function which returns an
+   instance of ``multiprocessing.synchronize.RLock`` initialized with a
+   default context.
+
+   :class:`RLock` supports the :term:`context manager` protocol and thus may be
+   used in :keyword:`with` statements.
+
+
+   .. method:: acquire(block=True, timeout=None)
+
+      Acquire a lock, blocking or non-blocking.
+
+      When invoked with the *block* argument set to ``True``, block until the
+      lock is in an unlocked state (not owned by any process or thread) unless
+      the lock is already owned by the current process or thread.  The current
+      process or thread then takes ownership of the lock (if it does not
+      already have ownership) and the recursion level inside the lock increments
+      by one, resulting in a return value of ``True``.  Note that there are
+      several differences in this first argument's behavior compared to the
+      implementation of :meth:`threading.RLock.acquire`, starting with the name
+      of the argument itself.
+
+      When invoked with the *block* argument set to ``False``, do not block.
+      If the lock has already been acquired (and thus is owned) by another
+      process or thread, the current process or thread does not take ownership
+      and the recursion level within the lock is not changed, resulting in
+      a return value of ``False``.  If the lock is in an unlocked state, the
+      current process or thread takes ownership and the recursion level is
+      incremented, resulting in a return value of ``True``.
+
+      Use and behaviors of the *timeout* argument are the same as in
+      :meth:`Lock.acquire`.  Note that the *timeout* argument does
+      not exist in this method's analog, :meth:`threading.RLock.acquire`.
+
+
+   .. method:: release()
+
+      Release a lock, decrementing the recursion level.  If after the
+      decrement the recursion level is zero, reset the lock to unlocked (not
+      owned by any process or thread) and if any other processes or threads
+      are blocked waiting for the lock to become unlocked, allow exactly one
+      of them to proceed.  If after the decrement the recursion level is still
+      nonzero, the lock remains locked and owned by the calling process or
+      thread.
+
+      Only call this method when the calling process or thread owns the lock.
+      An :exc:`AssertionError` is raised if this method is called by a process
+      or thread other than the owner or if the lock is in an unlocked (unowned)
+      state.  Note that the type of exception raised in this situation
+      differs from the implemented behavior in :meth:`threading.RLock.release`.
+
 
 .. class:: Semaphore([value])
 
-   A semaphore object: a clone of :class:`threading.Semaphore`.
+   A semaphore object: a close analog of :class:`threading.Semaphore`.
+
+   A solitary difference from its close analog exists: its ``acquire`` method's
+   first argument is named *block* and it supports an optional second argument
+   *timeout*, as is consistent with :meth:`Lock.acquire`.
 
 .. note::
 
