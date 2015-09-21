@@ -4609,7 +4609,7 @@ utime_fd(utime_t *ut, int fd)
 #define UTIME_HAVE_NOFOLLOW_SYMLINKS \
         (defined(HAVE_UTIMENSAT) || defined(HAVE_LUTIMES))
 
-#if UTIME_HAVE_NOFOLLOW_SYMLINKS
+#ifdef UTIME_HAVE_NOFOLLOW_SYMLINKS
 
 static int
 utime_nofollow_symlinks(utime_t *ut, char *path)
@@ -4771,7 +4771,7 @@ os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times,
         utime.now = 1;
     }
 
-#if !UTIME_HAVE_NOFOLLOW_SYMLINKS
+#if !defined(UTIME_HAVE_NOFOLLOW_SYMLINKS)
     if (follow_symlinks_specified("utime", follow_symlinks))
         goto exit;
 #endif
@@ -4825,7 +4825,7 @@ os_utime_impl(PyModuleDef *module, path_t *path, PyObject *times,
 #else /* MS_WINDOWS */
     Py_BEGIN_ALLOW_THREADS
 
-#if UTIME_HAVE_NOFOLLOW_SYMLINKS
+#ifdef UTIME_HAVE_NOFOLLOW_SYMLINKS
     if ((!follow_symlinks) && (dir_fd == DEFAULT_DIR_FD))
         result = utime_nofollow_symlinks(&utime, path->narrow);
     else
