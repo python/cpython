@@ -1,7 +1,21 @@
 What's New in IDLE 2.7.11?
 =========================
+*Release date:
 
-*Release date: 
+- Issue #25199: Idle: add synchronization comments for future maintainers.
+
+- Issue #16893: Replace help.txt with idle.html for Idle doc display.
+  The new idlelib/idle.html is copied from Doc/build/html/idle.html.
+  It looks better than help.txt and will better document Idle as released.
+  The tkinter html viewer that works for this file was written by Rose Roseman.
+  The now unused EditorWindow.HelpDialog class and helt.txt file are deprecated.
+
+- Issue #24199: Deprecate unused idlelib.idlever with possible removal in 3.6.
+
+- Issue #24782: In Idle extension config dialog, replace tabs with sorted list.
+  Patch by Mark Roseman.
+
+- Issue #24790: Remove extraneous code (which also create 2 & 3 conflicts).
 
 - Issue #23672: Allow Idle to edit and run files with astral chars in name.
   Patch by Mohd Sanad Zaki Rizvi.
@@ -22,7 +36,6 @@ What's New in IDLE 2.7.11?
 
 What's New in IDLE 2.7.10?
 =========================
-
 *Release date: 2015-05-23*
 
 - Issue #23583: Fixed writing unicode to standard output stream in IDLE.
@@ -41,7 +54,6 @@ What's New in IDLE 2.7.10?
 
 What's New in IDLE 2.7.9?
 =========================
-
 *Release date: 2014-12-10*
 
 - Issue #16893: Update Idle doc chapter to match current Idle and add new
@@ -76,7 +88,6 @@ What's New in IDLE 2.7.9?
 
 What's New in IDLE 2.7.8?
 =========================
-
 *Release date: 2014-06-29*
 
 - Issue #21940: Add unittest for WidgetRedirector. Initial patch by Saimadhav
@@ -104,7 +115,6 @@ What's New in IDLE 2.7.8?
 
 What's New in IDLE 2.7.7?
 =========================
-
 *Release date: 2014-05-31*
 
 - Issue #18104: Add idlelib/idle_test/htest.py with a few sample tests to begin
@@ -142,7 +152,6 @@ What's New in IDLE 2.7.7?
 
 What's New in IDLE 2.7.6?
 =========================
-
 *Release date: 2013-11-10*
 
 - Issue #19426: Fixed the opening of Python source file with specified encoding.
@@ -190,7 +199,6 @@ What's New in IDLE 2.7.6?
 
 What's New in IDLE 2.7.5?
 =========================
-
 *Release date: 2013-05-12*
 
 - Issue #17838: Allow sys.stdin to be reassigned.
@@ -225,7 +233,6 @@ What's New in IDLE 2.7.5?
 
 What's New in IDLE 2.7.4?
 =========================
-
 *Release date: 2013-04-06*
 
 - Issue #17625: In IDLE, close the replace dialog after it is used.
@@ -296,7 +303,6 @@ What's New in IDLE 2.7.4?
 
 What's New in IDLE 2.7.3?
 =========================
-
 *Release date: 2012-04-09*
 
 - Issue #964437 Make IDLE help window non-modal.
@@ -329,7 +335,6 @@ What's New in IDLE 2.7.3?
 
 What's New in IDLE 2.7.2?
 =========================
-
 *Release date: 2011-06-11*
 
 - Issue #11718: IDLE's open module dialog couldn't find the __init__.py
@@ -374,7 +379,6 @@ What's New in IDLE 2.7.2?
 
 What's New in Python 2.7.1?
 ===========================
-
 *Release date: 2010-11-27*
 
 - Issue #6378: idle.bat now runs with the appropriate Python version rather than
@@ -383,7 +387,6 @@ What's New in Python 2.7.1?
 
 What's New in IDLE 2.7?
 =======================
-
 *Release date: 2010-07-03*
 
 - Issue #5150: IDLE's format menu now has an option to strip trailing
@@ -415,7 +418,6 @@ What's New in IDLE 2.7?
 
 What's New in IDLE 2.6?
 =======================
-
 *Release date: 01-Oct-2008*
 
 - Issue #2665: On Windows, an IDLE installation upgraded from an old version
@@ -428,11 +430,6 @@ What's New in IDLE 2.6?
 
 - Autocompletion of filenames now support alternate separators, e.g. the
   '/' char on Windows.  Patch 2061 Tal Einat.
-
-What's New in IDLE 2.6a1?
-=========================
-
-*Release date: 29-Feb-2008*
 
 - Configured selection highlighting colors were ignored; updating highlighting
   in the config dialog would cause non-Python files to be colored as if they
@@ -505,14 +502,7 @@ What's New in IDLE 2.6a1?
 
 What's New in IDLE 1.2?
 =======================
-
 *Release date: 19-SEP-2006*
-
-
-What's New in IDLE 1.2c1?
-=========================
-
-*Release date: 17-AUG-2006*
 
 - File menu hotkeys: there were three 'p' assignments.  Reassign the
   'Save Copy As' and 'Print' hotkeys to 'y' and 't'.  Change the
@@ -533,11 +523,6 @@ What's New in IDLE 1.2c1?
 
 - When used w/o subprocess, all exceptions were preceded by an error
   message claiming they were IDLE internal errors (since 1.2a1).
-
-What's New in IDLE 1.2b3?
-=========================
-
-*Release date: 03-AUG-2006*
 
 - Bug #1525817: Don't truncate short lines in IDLE's tool tips.
 
@@ -561,26 +546,6 @@ What's New in IDLE 1.2b3?
 - Colorizer now handles #<builtin> correctly, also unicode strings and
   'as' keyword in comment directly following import command. Closes 1325071.
   Patch 1479219 Tal Einat
-
-What's New in IDLE 1.2b2?
-=========================
-
-*Release date: 11-JUL-2006*
-
-What's New in IDLE 1.2b1?
-=========================
-
-*Release date: 20-JUN-2006*
-
-What's New in IDLE 1.2a2?
-=========================
-
-*Release date: 27-APR-2006*
-
-What's New in IDLE 1.2a1?
-=========================
-
-*Release date: 05-APR-2006*
 
 - Patch #1162825: Support non-ASCII characters in IDLE window titles.
 
@@ -661,18 +626,13 @@ What's New in IDLE 1.2a1?
 - The remote procedure call module rpc.py can now access data attributes of
   remote registered objects.  Changes to these attributes are local, however.
 
+  
 What's New in IDLE 1.1?
 =======================
-
 *Release date: 30-NOV-2004*
 
 - On OpenBSD, terminating IDLE with ctrl-c from the command line caused a
   stuck subprocess MainThread because only the SocketThread was exiting.
-
-What's New in IDLE 1.1b3/rc1?
-=============================
-
-*Release date: 18-NOV-2004*
 
 - Saving a Keyset w/o making changes (by using the "Save as New Custom Key Set"
   button) caused IDLE to fail on restart (no new keyset was created in
@@ -681,27 +641,11 @@ What's New in IDLE 1.1b3/rc1?
 - A change to the linecache.py API caused IDLE to exit when an exception was
   raised while running without the subprocess (-n switch).  Python Bug 1063840.
 
-What's New in IDLE 1.1b2?
-=========================
-
-*Release date: 03-NOV-2004*
-
 - When paragraph reformat width was made configurable, a bug was
   introduced that caused reformatting of comment blocks to ignore how
   far the block was indented, effectively adding the indentation width
   to the reformat width.  This has been repaired, and the reformat
   width is again a bound on the total width of reformatted lines.
-
-What's New in IDLE 1.1b1?
-=========================
-
-*Release date: 15-OCT-2004*
-
-
-What's New in IDLE 1.1a3?
-=========================
-
-*Release date: 02-SEP-2004*
 
 - Improve keyboard focus binding, especially in Windows menu.  Improve
   window raising, especially in the Windows menu and in the debugger.
@@ -710,23 +654,11 @@ What's New in IDLE 1.1a3?
 - If user passes a non-existent filename on the commandline, just
   open a new file, don't raise a dialog.  IDLEfork 854928.
 
-
-What's New in IDLE 1.1a2?
-=========================
-
-*Release date: 05-AUG-2004*
-
 - EditorWindow.py was not finding the .chm help file on Windows.  Typo
   at Rev 1.54.  Python Bug 990954
 
 - checking sys.platform for substring 'win' was breaking IDLE docs on Mac
   (darwin).  Also, Mac Safari browser requires full file:// URIs.  SF 900580.
-
-
-What's New in IDLE 1.1a1?
-=========================
-
-*Release date: 08-JUL-2004*
 
 - Redirect the warning stream to the shell during the ScriptBinding check of
   user code and format the warning similarly to an exception for both that
@@ -790,25 +722,9 @@ What's New in IDLE 1.1a1?
 
 What's New in IDLE 1.0?
 =======================
-
 *Release date: 29-Jul-2003*
 
-- Added a banner to the shell discussing warnings possibly raised by personal
-  firewall software.  Added same comment to README.txt.
-
-
-What's New in IDLE 1.0 release candidate 2?
-===========================================
-
-*Release date: 24-Jul-2003*
-
 - Calltip error when docstring was None  Python Bug 775541
-
-
-What's New in IDLE 1.0 release candidate 1?
-===========================================
-
-*Release date: 18-Jul-2003*
 
 - Updated extend.txt, help.txt, and config-extensions.def to correctly
   reflect the current status of the configuration system.  Python Bug 768469
@@ -824,12 +740,6 @@ What's New in IDLE 1.0 release candidate 1?
 - Convert Unicode strings from readline to IOBinding.encoding.  Also set
   sys.std{in|out|err}.encoding, for both the local and the subprocess case.
   SF IDLEfork patch 682347.
-
-
-What's New in IDLE 1.0b2?
-=========================
-
-*Release date: 29-Jun-2003*
 
 - Extend AboutDialog.ViewFile() to support file encodings.  Make the CREDITS
   file Latin-1.
@@ -869,7 +779,6 @@ What's New in IDLE 1.0b2?
 
 What's New in IDLEfork 0.9b1?
 =============================
-
 *Release date: 02-Jun-2003*
 
 - The current working directory of the execution environment (and shell
@@ -971,10 +880,8 @@ What's New in IDLEfork 0.9b1?
   exception formatting to the subprocess.
 
 
-
 What's New in IDLEfork 0.9 Alpha 2?
 ===================================
-
 *Release date: 27-Jan-2003*
 
 - Updated INSTALL.txt to claify use of the python2 rpm.
@@ -1078,7 +985,6 @@ What's New in IDLEfork 0.9 Alpha 2?
 
 What's New in IDLEfork 0.9 Alpha 1?
 ===================================
-
 *Release date: 31-Dec-2002*
 
 - First release of major new functionality.  For further details refer to
