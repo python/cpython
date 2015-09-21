@@ -537,16 +537,22 @@ class EditorWindow(object):
             return 'normal'
 
     def about_dialog(self, event=None):
+        "Handle Help 'About IDLE' event."
+        # Synchronize with macosxSupport.overrideRootMenu.about_dialog.
         aboutDialog.AboutDialog(self.top,'About IDLE')
 
     def config_dialog(self, event=None):
+        "Handle Options 'Configure IDLE' event."
+        # Synchronize with macosxSupport.overrideRootMenu.config_dialog.
         configDialog.ConfigDialog(self.top,'Settings')
+
     def config_extensions_dialog(self, event=None):
+        "Handle Options 'Configure Extensions' event."
         configDialog.ConfigExtensionsDialog(self.top)
 
     def help_dialog(self, event=None):
-        "Handle help doc event."
-        # edit maxosxSupport.overrideRootMenu.help_dialog to match
+        "Handle Help 'IDLE Help' event."
+        # Synchronize with macosxSupport.overrideRootMenu.help_dialog.
         if self.root:
             parent = self.root
         else:

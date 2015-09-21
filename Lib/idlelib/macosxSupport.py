@@ -159,10 +159,14 @@ def overrideRootMenu(root, flist):
     WindowList.register_callback(postwindowsmenu)
 
     def about_dialog(event=None):
+        "Handle Help 'About IDLE' event."
+        # Synchronize with EditorWindow.EditorWindow.about_dialog.
         from idlelib import aboutDialog
         aboutDialog.AboutDialog(root, 'About IDLE')
 
     def config_dialog(event=None):
+        "Handle Options 'Configure IDLE' event."
+        # Synchronize with EditorWindow.EditorWindow.config_dialog.
         from idlelib import configDialog
 
         # Ensure that the root object has an instance_dict attribute,
@@ -170,10 +174,11 @@ def overrideRootMenu(root, flist):
         # on an EditorWindow instance that is then passed as the first
         # argument to ConfigDialog)
         root.instance_dict = flist.inversedict
-        root.instance_dict = flist.inversedict
         configDialog.ConfigDialog(root, 'Settings')
 
     def help_dialog(event=None):
+        "Handle Help 'IDLE Help' event."
+        # Synchronize with EditorWindow.EditorWindow.help_dialog.
         from idlelib import help
         help.show_idlehelp(root)
 
