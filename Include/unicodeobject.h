@@ -942,6 +942,23 @@ PyAPI_FUNC(int)
 _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
                                  Py_ssize_t length, Py_UCS4 maxchar);
 
+/* Prepare the buffer to have at least the kind KIND.
+   For example, kind=PyUnicode_2BYTE_KIND ensures that the writer will
+   support characters in range U+000-U+FFFF.
+
+   Return 0 on success, raise an exception and return -1 on error. */
+#define _PyUnicodeWriter_PrepareKind(WRITER, KIND)                    \
+    (assert((KIND) != PyUnicode_WCHAR_KIND),                          \
+     (KIND) <= (WRITER)->kind                                         \
+     ? 0                                                              \
+     : _PyUnicodeWriter_PrepareKindInternal((WRITER), (KIND)))
+
+/* Don't call this function directly, use the _PyUnicodeWriter_PrepareKind()
+   macro instead. */
+PyAPI_FUNC(int)
+_PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
+                                     enum PyUnicode_Kind kind);
+
 /* Append a Unicode character.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int)
