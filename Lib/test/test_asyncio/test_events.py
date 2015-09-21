@@ -619,9 +619,6 @@ class EventLoopTestsMixin:
         self.assertEqual(peercert,
                          client.get_extra_info('peercert'))
 
-        # Python disables compression to prevent CRIME attacks by default
-        self.assertIsNone(client.get_extra_info('compression'))
-
         # test SSL cipher
         cipher = client.get_extra_info('cipher')
         self.assertIsInstance(cipher, tuple)
@@ -639,6 +636,8 @@ class EventLoopTestsMixin:
                          client.get_extra_info('cipher'))
         self.assertEqual(sslobj.getpeercert(),
                          client.get_extra_info('peercert'))
+        self.assertEqual(sslobj.compression(),
+                         client.get_extra_info('compression'))
 
     def _basetest_create_ssl_connection(self, connection_fut,
                                         check_sockname=True,
