@@ -295,6 +295,7 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
 
     def __init__(self, loop, ssl_protocol, app_protocol):
         self._loop = loop
+        # SSLProtocol instance
         self._ssl_protocol = ssl_protocol
         self._app_protocol = app_protocol
         self._closed = False
@@ -425,10 +426,12 @@ class SSLProtocol(protocols.Protocol):
         self._app_protocol = app_protocol
         self._app_transport = _SSLProtocolTransport(self._loop,
                                                     self, self._app_protocol)
+        # _SSLPipe instance (None until the connection is made)
         self._sslpipe = None
         self._session_established = False
         self._in_handshake = False
         self._in_shutdown = False
+        # transport, ex: SelectorSocketTransport
         self._transport = None
 
     def _wakeup_waiter(self, exc=None):
@@ -591,6 +594,7 @@ class SSLProtocol(protocols.Protocol):
         self._extra.update(peercert=peercert,
                            cipher=sslobj.cipher(),
                            compression=sslobj.compression(),
+                           ssl_object=sslobj,
                            )
         self._app_protocol.connection_made(self._app_transport)
         self._wakeup_waiter()
