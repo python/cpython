@@ -27,6 +27,7 @@ def coding_checker(self, coder):
         self.assertEqual(coder(input), (expect, len(input)))
     return check
 
+
 class Queue(object):
     """
     queue: write bytes at one end, read bytes from the other end
@@ -46,6 +47,7 @@ class Queue(object):
             s = self._buffer[:size]
             self._buffer = self._buffer[size:]
             return s
+
 
 class MixInCheckStateHandling:
     def check_state_handling_decode(self, encoding, u, s):
@@ -79,6 +81,7 @@ class MixInCheckStateHandling:
             d.setstate(state)
             part2 = d.encode(u[i:], True)
             self.assertEqual(s, part1+part2)
+
 
 class ReadTest(MixInCheckStateHandling):
     def check_partial(self, input, partialresults):
@@ -383,6 +386,7 @@ class ReadTest(MixInCheckStateHandling):
             self.assertEqual(test_sequence.decode(self.encoding, "backslashreplace"),
                              before + backslashreplace + after)
 
+
 class UTF32Test(ReadTest, unittest.TestCase):
     encoding = "utf-32"
     if sys.byteorder == 'little':
@@ -478,6 +482,7 @@ class UTF32Test(ReadTest, unittest.TestCase):
         self.assertEqual('\U00010000' * 1024,
                          codecs.utf_32_decode(encoded_be)[0])
 
+
 class UTF32LETest(ReadTest, unittest.TestCase):
     encoding = "utf-32-le"
     ill_formed_sequence = b"\x80\xdc\x00\x00"
@@ -522,6 +527,7 @@ class UTF32LETest(ReadTest, unittest.TestCase):
         encoded = b'\x00\x00\x01\x00' * 1024
         self.assertEqual('\U00010000' * 1024,
                          codecs.utf_32_le_decode(encoded)[0])
+
 
 class UTF32BETest(ReadTest, unittest.TestCase):
     encoding = "utf-32-be"
@@ -796,6 +802,7 @@ class UTF8Test(ReadTest, unittest.TestCase):
             b"abc\xed\xa0".decode("utf-8", "surrogatepass")
         with self.assertRaises(UnicodeDecodeError):
             b"abc\xed\xa0z".decode("utf-8", "surrogatepass")
+
 
 @unittest.skipUnless(sys.platform == 'win32',
                      'cp65001 is a Windows-only codec')
@@ -1136,6 +1143,7 @@ class EscapeDecodeTest(unittest.TestCase):
         self.assertEqual(decode(br"[\x0]\x0", "ignore"), (b"[]", 8))
         self.assertEqual(decode(br"[\x0]\x0", "replace"), (b"[?]?", 8))
 
+
 class RecodingTest(unittest.TestCase):
     def test_recoding(self):
         f = io.BytesIO()
@@ -1255,6 +1263,7 @@ for i in punycode_testcases:
     if len(i)!=2:
         print(repr(i))
 
+
 class PunycodeTest(unittest.TestCase):
     def test_encode(self):
         for uni, puny in punycode_testcases:
@@ -1273,6 +1282,7 @@ class PunycodeTest(unittest.TestCase):
             self.assertEqual(uni, puny.decode("punycode"))
             puny = puny.decode("ascii").encode("ascii")
             self.assertEqual(uni, puny.decode("punycode"))
+
 
 class UnicodeInternalTest(unittest.TestCase):
     @unittest.skipUnless(SIZEOF_WCHAR_T == 4, 'specific to 32-bit wchar_t')
@@ -1528,6 +1538,7 @@ class NameprepTest(unittest.TestCase):
                 except Exception as e:
                     raise support.TestFailed("Test 3.%d: %s" % (pos+1, str(e)))
 
+
 class IDNACodecTest(unittest.TestCase):
     def test_builtin_decode(self):
         self.assertEqual(str(b"python.org", "idna"), "python.org")
@@ -1613,6 +1624,7 @@ class IDNACodecTest(unittest.TestCase):
             self.assertRaises(Exception, "python.org".encode, "idna", errors)
             self.assertRaises(Exception,
                 b"python.org".decode, "idna", errors)
+
 
 class CodecsModuleTest(unittest.TestCase):
 
@@ -1722,6 +1734,7 @@ class CodecsModuleTest(unittest.TestCase):
             self.assertRaises(UnicodeError,
                 codecs.decode, b'abc', 'undefined', errors)
 
+
 class StreamReaderTest(unittest.TestCase):
 
     def setUp(self):
@@ -1731,6 +1744,7 @@ class StreamReaderTest(unittest.TestCase):
     def test_readlines(self):
         f = self.reader(self.stream)
         self.assertEqual(f.readlines(), ['\ud55c\n', '\uae00'])
+
 
 class EncodedFileTest(unittest.TestCase):
 
@@ -1861,6 +1875,7 @@ broken_unicode_with_stateful = [
     "punycode",
     "unicode_internal"
 ]
+
 
 class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
     def test_basics(self):
@@ -2023,6 +2038,7 @@ class BasicUnicodeTest(unittest.TestCase, MixInCheckStateHandling):
             if encoding not in broken_unicode_with_stateful:
                 self.check_state_handling_decode(encoding, u, u.encode(encoding))
                 self.check_state_handling_encode(encoding, u, u.encode(encoding))
+
 
 class CharmapTest(unittest.TestCase):
     def test_decode_with_string_map(self):
@@ -2273,6 +2289,7 @@ class WithStmtTest(unittest.TestCase):
         with codecs.StreamReaderWriter(f, info.streamreader,
                                        info.streamwriter, 'strict') as srw:
             self.assertEqual(srw.read(), "\xfc")
+
 
 class TypesTest(unittest.TestCase):
     def test_decode_unicode(self):
@@ -2563,6 +2580,7 @@ except ImportError:
 else:
     bytes_transform_encodings.append("bz2_codec")
     transform_aliases["bz2_codec"] = ["bz2"]
+
 
 class TransformCodecTest(unittest.TestCase):
 
@@ -3039,6 +3057,20 @@ class CodePageTest(unittest.TestCase):
                                           b'abc', 'strict',
                                           False)
         self.assertEqual(decoded, ('abc', 3))
+
+
+class ASCIITest(unittest.TestCase):
+    def test_decode(self):
+        for data, error_handler, expected in (
+            (b'[\x80\xff]', 'ignore', '[]'),
+            (b'[\x80\xff]', 'replace', '[\ufffd\ufffd]'),
+            (b'[\x80\xff]', 'surrogateescape', '[\udc80\udcff]'),
+            (b'[\x80\xff]', 'backslashreplace', '[\\x80\\xff]'),
+        ):
+            with self.subTest(data=data, error_handler=error_handler,
+                              expected=expected):
+                self.assertEqual(data.decode('ascii', error_handler),
+                                 expected)
 
 
 if __name__ == "__main__":
