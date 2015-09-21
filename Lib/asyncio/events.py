@@ -305,7 +305,8 @@ class AbstractEventLoop:
 
         If host is an empty string or None all interfaces are assumed
         and a list of multiple sockets will be returned (most likely
-        one for IPv4 and another one for IPv6).
+        one for IPv4 and another one for IPv6). The host parameter can also be a
+        sequence (e.g. list) of hosts to bind to.
 
         family can be set to either AF_INET or AF_INET6 to force the
         socket to use IPv4 or IPv6. If not set it will be determined
