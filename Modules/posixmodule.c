@@ -4605,9 +4605,9 @@ utime_fd(utime_t *ut, int fd)
     #define PATH_UTIME_HAVE_FD 0
 #endif
 
-
-#define UTIME_HAVE_NOFOLLOW_SYMLINKS \
-        (defined(HAVE_UTIMENSAT) || defined(HAVE_LUTIMES))
+#if defined(HAVE_UTIMENSAT) || defined(HAVE_LUTIMES)
+#  define UTIME_HAVE_NOFOLLOW_SYMLINKS
+#endif
 
 #ifdef UTIME_HAVE_NOFOLLOW_SYMLINKS
 
