@@ -71,6 +71,8 @@ BaseTransport
         - ``'peercert'``: peer certificate; result of
           :meth:`ssl.SSLSocket.getpeercert`
         - ``'sslcontext'``: :class:`ssl.SSLContext` instance
+        - ``'ssl_object'``: :class:`ssl.SSLObject` or :class:`ssl.SSLSocket`
+          instance
 
       * pipe:
 
@@ -79,6 +81,9 @@ BaseTransport
       * subprocess:
 
         - ``'subprocess'``: :class:`subprocess.Popen` instance
+
+   .. versionchanged:: 3.4.4
+      ``'ssl_object'`` info was added to SSL sockets.
 
 
 ReadTransport
