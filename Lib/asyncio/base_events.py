@@ -18,6 +18,7 @@ import collections
 import concurrent.futures
 import heapq
 import inspect
+import itertools
 import logging
 import os
 import socket
@@ -787,6 +788,15 @@ class BaseEventLoop(events.AbstractEventLoop):
         return transport, protocol
 
     @coroutine
+    def _create_server_getaddrinfo(self, host, port, family, flags):
+        infos = yield from self.getaddrinfo(host, port, family=family,
+                                            type=socket.SOCK_STREAM,
+                                            flags=flags)
+        if not infos:
+            raise OSError('getaddrinfo({!r}) returned empty list'.format(host))
+        return infos
+
+    @coroutine
     def create_server(self, protocol_factory, host=None, port=None,
                       *,
                       family=socket.AF_UNSPEC,
@@ -795,7 +805,13 @@ class BaseEventLoop(events.AbstractEventLoop):
                       backlog=100,
                       ssl=None,
                       reuse_address=None):
-        """Create a TCP server bound to host and port.
+        """Create a TCP server.
+
+        The host parameter can be a string, in that case the TCP server is bound
+        to host and port.
+
+        The host parameter can also be a sequence of strings and in that case
+        the TCP server is bound to all hosts of the sequence.
 
         Return a Server object which can be used to stop the service.
 
@@ -813,13 +829,18 @@ class BaseEventLoop(events.AbstractEventLoop):
                 reuse_address = os.name == 'posix' and sys.platform != 'cygwin'
             sockets = []
             if host == '':
-                host = None
+                hosts = [None]
+            elif (isinstance(host, str) or
+                  not isinstance(host, collections.Iterable)):
+                hosts = [host]
+            else:
+                hosts = host
 
-            infos = yield from self.getaddrinfo(
-                host, port, family=family,
-                type=socket.SOCK_STREAM, proto=0, flags=flags)
-            if not infos:
-                raise OSError('getaddrinfo() returned empty list')
+            fs = [self._create_server_getaddrinfo(host, port, family=family,
+                                                  flags=flags)
+                  for host in hosts]
+            infos = yield from tasks.gather(*fs, loop=self)
+            infos = itertools.chain.from_iterable(infos)
 
             completed = False
             try:

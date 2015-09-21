@@ -331,9 +331,12 @@ Creating listening connections
 
    Parameters:
 
-   * If *host* is an empty string or ``None``, all interfaces are assumed
-     and a list of multiple sockets will be returned (most likely
-     one for IPv4 and another one for IPv6).
+   * The *host* parameter can be a string, in that case the TCP server is
+     bound to *host* and *port*. The *host* parameter can also be a sequence
+     of strings and in that case the TCP server is bound to all hosts of the
+     sequence. If *host* is an empty string or ``None``, all interfaces are
+     assumed and a list of multiple sockets will be returned (most likely one
+     for IPv4 and another one for IPv6).
 
    * *family* can be set to either :data:`socket.AF_INET` or
      :data:`~socket.AF_INET6` to force the socket to use IPv4 or IPv6. If not set
@@ -364,6 +367,10 @@ Creating listening connections
 
       The function :func:`start_server` creates a (:class:`StreamReader`,
       :class:`StreamWriter`) pair and calls back a function with this pair.
+
+   .. versionchanged:: 3.4.4
+
+      The *host* parameter can now be a sequence of strings.
 
 
 .. coroutinemethod:: BaseEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None)
