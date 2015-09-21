@@ -13307,7 +13307,8 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     PyObject *newbuffer;
 
     /* ensure that the _PyUnicodeWriter_Prepare macro was used */
-    assert(maxchar > writer->maxchar || length > 0);
+    assert((maxchar > writer->maxchar && length >= 0)
+           || length > 0);
 
     if (length > PY_SSIZE_T_MAX - writer->pos) {
         PyErr_NoMemory();
