@@ -3938,7 +3938,7 @@ decode_utf8(struct compiling *c, const char **sPtr, const char *end)
 }
 
 static PyObject *
-decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, const char *encoding)
+decode_unicode(struct compiling *c, const char *s, size_t len, const char *encoding)
 {
     PyObject *v, *u;
     char *buf;
@@ -3994,10 +3994,7 @@ decode_unicode(struct compiling *c, const char *s, size_t len, int rawmode, cons
         len = p - buf;
         s = buf;
     }
-    if (rawmode)
-        v = PyUnicode_DecodeRawUnicodeEscape(s, len, NULL);
-    else
-        v = PyUnicode_DecodeUnicodeEscape(s, len, NULL);
+    v = PyUnicode_DecodeUnicodeEscape(s, len, NULL);
     Py_XDECREF(u);
     return v;
 }
@@ -4896,7 +4893,7 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
         }
     }
     if (!*bytesmode && !rawmode) {
-        return decode_unicode(c, s, len, rawmode, c->c_encoding);
+        return decode_unicode(c, s, len, c->c_encoding);
     }
     if (*bytesmode) {
         /* Disallow non-ascii characters (but not escapes) */
