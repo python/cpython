@@ -106,7 +106,8 @@ operator
 Optimizations
 =============
 
-* None yet.
+* The ASCII decoder is now up to 60 times as fast for error handlers:
+  ``surrogateescape``, ``ignore`` and ``replace``.
 
 
 Build and C API Changes
