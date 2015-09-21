@@ -293,6 +293,34 @@ static unsigned char ascii_linebreak[] = {
 
 #include "clinic/unicodeobject.c.h"
 
+typedef enum {
+    _Py_ERROR_UNKNOWN=0,
+    _Py_ERROR_STRICT,
+    _Py_ERROR_SURROGATEESCAPE,
+    _Py_ERROR_REPLACE,
+    _Py_ERROR_IGNORE,
+    _Py_ERROR_XMLCHARREFREPLACE,
+    _Py_ERROR_OTHER
+} _Py_error_handler;
+
+static _Py_error_handler
+get_error_handler(const char *errors)
+{
+    if (errors == NULL)
+        return _Py_ERROR_STRICT;
+    if (strcmp(errors, "strict") == 0)
+        return _Py_ERROR_STRICT;
+    if (strcmp(errors, "surrogateescape") == 0)
+        return _Py_ERROR_SURROGATEESCAPE;
+    if (strcmp(errors, "ignore") == 0)
+        return _Py_ERROR_IGNORE;
+    if (strcmp(errors, "replace") == 0)
+        return _Py_ERROR_REPLACE;
+    if (strcmp(errors, "xmlcharrefreplace") == 0)
+        return _Py_ERROR_XMLCHARREFREPLACE;
+    return _Py_ERROR_OTHER;
+}
+
 /* The max unicode value is always 0x10FFFF while using the PEP-393 API.
    This function is kept for backward compatibility with the old API. */
 Py_UNICODE
@@ -3163,24 +3191,22 @@ wcstombs_errorpos(const wchar_t *wstr)
 static int
 locale_error_handler(const char *errors, int *surrogateescape)
 {
-    if (errors == NULL) {
+    _Py_error_handler error_handler = get_error_handler(errors);
+    switch (error_handler)
+    {
+    case _Py_ERROR_STRICT:
         *surrogateescape = 0;
         return 0;
-    }
-
-    if (strcmp(errors, "strict") == 0) {
-        *surrogateescape = 0;
-        return 0;
-    }
-    if (strcmp(errors, "surrogateescape") == 0) {
+    case _Py_ERROR_SURROGATEESCAPE:
         *surrogateescape = 1;
         return 0;
+    default:
+        PyErr_Format(PyExc_ValueError,
+                     "only 'strict' and 'surrogateescape' error handlers "
+                     "are supported, not '%s'",
+                     errors);
+        return -1;
     }
-    PyErr_Format(PyExc_ValueError,
-                 "only 'strict' and 'surrogateescape' error handlers "
-                 "are supported, not '%s'",
-                 errors);
-    return -1;
 }
 
 PyObject *
@@ -6403,11 +6429,9 @@ unicode_encode_ucs1(PyObject *unicode,
     Py_ssize_t ressize;
     const char *encoding = (limit == 256) ? "latin-1" : "ascii";
     const char *reason = (limit == 256) ? "ordinal not in range(256)" : "ordinal not in range(128)";
-    PyObject *errorHandler = NULL;
+    PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
-    /* the following variable is used for caching string comparisons
-     * -1=not initialized, 0=unknown, 1=strict, 2=replace, 3=ignore, 4=xmlcharrefreplace */
-    int known_errorHandler = -1;
+    _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
 
     if (PyUnicode_READY(unicode) == -1)
         return NULL;
@@ -6441,32 +6465,28 @@ unicode_encode_ucs1(PyObject *unicode,
             Py_ssize_t collstart = pos;
             Py_ssize_t collend = pos;
             /* find all unecodable characters */
+
             while ((collend < size) && (PyUnicode_READ(kind, data, collend) >= limit))
                 ++collend;
+
             /* cache callback name lookup (if not done yet, i.e. it's the first error) */
-            if (known_errorHandler==-1) {
-                if ((errors==NULL) || (!strcmp(errors, "strict")))
-                    known_errorHandler = 1;
-                else if (!strcmp(errors, "replace"))
-                    known_errorHandler = 2;
-                else if (!strcmp(errors, "ignore"))
-                    known_errorHandler = 3;
-                else if (!strcmp(errors, "xmlcharrefreplace"))
-                    known_errorHandler = 4;
-                else
-                    known_errorHandler = 0;
-            }
-            switch (known_errorHandler) {
-            case 1: /* strict */
+            if (error_handler == _Py_ERROR_UNKNOWN)
+                error_handler = get_error_handler(errors);
+
+            switch (error_handler) {
+            case _Py_ERROR_STRICT:
                 raise_encode_exception(&exc, encoding, unicode, collstart, collend, reason);
                 goto onError;
-            case 2: /* replace */
+
+            case _Py_ERROR_REPLACE:
                 while (collstart++ < collend)
-                    *str++ = '?'; /* fall through */
-            case 3: /* ignore */
+                    *str++ = '?';
+                /* fall through */
+            case _Py_ERROR_IGNORE:
                 pos = collend;
                 break;
-            case 4: /* xmlcharrefreplace */
+
+            case _Py_ERROR_XMLCHARREFREPLACE:
                 respos = str - PyBytes_AS_STRING(res);
                 requiredsize = respos;
                 /* determine replacement size */
@@ -6510,8 +6530,9 @@ unicode_encode_ucs1(PyObject *unicode,
                 }
                 pos = collend;
                 break;
+
             default:
-                repunicode = unicode_encode_call_errorhandler(errors, &errorHandler,
+                repunicode = unicode_encode_call_errorhandler(errors, &error_handler_obj,
                                                               encoding, reason, unicode, &exc,
                                                               collstart, collend, &newpos);
                 if (repunicode == NULL || (PyUnicode_Check(repunicode) &&
@@ -6587,7 +6608,7 @@ unicode_encode_ucs1(PyObject *unicode,
             goto onError;
     }
 
-    Py_XDECREF(errorHandler);
+    Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
     return res;
 
@@ -6597,7 +6618,7 @@ unicode_encode_ucs1(PyObject *unicode,
 
   onError:
     Py_XDECREF(res);
-    Py_XDECREF(errorHandler);
+    Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
     return NULL;
 }
@@ -6643,28 +6664,6 @@ PyUnicode_AsLatin1String(PyObject *unicode)
 }
 
 /* --- 7-bit ASCII Codec -------------------------------------------------- */
-
-typedef enum {
-    _Py_ERROR_UNKNOWN=0,
-    _Py_ERROR_SURROGATEESCAPE,
-    _Py_ERROR_REPLACE,
-    _Py_ERROR_IGNORE,
-    _Py_ERROR_OTHER
-} _Py_error_handler;
-
-static _Py_error_handler
-get_error_handler(const char *errors)
-{
-    if (errors == NULL)
-        return _Py_ERROR_OTHER;
-    if (strcmp(errors, "surrogateescape") == 0)
-        return _Py_ERROR_SURROGATEESCAPE;
-    if (strcmp(errors, "ignore") == 0)
-        return _Py_ERROR_IGNORE;
-    if (strcmp(errors, "replace") == 0)
-        return _Py_ERROR_REPLACE;
-    return _Py_ERROR_OTHER;
-}
 
 PyObject *
 PyUnicode_DecodeASCII(const char *s,
@@ -8129,7 +8128,7 @@ static int
 charmap_encoding_error(
     PyObject *unicode, Py_ssize_t *inpos, PyObject *mapping,
     PyObject **exceptionObject,
-    int *known_errorHandler, PyObject **errorHandler, const char *errors,
+    _Py_error_handler *error_handler, PyObject **error_handler_obj, const char *errors,
     PyObject **res, Py_ssize_t *respos)
 {
     PyObject *repunicode = NULL; /* initialize to prevent gcc warning */
@@ -8176,23 +8175,15 @@ charmap_encoding_error(
     }
     /* cache callback name lookup
      * (if not done yet, i.e. it's the first error) */
-    if (*known_errorHandler==-1) {
-        if ((errors==NULL) || (!strcmp(errors, "strict")))
-            *known_errorHandler = 1;
-        else if (!strcmp(errors, "replace"))
-            *known_errorHandler = 2;
-        else if (!strcmp(errors, "ignore"))
-            *known_errorHandler = 3;
-        else if (!strcmp(errors, "xmlcharrefreplace"))
-            *known_errorHandler = 4;
-        else
-            *known_errorHandler = 0;
-    }
-    switch (*known_errorHandler) {
-    case 1: /* strict */
+    if (*error_handler == _Py_ERROR_UNKNOWN)
+        *error_handler = get_error_handler(errors);
+
+    switch (*error_handler) {
+    case _Py_ERROR_STRICT:
         raise_encode_exception(exceptionObject, encoding, unicode, collstartpos, collendpos, reason);
         return -1;
-    case 2: /* replace */
+
+    case _Py_ERROR_REPLACE:
         for (collpos = collstartpos; collpos<collendpos; ++collpos) {
             x = charmapencode_output('?', mapping, res, respos);
             if (x==enc_EXCEPTION) {
@@ -8204,10 +8195,11 @@ charmap_encoding_error(
             }
         }
         /* fall through */
-    case 3: /* ignore */
+    case _Py_ERROR_IGNORE:
         *inpos = collendpos;
         break;
-    case 4: /* xmlcharrefreplace */
+
+    case _Py_ERROR_XMLCHARREFREPLACE:
         /* generate replacement (temporarily (mis)uses p) */
         for (collpos = collstartpos; collpos < collendpos; ++collpos) {
             char buffer[2+29+1+1];
@@ -8225,8 +8217,9 @@ charmap_encoding_error(
         }
         *inpos = collendpos;
         break;
+
     default:
-        repunicode = unicode_encode_call_errorhandler(errors, errorHandler,
+        repunicode = unicode_encode_call_errorhandler(errors, error_handler_obj,
                                                       encoding, reason, unicode, exceptionObject,
                                                       collstartpos, collendpos, &newpos);
         if (repunicode == NULL)
@@ -8289,12 +8282,9 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
     Py_ssize_t size;
     /* current output position */
     Py_ssize_t respos = 0;
-    PyObject *errorHandler = NULL;
+    PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
-    /* the following variable is used for caching string comparisons
-     * -1=not initialized, 0=unknown, 1=strict, 2=replace,
-     * 3=ignore, 4=xmlcharrefreplace */
-    int known_errorHandler = -1;
+    _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
     void *data;
     int kind;
 
@@ -8325,7 +8315,7 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
         if (x==enc_FAILED) { /* unencodable character */
             if (charmap_encoding_error(unicode, &inpos, mapping,
                                        &exc,
-                                       &known_errorHandler, &errorHandler, errors,
+                                       &error_handler, &error_handler_obj, errors,
                                        &res, &respos)) {
                 goto onError;
             }
@@ -8341,13 +8331,13 @@ _PyUnicode_EncodeCharmap(PyObject *unicode,
             goto onError;
 
     Py_XDECREF(exc);
-    Py_XDECREF(errorHandler);
+    Py_XDECREF(error_handler_obj);
     return res;
 
   onError:
     Py_XDECREF(res);
     Py_XDECREF(exc);
-    Py_XDECREF(errorHandler);
+    Py_XDECREF(error_handler_obj);
     return NULL;
 }
 
