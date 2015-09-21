@@ -157,7 +157,7 @@ class HelpText(Text):
         "Configure tags and feed file to parser."
         Text.__init__(self, parent, wrap='word', highlightthickness=0,
                       padx=5, borderwidth=0)
-        
+
         normalfont = self.findfont(['TkDefaultFont', 'arial', 'helvetica'])
         fixedfont = self.findfont(['TkFixedFont', 'monaco', 'courier'])
         self['font'] = (normalfont, 12)
@@ -173,7 +173,7 @@ class HelpText(Text):
         self.tag_configure('l3', lmargin1=75, lmargin2=75)
         self.tag_configure('l4', lmargin1=100, lmargin2=100)
 
-        self.parser = HelpParser(self)   
+        self.parser = HelpParser(self)
         with open(filename) as f:
             contents = f.read().decode(encoding='utf-8')
         self.parser.feed(contents)
@@ -203,7 +203,7 @@ class HelpFrame(Frame):
         self.grid_rowconfigure(0, weight=1)
         toc = self.contents_widget(text)
         toc.grid(column=0, row=0, sticky='nw')
-        
+
     def contents_widget(self, text):
         toc = Menubutton(self, text='TOC')
         drop = Menu(toc, tearoff=False)
