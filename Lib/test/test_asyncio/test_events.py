@@ -745,6 +745,39 @@ class EventLoopTestsMixin:
             self.assertEqual(cm.exception.errno, errno.EADDRINUSE)
             self.assertIn(str(httpd.address), cm.exception.strerror)
 
+    @mock.patch('asyncio.base_events.socket')
+    def create_server_multiple_hosts(self, family, hosts, mock_sock):
+        @asyncio.coroutine
+        def getaddrinfo(host, port, *args, **kw):
+            if family == socket.AF_INET:
+                return [[family, socket.SOCK_STREAM, 6, '', (host, port)]]
+            else:
+                return [[family, socket.SOCK_STREAM, 6, '', (host, port, 0, 0)]]
+
+        def getaddrinfo_task(*args, **kwds):
+            return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
+
+        if family == socket.AF_INET:
+            mock_sock.socket().getsockbyname.side_effect = [(host, 80)
+                                                            for host in hosts]
+        else:
+            mock_sock.socket().getsockbyname.side_effect = [(host, 80, 0, 0)
+                                                            for host in hosts]
+        self.loop.getaddrinfo = getaddrinfo_task
+        self.loop._start_serving = mock.Mock()
+        f = self.loop.create_server(lambda: MyProto(self.loop), hosts, 80)
+        server = self.loop.run_until_complete(f)
+        self.addCleanup(server.close)
+        server_hosts = [sock.getsockbyname()[0] for sock in server.sockets]
+        self.assertEqual(server_hosts, hosts)
+
+    def test_create_server_multiple_hosts_ipv4(self):
+        self.create_server_multiple_hosts(socket.AF_INET,
+                                          ['1.2.3.4', '5.6.7.8'])
+
+    def test_create_server_multiple_hosts_ipv6(self):
+        self.create_server_multiple_hosts(socket.AF_INET6, ['::1', '::2'])
+
     def test_create_server(self):
         proto = MyProto(self.loop)
         f = self.loop.create_server(lambda: proto, '0.0.0.0', 0)
