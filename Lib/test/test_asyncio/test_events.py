@@ -764,6 +764,7 @@ class EventLoopTestsMixin:
                                                             for host in hosts]
         self.loop.getaddrinfo = getaddrinfo_task
         self.loop._start_serving = mock.Mock()
+        self.loop._stop_serving = mock.Mock()
         f = self.loop.create_server(lambda: MyProto(self.loop), hosts, 80)
         server = self.loop.run_until_complete(f)
         self.addCleanup(server.close)
