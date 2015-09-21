@@ -6722,14 +6722,11 @@ PyUnicode_DecodeASCII(const char *s,
         case _Py_ERROR_REPLACE:
         case _Py_ERROR_SURROGATEESCAPE:
             /* Fast-path: the error handler only writes one character,
-               but we must switch to UCS2 at the first write */
-            if (kind < PyUnicode_2BYTE_KIND) {
-                if (_PyUnicodeWriter_Prepare(&writer, size - writer.pos,
-                                             0xffff) < 0)
-                    return NULL;
-                kind = writer.kind;
-                data = writer.data;
-            }
+               but we may switch to UCS2 at the first write */
+            if (_PyUnicodeWriter_PrepareKind(&writer, PyUnicode_2BYTE_KIND) < 0)
+                goto onError;
+            kind = writer.kind;
+            data = writer.data;
 
             if (error_handler == _Py_ERROR_REPLACE)
                 PyUnicode_WRITE(kind, data, writer.pos, 0xfffd);
@@ -13309,7 +13306,8 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     Py_ssize_t newlen;
     PyObject *newbuffer;
 
-    assert(length > 0);
+    /* ensure that the _PyUnicodeWriter_Prepare macro was used */
+    assert(maxchar > writer->maxchar || length > 0);
 
     if (length > PY_SSIZE_T_MAX - writer->pos) {
         PyErr_NoMemory();
@@ -13373,6 +13371,28 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
     return 0;
 
 #undef OVERALLOCATE_FACTOR
+}
+
+int
+_PyUnicodeWriter_PrepareKindInternal(_PyUnicodeWriter *writer,
+                                     enum PyUnicode_Kind kind)
+{
+    Py_UCS4 maxchar;
+
+    /* ensure that the _PyUnicodeWriter_PrepareKind macro was used */
+    assert(writer->kind < kind);
+
+    switch (kind)
+    {
+    case PyUnicode_1BYTE_KIND: maxchar = 0xff; break;
+    case PyUnicode_2BYTE_KIND: maxchar = 0xffff; break;
+    case PyUnicode_4BYTE_KIND: maxchar = 0x10ffff; break;
+    default:
+        assert(0 && "invalid kind");
+        return -1;
+    }
+
+    return _PyUnicodeWriter_PrepareInternal(writer, 0, maxchar);
 }
 
 Py_LOCAL_INLINE(int)
