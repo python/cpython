@@ -6644,6 +6644,28 @@ PyUnicode_AsLatin1String(PyObject *unicode)
 
 /* --- 7-bit ASCII Codec -------------------------------------------------- */
 
+typedef enum {
+    _Py_ERROR_UNKNOWN=0,
+    _Py_ERROR_SURROGATEESCAPE,
+    _Py_ERROR_REPLACE,
+    _Py_ERROR_IGNORE,
+    _Py_ERROR_OTHER
+} _Py_error_handler;
+
+static _Py_error_handler
+get_error_handler(const char *errors)
+{
+    if (errors == NULL)
+        return _Py_ERROR_OTHER;
+    if (strcmp(errors, "surrogateescape") == 0)
+        return _Py_ERROR_SURROGATEESCAPE;
+    if (strcmp(errors, "ignore") == 0)
+        return _Py_ERROR_IGNORE;
+    if (strcmp(errors, "replace") == 0)
+        return _Py_ERROR_REPLACE;
+    return _Py_ERROR_OTHER;
+}
+
 PyObject *
 PyUnicode_DecodeASCII(const char *s,
                       Py_ssize_t size,
@@ -6657,8 +6679,9 @@ PyUnicode_DecodeASCII(const char *s,
     Py_ssize_t endinpos;
     Py_ssize_t outpos;
     const char *e;
-    PyObject *errorHandler = NULL;
+    PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
+    _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
 
     if (size == 0)
         _Py_RETURN_UNICODE_EMPTY();
@@ -6687,12 +6710,45 @@ PyUnicode_DecodeASCII(const char *s,
             PyUnicode_WRITE(kind, data, writer.pos, c);
             writer.pos++;
             ++s;
+            continue;
         }
-        else {
+
+        /* byte outsize range 0x00..0x7f: call the error handler */
+
+        if (error_handler == _Py_ERROR_UNKNOWN)
+            error_handler = get_error_handler(errors);
+
+        switch (error_handler)
+        {
+        case _Py_ERROR_REPLACE:
+        case _Py_ERROR_SURROGATEESCAPE:
+            /* Fast-path: the error handler only writes one character,
+               but we must switch to UCS2 at the first write */
+            if (kind < PyUnicode_2BYTE_KIND) {
+                if (_PyUnicodeWriter_Prepare(&writer, size - writer.pos,
+                                             0xffff) < 0)
+                    return NULL;
+                kind = writer.kind;
+                data = writer.data;
+            }
+
+            if (error_handler == _Py_ERROR_REPLACE)
+                PyUnicode_WRITE(kind, data, writer.pos, 0xfffd);
+            else
+                PyUnicode_WRITE(kind, data, writer.pos, c + 0xdc00);
+            writer.pos++;
+            ++s;
+            break;
+
+        case _Py_ERROR_IGNORE:
+            ++s;
+            break;
+
+        default:
             startinpos = s-starts;
             endinpos = startinpos + 1;
             if (unicode_decode_call_errorhandler_writer(
-                    errors, &errorHandler,
+                    errors, &error_handler_obj,
                     "ascii", "ordinal not in range(128)",
                     &starts, &e, &startinpos, &endinpos, &exc, &s,
                     &writer))
@@ -6701,13 +6757,13 @@ PyUnicode_DecodeASCII(const char *s,
             data = writer.data;
         }
     }
-    Py_XDECREF(errorHandler);
+    Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
     return _PyUnicodeWriter_Finish(&writer);
 
   onError:
     _PyUnicodeWriter_Dealloc(&writer);
-    Py_XDECREF(errorHandler);
+    Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
     return NULL;
 }
