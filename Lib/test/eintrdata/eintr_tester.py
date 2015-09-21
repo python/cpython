@@ -301,9 +301,9 @@ class SocketEINTRTest(EINTRBaseTest):
 
     # Issue #25122: There is a race condition in the FreeBSD kernel on
     # handling signals in the FIFO device. Skip the test until the bug is
-    # fixed in the kernel. Bet that the bug will be fixed in FreeBSD 11.
+    # fixed in the kernel.
     # https://bugs.freebsd.org/bugzilla/show_bug.cgi?id=203162
-    @support.requires_freebsd_version(11)
+    @support.requires_freebsd_version(10, 3)
     @unittest.skipUnless(hasattr(os, 'mkfifo'), 'needs mkfifo()')
     def _test_open(self, do_open_close_reader, do_open_close_writer):
         filename = support.TESTFN
