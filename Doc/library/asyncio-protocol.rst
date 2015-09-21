@@ -82,7 +82,7 @@ BaseTransport
 
         - ``'subprocess'``: :class:`subprocess.Popen` instance
 
-   .. versionchanged:: 3.4.4
+   .. versionchanged:: 3.5.1
       ``'ssl_object'`` info was added to SSL sockets.
 
 
