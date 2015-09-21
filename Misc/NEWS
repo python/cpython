@@ -167,6 +167,21 @@ Build
 IDLE
 ----
 
+- Issue #25199: Idle: add synchronization comments for future maintainers.
+
+- Issue #16893: Replace help.txt with idle.html for Idle doc display.
+  The new idlelib/idle.html is copied from Doc/build/html/idle.html.
+  It looks better than help.txt and will better document Idle as released.
+  The tkinter html viewer that works for this file was written by Rose Roseman.
+  The now unused EditorWindow.HelpDialog class and helt.txt file are deprecated.
+
+- Issue #24199: Deprecate unused idlelib.idlever with possible removal in 3.6.
+
+- Issue #24782: In Idle extension config dialog, replace tabs with sorted list.
+  Patch by Mark Roseman.
+
+- Issue #24790: Remove extraneous code (which also create 2 & 3 conflicts).
+
 - Issue #23672: Allow Idle to edit and run files with astral chars in name.
   Patch by Mohd Sanad Zaki Rizvi.
 
