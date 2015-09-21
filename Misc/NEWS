@@ -167,12 +167,15 @@ Build
 IDLE
 ----
 
+- Issue #24861: Most of idlelib is private and subject to change.
+  Use idleib.idle.* to start Idle. See idlelib.__init__.__doc__.   
+
 - Issue #25199: Idle: add synchronization comments for future maintainers.
 
 - Issue #16893: Replace help.txt with idle.html for Idle doc display.
-  The new idlelib/idle.html is copied from Doc/build/html/idle.html.
+  The new idlelib/idle.html is copied from Doc/build/html/library/idle.html.
   It looks better than help.txt and will better document Idle as released.
-  The tkinter html viewer that works for this file was written by Rose Roseman.
+  The tkinter html viewer that works for this file was written by Mark Roseman.
   The now unused EditorWindow.HelpDialog class and helt.txt file are deprecated.
 
 - Issue #24199: Deprecate unused idlelib.idlever with possible removal in 3.6.
