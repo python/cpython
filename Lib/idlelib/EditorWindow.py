@@ -85,9 +85,7 @@ class HelpDialog(object):
         self.dlg = None
         self.parent = None
 
-helpDialog = HelpDialog()  # singleton instance
-def _help_dialog(parent):  # wrapper for htest
-    helpDialog.show_dialog(parent)
+helpDialog = HelpDialog()  # singleton instance, no longer used
 
 
 class EditorWindow(object):
