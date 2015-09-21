@@ -843,6 +843,7 @@ class _SelectorSslTransport(_SelectorTransport):
         self._extra.update(peercert=peercert,
                            cipher=self._sock.cipher(),
                            compression=self._sock.compression(),
+                           ssl_object=self._sock,
                            )
 
         self._read_wants_write = False
