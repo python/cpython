@@ -18,6 +18,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25092: Fix datetime.strftime() failure when errno was already set to
+  EINVAL.
+
 - Issue #23517: Fix rounding in fromtimestamp() and utcfromtimestamp() methods
   of datetime.datetime: microseconds are now rounded to nearest with ties
   going to nearest even integer (ROUND_HALF_EVEN), instead of being rounding
