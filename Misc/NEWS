@@ -150,6 +150,8 @@ Build
 Windows
 -------
 
+- Issue #25091: Increases font size of the installer.
+
 - Issue #25213: Restores requestedExecutionLevel to manifest to disable
   UAC virtualization.
 
