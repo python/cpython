@@ -150,6 +150,8 @@ Build
 Windows
 -------
 
+- Issue #25102: Windows installer does not precompile for -O or -OO.
+
 - Issue #25081: Makes Back button in installer go back to upgrade page when
   upgrading.
 
