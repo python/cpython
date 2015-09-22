@@ -139,13 +139,22 @@ class TestPartial:
 
     def test_nested_optimization(self):
         partial = self.partial
-        # Only "true" partial is optimized
-        if partial.__name__ != 'partial':
-            return
         inner = partial(signature, 'asdf')
         nested = partial(inner, bar=True)
         flat = partial(signature, 'asdf', bar=True)
         self.assertEqual(signature(nested), signature(flat))
+
+    def test_nested_partial_with_attribute(self):
+        # see issue 25137
+        partial = self.partial
+
+        def foo(bar):
+            return bar
+
+        p = partial(foo, 'first')
+        p2 = partial(p, 'second')
+        p2.new_attr = 'spam'
+        self.assertEqual(p2.new_attr, 'spam')
 
 
 @unittest.skipUnless(c_functools, 'requires the C _functools module')
@@ -237,6 +246,9 @@ if c_functools:
 class TestPartialCSubclass(TestPartialC):
     if c_functools:
         partial = PartialSubclass
+
+    # partial subclasses are not optimized for nested calls
+    test_nested_optimization = None
 
 
 class TestPartialMethod(unittest.TestCase):

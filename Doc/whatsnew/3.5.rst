@@ -2441,6 +2441,12 @@ Changes in the Python API
   module and the :func:`help` function.
   (Contributed by Serhiy Storchaka in :issue:`15582`.)
 
+* Nested :func:`functools.partial` calls are now flattened.  If you were
+  relying on the previous behavior, you can now either add an attribute to a
+  :func:`functools.partial` object or you can create a subclass of
+  :func:`functools.partial`.
+  (Contributed by Alexander Belopolsky in :issue:`7830`.)
+
 Changes in the C API
 --------------------
 
