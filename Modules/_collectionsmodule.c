@@ -209,7 +209,7 @@ deque_pop(dequeobject *deque, PyObject *unused)
     Py_SIZE(deque)--;
     deque->state++;
 
-    if (deque->rightindex == -1) {
+    if (deque->rightindex < 0) {
         if (Py_SIZE(deque)) {
             prevblock = deque->rightblock->leftlink;
             assert(deque->leftblock != deque->rightblock);
@@ -715,7 +715,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
                 *(dest++) = *(src++);
             } while (--m);
         }
-        if (rightindex == -1) {
+        if (rightindex < 0) {
             assert(leftblock != rightblock);
             assert(b == NULL);
             b = rightblock;
@@ -827,7 +827,7 @@ deque_reverse(dequeobject *deque, PyObject *unused)
 
         /* Step backwards with the right block/index pair */
         rightindex--;
-        if (rightindex == -1) {
+        if (rightindex < 0) {
             rightblock = rightblock->leftlink;
             rightindex = BLOCKLEN - 1;
         }
@@ -1234,7 +1234,7 @@ deque_copy(PyObject *deque)
         Py_DECREF(new_deque);
         return NULL;
     }
-    if (old_deque->maxlen == -1)
+    if (old_deque->maxlen < 0)
         return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "O", deque, NULL);
     else
         return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
@@ -1258,12 +1258,12 @@ deque_reduce(dequeobject *deque)
         return NULL;
     }
     if (dict == NULL) {
-        if (deque->maxlen == -1)
+        if (deque->maxlen < 0)
             result = Py_BuildValue("O(O)", Py_TYPE(deque), aslist);
         else
             result = Py_BuildValue("O(On)", Py_TYPE(deque), aslist, deque->maxlen);
     } else {
-        if (deque->maxlen == -1)
+        if (deque->maxlen < 0)
             result = Py_BuildValue("O(OO)O", Py_TYPE(deque), aslist, Py_None, dict);
         else
             result = Py_BuildValue("O(On)O", Py_TYPE(deque), aslist, deque->maxlen, dict);
@@ -1354,7 +1354,7 @@ deque_richcompare(PyObject *v, PyObject *w, int op)
         }
         Py_DECREF(x);
         Py_DECREF(y);
-        if (b == -1)
+        if (b < 0)
             goto done;
     }
     /* We reached the end of one deque or both */
@@ -1437,7 +1437,7 @@ deque_bool(dequeobject *deque)
 static PyObject *
 deque_get_maxlen(dequeobject *deque)
 {
-    if (deque->maxlen == -1)
+    if (deque->maxlen < 0)
         Py_RETURN_NONE;
     return PyLong_FromSsize_t(deque->maxlen);
 }
@@ -1778,7 +1778,7 @@ dequereviter_next(dequeiterobject *it)
     item = it->b->data[it->index];
     it->index--;
     it->counter--;
-    if (it->index == -1 && it->counter > 0) {
+    if (it->index < 0 && it->counter > 0) {
         CHECK_NOT_END(it->b->leftlink);
         it->b = it->b->leftlink;
         it->index = BLOCKLEN - 1;
