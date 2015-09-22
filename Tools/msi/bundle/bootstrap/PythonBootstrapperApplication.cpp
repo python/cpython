@@ -323,6 +323,8 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             SavePageSettings();
             if (_modifying) {
                 GoToPage(PAGE_MODIFY);
+            } else if (_upgrading) {
+                GoToPage(PAGE_UPGRADE);
             } else {
                 GoToPage(PAGE_INSTALL);
             }
@@ -2524,6 +2526,7 @@ private:
                     case BOOTSTRAPPER_ACTION_INSTALL:
                         if (_upgradingOldVersion) {
                             _installPage = PAGE_UPGRADE;
+                            _upgrading = TRUE;
                         } else if (SUCCEEDED(BalGetNumericVariable(L"SimpleInstall", &simple)) && simple) {
                             _installPage = PAGE_SIMPLE_INSTALL;
                         } else {
@@ -3029,6 +3032,7 @@ public:
         _suppressDowngradeFailure = FALSE;
         _suppressRepair = FALSE;
         _modifying = FALSE;
+        _upgrading = FALSE;
 
         _overridableVariables = nullptr;
         _taskbarList = nullptr;
@@ -3113,6 +3117,7 @@ private:
     BOOL _suppressDowngradeFailure;
     BOOL _suppressRepair;
     BOOL _modifying;
+    BOOL _upgrading;
 
     int _crtInstalledToken;
 

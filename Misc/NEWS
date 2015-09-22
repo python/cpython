@@ -150,6 +150,9 @@ Build
 Windows
 -------
 
+- Issue #25081: Makes Back button in installer go back to upgrade page when
+  upgrading.
+
 - Issue #25091: Increases font size of the installer.
 
 - Issue #25126: Clarifies that the non-web installer will download some
