@@ -242,7 +242,7 @@ def show_idlehelp(parent):
     filename = join(abspath(dirname(__file__)), 'help.html')
     if not isfile(filename):
         # try copy_strip, present message
-        return 
+        return
     HelpWindow(parent, filename, 'IDLE Help')
 
 if __name__ == '__main__':
