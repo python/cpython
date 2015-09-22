@@ -152,6 +152,9 @@ Windows
 
 - Issue #25091: Increases font size of the installer.
 
+- Issue #25126: Clarifies that the non-web installer will download some
+  components.
+
 - Issue #25213: Restores requestedExecutionLevel to manifest to disable
   UAC virtualization.
 
