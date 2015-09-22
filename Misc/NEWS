@@ -147,6 +147,9 @@ Build
 Windows
 -------
 
+- Issue #25213: Restores requestedExecutionLevel to manifest to disable
+  UAC virtualization.
+
 - Issue #25022: Removed very outdated PC/example_nt/ directory.
 
 What's New in Python 3.5.0 final?
