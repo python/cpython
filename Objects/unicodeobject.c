@@ -4709,9 +4709,8 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
     Py_ssize_t startinpos;
     Py_ssize_t endinpos;
     const char *errmsg = "";
-    PyObject *error_handler_obj = NULL;
+    PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
-    _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
 
     if (size == 0) {
         if (consumed)
@@ -4774,57 +4773,24 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
             continue;
         }
 
-        /* undecodable byte: call the error handler */
-
-        if (error_handler == _Py_ERROR_UNKNOWN)
-            error_handler = get_error_handler(errors);
-
-        switch (error_handler)
-        {
-        case _Py_ERROR_REPLACE:
-        case _Py_ERROR_SURROGATEESCAPE:
-        {
-            unsigned char ch = (unsigned char)*s;
-
-            /* Fast-path: the error handler only writes one character,
-               but we may switch to UCS2 at the first write */
-            if (_PyUnicodeWriter_PrepareKind(&writer, PyUnicode_2BYTE_KIND) < 0)
-                goto onError;
-            kind = writer.kind;
-
-            if (error_handler == _Py_ERROR_REPLACE)
-                PyUnicode_WRITE(kind, writer.data, writer.pos, 0xfffd);
-            else
-                PyUnicode_WRITE(kind, writer.data, writer.pos, ch + 0xdc00);
-            writer.pos++;
-            ++s;
-            break;
-        }
-
-        case _Py_ERROR_IGNORE:
-            s++;
-            break;
-
-        default:
-            if (unicode_decode_call_errorhandler_writer(
-                    errors, &error_handler_obj,
-                    "utf-8", errmsg,
-                    &starts, &end, &startinpos, &endinpos, &exc, &s,
-                    &writer))
-                goto onError;
-        }
+        if (unicode_decode_call_errorhandler_writer(
+                errors, &errorHandler,
+                "utf-8", errmsg,
+                &starts, &end, &startinpos, &endinpos, &exc, &s,
+                &writer))
+            goto onError;
     }
 
 End:
     if (consumed)
         *consumed = s - starts;
 
-    Py_XDECREF(error_handler_obj);
+    Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     return _PyUnicodeWriter_Finish(&writer);
 
 onError:
-    Py_XDECREF(error_handler_obj);
+    Py_XDECREF(errorHandler);
     Py_XDECREF(exc);
     _PyUnicodeWriter_Dealloc(&writer);
     return NULL;
