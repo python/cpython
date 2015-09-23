@@ -287,6 +287,15 @@ f'{a * x()}'"""
                              "f' { } '",
                              r"f'{\n}'",
                              r"f'{\n \n}'",
+
+                             # Catch the empty expression before the
+                             #  invalid conversion.
+                             "f'{!x}'",
+                             "f'{ !xr}'",
+                             "f'{!x:}'",
+                             "f'{!x:a}'",
+                             "f'{ !xr:}'",
+                             "f'{ !xr:a}'",
                              ])
 
     def test_parens_in_expressions(self):
