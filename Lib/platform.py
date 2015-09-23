@@ -546,7 +546,10 @@ def _get_real_winver(maj, min, build):
     return maj, min, build
 
 def win32_ver(release='', version='', csd='', ptype=''):
-    from sys import getwindowsversion
+    try:
+        from sys import getwindowsversion
+    except ImportError:
+        return release, version, csd, ptype
     try:
         from winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
     except ImportError:
