@@ -7,7 +7,7 @@ import faulthandler
 import getopt
 import os.path
 import unittest
-from test import regrtest, support, libregrtest
+from test import regrtest, support
 
 class ParseArgsTestCase(unittest.TestCase):
 
@@ -148,7 +148,7 @@ class ParseArgsTestCase(unittest.TestCase):
                 self.assertEqual(ns.use_resources, ['gui', 'network'])
                 ns = regrtest._parse_args([opt, 'gui,none,network'])
                 self.assertEqual(ns.use_resources, ['network'])
-                expected = list(libregrtest.RESOURCE_NAMES)
+                expected = list(regrtest.RESOURCE_NAMES)
                 expected.remove('gui')
                 ns = regrtest._parse_args([opt, 'all,-gui'])
                 self.assertEqual(ns.use_resources, expected)
