@@ -175,13 +175,13 @@ class EditorWindow(object):
         if macosxSupport.isAquaTk():
             # Command-W on editorwindows doesn't work without this.
             text.bind('<<close-window>>', self.close_event)
-            # Some OS X systems have only one mouse button,
-            # so use control-click for pulldown menus there.
-            #  (Note, AquaTk defines <2> as the right button if
-            #   present and the Tk Text widget already binds <2>.)
+            # Some OS X systems have only one mouse button, so use
+            # control-click for popup context menus there. For two
+            # buttons, AquaTk defines <2> as the right button, not <3>.
             text.bind("<Control-Button-1>",self.right_menu_event)
+            text.bind("<2>", self.right_menu_event)
         else:
-            # Elsewhere, use right-click for pulldown menus.
+            # Elsewhere, use right-click for popup menus.
             text.bind("<3>",self.right_menu_event)
         text.bind("<<cut>>", self.cut)
         text.bind("<<copy>>", self.copy)
