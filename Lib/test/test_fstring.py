@@ -299,6 +299,13 @@ f'{a * x()}'"""
 
                              "f'{!}'",
                              "f'{:}'",
+
+                             # We find the empty expression before the
+                             #  missing closing brace.
+                             "f'{!'",
+                             "f'{!s:'",
+                             "f'{:'",
+                             "f'{:x'",
                              ])
 
     def test_parens_in_expressions(self):
