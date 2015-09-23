@@ -1013,10 +1013,6 @@ must be integers.
 
 
 .. _comparisons:
-.. _is:
-.. _is not:
-.. _in:
-.. _not in:
 
 Comparisons
 ===========
@@ -1052,65 +1048,182 @@ Note that ``a op1 b op2 c`` doesn't imply any kind of comparison between *a* and
 *c*, so that, e.g., ``x < y > z`` is perfectly legal (though perhaps not
 pretty).
 
+Value comparisons
+-----------------
+
 The operators ``<``, ``>``, ``==``, ``>=``, ``<=``, and ``!=`` compare the
-values of two objects.  The objects need not have the same type. If both are
-numbers, they are converted to a common type.  Otherwise, the ``==`` and ``!=``
-operators *always* consider objects of different types to be unequal, while the
-``<``, ``>``, ``>=`` and ``<=`` operators raise a :exc:`TypeError` when
-comparing objects of different types that do not implement these operators for
-the given pair of types.  You can control comparison behavior of objects of
-non-built-in types by defining rich comparison methods like :meth:`__gt__`,
-described in section :ref:`customization`.
+values of two objects.  The objects do not need to have the same type.
 
-Comparison of objects of the same type depends on the type:
+Chapter :ref:`objects` states that objects have a value (in addition to type
+and identity).  The value of an object is a rather abstract notion in Python:
+For example, there is no canonical access method for an object's value.  Also,
+there is no requirement that the value of an object should be constructed in a
+particular way, e.g. comprised of all its data attributes. Comparison operators
+implement a particular notion of what the value of an object is.  One can think
+of them as defining the value of an object indirectly, by means of their
+comparison implementation.
 
-* Numbers are compared arithmetically.
+Because all types are (direct or indirect) subtypes of :class:`object`, they
+inherit the default comparison behavior from :class:`object`.  Types can
+customize their comparison behavior by implementing
+:dfn:`rich comparison methods` like :meth:`__lt__`, described in
+:ref:`customization`.
 
-* The values :const:`float('NaN')` and :const:`Decimal('NaN')` are special.
-  They are identical to themselves, ``x is x`` but are not equal to themselves,
-  ``x != x``.  Additionally, comparing any value to a not-a-number value
+The default behavior for equality comparison (``==`` and ``!=``) is based on
+the identity of the objects.  Hence, equality comparison of instances with the
+same identity results in equality, and equality comparison of instances with
+different identities results in inequality.  A motivation for this default
+behavior is the desire that all objects should be reflexive (i.e. ``x is y``
+implies ``x == y``).
+
+A default order comparison (``<``, ``>``, ``<=``, and ``>=``) is not provided;
+an attempt raises :exc:`TypeError`.  A motivation for this default behavior is
+the lack of a similar invariant as for equality.
+
+The behavior of the default equality comparison, that instances with different
+identities are always unequal, may be in contrast to what types will need that
+have a sensible definition of object value and value-based equality.  Such
+types will need to customize their comparison behavior, and in fact, a number
+of built-in types have done that.
+
+The following list describes the comparison behavior of the most important
+built-in types.
+
+* Numbers of built-in numeric types (:ref:`typesnumeric`) and of the standard
+  library types :class:`fractions.Fraction` and :class:`decimal.Decimal` can be
+  compared within and across their types, with the restriction that complex
+  numbers do not support order comparison.  Within the limits of the types
+  involved, they compare mathematically (algorithmically) correct without loss
+  of precision.
+
+  The not-a-number values :const:`float('NaN')` and :const:`Decimal('NaN')`
+  are special.  They are identical to themselves (``x is x`` is true) but
+  are not equal to themselves (``x == x`` is false).  Additionally,
+  comparing any number to a not-a-number value
   will return ``False``.  For example, both ``3 < float('NaN')`` and
   ``float('NaN') < 3`` will return ``False``.
 
-* Bytes objects are compared lexicographically using the numeric values of their
-  elements.
+* Binary sequences (instances of :class:`bytes` or :class:`bytearray`) can be
+  compared within and across their types.  They compare lexicographically using
+  the numeric values of their elements.
 
-* Strings are compared lexicographically using the numeric equivalents (the
-  result of the built-in function :func:`ord`) of their characters. [#]_ String
-  and bytes object can't be compared!
+* Strings (instances of :class:`str`) compare lexicographically using the
+  numerical Unicode code points (the result of the built-in function
+  :func:`ord`) of their characters. [#]_
 
-* Tuples and lists are compared lexicographically using comparison of
-  corresponding elements.  This means that to compare equal, each element must
-  compare equal and the two sequences must be of the same type and have the same
-  length.
+  Strings and binary sequences cannot be directly compared.
 
-  If not equal, the sequences are ordered the same as their first differing
-  elements.  For example, ``[1,2,x] <= [1,2,y]`` has the same value as
-  ``x <= y``.  If the corresponding element does not exist, the shorter
-  sequence is ordered first (for example, ``[1,2] < [1,2,3]``).
+* Sequences (instances of :class:`tuple`, :class:`list`, or :class:`range`) can
+  be compared only within each of their types, with the restriction that ranges
+  do not support order comparison.  Equality comparison across these types
+  results in unequality, and ordering comparison across these types raises
+  :exc:`TypeError`.
 
-* Mappings (dictionaries) compare equal if and only if they have the same
-  ``(key, value)`` pairs. Order comparisons ``('<', '<=', '>=', '>')``
-  raise :exc:`TypeError`.
+  Sequences compare lexicographically using comparison of corresponding
+  elements, whereby reflexivity of the elements is enforced.
 
-* Sets and frozensets define comparison operators to mean subset and superset
-  tests.  Those relations do not define total orderings (the two sets ``{1,2}``
-  and ``{2,3}`` are not equal, nor subsets of one another, nor supersets of one
+  In enforcing reflexivity of elements, the comparison of collections assumes
+  that for a collection element ``x``, ``x == x`` is always true.  Based on
+  that assumption, element identity is compared first, and element comparison
+  is performed only for distinct elements.  This approach yields the same
+  result as a strict element comparison would, if the compared elements are
+  reflexive.  For non-reflexive elements, the result is different than for
+  strict element comparison, and may be surprising:  The non-reflexive
+  not-a-number values for example result in the following comparison behavior
+  when used in a list::
+
+    >>> nan = float('NaN')
+    >>> nan is nan
+    True
+    >>> nan == nan
+    False                 <-- the defined non-reflexive behavior of NaN
+    >>> [nan] == [nan]
+    True                  <-- list enforces reflexivity and tests identity first
+
+  Lexicographical comparison between built-in collections works as follows:
+
+  - For two collections to compare equal, they must be of the same type, have
+    the same length, and each pair of corresponding elements must compare
+    equal (for example, ``[1,2] == (1,2)`` is false because the type is not the
+    same).
+
+  - Collections that support order comparison are ordered the same as their
+    first unequal elements (for example, ``[1,2,x] <= [1,2,y]`` has the same
+    value as ``x <= y``).  If a corresponding element does not exist, the
+    shorter collection is ordered first (for example, ``[1,2] < [1,2,3]`` is
+    true).
+
+* Mappings (instances of :class:`dict`) compare equal if and only if they have
+  equal `(key, value)` pairs. Equality comparison of the keys and elements
+  enforces reflexivity.
+
+  Order comparisons (``<``, ``>``, ``<=``, and ``>=``) raise :exc:`TypeError`.
+
+* Sets (instances of :class:`set` or :class:`frozenset`) can be compared within
+  and across their types.
+
+  They define order
+  comparison operators to mean subset and superset tests.  Those relations do
+  not define total orderings (for example, the two sets ``{1,2}`` and ``{2,3}``
+  are not equal, nor subsets of one another, nor supersets of one
   another).  Accordingly, sets are not appropriate arguments for functions
-  which depend on total ordering.  For example, :func:`min`, :func:`max`, and
-  :func:`sorted` produce undefined results given a list of sets as inputs.
+  which depend on total ordering (for example, :func:`min`, :func:`max`, and
+  :func:`sorted` produce undefined results given a list of sets as inputs).
 
-* Most other objects of built-in types compare unequal unless they are the same
-  object; the choice whether one object is considered smaller or larger than
-  another one is made arbitrarily but consistently within one execution of a
-  program.
+  Comparison of sets enforces reflexivity of its elements.
 
-Comparison of objects of differing types depends on whether either of the
-types provide explicit support for the comparison.  Most numeric types can be
-compared with one another.  When cross-type comparison is not supported, the
-comparison method returns ``NotImplemented``.
+* Most other built-in types have no comparison methods implemented, so they
+  inherit the default comparison behavior.
 
+User-defined classes that customize their comparison behavior should follow
+some consistency rules, if possible:
+
+* Equality comparison should be reflexive.
+  In other words, identical objects should compare equal:
+
+    ``x is y`` implies ``x == y``
+
+* Comparison should be symmetric.
+  In other words, the following expressions should have the same result:
+
+    ``x == y`` and ``y == x``
+
+    ``x != y`` and ``y != x``
+
+    ``x < y`` and ``y > x``
+
+    ``x <= y`` and ``y >= x``
+
+* Comparison should be transitive.
+  The following (non-exhaustive) examples illustrate that:
+
+    ``x > y and y > z`` implies ``x > z``
+
+    ``x < y and y <= z`` implies ``x < z``
+
+* Inverse comparison should result in the boolean negation.
+  In other words, the following expressions should have the same result:
+
+    ``x == y`` and ``not x != y``
+
+    ``x < y`` and ``not x >= y`` (for total ordering)
+
+    ``x > y`` and ``not x <= y`` (for total ordering)
+
+  The last two expressions apply to totally ordered collections (e.g. to
+  sequences, but not to sets or mappings). See also the
+  :func:`~functools.total_ordering` decorator.
+
+Python does not enforce these consistency rules. In fact, the not-a-number
+values are an example for not following these rules.
+
+
+.. _in:
+.. _not in:
 .. _membership-test-details:
+
+Membership test operations
+--------------------------
 
 The operators :keyword:`in` and :keyword:`not in` test for membership.  ``x in
 s`` evaluates to true if *x* is a member of *s*, and false otherwise.  ``x not
@@ -1152,6 +1265,13 @@ The operator :keyword:`not in` is defined to have the inverse true value of
    operator: is
    operator: is not
    pair: identity; test
+
+
+.. _is:
+.. _is not:
+
+Identity comparisons
+--------------------
 
 The operators :keyword:`is` and :keyword:`is not` test for object identity: ``x
 is y`` is true if and only if *x* and *y* are the same object.  ``x is not y``
@@ -1379,12 +1499,24 @@ precedence and have a left-to-right chaining feature as described in the
    cases, Python returns the latter result, in order to preserve that
    ``divmod(x,y)[0] * y + x % y`` be very close to ``x``.
 
-.. [#] While comparisons between strings make sense at the byte level, they may
-   be counter-intuitive to users.  For example, the strings ``"\u00C7"`` and
-   ``"\u0043\u0327"`` compare differently, even though they both represent the
-   same unicode character (LATIN CAPITAL LETTER C WITH CEDILLA).  To compare
-   strings in a human recognizable way, compare using
-   :func:`unicodedata.normalize`.
+.. [#] The Unicode standard distinguishes between :dfn:`code points`
+   (e.g. U+0041) and :dfn:`abstract characters` (e.g. "LATIN CAPITAL LETTER A").
+   While most abstract characters in Unicode are only represented using one
+   code point, there is a number of abstract characters that can in addition be
+   represented using a sequence of more than one code point.  For example, the
+   abstract character "LATIN CAPITAL LETTER C WITH CEDILLA" can be represented
+   as a single :dfn:`precomposed character` at code position U+00C7, or as a
+   sequence of a :dfn:`base character` at code position U+0043 (LATIN CAPITAL
+   LETTER C), followed by a :dfn:`combining character` at code position U+0327
+   (COMBINING CEDILLA).
+
+   The comparison operators on strings compare at the level of Unicode code
+   points. This may be counter-intuitive to humans.  For example,
+   ``"\u00C7" == "\u0043\u0327"`` is ``False``, even though both strings
+   represent the same abstract character "LATIN CAPITAL LETTER C WITH CEDILLA".
+
+   To compare strings at the level of abstract characters (that is, in a way
+   intuitive to humans), use :func:`unicodedata.normalize`.
 
 .. [#] Due to automatic garbage-collection, free lists, and the dynamic nature of
    descriptors, you may notice seemingly unusual behaviour in certain uses of
