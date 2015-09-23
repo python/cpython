@@ -138,6 +138,17 @@ Core and Builtins
 Library
 -------
 
+- Issue #25092: Fix datetime.strftime() failure when errno was already set to
+  EINVAL.
+
+- Issue #23517: Fix rounding in fromtimestamp() and utcfromtimestamp() methods
+  of datetime.datetime: microseconds are now rounded to nearest with ties
+  going to nearest even integer (ROUND_HALF_EVEN), instead of being rounding
+  towards minus infinity (ROUND_FLOOR). It's important that these methods use
+  the same rounding mode than datetime.timedelta to keep the property:
+  (datetime(1970,1,1) + timedelta(seconds=t)) == datetime.utcfromtimestamp(t).
+  It also the rounding mode used by round(float) for example.
+
 - Issue #25155: Fix datetime.datetime.now() and datetime.datetime.utcnow() on
   Windows to support date after year 2038. It was a regression introduced in
   Python 3.5.0.
@@ -238,6 +249,19 @@ Build
 
 Windows
 -------
+
+- Issue #25102: Windows installer does not precompile for -O or -OO.
+
+- Issue #25081: Makes Back button in installer go back to upgrade page when
+  upgrading.
+
+- Issue #25091: Increases font size of the installer.
+
+- Issue #25126: Clarifies that the non-web installer will download some
+  components.
+
+- Issue #25213: Restores requestedExecutionLevel to manifest to disable
+  UAC virtualization.
 
 - Issue #25022: Removed very outdated PC/example_nt/ directory.
 

@@ -653,6 +653,9 @@ time_strftime(PyObject *self, PyObject *args)
             PyErr_NoMemory();
             break;
         }
+#if defined _MSC_VER && _MSC_VER >= 1400 && defined(__STDC_SECURE_LIB__)
+        errno = 0;
+#endif
         _Py_BEGIN_SUPPRESS_IPH
         buflen = format_time(outbuf, i, fmt, &buf);
         _Py_END_SUPPRESS_IPH
