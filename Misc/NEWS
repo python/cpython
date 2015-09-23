@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #19143: platform module now reads Windows version from kernel32.dll to
+  avoid compatibility shims.
+
 - Issue #23517: Fix rounding in fromtimestamp() and utcfromtimestamp() methods
   of datetime.datetime: microseconds are now rounded to nearest with ties
   going to nearest even integer (ROUND_HALF_EVEN), instead of being rounding
