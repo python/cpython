@@ -234,7 +234,7 @@ def copy_strip():
     with open(src, 'rb') as inn,\
          open(dst, 'wb') as out:
         for line in inn:
-            out.write(line.rstrip() + '\n')
+            out.write(line.rstrip() + b'\n')
     print('idle.html copied to help.html')
 
 def show_idlehelp(parent):
