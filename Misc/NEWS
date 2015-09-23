@@ -138,6 +138,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #25047: The XML encoding declaration written by Element Tree now
+  respects the letter case given by the user. This restores the ability to
+  write encoding names in uppercase like "UTF-8", which worked in Python 2.
+
 - Issue #19143: platform module now reads Windows version from kernel32.dll to
   avoid compatibility shims.
 
