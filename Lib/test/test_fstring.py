@@ -296,6 +296,9 @@ f'{a * x()}'"""
                              "f'{!x:a}'",
                              "f'{ !xr:}'",
                              "f'{ !xr:a}'",
+
+                             "f'{!}'",
+                             "f'{:}'",
                              ])
 
     def test_parens_in_expressions(self):
