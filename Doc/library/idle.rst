@@ -504,27 +504,28 @@ Command line usage
 
 ::
 
-   idle.py [-c command] [-d] [-e] [-s] [-t title] [arg] ...
+   idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
 
-   -c command  run this command
-   -d          enable debugger
-   -e          edit mode; arguments are files to be edited
-   -s          run $IDLESTARTUP or $PYTHONSTARTUP first
+   -c command  run command in the shell window
+   -d          enable debugger and open shell window
+   -e          open editor window
+   -h          print help message with legal combinatios and exit
+   -i          open shell window
+   -r file     run file in shell window
+   -s          run $IDLESTARTUP or $PYTHONSTARTUP first, in shell window
    -t title    set title of shell window
+   -           run stdin in shell (- must be last option before args)
 
 If there are arguments:
 
-#. If ``-e`` is used, arguments are files opened for editing and
-   ``sys.argv`` reflects the arguments passed to IDLE itself.
+* If ``-``, ``-c``, or ``r`` is used, all arguments are placed in
+  ``sys.argv[1:...]`` and ``sys.argv[0]`` is set to ``''``, ``'-c'``,
+  or ``'-r'``.  No editor window is opened, even if that is the default
+  set in the Options dialog.
 
-#. Otherwise, if ``-c`` is used, all arguments are placed in
-   ``sys.argv[1:...]``, with ``sys.argv[0]`` set to ``'-c'``.
+* Otherwise, arguments are files opened for editing and
+  ``sys.argv`` reflects the arguments passed to IDLE itself.
 
-#. Otherwise, if neither ``-e`` nor ``-c`` is used, the first
-   argument is a script which is executed with the remaining arguments in
-   ``sys.argv[1:...]``  and ``sys.argv[0]`` set to the script name.  If the
-   script name is '-', no script is executed but an interactive Python session
-   is started;    the arguments are still available in ``sys.argv``.
 
 Running without a subprocess
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
