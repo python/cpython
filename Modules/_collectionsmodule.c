@@ -843,13 +843,12 @@ deque_count(dequeobject *deque, PyObject *v)
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
     Py_ssize_t n = Py_SIZE(deque);
-    Py_ssize_t i;
     Py_ssize_t count = 0;
     size_t start_state = deque->state;
     PyObject *item;
     int cmp;
 
-    for (i=0 ; i<n ; i++) {
+    while (n--) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
@@ -883,12 +882,11 @@ deque_contains(dequeobject *deque, PyObject *v)
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
     Py_ssize_t n = Py_SIZE(deque);
-    Py_ssize_t i;
     size_t start_state = deque->state;
     PyObject *item;
     int cmp;
 
-    for (i=0 ; i<n ; i++) {
+    while (n--) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
