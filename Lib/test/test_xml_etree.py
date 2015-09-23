@@ -2396,14 +2396,21 @@ class IOTest(unittest.TestCase):
         elem = ET.Element("tag")
         elem.text = "abc"
         self.assertEqual(serialize(elem), '<tag>abc</tag>')
-        self.assertEqual(serialize(elem, encoding="utf-8"),
-                b'<tag>abc</tag>')
-        self.assertEqual(serialize(elem, encoding="us-ascii"),
-                b'<tag>abc</tag>')
+        for enc in ("utf-8", "us-ascii"):
+            with self.subTest(enc):
+                self.assertEqual(serialize(elem, encoding=enc),
+                        b'<tag>abc</tag>')
+                self.assertEqual(serialize(elem, encoding=enc.upper()),
+                        b'<tag>abc</tag>')
         for enc in ("iso-8859-1", "utf-16", "utf-32"):
-            self.assertEqual(serialize(elem, encoding=enc),
-                    ("<?xml version='1.0' encoding='%s'?>\n"
-                     "<tag>abc</tag>" % enc).encode(enc))
+            with self.subTest(enc):
+                self.assertEqual(serialize(elem, encoding=enc),
+                        ("<?xml version='1.0' encoding='%s'?>\n"
+                         "<tag>abc</tag>" % enc).encode(enc))
+                upper = enc.upper()
+                self.assertEqual(serialize(elem, encoding=upper),
+                        ("<?xml version='1.0' encoding='%s'?>\n"
+                         "<tag>abc</tag>" % upper).encode(enc))
 
         elem = ET.Element("tag")
         elem.text = "<&\"\'>"
