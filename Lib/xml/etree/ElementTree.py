@@ -752,14 +752,13 @@ class ElementTree:
                 encoding = "utf-8"
             else:
                 encoding = "us-ascii"
-        else:
-            encoding = encoding.lower()
-        with _get_writer(file_or_filename, encoding) as write:
+        enc_lower = encoding.lower()
+        with _get_writer(file_or_filename, enc_lower) as write:
             if method == "xml" and (xml_declaration or
                     (xml_declaration is None and
-                     encoding not in ("utf-8", "us-ascii", "unicode"))):
+                     enc_lower not in ("utf-8", "us-ascii", "unicode"))):
                 declared_encoding = encoding
-                if encoding == "unicode":
+                if enc_lower == "unicode":
                     # Retrieve the default encoding for the xml declaration
                     import locale
                     declared_encoding = locale.getpreferredencoding()
