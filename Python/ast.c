@@ -4007,13 +4007,14 @@ decode_unicode(struct compiling *c, const char *s, size_t len, const char *encod
    expression. This is to allow strings with embedded newlines, for
    example. */
 static expr_ty
-fstring_expression_compile(PyObject *str, Py_ssize_t expr_start,
-                           Py_ssize_t expr_end, PyArena *arena)
+fstring_compile_expr(PyObject *str, Py_ssize_t expr_start,
+                     Py_ssize_t expr_end, PyArena *arena)
 {
     PyCompilerFlags cf;
     mod_ty mod;
     char *utf_expr;
     Py_ssize_t i;
+    Py_UCS4 end_ch = -1;
     int all_whitespace;
     PyObject *sub = NULL;
 
@@ -4022,6 +4023,16 @@ fstring_expression_compile(PyObject *str, Py_ssize_t expr_start,
     int decref_sub = 0;
 
     assert(str);
+
+    assert(expr_start >= 0 && expr_start < PyUnicode_GET_LENGTH(str));
+    assert(expr_end >= 0 && expr_end < PyUnicode_GET_LENGTH(str));
+    assert(expr_end >= expr_start);
+
+    /* There has to be at least on character on each side of the
+       expression inside this str. This will have been caught before
+       we're called. */
+    assert(expr_start >= 1);
+    assert(expr_end <= PyUnicode_GET_LENGTH(str)-1);
 
     /* If the substring is all whitespace, it's an error. We need to
         catch this here, and not when we call PyParser_ASTFromString,
@@ -4049,10 +4060,17 @@ fstring_expression_compile(PyObject *str, Py_ssize_t expr_start,
         string directly. */
 
     if (expr_start-1 == 0 && expr_end+1 == PyUnicode_GET_LENGTH(str)) {
-        /* No need to actually remember these characters, because we
-           know they must be braces. */
+        /* If str is well formed, then the first and last chars must
+           be '{' and '}', respectively. But, if there's a syntax
+           error, for example f'{3!', then the last char won't be a
+           closing brace. So, remember the last character we read in
+           order for us to restore it. */
+        end_ch = PyUnicode_ReadChar(str, expr_end-expr_start+1);
+        assert(end_ch != (Py_UCS4)-1);
+
+        /* In all cases, however, start_ch must be '{'. */
         assert(PyUnicode_ReadChar(str, 0) == '{');
-        assert(PyUnicode_ReadChar(str, expr_end-expr_start+1) == '}');
+
         sub = str;
     } else {
         /* Create a substring object. It must be a new object, with
@@ -4064,21 +4082,23 @@ fstring_expression_compile(PyObject *str, Py_ssize_t expr_start,
         decref_sub = 1;      /* Remember to deallocate it on error. */
     }
 
+    /* Put () around the expression. */
     if (PyUnicode_WriteChar(sub, 0, '(') < 0 ||
         PyUnicode_WriteChar(sub, expr_end-expr_start+1, ')') < 0)
         goto error;
-
-    cf.cf_flags = PyCF_ONLY_AST;
 
     /* No need to free the memory returned here: it's managed by the
        string. */
     utf_expr = PyUnicode_AsUTF8(sub);
     if (!utf_expr)
         goto error;
+
+    cf.cf_flags = PyCF_ONLY_AST;
     mod = PyParser_ASTFromString(utf_expr, "<fstring>",
                                  Py_eval_input, &cf, arena);
     if (!mod)
         goto error;
+
     if (sub != str)
         /* Clear instead of decref in case we ever modify this code to change
            the error handling: this is safest because the XDECREF won't try
@@ -4089,9 +4109,10 @@ fstring_expression_compile(PyObject *str, Py_ssize_t expr_start,
         Py_CLEAR(sub);
     else {
         assert(!decref_sub);
+        assert(end_ch != (Py_UCS4)-1);
         /* Restore str, which we earlier modified directly. */
         if (PyUnicode_WriteChar(str, 0, '{') < 0 ||
-            PyUnicode_WriteChar(str, expr_end-expr_start+1, '}') < 0)
+            PyUnicode_WriteChar(str, expr_end-expr_start+1, end_ch) < 0)
             goto error;
     }
     return mod->v.Expression.body;
@@ -4100,6 +4121,18 @@ error:
     /* Only decref sub if it was the result of a call to SubString. */
     if (decref_sub)
         Py_XDECREF(sub);
+
+    if (end_ch != (Py_UCS4)-1) {
+        /* We only get here if we modified str. Make sure that's the
+           case: str will be equal to sub. */
+        if (str == sub) {
+            /* Don't check the error, because we've already set the
+               error state (that's why we're in 'error', after
+               all). */
+            PyUnicode_WriteChar(str, 0, '{');
+            PyUnicode_WriteChar(str, expr_end-expr_start+1, end_ch);
+        }
+    }
     return NULL;
 }
 
@@ -4331,9 +4364,18 @@ fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
         return -1;
     }
 
-    /* Check for a conversion char, if present. */
     if (*ofs >= PyUnicode_GET_LENGTH(str))
         goto unexpected_end_of_string;
+
+    /* Compile the expression as soon as possible, so we show errors
+       related to the expression before errors related to the
+       conversion or format_spec. */
+    simple_expression = fstring_compile_expr(str, expr_start, expr_end,
+                                             c->c_arena);
+    if (!simple_expression)
+        return -1;
+
+    /* Check for a conversion char, if present. */
     if (PyUnicode_READ(kind, data, *ofs) == '!') {
         *ofs += 1;
         if (*ofs >= PyUnicode_GET_LENGTH(str))
@@ -4373,12 +4415,6 @@ fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
     assert(*ofs < PyUnicode_GET_LENGTH(str));
     assert(PyUnicode_READ(kind, data, *ofs) == '}');
     *ofs += 1;
-
-    /* Compile the expression. */
-    simple_expression = fstring_expression_compile(str, expr_start, expr_end,
-                                                   c->c_arena);
-    if (!simple_expression)
-        return -1;
 
     /* And now create the FormattedValue node that represents this entire
        expression with the conversion and format spec. */
