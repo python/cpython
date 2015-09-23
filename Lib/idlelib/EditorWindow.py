@@ -72,11 +72,6 @@ def _find_module(fullname, path=None):
 class HelpDialog(object):
 
     def __init__(self):
-        import warnings as w
-        w.warn("EditorWindow.HelpDialog is no longer used by Idle.\n"
-               "It will be removed in 3.6 or later.\n"
-               "It has been replaced by private help.HelpWindow\n",
-               DeprecationWarning, stacklevel=2)
         self.parent = None      # parent of help window
         self.dlg = None         # the help window iteself
 
@@ -88,6 +83,11 @@ class HelpDialog(object):
             near - a Toplevel widget (e.g. EditorWindow or PyShell)
                    to use as a reference for placing the help window
         """
+        import warnings as w
+        w.warn("EditorWindow.HelpDialog is no longer used by Idle.\n"
+               "It will be removed in 3.6 or later.\n"
+               "It has been replaced by private help.HelpWindow\n",
+               DeprecationWarning, stacklevel=2)
         if self.dlg is None:
             self.show_dialog(parent)
         if near:
