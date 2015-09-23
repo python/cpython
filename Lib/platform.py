@@ -26,12 +26,14 @@
 #      Betancourt, Randall Hopper, Karl Putland, John Farrell, Greg
 #      Andruk, Just van Rossum, Thomas Heller, Mark R. Levinson, Mark
 #      Hammond, Bill Tutt, Hans Nowak, Uwe Zessin (OpenVMS support),
-#      Colin Kong, Trent Mick, Guido van Rossum, Anthony Baxter
+#      Colin Kong, Trent Mick, Guido van Rossum, Anthony Baxter, Steve
+#      Dower
 #
 #    History:
 #
 #    <see CVS and SVN checkin messages for history>
 #
+#    1.0.8 - changed Windows support to read version from kernel32.dll
 #    1.0.7 - added DEV_NULL
 #    1.0.6 - added linux_distribution()
 #    1.0.5 - fixed Java support to allow running the module on Jython
@@ -469,188 +471,138 @@ def _syscmd_ver(system='', release='', version='',
         version = _norm_version(version)
     return system, release, version
 
-def _win32_getvalue(key, name, default=''):
+_WIN32_CLIENT_RELEASES = {
+    (5, 0): "2000",
+    (5, 1): "XP",
+    # Strictly, 5.2 client is XP 64-bit, but platform.py historically
+    # has always called it 2003 Server
+    (5, 2): "2003Server",
+    (5, None): "post2003",
 
-    """ Read a value for name from the registry key.
+    (6, 0): "Vista",
+    (6, 1): "7",
+    (6, 2): "8",
+    (6, 3): "8.1",
+    (6, None): "post8.1",
 
-        In case this fails, default is returned.
+    (10, 0): "10",
+    (10, None): "post10",
+}
 
-    """
-    try:
-        # Use win32api if available
-        from win32api import RegQueryValueEx
-    except ImportError:
-        # On Python 2.0 and later, emulate using winreg
-        import winreg
-        RegQueryValueEx = winreg.QueryValueEx
-    try:
-        return RegQueryValueEx(key, name)
-    except:
-        return default
+# Server release name lookup will default to client names if necessary
+_WIN32_SERVER_RELEASES = {
+    (5, 2): "2003Server",
+
+    (6, 0): "2008Server",
+    (6, 1): "2008ServerR2",
+    (6, 2): "2012Server",
+    (6, 3): "2012ServerR2",
+    (6, None): "post2012ServerR2",
+}
+
+def _get_real_winver(maj, min, build):
+    if maj < 6 or (maj == 6 and min < 2):
+        return maj, min, build
+
+    from ctypes import (c_buffer, POINTER, byref, create_unicode_buffer,
+                        Structure, WinDLL)
+    from ctypes.wintypes import DWORD, HANDLE
+
+    class VS_FIXEDFILEINFO(Structure):
+        _fields_ = [
+            ("dwSignature", DWORD),
+            ("dwStrucVersion", DWORD),
+            ("dwFileVersionMS", DWORD),
+            ("dwFileVersionLS", DWORD),
+            ("dwProductVersionMS", DWORD),
+            ("dwProductVersionLS", DWORD),
+            ("dwFileFlagsMask", DWORD),
+            ("dwFileFlags", DWORD),
+            ("dwFileOS", DWORD),
+            ("dwFileType", DWORD),
+            ("dwFileSubtype", DWORD),
+            ("dwFileDateMS", DWORD),
+            ("dwFileDateLS", DWORD),
+        ]
+
+    kernel32 = WinDLL('kernel32')
+    version = WinDLL('version')
+
+    # We will immediately double the length up to MAX_PATH, but the
+    # path may be longer, so we retry until the returned string is
+    # shorter than our buffer.
+    name_len = actual_len = 130
+    while actual_len == name_len:
+        name_len *= 2
+        name = create_unicode_buffer(name_len)
+        actual_len = kernel32.GetModuleFileNameW(HANDLE(kernel32._handle),
+                                                 name, len(name))
+        if not actual_len:
+            return maj, min, build
+
+    size = version.GetFileVersionInfoSizeW(name, None)
+    if not size:
+        return maj, min, build
+
+    ver_block = c_buffer(size)
+    if (not version.GetFileVersionInfoW(name, None, size, ver_block) or
+        not ver_block):
+        return maj, min, build
+
+    pvi = POINTER(VS_FIXEDFILEINFO)()
+    if not version.VerQueryValueW(ver_block, "", byref(pvi), byref(DWORD())):
+        return maj, min, build
+
+    maj = pvi.contents.dwProductVersionMS >> 16
+    min = pvi.contents.dwProductVersionMS & 0xFFFF
+    build = pvi.contents.dwProductVersionLS >> 16
+
+    return maj, min, build
 
 def win32_ver(release='', version='', csd='', ptype=''):
-
-    """ Get additional version information from the Windows Registry
-        and return a tuple (version, csd, ptype) referring to version
-        number, CSD level (service pack), and OS type (multi/single
-        processor).
-
-        As a hint: ptype returns 'Uniprocessor Free' on single
-        processor NT machines and 'Multiprocessor Free' on multi
-        processor machines. The 'Free' refers to the OS version being
-        free of debugging code. It could also state 'Checked' which
-        means the OS version uses debugging code, i.e. code that
-        checks arguments, ranges, etc. (Thomas Heller).
-
-        Note: this function works best with Mark Hammond's win32
-        package installed, but also on Python 2.3 and later. It
-        obviously only runs on Win32 compatible platforms.
-
-    """
-    # XXX Is there any way to find out the processor type on WinXX ?
-    # XXX Is win32 available on Windows CE ?
-    #
-    # Adapted from code posted by Karl Putland to comp.lang.python.
-    #
-    # The mappings between reg. values and release names can be found
-    # here: http://msdn.microsoft.com/library/en-us/sysinfo/base/osversioninfo_str.asp
-
-    # Import the needed APIs
+    from sys import getwindowsversion
     try:
-        from win32api import RegQueryValueEx, RegOpenKeyEx, \
-             RegCloseKey, GetVersionEx
-        from win32con import HKEY_LOCAL_MACHINE, VER_PLATFORM_WIN32_NT, \
-             VER_PLATFORM_WIN32_WINDOWS, VER_NT_WORKSTATION
+        from winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
     except ImportError:
-        # Emulate the win32api module using Python APIs
+        from _winreg import OpenKeyEx, QueryValueEx, CloseKey, HKEY_LOCAL_MACHINE
+
+    winver = getwindowsversion()
+    maj, min, build = _get_real_winver(*winver[:3])
+    version = '{0}.{1}.{2}'.format(maj, min, build)
+
+    release = (_WIN32_CLIENT_RELEASES.get((maj, min)) or
+               _WIN32_CLIENT_RELEASES.get((maj, None)) or
+               release)
+
+    # getwindowsversion() reflect the compatibility mode Python is
+    # running under, and so the service pack value is only going to be
+    # valid if the versions match.
+    if winver[:2] == (maj, min):
         try:
-            sys.getwindowsversion
+            csd = 'SP{}'.format(winver.service_pack_major)
         except AttributeError:
-            # No emulation possible, so return the defaults...
-            return release, version, csd, ptype
-        else:
-            # Emulation using winreg (added in Python 2.0) and
-            # sys.getwindowsversion() (added in Python 2.3)
-            import winreg
-            GetVersionEx = sys.getwindowsversion
-            RegQueryValueEx = winreg.QueryValueEx
-            RegOpenKeyEx = winreg.OpenKeyEx
-            RegCloseKey = winreg.CloseKey
-            HKEY_LOCAL_MACHINE = winreg.HKEY_LOCAL_MACHINE
-            VER_PLATFORM_WIN32_WINDOWS = 1
-            VER_PLATFORM_WIN32_NT = 2
-            VER_NT_WORKSTATION = 1
-            VER_NT_SERVER = 3
-            REG_SZ = 1
+            if csd[:13] == 'Service Pack ':
+                csd = 'SP' + csd[13:]
 
-    # Find out the registry key and some general version infos
-    winver = GetVersionEx()
-    maj, min, buildno, plat, csd = winver
-    version = '%i.%i.%i' % (maj, min, buildno & 0xFFFF)
-    if hasattr(winver, "service_pack"):
-        if winver.service_pack != "":
-            csd = 'SP%s' % winver.service_pack_major
-    else:
-        if csd[:13] == 'Service Pack ':
-            csd = 'SP' + csd[13:]
+    # VER_NT_SERVER = 3
+    if getattr(winver, 'product_type', None) == 3:
+        release = (_WIN32_SERVER_RELEASES.get((maj, min)) or
+                   _WIN32_SERVER_RELEASES.get((maj, None)) or
+                   release)
 
-    if plat == VER_PLATFORM_WIN32_WINDOWS:
-        regkey = 'SOFTWARE\\Microsoft\\Windows\\CurrentVersion'
-        # Try to guess the release name
-        if maj == 4:
-            if min == 0:
-                release = '95'
-            elif min == 10:
-                release = '98'
-            elif min == 90:
-                release = 'Me'
-            else:
-                release = 'postMe'
-        elif maj == 5:
-            release = '2000'
-
-    elif plat == VER_PLATFORM_WIN32_NT:
-        regkey = 'SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion'
-        if maj <= 4:
-            release = 'NT'
-        elif maj == 5:
-            if min == 0:
-                release = '2000'
-            elif min == 1:
-                release = 'XP'
-            elif min == 2:
-                release = '2003Server'
-            else:
-                release = 'post2003'
-        elif maj == 6:
-            if hasattr(winver, "product_type"):
-                product_type = winver.product_type
-            else:
-                product_type = VER_NT_WORKSTATION
-                # Without an OSVERSIONINFOEX capable sys.getwindowsversion(),
-                # or help from the registry, we cannot properly identify
-                # non-workstation versions.
-                try:
-                    key = RegOpenKeyEx(HKEY_LOCAL_MACHINE, regkey)
-                    name, type = RegQueryValueEx(key, "ProductName")
-                    # Discard any type that isn't REG_SZ
-                    if type == REG_SZ and name.find("Server") != -1:
-                        product_type = VER_NT_SERVER
-                except OSError:
-                    # Use default of VER_NT_WORKSTATION
-                    pass
-
-            if min == 0:
-                if product_type == VER_NT_WORKSTATION:
-                    release = 'Vista'
-                else:
-                    release = '2008Server'
-            elif min == 1:
-                if product_type == VER_NT_WORKSTATION:
-                    release = '7'
-                else:
-                    release = '2008ServerR2'
-            elif min == 2:
-                if product_type == VER_NT_WORKSTATION:
-                    release = '8'
-                else:
-                    release = '2012Server'
-            else:
-                release = 'post2012Server'
-
-    else:
-        if not release:
-            # E.g. Win3.1 with win32s
-            release = '%i.%i' % (maj, min)
-        return release, version, csd, ptype
-
-    # Open the registry key
+    key = None
     try:
-        keyCurVer = RegOpenKeyEx(HKEY_LOCAL_MACHINE, regkey)
-        # Get a value to make sure the key exists...
-        RegQueryValueEx(keyCurVer, 'SystemRoot')
+        key = OpenKeyEx(HKEY_LOCAL_MACHINE,
+                        r'SOFTWARE\Microsoft\Windows NT\CurrentVersion')
+        ptype = QueryValueEx(key, 'CurrentType')[0]
     except:
-        return release, version, csd, ptype
+        pass
+    finally:
+        if key:
+            CloseKey(key)
 
-    # Parse values
-    #subversion = _win32_getvalue(keyCurVer,
-    #                            'SubVersionNumber',
-    #                            ('',1))[0]
-    #if subversion:
-    #   release = release + subversion # 95a, 95b, etc.
-    build = _win32_getvalue(keyCurVer,
-                            'CurrentBuildNumber',
-                            ('', 1))[0]
-    ptype = _win32_getvalue(keyCurVer,
-                           'CurrentType',
-                           (ptype, 1))[0]
-
-    # Normalize version
-    version = _norm_version(version, build)
-
-    # Close key
-    RegCloseKey(keyCurVer)
     return release, version, csd, ptype
+
 
 def _mac_ver_xml():
     fn = '/System/Library/CoreServices/SystemVersion.plist'
