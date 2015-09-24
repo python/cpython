@@ -6415,7 +6415,7 @@ unicode_encode_call_errorhandler(const char *errors,
 static PyObject *
 unicode_encode_ucs1(PyObject *unicode,
                     const char *errors,
-                    unsigned int limit)
+                    const Py_UCS4 limit)
 {
     /* input state */
     Py_ssize_t pos=0, size;
@@ -6449,12 +6449,12 @@ unicode_encode_ucs1(PyObject *unicode,
     ressize = size;
 
     while (pos < size) {
-        Py_UCS4 c = PyUnicode_READ(kind, data, pos);
+        Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
 
         /* can we encode this? */
-        if (c<limit) {
+        if (ch < limit) {
             /* no overflow check, because we know that the space is enough */
-            *str++ = (char)c;
+            *str++ = (char)ch;
             ++pos;
         }
         else {
@@ -6481,7 +6481,7 @@ unicode_encode_ucs1(PyObject *unicode,
             case _Py_ERROR_REPLACE:
                 while (collstart++ < collend)
                     *str++ = '?';
-                /* fall through */
+                /* fall through ignore error handler */
             case _Py_ERROR_IGNORE:
                 pos = collend;
                 break;
@@ -6491,8 +6491,9 @@ unicode_encode_ucs1(PyObject *unicode,
                 requiredsize = respos;
                 /* determine replacement size */
                 for (i = collstart; i < collend; ++i) {
-                    Py_UCS4 ch = PyUnicode_READ(kind, data, i);
                     Py_ssize_t incr;
+
+                    ch = PyUnicode_READ(kind, data, i);
                     if (ch < 10)
                         incr = 2+1+1;
                     else if (ch < 100)
@@ -6538,6 +6539,7 @@ unicode_encode_ucs1(PyObject *unicode,
                 if (repunicode == NULL || (PyUnicode_Check(repunicode) &&
                                            PyUnicode_READY(repunicode) == -1))
                     goto onError;
+
                 if (PyBytes_Check(repunicode)) {
                     /* Directly copy bytes result to output. */
                     repsize = PyBytes_Size(repunicode);
@@ -6561,6 +6563,7 @@ unicode_encode_ucs1(PyObject *unicode,
                     Py_DECREF(repunicode);
                     break;
                 }
+
                 /* need more space? (at least enough for what we
                    have+the replacement+the rest of the string, so
                    we won't have to check space for encodable characters) */
@@ -6583,17 +6586,18 @@ unicode_encode_ucs1(PyObject *unicode,
                     str = PyBytes_AS_STRING(res) + respos;
                     ressize = requiredsize;
                 }
+
                 /* check if there is anything unencodable in the replacement
                    and copy it to the output */
                 for (i = 0; repsize-->0; ++i, ++str) {
-                    c = PyUnicode_READ_CHAR(repunicode, i);
-                    if (c >= limit) {
+                    ch = PyUnicode_READ_CHAR(repunicode, i);
+                    if (ch >= limit) {
                         raise_encode_exception(&exc, encoding, unicode,
                                                pos, pos+1, reason);
                         Py_DECREF(repunicode);
                         goto onError;
                     }
-                    *str = (char)c;
+                    *str = (char)ch;
                 }
                 pos = newpos;
                 Py_DECREF(repunicode);
