@@ -216,43 +216,43 @@ class LongTest(test_int.IntLongCommonTests, unittest.TestCase):
         for n in xrange(2*SHIFT):
             p2 = 2L ** n
             eq(x << n >> n, x,
-                Frm("x << n >> n != x for x=%r, n=%r", (x, n)))
+                Frm("x << n >> n != x for x=%r, n=%r", x, n))
             eq(x // p2, x >> n,
-                Frm("x // p2 != x >> n for x=%r n=%r p2=%r", (x, n, p2)))
+                Frm("x // p2 != x >> n for x=%r n=%r p2=%r", x, n, p2))
             eq(x * p2, x << n,
-                Frm("x * p2 != x << n for x=%r n=%r p2=%r", (x, n, p2)))
+                Frm("x * p2 != x << n for x=%r n=%r p2=%r", x, n, p2))
             eq(x & -p2, x >> n << n,
-                Frm("not x & -p2 == x >> n << n for x=%r n=%r p2=%r", (x, n, p2)))
+                Frm("not x & -p2 == x >> n << n for x=%r n=%r p2=%r", x, n, p2))
             eq(x & -p2, x & ~(p2 - 1),
-                Frm("not x & -p2 == x & ~(p2 - 1) for x=%r n=%r p2=%r", (x, n, p2)))
+                Frm("not x & -p2 == x & ~(p2 - 1) for x=%r n=%r p2=%r", x, n, p2))
 
     def check_bitop_identities_2(self, x, y):
         eq = self.assertEqual
-        eq(x & y, y & x, Frm("x & y != y & x for x=%r, y=%r", (x, y)))
-        eq(x | y, y | x, Frm("x | y != y | x for x=%r, y=%r", (x, y)))
-        eq(x ^ y, y ^ x, Frm("x ^ y != y ^ x for x=%r, y=%r", (x, y)))
-        eq(x ^ y ^ x, y, Frm("x ^ y ^ x != y for x=%r, y=%r", (x, y)))
-        eq(x & y, ~(~x | ~y), Frm("x & y != ~(~x | ~y) for x=%r, y=%r", (x, y)))
-        eq(x | y, ~(~x & ~y), Frm("x | y != ~(~x & ~y) for x=%r, y=%r", (x, y)))
+        eq(x & y, y & x, Frm("x & y != y & x for x=%r, y=%r", x, y))
+        eq(x | y, y | x, Frm("x | y != y | x for x=%r, y=%r", x, y))
+        eq(x ^ y, y ^ x, Frm("x ^ y != y ^ x for x=%r, y=%r", x, y))
+        eq(x ^ y ^ x, y, Frm("x ^ y ^ x != y for x=%r, y=%r", x, y))
+        eq(x & y, ~(~x | ~y), Frm("x & y != ~(~x | ~y) for x=%r, y=%r", x, y))
+        eq(x | y, ~(~x & ~y), Frm("x | y != ~(~x & ~y) for x=%r, y=%r", x, y))
         eq(x ^ y, (x | y) & ~(x & y),
-             Frm("x ^ y != (x | y) & ~(x & y) for x=%r, y=%r", (x, y)))
+             Frm("x ^ y != (x | y) & ~(x & y) for x=%r, y=%r", x, y))
         eq(x ^ y, (x & ~y) | (~x & y),
-             Frm("x ^ y == (x & ~y) | (~x & y) for x=%r, y=%r", (x, y)))
+             Frm("x ^ y == (x & ~y) | (~x & y) for x=%r, y=%r", x, y))
         eq(x ^ y, (x | y) & (~x | ~y),
-             Frm("x ^ y == (x | y) & (~x | ~y) for x=%r, y=%r", (x, y)))
+             Frm("x ^ y == (x | y) & (~x | ~y) for x=%r, y=%r", x, y))
 
     def check_bitop_identities_3(self, x, y, z):
         eq = self.assertEqual
         eq((x & y) & z, x & (y & z),
-             Frm("(x & y) & z != x & (y & z) for x=%r, y=%r, z=%r", (x, y, z)))
+             Frm("(x & y) & z != x & (y & z) for x=%r, y=%r, z=%r", x, y, z))
         eq((x | y) | z, x | (y | z),
-             Frm("(x | y) | z != x | (y | z) for x=%r, y=%r, z=%r", (x, y, z)))
+             Frm("(x | y) | z != x | (y | z) for x=%r, y=%r, z=%r", x, y, z))
         eq((x ^ y) ^ z, x ^ (y ^ z),
-             Frm("(x ^ y) ^ z != x ^ (y ^ z) for x=%r, y=%r, z=%r", (x, y, z)))
+             Frm("(x ^ y) ^ z != x ^ (y ^ z) for x=%r, y=%r, z=%r", x, y, z))
         eq(x & (y | z), (x & y) | (x & z),
-             Frm("x & (y | z) != (x & y) | (x & z) for x=%r, y=%r, z=%r", (x, y, z)))
+             Frm("x & (y | z) != (x & y) | (x & z) for x=%r, y=%r, z=%r", x, y, z))
         eq(x | (y & z), (x | y) & (x | z),
-             Frm("x | (y & z) != (x | y) & (x | z) for x=%r, y=%r, z=%r", (x, y, z)))
+             Frm("x | (y & z) != (x | y) & (x | z) for x=%r, y=%r, z=%r", x, y, z))
 
     def test_bitop_identities(self):
         for x in special:
