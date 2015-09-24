@@ -48,7 +48,8 @@ class HelpParser(HTMLParser):
     def __init__(self, text):
         HTMLParser.__init__(self, convert_charrefs=True)
         self.text = text         # text widget we're rendering into
-        self.tags = ''           # current text tags to apply
+        self.tags = ''           # current block level text tags to apply
+        self.chartags = ''       # current character level text tags
         self.show = False        # used so we exclude page navigation
         self.hdrlink = False     # used so we don't show header links
         self.level = 0           # indentation level
@@ -78,11 +79,11 @@ class HelpParser(HTMLParser):
         elif tag == 'p' and class_ != 'first':
             s = '\n\n'
         elif tag == 'span' and class_ == 'pre':
-            self.tags = 'pre'
+            self.chartags = 'pre'
         elif tag == 'span' and class_ == 'versionmodified':
-            self.tags = 'em'
+            self.chartags = 'em'
         elif tag == 'em':
-            self.tags = 'em'
+            self.chartags = 'em'
         elif tag in ['ul', 'ol']:
             if class_.find('simple') != -1:
                 s = '\n'
@@ -120,16 +121,18 @@ class HelpParser(HTMLParser):
                 self.text.insert('end', '\n\n')
             self.tags = tag
         if self.show:
-            self.text.insert('end', s, self.tags)
+            self.text.insert('end', s, (self.tags, self.chartags))
 
     def handle_endtag(self, tag):
         "Handle endtags in help.html."
-        if tag in ['h1', 'h2', 'h3', 'span', 'em']:
+        if tag in ['h1', 'h2', 'h3']:
             self.indent(0)  # clear tag, reset indent
             if self.show and tag in ['h1', 'h2', 'h3']:
                 title = self.data
                 self.contents.append(('toc'+str(self.tocid), title))
                 self.tocid += 1
+        elif tag in ['span', 'em']:
+            self.chartags = ''
         elif tag == 'a':
             self.hdrlink = False
         elif tag == 'pre':
@@ -148,7 +151,7 @@ class HelpParser(HTMLParser):
                 if d[0:len(self.hprefix)] == self.hprefix:
                     d = d[len(self.hprefix):].strip()
                 self.data += d
-            self.text.insert('end', d, self.tags)
+            self.text.insert('end', d, (self.tags, self.chartags))
 
 
 class HelpText(Text):
@@ -165,7 +168,7 @@ class HelpText(Text):
         self.tag_configure('h1', font=(normalfont, 20, 'bold'))
         self.tag_configure('h2', font=(normalfont, 18, 'bold'))
         self.tag_configure('h3', font=(normalfont, 15, 'bold'))
-        self.tag_configure('pre', font=(fixedfont, 12))
+        self.tag_configure('pre', font=(fixedfont, 12), background='#f6f6ff')
         self.tag_configure('preblock', font=(fixedfont, 10), lmargin1=25,
                 borderwidth=1, relief='solid', background='#eeffcc')
         self.tag_configure('l1', lmargin1=25, lmargin2=25)
