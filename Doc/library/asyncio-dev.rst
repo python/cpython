@@ -14,14 +14,14 @@ This page lists common traps and explains how to avoid them.
 Debug mode of asyncio
 ---------------------
 
-The implementation of :mod:`asyncio` module has been written for performances.
-To development with asyncio, it's required to enable the debug checks to ease
-the development of asynchronous code.
+The implementation of :mod:`asyncio` has been written for performance.
+In order to ease the development of asynchronous code, you may wish to
+enable *debug mode*.
 
-Setup an application to enable all debug checks:
+To enable all debug checks for an application:
 
 * Enable the asyncio debug mode globally by setting the environment variable
-  :envvar:`PYTHONASYNCIODEBUG` to ``1``
+  :envvar:`PYTHONASYNCIODEBUG` to ``1``, or by calling :meth:`BaseEventLoop.set_debug`.
 * Set the log level of the :ref:`asyncio logger <asyncio-logger>` to
   :py:data:`logging.DEBUG`. For example, call
   ``logging.basicConfig(level=logging.DEBUG)`` at startup.
