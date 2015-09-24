@@ -16,7 +16,7 @@ IDLE has the following features:
 
 * coded in 100% pure Python, using the :mod:`tkinter` GUI toolkit
 
-* cross-platform: works on Windows, Unix, and Mac OS X
+* cross-platform: works mostly the same on Windows, Unix, and Mac OS X
 
 * Python shell window (interactive interpreter) with colorizing
   of code input, output, and error messages
@@ -492,8 +492,8 @@ Shell colors:
       black
 
 
-Startup
--------
+Startup and code execution
+--------------------------
 
 Upon startup with the ``-s`` option, IDLE will execute the file referenced by
 the environment variables :envvar:`IDLESTARTUP` or :envvar:`PYTHONSTARTUP`.
@@ -538,10 +538,27 @@ If there are arguments:
   ``sys.argv`` reflects the arguments passed to IDLE itself.
 
 
+IDLE-console differences
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+As much as possible, the result of executing Python code with IDLE is the
+same as executing the same code in a console window.  However, the different
+interface and operation occasionally affects results.
+
+For instance, IDLE normally executes user code in a separate process from
+the IDLE GUI itself.  The IDLE versions of sys.stdin, .stdout, and .stderr in the
+execution process get input from and send output to the GUI process,
+which keeps control of the keyboard and screen.  This is normally transparent,
+but code that access these object will see different attribute values.
+Also, functions that directly access the keyboard and screen will not work.
+
+With IDLE's Shell, one enters, edits, and recalls complete statements.
+Some consoles only work with a single physical line at a time.
+
 Running without a subprocess
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-By default, Idle executes user code in a separate subprocess via a socket,
+By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
 externally visible and no data is sent to or received from the Internet.
 If firewall software complains anyway, you can ignore it.
