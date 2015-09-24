@@ -4008,7 +4008,8 @@ decode_unicode(struct compiling *c, const char *s, size_t len, const char *encod
    example. */
 static expr_ty
 fstring_compile_expr(PyObject *str, Py_ssize_t expr_start,
-                     Py_ssize_t expr_end, PyArena *arena)
+                     Py_ssize_t expr_end, struct compiling *c, const node *n)
+
 {
     PyCompilerFlags cf;
     mod_ty mod;
@@ -4048,8 +4049,7 @@ fstring_compile_expr(PyObject *str, Py_ssize_t expr_start,
         }
     }
     if (all_whitespace) {
-        PyErr_SetString(PyExc_SyntaxError, "f-string: empty expression "
-                                           "not allowed");
+        ast_error(c, n, "f-string: empty expression not allowed");
         goto error;
     }
 
@@ -4095,7 +4095,7 @@ fstring_compile_expr(PyObject *str, Py_ssize_t expr_start,
 
     cf.cf_flags = PyCF_ONLY_AST;
     mod = PyParser_ASTFromString(utf_expr, "<fstring>",
-                                 Py_eval_input, &cf, arena);
+                                 Py_eval_input, &cf, c->c_arena);
     if (!mod)
         goto error;
 
@@ -4370,8 +4370,7 @@ fstring_find_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
     /* Compile the expression as soon as possible, so we show errors
        related to the expression before errors related to the
        conversion or format_spec. */
-    simple_expression = fstring_compile_expr(str, expr_start, expr_end,
-                                             c->c_arena);
+    simple_expression = fstring_compile_expr(str, expr_start, expr_end, c, n);
     if (!simple_expression)
         return -1;
 
