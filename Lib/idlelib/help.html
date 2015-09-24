@@ -223,7 +223,12 @@ there is a syntax error, the approximate location is indicated in the
 Editor window.</dd>
 <dt>Run Module</dt>
 <dd>Do Check Module (above).  If no error, restart the shell to clean the
-environment, then execute the module.</dd>
+environment, then execute the module.  Output is displayed in the Shell
+window.  Note that output requires use of <tt class="docutils literal"><span class="pre">print</span></tt> or <tt class="docutils literal"><span class="pre">write</span></tt>.
+When execution is complete, the Shell retains focus and displays a prompt.
+At this point, one may interactively explore the result of execution.
+This is similar to executing a file with <tt class="docutils literal"><span class="pre">python</span> <span class="pre">-i</span> <span class="pre">file</span></tt> at a command
+line.</dd>
 </dl>
 </div>
 <div class="section" id="shell-menu-shell-window-only">
@@ -676,7 +681,7 @@ are currently:</p>
     The Python Software Foundation is a non-profit corporation.
     <a href="https://www.python.org/psf/donations/">Please donate.</a>
     <br />
-    Last updated on Sep 23, 2015.
+    Last updated on Sep 24, 2015.
     <a href="../bugs.html">Found a bug</a>?
     <br />
     Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
