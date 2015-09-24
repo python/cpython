@@ -8,7 +8,7 @@ IDLE
    single: Python Editor
    single: Integrated Development Environment
 
-.. moduleauthor:: Guido van Rossum <guido@Python.org>
+.. moduleauthor:: Guido van Rossum <guido@python.org>
 
 IDLE is the Python IDE built with the :mod:`tkinter` GUI toolkit.
 
@@ -18,13 +18,19 @@ IDLE has the following features:
 
 * cross-platform: works on Windows, Unix, and Mac OS X
 
+* Python shell window (interactive interpreter) with colorizing
+  of code input, output, and error messages
+
 * multi-window text editor with multiple undo, Python colorizing,
-  smart indent, call tips, and many other features
+  smart indent, call tips, auto completion, and other features
 
-* Python shell window (a.k.a. interactive interpreter)
+* search within any window, replace within editor windows, and search
+  through multiple files (grep)
 
-* debugger (not complete, but you can set breakpoints, view and step)
+* debugger with persistent breakpoints, stepping, and viewing
+  of global and local namespaces
 
+* configuration, browsers, and other dialogs
 
 Menus
 -----
@@ -529,6 +535,17 @@ If there are arguments:
 
 Running without a subprocess
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, Idle executes user code in a separate subprocess via a socket,
+which uses the internal loopback interface.  This connection is not
+externally visible and no data is sent to or received from the Internet.
+If firewall software complains anyway, you can ignore it.
+
+If the attempt to make the socket connection fails, Idle will notify you.
+Such failures are sometimes transient, but if persistent, the problem
+may be either a firewall blocking the connecton or misconfiguration of
+a particular system.  Until the problem is fixed, one can run Idle with
+the -n command line switch.
 
 If IDLE is started with the -n command line switch it will run in a
 single process and will not create the subprocess which runs the RPC
