@@ -852,10 +852,9 @@ deque_count(dequeobject *deque, PyObject *v)
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
-        if (cmp > 0)
-            count++;
-        else if (cmp < 0)
+        if (cmp < 0)
             return NULL;
+        count += cmp;
 
         if (start_state != deque->state) {
             PyErr_SetString(PyExc_RuntimeError,
