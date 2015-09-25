@@ -7,15 +7,6 @@ import random
 import math
 import array
 
-# Used for lazy formatting of failure messages
-class Frm(object):
-    def __init__(self, format, *args):
-        self.format = format
-        self.args = args
-
-    def __str__(self):
-        return self.format % self.args
-
 # SHIFT should match the value in longintrepr.h for best testing.
 SHIFT = sys.int_info.bits_per_digit
 BASE = 2 ** SHIFT
@@ -163,17 +154,18 @@ class LongTest(unittest.TestCase):
 
     def check_division(self, x, y):
         eq = self.assertEqual
-        q, r = divmod(x, y)
-        q2, r2 = x//y, x%y
-        pab, pba = x*y, y*x
-        eq(pab, pba, Frm("multiplication does not commute for %r and %r", x, y))
-        eq(q, q2, Frm("divmod returns different quotient than / for %r and %r", x, y))
-        eq(r, r2, Frm("divmod returns different mod than %% for %r and %r", x, y))
-        eq(x, q*y + r, Frm("x != q*y + r after divmod on x=%r, y=%r", x, y))
-        if y > 0:
-            self.assertTrue(0 <= r < y, Frm("bad mod from divmod on %r and %r", x, y))
-        else:
-            self.assertTrue(y < r <= 0, Frm("bad mod from divmod on %r and %r", x, y))
+        with self.subTest(x=x, y=y):
+            q, r = divmod(x, y)
+            q2, r2 = x//y, x%y
+            pab, pba = x*y, y*x
+            eq(pab, pba, "multiplication does not commute")
+            eq(q, q2, "divmod returns different quotient than /")
+            eq(r, r2, "divmod returns different mod than %")
+            eq(x, q*y + r, "x != q*y + r after divmod")
+            if y > 0:
+                self.assertTrue(0 <= r < y, "bad mod from divmod")
+            else:
+                self.assertTrue(y < r <= 0, "bad mod from divmod")
 
     def test_division(self):
         digits = list(range(1, MAXDIGITS+1)) + list(range(KARATSUBA_CUTOFF,
@@ -228,72 +220,63 @@ class LongTest(unittest.TestCase):
             for bbits in bits:
                 if bbits < abits:
                     continue
-                b = (1 << bbits) - 1
-                x = a * b
-                y = ((1 << (abits + bbits)) -
-                     (1 << abits) -
-                     (1 << bbits) +
-                     1)
-                self.assertEqual(x, y,
-                    Frm("bad result for a*b: a=%r, b=%r, x=%r, y=%r", a, b, x, y))
+                with self.subTest(abits=abits, bbits=bbits):
+                    b = (1 << bbits) - 1
+                    x = a * b
+                    y = ((1 << (abits + bbits)) -
+                         (1 << abits) -
+                         (1 << bbits) +
+                         1)
+                    self.assertEqual(x, y)
 
     def check_bitop_identities_1(self, x):
         eq = self.assertEqual
-        eq(x & 0, 0, Frm("x & 0 != 0 for x=%r", x))
-        eq(x | 0, x, Frm("x | 0 != x for x=%r", x))
-        eq(x ^ 0, x, Frm("x ^ 0 != x for x=%r", x))
-        eq(x & -1, x, Frm("x & -1 != x for x=%r", x))
-        eq(x | -1, -1, Frm("x | -1 != -1 for x=%r", x))
-        eq(x ^ -1, ~x, Frm("x ^ -1 != ~x for x=%r", x))
-        eq(x, ~~x, Frm("x != ~~x for x=%r", x))
-        eq(x & x, x, Frm("x & x != x for x=%r", x))
-        eq(x | x, x, Frm("x | x != x for x=%r", x))
-        eq(x ^ x, 0, Frm("x ^ x != 0 for x=%r", x))
-        eq(x & ~x, 0, Frm("x & ~x != 0 for x=%r", x))
-        eq(x | ~x, -1, Frm("x | ~x != -1 for x=%r", x))
-        eq(x ^ ~x, -1, Frm("x ^ ~x != -1 for x=%r", x))
-        eq(-x, 1 + ~x, Frm("not -x == 1 + ~x for x=%r", x))
-        eq(-x, ~(x-1), Frm("not -x == ~(x-1) forx =%r", x))
+        with self.subTest(x=x):
+            eq(x & 0, 0)
+            eq(x | 0, x)
+            eq(x ^ 0, x)
+            eq(x & -1, x)
+            eq(x | -1, -1)
+            eq(x ^ -1, ~x)
+            eq(x, ~~x)
+            eq(x & x, x)
+            eq(x | x, x)
+            eq(x ^ x, 0)
+            eq(x & ~x, 0)
+            eq(x | ~x, -1)
+            eq(x ^ ~x, -1)
+            eq(-x, 1 + ~x)
+            eq(-x, ~(x-1))
         for n in range(2*SHIFT):
             p2 = 2 ** n
-            eq(x << n >> n, x,
-                Frm("x << n >> n != x for x=%r, n=%r", (x, n)))
-            eq(x // p2, x >> n,
-                Frm("x // p2 != x >> n for x=%r n=%r p2=%r", (x, n, p2)))
-            eq(x * p2, x << n,
-                Frm("x * p2 != x << n for x=%r n=%r p2=%r", (x, n, p2)))
-            eq(x & -p2, x >> n << n,
-                Frm("not x & -p2 == x >> n << n for x=%r n=%r p2=%r", (x, n, p2)))
-            eq(x & -p2, x & ~(p2 - 1),
-                Frm("not x & -p2 == x & ~(p2 - 1) for x=%r n=%r p2=%r", (x, n, p2)))
+            with self.subTest(x=x, n=n, p2=p2):
+                eq(x << n >> n, x)
+                eq(x // p2, x >> n)
+                eq(x * p2, x << n)
+                eq(x & -p2, x >> n << n)
+                eq(x & -p2, x & ~(p2 - 1))
 
     def check_bitop_identities_2(self, x, y):
         eq = self.assertEqual
-        eq(x & y, y & x, Frm("x & y != y & x for x=%r, y=%r", (x, y)))
-        eq(x | y, y | x, Frm("x | y != y | x for x=%r, y=%r", (x, y)))
-        eq(x ^ y, y ^ x, Frm("x ^ y != y ^ x for x=%r, y=%r", (x, y)))
-        eq(x ^ y ^ x, y, Frm("x ^ y ^ x != y for x=%r, y=%r", (x, y)))
-        eq(x & y, ~(~x | ~y), Frm("x & y != ~(~x | ~y) for x=%r, y=%r", (x, y)))
-        eq(x | y, ~(~x & ~y), Frm("x | y != ~(~x & ~y) for x=%r, y=%r", (x, y)))
-        eq(x ^ y, (x | y) & ~(x & y),
-             Frm("x ^ y != (x | y) & ~(x & y) for x=%r, y=%r", (x, y)))
-        eq(x ^ y, (x & ~y) | (~x & y),
-             Frm("x ^ y == (x & ~y) | (~x & y) for x=%r, y=%r", (x, y)))
-        eq(x ^ y, (x | y) & (~x | ~y),
-             Frm("x ^ y == (x | y) & (~x | ~y) for x=%r, y=%r", (x, y)))
+        with self.subTest(x=x, y=y):
+            eq(x & y, y & x)
+            eq(x | y, y | x)
+            eq(x ^ y, y ^ x)
+            eq(x ^ y ^ x, y)
+            eq(x & y, ~(~x | ~y))
+            eq(x | y, ~(~x & ~y))
+            eq(x ^ y, (x | y) & ~(x & y))
+            eq(x ^ y, (x & ~y) | (~x & y))
+            eq(x ^ y, (x | y) & (~x | ~y))
 
     def check_bitop_identities_3(self, x, y, z):
         eq = self.assertEqual
-        eq((x & y) & z, x & (y & z),
-             Frm("(x & y) & z != x & (y & z) for x=%r, y=%r, z=%r", (x, y, z)))
-        eq((x | y) | z, x | (y | z),
-             Frm("(x | y) | z != x | (y | z) for x=%r, y=%r, z=%r", (x, y, z)))
-        eq((x ^ y) ^ z, x ^ (y ^ z),
-             Frm("(x ^ y) ^ z != x ^ (y ^ z) for x=%r, y=%r, z=%r", (x, y, z)))
-        eq(x & (y | z), (x & y) | (x & z),
-             Frm("x & (y | z) != (x & y) | (x & z) for x=%r, y=%r, z=%r", (x, y, z)))
-        eq(x | (y & z), (x | y) & (x | z),
-             Frm("x | (y & z) != (x | y) & (x | z) for x=%r, y=%r, z=%r", (x, y, z)))
+        with self.subTest(x=x, y=y, z=z):
+            eq((x & y) & z, x & (y & z))
+            eq((x | y) | z, x | (y | z))
+            eq((x ^ y) ^ z, x ^ (y ^ z))
+            eq(x & (y | z), (x & y) | (x & z))
+            eq(x | (y & z), (x | y) & (x | z))
 
     def test_bitop_identities(self):
         for x in special:
@@ -324,11 +307,11 @@ class LongTest(unittest.TestCase):
     def check_format_1(self, x):
         for base, mapper in (2, bin), (8, oct), (10, str), (10, repr), (16, hex):
             got = mapper(x)
-            expected = self.slow_format(x, base)
-            msg = Frm("%s returned %r but expected %r for %r",
-                mapper.__name__, got, expected, x)
-            self.assertEqual(got, expected, msg)
-            self.assertEqual(int(got, 0), x, Frm('int("%s", 0) != %r', got, x))
+            with self.subTest(x=x, mapper=mapper.__name__):
+                expected = self.slow_format(x, base)
+                self.assertEqual(got, expected)
+            with self.subTest(got=got):
+                self.assertEqual(int(got, 0), x)
 
     def test_format(self):
         for x in special:
@@ -627,14 +610,15 @@ class LongTest(unittest.TestCase):
             for y in cases:
                 Ry = Rat(y)
                 Rcmp = (Rx > Ry) - (Rx < Ry)
-                xycmp = (x > y) - (x < y)
-                eq(Rcmp, xycmp, Frm("%r %r %d %d", x, y, Rcmp, xycmp))
-                eq(x == y, Rcmp == 0, Frm("%r == %r %d", x, y, Rcmp))
-                eq(x != y, Rcmp != 0, Frm("%r != %r %d", x, y, Rcmp))
-                eq(x < y, Rcmp < 0, Frm("%r < %r %d", x, y, Rcmp))
-                eq(x <= y, Rcmp <= 0, Frm("%r <= %r %d", x, y, Rcmp))
-                eq(x > y, Rcmp > 0, Frm("%r > %r %d", x, y, Rcmp))
-                eq(x >= y, Rcmp >= 0, Frm("%r >= %r %d", x, y, Rcmp))
+                with self.subTest(x=x, y=y, Rcmp=Rcmp):
+                    xycmp = (x > y) - (x < y)
+                    eq(Rcmp, xycmp)
+                    eq(x == y, Rcmp == 0)
+                    eq(x != y, Rcmp != 0)
+                    eq(x < y, Rcmp < 0)
+                    eq(x <= y, Rcmp <= 0)
+                    eq(x > y, Rcmp > 0)
+                    eq(x >= y, Rcmp >= 0)
 
     def test__format__(self):
         self.assertEqual(format(123456789, 'd'), '123456789')
