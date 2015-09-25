@@ -360,14 +360,6 @@ def _calc_mode(path):
     return mode
 
 
-def _verbose_message(message, *args, verbosity=1):
-    """Print the message to stderr if -v/PYTHONVERBOSE is turned on."""
-    if sys.flags.verbose >= verbosity:
-        if not message.startswith(('#', 'import ')):
-            message = '# ' + message
-        print(message.format(*args), file=sys.stderr)
-
-
 def _check_name(method):
     """Decorator to verify that the module being requested matches the one the
     loader can handle.
@@ -437,15 +429,15 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
     raw_size = data[8:12]
     if magic != MAGIC_NUMBER:
         message = 'bad magic number in {!r}: {!r}'.format(name, magic)
-        _verbose_message(message)
+        _bootstrap._verbose_message(message)
         raise ImportError(message, **exc_details)
     elif len(raw_timestamp) != 4:
         message = 'reached EOF while reading timestamp in {!r}'.format(name)
-        _verbose_message(message)
+        _bootstrap._verbose_message(message)
         raise EOFError(message)
     elif len(raw_size) != 4:
         message = 'reached EOF while reading size of source in {!r}'.format(name)
-        _verbose_message(message)
+        _bootstrap._verbose_message(message)
         raise EOFError(message)
     if source_stats is not None:
         try:
@@ -455,7 +447,7 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
         else:
             if _r_long(raw_timestamp) != source_mtime:
                 message = 'bytecode is stale for {!r}'.format(name)
-                _verbose_message(message)
+                _bootstrap._verbose_message(message)
                 raise ImportError(message, **exc_details)
         try:
             source_size = source_stats['size'] & 0xFFFFFFFF
@@ -472,7 +464,7 @@ def _compile_bytecode(data, name=None, bytecode_path=None, source_path=None):
     """Compile bytecode as returned by _validate_bytecode_header()."""
     code = marshal.loads(data)
     if isinstance(code, _code_type):
-        _verbose_message('code object from {!r}', bytecode_path)
+        _bootstrap._verbose_message('code object from {!r}', bytecode_path)
         if source_path is not None:
             _imp._fix_co_filename(code, source_path)
         return code
@@ -755,21 +747,21 @@ class SourceLoader(_LoaderBasics):
                     except (ImportError, EOFError):
                         pass
                     else:
-                        _verbose_message('{} matches {}', bytecode_path,
-                                        source_path)
+                        _bootstrap._verbose_message('{} matches {}', bytecode_path,
+                                                    source_path)
                         return _compile_bytecode(bytes_data, name=fullname,
                                                  bytecode_path=bytecode_path,
                                                  source_path=source_path)
         source_bytes = self.get_data(source_path)
         code_object = self.source_to_code(source_bytes, source_path)
-        _verbose_message('code object from {}', source_path)
+        _bootstrap._verbose_message('code object from {}', source_path)
         if (not sys.dont_write_bytecode and bytecode_path is not None and
                 source_mtime is not None):
             data = _code_to_bytecode(code_object, source_mtime,
                     len(source_bytes))
             try:
                 self._cache_bytecode(source_path, bytecode_path, data)
-                _verbose_message('wrote {!r}', bytecode_path)
+                _bootstrap._verbose_message('wrote {!r}', bytecode_path)
             except NotImplementedError:
                 pass
         return code_object
@@ -849,14 +841,16 @@ class SourceFileLoader(FileLoader, SourceLoader):
             except OSError as exc:
                 # Could be a permission error, read-only filesystem: just forget
                 # about writing the data.
-                _verbose_message('could not create {!r}: {!r}', parent, exc)
+                _bootstrap._verbose_message('could not create {!r}: {!r}',
+                                            parent, exc)
                 return
         try:
             _write_atomic(path, data, _mode)
-            _verbose_message('created {!r}', path)
+            _bootstrap._verbose_message('created {!r}', path)
         except OSError as exc:
             # Same as above: just don't write the bytecode.
-            _verbose_message('could not create {!r}: {!r}', path, exc)
+            _bootstrap._verbose_message('could not create {!r}: {!r}', path,
+                                        exc)
 
 
 class SourcelessFileLoader(FileLoader, _LoaderBasics):
@@ -901,14 +895,14 @@ class ExtensionFileLoader(FileLoader, _LoaderBasics):
         """Create an unitialized extension module"""
         module = _bootstrap._call_with_frames_removed(
             _imp.create_dynamic, spec)
-        _verbose_message('extension module {!r} loaded from {!r}',
+        _bootstrap._verbose_message('extension module {!r} loaded from {!r}',
                          spec.name, self.path)
         return module
 
     def exec_module(self, module):
         """Initialize an extension module"""
         _bootstrap._call_with_frames_removed(_imp.exec_dynamic, module)
-        _verbose_message('extension module {!r} executed from {!r}',
+        _bootstrap._verbose_message('extension module {!r} executed from {!r}',
                          self.name, self.path)
 
     def is_package(self, fullname):
@@ -1023,7 +1017,8 @@ class _NamespaceLoader:
 
         """
         # The import system never calls this method.
-        _verbose_message('namespace module loaded with path {!r}', self._path)
+        _bootstrap._verbose_message('namespace module loaded with path {!r}',
+                                    self._path)
         return _bootstrap._load_module_shim(self, fullname)
 
 
@@ -1243,12 +1238,13 @@ class FileFinder:
         # Check for a file w/ a proper suffix exists.
         for suffix, loader_class in self._loaders:
             full_path = _path_join(self.path, tail_module + suffix)
-            _verbose_message('trying {}'.format(full_path), verbosity=2)
+            _bootstrap._verbose_message('trying {}', full_path, verbosity=2)
             if cache_module + suffix in cache:
                 if _path_isfile(full_path):
-                    return self._get_spec(loader_class, fullname, full_path, None, target)
+                    return self._get_spec(loader_class, fullname, full_path,
+                                          None, target)
         if is_namespace:
-            _verbose_message('possible namespace for {}'.format(base_path))
+            _bootstrap._verbose_message('possible namespace for {}', base_path)
             spec = _bootstrap.ModuleSpec(fullname, None)
             spec.submodule_search_locations = [base_path]
             return spec
