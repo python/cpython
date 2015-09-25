@@ -458,38 +458,20 @@ Python Shell window
   * :kbd:`Return` while on any previous command retrieves that command
 
 
-Syntax colors
--------------
+Text colors
+^^^^^^^^^^^
 
-The coloring is applied in a background "thread," so you may occasionally see
-uncolorized text.  To change the color scheme, edit the ``[Colors]`` section in
-:file:`config.txt`.
+Idle defaults to black on white text, but colors text with special meanings.
+For the shell, these are shell output, shell error, user output, and
+user error.  For Python code, at the shell prompt or in an editor, these are
+keywords, builtin class and function names, names following ``class`` and
+``def``, strings, and comments. For any text window, these are the cursor (when
+present), found text (when possible), and selected text.
 
-Python syntax colors:
-   Keywords
-      orange
-
-   Strings
-      green
-
-   Comments
-      red
-
-   Definitions
-      blue
-
-Shell colors:
-   Console output
-      brown
-
-   stdout
-      blue
-
-   stderr
-      dark green
-
-   stdin
-      black
+Text coloring is done in the background, so uncolorized text is occasionally
+visible.  To change the color scheme, use the Configure IDLE dialog
+Highlighting tab.  The marking of debugger breakpoint lines in the editor and
+text in popups and dialogs is not user-configurable.
 
 
 Startup and code execution
