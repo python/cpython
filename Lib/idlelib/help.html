@@ -439,41 +439,22 @@ OS X use <tt class="kbd docutils literal"><span class="pre">C-p</span></tt>.</li
 </li>
 </ul>
 </div>
+<div class="section" id="text-colors">
+<h3>24.6.2.4. Text colors<a class="headerlink" href="#text-colors" title="Permalink to this headline">¶</a></h3>
+<p>Idle defaults to black on white text, but colors text with special meanings.
+For the shell, these are shell output, shell error, user output, and
+user error.  For Python code, at the shell prompt or in an editor, these are
+keywords, builtin class and function names, names following <tt class="docutils literal"><span class="pre">class</span></tt> and
+<tt class="docutils literal"><span class="pre">def</span></tt>, strings, and comments. For any text window, these are the cursor (when
+present), found text (when possible), and selected text.</p>
+<p>Text coloring is done in the background, so uncolorized text is occasionally
+visible.  To change the color scheme, use the Configure IDLE dialog
+Highlighting tab.  The marking of debugger breakpoint lines in the editor and
+text in popups and dialogs is not user-configurable.</p>
 </div>
-<div class="section" id="syntax-colors">
-<h2>24.6.3. Syntax colors<a class="headerlink" href="#syntax-colors" title="Permalink to this headline">¶</a></h2>
-<p>The coloring is applied in a background &#8220;thread,&#8221; so you may occasionally see
-uncolorized text.  To change the color scheme, edit the <tt class="docutils literal"><span class="pre">[Colors]</span></tt> section in
-<tt class="file docutils literal"><span class="pre">config.txt</span></tt>.</p>
-<dl class="docutils">
-<dt>Python syntax colors:</dt>
-<dd><dl class="first last docutils">
-<dt>Keywords</dt>
-<dd>orange</dd>
-<dt>Strings</dt>
-<dd>green</dd>
-<dt>Comments</dt>
-<dd>red</dd>
-<dt>Definitions</dt>
-<dd>blue</dd>
-</dl>
-</dd>
-<dt>Shell colors:</dt>
-<dd><dl class="first last docutils">
-<dt>Console output</dt>
-<dd>brown</dd>
-<dt>stdout</dt>
-<dd>blue</dd>
-<dt>stderr</dt>
-<dd>dark green</dd>
-<dt>stdin</dt>
-<dd>black</dd>
-</dl>
-</dd>
-</dl>
 </div>
 <div class="section" id="startup-and-code-execution">
-<h2>24.6.4. Startup and code execution<a class="headerlink" href="#startup-and-code-execution" title="Permalink to this headline">¶</a></h2>
+<h2>24.6.3. Startup and code execution<a class="headerlink" href="#startup-and-code-execution" title="Permalink to this headline">¶</a></h2>
 <p>Upon startup with the <tt class="docutils literal"><span class="pre">-s</span></tt> option, IDLE will execute the file referenced by
 the environment variables <span class="target" id="index-5"></span><tt class="xref std std-envvar docutils literal"><span class="pre">IDLESTARTUP</span></tt> or <span class="target" id="index-6"></span><a class="reference internal" href="../using/cmdline.html#envvar-PYTHONSTARTUP"><tt class="xref std std-envvar docutils literal"><span class="pre">PYTHONSTARTUP</span></tt></a>.
 IDLE first checks for <tt class="docutils literal"><span class="pre">IDLESTARTUP</span></tt>; if <tt class="docutils literal"><span class="pre">IDLESTARTUP</span></tt> is present the file
@@ -487,7 +468,7 @@ looked for in the user&#8217;s home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE&#8217;s Python shell.</p>
 <div class="section" id="command-line-usage">
-<h3>24.6.4.1. Command line usage<a class="headerlink" href="#command-line-usage" title="Permalink to this headline">¶</a></h3>
+<h3>24.6.3.1. Command line usage<a class="headerlink" href="#command-line-usage" title="Permalink to this headline">¶</a></h3>
 <div class="highlight-python"><div class="highlight"><pre>idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
 
 -c command  run command in the shell window
@@ -512,7 +493,7 @@ set in the Options dialog.</li>
 </ul>
 </div>
 <div class="section" id="idle-console-differences">
-<h3>24.6.4.2. IDLE-console differences<a class="headerlink" href="#idle-console-differences" title="Permalink to this headline">¶</a></h3>
+<h3>24.6.3.2. IDLE-console differences<a class="headerlink" href="#idle-console-differences" title="Permalink to this headline">¶</a></h3>
 <p>As much as possible, the result of executing Python code with IDLE is the
 same as executing the same code in a console window.  However, the different
 interface and operation occasionally affects results.</p>
@@ -526,7 +507,7 @@ Also, functions that directly access the keyboard and screen will not work.</p>
 Some consoles only work with a single physical line at a time.</p>
 </div>
 <div class="section" id="running-without-a-subprocess">
-<h3>24.6.4.3. Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Permalink to this headline">¶</a></h3>
+<h3>24.6.3.3. Running without a subprocess<a class="headerlink" href="#running-without-a-subprocess" title="Permalink to this headline">¶</a></h3>
 <p>By default, IDLE executes user code in a separate subprocess via a socket,
 which uses the internal loopback interface.  This connection is not
 externally visible and no data is sent to or received from the Internet.
@@ -552,9 +533,9 @@ with the default subprocess if at all possible.</p>
 </div>
 </div>
 <div class="section" id="help-and-preferences">
-<h2>24.6.5. Help and preferences<a class="headerlink" href="#help-and-preferences" title="Permalink to this headline">¶</a></h2>
+<h2>24.6.4. Help and preferences<a class="headerlink" href="#help-and-preferences" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="additional-help-sources">
-<h3>24.6.5.1. Additional help sources<a class="headerlink" href="#additional-help-sources" title="Permalink to this headline">¶</a></h3>
+<h3>24.6.4.1. Additional help sources<a class="headerlink" href="#additional-help-sources" title="Permalink to this headline">¶</a></h3>
 <p>IDLE includes a help menu entry called &#8220;Python Docs&#8221; that will open the
 extensive sources of help, including tutorials, available at docs.python.org.
 Selected URLs can be added or removed from the help menu at any time using the
@@ -562,14 +543,14 @@ Configure IDLE dialog. See the IDLE help option in the help menu of IDLE for
 more information.</p>
 </div>
 <div class="section" id="setting-preferences">
-<h3>24.6.5.2. Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
+<h3>24.6.4.2. Setting preferences<a class="headerlink" href="#setting-preferences" title="Permalink to this headline">¶</a></h3>
 <p>The font preferences, highlighting, keys, and general preferences can be
 changed via Configure IDLE on the Option menu.  Keys can be user defined;
 IDLE ships with four built in key sets. In addition a user can create a
 custom key set in the Configure IDLE dialog under the keys tab.</p>
 </div>
 <div class="section" id="extensions">
-<h3>24.6.5.3. Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline">¶</a></h3>
+<h3>24.6.4.3. Extensions<a class="headerlink" href="#extensions" title="Permalink to this headline">¶</a></h3>
 <p>IDLE contains an extension facility.  Peferences for extensions can be
 changed with Configure Extensions. See the beginning of config-extensions.def
 in the idlelib directory for further information.  The default extensions
@@ -615,19 +596,19 @@ are currently:</p>
 <li><a class="reference internal" href="#automatic-indentation">24.6.2.1. Automatic indentation</a></li>
 <li><a class="reference internal" href="#completions">24.6.2.2. Completions</a></li>
 <li><a class="reference internal" href="#python-shell-window">24.6.2.3. Python Shell window</a></li>
+<li><a class="reference internal" href="#text-colors">24.6.2.4. Text colors</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#syntax-colors">24.6.3. Syntax colors</a></li>
-<li><a class="reference internal" href="#startup-and-code-execution">24.6.4. Startup and code execution</a><ul>
-<li><a class="reference internal" href="#command-line-usage">24.6.4.1. Command line usage</a></li>
-<li><a class="reference internal" href="#idle-console-differences">24.6.4.2. IDLE-console differences</a></li>
-<li><a class="reference internal" href="#running-without-a-subprocess">24.6.4.3. Running without a subprocess</a></li>
+<li><a class="reference internal" href="#startup-and-code-execution">24.6.3. Startup and code execution</a><ul>
+<li><a class="reference internal" href="#command-line-usage">24.6.3.1. Command line usage</a></li>
+<li><a class="reference internal" href="#idle-console-differences">24.6.3.2. IDLE-console differences</a></li>
+<li><a class="reference internal" href="#running-without-a-subprocess">24.6.3.3. Running without a subprocess</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#help-and-preferences">24.6.5. Help and preferences</a><ul>
-<li><a class="reference internal" href="#additional-help-sources">24.6.5.1. Additional help sources</a></li>
-<li><a class="reference internal" href="#setting-preferences">24.6.5.2. Setting preferences</a></li>
-<li><a class="reference internal" href="#extensions">24.6.5.3. Extensions</a></li>
+<li><a class="reference internal" href="#help-and-preferences">24.6.4. Help and preferences</a><ul>
+<li><a class="reference internal" href="#additional-help-sources">24.6.4.1. Additional help sources</a></li>
+<li><a class="reference internal" href="#setting-preferences">24.6.4.2. Setting preferences</a></li>
+<li><a class="reference internal" href="#extensions">24.6.4.3. Extensions</a></li>
 </ul>
 </li>
 </ul>
