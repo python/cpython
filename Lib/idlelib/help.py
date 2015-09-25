@@ -28,6 +28,7 @@ from html.parser import HTMLParser
 from os.path import abspath, dirname, isdir, isfile, join
 from tkinter import Tk, Toplevel, Frame, Text, Scrollbar, Menu, Menubutton
 from tkinter import font as tkfont
+from idlelib.configHandler import idleConf
 
 use_ttk = False # until available to import
 if use_ttk:
@@ -158,8 +159,11 @@ class HelpText(Text):
     "Display help.html."
     def __init__(self, parent, filename):
         "Configure tags and feed file to parser."
+        uwide = idleConf.GetOption('main', 'EditorWindow', 'width', type='int')
+        uhigh = idleConf.GetOption('main', 'EditorWindow', 'height', type='int')
+        uhigh = 3 * uhigh // 4  # lines average 4/3 of editor line height
         Text.__init__(self, parent, wrap='word', highlightthickness=0,
-                      padx=5, borderwidth=0)
+                      padx=5, borderwidth=0, width=uwide, height=uhigh)
 
         normalfont = self.findfont(['TkDefaultFont', 'arial', 'helvetica'])
         fixedfont = self.findfont(['TkFixedFont', 'monaco', 'courier'])
