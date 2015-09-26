@@ -27,6 +27,9 @@ Library
   respects the letter case given by the user. This restores the ability to
   write encoding names in uppercase like "UTF-8", which worked in Python 2.
 
+- Issue #25135: Make deque_clear() safer by emptying the deque before clearing.
+  This helps avoid possible reentrancy issues.
+
 - Issue #19143: platform module now reads Windows version from kernel32.dll to
   avoid compatibility shims.
 
