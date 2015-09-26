@@ -644,16 +644,70 @@ PyDoc_STRVAR(remove_doc,
 static void
 deque_clear(dequeobject *deque)
 {
+    block *b;
+    block *prevblock;
+    block *leftblock;
+    Py_ssize_t leftindex;
+    Py_ssize_t n;
     PyObject *item;
 
+    /* During the process of clearing a deque, decrefs can cause the
+       deque to mutate.  To avoid fatal confusion, we have to make the
+       deque empty before clearing the blocks and never refer to
+       anything via deque->ref while clearing.  (This is the same
+       technique used for clearing lists, sets, and dicts.)
+
+       Making the deque empty requires allocating a new empty block.  In
+       the unlikely event that memory is full, we fall back to an
+       alternate method that doesn't require a new block.  Repeating
+       pops in a while-loop is slower, possibly re-entrant (and a clever
+       adversary could cause it to never terminate).
+    */
+
+    b = newblock(NULL, NULL, 0);
+    if (b == NULL) {
+        PyErr_Clear();
+        goto alternate_method;
+    }
+
+    /* Remember the old size, leftblock, and leftindex */
+    leftblock = deque->leftblock;
+    leftindex = deque->leftindex;
+    n = deque->len;
+
+    /* Set the deque to be empty using the newly allocated block */
+    deque->len = 0;
+    deque->leftblock = b;
+    deque->rightblock = b;
+    deque->leftindex = CENTER + 1;
+    deque->rightindex = CENTER;
+    deque->state++;
+
+    /* Now the old size, leftblock, and leftindex are disconnected from
+       the empty deque and we can use them to decref the pointers.
+    */
+    while (n--) {
+        item = leftblock->data[leftindex];
+        Py_DECREF(item);
+        leftindex++;
+        if (leftindex == BLOCKLEN && n) {
+            assert(leftblock->rightlink != NULL);
+            prevblock = leftblock;
+            leftblock = leftblock->rightlink;
+            leftindex = 0;
+            freeblock(prevblock);
+        }
+    }
+    assert(leftblock->rightlink == NULL);
+    freeblock(leftblock);
+    return;
+
+  alternate_method:
     while (deque->len) {
         item = deque_pop(deque, NULL);
         assert (item != NULL);
         Py_DECREF(item);
     }
-    assert(deque->leftblock == deque->rightblock &&
-           deque->leftindex - 1 == deque->rightindex &&
-           deque->len == 0);
 }
 
 static PyObject *

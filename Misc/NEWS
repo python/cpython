@@ -40,6 +40,9 @@ Library
 - Issue #19143: platform module now reads Windows version from kernel32.dll to
   avoid compatibility shims.
 
+- Issue #25135: Make deque_clear() safer by emptying the deque before clearing.
+  This helps avoid possible reentrancy issues.
+
 - Issue #24684: socket.socket.getaddrinfo() now calls
   PyUnicode_AsEncodedString() instead of calling the encode() method of the
   host, to handle correctly custom unicode string with an encode() method
