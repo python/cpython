@@ -371,6 +371,7 @@ static PyObject *
 deque_extend(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
+    PyObject *(*iternext)(PyObject *);
     int trim = (deque->maxlen != -1);
 
     /* Handle case where id(deque) == id(iterable) */
@@ -399,7 +400,8 @@ deque_extend(dequeobject *deque, PyObject *iterable)
     if (deque->maxlen == 0)
         return consume_iterator(it);
 
-    while ((item = PyIter_Next(it)) != NULL) {
+    iternext = *Py_TYPE(it)->tp_iternext;
+    while ((item = iternext(it)) != NULL) {
         deque->state++;
         if (deque->rightindex == BLOCKLEN - 1) {
             block *b = newblock(Py_SIZE(deque));
@@ -422,8 +424,12 @@ deque_extend(dequeobject *deque, PyObject *iterable)
             deque_trim_left(deque);
     }
     if (PyErr_Occurred()) {
-        Py_DECREF(it);
-        return NULL;
+        if (PyErr_ExceptionMatches(PyExc_StopIteration))
+            PyErr_Clear();
+        else {
+            Py_DECREF(it);
+            return NULL;
+        }
     }
     Py_DECREF(it);
     Py_RETURN_NONE;
@@ -436,6 +442,7 @@ static PyObject *
 deque_extendleft(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
+    PyObject *(*iternext)(PyObject *);
     int trim = (deque->maxlen != -1);
 
     /* Handle case where id(deque) == id(iterable) */
@@ -464,7 +471,8 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
     if (deque->maxlen == 0)
         return consume_iterator(it);
 
-    while ((item = PyIter_Next(it)) != NULL) {
+    iternext = *Py_TYPE(it)->tp_iternext;
+    while ((item = iternext(it)) != NULL) {
         deque->state++;
         if (deque->leftindex == 0) {
             block *b = newblock(Py_SIZE(deque));
@@ -487,8 +495,12 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
             deque_trim_right(deque);
     }
     if (PyErr_Occurred()) {
-        Py_DECREF(it);
-        return NULL;
+        if (PyErr_ExceptionMatches(PyExc_StopIteration))
+            PyErr_Clear();
+        else {
+            Py_DECREF(it);
+            return NULL;
+        }
     }
     Py_DECREF(it);
     Py_RETURN_NONE;
