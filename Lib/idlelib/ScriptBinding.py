@@ -197,10 +197,10 @@ class ScriptBinding:
         confirm = tkMessageBox.askokcancel(title="Save Before Run or Check",
                                            message=msg,
                                            default=tkMessageBox.OK,
-                                           master=self.editwin.text)
+                                           parent=self.editwin.text)
         return confirm
 
     def errorbox(self, title, message):
         # XXX This should really be a function of EditorWindow...
-        tkMessageBox.showerror(title, message, master=self.editwin.text)
+        tkMessageBox.showerror(title, message, parent=self.editwin.text)
         self.editwin.text.focus_set()
