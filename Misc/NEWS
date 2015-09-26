@@ -141,6 +141,8 @@ Core and Builtins
 Library
 -------
 
+- Prevent overflow in _Unpickler_Read.
+
 - Issue #25047: The XML encoding declaration written by Element Tree now
   respects the letter case given by the user. This restores the ability to
   write encoding names in uppercase like "UTF-8", which worked in Python 2.
