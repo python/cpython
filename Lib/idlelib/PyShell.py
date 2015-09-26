@@ -774,7 +774,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
                     "Exit?",
                     "Do you want to exit altogether?",
                     default="yes",
-                    master=self.tkconsole.text):
+                    parent=self.tkconsole.text):
                     raise
                 else:
                     self.showtraceback()
@@ -812,7 +812,7 @@ class ModifiedInterpreter(InteractiveInterpreter):
             "Run IDLE with the -n command line switch to start without a "
             "subprocess and refer to Help/IDLE Help 'Running without a "
             "subprocess' for further details.",
-            master=self.tkconsole.text)
+            parent=self.tkconsole.text)
 
     def display_no_subprocess_error(self):
         tkMessageBox.showerror(
@@ -820,14 +820,14 @@ class ModifiedInterpreter(InteractiveInterpreter):
             "IDLE's subprocess didn't make connection.  Either IDLE can't "
             "start a subprocess or personal firewall software is blocking "
             "the connection.",
-            master=self.tkconsole.text)
+            parent=self.tkconsole.text)
 
     def display_executing_dialog(self):
         tkMessageBox.showerror(
             "Already executing",
             "The Python Shell window is already executing a command; "
             "please wait until it is finished.",
-            master=self.tkconsole.text)
+            parent=self.tkconsole.text)
 
 
 class PyShell(OutputWindow):
@@ -931,7 +931,7 @@ class PyShell(OutputWindow):
         if self.executing:
             tkMessageBox.showerror("Don't debug now",
                 "You can only toggle the debugger when idle",
-                master=self.text)
+                parent=self.text)
             self.set_debugger_indicator()
             return "break"
         else:
@@ -1239,7 +1239,7 @@ class PyShell(OutputWindow):
             tkMessageBox.showerror("No stack trace",
                 "There is no stack trace yet.\n"
                 "(sys.last_traceback is not defined)",
-                master=self.text)
+                parent=self.text)
             return
         from idlelib.StackViewer import StackBrowser
         StackBrowser(self.root, self.flist)
