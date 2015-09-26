@@ -1,8 +1,8 @@
 import argparse
 import faulthandler
 import os
-
 from test import support
+
 
 USAGE = """\
 python -m test [options] [test_name1 [test_name2 ...]]
