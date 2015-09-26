@@ -557,7 +557,7 @@ static void deque_clear(dequeobject *deque);
 static PyObject *
 deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
 {
-    Py_ssize_t i, size;
+    Py_ssize_t i, m, size;
     PyObject *seq;
     PyObject *rv;
 
@@ -598,7 +598,11 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
                 MARK_END(b->rightlink);
                 deque->rightindex = -1;
             }
-            for ( ; i < n-1 && deque->rightindex != BLOCKLEN - 1 ; i++) {
+            m = n - 1 - i;
+            if (m > BLOCKLEN - 1 - deque->rightindex)
+                m = BLOCKLEN - 1 - deque->rightindex;
+            i += m;
+            while (m--) {
                 deque->rightindex++;
                 Py_INCREF(item);
                 deque->rightblock->data[deque->rightindex] = item;
