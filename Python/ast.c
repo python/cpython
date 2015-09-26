@@ -2107,6 +2107,7 @@ ast_for_atom(struct compiling *c, const node *n)
          *                    (comp_for | (',' (test ':' test | '**' test))* [','])) |
          *                   ((test | '*' test)
          *                    (comp_for | (',' (test | '*' test))* [','])) ) */
+        expr_ty res;
         ch = CHILD(n, 1);
         if (TYPE(ch) == RBRACE) {
             /* It's an empty dict. */
@@ -2118,12 +2119,12 @@ ast_for_atom(struct compiling *c, const node *n)
                     (NCH(ch) > 1 &&
                      TYPE(CHILD(ch, 1)) == COMMA)) {
                 /* It's a set display. */
-                return ast_for_setdisplay(c, ch);
+                res = ast_for_setdisplay(c, ch);
             }
             else if (NCH(ch) > 1 &&
                     TYPE(CHILD(ch, 1)) == comp_for) {
                 /* It's a set comprehension. */
-                return ast_for_setcomp(c, ch);
+                res = ast_for_setcomp(c, ch);
             }
             else if (NCH(ch) > 3 - is_dict &&
                     TYPE(CHILD(ch, 3 - is_dict)) == comp_for) {
@@ -2133,12 +2134,17 @@ ast_for_atom(struct compiling *c, const node *n)
                             "dict comprehension");
                     return NULL;
                 }
-                return ast_for_dictcomp(c, ch);
+                res = ast_for_dictcomp(c, ch);
             }
             else {
                 /* It's a dictionary display. */
-                return ast_for_dictdisplay(c, ch);
+                res = ast_for_dictdisplay(c, ch);
             }
+            if (res) {
+                res->lineno = LINENO(n);
+                res->col_offset = n->n_col_offset;
+            }
+            return res;
         }
     }
     default:
