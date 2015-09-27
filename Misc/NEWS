@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25011: rlcomplete now omits private and special attribute names unless
+  the prefix starts with underscores.
+
 - Issue #25209: rlcomplete now can add a space or a colon after completed keyword.
 
 - Issue #22241: timezone.utc name is now plain 'UTC', not 'UTC-00:00'.
