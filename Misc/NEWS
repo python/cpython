@@ -141,6 +141,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23329: Allow the ssl module to be built with older versions of
+  LibreSSL.
+
 - Prevent overflow in _Unpickler_Read.
 
 - Issue #25047: The XML encoding declaration written by Element Tree now
