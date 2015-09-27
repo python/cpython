@@ -228,8 +228,8 @@ StreamReaderProtocol
 
     (This is a helper class instead of making :class:`StreamReader` itself a
     :class:`Protocol` subclass, because the :class:`StreamReader` has other
-    potential uses, and to prevent the user of the :class:`StreamReader` to
-    accidentally call inappropriate methods of the protocol.)
+    potential uses, and to prevent the user of the :class:`StreamReader` from
+    accidentally calling inappropriate methods of the protocol.)
 
 
 IncompleteReadError
