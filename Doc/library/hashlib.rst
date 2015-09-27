@@ -176,8 +176,8 @@ A hash object has the following methods:
    compute the digests of data sharing a common initial substring.
 
 
-Key Derivation Function
------------------------
+Key derivation
+--------------
 
 Key derivation and key stretching algorithms are designed for secure password
 hashing. Naive algorithms such as ``sha1(password)`` are not resistant against
