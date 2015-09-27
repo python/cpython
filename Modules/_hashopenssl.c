@@ -532,8 +532,8 @@ PKCS5_PBKDF2_HMAC_fast(const char *pass, int passlen,
         HMAC_CTX_cleanup(&hctx_tpl);
         return 0;
     }
-    while(tkeylen) {
-        if(tkeylen > mdlen)
+    while (tkeylen) {
+        if (tkeylen > mdlen)
             cplen = mdlen;
         else
             cplen = tkeylen;
