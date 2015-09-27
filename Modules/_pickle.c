@@ -1193,6 +1193,7 @@ _Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
 {
     Py_ssize_t num_read;
 
+    *s = NULL;
     if (self->next_read_idx > PY_SSIZE_T_MAX - n) {
         PickleState *st = _Pickle_GetGlobalState();
         PyErr_SetString(st->UnpicklingError,
