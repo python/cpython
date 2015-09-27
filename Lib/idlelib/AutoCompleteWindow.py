@@ -192,6 +192,7 @@ class AutoCompleteWindow:
         scrollbar.config(command=listbox.yview)
         scrollbar.pack(side=RIGHT, fill=Y)
         listbox.pack(side=LEFT, fill=BOTH, expand=True)
+        acw.lift()  # work around bug in Tk 8.5.18+ (issue #24570)
 
         # Initialize the listbox selection
         self.listbox.select_set(self._binary_search(self.start))
