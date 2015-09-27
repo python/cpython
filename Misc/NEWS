@@ -81,6 +81,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25203: Failed readline.set_completer_delims() no longer left the
+  module in inconsistent state.
+
 - Prevent overflow in _Unpickler_Read.
 
 - Issue #25047: The XML encoding declaration written by Element Tree now
