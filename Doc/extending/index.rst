@@ -26,8 +26,8 @@ For a detailed description of the whole Python/C API, see the separate
    This guide only covers the basic tools for creating extensions provided
    as part of this version of CPython. Third party tools may offer simpler
    alternatives. Refer to the `binary extensions section
-   <https://python-packaging-user-guide.readthedocs.org/en/latest/extensions.html>`__
-   in the Python Packaging User Guide for more information.
+   <https://packaging.python.org/en/latest/extensions/>`__ in the Python
+   Packaging User Guide for more information.
 
 
 .. toctree::
