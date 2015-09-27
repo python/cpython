@@ -27,6 +27,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25209: rlcomplete now can add a space or a colon after completed keyword.
+
 - Issue #22241: timezone.utc name is now plain 'UTC', not 'UTC-00:00'.
 
 - Issue #23517: fromtimestamp() and utcfromtimestamp() methods of
