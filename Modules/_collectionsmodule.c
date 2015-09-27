@@ -522,7 +522,40 @@ deque_inplace_concat(dequeobject *deque, PyObject *other)
     return (PyObject *)deque;
 }
 
-static PyObject *deque_copy(PyObject *deque);
+static PyObject *
+deque_copy(PyObject *deque)
+{
+    dequeobject *old_deque = (dequeobject *)deque;
+    if (Py_TYPE(deque) == &deque_type) {
+        dequeobject *new_deque;
+        PyObject *rv;
+
+        new_deque = (dequeobject *)deque_new(&deque_type, (PyObject *)NULL, (PyObject *)NULL);
+        if (new_deque == NULL)
+            return NULL;
+        new_deque->maxlen = old_deque->maxlen;
+        /* Fast path for the deque_repeat() common case where len(deque) == 1 */
+        if (Py_SIZE(deque) == 1 && new_deque->maxlen != 0) {
+            PyObject *item = old_deque->leftblock->data[old_deque->leftindex];
+            rv = deque_append(new_deque, item);
+        } else {
+            rv = deque_extend(new_deque, deque);
+        }
+        if (rv != NULL) {
+            Py_DECREF(rv);
+            return (PyObject *)new_deque;
+        }
+        Py_DECREF(new_deque);
+        return NULL;
+    }
+    if (old_deque->maxlen < 0)
+        return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "O", deque, NULL);
+    else
+        return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
+            deque, old_deque->maxlen, NULL);
+}
+
+PyDoc_STRVAR(copy_doc, "Return a shallow copy of a deque.");
 
 static PyObject *
 deque_concat(dequeobject *deque, PyObject *other)
@@ -552,7 +585,85 @@ deque_concat(dequeobject *deque, PyObject *other)
     return new_deque;
 }
 
-static void deque_clear(dequeobject *deque);
+static void
+deque_clear(dequeobject *deque)
+{
+    block *b;
+    block *prevblock;
+    block *leftblock;
+    Py_ssize_t leftindex;
+    Py_ssize_t n;
+    PyObject *item;
+
+    /* During the process of clearing a deque, decrefs can cause the
+       deque to mutate.  To avoid fatal confusion, we have to make the
+       deque empty before clearing the blocks and never refer to
+       anything via deque->ref while clearing.  (This is the same
+       technique used for clearing lists, sets, and dicts.)
+
+       Making the deque empty requires allocating a new empty block.  In
+       the unlikely event that memory is full, we fall back to an
+       alternate method that doesn't require a new block.  Repeating
+       pops in a while-loop is slower, possibly re-entrant (and a clever
+       adversary could cause it to never terminate).
+    */
+
+    b = newblock(0);
+    if (b == NULL) {
+        PyErr_Clear();
+        goto alternate_method;
+    }
+
+    /* Remember the old size, leftblock, and leftindex */
+    leftblock = deque->leftblock;
+    leftindex = deque->leftindex;
+    n = Py_SIZE(deque);
+
+    /* Set the deque to be empty using the newly allocated block */
+    MARK_END(b->leftlink);
+    MARK_END(b->rightlink);
+    Py_SIZE(deque) = 0;
+    deque->leftblock = b;
+    deque->rightblock = b;
+    deque->leftindex = CENTER + 1;
+    deque->rightindex = CENTER;
+    deque->state++;
+
+    /* Now the old size, leftblock, and leftindex are disconnected from
+       the empty deque and we can use them to decref the pointers.
+    */
+    while (n--) {
+        item = leftblock->data[leftindex];
+        Py_DECREF(item);
+        leftindex++;
+        if (leftindex == BLOCKLEN && n) {
+            CHECK_NOT_END(leftblock->rightlink);
+            prevblock = leftblock;
+            leftblock = leftblock->rightlink;
+            leftindex = 0;
+            freeblock(prevblock);
+        }
+    }
+    CHECK_END(leftblock->rightlink);
+    freeblock(leftblock);
+    return;
+
+  alternate_method:
+    while (Py_SIZE(deque)) {
+        item = deque_pop(deque, NULL);
+        assert (item != NULL);
+        Py_DECREF(item);
+    }
+}
+
+static PyObject *
+deque_clearmethod(dequeobject *deque)
+{
+    deque_clear(deque);
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(clear_doc, "Remove all elements from the deque.");
 
 static PyObject *
 deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
@@ -1058,77 +1169,6 @@ deque_remove(dequeobject *deque, PyObject *value)
 PyDoc_STRVAR(remove_doc,
 "D.remove(value) -- remove first occurrence of value.");
 
-static void
-deque_clear(dequeobject *deque)
-{
-    block *b;
-    block *prevblock;
-    block *leftblock;
-    Py_ssize_t leftindex;
-    Py_ssize_t n;
-    PyObject *item;
-
-    /* During the process of clearing a deque, decrefs can cause the
-       deque to mutate.  To avoid fatal confusion, we have to make the
-       deque empty before clearing the blocks and never refer to
-       anything via deque->ref while clearing.  (This is the same
-       technique used for clearing lists, sets, and dicts.)
-
-       Making the deque empty requires allocating a new empty block.  In
-       the unlikely event that memory is full, we fall back to an
-       alternate method that doesn't require a new block.  Repeating
-       pops in a while-loop is slower, possibly re-entrant (and a clever
-       adversary could cause it to never terminate).
-    */
-
-    b = newblock(0);
-    if (b == NULL) {
-        PyErr_Clear();
-        goto alternate_method;
-    }
-
-    /* Remember the old size, leftblock, and leftindex */
-    leftblock = deque->leftblock;
-    leftindex = deque->leftindex;
-    n = Py_SIZE(deque);
-
-    /* Set the deque to be empty using the newly allocated block */
-    MARK_END(b->leftlink);
-    MARK_END(b->rightlink);
-    Py_SIZE(deque) = 0;
-    deque->leftblock = b;
-    deque->rightblock = b;
-    deque->leftindex = CENTER + 1;
-    deque->rightindex = CENTER;
-    deque->state++;
-
-    /* Now the old size, leftblock, and leftindex are disconnected from
-       the empty deque and we can use them to decref the pointers.
-    */
-    while (n--) {
-        item = leftblock->data[leftindex];
-        Py_DECREF(item);
-        leftindex++;
-        if (leftindex == BLOCKLEN && n) {
-            CHECK_NOT_END(leftblock->rightlink);
-            prevblock = leftblock;
-            leftblock = leftblock->rightlink;
-            leftindex = 0;
-            freeblock(prevblock);
-        }
-    }
-    CHECK_END(leftblock->rightlink);
-    freeblock(leftblock);
-    return;
-
-  alternate_method:
-    while (Py_SIZE(deque)) {
-        item = deque_pop(deque, NULL);
-        assert (item != NULL);
-        Py_DECREF(item);
-    }
-}
-
 static int
 valid_index(Py_ssize_t i, Py_ssize_t limit)
 {
@@ -1229,15 +1269,6 @@ deque_ass_item(dequeobject *deque, Py_ssize_t i, PyObject *v)
     return 0;
 }
 
-static PyObject *
-deque_clearmethod(dequeobject *deque)
-{
-    deque_clear(deque);
-    Py_RETURN_NONE;
-}
-
-PyDoc_STRVAR(clear_doc, "Remove all elements from the deque.");
-
 static void
 deque_dealloc(dequeobject *deque)
 {
@@ -1275,41 +1306,6 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
     }
     return 0;
 }
-
-static PyObject *
-deque_copy(PyObject *deque)
-{
-    dequeobject *old_deque = (dequeobject *)deque;
-    if (Py_TYPE(deque) == &deque_type) {
-        dequeobject *new_deque;
-        PyObject *rv;
-
-        new_deque = (dequeobject *)deque_new(&deque_type, (PyObject *)NULL, (PyObject *)NULL);
-        if (new_deque == NULL)
-            return NULL;
-        new_deque->maxlen = old_deque->maxlen;
-        /* Fast path for the deque_repeat() common case where len(deque) == 1 */
-        if (Py_SIZE(deque) == 1 && new_deque->maxlen != 0) {
-            PyObject *item = old_deque->leftblock->data[old_deque->leftindex];
-            rv = deque_append(new_deque, item);
-        } else {
-            rv = deque_extend(new_deque, deque);
-        }
-        if (rv != NULL) {
-            Py_DECREF(rv);
-            return (PyObject *)new_deque;
-        }
-        Py_DECREF(new_deque);
-        return NULL;
-    }
-    if (old_deque->maxlen < 0)
-        return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "O", deque, NULL);
-    else
-        return PyObject_CallFunction((PyObject *)(Py_TYPE(deque)), "Oi",
-            deque, old_deque->maxlen, NULL);
-}
-
-PyDoc_STRVAR(copy_doc, "Return a shallow copy of a deque.");
 
 static PyObject *
 deque_reduce(dequeobject *deque)
