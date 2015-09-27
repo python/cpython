@@ -204,7 +204,7 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
    http://csrc.nist.gov/publications/fips/fips180-2/fips180-2.pdf
       The FIPS 180-2 publication on Secure Hash Algorithms.
 
-   http://en.wikipedia.org/wiki/Cryptographic_hash_function#Cryptographic_hash_algorithms
+   https://en.wikipedia.org/wiki/Cryptographic_hash_function#Cryptographic_hash_algorithms
       Wikipedia article with information on which algorithms have known issues and
       what that means regarding their use.
 
