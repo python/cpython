@@ -315,8 +315,8 @@ deque_append(dequeobject *deque, PyObject *item)
         MARK_END(b->rightlink);
         deque->rightindex = -1;
     }
-    Py_INCREF(item);
     Py_SIZE(deque)++;
+    Py_INCREF(item);
     deque->rightindex++;
     deque->rightblock->data[deque->rightindex] = item;
     deque_trim_left(deque);
@@ -340,8 +340,8 @@ deque_appendleft(dequeobject *deque, PyObject *item)
         MARK_END(b->leftlink);
         deque->leftindex = BLOCKLEN;
     }
-    Py_INCREF(item);
     Py_SIZE(deque)++;
+    Py_INCREF(item);
     deque->leftindex--;
     deque->leftblock->data[deque->leftindex] = item;
     deque_trim_right(deque);
