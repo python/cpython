@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25203: Failed readline.set_completer_delims() no longer left the
+  module in inconsistent state.
+
 - Issue #19143: platform module now reads Windows version from kernel32.dll to
   avoid compatibility shims.
 
