@@ -121,7 +121,7 @@ static PyTypeObject deque_type;
    added at about the same rate as old blocks are being freed.
  */
 
-#define MAXFREEBLOCKS 10
+#define MAXFREEBLOCKS 16
 static Py_ssize_t numfreeblocks = 0;
 static block *freeblocks[MAXFREEBLOCKS];
 
