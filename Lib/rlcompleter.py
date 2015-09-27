@@ -106,6 +106,12 @@ class Completer:
         n = len(text)
         for word in keyword.kwlist:
             if word[:n] == text:
+                if word in {'finally', 'try'}:
+                    word = word + ':'
+                elif word not in {'False', 'None', 'True',
+                                  'break', 'continue', 'pass',
+                                  'else'}:
+                    word = word + ' '
                 matches.append(word)
         for nspace in [builtins.__dict__, self.namespace]:
             for word, val in nspace.items():

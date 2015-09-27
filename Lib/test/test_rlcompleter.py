@@ -67,10 +67,15 @@ class TestRlcompleter(unittest.TestCase):
     def test_complete(self):
         completer = rlcompleter.Completer()
         self.assertEqual(completer.complete('', 0), '\t')
-        self.assertEqual(completer.complete('a', 0), 'and')
-        self.assertEqual(completer.complete('a', 1), 'as')
-        self.assertEqual(completer.complete('as', 2), 'assert')
-        self.assertEqual(completer.complete('an', 0), 'and')
+        self.assertEqual(completer.complete('a', 0), 'and ')
+        self.assertEqual(completer.complete('a', 1), 'as ')
+        self.assertEqual(completer.complete('as', 2), 'assert ')
+        self.assertEqual(completer.complete('an', 0), 'and ')
+        self.assertEqual(completer.complete('pa', 0), 'pass')
+        self.assertEqual(completer.complete('Fa', 0), 'False')
+        self.assertEqual(completer.complete('el', 0), 'elif ')
+        self.assertEqual(completer.complete('el', 1), 'else')
+        self.assertEqual(completer.complete('tr', 0), 'try:')
 
 if __name__ == '__main__':
     unittest.main()
