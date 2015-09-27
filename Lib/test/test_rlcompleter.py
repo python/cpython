@@ -5,6 +5,7 @@ import rlcompleter
 class CompleteMe:
     """ Trivial class used in testing rlcompleter.Completer. """
     spam = 1
+    _ham = 2
 
 
 class TestRlcompleter(unittest.TestCase):
@@ -51,11 +52,25 @@ class TestRlcompleter(unittest.TestCase):
                          ['str.{}('.format(x) for x in dir(str)
                           if x.startswith('s')])
         self.assertEqual(self.stdcompleter.attr_matches('tuple.foospamegg'), [])
+        expected = sorted({'None.%s%s' % (x, '(' if x != '__doc__' else '')
+                           for x in dir(None)})
+        self.assertEqual(self.stdcompleter.attr_matches('None.'), expected)
+        self.assertEqual(self.stdcompleter.attr_matches('None._'), expected)
+        self.assertEqual(self.stdcompleter.attr_matches('None.__'), expected)
 
         # test with a customized namespace
         self.assertEqual(self.completer.attr_matches('CompleteMe.sp'),
                          ['CompleteMe.spam'])
         self.assertEqual(self.completer.attr_matches('Completeme.egg'), [])
+        self.assertEqual(self.completer.attr_matches('CompleteMe.'),
+                         ['CompleteMe.mro(', 'CompleteMe.spam'])
+        self.assertEqual(self.completer.attr_matches('CompleteMe._'),
+                         ['CompleteMe._ham'])
+        matches = self.completer.attr_matches('CompleteMe.__')
+        for x in matches:
+            self.assertTrue(x.startswith('CompleteMe.__'), x)
+        self.assertIn('CompleteMe.__name__', matches)
+        self.assertIn('CompleteMe.__new__(', matches)
 
         CompleteMe.me = CompleteMe
         self.assertEqual(self.completer.attr_matches('CompleteMe.me.me.sp'),
