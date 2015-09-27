@@ -11,7 +11,7 @@ import importlib
 
 import os
 import sys
-from test.libregrtest import main_in_temp_cwd
+from test.libregrtest import main, main_in_temp_cwd
 
 
 if __name__ == '__main__':
