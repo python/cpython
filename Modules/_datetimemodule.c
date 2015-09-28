@@ -3046,7 +3046,7 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
         goto Fail;
     if (dst == Py_None)
         goto Inconsistent;
-    if (delta_bool(delta) != 0) {
+    if (delta_bool((PyDateTime_Delta *)dst) != 0) {
         PyObject *temp = result;
         result = add_datetime_timedelta((PyDateTime_DateTime *)result,
                                         (PyDateTime_Delta *)dst, 1);
