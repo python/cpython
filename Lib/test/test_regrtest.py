@@ -438,14 +438,7 @@ class ProgramsTestCase(BaseTestCase):
         script = os.path.join(ROOT_DIR, 'Tools', 'scripts', 'run_tests.py')
         self.run_tests([script, *self.tests])
 
-    def run_rt_bat(self, script, *args):
-        rt_args = []
-        if platform.architecture()[0] == '64bit':
-            rt_args.append('-x64')   # 64-bit build
-        if Py_DEBUG:
-            rt_args.append('-d')   # Debug build
-
-        args = [script, *rt_args, *args]
+    def run_batch(self, *args):
         proc = subprocess.run(args,
                               check=True, universal_newlines=True,
                               input='',
@@ -456,15 +449,23 @@ class ProgramsTestCase(BaseTestCase):
     def test_tools_buildbot_test(self):
         # Tools\buildbot\test.bat
         script = os.path.join(ROOT_DIR, 'Tools', 'buildbot', 'test.bat')
-        self.run_rt_bat(script, *self.tests)
+        test_args = []
+        if platform.architecture()[0] == '64bit':
+            test_args.append('-x64')   # 64-bit build
+        if not Py_DEBUG:
+            test_args.append('+d')     # Release build, use python.exe
+        self.run_batch(script, *test_args, *self.tests)
 
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
     def test_pcbuild_rt(self):
         # PCbuild\rt.bat
         script = os.path.join(ROOT_DIR, r'PCbuild\rt.bat')
-        # -q: quick, don't run tests twice
-        rt_args = ["-q"]
-        self.run_rt_bat(script, *rt_args, *self.regrtest_args, *self.tests)
+        rt_args = ["-q"]             # Quick, don't run tests twice
+        if platform.architecture()[0] == '64bit':
+            rt_args.append('-x64')   # 64-bit build
+        if Py_DEBUG:
+            rt_args.append('-d')     # Debug build, use python_d.exe
+        self.run_batch(script, *rt_args, *self.regrtest_args, *self.tests)
 
 
 class ArgsTestCase(BaseTestCase):
