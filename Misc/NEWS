@@ -21,6 +21,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25233: Rewrite the guts of Queue to be more understandable and correct.
+
 - Issue #25203: Failed readline.set_completer_delims() no longer left the
   module in inconsistent state.
 
