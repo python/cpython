@@ -81,6 +81,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25233: Rewrite the guts of Queue to be more understandable and correct.
+
 - Issue #23600: Default implementation of tzinfo.fromutc() was returning
   wrong results in some cases.
 
