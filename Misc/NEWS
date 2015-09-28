@@ -75,13 +75,10 @@ Core and Builtins
 
 - Issue #21354: PyCFunction_New function is exposed by python DLL again.
 
-- Issue #23812: Fix asyncio.Queue.get() to avoid loosing items on cancellation.
-  Patch by Gustavo J. A. M. Carneiro.
-
 Library
 -------
 
-- Issue #25233: Rewrite the guts of Queue to be more understandable and correct.
+- Issue #25233: Rewrite the guts of asyncio.Queue to be more understandable and correct.
 
 - Issue #23600: Default implementation of tzinfo.fromutc() was returning
   wrong results in some cases.
