@@ -271,6 +271,29 @@ class QueueGetTests(_QueueTestBase):
         self.assertEqual(self.loop.run_until_complete(q.get()), 'a')
         self.assertEqual(self.loop.run_until_complete(q.get()), 'b')
 
+    def test_why_are_getters_waiting(self):
+        # From issue #268.
+
+        @asyncio.coroutine
+        def consumer(queue, num_expected):
+            for _ in range(num_expected):
+                yield from queue.get()
+
+        @asyncio.coroutine
+        def producer(queue, num_items):
+            for i in range(num_items):
+                yield from queue.put(i)
+
+        queue_size = 1
+        producer_num_items = 5
+        q = asyncio.Queue(queue_size, loop=self.loop)
+
+        self.loop.run_until_complete(
+            asyncio.gather(producer(q, producer_num_items),
+                           consumer(q, producer_num_items),
+                           loop=self.loop),
+            )
+
 
 class QueuePutTests(_QueueTestBase):
 
@@ -377,13 +400,8 @@ class QueuePutTests(_QueueTestBase):
 
         loop.run_until_complete(reader3)
 
-        # reader2 will receive `2`, because it was added to the
-        # queue of pending readers *before* put_nowaits were called.
-        self.assertEqual(reader2.result(), 2)
-        # reader3 will receive `1`, because reader1 was cancelled
-        # before is had a chance to execute, and `2` was already
-        # pushed to reader2 by second `put_nowait`.
-        self.assertEqual(reader3.result(), 1)
+        # It is undefined in which order concurrent readers receive results.
+        self.assertEqual({reader2.result(), reader3.result()}, {1, 2})
 
     def test_put_cancel_drop(self):
 
@@ -478,6 +496,29 @@ class QueuePutTests(_QueueTestBase):
         test_utils.run_briefly(self.loop)
         self.loop.run_until_complete(q.put('a'))
         self.assertEqual(self.loop.run_until_complete(t), 'a')
+
+    def test_why_are_putters_waiting(self):
+        # From issue #265.
+
+        queue = asyncio.Queue(2, loop=self.loop)
+
+        @asyncio.coroutine
+        def putter(item):
+            yield from queue.put(item)
+
+        @asyncio.coroutine
+        def getter():
+            yield
+            num = queue.qsize()
+            for _ in range(num):
+                item = queue.get_nowait()
+
+        t0 = putter(0)
+        t1 = putter(1)
+        t2 = putter(2)
+        t3 = putter(3)
+        self.loop.run_until_complete(
+            asyncio.gather(getter(), t0, t1, t2, t3, loop=self.loop))
 
 
 class LifoQueueTests(_QueueTestBase):
