@@ -180,6 +180,29 @@ class TestTZInfo(unittest.TestCase):
                 self.assertEqual(derived.utcoffset(None), offset)
                 self.assertEqual(derived.tzname(None), oname)
 
+    def test_issue23600(self):
+        DSTDIFF = DSTOFFSET = timedelta(hours=1)
+
+        class UKSummerTime(tzinfo):
+            """Simple time zone which pretends to always be in summer time, since
+                that's what shows the failure.
+            """
+
+            def utcoffset(self, dt):
+                return DSTOFFSET
+
+            def dst(self, dt):
+                return DSTDIFF
+
+            def tzname(self, dt):
+                return 'UKSummerTime'
+
+        tz = UKSummerTime()
+        u = datetime(2014, 4, 26, 12, 1, tzinfo=tz)
+        t = tz.fromutc(u)
+        self.assertEqual(t - t.utcoffset(), u)
+
+
 class TestTimeZone(unittest.TestCase):
 
     def setUp(self):
