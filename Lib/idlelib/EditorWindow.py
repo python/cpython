@@ -770,8 +770,10 @@ class EditorWindow(object):
             insertbackground=cursor_color,
             selectforeground=select_colors['foreground'],
             selectbackground=select_colors['background'],
-            inactiveselectbackground=select_colors['background'],
             )
+        if TkVersion >= 8.5:
+            self.text.config(
+                inactiveselectbackground=select_colors['background'])
 
     def ResetFont(self):
         "Update the text widgets' font if it is changed"
