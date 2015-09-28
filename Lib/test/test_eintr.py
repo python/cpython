@@ -16,14 +16,7 @@ class EINTRTests(unittest.TestCase):
         # Run the tester in a sub-process, to make sure there is only one
         # thread (for reliable signal delivery).
         tester = support.findfile("eintr_tester.py", subdir="eintrdata")
-
-        if support.verbose:
-            args = [sys.executable, tester]
-            with subprocess.Popen(args) as proc:
-                exitcode = proc.wait()
-            self.assertEqual(exitcode, 0)
-        else:
-            script_helper.assert_python_ok(tester)
+        script_helper.assert_python_ok(tester)
 
 
 if __name__ == "__main__":
