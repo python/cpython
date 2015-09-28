@@ -27,6 +27,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #23600: Default implementation of tzinfo.fromutc() was returning
+  wrong results in some cases.
+
+- Issue #25203: Failed readline.set_completer_delims() no longer left the
+  module in inconsistent state.
+
 - Issue #25011: rlcomplete now omits private and special attribute names unless
   the prefix starts with underscores.
 
