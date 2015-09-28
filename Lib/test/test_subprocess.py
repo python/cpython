@@ -37,16 +37,6 @@ else:
     SETBINARY = ''
 
 
-try:
-    mkstemp = tempfile.mkstemp
-except AttributeError:
-    # tempfile.mkstemp is not available
-    def mkstemp():
-        """Replacement for mkstemp, calling mktemp."""
-        fname = tempfile.mktemp()
-        return os.open(fname, os.O_RDWR|os.O_CREAT), fname
-
-
 class BaseTestCase(unittest.TestCase):
     def setUp(self):
         # Try to minimize the number of children we have so this test
@@ -1150,9 +1140,9 @@ class ProcessTestCase(BaseTestCase):
     def test_handles_closed_on_exception(self):
         # If CreateProcess exits with an error, ensure the
         # duplicate output handles are released
-        ifhandle, ifname = mkstemp()
-        ofhandle, ofname = mkstemp()
-        efhandle, efname = mkstemp()
+        ifhandle, ifname = tempfile.mkstemp()
+        ofhandle, ofname = tempfile.mkstemp()
+        efhandle, efname = tempfile.mkstemp()
         try:
             subprocess.Popen (["*"], stdin=ifhandle, stdout=ofhandle,
               stderr=efhandle)
@@ -1428,7 +1418,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def test_args_string(self):
         # args is a string
-        fd, fname = mkstemp()
+        fd, fname = tempfile.mkstemp()
         # reopen in text mode
         with open(fd, "w", errors="surrogateescape") as fobj:
             fobj.write("#!/bin/sh\n")
@@ -1473,7 +1463,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def test_call_string(self):
         # call() function with string argument on UNIX
-        fd, fname = mkstemp()
+        fd, fname = tempfile.mkstemp()
         # reopen in text mode
         with open(fd, "w", errors="surrogateescape") as fobj:
             fobj.write("#!/bin/sh\n")
@@ -1666,7 +1656,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def test_remapping_std_fds(self):
         # open up some temporary files
-        temps = [mkstemp() for i in range(3)]
+        temps = [tempfile.mkstemp() for i in range(3)]
         try:
             temp_fds = [fd for fd, fname in temps]
 
@@ -1711,7 +1701,7 @@ class POSIXProcessTestCase(BaseTestCase):
 
     def check_swap_fds(self, stdin_no, stdout_no, stderr_no):
         # open up some temporary files
-        temps = [mkstemp() for i in range(3)]
+        temps = [tempfile.mkstemp() for i in range(3)]
         temp_fds = [fd for fd, fname in temps]
         try:
             # unlink the files -- we won't need to reopen them
@@ -2442,7 +2432,7 @@ class CommandsWithSpaces (BaseTestCase):
 
     def setUp(self):
         super().setUp()
-        f, fname = mkstemp(".py", "te st")
+        f, fname = tempfile.mkstemp(".py", "te st")
         self.fname = fname.lower ()
         os.write(f, b"import sys;"
                     b"sys.stdout.write('%d %s' % (len(sys.argv), [a.lower () for a in sys.argv]))"
