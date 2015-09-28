@@ -21,7 +21,7 @@ Core and Builtins
 Library
 -------
 
-- Issue #25233: Rewrite the guts of Queue to be more understandable and correct.
+- Issue #25233: Rewrite the guts of asyncio.Queue to be more understandable and correct.
 
 - Issue #25203: Failed readline.set_completer_delims() no longer left the
   module in inconsistent state.
@@ -341,9 +341,6 @@ Library
 - Issue #19450: Update Windows and OS X installer builds to use SQLite 3.8.11.
 
 - Issue #17527: Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
-
-- Issue #23812: Fix asyncio.Queue.get() to avoid loosing items on cancellation.
-  Patch by Gustavo J. A. M. Carneiro.
 
 - Issue #24791: Fix grammar regression for call syntax: 'g(*a or b)'.
 
