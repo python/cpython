@@ -180,7 +180,7 @@ IDLE
   * Give code snippet a very Sphinx-like light blueish-gray background.
   * Re-use initial width and height set by users for shell and editor.
   * When the Table of Contents (TOC) menu is used, put the section header
-    at the top of the screen.
+  at the top of the screen.
 
 - Issue #25225: Condense and rewrite Idle doc section on text colors.
 
