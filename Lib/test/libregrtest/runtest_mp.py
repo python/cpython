@@ -1,7 +1,7 @@
 import json
 import os
-import re
 import sys
+import time
 import traceback
 import unittest
 from queue import Queue
@@ -15,7 +15,12 @@ except ImportError:
 from test.libregrtest.runtest import runtest, INTERRUPTED, CHILD_ERROR
 
 
-def run_tests_in_subprocess(testname, ns):
+# Minimum duration of a test to display its duration or to mention that
+# the test is running in background
+PROGRESS_MIN_TIME = 30.0   # seconds
+
+
+def run_test_in_subprocess(testname, ns):
     """Run the given test in a subprocess with --slaveargs.
 
     ns is the option Namespace parsed from command-line arguments. regrtest
@@ -24,26 +29,33 @@ def run_tests_in_subprocess(testname, ns):
     3-tuple.
     """
     from subprocess import Popen, PIPE
-    base_cmd = ([sys.executable] + support.args_from_interpreter_flags() +
-                ['-X', 'faulthandler', '-m', 'test.regrtest'])
 
-    slaveargs = (
-            (testname, ns.verbose, ns.quiet),
-            dict(huntrleaks=ns.huntrleaks,
-                 use_resources=ns.use_resources,
-                 output_on_failure=ns.verbose3,
-                 timeout=ns.timeout, failfast=ns.failfast,
-                 match_tests=ns.match_tests))
+    args = (testname, ns.verbose, ns.quiet)
+    kwargs = dict(huntrleaks=ns.huntrleaks,
+                  use_resources=ns.use_resources,
+                  output_on_failure=ns.verbose3,
+                  timeout=ns.timeout,
+                  failfast=ns.failfast,
+                  match_tests=ns.match_tests)
+    slaveargs = (args, kwargs)
+    slaveargs = json.dumps(slaveargs)
+
+    cmd = [sys.executable, *support.args_from_interpreter_flags(),
+           '-X', 'faulthandler',
+           '-m', 'test.regrtest',
+           '--slaveargs', slaveargs]
+
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
-    popen = Popen(base_cmd + ['--slaveargs', json.dumps(slaveargs)],
+    popen = Popen(cmd,
                   stdout=PIPE, stderr=PIPE,
                   universal_newlines=True,
                   close_fds=(os.name != 'nt'),
                   cwd=support.SAVEDCWD)
-    stdout, stderr = popen.communicate()
-    retcode = popen.wait()
+    with popen:
+        stdout, stderr = popen.communicate()
+        retcode = popen.wait()
     return retcode, stdout, stderr
 
 
@@ -90,30 +102,45 @@ class MultiprocessThread(threading.Thread):
         self.pending = pending
         self.output = output
         self.ns = ns
+        self.current_test = None
+        self.start_time = None
+
+    def _runtest(self):
+        try:
+            test = next(self.pending)
+        except StopIteration:
+            self.output.put((None, None, None, None))
+            return True
+
+        try:
+            self.start_time = time.monotonic()
+            self.current_test = test
+
+            retcode, stdout, stderr = run_test_in_subprocess(test, self.ns)
+        finally:
+            self.current_test = None
+
+        stdout, _, result = stdout.strip().rpartition("\n")
+        if retcode != 0:
+            result = (CHILD_ERROR, "Exit code %s" % retcode)
+            self.output.put((test, stdout.rstrip(), stderr.rstrip(),
+                             result))
+            return True
+
+        if not result:
+            self.output.put((None, None, None, None))
+            return True
+
+        result = json.loads(result)
+        self.output.put((test, stdout.rstrip(), stderr.rstrip(),
+                         result))
+        return False
 
     def run(self):
-        # A worker thread.
         try:
-            while True:
-                try:
-                    test = next(self.pending)
-                except StopIteration:
-                    self.output.put((None, None, None, None))
-                    return
-                retcode, stdout, stderr = run_tests_in_subprocess(test,
-                                                                  self.ns)
-                stdout, _, result = stdout.strip().rpartition("\n")
-                if retcode != 0:
-                    result = (CHILD_ERROR, "Exit code %s" % retcode)
-                    self.output.put((test, stdout.rstrip(), stderr.rstrip(),
-                                     result))
-                    return
-                if not result:
-                    self.output.put((None, None, None, None))
-                    return
-                result = json.loads(result)
-                self.output.put((test, stdout.rstrip(), stderr.rstrip(),
-                                 result))
+            stop = False
+            while not stop:
+                stop = self._runtest()
         except BaseException:
             self.output.put((None, None, None, None))
             raise
@@ -136,13 +163,33 @@ def run_tests_multiprocess(regrtest):
                 finished += 1
                 continue
             regrtest.accumulate_result(test, result)
-            regrtest.display_progress(test_index, test)
+
+            # Display progress
+            text = test
+            ok, test_time = result
+            if (ok not in (CHILD_ERROR, INTERRUPTED)
+                and test_time >= PROGRESS_MIN_TIME):
+                text += ' (%.0f sec)' % test_time
+            running = []
+            for worker in workers:
+                current_test = worker.current_test
+                if not current_test:
+                    continue
+                dt = time.monotonic() - worker.start_time
+                if dt >= PROGRESS_MIN_TIME:
+                    running.append('%s (%.0f sec)' % (current_test, dt))
+            if running:
+                text += ' -- running: %s' % ', '.join(running)
+            regrtest.display_progress(test_index, text)
+
+            # Copy stdout and stderr from the child process
             if stdout:
                 print(stdout)
             if stderr:
                 print(stderr, file=sys.stderr)
             sys.stdout.flush()
             sys.stderr.flush()
+
             if result[0] == INTERRUPTED:
                 raise KeyboardInterrupt
             if result[0] == CHILD_ERROR:
@@ -152,5 +199,11 @@ def run_tests_multiprocess(regrtest):
     except KeyboardInterrupt:
         regrtest.interrupted = True
         pending.interrupted = True
+        print()
+
+    running = [worker.current_test for worker in workers]
+    running = list(filter(bool, running))
+    if running:
+        print("Waiting for %s" % ', '.join(running))
     for worker in workers:
         worker.join()
