@@ -324,7 +324,7 @@ class StreamReader:
     def __repr__(self):
         info = ['StreamReader']
         if self._buffer:
-            info.append('%d bytes' % len(info))
+            info.append('%d bytes' % len(self._buffer))
         if self._eof:
             info.append('eof')
         if self._limit != _DEFAULT_LIMIT:
