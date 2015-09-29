@@ -7,7 +7,7 @@ import sysconfig
 import tempfile
 import textwrap
 from test.libregrtest.runtest import (
-    findtests, runtest,
+    findtests, runtest_ns,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED)
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.setup import setup_python
@@ -251,8 +251,7 @@ class Regrtest:
                 print("Re-running test %r in verbose mode" % test, flush=True)
                 try:
                     self.ns.verbose = True
-                    ok = runtest(test, True, self.ns.quiet, self.ns.huntrleaks,
-                                 timeout=self.ns.timeout)
+                    ok = runtest_ns(test, True, self.ns)
                 except KeyboardInterrupt:
                     # print a newline separate from the ^C
                     print()
@@ -266,14 +265,10 @@ class Regrtest:
                     printlist(self.bad)
 
     def run_test(self, test):
-        result = runtest(test,
-                         self.ns.verbose,
-                         self.ns.quiet,
-                         self.ns.huntrleaks,
-                         output_on_failure=self.ns.verbose3,
-                         timeout=self.ns.timeout,
-                         failfast=self.ns.failfast,
-                         match_tests=self.ns.match_tests)
+        result = runtest_ns(test, self.ns.verbose, self.ns,
+                            output_on_failure=self.ns.verbose3,
+                            failfast=self.ns.failfast,
+                            match_tests=self.ns.match_tests)
         self.accumulate_result(test, result)
 
     def run_tests_sequential(self):
