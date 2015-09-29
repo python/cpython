@@ -16,7 +16,6 @@ import textwrap
 import unittest
 from test import libregrtest
 from test import support
-from test.support import script_helper
 
 
 Py_DEBUG = hasattr(sys, 'getobjects')
@@ -366,6 +365,31 @@ class BaseTestCase(unittest.TestCase):
         self.assertTrue(0 <= randseed <= 10000000, randseed)
         return randseed
 
+    def run_command(self, args, input=None):
+        if not input:
+            input = ''
+        try:
+            return subprocess.run(args,
+                                  check=True, universal_newlines=True,
+                                  input=input,
+                                  stdout=subprocess.PIPE,
+                                  stderr=subprocess.PIPE)
+        except subprocess.CalledProcessError as exc:
+            self.fail("%s\n"
+                      "\n"
+                      "stdout:\n"
+                      "%s\n"
+                      "\n"
+                      "stderr:\n"
+                      "%s"
+                      % (str(exc), exc.stdout, exc.stderr))
+
+
+    def run_python(self, args, **kw):
+        args = [sys.executable, '-X', 'faulthandler', '-I', *args]
+        proc = self.run_command(args, **kw)
+        return proc.stdout
+
 
 class ProgramsTestCase(BaseTestCase):
     """
@@ -391,9 +415,8 @@ class ProgramsTestCase(BaseTestCase):
         self.check_executed_tests(output, self.tests)
 
     def run_tests(self, args):
-        res = script_helper.assert_python_ok(*args)
-        output = os.fsdecode(res.out)
-        self.check_output(output)
+        stdout = self.run_python(args)
+        self.check_output(stdout)
 
     def test_script_regrtest(self):
         # Lib/test/regrtest.py
@@ -439,10 +462,7 @@ class ProgramsTestCase(BaseTestCase):
         self.run_tests([script, *self.tests])
 
     def run_batch(self, *args):
-        proc = subprocess.run(args,
-                              check=True, universal_newlines=True,
-                              input='',
-                              stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        proc = self.run_command(args)
         self.check_output(proc.stdout)
 
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
@@ -473,10 +493,8 @@ class ArgsTestCase(BaseTestCase):
     Test arguments of the Python test suite.
     """
 
-    def run_tests(self, *args):
-        args = ['-m', 'test', *args]
-        res = script_helper.assert_python_ok(*args)
-        return os.fsdecode(res.out)
+    def run_tests(self, *args, input=None):
+        return self.run_python(['-m', 'test', *args], input=input)
 
     def test_resources(self):
         # test -u command line option
@@ -560,6 +578,12 @@ class ArgsTestCase(BaseTestCase):
         regex = ('lines +cov% +module +\(path\)\n'
                  '(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
         self.check_line(output, regex)
+
+    def test_wait(self):
+        # test --wait
+        test = self.create_test()
+        output = self.run_tests("--wait", test, input='key')
+        self.check_line(output, 'Press any key to continue')
 
 
 if __name__ == '__main__':
