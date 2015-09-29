@@ -13,7 +13,8 @@ except ImportError:
     print("Multiprocess option requires thread support")
     sys.exit(2)
 
-from test.libregrtest.runtest import runtest, INTERRUPTED, CHILD_ERROR
+from test.libregrtest.runtest import runtest_ns, INTERRUPTED, CHILD_ERROR
+from test.libregrtest.setup import setup_python
 
 
 # Minimum duration of a test to display its duration or to mention that
@@ -58,11 +59,10 @@ def run_tests_slave(slaveargs):
     ns_dict, testname = json.loads(slaveargs)
     ns = types.SimpleNamespace(**ns_dict)
 
-    if ns.huntrleaks:
-        unittest.BaseTestSuite._cleanup = False
+    setup_python(ns)
 
     try:
-        result = runtest_ns(testname,  ns.verbose, ns.quiet, ns,
+        result = runtest_ns(testname,  ns.verbose, ns,
                             use_resources=ns.use_resources,
                             output_on_failure=ns.verbose3,
                             failfast=ns.failfast,

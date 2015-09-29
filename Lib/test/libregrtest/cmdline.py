@@ -295,8 +295,6 @@ def _parse_args(args, **kwargs):
         parser.error("-T and -j don't go together!")
     if ns.use_mp and ns.findleaks:
         parser.error("-l and -j don't go together!")
-    if ns.use_mp and ns.memlimit:
-        parser.error("-M and -j don't go together!")
     if ns.failfast and not (ns.verbose or ns.verbose3):
         parser.error("-G/--failfast needs either -v or -W")
 
