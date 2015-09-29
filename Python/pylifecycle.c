@@ -972,6 +972,9 @@ is_valid_fd(int fd)
     if (fd < 0 || !_PyVerify_fd(fd))
         return 0;
     _Py_BEGIN_SUPPRESS_IPH
+    /* Prefer dup() over fstat(). fstat() can require input/output whereas
+       dup() doesn't, there is a low risk of EMFILE/ENFILE at Python
+       startup. */
     fd2 = dup(fd);
     if (fd2 >= 0)
         close(fd2);
