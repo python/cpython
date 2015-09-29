@@ -1,7 +1,6 @@
 import faulthandler
 import importlib
 import io
-import json
 import os
 import sys
 import time
@@ -20,38 +19,6 @@ SKIPPED = -2
 RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
-
-
-def run_test_in_subprocess(testname, ns):
-    """Run the given test in a subprocess with --slaveargs.
-
-    ns is the option Namespace parsed from command-line arguments. regrtest
-    is invoked in a subprocess with the --slaveargs argument; when the
-    subprocess exits, its return code, stdout and stderr are returned as a
-    3-tuple.
-    """
-    from subprocess import Popen, PIPE
-    base_cmd = ([sys.executable] + support.args_from_interpreter_flags() +
-                ['-X', 'faulthandler', '-m', 'test.regrtest'])
-
-    slaveargs = (
-            (testname, ns.verbose, ns.quiet),
-            dict(huntrleaks=ns.huntrleaks,
-                 use_resources=ns.use_resources,
-                 output_on_failure=ns.verbose3,
-                 timeout=ns.timeout, failfast=ns.failfast,
-                 match_tests=ns.match_tests))
-    # Running the child from the same working directory as regrtest's original
-    # invocation ensures that TEMPDIR for the child is the same when
-    # sysconfig.is_python_build() is true. See issue 15300.
-    popen = Popen(base_cmd + ['--slaveargs', json.dumps(slaveargs)],
-                  stdout=PIPE, stderr=PIPE,
-                  universal_newlines=True,
-                  close_fds=(os.name != 'nt'),
-                  cwd=support.SAVEDCWD)
-    stdout, stderr = popen.communicate()
-    retcode = popen.wait()
-    return retcode, stdout, stderr
 
 
 # small set of tests to determine if we have a basically functioning interpreter
