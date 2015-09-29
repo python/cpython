@@ -411,6 +411,13 @@ class Semaphore(_ContextManagerMixin):
             extra = '{},waiters:{}'.format(extra, len(self._waiters))
         return '<{} [{}]>'.format(res[1:-1], extra)
 
+    def _wake_up_next(self):
+        while self._waiters:
+            waiter = self._waiters.popleft()
+            if not waiter.done():
+                waiter.set_result(None)
+                return
+
     def locked(self):
         """Returns True if semaphore can not be acquired immediately."""
         return self._value == 0
@@ -425,18 +432,19 @@ class Semaphore(_ContextManagerMixin):
         called release() to make it larger than 0, and then return
         True.
         """
-        if not self._waiters and self._value > 0:
-            self._value -= 1
-            return True
-
-        fut = futures.Future(loop=self._loop)
-        self._waiters.append(fut)
-        try:
-            yield from fut
-            self._value -= 1
-            return True
-        finally:
-            self._waiters.remove(fut)
+        while self._value <= 0:
+            fut = futures.Future(loop=self._loop)
+            self._waiters.append(fut)
+            try:
+                yield from fut
+            except:
+                # See the similar code in Queue.get.
+                fut.cancel()
+                if self._value > 0 and not fut.cancelled():
+                    self._wake_up_next()
+                raise
+        self._value -= 1
+        return True
 
     def release(self):
         """Release a semaphore, incrementing the internal counter by one.
@@ -444,10 +452,7 @@ class Semaphore(_ContextManagerMixin):
         become larger than zero again, wake up that coroutine.
         """
         self._value += 1
-        for waiter in self._waiters:
-            if not waiter.done():
-                waiter.set_result(True)
-                break
+        self._wake_up_next()
 
 
 class BoundedSemaphore(Semaphore):
