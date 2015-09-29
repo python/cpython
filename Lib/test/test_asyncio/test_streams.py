@@ -632,6 +632,48 @@ os.close(fd)
         protocol = asyncio.StreamReaderProtocol(reader)
         self.assertIs(protocol._loop, self.loop)
 
+    def test___repr__(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        self.assertEqual("<StreamReader>", repr(stream))
+
+    def test___repr__nondefault_limit(self):
+        stream = asyncio.StreamReader(loop=self.loop, limit=123)
+        self.assertEqual("<StreamReader l=123>", repr(stream))
+
+    def test___repr__eof(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream.feed_eof()
+        self.assertEqual("<StreamReader eof>", repr(stream))
+
+    def test___repr__data(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream.feed_data(b'data')
+        self.assertEqual("<StreamReader 4 bytes>", repr(stream))
+
+    def test___repr__exception(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        exc = RuntimeError()
+        stream.set_exception(exc)
+        self.assertEqual("<StreamReader e=RuntimeError()>", repr(stream))
+
+    def test___repr__waiter(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream._waiter = asyncio.Future(loop=self.loop)
+        self.assertRegex(
+            repr(stream),
+            "<StreamReader w=<Future pending[\S ]*>>")
+        stream._waiter.set_result(None)
+        self.loop.run_until_complete(stream._waiter)
+        stream._waiter = None
+        self.assertEqual("<StreamReader>", repr(stream))
+
+    def test___repr__transport(self):
+        stream = asyncio.StreamReader(loop=self.loop)
+        stream._transport = mock.Mock()
+        stream._transport.__repr__ = mock.Mock()
+        stream._transport.__repr__.return_value = "<Transport>"
+        self.assertEqual("<StreamReader t=<Transport>>", repr(stream))
+
 
 if __name__ == '__main__':
     unittest.main()
