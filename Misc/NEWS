@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22958: Constructor and update method of weakref.WeakValueDictionary
+  now accept the self keyword argument.
+
 - Issue #22609: Constructor and the update method of collections.UserDict now
   accept the self keyword argument.
 
