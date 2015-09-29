@@ -145,7 +145,7 @@ def create_dynamic_class(name, bases):
     result.reduce_args = (name, bases)
     return result
 
-# DATA0 .. DATA2 are the pickles we expect under the various protocols, for
+# DATA0 .. DATA4 are the pickles we expect under the various protocols, for
 # the object returned by create_data().
 
 DATA0 = (
@@ -401,22 +401,172 @@ DATA2_DIS = """\
 highest protocol among opcodes = 2
 """
 
+DATA3 = (
+    b'\x80\x03]q\x00(K\x00K\x01G@\x00\x00\x00\x00\x00\x00\x00c'
+    b'builtins\ncomplex\nq\x01G'
+    b'@\x08\x00\x00\x00\x00\x00\x00G\x00\x00\x00\x00\x00\x00\x00\x00\x86q\x02'
+    b'Rq\x03K\x01J\xff\xff\xff\xffK\xffJ\x01\xff\xff\xffJ\x00\xff'
+    b'\xff\xffM\xff\xffJ\x01\x00\xff\xffJ\x00\x00\xff\xffJ\xff\xff\xff\x7f'
+    b'J\x01\x00\x00\x80J\x00\x00\x00\x80(X\x03\x00\x00\x00abcq'
+    b'\x04h\x04c__main__\nC\nq\x05)\x81q'
+    b'\x06}q\x07(X\x03\x00\x00\x00barq\x08K\x02X\x03\x00'
+    b'\x00\x00fooq\tK\x01ubh\x06tq\nh\nK\x05'
+    b'e.'
+)
+
+# Disassembly of DATA3
+DATA3_DIS = """\
+    0: \x80 PROTO      3
+    2: ]    EMPTY_LIST
+    3: q    BINPUT     0
+    5: (    MARK
+    6: K        BININT1    0
+    8: K        BININT1    1
+   10: G        BINFLOAT   2.0
+   19: c        GLOBAL     'builtins complex'
+   37: q        BINPUT     1
+   39: G        BINFLOAT   3.0
+   48: G        BINFLOAT   0.0
+   57: \x86     TUPLE2
+   58: q        BINPUT     2
+   60: R        REDUCE
+   61: q        BINPUT     3
+   63: K        BININT1    1
+   65: J        BININT     -1
+   70: K        BININT1    255
+   72: J        BININT     -255
+   77: J        BININT     -256
+   82: M        BININT2    65535
+   85: J        BININT     -65535
+   90: J        BININT     -65536
+   95: J        BININT     2147483647
+  100: J        BININT     -2147483647
+  105: J        BININT     -2147483648
+  110: (        MARK
+  111: X            BINUNICODE 'abc'
+  119: q            BINPUT     4
+  121: h            BINGET     4
+  123: c            GLOBAL     '__main__ C'
+  135: q            BINPUT     5
+  137: )            EMPTY_TUPLE
+  138: \x81         NEWOBJ
+  139: q            BINPUT     6
+  141: }            EMPTY_DICT
+  142: q            BINPUT     7
+  144: (            MARK
+  145: X                BINUNICODE 'bar'
+  153: q                BINPUT     8
+  155: K                BININT1    2
+  157: X                BINUNICODE 'foo'
+  165: q                BINPUT     9
+  167: K                BININT1    1
+  169: u                SETITEMS   (MARK at 144)
+  170: b            BUILD
+  171: h            BINGET     6
+  173: t            TUPLE      (MARK at 110)
+  174: q        BINPUT     10
+  176: h        BINGET     10
+  178: K        BININT1    5
+  180: e        APPENDS    (MARK at 5)
+  181: .    STOP
+highest protocol among opcodes = 2
+"""
+
+DATA4 = (
+    b'\x80\x04\x95\xa8\x00\x00\x00\x00\x00\x00\x00]\x94(K\x00K\x01G@'
+    b'\x00\x00\x00\x00\x00\x00\x00\x8c\x08builtins\x94\x8c\x07'
+    b'complex\x94\x93\x94G@\x08\x00\x00\x00\x00\x00\x00G'
+    b'\x00\x00\x00\x00\x00\x00\x00\x00\x86\x94R\x94K\x01J\xff\xff\xff\xffK'
+    b'\xffJ\x01\xff\xff\xffJ\x00\xff\xff\xffM\xff\xffJ\x01\x00\xff\xffJ'
+    b'\x00\x00\xff\xffJ\xff\xff\xff\x7fJ\x01\x00\x00\x80J\x00\x00\x00\x80('
+    b'\x8c\x03abc\x94h\x06\x8c\x08__main__\x94\x8c'
+    b'\x01C\x94\x93\x94)\x81\x94}\x94(\x8c\x03bar\x94K\x02\x8c'
+    b'\x03foo\x94K\x01ubh\nt\x94h\x0eK\x05e.'
+)
+
+# Disassembly of DATA4
+DATA4_DIS = """\
+    0: \x80 PROTO      4
+    2: \x95 FRAME      168
+   11: ]    EMPTY_LIST
+   12: \x94 MEMOIZE
+   13: (    MARK
+   14: K        BININT1    0
+   16: K        BININT1    1
+   18: G        BINFLOAT   2.0
+   27: \x8c     SHORT_BINUNICODE 'builtins'
+   37: \x94     MEMOIZE
+   38: \x8c     SHORT_BINUNICODE 'complex'
+   47: \x94     MEMOIZE
+   48: \x93     STACK_GLOBAL
+   49: \x94     MEMOIZE
+   50: G        BINFLOAT   3.0
+   59: G        BINFLOAT   0.0
+   68: \x86     TUPLE2
+   69: \x94     MEMOIZE
+   70: R        REDUCE
+   71: \x94     MEMOIZE
+   72: K        BININT1    1
+   74: J        BININT     -1
+   79: K        BININT1    255
+   81: J        BININT     -255
+   86: J        BININT     -256
+   91: M        BININT2    65535
+   94: J        BININT     -65535
+   99: J        BININT     -65536
+  104: J        BININT     2147483647
+  109: J        BININT     -2147483647
+  114: J        BININT     -2147483648
+  119: (        MARK
+  120: \x8c         SHORT_BINUNICODE 'abc'
+  125: \x94         MEMOIZE
+  126: h            BINGET     6
+  128: \x8c         SHORT_BINUNICODE '__main__'
+  138: \x94         MEMOIZE
+  139: \x8c         SHORT_BINUNICODE 'C'
+  142: \x94         MEMOIZE
+  143: \x93         STACK_GLOBAL
+  144: \x94         MEMOIZE
+  145: )            EMPTY_TUPLE
+  146: \x81         NEWOBJ
+  147: \x94         MEMOIZE
+  148: }            EMPTY_DICT
+  149: \x94         MEMOIZE
+  150: (            MARK
+  151: \x8c             SHORT_BINUNICODE 'bar'
+  156: \x94             MEMOIZE
+  157: K                BININT1    2
+  159: \x8c             SHORT_BINUNICODE 'foo'
+  164: \x94             MEMOIZE
+  165: K                BININT1    1
+  167: u                SETITEMS   (MARK at 150)
+  168: b            BUILD
+  169: h            BINGET     10
+  171: t            TUPLE      (MARK at 119)
+  172: \x94     MEMOIZE
+  173: h        BINGET     14
+  175: K        BININT1    5
+  177: e        APPENDS    (MARK at 13)
+  178: .    STOP
+highest protocol among opcodes = 4
+"""
+
 # set([1,2]) pickled from 2.x with protocol 2
-DATA3 = b'\x80\x02c__builtin__\nset\nq\x00]q\x01(K\x01K\x02e\x85q\x02Rq\x03.'
+DATA_SET = b'\x80\x02c__builtin__\nset\nq\x00]q\x01(K\x01K\x02e\x85q\x02Rq\x03.'
 
 # xrange(5) pickled from 2.x with protocol 2
-DATA4 = b'\x80\x02c__builtin__\nxrange\nq\x00K\x00K\x05K\x01\x87q\x01Rq\x02.'
+DATA_XRANGE = b'\x80\x02c__builtin__\nxrange\nq\x00K\x00K\x05K\x01\x87q\x01Rq\x02.'
 
 # a SimpleCookie() object pickled from 2.x with protocol 2
-DATA5 = (b'\x80\x02cCookie\nSimpleCookie\nq\x00)\x81q\x01U\x03key'
-         b'q\x02cCookie\nMorsel\nq\x03)\x81q\x04(U\x07commentq\x05U'
-         b'\x00q\x06U\x06domainq\x07h\x06U\x06secureq\x08h\x06U\x07'
-         b'expiresq\th\x06U\x07max-ageq\nh\x06U\x07versionq\x0bh\x06U'
-         b'\x04pathq\x0ch\x06U\x08httponlyq\rh\x06u}q\x0e(U\x0b'
-         b'coded_valueq\x0fU\x05valueq\x10h\x10h\x10h\x02h\x02ubs}q\x11b.')
+DATA_COOKIE = (b'\x80\x02cCookie\nSimpleCookie\nq\x00)\x81q\x01U\x03key'
+               b'q\x02cCookie\nMorsel\nq\x03)\x81q\x04(U\x07commentq\x05U'
+               b'\x00q\x06U\x06domainq\x07h\x06U\x06secureq\x08h\x06U\x07'
+               b'expiresq\th\x06U\x07max-ageq\nh\x06U\x07versionq\x0bh\x06U'
+               b'\x04pathq\x0ch\x06U\x08httponlyq\rh\x06u}q\x0e(U\x0b'
+               b'coded_valueq\x0fU\x05valueq\x10h\x10h\x10h\x02h\x02ubs}q\x11b.')
 
 # set([3]) pickled from 2.x with protocol 2
-DATA6 = b'\x80\x02c__builtin__\nset\nq\x00]q\x01K\x03a\x85q\x02Rq\x03.'
+DATA_SET2 = b'\x80\x02c__builtin__\nset\nq\x00]q\x01K\x03a\x85q\x02Rq\x03.'
 
 python2_exceptions_without_args = (
     ArithmeticError,
@@ -468,20 +618,10 @@ python2_exceptions_without_args = (
 
 exception_pickle = b'\x80\x02cexceptions\n?\nq\x00)Rq\x01.'
 
-# Exception objects without arguments pickled from 2.x with protocol 2
-DATA7 = {
-    exception :
-    exception_pickle.replace(b'?', exception.__name__.encode("ascii"))
-    for exception in python2_exceptions_without_args
-}
-
-# StandardError is mapped to Exception, test that separately
-DATA8 = exception_pickle.replace(b'?', b'StandardError')
-
 # UnicodeEncodeError object pickled from 2.x with protocol 2
-DATA9 = (b'\x80\x02cexceptions\nUnicodeEncodeError\n'
-         b'q\x00(U\x05asciiq\x01X\x03\x00\x00\x00fooq\x02K\x00K\x01'
-         b'U\x03badq\x03tq\x04Rq\x05.')
+DATA_UEERR = (b'\x80\x02cexceptions\nUnicodeEncodeError\n'
+              b'q\x00(U\x05asciiq\x01X\x03\x00\x00\x00fooq\x02K\x00K\x01'
+              b'U\x03badq\x03tq\x04Rq\x05.')
 
 
 def create_data():
@@ -536,6 +676,12 @@ class AbstractUnpickleTests(unittest.TestCase):
 
     def test_load_from_data2(self):
         self.assert_is_copy(self._testdata, self.loads(DATA2))
+
+    def test_load_from_data3(self):
+        self.assert_is_copy(self._testdata, self.loads(DATA3))
+
+    def test_load_from_data4(self):
+        self.assert_is_copy(self._testdata, self.loads(DATA4))
 
     def test_load_classic_instance(self):
         # See issue5180.  Test loading 2.x pickles that
@@ -594,11 +740,6 @@ class AbstractUnpickleTests(unittest.TestCase):
                        b'q\x00oq\x01}q\x02b.').replace(b'X', xname)
             self.assert_is_copy(X(*args), self.loads(pickle2))
 
-    def test_get(self):
-        self.assertRaises(KeyError, self.loads, b'g0\np0')
-        self.assert_is_copy([(100,), (100,)],
-                            self.loads(b'((Kdtp0\nh\x00l.))'))
-
     def test_maxint64(self):
         maxint64 = (1 << 63) - 1
         data = b'I' + str(maxint64).encode("ascii") + b'\n.'
@@ -616,24 +757,27 @@ class AbstractUnpickleTests(unittest.TestCase):
 
     def test_unpickle_from_2x(self):
         # Unpickle non-trivial data from Python 2.x.
-        loaded = self.loads(DATA3)
+        loaded = self.loads(DATA_SET)
         self.assertEqual(loaded, set([1, 2]))
-        loaded = self.loads(DATA4)
+        loaded = self.loads(DATA_XRANGE)
         self.assertEqual(type(loaded), type(range(0)))
         self.assertEqual(list(loaded), list(range(5)))
-        loaded = self.loads(DATA5)
+        loaded = self.loads(DATA_COOKIE)
         self.assertEqual(type(loaded), SimpleCookie)
         self.assertEqual(list(loaded.keys()), ["key"])
         self.assertEqual(loaded["key"].value, "value")
 
-        for (exc, data) in DATA7.items():
+        # Exception objects without arguments pickled from 2.x with protocol 2
+        for exc in python2_exceptions_without_args:
+            data = exception_pickle.replace(b'?', exc.__name__.encode("ascii"))
             loaded = self.loads(data)
             self.assertIs(type(loaded), exc)
 
-        loaded = self.loads(DATA8)
+        # StandardError is mapped to Exception, test that separately
+        loaded = self.loads(exception_pickle.replace(b'?', b'StandardError'))
         self.assertIs(type(loaded), Exception)
 
-        loaded = self.loads(DATA9)
+        loaded = self.loads(DATA_UEERR)
         self.assertIs(type(loaded), UnicodeEncodeError)
         self.assertEqual(loaded.object, "foo")
         self.assertEqual(loaded.encoding, "ascii")
@@ -670,10 +814,25 @@ class AbstractUnpickleTests(unittest.TestCase):
                                     b'x' * 300 + pickle.STOP,
                                     encoding='bytes'), b'x' * 300)
 
+    def test_constants(self):
+        self.assertIsNone(self.loads(b'N.'))
+        self.assertIs(self.loads(b'\x88.'), True)
+        self.assertIs(self.loads(b'\x89.'), False)
+        self.assertIs(self.loads(b'I01\n.'), True)
+        self.assertIs(self.loads(b'I00\n.'), False)
+
     def test_empty_bytestring(self):
         # issue 11286
         empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
         self.assertEqual(empty, '')
+
+    def test_short_binbytes(self):
+        dumped = b'\x80\x03C\x04\xe2\x82\xac\x00.'
+        self.assertEqual(self.loads(dumped), b'\xe2\x82\xac\x00')
+
+    def test_binbytes(self):
+        dumped = b'\x80\x03B\x04\x00\x00\x00\xe2\x82\xac\x00.'
+        self.assertEqual(self.loads(dumped), b'\xe2\x82\xac\x00')
 
     @requires_32b
     def test_negative_32b_binbytes(self):
@@ -688,6 +847,39 @@ class AbstractUnpickleTests(unittest.TestCase):
         dumped = b'\x80\x03X\xff\xff\xff\xffxyzq\x00.'
         with self.assertRaises((pickle.UnpicklingError, OverflowError)):
             self.loads(dumped)
+
+    def test_short_binunicode(self):
+        dumped = b'\x80\x04\x8c\x04\xe2\x82\xac\x00.'
+        self.assertEqual(self.loads(dumped), '\u20ac\x00')
+
+    def test_misc_get(self):
+        self.assertRaises(KeyError, self.loads, b'g0\np0')
+        self.assert_is_copy([(100,), (100,)],
+                            self.loads(b'((Kdtp0\nh\x00l.))'))
+
+    def test_get(self):
+        pickled = b'((lp100000\ng100000\nt.'
+        unpickled = self.loads(pickled)
+        self.assertEqual(unpickled, ([],)*2)
+        self.assertIs(unpickled[0], unpickled[1])
+
+    def test_binget(self):
+        pickled = b'(]q\xffh\xfft.'
+        unpickled = self.loads(pickled)
+        self.assertEqual(unpickled, ([],)*2)
+        self.assertIs(unpickled[0], unpickled[1])
+
+    def test_long_binget(self):
+        pickled = b'(]r\x00\x00\x01\x00j\x00\x00\x01\x00t.'
+        unpickled = self.loads(pickled)
+        self.assertEqual(unpickled, ([],)*2)
+        self.assertIs(unpickled[0], unpickled[1])
+
+    def test_dup(self):
+        pickled = b'((l2t.'
+        unpickled = self.loads(pickled)
+        self.assertEqual(unpickled, ([],)*2)
+        self.assertIs(unpickled[0], unpickled[1])
 
     def test_negative_put(self):
         # Issue #12847
@@ -1455,9 +1647,9 @@ class AbstractPickleTests(unittest.TestCase):
         # NOTE: this test is a bit too strong since we can produce different
         # bytecode that 2.x will still understand.
         dumped = self.dumps(range(5), 2)
-        self.assertEqual(dumped, DATA4)
+        self.assertEqual(dumped, DATA_XRANGE)
         dumped = self.dumps(set([3]), 2)
-        self.assertEqual(dumped, DATA6)
+        self.assertEqual(dumped, DATA_SET2)
 
     def test_large_pickles(self):
         # Test the correctness of internal buffering routines when handling
@@ -2312,7 +2504,7 @@ if __name__ == "__main__":
     # Print some stuff that can be used to rewrite DATA{0,1,2}
     from pickletools import dis
     x = create_data()
-    for i in range(3):
+    for i in range(pickle.HIGHEST_PROTOCOL+1):
         p = pickle.dumps(x, i)
         print("DATA{0} = (".format(i))
         for j in range(0, len(p), 20):
