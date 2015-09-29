@@ -431,8 +431,8 @@ class Regrtest:
             os.system("leaks %d" % os.getpid())
 
     def main(self, tests=None, **kwargs):
-        setup_python()
         self.ns = _parse_args(sys.argv[1:], **kwargs)
+        setup_python()
         self.setup_regrtest()
         if self.ns.wait:
             input("Press any key to continue...")
