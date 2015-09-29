@@ -157,8 +157,8 @@ class Regrtest:
             return
         fmt = "[{1:{0}}{2}/{3}] {4}" if self.bad else "[{1:{0}}{2}] {4}"
         print(fmt.format(self.test_count_width, test_index,
-                         self.test_count, len(self.bad), test))
-        sys.stdout.flush()
+                         self.test_count, len(self.bad), test),
+              flush=True)
 
     def setup_regrtest(self):
         if self.ns.huntrleaks:
@@ -333,8 +333,7 @@ class Regrtest:
         if self.ns.verbose2 and self.bad:
             print("Re-running failed tests in verbose mode")
             for test in self.bad[:]:
-                print("Re-running test %r in verbose mode" % test)
-                sys.stdout.flush()
+                print("Re-running test %r in verbose mode" % test, flush=True)
                 try:
                     self.ns.verbose = True
                     ok = runtest(test, True, self.ns.quiet, self.ns.huntrleaks,

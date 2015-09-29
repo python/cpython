@@ -161,27 +161,23 @@ def runtest_inner(test, verbose, quiet,
             test_time = time.time() - start_time
     except support.ResourceDenied as msg:
         if not quiet:
-            print(test, "skipped --", msg)
-            sys.stdout.flush()
+            print(test, "skipped --", msg, flush=True)
         return RESOURCE_DENIED, test_time
     except unittest.SkipTest as msg:
         if not quiet:
-            print(test, "skipped --", msg)
-            sys.stdout.flush()
+            print(test, "skipped --", msg, flush=True)
         return SKIPPED, test_time
     except KeyboardInterrupt:
         raise
     except support.TestFailed as msg:
         if display_failure:
-            print("test", test, "failed --", msg, file=sys.stderr)
+            print("test", test, "failed --", msg, file=sys.stderr, flush=True)
         else:
-            print("test", test, "failed", file=sys.stderr)
-        sys.stderr.flush()
+            print("test", test, "failed", file=sys.stderr, flush=True)
         return FAILED, test_time
     except:
         msg = traceback.format_exc()
-        print("test", test, "crashed --", msg, file=sys.stderr)
-        sys.stderr.flush()
+        print("test", test, "crashed --", msg, file=sys.stderr, flush=True)
         return FAILED, test_time
     else:
         if refleak:
