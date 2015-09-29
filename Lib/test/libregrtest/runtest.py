@@ -53,6 +53,13 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + sorted(tests)
 
 
+def runtest_ns(test, verbose, ns, **kw):
+    return runtest(test, verbose, ns.quiet,
+                   huntrleaks=ns.huntrleaks,
+                   timeout=ns.timeout,
+                   **kw)
+
+
 def runtest(test, verbose, quiet,
             huntrleaks=False, use_resources=None,
             output_on_failure=False, failfast=False, match_tests=None,

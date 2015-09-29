@@ -3,6 +3,7 @@ import os
 import sys
 import time
 import traceback
+import types
 import unittest
 from queue import Queue
 from test import support
@@ -30,14 +31,8 @@ def run_test_in_subprocess(testname, ns):
     """
     from subprocess import Popen, PIPE
 
-    args = (testname, ns.verbose, ns.quiet)
-    kwargs = dict(huntrleaks=ns.huntrleaks,
-                  use_resources=ns.use_resources,
-                  output_on_failure=ns.verbose3,
-                  timeout=ns.timeout,
-                  failfast=ns.failfast,
-                  match_tests=ns.match_tests)
-    slaveargs = (args, kwargs)
+    ns_dict = vars(ns)
+    slaveargs = (ns_dict, testname)
     slaveargs = json.dumps(slaveargs)
 
     cmd = [sys.executable, *support.args_from_interpreter_flags(),
@@ -60,11 +55,18 @@ def run_test_in_subprocess(testname, ns):
 
 
 def run_tests_slave(slaveargs):
-    args, kwargs = json.loads(slaveargs)
-    if kwargs.get('huntrleaks'):
+    ns_dict, testname = json.loads(slaveargs)
+    ns = types.SimpleNamespace(**ns_dict)
+
+    if ns.huntrleaks:
         unittest.BaseTestSuite._cleanup = False
+
     try:
-        result = runtest(*args, **kwargs)
+        result = runtest_ns(testname,  ns.verbose, ns.quiet, ns,
+                            use_resources=ns.use_resources,
+                            output_on_failure=ns.verbose3,
+                            failfast=ns.failfast,
+                            match_tests=ns.match_tests)
     except KeyboardInterrupt:
         result = INTERRUPTED, ''
     except BaseException as e:
