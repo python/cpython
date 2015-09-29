@@ -15,9 +15,6 @@ except ImportError:
 from test.libregrtest.runtest import runtest, INTERRUPTED, CHILD_ERROR
 
 
-debug_output_pat = re.compile(r"\[\d+ refs, \d+ blocks\]$")
-
-
 def run_tests_in_subprocess(testname, ns):
     """Run the given test in a subprocess with --slaveargs.
 
@@ -105,9 +102,6 @@ class MultiprocessThread(threading.Thread):
                     return
                 retcode, stdout, stderr = run_tests_in_subprocess(test,
                                                                   self.ns)
-                # Strip last refcount output line if it exists, since it
-                # comes from the shutdown of the interpreter in the subcommand.
-                stderr = debug_output_pat.sub("", stderr)
                 stdout, _, result = stdout.strip().rpartition("\n")
                 if retcode != 0:
                     result = (CHILD_ERROR, "Exit code %s" % retcode)
