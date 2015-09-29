@@ -31,7 +31,7 @@ else:
 TEMPDIR = os.path.abspath(TEMPDIR)
 
 
-def setup_python():
+def setup_python(ns):
     # Display the Python traceback on fatal errors (e.g. segfault)
     faulthandler.enable(all_threads=True)
 
@@ -79,6 +79,38 @@ def setup_python():
             soft, hard = resource.getrlimit(resource.RLIMIT_STACK)
             newsoft = min(hard, max(soft, 1024*2048))
             resource.setrlimit(resource.RLIMIT_STACK, (newsoft, hard))
+
+    if ns.huntrleaks:
+        unittest.BaseTestSuite._cleanup = False
+
+        # Avoid false positives due to various caches
+        # filling slowly with random data:
+        warm_caches()
+
+    if ns.memlimit is not None:
+        support.set_memlimit(ns.memlimit)
+
+    if ns.threshold is not None:
+        if gc is not None:
+            gc.set_threshold(ns.threshold)
+        else:
+            print('No GC available, ignore --threshold.')
+
+    if ns.nowindows:
+        import msvcrt
+        msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
+                            msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
+                            msvcrt.SEM_NOGPFAULTERRORBOX|
+                            msvcrt.SEM_NOOPENFILEERRORBOX)
+        try:
+            msvcrt.CrtSetReportMode
+        except AttributeError:
+            # release build
+            pass
+        else:
+            for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
+                msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
+                msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
 
 
 class Regrtest:
@@ -161,36 +193,6 @@ class Regrtest:
               flush=True)
 
     def setup_regrtest(self):
-        if self.ns.huntrleaks:
-            # Avoid false positives due to various caches
-            # filling slowly with random data:
-            warm_caches()
-
-        if self.ns.memlimit is not None:
-            support.set_memlimit(self.ns.memlimit)
-
-        if self.ns.threshold is not None:
-            if gc is not None:
-                gc.set_threshold(self.ns.threshold)
-            else:
-                print('No GC available, ignore --threshold.')
-
-        if self.ns.nowindows:
-            import msvcrt
-            msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
-                                msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
-                                msvcrt.SEM_NOGPFAULTERRORBOX|
-                                msvcrt.SEM_NOOPENFILEERRORBOX)
-            try:
-                msvcrt.CrtSetReportMode
-            except AttributeError:
-                # release build
-                pass
-            else:
-                for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
-
         if self.ns.findleaks:
             if gc is not None:
                 # Uncomment the line below to report garbage that is not
@@ -202,18 +204,8 @@ class Regrtest:
                 print('No GC available, disabling --findleaks')
                 self.ns.findleaks = False
 
-        if self.ns.huntrleaks:
-            unittest.BaseTestSuite._cleanup = False
-
         # Strip .py extensions.
         removepy(self.ns.args)
-
-        if self.ns.trace:
-            import trace
-            self.tracer = trace.Trace(ignoredirs=[sys.base_prefix,
-                                                  sys.base_exec_prefix,
-                                                  tempfile.gettempdir()],
-                                      trace=False, count=True)
 
     def find_tests(self, tests):
         self.tests = tests
@@ -278,7 +270,7 @@ class Regrtest:
             except IndexError:
                 pass
 
-        # Remove all the self.selected tests that precede start if it's set.
+        # Remove all the selected tests that precede start if it's set.
         if self.ns.start:
             try:
                 del self.selected[:self.selected.index(self.ns.start)]
@@ -362,11 +354,18 @@ class Regrtest:
         self.accumulate_result(test, result)
 
     def run_tests_sequential(self):
+        if self.ns.trace:
+            import trace
+            self.tracer = trace.Trace(ignoredirs=[sys.base_prefix,
+                                                  sys.base_exec_prefix,
+                                                  tempfile.gettempdir()],
+                                      trace=False, count=True)
+
         save_modules = sys.modules.keys()
 
         for test_index, test in enumerate(self.tests, 1):
             self.display_progress(test_index, test)
-            if self.ns.trace:
+            if self.tracer:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
                 cmd = 'self.run_test(test)'
@@ -426,7 +425,7 @@ class Regrtest:
             else:
                 os.unlink(self.next_single_filename)
 
-        if self.ns.trace:
+        if self.tracer:
             r = self.tracer.results()
             r.write_results(show_missing=True, summary=True,
                             coverdir=self.ns.coverdir)
@@ -436,15 +435,18 @@ class Regrtest:
 
     def main(self, tests=None, **kwargs):
         self.ns = _parse_args(sys.argv[1:], **kwargs)
-        setup_python()
+        setup_python(self.ns)
         self.setup_regrtest()
-        if self.ns.wait:
-            input("Press any key to continue...")
+
         if self.ns.slaveargs is not None:
             from test.libregrtest.runtest_mp import run_tests_slave
             run_tests_slave(self.ns.slaveargs)
+        if self.ns.wait:
+            input("Press any key to continue...")
+
         self.find_tests(tests)
         self.run_tests()
+
         self.display_result()
         self.finalize()
         sys.exit(len(self.bad) > 0 or self.interrupted)
