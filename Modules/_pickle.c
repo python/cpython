@@ -4606,10 +4606,20 @@ static Py_ssize_t
 calc_binsize(char *bytes, int nbytes)
 {
     unsigned char *s = (unsigned char *)bytes;
-    Py_ssize_t i;
+    int i;
     size_t x = 0;
 
-    for (i = 0; i < nbytes && (size_t)i < sizeof(size_t); i++) {
+    if (nbytes > (int)sizeof(size_t)) {
+        /* Check for integer overflow.  BINBYTES8 and BINUNICODE8 opcodes
+         * have 64-bit size that can't be represented on 32-bit platform.
+         */
+        for (i = (int)sizeof(size_t); i < nbytes; i++) {
+            if (s[i])
+                return -1;
+        }
+        nbytes = (int)sizeof(size_t);
+    }
+    for (i = 0; i < nbytes; i++) {
         x |= (size_t) s[i] << (8 * i);
     }
 
