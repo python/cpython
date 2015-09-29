@@ -37,6 +37,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22609: Constructor and the update method of collections.UserDict now
+  accept the self keyword argument.
+
 - Issue #25203: Failed readline.set_completer_delims() no longer left the
   module in inconsistent state.
 
