@@ -417,12 +417,33 @@ not be found.  Run the module once with your imports to correct this situation.
 Note that IDLE itself places quite a few modules in sys.modules, so
 much can be found by default, e.g. the re module.</p>
 <p>If you don&#8217;t like the ACW popping up unbidden, simply make the delay
-longer or disable the extension.  Or another option is the delay could
-be set to zero. Another alternative to preventing ACW popups is to
-disable the call tips extension.</p>
+longer or disable the extension.</p>
+</div>
+<div class="section" id="calltips">
+<h3>25.5.2.3. Calltips<a class="headerlink" href="#calltips" title="Permalink to this headline">¶</a></h3>
+<p>A calltip is shown when one types <tt class="kbd docutils literal"><span class="pre">(</span></tt> after the name of an <em>acccessible</em>
+function.  A name expression may include dots and subscripts.  A calltip
+remains until it is clicked, the cursor is moved out of the argument area,
+or <tt class="kbd docutils literal"><span class="pre">)</span></tt> is typed.  When the cursor is in the argument part of a definition,
+the menu or shortcut display a calltip.</p>
+<p>A calltip consists of the function signature and the first line of the
+docstring.  For builtins without an accessible signature, the calltip
+consists of all lines up the fifth line or the first blank line.  These
+details may change.</p>
+<p>The set of <em>accessible</em> functions depends on what modules have been imported
+into the user process, including those imported by Idle itself,
+and what definitions have been run, all since the last restart.</p>
+<p>For example, restart the Shell and enter <tt class="docutils literal"><span class="pre">itertools.count(</span></tt>.  A calltip
+appears because Idle imports itertools into the user process for its own use.
+(This could change.)  Enter <tt class="docutils literal"><span class="pre">turtle.write(</span></tt> and nothing appears.  Idle does
+not import turtle.  The menu or shortcut do nothing either.  Enter
+<tt class="docutils literal"><span class="pre">import</span> <span class="pre">turtle</span></tt> and then <tt class="docutils literal"><span class="pre">turtle.write(</span></tt> will work.</p>
+<p>In an editor, import statements have no effect until one runs the file.  One
+might want to run a file after writing the import statements at the top,
+or immediately run an existing file before editing.</p>
 </div>
 <div class="section" id="python-shell-window">
-<h3>25.5.2.3. Python Shell window<a class="headerlink" href="#python-shell-window" title="Permalink to this headline">¶</a></h3>
+<h3>25.5.2.4. Python Shell window<a class="headerlink" href="#python-shell-window" title="Permalink to this headline">¶</a></h3>
 <ul>
 <li><p class="first"><tt class="kbd docutils literal"><span class="pre">C-c</span></tt> interrupts executing command</p>
 </li>
@@ -440,7 +461,7 @@ OS X use <tt class="kbd docutils literal"><span class="pre">C-p</span></tt>.</li
 </ul>
 </div>
 <div class="section" id="text-colors">
-<h3>25.5.2.4. Text colors<a class="headerlink" href="#text-colors" title="Permalink to this headline">¶</a></h3>
+<h3>25.5.2.5. Text colors<a class="headerlink" href="#text-colors" title="Permalink to this headline">¶</a></h3>
 <p>Idle defaults to black on white text, but colors text with special meanings.
 For the shell, these are shell output, shell error, user output, and
 user error.  For Python code, at the shell prompt or in an editor, these are
@@ -595,8 +616,9 @@ are currently:</p>
 <li><a class="reference internal" href="#editing-and-navigation">25.5.2. Editing and navigation</a><ul>
 <li><a class="reference internal" href="#automatic-indentation">25.5.2.1. Automatic indentation</a></li>
 <li><a class="reference internal" href="#completions">25.5.2.2. Completions</a></li>
-<li><a class="reference internal" href="#python-shell-window">25.5.2.3. Python Shell window</a></li>
-<li><a class="reference internal" href="#text-colors">25.5.2.4. Text colors</a></li>
+<li><a class="reference internal" href="#calltips">25.5.2.3. Calltips</a></li>
+<li><a class="reference internal" href="#python-shell-window">25.5.2.4. Python Shell window</a></li>
+<li><a class="reference internal" href="#text-colors">25.5.2.5. Text colors</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#startup-and-code-execution">25.5.3. Startup and code execution</a><ul>
@@ -677,7 +699,7 @@ are currently:</p>
     The Python Software Foundation is a non-profit corporation.
     <a href="https://www.python.org/psf/donations/">Please donate.</a>
     <br />
-    Last updated on Sep 24, 2015.
+    Last updated on Sep 29, 2015.
     <a href="../bugs.html">Found a bug</a>?
     <br />
     Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
