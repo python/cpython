@@ -346,7 +346,18 @@ class Regrtest:
                     print(count(len(self.bad), 'test'), "failed again:")
                     printlist(self.bad)
 
-    def _run_tests_sequential(self):
+    def run_test(self, test):
+        result = runtest(test,
+                         self.ns.verbose,
+                         self.ns.quiet,
+                         self.ns.huntrleaks,
+                         output_on_failure=self.ns.verbose3,
+                         timeout=self.ns.timeout,
+                         failfast=self.ns.failfast,
+                         match_tests=self.ns.match_tests)
+        self.accumulate_result(test, result)
+
+    def run_tests_sequential(self):
         save_modules = sys.modules.keys()
 
         for test_index, test in enumerate(self.tests, 1):
@@ -354,19 +365,15 @@ class Regrtest:
             if self.ns.trace:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                cmd = 'runtest(test, self.ns.verbose, self.ns.quiet, timeout=self.ns.timeout)'
+                cmd = 'self.run_test(test)'
                 self.tracer.runctx(cmd, globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(test, self.ns.verbose, self.ns.quiet,
-                                     self.ns.huntrleaks,
-                                     output_on_failure=self.ns.verbose3,
-                                     timeout=self.ns.timeout, failfast=self.ns.failfast,
-                                     match_tests=self.ns.match_tests)
-                    self.accumulate_result(test, result)
+                    self.run_test(test)
                 except KeyboardInterrupt:
                     self.interrupted = True
                     break
+
             if self.ns.findleaks:
                 gc.collect()
                 if gc.garbage:
@@ -376,13 +383,14 @@ class Regrtest:
                     # them again
                     self.found_garbage.extend(gc.garbage)
                     del gc.garbage[:]
+
             # Unload the newly imported modules (best effort finalization)
             for module in sys.modules.keys():
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
 
     def run_tests(self):
-        support.verbose = self.ns.verbose      # Tell tests to be moderately quiet
+        support.verbose = self.ns.verbose   # Tell tests to be moderately quiet
         support.use_resources = self.ns.use_resources
 
         if self.ns.forever:
@@ -404,7 +412,7 @@ class Regrtest:
             from test.libregrtest.runtest_mp import run_tests_multiprocess
             run_tests_multiprocess(self)
         else:
-            self._run_tests_sequential()
+            self.run_tests_sequential()
 
     def finalize(self):
         if self.next_single_filename:
