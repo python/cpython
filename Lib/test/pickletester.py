@@ -18,6 +18,9 @@ from test.support import (
 
 from pickle import bytes_types
 
+requires_32b = unittest.skipUnless(sys.maxsize < 2**32,
+                                   "test is only meaningful on 32-bit builds")
+
 # Tests that try a number of pickle protocols should have a
 #     for proto in protocols:
 # kind of outer loop.
@@ -502,15 +505,10 @@ def create_data():
     return x
 
 
-class AbstractPickleTests(unittest.TestCase):
-    # Subclass must define self.dumps, self.loads.
-
-    optimized = False
+class AbstractUnpickleTests(unittest.TestCase):
+    # Subclass must define self.loads.
 
     _testdata = create_data()
-
-    def setUp(self):
-        pass
 
     def assert_is_copy(self, obj, objcopy, msg=None):
         """Utility method to verify if two objects are copies of each others.
@@ -529,33 +527,6 @@ class AbstractPickleTests(unittest.TestCase):
                     hasattr(obj, slot), hasattr(objcopy, slot), msg=msg)
                 self.assertEqual(getattr(obj, slot, None),
                                  getattr(objcopy, slot, None), msg=msg)
-
-    def test_misc(self):
-        # test various datatypes not tested by testdata
-        for proto in protocols:
-            x = myint(4)
-            s = self.dumps(x, proto)
-            y = self.loads(s)
-            self.assert_is_copy(x, y)
-
-            x = (1, ())
-            s = self.dumps(x, proto)
-            y = self.loads(s)
-            self.assert_is_copy(x, y)
-
-            x = initarg(1, x)
-            s = self.dumps(x, proto)
-            y = self.loads(s)
-            self.assert_is_copy(x, y)
-
-        # XXX test __reduce__ protocol?
-
-    def test_roundtrip_equality(self):
-        expected = self._testdata
-        for proto in protocols:
-            s = self.dumps(expected, proto)
-            got = self.loads(s)
-            self.assert_is_copy(expected, got)
 
     def test_load_from_data0(self):
         self.assert_is_copy(self._testdata, self.loads(DATA0))
@@ -622,6 +593,216 @@ class AbstractPickleTests(unittest.TestCase):
                        b'X\n'
                        b'q\x00oq\x01}q\x02b.').replace(b'X', xname)
             self.assert_is_copy(X(*args), self.loads(pickle2))
+
+    def test_get(self):
+        self.assertRaises(KeyError, self.loads, b'g0\np0')
+        self.assert_is_copy([(100,), (100,)],
+                            self.loads(b'((Kdtp0\nh\x00l.))'))
+
+    def test_maxint64(self):
+        maxint64 = (1 << 63) - 1
+        data = b'I' + str(maxint64).encode("ascii") + b'\n.'
+        got = self.loads(data)
+        self.assert_is_copy(maxint64, got)
+
+        # Try too with a bogus literal.
+        data = b'I' + str(maxint64).encode("ascii") + b'JUNK\n.'
+        self.assertRaises(ValueError, self.loads, data)
+
+    def test_pop_empty_stack(self):
+        # Test issue7455
+        s = b'0'
+        self.assertRaises((pickle.UnpicklingError, IndexError), self.loads, s)
+
+    def test_unpickle_from_2x(self):
+        # Unpickle non-trivial data from Python 2.x.
+        loaded = self.loads(DATA3)
+        self.assertEqual(loaded, set([1, 2]))
+        loaded = self.loads(DATA4)
+        self.assertEqual(type(loaded), type(range(0)))
+        self.assertEqual(list(loaded), list(range(5)))
+        loaded = self.loads(DATA5)
+        self.assertEqual(type(loaded), SimpleCookie)
+        self.assertEqual(list(loaded.keys()), ["key"])
+        self.assertEqual(loaded["key"].value, "value")
+
+        for (exc, data) in DATA7.items():
+            loaded = self.loads(data)
+            self.assertIs(type(loaded), exc)
+
+        loaded = self.loads(DATA8)
+        self.assertIs(type(loaded), Exception)
+
+        loaded = self.loads(DATA9)
+        self.assertIs(type(loaded), UnicodeEncodeError)
+        self.assertEqual(loaded.object, "foo")
+        self.assertEqual(loaded.encoding, "ascii")
+        self.assertEqual(loaded.start, 0)
+        self.assertEqual(loaded.end, 1)
+        self.assertEqual(loaded.reason, "bad")
+
+    def test_load_python2_str_as_bytes(self):
+        # From Python 2: pickle.dumps('a\x00\xa0', protocol=0)
+        self.assertEqual(self.loads(b"S'a\\x00\\xa0'\n.",
+                                    encoding="bytes"), b'a\x00\xa0')
+        # From Python 2: pickle.dumps('a\x00\xa0', protocol=1)
+        self.assertEqual(self.loads(b'U\x03a\x00\xa0.',
+                                    encoding="bytes"), b'a\x00\xa0')
+        # From Python 2: pickle.dumps('a\x00\xa0', protocol=2)
+        self.assertEqual(self.loads(b'\x80\x02U\x03a\x00\xa0.',
+                                    encoding="bytes"), b'a\x00\xa0')
+
+    def test_load_python2_unicode_as_str(self):
+        # From Python 2: pickle.dumps(u'π', protocol=0)
+        self.assertEqual(self.loads(b'V\\u03c0\n.',
+                                    encoding='bytes'), 'π')
+        # From Python 2: pickle.dumps(u'π', protocol=1)
+        self.assertEqual(self.loads(b'X\x02\x00\x00\x00\xcf\x80.',
+                                    encoding="bytes"), 'π')
+        # From Python 2: pickle.dumps(u'π', protocol=2)
+        self.assertEqual(self.loads(b'\x80\x02X\x02\x00\x00\x00\xcf\x80.',
+                                    encoding="bytes"), 'π')
+
+    def test_load_long_python2_str_as_bytes(self):
+        # From Python 2: pickle.dumps('x' * 300, protocol=1)
+        self.assertEqual(self.loads(pickle.BINSTRING +
+                                    struct.pack("<I", 300) +
+                                    b'x' * 300 + pickle.STOP,
+                                    encoding='bytes'), b'x' * 300)
+
+    def test_empty_bytestring(self):
+        # issue 11286
+        empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
+        self.assertEqual(empty, '')
+
+    @requires_32b
+    def test_negative_32b_binbytes(self):
+        # On 32-bit builds, a BINBYTES of 2**31 or more is refused
+        dumped = b'\x80\x03B\xff\xff\xff\xffxyzq\x00.'
+        with self.assertRaises((pickle.UnpicklingError, OverflowError)):
+            self.loads(dumped)
+
+    @requires_32b
+    def test_negative_32b_binunicode(self):
+        # On 32-bit builds, a BINUNICODE of 2**31 or more is refused
+        dumped = b'\x80\x03X\xff\xff\xff\xffxyzq\x00.'
+        with self.assertRaises((pickle.UnpicklingError, OverflowError)):
+            self.loads(dumped)
+
+    def test_negative_put(self):
+        # Issue #12847
+        dumped = b'Va\np-1\n.'
+        self.assertRaises(ValueError, self.loads, dumped)
+
+    @requires_32b
+    def test_negative_32b_binput(self):
+        # Issue #12847
+        dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
+        self.assertRaises(ValueError, self.loads, dumped)
+
+    def test_badly_escaped_string(self):
+        self.assertRaises(ValueError, self.loads, b"S'\\'\n.")
+
+    def test_badly_quoted_string(self):
+        # Issue #17710
+        badpickles = [b"S'\n.",
+                      b'S"\n.',
+                      b'S\' \n.',
+                      b'S" \n.',
+                      b'S\'"\n.',
+                      b'S"\'\n.',
+                      b"S' ' \n.",
+                      b'S" " \n.',
+                      b"S ''\n.",
+                      b'S ""\n.',
+                      b'S \n.',
+                      b'S\n.',
+                      b'S.']
+        for p in badpickles:
+            self.assertRaises(pickle.UnpicklingError, self.loads, p)
+
+    def test_correctly_quoted_string(self):
+        goodpickles = [(b"S''\n.", ''),
+                       (b'S""\n.', ''),
+                       (b'S"\\n"\n.', '\n'),
+                       (b"S'\\n'\n.", '\n')]
+        for p, expected in goodpickles:
+            self.assertEqual(self.loads(p), expected)
+
+    def test_frame_readline(self):
+        pickled = b'\x80\x04\x95\x05\x00\x00\x00\x00\x00\x00\x00I42\n.'
+        #    0: \x80 PROTO      4
+        #    2: \x95 FRAME      5
+        #   11: I    INT        42
+        #   15: .    STOP
+        self.assertEqual(self.loads(pickled), 42)
+
+    def test_compat_unpickle(self):
+        # xrange(1, 7)
+        pickled = b'\x80\x02c__builtin__\nxrange\nK\x01K\x07K\x01\x87R.'
+        unpickled = self.loads(pickled)
+        self.assertIs(type(unpickled), range)
+        self.assertEqual(unpickled, range(1, 7))
+        self.assertEqual(list(unpickled), [1, 2, 3, 4, 5, 6])
+        # reduce
+        pickled = b'\x80\x02c__builtin__\nreduce\n.'
+        self.assertIs(self.loads(pickled), functools.reduce)
+        # whichdb.whichdb
+        pickled = b'\x80\x02cwhichdb\nwhichdb\n.'
+        self.assertIs(self.loads(pickled), dbm.whichdb)
+        # Exception(), StandardError()
+        for name in (b'Exception', b'StandardError'):
+            pickled = (b'\x80\x02cexceptions\n' + name + b'\nU\x03ugh\x85R.')
+            unpickled = self.loads(pickled)
+            self.assertIs(type(unpickled), Exception)
+            self.assertEqual(str(unpickled), 'ugh')
+        # UserDict.UserDict({1: 2}), UserDict.IterableUserDict({1: 2})
+        for name in (b'UserDict', b'IterableUserDict'):
+            pickled = (b'\x80\x02(cUserDict\n' + name +
+                       b'\no}U\x04data}K\x01K\x02ssb.')
+            unpickled = self.loads(pickled)
+            self.assertIs(type(unpickled), collections.UserDict)
+            self.assertEqual(unpickled, collections.UserDict({1: 2}))
+
+
+class AbstractPickleTests(unittest.TestCase):
+    # Subclass must define self.dumps, self.loads.
+
+    optimized = False
+
+    _testdata = AbstractUnpickleTests._testdata
+
+    def setUp(self):
+        pass
+
+    assert_is_copy = AbstractUnpickleTests.assert_is_copy
+
+    def test_misc(self):
+        # test various datatypes not tested by testdata
+        for proto in protocols:
+            x = myint(4)
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assert_is_copy(x, y)
+
+            x = (1, ())
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assert_is_copy(x, y)
+
+            x = initarg(1, x)
+            s = self.dumps(x, proto)
+            y = self.loads(s)
+            self.assert_is_copy(x, y)
+
+        # XXX test __reduce__ protocol?
+
+    def test_roundtrip_equality(self):
+        expected = self._testdata
+        for proto in protocols:
+            s = self.dumps(expected, proto)
+            got = self.loads(s)
+            self.assert_is_copy(expected, got)
 
     # There are gratuitous differences between pickles produced by
     # pickle and cPickle, largely because cPickle starts PUT indices at
@@ -718,11 +899,6 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(list(x[0].attr.keys()), [1])
             self.assertTrue(x[0].attr[1] is x)
 
-    def test_get(self):
-        self.assertRaises(KeyError, self.loads, b'g0\np0')
-        self.assert_is_copy([(100,), (100,)],
-                            self.loads(b'((Kdtp0\nh\x00l.))'))
-
     def test_unicode(self):
         endcases = ['', '<\\u>', '<\\\u1234>', '<\n>',
                     '<\\>', '<\\\U00012345>',
@@ -754,7 +930,6 @@ class AbstractPickleTests(unittest.TestCase):
                 self.assert_is_copy(s, self.loads(p))
 
     def test_ints(self):
-        import sys
         for proto in protocols:
             n = sys.maxsize
             while n:
@@ -763,16 +938,6 @@ class AbstractPickleTests(unittest.TestCase):
                     n2 = self.loads(s)
                     self.assert_is_copy(expected, n2)
                 n = n >> 1
-
-    def test_maxint64(self):
-        maxint64 = (1 << 63) - 1
-        data = b'I' + str(maxint64).encode("ascii") + b'\n.'
-        got = self.loads(data)
-        self.assert_is_copy(maxint64, got)
-
-        # Try too with a bogus literal.
-        data = b'I' + str(maxint64).encode("ascii") + b'JUNK\n.'
-        self.assertRaises(ValueError, self.loads, data)
 
     def test_long(self):
         for proto in protocols:
@@ -825,11 +990,6 @@ class AbstractPickleTests(unittest.TestCase):
             dumped = self.dumps(inst, proto)
             loaded = self.loads(dumped)
             self.assert_is_copy(inst, loaded)
-
-    def test_pop_empty_stack(self):
-        # Test issue7455
-        s = b'0'
-        self.assertRaises((pickle.UnpicklingError, IndexError), self.loads, s)
 
     def test_metaclass(self):
         a = use_metaclass()
@@ -1289,33 +1449,6 @@ class AbstractPickleTests(unittest.TestCase):
             for x_key, y_key in zip(x_keys, y_keys):
                 self.assertIs(x_key, y_key)
 
-    def test_unpickle_from_2x(self):
-        # Unpickle non-trivial data from Python 2.x.
-        loaded = self.loads(DATA3)
-        self.assertEqual(loaded, set([1, 2]))
-        loaded = self.loads(DATA4)
-        self.assertEqual(type(loaded), type(range(0)))
-        self.assertEqual(list(loaded), list(range(5)))
-        loaded = self.loads(DATA5)
-        self.assertEqual(type(loaded), SimpleCookie)
-        self.assertEqual(list(loaded.keys()), ["key"])
-        self.assertEqual(loaded["key"].value, "value")
-
-        for (exc, data) in DATA7.items():
-            loaded = self.loads(data)
-            self.assertIs(type(loaded), exc)
-
-        loaded = self.loads(DATA8)
-        self.assertIs(type(loaded), Exception)
-
-        loaded = self.loads(DATA9)
-        self.assertIs(type(loaded), UnicodeEncodeError)
-        self.assertEqual(loaded.object, "foo")
-        self.assertEqual(loaded.encoding, "ascii")
-        self.assertEqual(loaded.start, 0)
-        self.assertEqual(loaded.end, 1)
-        self.assertEqual(loaded.reason, "bad")
-
     def test_pickle_to_2x(self):
         # Pickle non-trivial data with protocol 2, expecting that it yields
         # the same result as Python 2.x did.
@@ -1326,35 +1459,6 @@ class AbstractPickleTests(unittest.TestCase):
         dumped = self.dumps(set([3]), 2)
         self.assertEqual(dumped, DATA6)
 
-    def test_load_python2_str_as_bytes(self):
-        # From Python 2: pickle.dumps('a\x00\xa0', protocol=0)
-        self.assertEqual(self.loads(b"S'a\\x00\\xa0'\n.",
-                                    encoding="bytes"), b'a\x00\xa0')
-        # From Python 2: pickle.dumps('a\x00\xa0', protocol=1)
-        self.assertEqual(self.loads(b'U\x03a\x00\xa0.',
-                                    encoding="bytes"), b'a\x00\xa0')
-        # From Python 2: pickle.dumps('a\x00\xa0', protocol=2)
-        self.assertEqual(self.loads(b'\x80\x02U\x03a\x00\xa0.',
-                                    encoding="bytes"), b'a\x00\xa0')
-
-    def test_load_python2_unicode_as_str(self):
-        # From Python 2: pickle.dumps(u'π', protocol=0)
-        self.assertEqual(self.loads(b'V\\u03c0\n.',
-                                    encoding='bytes'), 'π')
-        # From Python 2: pickle.dumps(u'π', protocol=1)
-        self.assertEqual(self.loads(b'X\x02\x00\x00\x00\xcf\x80.',
-                                    encoding="bytes"), 'π')
-        # From Python 2: pickle.dumps(u'π', protocol=2)
-        self.assertEqual(self.loads(b'\x80\x02X\x02\x00\x00\x00\xcf\x80.',
-                                    encoding="bytes"), 'π')
-
-    def test_load_long_python2_str_as_bytes(self):
-        # From Python 2: pickle.dumps('x' * 300, protocol=1)
-        self.assertEqual(self.loads(pickle.BINSTRING +
-                                    struct.pack("<I", 300) +
-                                    b'x' * 300 + pickle.STOP,
-                                    encoding='bytes'), b'x' * 300)
-
     def test_large_pickles(self):
         # Test the correctness of internal buffering routines when handling
         # large data.
@@ -1364,11 +1468,6 @@ class AbstractPickleTests(unittest.TestCase):
             loaded = self.loads(dumped)
             self.assertEqual(len(loaded), len(data))
             self.assertEqual(loaded, data)
-
-    def test_empty_bytestring(self):
-        # issue 11286
-        empty = self.loads(b'\x80\x03U\x00q\x00.', encoding='koi8-r')
-        self.assertEqual(empty, '')
 
     def test_int_pickling_efficiency(self):
         # Test compacity of int representation (see issue #12744)
@@ -1381,64 +1480,6 @@ class AbstractPickleTests(unittest.TestCase):
                 if proto >= 2:
                     for p in pickles:
                         self.assertFalse(opcode_in_pickle(pickle.LONG, p))
-
-    def check_negative_32b_binXXX(self, dumped):
-        if sys.maxsize > 2**32:
-            self.skipTest("test is only meaningful on 32-bit builds")
-        # XXX Pure Python pickle reads lengths as signed and passes
-        # them directly to read() (hence the EOFError)
-        with self.assertRaises((pickle.UnpicklingError, EOFError,
-                                ValueError, OverflowError)):
-            self.loads(dumped)
-
-    def test_negative_32b_binbytes(self):
-        # On 32-bit builds, a BINBYTES of 2**31 or more is refused
-        self.check_negative_32b_binXXX(b'\x80\x03B\xff\xff\xff\xffxyzq\x00.')
-
-    def test_negative_32b_binunicode(self):
-        # On 32-bit builds, a BINUNICODE of 2**31 or more is refused
-        self.check_negative_32b_binXXX(b'\x80\x03X\xff\xff\xff\xffxyzq\x00.')
-
-    def test_negative_put(self):
-        # Issue #12847
-        dumped = b'Va\np-1\n.'
-        self.assertRaises(ValueError, self.loads, dumped)
-
-    def test_negative_32b_binput(self):
-        # Issue #12847
-        if sys.maxsize > 2**32:
-            self.skipTest("test is only meaningful on 32-bit builds")
-        dumped = b'\x80\x03X\x01\x00\x00\x00ar\xff\xff\xff\xff.'
-        self.assertRaises(ValueError, self.loads, dumped)
-
-    def test_badly_escaped_string(self):
-        self.assertRaises(ValueError, self.loads, b"S'\\'\n.")
-
-    def test_badly_quoted_string(self):
-        # Issue #17710
-        badpickles = [b"S'\n.",
-                      b'S"\n.',
-                      b'S\' \n.',
-                      b'S" \n.',
-                      b'S\'"\n.',
-                      b'S"\'\n.',
-                      b"S' ' \n.",
-                      b'S" " \n.',
-                      b"S ''\n.",
-                      b'S ""\n.',
-                      b'S \n.',
-                      b'S\n.',
-                      b'S.']
-        for p in badpickles:
-            self.assertRaises(pickle.UnpicklingError, self.loads, p)
-
-    def test_correctly_quoted_string(self):
-        goodpickles = [(b"S''\n.", ''),
-                       (b'S""\n.', ''),
-                       (b'S"\\n"\n.', '\n'),
-                       (b"S'\\n'\n.", '\n')]
-        for p, expected in goodpickles:
-            self.assertEqual(self.loads(p), expected)
 
     def _check_pickling_with_opcode(self, obj, opcode, proto):
         pickled = self.dumps(obj, proto)
@@ -1552,14 +1593,6 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertLess(count_opcode(pickle.FRAME, some_frames_pickle),
                             count_opcode(pickle.FRAME, pickled))
             self.assertEqual(obj, self.loads(some_frames_pickle))
-
-    def test_frame_readline(self):
-        pickled = b'\x80\x04\x95\x05\x00\x00\x00\x00\x00\x00\x00I42\n.'
-        #    0: \x80 PROTO      4
-        #    2: \x95 FRAME      5
-        #   11: I    INT        42
-        #   15: .    STOP
-        self.assertEqual(self.loads(pickled), 42)
 
     def test_nested_names(self):
         global Nested
@@ -1676,33 +1709,6 @@ class AbstractPickleTests(unittest.TestCase):
                     pickled = self.dumps(val, proto)
                     self.assertIn(('c%s\n%s' % (mod, name)).encode(), pickled)
                     self.assertIs(type(self.loads(pickled)), type(val))
-
-    def test_compat_unpickle(self):
-        # xrange(1, 7)
-        pickled = b'\x80\x02c__builtin__\nxrange\nK\x01K\x07K\x01\x87R.'
-        unpickled = self.loads(pickled)
-        self.assertIs(type(unpickled), range)
-        self.assertEqual(unpickled, range(1, 7))
-        self.assertEqual(list(unpickled), [1, 2, 3, 4, 5, 6])
-        # reduce
-        pickled = b'\x80\x02c__builtin__\nreduce\n.'
-        self.assertIs(self.loads(pickled), functools.reduce)
-        # whichdb.whichdb
-        pickled = b'\x80\x02cwhichdb\nwhichdb\n.'
-        self.assertIs(self.loads(pickled), dbm.whichdb)
-        # Exception(), StandardError()
-        for name in (b'Exception', b'StandardError'):
-            pickled = (b'\x80\x02cexceptions\n' + name + b'\nU\x03ugh\x85R.')
-            unpickled = self.loads(pickled)
-            self.assertIs(type(unpickled), Exception)
-            self.assertEqual(str(unpickled), 'ugh')
-        # UserDict.UserDict({1: 2}), UserDict.IterableUserDict({1: 2})
-        for name in (b'UserDict', b'IterableUserDict'):
-            pickled = (b'\x80\x02(cUserDict\n' + name +
-                       b'\no}U\x04data}K\x01K\x02ssb.')
-            unpickled = self.loads(pickled)
-            self.assertIs(type(unpickled), collections.UserDict)
-            self.assertEqual(unpickled, collections.UserDict({1: 2}))
 
 
 class BigmemPickleTests(unittest.TestCase):
