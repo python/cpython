@@ -257,10 +257,14 @@ class FrameSummary:
             dict((k, repr(v)) for k, v in locals.items()) if locals else None
 
     def __eq__(self, other):
-        return (self.filename == other.filename and
-                self.lineno == other.lineno and
-                self.name == other.name and
-                self.locals == other.locals)
+        if isinstance(other, FrameSummary):
+            return (self.filename == other.filename and
+                    self.lineno == other.lineno and
+                    self.name == other.name and
+                    self.locals == other.locals)
+        if isinstance(other, tuple):
+            return (self.filename, self.lineno, self.name, self.line) == other
+        return NotImplemented
 
     def __getitem__(self, pos):
         return (self.filename, self.lineno, self.name, self.line)[pos]
