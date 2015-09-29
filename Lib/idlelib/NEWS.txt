@@ -2,8 +2,42 @@ What's New in Idle 3.4.4?
 =========================
 *Release date: 2015-??-??*
 
+- Issue #24972: Inactive selection background now matches active selection
+  background, as configured by user, on all systems.  Found items are now
+  always highlighted on Windows.  Initial patch by Mark Roseman.
+
+- Issue #24570: Idle: make calltip and completion boxes appear on Macs
+  affected by a tk regression.  Initial patch by Mark Roseman.
+
+- Issue #24988: Idle ScrolledList context menus (used in debugger)
+  now work on Mac Aqua.  Patch by Mark Roseman.
+
+- Issue #24801: Make right-click for context menu work on Mac Aqua.
+  Patch by Mark Roseman.
+
+- Issue #25173: Associate tkinter messageboxes with a specific widget.
+  For Mac OSX, make them a 'sheet'.  Patch by Mark Roseman.
+
+- Issue #25198: Enhance the initial html viewer now used for Idle Help.
+  * Properly indent fixed-pitch text (patch by Mark Roseman).
+  * Give code snippet a very Sphinx-like light blueish-gray background.
+  * Re-use initial width and height set by users for shell and editor.
+  * When the Table of Contents (TOC) menu is used, put the section header
+    at the top of the screen.
+
+- Issue #25225: Condense and rewrite Idle doc section on text colors.
+
+- Issue #21995: Explain some differences between IDLE and console Python.
+
+- Issue #22820: Explain need for *print* when running file from Idle editor.
+
+- Issue #25224: Doc: augment Idle feature list and no-subprocess section.
+
+- Issue #25219: Update doc for Idle command line options.
+  Some were missing and notes were not correct.
+
 - Issue #24861: Most of idlelib is private and subject to change.
-  Use idleib.idle.* to start Idle. See idlelib.__init__.__doc__.   
+  Use idleib.idle.* to start Idle. See idlelib.__init__.__doc__.
 
 - Issue #25199: Idle: add synchronization comments for future maintainers.
 
@@ -232,7 +266,7 @@ What's New in IDLE 3.1a1?
 - Issue #2665: On Windows, an IDLE installation upgraded from an old version
   would not start if a custom theme was defined.
 
-  
+
 What's New in IDLE 2.7? (UNRELEASED, but merged into 3.1 releases above.)
 =======================
 *Release date: XX-XXX-2010*
@@ -524,7 +558,7 @@ What's New in IDLE 1.2?
 - The remote procedure call module rpc.py can now access data attributes of
   remote registered objects.  Changes to these attributes are local, however.
 
-  
+
 What's New in IDLE 1.1?
 =======================
 *Release date: 30-NOV-2004*
