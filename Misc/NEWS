@@ -78,6 +78,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22609: Constructor of collections.UserDict now accepts the self keyword
+  argument.
+
 - Issue #25262. Added support for BINBYTES8 opcode in Python implementation of
   unpickler.  Highest 32 bits of 64-bit size for BINUNICODE8 and BINBYTES8
   opcodes no longer silently ignored on 32-bit platforms in C implementation.
