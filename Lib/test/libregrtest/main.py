@@ -19,10 +19,6 @@ try:
     import gc
 except ImportError:
     gc = None
-try:
-    import threading
-except ImportError:
-    threading = None
 
 
 # When tests are run from the Python build directory, it is best practice
