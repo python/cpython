@@ -190,6 +190,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25111: Fixed comparison of traceback.FrameSummary.
+
 - Issue #25262. Added support for BINBYTES8 opcode in Python implementation of
   unpickler.  Highest 32 bits of 64-bit size for BINUNICODE8 and BINBYTES8
   opcodes no longer silently ignored on 32-bit platforms in C implementation.
