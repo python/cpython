@@ -70,9 +70,8 @@ def run_tests_slave(slaveargs):
     except BaseException as e:
         traceback.print_exc()
         result = CHILD_ERROR, str(e)
-    sys.stdout.flush()
     print()   # Force a newline (just in case)
-    print(json.dumps(result))
+    print(json.dumps(result), flush=True)
     sys.exit(0)
 
 
@@ -184,11 +183,9 @@ def run_tests_multiprocess(regrtest):
 
             # Copy stdout and stderr from the child process
             if stdout:
-                print(stdout)
+                print(stdout, flush=True)
             if stderr:
-                print(stderr, file=sys.stderr)
-            sys.stdout.flush()
-            sys.stderr.flush()
+                print(stderr, file=sys.stderr, flush=True)
 
             if result[0] == INTERRUPTED:
                 raise KeyboardInterrupt

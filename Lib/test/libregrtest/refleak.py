@@ -44,13 +44,12 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     alloc_deltas = [0] * repcount
 
     print("beginning", repcount, "repetitions", file=sys.stderr)
-    print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr)
-    sys.stderr.flush()
+    print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
+          flush=True)
     for i in range(repcount):
         indirect_test()
         alloc_after, rc_after = dash_R_cleanup(fs, ps, pic, zdc, abcs)
-        sys.stderr.write('.')
-        sys.stderr.flush()
+        print('.', end='', flush=True)
         if i >= nwarmup:
             rc_deltas[i] = rc_after - rc_before
             alloc_deltas[i] = alloc_after - alloc_before
@@ -74,8 +73,7 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
         if checker(deltas):
             msg = '%s leaked %s %s, sum=%s' % (
                 test, deltas[nwarmup:], item_name, sum(deltas))
-            print(msg, file=sys.stderr)
-            sys.stderr.flush()
+            print(msg, file=sys.stderr, flush=True)
             with open(fname, "a") as refrep:
                 print(msg, file=refrep)
                 refrep.flush()
