@@ -21,6 +21,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25034: Fix string.Formatter problem with auto-numbering and
+  nested format_specs. Patch by Anthon van der Neut.
+
 - Issue #25233: Rewrite the guts of asyncio.Queue to be more understandable and correct.
 
 - Issue #25203: Failed readline.set_completer_delims() no longer left the
