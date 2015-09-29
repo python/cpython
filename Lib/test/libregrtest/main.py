@@ -354,13 +354,14 @@ class Regrtest:
     def main(self, tests=None, **kwargs):
         self.ns = self.parse_args(kwargs)
 
-        setup_python(self.ns)
-
         if self.ns.slaveargs is not None:
             from test.libregrtest.runtest_mp import run_tests_slave
             run_tests_slave(self.ns.slaveargs)
+
         if self.ns.wait:
             input("Press any key to continue...")
+
+        setup_python(self.ns)
 
         self.find_tests(tests)
         self.run_tests()
