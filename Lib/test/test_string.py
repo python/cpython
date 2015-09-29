@@ -58,6 +58,8 @@ class ModuleTest(unittest.TestCase):
                          'foo{1}{num}{1}'.format(None, 'bar', num=6))
         self.assertEqual(fmt.format('{:^{}}', 'bar', 6),
                          '{:^{}}'.format('bar', 6))
+        self.assertEqual(fmt.format('{:^{}} {}', 'bar', 6, 'X'),
+                         '{:^{}} {}'.format('bar', 6, 'X'))
         self.assertEqual(fmt.format('{:^{pad}}{}', 'foo', 'bar', pad=6),
                          '{:^{pad}}{}'.format('foo', 'bar', pad=6))
 
