@@ -103,20 +103,23 @@ class MultiprocessThread(threading.Thread):
                 except StopIteration:
                     self.output.put((None, None, None, None))
                     return
-                retcode, stdout, stderr = run_tests_in_subprocess(test, self.ns)
+                retcode, stdout, stderr = run_tests_in_subprocess(test,
+                                                                  self.ns)
                 # Strip last refcount output line if it exists, since it
                 # comes from the shutdown of the interpreter in the subcommand.
                 stderr = debug_output_pat.sub("", stderr)
                 stdout, _, result = stdout.strip().rpartition("\n")
                 if retcode != 0:
                     result = (CHILD_ERROR, "Exit code %s" % retcode)
-                    self.output.put((test, stdout.rstrip(), stderr.rstrip(), result))
+                    self.output.put((test, stdout.rstrip(), stderr.rstrip(),
+                                     result))
                     return
                 if not result:
                     self.output.put((None, None, None, None))
                     return
                 result = json.loads(result)
-                self.output.put((test, stdout.rstrip(), stderr.rstrip(), result))
+                self.output.put((test, stdout.rstrip(), stderr.rstrip(),
+                                 result))
         except BaseException:
             self.output.put((None, None, None, None))
             raise
@@ -149,7 +152,8 @@ def run_tests_multiprocess(regrtest):
             if result[0] == INTERRUPTED:
                 raise KeyboardInterrupt
             if result[0] == CHILD_ERROR:
-                raise Exception("Child error on {}: {}".format(test, result[1]))
+                msg = "Child error on {}: {}".format(test, result[1])
+                raise Exception(msg)
             test_index += 1
     except KeyboardInterrupt:
         regrtest.interrupted = True
