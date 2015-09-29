@@ -3060,7 +3060,31 @@ class CodePageTest(unittest.TestCase):
 
 
 class ASCIITest(unittest.TestCase):
+    def test_encode(self):
+        self.assertEqual('abc123'.encode('ascii'), b'abc123')
+
+    def test_encode_error(self):
+        for data, error_handler, expected in (
+            ('[\x80\xff\u20ac]', 'ignore', b'[]'),
+            ('[\x80\xff\u20ac]', 'replace', b'[???]'),
+            ('[\x80\xff\u20ac]', 'xmlcharrefreplace', b'[&#128;&#255;&#8364;]'),
+            ('[\x80\xff\u20ac]', 'backslashreplace', b'[\\x80\\xff\\u20ac]'),
+            ('[\udc80\udcff]', 'surrogateescape', b'[\x80\xff]'),
+        ):
+            with self.subTest(data=data, error_handler=error_handler,
+                              expected=expected):
+                self.assertEqual(data.encode('ascii', error_handler),
+                                 expected)
+
+    def test_encode_surrogateescape_error(self):
+        with self.assertRaises(UnicodeEncodeError):
+            # the first character can be decoded, but not the second
+            '\udc80\xff'.encode('ascii', 'surrogateescape')
+
     def test_decode(self):
+        self.assertEqual(b'abc'.decode('ascii'), 'abc')
+
+    def test_decode_error(self):
         for data, error_handler, expected in (
             (b'[\x80\xff]', 'ignore', '[]'),
             (b'[\x80\xff]', 'replace', '[\ufffd\ufffd]'),
@@ -3071,6 +3095,42 @@ class ASCIITest(unittest.TestCase):
                               expected=expected):
                 self.assertEqual(data.decode('ascii', error_handler),
                                  expected)
+
+
+class Latin1Test(unittest.TestCase):
+    def test_encode(self):
+        for data, expected in (
+            ('abc', b'abc'),
+            ('\x80\xe9\xff', b'\x80\xe9\xff'),
+        ):
+            with self.subTest(data=data, expected=expected):
+                self.assertEqual(data.encode('latin1'), expected)
+
+    def test_encode_errors(self):
+        for data, error_handler, expected in (
+            ('[\u20ac\udc80]', 'ignore', b'[]'),
+            ('[\u20ac\udc80]', 'replace', b'[??]'),
+            ('[\u20ac\udc80]', 'backslashreplace', b'[\\u20ac\\udc80]'),
+            ('[\u20ac\udc80]', 'xmlcharrefreplace', b'[&#8364;&#56448;]'),
+            ('[\udc80\udcff]', 'surrogateescape', b'[\x80\xff]'),
+        ):
+            with self.subTest(data=data, error_handler=error_handler,
+                              expected=expected):
+                self.assertEqual(data.encode('latin1', error_handler),
+                                 expected)
+
+    def test_encode_surrogateescape_error(self):
+        with self.assertRaises(UnicodeEncodeError):
+            # the first character can be decoded, but not the second
+            '\udc80\u20ac'.encode('latin1', 'surrogateescape')
+
+    def test_decode(self):
+        for data, expected in (
+            (b'abc', 'abc'),
+            (b'[\x80\xff]', '[\x80\xff]'),
+        ):
+            with self.subTest(data=data, expected=expected):
+                self.assertEqual(data.decode('latin1'), expected)
 
 
 if __name__ == "__main__":

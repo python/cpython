@@ -117,6 +117,9 @@ Optimizations
 * The ASCII decoder is now up to 60 times as fast for error handlers:
   ``surrogateescape``, ``ignore`` and ``replace``.
 
+* The ASCII and the Latin1 encoders are now up to 3 times as fast for the error
+  error ``surrogateescape``.
+
 
 Build and C API Changes
 =======================

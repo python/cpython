@@ -6532,6 +6532,22 @@ unicode_encode_ucs1(PyObject *unicode,
                 pos = collend;
                 break;
 
+            case _Py_ERROR_SURROGATEESCAPE:
+                for (i = collstart; i < collend; ++i) {
+                    ch = PyUnicode_READ(kind, data, i);
+                    if (ch < 0xdc80 || 0xdcff < ch) {
+                        /* Not a UTF-8b surrogate */
+                        break;
+                    }
+                    *str++ = (char)(ch - 0xdc00);
+                    ++pos;
+                }
+                if (i >= collend)
+                    break;
+                collstart = pos;
+                assert(collstart != collend);
+                /* fallback to general error handling */
+
             default:
                 repunicode = unicode_encode_call_errorhandler(errors, &error_handler_obj,
                                                               encoding, reason, unicode, &exc,
