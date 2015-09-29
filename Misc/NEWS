@@ -156,28 +156,45 @@ Library
 
 - Issue #24134: Reverted issue #24134 changes.
 
-Build
------
-
-- Issue #24915: When doing a PGO build, the test suite is now used instead of
-  pybench; Clang support was also added as part off this work. Initial patch by
-  Alecsandru Patrascu of Intel.
-
-- Issue #24986: It is now possible to build Python on Windows without errors
-  when external libraries are not available.
-
-- Issue #24508: Backported the MSBuild project files from Python 3.5.  The
-  backported files replace the old project files in PCbuild; the old files moved
-  to PC/VS9.0 and remain supported.
-
-- Issue #24603: Update Windows builds and OS X 10.5 installer to use OpenSSL
-  1.0.2d.
-
 IDLE
 ----
 
+- Issue #24972: Inactive selection background now matches active selection
+  background, as configured by user, on all systems.  Found items are now
+  always highlighted on Windows.  Initial patch by Mark Roseman.
+
+- Issue #24570: Idle: make calltip and completion boxes appear on Macs
+  affected by a tk regression.  Initial patch by Mark Roseman.
+
+- Issue #24988: Idle ScrolledList context menus (used in debugger)
+  now work on Mac Aqua.  Patch by Mark Roseman.
+
+- Issue #24801: Make right-click for context menu work on Mac Aqua.
+  Patch by Mark Roseman.
+
+- Issue #25173: Associate tkinter messageboxes with a specific widget.
+  For Mac OSX, make them a 'sheet'.  Patch by Mark Roseman.
+
+- Issue #25198: Enhance the initial html viewer now used for Idle Help.
+  * Properly indent fixed-pitch text (patch by Mark Roseman).
+  * Give code snippet a very Sphinx-like light blueish-gray background.
+  * Re-use initial width and height set by users for shell and editor.
+  * When the Table of Contents (TOC) menu is used, put the section header
+    at the top of the screen.
+
+- Issue #25225: Condense and rewrite Idle doc section on text colors.
+
+- Issue #21995: Explain some differences between IDLE and console Python.
+
+- Issue #22820: Explain need for *print* when running file from Idle editor.
+
+- Issue #25224: Doc: augment Idle feature list and no-subprocess section.
+
+- Issue #25219: Update doc for Idle command line options.
+  Some were missing and notes were not correct.
+
 - Issue #24861: Most of idlelib is private and subject to change.
-  Use idleib.idle.* to start Idle. See idlelib.__init__.__doc__.   
+  Use idleib.idle.* to start Idle. See idlelib.__init__.__doc__.
 
 - Issue #25199: Idle: add synchronization comments for future maintainers.
 
@@ -232,6 +249,23 @@ Tests
 
 - PCbuild\rt.bat now accepts an unlimited number of arguments to pass along
   to regrtest.py.  Previously there was a limit of 9.
+
+Build
+-----
+
+- Issue #24915: When doing a PGO build, the test suite is now used instead of
+  pybench; Clang support was also added as part off this work. Initial patch by
+  Alecsandru Patrascu of Intel.
+
+- Issue #24986: It is now possible to build Python on Windows without errors
+  when external libraries are not available.
+
+- Issue #24508: Backported the MSBuild project files from Python 3.5.  The
+  backported files replace the old project files in PCbuild; the old files moved
+  to PC/VS9.0 and remain supported.
+
+- Issue #24603: Update Windows builds and OS X 10.5 installer to use OpenSSL
+  1.0.2d.
 
 Windows
 -------
