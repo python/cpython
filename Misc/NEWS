@@ -10,6 +10,10 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25227: Optimize ASCII and latin1 encoders with the ``surrogateescape``
+  error handler: the encoders are now up to 3 times as fast. Initial patch
+  written by Serhiy Storchaka.
+
 - Issue #25003: On Solaris 11.3 or newer, os.urandom() now uses the
   getrandom() function instead of the getentropy() function. The getentropy()
   function is blocking to generate very good quality entropy, os.urandom()
