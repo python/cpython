@@ -2,7 +2,8 @@ import cPickle
 import cStringIO
 import io
 import unittest
-from test.pickletester import (AbstractPickleTests,
+from test.pickletester import (AbstractUnpickleTests,
+                               AbstractPickleTests,
                                AbstractPickleModuleTests,
                                AbstractPicklerUnpicklerObjectTests,
                                BigmemPickleTests)
@@ -40,7 +41,8 @@ class FileIOMixin:
         test_support.unlink(test_support.TESTFN)
 
 
-class cPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
+class cPickleTests(AbstractUnpickleTests, AbstractPickleTests,
+                   AbstractPickleModuleTests):
 
     def setUp(self):
         self.dumps = cPickle.dumps
@@ -48,6 +50,28 @@ class cPickleTests(AbstractPickleTests, AbstractPickleModuleTests):
 
     error = cPickle.BadPickleGet
     module = cPickle
+
+class cPickleUnpicklerTests(AbstractUnpickleTests):
+
+    def loads(self, buf):
+        f = self.input(buf)
+        try:
+            p = cPickle.Unpickler(f)
+            return p.load()
+        finally:
+            self.close(f)
+
+    error = cPickle.BadPickleGet
+
+class cStringIOCUnpicklerTests(cStringIOMixin, cPickleUnpicklerTests):
+    pass
+
+class BytesIOCUnpicklerTests(BytesIOMixin, cPickleUnpicklerTests):
+    pass
+
+class FileIOCUnpicklerTests(FileIOMixin, cPickleUnpicklerTests):
+    pass
+
 
 class cPicklePicklerTests(AbstractPickleTests):
 
@@ -68,8 +92,6 @@ class cPicklePicklerTests(AbstractPickleTests):
             return p.load()
         finally:
             self.close(f)
-
-    error = cPickle.BadPickleGet
 
 class cStringIOCPicklerTests(cStringIOMixin, cPicklePicklerTests):
     pass
@@ -128,8 +150,6 @@ class cPickleFastPicklerTests(AbstractPickleTests):
             return p.load()
         finally:
             self.close(f)
-
-    error = cPickle.BadPickleGet
 
     def test_recursive_list(self):
         self.assertRaises(ValueError,
@@ -219,6 +239,9 @@ class cPickleDeepRecursive(unittest.TestCase):
 def test_main():
     test_support.run_unittest(
         cPickleTests,
+        cStringIOCUnpicklerTests,
+        BytesIOCUnpicklerTests,
+        FileIOCUnpicklerTests,
         cStringIOCPicklerTests,
         BytesIOCPicklerTests,
         FileIOCPicklerTests,

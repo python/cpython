@@ -420,10 +420,53 @@ def create_data():
     x.append(5)
     return x
 
-class AbstractPickleTests(unittest.TestCase):
-    # Subclass must define self.dumps, self.loads, self.error.
+
+class AbstractUnpickleTests(unittest.TestCase):
+    # Subclass must define self.loads, self.error.
 
     _testdata = create_data()
+
+    def test_load_from_canned_string(self):
+        expected = self._testdata
+        for canned in DATA0, DATA1, DATA2:
+            got = self.loads(canned)
+            self.assertEqual(expected, got)
+
+    def test_garyp(self):
+        self.assertRaises(self.error, self.loads, 'garyp')
+
+    def test_maxint64(self):
+        maxint64 = (1L << 63) - 1
+        data = 'I' + str(maxint64) + '\n.'
+        got = self.loads(data)
+        self.assertEqual(got, maxint64)
+
+        # Try too with a bogus literal.
+        data = 'I' + str(maxint64) + 'JUNK\n.'
+        self.assertRaises(ValueError, self.loads, data)
+
+    def test_insecure_strings(self):
+        insecure = ["abc", "2 + 2", # not quoted
+                    #"'abc' + 'def'", # not a single quoted string
+                    "'abc", # quote is not closed
+                    "'abc\"", # open quote and close quote don't match
+                    "'abc'   ?", # junk after close quote
+                    "'\\'", # trailing backslash
+                    "'",    # issue #17710
+                    "' ",   # issue #17710
+                    # some tests of the quoting rules
+                    #"'abc\"\''",
+                    #"'\\\\a\'\'\'\\\'\\\\\''",
+                    ]
+        for s in insecure:
+            buf = "S" + s + "\012p0\012."
+            self.assertRaises(ValueError, self.loads, buf)
+
+
+class AbstractPickleTests(unittest.TestCase):
+    # Subclass must define self.dumps, self.loads.
+
+    _testdata = AbstractUnpickleTests._testdata
 
     def setUp(self):
         pass
@@ -453,12 +496,6 @@ class AbstractPickleTests(unittest.TestCase):
         for proto in protocols:
             s = self.dumps(expected, proto)
             got = self.loads(s)
-            self.assertEqual(expected, got)
-
-    def test_load_from_canned_string(self):
-        expected = self._testdata
-        for canned in DATA0, DATA1, DATA2:
-            got = self.loads(canned)
             self.assertEqual(expected, got)
 
     # There are gratuitous differences between pickles produced by
@@ -528,26 +565,6 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(x[0].attr.keys(), [1])
             self.assertTrue(x[0].attr[1] is x)
 
-    def test_garyp(self):
-        self.assertRaises(self.error, self.loads, 'garyp')
-
-    def test_insecure_strings(self):
-        insecure = ["abc", "2 + 2", # not quoted
-                    #"'abc' + 'def'", # not a single quoted string
-                    "'abc", # quote is not closed
-                    "'abc\"", # open quote and close quote don't match
-                    "'abc'   ?", # junk after close quote
-                    "'\\'", # trailing backslash
-                    "'",    # issue #17710
-                    "' ",   # issue #17710
-                    # some tests of the quoting rules
-                    #"'abc\"\''",
-                    #"'\\\\a\'\'\'\\\'\\\\\''",
-                    ]
-        for s in insecure:
-            buf = "S" + s + "\012p0\012."
-            self.assertRaises(ValueError, self.loads, buf)
-
     if have_unicode:
         def test_unicode(self):
             endcases = [u'', u'<\\u>', u'<\\\u1234>', u'<\n>',
@@ -575,16 +592,6 @@ class AbstractPickleTests(unittest.TestCase):
                     n2 = self.loads(s)
                     self.assertEqual(expected, n2)
                 n = n >> 1
-
-    def test_maxint64(self):
-        maxint64 = (1L << 63) - 1
-        data = 'I' + str(maxint64) + '\n.'
-        got = self.loads(data)
-        self.assertEqual(got, maxint64)
-
-        # Try too with a bogus literal.
-        data = 'I' + str(maxint64) + 'JUNK\n.'
-        self.assertRaises(ValueError, self.loads, data)
 
     def test_long(self):
         for proto in protocols:
