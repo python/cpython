@@ -10,6 +10,7 @@ import sys
 import unittest
 from test import support
 
+from test.pickletester import AbstractUnpickleTests
 from test.pickletester import AbstractPickleTests
 from test.pickletester import AbstractPickleModuleTests
 from test.pickletester import AbstractPersistentPicklerTests
@@ -26,6 +27,16 @@ except ImportError:
 
 class PickleTests(AbstractPickleModuleTests):
     pass
+
+
+class PyUnpicklerTests(AbstractUnpickleTests):
+
+    unpickler = pickle._Unpickler
+
+    def loads(self, buf, **kwds):
+        f = io.BytesIO(buf)
+        u = self.unpickler(f, **kwds)
+        return u.load()
 
 
 class PyPicklerTests(AbstractPickleTests):
@@ -46,7 +57,8 @@ class PyPicklerTests(AbstractPickleTests):
         return u.load()
 
 
-class InMemoryPickleTests(AbstractPickleTests, BigmemPickleTests):
+class InMemoryPickleTests(AbstractPickleTests, AbstractUnpickleTests,
+                          BigmemPickleTests):
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
@@ -105,6 +117,9 @@ class PyChainDispatchTableTests(AbstractDispatchTableTests):
 
 
 if has_c_implementation:
+    class CUnpicklerTests(PyUnpicklerTests):
+        unpickler = _pickle.Unpickler
+
     class CPicklerTests(PyPicklerTests):
         pickler = _pickle.Pickler
         unpickler = _pickle.Unpickler
@@ -372,11 +387,11 @@ class CompatPickleTests(unittest.TestCase):
 
 
 def test_main():
-    tests = [PickleTests, PyPicklerTests, PyPersPicklerTests,
+    tests = [PickleTests, PyUnpicklerTests, PyPicklerTests, PyPersPicklerTests,
              PyDispatchTableTests, PyChainDispatchTableTests,
              CompatPickleTests]
     if has_c_implementation:
-        tests.extend([CPicklerTests, CPersPicklerTests,
+        tests.extend([CUnpicklerTests, CPicklerTests, CPersPicklerTests,
                       CDumpPickle_LoadPickle, DumpPickle_CLoadPickle,
                       PyPicklerUnpicklerObjectTests,
                       CPicklerUnpicklerObjectTests,
