@@ -246,7 +246,9 @@ def main(tests=None, **kwargs):
         random.shuffle(selected)
     if ns.trace:
         import trace, tempfile
-        tracer = trace.Trace(trace=False, count=True)
+        tracer = trace.Trace(ignoredirs=[sys.base_prefix, sys.base_exec_prefix,
+                                         tempfile.gettempdir()],
+                             trace=False, count=True)
 
     test_times = []
     support.verbose = ns.verbose      # Tell tests to be moderately quiet
