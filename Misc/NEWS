@@ -190,6 +190,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22609: Constructor of collections.UserDict now accepts the self keyword
+  argument.
+
 - Issue #25111: Fixed comparison of traceback.FrameSummary.
 
 - Issue #25262. Added support for BINBYTES8 opcode in Python implementation of
