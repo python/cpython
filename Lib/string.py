@@ -183,7 +183,7 @@ class Formatter:
 
     def vformat(self, format_string, args, kwargs):
         used_args = set()
-        result = self._vformat(format_string, args, kwargs, used_args, 2)
+        result, _ = self._vformat(format_string, args, kwargs, used_args, 2)
         self.check_unused_args(used_args, args, kwargs)
         return result
 
@@ -230,14 +230,15 @@ class Formatter:
                 obj = self.convert_field(obj, conversion)
 
                 # expand the format spec, if needed
-                format_spec = self._vformat(format_spec, args, kwargs,
-                                            used_args, recursion_depth-1,
-                                            auto_arg_index=auto_arg_index)
+                format_spec, auto_arg_index = self._vformat(
+                    format_spec, args, kwargs,
+                    used_args, recursion_depth-1,
+                    auto_arg_index=auto_arg_index)
 
                 # format the object and append to the result
                 result.append(self.format_field(obj, format_spec))
 
-        return ''.join(result)
+        return ''.join(result), auto_arg_index
 
 
     def get_value(self, key, args, kwargs):
