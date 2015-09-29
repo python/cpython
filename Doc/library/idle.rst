@@ -435,9 +435,35 @@ Note that IDLE itself places quite a few modules in sys.modules, so
 much can be found by default, e.g. the re module.
 
 If you don't like the ACW popping up unbidden, simply make the delay
-longer or disable the extension.  Or another option is the delay could
-be set to zero. Another alternative to preventing ACW popups is to
-disable the call tips extension.
+longer or disable the extension.
+
+Calltips
+^^^^^^^^
+
+A calltip is shown when one types :kbd:`(` after the name of an *acccessible*
+function.  A name expression may include dots and subscripts.  A calltip
+remains until it is clicked, the cursor is moved out of the argument area,
+or :kbd:`)` is typed.  When the cursor is in the argument part of a definition,
+the menu or shortcut display a calltip.
+
+A calltip consists of the function signature and the first line of the
+docstring.  For builtins without an accessible signature, the calltip
+consists of all lines up the fifth line or the first blank line.  These
+details may change.
+
+The set of *accessible* functions depends on what modules have been imported
+into the user process, including those imported by Idle itself,
+and what definitions have been run, all since the last restart.
+
+For example, restart the Shell and enter ``itertools.count(``.  A calltip
+appears because Idle imports itertools into the user process for its own use.
+(This could change.)  Enter ``turtle.write(`` and nothing appears.  Idle does
+not import turtle.  The menu or shortcut do nothing either.  Enter
+``import turtle`` and then ``turtle.write(`` will work.
+
+In an editor, import statements have no effect until one runs the file.  One
+might want to run a file after writing the import statements at the top,
+or immediately run an existing file before editing.
 
 Python Shell window
 ^^^^^^^^^^^^^^^^^^^
