@@ -857,6 +857,26 @@ class AbstractUnpickleTests(unittest.TestCase):
         self.assert_is_copy([(100,), (100,)],
                             self.loads(b'((Kdtp0\nh\x00l.))'))
 
+    def test_binbytes8(self):
+        dumped = b'\x80\x04\x8e\4\0\0\0\0\0\0\0\xe2\x82\xac\x00.'
+        self.assertEqual(self.loads(dumped), b'\xe2\x82\xac\x00')
+
+    def test_binunicode8(self):
+        dumped = b'\x80\x04\x8d\4\0\0\0\0\0\0\0\xe2\x82\xac\x00.'
+        self.assertEqual(self.loads(dumped), '\u20ac\x00')
+
+    @requires_32b
+    def test_large_32b_binbytes8(self):
+        dumped = b'\x80\x04\x8e\4\0\0\0\1\0\0\0\xe2\x82\xac\x00.'
+        with self.assertRaises((pickle.UnpicklingError, OverflowError)):
+            self.loads(dumped)
+
+    @requires_32b
+    def test_large_32b_binunicode8(self):
+        dumped = b'\x80\x04\x8d\4\0\0\0\1\0\0\0\xe2\x82\xac\x00.'
+        with self.assertRaises((pickle.UnpicklingError, OverflowError)):
+            self.loads(dumped)
+
     def test_get(self):
         pickled = b'((lp100000\ng100000\nt.'
         unpickled = self.loads(pickled)
