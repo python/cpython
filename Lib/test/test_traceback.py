@@ -640,7 +640,7 @@ class MiscTracebackCases(unittest.TestCase):
             return traceback.extract_stack()
         result = extract()
         lineno = extract.__code__.co_firstlineno
-        self.assertEqual([tuple(x) for x in result[-2:]], [
+        self.assertEqual(result[-2:], [
             (__file__, lineno+2, 'test_extract_stack', 'result = extract()'),
             (__file__, lineno+1, 'extract', 'return traceback.extract_stack()'),
             ])
@@ -652,10 +652,16 @@ class TestFrame(unittest.TestCase):
         linecache.clearcache()
         linecache.lazycache("f", globals())
         f = traceback.FrameSummary("f", 1, "dummy")
-        self.assertEqual(
-            ("f", 1, "dummy", '"""Test cases for traceback module"""'),
-            tuple(f))
-        self.assertEqual(None, f.locals)
+        self.assertEqual(f,
+            ("f", 1, "dummy", '"""Test cases for traceback module"""'))
+        self.assertEqual(tuple(f),
+            ("f", 1, "dummy", '"""Test cases for traceback module"""'))
+        self.assertEqual(f, traceback.FrameSummary("f", 1, "dummy"))
+        self.assertEqual(f, tuple(f))
+        # Since tuple.__eq__ doesn't support FrameSummary, the equality
+        # operator fallbacks to FrameSummary.__eq__.
+        self.assertEqual(tuple(f), f)
+        self.assertIsNone(f.locals)
 
     def test_lazy_lines(self):
         linecache.clearcache()
