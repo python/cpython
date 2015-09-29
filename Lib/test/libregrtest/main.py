@@ -63,7 +63,8 @@ def setup_python():
     # the packages to prevent later imports to fail when the CWD is different.
     for module in sys.modules.values():
         if hasattr(module, '__path__'):
-            module.__path__ = [os.path.abspath(path) for path in module.__path__]
+            module.__path__ = [os.path.abspath(path)
+                               for path in module.__path__]
         if hasattr(module, '__file__'):
             module.__file__ = os.path.abspath(module.__file__)
 
@@ -159,8 +160,8 @@ class Regrtest:
         if self.ns.quiet:
             return
         fmt = "[{1:{0}}{2}/{3}] {4}" if self.bad else "[{1:{0}}{2}] {4}"
-        print(fmt.format(
-            self.test_count_width, test_index, self.test_count, len(self.bad), test))
+        print(fmt.format(self.test_count_width, test_index,
+                         self.test_count, len(self.bad), test))
         sys.stdout.flush()
 
     def setup_regrtest(self):
@@ -252,7 +253,10 @@ class Regrtest:
             self.ns.args = []
 
         # For a partial run, we do not need to clutter the output.
-        if self.ns.verbose or self.ns.header or not (self.ns.quiet or self.ns.single or self.tests or self.ns.args):
+        if (self.ns.verbose
+            or self.ns.header
+            or not (self.ns.quiet or self.ns.single
+                    or self.tests or self.ns.args)):
             # Print basic platform information
             print("==", platform.python_implementation(), *sys.version.split())
             print("==  ", platform.platform(aliased=True),
@@ -283,7 +287,8 @@ class Regrtest:
             try:
                 del self.selected[:self.selected.index(self.ns.start)]
             except ValueError:
-                print("Couldn't find starting test (%s), using all tests" % self.ns.start)
+                print("Couldn't find starting test (%s), using all tests"
+                      % self.ns.start)
 
         if self.ns.randomize:
             if self.ns.random_seed is None:
@@ -297,12 +302,16 @@ class Regrtest:
             # print a newline after ^C
             print()
             print("Test suite interrupted by signal SIGINT.")
-            omitted = set(self.selected) - set(self.good) - set(self.bad) - set(self.skipped)
+            executed = set(self.good) | set(self.bad) | set(self.skipped)
+            omitted = set(self.selected) - executed
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
 
         if self.good and not self.ns.quiet:
-            if not self.bad and not self.skipped and not self.interrupted and len(self.good) > 1:
+            if (not self.bad
+                and not self.skipped
+                and not self.interrupted
+                and len(self.good) > 1):
                 print("All", end=' ')
             print(count(len(self.good), "test"), "OK.")
 
