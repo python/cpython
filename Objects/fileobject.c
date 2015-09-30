@@ -376,7 +376,7 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
     PyObject *bytes = NULL;
     char *str;
     Py_ssize_t n;
-    int _errno;
+    int err;
 
     if (self->fd < 0) {
         /* fd might be invalid on Windows
@@ -403,10 +403,13 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
     }
 
     n = _Py_write(self->fd, str, n);
-    _errno = errno;
+    /* save errno, it can be modified indirectly by Py_XDECREF() */
+    err = errno;
+
     Py_XDECREF(bytes);
+
     if (n == -1) {
-        if (_errno == EAGAIN) {
+        if (err == EAGAIN) {
             PyErr_Clear();
             Py_RETURN_NONE;
         }
