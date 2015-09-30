@@ -605,8 +605,6 @@ class ArgsTestCase(BaseTestCase):
                  % (self.TESTNAME_REGEX, len(tests)))
         self.check_line(output, regex)
 
-    @unittest.skipIf(sys.platform == 'win32',
-                     "FIXME: coverage doesn't work on Windows")
     def test_coverage(self):
         # test --coverage
         test = self.create_test()

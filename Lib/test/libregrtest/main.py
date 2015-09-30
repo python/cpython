@@ -272,10 +272,7 @@ class Regrtest:
     def run_tests_sequential(self):
         if self.ns.trace:
             import trace
-            self.tracer = trace.Trace(ignoredirs=[sys.base_prefix,
-                                                  sys.base_exec_prefix,
-                                                  tempfile.gettempdir()],
-                                      trace=False, count=True)
+            self.tracer = trace.Trace(trace=False, count=True)
 
         save_modules = sys.modules.keys()
 
