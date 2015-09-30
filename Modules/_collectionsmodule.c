@@ -595,6 +595,9 @@ deque_clear(dequeobject *deque)
     Py_ssize_t n;
     PyObject *item;
 
+    if (Py_SIZE(deque) == 0)
+        return;
+
     /* During the process of clearing a deque, decrefs can cause the
        deque to mutate.  To avoid fatal confusion, we have to make the
        deque empty before clearing the blocks and never refer to
