@@ -372,8 +372,11 @@ PyFile_NewStdPrinter(int fd)
 static PyObject *
 stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
 {
+    PyObject *unicode;
+    PyObject *bytes = NULL;
     char *str;
     Py_ssize_t n;
+    int _errno;
 
     if (self->fd < 0) {
         /* fd might be invalid on Windows
@@ -383,13 +386,27 @@ stdprinter_write(PyStdPrinter_Object *self, PyObject *args)
         Py_RETURN_NONE;
     }
 
-    /* encode Unicode to UTF-8 */
-    if (!PyArg_ParseTuple(args, "s", &str))
+    if (!PyArg_ParseTuple(args, "U", &unicode))
         return NULL;
 
-    n = _Py_write(self->fd, str, strlen(str));
+    /* encode Unicode to UTF-8 */
+    str = PyUnicode_AsUTF8AndSize(unicode, &n);
+    if (str == NULL) {
+        PyErr_Clear();
+        bytes = _PyUnicode_AsUTF8String(unicode, "backslashreplace");
+        if (bytes == NULL)
+            return NULL;
+        if (PyBytes_AsStringAndSize(bytes, &str, &n) < 0) {
+            Py_DECREF(bytes);
+            return NULL;
+        }
+    }
+
+    n = _Py_write(self->fd, str, n);
+    _errno = errno;
+    Py_XDECREF(bytes);
     if (n == -1) {
-        if (errno == EAGAIN) {
+        if (_errno == EAGAIN) {
             PyErr_Clear();
             Py_RETURN_NONE;
         }
