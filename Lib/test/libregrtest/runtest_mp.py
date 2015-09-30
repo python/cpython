@@ -1,11 +1,11 @@
 import json
 import os
+import queue
 import sys
 import time
 import traceback
 import types
 import unittest
-from queue import Queue
 from test import support
 try:
     import threading
@@ -20,6 +20,9 @@ from test.libregrtest.setup import setup_tests
 # Minimum duration of a test to display its duration or to mention that
 # the test is running in background
 PROGRESS_MIN_TIME = 30.0   # seconds
+
+# Display the running tests if nothing happened last N seconds
+PROGRESS_UPDATE = 60.0   # seconds
 
 
 def run_test_in_subprocess(testname, ns):
@@ -145,18 +148,39 @@ class MultiprocessThread(threading.Thread):
 
 
 def run_tests_multiprocess(regrtest):
-    output = Queue()
+    output = queue.Queue()
     pending = MultiprocessIterator(regrtest.tests)
 
     workers = [MultiprocessThread(pending, output, regrtest.ns)
                for i in range(regrtest.ns.use_mp)]
     for worker in workers:
         worker.start()
+
+    def get_running(workers):
+        running = []
+        for worker in workers:
+            current_test = worker.current_test
+            if not current_test:
+                continue
+            dt = time.monotonic() - worker.start_time
+            if dt >= PROGRESS_MIN_TIME:
+                running.append('%s (%.0f sec)' % (current_test, dt))
+        return running
+
     finished = 0
     test_index = 1
+    timeout = max(PROGRESS_UPDATE, PROGRESS_MIN_TIME)
     try:
         while finished < regrtest.ns.use_mp:
-            test, stdout, stderr, result = output.get()
+            try:
+                item = output.get(timeout=PROGRESS_UPDATE)
+            except queue.Empty:
+                running = get_running(workers)
+                if running:
+                    print('running: %s' % ', '.join(running))
+                continue
+
+            test, stdout, stderr, result = item
             if test is None:
                 finished += 1
                 continue
@@ -168,14 +192,7 @@ def run_tests_multiprocess(regrtest):
             if (ok not in (CHILD_ERROR, INTERRUPTED)
                 and test_time >= PROGRESS_MIN_TIME):
                 text += ' (%.0f sec)' % test_time
-            running = []
-            for worker in workers:
-                current_test = worker.current_test
-                if not current_test:
-                    continue
-                dt = time.monotonic() - worker.start_time
-                if dt >= PROGRESS_MIN_TIME:
-                    running.append('%s (%.0f sec)' % (current_test, dt))
+            running = get_running(workers)
             if running:
                 text += ' -- running: %s' % ', '.join(running)
             regrtest.display_progress(test_index, text)
