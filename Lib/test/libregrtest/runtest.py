@@ -61,7 +61,7 @@ def runtest_ns(test, verbose, ns, **kw):
 
 
 def runtest(test, verbose, quiet,
-            huntrleaks=False, use_resources=None,
+            huntrleaks=False,
             output_on_failure=False, failfast=False, match_tests=None,
             timeout=None):
     """Run a single test.
@@ -71,7 +71,6 @@ def runtest(test, verbose, quiet,
     quiet -- if true, don't print 'skipped' messages (probably redundant)
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
-    use_resources -- list of extra resources to use
     output_on_failure -- if true, display test output on failure
     timeout -- dump the traceback and exit if a test takes more than
                timeout seconds
@@ -86,8 +85,6 @@ def runtest(test, verbose, quiet,
         PASSED           test passed
     """
 
-    if use_resources is not None:
-        support.use_resources = use_resources
     use_timeout = (timeout is not None)
     if use_timeout:
         faulthandler.dump_traceback_later(timeout, exit=True)

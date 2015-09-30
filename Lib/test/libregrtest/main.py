@@ -10,7 +10,7 @@ from test.libregrtest.runtest import (
     findtests, runtest_ns,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED)
 from test.libregrtest.cmdline import _parse_args
-from test.libregrtest.setup import setup_python
+from test.libregrtest.setup import setup_tests
 from test import support
 try:
     import gc
@@ -312,7 +312,6 @@ class Regrtest:
 
     def run_tests(self):
         support.verbose = self.ns.verbose   # Tell tests to be moderately quiet
-        support.use_resources = self.ns.use_resources
 
         if self.ns.forever:
             def test_forever(tests):
@@ -361,7 +360,7 @@ class Regrtest:
         if self.ns.wait:
             input("Press any key to continue...")
 
-        setup_python(self.ns)
+        setup_tests(self.ns)
 
         self.find_tests(tests)
         self.run_tests()
