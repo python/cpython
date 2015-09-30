@@ -157,6 +157,9 @@ Documentation
 Tests
 -----
 
+- Issue #25260: Fix ``python -m test --coverage`` on Windows. Remove the
+  list of ignored directories.
+
 - PCbuild\rt.bat now accepts an unlimited number of arguments to pass along
   to regrtest.py.  Previously there was a limit of 9.
 
