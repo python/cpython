@@ -5,7 +5,6 @@ import sys
 import time
 import traceback
 import types
-import unittest
 from test import support
 try:
     import threading
@@ -173,7 +172,7 @@ def run_tests_multiprocess(regrtest):
     try:
         while finished < regrtest.ns.use_mp:
             try:
-                item = output.get(timeout=PROGRESS_UPDATE)
+                item = output.get(timeout=timeout)
             except queue.Empty:
                 running = get_running(workers)
                 if running:
