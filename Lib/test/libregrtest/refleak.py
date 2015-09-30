@@ -46,6 +46,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     print("beginning", repcount, "repetitions", file=sys.stderr)
     print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
           flush=True)
+    # initialize variables to make pyflakes quiet
+    rc_before = alloc_before = 0
     for i in range(repcount):
         indirect_test()
         alloc_after, rc_after = dash_R_cleanup(fs, ps, pic, zdc, abcs)
@@ -158,6 +160,6 @@ def warm_caches():
     for i in range(256):
         s[i:i+1]
     # unicode cache
-    x = [chr(i) for i in range(256)]
+    [chr(i) for i in range(256)]
     # int cache
-    x = list(range(-5, 257))
+    list(range(-5, 257))

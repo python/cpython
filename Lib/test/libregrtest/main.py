@@ -319,7 +319,7 @@ class Regrtest:
 
     def run_tests(self):
         if self.ns.forever:
-            self.tests = _test_forever(list(self.selected))
+            self.tests = self._test_forever(list(self.selected))
             self.test_count = ''
             self.test_count_width = 3
         else:

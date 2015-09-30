@@ -330,33 +330,52 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
-        parser = re.finditer(r'^\[[0-9]+/[0-9]+\] (%s)$' % self.TESTNAME_REGEX,
-                             output,
-                             re.MULTILINE)
-        return set(match.group(1) for match in parser)
+        regex = r'^\[ *[0-9]+(?:/ *[0-9]+)?\] (%s)$' % self.TESTNAME_REGEX
+        parser = re.finditer(regex, output, re.MULTILINE)
+        return list(match.group(1) for match in parser)
 
-    def check_executed_tests(self, output, tests, skipped=None):
+    def check_executed_tests(self, output, tests, skipped=(), failed=(),
+                             randomize=False):
         if isinstance(tests, str):
             tests = [tests]
-        executed = self.parse_executed_tests(output)
-        self.assertEqual(executed, set(tests), output)
+        if isinstance(skipped, str):
+            skipped = [skipped]
+        if isinstance(failed, str):
+            failed = [failed]
         ntest = len(tests)
-        if skipped:
-            if isinstance(skipped, str):
-                skipped = [skipped]
-            nskipped = len(skipped)
+        nskipped = len(skipped)
+        nfailed = len(failed)
 
-            plural = 's' if nskipped != 1 else ''
-            names = ' '.join(sorted(skipped))
-            expected = (r'%s test%s skipped:\n    %s$'
-                        % (nskipped, plural, names))
-            self.check_line(output, expected)
-
-            ok = ntest - nskipped
-            if ok:
-                self.check_line(output, r'%s test OK\.$' % ok)
+        executed = self.parse_executed_tests(output)
+        if randomize:
+            self.assertEqual(set(executed), set(tests), output)
         else:
-            self.check_line(output, r'All %s tests OK\.$' % ntest)
+            self.assertEqual(executed, tests, output)
+
+        def plural(count):
+            return 's' if count != 1 else ''
+
+        def list_regex(line_format, tests):
+            count = len(tests)
+            names = ' '.join(sorted(tests))
+            regex = line_format % (count, plural(count))
+            regex = r'%s:\n    %s$' % (regex, names)
+            return regex
+
+        if skipped:
+            regex = list_regex('%s test%s skipped', skipped)
+            self.check_line(output, regex)
+
+        if failed:
+            regex = list_regex('%s test%s failed', failed)
+            self.check_line(output, regex)
+
+        good = ntest - nskipped - nfailed
+        if good:
+            regex = r'%s test%s OK\.$' % (good, plural(good))
+            if not skipped and not failed and good > 1:
+                regex = 'All %s' % regex
+            self.check_line(output, regex)
 
     def parse_random_seed(self, output):
         match = self.regex_search(r'Using random seed ([0-9]+)', output)
@@ -364,24 +383,28 @@ class BaseTestCase(unittest.TestCase):
         self.assertTrue(0 <= randseed <= 10000000, randseed)
         return randseed
 
-    def run_command(self, args, input=None):
+    def run_command(self, args, input=None, exitcode=0):
         if not input:
             input = ''
-        try:
-            return subprocess.run(args,
-                                  check=True, universal_newlines=True,
-                                  input=input,
-                                  stdout=subprocess.PIPE,
-                                  stderr=subprocess.PIPE)
-        except subprocess.CalledProcessError as exc:
-            self.fail("%s\n"
+        proc = subprocess.run(args,
+                              universal_newlines=True,
+                              input=input,
+                              stdout=subprocess.PIPE,
+                              stderr=subprocess.PIPE)
+        if proc.returncode != exitcode:
+            self.fail("Command %s failed with exit code %s\n"
                       "\n"
                       "stdout:\n"
+                      "---\n"
                       "%s\n"
+                      "---\n"
                       "\n"
                       "stderr:\n"
+                      "---\n"
                       "%s"
-                      % (str(exc), exc.stdout, exc.stderr))
+                      "---\n"
+                      % (str(args), proc.returncode, proc.stdout, proc.stderr))
+        return proc
 
 
     def run_python(self, args, **kw):
@@ -411,11 +434,11 @@ class ProgramsTestCase(BaseTestCase):
 
     def check_output(self, output):
         self.parse_random_seed(output)
-        self.check_executed_tests(output, self.tests)
+        self.check_executed_tests(output, self.tests, randomize=True)
 
     def run_tests(self, args):
-        stdout = self.run_python(args)
-        self.check_output(stdout)
+        output = self.run_python(args)
+        self.check_output(output)
 
     def test_script_regrtest(self):
         # Lib/test/regrtest.py
@@ -492,8 +515,24 @@ class ArgsTestCase(BaseTestCase):
     Test arguments of the Python test suite.
     """
 
-    def run_tests(self, *args, input=None):
-        return self.run_python(['-m', 'test', *args], input=input)
+    def run_tests(self, *args, **kw):
+        return self.run_python(['-m', 'test', *args], **kw)
+
+    def test_failing_test(self):
+        # test a failing test
+        code = textwrap.dedent("""
+            import unittest
+
+            class FailingTest(unittest.TestCase):
+                def test_failing(self):
+                    self.fail("bug")
+        """)
+        test_ok = self.create_test()
+        test_failing = self.create_test(code=code)
+        tests = [test_ok, test_failing]
+
+        output = self.run_tests(*tests, exitcode=1)
+        self.check_executed_tests(output, tests, failed=test_failing)
 
     def test_resources(self):
         # test -u command line option
@@ -572,8 +611,7 @@ class ArgsTestCase(BaseTestCase):
         # test --coverage
         test = self.create_test()
         output = self.run_tests("--coverage", test)
-        executed = self.parse_executed_tests(output)
-        self.assertEqual(executed, {test}, output)
+        self.check_executed_tests(output, [test])
         regex = ('lines +cov% +module +\(path\)\n'
                  '(?: *[0-9]+ *[0-9]{1,2}% *[^ ]+ +\([^)]+\)+)+')
         self.check_line(output, regex)
@@ -583,6 +621,23 @@ class ArgsTestCase(BaseTestCase):
         test = self.create_test()
         output = self.run_tests("--wait", test, input='key')
         self.check_line(output, 'Press any key to continue')
+
+    def test_forever(self):
+        # test --forever
+        code = textwrap.dedent("""
+            import unittest
+
+            class ForeverTester(unittest.TestCase):
+                RUN = 1
+
+                def test_run(self):
+                    ForeverTester.RUN += 1
+                    if ForeverTester.RUN > 3:
+                        self.fail("fail at the 3rd runs")
+        """)
+        test = self.create_test(code=code)
+        output = self.run_tests('--forever', test, exitcode=1)
+        self.check_executed_tests(output, [test]*3, failed=test)
 
 
 if __name__ == '__main__':
