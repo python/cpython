@@ -13,7 +13,7 @@ except ImportError:
 from test.libregrtest.refleak import warm_caches
 
 
-def setup_python(ns):
+def setup_tests(ns):
     # Display the Python traceback on fatal errors (e.g. segfault)
     faulthandler.enable(all_threads=True)
 
@@ -90,6 +90,8 @@ def setup_python(ns):
             for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
                 msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
                 msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+
+    support.use_resources = ns.use_resources
 
 
 def replace_stdout():
