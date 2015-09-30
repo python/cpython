@@ -68,6 +68,7 @@ def run_tests_slave(slaveargs):
     except BaseException as e:
         traceback.print_exc()
         result = CHILD_ERROR, str(e)
+
     print()   # Force a newline (just in case)
     print(json.dumps(result), flush=True)
     sys.exit(0)

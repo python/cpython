@@ -310,17 +310,16 @@ class Regrtest:
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
 
-    def run_tests(self):
-        support.verbose = self.ns.verbose   # Tell tests to be moderately quiet
+    def _test_forever(self, tests):
+        while True:
+            for test in tests:
+                yield test
+                if self.bad:
+                    return
 
+    def run_tests(self):
         if self.ns.forever:
-            def test_forever(tests):
-                while True:
-                    for test in tests:
-                        yield test
-                        if self.bad:
-                            return
-            self.tests = test_forever(list(self.selected))
+            self.tests = _test_forever(list(self.selected))
             self.test_count = ''
             self.test_count_width = 3
         else:
