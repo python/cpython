@@ -364,7 +364,7 @@ _PyOS_URandom(void *buffer, Py_ssize_t size)
 
 #ifdef MS_WINDOWS
     return win32_urandom((unsigned char *)buffer, size, 1);
-#elif PY_GETENTROPY
+#elif defined(PY_GETENTROPY)
     return py_getentropy(buffer, size, 0);
 #else
     return dev_urandom_python((char*)buffer, size);
@@ -411,7 +411,7 @@ _PyRandom_Init(void)
     else {
 #ifdef MS_WINDOWS
         (void)win32_urandom(secret, secret_size, 0);
-#elif PY_GETENTROPY
+#elif defined(PY_GETENTROPY)
         (void)py_getentropy(secret, secret_size, 1);
 #else
         dev_urandom_noraise(secret, secret_size);
@@ -427,7 +427,7 @@ _PyRandom_Fini(void)
         CryptReleaseContext(hCryptProv, 0);
         hCryptProv = 0;
     }
-#elif PY_GETENTROPY
+#elif defined(PY_GETENTROPY)
     /* nothing to clean */
 #else
     dev_urandom_close();
