@@ -7,7 +7,7 @@ import sysconfig
 import tempfile
 import textwrap
 from test.libregrtest.runtest import (
-    findtests, runtest_ns,
+    findtests, runtest,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED)
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.setup import setup_tests
@@ -208,6 +208,30 @@ class Regrtest:
             print("Using random seed", self.ns.random_seed)
             random.shuffle(self.selected)
 
+    def rerun_failed_tests(self):
+        self.ns.verbose = True
+        self.ns.failfast = False
+        self.ns.verbose3 = False
+        self.ns.match_tests = None
+
+        print("Re-running failed tests in verbose mode")
+        for test in self.bad[:]:
+            print("Re-running test %r in verbose mode" % test, flush=True)
+            try:
+                self.ns.verbose = True
+                ok = runtest(self.ns, test)
+            except KeyboardInterrupt:
+                # print a newline separate from the ^C
+                print()
+                break
+            else:
+                if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
+                    self.bad.remove(test)
+        else:
+            if self.bad:
+                print(count(len(self.bad), 'test'), "failed again:")
+                printlist(self.bad)
+
     def display_result(self):
         if self.interrupted:
             # print a newline after ^C
@@ -245,32 +269,6 @@ class Regrtest:
             print(count(len(self.skipped), "test"), "skipped:")
             printlist(self.skipped)
 
-        if self.ns.verbose2 and self.bad:
-            print("Re-running failed tests in verbose mode")
-            for test in self.bad[:]:
-                print("Re-running test %r in verbose mode" % test, flush=True)
-                try:
-                    self.ns.verbose = True
-                    ok = runtest_ns(test, True, self.ns)
-                except KeyboardInterrupt:
-                    # print a newline separate from the ^C
-                    print()
-                    break
-                else:
-                    if ok[0] in {PASSED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED}:
-                        self.bad.remove(test)
-            else:
-                if self.bad:
-                    print(count(len(self.bad), 'test'), "failed again:")
-                    printlist(self.bad)
-
-    def run_test(self, test):
-        result = runtest_ns(test, self.ns.verbose, self.ns,
-                            output_on_failure=self.ns.verbose3,
-                            failfast=self.ns.failfast,
-                            match_tests=self.ns.match_tests)
-        self.accumulate_result(test, result)
-
     def run_tests_sequential(self):
         if self.ns.trace:
             import trace
@@ -286,11 +284,13 @@ class Regrtest:
             if self.tracer:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
-                cmd = 'self.run_test(test)'
+                cmd = ('result = runtest(self.ns, test); '
+                       'self.accumulate_result(test, result)')
                 self.tracer.runctx(cmd, globals=globals(), locals=vars())
             else:
                 try:
-                    self.run_test(test)
+                    result = runtest(self.ns, test)
+                    self.accumulate_result(test, result)
                 except KeyboardInterrupt:
                     self.interrupted = True
                     break
@@ -366,6 +366,10 @@ class Regrtest:
         self.run_tests()
 
         self.display_result()
+
+        if self.ns.verbose2 and self.bad:
+            self.rerun_failed_tests()
+
         self.finalize()
         sys.exit(len(self.bad) > 0 or self.interrupted)
 
