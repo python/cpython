@@ -454,7 +454,7 @@ static int
 _PyTime_AsTimevalStruct_impl(_PyTime_t t, struct timeval *tv,
                              _PyTime_round_t round, int raise)
 {
-    _PyTime_t secs, secs2;
+    _PyTime_t secs;
     int us;
     int res;
 
@@ -467,8 +467,7 @@ _PyTime_AsTimevalStruct_impl(_PyTime_t t, struct timeval *tv,
 #endif
     tv->tv_usec = us;
 
-    secs2 = (_PyTime_t)tv->tv_sec;
-    if (res < 0 || secs2 != secs) {
+    if (res < 0 || (_PyTime_t)tv->tv_sec != secs) {
         if (raise)
             error_time_t_overflow();
         return -1;
