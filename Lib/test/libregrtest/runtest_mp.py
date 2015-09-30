@@ -13,7 +13,7 @@ except ImportError:
     print("Multiprocess option requires thread support")
     sys.exit(2)
 
-from test.libregrtest.runtest import runtest_ns, INTERRUPTED, CHILD_ERROR
+from test.libregrtest.runtest import runtest, INTERRUPTED, CHILD_ERROR
 from test.libregrtest.setup import setup_tests
 
 
@@ -62,10 +62,7 @@ def run_tests_slave(slaveargs):
     setup_tests(ns)
 
     try:
-        result = runtest_ns(testname,  ns.verbose, ns,
-                            output_on_failure=ns.verbose3,
-                            failfast=ns.failfast,
-                            match_tests=ns.match_tests)
+        result = runtest(ns, testname)
     except KeyboardInterrupt:
         result = INTERRUPTED, ''
     except BaseException as e:
