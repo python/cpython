@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #25182: The stdprinter (used as sys.stderr before the io module is
+  imported at startup) now uses the backslashreplace error handler.
+
 - Issue #25131: Make the line number and column offset of set/dict literals and
   comprehensions correspond to the opening brace.
 
