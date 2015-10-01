@@ -5,6 +5,7 @@
         <SchemaVersion>2.0</SchemaVersion>
         <OutputName>launcher</OutputName>
         <OutputType>Package</OutputType>
+        <DefineConstants>SkipMissingCore=1;$(DefineConstants)</DefineConstants>
     </PropertyGroup>
     <Import Project="..\msi.props" />
     <ItemGroup>
