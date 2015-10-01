@@ -58,14 +58,10 @@ try:
 except ImportError:
     threading = None
 try:
-    import win32evtlog
+    import win32evtlog, win32evtlogutil, pywintypes
 except ImportError:
-    win32evtlog = None
-try:
-    import win32evtlogutil
-except ImportError:
-    win32evtlogutil = None
-    win32evtlog = None
+    win32evtlog = win32evtlogutil = pywintypes = None
+
 try:
     import zlib
 except ImportError:
@@ -4128,13 +4124,19 @@ for when, exp in (('S', 1),
     setattr(TimedRotatingFileHandlerTest, "test_compute_rollover_%s" % when, test_compute_rollover)
 
 
-@unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil required for this test.')
+@unittest.skipUnless(win32evtlog, 'win32evtlog/win32evtlogutil/pywintypes required for this test.')
 class NTEventLogHandlerTest(BaseTest):
     def test_basic(self):
         logtype = 'Application'
         elh = win32evtlog.OpenEventLog(None, logtype)
         num_recs = win32evtlog.GetNumberOfEventLogRecords(elh)
-        h = logging.handlers.NTEventLogHandler('test_logging')
+
+        try:
+            h = logging.handlers.NTEventLogHandler('test_logging')
+        except pywintypes.error as e:
+            if e[0] == 5:  # access denied
+                raise unittest.SkipTest('Insufficient privileges to run test')
+
         r = logging.makeLogRecord({'msg': 'Test Log Message'})
         h.handle(r)
         h.close()
