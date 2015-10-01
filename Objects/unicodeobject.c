@@ -8683,7 +8683,7 @@ exit:
     return res;
 }
 
-PyObject *
+static PyObject *
 _PyUnicode_TranslateCharmap(PyObject *input,
                             PyObject *mapping,
                             const char *errors)
