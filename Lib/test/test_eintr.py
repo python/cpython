@@ -16,7 +16,8 @@ class EINTRTests(unittest.TestCase):
         # Run the tester in a sub-process, to make sure there is only one
         # thread (for reliable signal delivery).
         tester = support.findfile("eintr_tester.py", subdir="eintrdata")
-        script_helper.assert_python_ok(tester)
+        # use -u to try to get the full output if the test hangs or crash
+        script_helper.assert_python_ok("-u", tester)
 
 
 if __name__ == "__main__":
