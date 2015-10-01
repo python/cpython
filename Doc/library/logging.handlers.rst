@@ -162,11 +162,17 @@ for this value.
    first call to :meth:`emit`.  By default, the file grows indefinitely.
 
 
+   .. method:: reopenIfNeeded()
+
+      Checks to see if the file has changed.  If it has, the existing stream is
+      flushed and closed and the file opened again, typically as a precursor to
+      outputting the record to the file.
+
+
    .. method:: emit(record)
 
-      Outputs the record to the file, but first checks to see if the file has
-      changed.  If it has, the existing stream is flushed and closed and the
-      file opened again, before outputting the record to the file.
+      Outputs the record to the file, but first calls :meth:`reopenIfNeeded` to
+      reopen the file if it has changed.
 
 .. _base-rotating-handler:
 
