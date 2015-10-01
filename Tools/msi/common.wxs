@@ -22,17 +22,19 @@
         </Upgrade>
         
         <?if $(var.UpgradeCode)!=$(var.CoreUpgradeCode) ?>
+        <?ifndef SkipMissingCore ?>
         <Upgrade Id="$(var.CoreUpgradeCode)">
             <UpgradeVersion Property="MISSING_CORE" Minimum="$(var.Version)" IncludeMinimum="yes" Maximum="$(var.Version)" IncludeMaximum="yes" OnlyDetect="yes" />
         </Upgrade>
+        <Condition Message="!(loc.IncorrectCore)">Installed OR NOT MISSING_CORE</Condition>
+        <?endif ?>
         <?endif ?>
         
         <Condition Message="!(loc.NoDowngrade)">Installed OR NOT DOWNGRADE</Condition>
-        <Condition Message="!(loc.IncorrectCore)">Installed OR NOT MISSING_CORE</Condition>
         <Condition Message="!(loc.NoTargetDir)">Installed OR TARGETDIR OR Suppress_TARGETDIR_Check</Condition>
 
         <InstallExecuteSequence>
-            <RemoveExistingProducts After="InstallInitialize">UPGRADE</RemoveExistingProducts>
+            <RemoveExistingProducts After="InstallInitialize" Overridable="yes">UPGRADE</RemoveExistingProducts>
         </InstallExecuteSequence>
     </Fragment>
     

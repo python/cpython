@@ -26,6 +26,13 @@
         <InstallExecuteSequence>
             <Custom Before="SetLauncherInstallDirectoryLM" Action="SetLauncherInstallDirectoryCU">NOT Installed AND NOT ALLUSERS=1</Custom>
             <Custom Before="CostFinalize" Action="SetLauncherInstallDirectoryLM">NOT Installed AND ALLUSERS=1</Custom>
+
+            <RemoveExistingProducts After="InstallInitialize">UPGRADE or REMOVE_OLD_LAUNCHER</RemoveExistingProducts>
         </InstallExecuteSequence>
+        
+        <!-- Python 3.5.0 shipped with an incorrect UpgradeCode -->
+        <Upgrade Id="A71530B9-E89D-53DB-9C2D-C6D7551876D8">
+            <UpgradeVersion Maximum="$(var.Version)" Property="REMOVE_OLD_LAUNCHER" />
+        </Upgrade>
     </Product>
 </Wix>

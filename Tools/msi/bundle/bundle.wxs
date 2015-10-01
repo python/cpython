@@ -85,6 +85,8 @@
       <PackageGroupRef Id="tools" />
       <PackageGroupRef Id="tcltk" />
       <PackageGroupRef Id="launcher" />
+      <PackageGroupRef Id="pip" />
+      <PackageGroupRef Id="packageinstall" />
       <PackageGroupRef Id="postinstall" />
     </Chain>
   </Bundle>

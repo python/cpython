@@ -9,6 +9,8 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="yes"
                         EnableFeatureSelection="yes"
+                        Permanent="yes"
+                        Visible="yes"
                         InstallCondition="(InstallAllUsers or InstallLauncherAllUsers) and Include_launcher" />
 
             <MsiPackage Id="launcher_JustForMe"
@@ -17,6 +19,8 @@
                         DownloadUrl="$(var.DownloadUrl)"
                         ForcePerMachine="no"
                         EnableFeatureSelection="yes"
+                        Permanent="yes"
+                        Visible="yes"
                         InstallCondition="not (InstallAllUsers or InstallLauncherAllUsers) and Include_launcher" />
         </PackageGroup>
     </Fragment>
