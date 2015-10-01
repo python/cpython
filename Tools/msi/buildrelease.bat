@@ -4,17 +4,28 @@
 rem This script is intended for building official releases of Python.
 rem To use it to build alternative releases, you should clone this file
 rem and modify the following three URIs.
-rem
-rem The first two will ensure that your release can be installed
-rem alongside an official Python release, while the second specifies
-rem the URL that will be used to download installation files. The
-rem files available from this URL *will* conflict with your installer.
-rem Trust me, you don't want them, even if it seems like a good idea.
 
-set RELEASE_URI_X86=http://www.python.org/win32
-set RELEASE_URI_X64=http://www.python.org/amd64
-set DOWNLOAD_URL_BASE=https://www.python.org/ftp/python
-set DOWNLOAD_URL=
+rem These two will ensure that your release can be installed
+rem alongside an official Python release, by modifying the GUIDs used
+rem for all components.
+rem
+rem The following substitutions will be applied to the release URI:
+rem     Variable        Description         Example
+rem     {arch}          architecture        amd64, win32
+set RELEASE_URI=http://www.python.org/{arch}
+
+rem This is the URL that will be used to download installation files.
+rem The files available from the default URL *will* conflict with your
+rem installer. Trust me, you don't want them, even if it seems like a
+rem good idea.
+rem
+rem The following substitutions will be applied to the download URL:
+rem     Variable        Description         Example
+rem     {version}       version number      3.5.0
+rem     {arch}          architecture        amd64, win32
+rem     {releasename}   release name        a1, b2, rc3 (or blank for final)
+rem     {msi}           MSI filename        core.msi
+set DOWNLOAD_URL=https://www.python.org/ftp/python/{version}/{arch}{releasename}/{msi}
 
 set D=%~dp0
 set PCBUILD=%D%..\..\PCBuild\
@@ -90,14 +101,12 @@ if "%1" EQU "x86" (
     set BUILD_PLAT=Win32
     set OUTDIR_PLAT=win32
     set OBJDIR_PLAT=x86
-    set RELEASE_URI=%RELEASE_URI_X86%
 ) ELSE (
     call "%PCBUILD%env.bat" x86_amd64
     set BUILD=%PCBUILD%amd64\
     set BUILD_PLAT=x64
     set OUTDIR_PLAT=amd64
     set OBJDIR_PLAT=x64
-    set RELEASE_URI=%RELEASE_URI_X64%
 )
 
 if exist "%BUILD%en-us" (
@@ -157,10 +166,16 @@ echo    -x64                Build x64 installers
 echo    --build (-b)        Incrementally build Python rather than rebuilding
 echo    --skip-build (-B)   Do not build Python (just do the installers)
 echo    --skip-doc (-D)     Do not build documentation
-echo    --download          Specify the full download URL for MSIs (should include {2})
+echo    --download          Specify the full download URL for MSIs
 echo    --test              Specify the test directory to run the installer tests
 echo    -h                  Display this help information
 echo.
 echo If no architecture is specified, all architectures will be built.
 echo If --test is not specified, the installer tests are not run.
 echo.
+echo The following substitutions will be applied to the download URL:
+echo     Variable        Description         Example
+echo     {version}       version number      3.5.0
+echo     {arch}          architecture        amd64, win32
+echo     {releasename}   release name        a1, b2, rc3 (or blank for final)
+echo     {msi}           MSI filename        core.msi
