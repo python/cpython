@@ -9,6 +9,7 @@ sub-second periodicity (contrarily to signal()).
 """
 
 import contextlib
+import faulthandler
 import io
 import os
 import select
@@ -50,6 +51,9 @@ class EINTRBaseTest(unittest.TestCase):
         signal.setitimer(signal.ITIMER_REAL, cls.signal_delay,
                          cls.signal_period)
 
+        # Issue #25277: Use faulthandler to try to debug a hang on FreeBSD
+        faulthandler.dump_traceback_later(10 * 60, exit=True)
+
     @classmethod
     def stop_alarm(cls):
         signal.setitimer(signal.ITIMER_REAL, 0, 0)
@@ -58,6 +62,7 @@ class EINTRBaseTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.stop_alarm()
         signal.signal(signal.SIGALRM, cls.orig_handler)
+        faulthandler.cancel_dump_traceback_later()
 
     @classmethod
     def _sleep(cls):
