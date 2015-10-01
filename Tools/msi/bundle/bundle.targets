@@ -16,8 +16,9 @@
         <OutputPath>$(OutputPath)en-us\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
         
-        <DownloadUrl Condition="'$(DownloadUrl)' == '' and '$(DownloadUrlBase)' != ''">$(DownloadUrlBase.TrimEnd(`/`))/$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)/$(ArchName)$(ReleaseLevelName)/</DownloadUrl>
-        <DefineConstants Condition="'$(DownloadUrl)' != ''">$(DefineConstants);DownloadUrl=$(DownloadUrl){2}</DefineConstants>
+        <!-- See Tools/msi/buildrelease.bat for help on configuring the download URL -->
+        <DownloadUrl Condition="'$(DownloadUrl)' == '' and '$(DownloadUrlBase)' != ''">$(DownloadUrlBase.TrimEnd(`/`))/{version}/{arch}{releasename}/{msi}</DownloadUrl>
+        <DefineConstants Condition="'$(DownloadUrl)' != ''">$(DefineConstants);DownloadUrl=$(DownloadUrl.Replace(`{version}`, `$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)`).Replace(`{arch}`, `$(ArchName)`).Replace(`{releasename}`, `$(ReleaseName)`).Replace(`{msi}`, `{2}`))</DefineConstants>
         <DefineConstants Condition="'$(DownloadUrl)' == ''">$(DefineConstants);DownloadUrl={2}</DefineConstants>
     </PropertyGroup>
     
@@ -88,7 +89,7 @@
     
     <Target Name="BuildLauncher" BeforeTargets="BeforeBuild" Condition="'$(RebuildAll)' != 'false'">
         <!-- Build the launcher MSI using Exec rather than MSBuild -->
-        <Exec Command='msbuild ..\launcher\launcher.wixproj /p:Platform=x86 /p:OutputPath="$(BuildPath.TrimEnd(`\`))" /p:OutputSuffix=$(Platform) /p:BuildForRelease=$(BuildForRelease) /p:UseTestMarker=$(UseTestMarker)'
+        <Exec Command='msbuild ..\launcher\launcher.wixproj /p:Platform=x86 /p:ReleaseUri="$(ReleaseUri)" /p:OutputPath="$(BuildPath.TrimEnd(`\`))" /p:OutputSuffix=$(Platform) /p:BuildForRelease=$(BuildForRelease) /p:UseTestMarker=$(UseTestMarker)'
               ContinueOnError="false" />
     </Target>
     

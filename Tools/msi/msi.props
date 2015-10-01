@@ -11,6 +11,12 @@
         <Configuration Condition="'$(Configuration)' == ''">Release</Configuration>
         <Platform Condition="'$(Platform)' == ''">x86</Platform>
         <InstallScope Condition="'$(InstallScope)' != 'perMachine'">perUser</InstallScope>
+    </PropertyGroup>
+
+    <Import Project="wix.props" />
+    <Import Project="..\..\PCBuild\tcltk.props" />
+
+    <PropertyGroup>
         <!--
         This URI is used to generate the various GUIDs used by the installer.
         Installers built with the same URI will upgrade each other or block
@@ -21,17 +27,15 @@
         that intend to bundle Python should rebuild these modules with their
         own URI to avoid conflicting with the official releases.
         
-        The official releases are built with http://www.python.org/.
+        The official releases use "http://www.python.org/$(ArchName)"
         
         This is not the same as the DownloadUrl property used in the bundle
         projects.
         -->
-        <ReleaseUri Condition="'$(ReleaseUri)' == ''">$(ComputerName)</ReleaseUri>
+        <ReleaseUri Condition="'$(ReleaseUri)' == ''">$(ComputerName)/$(ArchName)/</ReleaseUri>
         <ReleaseUri Condition="!$(ReleaseUri.EndsWith(`/`))">$(ReleaseUri)/</ReleaseUri>
     </PropertyGroup>
 
-    <Import Project="wix.props" />
-    <Import Project="..\..\PCBuild\tcltk.props" />
     
     <ItemGroup>
         <Compile Include="$(MSBuildThisFileDirectory)common.wxs" />
@@ -150,7 +154,7 @@
     <Target Name="_GenerateGuids" AfterTargets="PrepareForBuild">
         <PropertyGroup>
             <_Uuids>@(_Uuid->'("%(Identity)", "$(MajorVersionNumber).$(MinorVersionNumber)/%(Uri)")',',')</_Uuids>
-            <_GenerateCommand>import uuid; print('\n'.join('{}={}'.format(i, uuid.uuid5(uuid.UUID('c8d9733e-a70c-43ff-ab0c-e26456f11083'), '$(ReleaseUri)' + j)) for i,j in [$(_Uuids.Replace(`"`,`'`))]))</_GenerateCommand>
+            <_GenerateCommand>import uuid; print('\n'.join('{}={}'.format(i, uuid.uuid5(uuid.UUID('c8d9733e-a70c-43ff-ab0c-e26456f11083'), '$(ReleaseUri.Replace(`{arch}`, `$(ArchName)`))' + j)) for i,j in [$(_Uuids.Replace(`"`,`'`))]))</_GenerateCommand>
         </PropertyGroup>
         
         <Exec Command='"$(PythonExe)" -c "$(_GenerateCommand)" &gt; "$(IntermediateOutputPath)$(OutputName)guids.txt"'
