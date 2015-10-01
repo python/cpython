@@ -361,6 +361,12 @@ class ReadTest(MixInCheckStateHandling):
         self.assertEqual("[\uDC80]".encode(self.encoding, "replace"),
                          "[?]".encode(self.encoding))
 
+        # sequential surrogate characters
+        self.assertEqual("[\uD800\uDC80]".encode(self.encoding, "ignore"),
+                         "[]".encode(self.encoding))
+        self.assertEqual("[\uD800\uDC80]".encode(self.encoding, "replace"),
+                         "[??]".encode(self.encoding))
+
         bom = "".encode(self.encoding)
         for before, after in [("\U00010fff", "A"), ("[", "]"),
                               ("A", "\U00010fff")]:
@@ -753,6 +759,7 @@ class UTF8Test(ReadTest, unittest.TestCase):
     encoding = "utf-8"
     ill_formed_sequence = b"\xed\xb2\x80"
     ill_formed_sequence_replace = "\ufffd" * 3
+    BOM = b''
 
     def test_partial(self):
         self.check_partial(
@@ -785,23 +792,32 @@ class UTF8Test(ReadTest, unittest.TestCase):
         super().test_lone_surrogates()
         # not sure if this is making sense for
         # UTF-16 and UTF-32
-        self.assertEqual("[\uDC80]".encode('utf-8', "surrogateescape"),
-                         b'[\x80]')
+        self.assertEqual("[\uDC80]".encode(self.encoding, "surrogateescape"),
+                         self.BOM + b'[\x80]')
+
+        with self.assertRaises(UnicodeEncodeError) as cm:
+            "[\uDC80\uD800\uDFFF]".encode(self.encoding, "surrogateescape")
+        exc = cm.exception
+        self.assertEqual(exc.object[exc.start:exc.end], '\uD800\uDFFF')
 
     def test_surrogatepass_handler(self):
-        self.assertEqual("abc\ud800def".encode("utf-8", "surrogatepass"),
-                         b"abc\xed\xa0\x80def")
-        self.assertEqual(b"abc\xed\xa0\x80def".decode("utf-8", "surrogatepass"),
+        self.assertEqual("abc\ud800def".encode(self.encoding, "surrogatepass"),
+                         self.BOM + b"abc\xed\xa0\x80def")
+        self.assertEqual("\U00010fff\uD800".encode(self.encoding, "surrogatepass"),
+                         self.BOM + b"\xf0\x90\xbf\xbf\xed\xa0\x80")
+        self.assertEqual("[\uD800\uDC80]".encode(self.encoding, "surrogatepass"),
+                         self.BOM + b'[\xed\xa0\x80\xed\xb2\x80]')
+
+        self.assertEqual(b"abc\xed\xa0\x80def".decode(self.encoding, "surrogatepass"),
                          "abc\ud800def")
-        self.assertEqual("\U00010fff\uD800".encode("utf-8", "surrogatepass"),
-                         b"\xf0\x90\xbf\xbf\xed\xa0\x80")
-        self.assertEqual(b"\xf0\x90\xbf\xbf\xed\xa0\x80".decode("utf-8", "surrogatepass"),
+        self.assertEqual(b"\xf0\x90\xbf\xbf\xed\xa0\x80".decode(self.encoding, "surrogatepass"),
                          "\U00010fff\uD800")
+
         self.assertTrue(codecs.lookup_error("surrogatepass"))
         with self.assertRaises(UnicodeDecodeError):
-            b"abc\xed\xa0".decode("utf-8", "surrogatepass")
+            b"abc\xed\xa0".decode(self.encoding, "surrogatepass")
         with self.assertRaises(UnicodeDecodeError):
-            b"abc\xed\xa0z".decode("utf-8", "surrogatepass")
+            b"abc\xed\xa0z".decode(self.encoding, "surrogatepass")
 
 
 @unittest.skipUnless(sys.platform == 'win32',
@@ -1008,6 +1024,7 @@ class ReadBufferTest(unittest.TestCase):
 
 class UTF8SigTest(UTF8Test, unittest.TestCase):
     encoding = "utf-8-sig"
+    BOM = codecs.BOM_UTF8
 
     def test_partial(self):
         self.check_partial(

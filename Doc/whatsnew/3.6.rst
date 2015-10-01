@@ -120,6 +120,9 @@ Optimizations
 * The ASCII and the Latin1 encoders are now up to 3 times as fast for the error
   error ``surrogateescape``.
 
+* The UTF-8 encoder is now up to 75 times as fast for error handlers:
+  ``ignore``, ``replace``, ``surrogateescape``, ``surrogatepass``.
+
 
 Build and C API Changes
 =======================

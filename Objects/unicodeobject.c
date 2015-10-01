@@ -297,6 +297,7 @@ typedef enum {
     _Py_ERROR_UNKNOWN=0,
     _Py_ERROR_STRICT,
     _Py_ERROR_SURROGATEESCAPE,
+    _Py_ERROR_SURROGATEPASS,
     _Py_ERROR_REPLACE,
     _Py_ERROR_IGNORE,
     _Py_ERROR_XMLCHARREFREPLACE,
@@ -312,6 +313,8 @@ get_error_handler(const char *errors)
         return _Py_ERROR_STRICT;
     if (strcmp(errors, "surrogateescape") == 0)
         return _Py_ERROR_SURROGATEESCAPE;
+    if (strcmp(errors, "surrogatepass") == 0)
+        return _Py_ERROR_SURROGATEPASS;
     if (strcmp(errors, "ignore") == 0)
         return _Py_ERROR_IGNORE;
     if (strcmp(errors, "replace") == 0)
@@ -6479,8 +6482,8 @@ unicode_encode_ucs1(PyObject *unicode,
                 goto onError;
 
             case _Py_ERROR_REPLACE:
-                while (collstart++ < collend)
-                    *str++ = '?';
+                memset(str, '?', collend - collstart);
+                str += (collend - collstart);
                 /* fall through ignore error handler */
             case _Py_ERROR_IGNORE:
                 pos = collend;
