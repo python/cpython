@@ -395,6 +395,9 @@
 /* Define to 1 if you have the `getpwent' function. */
 #undef HAVE_GETPWENT
 
+/* Define to 1 if the getrandom() function is available */
+#undef HAVE_GETRANDOM
+
 /* Define to 1 if the Linux getrandom() syscall is available */
 #undef HAVE_GETRANDOM_SYSCALL
 
