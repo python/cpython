@@ -16085,11 +16085,11 @@ cat confdefs.h - <<_ACEOF >conftest.$ac_ext
     #include <sys/syscall.h>
 
     int main() {
-        const int flags = 0;
         char buffer[1];
-        int n;
+        const size_t buflen = sizeof(buffer);
+        const int flags = 0;
         /* ignore the result, Python checks for ENOSYS at runtime */
-        (void)syscall(SYS_getrandom, buffer, sizeof(buffer), flags);
+        (void)syscall(SYS_getrandom, buffer, buflen, flags);
         return 0;
     }
 
@@ -16108,6 +16108,43 @@ $as_echo "$have_getrandom_syscall" >&6; }
 if test "$have_getrandom_syscall" = yes; then
 
 $as_echo "#define HAVE_GETRANDOM_SYSCALL 1" >>confdefs.h
+
+fi
+
+# check if the getrandom() function is available
+# the test was written for the Solaris function of <sys/random.h>
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for the getrandom() function" >&5
+$as_echo_n "checking for the getrandom() function... " >&6; }
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+
+    #include <sys/random.h>
+
+    int main() {
+        char buffer[1];
+        const size_t buflen = sizeof(buffer);
+        const int flags = 0;
+        /* ignore the result, Python checks for ENOSYS at runtime */
+        (void)getrandom(buffer, buflen, flags);
+        return 0;
+    }
+
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  have_getrandom=yes
+else
+  have_getrandom=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $have_getrandom" >&5
+$as_echo "$have_getrandom" >&6; }
+
+if test "$have_getrandom" = yes; then
+
+$as_echo "#define HAVE_GETRANDOM 1" >>confdefs.h
 
 fi
 
