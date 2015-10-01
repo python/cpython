@@ -586,14 +586,14 @@ Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
 pool of processes). By default, an event loop uses a thread pool executor
 (:class:`~concurrent.futures.ThreadPoolExecutor`).
 
-.. coroutinemethod:: BaseEventLoop.run_in_executor(executor, callback, \*args)
+.. coroutinemethod:: BaseEventLoop.run_in_executor(executor, func, \*args)
 
-   Arrange for a callback to be called in the specified executor.
+   Arrange for a *func* to be called in the specified executor.
 
    The *executor* argument should be an :class:`~concurrent.futures.Executor`
    instance. The default executor is used if *executor* is ``None``.
 
-   :ref:`Use functools.partial to pass keywords to the callback
+   :ref:`Use functools.partial to pass keywords to the *func*
    <asyncio-pass-keywords>`.
 
    This method is a :ref:`coroutine <coroutine>`.
