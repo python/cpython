@@ -10,6 +10,10 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #25003: os.urandom() doesn't use getentropy() on Solaris because
+  getentropy() is blocking, whereas os.urandom() should not block. getentropy()
+  is supported since Solaris 11.3.
+
 - Issue #21167: NAN operations are now handled correctly when python is
   compiled with ICC even if -fp-model strict is not specified.
 
