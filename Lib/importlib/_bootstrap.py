@@ -620,15 +620,15 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
     raw_size = data[8:12]
     if magic != MAGIC_NUMBER:
         message = 'bad magic number in {!r}: {!r}'.format(name, magic)
-        _verbose_message(message)
+        _verbose_message('{}', message)
         raise ImportError(message, **exc_details)
     elif len(raw_timestamp) != 4:
         message = 'reached EOF while reading timestamp in {!r}'.format(name)
-        _verbose_message(message)
+        _verbose_message('{}', message)
         raise EOFError(message)
     elif len(raw_size) != 4:
         message = 'reached EOF while reading size of source in {!r}'.format(name)
-        _verbose_message(message)
+        _verbose_message('{}', message)
         raise EOFError(message)
     if source_stats is not None:
         try:
@@ -638,7 +638,7 @@ def _validate_bytecode_header(data, source_stats=None, name=None, path=None):
         else:
             if _r_long(raw_timestamp) != source_mtime:
                 message = 'bytecode is stale for {!r}'.format(name)
-                _verbose_message(message)
+                _verbose_message('{}', message)
                 raise ImportError(message, **exc_details)
         try:
             source_size = source_stats['size'] & 0xFFFFFFFF
