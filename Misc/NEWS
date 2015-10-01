@@ -10,6 +10,10 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25267: The UTF-8 encoder is now up to 75 times as fast for error
+  handlers: ``ignore``, ``replace``, ``surrogateescape``, ``surrogatepass``.
+  Patch co-written with Serhiy Storchaka.
+
 - Issue #25280: Import trace messages emitted in verbose (-v) mode are no
   longer formatted twice.
 
