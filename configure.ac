@@ -5154,11 +5154,11 @@ AC_LINK_IFELSE(
     #include <sys/syscall.h>
 
     int main() {
-        const int flags = 0;
         char buffer[1];
-        int n;
+        const size_t buflen = sizeof(buffer);
+        const int flags = 0;
         /* ignore the result, Python checks for ENOSYS at runtime */
-        (void)syscall(SYS_getrandom, buffer, sizeof(buffer), flags);
+        (void)syscall(SYS_getrandom, buffer, buflen, flags);
         return 0;
     }
   ]])
@@ -5168,6 +5168,31 @@ AC_MSG_RESULT($have_getrandom_syscall)
 if test "$have_getrandom_syscall" = yes; then
     AC_DEFINE(HAVE_GETRANDOM_SYSCALL, 1,
               [Define to 1 if the Linux getrandom() syscall is available])
+fi
+
+# check if the getrandom() function is available
+# the test was written for the Solaris function of <sys/random.h>
+AC_MSG_CHECKING(for the getrandom() function)
+AC_LINK_IFELSE(
+[
+  AC_LANG_SOURCE([[
+    #include <sys/random.h>
+
+    int main() {
+        char buffer[1];
+        const size_t buflen = sizeof(buffer);
+        const int flags = 0;
+        /* ignore the result, Python checks for ENOSYS at runtime */
+        (void)getrandom(buffer, buflen, flags);
+        return 0;
+    }
+  ]])
+],[have_getrandom=yes],[have_getrandom=no])
+AC_MSG_RESULT($have_getrandom)
+
+if test "$have_getrandom" = yes; then
+    AC_DEFINE(HAVE_GETRANDOM, 1,
+              [Define to 1 if the getrandom() function is available])
 fi
 
 # generate output files

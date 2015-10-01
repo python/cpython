@@ -1226,13 +1226,15 @@ class URandomTests(unittest.TestCase):
         self.assertNotEqual(data1, data2)
 
 
-HAVE_GETENTROPY = (sysconfig.get_config_var('HAVE_GETENTROPY') == 1)
-HAVE_GETRANDOM = (sysconfig.get_config_var('HAVE_GETRANDOM_SYSCALL') == 1)
+# os.urandom() doesn't use a file descriptor when it is implemented with the
+# getentropy() function, the getrandom() function or the getrandom() syscall
+OS_URANDOM_DONT_USE_FD = (
+    sysconfig.get_config_var('HAVE_GETENTROPY') == 1
+    or sysconfig.get_config_var('HAVE_GETRANDOM') == 1
+    or sysconfig.get_config_var('HAVE_GETRANDOM_SYSCALL') == 1)
 
-@unittest.skipIf(HAVE_GETENTROPY,
-                 "getentropy() does not use a file descriptor")
-@unittest.skipIf(HAVE_GETRANDOM,
-                 "getrandom() does not use a file descriptor")
+@unittest.skipIf(OS_URANDOM_DONT_USE_FD ,
+                 "os.random() does not use a file descriptor")
 class URandomFDTests(unittest.TestCase):
     @unittest.skipUnless(resource, "test requires the resource module")
     def test_urandom_failure(self):
