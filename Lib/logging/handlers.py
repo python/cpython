@@ -440,11 +440,11 @@ class WatchedFileHandler(logging.FileHandler):
             sres = os.fstat(self.stream.fileno())
             self.dev, self.ino = sres[ST_DEV], sres[ST_INO]
 
-    def emit(self, record):
+    def reopenIfNeeded(self):
         """
-        Emit a record.
+        Reopen log file if needed.
 
-        First check if the underlying file has changed, and if it
+        Checks if the underlying file has changed, and if it
         has, close the old stream and reopen the file to get the
         current stream.
         """
@@ -467,6 +467,15 @@ class WatchedFileHandler(logging.FileHandler):
                 # open a new file handle and get new stat info from that fd
                 self.stream = self._open()
                 self._statstream()
+
+    def emit(self, record):
+        """
+        Emit a record.
+
+        If underlying file has changed, reopen the file before emitting the
+        record to it.
+        """
+        self.reopenIfNeeded()
         logging.FileHandler.emit(self, record)
 
 
