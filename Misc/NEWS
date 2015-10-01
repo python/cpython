@@ -244,7 +244,10 @@ Build
 Windows
 -------
 
-- Issues #25112: py.exe launcher is missing icons
+- Issue #25165: Windows uninstallation should not remove launcher if other
+  versions remain
+
+- Issue #25112: py.exe launcher is missing icons
 
 - Issue #25102: Windows installer does not precompile for -O or -OO.
 
