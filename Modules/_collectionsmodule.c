@@ -1456,8 +1456,14 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
     Py_ssize_t maxlen = -1;
     char *kwlist[] = {"iterable", "maxlen", 0};
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist, &iterable, &maxlenobj))
-        return -1;
+    if (kwdargs == NULL) {
+        if (!PyArg_UnpackTuple(args, "deque()", 0, 2, &iterable, &maxlenobj))
+            return -1;
+    } else {
+        if (!PyArg_ParseTupleAndKeywords(args, kwdargs, "|OO:deque", kwlist,
+                                         &iterable, &maxlenobj))
+            return -1;
+    }
     if (maxlenobj != NULL && maxlenobj != Py_None) {
         maxlen = PyLong_AsSsize_t(maxlenobj);
         if (maxlen == -1 && PyErr_Occurred())
@@ -1468,7 +1474,8 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
         }
     }
     deque->maxlen = maxlen;
-    deque_clear(deque);
+    if (Py_SIZE(deque) > 0)
+        deque_clear(deque);
     if (iterable != NULL) {
         PyObject *rv = deque_extend(deque, iterable);
         if (rv == NULL)
