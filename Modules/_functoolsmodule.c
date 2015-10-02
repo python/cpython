@@ -601,6 +601,7 @@ struct lru_cache_object;
 typedef struct lru_list_elem {
     PyObject_HEAD
     struct lru_list_elem *prev, *next;  /* borrowed links */
+    Py_hash_t hash;
     PyObject *key, *result;
 } lru_list_elem;
 
@@ -762,10 +763,14 @@ static PyObject *
 infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds)
 {
     PyObject *result;
+    Py_hash_t hash;
     PyObject *key = lru_cache_make_key(args, kwds, self->typed);
     if (!key)
         return NULL;
-    result = PyDict_GetItemWithError(self->cache, key);
+    hash = PyObject_Hash(key);
+    if (hash == -1)
+        return NULL;
+    result = _PyDict_GetItem_KnownHash(self->cache, key, hash);
     if (result) {
         Py_INCREF(result);
         self->hits++;
@@ -781,7 +786,7 @@ infinite_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwd
         Py_DECREF(key);
         return NULL;
     }
-    if (PyDict_SetItem(self->cache, key, result) < 0) {
+    if (_PyDict_SetItem_KnownHash(self->cache, key, result, hash) < 0) {
         Py_DECREF(result);
         Py_DECREF(key);
         return NULL;
@@ -813,11 +818,15 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
 {
     lru_list_elem *link;
     PyObject *key, *result;
+    Py_hash_t hash;
 
     key = lru_cache_make_key(args, kwds, self->typed);
     if (!key)
         return NULL;
-    link  = (lru_list_elem *)PyDict_GetItemWithError(self->cache, key);
+    hash = PyObject_Hash(key);
+    if (hash == -1)
+        return NULL;
+    link  = (lru_list_elem *)_PyDict_GetItem_KnownHash(self->cache, key, hash);
     if (link) {
         lru_cache_extricate_link(link);
         lru_cache_append_link(self, link);
@@ -845,7 +854,8 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         /* Remove it from the cache.
            The cache dict holds one reference to the link,
            and the linked list holds yet one reference to it. */
-        if (PyDict_DelItem(self->cache, link->key) < 0) {
+        if (_PyDict_DelItem_KnownHash(self->cache, link->key,
+                                      link->hash) < 0) {
             lru_cache_append_link(self, link);
             Py_DECREF(key);
             Py_DECREF(result);
@@ -859,9 +869,11 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
         oldkey = link->key;
         oldresult = link->result;
 
+        link->hash = hash;
         link->key = key;
         link->result = result;
-        if (PyDict_SetItem(self->cache, key, (PyObject *)link) < 0) {
+        if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
+                                      hash) < 0) {
             Py_DECREF(link);
             Py_DECREF(oldkey);
             Py_DECREF(oldresult);
@@ -881,10 +893,12 @@ bounded_lru_cache_wrapper(lru_cache_object *self, PyObject *args, PyObject *kwds
             return NULL;
         }
 
+        link->hash = hash;
         link->key = key;
         link->result = result;
         _PyObject_GC_TRACK(link);
-        if (PyDict_SetItem(self->cache, key, (PyObject *)link) < 0) {
+        if (_PyDict_SetItem_KnownHash(self->cache, key, (PyObject *)link,
+                                      hash) < 0) {
             Py_DECREF(link);
             return NULL;
         }
