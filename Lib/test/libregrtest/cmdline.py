@@ -1,5 +1,4 @@
 import argparse
-import faulthandler
 import os
 from test import support
 
@@ -234,6 +233,9 @@ def _create_parser():
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
                             'error happens')
+    group.add_argument('--list-tests', action='store_true',
+                       help="only write the name of tests that will be run, "
+                            "don't execute them")
 
     parser.add_argument('args', nargs=argparse.REMAINDER,
                         help=argparse.SUPPRESS)
@@ -301,12 +303,7 @@ def _parse_args(args, **kwargs):
     if ns.quiet:
         ns.verbose = 0
     if ns.timeout is not None:
-        if hasattr(faulthandler, 'dump_traceback_later'):
-            if ns.timeout <= 0:
-                ns.timeout = None
-        else:
-            print("Warning: The timeout option requires "
-                  "faulthandler.dump_traceback_later")
+        if ns.timeout <= 0:
             ns.timeout = None
     if ns.use_mp is not None:
         if ns.use_mp <= 0:

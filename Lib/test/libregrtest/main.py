@@ -1,3 +1,4 @@
+import faulthandler
 import os
 import platform
 import random
@@ -110,8 +111,13 @@ class Regrtest:
     def parse_args(self, kwargs):
         ns = _parse_args(sys.argv[1:], **kwargs)
 
+        if ns.timeout and not hasattr(faulthandler, 'dump_traceback_later'):
+            print("Warning: The timeout option requires "
+                  "faulthandler.dump_traceback_later", file=sys.stderr)
+            ns.timeout = None
+
         if ns.threshold is not None and gc is None:
-            print('No GC available, ignore --threshold.')
+            print('No GC available, ignore --threshold.', file=sys.stderr)
             ns.threshold = None
 
         if ns.findleaks:
@@ -122,7 +128,8 @@ class Regrtest:
                 pass
                 #gc.set_debug(gc.DEBUG_SAVEALL)
             else:
-                print('No GC available, disabling --findleaks')
+                print('No GC available, disabling --findleaks',
+                      file=sys.stderr)
                 ns.findleaks = False
 
         # Strip .py extensions.
@@ -163,20 +170,6 @@ class Regrtest:
                 nottests.add(arg)
             self.ns.args = []
 
-        # For a partial run, we do not need to clutter the output.
-        if (self.ns.verbose
-            or self.ns.header
-            or not (self.ns.quiet or self.ns.single
-                    or self.tests or self.ns.args)):
-            # Print basic platform information
-            print("==", platform.python_implementation(), *sys.version.split())
-            print("==  ", platform.platform(aliased=True),
-                          "%s-endian" % sys.byteorder)
-            print("==  ", "hash algorithm:", sys.hash_info.algorithm,
-                  "64bit" if sys.maxsize > 2**32 else "32bit")
-            print("==  ", os.getcwd())
-            print("Testing with flags:", sys.flags)
-
         # if testdir is set, then we are not running the python tests suite, so
         # don't add default tests to be executed or skipped (pass empty values)
         if self.ns.testdir:
@@ -199,14 +192,17 @@ class Regrtest:
                 del self.selected[:self.selected.index(self.ns.start)]
             except ValueError:
                 print("Couldn't find starting test (%s), using all tests"
-                      % self.ns.start)
+                      % self.ns.start, file=sys.stderr)
 
         if self.ns.randomize:
             if self.ns.random_seed is None:
                 self.ns.random_seed = random.randrange(10000000)
             random.seed(self.ns.random_seed)
-            print("Using random seed", self.ns.random_seed)
             random.shuffle(self.selected)
+
+    def list_tests(self):
+        for name in self.selected:
+            print(name)
 
     def rerun_failed_tests(self):
         self.ns.verbose = True
@@ -315,6 +311,23 @@ class Regrtest:
                     return
 
     def run_tests(self):
+        # For a partial run, we do not need to clutter the output.
+        if (self.ns.verbose
+            or self.ns.header
+            or not (self.ns.quiet or self.ns.single
+                    or self.tests or self.ns.args)):
+            # Print basic platform information
+            print("==", platform.python_implementation(), *sys.version.split())
+            print("==  ", platform.platform(aliased=True),
+                          "%s-endian" % sys.byteorder)
+            print("==  ", "hash algorithm:", sys.hash_info.algorithm,
+                  "64bit" if sys.maxsize > 2**32 else "32bit")
+            print("==  ", os.getcwd())
+            print("Testing with flags:", sys.flags)
+
+        if self.ns.randomize:
+            print("Using random seed", self.ns.random_seed)
+
         if self.ns.forever:
             self.tests = self._test_forever(list(self.selected))
             self.test_count = ''
@@ -359,8 +372,12 @@ class Regrtest:
         setup_tests(self.ns)
 
         self.find_tests(tests)
-        self.run_tests()
 
+        if self.ns.list_tests:
+            self.list_tests()
+            sys.exit(0)
+
+        self.run_tests()
         self.display_result()
 
         if self.ns.verbose2 and self.bad:

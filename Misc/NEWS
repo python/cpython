@@ -170,6 +170,8 @@ Documentation
 Tests
 -----
 
+- Issue #22806: Add ``python -m test --list-tests`` command to list tests.
+
 - Issue #18174: ``python -m test --huntrleaks ...`` now also checks for leak of
   file descriptors. Patch written by Richard Oudkerk.
 
