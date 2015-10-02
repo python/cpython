@@ -383,27 +383,32 @@ class BaseTestCase(unittest.TestCase):
         self.assertTrue(0 <= randseed <= 10000000, randseed)
         return randseed
 
-    def run_command(self, args, input=None, exitcode=0):
+    def run_command(self, args, input=None, exitcode=0, **kw):
         if not input:
             input = ''
+        if 'stderr' not in kw:
+            kw['stderr'] = subprocess.PIPE
         proc = subprocess.run(args,
                               universal_newlines=True,
                               input=input,
                               stdout=subprocess.PIPE,
-                              stderr=subprocess.PIPE)
+                              **kw)
         if proc.returncode != exitcode:
-            self.fail("Command %s failed with exit code %s\n"
-                      "\n"
-                      "stdout:\n"
-                      "---\n"
-                      "%s\n"
-                      "---\n"
-                      "\n"
-                      "stderr:\n"
-                      "---\n"
-                      "%s"
-                      "---\n"
-                      % (str(args), proc.returncode, proc.stdout, proc.stderr))
+            msg = ("Command %s failed with exit code %s\n"
+                   "\n"
+                   "stdout:\n"
+                   "---\n"
+                   "%s\n"
+                   "---\n"
+                   % (str(args), proc.returncode, proc.stdout))
+            if proc.stderr:
+                msg += ("\n"
+                        "stderr:\n"
+                        "---\n"
+                        "%s"
+                        "---\n"
+                        % proc.stderr)
+            self.fail(msg)
         return proc
 
 
@@ -636,6 +641,36 @@ class ArgsTestCase(BaseTestCase):
         test = self.create_test(code=code)
         output = self.run_tests('--forever', test, exitcode=1)
         self.check_executed_tests(output, [test]*3, failed=test)
+
+    def test_huntrleaks_fd_leak(self):
+        # test --huntrleaks for file descriptor leak
+        code = textwrap.dedent("""
+            import os
+            import unittest
+
+            class FDLeakTest(unittest.TestCase):
+                def test_leak(self):
+                    fd = os.open(__file__, os.O_RDONLY)
+                    # bug: never cloes the file descriptor
+        """)
+        test = self.create_test(code=code)
+
+        filename = 'reflog.txt'
+        self.addCleanup(support.unlink, filename)
+        output = self.run_tests('--huntrleaks', '3:3:', test,
+                                exitcode=1,
+                                stderr=subprocess.STDOUT)
+        self.check_executed_tests(output, [test], failed=test)
+
+        line = 'beginning 6 repetitions\n123456\n......\n'
+        self.check_line(output, re.escape(line))
+
+        line2 = '%s leaked [1, 1, 1] file descriptors, sum=3\n' % test
+        self.check_line(output, re.escape(line2))
+
+        with open(filename) as fp:
+            reflog = fp.read()
+            self.assertEqual(reflog, line2)
 
 
 if __name__ == '__main__':
