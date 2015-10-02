@@ -4381,31 +4381,31 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
             }
             else { /* now leaving a base-64 section */
                 inShift = 0;
-                s++;
-                if (surrogate) {
-                    if (_PyUnicodeWriter_WriteCharInline(&writer, surrogate) < 0)
-                        goto onError;
-                    surrogate = 0;
-                }
                 if (base64bits > 0) { /* left-over bits */
                     if (base64bits >= 6) {
                         /* We've seen at least one base-64 character */
+                        s++;
                         errmsg = "partial character in shift sequence";
                         goto utf7Error;
                     }
                     else {
                         /* Some bits remain; they should be zero */
                         if (base64buffer != 0) {
+                            s++;
                             errmsg = "non-zero padding bits in shift sequence";
                             goto utf7Error;
                         }
                     }
                 }
-                if (ch != '-') {
+                if (surrogate && DECODE_DIRECT(ch)) {
+                    if (_PyUnicodeWriter_WriteCharInline(&writer, surrogate) < 0)
+                        goto onError;
+                }
+                surrogate = 0;
+                if (ch == '-') {
                     /* '-' is absorbed; other terminating
                        characters are preserved */
-                    if (_PyUnicodeWriter_WriteCharInline(&writer, ch) < 0)
-                        goto onError;
+                    s++;
                 }
             }
         }
@@ -4419,6 +4419,7 @@ PyUnicode_DecodeUTF7Stateful(const char *s,
             }
             else { /* begin base64-encoded section */
                 inShift = 1;
+                surrogate = 0;
                 shiftOutStart = writer.pos;
                 base64bits = 0;
                 base64buffer = 0;
@@ -4450,6 +4451,7 @@ utf7Error:
 
     if (inShift && !consumed) { /* in shift sequence, no more to follow */
         /* if we're in an inconsistent state, that's an error */
+        inShift = 0;
         if (surrogate ||
                 (base64bits >= 6) ||
                 (base64bits > 0 && base64buffer != 0)) {
@@ -13337,6 +13339,7 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
 
         if (maxchar > writer->maxchar || writer->readonly) {
             /* resize + widen */
+            maxchar = Py_MAX(maxchar, writer->maxchar);
             newbuffer = PyUnicode_New(newlen, maxchar);
             if (newbuffer == NULL)
                 return -1;
