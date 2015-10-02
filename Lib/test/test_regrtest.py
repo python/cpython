@@ -672,6 +672,13 @@ class ArgsTestCase(BaseTestCase):
             reflog = fp.read()
             self.assertEqual(reflog, line2)
 
+    def test_list_tests(self):
+        # test --list-tests
+        tests = [self.create_test() for i in range(5)]
+        output = self.run_tests('--list-tests', *tests)
+        self.assertEqual(output.rstrip().splitlines(),
+                         tests)
+
 
 if __name__ == '__main__':
     unittest.main()
