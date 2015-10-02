@@ -498,10 +498,10 @@ class AbstractUnpickleTests(unittest.TestCase):
             self.assertRaises(ValueError, self.loads, buf)
 
     def test_correctly_quoted_string(self):
-        goodpickles = [(b"S''\n.", ''),
-                       (b'S""\n.', ''),
-                       (b'S"\\n"\n.', '\n'),
-                       (b"S'\\n'\n.", '\n')]
+        goodpickles = [("S''\n.", ''),
+                       ('S""\n.', ''),
+                       ('S"\\n"\n.', '\n'),
+                       ("S'\\n'\n.", '\n')]
         for p, expected in goodpickles:
             self.assertEqual(self.loads(p), expected)
 
@@ -521,10 +521,10 @@ class AbstractUnpickleTests(unittest.TestCase):
             21: b    BUILD
             22: .    STOP
             """
-            pickle0 = (b"(i__main__\n"
-                       b"X\n"
-                       b"p0\n"
-                       b"(dp1\nb.").replace(b'X', xname)
+            pickle0 = ("(i__main__\n"
+                       "X\n"
+                       "p0\n"
+                       "(dp1\nb.").replace('X', xname)
             self.assert_is_copy(X(*args), self.loads(pickle0))
 
             # Protocol 1 (binary mode pickle)
@@ -539,12 +539,12 @@ class AbstractUnpickleTests(unittest.TestCase):
             21: b    BUILD
             22: .    STOP
             """
-            pickle1 = (b'(c__main__\n'
-                       b'X\n'
-                       b'q\x00oq\x01}q\x02b.').replace(b'X', xname)
+            pickle1 = ('(c__main__\n'
+                       'X\n'
+                       'q\x00oq\x01}q\x02b.').replace('X', xname)
             self.assert_is_copy(X(*args), self.loads(pickle1))
 
-            # Protocol 2 (pickle2 = b'\x80\x02' + pickle1)
+            # Protocol 2 (pickle2 = '\x80\x02' + pickle1)
             """
              0: \x80 PROTO      2
              2: (    MARK
@@ -557,63 +557,63 @@ class AbstractUnpickleTests(unittest.TestCase):
             23: b    BUILD
             24: .    STOP
             """
-            pickle2 = (b'\x80\x02(c__main__\n'
-                       b'X\n'
-                       b'q\x00oq\x01}q\x02b.').replace(b'X', xname)
+            pickle2 = ('\x80\x02(c__main__\n'
+                       'X\n'
+                       'q\x00oq\x01}q\x02b.').replace('X', xname)
             self.assert_is_copy(X(*args), self.loads(pickle2))
 
     def test_pop_empty_stack(self):
         # Test issue7455
-        s = b'0'
+        s = '0'
         self.assertRaises((cPickle.UnpicklingError, IndexError), self.loads, s)
 
     def test_load_str(self):
         # From Python 2: pickle.dumps('a\x00\xa0', protocol=0)
-        self.assertEqual(self.loads(b"S'a\\x00\\xa0'\n."), b'a\x00\xa0')
+        self.assertEqual(self.loads("S'a\\x00\\xa0'\n."), 'a\x00\xa0')
         # From Python 2: pickle.dumps('a\x00\xa0', protocol=1)
-        self.assertEqual(self.loads(b'U\x03a\x00\xa0.'), b'a\x00\xa0')
+        self.assertEqual(self.loads('U\x03a\x00\xa0.'), 'a\x00\xa0')
         # From Python 2: pickle.dumps('a\x00\xa0', protocol=2)
-        self.assertEqual(self.loads(b'\x80\x02U\x03a\x00\xa0.'), b'a\x00\xa0')
+        self.assertEqual(self.loads('\x80\x02U\x03a\x00\xa0.'), 'a\x00\xa0')
 
     def test_load_unicode(self):
         # From Python 2: pickle.dumps(u'π', protocol=0)
-        self.assertEqual(self.loads(b'V\\u03c0\n.'), u'π')
+        self.assertEqual(self.loads('V\\u03c0\n.'), u'π')
         # From Python 2: pickle.dumps(u'π', protocol=1)
-        self.assertEqual(self.loads(b'X\x02\x00\x00\x00\xcf\x80.'), u'π')
+        self.assertEqual(self.loads('X\x02\x00\x00\x00\xcf\x80.'), u'π')
         # From Python 2: pickle.dumps(u'π', protocol=2)
-        self.assertEqual(self.loads(b'\x80\x02X\x02\x00\x00\x00\xcf\x80.'), u'π')
+        self.assertEqual(self.loads('\x80\x02X\x02\x00\x00\x00\xcf\x80.'), u'π')
 
     def test_constants(self):
-        self.assertIsNone(self.loads(b'N.'))
-        self.assertIs(self.loads(b'\x88.'), True)
-        self.assertIs(self.loads(b'\x89.'), False)
-        self.assertIs(self.loads(b'I01\n.'), True)
-        self.assertIs(self.loads(b'I00\n.'), False)
+        self.assertIsNone(self.loads('N.'))
+        self.assertIs(self.loads('\x88.'), True)
+        self.assertIs(self.loads('\x89.'), False)
+        self.assertIs(self.loads('I01\n.'), True)
+        self.assertIs(self.loads('I00\n.'), False)
 
     def test_misc_get(self):
-        self.assertRaises(self.error, self.loads, b'g0\np0\n')
-        self.assertRaises(self.error, self.loads, b'h\x00q\x00')
+        self.assertRaises(self.error, self.loads, 'g0\np0\n')
+        self.assertRaises(self.error, self.loads, 'h\x00q\x00')
 
     def test_get(self):
-        pickled = b'((lp100000\ng100000\nt.'
+        pickled = '((lp100000\ng100000\nt.'
         unpickled = self.loads(pickled)
         self.assertEqual(unpickled, ([],)*2)
         self.assertIs(unpickled[0], unpickled[1])
 
     def test_binget(self):
-        pickled = b'(]q\xffh\xfft.'
+        pickled = '(]q\xffh\xfft.'
         unpickled = self.loads(pickled)
         self.assertEqual(unpickled, ([],)*2)
         self.assertIs(unpickled[0], unpickled[1])
 
     def test_long_binget(self):
-        pickled = b'(]r\x00\x00\x01\x00j\x00\x00\x01\x00t.'
+        pickled = '(]r\x00\x00\x01\x00j\x00\x00\x01\x00t.'
         unpickled = self.loads(pickled)
         self.assertEqual(unpickled, ([],)*2)
         self.assertIs(unpickled[0], unpickled[1])
 
     def test_dup(self):
-        pickled = b'((l2t.'
+        pickled = '((l2t.'
         unpickled = self.loads(pickled)
         self.assertEqual(unpickled, ([],)*2)
         self.assertIs(unpickled[0], unpickled[1])
