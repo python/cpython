@@ -642,6 +642,32 @@ class UTF8Test(ReadTest):
 class UTF7Test(ReadTest):
     encoding = "utf-7"
 
+    def test_ascii(self):
+        # Set D (directly encoded characters)
+        set_d = ('ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+                 'abcdefghijklmnopqrstuvwxyz'
+                 '0123456789'
+                 '\'(),-./:?')
+        self.assertEqual(set_d.encode(self.encoding), set_d)
+        self.assertEqual(set_d.decode(self.encoding), set_d)
+        # Set O (optional direct characters)
+        set_o = ' !"#$%&*;<=>@[]^_`{|}'
+        self.assertEqual(set_o.encode(self.encoding), set_o)
+        self.assertEqual(set_o.decode(self.encoding), set_o)
+        # +
+        self.assertEqual(u'a+b'.encode(self.encoding), 'a+-b')
+        self.assertEqual('a+-b'.decode(self.encoding), u'a+b')
+        # White spaces
+        ws = ' \t\n\r'
+        self.assertEqual(ws.encode(self.encoding), ws)
+        self.assertEqual(ws.decode(self.encoding), ws)
+        # Other ASCII characters
+        other_ascii = ''.join(sorted(set(chr(i) for i in range(0x80)) -
+                                     set(set_d + set_o + '+' + ws)))
+        self.assertEqual(other_ascii.encode(self.encoding),
+                         '+AAAAAQACAAMABAAFAAYABwAIAAsADAAOAA8AEAARABIAEwAU'
+                         'ABUAFgAXABgAGQAaABsAHAAdAB4AHwBcAH4Afw-')
+
     def test_partial(self):
         self.check_partial(
             u"a+-b",
@@ -656,7 +682,9 @@ class UTF7Test(ReadTest):
 
     def test_errors(self):
         tests = [
+            ('\xffb', u'\ufffdb'),
             ('a\xffb', u'a\ufffdb'),
+            ('a\xff\xffb', u'a\ufffd\ufffdb'),
             ('a+IK', u'a\ufffd'),
             ('a+IK-b', u'a\ufffdb'),
             ('a+IK,b', u'a\ufffdb'),
@@ -672,6 +700,8 @@ class UTF7Test(ReadTest):
             ('a+//,+IKw-b', u'a\ufffd\u20acb'),
             ('a+///,+IKw-b', u'a\uffff\ufffd\u20acb'),
             ('a+////,+IKw-b', u'a\uffff\ufffd\u20acb'),
+            ('a+IKw-b\xff', u'a\u20acb\ufffd'),
+            ('a+IKw\xffb', u'a\u20ac\ufffdb'),
         ]
         for raw, expected in tests:
             self.assertRaises(UnicodeDecodeError, codecs.utf_7_decode,
@@ -682,6 +712,35 @@ class UTF7Test(ReadTest):
         self.assertEqual(u'\U000104A0'.encode(self.encoding), '+2AHcoA-')
         self.assertEqual(u'\ud801\udca0'.encode(self.encoding), '+2AHcoA-')
         self.assertEqual('+2AHcoA-'.decode(self.encoding), u'\U000104A0')
+        self.assertEqual('+2AHcoA'.decode(self.encoding), u'\U000104A0')
+        self.assertEqual(u'\u20ac\U000104A0'.encode(self.encoding), '+IKzYAdyg-')
+        self.assertEqual('+IKzYAdyg-'.decode(self.encoding), u'\u20ac\U000104A0')
+        self.assertEqual('+IKzYAdyg'.decode(self.encoding), u'\u20ac\U000104A0')
+        self.assertEqual(u'\u20ac\u20ac\U000104A0'.encode(self.encoding),
+                         '+IKwgrNgB3KA-')
+        self.assertEqual('+IKwgrNgB3KA-'.decode(self.encoding),
+                         u'\u20ac\u20ac\U000104A0')
+        self.assertEqual('+IKwgrNgB3KA'.decode(self.encoding),
+                         u'\u20ac\u20ac\U000104A0')
+
+    def test_lone_surrogates(self):
+        tests = [
+            ('a+2AE-b', u'a\ud801b'),
+            ('a+2AE\xffb', u'a\ufffdb'),
+            ('a+2AE', u'a\ufffd'),
+            ('a+2AEA-b', u'a\ufffdb'),
+            ('a+2AH-b', u'a\ufffdb'),
+            ('a+IKzYAQ-b', u'a\u20ac\ud801b'),
+            ('a+IKzYAQ\xffb', u'a\u20ac\ufffdb'),
+            ('a+IKzYAQA-b', u'a\u20ac\ufffdb'),
+            ('a+IKzYAd-b', u'a\u20ac\ufffdb'),
+            ('a+IKwgrNgB-b', u'a\u20ac\u20ac\ud801b'),
+            ('a+IKwgrNgB\xffb', u'a\u20ac\u20ac\ufffdb'),
+            ('a+IKwgrNgB', u'a\u20ac\u20ac\ufffd'),
+            ('a+IKwgrNgBA-b', u'a\u20ac\u20ac\ufffdb'),
+        ]
+        for raw, expected in tests:
+            self.assertEqual(raw.decode('utf-7', 'replace'), expected)
 
 class UTF16ExTest(unittest.TestCase):
 

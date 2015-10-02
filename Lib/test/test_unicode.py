@@ -1036,6 +1036,7 @@ class UnicodeTest(
         self.assertRaises(UnicodeError, unicode, 'Andr\202 x', 'ascii','strict')
         self.assertEqual(unicode('Andr\202 x','ascii','ignore'), u"Andr x")
         self.assertEqual(unicode('Andr\202 x','ascii','replace'), u'Andr\uFFFD x')
+        self.assertEqual(unicode('\202 x', 'ascii', 'replace'), u'\uFFFD x')
         self.assertEqual(u'abcde'.decode('ascii', 'ignore'),
                          u'abcde'.decode('ascii', errors='ignore'))
         self.assertEqual(u'abcde'.decode('ascii', 'replace'),
