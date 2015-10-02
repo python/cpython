@@ -13294,27 +13294,38 @@ unicode_endswith(PyObject *self,
 Py_LOCAL_INLINE(void)
 _PyUnicodeWriter_Update(_PyUnicodeWriter *writer)
 {
-    if (!writer->readonly)
+    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(writer->buffer);
+    writer->data = PyUnicode_DATA(writer->buffer);
+
+    if (!writer->readonly) {
+        writer->kind = PyUnicode_KIND(writer->buffer);
         writer->size = PyUnicode_GET_LENGTH(writer->buffer);
+    }
     else {
+        /* use a value smaller than PyUnicode_1BYTE_KIND() so
+           _PyUnicodeWriter_PrepareKind() will copy the buffer. */
+        writer->kind = PyUnicode_WCHAR_KIND;
+        assert(writer->kind <= PyUnicode_1BYTE_KIND);
+
         /* Copy-on-write mode: set buffer size to 0 so
          * _PyUnicodeWriter_Prepare() will copy (and enlarge) the buffer on
          * next write. */
         writer->size = 0;
     }
-    writer->maxchar = PyUnicode_MAX_CHAR_VALUE(writer->buffer);
-    writer->data = PyUnicode_DATA(writer->buffer);
-    writer->kind = PyUnicode_KIND(writer->buffer);
 }
 
 void
 _PyUnicodeWriter_Init(_PyUnicodeWriter *writer)
 {
     memset(writer, 0, sizeof(*writer));
-#ifdef Py_DEBUG
-    writer->kind = 5;    /* invalid kind */
-#endif
+
+    /* ASCII is the bare minimum */
     writer->min_char = 127;
+
+    /* use a value smaller than PyUnicode_1BYTE_KIND() so
+       _PyUnicodeWriter_PrepareKind() will copy the buffer. */
+    writer->kind = PyUnicode_WCHAR_KIND;
+    assert(writer->kind <= PyUnicode_1BYTE_KIND);
 }
 
 int
