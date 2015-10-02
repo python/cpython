@@ -41,10 +41,11 @@ class saved_test_environment:
 
     changed = False
 
-    def __init__(self, testname, verbose=0, quiet=False):
+    def __init__(self, testname, verbose=0, quiet=False, *, pgo=False):
         self.testname = testname
         self.verbose = verbose
         self.quiet = quiet
+        self.pgo = pgo
 
     # To add things to save and restore, add a name XXX to the resources list
     # and add corresponding get_XXX/restore_XXX functions.  get_XXX should
@@ -273,7 +274,7 @@ class saved_test_environment:
             if current != original:
                 self.changed = True
                 restore(original)
-                if not self.quiet:
+                if not self.quiet and not self.pgo:
                     print("Warning -- {} was modified by {}".format(
                                                  name, self.testname),
                                                  file=sys.stderr)

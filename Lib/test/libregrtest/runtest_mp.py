@@ -42,6 +42,8 @@ def run_test_in_subprocess(testname, ns):
            '-X', 'faulthandler',
            '-m', 'test.regrtest',
            '--slaveargs', slaveargs]
+    if ns.pgo:
+        cmd += ['--pgo']
 
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
@@ -175,7 +177,7 @@ def run_tests_multiprocess(regrtest):
                 item = output.get(timeout=timeout)
             except queue.Empty:
                 running = get_running(workers)
-                if running:
+                if running and not regrtest.ns.pgo:
                     print('running: %s' % ', '.join(running))
                 continue
 
@@ -189,17 +191,18 @@ def run_tests_multiprocess(regrtest):
             text = test
             ok, test_time = result
             if (ok not in (CHILD_ERROR, INTERRUPTED)
-                and test_time >= PROGRESS_MIN_TIME):
+                and test_time >= PROGRESS_MIN_TIME
+                and not regrtest.ns.pgo):
                 text += ' (%.0f sec)' % test_time
             running = get_running(workers)
-            if running:
+            if running and not regrtest.ns.pgo:
                 text += ' -- running: %s' % ', '.join(running)
             regrtest.display_progress(test_index, text)
 
             # Copy stdout and stderr from the child process
             if stdout:
                 print(stdout, flush=True)
-            if stderr:
+            if stderr and not regrtest.ns.pgo:
                 print(stderr, file=sys.stderr, flush=True)
 
             if result[0] == INTERRUPTED:

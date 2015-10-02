@@ -103,7 +103,10 @@ class Regrtest:
     def display_progress(self, test_index, test):
         if self.ns.quiet:
             return
-        fmt = "[{1:{0}}{2}/{3}] {4}" if self.bad else "[{1:{0}}{2}] {4}"
+        if self.bad and not self.ns.pgo:
+            fmt = "[{1:{0}}{2}/{3}] {4}"
+        else:
+            fmt = "[{1:{0}}{2}] {4}"
         print(fmt.format(self.test_count_width, test_index,
                          self.test_count, len(self.bad), test),
               flush=True)
@@ -238,6 +241,11 @@ class Regrtest:
             print(count(len(omitted), "test"), "omitted:")
             printlist(omitted)
 
+        # If running the test suite for PGO then no one cares about
+        # results.
+        if self.ns.pgo:
+            return
+
         if self.good and not self.ns.quiet:
             if (not self.bad
                 and not self.skipped
@@ -314,7 +322,7 @@ class Regrtest:
         # For a partial run, we do not need to clutter the output.
         if (self.ns.verbose
             or self.ns.header
-            or not (self.ns.quiet or self.ns.single
+            or not (self.ns.pgo or self.ns.quiet or self.ns.single
                     or self.tests or self.ns.args)):
             # Print basic platform information
             print("==", platform.python_implementation(), *sys.version.split())
