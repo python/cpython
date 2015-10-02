@@ -153,6 +153,24 @@ class TaskTests(test_utils.TestCase):
         t = asyncio.ensure_future(t_orig, loop=self.loop)
         self.assertIs(t, t_orig)
 
+    @unittest.skipUnless(PY35, 'need python 3.5 or later')
+    def test_ensure_future_awaitable(self):
+        class Aw:
+            def __init__(self, coro):
+                self.coro = coro
+            def __await__(self):
+                return (yield from self.coro)
+
+        @asyncio.coroutine
+        def coro():
+            return 'ok'
+
+        loop = asyncio.new_event_loop()
+        self.set_event_loop(loop)
+        fut = asyncio.ensure_future(Aw(coro()), loop=loop)
+        loop.run_until_complete(fut)
+        assert fut.result() == 'ok'
+
     def test_ensure_future_neither(self):
         with self.assertRaises(TypeError):
             asyncio.ensure_future('ok')
