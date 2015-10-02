@@ -152,6 +152,8 @@ Library
 - Issue #23572: Fixed functools.singledispatch on classes with falsy
   metaclasses.  Patch by Ethan Furman.
 
+- asyncio: ensure_future() now accepts awaitable objects.
+
 IDLE
 ----
 
