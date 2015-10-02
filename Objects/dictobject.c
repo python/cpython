@@ -1242,6 +1242,7 @@ _PyDict_SetItem_KnownHash(PyObject *op, PyObject *key, PyObject *value,
     }
     assert(key);
     assert(value);
+    assert(hash != -1);
     mp = (PyDictObject *)op;
 
     /* insertdict() handles any resizing that might be necessary */
@@ -1268,6 +1269,42 @@ PyDict_DelItem(PyObject *op, PyObject *key)
         if (hash == -1)
             return -1;
     }
+    mp = (PyDictObject *)op;
+    ep = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr);
+    if (ep == NULL)
+        return -1;
+    if (*value_addr == NULL) {
+        _PyErr_SetKeyError(key);
+        return -1;
+    }
+    old_value = *value_addr;
+    *value_addr = NULL;
+    mp->ma_used--;
+    if (!_PyDict_HasSplitTable(mp)) {
+        ENSURE_ALLOWS_DELETIONS(mp);
+        old_key = ep->me_key;
+        Py_INCREF(dummy);
+        ep->me_key = dummy;
+        Py_DECREF(old_key);
+    }
+    Py_DECREF(old_value);
+    return 0;
+}
+
+int
+_PyDict_DelItem_KnownHash(PyObject *op, PyObject *key, Py_hash_t hash)
+{
+    PyDictObject *mp;
+    PyDictKeyEntry *ep;
+    PyObject *old_key, *old_value;
+    PyObject **value_addr;
+
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        return -1;
+    }
+    assert(key);
+    assert(hash != -1);
     mp = (PyDictObject *)op;
     ep = (mp->ma_keys->dk_lookup)(mp, key, hash, &value_addr);
     if (ep == NULL)
