@@ -236,6 +236,8 @@ def _create_parser():
     group.add_argument('--list-tests', action='store_true',
                        help="only write the name of tests that will be run, "
                             "don't execute them")
+    group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
+                       help='enable Profile Guided Optimization training')
 
     parser.add_argument('args', nargs=argparse.REMAINDER,
                         help=argparse.SUPPRESS)
@@ -279,7 +281,7 @@ def _parse_args(args, **kwargs):
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, failfast=False, match_tests=None)
+         header=False, failfast=False, match_tests=None, pgo=False)
     for k, v in kwargs.items():
         if not hasattr(ns, k):
             raise TypeError('%r is an invalid keyword argument '
@@ -299,6 +301,8 @@ def _parse_args(args, **kwargs):
         parser.error("-l and -j don't go together!")
     if ns.failfast and not (ns.verbose or ns.verbose3):
         parser.error("-G/--failfast needs either -v or -W")
+    if ns.pgo and (ns.verbose or ns.verbose2 or ns.verbose3):
+        parser.error("--pgo/-v don't go together!")
 
     if ns.quiet:
         ns.verbose = 0

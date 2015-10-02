@@ -65,6 +65,7 @@ def runtest(ns, test):
     timeout -- dump the traceback and exit if a test takes more than
                timeout seconds
     failfast, match_tests -- See regrtest command-line flags for these.
+    pgo -- if true, suppress any info irrelevant to a generating a PGO build
 
     Returns the tuple result, test_time, where result is one of the constants:
         INTERRUPTED      KeyboardInterrupt when run under -j
@@ -82,6 +83,7 @@ def runtest(ns, test):
     failfast = ns.failfast
     match_tests = ns.match_tests
     timeout = ns.timeout
+    pgo = ns.pgo
 
     use_timeout = (timeout is not None)
     if use_timeout:
@@ -110,7 +112,7 @@ def runtest(ns, test):
                 sys.stdout = stream
                 sys.stderr = stream
                 result = runtest_inner(test, verbose, quiet, huntrleaks,
-                                       display_failure=False)
+                                       display_failure=False, pgo=pgo)
                 if result[0] == FAILED:
                     output = stream.getvalue()
                     orig_stderr.write(output)
@@ -121,7 +123,7 @@ def runtest(ns, test):
         else:
             support.verbose = verbose  # Tell tests to be moderately quiet
             result = runtest_inner(test, verbose, quiet, huntrleaks,
-                                   display_failure=not verbose)
+                                   display_failure=not verbose, pgo=pgo)
         return result
     finally:
         if use_timeout:
@@ -131,7 +133,7 @@ runtest.stringio = None
 
 
 def runtest_inner(test, verbose, quiet,
-                  huntrleaks=False, display_failure=True):
+                  huntrleaks=False, display_failure=True, *, pgo=False):
     support.unload(test)
 
     test_time = 0.0
@@ -142,7 +144,7 @@ def runtest_inner(test, verbose, quiet,
         else:
             # Always import it from the test package
             abstest = 'test.' + test
-        with saved_test_environment(test, verbose, quiet) as environment:
+        with saved_test_environment(test, verbose, quiet, pgo=pgo) as environment:
             start_time = time.time()
             the_module = importlib.import_module(abstest)
             # If the test has a test_main, that will run the appropriate
@@ -162,24 +164,28 @@ def runtest_inner(test, verbose, quiet,
                 refleak = dash_R(the_module, test, test_runner, huntrleaks)
             test_time = time.time() - start_time
     except support.ResourceDenied as msg:
-        if not quiet:
+        if not quiet and not pgo:
             print(test, "skipped --", msg, flush=True)
         return RESOURCE_DENIED, test_time
     except unittest.SkipTest as msg:
-        if not quiet:
+        if not quiet and not pgo:
             print(test, "skipped --", msg, flush=True)
         return SKIPPED, test_time
     except KeyboardInterrupt:
         raise
     except support.TestFailed as msg:
-        if display_failure:
-            print("test", test, "failed --", msg, file=sys.stderr, flush=True)
-        else:
-            print("test", test, "failed", file=sys.stderr, flush=True)
+        if not pgo:
+            if display_failure:
+                print("test", test, "failed --", msg, file=sys.stderr,
+                      flush=True)
+            else:
+                print("test", test, "failed", file=sys.stderr, flush=True)
         return FAILED, test_time
     except:
         msg = traceback.format_exc()
-        print("test", test, "crashed --", msg, file=sys.stderr, flush=True)
+        if not pgo:
+            print("test", test, "crashed --", msg, file=sys.stderr,
+                  flush=True)
         return FAILED, test_time
     else:
         if refleak:
