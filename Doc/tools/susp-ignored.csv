@@ -290,8 +290,8 @@ library/zipapp,155,:callable,"""pkg.module:callable"" and the archive will be ru
 library/stdtypes,,::,>>> m[::2].tolist()
 library/sys,1115,`,# ``wrapper`` creates a ``wrap(coro)`` coroutine:
 tutorial/venv,77,:c7b9645a6f35,"Python 3.4.3+ (3.4:c7b9645a6f35+, May 22 2015, 09:31:25)"
-whatsnew/3.5,965,:root,'WARNING:root:warning\n'
-whatsnew/3.5,965,:warning,'WARNING:root:warning\n'
-whatsnew/3.5,1292,::,>>> addr6 = ipaddress.IPv6Address('::1')
-whatsnew/3.5,1354,:root,ERROR:root:exception
-whatsnew/3.5,1354,:exception,ERROR:root:exception
+whatsnew/3.5,,:root,'WARNING:root:warning\n'
+whatsnew/3.5,,:warning,'WARNING:root:warning\n'
+whatsnew/3.5,,::,>>> addr6 = ipaddress.IPv6Address('::1')
+whatsnew/3.5,,:root,ERROR:root:exception
+whatsnew/3.5,,:exception,ERROR:root:exception
