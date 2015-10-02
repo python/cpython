@@ -72,6 +72,10 @@ PyAPI_FUNC(int) _PyDict_SetItem_KnownHash(PyObject *mp, PyObject *key,
                                           PyObject *item, Py_hash_t hash);
 #endif
 PyAPI_FUNC(int) PyDict_DelItem(PyObject *mp, PyObject *key);
+#ifndef Py_LIMITED_API
+PyAPI_FUNC(int) _PyDict_DelItem_KnownHash(PyObject *mp, PyObject *key,
+                                          Py_hash_t hash);
+#endif
 PyAPI_FUNC(void) PyDict_Clear(PyObject *mp);
 PyAPI_FUNC(int) PyDict_Next(
     PyObject *mp, Py_ssize_t *pos, PyObject **key, PyObject **value);
