@@ -57,6 +57,7 @@ Special runs
 -t/--threshold THRESHOLD
                 -- call gc.set_threshold(THRESHOLD)
 -F/--forever    -- run the specified tests in a loop, until an error happens
+-P/--pgo        -- enable Profile Guided Optimization training
 
 
 Additional Option Details:
@@ -240,7 +241,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False):
+         header=False, pgo=False):
     """Execute a test suite.
 
     This also parses command-line options and modifies its behavior
@@ -266,12 +267,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     test_support.record_original_stdout(sys.stdout)
     try:
-        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:j:',
+        opts, args = getopt.getopt(sys.argv[1:], 'hvqxsSrf:lu:t:TD:NLR:FwWM:j:P',
             ['help', 'verbose', 'verbose2', 'verbose3', 'quiet',
              'exclude', 'single', 'slow', 'randomize', 'fromfile=', 'findleaks',
              'use=', 'threshold=', 'trace', 'coverdir=', 'nocoverdir',
              'runleaks', 'huntrleaks=', 'memlimit=', 'randseed=',
-             'multiprocess=', 'slaveargs=', 'forever', 'header'])
+             'multiprocess=', 'slaveargs=', 'forever', 'header', 'pgo'])
     except getopt.error, msg:
         usage(2, msg)
 
@@ -366,6 +367,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             print   # Force a newline (just in case)
             print json.dumps(result)
             sys.exit(0)
+        elif o in ('-P', '--pgo'):
+            pgo = True            
         else:
             print >>sys.stderr, ("No handler for option {}.  Please "
                 "report this as a bug at http://bugs.python.org.").format(o)
@@ -431,13 +434,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     # For a partial run, we do not need to clutter the output.
     if verbose or header or not (quiet or single or tests or args):
-        # Print basic platform information
-        print "==", platform.python_implementation(), \
-                    " ".join(sys.version.split())
-        print "==  ", platform.platform(aliased=True), \
-                      "%s-endian" % sys.byteorder
-        print "==  ", os.getcwd()
-        print "Testing with flags:", sys.flags
+        if not pgo:
+            # Print basic platform information
+            print "==", platform.python_implementation(), \
+                        " ".join(sys.version.split())
+            print "==  ", platform.platform(aliased=True), \
+                          "%s-endian" % sys.byteorder
+            print "==  ", os.getcwd()
+            print "Testing with flags:", sys.flags
 
     alltests = findtests(testdir, stdtests, nottests)
     selected = tests or args or alltests
@@ -510,6 +514,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         pending = tests_and_args()
         opt_args = test_support.args_from_interpreter_flags()
         base_cmd = [sys.executable] + opt_args + ['-m', 'test.regrtest']
+        # required to spawn a new process with PGO flag on/off
+        if pgo:
+            base_cmd = base_cmd + ['--pgo']
         def work():
             # A worker thread.
             try:
@@ -519,6 +526,9 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     except StopIteration:
                         output.put((None, None, None, None))
                         return
+                    # required to permit running tests with PGO flag on/off
+                    if pgo:
+                        args_tuple[1]['pgo']=pgo
                     # -E is needed by some tests, e.g. test_import
                     popen = Popen(base_cmd + ['--slaveargs', json.dumps(args_tuple)],
                                    stdout=PIPE, stderr=PIPE,
@@ -550,7 +560,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     continue
                 if stdout:
                     print stdout
-                if stderr:
+                if stderr and not pgo:
                     print >>sys.stderr, stderr
                 sys.stdout.flush()
                 sys.stderr.flush()
@@ -570,7 +580,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for worker in workers:
             worker.join()
     else:
-        for test_index, test in enumerate(tests, 1):
+        for test_index, test in enumerate(tests, 1):            
             if not quiet:
                 fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
                 print(fmt.format(
@@ -583,11 +593,12 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                               globals=globals(), locals=vars())
             else:
                 try:
-                    result = runtest(test, verbose, quiet, huntrleaks)
+                    result = runtest(test, verbose, quiet, huntrleaks, None, pgo)
                     accumulate_result(test, result)
                     if verbose3 and result[0] == FAILED:
-                        print "Re-running test %r in verbose mode" % test
-                        runtest(test, True, quiet, huntrleaks)
+                        if not pgo:
+                            print "Re-running test %r in verbose mode" % test
+                        runtest(test, True, quiet, huntrleaks, None, pgo)
                 except KeyboardInterrupt:
                     interrupted = True
                     break
@@ -607,14 +618,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                 if module not in save_modules and module.startswith("test."):
                     test_support.unload(module)
 
-    if interrupted:
+    if interrupted and not pgo:
         # print a newline after ^C
         print
         print "Test suite interrupted by signal SIGINT."
         omitted = set(selected) - set(good) - set(bad) - set(skipped)
         print count(len(omitted), "test"), "omitted:"
         printlist(omitted)
-    if good and not quiet:
+    if good and not quiet and not pgo:
         if not bad and not skipped and not interrupted and len(good) > 1:
             print "All",
         print count(len(good), "test"), "OK."
@@ -623,14 +634,14 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         print "10 slowest tests:"
         for time, test in test_times[:10]:
             print "%s: %.1fs" % (test, time)
-    if bad:
+    if bad and not pgo:
         print count(len(bad), "test"), "failed:"
         printlist(bad)
-    if environment_changed:
+    if environment_changed and not pgo:
         print "{} altered the execution environment:".format(
             count(len(environment_changed), "test"))
         printlist(environment_changed)
-    if skipped and not quiet:
+    if skipped and not quiet and not pgo:
         print count(len(skipped), "test"), "skipped:"
         printlist(skipped)
 
@@ -655,7 +666,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             sys.stdout.flush()
             try:
                 test_support.verbose = True
-                ok = runtest(test, True, quiet, huntrleaks)
+                ok = runtest(test, True, quiet, huntrleaks, None, pgo)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print
@@ -716,7 +727,7 @@ def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
     return stdtests + sorted(tests)
 
 def runtest(test, verbose, quiet,
-            huntrleaks=False, use_resources=None):
+            huntrleaks=False, use_resources=None, pgo=False):
     """Run a single test.
 
     test -- the name of the test
@@ -725,6 +736,9 @@ def runtest(test, verbose, quiet,
     test_times -- a list of (time, test_name) pairs
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
+    pgo -- if true, do not print unnecessary info when running the test 
+           for Profile Guided Optimization build
+           
     Returns one of the test result constants:
         INTERRUPTED      KeyboardInterrupt when run under -j
         RESOURCE_DENIED  test skipped because resource denied
@@ -738,7 +752,7 @@ def runtest(test, verbose, quiet,
     if use_resources is not None:
         test_support.use_resources = use_resources
     try:
-        return runtest_inner(test, verbose, quiet, huntrleaks)
+        return runtest_inner(test, verbose, quiet, huntrleaks, pgo)
     finally:
         cleanup_test_droppings(test, verbose)
 
@@ -767,10 +781,11 @@ class saved_test_environment:
 
     changed = False
 
-    def __init__(self, testname, verbose=0, quiet=False):
+    def __init__(self, testname, verbose=0, quiet=False, pgo=False):
         self.testname = testname
         self.verbose = verbose
         self.quiet = quiet
+        self.pgo = pgo
 
     # To add things to save and restore, add a name XXX to the resources list
     # and add corresponding get_XXX/restore_XXX functions.  get_XXX should
@@ -884,11 +899,11 @@ class saved_test_environment:
             if current != original:
                 self.changed = True
                 restore(original)
-                if not self.quiet:
+                if not self.quiet and not self.pgo:
                     print >>sys.stderr, (
                           "Warning -- {} was modified by {}".format(
                                                  name, self.testname))
-                    if self.verbose > 1:
+                    if self.verbose > 1 and not self.pgo:
                         print >>sys.stderr, (
                               "  Before: {}\n  After:  {} ".format(
                                                   original, current))
@@ -899,7 +914,7 @@ class saved_test_environment:
         return False
 
 
-def runtest_inner(test, verbose, quiet, huntrleaks=False):
+def runtest_inner(test, verbose, quiet, huntrleaks=False, pgo=False):
     test_support.unload(test)
     if verbose:
         capture_stdout = None
@@ -918,7 +933,7 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False):
             else:
                 # Always import it from the test package
                 abstest = 'test.' + test
-            with saved_test_environment(test, verbose, quiet) as environment:
+            with saved_test_environment(test, verbose, quiet, pgo) as environment:
                 start_time = time.time()
                 the_package = __import__(abstest, globals(), locals(), [])
                 the_module = getattr(the_package, test)
@@ -935,26 +950,28 @@ def runtest_inner(test, verbose, quiet, huntrleaks=False):
         finally:
             sys.stdout = save_stdout
     except test_support.ResourceDenied, msg:
-        if not quiet:
+        if not quiet and not pgo:
             print test, "skipped --", msg
             sys.stdout.flush()
         return RESOURCE_DENIED, test_time
     except unittest.SkipTest, msg:
-        if not quiet:
+        if not quiet and not pgo:
             print test, "skipped --", msg
             sys.stdout.flush()
         return SKIPPED, test_time
     except KeyboardInterrupt:
         raise
     except test_support.TestFailed, msg:
-        print >>sys.stderr, "test", test, "failed --", msg
+        if not pgo:
+            print >>sys.stderr, "test", test, "failed --", msg
         sys.stderr.flush()
         return FAILED, test_time
     except:
         type, value = sys.exc_info()[:2]
-        print >>sys.stderr, "test", test, "crashed --", str(type) + ":", value
+        if not pgo:
+            print >>sys.stderr, "test", test, "crashed --", str(type) + ":", value
         sys.stderr.flush()
-        if verbose:
+        if verbose and not pgo:
             traceback.print_exc(file=sys.stderr)
             sys.stderr.flush()
         return FAILED, test_time
