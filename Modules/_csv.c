@@ -1520,7 +1520,7 @@ PyDoc_STRVAR(csv_reader_doc,
 "provided by the dialect.\n"
 "\n"
 "The returned object is an iterator.  Each iteration returns a row\n"
-"of the CSV file (which can span multiple input lines):\n");
+"of the CSV file (which can span multiple input lines).\n");
 
 PyDoc_STRVAR(csv_writer_doc,
 "    csv_writer = csv.writer(fileobj [, dialect='excel']\n"
