@@ -231,7 +231,7 @@ TCLTK_INCLUDES=	@TCLTK_INCLUDES@
 TCLTK_LIBS=	@TCLTK_LIBS@
 
 # The task to run while instrument when building the profile-opt target
-PROFILE_TASK=-m test.regrtest >/dev/null 2>&1
+PROFILE_TASK=-m test.regrtest --pgo
 
 # report files for gcov / lcov coverage report
 COVERAGE_INFO=	$(abs_builddir)/coverage.info
