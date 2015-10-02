@@ -803,6 +803,13 @@ Notable changes in the :mod:`asyncio` module since Python 3.4.0:
   :class:`asyncio.Queue` class.
   (Contributed by Victor Stinner.)
 
+Updates in 3.5.1:
+
+* The :func:`~asyncio.ensure_future` function and all functions that
+  use it, such as :meth:`loop.run_until_complete() <asyncio.BaseEventLoop.run_until_complete>`,
+  now accept all kinds of :term:`awaitable objects <awaitable>`.
+  (Contributed by Yury Selivanov.)
+
 
 bz2
 ---
