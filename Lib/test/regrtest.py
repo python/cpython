@@ -322,6 +322,8 @@ def _create_parser():
     group.add_argument('-F', '--forever', action='store_true',
                        help='run the specified tests in a loop, until an '
                             'error happens')
+    group.add_argument('-P', '--pgo', dest='pgo', action='store_true',
+                       help='enable Profile Guided Optimization training')
 
     parser.add_argument('args', nargs=argparse.REMAINDER,
                         help=argparse.SUPPRESS)
@@ -361,7 +363,7 @@ def _parse_args(args, **kwargs):
          findleaks=False, use_resources=None, trace=False, coverdir='coverage',
          runleaks=False, huntrleaks=False, verbose2=False, print_slow=False,
          random_seed=None, use_mp=None, verbose3=False, forever=False,
-         header=False, failfast=False, match_tests=None)
+         header=False, failfast=False, match_tests=None, pgo=False)
     for k, v in kwargs.items():
         if not hasattr(ns, k):
             raise TypeError('%r is an invalid keyword argument '
@@ -435,14 +437,16 @@ def run_test_in_subprocess(testname, ns):
     from subprocess import Popen, PIPE
     base_cmd = ([sys.executable] + support.args_from_interpreter_flags() +
                 ['-X', 'faulthandler', '-m', 'test.regrtest'])
-
+    # required to spawn a new process with PGO flag on/off
+    if ns.pgo:
+        base_cmd = base_cmd + ['--pgo']
     slaveargs = (
             (testname, ns.verbose, ns.quiet),
             dict(huntrleaks=ns.huntrleaks,
                  use_resources=ns.use_resources,
                  output_on_failure=ns.verbose3,
                  timeout=ns.timeout, failfast=ns.failfast,
-                 match_tests=ns.match_tests))
+                 match_tests=ns.match_tests, pgo=ns.pgo))
     # Running the child from the same working directory as regrtest's original
     # invocation ensures that TEMPDIR for the child is the same when
     # sysconfig.is_python_build() is true. See issue 15300.
@@ -596,13 +600,14 @@ def main(tests=None, **kwargs):
         ns.args = []
 
     # For a partial run, we do not need to clutter the output.
-    if ns.verbose or ns.header or not (ns.quiet or ns.single or tests or ns.args):
+    if (ns.verbose or ns.header or
+            not (ns.pgo or ns.quiet or ns.single or tests or ns.args)):
         # Print basic platform information
         print("==", platform.python_implementation(), *sys.version.split())
         print("==  ", platform.platform(aliased=True),
-                      "%s-endian" % sys.byteorder)
+                        "%s-endian" % sys.byteorder)
         print("==  ", "hash algorithm:", sys.hash_info.algorithm,
-              "64bit" if sys.maxsize > 2**32 else "32bit")
+                "64bit" if sys.maxsize > 2**32 else "32bit")
         print("==  ", os.getcwd())
         print("Testing with flags:", sys.flags)
 
@@ -722,13 +727,16 @@ def main(tests=None, **kwargs):
                     continue
                 accumulate_result(test, result)
                 if not ns.quiet:
-                    fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+                    if bad and not ns.pgo:
+                        fmt = "[{1:{0}}{2}/{3}] {4}"
+                    else:
+                        fmt = "[{1:{0}}{2}] {4}"
                     print(fmt.format(
                         test_count_width, test_index, test_count,
                         len(bad), test))
                 if stdout:
                     print(stdout)
-                if stderr:
+                if stderr and not ns.pgo:
                     print(stderr, file=sys.stderr)
                 sys.stdout.flush()
                 sys.stderr.flush()
@@ -745,7 +753,10 @@ def main(tests=None, **kwargs):
     else:
         for test_index, test in enumerate(tests, 1):
             if not ns.quiet:
-                fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
+                if bad and not ns.pgo:
+                    fmt = "[{1:{0}}{2}/{3}] {4}"
+                else:
+                    fmt = "[{1:{0}}{2}] {4}"
                 print(fmt.format(
                     test_count_width, test_index, test_count, len(bad), test))
                 sys.stdout.flush()
@@ -760,7 +771,7 @@ def main(tests=None, **kwargs):
                                      ns.huntrleaks,
                                      output_on_failure=ns.verbose3,
                                      timeout=ns.timeout, failfast=ns.failfast,
-                                     match_tests=ns.match_tests)
+                                     match_tests=ns.match_tests, pgo=ns.pgo)
                     accumulate_result(test, result)
                 except KeyboardInterrupt:
                     interrupted = True
@@ -779,14 +790,14 @@ def main(tests=None, **kwargs):
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
 
-    if interrupted:
+    if interrupted and not ns.pgo:
         # print a newline after ^C
         print()
         print("Test suite interrupted by signal SIGINT.")
         omitted = set(selected) - set(good) - set(bad) - set(skipped)
         print(count(len(omitted), "test"), "omitted:")
         printlist(omitted)
-    if good and not ns.quiet:
+    if good and not ns.quiet and not ns.pgo:
         if not bad and not skipped and not interrupted and len(good) > 1:
             print("All", end=' ')
         print(count(len(good), "test"), "OK.")
@@ -795,26 +806,27 @@ def main(tests=None, **kwargs):
         print("10 slowest tests:")
         for time, test in test_times[:10]:
             print("%s: %.1fs" % (test, time))
-    if bad:
+    if bad and not ns.pgo:
         print(count(len(bad), "test"), "failed:")
         printlist(bad)
-    if environment_changed:
+    if environment_changed and not ns.pgo:
         print("{} altered the execution environment:".format(
                  count(len(environment_changed), "test")))
         printlist(environment_changed)
-    if skipped and not ns.quiet:
+    if skipped and not ns.quiet and not ns.pgo:
         print(count(len(skipped), "test"), "skipped:")
         printlist(skipped)
 
     if ns.verbose2 and bad:
         print("Re-running failed tests in verbose mode")
         for test in bad[:]:
-            print("Re-running test %r in verbose mode" % test)
+            if not ns.pgo:
+                print("Re-running test %r in verbose mode" % test)
             sys.stdout.flush()
             try:
                 ns.verbose = True
                 ok = runtest(test, True, ns.quiet, ns.huntrleaks,
-                             timeout=ns.timeout)
+                             timeout=ns.timeout, pgo=ns.pgo)
             except KeyboardInterrupt:
                 # print a newline separate from the ^C
                 print()
@@ -913,7 +925,7 @@ def replace_stdout():
 def runtest(test, verbose, quiet,
             huntrleaks=False, use_resources=None,
             output_on_failure=False, failfast=False, match_tests=None,
-            timeout=None):
+            timeout=None, *, pgo=False):
     """Run a single test.
 
     test -- the name of the test
@@ -926,6 +938,8 @@ def runtest(test, verbose, quiet,
     timeout -- dump the traceback and exit if a test takes more than
                timeout seconds
     failfast, match_tests -- See regrtest command-line flags for these.
+    pgo -- if true, do not print unnecessary info when running the test
+           for Profile Guided Optimization build
 
     Returns the tuple result, test_time, where result is one of the constants:
         INTERRUPTED      KeyboardInterrupt when run under -j
@@ -935,7 +949,6 @@ def runtest(test, verbose, quiet,
         FAILED           test failed
         PASSED           test passed
     """
-
     if use_resources is not None:
         support.use_resources = use_resources
     use_timeout = (timeout is not None)
@@ -965,8 +978,8 @@ def runtest(test, verbose, quiet,
                 sys.stdout = stream
                 sys.stderr = stream
                 result = runtest_inner(test, verbose, quiet, huntrleaks,
-                                       display_failure=False)
-                if result[0] == FAILED:
+                                       display_failure=False, pgo=pgo)
+                if result[0] == FAILED and not pgo:
                     output = stream.getvalue()
                     orig_stderr.write(output)
                     orig_stderr.flush()
@@ -976,7 +989,7 @@ def runtest(test, verbose, quiet,
         else:
             support.verbose = verbose  # Tell tests to be moderately quiet
             result = runtest_inner(test, verbose, quiet, huntrleaks,
-                                   display_failure=not verbose)
+                                   display_failure=not verbose, pgo=pgo)
         return result
     finally:
         if use_timeout:
@@ -1008,10 +1021,11 @@ class saved_test_environment:
 
     changed = False
 
-    def __init__(self, testname, verbose=0, quiet=False):
+    def __init__(self, testname, verbose=0, quiet=False, *, pgo=False):
         self.testname = testname
         self.verbose = verbose
         self.quiet = quiet
+        self.pgo = pgo
 
     # To add things to save and restore, add a name XXX to the resources list
     # and add corresponding get_XXX/restore_XXX functions.  get_XXX should
@@ -1240,11 +1254,11 @@ class saved_test_environment:
             if current != original:
                 self.changed = True
                 restore(original)
-                if not self.quiet:
+                if not self.quiet and not self.pgo:
                     print("Warning -- {} was modified by {}".format(
                                                  name, self.testname),
                                                  file=sys.stderr)
-                    if self.verbose > 1:
+                    if self.verbose > 1 and not self.pgo:
                         print("  Before: {}\n  After:  {} ".format(
                                                   original, current),
                                                   file=sys.stderr)
@@ -1252,7 +1266,7 @@ class saved_test_environment:
 
 
 def runtest_inner(test, verbose, quiet,
-                  huntrleaks=False, display_failure=True):
+                  huntrleaks=False, display_failure=True, pgo=False):
     support.unload(test)
 
     test_time = 0.0
@@ -1263,7 +1277,7 @@ def runtest_inner(test, verbose, quiet,
         else:
             # Always import it from the test package
             abstest = 'test.' + test
-        with saved_test_environment(test, verbose, quiet) as environment:
+        with saved_test_environment(test, verbose, quiet, pgo=pgo) as environment:
             start_time = time.time()
             the_module = importlib.import_module(abstest)
             # If the test has a test_main, that will run the appropriate
@@ -1283,27 +1297,29 @@ def runtest_inner(test, verbose, quiet,
                 refleak = dash_R(the_module, test, test_runner, huntrleaks)
             test_time = time.time() - start_time
     except support.ResourceDenied as msg:
-        if not quiet:
+        if not quiet and not pgo:
             print(test, "skipped --", msg)
             sys.stdout.flush()
         return RESOURCE_DENIED, test_time
     except unittest.SkipTest as msg:
-        if not quiet:
+        if not quiet and not pgo:
             print(test, "skipped --", msg)
             sys.stdout.flush()
         return SKIPPED, test_time
     except KeyboardInterrupt:
         raise
     except support.TestFailed as msg:
-        if display_failure:
-            print("test", test, "failed --", msg, file=sys.stderr)
-        else:
-            print("test", test, "failed", file=sys.stderr)
+        if not pgo:
+            if display_failure:
+                print("test", test, "failed --", msg, file=sys.stderr)
+            else:
+                print("test", test, "failed", file=sys.stderr)
         sys.stderr.flush()
         return FAILED, test_time
     except:
         msg = traceback.format_exc()
-        print("test", test, "crashed --", msg, file=sys.stderr)
+        if not pgo:
+            print("test", test, "crashed --", msg, file=sys.stderr)
         sys.stderr.flush()
         return FAILED, test_time
     else:
