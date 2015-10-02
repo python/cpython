@@ -64,7 +64,7 @@ Module Attributes
 
    A list of available password hashing algorithms, as
    ``crypt.METHOD_*`` objects.  This list is sorted from strongest to
-   weakest, and is guaranteed to have at least ``crypt.METHOD_CRYPT``.
+   weakest.
 
 
 Module Functions
