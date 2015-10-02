@@ -368,7 +368,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             print json.dumps(result)
             sys.exit(0)
         elif o in ('-P', '--pgo'):
-            pgo = True            
+            pgo = True
         else:
             print >>sys.stderr, ("No handler for option {}.  Please "
                 "report this as a bug at http://bugs.python.org.").format(o)
@@ -580,7 +580,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
         for worker in workers:
             worker.join()
     else:
-        for test_index, test in enumerate(tests, 1):            
+        for test_index, test in enumerate(tests, 1):
             if not quiet:
                 fmt = "[{1:{0}}{2}/{3}] {4}" if bad else "[{1:{0}}{2}] {4}"
                 print(fmt.format(
@@ -736,9 +736,9 @@ def runtest(test, verbose, quiet,
     test_times -- a list of (time, test_name) pairs
     huntrleaks -- run multiple times to test for leaks; requires a debug
                   build; a triple corresponding to -R's three arguments
-    pgo -- if true, do not print unnecessary info when running the test 
+    pgo -- if true, do not print unnecessary info when running the test
            for Profile Guided Optimization build
-           
+
     Returns one of the test result constants:
         INTERRUPTED      KeyboardInterrupt when run under -j
         RESOURCE_DENIED  test skipped because resource denied
