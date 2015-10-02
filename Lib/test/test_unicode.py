@@ -1524,7 +1524,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertEqual(b'+2AHab9ze-'.decode('utf-7'), '\uD801\U000abcde')
 
         # Issue #2242: crash on some Windows/MSVC versions
-        self.assertEqual(b'+\xc1'.decode('utf-7'), '\xc1')
+        self.assertEqual(b'+\xc1'.decode('utf-7', 'ignore'), '')
 
         # Direct encoded characters
         set_d = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'(),-./:?"
@@ -1966,6 +1966,7 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertRaises(UnicodeError, str, b'Andr\202 x', 'ascii', 'strict')
         self.assertEqual(str(b'Andr\202 x', 'ascii', 'ignore'), "Andr x")
         self.assertEqual(str(b'Andr\202 x', 'ascii', 'replace'), 'Andr\uFFFD x')
+        self.assertEqual(str(b'\202 x', 'ascii', 'replace'), '\uFFFD x')
 
         # Error handling (unknown character names)
         self.assertEqual(b"\\N{foo}xx".decode("unicode-escape", "ignore"), "xx")
