@@ -1,9 +1,40 @@
+import errno
 import os
 import re
 import sys
 import warnings
 from inspect import isabstract
 from test import support
+
+
+try:
+    MAXFD = os.sysconf("SC_OPEN_MAX")
+except Exception:
+    MAXFD = 256
+
+
+def fd_count():
+    """Count the number of open file descriptors"""
+    if sys.platform.startswith(('linux', 'freebsd')):
+        try:
+            names = os.listdir("/proc/self/fd")
+            return len(names)
+        except FileNotFoundError:
+            pass
+
+    count = 0
+    for fd in range(MAXFD):
+        try:
+            # Prefer dup() over fstat(). fstat() can require input/output
+            # whereas dup() doesn't.
+            fd2 = os.dup(fd)
+        except OSError as e:
+            if e.errno != errno.EBADF:
+                raise
+        else:
+            os.close(fd2)
+            count += 1
+    return count
 
 
 def dash_R(the_module, test, indirect_test, huntrleaks):
@@ -42,20 +73,25 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     repcount = nwarmup + ntracked
     rc_deltas = [0] * repcount
     alloc_deltas = [0] * repcount
+    fd_deltas = [0] * repcount
 
     print("beginning", repcount, "repetitions", file=sys.stderr)
     print(("1234567890"*(repcount//10 + 1))[:repcount], file=sys.stderr,
           flush=True)
     # initialize variables to make pyflakes quiet
-    rc_before = alloc_before = 0
+    rc_before = alloc_before = fd_before = 0
     for i in range(repcount):
         indirect_test()
-        alloc_after, rc_after = dash_R_cleanup(fs, ps, pic, zdc, abcs)
+        alloc_after, rc_after, fd_after = dash_R_cleanup(fs, ps, pic, zdc,
+                                                         abcs)
         print('.', end='', flush=True)
         if i >= nwarmup:
             rc_deltas[i] = rc_after - rc_before
             alloc_deltas[i] = alloc_after - alloc_before
-        alloc_before, rc_before = alloc_after, rc_after
+            fd_deltas[i] = fd_after - fd_before
+        alloc_before = alloc_after
+        rc_before = rc_after
+        fd_before = fd_after
     print(file=sys.stderr)
     # These checkers return False on success, True on failure
     def check_rc_deltas(deltas):
@@ -71,7 +107,8 @@ def dash_R(the_module, test, indirect_test, huntrleaks):
     failed = False
     for deltas, item_name, checker in [
         (rc_deltas, 'references', check_rc_deltas),
-        (alloc_deltas, 'memory blocks', check_alloc_deltas)]:
+        (alloc_deltas, 'memory blocks', check_alloc_deltas),
+        (fd_deltas, 'file descriptors', check_rc_deltas)]:
         if checker(deltas):
             msg = '%s leaked %s %s, sum=%s' % (
                 test, deltas[nwarmup:], item_name, sum(deltas))
@@ -151,7 +188,7 @@ def dash_R_cleanup(fs, ps, pic, zdc, abcs):
     func1 = sys.getallocatedblocks
     func2 = sys.gettotalrefcount
     gc.collect()
-    return func1(), func2()
+    return func1(), func2(), fd_count()
 
 
 def warm_caches():
