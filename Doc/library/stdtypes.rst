@@ -1613,8 +1613,11 @@ an arbitrary object):
 | ``s.append(x)``              | same as ``s[len(s):len(s)] =   | \(2)                |
 |                              | [x]``                          |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.extend(x)``              | same as ``s[len(s):len(s)] =   | \(3)                |
-|                              | x``                            |                     |
+| ``s.extend(x)`` or           | for the most part the same as  | \(3)                |
+| ``s += t``                   | ``s[len(s):len(s)] = x``       |                     |
++------------------------------+--------------------------------+---------------------+
+| ``s *= n``                   | updates *s* with its contents  | \(11)               |
+|                              | repeated *n* times             |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.count(x)``               | return number of *i*'s for     |                     |
 |                              | which ``s[i] == x``            |                     |
@@ -1719,6 +1722,12 @@ Notes:
       newer makes the list appear empty for the duration, and raises
       :exc:`ValueError` if it can detect that the list has been mutated during a
       sort.
+
+(11)
+   The value *n* is an integer, or an object implementing
+   :meth:`~object.__index__`.  Zero and negative values of *n* clear
+   the sequence.  Items in the sequence are not copied; they are referenced
+   multiple times, as explained for ``s * n`` under :ref:`typesseq`.
 
 
 .. _types-set:
