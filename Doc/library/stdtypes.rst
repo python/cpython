@@ -1063,9 +1063,13 @@ accepts integers that meet the value restriction ``0 <= x <= 255``).
 | ``s.copy()``                 | creates a shallow copy of ``s``| \(5)                |
 |                              | (same as ``s[:]``)             |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.extend(t)``              | extends *s* with the           |                     |
-|                              | contents of *t* (same as       |                     |
+| ``s.extend(t)`` or           | extends *s* with the           |                     |
+| ``s += t``                   | contents of *t* (for the       |                     |
+|                              | most part the same as          |                     |
 |                              | ``s[len(s):len(s)] = t``)      |                     |
++------------------------------+--------------------------------+---------------------+
+| ``s *= n``                   | updates *s* with its contents  | \(6)                |
+|                              | repeated *n* times             |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s.insert(i, x)``           | inserts *x* into *s* at the    |                     |
 |                              | index given by *i*             |                     |
@@ -1106,6 +1110,12 @@ Notes:
 
    .. versionadded:: 3.3
       :meth:`clear` and :meth:`!copy` methods.
+
+(6)
+   The value *n* is an integer, or an object implementing
+   :meth:`~object.__index__`.  Zero and negative values of *n* clear
+   the sequence.  Items in the sequence are not copied; they are referenced
+   multiple times, as explained for ``s * n`` under :ref:`typesseq-common`.
 
 
 .. _typesseq-list:
