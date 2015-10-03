@@ -887,13 +887,15 @@ def _url_collapse_path(path):
     The utility of this function is limited to is_cgi method and helps
     preventing some security attacks.
 
-    Returns: A tuple of (head, tail) where tail is everything after the final /
-    and head is everything before it.  Head will always start with a '/' and,
-    if it contains anything else, never have a trailing '/'.
+    Returns: The reconstituted URL, which will always start with a '/'.
 
     Raises: IndexError if too many '..' occur within the path.
 
     """
+    # Query component should not be involved.
+    path, _, query = path.partition('?')
+    path = urllib.parse.unquote(path)
+
     # Similar to os.path.split(os.path.normpath(path)) but specific to URL
     # path semantics rather than local operating system semantics.
     path_parts = path.split('/')
@@ -913,6 +915,9 @@ def _url_collapse_path(path):
                 tail_part = ''
     else:
         tail_part = ''
+
+    if query:
+        tail_part = '?'.join((tail_part, query))
 
     splitpath = ('/' + '/'.join(head_parts), tail_part)
     collapsed_path = "/".join(splitpath)
@@ -995,7 +1000,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
         (and the next character is a '/' or the end of the string).
 
         """
-        collapsed_path = _url_collapse_path(urllib.parse.unquote(self.path))
+        collapsed_path = _url_collapse_path(self.path)
         dir_sep = collapsed_path.find('/', 1)
         head, tail = collapsed_path[:dir_sep], collapsed_path[dir_sep+1:]
         if head in self.cgi_directories:
