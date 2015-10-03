@@ -1032,11 +1032,7 @@ class CGIHTTPRequestHandler(SimpleHTTPRequestHandler):
                 break
 
         # find an explicit query string, if present.
-        i = rest.rfind('?')
-        if i >= 0:
-            rest, query = rest[:i], rest[i+1:]
-        else:
-            query = ''
+        rest, _, query = rest.partition('?')
 
         # dissect the part after the directory name into a script name &
         # a possible additional path, to be stored in PATH_INFO.
