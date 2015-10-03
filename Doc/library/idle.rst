@@ -10,7 +10,7 @@ IDLE
 
 .. moduleauthor:: Guido van Rossum <guido@python.org>
 
-IDLE is the Python IDE built with the :mod:`tkinter` GUI toolkit.
+IDLE is Python's Integrated Development and Learning Environment.
 
 IDLE has the following features:
 
