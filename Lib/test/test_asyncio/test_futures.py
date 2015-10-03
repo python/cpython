@@ -174,8 +174,6 @@ class FutureTests(test_utils.TestCase):
                          '<Future cancelled>')
 
     def test_copy_state(self):
-        # Test the internal _copy_state method since it's being directly
-        # invoked in other modules.
         f = asyncio.Future(loop=self.loop)
         f.set_result(10)
 
