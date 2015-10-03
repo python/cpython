@@ -350,21 +350,34 @@ deque_appendleft(dequeobject *deque, PyObject *item)
 
 PyDoc_STRVAR(appendleft_doc, "Add an element to the left side of the deque.");
 
+static PyObject*
+finalize_iterator(PyObject *it)
+{
+    if (PyErr_Occurred()) {
+        if (PyErr_ExceptionMatches(PyExc_StopIteration))
+            PyErr_Clear();
+        else {
+            Py_DECREF(it);
+            return NULL;
+        }
+    }
+    Py_DECREF(it);
+    Py_RETURN_NONE;
+}
 
 /* Run an iterator to exhaustion.  Shortcut for
    the extend/extendleft methods when maxlen == 0. */
 static PyObject*
 consume_iterator(PyObject *it)
 {
+    PyObject *(*iternext)(PyObject *);
     PyObject *item;
 
-    while ((item = PyIter_Next(it)) != NULL) {
+    iternext = *Py_TYPE(it)->tp_iternext;
+    while ((item = iternext(it)) != NULL) {
         Py_DECREF(item);
     }
-    Py_DECREF(it);
-    if (PyErr_Occurred())
-        return NULL;
-    Py_RETURN_NONE;
+    return finalize_iterator(it);
 }
 
 static PyObject *
@@ -423,16 +436,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         if (trim)
             deque_trim_left(deque);
     }
-    if (PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_StopIteration))
-            PyErr_Clear();
-        else {
-            Py_DECREF(it);
-            return NULL;
-        }
-    }
-    Py_DECREF(it);
-    Py_RETURN_NONE;
+    return finalize_iterator(it);
 }
 
 PyDoc_STRVAR(extend_doc,
@@ -494,16 +498,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         if (trim)
             deque_trim_right(deque);
     }
-    if (PyErr_Occurred()) {
-        if (PyErr_ExceptionMatches(PyExc_StopIteration))
-            PyErr_Clear();
-        else {
-            Py_DECREF(it);
-            return NULL;
-        }
-    }
-    Py_DECREF(it);
-    Py_RETURN_NONE;
+    return finalize_iterator(it);
 }
 
 PyDoc_STRVAR(extendleft_doc,
