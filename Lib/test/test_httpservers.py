@@ -381,6 +381,16 @@ print "%%s, %%s, %%s" %% (form.getfirst("spam"), form.getfirst("eggs"),
                           form.getfirst("bacon"))
 """
 
+cgi_file4 = """\
+#!%s
+import os
+
+print("Content-type: text/html")
+print()
+
+print(os.environ["%s"])
+"""
+
 
 @unittest.skipIf(hasattr(os, 'geteuid') and os.geteuid() == 0,
         "This test can't be run reliably as root (issue #13308).")
@@ -424,6 +434,11 @@ class CGIHTTPServerTestCase(BaseTestCase):
             file3.write(cgi_file1 % self.pythonexe)
         os.chmod(self.file3_path, 0777)
 
+        self.file4_path = os.path.join(self.cgi_dir, 'file4.py')
+        with open(self.file4_path, 'w') as file4:
+            file4.write(cgi_file4 % (self.pythonexe, 'QUERY_STRING'))
+        os.chmod(self.file4_path, 0o777)
+
         self.cwd = os.getcwd()
         os.chdir(self.parent_dir)
 
@@ -436,6 +451,7 @@ class CGIHTTPServerTestCase(BaseTestCase):
             os.remove(self.file1_path)
             os.remove(self.file2_path)
             os.remove(self.file3_path)
+            os.remove(self.file4_path)
             os.rmdir(self.cgi_child_dir)
             os.rmdir(self.cgi_dir)
             os.rmdir(self.parent_dir)
@@ -535,6 +551,12 @@ class CGIHTTPServerTestCase(BaseTestCase):
         res = self.request('/cgi-bin/child-dir/file3.py')
         self.assertEqual((b'Hello World\n', 'text/html', 200),
                 (res.read(), res.getheader('Content-type'), res.status))
+
+    def test_query_with_multiple_question_mark(self):
+        res = self.request('/cgi-bin/file4.py?a=b?c=d')
+        self.assertEqual(
+            (b'a=b?c=d\n', 'text/html', 200),
+            (res.read(), res.getheader('Content-type'), res.status))
 
 
 class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
