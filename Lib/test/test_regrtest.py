@@ -643,13 +643,23 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [test]*3, failed=test)
 
     @unittest.skipUnless(Py_DEBUG, 'need a debug build')
-    # Issue #25306: the test hangs sometimes on Windows
-    @unittest.skipIf(sys.platform == 'win32', 'test broken on Windows')
     def test_huntrleaks_fd_leak(self):
         # test --huntrleaks for file descriptor leak
         code = textwrap.dedent("""
             import os
             import unittest
+
+            # Issue #25306: Disable popups and logs to stderr on assertion
+            # failures in MSCRT
+            try:
+                import msvcrt
+                msvcrt.CrtSetReportMode
+            except (ImportError, AttributeError):
+                # no Windows, o release build
+                pass
+            else:
+                for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
+                    msvcrt.CrtSetReportMode(m, 0)
 
             class FDLeakTest(unittest.TestCase):
                 def test_leak(self):
