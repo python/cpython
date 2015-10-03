@@ -558,6 +558,13 @@ class CGIHTTPServerTestCase(BaseTestCase):
             (b'a=b?c=d\n', 'text/html', 200),
             (res.read(), res.getheader('Content-type'), res.status))
 
+    def test_query_with_continuous_slashes(self):
+        res = self.request('/cgi-bin/file4.py?k=aa%2F%2Fbb&//q//p//=//a//b//')
+        self.assertEqual(
+            (b'k=aa%2F%2Fbb&//q//p//=//a//b//\n',
+             'text/html', 200),
+            (res.read(), res.getheader('Content-type'), res.status))
+
 
 class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
     """ Test url parsing """
