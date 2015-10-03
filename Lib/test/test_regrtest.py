@@ -643,6 +643,8 @@ class ArgsTestCase(BaseTestCase):
         self.check_executed_tests(output, [test]*3, failed=test)
 
     @unittest.skipUnless(Py_DEBUG, 'need a debug build')
+    # Issue #25306: the test hangs sometimes on Windows
+    @unittest.skipIf(sys.platform == 'win32', 'test broken on Windows')
     def test_huntrleaks_fd_leak(self):
         # test --huntrleaks for file descriptor leak
         code = textwrap.dedent("""
