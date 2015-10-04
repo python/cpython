@@ -2,6 +2,25 @@ What's New in Idle 3.4.4?
 =========================
 *Release date: 2015-??-??*
 
+- Issue #24820: IDLE now has an 'IDLE Dark' built-in text color theme.
+  It is more or less IDLE Classic inverted, with a cobalt blue background.
+  Strings, comments, keywords, ... are still green, red, orange, ... .
+  Selecting it displays the following warning and solution.
+  "IDLE Dark is new in October, 2015.  Trying to run earlier versions
+  of IDLE with it selected will disable colorizing, or worse.
+  If you might ever run an earlier release of IDLE, then before
+  exiting this version, either switch to another theme or hit the
+  'Save as New Custom Theme' button.  The latter requires a new name,
+  such as 'Custom Dark', but the custom theme will work with any IDLE
+  release, and can be modified."
+
+- Issue #25224: README.txt is now an idlelib index for IDLE developers and
+  curious users.  The previous user content is now in the IDLE doc and is
+  redundant.  IDLE now means 'Integrated Development and Learning Environment'.
+
+- Issue #24820: Users can now set breakpoint colors in
+  Settings -> Custom Highlighting.  Original patch by Mark Roseman.
+
 - Issue #24972: Inactive selection background now matches active selection
   background, as configured by user, on all systems.  Found items are now
   always highlighted on Windows.  Initial patch by Mark Roseman.
