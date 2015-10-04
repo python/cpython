@@ -29,7 +29,7 @@ Core and Builtins
   doesn't need such high-quality entropy.
 
 - Issue #9232: Modify Python's grammar to allow trailing commas in the
-  argument list of a function declaration.  For example, "def f(*, a =
+  argument list of a function declaration.  For example, "def f(\*, a =
   3,): pass" is now legal. Patch from Mark Dickinson.
 
 - Issue #24965: Implement PEP 498 "Literal String Interpolation". This
@@ -555,8 +555,8 @@ Library
 
 - Issue #17527: Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
 
-- Issue #24791: Fix grammar regression for call syntax: 'g(*a or b)'.
-
+- Issue #24791: Fix grammar regression for call syntax: 'g(\*a or b)'.
+p
 IDLE
 ----
 
