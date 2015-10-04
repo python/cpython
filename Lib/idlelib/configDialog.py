@@ -524,6 +524,20 @@ class ConfigDialog(Toplevel):
 
     def VarChanged_builtinTheme(self, *params):
         value = self.builtinTheme.get()
+        if value == 'IDLE Dark':
+            tkMessageBox.showwarning(
+                title="The 'IDLE Dark' Text Color Theme",
+                message="IDLE Dark is new in October, 2015.  Trying to "
+                        "run earlier versions of IDLE with it selected "
+                        "will disable colorizing, or worse.\n\n"
+                        "If you might ever run an earlier release of IDLE, "
+                        "then before exiting this version, "
+                        "either switch to another theme or "
+                        "hit the 'Save as New Custom Theme' button.  "
+                        "The latter requires a new name, such as "
+                        "'Custom Dark', but the custom theme will work "
+                        "with any IDLE release, and can be modified.",
+                parent=self)
         self.AddChangedItem('main', 'Theme', 'name', value)
         self.PaintThemeSample()
 
