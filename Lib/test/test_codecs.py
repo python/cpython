@@ -573,9 +573,13 @@ class UTF16LETest(ReadTest):
             (b'\x00\xdcA\x00', u'\ufffdA'),
         ]
         for raw, expected in tests:
-            self.assertRaises(UnicodeDecodeError, codecs.utf_16_le_decode,
-                              raw, 'strict', True)
-            self.assertEqual(raw.decode('utf-16le', 'replace'), expected)
+            try:
+                with self.assertRaises(UnicodeDecodeError):
+                    codecs.utf_16_le_decode(raw, 'strict', True)
+                self.assertEqual(raw.decode('utf-16le', 'replace'), expected)
+            except:
+                print 'raw=%r' % raw
+                raise
 
 class UTF16BETest(ReadTest):
     encoding = "utf-16-be"
@@ -610,9 +614,13 @@ class UTF16BETest(ReadTest):
             (b'\xdc\x00\x00A', u'\ufffdA'),
         ]
         for raw, expected in tests:
-            self.assertRaises(UnicodeDecodeError, codecs.utf_16_be_decode,
-                              raw, 'strict', True)
-            self.assertEqual(raw.decode('utf-16be', 'replace'), expected)
+            try:
+                with self.assertRaises(UnicodeDecodeError):
+                    codecs.utf_16_be_decode(raw, 'strict', True)
+                self.assertEqual(raw.decode('utf-16be', 'replace'), expected)
+            except:
+                print 'raw=%r' % raw
+                raise
 
 class UTF8Test(ReadTest):
     encoding = "utf-8"
@@ -704,9 +712,13 @@ class UTF7Test(ReadTest):
             ('a+IKw\xffb', u'a\u20ac\ufffdb'),
         ]
         for raw, expected in tests:
-            self.assertRaises(UnicodeDecodeError, codecs.utf_7_decode,
-                              raw, 'strict', True)
-            self.assertEqual(raw.decode('utf-7', 'replace'), expected)
+            try:
+                with self.assertRaises(UnicodeDecodeError):
+                    codecs.utf_7_decode(raw, 'strict', True)
+                self.assertEqual(raw.decode('utf-7', 'replace'), expected)
+            except:
+                print 'raw=%r' % raw
+                raise
 
     def test_nonbmp(self):
         self.assertEqual(u'\U000104A0'.encode(self.encoding), '+2AHcoA-')
@@ -740,7 +752,11 @@ class UTF7Test(ReadTest):
             ('a+IKwgrNgBA-b', u'a\u20ac\u20ac\ufffdb'),
         ]
         for raw, expected in tests:
-            self.assertEqual(raw.decode('utf-7', 'replace'), expected)
+            try:
+                self.assertEqual(raw.decode('utf-7', 'replace'), expected)
+            except:
+                print 'raw=%r' % raw
+                raise
 
 class UTF16ExTest(unittest.TestCase):
 
