@@ -423,7 +423,7 @@ Library
 
 - Issue #17527: Add PATCH to wsgiref.validator. Patch from Luca Sbardella.
 
-- Issue #24791: Fix grammar regression for call syntax: 'g(*a or b)'.
+- Issue #24791: Fix grammar regression for call syntax: 'g(\*a or b)'.
 
 IDLE
 ----
