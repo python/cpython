@@ -2166,6 +2166,27 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         with self.assertRaises(asyncio.CancelledError):
             self.loop.run_until_complete(future)
 
+    def test_run_coroutine_threadsafe_task_factory_exception(self):
+        """Test coroutine submission from a tread to an event loop
+        when the task factory raise an exception."""
+        # Clear the time generator
+        asyncio.ensure_future(self.add(1, 2), loop=self.loop)
+        # Schedule the target
+        future = self.loop.run_in_executor(None, self.target)
+        # Set corrupted task factory
+        self.loop.set_task_factory(lambda loop, coro: wrong_name)
+        # Set exception handler
+        callback = test_utils.MockCallback()
+        self.loop.set_exception_handler(callback)
+        # Run event loop
+        with self.assertRaises(NameError) as exc_context:
+            self.loop.run_until_complete(future)
+        # Check exceptions
+        self.assertIn('wrong_name', exc_context.exception.args[0])
+        self.assertEqual(len(callback.call_args_list), 1)
+        (loop, context), kwargs = callback.call_args
+        self.assertEqual(context['exception'], exc_context.exception)
+
 
 if __name__ == '__main__':
     unittest.main()
