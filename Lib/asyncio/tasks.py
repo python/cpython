@@ -704,7 +704,12 @@ def run_coroutine_threadsafe(coro, loop):
     future = concurrent.futures.Future()
 
     def callback():
-        futures._chain_future(ensure_future(coro, loop=loop), future)
+        try:
+            futures._chain_future(ensure_future(coro, loop=loop), future)
+        except Exception as exc:
+            if future.set_running_or_notify_cancel():
+                future.set_exception(exc)
+            raise
 
     loop.call_soon_threadsafe(callback)
     return future
