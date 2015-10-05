@@ -4714,8 +4714,9 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
     Py_ssize_t startinpos;
     Py_ssize_t endinpos;
     const char *errmsg = "";
-    PyObject *errorHandler = NULL;
+    PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
+    _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
 
     if (size == 0) {
         if (consumed)
@@ -4740,6 +4741,7 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
     while (s < end) {
         Py_UCS4 ch;
         int kind = writer.kind;
+
         if (kind == PyUnicode_1BYTE_KIND) {
             if (PyUnicode_IS_ASCII(writer.buffer))
                 ch = asciilib_utf8_decode(&s, end, writer.data, &writer.pos);
@@ -4778,24 +4780,52 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
             continue;
         }
 
-        if (unicode_decode_call_errorhandler_writer(
-                errors, &errorHandler,
-                "utf-8", errmsg,
-                &starts, &end, &startinpos, &endinpos, &exc, &s,
-                &writer))
-            goto onError;
+        if (error_handler == _Py_ERROR_UNKNOWN)
+            error_handler = get_error_handler(errors);
+
+        switch (error_handler) {
+        case _Py_ERROR_IGNORE:
+            s += (endinpos - startinpos);
+            break;
+
+        case _Py_ERROR_REPLACE:
+            if (_PyUnicodeWriter_WriteCharInline(&writer, 0xfffd) < 0)
+                goto onError;
+            s += (endinpos - startinpos);
+            break;
+
+        case _Py_ERROR_SURROGATEESCAPE:
+            if (_PyUnicodeWriter_PrepareKind(&writer, PyUnicode_2BYTE_KIND) < 0)
+                goto onError;
+            for (Py_ssize_t i=startinpos; i<endinpos; i++) {
+                ch = (Py_UCS4)(unsigned char)(starts[i]);
+                PyUnicode_WRITE(writer.kind, writer.data, writer.pos,
+                                ch + 0xdc00);
+                writer.pos++;
+            }
+            s += (endinpos - startinpos);
+            break;
+
+        default:
+            if (unicode_decode_call_errorhandler_writer(
+                    errors, &error_handler_obj,
+                    "utf-8", errmsg,
+                    &starts, &end, &startinpos, &endinpos, &exc, &s,
+                    &writer))
+                goto onError;
+        }
     }
 
 End:
     if (consumed)
         *consumed = s - starts;
 
-    Py_XDECREF(errorHandler);
+    Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
     return _PyUnicodeWriter_Finish(&writer);
 
 onError:
-    Py_XDECREF(errorHandler);
+    Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
     _PyUnicodeWriter_Dealloc(&writer);
     return NULL;

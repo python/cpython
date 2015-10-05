@@ -788,6 +788,18 @@ class UTF8Test(ReadTest, unittest.TestCase):
         self.check_state_handling_decode(self.encoding,
                                          u, u.encode(self.encoding))
 
+    def test_decode_error(self):
+        for data, error_handler, expected in (
+            (b'[\x80\xff]', 'ignore', '[]'),
+            (b'[\x80\xff]', 'replace', '[\ufffd\ufffd]'),
+            (b'[\x80\xff]', 'surrogateescape', '[\udc80\udcff]'),
+            (b'[\x80\xff]', 'backslashreplace', '[\\x80\\xff]'),
+        ):
+            with self.subTest(data=data, error_handler=error_handler,
+                              expected=expected):
+                self.assertEqual(data.decode(self.encoding, error_handler),
+                                 expected)
+
     def test_lone_surrogates(self):
         super().test_lone_surrogates()
         # not sure if this is making sense for

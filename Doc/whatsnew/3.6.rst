@@ -123,6 +123,9 @@ Optimizations
 * The UTF-8 encoder is now up to 75 times as fast for error handlers:
   ``ignore``, ``replace``, ``surrogateescape``, ``surrogatepass``.
 
+* The UTF-8 decoder is now up to 15 times as fast for error handlers:
+  ``ignore``, ``replace`` and ``surrogateescape``.
+
 
 Build and C API Changes
 =======================
