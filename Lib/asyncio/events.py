@@ -297,7 +297,8 @@ class AbstractEventLoop:
 
     def create_server(self, protocol_factory, host=None, port=None, *,
                       family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE,
-                      sock=None, backlog=100, ssl=None, reuse_address=None):
+                      sock=None, backlog=100, ssl=None, reuse_address=None,
+                      reuse_port=None):
         """A coroutine which creates a TCP server bound to host and port.
 
         The return value is a Server object which can be used to stop
@@ -327,6 +328,11 @@ class AbstractEventLoop:
         TIME_WAIT state, without waiting for its natural timeout to
         expire. If not specified will automatically be set to True on
         UNIX.
+
+        reuse_port tells the kernel to allow this endpoint to be bound to
+        the same port as other existing endpoints are bound to, so long as
+        they all set this flag when being created. This option is not
+        supported on Windows.
         """
         raise NotImplementedError
 
@@ -358,7 +364,37 @@ class AbstractEventLoop:
 
     def create_datagram_endpoint(self, protocol_factory,
                                  local_addr=None, remote_addr=None, *,
-                                 family=0, proto=0, flags=0):
+                                 family=0, proto=0, flags=0,
+                                 reuse_address=None, reuse_port=None,
+                                 allow_broadcast=None, sock=None):
+        """A coroutine which creates a datagram endpoint.
+
+        This method will try to establish the endpoint in the background.
+        When successful, the coroutine returns a (transport, protocol) pair.
+
+        protocol_factory must be a callable returning a protocol instance.
+
+        socket family AF_INET or socket.AF_INET6 depending on host (or
+        family if specified), socket type SOCK_DGRAM.
+
+        reuse_address tells the kernel to reuse a local socket in
+        TIME_WAIT state, without waiting for its natural timeout to
+        expire. If not specified it will automatically be set to True on
+        UNIX.
+
+        reuse_port tells the kernel to allow this endpoint to be bound to
+        the same port as other existing endpoints are bound to, so long as
+        they all set this flag when being created. This option is not
+        supported on Windows and some UNIX's. If the
+        :py:data:`~socket.SO_REUSEPORT` constant is not defined then this
+        capability is unsupported.
+
+        allow_broadcast tells the kernel to allow this endpoint to send
+        messages to the broadcast address.
+
+        sock can optionally be specified in order to use a preexisting
+        socket object.
+        """
         raise NotImplementedError
 
     # Pipes and subprocesses.
