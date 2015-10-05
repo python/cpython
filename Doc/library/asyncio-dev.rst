@@ -96,16 +96,22 @@ the same thread. But when the task uses ``yield from``, the task is suspended
 and the event loop executes the next task.
 
 To schedule a callback from a different thread, the
-:meth:`BaseEventLoop.call_soon_threadsafe` method should be used. Example to
-schedule a coroutine from a different thread::
+:meth:`BaseEventLoop.call_soon_threadsafe` method should be used. Example::
 
-    loop.call_soon_threadsafe(asyncio.async, coro_func())
+    loop.call_soon_threadsafe(callback, *args)
 
 Most asyncio objects are not thread safe. You should only worry if you access
 objects outside the event loop. For example, to cancel a future, don't call
 directly its :meth:`Future.cancel` method, but::
 
     loop.call_soon_threadsafe(fut.cancel)
+
+To schedule a coroutine object from a different thread, the
+:func:`run_coroutine_threadsafe` function should be used. It returns a
+:class:`concurrent.futures.Future` to access the result::
+
+     future = asyncio.run_coroutine_threadsafe(coro_func(), loop)
+     result = future.result(timeout)  # Wait for the result with a timeout
 
 To handle signals and to execute subprocesses, the event loop must be run in
 the main thread.
