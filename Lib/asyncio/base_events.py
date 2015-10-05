@@ -700,75 +700,109 @@ class BaseEventLoop(events.AbstractEventLoop):
     @coroutine
     def create_datagram_endpoint(self, protocol_factory,
                                  local_addr=None, remote_addr=None, *,
-                                 family=0, proto=0, flags=0):
+                                 family=0, proto=0, flags=0,
+                                 reuse_address=None, reuse_port=None,
+                                 allow_broadcast=None, sock=None):
         """Create datagram connection."""
-        if not (local_addr or remote_addr):
-            if family == 0:
-                raise ValueError('unexpected address family')
-            addr_pairs_info = (((family, proto), (None, None)),)
-        else:
-            # join address by (family, protocol)
-            addr_infos = collections.OrderedDict()
-            for idx, addr in ((0, local_addr), (1, remote_addr)):
-                if addr is not None:
-                    assert isinstance(addr, tuple) and len(addr) == 2, (
-                        '2-tuple is expected')
-
-                    infos = yield from self.getaddrinfo(
-                        *addr, family=family, type=socket.SOCK_DGRAM,
-                        proto=proto, flags=flags)
-                    if not infos:
-                        raise OSError('getaddrinfo() returned empty list')
-
-                    for fam, _, pro, _, address in infos:
-                        key = (fam, pro)
-                        if key not in addr_infos:
-                            addr_infos[key] = [None, None]
-                        addr_infos[key][idx] = address
-
-            # each addr has to have info for each (family, proto) pair
-            addr_pairs_info = [
-                (key, addr_pair) for key, addr_pair in addr_infos.items()
-                if not ((local_addr and addr_pair[0] is None) or
-                        (remote_addr and addr_pair[1] is None))]
-
-            if not addr_pairs_info:
-                raise ValueError('can not get address information')
-
-        exceptions = []
-
-        for ((family, proto),
-             (local_address, remote_address)) in addr_pairs_info:
-            sock = None
+        if sock is not None:
+            if (local_addr or remote_addr or
+                    family or proto or flags or
+                    reuse_address or reuse_port or allow_broadcast):
+                # show the problematic kwargs in exception msg
+                opts = dict(local_addr=local_addr, remote_addr=remote_addr,
+                            family=family, proto=proto, flags=flags,
+                            reuse_address=reuse_address, reuse_port=reuse_port,
+                            allow_broadcast=allow_broadcast)
+                problems = ', '.join(
+                    '{}={}'.format(k, v) for k, v in opts.items() if v)
+                raise ValueError(
+                    'socket modifier keyword arguments can not be used '
+                    'when sock is specified. ({})'.format(problems))
+            sock.setblocking(False)
             r_addr = None
-            try:
-                sock = socket.socket(
-                    family=family, type=socket.SOCK_DGRAM, proto=proto)
-                sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-                sock.setblocking(False)
-
-                if local_addr:
-                    sock.bind(local_address)
-                if remote_addr:
-                    yield from self.sock_connect(sock, remote_address)
-                    r_addr = remote_address
-            except OSError as exc:
-                if sock is not None:
-                    sock.close()
-                exceptions.append(exc)
-            except:
-                if sock is not None:
-                    sock.close()
-                raise
-            else:
-                break
         else:
-            raise exceptions[0]
+            if not (local_addr or remote_addr):
+                if family == 0:
+                    raise ValueError('unexpected address family')
+                addr_pairs_info = (((family, proto), (None, None)),)
+            else:
+                # join address by (family, protocol)
+                addr_infos = collections.OrderedDict()
+                for idx, addr in ((0, local_addr), (1, remote_addr)):
+                    if addr is not None:
+                        assert isinstance(addr, tuple) and len(addr) == 2, (
+                            '2-tuple is expected')
+
+                        infos = yield from self.getaddrinfo(
+                            *addr, family=family, type=socket.SOCK_DGRAM,
+                            proto=proto, flags=flags)
+                        if not infos:
+                            raise OSError('getaddrinfo() returned empty list')
+
+                        for fam, _, pro, _, address in infos:
+                            key = (fam, pro)
+                            if key not in addr_infos:
+                                addr_infos[key] = [None, None]
+                            addr_infos[key][idx] = address
+
+                # each addr has to have info for each (family, proto) pair
+                addr_pairs_info = [
+                    (key, addr_pair) for key, addr_pair in addr_infos.items()
+                    if not ((local_addr and addr_pair[0] is None) or
+                            (remote_addr and addr_pair[1] is None))]
+
+                if not addr_pairs_info:
+                    raise ValueError('can not get address information')
+
+            exceptions = []
+
+            if reuse_address is None:
+                reuse_address = os.name == 'posix' and sys.platform != 'cygwin'
+
+            for ((family, proto),
+                 (local_address, remote_address)) in addr_pairs_info:
+                sock = None
+                r_addr = None
+                try:
+                    sock = socket.socket(
+                        family=family, type=socket.SOCK_DGRAM, proto=proto)
+                    if reuse_address:
+                        sock.setsockopt(
+                            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+                    if reuse_port:
+                        if not hasattr(socket, 'SO_REUSEPORT'):
+                            raise ValueError(
+                                'reuse_port not supported by socket module')
+                        else:
+                            sock.setsockopt(
+                                socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+                    if allow_broadcast:
+                        sock.setsockopt(
+                            socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+                    sock.setblocking(False)
+
+                    if local_addr:
+                        sock.bind(local_address)
+                    if remote_addr:
+                        yield from self.sock_connect(sock, remote_address)
+                        r_addr = remote_address
+                except OSError as exc:
+                    if sock is not None:
+                        sock.close()
+                    exceptions.append(exc)
+                except:
+                    if sock is not None:
+                        sock.close()
+                    raise
+                else:
+                    break
+            else:
+                raise exceptions[0]
 
         protocol = protocol_factory()
         waiter = futures.Future(loop=self)
-        transport = self._make_datagram_transport(sock, protocol, r_addr,
-                                                  waiter)
+        transport = self._make_datagram_transport(
+            sock, protocol, r_addr, waiter)
         if self._debug:
             if local_addr:
                 logger.info("Datagram endpoint local_addr=%r remote_addr=%r "
@@ -804,7 +838,8 @@ class BaseEventLoop(events.AbstractEventLoop):
                       sock=None,
                       backlog=100,
                       ssl=None,
-                      reuse_address=None):
+                      reuse_address=None,
+                      reuse_port=None):
         """Create a TCP server.
 
         The host parameter can be a string, in that case the TCP server is bound
@@ -857,8 +892,15 @@ class BaseEventLoop(events.AbstractEventLoop):
                         continue
                     sockets.append(sock)
                     if reuse_address:
-                        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
-                                        True)
+                        sock.setsockopt(
+                            socket.SOL_SOCKET, socket.SO_REUSEADDR, True)
+                    if reuse_port:
+                        if not hasattr(socket, 'SO_REUSEPORT'):
+                            raise ValueError(
+                                'reuse_port not supported by socket module')
+                        else:
+                            sock.setsockopt(
+                                socket.SOL_SOCKET, socket.SO_REUSEPORT, True)
                     # Disable IPv4/IPv6 dual stack support (enabled by
                     # default on Linux) which makes a single socket
                     # listen on both address families.
