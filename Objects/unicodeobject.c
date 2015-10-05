@@ -4795,9 +4795,12 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
             break;
 
         case _Py_ERROR_SURROGATEESCAPE:
+        {
+            Py_ssize_t i;
+
             if (_PyUnicodeWriter_PrepareKind(&writer, PyUnicode_2BYTE_KIND) < 0)
                 goto onError;
-            for (Py_ssize_t i=startinpos; i<endinpos; i++) {
+            for (i=startinpos; i<endinpos; i++) {
                 ch = (Py_UCS4)(unsigned char)(starts[i]);
                 PyUnicode_WRITE(writer.kind, writer.data, writer.pos,
                                 ch + 0xdc00);
@@ -4805,6 +4808,7 @@ PyUnicode_DecodeUTF8Stateful(const char *s,
             }
             s += (endinpos - startinpos);
             break;
+        }
 
         default:
             if (unicode_decode_call_errorhandler_writer(
