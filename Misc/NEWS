@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+* Issue #25301: The UTF-8 decoder is now up to 15 times as fast for error
+  handlers: ``ignore``, ``replace`` and ``surrogateescape``.
+
 - Issue #24848: Fixed a number of bugs in UTF-7 decoding of misformed data.
 
 - Issue #25267: The UTF-8 encoder is now up to 75 times as fast for error
