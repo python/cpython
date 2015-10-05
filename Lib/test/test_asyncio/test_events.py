@@ -814,6 +814,32 @@ class EventLoopTestsMixin:
         # close server
         server.close()
 
+    @unittest.skipUnless(hasattr(socket, 'SO_REUSEPORT'), 'No SO_REUSEPORT')
+    def test_create_server_reuse_port(self):
+        proto = MyProto(self.loop)
+        f = self.loop.create_server(
+            lambda: proto, '0.0.0.0', 0)
+        server = self.loop.run_until_complete(f)
+        self.assertEqual(len(server.sockets), 1)
+        sock = server.sockets[0]
+        self.assertFalse(
+            sock.getsockopt(
+                socket.SOL_SOCKET, socket.SO_REUSEPORT))
+        server.close()
+
+        test_utils.run_briefly(self.loop)
+
+        proto = MyProto(self.loop)
+        f = self.loop.create_server(
+            lambda: proto, '0.0.0.0', 0, reuse_port=True)
+        server = self.loop.run_until_complete(f)
+        self.assertEqual(len(server.sockets), 1)
+        sock = server.sockets[0]
+        self.assertTrue(
+            sock.getsockopt(
+                socket.SOL_SOCKET, socket.SO_REUSEPORT))
+        server.close()
+
     def _make_unix_server(self, factory, **kwargs):
         path = test_utils.gen_unix_socket_path()
         self.addCleanup(lambda: os.path.exists(path) and os.unlink(path))
@@ -1263,6 +1289,32 @@ class EventLoopTestsMixin:
         self.loop.run_until_complete(client.done)
         self.assertEqual('CLOSED', client.state)
         server.transport.close()
+
+    def test_create_datagram_endpoint_sock(self):
+        sock = None
+        local_address = ('127.0.0.1', 0)
+        infos = self.loop.run_until_complete(
+            self.loop.getaddrinfo(
+                *local_address, type=socket.SOCK_DGRAM))
+        for family, type, proto, cname, address in infos:
+            try:
+                sock = socket.socket(family=family, type=type, proto=proto)
+                sock.setblocking(False)
+                sock.bind(address)
+            except:
+                pass
+            else:
+                break
+        else:
+            assert False, 'Can not create socket.'
+
+        f = self.loop.create_connection(
+            lambda: MyDatagramProto(loop=self.loop), sock=sock)
+        tr, pr = self.loop.run_until_complete(f)
+        self.assertIsInstance(tr, asyncio.Transport)
+        self.assertIsInstance(pr, MyDatagramProto)
+        tr.close()
+        self.loop.run_until_complete(pr.done)
 
     def test_internal_fds(self):
         loop = self.create_event_loop()
