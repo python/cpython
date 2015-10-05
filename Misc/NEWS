@@ -34,6 +34,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25316: distutils raises OSError instead of DistutilsPlatformError
+  when MSVC is not installed.
+
 - Issue #23972: Updates asyncio datagram create method allowing reuseport
   and reuseaddr socket options to be set prior to binding the socket.
   Mirroring the existing asyncio create_server method the reuseaddr option
