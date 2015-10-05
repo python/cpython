@@ -285,17 +285,50 @@ Creating connections
       (:class:`StreamReader`, :class:`StreamWriter`) instead of a protocol.
 
 
-.. coroutinemethod:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0)
+.. coroutinemethod:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0, reuse_address=None, reuse_port=None, allow_broadcast=None, sock=None)
 
    Create datagram connection: socket family :py:data:`~socket.AF_INET` or
    :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
-   socket type :py:data:`~socket.SOCK_DGRAM`.
+   socket type :py:data:`~socket.SOCK_DGRAM`. *protocol_factory* must be a
+   callable returning a :ref:`protocol <asyncio-protocol>` instance.
 
    This method is a :ref:`coroutine <coroutine>` which will try to
    establish the connection in the background.  When successful, the
    coroutine returns a ``(transport, protocol)`` pair.
 
-   See the :meth:`BaseEventLoop.create_connection` method for parameters.
+   Options changing how the connection is created:
+
+   * *local_addr*, if given, is a ``(local_host, local_port)`` tuple used
+     to bind the socket to locally.  The *local_host* and *local_port*
+     are looked up using :meth:`getaddrinfo`.
+
+   * *remote_addr*, if given, is a ``(remote_host, remote_port)`` tuple used
+     to connect the socket to a remote address.  The *remote_host* and
+     *remote_port* are looked up using :meth:`getaddrinfo`.
+
+   * *family*, *proto*, *flags* are the optional address family, protocol
+     and flags to be passed through to :meth:`getaddrinfo` for *host*
+     resolution. If given, these should all be integers from the
+     corresponding :mod:`socket` module constants.
+
+   * *reuse_address* tells the kernel to reuse a local socket in
+     TIME_WAIT state, without waiting for its natural timeout to
+     expire. If not specified will automatically be set to True on
+     UNIX.
+
+   * *reuse_port* tells the kernel to allow this endpoint to be bound to the
+     same port as other existing endpoints are bound to, so long as they all
+     set this flag when being created. This option is not supported on Windows
+     and some UNIX's. If the :py:data:`~socket.SO_REUSEPORT` constant is not
+     defined then this capability is unsupported.
+
+   * *allow_broadcast* tells the kernel to allow this endpoint to send
+     messages to the broadcast address.
+
+   * *sock* can optionally be specified in order to use a preexisting,
+     already connected, :class:`socket.socket` object to be used by the
+     transport. If specified, *local_addr* and *remote_addr* should be omitted
+     (must be :const:`None`).
 
    On Windows with :class:`ProactorEventLoop`, this method is not supported.
 
@@ -322,7 +355,7 @@ Creating connections
 Creating listening connections
 ------------------------------
 
-.. coroutinemethod:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None)
+.. coroutinemethod:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None)
 
    Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) bound to
    *host* and *port*.
@@ -360,6 +393,11 @@ Creating listening connections
      TIME_WAIT state, without waiting for its natural timeout to
      expire. If not specified will automatically be set to True on
      UNIX.
+
+   * *reuse_port* tells the kernel to allow this endpoint to be bound to the
+     same port as other existing endpoints are bound to, so long as they all
+     set this flag when being created. This option is not supported on
+     Windows.
 
    This method is a :ref:`coroutine <coroutine>`.
 
