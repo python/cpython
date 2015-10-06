@@ -1909,6 +1909,34 @@ format codes.
 | ``%%``    | A literal ``'%'`` character.   | %                      |       |
 +-----------+--------------------------------+------------------------+-------+
 
+Several additional directives not required by the C89 standard are included for
+convenience. These parameters all correspond to ISO 8601 date values. These
+may not be available on all platforms when used with the :meth:`strftime`
+method. The ISO 8601 year and ISO 8601 week directives are not interchangeable
+with the year and week number directives above. Calling :meth:`strptime` with
+incomplete or ambiguous ISO 8601 directives will raise a :exc:`ValueError`.
+
++-----------+--------------------------------+------------------------+-------+
+| Directive | Meaning                        | Example                | Notes |
++===========+================================+========================+=======+
+| ``%G``    | ISO 8601 year with century     | 0001, 0002, ..., 2013, | \(8)  |
+|           | representing the year that     | 2014, ..., 9998, 9999  |       |
+|           | contains the greater part of   |                        |       |
+|           | the ISO week (``%V``).         |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%u``    | ISO 8601 weekday as a decimal  | 1, 2, ..., 7           |       |
+|           | number where 1 is Monday.      |                        |       |
++-----------+--------------------------------+------------------------+-------+
+| ``%V``    | ISO 8601 week as a decimal     | 01, 02, ..., 53        | \(8)  |
+|           | number with Monday as          |                        |       |
+|           | the first day of the week.     |                        |       |
+|           | Week 01 is the week containing |                        |       |
+|           | Jan 4.                         |                        |       |
++-----------+--------------------------------+------------------------+-------+
+
+.. versionadded:: 3.6
+   ``%G``, ``%u`` and ``%V`` were added.
+
 Notes:
 
 (1)
@@ -1973,7 +2001,14 @@ Notes:
 
 (7)
    When used with the :meth:`strptime` method, ``%U`` and ``%W`` are only used
-   in calculations when the day of the week and the year are specified.
+   in calculations when the day of the week and the calendar year (``%Y``)
+   are specified.
+
+(8)
+   Similar to ``%U`` and ``%W``, ``%V`` is only used in calculations when the
+   day of the week and the ISO year (``%G``) are specified in a
+   :meth:`strptime` format string. Also note that ``%G`` and ``%Y`` are not
+   interchangable.
 
 .. rubric:: Footnotes
 

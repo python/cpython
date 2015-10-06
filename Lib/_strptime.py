@@ -195,12 +195,15 @@ class TimeRE(dict):
             'f': r"(?P<f>[0-9]{1,6})",
             'H': r"(?P<H>2[0-3]|[0-1]\d|\d)",
             'I': r"(?P<I>1[0-2]|0[1-9]|[1-9])",
+            'G': r"(?P<G>\d\d\d\d)",
             'j': r"(?P<j>36[0-6]|3[0-5]\d|[1-2]\d\d|0[1-9]\d|00[1-9]|[1-9]\d|0[1-9]|[1-9])",
             'm': r"(?P<m>1[0-2]|0[1-9]|[1-9])",
             'M': r"(?P<M>[0-5]\d|\d)",
             'S': r"(?P<S>6[0-1]|[0-5]\d|\d)",
             'U': r"(?P<U>5[0-3]|[0-4]\d|\d)",
             'w': r"(?P<w>[0-6])",
+            'u': r"(?P<u>[1-7])",
+            'V': r"(?P<V>5[0-3]|0[1-9]|[1-4]\d|\d)",
             # W is set below by using 'U'
             'y': r"(?P<y>\d\d)",
             #XXX: Does 'Y' need to worry about having less or more than
@@ -295,6 +298,22 @@ def _calc_julian_from_U_or_W(year, week_of_year, day_of_week, week_starts_Mon):
         return 1 + days_to_week + day_of_week
 
 
+def _calc_julian_from_V(iso_year, iso_week, iso_weekday):
+    """Calculate the Julian day based on the ISO 8601 year, week, and weekday.
+    ISO weeks start on Mondays, with week 01 being the week containing 4 Jan.
+    ISO week days range from 1 (Monday) to 7 (Sunday).
+    """
+    correction = datetime_date(iso_year, 1, 4).isoweekday() + 3
+    ordinal = (iso_week * 7) + iso_weekday - correction
+    # ordinal may be negative or 0 now, which means the date is in the previous
+    # calendar year
+    if ordinal < 1:
+        ordinal += datetime_date(iso_year, 1, 1).toordinal()
+        iso_year -= 1
+        ordinal -= datetime_date(iso_year, 1, 1).toordinal()
+    return iso_year, ordinal
+
+
 def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
     """Return a 2-tuple consisting of a time struct and an int containing
     the number of microseconds based on the input string and the
@@ -339,15 +358,15 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         raise ValueError("unconverted data remains: %s" %
                           data_string[found.end():])
 
-    year = None
+    iso_year = year = None
     month = day = 1
     hour = minute = second = fraction = 0
     tz = -1
     tzoffset = None
     # Default to -1 to signify that values not known; not critical to have,
     # though
-    week_of_year = -1
-    week_of_year_start = -1
+    iso_week = week_of_year = None
+    week_of_year_start = None
     # weekday and julian defaulted to None so as to signal need to calculate
     # values
     weekday = julian = None
@@ -369,6 +388,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 year += 1900
         elif group_key == 'Y':
             year = int(found_dict['Y'])
+        elif group_key == 'G':
+            iso_year = int(found_dict['G'])
         elif group_key == 'm':
             month = int(found_dict['m'])
         elif group_key == 'B':
@@ -414,6 +435,9 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                 weekday = 6
             else:
                 weekday -= 1
+        elif group_key == 'u':
+            weekday = int(found_dict['u'])
+            weekday -= 1
         elif group_key == 'j':
             julian = int(found_dict['j'])
         elif group_key in ('U', 'W'):
@@ -424,6 +448,8 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
             else:
                 # W starts week on Monday.
                 week_of_year_start = 0
+        elif group_key == 'V':
+            iso_week = int(found_dict['V'])
         elif group_key == 'z':
             z = found_dict['z']
             tzoffset = int(z[1:3]) * 60 + int(z[3:5])
@@ -444,28 +470,57 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
                     else:
                         tz = value
                         break
+    # Deal with the cases where ambiguities arize
+    # don't assume default values for ISO week/year
+    if year is None and iso_year is not None:
+        if iso_week is None or weekday is None:
+            raise ValueError("ISO year directive '%G' must be used with "
+                             "the ISO week directive '%V' and a weekday "
+                             "directive ('%A', '%a', '%w', or '%u').")
+        if julian is not None:
+            raise ValueError("Day of the year directive '%j' is not "
+                             "compatible with ISO year directive '%G'. "
+                             "Use '%Y' instead.")
+    elif week_of_year is None and iso_week is not None:
+        if weekday is None:
+            raise ValueError("ISO week directive '%V' must be used with "
+                             "the ISO year directive '%G' and a weekday "
+                             "directive ('%A', '%a', '%w', or '%u').")
+        else:
+            raise ValueError("ISO week directive '%V' is incompatible with "
+                             "the year directive '%Y'. Use the ISO year '%G' "
+                             "instead.")
+
     leap_year_fix = False
     if year is None and month == 2 and day == 29:
         year = 1904  # 1904 is first leap year of 20th century
         leap_year_fix = True
     elif year is None:
         year = 1900
+
+
     # If we know the week of the year and what day of that week, we can figure
     # out the Julian day of the year.
-    if julian is None and week_of_year != -1 and weekday is not None:
-        week_starts_Mon = True if week_of_year_start == 0 else False
-        julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
-                                            week_starts_Mon)
-    # Cannot pre-calculate datetime_date() since can change in Julian
-    # calculation and thus could have different value for the day of the week
-    # calculation.
+    if julian is None and weekday is not None:
+        if week_of_year is not None:
+            week_starts_Mon = True if week_of_year_start == 0 else False
+            julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
+                                                week_starts_Mon)
+        elif iso_year is not None and iso_week is not None:
+            year, julian = _calc_julian_from_V(iso_year, iso_week, weekday + 1)
+
     if julian is None:
+        # Cannot pre-calculate datetime_date() since can change in Julian
+        # calculation and thus could have different value for the day of
+        # the week calculation.
         # Need to add 1 to result since first day of the year is 1, not 0.
         julian = datetime_date(year, month, day).toordinal() - \
                   datetime_date(year, 1, 1).toordinal() + 1
-    else:  # Assume that if they bothered to include Julian day it will
-           # be accurate.
-        datetime_result = datetime_date.fromordinal((julian - 1) + datetime_date(year, 1, 1).toordinal())
+    else:  # Assume that if they bothered to include Julian day (or if it was
+           # calculated above with year/week/weekday) it will be accurate.
+        datetime_result = datetime_date.fromordinal(
+                            (julian - 1) +
+                            datetime_date(year, 1, 1).toordinal())
         year = datetime_result.year
         month = datetime_result.month
         day = datetime_result.day
