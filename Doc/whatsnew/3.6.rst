@@ -110,6 +110,14 @@ Private and special attribute names now are omitted unless the prefix starts
 with underscores.  A space or a colon can be added after completed keyword.
 (Contributed by Serhiy Storchaka in :issue:`25011` and :issue:`25209`.)
 
+datetime
+--------
+
+* :meth:`datetime.stftime <datetime.datetime.stftime>`  and
+  :meth:`date.stftime <datetime.date.stftime>` methods now support ISO 8601
+  date directives ``%G``, ``%u`` and ``%V``.
+  (Contributed by Ashley Anderson in :issue:`12006`.)
+
 
 Optimizations
 =============

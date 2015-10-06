@@ -152,8 +152,8 @@ class TimeRETests(unittest.TestCase):
                          "'%s' using '%s'; group 'a' = '%s', group 'b' = %s'" %
                          (found.string, found.re.pattern, found.group('a'),
                           found.group('b')))
-        for directive in ('a','A','b','B','c','d','H','I','j','m','M','p','S',
-                          'U','w','W','x','X','y','Y','Z','%'):
+        for directive in ('a','A','b','B','c','d','G','H','I','j','m','M','p',
+                          'S','u','U','V','w','W','x','X','y','Y','Z','%'):
             compiled = self.time_re.compile("%" + directive)
             found = compiled.match(time.strftime("%" + directive))
             self.assertTrue(found, "Matching failed on '%s' using '%s' regex" %
@@ -217,6 +217,26 @@ class StrptimeTests(unittest.TestCase):
                             (bad_format, err.__class__.__name__))
             else:
                 self.fail("'%s' did not raise ValueError" % bad_format)
+
+        # Ambiguous or incomplete cases using ISO year/week/weekday directives
+        # 1. ISO week (%V) is specified, but the year is specified with %Y
+        # instead of %G
+        with self.assertRaises(ValueError):
+            _strptime._strptime("1999 50", "%Y %V")
+        # 2. ISO year (%G) and ISO week (%V) are specified, but weekday is not
+        with self.assertRaises(ValueError):
+            _strptime._strptime("1999 51", "%G %V")
+        # 3. ISO year (%G) and weekday are specified, but ISO week (%V) is not
+        for w in ('A', 'a', 'w', 'u'):
+            with self.assertRaises(ValueError):
+                _strptime._strptime("1999 51","%G %{}".format(w))
+        # 4. ISO year is specified alone (e.g. time.strptime('2015', '%G'))
+        with self.assertRaises(ValueError):
+            _strptime._strptime("2015", "%G")
+        # 5. Julian/ordinal day (%j) is specified with %G, but not %Y
+        with self.assertRaises(ValueError):
+            _strptime._strptime("1999 256", "%G %j")
+
 
     def test_strptime_exception_context(self):
         # check that this doesn't chain exceptions needlessly (see #17572)
@@ -289,7 +309,7 @@ class StrptimeTests(unittest.TestCase):
 
     def test_weekday(self):
         # Test weekday directives
-        for directive in ('A', 'a', 'w'):
+        for directive in ('A', 'a', 'w', 'u'):
             self.helper(directive,6)
 
     def test_julian(self):
@@ -458,16 +478,20 @@ class CalculationTests(unittest.TestCase):
         # Should be able to infer date if given year, week of year (%U or %W)
         # and day of the week
         def test_helper(ymd_tuple, test_reason):
-            for directive in ('W', 'U'):
-                format_string = "%%Y %%%s %%w" % directive
-                dt_date = datetime_date(*ymd_tuple)
-                strp_input = dt_date.strftime(format_string)
-                strp_output = _strptime._strptime_time(strp_input, format_string)
-                self.assertTrue(strp_output[:3] == ymd_tuple,
-                        "%s(%s) test failed w/ '%s': %s != %s (%s != %s)" %
-                            (test_reason, directive, strp_input,
-                                strp_output[:3], ymd_tuple,
-                                strp_output[7], dt_date.timetuple()[7]))
+            for year_week_format in ('%Y %W', '%Y %U', '%G %V'):
+                for weekday_format in ('%w', '%u', '%a', '%A'):
+                    format_string = year_week_format + ' ' + weekday_format
+                    with self.subTest(test_reason,
+                                      date=ymd_tuple,
+                                      format=format_string):
+                        dt_date = datetime_date(*ymd_tuple)
+                        strp_input = dt_date.strftime(format_string)
+                        strp_output = _strptime._strptime_time(strp_input,
+                                                               format_string)
+                        msg = "%r: %s != %s" % (strp_input,
+                                                strp_output[7],
+                                                dt_date.timetuple()[7])
+                        self.assertEqual(strp_output[:3], ymd_tuple, msg)
         test_helper((1901, 1, 3), "week 0")
         test_helper((1901, 1, 8), "common case")
         test_helper((1901, 1, 13), "day on Sunday")
@@ -499,18 +523,25 @@ class CalculationTests(unittest.TestCase):
             self.assertEqual(_strptime._strptime_time(value, format)[:-1], expected)
         check('2015 0 0', '%Y %U %w', 2014, 12, 28, 0, 0, 0, 6, -3)
         check('2015 0 0', '%Y %W %w', 2015, 1, 4, 0, 0, 0, 6, 4)
+        check('2015 1 1', '%G %V %u', 2014, 12, 29, 0, 0, 0, 0, 363)
         check('2015 0 1', '%Y %U %w', 2014, 12, 29, 0, 0, 0, 0, -2)
         check('2015 0 1', '%Y %W %w', 2014, 12, 29, 0, 0, 0, 0, -2)
+        check('2015 1 2', '%G %V %u', 2014, 12, 30, 0, 0, 0, 1, 364)
         check('2015 0 2', '%Y %U %w', 2014, 12, 30, 0, 0, 0, 1, -1)
         check('2015 0 2', '%Y %W %w', 2014, 12, 30, 0, 0, 0, 1, -1)
+        check('2015 1 3', '%G %V %u', 2014, 12, 31, 0, 0, 0, 2, 365)
         check('2015 0 3', '%Y %U %w', 2014, 12, 31, 0, 0, 0, 2, 0)
         check('2015 0 3', '%Y %W %w', 2014, 12, 31, 0, 0, 0, 2, 0)
+        check('2015 1 4', '%G %V %u', 2015, 1, 1, 0, 0, 0, 3, 1)
         check('2015 0 4', '%Y %U %w', 2015, 1, 1, 0, 0, 0, 3, 1)
         check('2015 0 4', '%Y %W %w', 2015, 1, 1, 0, 0, 0, 3, 1)
+        check('2015 1 5', '%G %V %u', 2015, 1, 2, 0, 0, 0, 4, 2)
         check('2015 0 5', '%Y %U %w', 2015, 1, 2, 0, 0, 0, 4, 2)
         check('2015 0 5', '%Y %W %w', 2015, 1, 2, 0, 0, 0, 4, 2)
+        check('2015 1 6', '%G %V %u', 2015, 1, 3, 0, 0, 0, 5, 3)
         check('2015 0 6', '%Y %U %w', 2015, 1, 3, 0, 0, 0, 5, 3)
         check('2015 0 6', '%Y %W %w', 2015, 1, 3, 0, 0, 0, 5, 3)
+        check('2015 1 7', '%G %V %u', 2015, 1, 4, 0, 0, 0, 6, 4)
 
 
 class CacheTests(unittest.TestCase):
