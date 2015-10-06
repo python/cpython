@@ -4134,7 +4134,7 @@ class NTEventLogHandlerTest(BaseTest):
         try:
             h = logging.handlers.NTEventLogHandler('test_logging')
         except pywintypes.error as e:
-            if e[0] == 5:  # access denied
+            if e.winerror == 5:  # access denied
                 raise unittest.SkipTest('Insufficient privileges to run test')
 
         r = logging.makeLogRecord({'msg': 'Test Log Message'})
