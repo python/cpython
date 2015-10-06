@@ -496,7 +496,7 @@ class Event:
 
     def _reset_internal_locks(self):
         # private!  called by Thread._reset_internal_locks by _after_fork()
-        self._cond.__init__()
+        self._cond.__init__(Lock())
 
     def is_set(self):
         """Return true if and only if the internal flag is true."""
