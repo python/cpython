@@ -565,7 +565,7 @@ class _Event(_Verbose):
 
     def _reset_internal_locks(self):
         # private!  called by Thread._reset_internal_locks by _after_fork()
-        self.__cond.__init__()
+        self.__cond.__init__(Lock())
 
     def isSet(self):
         'Return true if and only if the internal flag is true.'

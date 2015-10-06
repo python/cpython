@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25319: When threading.Event is reinitialized, the underlying condition
+  should use a regular lock rather than a recursive lock.
+
 - Issue #25232: Fix CGIRequestHandler to split the query from the URL at the
   first question mark (?) rather than the last. Patch from Xiang Zhang.
 

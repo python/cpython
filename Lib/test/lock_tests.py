@@ -305,6 +305,14 @@ class EventTests(BaseTestCase):
         for r, dt in results2:
             self.assertTrue(r)
 
+    def test_reset_internal_locks(self):
+        evt = self.eventtype()
+        old_lock = evt._Event__cond._Condition__lock
+        evt._reset_internal_locks()
+        new_lock = evt._Event__cond._Condition__lock
+        self.assertIsNot(new_lock, old_lock)
+        self.assertIs(type(new_lock), type(old_lock))
+
 
 class ConditionTests(BaseTestCase):
     """
