@@ -394,6 +394,14 @@ class EventTests(BaseTestCase):
         b.wait_for_finished()
         self.assertEqual(results, [True] * N)
 
+    def test_reset_internal_locks(self):
+        evt = self.eventtype()
+        old_lock = evt._cond._lock
+        evt._reset_internal_locks()
+        new_lock = evt._cond._lock
+        self.assertIsNot(new_lock, old_lock)
+        self.assertIs(type(new_lock), type(old_lock))
+
 
 class ConditionTests(BaseTestCase):
     """
