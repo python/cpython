@@ -1215,6 +1215,7 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
 
     def test_create_datagram_endpoint_sock(self):
         sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        sock.bind(('127.0.0.1', 0))
         fut = self.loop.create_datagram_endpoint(
             lambda: MyDatagramProto(create_future=True, loop=self.loop),
             sock=sock)
@@ -1305,10 +1306,6 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
                 socket.SOL_SOCKET, socket.SO_REUSEADDR))
         if reuseport_supported:
             self.assertTrue(
-                sock.getsockopt(
-                    socket.SOL_SOCKET, socket.SO_REUSEPORT))
-        else:
-            self.assertFalse(
                 sock.getsockopt(
                     socket.SOL_SOCKET, socket.SO_REUSEPORT))
         self.assertTrue(
