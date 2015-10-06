@@ -530,7 +530,7 @@ deque_copy(PyObject *deque)
             return NULL;
         new_deque->maxlen = old_deque->maxlen;
         /* Fast path for the deque_repeat() common case where len(deque) == 1 */
-        if (Py_SIZE(deque) == 1 && new_deque->maxlen != 0) {
+        if (Py_SIZE(deque) == 1) {
             PyObject *item = old_deque->leftblock->data[old_deque->leftindex];
             rv = deque_append(new_deque, item);
         } else {
