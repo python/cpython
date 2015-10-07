@@ -421,7 +421,7 @@ Build
 -----
 
 - Issue #24915: Add LLVM support for PGO builds and use the test suite to
-  generate the profile data. Initiial patch by Alecsandru Patrascu of Intel.
+  generate the profile data. Initial patch by Alecsandru Patrascu of Intel.
 
 - Issue #24910: Windows MSIs now have unique display names.
 
@@ -1830,7 +1830,7 @@ Core and Builtins
   type) can now be weakref'ed.  Patch by Wei Wu.
 
 - Issue #22077: Improve index error messages for bytearrays, bytes, lists,
-  and tuples by adding 'or slices'. Added ', not <typename' for bytearrays.
+  and tuples by adding 'or slices'. Added ', not <typename>' for bytearrays.
   Original patch by Claudiu Popa.
 
 - Issue #20179: Apply Argument Clinic to bytes and bytearray.
@@ -1854,7 +1854,7 @@ Core and Builtins
   engine friendly) error messages when "exec" and "print" are used as
   statements.
 
-- Issue #21642: If the conditional if-else expression, allow an integer written
+- Issue #21642: In the conditional if-else expression, allow an integer written
   with no space between itself and the ``else`` keyword (e.g. ``True if 42else
   False``) to be valid syntax.
 
