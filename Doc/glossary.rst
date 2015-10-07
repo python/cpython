@@ -182,6 +182,14 @@ Glossary
       keys can be any object with :meth:`__hash__`  and :meth:`__eq__` methods.
       Called a hash in Perl.
 
+   dictionary view
+      The objects returned from :meth:`dict.viewkeys`, :meth:`dict.viewvalues`,
+      and :meth:`dict.viewitems` are called dictionary views. They provide a dynamic
+      view on the dictionary’s entries, which means that when the dictionary
+      changes, the view reflects these changes. To force
+      dictionary view to become a full list use ``list(dictview)``.  See
+      :ref:`dict-views`.
+
    docstring
       A string literal which appears as the first expression in a class,
       function or module.  While ignored when the suite is executed, it is
@@ -712,13 +720,6 @@ Glossary
       the Windows convention ``'\r\n'``, and the old Macintosh convention
       ``'\r'``.  See :pep:`278` and :pep:`3116`, as well as
       :func:`str.splitlines` for an additional use.
-
-   view
-      The objects returned from :meth:`dict.viewkeys`, :meth:`dict.viewvalues`,
-      and :meth:`dict.viewitems` are called dictionary views.  They are lazy
-      sequences that will see changes in the underlying dictionary.  To force
-      the dictionary view to become a full list use ``list(dictview)``.  See
-      :ref:`dict-views`.
 
    virtual environment
       A cooperatively isolated runtime environment that allows Python users

@@ -978,7 +978,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
            KeysView
            ValuesView
 
-   ABCs for mapping, items, keys, and values :term:`views <view>`.
+   ABCs for mapping, items, keys, and values :term:`views <dictionary view>`.
 
 
 These ABCs allow us to ask classes or instances if they provide
