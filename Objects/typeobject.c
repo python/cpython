@@ -1973,6 +1973,12 @@ best_base(PyObject *bases)
             if (PyType_Ready(base_i) < 0)
                 return NULL;
         }
+        if (!PyType_HasFeature(base_i, Py_TPFLAGS_BASETYPE)) {
+            PyErr_Format(PyExc_TypeError,
+                         "type '%.100s' is not an acceptable base type",
+                         base_i->tp_name);
+            return NULL;
+        }
         candidate = solid_base(base_i);
         if (winner == NULL) {
             winner = candidate;
@@ -2351,12 +2357,6 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     /* Calculate best base, and check that all bases are type objects */
     base = best_base(bases);
     if (base == NULL) {
-        goto error;
-    }
-    if (!PyType_HasFeature(base, Py_TPFLAGS_BASETYPE)) {
-        PyErr_Format(PyExc_TypeError,
-                     "type '%.100s' is not an acceptable base type",
-                     base->tp_name);
         goto error;
     }
 
