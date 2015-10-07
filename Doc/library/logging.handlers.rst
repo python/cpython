@@ -168,6 +168,8 @@ for this value.
       flushed and closed and the file opened again, typically as a precursor to
       outputting the record to the file.
 
+      .. versionadded:: 3.6
+
 
    .. method:: emit(record)
 
