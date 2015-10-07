@@ -1045,6 +1045,9 @@ deque_clear(dequeobject *deque)
     Py_ssize_t n;
     PyObject *item;
 
+    if (Py_SIZE(deque) == 0)
+        return;
+
     /* During the process of clearing a deque, decrefs can cause the
        deque to mutate.  To avoid fatal confusion, we have to make the
        deque empty before clearing the blocks and never refer to
@@ -1423,7 +1426,8 @@ deque_init(dequeobject *deque, PyObject *args, PyObject *kwdargs)
         }
     }
     deque->maxlen = maxlen;
-    deque_clear(deque);
+    if (Py_SIZE(deque) > 0)
+        deque_clear(deque);
     if (iterable != NULL) {
         PyObject *rv = deque_extend(deque, iterable);
         if (rv == NULL)
