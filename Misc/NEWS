@@ -10,6 +10,9 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #24806: Prevent builtin types that are not allowed to be subclassed from
+  being subclassed through multiple inheritance.
+
 - Issue #24848: Fixed a number of bugs in UTF-7 decoding of misformed data.
 
 - Issue #25003: os.urandom() doesn't use getentropy() on Solaris because
