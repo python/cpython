@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #24806: Prevent builtin types that are not allowed to be subclassed from
+  being subclassed through multiple inheritance.
+
 - Issue #24848: Fixed a number of bugs in UTF-7 decoding of misformed data.
 
 - Issue #25280: Import trace messages emitted in verbose (-v) mode are no
