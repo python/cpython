@@ -750,7 +750,7 @@ _io_StringIO___init___impl(stringio *self, PyObject *value,
     /* If newline == "", we don't translate anything.
        If newline == "\n" or newline == None, we translate to "\n", which is
        a no-op.
-       (for newline == None, TextIOWrapper translates to os.sepline, but it
+       (for newline == None, TextIOWrapper translates to os.linesep, but it
        is pointless for StringIO)
     */
     if (newline != NULL && newline[0] == '\r') {
