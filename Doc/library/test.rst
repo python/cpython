@@ -160,7 +160,7 @@ Running tests using the command-line interface
 The :mod:`test` package can be run as a script to drive Python's regression
 test suite, thanks to the :option:`-m` option: :program:`python -m test`. Under
 the hood, it uses :mod:`test.regrtest`; the call :program:`python -m
-test.regrtest` used in previous Python versions still works).  Running the
+test.regrtest` used in previous Python versions still works.  Running the
 script by itself automatically starts running all regression tests in the
 :mod:`test` package. It does this by finding all modules in the package whose
 name starts with ``test_``, importing them, and executing the function

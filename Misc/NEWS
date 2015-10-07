@@ -1131,7 +1131,7 @@ Core and Builtins
   engine friendly) error messages when "exec" and "print" are used as
   statements.
 
-- Issue #21642: If the conditional if-else expression, allow an integer written
+- Issue #21642: In the conditional if-else expression, allow an integer written
   with no space between itself and the ``else`` keyword (e.g. ``True if 42else
   False``) to be valid syntax.
 

@@ -459,7 +459,7 @@ PyObject_Repr(PyObject *v)
 #ifdef Py_DEBUG
     /* PyObject_Repr() must not be called with an exception set,
        because it may clear it (directly or indirectly) and so the
-       caller looses its exception */
+       caller loses its exception */
     assert(!PyErr_Occurred());
 #endif
 
