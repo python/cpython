@@ -4035,7 +4035,7 @@ fstring_compile_expr(PyObject *str, Py_ssize_t expr_start,
     assert(expr_end >= 0 && expr_end < PyUnicode_GET_LENGTH(str));
     assert(expr_end >= expr_start);
 
-    /* There has to be at least on character on each side of the
+    /* There has to be at least one character on each side of the
        expression inside this str. This will have been caught before
        we're called. */
     assert(expr_start >= 1);
