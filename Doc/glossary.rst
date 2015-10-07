@@ -186,7 +186,7 @@ Glossary
       The objects returned from :meth:`dict.viewkeys`, :meth:`dict.viewvalues`,
       and :meth:`dict.viewitems` are called dictionary views. They provide a dynamic
       view on the dictionary’s entries, which means that when the dictionary
-      changes, the view reflects these changes. To force
+      changes, the view reflects these changes. To force the
       dictionary view to become a full list use ``list(dictview)``.  See
       :ref:`dict-views`.
 
