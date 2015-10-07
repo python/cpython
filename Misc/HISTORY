@@ -6751,7 +6751,7 @@ Library
 
 - Issue #7895: platform.mac_ver() no longer crashes after calling os.fork().
 
-- Issue #9323: Fixed a bug in trace.py that resulted in loosing the name of the
+- Issue #9323: Fixed a bug in trace.py that resulted in losing the name of the
   script being traced.  Patch by Eli Bendersky.
 
 - Issue #9282: Fixed --listfuncs option of trace.py.  Thanks Eli Bendersky for
