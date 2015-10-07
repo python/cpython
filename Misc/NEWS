@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #24806: Prevent builtin types that are not allowed to be subclassed from
+  being subclassed through multiple inheritance.
+
 * Issue #25301: The UTF-8 decoder is now up to 15 times as fast for error
   handlers: ``ignore``, ``replace`` and ``surrogateescape``.
 
