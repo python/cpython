@@ -1212,7 +1212,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #ifdef Py_DEBUG
     /* PyEval_EvalFrameEx() must not be called with an exception set,
        because it may clear it (directly or indirectly) and so the
-       caller looses its exception */
+       caller loses its exception */
     assert(!PyErr_Occurred());
 #endif
 
@@ -4087,7 +4087,7 @@ PyEval_CallObjectWithKeywords(PyObject *func, PyObject *arg, PyObject *kw)
 #ifdef Py_DEBUG
     /* PyEval_CallObjectWithKeywords() must not be called with an exception
        set, because it may clear it (directly or indirectly)
-       and so the caller looses its exception */
+       and so the caller loses its exception */
     assert(!PyErr_Occurred());
 #endif
 
