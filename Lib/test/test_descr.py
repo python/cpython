@@ -3735,6 +3735,37 @@ order (MRO) for bases """
         else:
             assert 0, "best_base calculation found wanting"
 
+    def test_unsubclassable_types(self):
+        with self.assertRaises(TypeError):
+            class X(type(None)):
+                pass
+        with self.assertRaises(TypeError):
+            class X(object, type(None)):
+                pass
+        with self.assertRaises(TypeError):
+            class X(type(None), object):
+                pass
+        class O(object):
+            pass
+        with self.assertRaises(TypeError):
+            class X(O, type(None)):
+                pass
+        with self.assertRaises(TypeError):
+            class X(type(None), O):
+                pass
+
+        class X(object):
+            pass
+        with self.assertRaises(TypeError):
+            X.__bases__ = type(None),
+        with self.assertRaises(TypeError):
+            X.__bases__ = object, type(None)
+        with self.assertRaises(TypeError):
+            X.__bases__ = type(None), object
+        with self.assertRaises(TypeError):
+            X.__bases__ = O, type(None)
+        with self.assertRaises(TypeError):
+            X.__bases__ = type(None), O
 
     def test_mutable_bases_with_failing_mro(self):
         # Testing mutable bases with failing mro...
