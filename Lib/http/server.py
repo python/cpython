@@ -881,7 +881,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 def _url_collapse_path(path):
     """
     Given a URL path, remove extra '/'s and '.' path elements and collapse
-    any '..' references and returns a colllapsed path.
+    any '..' references and returns a collapsed path.
 
     Implements something akin to RFC-2396 5.2 step 6 to parse relative paths.
     The utility of this function is limited to is_cgi method and helps

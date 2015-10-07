@@ -980,7 +980,7 @@ anywhere a regular dictionary is used.
 
 The :class:`OrderedDict` constructor and :meth:`update` method both accept
 keyword arguments, but their order is lost because Python's function call
-semantics pass-in keyword arguments using a regular unordered dictionary.
+semantics pass in keyword arguments using a regular unordered dictionary.
 
 
 :class:`OrderedDict` Examples and Recipes

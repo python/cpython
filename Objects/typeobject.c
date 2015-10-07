@@ -876,7 +876,7 @@ type_call(PyTypeObject *type, PyObject *args, PyObject *kwds)
 #ifdef Py_DEBUG
     /* type_call() must not be called with an exception set,
        because it may clear it (directly or indirectly) and so the
-       caller looses its exception */
+       caller loses its exception */
     assert(!PyErr_Occurred());
 #endif
 

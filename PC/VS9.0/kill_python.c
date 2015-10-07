@@ -108,7 +108,7 @@ main(int argc, char **argv)
          * modules for all processes (not just the python[_d].exe ones)
          * and see if any of our DLLs are loaded (i.e. python34[_d].dll),
          * as that would also inhibit our ability to rebuild the solution.
-         * Not worth loosing sleep over though; for now, a simple check 
+         * Not worth losing sleep over though; for now, a simple check
          * for just the python executable should be sufficient.
          */
 
