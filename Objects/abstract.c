@@ -2131,7 +2131,7 @@ PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw)
 
     /* PyObject_Call() must not be called with an exception set,
        because it may clear it (directly or indirectly) and so the
-       caller looses its exception */
+       caller loses its exception */
     assert(!PyErr_Occurred());
 
     call = func->ob_type->tp_call;

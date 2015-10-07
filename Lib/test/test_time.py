@@ -773,7 +773,7 @@ class TestPyTime_t(unittest.TestCase):
                 (2**23 - 1e-9,  8388607999999999),
                 (2**23,         8388608000000000),
 
-                # start loosing precision for value > 2^23 seconds
+                # start losing precision for value > 2^23 seconds
                 (2**23 + 1e-9,  8388608000000002),
 
                 # nanoseconds are lost for value > 2^23 seconds
@@ -848,7 +848,7 @@ class TestPyTime_t(unittest.TestCase):
             (4194304000000000, 2**22),
             (4194304000000001, 2**22 + 1e-9),
 
-            # start loosing precision for value > 2^23 seconds
+            # start losing precision for value > 2^23 seconds
             (8388608000000002, 2**23 + 1e-9),
 
             # nanoseconds are lost for value > 2^23 seconds
