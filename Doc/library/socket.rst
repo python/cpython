@@ -384,7 +384,11 @@ The following functions all create :ref:`socket objects <socket-objects>`.
    :const:`SOCK_DGRAM`, :const:`SOCK_RAW` or perhaps one of the other ``SOCK_``
    constants. The protocol number is usually zero and may be omitted or in the
    case where the address family is :const:`AF_CAN` the protocol should be one
-   of :const:`CAN_RAW` or :const:`CAN_BCM`.
+   of :const:`CAN_RAW` or :const:`CAN_BCM`.  If *fileno* is specified, the other
+   arguments are ignored, causing the socket with the specified file descriptor
+   to return.  Unlike :func:`socket.fromfd`, *fileno* will return the same
+   socket and not a duplicate. This may help close a detached socket using
+   :meth:`socket.close()`.
 
    The newly created socket is :ref:`non-inheritable <fd_inheritance>`.
 
