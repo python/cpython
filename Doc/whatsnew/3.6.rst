@@ -119,6 +119,14 @@ datetime
   (Contributed by Ashley Anderson in :issue:`12006`.)
 
 
+urllib.robotparser
+------------------
+
+:class:`~urllib.robotparser.RobotFileParser` now supports ``Crawl-delay`` and
+``Request-rate`` extensions.
+(Contributed by Nikolay Bogoychev in :issue:`16099`.)
+
+
 Optimizations
 =============
 
