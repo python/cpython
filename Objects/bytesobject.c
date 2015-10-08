@@ -3735,3 +3735,196 @@ bytes_iter(PyObject *seq)
     _PyObject_GC_TRACK(it);
     return (PyObject *)it;
 }
+
+
+/* _PyBytesWriter API */
+
+#ifdef MS_WINDOWS
+   /* On Windows, overallocate by 50% is the best factor */
+#  define OVERALLOCATE_FACTOR 2
+#else
+   /* On Linux, overallocate by 25% is the best factor */
+#  define OVERALLOCATE_FACTOR 4
+#endif
+
+void
+_PyBytesWriter_Init(_PyBytesWriter *writer)
+{
+    writer->buffer = NULL;
+    writer->allocated = 0;
+    writer->size = 0;
+    writer->overallocate = 0;
+    writer->use_stack_buffer = 0;
+#ifdef Py_DEBUG
+    memset(writer->stack_buffer, 0xCB, sizeof(writer->stack_buffer));
+#endif
+}
+
+void
+_PyBytesWriter_Dealloc(_PyBytesWriter *writer)
+{
+    Py_CLEAR(writer->buffer);
+}
+
+Py_LOCAL_INLINE(char*)
+_PyBytesWriter_AsString(_PyBytesWriter *writer)
+{
+    if (!writer->use_stack_buffer) {
+        assert(writer->buffer != NULL);
+        return PyBytes_AS_STRING(writer->buffer);
+    }
+    else {
+        assert(writer->buffer == NULL);
+        return writer->stack_buffer;
+    }
+}
+
+Py_LOCAL_INLINE(Py_ssize_t)
+_PyBytesWriter_GetPos(_PyBytesWriter *writer, char *str)
+{
+    char *start = _PyBytesWriter_AsString(writer);
+    assert(str != NULL);
+    assert(str >= start);
+    return str - start;
+}
+
+Py_LOCAL_INLINE(void)
+_PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
+{
+#ifdef Py_DEBUG
+    char *start, *end;
+
+    if (!writer->use_stack_buffer) {
+        assert(writer->buffer != NULL);
+        assert(PyBytes_CheckExact(writer->buffer));
+        assert(Py_REFCNT(writer->buffer) == 1);
+    }
+    else {
+        assert(writer->buffer == NULL);
+    }
+
+    start = _PyBytesWriter_AsString(writer);
+    assert(0 <= writer->size && writer->size <= writer->allocated);
+    /* the last byte must always be null */
+    assert(start[writer->allocated] == 0);
+
+    end = start + writer->allocated;
+    assert(str != NULL);
+    assert(start <= str && str <= end);
+#endif
+}
+
+char*
+_PyBytesWriter_Prepare(_PyBytesWriter *writer, char *str, Py_ssize_t size)
+{
+    Py_ssize_t allocated, pos;
+
+    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(size >= 0);
+
+    if (size == 0) {
+        /* nothing to do */
+        return str;
+    }
+
+    if (writer->size > PY_SSIZE_T_MAX - size) {
+        PyErr_NoMemory();
+        _PyBytesWriter_Dealloc(writer);
+        return NULL;
+    }
+    writer->size += size;
+
+    allocated = writer->allocated;
+    if (writer->size <= allocated)
+        return str;
+
+    allocated = writer->size;
+    if (writer->overallocate
+        && allocated <= (PY_SSIZE_T_MAX - allocated / OVERALLOCATE_FACTOR)) {
+        /* overallocate to limit the number of realloc() */
+        allocated += allocated / OVERALLOCATE_FACTOR;
+    }
+
+    pos = _PyBytesWriter_GetPos(writer, str);
+    if (!writer->use_stack_buffer) {
+        /* Note: Don't use a bytearray object because the conversion from
+           byterray to bytes requires to copy all bytes. */
+        if (_PyBytes_Resize(&writer->buffer, allocated)) {
+            assert(writer->buffer == NULL);
+            return NULL;
+        }
+    }
+    else {
+        /* convert from stack buffer to bytes object buffer */
+        assert(writer->buffer == NULL);
+
+        writer->buffer = PyBytes_FromStringAndSize(NULL, allocated);
+        if (writer->buffer == NULL)
+            return NULL;
+
+        if (pos != 0) {
+            Py_MEMCPY(PyBytes_AS_STRING(writer->buffer),
+                      writer->stack_buffer,
+                      pos);
+        }
+
+#ifdef Py_DEBUG
+        memset(writer->stack_buffer, 0xDB, sizeof(writer->stack_buffer));
+#endif
+
+        writer->use_stack_buffer = 0;
+    }
+    writer->allocated = allocated;
+
+    str = _PyBytesWriter_AsString(writer) + pos;
+    _PyBytesWriter_CheckConsistency(writer, str);
+    return str;
+}
+
+/* Allocate the buffer to write size bytes.
+   Return the pointer to the beginning of buffer data.
+   Raise an exception and return NULL on error. */
+char*
+_PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
+{
+    /* ensure that _PyBytesWriter_Alloc() is only called once */
+    assert(writer->size == 0 && writer->buffer == NULL);
+    assert(size >= 0);
+
+    writer->use_stack_buffer = 1;
+#if Py_DEBUG
+    /* the last byte is reserved, it must be '\0' */
+    writer->stack_buffer[sizeof(writer->stack_buffer) - 1] = 0;
+    writer->allocated = sizeof(writer->stack_buffer) - 1;
+#else
+    writer->allocated = sizeof(writer->stack_buffer);
+#endif
+    return _PyBytesWriter_Prepare(writer, writer->stack_buffer, size);
+}
+
+PyObject *
+_PyBytesWriter_Finish(_PyBytesWriter *writer, char *str)
+{
+    Py_ssize_t pos;
+    PyObject *result;
+
+    _PyBytesWriter_CheckConsistency(writer, str);
+
+    pos = _PyBytesWriter_GetPos(writer, str);
+    if (!writer->use_stack_buffer) {
+        if (pos != writer->allocated) {
+            if (_PyBytes_Resize(&writer->buffer, pos)) {
+                assert(writer->buffer == NULL);
+                return NULL;
+            }
+        }
+
+        result = writer->buffer;
+        writer->buffer = NULL;
+    }
+    else {
+        result = PyBytes_FromStringAndSize(writer->stack_buffer, pos);
+    }
+
+    return result;
+}
