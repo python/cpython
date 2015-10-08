@@ -1,4 +1,4 @@
-+++++++++++
+﻿+++++++++++
 Python News
 +++++++++++
 
@@ -45,6 +45,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #16099: RobotFileParser now supports Crawl-delay and Request-rate
+  extensions.  Patch by Nikolay Bogoychev.
 
 - Issue #25316: distutils raises OSError instead of DistutilsPlatformError
   when MSVC is not installed.
