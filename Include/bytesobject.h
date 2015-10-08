@@ -123,6 +123,58 @@ PyAPI_FUNC(Py_ssize_t) _PyBytes_InsertThousandsGrouping(char *buffer,
 #define F_ALT	(1<<3)
 #define F_ZERO	(1<<4)
 
+#ifndef Py_LIMITED_API
+/* The _PyBytesWriter structure is big: it contains an embeded "stack buffer".
+   A _PyBytesWriter variable must be declared at the end of variables in a
+   function to optimize the memory allocation on the stack. */
+typedef struct {
+    /* bytes object */
+    PyObject *buffer;
+
+    /* Number of allocated size */
+    Py_ssize_t allocated;
+
+    /* Current size of the buffer (can be smaller than the allocated size) */
+    Py_ssize_t size;
+
+    /* If non-zero, overallocate the buffer (default: 0). */
+    int overallocate;
+
+    /* Stack buffer */
+    int use_stack_buffer;
+    char stack_buffer[512];
+} _PyBytesWriter;
+
+/* Initialize a bytes writer
+
+   By default, the overallocation is disabled. Set the overallocate attribute
+   to control the allocation of the buffer. */
+PyAPI_FUNC(void) _PyBytesWriter_Init(_PyBytesWriter *writer);
+
+/* Get the buffer content and reset the writer.
+   Return a bytes object.
+   Raise an exception and return NULL on error. */
+PyAPI_FUNC(PyObject *) _PyBytesWriter_Finish(_PyBytesWriter *writer,
+    char *str);
+
+/* Deallocate memory of a writer (clear its internal buffer). */
+PyAPI_FUNC(void) _PyBytesWriter_Dealloc(_PyBytesWriter *writer);
+
+/* Allocate the buffer to write size bytes.
+   Return the pointer to the beginning of buffer data.
+   Raise an exception and return NULL on error. */
+PyAPI_FUNC(char*) _PyBytesWriter_Alloc(_PyBytesWriter *writer,
+    Py_ssize_t size);
+
+/* Add *size* bytes to the buffer.
+   str is the current pointer inside the buffer.
+   Return the updated current pointer inside the buffer.
+   Raise an exception and return NULL on error. */
+PyAPI_FUNC(char*) _PyBytesWriter_Prepare(_PyBytesWriter *writer,
+    char *str,
+    Py_ssize_t size);
+#endif   /* Py_LIMITED_API */
+
 #ifdef __cplusplus
 }
 #endif
