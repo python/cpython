@@ -53,15 +53,41 @@ structure of :file:`robots.txt` files, see http://www.robotstxt.org/orig.html.
       Sets the time the ``robots.txt`` file was last fetched to the current
       time.
 
+   .. method:: crawl_delay(useragent)
 
-The following example demonstrates basic use of the RobotFileParser class.
+      Returns the value of the ``Crawl-delay`` parameter from ``robots.txt``
+      for the *useragent* in question.  If there is no such parameter or it
+      doesn't apply to the *useragent* specified or the ``robots.txt`` entry
+      for this parameter has invalid syntax, return ``None``.
+
+      .. versionadded:: 3.6
+
+   .. method:: request_rate(useragent)
+
+      Returns the contents of the ``Request-rate`` parameter from
+      ``robots.txt`` in the form of a :func:`~collections.namedtuple`
+      ``(requests, seconds)``.  If there is no such parameter or it doesn't
+      apply to the *useragent* specified or the ``robots.txt`` entry for this
+      parameter has invalid syntax, return ``None``.
+
+      .. versionadded:: 3.6
+
+
+The following example demonstrates basic use of the :class:`RobotFileParser`
+class::
 
    >>> import urllib.robotparser
    >>> rp = urllib.robotparser.RobotFileParser()
    >>> rp.set_url("http://www.musi-cal.com/robots.txt")
    >>> rp.read()
+   >>> rrate = rp.request_rate("*")
+   >>> rrate.requests
+   3
+   >>> rrate.seconds
+   20
+   >>> rp.crawl_delay("*")
+   6
    >>> rp.can_fetch("*", "http://www.musi-cal.com/cgi-bin/search?city=San+Francisco")
    False
    >>> rp.can_fetch("*", "http://www.musi-cal.com/")
    True
-
