@@ -687,6 +687,13 @@ public: // IBootstrapperApplication
             if (hr == S_FALSE) {
                 hr = LoadLauncherStateFromKey(_engine, HKEY_LOCAL_MACHINE);
             }
+            if (FAILED(hr)) {
+                BalLog(
+                    BOOTSTRAPPER_LOG_LEVEL_ERROR,
+                    "Failed to load launcher state: error code 0x%08X",
+                    hr
+                );
+            }
         } else if (BOOTSTRAPPER_RELATED_OPERATION_NONE == operation) {
             if (_command.action == BOOTSTRAPPER_ACTION_INSTALL) {
                 LOC_STRING *pLocString = nullptr;
