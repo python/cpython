@@ -334,7 +334,6 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 i += (endpos - startpos - 1);
                 break;
 
-
             case _Py_ERROR_SURROGATEPASS:
                 for (k=startpos; k<endpos; k++) {
                     ch = data[k];
@@ -342,6 +341,22 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                     *p++ = (char)(0x80 | ((ch >> 6) & 0x3f));
                     *p++ = (char)(0x80 | (ch & 0x3f));
                 }
+                i += (endpos - startpos - 1);
+                break;
+
+            case _Py_ERROR_BACKSLASHREPLACE:
+                p = backslashreplace(&writer, max_char_size, p,
+                                     unicode, startpos, endpos);
+                if (p == NULL)
+                    goto error;
+                i += (endpos - startpos - 1);
+                break;
+
+            case _Py_ERROR_XMLCHARREFREPLACE:
+                p = xmlcharrefreplace(&writer, max_char_size, p,
+                                      unicode, startpos, endpos);
+                if (p == NULL)
+                    goto error;
                 i += (endpos - startpos - 1);
                 break;
 
@@ -359,7 +374,6 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 startpos = k;
                 assert(startpos < endpos);
                 /* fall through the default handler */
-
             default:
                 rep = unicode_encode_call_errorhandler(
                       errors, &error_handler_obj, "utf-8", "surrogates not allowed",
