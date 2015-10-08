@@ -163,6 +163,14 @@ extern "C" {
             *_to++ = (to_type) *_iter++;                \
     } while (0)
 
+#ifdef MS_WINDOWS
+   /* On Windows, overallocate by 50% is the best factor */
+#  define OVERALLOCATE_FACTOR 2
+#else
+   /* On Linux, overallocate by 25% is the best factor */
+#  define OVERALLOCATE_FACTOR 4
+#endif
+
 /* This dictionary holds all interned unicode strings.  Note that references
    to strings in this dictionary are *not* counted in the string's ob_refcnt.
    When the interned string reaches a refcnt of 0 the string deallocation
@@ -336,6 +344,216 @@ PyUnicode_GetMax(void)
        not be passed to unichr. */
     return 0xFFFF;
 #endif
+}
+
+/* The _PyBytesWriter structure is big: it contains an embeded "stack buffer".
+   A _PyBytesWriter variable must be declared at the end of variables in a
+   function to optimize the memory allocation on the stack. */
+typedef struct {
+    /* bytes object */
+    PyObject *buffer;
+
+    /* Number of allocated size */
+    Py_ssize_t allocated;
+
+    /* Current size of the buffer (can be smaller than the allocated size) */
+    Py_ssize_t size;
+
+    /* If non-zero, overallocate the buffer (default: 0). */
+    int overallocate;
+
+    /* Stack buffer */
+    int use_stack_buffer;
+    char stack_buffer[512];
+} _PyBytesWriter;
+
+static void
+_PyBytesWriter_Init(_PyBytesWriter *writer)
+{
+    writer->buffer = NULL;
+    writer->allocated = 0;
+    writer->size = 0;
+    writer->overallocate = 0;
+    writer->use_stack_buffer = 0;
+#ifdef Py_DEBUG
+    memset(writer->stack_buffer, 0xCB, sizeof(writer->stack_buffer));
+#endif
+}
+
+static void
+_PyBytesWriter_Dealloc(_PyBytesWriter *writer)
+{
+    Py_CLEAR(writer->buffer);
+}
+
+static char*
+_PyBytesWriter_AsString(_PyBytesWriter *writer)
+{
+    if (!writer->use_stack_buffer) {
+        assert(writer->buffer != NULL);
+        return PyBytes_AS_STRING(writer->buffer);
+    }
+    else {
+        assert(writer->buffer == NULL);
+        return writer->stack_buffer;
+    }
+}
+
+Py_LOCAL_INLINE(Py_ssize_t)
+_PyBytesWriter_GetPos(_PyBytesWriter *writer, char *str)
+{
+    char *start = _PyBytesWriter_AsString(writer);
+    assert(str != NULL);
+    assert(str >= start);
+    return str - start;
+}
+
+Py_LOCAL_INLINE(void)
+_PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
+{
+#ifdef Py_DEBUG
+    char *start, *end;
+
+    if (!writer->use_stack_buffer) {
+        assert(writer->buffer != NULL);
+        assert(PyBytes_CheckExact(writer->buffer));
+        assert(Py_REFCNT(writer->buffer) == 1);
+    }
+    else {
+        assert(writer->buffer == NULL);
+    }
+
+    start = _PyBytesWriter_AsString(writer);
+    assert(0 <= writer->size && writer->size <= writer->allocated);
+    /* the last byte must always be null */
+    assert(start[writer->allocated] == 0);
+
+    end = start + writer->allocated;
+    assert(str != NULL);
+    assert(start <= str && str <= end);
+#endif
+}
+
+/* Add *size* bytes to the buffer.
+   str is the current pointer inside the buffer.
+   Return the updated current pointer inside the buffer.
+   Raise an exception and return NULL on error. */
+static char*
+_PyBytesWriter_Prepare(_PyBytesWriter *writer, char *str, Py_ssize_t size)
+{
+    Py_ssize_t allocated, pos;
+
+    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(size >= 0);
+
+    if (size == 0) {
+        /* nothing to do */
+        return str;
+    }
+
+    if (writer->size > PY_SSIZE_T_MAX - size) {
+        PyErr_NoMemory();
+        _PyBytesWriter_Dealloc(writer);
+        return NULL;
+    }
+    writer->size += size;
+
+    allocated = writer->allocated;
+    if (writer->size <= allocated)
+        return str;
+
+    allocated = writer->size;
+    if (writer->overallocate
+        && allocated <= (PY_SSIZE_T_MAX - allocated / OVERALLOCATE_FACTOR)) {
+        /* overallocate to limit the number of realloc() */
+        allocated += allocated / OVERALLOCATE_FACTOR;
+    }
+
+    pos = _PyBytesWriter_GetPos(writer, str);
+    if (!writer->use_stack_buffer) {
+        /* Note: Don't use a bytearray object because the conversion from
+           byterray to bytes requires to copy all bytes. */
+        if (_PyBytes_Resize(&writer->buffer, allocated)) {
+            assert(writer->buffer == NULL);
+            return NULL;
+        }
+    }
+    else {
+        /* convert from stack buffer to bytes object buffer */
+        assert(writer->buffer == NULL);
+
+        writer->buffer = PyBytes_FromStringAndSize(NULL, allocated);
+        if (writer->buffer == NULL)
+            return NULL;
+
+        if (pos != 0) {
+            Py_MEMCPY(PyBytes_AS_STRING(writer->buffer),
+                      writer->stack_buffer,
+                      pos);
+        }
+
+#ifdef Py_DEBUG
+        memset(writer->stack_buffer, 0xDB, sizeof(writer->stack_buffer));
+#endif
+
+        writer->use_stack_buffer = 0;
+    }
+    writer->allocated = allocated;
+
+    str = _PyBytesWriter_AsString(writer) + pos;
+    _PyBytesWriter_CheckConsistency(writer, str);
+    return str;
+}
+
+/* Allocate the buffer to write size bytes.
+   Return the pointer to the beginning of buffer data.
+   Raise an exception and return NULL on error. */
+static char*
+_PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
+{
+    /* ensure that _PyBytesWriter_Alloc() is only called once */
+    assert(writer->size == 0 && writer->buffer == NULL);
+    assert(size >= 0);
+
+    writer->use_stack_buffer = 1;
+#if Py_DEBUG
+    /* the last byte is reserved, it must be '\0' */
+    writer->stack_buffer[sizeof(writer->stack_buffer) - 1] = 0;
+    writer->allocated = sizeof(writer->stack_buffer) - 1;
+#else
+    writer->allocated = sizeof(writer->stack_buffer);
+#endif
+    return _PyBytesWriter_Prepare(writer, writer->stack_buffer, size);
+}
+
+/* Get the buffer content and reset the writer.
+   Return a bytes object.
+   Raise an exception and return NULL on error. */
+static PyObject *
+_PyBytesWriter_Finish(_PyBytesWriter *writer, char *str)
+{
+    Py_ssize_t pos;
+    PyObject *result;
+
+    _PyBytesWriter_CheckConsistency(writer, str);
+
+    pos = _PyBytesWriter_GetPos(writer, str);
+    if (!writer->use_stack_buffer) {
+        if (pos != writer->allocated) {
+            if (_PyBytes_Resize(&writer->buffer, pos)) {
+                assert(writer->buffer == NULL);
+                return NULL;
+            }
+        }
+
+        result = writer->buffer;
+        writer->buffer = NULL;
+    }
+    else {
+        result = PyBytes_FromStringAndSize(writer->stack_buffer, pos);
+    }
+
+    return result;
 }
 
 #ifdef Py_DEBUG
@@ -6460,17 +6678,15 @@ unicode_encode_ucs1(PyObject *unicode,
     Py_ssize_t pos=0, size;
     int kind;
     void *data;
-    /* output object */
-    PyObject *res;
     /* pointer into the output */
     char *str;
-    /* current output position */
-    Py_ssize_t ressize;
     const char *encoding = (limit == 256) ? "latin-1" : "ascii";
     const char *reason = (limit == 256) ? "ordinal not in range(256)" : "ordinal not in range(128)";
     PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
     _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
+    /* output object */
+    _PyBytesWriter writer;
 
     if (PyUnicode_READY(unicode) == -1)
         return NULL;
@@ -6481,11 +6697,11 @@ unicode_encode_ucs1(PyObject *unicode,
        replacements, if we need more, we'll resize */
     if (size == 0)
         return PyBytes_FromStringAndSize(NULL, 0);
-    res = PyBytes_FromStringAndSize(NULL, size);
-    if (res == NULL)
+
+    _PyBytesWriter_Init(&writer);
+    str = _PyBytesWriter_Alloc(&writer, size);
+    if (str == NULL)
         return NULL;
-    str = PyBytes_AS_STRING(res);
-    ressize = size;
 
     while (pos < size) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, pos);
@@ -6499,14 +6715,17 @@ unicode_encode_ucs1(PyObject *unicode,
         else {
             Py_ssize_t requiredsize;
             PyObject *repunicode;
-            Py_ssize_t repsize, newpos, respos, i;
+            Py_ssize_t repsize, newpos, i;
             /* startpos for collecting unencodable chars */
             Py_ssize_t collstart = pos;
-            Py_ssize_t collend = pos;
+            Py_ssize_t collend = collstart + 1;
             /* find all unecodable characters */
 
             while ((collend < size) && (PyUnicode_READ(kind, data, collend) >= limit))
                 ++collend;
+
+            /* Only overallocate the buffer if it's not the last write */
+            writer.overallocate = (collend < size);
 
             /* cache callback name lookup (if not done yet, i.e. it's the first error) */
             if (error_handler == _Py_ERROR_UNKNOWN)
@@ -6526,8 +6745,7 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_XMLCHARREFREPLACE:
-                respos = str - PyBytes_AS_STRING(res);
-                requiredsize = respos;
+                requiredsize = 0;
                 /* determine replacement size */
                 for (i = collstart; i < collend; ++i) {
                     Py_ssize_t incr;
@@ -6553,17 +6771,11 @@ unicode_encode_ucs1(PyObject *unicode,
                         goto overflow;
                     requiredsize += incr;
                 }
-                if (requiredsize > PY_SSIZE_T_MAX - (size - collend))
-                    goto overflow;
-                requiredsize += size - collend;
-                if (requiredsize > ressize) {
-                    if (ressize <= PY_SSIZE_T_MAX/2 && requiredsize < 2*ressize)
-                        requiredsize = 2*ressize;
-                    if (_PyBytes_Resize(&res, requiredsize))
-                        goto onError;
-                    str = PyBytes_AS_STRING(res) + respos;
-                    ressize = requiredsize;
-                }
+
+                str = _PyBytesWriter_Prepare(&writer, str, requiredsize-1);
+                if (str == NULL)
+                    goto onError;
+
                 /* generate replacement */
                 for (i = collstart; i < collend; ++i) {
                     str += sprintf(str, "&#%d;", PyUnicode_READ(kind, data, i));
@@ -6598,20 +6810,9 @@ unicode_encode_ucs1(PyObject *unicode,
                 if (PyBytes_Check(repunicode)) {
                     /* Directly copy bytes result to output. */
                     repsize = PyBytes_Size(repunicode);
-                    if (repsize > 1) {
-                        /* Make room for all additional bytes. */
-                        respos = str - PyBytes_AS_STRING(res);
-                        if (ressize > PY_SSIZE_T_MAX - repsize - 1) {
-                            Py_DECREF(repunicode);
-                            goto overflow;
-                        }
-                        if (_PyBytes_Resize(&res, ressize+repsize-1)) {
-                            Py_DECREF(repunicode);
-                            goto onError;
-                        }
-                        str = PyBytes_AS_STRING(res) + respos;
-                        ressize += repsize-1;
-                    }
+                    str = _PyBytesWriter_Prepare(&writer, str, repsize-1);
+                    if (str == NULL)
+                        goto onError;
                     memcpy(str, PyBytes_AsString(repunicode), repsize);
                     str += repsize;
                     pos = newpos;
@@ -6622,24 +6823,11 @@ unicode_encode_ucs1(PyObject *unicode,
                 /* need more space? (at least enough for what we
                    have+the replacement+the rest of the string, so
                    we won't have to check space for encodable characters) */
-                respos = str - PyBytes_AS_STRING(res);
                 repsize = PyUnicode_GET_LENGTH(repunicode);
-                requiredsize = respos;
-                if (requiredsize > PY_SSIZE_T_MAX - repsize)
-                    goto overflow;
-                requiredsize += repsize;
-                if (requiredsize > PY_SSIZE_T_MAX - (size - collend))
-                    goto overflow;
-                requiredsize += size - collend;
-                if (requiredsize > ressize) {
-                    if (ressize <= PY_SSIZE_T_MAX/2 && requiredsize < 2*ressize)
-                        requiredsize = 2*ressize;
-                    if (_PyBytes_Resize(&res, requiredsize)) {
-                        Py_DECREF(repunicode);
+                if (repsize > 1) {
+                    str = _PyBytesWriter_Prepare(&writer, str, repsize-1);
+                    if (str == NULL)
                         goto onError;
-                    }
-                    str = PyBytes_AS_STRING(res) + respos;
-                    ressize = requiredsize;
                 }
 
                 /* check if there is anything unencodable in the replacement
@@ -6657,26 +6845,23 @@ unicode_encode_ucs1(PyObject *unicode,
                 pos = newpos;
                 Py_DECREF(repunicode);
             }
+
+            /* If overallocation was disabled, ensure that it was the last
+               write. Otherwise, we missed an optimization */
+            assert(writer.overallocate || pos == size);
         }
-    }
-    /* Resize if we allocated to much */
-    size = str - PyBytes_AS_STRING(res);
-    if (size < ressize) { /* If this falls res will be NULL */
-        assert(size >= 0);
-        if (_PyBytes_Resize(&res, size) < 0)
-            goto onError;
     }
 
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
-    return res;
+    return _PyBytesWriter_Finish(&writer, str);
 
   overflow:
     PyErr_SetString(PyExc_OverflowError,
                     "encoded result is too long for a Python string");
 
   onError:
-    Py_XDECREF(res);
+    _PyBytesWriter_Dealloc(&writer);
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
     return NULL;
@@ -13366,13 +13551,6 @@ int
 _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
                                  Py_ssize_t length, Py_UCS4 maxchar)
 {
-#ifdef MS_WINDOWS
-   /* On Windows, overallocate by 50% is the best factor */
-#  define OVERALLOCATE_FACTOR 2
-#else
-   /* On Linux, overallocate by 25% is the best factor */
-#  define OVERALLOCATE_FACTOR 4
-#endif
     Py_ssize_t newlen;
     PyObject *newbuffer;
 
