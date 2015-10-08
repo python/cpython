@@ -304,6 +304,10 @@ def _parse_args(args, **kwargs):
     if ns.pgo and (ns.verbose or ns.verbose2 or ns.verbose3):
         parser.error("--pgo/-v don't go together!")
 
+    if ns.nowindows:
+        print("Warning: the --nowindows (-n) option is deprecated. "
+              "Use -vv to display assertions in stderr.", file=sys.stderr)
+
     if ns.quiet:
         ns.verbose = 0
     if ns.timeout is not None:
