@@ -908,7 +908,7 @@ typedef struct {
     /* minimum character (default: 127, ASCII) */
     Py_UCS4 min_char;
 
-    /* If non-zero, overallocate the buffer by 25% (default: 0). */
+    /* If non-zero, overallocate the buffer (default: 0). */
     unsigned char overallocate;
 
     /* If readonly is 1, buffer is a shared string (cannot be modified)
