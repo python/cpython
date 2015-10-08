@@ -511,7 +511,13 @@ def main(tests=None, **kwargs):
         import gc
         gc.set_threshold(ns.threshold)
     if ns.nowindows:
+        print('The --nowindows (-n) option is deprecated. '
+              'Use -vv to display assertions in stderr.')
+    try:
         import msvcrt
+    except ImportError:
+        pass
+    else:
         msvcrt.SetErrorMode(msvcrt.SEM_FAILCRITICALERRORS|
                             msvcrt.SEM_NOALIGNMENTFAULTEXCEPT|
                             msvcrt.SEM_NOGPFAULTERRORBOX|
@@ -523,8 +529,11 @@ def main(tests=None, **kwargs):
             pass
         else:
             for m in [msvcrt.CRT_WARN, msvcrt.CRT_ERROR, msvcrt.CRT_ASSERT]:
-                msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
-                msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+                if ns.verbose and ns.verbose >= 2:
+                    msvcrt.CrtSetReportMode(m, msvcrt.CRTDBG_MODE_FILE)
+                    msvcrt.CrtSetReportFile(m, msvcrt.CRTDBG_FILE_STDERR)
+                else:
+                    msvcrt.CrtSetReportMode(m, 0)
     if ns.wait:
         input("Press any key to continue...")
 
