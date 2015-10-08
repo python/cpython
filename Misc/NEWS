@@ -297,6 +297,9 @@ Build
 Windows
 -------
 
+- Issue #25089: Adds logging to installer for case where launcher is not
+  selected on upgrade.
+
 - Issue #25165: Windows uninstallation should not remove launcher if other
   versions remain
 
