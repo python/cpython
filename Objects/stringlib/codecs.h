@@ -263,10 +263,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 #define MAX_SHORT_UNICHARS 300  /* largest size we'll do on the stack */
 
     Py_ssize_t i;                /* index into s of next input byte */
-    PyObject *result;            /* result string object */
     char *p;                     /* next free byte in output buffer */
-    Py_ssize_t nallocated;      /* number of result bytes allocated */
-    Py_ssize_t nneeded;            /* number of result bytes needed */
 #if STRINGLIB_SIZEOF_CHAR > 1
     PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
@@ -275,38 +272,24 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 #endif
 #if STRINGLIB_SIZEOF_CHAR == 1
     const Py_ssize_t max_char_size = 2;
-    char stackbuf[MAX_SHORT_UNICHARS * 2];
 #elif STRINGLIB_SIZEOF_CHAR == 2
     const Py_ssize_t max_char_size = 3;
-    char stackbuf[MAX_SHORT_UNICHARS * 3];
 #else /*  STRINGLIB_SIZEOF_CHAR == 4 */
     const Py_ssize_t max_char_size = 4;
-    char stackbuf[MAX_SHORT_UNICHARS * 4];
 #endif
+    _PyBytesWriter writer;
 
     assert(size >= 0);
+    _PyBytesWriter_Init(&writer);
 
-    if (size <= MAX_SHORT_UNICHARS) {
-        /* Write into the stack buffer; nallocated can't overflow.
-         * At the end, we'll allocate exactly as much heap space as it
-         * turns out we need.
-         */
-        nallocated = Py_SAFE_DOWNCAST(sizeof(stackbuf), size_t, int);
-        result = NULL;   /* will allocate after we're done */
-        p = stackbuf;
+    if (size > PY_SSIZE_T_MAX / max_char_size) {
+        /* integer overflow */
+        return PyErr_NoMemory();
     }
-    else {
-        if (size > PY_SSIZE_T_MAX / max_char_size) {
-            /* integer overflow */
-            return PyErr_NoMemory();
-        }
-        /* Overallocate on the heap, and give the excess back at the end. */
-        nallocated = size * max_char_size;
-        result = PyBytes_FromStringAndSize(NULL, nallocated);
-        if (result == NULL)
-            return NULL;
-        p = PyBytes_AS_STRING(result);
-    }
+
+    p = _PyBytesWriter_Alloc(&writer, size * max_char_size);
+    if (p == NULL)
+        return NULL;
 
     for (i = 0; i < size;) {
         Py_UCS4 ch = data[i++];
@@ -337,6 +320,9 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 
             while ((endpos < size) && Py_UNICODE_IS_SURROGATE(data[endpos]))
                 endpos++;
+
+            /* Only overallocate the buffer if it's not the last write */
+            writer.overallocate = (endpos < size);
 
             switch (error_handler)
             {
@@ -387,29 +373,10 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                     repsize = PyUnicode_GET_LENGTH(rep);
 
                 if (repsize > max_char_size) {
-                    Py_ssize_t offset;
-
-                    if (result == NULL)
-                        offset = p - stackbuf;
-                    else
-                        offset = p - PyBytes_AS_STRING(result);
-
-                    if (nallocated > PY_SSIZE_T_MAX - repsize + max_char_size) {
-                        /* integer overflow */
-                        PyErr_NoMemory();
+                    p = _PyBytesWriter_Prepare(&writer, p,
+                                               repsize - max_char_size);
+                    if (p == NULL)
                         goto error;
-                    }
-                    nallocated += repsize - max_char_size;
-                    if (result != NULL) {
-                        if (_PyBytes_Resize(&result, nallocated) < 0)
-                            goto error;
-                    } else {
-                        result = PyBytes_FromStringAndSize(NULL, nallocated);
-                        if (result == NULL)
-                            goto error;
-                        Py_MEMCPY(PyBytes_AS_STRING(result), stackbuf, offset);
-                    }
-                    p = PyBytes_AS_STRING(result) + offset;
                 }
 
                 if (PyBytes_Check(rep)) {
@@ -437,6 +404,10 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 
                 i = newpos;
             }
+
+            /* If overallocation was disabled, ensure that it was the last
+               write. Otherwise, we missed an optimization */
+            assert(writer.overallocate || i == size);
         }
         else
 #if STRINGLIB_SIZEOF_CHAR > 2
@@ -461,31 +432,18 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 #endif /* STRINGLIB_SIZEOF_CHAR > 1 */
     }
 
-    if (result == NULL) {
-        /* This was stack allocated. */
-        nneeded = p - stackbuf;
-        assert(nneeded <= nallocated);
-        result = PyBytes_FromStringAndSize(stackbuf, nneeded);
-    }
-    else {
-        /* Cut back to size actually needed. */
-        nneeded = p - PyBytes_AS_STRING(result);
-        assert(nneeded <= nallocated);
-        _PyBytes_Resize(&result, nneeded);
-    }
-
 #if STRINGLIB_SIZEOF_CHAR > 1
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
 #endif
-    return result;
+    return _PyBytesWriter_Finish(&writer, p);
 
 #if STRINGLIB_SIZEOF_CHAR > 1
  error:
     Py_XDECREF(rep);
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
-    Py_XDECREF(result);
+    _PyBytesWriter_Dealloc(&writer);
     return NULL;
 #endif
 
