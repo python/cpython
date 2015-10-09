@@ -300,6 +300,8 @@ class FormatTest(unittest.TestCase):
         testcommon(b"%c", 7, b"\x07")
         testcommon(b"%c", b"Z", b"Z")
         testcommon(b"%c", bytearray(b"Z"), b"Z")
+        testcommon(b"%5c", 65, b"    A")
+        testcommon(b"%-5c", 65, b"A    ")
         # %b will insert a series of bytes, either from a type that supports
         # the Py_buffer protocol, or something that has a __bytes__ method
         class FakeBytes(object):
