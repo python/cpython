@@ -3821,7 +3821,7 @@ _PyBytesWriter_Init(_PyBytesWriter *writer)
 {
     writer->buffer = NULL;
     writer->allocated = 0;
-    writer->size = 0;
+    writer->min_size = 0;
     writer->overallocate = 0;
     writer->use_small_buffer = 0;
 #ifdef Py_DEBUG
@@ -3874,7 +3874,7 @@ _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
     }
 
     start = _PyBytesWriter_AsString(writer);
-    assert(0 <= writer->size && writer->size <= writer->allocated);
+    assert(0 <= writer->min_size && writer->min_size <= writer->allocated);
     /* the last byte must always be null */
     assert(start[writer->allocated] == 0);
 
@@ -3897,18 +3897,18 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, char *str, Py_ssize_t size)
         return str;
     }
 
-    if (writer->size > PY_SSIZE_T_MAX - size) {
+    if (writer->min_size > PY_SSIZE_T_MAX - size) {
         PyErr_NoMemory();
         _PyBytesWriter_Dealloc(writer);
         return NULL;
     }
-    writer->size += size;
+    writer->min_size += size;
 
     allocated = writer->allocated;
-    if (writer->size <= allocated)
+    if (writer->min_size <= allocated)
         return str;
 
-    allocated = writer->size;
+    allocated = writer->min_size;
     if (writer->overallocate
         && allocated <= (PY_SSIZE_T_MAX - allocated / OVERALLOCATE_FACTOR)) {
         /* overallocate to limit the number of realloc() */
@@ -3957,7 +3957,7 @@ char*
 _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
 {
     /* ensure that _PyBytesWriter_Alloc() is only called once */
-    assert(writer->size == 0 && writer->buffer == NULL);
+    assert(writer->min_size == 0 && writer->buffer == NULL);
     assert(size >= 0);
 
     writer->use_small_buffer = 1;
