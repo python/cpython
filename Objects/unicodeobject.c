@@ -6599,6 +6599,7 @@ unicode_encode_ucs1(PyObject *unicode,
     PyObject *error_handler_obj = NULL;
     PyObject *exc = NULL;
     _Py_error_handler error_handler = _Py_ERROR_UNKNOWN;
+    PyObject *rep = NULL;
     /* output object */
     _PyBytesWriter writer;
 
@@ -6627,8 +6628,7 @@ unicode_encode_ucs1(PyObject *unicode,
             ++pos;
         }
         else {
-            PyObject *repunicode;
-            Py_ssize_t repsize, newpos, i;
+            Py_ssize_t newpos, i;
             /* startpos for collecting unencodable chars */
             Py_ssize_t collstart = pos;
             Py_ssize_t collend = collstart + 1;
@@ -6694,52 +6694,59 @@ unicode_encode_ucs1(PyObject *unicode,
                 /* fallback to general error handling */
 
             default:
-                repunicode = unicode_encode_call_errorhandler(errors, &error_handler_obj,
-                                                              encoding, reason, unicode, &exc,
-                                                              collstart, collend, &newpos);
-                if (repunicode == NULL || (PyUnicode_Check(repunicode) &&
-                                           PyUnicode_READY(repunicode) == -1))
+                rep = unicode_encode_call_errorhandler(errors, &error_handler_obj,
+                                                       encoding, reason, unicode, &exc,
+                                                       collstart, collend, &newpos);
+                if (rep == NULL)
                     goto onError;
 
                 /* substract preallocated bytes */
                 writer.min_size -= 1;
 
-                if (PyBytes_Check(repunicode)) {
+                if (PyBytes_Check(rep)) {
                     /* Directly copy bytes result to output. */
                     str = _PyBytesWriter_WriteBytes(&writer, str,
-                                                    PyBytes_AS_STRING(repunicode),
-                                                    PyBytes_GET_SIZE(repunicode));
+                                                    PyBytes_AS_STRING(rep),
+                                                    PyBytes_GET_SIZE(rep));
                     if (str == NULL)
                         goto onError;
-
-                    pos = newpos;
-                    Py_DECREF(repunicode);
-                    break;
                 }
+                else {
+                    assert(PyUnicode_Check(rep));
 
-                /* need more space? (at least enough for what we
-                   have+the replacement+the rest of the string, so
-                   we won't have to check space for encodable characters) */
-                repsize = PyUnicode_GET_LENGTH(repunicode);
-
-                str = _PyBytesWriter_Prepare(&writer, str, repsize);
-                if (str == NULL)
-                    goto onError;
-
-                /* check if there is anything unencodable in the replacement
-                   and copy it to the output */
-                for (i = 0; repsize-->0; ++i, ++str) {
-                    ch = PyUnicode_READ_CHAR(repunicode, i);
-                    if (ch >= limit) {
-                        raise_encode_exception(&exc, encoding, unicode,
-                                               pos, pos+1, reason);
-                        Py_DECREF(repunicode);
+                    if (PyUnicode_READY(rep) < 0)
                         goto onError;
+
+                    if (PyUnicode_IS_ASCII(rep)) {
+                        /* Fast path: all characters are smaller than limit */
+                        assert(limit >= 128);
+                        assert(PyUnicode_KIND(rep) == PyUnicode_1BYTE_KIND);
+                        str = _PyBytesWriter_WriteBytes(&writer, str,
+                                                        PyUnicode_DATA(rep),
+                                                        PyUnicode_GET_LENGTH(rep));
                     }
-                    *str = (char)ch;
+                    else {
+                        Py_ssize_t repsize = PyUnicode_GET_LENGTH(rep);
+
+                        str = _PyBytesWriter_Prepare(&writer, str, repsize);
+                        if (str == NULL)
+                            goto onError;
+
+                        /* check if there is anything unencodable in the
+                           replacement and copy it to the output */
+                        for (i = 0; repsize-->0; ++i, ++str) {
+                            ch = PyUnicode_READ_CHAR(rep, i);
+                            if (ch >= limit) {
+                                raise_encode_exception(&exc, encoding, unicode,
+                                                       pos, pos+1, reason);
+                                goto onError;
+                            }
+                            *str = (char)ch;
+                        }
+                    }
                 }
                 pos = newpos;
-                Py_DECREF(repunicode);
+                Py_CLEAR(rep);
             }
 
             /* If overallocation was disabled, ensure that it was the last
@@ -6753,6 +6760,7 @@ unicode_encode_ucs1(PyObject *unicode,
     return _PyBytesWriter_Finish(&writer, str);
 
   onError:
+    Py_XDECREF(rep);
     _PyBytesWriter_Dealloc(&writer);
     Py_XDECREF(error_handler_obj);
     Py_XDECREF(exc);
