@@ -411,8 +411,7 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 
 static char*
 formatfloat(PyObject *v, int flags, int prec, int type,
-            PyObject **p_result, _PyBytesWriter *writer, char *str,
-            Py_ssize_t prealloc)
+            PyObject **p_result, _PyBytesWriter *writer, char *str)
 {
     char *p;
     PyObject *result;
@@ -437,11 +436,9 @@ formatfloat(PyObject *v, int flags, int prec, int type,
 
     len = strlen(p);
     if (writer != NULL) {
-        if ((Py_ssize_t)len > prealloc) {
-            str = _PyBytesWriter_Prepare(writer, str, len - prealloc);
-            if (str == NULL)
-                return NULL;
-        }
+        str = _PyBytesWriter_Prepare(writer, str, len);
+        if (str == NULL)
+            return NULL;
         Py_MEMCPY(str, p, len);
         str += len;
         return str;
@@ -865,13 +862,14 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                     && !(flags & (F_SIGN | F_BLANK)))
                 {
                     /* Fast path */
-                    res = formatfloat(v, flags, prec, c, NULL, &writer, res, 1);
+                    writer.min_size -= 2; /* size preallocated by "%f" */
+                    res = formatfloat(v, flags, prec, c, NULL, &writer, res);
                     if (res == NULL)
                         goto error;
                     continue;
                 }
 
-                if (!formatfloat(v, flags, prec, c, &temp, NULL, res, 1))
+                if (!formatfloat(v, flags, prec, c, &temp, NULL, res))
                     goto error;
                 pbuf = PyBytes_AS_STRING(temp);
                 len = PyBytes_GET_SIZE(temp);
