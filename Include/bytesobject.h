@@ -141,8 +141,8 @@ typedef struct {
     int overallocate;
 
     /* Stack buffer */
-    int use_stack_buffer;
-    char stack_buffer[512];
+    int use_small_buffer;
+    char small_buffer[512];
 } _PyBytesWriter;
 
 /* Initialize a bytes writer
