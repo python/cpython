@@ -388,22 +388,22 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 /* substract preallocated bytes */
                 writer.min_size -= max_char_size;
 
-                if (PyBytes_Check(rep))
-                    repsize = PyBytes_GET_SIZE(rep);
-                else
-                    repsize = PyUnicode_GET_LENGTH(rep);
-
-                p = _PyBytesWriter_Prepare(&writer, p, repsize);
-                if (p == NULL)
-                    goto error;
-
                 if (PyBytes_Check(rep)) {
-                    memcpy(p, PyBytes_AS_STRING(rep), repsize);
-                    p += repsize;
+                    p = _PyBytesWriter_WriteBytes(&writer, p,
+                                                  PyBytes_AS_STRING(rep),
+                                                  PyBytes_GET_SIZE(rep));
+                    if (p == NULL)
+                        goto error;
                 }
                 else {
                     /* rep is unicode */
                     if (PyUnicode_READY(rep) < 0)
+                        goto error;
+
+                    repsize = PyUnicode_GET_LENGTH(rep);
+
+                    p = _PyBytesWriter_Prepare(&writer, p, repsize);
+                    if (p == NULL)
                         goto error;
 
                     if (!PyUnicode_IS_ASCII(rep)) {

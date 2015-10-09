@@ -3995,3 +3995,17 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, char *str)
 
     return result;
 }
+
+char*
+_PyBytesWriter_WriteBytes(_PyBytesWriter *writer, char *str,
+                          char *bytes, Py_ssize_t size)
+{
+    str = _PyBytesWriter_Prepare(writer, str, size);
+    if (str == NULL)
+        return NULL;
+
+    Py_MEMCPY(str, bytes, size);
+    str += size;
+
+    return str;
+}
