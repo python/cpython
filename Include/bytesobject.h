@@ -134,8 +134,9 @@ typedef struct {
     /* Number of allocated size */
     Py_ssize_t allocated;
 
-    /* Current size of the buffer (can be smaller than the allocated size) */
-    Py_ssize_t size;
+    /* Minimum number of allocated bytes,
+       incremented by _PyBytesWriter_Prepare() */
+    Py_ssize_t min_size;
 
     /* If non-zero, overallocate the buffer (default: 0). */
     int overallocate;
