@@ -2,6 +2,7 @@ import sys
 import compileall
 import importlib.util
 import os
+import pathlib
 import py_compile
 import shutil
 import struct
@@ -168,6 +169,33 @@ class EncodingTest(unittest.TestCase):
 class CommandLineTests(unittest.TestCase):
     """Test compileall's CLI."""
 
+    @classmethod
+    def setUpClass(cls):
+        for path in filter(os.path.isdir, sys.path):
+            directory_created = False
+            directory = pathlib.Path(path) / '__pycache__'
+            path = directory / 'test.try'
+            try:
+                if not directory.is_dir():
+                    directory.mkdir()
+                    directory_created = True
+                with path.open('w') as file:
+                    file.write('# for test_compileall')
+            except OSError:
+                sys_path_writable = False
+                break
+            finally:
+                support.unlink(str(path))
+                if directory_created:
+                    directory.rmdir()
+        else:
+            sys_path_writable = True
+        cls._sys_path_writable = sys_path_writable
+
+    def _skip_if_sys_path_not_writable(self):
+        if not self._sys_path_writable:
+            raise unittest.SkipTest('not all entries on sys.path are writable')
+
     def _get_run_args(self, args):
         interp_args = ['-S']
         if sys.flags.optimize:
@@ -194,8 +222,8 @@ class CommandLineTests(unittest.TestCase):
         self.assertFalse(os.path.exists(path))
 
     def setUp(self):
-        self.addCleanup(self._cleanup)
         self.directory = tempfile.mkdtemp()
+        self.addCleanup(support.rmtree, self.directory)
         self.pkgdir = os.path.join(self.directory, 'foo')
         os.mkdir(self.pkgdir)
         self.pkgdir_cachedir = os.path.join(self.pkgdir, '__pycache__')
@@ -203,11 +231,9 @@ class CommandLineTests(unittest.TestCase):
         self.initfn = script_helper.make_script(self.pkgdir, '__init__', '')
         self.barfn = script_helper.make_script(self.pkgdir, 'bar', '')
 
-    def _cleanup(self):
-        support.rmtree(self.directory)
-
     def test_no_args_compiles_path(self):
         # Note that -l is implied for the no args case.
+        self._skip_if_sys_path_not_writable()
         bazfn = script_helper.make_script(self.directory, 'baz', '')
         self.assertRunOK(PYTHONPATH=self.directory)
         self.assertCompiled(bazfn)
@@ -215,6 +241,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertNotCompiled(self.barfn)
 
     def test_no_args_respects_force_flag(self):
+        self._skip_if_sys_path_not_writable()
         bazfn = script_helper.make_script(self.directory, 'baz', '')
         self.assertRunOK(PYTHONPATH=self.directory)
         pycpath = importlib.util.cache_from_source(bazfn)
@@ -231,6 +258,7 @@ class CommandLineTests(unittest.TestCase):
         self.assertNotEqual(mtime, mtime2)
 
     def test_no_args_respects_quiet_flag(self):
+        self._skip_if_sys_path_not_writable()
         script_helper.make_script(self.directory, 'baz', '')
         noisy = self.assertRunOK(PYTHONPATH=self.directory)
         self.assertIn(b'Listing ', noisy)
