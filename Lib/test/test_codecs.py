@@ -3155,7 +3155,8 @@ class ASCIITest(unittest.TestCase):
             ('[\x80\xff\u20ac]', 'ignore', b'[]'),
             ('[\x80\xff\u20ac]', 'replace', b'[???]'),
             ('[\x80\xff\u20ac]', 'xmlcharrefreplace', b'[&#128;&#255;&#8364;]'),
-            ('[\x80\xff\u20ac]', 'backslashreplace', b'[\\x80\\xff\\u20ac]'),
+            ('[\x80\xff\u20ac\U000abcde]', 'backslashreplace',
+             b'[\\x80\\xff\\u20ac\\U000abcde]'),
             ('[\udc80\udcff]', 'surrogateescape', b'[\x80\xff]'),
         ):
             with self.subTest(data=data, error_handler=error_handler,
@@ -3197,7 +3198,8 @@ class Latin1Test(unittest.TestCase):
         for data, error_handler, expected in (
             ('[\u20ac\udc80]', 'ignore', b'[]'),
             ('[\u20ac\udc80]', 'replace', b'[??]'),
-            ('[\u20ac\udc80]', 'backslashreplace', b'[\\u20ac\\udc80]'),
+            ('[\u20ac\U000abcde]', 'backslashreplace',
+             b'[\\u20ac\\U000abcde]'),
             ('[\u20ac\udc80]', 'xmlcharrefreplace', b'[&#8364;&#56448;]'),
             ('[\udc80\udcff]', 'surrogateescape', b'[\x80\xff]'),
         ):
