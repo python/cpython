@@ -1168,3 +1168,139 @@ The above approach can, of course, be adapted to other TTS systems and even
 other systems altogether which can process messages via external programs run
 from a command line.
 
+.. _buffered-logging:
+
+Buffering logging messages and outputting them conditionally
+------------------------------------------------------------
+
+There might be situations where you want to log messages in a temporary area
+and only output them if a certain condition occurs. For example, you may want to
+start logging debug events in a function, and if the function completes without
+errors, you don't want to clutter the log with the collected debug information,
+but if there is an error, you want all the debug information to be output as well
+as the error.
+
+Here is an example which shows how you could do this using a decorator for your
+functions where you want logging to behave this way. It makes use of the
+:class:`logging.handlers.MemoryHandler`, which allows buffering of logged events
+until some condition occurs, at which point the buffered events are ``flushed``
+- passed to another handler (the ``target`` handler) for processing. By default,
+the ``MemoryHandler`` flushed when its buffer gets filled up or an event whose
+level is greater than or equal to a specified threshold is seen. You can use this
+recipe with a more specialised subclass of ``MemoryHandler`` if you want custom
+flushing behavior.
+
+The example script has a simple function, ``foo``, which just cycles through
+all the logging levels, writing to ``sys.stderr`` to say what level it's about
+to log at, and then actually logging a message that that level. You can pass a
+parameter to ``foo`` which, if true, will log at ERROR and CRITICAL levels -
+otherwise, it only logs at DEBUG, INFO and WARNING levels.
+
+The script just arranges to decorate ``foo`` with a decorator which will do the
+conditional logging that's required. The decorator takes a logger as a parameter
+and attaches a memory handler for the duration of the call to the decorated
+function. The decorator can be additionally parameterised using a target handler,
+a level at which flushing should occur, and a capacity for the buffer. These
+default to a :class:`~logging.StreamHandler` which writes to ``sys.stderr``,
+``logging.ERROR`` and ``100`` respectively.
+
+Here's the script::
+
+    import logging
+    from logging.handlers import MemoryHandler
+    import sys
+
+    logger = logging.getLogger(__name__)
+    logger.addHandler(logging.NullHandler())
+
+    def log_if_errors(logger, target_handler=None, flush_level=None, capacity=None):
+        if target_handler is None:
+            target_handler = logging.StreamHandler()
+        if flush_level is None:
+            flush_level = logging.ERROR
+        if capacity is None:
+            capacity = 100
+        handler = MemoryHandler(capacity, flushLevel=flush_level, target=target_handler)
+
+        def decorator(fn):
+            def wrapper(*args, **kwargs):
+                logger.addHandler(handler)
+                try:
+                    return fn(*args, **kwargs)
+                except Exception:
+                    logger.exception('call failed')
+                    raise
+                finally:
+                    super(MemoryHandler, handler).flush()
+                    logger.removeHandler(handler)
+            return wrapper
+
+        return decorator
+
+    def write_line(s):
+        sys.stderr.write('%s\n' % s)
+
+    def foo(fail=False):
+        write_line('about to log at DEBUG ...')
+        logger.debug('Actually logged at DEBUG')
+        write_line('about to log at INFO ...')
+        logger.info('Actually logged at INFO')
+        write_line('about to log at WARNING ...')
+        logger.warning('Actually logged at WARNING')
+        if fail:
+            write_line('about to log at ERROR ...')
+            logger.error('Actually logged at ERROR')
+            write_line('about to log at CRITICAL ...')
+            logger.critical('Actually logged at CRITICAL')
+        return fail
+
+    decorated_foo = log_if_errors(logger)(foo)
+
+    if __name__ == '__main__':
+        logger.setLevel(logging.DEBUG)
+        write_line('Calling undecorated foo with False')
+        assert not foo(False)
+        write_line('Calling undecorated foo with True')
+        assert foo(True)
+        write_line('Calling decorated foo with False')
+        assert not decorated_foo(False)
+        write_line('Calling decorated foo with True')
+        assert decorated_foo(True)
+
+When this script is run, the following output should be observed::
+
+    Calling undecorated foo with False
+    about to log at DEBUG ...
+    about to log at INFO ...
+    about to log at WARNING ...
+    Calling undecorated foo with True
+    about to log at DEBUG ...
+    about to log at INFO ...
+    about to log at WARNING ...
+    about to log at ERROR ...
+    about to log at CRITICAL ...
+    Calling decorated foo with False
+    about to log at DEBUG ...
+    about to log at INFO ...
+    about to log at WARNING ...
+    Calling decorated foo with True
+    about to log at DEBUG ...
+    about to log at INFO ...
+    about to log at WARNING ...
+    about to log at ERROR ...
+    Actually logged at DEBUG
+    Actually logged at INFO
+    Actually logged at WARNING
+    Actually logged at ERROR
+    about to log at CRITICAL ...
+    Actually logged at CRITICAL
+
+As you can see, actual logging output only occurs when an event is logged whose
+severity is ERROR or greater, but in that case, any previous events at lower
+severities are also logged.
+
+You can of course use the conventional means of decoration::
+
+    @log_if_errors(logger)
+    def foo(fail=False):
+        ...
