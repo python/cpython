@@ -6706,14 +6706,12 @@ unicode_encode_ucs1(PyObject *unicode,
 
                 if (PyBytes_Check(repunicode)) {
                     /* Directly copy bytes result to output. */
-                    repsize = PyBytes_Size(repunicode);
-
-                    str = _PyBytesWriter_Prepare(&writer, str, repsize);
+                    str = _PyBytesWriter_WriteBytes(&writer, str,
+                                                    PyBytes_AS_STRING(repunicode),
+                                                    PyBytes_GET_SIZE(repunicode));
                     if (str == NULL)
                         goto onError;
 
-                    memcpy(str, PyBytes_AsString(repunicode), repsize);
-                    str += repsize;
                     pos = newpos;
                     Py_DECREF(repunicode);
                     break;
