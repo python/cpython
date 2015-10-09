@@ -313,6 +313,12 @@ class SMTPDChannelTest(unittest.TestCase):
             DummyDispatcherBroken, BrokenDummyServer,
             (support.HOST, 0), ('b', 0), decode_data=True)
 
+    def test_decode_data_and_enable_SMTPUTF8_raises(self):
+        self.assertRaises(
+            ValueError, smtpd.SMTPChannel,
+            self.server, self.channel.conn, self.channel.addr,
+            enable_SMTPUTF8=True, decode_data=True)
+
     def test_server_accept(self):
         self.server.handle_accept()
 
