@@ -590,7 +590,7 @@ backslashreplace(_PyBytesWriter *writer, Py_ssize_t prealloc_per_char,
             incr = 2+4;
         else {
             assert(ch <= MAX_UNICODE);
-            incr = 2+6;
+            incr = 2+8;
         }
         if (size > PY_SSIZE_T_MAX - incr) {
             PyErr_SetString(PyExc_OverflowError,
