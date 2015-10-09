@@ -409,12 +409,15 @@ getnextarg(PyObject *args, Py_ssize_t arglen, Py_ssize_t *p_argidx)
 
 /* Returns a new reference to a PyBytes object, or NULL on failure. */
 
-static PyObject *
-formatfloat(PyObject *v, int flags, int prec, int type)
+static char*
+formatfloat(PyObject *v, int flags, int prec, int type,
+            PyObject **p_result, _PyBytesWriter *writer, char *str,
+            Py_ssize_t prealloc)
 {
     char *p;
     PyObject *result;
     double x;
+    size_t len;
 
     x = PyFloat_AsDouble(v);
     if (x == -1.0 && PyErr_Occurred()) {
@@ -431,9 +434,23 @@ formatfloat(PyObject *v, int flags, int prec, int type)
 
     if (p == NULL)
         return NULL;
-    result = PyBytes_FromStringAndSize(p, strlen(p));
+
+    len = strlen(p);
+    if (writer != NULL) {
+        if ((Py_ssize_t)len > prealloc) {
+            str = _PyBytesWriter_Prepare(writer, str, len - prealloc);
+            if (str == NULL)
+                return NULL;
+        }
+        Py_MEMCPY(str, p, len);
+        str += len;
+        return str;
+    }
+
+    result = PyBytes_FromStringAndSize(p, len);
     PyMem_Free(p);
-    return result;
+    *p_result = result;
+    return str;
 }
 
 static PyObject *
@@ -557,36 +574,32 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
     return NULL;
 }
 
-/* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...)
-
-   FORMATBUFLEN is the length of the buffer in which the ints &
-   chars are formatted. XXX This is a magic number. Each formatting
-   routine does bounds checking to ensure no overflow, but a better
-   solution may be to malloc a buffer of appropriate size for each
-   format. For now, the current solution is sufficient.
-*/
-#define FORMATBUFLEN (size_t)120
+/* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...) */
 
 PyObject *
 _PyBytes_Format(PyObject *format, PyObject *args)
 {
     char *fmt, *res;
     Py_ssize_t arglen, argidx;
-    Py_ssize_t reslen, rescnt, fmtcnt;
+    Py_ssize_t fmtcnt;
     int args_owned = 0;
-    PyObject *result;
     PyObject *dict = NULL;
+    _PyBytesWriter writer;
+
     if (format == NULL || !PyBytes_Check(format) || args == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
     fmt = PyBytes_AS_STRING(format);
     fmtcnt = PyBytes_GET_SIZE(format);
-    reslen = rescnt = fmtcnt + 100;
-    result = PyBytes_FromStringAndSize((char *)NULL, reslen);
-    if (result == NULL)
+
+    _PyBytesWriter_Init(&writer);
+
+    res = _PyBytesWriter_Alloc(&writer, fmtcnt);
+    if (res == NULL)
         return NULL;
-    res = PyBytes_AsString(result);
+    writer.overallocate = 1;
+
     if (PyTuple_Check(args)) {
         arglen = PyTuple_GET_SIZE(args);
         argidx = 0;
@@ -600,18 +613,25 @@ _PyBytes_Format(PyObject *format, PyObject *args)
         !PyByteArray_Check(args)) {
             dict = args;
     }
+
     while (--fmtcnt >= 0) {
         if (*fmt != '%') {
-            if (--rescnt < 0) {
-                rescnt = fmtcnt + 100;
-                reslen += rescnt;
-                if (_PyBytes_Resize(&result, reslen))
-                    return NULL;
-                res = PyBytes_AS_STRING(result)
-                    + reslen - rescnt;
-                --rescnt;
+            Py_ssize_t len;
+            char *pos;
+
+            pos = strchr(fmt + 1, '%');
+            if (pos != NULL)
+                len = pos - fmt;
+            else {
+                len = PyBytes_GET_SIZE(format);
+                len -= (fmt - PyBytes_AS_STRING(format));
             }
-            *res++ = *fmt++;
+            assert(len != 0);
+
+            Py_MEMCPY(res, fmt, len);
+            res += len;
+            fmt += len;
+            fmtcnt -= (len - 1);
         }
         else {
             /* Got a format specifier */
@@ -626,6 +646,10 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             int sign;
             Py_ssize_t len = 0;
             char onechar; /* For byte_converter() */
+            Py_ssize_t alloc;
+#ifdef Py_DEBUG
+            char *before;
+#endif
 
             fmt++;
             if (*fmt == '(') {
@@ -673,6 +697,8 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 arglen = -1;
                 argidx = -2;
             }
+
+            /* Parse flags. Example: "%+i" => flags=F_SIGN. */
             while (--fmtcnt >= 0) {
                 switch (c = *fmt++) {
                 case '-': flags |= F_LJUST; continue;
@@ -683,6 +709,8 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 }
                 break;
             }
+
+            /* Parse width. Example: "%10s" => width=10 */
             if (c == '*') {
                 v = getnextarg(args, arglen, &argidx);
                 if (v == NULL)
@@ -717,6 +745,8 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                     width = width*10 + (c - '0');
                 }
             }
+
+            /* Parse precision. Example: "%.3f" => prec=3 */
             if (c == '.') {
                 prec = 0;
                 if (--fmtcnt >= 0)
@@ -771,6 +801,12 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 if (v == NULL)
                     goto error;
             }
+
+            if (fmtcnt < 0) {
+                /* last writer: disable writer overallocation */
+                writer.overallocate = 0;
+            }
+
             sign = 0;
             fill = ' ';
             switch (c) {
@@ -778,6 +814,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 pbuf = "%";
                 len = 1;
                 break;
+
             case 'r':
                 // %r is only for 2/3 code; 3 only code should use %a
             case 'a':
@@ -790,6 +827,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 if (prec >= 0 && len > prec)
                     len = prec;
                 break;
+
             case 's':
                 // %s is only for 2/3 code; 3 only code should use %b
             case 'b':
@@ -799,6 +837,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 if (prec >= 0 && len > prec)
                     len = prec;
                 break;
+
             case 'i':
             case 'd':
             case 'u':
@@ -815,14 +854,24 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 if (flags & F_ZERO)
                     fill = '0';
                 break;
+
             case 'e':
             case 'E':
             case 'f':
             case 'F':
             case 'g':
             case 'G':
-                temp = formatfloat(v, flags, prec, c);
-                if (temp == NULL)
+                if (width == -1 && prec == -1
+                    && !(flags & (F_SIGN | F_BLANK)))
+                {
+                    /* Fast path */
+                    res = formatfloat(v, flags, prec, c, NULL, &writer, res, 1);
+                    if (res == NULL)
+                        goto error;
+                    continue;
+                }
+
+                if (!formatfloat(v, flags, prec, c, &temp, NULL, res, 1))
                     goto error;
                 pbuf = PyBytes_AS_STRING(temp);
                 len = PyBytes_GET_SIZE(temp);
@@ -830,12 +879,14 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 if (flags & F_ZERO)
                     fill = '0';
                 break;
+
             case 'c':
                 pbuf = &onechar;
                 len = byte_converter(v, &onechar);
                 if (!len)
                     goto error;
                 break;
+
             default:
                 PyErr_Format(PyExc_ValueError,
                   "unsupported format character '%c' (0x%x) "
@@ -845,6 +896,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                                PyBytes_AsString(format)));
                 goto error;
             }
+
             if (sign) {
                 if (*pbuf == '-' || *pbuf == '+') {
                     sign = *pbuf++;
@@ -859,29 +911,30 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             }
             if (width < len)
                 width = len;
-            if (rescnt - (sign != 0) < width) {
-                reslen -= rescnt;
-                rescnt = width + fmtcnt + 100;
-                reslen += rescnt;
-                if (reslen < 0) {
-                    Py_DECREF(result);
-                    Py_XDECREF(temp);
-                    return PyErr_NoMemory();
-                }
-                if (_PyBytes_Resize(&result, reslen)) {
-                    Py_XDECREF(temp);
-                    return NULL;
-                }
-                res = PyBytes_AS_STRING(result)
-                    + reslen - rescnt;
+
+            alloc = width;
+            if (sign != 0 && len == width)
+                alloc++;
+            if (alloc > 1) {
+                res = _PyBytesWriter_Prepare(&writer, res, alloc - 1);
+                if (res == NULL)
+                    goto error;
             }
+#ifdef Py_DEBUG
+            before = res;
+#endif
+
+            /* Write the sign if needed */
             if (sign) {
                 if (fill != ' ')
                     *res++ = sign;
-                rescnt--;
                 if (width > len)
                     width--;
             }
+
+            /* Write the numeric prefix for "x", "X" and "o" formats
+               if the alternate form is used.
+               For example, write "0x" for the "%#x" format. */
             if ((flags & F_ALT) && (c == 'x' || c == 'X')) {
                 assert(pbuf[0] == '0');
                 assert(pbuf[1] == c);
@@ -889,18 +942,21 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                     *res++ = *pbuf++;
                     *res++ = *pbuf++;
                 }
-                rescnt -= 2;
                 width -= 2;
                 if (width < 0)
                     width = 0;
                 len -= 2;
             }
+
+            /* Pad left with the fill character if needed */
             if (width > len && !(flags & F_LJUST)) {
-                do {
-                    --rescnt;
-                    *res++ = fill;
-                } while (--width > len);
+                memset(res, fill, width - len);
+                res += (width - len);
+                width = len;
             }
+
+            /* If padding with spaces: write sign if needed and/or numeric
+               prefix if the alternate form is used */
             if (fill == ' ') {
                 if (sign)
                     *res++ = sign;
@@ -912,13 +968,17 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                     *res++ = *pbuf++;
                 }
             }
+
+            /* Copy bytes */
             Py_MEMCPY(res, pbuf, len);
             res += len;
-            rescnt -= len;
-            while (--width >= len) {
-                --rescnt;
-                *res++ = ' ';
+
+            /* Pad right with the fill character if needed */
+            if (width > len) {
+                memset(res, ' ', width - len);
+                res += (width - len);
             }
+
             if (dict && (argidx < arglen) && c != '%') {
                 PyErr_SetString(PyExc_TypeError,
                            "not all arguments converted during bytes formatting");
@@ -926,22 +986,31 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 goto error;
             }
             Py_XDECREF(temp);
+
+#ifdef Py_DEBUG
+            /* check that we computed the exact size for this write */
+            assert((res - before) == alloc);
+#endif
         } /* '%' */
+
+        /* If overallocation was disabled, ensure that it was the last
+           write. Otherwise, we missed an optimization */
+        assert(writer.overallocate || fmtcnt < 0);
     } /* until end */
+
     if (argidx < arglen && !dict) {
         PyErr_SetString(PyExc_TypeError,
                         "not all arguments converted during bytes formatting");
         goto error;
     }
+
     if (args_owned) {
         Py_DECREF(args);
     }
-    if (_PyBytes_Resize(&result, reslen - rescnt))
-        return NULL;
-    return result;
+    return _PyBytesWriter_Finish(&writer, res);
 
  error:
-    Py_DECREF(result);
+    _PyBytesWriter_Dealloc(&writer);
     if (args_owned) {
         Py_DECREF(args);
     }

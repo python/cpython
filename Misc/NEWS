@@ -10,6 +10,8 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25349: Optimize bytes % args using the new private _PyBytesWriter API.
+
 - Issue #24806: Prevent builtin types that are not allowed to be subclassed from
   being subclassed through multiple inheritance.
 
