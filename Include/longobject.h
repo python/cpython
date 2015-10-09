@@ -182,6 +182,13 @@ PyAPI_FUNC(int) _PyLong_FormatWriter(
     int base,
     int alternate);
 
+PyAPI_FUNC(char*) _PyLong_FormatBytesWriter(
+    _PyBytesWriter *writer,
+    char *str,
+    PyObject *obj,
+    int base,
+    int alternate);
+
 /* Format the object based on the format_spec, as defined in PEP 3101
    (Advanced String Formatting). */
 PyAPI_FUNC(int) _PyLong_FormatAdvancedWriter(
