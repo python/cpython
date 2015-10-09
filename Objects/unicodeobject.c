@@ -565,11 +565,10 @@ unicode_result_unchanged(PyObject *unicode)
 /* Implementation of the "backslashreplace" error handler for 8-bit encodings:
    ASCII, Latin1, UTF-8, etc. */
 static char*
-backslashreplace(_PyBytesWriter *writer, Py_ssize_t prealloc_per_char,
-                  char *str,
+backslashreplace(_PyBytesWriter *writer, char *str,
                  PyObject *unicode, Py_ssize_t collstart, Py_ssize_t collend)
 {
-    Py_ssize_t size, i, prealloc;
+    Py_ssize_t size, i;
     Py_UCS4 ch;
     enum PyUnicode_Kind kind;
     void *data;
@@ -600,12 +599,9 @@ backslashreplace(_PyBytesWriter *writer, Py_ssize_t prealloc_per_char,
         size += incr;
     }
 
-    prealloc = prealloc_per_char * (collend - collstart);
-    if (size > prealloc) {
-        str = _PyBytesWriter_Prepare(writer, str, size - prealloc);
-        if (str == NULL)
-            return NULL;
-    }
+    str = _PyBytesWriter_Prepare(writer, str, size);
+    if (str == NULL)
+        return NULL;
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
@@ -636,11 +632,10 @@ backslashreplace(_PyBytesWriter *writer, Py_ssize_t prealloc_per_char,
 /* Implementation of the "xmlcharrefreplace" error handler for 8-bit encodings:
    ASCII, Latin1, UTF-8, etc. */
 static char*
-xmlcharrefreplace(_PyBytesWriter *writer, Py_ssize_t prealloc_per_char,
-                  char *str,
+xmlcharrefreplace(_PyBytesWriter *writer, char *str,
                   PyObject *unicode, Py_ssize_t collstart, Py_ssize_t collend)
 {
-    Py_ssize_t size, i, prealloc;
+    Py_ssize_t size, i;
     Py_UCS4 ch;
     enum PyUnicode_Kind kind;
     void *data;
@@ -679,12 +674,9 @@ xmlcharrefreplace(_PyBytesWriter *writer, Py_ssize_t prealloc_per_char,
         size += incr;
     }
 
-    prealloc = prealloc_per_char * (collend - collstart);
-    if (size > prealloc) {
-        str = _PyBytesWriter_Prepare(writer, str, size - prealloc);
-        if (str == NULL)
-            return NULL;
-    }
+    str = _PyBytesWriter_Prepare(writer, str, size);
+    if (str == NULL)
+        return NULL;
 
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
@@ -6666,7 +6658,9 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_BACKSLASHREPLACE:
-                str = backslashreplace(&writer, 1, str,
+                /* substract preallocated bytes */
+                writer.min_size -= (collend - collstart);
+                str = backslashreplace(&writer, str,
                                        unicode, collstart, collend);
                 if (str == NULL)
                     goto onError;
@@ -6674,7 +6668,9 @@ unicode_encode_ucs1(PyObject *unicode,
                 break;
 
             case _Py_ERROR_XMLCHARREFREPLACE:
-                str = xmlcharrefreplace(&writer, 1, str,
+                /* substract preallocated bytes */
+                writer.min_size -= (collend - collstart);
+                str = xmlcharrefreplace(&writer, str,
                                         unicode, collstart, collend);
                 if (str == NULL)
                     goto onError;
@@ -6705,14 +6701,17 @@ unicode_encode_ucs1(PyObject *unicode,
                                            PyUnicode_READY(repunicode) == -1))
                     goto onError;
 
+                /* substract preallocated bytes */
+                writer.min_size -= 1;
+
                 if (PyBytes_Check(repunicode)) {
                     /* Directly copy bytes result to output. */
                     repsize = PyBytes_Size(repunicode);
-                    if (repsize > 1) {
-                        str = _PyBytesWriter_Prepare(&writer, str, repsize-1);
-                        if (str == NULL)
-                            goto onError;
-                    }
+
+                    str = _PyBytesWriter_Prepare(&writer, str, repsize);
+                    if (str == NULL)
+                        goto onError;
+
                     memcpy(str, PyBytes_AsString(repunicode), repsize);
                     str += repsize;
                     pos = newpos;
@@ -6724,11 +6723,10 @@ unicode_encode_ucs1(PyObject *unicode,
                    have+the replacement+the rest of the string, so
                    we won't have to check space for encodable characters) */
                 repsize = PyUnicode_GET_LENGTH(repunicode);
-                if (repsize > 1) {
-                    str = _PyBytesWriter_Prepare(&writer, str, repsize-1);
-                    if (str == NULL)
-                        goto onError;
-                }
+
+                str = _PyBytesWriter_Prepare(&writer, str, repsize);
+                if (str == NULL)
+                    goto onError;
 
                 /* check if there is anything unencodable in the replacement
                    and copy it to the output */

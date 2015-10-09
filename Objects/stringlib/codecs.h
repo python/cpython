@@ -345,7 +345,9 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 break;
 
             case _Py_ERROR_BACKSLASHREPLACE:
-                p = backslashreplace(&writer, max_char_size, p,
+                /* substract preallocated bytes */
+                writer.min_size -= max_char_size * (endpos - startpos);
+                p = backslashreplace(&writer, p,
                                      unicode, startpos, endpos);
                 if (p == NULL)
                     goto error;
@@ -353,7 +355,9 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 break;
 
             case _Py_ERROR_XMLCHARREFREPLACE:
-                p = xmlcharrefreplace(&writer, max_char_size, p,
+                /* substract preallocated bytes */
+                writer.min_size -= max_char_size * (endpos - startpos);
+                p = xmlcharrefreplace(&writer, p,
                                       unicode, startpos, endpos);
                 if (p == NULL)
                     goto error;
@@ -381,17 +385,17 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                 if (!rep)
                     goto error;
 
+                /* substract preallocated bytes */
+                writer.min_size -= max_char_size;
+
                 if (PyBytes_Check(rep))
                     repsize = PyBytes_GET_SIZE(rep);
                 else
                     repsize = PyUnicode_GET_LENGTH(rep);
 
-                if (repsize > max_char_size) {
-                    p = _PyBytesWriter_Prepare(&writer, p,
-                                               repsize - max_char_size);
-                    if (p == NULL)
-                        goto error;
-                }
+                p = _PyBytesWriter_Prepare(&writer, p, repsize);
+                if (p == NULL)
+                    goto error;
 
                 if (PyBytes_Check(rep)) {
                     memcpy(p, PyBytes_AS_STRING(rep), repsize);
