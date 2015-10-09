@@ -7,6 +7,7 @@ import time
 from _thread import start_new_thread, TIMEOUT_MAX
 import threading
 import unittest
+import weakref
 
 from test import support
 
@@ -197,6 +198,17 @@ class BaseLockTests(BaseTestCase):
         Bunch(f, 1).wait_for_finished()
         self.assertFalse(results[0])
         self.assertTimeout(results[1], 0.5)
+
+    def test_weakref_exists(self):
+        lock = self.locktype()
+        ref = weakref.ref(lock)
+        self.assertIsNotNone(ref())
+
+    def test_weakref_deleted(self):
+        lock = self.locktype()
+        ref = weakref.ref(lock)
+        del lock
+        self.assertIsNone(ref())
 
 
 class LockTests(BaseLockTests):
