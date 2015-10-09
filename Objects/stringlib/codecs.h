@@ -311,7 +311,7 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
 #if STRINGLIB_SIZEOF_CHAR > 1
         else if (Py_UNICODE_IS_SURROGATE(ch)) {
             Py_ssize_t startpos, endpos, newpos;
-            Py_ssize_t repsize, k;
+            Py_ssize_t k;
             if (error_handler == _Py_ERROR_UNKNOWN)
                 error_handler = get_error_handler(errors);
 
@@ -392,18 +392,10 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                     p = _PyBytesWriter_WriteBytes(&writer, p,
                                                   PyBytes_AS_STRING(rep),
                                                   PyBytes_GET_SIZE(rep));
-                    if (p == NULL)
-                        goto error;
                 }
                 else {
                     /* rep is unicode */
                     if (PyUnicode_READY(rep) < 0)
-                        goto error;
-
-                    repsize = PyUnicode_GET_LENGTH(rep);
-
-                    p = _PyBytesWriter_Prepare(&writer, p, repsize);
-                    if (p == NULL)
                         goto error;
 
                     if (!PyUnicode_IS_ASCII(rep)) {
@@ -415,9 +407,13 @@ STRINGLIB(utf8_encoder)(PyObject *unicode,
                     }
 
                     assert(PyUnicode_KIND(rep) == PyUnicode_1BYTE_KIND);
-                    memcpy(p, PyUnicode_DATA(rep), repsize);
-                    p += repsize;
+                    p = _PyBytesWriter_WriteBytes(&writer, p,
+                                                  PyUnicode_DATA(rep),
+                                                  PyUnicode_GET_LENGTH(rep));
                 }
+
+                if (p == NULL)
+                    goto error;
                 Py_CLEAR(rep);
 
                 i = newpos;
