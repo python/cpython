@@ -841,6 +841,42 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             case 'o':
             case 'x':
             case 'X':
+                if (PyLong_CheckExact(v)
+                        && width == -1 && prec == -1
+                        && !(flags & (F_SIGN | F_BLANK))
+                        && c != 'X')
+                {
+                    /* Fast path */
+                    int alternate = flags & F_ALT;
+                    int base;
+
+                    switch(c)
+                    {
+                        default:
+                            assert(0 && "'type' not in [diuoxX]");
+                        case 'd':
+                        case 'i':
+                        case 'u':
+                            base = 10;
+                            break;
+                        case 'o':
+                            base = 8;
+                            break;
+                        case 'x':
+                        case 'X':
+                            base = 16;
+                            break;
+                    }
+
+                    /* Fast path */
+                    writer.min_size -= 2; /* size preallocated by "%d" */
+                    res = _PyLong_FormatBytesWriter(&writer, res,
+                                                    v, base, alternate);
+                    if (res == NULL)
+                        goto error;
+                    continue;
+                }
+
                 temp = formatlong(v, flags, prec, c);
                 if (!temp)
                     goto error;
