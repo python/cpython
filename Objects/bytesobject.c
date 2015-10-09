@@ -3892,7 +3892,7 @@ _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
     assert(size >= 0);
 
     writer->use_stack_buffer = 1;
-#if Py_DEBUG
+#ifdef Py_DEBUG
     /* the last byte is reserved, it must be '\0' */
     writer->stack_buffer[sizeof(writer->stack_buffer) - 1] = 0;
     writer->allocated = sizeof(writer->stack_buffer) - 1;
