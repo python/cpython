@@ -331,7 +331,7 @@ builtin_any(PyModuleDef *module, PyObject *iterable)
             Py_DECREF(it);
             return NULL;
         }
-        if (cmp == 1) {
+        if (cmp > 0) {
             Py_DECREF(it);
             Py_RETURN_TRUE;
         }
