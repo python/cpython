@@ -137,8 +137,8 @@ class SMTPChannel(asynchat.async_chat):
         self.enable_SMTPUTF8 = enable_SMTPUTF8
         if enable_SMTPUTF8:
             if decode_data:
-                ValueError("decode_data and enable_SMTPUTF8 cannot be set to"
-                           " True at the same time")
+                raise ValueError("decode_data and enable_SMTPUTF8 cannot"
+                                 " be set to True at the same time")
             decode_data = False
         if decode_data is None:
             warn("The decode_data default of True will change to False in 3.6;"
