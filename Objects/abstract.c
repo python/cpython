@@ -259,7 +259,7 @@ PyObject_AsCharBuffer(PyObject *obj,
          pb->bf_getcharbuffer == NULL ||
          pb->bf_getsegcount == NULL) {
         PyErr_SetString(PyExc_TypeError,
-                        "expected a character buffer object");
+                        "expected a string or other character buffer object");
         return -1;
     }
     if ((*pb->bf_getsegcount)(obj,NULL) != 1) {
