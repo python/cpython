@@ -610,14 +610,25 @@ backslashreplace(_PyBytesWriter *writer, Py_ssize_t prealloc_per_char,
     /* generate replacement */
     for (i = collstart; i < collend; ++i) {
         ch = PyUnicode_READ(kind, data, i);
-        if (ch < 0x100)
-            str += sprintf(str, "\\x%02x", ch);
-        else if (ch < 0x10000)
-            str += sprintf(str, "\\u%04x", ch);
-        else {
-            assert(ch <= MAX_UNICODE);
-            str += sprintf(str, "\\U%08x", ch);
+        *str++ = '\\';
+        if (ch >= 0x00010000) {
+            *str++ = 'U';
+            *str++ = Py_hexdigits[(ch>>28)&0xf];
+            *str++ = Py_hexdigits[(ch>>24)&0xf];
+            *str++ = Py_hexdigits[(ch>>20)&0xf];
+            *str++ = Py_hexdigits[(ch>>16)&0xf];
+            *str++ = Py_hexdigits[(ch>>12)&0xf];
+            *str++ = Py_hexdigits[(ch>>8)&0xf];
         }
+        else if (ch >= 0x100) {
+            *str++ = 'u';
+            *str++ = Py_hexdigits[(ch>>12)&0xf];
+            *str++ = Py_hexdigits[(ch>>8)&0xf];
+        }
+        else
+            *str++ = 'x';
+        *str++ = Py_hexdigits[(ch>>4)&0xf];
+        *str++ = Py_hexdigits[ch&0xf];
     }
     return str;
 }
