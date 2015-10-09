@@ -808,9 +808,8 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             fill = ' ';
             switch (c) {
             case '%':
-                pbuf = "%";
-                len = 1;
-                break;
+                *res++ = '%';
+                continue;
 
             case 'r':
                 // %r is only for 2/3 code; 3 only code should use %a
@@ -842,9 +841,9 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             case 'x':
             case 'X':
                 if (PyLong_CheckExact(v)
-                        && width == -1 && prec == -1
-                        && !(flags & (F_SIGN | F_BLANK))
-                        && c != 'X')
+                    && width == -1 && prec == -1
+                    && !(flags & (F_SIGN | F_BLANK))
+                    && c != 'X')
                 {
                     /* Fast path */
                     int alternate = flags & F_ALT;
@@ -869,7 +868,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                     }
 
                     /* Fast path */
-                    writer.min_size -= 2; /* size preallocated by "%d" */
+                    writer.min_size -= 2; /* size preallocated for "%d" */
                     res = _PyLong_FormatBytesWriter(&writer, res,
                                                     v, base, alternate);
                     if (res == NULL)
@@ -898,7 +897,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                     && !(flags & (F_SIGN | F_BLANK)))
                 {
                     /* Fast path */
-                    writer.min_size -= 2; /* size preallocated by "%f" */
+                    writer.min_size -= 2; /* size preallocated for "%f" */
                     res = formatfloat(v, flags, prec, c, NULL, &writer, res);
                     if (res == NULL)
                         goto error;
@@ -919,6 +918,11 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                 len = byte_converter(v, &onechar);
                 if (!len)
                     goto error;
+                if (width == -1) {
+                    /* Fast path */
+                    *res++ = onechar;
+                    continue;
+                }
                 break;
 
             default:
@@ -949,8 +953,9 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             alloc = width;
             if (sign != 0 && len == width)
                 alloc++;
-            if (alloc > 1) {
-                res = _PyBytesWriter_Prepare(&writer, res, alloc - 1);
+            /* 2: size preallocated for %s */
+            if (alloc > 2) {
+                res = _PyBytesWriter_Prepare(&writer, res, alloc - 2);
                 if (res == NULL)
                     goto error;
             }
