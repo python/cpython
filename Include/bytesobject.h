@@ -174,6 +174,13 @@ PyAPI_FUNC(char*) _PyBytesWriter_Alloc(_PyBytesWriter *writer,
 PyAPI_FUNC(char*) _PyBytesWriter_Prepare(_PyBytesWriter *writer,
     char *str,
     Py_ssize_t size);
+
+/* Write bytes.
+   Raise an exception and return NULL on error. */
+PyAPI_FUNC(char*) _PyBytesWriter_WriteBytes(_PyBytesWriter *writer,
+    char *str,
+    char *bytes,
+    Py_ssize_t size);
 #endif   /* Py_LIMITED_API */
 
 #ifdef __cplusplus
