@@ -803,10 +803,16 @@ Text I/O
 
    An in-memory stream for unicode text.  It inherits :class:`TextIOWrapper`.
 
-   The initial value of the buffer (an empty unicode string by default) can
-   be set by providing *initial_value*.  The *newline* argument works like
-   that of :class:`TextIOWrapper`.  The default is to consider only ``\n``
-   characters as end of lines and to do no newline translation.
+   The initial value of the buffer can be set by providing *initial_value*.
+   If newline translation is enabled, newlines will be encoded as if by
+   :meth:`~TextIOBase.write`.  The stream is positioned at the start of
+   the buffer.
+
+   The *newline* argument works like that of :class:`TextIOWrapper`.
+   The default is to consider only ``\n`` characters as ends of lines and
+   to do no newline translation.  If *newline* is set to ``None``,
+   newlines are written as ``\n`` on all platforms, but universal
+   newline decoding is still performed when reading.
 
    :class:`StringIO` provides this method in addition to those from
    :class:`TextIOWrapper` and its parents:
@@ -815,7 +821,8 @@ Text I/O
 
       Return a ``unicode`` containing the entire contents of the buffer at any
       time before the :class:`StringIO` object's :meth:`close` method is
-      called.
+      called.  Newlines are decoded as if by :meth:`~TextIOBase.read`,
+      although the stream position is not changed.
 
    Example usage::
 
