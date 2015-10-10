@@ -553,7 +553,7 @@ advance::
 
 Due to the way the decorator protocol works, a callback function
 declared this way cannot take any parameters. Instead, any resources to
-be released must be accessed as closure variables
+be released must be accessed as closure variables.
 
 
 Using a context manager as a function decorator

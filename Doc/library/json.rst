@@ -339,7 +339,7 @@ Encoders and Decoders
    .. method:: decode(s)
 
       Return the Python representation of *s* (a :class:`str` instance
-      containing a JSON document)
+      containing a JSON document).
 
       :exc:`JSONDecodeError` will be raised if the given JSON document is not
       valid.
