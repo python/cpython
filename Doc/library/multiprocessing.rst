@@ -1705,7 +1705,7 @@ itself.  This means, for example, that one shared object can contain a second:
       raised by :meth:`_callmethod`.
 
       Note in particular that an exception will be raised if *methodname* has
-      not been *exposed*
+      not been *exposed*.
 
       An example of the usage of :meth:`_callmethod`:
 

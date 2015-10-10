@@ -291,7 +291,7 @@ provided.  They rely on the :mod:`zipfile` and :mod:`tarfile` modules.
 .. function:: get_archive_formats()
 
    Return a list of supported formats for archiving.
-   Each element of the returned sequence is a tuple ``(name, description)``
+   Each element of the returned sequence is a tuple ``(name, description)``.
 
    By default :mod:`shutil` provides these formats:
 

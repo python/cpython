@@ -126,7 +126,7 @@ Cross Platform
 
 .. function:: python_version()
 
-   Returns the Python version as string ``'major.minor.patchlevel'``
+   Returns the Python version as string ``'major.minor.patchlevel'``.
 
    Note that unlike the Python ``sys.version``, the returned value will always
    include the patchlevel (it defaults to 0).

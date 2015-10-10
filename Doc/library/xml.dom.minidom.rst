@@ -18,7 +18,7 @@
 Model interface, with an API similar to that in other languages.  It is intended
 to be simpler than the full DOM and also significantly smaller.  Users who are
 not already proficient with the DOM should consider using the
-:mod:`xml.etree.ElementTree` module for their XML processing instead
+:mod:`xml.etree.ElementTree` module for their XML processing instead.
 
 
 .. warning::

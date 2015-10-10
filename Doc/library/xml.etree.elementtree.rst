@@ -829,7 +829,7 @@ ElementTree Objects
 
       Creates and returns a tree iterator for the root element.  The iterator
       loops over all elements in this tree, in section order.  *tag* is the tag
-      to look for (default is to return all elements)
+      to look for (default is to return all elements).
 
 
    .. method:: iterfind(match)

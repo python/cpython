@@ -479,7 +479,7 @@ input, output, and error streams.
 
    Similar to :class:`BaseCGIHandler`, but designed for use with HTTP origin
    servers.  If you are writing an HTTP server implementation, you will probably
-   want to subclass this instead of :class:`BaseCGIHandler`
+   want to subclass this instead of :class:`BaseCGIHandler`.
 
    This class is a subclass of :class:`BaseHandler`.  It overrides the
    :meth:`__init__`, :meth:`get_stdin`, :meth:`get_stderr`, :meth:`add_cgi_vars`,

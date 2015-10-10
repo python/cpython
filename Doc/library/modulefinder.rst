@@ -55,7 +55,7 @@ report of the imported modules will be printed.
    .. attribute:: modules
 
       A dictionary mapping module names to modules. See
-      :ref:`modulefinder-example`
+      :ref:`modulefinder-example`.
 
 
 .. _modulefinder-example:

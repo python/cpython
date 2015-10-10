@@ -890,7 +890,7 @@ Decimal objects
 
       Engineering notation has an exponent which is a multiple of 3, so there
       are up to 3 digits left of the decimal place.  For example, converts
-      ``Decimal('123E+1')`` to ``Decimal('1.23E+3')``
+      ``Decimal('123E+1')`` to ``Decimal('1.23E+3')``.
 
    .. method:: to_integral([rounding[, context]])
 

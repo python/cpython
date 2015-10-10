@@ -321,7 +321,7 @@ All of the components of an XML document are subclasses of :class:`Node`.
 .. attribute:: Node.prefix
 
    The part of the :attr:`tagName` preceding the colon if there is one, else the
-   empty string.  The value is a string, or ``None``
+   empty string.  The value is a string, or ``None``.
 
 
 .. attribute:: Node.namespaceURI

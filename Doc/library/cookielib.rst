@@ -546,7 +546,7 @@ Netscape protocol strictness switches:
 
 .. attribute:: DefaultCookiePolicy.strict_ns_unverifiable
 
-   apply RFC 2965 rules on unverifiable transactions even to Netscape cookies
+   Apply RFC 2965 rules on unverifiable transactions even to Netscape cookies.
 
 
 .. attribute:: DefaultCookiePolicy.strict_ns_domain

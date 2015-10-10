@@ -208,7 +208,7 @@ The :mod:`locale` module defines the following exception and functions:
 
    .. data:: RADIXCHAR
 
-      Get the radix character (decimal dot, decimal comma, etc.)
+      Get the radix character (decimal dot, decimal comma, etc.).
 
    .. data:: THOUSEP
 

@@ -168,7 +168,7 @@ the same library that the Python runtime is using.
 .. c:function:: struct _node* PyParser_SimpleParseFile(FILE *fp, const char *filename, int start)
 
    This is a simplified interface to :c:func:`PyParser_SimpleParseFileFlags` below,
-   leaving *flags* set to ``0``
+   leaving *flags* set to ``0``.
 
 
 .. c:function:: struct _node* PyParser_SimpleParseFileFlags(FILE *fp, const char *filename, int start, int flags)

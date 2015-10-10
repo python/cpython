@@ -356,7 +356,7 @@ Encoders and Decoders
    .. method:: decode(s)
 
       Return the Python representation of *s* (a :class:`str` or
-      :class:`unicode` instance containing a JSON document)
+      :class:`unicode` instance containing a JSON document).
 
    .. method:: raw_decode(s)
 

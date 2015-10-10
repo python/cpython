@@ -926,7 +926,7 @@ timestamp dependency analysis.
 
    Walk two filename lists in parallel, testing if each source is newer than its
    corresponding target.  Return a pair of lists (*sources*, *targets*) where
-   source is newer than target, according to the semantics of :func:`newer`
+   source is newer than target, according to the semantics of :func:`newer`.
 
    .. % % equivalent to a listcomp...
 

@@ -19,7 +19,7 @@ documentation.
 The module implements both the normal and wide char variants of the console I/O
 api. The normal API deals only with ASCII characters and is of limited use
 for internationalized applications. The wide char API should be used where
-ever possible
+ever possible.
 
 .. _msvcrt-files:
 

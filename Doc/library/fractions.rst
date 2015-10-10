@@ -89,7 +89,7 @@ another rational number, or from a string.
 
       This class method constructs a :class:`Fraction` representing the exact
       value of *flt*, which must be a :class:`float`. Beware that
-      ``Fraction.from_float(0.3)`` is not the same value as ``Fraction(3, 10)``
+      ``Fraction.from_float(0.3)`` is not the same value as ``Fraction(3, 10)``.
 
       .. note:: From Python 2.7 onwards, you can also construct a
          :class:`Fraction` instance directly from a :class:`float`.

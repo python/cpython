@@ -1948,4 +1948,4 @@ A partial upgrade path from :mod:`optparse` to :mod:`argparse`:
   ``%(default)s`` and ``%(prog)s``.
 
 * Replace the OptionParser constructor ``version`` argument with a call to
-  ``parser.add_argument('--version', action='version', version='<the version>')``
+  ``parser.add_argument('--version', action='version', version='<the version>')``.
