@@ -1320,7 +1320,7 @@ Basic customization
      object's   :meth:`__hash__` must interoperate on builds of different bit
      sizes, be sure to check the width on all supported builds.  An easy way
      to do this is with
-     ``python -c "import sys; print(sys.hash_info.width)"``
+     ``python -c "import sys; print(sys.hash_info.width)"``.
 
    If a class does not define an :meth:`__eq__` method it should not define a
    :meth:`__hash__` operation either; if it defines :meth:`__eq__` but not
