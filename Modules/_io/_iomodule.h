@@ -52,7 +52,12 @@ extern PyObject *_PyIncrementalNewlineDecoder_decode(
    which can be safely put aside until another search.
 
    NOTE: for performance reasons, `end` must point to a NUL character ('\0').
-   Otherwise, the function will scan further and return garbage. */
+   Otherwise, the function will scan further and return garbage.
+
+   There are three modes, in order of priority:
+   * translated: Only find \n (assume newlines already translated)
+   * universal: Use universal newlines algorithm
+   * Otherwise, the line ending is specified by readnl, a str object */
 extern Py_ssize_t _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
     int kind, char *start, char *end, Py_ssize_t *consumed);
