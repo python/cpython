@@ -201,7 +201,7 @@ The following classes are provided:
    ``"Python-urllib/2.6"`` (on Python 2.6).
 
    An example of using ``Content-Type`` header with *data* argument would be
-   sending a dictionary like ``{"Content-Type":" application/x-www-form-urlencoded;charset=utf-8"}``
+   sending a dictionary like ``{"Content-Type":" application/x-www-form-urlencoded;charset=utf-8"}``.
 
    The final two arguments are only of interest for correct handling
    of third-party HTTP cookies:

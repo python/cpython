@@ -230,7 +230,7 @@ need to override.
       renamed to the destination.
 
       :param source: The source filename. This is normally the base
-                     filename, e.g. 'test.log'
+                     filename, e.g. 'test.log'.
       :param dest:   The destination filename. This is normally
                      what the source is rotated to, e.g. 'test.log.1'.
 
