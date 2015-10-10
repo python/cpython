@@ -1854,8 +1854,10 @@ builtin_input_impl(PyModuleDef *module, PyObject *prompt)
     }
     if (tty) {
         tmp = _PyObject_CallMethodId(fout, &PyId_fileno, "");
-        if (tmp == NULL)
+        if (tmp == NULL) {
             PyErr_Clear();
+            tty = 0;
+        }
         else {
             fd = PyLong_AsLong(tmp);
             Py_DECREF(tmp);
