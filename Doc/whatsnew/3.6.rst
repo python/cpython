@@ -112,6 +112,15 @@ indexers. For example: ``subscript[0:10:2] == slice(0, 10, 2)``
 (Contributed by Joe Jevnik in :issue:`24379`.)
 
 
+pickle
+------
+
+Objects that need calling ``__new__`` with keyword arguments, can now be pickled
+using :ref:`pickle protocols <pickle-protocols>` older than protocol version 4.
+Protocol version 4 already supports this case.  (Contributed by Serhiy
+Storchaka in :issue:`24164`.)
+
+
 rlcomplete
 ----------
 
