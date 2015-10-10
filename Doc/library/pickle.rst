@@ -235,7 +235,7 @@ process more convenient:
 .. function:: loads(bytes_object, \*, fix_imports=True, encoding="ASCII", errors="strict")
 
    Read a pickled object hierarchy from a :class:`bytes` object and return the
-   reconstituted object hierarchy specified therein
+   reconstituted object hierarchy specified therein.
 
    The protocol version of the pickle is detected automatically, so no
    protocol argument is needed.  Bytes past the pickled object's

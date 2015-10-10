@@ -1944,7 +1944,7 @@ itself.  This means, for example, that one shared object can contain a second:
       raised by :meth:`_callmethod`.
 
       Note in particular that an exception will be raised if *methodname* has
-      not been *exposed*
+      not been *exposed*.
 
       An example of the usage of :meth:`_callmethod`:
 
@@ -2050,7 +2050,7 @@ with the :class:`Pool` class.
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
       it, that is unless the call failed, in which case the *error_callback*
-      is applied instead
+      is applied instead.
 
       If *error_callback* is specified then it should be a callable which
       accepts a single argument.  If the target function fails, then
@@ -2075,7 +2075,7 @@ with the :class:`Pool` class.
       If *callback* is specified then it should be a callable which accepts a
       single argument.  When the result becomes ready *callback* is applied to
       it, that is unless the call failed, in which case the *error_callback*
-      is applied instead
+      is applied instead.
 
       If *error_callback* is specified then it should be a callable which
       accepts a single argument.  If the target function fails, then
