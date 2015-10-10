@@ -232,7 +232,7 @@ BaseSubprocessTransport
 
    .. method:: kill(self)
 
-      Kill the subprocess, as in :meth:`subprocess.Popen.kill`
+      Kill the subprocess, as in :meth:`subprocess.Popen.kill`.
 
       On POSIX systems, the function sends SIGKILL to the subprocess.
       On Windows, this method is an alias for :meth:`terminate`.

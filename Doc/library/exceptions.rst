@@ -603,7 +603,7 @@ module for more information.
 
 .. exception:: SyntaxWarning
 
-   Base class for warnings about dubious syntax
+   Base class for warnings about dubious syntax.
 
 
 .. exception:: RuntimeWarning
