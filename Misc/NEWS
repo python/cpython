@@ -51,6 +51,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24164: Objects that need calling ``__new__`` with keyword arguments,
+  can now be pickled using pickle protocols older than protocol version 4.
+
 - Issue #25364: zipfile now works in threads disabled builds.
 
 - Issue #25328: smtpd's SMTPChannel now correctly raises a ValueError if both
