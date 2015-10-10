@@ -717,7 +717,7 @@ find and load modules.
    modules recognized by the standard import machinery. This is a
    helper for code which simply needs to know if a filesystem path
    potentially refers to a module without needing any details on the kind
-   of module (for example, :func:`inspect.getmodulename`)
+   of module (for example, :func:`inspect.getmodulename`).
 
    .. versionadded:: 3.3
 

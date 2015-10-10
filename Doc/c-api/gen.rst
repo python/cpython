@@ -17,7 +17,7 @@ than explicitly calling :c:func:`PyGen_New`.
 
 .. c:var:: PyTypeObject PyGen_Type
 
-   The type object corresponding to generator objects
+   The type object corresponding to generator objects.
 
 
 .. c:function:: int PyGen_Check(ob)
