@@ -4101,7 +4101,7 @@ _PyObject_GetItemsIter(PyObject *obj, PyObject **listitems,
 }
 
 static PyObject *
-reduce_newobj(PyObject *obj, int proto)
+reduce_newobj(PyObject *obj)
 {
     PyObject *args = NULL, *kwargs = NULL;
     PyObject *copyreg;
@@ -4153,7 +4153,7 @@ reduce_newobj(PyObject *obj, int proto)
         }
         Py_DECREF(args);
     }
-    else if (proto >= 4) {
+    else {
         _Py_IDENTIFIER(__newobj_ex__);
 
         newobj = _PyObject_GetAttrId(copyreg, &PyId___newobj_ex__);
@@ -4170,16 +4170,6 @@ reduce_newobj(PyObject *obj, int proto)
             Py_DECREF(newobj);
             return NULL;
         }
-    }
-    else {
-        PyErr_SetString(PyExc_ValueError,
-                        "must use protocol 4 or greater to copy this "
-                        "object; since __getnewargs_ex__ returned "
-                        "keyword arguments.");
-        Py_DECREF(args);
-        Py_DECREF(kwargs);
-        Py_DECREF(copyreg);
-        return NULL;
     }
 
     state = _PyObject_GetState(obj);
@@ -4225,7 +4215,7 @@ _common_reduce(PyObject *self, int proto)
     PyObject *copyreg, *res;
 
     if (proto >= 2)
-        return reduce_newobj(self, proto);
+        return reduce_newobj(self);
 
     copyreg = import_copyreg();
     if (!copyreg)

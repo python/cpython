@@ -153,6 +153,9 @@ typedef struct {
     PyObject *codecs_encode;
     /* builtins.getattr, used for saving nested names with protocol < 4 */
     PyObject *getattr;
+    /* functools.partial, used for implementing __newobj_ex__ with protocols
+       2 and 3 */
+    PyObject *partial;
 } PickleState;
 
 /* Forward declaration of the _pickle module definition. */
@@ -200,6 +203,7 @@ _Pickle_InitState(PickleState *st)
     PyObject *copyreg = NULL;
     PyObject *compat_pickle = NULL;
     PyObject *codecs = NULL;
+    PyObject *functools = NULL;
 
     builtins = PyEval_GetBuiltins();
     if (builtins == NULL)
@@ -314,12 +318,21 @@ _Pickle_InitState(PickleState *st)
     }
     Py_CLEAR(codecs);
 
+    functools = PyImport_ImportModule("functools");
+    if (!functools)
+        goto error;
+    st->partial = PyObject_GetAttrString(functools, "partial");
+    if (!st->partial)
+        goto error;
+    Py_CLEAR(functools);
+
     return 0;
 
   error:
     Py_CLEAR(copyreg);
     Py_CLEAR(compat_pickle);
     Py_CLEAR(codecs);
+    Py_CLEAR(functools);
     _Pickle_ClearState(st);
     return -1;
 }
@@ -3533,11 +3546,9 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             PyErr_Clear();
         }
         else if (PyUnicode_Check(name)) {
-            if (self->proto >= 4) {
-                _Py_IDENTIFIER(__newobj_ex__);
-                use_newobj_ex = PyUnicode_Compare(
-                        name, _PyUnicode_FromId(&PyId___newobj_ex__)) == 0;
-            }
+            _Py_IDENTIFIER(__newobj_ex__);
+            use_newobj_ex = PyUnicode_Compare(
+                    name, _PyUnicode_FromId(&PyId___newobj_ex__)) == 0;
             if (!use_newobj_ex) {
                 _Py_IDENTIFIER(__newobj__);
                 use_newobj = PyUnicode_Compare(
@@ -3581,11 +3592,58 @@ save_reduce(PicklerObject *self, PyObject *args, PyObject *obj)
             return -1;
         }
 
-        if (save(self, cls, 0) < 0 ||
-            save(self, args, 0) < 0 ||
-            save(self, kwargs, 0) < 0 ||
-            _Pickler_Write(self, &newobj_ex_op, 1) < 0) {
-            return -1;
+        if (self->proto >= 4) {
+            if (save(self, cls, 0) < 0 ||
+                save(self, args, 0) < 0 ||
+                save(self, kwargs, 0) < 0 ||
+                _Pickler_Write(self, &newobj_ex_op, 1) < 0) {
+                return -1;
+            }
+        }
+        else {
+            PyObject *newargs;
+            PyObject *cls_new;
+            Py_ssize_t i;
+            _Py_IDENTIFIER(__new__);
+
+            newargs = PyTuple_New(Py_SIZE(args) + 2);
+            if (newargs == NULL)
+                return -1;
+
+            cls_new = _PyObject_GetAttrId(cls, &PyId___new__);
+            if (cls_new == NULL) {
+                Py_DECREF(newargs);
+                return -1;
+            }
+            PyTuple_SET_ITEM(newargs, 0, cls_new);
+            Py_INCREF(cls);
+            PyTuple_SET_ITEM(newargs, 1, cls);
+            for (i = 0; i < Py_SIZE(args); i++) {
+                PyObject *item = PyTuple_GET_ITEM(args, i);
+                Py_INCREF(item);
+                PyTuple_SET_ITEM(newargs, i + 2, item);
+            }
+
+            callable = PyObject_Call(st->partial, newargs, kwargs);
+            Py_DECREF(newargs);
+            if (callable == NULL)
+                return -1;
+
+            newargs = PyTuple_New(0);
+            if (newargs == NULL) {
+                Py_DECREF(callable);
+                return -1;
+            }
+
+            if (save(self, callable, 0) < 0 ||
+                save(self, newargs, 0) < 0 ||
+                _Pickler_Write(self, &reduce_op, 1) < 0) {
+                Py_DECREF(newargs);
+                Py_DECREF(callable);
+                return -1;
+            }
+            Py_DECREF(newargs);
+            Py_DECREF(callable);
         }
     }
     else if (use_newobj) {

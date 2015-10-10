@@ -1580,16 +1580,14 @@ class AbstractPickleTests(unittest.TestCase):
         x.abc = 666
         for proto in protocols:
             with self.subTest(proto=proto):
-                if 2 <= proto < 4:
-                    self.assertRaises(ValueError, self.dumps, x, proto)
-                    continue
                 s = self.dumps(x, proto)
                 if proto < 1:
                     self.assertIn(b'\nL64206', s)  # LONG
                 elif proto < 2:
                     self.assertIn(b'M\xce\xfa', s)  # BININT2
+                elif proto < 4:
+                    self.assertIn(b'X\x04\x00\x00\x00FACE', s)  # BINUNICODE
                 else:
-                    assert proto >= 4
                     self.assertIn(b'\x8c\x04FACE', s)  # SHORT_BINUNICODE
                 self.assertFalse(opcode_in_pickle(pickle.NEWOBJ, s))
                 self.assertEqual(opcode_in_pickle(pickle.NEWOBJ_EX, s),

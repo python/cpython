@@ -27,6 +27,7 @@ from types import FunctionType
 from copyreg import dispatch_table
 from copyreg import _extension_registry, _inverted_registry, _extension_cache
 from itertools import islice
+from functools import partial
 import sys
 from sys import maxsize
 from struct import pack, unpack
@@ -544,7 +545,7 @@ class _Pickler:
         write = self.write
 
         func_name = getattr(func, "__name__", "")
-        if self.proto >= 4 and func_name == "__newobj_ex__":
+        if self.proto >= 2 and func_name == "__newobj_ex__":
             cls, args, kwargs = args
             if not hasattr(cls, "__new__"):
                 raise PicklingError("args[0] from {} args has no __new__"
@@ -552,10 +553,16 @@ class _Pickler:
             if obj is not None and cls is not obj.__class__:
                 raise PicklingError("args[0] from {} args has the wrong class"
                                     .format(func_name))
-            save(cls)
-            save(args)
-            save(kwargs)
-            write(NEWOBJ_EX)
+            if self.proto >= 4:
+                save(cls)
+                save(args)
+                save(kwargs)
+                write(NEWOBJ_EX)
+            else:
+                func = partial(cls.__new__, cls, *args, **kwargs)
+                save(func)
+                save(())
+                write(REDUCE)
         elif self.proto >= 2 and func_name == "__newobj__":
             # A __reduce__ implementation can direct protocol 2 or newer to
             # use the more efficient NEWOBJ opcode, while still
