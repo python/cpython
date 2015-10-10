@@ -1555,7 +1555,10 @@ int unicode_decode_call_errorhandler(const char *errors, PyObject **errorHandler
 /* Is c a base-64 character? */
 
 #define IS_BASE64(c) \
-    (isalnum(c) || (c) == '+' || (c) == '/')
+    (((c) >= 'A' && (c) <= 'Z') ||     \
+     ((c) >= 'a' && (c) <= 'z') ||     \
+     ((c) >= '0' && (c) <= '9') ||     \
+     (c) == '+' || (c) == '/')
 
 /* given that c is a base-64 character, what is its base-64 value? */
 

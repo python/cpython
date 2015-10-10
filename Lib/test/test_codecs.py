@@ -690,9 +690,9 @@ class UTF7Test(ReadTest):
 
     def test_errors(self):
         tests = [
-            ('\xffb', u'\ufffdb'),
-            ('a\xffb', u'a\ufffdb'),
-            ('a\xff\xffb', u'a\ufffd\ufffdb'),
+            ('\xe1b', u'\ufffdb'),
+            ('a\xe1b', u'a\ufffdb'),
+            ('a\xe1\xe1b', u'a\ufffd\ufffdb'),
             ('a+IK', u'a\ufffd'),
             ('a+IK-b', u'a\ufffdb'),
             ('a+IK,b', u'a\ufffdb'),
@@ -708,8 +708,8 @@ class UTF7Test(ReadTest):
             ('a+//,+IKw-b', u'a\ufffd\u20acb'),
             ('a+///,+IKw-b', u'a\uffff\ufffd\u20acb'),
             ('a+////,+IKw-b', u'a\uffff\ufffd\u20acb'),
-            ('a+IKw-b\xff', u'a\u20acb\ufffd'),
-            ('a+IKw\xffb', u'a\u20ac\ufffdb'),
+            ('a+IKw-b\xe1', u'a\u20acb\ufffd'),
+            ('a+IKw\xe1b', u'a\u20ac\ufffdb'),
         ]
         for raw, expected in tests:
             try:
@@ -738,16 +738,16 @@ class UTF7Test(ReadTest):
     def test_lone_surrogates(self):
         tests = [
             ('a+2AE-b', u'a\ud801b'),
-            ('a+2AE\xffb', u'a\ufffdb'),
+            ('a+2AE\xe1b', u'a\ufffdb'),
             ('a+2AE', u'a\ufffd'),
             ('a+2AEA-b', u'a\ufffdb'),
             ('a+2AH-b', u'a\ufffdb'),
             ('a+IKzYAQ-b', u'a\u20ac\ud801b'),
-            ('a+IKzYAQ\xffb', u'a\u20ac\ufffdb'),
+            ('a+IKzYAQ\xe1b', u'a\u20ac\ufffdb'),
             ('a+IKzYAQA-b', u'a\u20ac\ufffdb'),
             ('a+IKzYAd-b', u'a\u20ac\ufffdb'),
             ('a+IKwgrNgB-b', u'a\u20ac\u20ac\ud801b'),
-            ('a+IKwgrNgB\xffb', u'a\u20ac\u20ac\ufffdb'),
+            ('a+IKwgrNgB\xe1b', u'a\u20ac\u20ac\ufffdb'),
             ('a+IKwgrNgB', u'a\u20ac\u20ac\ufffd'),
             ('a+IKwgrNgBA-b', u'a\u20ac\u20ac\ufffdb'),
         ]
