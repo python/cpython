@@ -371,7 +371,7 @@ the yield expression. It can be either set explicitly when raising
 (by returning a value from the sub-generator).
 
    .. versionchanged:: 3.3
-      Added ``yield from <expr>`` to delegate control flow to a subiterator
+      Added ``yield from <expr>`` to delegate control flow to a subiterator.
 
 The parentheses may be omitted when the yield expression is the sole expression
 on the right hand side of an assignment statement.

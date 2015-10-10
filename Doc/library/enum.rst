@@ -714,7 +714,7 @@ allow one to do things with an :class:`Enum` class that fail on a typical
 class, such as `list(Color)` or `some_var in Color`.  :class:`EnumMeta` is
 responsible for ensuring that various other methods on the final :class:`Enum`
 class are correct (such as :meth:`__new__`, :meth:`__getnewargs__`,
-:meth:`__str__` and :meth:`__repr__`)
+:meth:`__str__` and :meth:`__repr__`).
 
 
 Enum Members (aka instances)
