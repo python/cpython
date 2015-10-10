@@ -641,7 +641,7 @@ always available.
    :term:`struct sequence`  :data:`sys.version_info` may be used for a more
    human-friendly encoding of the same information.
 
-   More details of ``hexversion`` can be found at :ref:`apiabiversion`
+   More details of ``hexversion`` can be found at :ref:`apiabiversion`.
 
 
 .. data:: implementation

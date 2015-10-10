@@ -194,7 +194,7 @@ The following classes are available:
    It has one attribute, :attr:`data`, that can be used to retrieve the Python
    bytes object stored in it.
 
-   .. deprecated:: 3.4 Use a :class:`bytes` object instead
+   .. deprecated:: 3.4 Use a :class:`bytes` object instead.
 
 
 The following constants are available:
