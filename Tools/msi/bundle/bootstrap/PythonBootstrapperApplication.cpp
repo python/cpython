@@ -293,28 +293,8 @@ class PythonBootstrapperApplication : public CBalBaseBootstrapperApplication {
             hr = _engine->SetVariableNumeric(L"CompileAll", installAllUsers);
             ExitOnFailure(hr, L"Failed to update CompileAll");
 
-            hr = BalGetStringVariable(L"TargetDir", &targetDir);
-            if (FAILED(hr) || !targetDir || !targetDir[0]) {
-                ReleaseStr(targetDir);
-                targetDir = nullptr;
-
-                hr = BalGetStringVariable(
-                    installAllUsers ? L"DefaultAllUsersTargetDir" : L"DefaultJustForMeTargetDir",
-                    &defaultDir
-                );
-                BalExitOnFailure(hr, "Failed to get the default install directory");
-
-                if (!defaultDir || !defaultDir[0]) {
-                    BalLogError(E_INVALIDARG, "Default install directory is blank");
-                }
-
-                hr = BalFormatString(defaultDir, &targetDir);
-                BalExitOnFailure1(hr, "Failed to format '%ls'", defaultDir);
-
-                hr = _engine->SetVariableString(L"TargetDir", targetDir);
-                BalExitOnFailure(hr, "Failed to set install target directory");
-            }
-            ReleaseStr(targetDir);
+            hr = EnsureTargetDir();
+            ExitOnFailure(hr, L"Failed to set TargetDir");
 
             OnPlan(BOOTSTRAPPER_ACTION_INSTALL);
             break;
@@ -2972,6 +2952,39 @@ private:
         return;
     }
 
+    HRESULT EnsureTargetDir() {
+        LONGLONG installAllUsers;
+        LPWSTR targetDir = nullptr, defaultDir = nullptr;
+        HRESULT hr = BalGetStringVariable(L"TargetDir", &targetDir);
+        if (FAILED(hr) || !targetDir || !targetDir[0]) {
+            ReleaseStr(targetDir);
+            targetDir = nullptr;
+
+            hr = BalGetNumericVariable(L"InstallAllUsers", &installAllUsers);
+            ExitOnFailure(hr, L"Failed to get install scope");
+
+            hr = BalGetStringVariable(
+                installAllUsers ? L"DefaultAllUsersTargetDir" : L"DefaultJustForMeTargetDir",
+                &defaultDir
+            );
+            BalExitOnFailure(hr, "Failed to get the default install directory");
+
+            if (!defaultDir || !defaultDir[0]) {
+                BalLogError(E_INVALIDARG, "Default install directory is blank");
+            }
+
+            hr = BalFormatString(defaultDir, &targetDir);
+            BalExitOnFailure1(hr, "Failed to format '%ls'", defaultDir);
+
+            hr = _engine->SetVariableString(L"TargetDir", targetDir);
+            BalExitOnFailure(hr, "Failed to set install target directory");
+        }
+    LExit:
+        ReleaseStr(defaultDir);
+        ReleaseStr(targetDir);
+        return hr;
+    }
+
 public:
     //
     // Constructor - initialize member variables.
@@ -3057,6 +3070,7 @@ public:
         _baFunction = nullptr;
 
         LoadOptionalFeatureStates(pEngine);
+        EnsureTargetDir();
     }
 
 
