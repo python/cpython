@@ -7,10 +7,11 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest,
-    STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED)
-from test.libregrtest.cmdline import _parse_args
+    STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
+    INTERRUPTED, CHILD_ERROR)
 from test.libregrtest.setup import setup_tests
 from test import support
 try:
@@ -87,7 +88,8 @@ class Regrtest:
 
     def accumulate_result(self, test, result):
         ok, test_time = result
-        self.test_times.append((test_time, test))
+        if ok not in (CHILD_ERROR, INTERRUPTED):
+            self.test_times.append((test_time, test))
         if ok == PASSED:
             self.good.append(test)
         elif ok == FAILED:
@@ -291,10 +293,12 @@ class Regrtest:
             else:
                 try:
                     result = runtest(self.ns, test)
-                    self.accumulate_result(test, result)
                 except KeyboardInterrupt:
+                    self.accumulate_result(test, (INTERRUPTED, None))
                     self.interrupted = True
                     break
+                else:
+                    self.accumulate_result(test, result)
 
             if self.ns.findleaks:
                 gc.collect()

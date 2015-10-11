@@ -24,6 +24,16 @@ Py_DEBUG = hasattr(sys, 'getobjects')
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..', '..')
 ROOT_DIR = os.path.abspath(os.path.normpath(ROOT_DIR))
 
+TEST_INTERRUPTED = textwrap.dedent("""
+    from signal import SIGINT
+    try:
+        from _testcapi import raise_signal
+        raise_signal(SIGINT)
+    except ImportError:
+        import os
+        os.kill(os.getpid(), SIGINT)
+    """)
+
 
 class ParseArgsTestCase(unittest.TestCase):
     """
@@ -340,16 +350,19 @@ class BaseTestCase(unittest.TestCase):
         return list(match.group(1) for match in parser)
 
     def check_executed_tests(self, output, tests, skipped=(), failed=(),
-                             randomize=False):
+                             omitted=(), randomize=False):
         if isinstance(tests, str):
             tests = [tests]
         if isinstance(skipped, str):
             skipped = [skipped]
         if isinstance(failed, str):
             failed = [failed]
+        if isinstance(omitted, str):
+            omitted = [omitted]
         ntest = len(tests)
         nskipped = len(skipped)
         nfailed = len(failed)
+        nomitted = len(omitted)
 
         executed = self.parse_executed_tests(output)
         if randomize:
@@ -375,7 +388,11 @@ class BaseTestCase(unittest.TestCase):
             regex = list_regex('%s test%s failed', failed)
             self.check_line(output, regex)
 
-        good = ntest - nskipped - nfailed
+        if omitted:
+            regex = list_regex('%s test%s omitted', omitted)
+            self.check_line(output, regex)
+
+        good = ntest - nskipped - nfailed - nomitted
         if good:
             regex = r'%s test%s OK\.$' % (good, plural(good))
             if not skipped and not failed and good > 1:
@@ -607,6 +624,12 @@ class ArgsTestCase(BaseTestCase):
         output = self.run_tests('--fromfile', filename)
         self.check_executed_tests(output, tests)
 
+    def test_interrupted(self):
+        code = TEST_INTERRUPTED
+        test = self.create_test("sigint", code=code)
+        output = self.run_tests(test, exitcode=1)
+        self.check_executed_tests(output, test, omitted=test)
+
     def test_slow(self):
         # test --slow
         tests = [self.create_test() for index in range(3)]
@@ -616,6 +639,22 @@ class ArgsTestCase(BaseTestCase):
                  '(?:%s: [0-9]+\.[0-9]+s\n){%s}'
                  % (self.TESTNAME_REGEX, len(tests)))
         self.check_line(output, regex)
+
+    def test_slow_interrupted(self):
+        # Issue #25373: test --slow with an interrupted test
+        code = TEST_INTERRUPTED
+        test = self.create_test("sigint", code=code)
+
+        for multiprocessing in (False, True):
+            if multiprocessing:
+                args = ("--slow", "-j2", test)
+            else:
+                args = ("--slow", test)
+            output = self.run_tests(*args, exitcode=1)
+            self.check_executed_tests(output, test, omitted=test)
+            regex = ('10 slowest tests:\n')
+            self.check_line(output, regex)
+            self.check_line(output, 'Test suite interrupted by signal SIGINT.')
 
     def test_coverage(self):
         # test --coverage
