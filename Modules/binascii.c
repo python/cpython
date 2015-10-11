@@ -528,21 +528,22 @@ binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *data)
 binascii.b2a_base64
 
     data: Py_buffer
-    /
+    *
+    newline: int(c_default="1") = True
 
 Base64-code line of data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=3cd61fbee2913285 input=14ec4e47371174a9]*/
+binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data, int newline)
+/*[clinic end generated code: output=19e1dd719a890b50 input=7b2ea6fa38d8924c]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
     PyObject *rv;
-    Py_ssize_t bin_len;
+    Py_ssize_t bin_len, out_len;
 
     bin_data = data->buf;
     bin_len = data->len;
@@ -555,9 +556,12 @@ binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data)
     }
 
     /* We're lazy and allocate too much (fixed up later).
-       "+3" leaves room for up to two pad characters and a trailing
-       newline.  Note that 'b' gets encoded as 'Yg==\n' (1 in, 5 out). */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len*2 + 3)) == NULL )
+       "+2" leaves room for up to two pad characters.
+       Note that 'b' gets encoded as 'Yg==\n' (1 in, 5 out). */
+    out_len = bin_len*2 + 2;
+    if (newline)
+        out_len++;
+    if ( (rv=PyBytes_FromStringAndSize(NULL, out_len)) == NULL )
         return NULL;
     ascii_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
@@ -581,7 +585,8 @@ binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data)
         *ascii_data++ = table_b2a_base64[(leftchar&0xf) << 2];
         *ascii_data++ = BASE64_PAD;
     }
-    *ascii_data++ = '\n';       /* Append a courtesy newline */
+    if (newline)
+        *ascii_data++ = '\n';       /* Append a courtesy newline */
 
     if (_PyBytes_Resize(&rv,
                        (ascii_data -
