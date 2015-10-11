@@ -580,12 +580,9 @@ class _Event(_Verbose):
         that call wait() once the flag is true will not block at all.
 
         """
-        self.__cond.acquire()
-        try:
+        with self.__cond:
             self.__flag = True
             self.__cond.notify_all()
-        finally:
-            self.__cond.release()
 
     def clear(self):
         """Reset the internal flag to false.
@@ -594,11 +591,8 @@ class _Event(_Verbose):
         set the internal flag to true again.
 
         """
-        self.__cond.acquire()
-        try:
+        with self.__cond:
             self.__flag = False
-        finally:
-            self.__cond.release()
 
     def wait(self, timeout=None):
         """Block until the internal flag is true.
@@ -615,13 +609,10 @@ class _Event(_Verbose):
         True except if a timeout is given and the operation times out.
 
         """
-        self.__cond.acquire()
-        try:
+        with self.__cond:
             if not self.__flag:
                 self.__cond.wait(timeout)
             return self.__flag
-        finally:
-            self.__cond.release()
 
 # Helper to generate new thread names
 _counter = _count().next
