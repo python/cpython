@@ -120,4 +120,14 @@ Feel free to email &lt;a href="mailto:python-list@python.org"&gt;python-list@pyt
   <String Id="FailureRestartText">You must restart your computer to complete the rollback of the software.</String>
   <String Id="FailureRestartButton">&amp;Restart</String>
   <String Id="FailureExistingInstall">Unable to install [WixBundleName] due to an existing install. Use Programs and Features to modify, repair or remove [WixBundleName].</String>
+  
+  <String Id="FailureWin7MissingSP1">Windows 7 Service Pack 1 and all applicable updates are required to install [WixBundleName].
+
+Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%207%20service%20pack%201"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
+  <String Id="FailureVistaMissingSP2">Windows Vista Service Pack 2 and all applicable updates are required to install [WixBundleName].
+
+Please &lt;a href="https://www.bing.com/search?q=how%20to%20install%20windows%20vista%20service%20pack%202"&gt;update your machine&lt;/a&gt; and then restart the installation.</String>
+  <String Id="FailureXPOrEarlier">Windows Vista or later is required to install and use [WixBundleName].
+
+Visit &lt;a href="https://www.python.org/"&gt;python.org&lt;/a&gt; to download Python 3.4.</String>
 </WixLocalization>
