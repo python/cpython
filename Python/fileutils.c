@@ -986,8 +986,10 @@ _Py_open_impl(const char *pathname, int flags, int gil_held)
 int
 _Py_open(const char *pathname, int flags)
 {
+#ifdef WITH_THREAD
     /* _Py_open() must be called with the GIL held. */
     assert(PyGILState_Check());
+#endif
     return _Py_open_impl(pathname, flags, 1);
 }
 
@@ -1080,7 +1082,9 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     wchar_t wmode[10];
     int usize;
 
+#ifdef WITH_THREAD
     assert(PyGILState_Check());
+#endif
 
     if (!PyUnicode_Check(path)) {
         PyErr_Format(PyExc_TypeError,
@@ -1108,7 +1112,9 @@ _Py_fopen_obj(PyObject *path, const char *mode)
     PyObject *bytes;
     char *path_bytes;
 
+#ifdef WITH_THREAD
     assert(PyGILState_Check());
+#endif
 
     if (!PyUnicode_FSConverter(path, &bytes))
         return NULL;

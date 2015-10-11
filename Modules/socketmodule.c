@@ -719,8 +719,10 @@ sock_call_ex(PySocketSockObject *s,
     int deadline_initialized = 0;
     int res;
 
+#ifdef WITH_THREAD
     /* sock_call() must be called with the GIL held. */
     assert(PyGILState_Check());
+#endif
 
     /* outer loop to retry select() when select() is interrupted by a signal
        or to retry select()+sock_func() on false positive (see above) */
