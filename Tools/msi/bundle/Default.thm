@@ -128,7 +128,7 @@
         <Image X="0" Y="0" Width="178" Height="382" ImageFile="SideBar.png"/>
 
         <Hypertext Name="FailureLogFileLink" X="205" Y="71" Width="-11" Height="60" FontId="3" TabStop="yes" HideWhenDisabled="yes">#(loc.FailureHyperlinkLogText)</Hypertext>
-        <Hypertext Name="FailureMessageText" X="205" Y="-100" Width="-11" Height="60" FontId="3" TabStop="yes" HideWhenDisabled="yes"></Hypertext>
+        <Hypertext Name="FailureMessageText" X="205" Y="151" Width="-11" Height="120" FontId="3" TabStop="yes" HideWhenDisabled="yes"></Hypertext>
         <Text Name="FailureRestartText" X="205" Y="-40" Width="-11" Height="34" FontId="3" HideWhenDisabled="yes" DisablePrefix="yes">#(loc.FailureRestartText)</Text>
         <Button Name="FailureRestartButton" X="-101" Y="-11" Width="85" Height="27" TabStop="yes" FontId="0" HideWhenDisabled="yes">#(loc.FailureRestartButton)</Button>
         <Button Name="FailureCancelButton" X="-11" Y="-11" Width="85" Height="27" TabStop="yes" FontId="0">#(loc.CloseButton)</Button>

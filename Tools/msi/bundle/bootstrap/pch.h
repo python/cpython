@@ -23,6 +23,7 @@
 #include <stdlib.h>
 #include <strsafe.h>
 #include <stddef.h>
+#include <versionhelpers.h>
 
 #include "dutil.h"
 #include "memutil.h"
