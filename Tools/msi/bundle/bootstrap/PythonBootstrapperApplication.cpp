@@ -1216,6 +1216,8 @@ private:
         hr = pThis->CreateMainWindow();
         BalExitOnFailure(hr, "Failed to create main window.");
 
+        pThis->ValidateOperatingSystem();
+
         if (FAILED(pThis->_hrFinal)) {
             pThis->SetState(PYBA_STATE_FAILED, hr);
             ::PostMessageW(pThis->_hWnd, WM_PYBA_SHOW_FAILURE, 0, 0);
@@ -2983,6 +2985,36 @@ private:
         ReleaseStr(defaultDir);
         ReleaseStr(targetDir);
         return hr;
+    }
+
+    void ValidateOperatingSystem() {
+        LOC_STRING *pLocString = nullptr;
+        
+        if (IsWindows7SP1OrGreater()) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows 7 SP1 or later");
+            return;
+        } else if (IsWindows7OrGreater()) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows 7 RTM");
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 1 is required to continue installation");
+            LocGetString(_wixLoc, L"#(loc.FailureWin7MissingSP1)", &pLocString);
+        } else if (IsWindowsVistaSP2OrGreater()) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Target OS is Windows Vista SP2");
+            return;
+        } else if (IsWindowsVistaOrGreater()) {
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows Vista RTM or SP1");
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Service Pack 2 is required to continue installation");
+            LocGetString(_wixLoc, L"#(loc.FailureVistaMissingSP2)", &pLocString);
+        } else { 
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Detected Windows XP or earlier");
+            BalLog(BOOTSTRAPPER_LOG_LEVEL_ERROR, "Windows Vista SP2 or later is required to continue installation");
+            LocGetString(_wixLoc, L"#(loc.FailureXPOrEarlier)", &pLocString);
+        }
+
+        if (pLocString && pLocString->wzText) {
+            BalFormatString(pLocString->wzText, &_failedMessage);
+        }
+        
+        _hrFinal = E_WIXSTDBA_CONDITION_FAILED;
     }
 
 public:

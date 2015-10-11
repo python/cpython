@@ -308,6 +308,8 @@ Build
 Windows
 -------
 
+- Issue #25143: Improves installer error messages for unsupported platforms.
+
 - Issue #25163: Display correct directory in installer when using non-default
   settings.
 
