@@ -7,6 +7,7 @@ Note: test_regrtest cannot be run twice in parallel.
 import argparse
 import faulthandler
 import getopt
+import io
 import os.path
 import platform
 import re
@@ -433,7 +434,9 @@ class ProgramsTestCase(BaseTestCase):
         self.tests = [self.create_test() for index in range(self.NTEST)]
 
         self.python_args = ['-Wd', '-E', '-bb']
-        self.regrtest_args = ['-uall', '-rwW', '--timeout', '3600', '-j4']
+        self.regrtest_args = ['-uall', '-rwW']
+        if hasattr(faulthandler, 'dump_traceback_later'):
+            self.regrtest_args.extend(('--timeout', '3600', '-j4'))
         if sys.platform == 'win32':
             self.regrtest_args.append('-n')
 
