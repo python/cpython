@@ -5081,10 +5081,6 @@ class PicklingTests(unittest.TestCase):
             with self.subTest(cls=cls):
                 kwargs = getattr(cls, 'KWARGS', {})
                 obj = cls(*cls.ARGS, **kwargs)
-                # XXX: We need to modify the copy module to support PEP 3154's
-                # reduce protocol 4.
-                if hasattr(cls, '__getnewargs_ex__'):
-                    continue
                 objcopy = deepcopy(obj)
                 self._assert_is_copy(obj, objcopy)
                 # For test classes that supports this, make sure we didn't go
