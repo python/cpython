@@ -514,12 +514,9 @@ class Event:
         that call wait() once the flag is true will not block at all.
 
         """
-        self._cond.acquire()
-        try:
+        with self._cond:
             self._flag = True
             self._cond.notify_all()
-        finally:
-            self._cond.release()
 
     def clear(self):
         """Reset the internal flag to false.
@@ -528,11 +525,8 @@ class Event:
         set the internal flag to true again.
 
         """
-        self._cond.acquire()
-        try:
+        with self._cond:
             self._flag = False
-        finally:
-            self._cond.release()
 
     def wait(self, timeout=None):
         """Block until the internal flag is true.
@@ -549,14 +543,11 @@ class Event:
         True except if a timeout is given and the operation times out.
 
         """
-        self._cond.acquire()
-        try:
+        with self._cond:
             signaled = self._flag
             if not signaled:
                 signaled = self._cond.wait(timeout)
             return signaled
-        finally:
-            self._cond.release()
 
 
 # A barrier class.  Inspired in part by the pthread_barrier_* api and
