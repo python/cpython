@@ -4763,14 +4763,6 @@ class PicklingTests(unittest.TestCase):
                     with self.assertRaises((TypeError, ValueError)):
                         obj.__reduce_ex__(proto)
 
-        class C8:
-            def __getnewargs_ex__(self):
-                return (args, kwargs)
-        obj = C8()
-        for proto in protocols:
-            if 2 <= proto < 4:
-                with self.assertRaises(ValueError):
-                    obj.__reduce_ex__(proto)
         class C9:
             def __getnewargs_ex__(self):
                 return (args, {})
