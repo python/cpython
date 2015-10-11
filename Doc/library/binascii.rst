@@ -52,11 +52,16 @@ The :mod:`binascii` module defines the following functions:
    than one line may be passed at a time.
 
 
-.. function:: b2a_base64(data)
+.. function:: b2a_base64(data, \*, newline=True)
 
    Convert binary data to a line of ASCII characters in base64 coding. The return
-   value is the converted line, including a newline char. The length of *data*
-   should be at most 57 to adhere to the base64 standard.
+   value is the converted line, including a newline char if *newline* is
+   true. The length of *data* should be at most 57 to adhere to the
+   base64 standard.
+
+
+   .. versionchanged:: 3.6
+      Added the *newline* parameter.
 
 
 .. function:: a2b_qp(data, header=False)

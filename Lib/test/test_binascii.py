@@ -262,6 +262,16 @@ class BinASCIITest(unittest.TestCase):
             # non-ASCII string
             self.assertRaises(ValueError, a2b, "\x80")
 
+    def test_b2a_base64_newline(self):
+        # Issue #25357: test newline parameter
+        b = self.type2test(b'hello')
+        self.assertEqual(binascii.b2a_base64(b),
+                         b'aGVsbG8=\n')
+        self.assertEqual(binascii.b2a_base64(b, newline=True),
+                         b'aGVsbG8=\n')
+        self.assertEqual(binascii.b2a_base64(b, newline=False),
+                         b'aGVsbG8=')
+
 
 class ArrayBinASCIITest(BinASCIITest):
     def type2test(self, s):

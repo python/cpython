@@ -93,26 +93,29 @@ exit:
 }
 
 PyDoc_STRVAR(binascii_b2a_base64__doc__,
-"b2a_base64($module, data, /)\n"
+"b2a_base64($module, /, data, *, newline=True)\n"
 "--\n"
 "\n"
 "Base64-code line of data.");
 
 #define BINASCII_B2A_BASE64_METHODDEF    \
-    {"b2a_base64", (PyCFunction)binascii_b2a_base64, METH_O, binascii_b2a_base64__doc__},
+    {"b2a_base64", (PyCFunction)binascii_b2a_base64, METH_VARARGS|METH_KEYWORDS, binascii_b2a_base64__doc__},
 
 static PyObject *
-binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data);
+binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data, int newline);
 
 static PyObject *
-binascii_b2a_base64(PyModuleDef *module, PyObject *arg)
+binascii_b2a_base64(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
+    static char *_keywords[] = {"data", "newline", NULL};
     Py_buffer data = {NULL, NULL};
+    int newline = 1;
 
-    if (!PyArg_Parse(arg, "y*:b2a_base64", &data))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|$i:b2a_base64", _keywords,
+        &data, &newline))
         goto exit;
-    return_value = binascii_b2a_base64_impl(module, &data);
+    return_value = binascii_b2a_base64_impl(module, &data, newline);
 
 exit:
     /* Cleanup for data */
@@ -516,4 +519,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=b1a3cbf7660ebaa5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b15a24350d105251 input=a9049054013a1b77]*/
