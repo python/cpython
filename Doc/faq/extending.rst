@@ -440,8 +440,8 @@ extension module using g++ (e.g., ``g++ -shared -o mymodule.so mymodule.o``).
 Can I create an object class with some methods implemented in C and others in Python (e.g. through inheritance)?
 ----------------------------------------------------------------------------------------------------------------
 
-In Python 2.2, you can inherit from built-in classes such as :class:`int`,
-:class:`list`, :class:`dict`, etc.
+Yes, you can inherit from built-in classes such as :class:`int`, :class:`list`,
+:class:`dict`, etc.
 
 The Boost Python Library (BPL, http://www.boost.org/libs/python/doc/index.html)
 provides a way of doing this from C++ (i.e. you can inherit from an extension
