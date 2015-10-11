@@ -435,6 +435,9 @@
     <ClInclude Include="..\Modules\hashtable.h">
       <Filter>Modules</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\odictobject.h">
+      <Filter>Include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_bisectmodule.c">
@@ -967,6 +970,9 @@
     </ClCompile>
     <ClCompile Include="..\PC\invalid_parameter_handler.c">
       <Filter>PC</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Objects\odictobject.c">
+      <Filter>Objects</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
