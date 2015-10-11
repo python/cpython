@@ -58,8 +58,7 @@ def b64encode(s, altchars=None):
 
     The encoded byte string is returned.
     """
-    # Strip off the trailing newline
-    encoded = binascii.b2a_base64(s)[:-1]
+    encoded = binascii.b2a_base64(s, newline=False)
     if altchars is not None:
         assert len(altchars) == 2, repr(altchars)
         return encoded.translate(bytes.maketrans(b'+/', altchars))
