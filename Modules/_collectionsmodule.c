@@ -281,7 +281,7 @@ PyDoc_STRVAR(popleft_doc, "Remove and return the leftmost element.");
 static void
 deque_trim_right(dequeobject *deque)
 {
-    if (deque->maxlen != -1 && Py_SIZE(deque) > deque->maxlen) {
+    if (deque->maxlen >= 0 && Py_SIZE(deque) > deque->maxlen) {
         PyObject *rv = deque_pop(deque, NULL);
         assert(rv != NULL);
         assert(Py_SIZE(deque) <= deque->maxlen);
@@ -292,7 +292,7 @@ deque_trim_right(dequeobject *deque)
 static void
 deque_trim_left(dequeobject *deque)
 {
-    if (deque->maxlen != -1 && Py_SIZE(deque) > deque->maxlen) {
+    if (deque->maxlen >= 0 && Py_SIZE(deque) > deque->maxlen) {
         PyObject *rv = deque_popleft(deque, NULL);
         assert(rv != NULL);
         assert(Py_SIZE(deque) <= deque->maxlen);
@@ -385,7 +385,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
-    int trim = (deque->maxlen != -1);
+    int trim = (deque->maxlen >= 0);
 
     /* Handle case where id(deque) == id(iterable) */
     if ((PyObject *)deque == iterable) {
@@ -447,7 +447,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 {
     PyObject *it, *item;
     PyObject *(*iternext)(PyObject *);
-    int trim = (deque->maxlen != -1);
+    int trim = (deque->maxlen >= 0);
 
     /* Handle case where id(deque) == id(iterable) */
     if ((PyObject *)deque == iterable) {
@@ -686,7 +686,7 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
         /* common case, repeating a single element */
         PyObject *item = deque->leftblock->data[deque->leftindex];
 
-        if (deque->maxlen != -1 && n > deque->maxlen)
+        if (deque->maxlen >= 0 && n > deque->maxlen)
             n = deque->maxlen;
 
         if (n > MAX_DEQUE_LEN)
@@ -1355,7 +1355,7 @@ deque_repr(PyObject *deque)
         Py_ReprLeave(deque);
         return NULL;
     }
-    if (((dequeobject *)deque)->maxlen != -1)
+    if (((dequeobject *)deque)->maxlen >= 0)
         result = PyUnicode_FromFormat("deque(%R, maxlen=%zd)",
                                       aslist, ((dequeobject *)deque)->maxlen);
     else
