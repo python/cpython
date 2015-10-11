@@ -659,7 +659,8 @@ def main(tests=None, **kwargs):
 
     def accumulate_result(test, result):
         ok, test_time = result
-        test_times.append((test_time, test))
+        if ok not in (CHILD_ERROR, INTERRUPTED):
+            test_times.append((test_time, test))
         if ok == PASSED:
             good.append(test)
         elif ok == FAILED:
