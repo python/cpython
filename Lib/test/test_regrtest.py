@@ -5,6 +5,7 @@ Note: test_regrtest cannot be run twice in parallel.
 """
 
 import argparse
+import contextlib
 import faulthandler
 import getopt
 import io
@@ -247,8 +248,11 @@ class ParseArgsTestCase(unittest.TestCase):
     def test_nowindows(self):
         for opt in '-n', '--nowindows':
             with self.subTest(opt=opt):
-                ns = libregrtest._parse_args([opt])
+                with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    ns = libregrtest._parse_args([opt])
                 self.assertTrue(ns.nowindows)
+                err = stderr.getvalue()
+                self.assertIn('the --nowindows (-n) option is deprecated', err)
 
     def test_forever(self):
         for opt in '-F', '--forever':
