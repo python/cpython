@@ -42,7 +42,7 @@ Continue?</String>
   <String Id="InstallLicenseLinkText">[WixBundleName] &lt;a href="#"&gt;license terms&lt;/a&gt;.</String>
   <String Id="InstallAcceptCheckbox">I &amp;agree to the license terms and conditions</String>
   <String Id="InstallButton">&amp;Install Now</String>
-  <String Id="InstallButtonNote">[DefaultJustForMeTargetDir]
+  <String Id="InstallButtonNote">[TargetDir]
 
 Includes IDLE, pip and documentation
 Creates shortcuts and file associations</String>

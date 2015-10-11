@@ -459,6 +459,9 @@ Build
 Windows
 -------
 
+- Issue #25163: Display correct directory in installer when using non-default
+  settings.
+
 - Issue #25361: Disables use of SSE2 instructions in Windows 32-bit build
 
 - Issue #25089: Adds logging to installer for case where launcher is not
