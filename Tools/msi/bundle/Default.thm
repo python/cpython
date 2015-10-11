@@ -24,8 +24,8 @@
         <Button Name="InstallButton" X="185" Y="101" Width="-11" Height="109" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallButton)</Button>
         <Button Name="InstallCustomButton" X="185" Y="221" Width="-11" Height="59" TabStop="yes" FontId="3" HexStyle="0xE">#(loc.InstallCustomButton)</Button>
 
-        <Checkbox Name="PrependPath" X="185" Y="-13" Width="-100" Height="24" TabStop="yes" FontId="3">#(loc.ShortPrependPathLabel)</Checkbox>
         <Checkbox Name="InstallLauncherAllUsers" X="185" Y="-37" Width="-100" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.ShortInstallLauncherAllUsersLabel)</Checkbox>
+        <Checkbox Name="PrependPath" X="185" Y="-13" Width="-100" Height="24" TabStop="yes" FontId="3">#(loc.ShortPrependPathLabel)</Checkbox>
 
         <Button Name="InstallCancelButton" X="-11" Y="-11" Width="85" Height="27" TabStop="yes" FontId="0">#(loc.CancelButton)</Button>
     </Page>
