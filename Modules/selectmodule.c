@@ -2363,7 +2363,7 @@ arguments; each contains the subset of the corresponding file descriptors\n\
 that are ready.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
-On Windows only sockets are supported; on Unix, all file\n\
+On Windows, only sockets are supported; on Unix, all file\n\
 descriptors can be used.");
 
 static PyMethodDef select_methods[] = {
@@ -2381,7 +2381,7 @@ PyDoc_STRVAR(module_doc,
 "This module supports asynchronous I/O on multiple file descriptors.\n\
 \n\
 *** IMPORTANT NOTICE ***\n\
-On Windows only sockets are supported; on Unix, all file descriptors.");
+On Windows, only sockets are supported; on Unix, all file descriptors.");
 
 
 static struct PyModuleDef selectmodule = {
