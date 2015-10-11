@@ -52,7 +52,8 @@ class EINTRBaseTest(unittest.TestCase):
                          cls.signal_period)
 
         # Issue #25277: Use faulthandler to try to debug a hang on FreeBSD
-        faulthandler.dump_traceback_later(10 * 60, exit=True)
+        if hasattr(faulthandler, 'dump_traceback_later'):
+            faulthandler.dump_traceback_later(10 * 60, exit=True)
 
     @classmethod
     def stop_alarm(cls):
@@ -62,7 +63,8 @@ class EINTRBaseTest(unittest.TestCase):
     def tearDownClass(cls):
         cls.stop_alarm()
         signal.signal(signal.SIGALRM, cls.orig_handler)
-        faulthandler.cancel_dump_traceback_later()
+        if hasattr(faulthandler, 'cancel_dump_traceback_later'):
+            faulthandler.cancel_dump_traceback_later()
 
     @classmethod
     def _sleep(cls):
