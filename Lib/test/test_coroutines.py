@@ -1324,7 +1324,7 @@ class CoroAsyncIOCompatTest(unittest.TestCase):
     def test_asyncio_1(self):
         # asyncio cannot be imported when Python is compiled without thread
         # support
-        support.import_module('asyncio')
+        asyncio = support.import_module('asyncio')
 
         class MyException(Exception):
             pass
