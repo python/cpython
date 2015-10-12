@@ -276,29 +276,12 @@ PyDoc_STRVAR(popleft_doc, "Remove and return the leftmost element.");
  * the limit. If it has, we get the size back down to the limit by popping an
  * item off of the opposite end.  The methods that can trigger this are append(),
  * appendleft(), extend(), and extendleft().
+ *
+ * The macro to check whether a deque needs to be trimmed uses a single
+ * unsigned test that returns true whenever 0 <= maxlen < Py_SIZE(deque).
  */
 
-static void
-deque_trim_right(dequeobject *deque)
-{
-    if (deque->maxlen >= 0 && Py_SIZE(deque) > deque->maxlen) {
-        PyObject *rv = deque_pop(deque, NULL);
-        assert(rv != NULL);
-        assert(Py_SIZE(deque) <= deque->maxlen);
-        Py_DECREF(rv);
-    }
-}
-
-static void
-deque_trim_left(dequeobject *deque)
-{
-    if (deque->maxlen >= 0 && Py_SIZE(deque) > deque->maxlen) {
-        PyObject *rv = deque_popleft(deque, NULL);
-        assert(rv != NULL);
-        assert(Py_SIZE(deque) <= deque->maxlen);
-        Py_DECREF(rv);
-    }
-}
+#define NEEDS_TRIM(deque, maxlen) ((size_t)(maxlen) < (size_t)(Py_SIZE(deque)))
 
 static PyObject *
 deque_append(dequeobject *deque, PyObject *item)
@@ -319,7 +302,10 @@ deque_append(dequeobject *deque, PyObject *item)
     Py_INCREF(item);
     deque->rightindex++;
     deque->rightblock->data[deque->rightindex] = item;
-    deque_trim_left(deque);
+    if (NEEDS_TRIM(deque, deque->maxlen)) {
+        PyObject *rv = deque_popleft(deque, NULL);
+        Py_DECREF(rv);
+    }
     Py_RETURN_NONE;
 }
 
@@ -344,7 +330,10 @@ deque_appendleft(dequeobject *deque, PyObject *item)
     Py_INCREF(item);
     deque->leftindex--;
     deque->leftblock->data[deque->leftindex] = item;
-    deque_trim_right(deque);
+    if (NEEDS_TRIM(deque, deque->maxlen)) {
+        PyObject *rv = deque_pop(deque, NULL);
+        Py_DECREF(rv);
+    }
     Py_RETURN_NONE;
 }
 
@@ -433,7 +422,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         Py_SIZE(deque)++;
         deque->rightindex++;
         deque->rightblock->data[deque->rightindex] = item;
-        if (maxlen >= 0 && Py_SIZE(deque) > maxlen) {
+        if (NEEDS_TRIM(deque, maxlen)) {
             PyObject *rv = deque_popleft(deque, NULL);
             Py_DECREF(rv);
         }
@@ -497,7 +486,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         Py_SIZE(deque)++;
         deque->leftindex--;
         deque->leftblock->data[deque->leftindex] = item;
-        if (maxlen >= 0 && Py_SIZE(deque) > maxlen) {
+        if (NEEDS_TRIM(deque, maxlen)) {
             PyObject *rv = deque_pop(deque, NULL);
             Py_DECREF(rv);
         }
