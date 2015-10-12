@@ -674,6 +674,8 @@ public: // IBootstrapperApplication
                     hr
                 );
             }
+
+            LoadOptionalFeatureStates(_engine);
         } else if (BOOTSTRAPPER_RELATED_OPERATION_NONE == operation) {
             if (_command.action == BOOTSTRAPPER_ACTION_INSTALL) {
                 LOC_STRING *pLocString = nullptr;
@@ -2556,7 +2558,14 @@ private:
 
     BOOL WillElevate() {
         static BAL_CONDITION WILL_ELEVATE_CONDITION = {
-            L"not WixBundleElevated and (InstallAllUsers or (InstallLauncherAllUsers and Include_launcher))",
+            L"not WixBundleElevated and ("
+                /*Elevate when installing for all users*/
+                L"InstallAllUsers or"
+                /*Elevate when installing the launcher for all users and it was not detected*/
+                L"(InstallLauncherAllUsers and Include_launcher and not DetectedLauncher) or"
+                /*Elevate when the launcher was installed for all users and it is being removed*/
+                L"(DetectedLauncher and DetectedLauncherAllUsers and not Include_launcher)"
+            L")",
             L""
         };
         BOOL result;
@@ -2884,6 +2893,10 @@ private:
             pEngine->SetVariableNumeric(L"Include_launcher", 0);
         } else if (res == ERROR_SUCCESS) {
             pEngine->SetVariableNumeric(L"Include_launcher", 1);
+            pEngine->SetVariableNumeric(L"DetectedLauncher", 1);
+            pEngine->SetVariableNumeric(L"InstallLauncherAllUsers", (hkHive == HKEY_LOCAL_MACHINE) ? 1 : 0);
+            pEngine->SetVariableNumeric(L"DetectedLauncherAllUsers", (hkHive == HKEY_LOCAL_MACHINE) ? 1 : 0);
+            pEngine->SetVariableString(L"InstallLauncherAllUsersState", L"disable");
         }
 
         res = RegQueryValueExW(hKey, L"AssociateFiles", nullptr, nullptr, nullptr, nullptr);
@@ -3101,7 +3114,6 @@ public:
         _hBAFModule = nullptr;
         _baFunction = nullptr;
 
-        LoadOptionalFeatureStates(pEngine);
         EnsureTargetDir();
     }
 

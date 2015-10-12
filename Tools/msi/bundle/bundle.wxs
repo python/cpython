@@ -65,6 +65,7 @@
     <Variable Name="Include_debug" Value="0" bal:Overridable="yes" />
     
     <Variable Name="LauncherOnly" Value="0" bal:Overridable="yes" />
+    <Variable Name="DetectedLauncher" Value="0" />
     
     <Variable Name="AssociateFiles" Value="1" bal:Overridable="yes" />
     <Variable Name="Shortcuts" Value="1" bal:Overridable="yes" />
