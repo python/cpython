@@ -94,10 +94,16 @@ PyAPI_DATA(int) _Py_CheckRecursionLimit;
 #  define _Py_MakeRecCheck(x)  (++(x) > _Py_CheckRecursionLimit)
 #endif
 
+/* Compute the "lower-water mark" for a recursion limit. When
+ * Py_LeaveRecursiveCall() is called with a recursion depth below this mark,
+ * the overflowed flag is reset to 0. */
+#define _Py_RecursionLimitLowerWaterMark(limit) \
+    (((limit) > 200) \
+        ? ((limit) - 50) \
+        : (3 * ((limit) >> 2)))
+
 #define _Py_MakeEndRecCheck(x) \
-    (--(x) < ((_Py_CheckRecursionLimit > 100) \
-        ? (_Py_CheckRecursionLimit - 50) \
-        : (3 * (_Py_CheckRecursionLimit >> 2))))
+    (--(x) < _Py_RecursionLimitLowerWaterMark(_Py_CheckRecursionLimit))
 
 #define Py_ALLOW_RECURSION \
   do { unsigned char _old = PyThreadState_GET()->recursion_critical;\
