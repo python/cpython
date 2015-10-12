@@ -52,7 +52,7 @@ Creates shortcuts and file associations</String>
   <String Id="InstallSimpleButtonNote">Use settings preselected by your administrator
 
 [SimpleInstallDescription]</String>
-  <String Id="InstallUpgradeButton">&amp;Upgrade Now</String>
+  <String Id="InstallUpgradeButton">Up&amp;grade Now</String>
   <String Id="InstallUpgradeButtonNote">[TargetDir]
 
 Replaces your existing installation without changing settings.
