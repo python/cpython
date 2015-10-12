@@ -4019,19 +4019,24 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
     _PyBytesWriter_CheckConsistency(writer, str);
 
     pos = _PyBytesWriter_GetPos(writer, str);
-    if (!writer->use_small_buffer) {
+    if (pos == 0) {
+        Py_CLEAR(writer->buffer);
+        /* Get the empty byte string singleton */
+        result = PyBytes_FromStringAndSize(NULL, 0);
+    }
+    else if (writer->use_small_buffer) {
+        result = PyBytes_FromStringAndSize(writer->small_buffer, pos);
+    }
+    else {
+        result = writer->buffer;
+        writer->buffer = NULL;
+
         if (pos != writer->allocated) {
-            if (_PyBytes_Resize(&writer->buffer, pos)) {
-                assert(writer->buffer == NULL);
+            if (_PyBytes_Resize(&result, pos)) {
+                assert(result == NULL);
                 return NULL;
             }
         }
-
-        result = writer->buffer;
-        writer->buffer = NULL;
-    }
-    else {
-        result = PyBytes_FromStringAndSize(writer->small_buffer, pos);
     }
     return result;
 }
