@@ -151,8 +151,8 @@ after a final minor release is made, the Subversion trunk is incremented to the
 next minor version, which becomes the "a0" version,
 e.g. "2.4a0".
 
-See also the documentation for ``sys.version``, ``sys.hexversion``, and
-``sys.version_info``.
+See also the documentation for :data:`sys.version`, :data:`sys.hexversion`, and
+:data:`sys.version_info`.
 
 
 How do I obtain a copy of the Python source?
