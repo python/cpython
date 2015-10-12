@@ -3520,6 +3520,15 @@ test_PyTime_AsMicroseconds(PyObject *self, PyObject *args)
     return _PyTime_AsNanosecondsObject(ms);
 }
 
+static PyObject*
+get_recursion_depth(PyObject *self, PyObject *args)
+{
+    PyThreadState *tstate = PyThreadState_GET();
+
+    /* substract one to ignore the frame of the get_recursion_depth() call */
+    return PyLong_FromLong(tstate->recursion_depth - 1);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3696,6 +3705,7 @@ static PyMethodDef TestMethods[] = {
 #endif
     {"PyTime_AsMilliseconds", test_PyTime_AsMilliseconds, METH_VARARGS},
     {"PyTime_AsMicroseconds", test_PyTime_AsMicroseconds, METH_VARARGS},
+    {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 
