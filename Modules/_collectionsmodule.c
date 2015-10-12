@@ -399,7 +399,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
     if (it == NULL)
         return NULL;
 
-    if (deque->maxlen == 0)
+    if (maxlen == 0)
         return consume_iterator(it);
 
     iternext = *Py_TYPE(it)->tp_iternext;
@@ -463,7 +463,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
     if (it == NULL)
         return NULL;
 
-    if (deque->maxlen == 0)
+    if (maxlen == 0)
         return consume_iterator(it);
 
     iternext = *Py_TYPE(it)->tp_iternext;
