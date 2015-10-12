@@ -21,7 +21,7 @@ class TextViewer(Toplevel):
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
         # place dialog below parent if running htest
-        self.geometry("=%dx%d+%d+%d" % (625, 500,
+        self.geometry("=%dx%d+%d+%d" % (750, 500,
                            parent.winfo_rootx() + 10,
                            parent.winfo_rooty() + (10 if not _htest else 100)))
         #elguavas - config placeholders til config stuff completed
