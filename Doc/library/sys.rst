@@ -975,6 +975,13 @@ always available.
    that supports a higher limit.  This should be done with care, because a too-high
    limit can lead to a crash.
 
+   If the new limit is too low at the current recursion depth, a
+   :exc:`RecursionError` exception is raised.
+
+   .. versionchanged:: 3.5.1
+      A :exc:`RecursionError` exception is now raised if the new limit is too
+      low at the current recursion depth.
+
 
 .. function:: setswitchinterval(interval)
 
