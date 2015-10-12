@@ -632,14 +632,37 @@ processor's time-stamp counter."
 static PyObject *
 sys_setrecursionlimit(PyObject *self, PyObject *args)
 {
-    int new_limit;
+    int new_limit, mark;
+    PyThreadState *tstate;
+
     if (!PyArg_ParseTuple(args, "i:setrecursionlimit", &new_limit))
         return NULL;
-    if (new_limit <= 0) {
+
+    if (new_limit < 1) {
         PyErr_SetString(PyExc_ValueError,
-                        "recursion limit must be positive");
+                        "recursion limit must be greater or equal than 1");
         return NULL;
     }
+
+    /* Issue #25274: When the recursion depth hits the recursion limit in
+       _Py_CheckRecursiveCall(), the overflowed flag of the thread state is
+       set to 1 and a RecursionError is raised. The overflowed flag is reset
+       to 0 when the recursion depth goes below the low-water mark: see
+       Py_LeaveRecursiveCall().
+
+       Reject too low new limit if the current recursion depth is higher than
+       the new low-water mark. Otherwise it may not be possible anymore to
+       reset the overflowed flag to 0. */
+    mark = _Py_RecursionLimitLowerWaterMark(new_limit);
+    tstate = PyThreadState_GET();
+    if (tstate->recursion_depth >= mark) {
+        PyErr_Format(PyExc_RecursionError,
+                     "cannot set the recursion limit to %i at "
+                     "the recursion depth %i: the limit is too low",
+                     new_limit, tstate->recursion_depth);
+        return NULL;
+    }
+
     Py_SetRecursionLimit(new_limit);
     Py_INCREF(Py_None);
     return Py_None;

@@ -201,22 +201,57 @@ class SysModuleTest(unittest.TestCase):
         if hasattr(sys, 'gettrace') and sys.gettrace():
             self.skipTest('fatal error if run with a trace function')
 
-        # NOTE: this test is slightly fragile in that it depends on the current
-        # recursion count when executing the test being low enough so as to
-        # trigger the recursion recovery detection in the _Py_MakeEndRecCheck
-        # macro (see ceval.h).
         oldlimit = sys.getrecursionlimit()
         def f():
             f()
         try:
-            # FIXME: workaround crash for the issue #25274
-            # FIXME: until the crash is fixed
-            #for i in (50, 1000):
-            for i in (150, 1000):
-                # Issue #5392: stack overflow after hitting recursion limit twice
-                sys.setrecursionlimit(i)
+            for depth in (10, 25, 50, 75, 100, 250, 1000):
+                try:
+                    sys.setrecursionlimit(depth)
+                except RecursionError:
+                    # Issue #25274: The recursion limit is too low at the
+                    # current recursion depth
+                    continue
+
+                # Issue #5392: test stack overflow after hitting recursion
+                # limit twice
                 self.assertRaises(RecursionError, f)
                 self.assertRaises(RecursionError, f)
+        finally:
+            sys.setrecursionlimit(oldlimit)
+
+    @test.support.cpython_only
+    def test_setrecursionlimit_recursion_depth(self):
+        # Issue #25274: Setting a low recursion limit must be blocked if the
+        # current recursion depth is already higher than the "lower-water
+        # mark". Otherwise, it may not be possible anymore to
+        # reset the overflowed flag to 0.
+
+        from _testcapi import get_recursion_depth
+
+        def set_recursion_limit_at_depth(depth, limit):
+            recursion_depth = get_recursion_depth()
+            if recursion_depth >= depth:
+                with self.assertRaises(RecursionError) as cm:
+                    sys.setrecursionlimit(limit)
+                self.assertRegex(str(cm.exception),
+                                 "cannot set the recursion limit to [0-9]+ "
+                                 "at the recursion depth [0-9]+: "
+                                 "the limit is too low")
+            else:
+                set_recursion_limit_at_depth(depth, limit)
+
+        oldlimit = sys.getrecursionlimit()
+        try:
+            sys.setrecursionlimit(1000)
+
+            for limit in (10, 25, 50, 75, 100, 150, 200):
+                # formula extracted from _Py_RecursionLimitLowerWaterMark()
+                if limit > 200:
+                    depth = limit - 50
+                else:
+                    depth = limit * 3 // 4
+                set_recursion_limit_at_depth(depth, limit)
         finally:
             sys.setrecursionlimit(oldlimit)
 
