@@ -2110,38 +2110,35 @@ save_bytes(PicklerObject *self, PyObject *obj)
 static PyObject *
 raw_unicode_escape(PyObject *obj)
 {
-    PyObject *repr;
     char *p;
     Py_ssize_t i, size;
-    size_t expandsize;
     void *data;
     unsigned int kind;
+    _PyBytesWriter writer;
 
     if (PyUnicode_READY(obj))
         return NULL;
 
+    _PyBytesWriter_Init(&writer);
+
     size = PyUnicode_GET_LENGTH(obj);
     data = PyUnicode_DATA(obj);
     kind = PyUnicode_KIND(obj);
-    if (kind == PyUnicode_4BYTE_KIND)
-        expandsize = 10;
-    else
-        expandsize = 6;
 
-    if ((size_t)size > (size_t)PY_SSIZE_T_MAX / expandsize)
-        return PyErr_NoMemory();
-    repr = PyBytes_FromStringAndSize(NULL, expandsize * size);
-    if (repr == NULL)
-        return NULL;
-    if (size == 0)
-        return repr;
-    assert(Py_REFCNT(repr) == 1);
+    p = _PyBytesWriter_Alloc(&writer, size);
+    if (p == NULL)
+        goto error;
+    writer.overallocate = 1;
 
-    p = PyBytes_AS_STRING(repr);
     for (i=0; i < size; i++) {
         Py_UCS4 ch = PyUnicode_READ(kind, data, i);
         /* Map 32-bit characters to '\Uxxxxxxxx' */
         if (ch >= 0x10000) {
+            /* -1: substract 1 preallocated byte */
+            p = _PyBytesWriter_Prepare(&writer, p, 10-1);
+            if (p == NULL)
+                goto error;
+
             *p++ = '\\';
             *p++ = 'U';
             *p++ = Py_hexdigits[(ch >> 28) & 0xf];
@@ -2153,8 +2150,13 @@ raw_unicode_escape(PyObject *obj)
             *p++ = Py_hexdigits[(ch >> 4) & 0xf];
             *p++ = Py_hexdigits[ch & 15];
         }
-        /* Map 16-bit characters to '\uxxxx' */
+        /* Map 16-bit characters, '\\' and '\n' to '\uxxxx' */
         else if (ch >= 256 || ch == '\\' || ch == '\n') {
+            /* -1: substract 1 preallocated byte */
+            p = _PyBytesWriter_Prepare(&writer, p, 6-1);
+            if (p == NULL)
+                goto error;
+
             *p++ = '\\';
             *p++ = 'u';
             *p++ = Py_hexdigits[(ch >> 12) & 0xf];
@@ -2166,10 +2168,12 @@ raw_unicode_escape(PyObject *obj)
         else
             *p++ = (char) ch;
     }
-    size = p - PyBytes_AS_STRING(repr);
-    if (_PyBytes_Resize(&repr, size) < 0)
-        return NULL;
-    return repr;
+
+    return _PyBytesWriter_Finish(&writer, p);
+
+error:
+    _PyBytesWriter_Dealloc(&writer);
+    return NULL;
 }
 
 static int
