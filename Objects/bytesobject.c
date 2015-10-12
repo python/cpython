@@ -4042,9 +4042,11 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
 }
 
 void*
-_PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *str,
+_PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *ptr,
                           const void *bytes, Py_ssize_t size)
 {
+    char *str = (char *)ptr;
+
     str = _PyBytesWriter_Prepare(writer, str, size);
     if (str == NULL)
         return NULL;
