@@ -156,7 +156,7 @@ PyAPI_FUNC(void) _PyBytesWriter_Init(_PyBytesWriter *writer);
    Return a bytes object.
    Raise an exception and return NULL on error. */
 PyAPI_FUNC(PyObject *) _PyBytesWriter_Finish(_PyBytesWriter *writer,
-    char *str);
+    void *str);
 
 /* Deallocate memory of a writer (clear its internal buffer). */
 PyAPI_FUNC(void) _PyBytesWriter_Dealloc(_PyBytesWriter *writer);
@@ -164,22 +164,22 @@ PyAPI_FUNC(void) _PyBytesWriter_Dealloc(_PyBytesWriter *writer);
 /* Allocate the buffer to write size bytes.
    Return the pointer to the beginning of buffer data.
    Raise an exception and return NULL on error. */
-PyAPI_FUNC(char*) _PyBytesWriter_Alloc(_PyBytesWriter *writer,
+PyAPI_FUNC(void*) _PyBytesWriter_Alloc(_PyBytesWriter *writer,
     Py_ssize_t size);
 
 /* Add *size* bytes to the buffer.
    str is the current pointer inside the buffer.
    Return the updated current pointer inside the buffer.
    Raise an exception and return NULL on error. */
-PyAPI_FUNC(char*) _PyBytesWriter_Prepare(_PyBytesWriter *writer,
-    char *str,
+PyAPI_FUNC(void*) _PyBytesWriter_Prepare(_PyBytesWriter *writer,
+    void *str,
     Py_ssize_t size);
 
 /* Write bytes.
    Raise an exception and return NULL on error. */
-PyAPI_FUNC(char*) _PyBytesWriter_WriteBytes(_PyBytesWriter *writer,
-    char *str,
-    char *bytes,
+PyAPI_FUNC(void*) _PyBytesWriter_WriteBytes(_PyBytesWriter *writer,
+    void *str,
+    const void *bytes,
     Py_ssize_t size);
 #endif   /* Py_LIMITED_API */
 
