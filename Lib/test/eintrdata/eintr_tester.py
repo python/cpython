@@ -59,11 +59,6 @@ class EINTRBaseTest(unittest.TestCase):
         cls.stop_alarm()
         signal.signal(signal.SIGALRM, cls.orig_handler)
 
-    @classmethod
-    def _sleep(cls):
-        # default sleep time
-        time.sleep(cls.sleep_time)
-
     def subprocess(self, *args, **kw):
         cmd_args = (sys.executable, '-c') + args
         return subprocess.Popen(cmd_args, **kw)
@@ -375,6 +370,11 @@ class SignalEINTRTest(EINTRBaseTest):
     @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
                          'need signal.sigwaitinfo()')
     def test_sigwaitinfo(self):
+        # Issue #25277: The sleep is a weak synchronization between the parent
+        # and the child process. If the sleep is too low, the test hangs on
+        # slow or highly loaded systems.
+        self.sleep_time = 2.0
+
         signum = signal.SIGUSR1
         pid = os.getpid()
 
