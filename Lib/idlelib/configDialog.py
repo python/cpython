@@ -18,7 +18,9 @@ from idlelib.keybindingDialog import GetKeysDialog
 from idlelib.configSectionNameDialog import GetCfgSectionNameDialog
 from idlelib.configHelpSourceEdit import GetHelpSourceDialog
 from idlelib.tabbedpages import TabbedPageSet
+from idlelib.textView import view_text
 from idlelib import macosxSupport
+
 class ConfigDialog(Toplevel):
 
     def __init__(self, parent, title='', _htest=False, _utest=False):
@@ -83,6 +85,7 @@ class ConfigDialog(Toplevel):
         self.CreatePageKeys()
         self.CreatePageGeneral()
         self.create_action_buttons().pack(side=BOTTOM)
+
     def create_action_buttons(self):
         if macosxSupport.isAquaTk():
             # Changing the default padding on OSX results in unreadable
@@ -92,28 +95,18 @@ class ConfigDialog(Toplevel):
             paddingArgs = {'padx':6, 'pady':3}
         outer = Frame(self, pady=2)
         buttons = Frame(outer, pady=2)
-        self.buttonOk = Button(
-                buttons, text='Ok', command=self.Ok,
-                takefocus=FALSE, **paddingArgs)
-        self.buttonApply = Button(
-                buttons, text='Apply', command=self.Apply,
-                takefocus=FALSE, **paddingArgs)
-        self.buttonCancel = Button(
-                buttons, text='Cancel', command=self.Cancel,
-                takefocus=FALSE, **paddingArgs)
-        self.buttonOk.pack(side=LEFT, padx=5)
-        self.buttonApply.pack(side=LEFT, padx=5)
-        self.buttonCancel.pack(side=LEFT, padx=5)
-# Comment out Help button creation and packing until implement self.Help
-##        self.buttonHelp = Button(
-##                buttons, text='Help', command=self.Help,
-##                takefocus=FALSE, **paddingArgs)
-##        self.buttonHelp.pack(side=RIGHT, padx=5)
-
+        for txt, cmd in (
+            ('Ok', self.Ok),
+            ('Apply', self.Apply),
+            ('Cancel', self.Cancel),
+            ('Help', self.Help)):
+            Button(buttons, text=txt, command=cmd, takefocus=FALSE,
+                   **paddingArgs).pack(side=LEFT, padx=5)
         # add space above buttons
         Frame(outer, height=2, borderwidth=0).pack(side=TOP)
         buttons.pack(side=BOTTOM)
         return outer
+
     def CreatePageFontTab(self):
         parent = self.parent
         self.fontSize = StringVar(parent)
@@ -1200,7 +1193,27 @@ class ConfigDialog(Toplevel):
         self.ActivateConfigChanges()
 
     def Help(self):
-        pass
+        page = self.tabPages._current_page
+        view_text(self, title='Help for IDLE preferences',
+                 text=help_common+help_pages.get(page, ''))
+
+help_common = '''\
+When you click either the Apply or Ok buttons, settings in this
+dialog that are different from IDLE's default are saved in
+a .idlerc directory in your home directory. Except as noted,
+hese changes apply to all versions of IDLE installed on this
+machine. Some do not take affect until IDLE is restarted.
+[Cancel] only cancels changes made since the last save.
+'''
+help_pages = {
+    'Highlighting':'''
+Highlighting:
+The IDLE Dark color theme is new in Octover 2015.  It can only
+be used with older IDLE releases if it is saved as a custom
+theme, with a different name.
+'''
+}
+
 
 class VerticalScrolledFrame(Frame):
     """A pure Tkinter vertically scrollable frame.
