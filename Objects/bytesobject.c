@@ -3923,8 +3923,8 @@ _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
 #endif
 }
 
-char*
-_PyBytesWriter_Prepare(_PyBytesWriter *writer, char *str, Py_ssize_t size)
+void*
+_PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 {
     Py_ssize_t allocated, pos;
 
@@ -3992,7 +3992,7 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, char *str, Py_ssize_t size)
 /* Allocate the buffer to write size bytes.
    Return the pointer to the beginning of buffer data.
    Raise an exception and return NULL on error. */
-char*
+void*
 _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
 {
     /* ensure that _PyBytesWriter_Alloc() is only called once */
@@ -4011,7 +4011,7 @@ _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
 }
 
 PyObject *
-_PyBytesWriter_Finish(_PyBytesWriter *writer, char *str)
+_PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
 {
     Py_ssize_t pos;
     PyObject *result;
@@ -4033,13 +4033,12 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, char *str)
     else {
         result = PyBytes_FromStringAndSize(writer->small_buffer, pos);
     }
-
     return result;
 }
 
-char*
-_PyBytesWriter_WriteBytes(_PyBytesWriter *writer, char *str,
-                          char *bytes, Py_ssize_t size)
+void*
+_PyBytesWriter_WriteBytes(_PyBytesWriter *writer, void *str,
+                          const void *bytes, Py_ssize_t size)
 {
     str = _PyBytesWriter_Prepare(writer, str, size);
     if (str == NULL)
