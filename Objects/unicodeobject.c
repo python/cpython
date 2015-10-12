@@ -13715,17 +13715,26 @@ _PyUnicodeWriter_Finish(_PyUnicodeWriter *writer)
         assert(PyUnicode_GET_LENGTH(str) == writer->pos);
         return str;
     }
-    if (PyUnicode_GET_LENGTH(writer->buffer) != writer->pos) {
-        PyObject *newbuffer;
-        newbuffer = resize_compact(writer->buffer, writer->pos);
-        if (newbuffer == NULL) {
-            Py_CLEAR(writer->buffer);
-            return NULL;
-        }
-        writer->buffer = newbuffer;
+    if (writer->pos == 0) {
+        Py_CLEAR(writer->buffer);
+
+        /* Get the empty Unicode string singleton ('') */
+        _Py_INCREF_UNICODE_EMPTY();
+        str  = unicode_empty;
     }
-    str = writer->buffer;
-    writer->buffer = NULL;
+    else {
+        str = writer->buffer;
+        writer->buffer = NULL;
+
+        if (PyUnicode_GET_LENGTH(str) != writer->pos) {
+            PyObject *str2;
+            str2 = resize_compact(str, writer->pos);
+            if (str2 == NULL)
+                return NULL;
+            str = str2;
+        }
+    }
+
     assert(_PyUnicode_CheckConsistency(str, 1));
     return unicode_result_ready(str);
 }
