@@ -2440,6 +2440,7 @@ def dis(pickle, out=None, memo=None, indentlevel=4, annotate=0):
         if opcode.name in ("PUT", "BINPUT", "LONG_BINPUT", "MEMOIZE"):
             if opcode.name == "MEMOIZE":
                 memo_idx = len(memo)
+                markmsg = "(as %d)" % memo_idx
             else:
                 assert arg is not None
                 memo_idx = arg
