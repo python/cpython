@@ -346,9 +346,10 @@ binascii_b2a_uu_impl(PyModuleDef *module, Py_buffer *data)
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
-    PyObject *rv;
-    Py_ssize_t bin_len;
+    Py_ssize_t bin_len, out_len;
+    _PyBytesWriter writer;
 
+    _PyBytesWriter_Init(&writer);
     bin_data = data->buf;
     bin_len = data->len;
     if ( bin_len > 45 ) {
@@ -358,9 +359,10 @@ binascii_b2a_uu_impl(PyModuleDef *module, Py_buffer *data)
     }
 
     /* We're lazy and allocate to much (fixed up later) */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, 2 + (bin_len+2)/3*4)) == NULL )
+    out_len = 2 + (bin_len + 2) / 3 * 4;
+    ascii_data = _PyBytesWriter_Alloc(&writer, out_len);
+    if (ascii_data == NULL)
         return NULL;
-    ascii_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     /* Store the length */
     *ascii_data++ = ' ' + (bin_len & 077);
@@ -382,12 +384,7 @@ binascii_b2a_uu_impl(PyModuleDef *module, Py_buffer *data)
     }
     *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    if (_PyBytes_Resize(&rv,
-                       (ascii_data -
-                        (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
-        Py_CLEAR(rv);
-    }
-    return rv;
+    return _PyBytesWriter_Finish(&writer, ascii_data);
 }
 
 
@@ -433,9 +430,9 @@ binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *data)
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
-    PyObject *rv;
     Py_ssize_t ascii_len, bin_len;
     int quad_pos = 0;
+    _PyBytesWriter writer;
 
     ascii_data = data->buf;
     ascii_len = data->len;
@@ -447,11 +444,12 @@ binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *data)
 
     bin_len = ((ascii_len+3)/4)*3; /* Upper bound, corrected later */
 
+    _PyBytesWriter_Init(&writer);
+
     /* Allocate the buffer */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, bin_len)) == NULL )
+    bin_data = _PyBytesWriter_Alloc(&writer, bin_len);
+    if (bin_data == NULL)
         return NULL;
-    bin_data = (unsigned char *)PyBytes_AS_STRING(rv);
-    bin_len = 0;
 
     for( ; ascii_len > 0; ascii_len--, ascii_data++) {
         this_ch = *ascii_data;
@@ -496,31 +494,17 @@ binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *data)
         if ( leftbits >= 8 ) {
             leftbits -= 8;
             *bin_data++ = (leftchar >> leftbits) & 0xff;
-            bin_len++;
             leftchar &= ((1 << leftbits) - 1);
         }
     }
 
     if (leftbits != 0) {
         PyErr_SetString(Error, "Incorrect padding");
-        Py_DECREF(rv);
+        _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
 
-    /* And set string size correctly. If the result string is empty
-    ** (because the input was all invalid) return the shared empty
-    ** string instead; _PyBytes_Resize() won't do this for us.
-    */
-    if (bin_len > 0) {
-        if (_PyBytes_Resize(&rv, bin_len) < 0) {
-            Py_CLEAR(rv);
-        }
-    }
-    else {
-        Py_DECREF(rv);
-        rv = PyBytes_FromStringAndSize("", 0);
-    }
-    return rv;
+    return _PyBytesWriter_Finish(&writer, bin_data);
 }
 
 
@@ -542,11 +526,12 @@ binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data, int newline)
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
-    PyObject *rv;
     Py_ssize_t bin_len, out_len;
+    _PyBytesWriter writer;
 
     bin_data = data->buf;
     bin_len = data->len;
+    _PyBytesWriter_Init(&writer);
 
     assert(bin_len >= 0);
 
@@ -561,9 +546,9 @@ binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data, int newline)
     out_len = bin_len*2 + 2;
     if (newline)
         out_len++;
-    if ( (rv=PyBytes_FromStringAndSize(NULL, out_len)) == NULL )
+    ascii_data = _PyBytesWriter_Alloc(&writer, out_len);
+    if (ascii_data == NULL)
         return NULL;
-    ascii_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( ; bin_len > 0 ; bin_len--, bin_data++ ) {
         /* Shift the data into our buffer */
@@ -588,12 +573,7 @@ binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data, int newline)
     if (newline)
         *ascii_data++ = '\n';       /* Append a courtesy newline */
 
-    if (_PyBytes_Resize(&rv,
-                       (ascii_data -
-                        (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
-        Py_CLEAR(rv);
-    }
-    return rv;
+    return _PyBytesWriter_Finish(&writer, ascii_data);
 }
 
 /*[clinic input]
@@ -613,12 +593,14 @@ binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *data)
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
-    PyObject *rv;
+    PyObject *res;
     Py_ssize_t len;
     int done = 0;
+    _PyBytesWriter writer;
 
     ascii_data = data->buf;
     len = data->len;
+    _PyBytesWriter_Init(&writer);
 
     assert(len >= 0);
 
@@ -628,9 +610,9 @@ binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *data)
     /* Allocate a string that is too big (fixed later)
        Add two to the initial length to prevent interning which
        would preclude subsequent resizing.  */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, len+2)) == NULL )
+    bin_data = _PyBytesWriter_Alloc(&writer, len + 2);
+    if (bin_data == NULL)
         return NULL;
-    bin_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( ; len > 0 ; len--, ascii_data++ ) {
         /* Get the byte and look it up */
@@ -639,7 +621,7 @@ binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *data)
             continue;
         if ( this_ch == FAIL ) {
             PyErr_SetString(Error, "Illegal char");
-            Py_DECREF(rv);
+            _PyBytesWriter_Dealloc(&writer);
             return NULL;
         }
         if ( this_ch == DONE ) {
@@ -661,21 +643,14 @@ binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *data)
     if ( leftbits && !done ) {
         PyErr_SetString(Incomplete,
                         "String has incomplete number of bytes");
-        Py_DECREF(rv);
+        _PyBytesWriter_Dealloc(&writer);
         return NULL;
     }
-    if (_PyBytes_Resize(&rv,
-                       (bin_data -
-                        (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
-        Py_CLEAR(rv);
-    }
-    if (rv) {
-        PyObject *rrv = Py_BuildValue("Oi", rv, done);
-        Py_DECREF(rv);
-        return rrv;
-    }
 
-    return NULL;
+    res = _PyBytesWriter_Finish(&writer, bin_data);
+    if (res == NULL)
+        return NULL;
+    return Py_BuildValue("Ni", res, done);
 }
 
 
@@ -693,10 +668,11 @@ binascii_rlecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
 /*[clinic end generated code: output=0905da344dbf0648 input=e1f1712447a82b09]*/
 {
     unsigned char *in_data, *out_data;
-    PyObject *rv;
     unsigned char ch;
     Py_ssize_t in, inend, len;
+    _PyBytesWriter writer;
 
+    _PyBytesWriter_Init(&writer);
     in_data = data->buf;
     len = data->len;
 
@@ -706,9 +682,9 @@ binascii_rlecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
         return PyErr_NoMemory();
 
     /* Worst case: output is twice as big as input (fixed later) */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, len*2+2)) == NULL )
+    out_data = _PyBytesWriter_Alloc(&writer, len * 2 + 2);
+    if (out_data == NULL)
         return NULL;
-    out_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( in=0; in<len; in++) {
         ch = in_data[in];
@@ -734,12 +710,8 @@ binascii_rlecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
             }
         }
     }
-    if (_PyBytes_Resize(&rv,
-                       (out_data -
-                        (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
-        Py_CLEAR(rv);
-    }
-    return rv;
+
+    return _PyBytesWriter_Finish(&writer, out_data);
 }
 
 
@@ -760,11 +732,12 @@ binascii_b2a_hqx_impl(PyModuleDef *module, Py_buffer *data)
     int leftbits = 0;
     unsigned char this_ch;
     unsigned int leftchar = 0;
-    PyObject *rv;
     Py_ssize_t len;
+    _PyBytesWriter writer;
 
     bin_data = data->buf;
     len = data->len;
+    _PyBytesWriter_Init(&writer);
 
     assert(len >= 0);
 
@@ -772,9 +745,9 @@ binascii_b2a_hqx_impl(PyModuleDef *module, Py_buffer *data)
         return PyErr_NoMemory();
 
     /* Allocate a buffer that is at least large enough */
-    if ( (rv=PyBytes_FromStringAndSize(NULL, len*2+2)) == NULL )
+    ascii_data = _PyBytesWriter_Alloc(&writer, len * 2 + 2);
+    if (ascii_data == NULL)
         return NULL;
-    ascii_data = (unsigned char *)PyBytes_AS_STRING(rv);
 
     for( ; len > 0 ; len--, bin_data++ ) {
         /* Shift into our buffer, and output any 6bits ready */
@@ -791,12 +764,8 @@ binascii_b2a_hqx_impl(PyModuleDef *module, Py_buffer *data)
         leftchar <<= (6-leftbits);
         *ascii_data++ = table_b2a_hqx[leftchar & 0x3f];
     }
-    if (_PyBytes_Resize(&rv,
-                       (ascii_data -
-                        (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
-        Py_CLEAR(rv);
-    }
-    return rv;
+
+    return _PyBytesWriter_Finish(&writer, ascii_data);
 }
 
 
@@ -815,11 +784,12 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
 {
     unsigned char *in_data, *out_data;
     unsigned char in_byte, in_repeat;
-    PyObject *rv;
     Py_ssize_t in_len, out_len, out_len_left;
+    _PyBytesWriter writer;
 
     in_data = data->buf;
     in_len = data->len;
+    _PyBytesWriter_Init(&writer);
 
     assert(in_len >= 0);
 
@@ -830,45 +800,49 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
         return PyErr_NoMemory();
 
     /* Allocate a buffer of reasonable size. Resized when needed */
-    out_len = in_len*2;
-    if ( (rv=PyBytes_FromStringAndSize(NULL, out_len)) == NULL )
+    out_len = in_len * 2;
+    out_data = _PyBytesWriter_Alloc(&writer, out_len);
+    if (out_data == NULL)
         return NULL;
-    out_len_left = out_len;
-    out_data = (unsigned char *)PyBytes_AS_STRING(rv);
+
+    /* Use overallocation */
+    writer.overallocate = 1;
+    out_len_left = writer.allocated;
 
     /*
     ** We need two macros here to get/put bytes and handle
     ** end-of-buffer for input and output strings.
     */
-#define INBYTE(b) \
-    do { \
-             if ( --in_len < 0 ) { \
-                       PyErr_SetString(Incomplete, ""); \
-                       Py_DECREF(rv); \
-                       return NULL; \
-             } \
-             b = *in_data++; \
+#define INBYTE(b)                                                       \
+    do {                                                                \
+         if ( --in_len < 0 ) {                                          \
+           PyErr_SetString(Incomplete, "");                             \
+           goto error;                                                  \
+         }                                                              \
+         b = *in_data++;                                                \
     } while(0)
 
-#define OUTBYTE(b) \
-    do { \
-             if ( --out_len_left < 0 ) { \
-                      if ( out_len > PY_SSIZE_T_MAX / 2) return PyErr_NoMemory(); \
-                      if (_PyBytes_Resize(&rv, 2*out_len) < 0) \
-                        { Py_XDECREF(rv); return NULL; } \
-                      out_data = (unsigned char *)PyBytes_AS_STRING(rv) \
-                                                             + out_len; \
-                      out_len_left = out_len-1; \
-                      out_len = out_len * 2; \
-             } \
-             *out_data++ = b; \
+#define OUTBYTE(b)                                                      \
+    do {                                                                \
+         if ( --out_len_left < 0 ) {                                    \
+             if (in_len <= 0) {                                         \
+                 /* We are done after this write, no need to            \
+                    overallocate the buffer anymore */                  \
+                 writer.overallocate = 0;                               \
+             }                                                          \
+             out_data = _PyBytesWriter_Prepare(&writer, out_data, 1);   \
+             if (out_data == NULL)                                      \
+                 goto error;                                            \
+             out_len_left = writer.allocated;                           \
+         }                                                              \
+         *out_data++ = b;                                               \
     } while(0)
 
-        /*
-        ** Handle first byte separately (since we have to get angry
-        ** in case of an orphaned RLE code).
-        */
-        INBYTE(in_byte);
+    /*
+    ** Handle first byte separately (since we have to get angry
+    ** in case of an orphaned RLE code).
+    */
+    INBYTE(in_byte);
 
     if (in_byte == RUNCHAR) {
         INBYTE(in_repeat);
@@ -877,8 +851,7 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
             ** of the string only). This is a programmer error.
             */
             PyErr_SetString(Error, "Orphaned RLE code at start");
-            Py_DECREF(rv);
-            return NULL;
+            goto error;
         }
         OUTBYTE(RUNCHAR);
     } else {
@@ -904,12 +877,11 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
             OUTBYTE(in_byte);
         }
     }
-    if (_PyBytes_Resize(&rv,
-                       (out_data -
-                        (unsigned char *)PyBytes_AS_STRING(rv))) < 0) {
-        Py_CLEAR(rv);
-    }
-    return rv;
+    return _PyBytesWriter_Finish(&writer, out_data);
+
+error:
+    _PyBytesWriter_Dealloc(&writer);
+    return NULL;
 }
 
 
