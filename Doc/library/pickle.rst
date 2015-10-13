@@ -488,7 +488,7 @@ methods:
 
 .. method:: object.__getnewargs_ex__()
 
-   In protocols 4 and newer, classes that implements the
+   In protocols 2 and newer, classes that implements the
    :meth:`__getnewargs_ex__` method can dictate the values passed to the
    :meth:`__new__` method upon unpickling.  The method must return a pair
    ``(args, kwargs)`` where *args* is a tuple of positional arguments
@@ -500,15 +500,22 @@ methods:
    class requires keyword-only arguments.  Otherwise, it is recommended for
    compatibility to implement :meth:`__getnewargs__`.
 
+   .. versionchanged:: 3.6
+      :meth:`__getnewargs_ex__` is now used in protocols 2 and 3.
+
 
 .. method:: object.__getnewargs__()
 
-   This method serve a similar purpose as :meth:`__getnewargs_ex__` but
-   for protocols 2 and newer.  It must return a tuple of arguments ``args``
-   which will be passed to the :meth:`__new__` method upon unpickling.
+   This method serve a similar purpose as :meth:`__getnewargs_ex__`, but
+   supports only positional arguments.  It must return a tuple of arguments
+   ``args`` which will be passed to the :meth:`__new__` method upon unpickling.
 
-   In protocols 4 and newer, :meth:`__getnewargs__` will not be called if
-   :meth:`__getnewargs_ex__` is defined.
+   :meth:`__getnewargs__` will not be called if :meth:`__getnewargs_ex__` is
+   defined.
+
+   .. versionchanged:: 3.6
+      Before Python 3.6, :meth:`__getnewargs__` was called instead of
+      :meth:`__getnewargs_ex__` in protocols 2 and 3.
 
 
 .. method:: object.__getstate__()
