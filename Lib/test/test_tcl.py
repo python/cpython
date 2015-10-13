@@ -1,5 +1,6 @@
 import unittest
 import re
+import subprocess
 import sys
 import os
 from test import support
@@ -242,11 +243,10 @@ class TclTest(unittest.TestCase):
 
         with support.EnvironmentVarGuard() as env:
             env.unset("TCL_LIBRARY")
-            f = os.popen('%s -c "import tkinter; print(tkinter)"' % (unc_name,))
+            stdout = subprocess.check_output(
+                    [unc_name, '-c', 'import tkinter; print(tkinter)'])
 
-        self.assertIn('tkinter', f.read())
-        # exit code must be zero
-        self.assertEqual(f.close(), None)
+        self.assertIn(b'tkinter', stdout)
 
     def test_exprstring(self):
         tcl = self.interp
