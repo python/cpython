@@ -1898,7 +1898,7 @@ opcodes = [
       arg=None,
       stack_before=[pyunicode, pyunicode],
       stack_after=[anyobject],
-      proto=0,
+      proto=4,
       doc="""Push a global object (module.attr) on the stack.
       """),
 
