@@ -3852,11 +3852,8 @@ bytes_iter(PyObject *seq)
 void
 _PyBytesWriter_Init(_PyBytesWriter *writer)
 {
-    writer->buffer = NULL;
-    writer->allocated = 0;
-    writer->min_size = 0;
-    writer->overallocate = 0;
-    writer->use_small_buffer = 0;
+    /* Set all attributes before small_buffer to 0 */
+    memset(writer, 0, offsetof(_PyBytesWriter, small_buffer));
 #ifdef Py_DEBUG
     memset(writer->small_buffer, 0xCB, sizeof(writer->small_buffer));
 #endif
@@ -3871,13 +3868,17 @@ _PyBytesWriter_Dealloc(_PyBytesWriter *writer)
 Py_LOCAL_INLINE(char*)
 _PyBytesWriter_AsString(_PyBytesWriter *writer)
 {
-    if (!writer->use_small_buffer) {
-        assert(writer->buffer != NULL);
-        return PyBytes_AS_STRING(writer->buffer);
-    }
-    else {
+    if (writer->use_small_buffer) {
         assert(writer->buffer == NULL);
         return writer->small_buffer;
+    }
+    else if (writer->use_bytearray) {
+        assert(writer->buffer != NULL);
+        return PyByteArray_AS_STRING(writer->buffer);
+    }
+    else {
+        assert(writer->buffer != NULL);
+        return PyBytes_AS_STRING(writer->buffer);
     }
 }
 
@@ -3897,18 +3898,28 @@ _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
 #ifdef Py_DEBUG
     char *start, *end;
 
-    if (!writer->use_small_buffer) {
-        assert(writer->buffer != NULL);
-        assert(PyBytes_CheckExact(writer->buffer));
-        assert(Py_REFCNT(writer->buffer) == 1);
-    }
-    else {
+    if (writer->use_small_buffer) {
         assert(writer->buffer == NULL);
     }
+    else {
+        assert(writer->buffer != NULL);
+        if (writer->use_bytearray)
+            assert(PyByteArray_CheckExact(writer->buffer));
+        else
+            assert(PyBytes_CheckExact(writer->buffer));
+        assert(Py_REFCNT(writer->buffer) == 1);
+    }
 
-    start = _PyBytesWriter_AsString(writer);
+    if (writer->use_bytearray) {
+        /* bytearray has its own overallocation algorithm,
+           writer overallocation must be disabled */
+        assert(!writer->overallocate);
+    }
+
+    assert(0 <= writer->allocated);
     assert(0 <= writer->min_size && writer->min_size <= writer->allocated);
     /* the last byte must always be null */
+    start = _PyBytesWriter_AsString(writer);
     assert(start[writer->allocated] == 0);
 
     end = start + writer->allocated;
@@ -3932,8 +3943,7 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 
     if (writer->min_size > PY_SSIZE_T_MAX - size) {
         PyErr_NoMemory();
-        _PyBytesWriter_Dealloc(writer);
-        return NULL;
+        goto error;
     }
     writer->min_size += size;
 
@@ -3950,23 +3960,38 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 
     pos = _PyBytesWriter_GetPos(writer, str);
     if (!writer->use_small_buffer) {
-        /* Note: Don't use a bytearray object because the conversion from
-           byterray to bytes requires to copy all bytes. */
-        if (_PyBytes_Resize(&writer->buffer, allocated)) {
-            assert(writer->buffer == NULL);
-            return NULL;
+        if (writer->use_bytearray) {
+            if (PyByteArray_Resize(writer->buffer, allocated))
+                goto error;
+            /* writer->allocated can be smaller than writer->buffer->ob_alloc,
+               but we cannot use ob_alloc because bytes may need to be moved
+               to use the whole buffer. bytearray uses an internal optimization
+               to avoid moving or copying bytes when bytes are removed at the
+               beginning (ex: del bytearray[:1]). */
+        }
+        else {
+            if (_PyBytes_Resize(&writer->buffer, allocated))
+                goto error;
         }
     }
     else {
         /* convert from stack buffer to bytes object buffer */
         assert(writer->buffer == NULL);
 
-        writer->buffer = PyBytes_FromStringAndSize(NULL, allocated);
+        if (writer->use_bytearray)
+            writer->buffer = PyByteArray_FromStringAndSize(NULL, allocated);
+        else
+            writer->buffer = PyBytes_FromStringAndSize(NULL, allocated);
         if (writer->buffer == NULL)
-            return NULL;
+            goto error;
 
         if (pos != 0) {
-            Py_MEMCPY(PyBytes_AS_STRING(writer->buffer),
+            char *dest;
+            if (writer->use_bytearray)
+                dest = PyByteArray_AS_STRING(writer->buffer);
+            else
+                dest = PyBytes_AS_STRING(writer->buffer);
+            Py_MEMCPY(dest,
                       writer->small_buffer,
                       pos);
         }
@@ -3981,6 +4006,10 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
     str = _PyBytesWriter_AsString(writer) + pos;
     _PyBytesWriter_CheckConsistency(writer, str);
     return str;
+
+error:
+    _PyBytesWriter_Dealloc(writer);
+    return NULL;
 }
 
 /* Allocate the buffer to write size bytes.
@@ -4013,7 +4042,7 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
     _PyBytesWriter_CheckConsistency(writer, str);
 
     pos = _PyBytesWriter_GetPos(writer, str);
-    if (pos == 0) {
+    if (pos == 0 && !writer->use_bytearray) {
         Py_CLEAR(writer->buffer);
         /* Get the empty byte string singleton */
         result = PyBytes_FromStringAndSize(NULL, 0);
@@ -4026,9 +4055,17 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
         writer->buffer = NULL;
 
         if (pos != writer->allocated) {
-            if (_PyBytes_Resize(&result, pos)) {
-                assert(result == NULL);
-                return NULL;
+            if (writer->use_bytearray) {
+                if (PyByteArray_Resize(result, pos)) {
+                    Py_DECREF(result);
+                    return NULL;
+                }
+            }
+            else {
+                if (_PyBytes_Resize(&result, pos)) {
+                    assert(result == NULL);
+                    return NULL;
+                }
             }
         }
     }

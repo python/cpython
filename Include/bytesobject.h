@@ -128,17 +128,21 @@ PyAPI_FUNC(Py_ssize_t) _PyBytes_InsertThousandsGrouping(char *buffer,
    A _PyBytesWriter variable must be declared at the end of variables in a
    function to optimize the memory allocation on the stack. */
 typedef struct {
-    /* bytes object */
+    /* bytes, bytearray or NULL (when the small buffer is used) */
     PyObject *buffer;
 
-    /* Number of allocated size */
+    /* Number of allocated size. */
     Py_ssize_t allocated;
 
     /* Minimum number of allocated bytes,
        incremented by _PyBytesWriter_Prepare() */
     Py_ssize_t min_size;
 
-    /* If non-zero, overallocate the buffer (default: 0). */
+    /* If non-zero, use a bytearray instead of a bytes object for buffer. */
+    int use_bytearray;
+
+    /* If non-zero, overallocate the buffer (default: 0).
+       This flag must be zero if use_bytearray is non-zero. */
     int overallocate;
 
     /* Stack buffer */
@@ -153,7 +157,7 @@ typedef struct {
 PyAPI_FUNC(void) _PyBytesWriter_Init(_PyBytesWriter *writer);
 
 /* Get the buffer content and reset the writer.
-   Return a bytes object.
+   Return a bytes object, or a bytearray object if use_bytearray is non-zero.
    Raise an exception and return NULL on error. */
 PyAPI_FUNC(PyObject *) _PyBytesWriter_Finish(_PyBytesWriter *writer,
     void *str);
