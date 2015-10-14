@@ -3456,23 +3456,23 @@ _PyBytes_FromTuple(PyObject *x)
 static PyObject *
 _PyBytes_FromIterator(PyObject *x)
 {
-    PyObject *new, *it;
+    char *str;
+    PyObject *it;
     Py_ssize_t i, size;
+    _PyBytesWriter writer;
+
+    _PyBytesWriter_Init(&writer);
 
     /* For iterator version, create a string object and resize as needed */
     size = PyObject_LengthHint(x, 64);
     if (size == -1 && PyErr_Occurred())
         return NULL;
-    /* Allocate an extra byte to prevent PyBytes_FromStringAndSize() from
-       returning a shared empty bytes string. This required because we
-       want to call _PyBytes_Resize() the returned object, which we can
-       only do on bytes objects with refcount == 1. */
-    if (size == 0)
-        size = 1;
-    new = PyBytes_FromStringAndSize(NULL, size);
-    if (new == NULL)
+
+    str = _PyBytesWriter_Alloc(&writer, size);
+    if (str == NULL)
         return NULL;
-    assert(Py_REFCNT(new) == 1);
+    writer.overallocate = 1;
+    size = writer.allocated;
 
     /* Get the iterator */
     it = PyObject_GetIter(x);
@@ -3507,21 +3507,20 @@ _PyBytes_FromIterator(PyObject *x)
 
         /* Append the byte */
         if (i >= size) {
-            size = 2 * size + 1;
-            if (_PyBytes_Resize(&new, size) < 0)
-                goto error;
+            str = _PyBytesWriter_Resize(&writer, str, size+1);
+            if (str == NULL)
+                return NULL;
+            size = writer.allocated;
         }
-        ((PyBytesObject *)new)->ob_sval[i] = (char) value;
+        *str++ = (char) value;
     }
-    _PyBytes_Resize(&new, i);
-
-    /* Clean up and return success */
     Py_DECREF(it);
-    return new;
+
+    return _PyBytesWriter_Finish(&writer, str);
 
   error:
+    _PyBytesWriter_Dealloc(&writer);
     Py_XDECREF(it);
-    Py_XDECREF(new);
     return NULL;
 }
 
