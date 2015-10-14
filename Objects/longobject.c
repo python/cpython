@@ -1587,7 +1587,7 @@ long_to_decimal_string_internal(PyObject *aa,
                                 char **bytes_str)
 {
     PyLongObject *scratch, *a;
-    PyObject *str;
+    PyObject *str = NULL;
     Py_ssize_t size, strlen, size_a, i, j;
     digit *pout, *pin, rem, tenpow;
     int negative;
@@ -1664,7 +1664,6 @@ long_to_decimal_string_internal(PyObject *aa,
             return -1;
         }
         kind = writer->kind;
-        str = NULL;
     }
     else if (bytes_writer) {
         *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, strlen);
@@ -1777,7 +1776,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
                    _PyBytesWriter *bytes_writer, char **bytes_str)
 {
     PyLongObject *a = (PyLongObject *)aa;
-    PyObject *v;
+    PyObject *v = NULL;
     Py_ssize_t sz;
     Py_ssize_t size_a;
     enum PyUnicode_Kind kind;
@@ -1834,7 +1833,6 @@ long_format_binary(PyObject *aa, int base, int alternate,
         if (_PyUnicodeWriter_Prepare(writer, sz, 'x') == -1)
             return -1;
         kind = writer->kind;
-        v = NULL;
     }
     else if (bytes_writer) {
         *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, sz);
