@@ -252,17 +252,16 @@ Options menu (Shell and Editor)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Configure IDLE
-   Open a configuration dialog.  Fonts, indentation, keybindings, and color
-   themes may be altered.  Startup Preferences may be set, and additional
-   help sources can be specified.  Non-default user setting are saved in a
-   .idlerc directory in the user's home directory.  Problems caused by bad user
-   configuration files are solved by editing or deleting one or more of the
-   files in .idlerc.  On OS X, open the configuration dialog by selecting
-   Preferences in the application menu.
+   Open a configuration dialog and change preferences for the following:
+   fonts, indentation, keybindings, text color themes, startup windows and
+   size, additional help sources, and extensions (see below).  On OS X,
+   open the configuration dialog by selecting Preferences in the application
+   menu.  To use a new built-in color theme (IDLE Dark) with older IDLEs,
+   save it as a new custom theme.
 
-Configure Extensions
-   Open a configuration dialog for setting preferences for extensions
-   (discussed below).  See note above about the location of user settings.
+   Non-default user settings are saved in a .idlerc directory in the user's
+   home directory.  Problems caused by bad user configuration files are solved
+   by editing or deleting one or more of the files in .idlerc.
 
 Code Context (toggle)(Editor Window only)
    Open a pane at the top of the edit window which shows the block context
