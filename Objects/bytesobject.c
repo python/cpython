@@ -3408,68 +3408,49 @@ fail:
     return NULL;
 }
 
+#define _PyBytes_FROM_LIST_BODY(x, GET_ITEM)                                \
+    do {                                                                    \
+        PyObject *bytes;                                                    \
+        Py_ssize_t i;                                                       \
+        Py_ssize_t value;                                                   \
+        char *str;                                                          \
+        PyObject *item;                                                     \
+                                                                            \
+        bytes = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));                \
+        if (bytes == NULL)                                                  \
+            return NULL;                                                    \
+        str = ((PyBytesObject *)bytes)->ob_sval;                            \
+                                                                            \
+        for (i = 0; i < Py_SIZE(x); i++) {                                  \
+            item = GET_ITEM((x), i);                                        \
+            value = PyNumber_AsSsize_t(item, PyExc_ValueError);             \
+            if (value == -1 && PyErr_Occurred())                            \
+                goto error;                                                 \
+                                                                            \
+            if (value < 0 || value >= 256) {                                \
+                PyErr_SetString(PyExc_ValueError,                           \
+                                "bytes must be in range(0, 256)");          \
+                goto error;                                                 \
+            }                                                               \
+            *str++ = (char) value;                                          \
+        }                                                                   \
+        return bytes;                                                       \
+                                                                            \
+    error:                                                                  \
+        Py_DECREF(bytes);                                                   \
+        return NULL;                                                        \
+    } while (0)
+
 static PyObject*
 _PyBytes_FromList(PyObject *x)
 {
-    PyObject *new;
-    Py_ssize_t i;
-    Py_ssize_t value;
-    char *str;
-
-    new = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));
-    if (new == NULL)
-        return NULL;
-    str = ((PyBytesObject *)new)->ob_sval;
-
-    for (i = 0; i < Py_SIZE(x); i++) {
-        value = PyNumber_AsSsize_t(PyList_GET_ITEM(x, i), PyExc_ValueError);
-        if (value == -1 && PyErr_Occurred())
-            goto error;
-
-        if (value < 0 || value >= 256) {
-            PyErr_SetString(PyExc_ValueError,
-                    "bytes must be in range(0, 256)");
-            goto error;
-        }
-        *str++ = (char) value;
-    }
-    return new;
-
-error:
-    Py_DECREF(new);
-    return NULL;
+    _PyBytes_FROM_LIST_BODY(x, PyList_GET_ITEM);
 }
 
 static PyObject*
 _PyBytes_FromTuple(PyObject *x)
 {
-    PyObject *new;
-    Py_ssize_t i;
-    Py_ssize_t value;
-    char *str;
-
-    new = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));
-    if (new == NULL)
-        return NULL;
-    str = ((PyBytesObject *)new)->ob_sval;
-
-    for (i = 0; i < Py_SIZE(x); i++) {
-        value = PyNumber_AsSsize_t(PyTuple_GET_ITEM(x, i), PyExc_ValueError);
-        if (value == -1 && PyErr_Occurred())
-            goto error;
-
-        if (value < 0 || value >= 256) {
-            PyErr_SetString(PyExc_ValueError,
-                    "bytes must be in range(0, 256)");
-            goto error;
-        }
-        *str++ = (char) value;
-    }
-    return new;
-
-error:
-    Py_DECREF(new);
-    return NULL;
+    _PyBytes_FROM_LIST_BODY(x, PyTuple_GET_ITEM);
 }
 
 static PyObject *
