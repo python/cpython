@@ -1068,6 +1068,42 @@ bytes_dealloc(PyObject *op)
    the string is UTF-8 encoded and should be re-encoded in the
    specified encoding.  */
 
+static char *
+_PyBytes_DecodeEscapeRecode(const char **s, const char *end,
+                            const char *errors, const char *recode_encoding,
+                            _PyBytesWriter *writer, char *p)
+{
+    PyObject *u, *w;
+    const char* t;
+
+    t = *s;
+    /* Decode non-ASCII bytes as UTF-8. */
+    while (t < end && (*t & 0x80))
+        t++;
+    u = PyUnicode_DecodeUTF8(*s, t - *s, errors);
+    if (u == NULL)
+        return NULL;
+
+    /* Recode them in target encoding. */
+    w = PyUnicode_AsEncodedString(u, recode_encoding, errors);
+    Py_DECREF(u);
+    if  (w == NULL)
+        return NULL;
+    assert(PyBytes_Check(w));
+
+    /* Append bytes to output buffer. */
+    writer->min_size--;   /* substract 1 preallocated byte */
+    p = _PyBytesWriter_WriteBytes(writer, p,
+                                  PyBytes_AS_STRING(w),
+                                  PyBytes_GET_SIZE(w));
+    Py_DECREF(w);
+    if (p == NULL)
+        return NULL;
+
+    *s = t;
+    return p;
+}
+
 PyObject *PyBytes_DecodeEscape(const char *s,
                                 Py_ssize_t len,
                                 const char *errors,
@@ -1075,54 +1111,42 @@ PyObject *PyBytes_DecodeEscape(const char *s,
                                 const char *recode_encoding)
 {
     int c;
-    char *p, *buf;
+    char *p;
     const char *end;
-    PyObject *v;
-    Py_ssize_t newlen = recode_encoding ? 4*len:len;
-    v = PyBytes_FromStringAndSize((char *)NULL, newlen);
-    if (v == NULL)
+    _PyBytesWriter writer;
+
+    _PyBytesWriter_Init(&writer);
+
+    p = _PyBytesWriter_Alloc(&writer, len);
+    if (p == NULL)
         return NULL;
-    p = buf = PyBytes_AsString(v);
+    writer.overallocate = 1;
+
     end = s + len;
     while (s < end) {
         if (*s != '\\') {
           non_esc:
-            if (recode_encoding && (*s & 0x80)) {
-                PyObject *u, *w;
-                char *r;
-                const char* t;
-                Py_ssize_t rn;
-                t = s;
-                /* Decode non-ASCII bytes as UTF-8. */
-                while (t < end && (*t & 0x80)) t++;
-                u = PyUnicode_DecodeUTF8(s, t - s, errors);
-                if(!u) goto failed;
-
-                /* Recode them in target encoding. */
-                w = PyUnicode_AsEncodedString(
-                    u, recode_encoding, errors);
-                Py_DECREF(u);
-                if (!w)                 goto failed;
-
-                /* Append bytes to output buffer. */
-                assert(PyBytes_Check(w));
-                r = PyBytes_AS_STRING(w);
-                rn = PyBytes_GET_SIZE(w);
-                Py_MEMCPY(p, r, rn);
-                p += rn;
-                Py_DECREF(w);
-                s = t;
-            } else {
+            if (!(recode_encoding && (*s & 0x80))) {
                 *p++ = *s++;
+            }
+            else {
+                /* non-ASCII character and need to recode */
+                p = _PyBytes_DecodeEscapeRecode(&s, end,
+                                                errors, recode_encoding,
+                                                &writer, p);
+                if (p == NULL)
+                    goto failed;
             }
             continue;
         }
+
         s++;
-        if (s==end) {
+        if (s == end) {
             PyErr_SetString(PyExc_ValueError,
                             "Trailing \\ in string");
             goto failed;
         }
+
         switch (*s++) {
         /* XXX This assumes ASCII! */
         case '\n': break;
@@ -1147,28 +1171,18 @@ PyObject *PyBytes_DecodeEscape(const char *s,
             *p++ = c;
             break;
         case 'x':
-            if (s+1 < end && Py_ISXDIGIT(s[0]) && Py_ISXDIGIT(s[1])) {
-                unsigned int x = 0;
-                c = Py_CHARMASK(*s);
-                s++;
-                if (Py_ISDIGIT(c))
-                    x = c - '0';
-                else if (Py_ISLOWER(c))
-                    x = 10 + c - 'a';
-                else
-                    x = 10 + c - 'A';
-                x = x << 4;
-                c = Py_CHARMASK(*s);
-                s++;
-                if (Py_ISDIGIT(c))
-                    x += c - '0';
-                else if (Py_ISLOWER(c))
-                    x += 10 + c - 'a';
-                else
-                    x += 10 + c - 'A';
-                *p++ = x;
-                break;
+            if (s+1 < end) {
+                int digit1, digit2;
+                digit1 = _PyLong_DigitValue[Py_CHARMASK(s[0])];
+                digit2 = _PyLong_DigitValue[Py_CHARMASK(s[1])];
+                if (digit1 < 16 && digit2 < 16) {
+                    *p++ = (unsigned char)((digit1 << 4) + digit2);
+                    s += 2;
+                    break;
+                }
             }
+            /* invalid hexadecimal digits */
+
             if (!errors || strcmp(errors, "strict") == 0) {
                 PyErr_Format(PyExc_ValueError,
                              "invalid \\x escape at position %d",
@@ -1190,6 +1204,7 @@ PyObject *PyBytes_DecodeEscape(const char *s,
             if (s < end && Py_ISXDIGIT(s[0]))
                 s++; /* and a hexdigit */
             break;
+
         default:
             *p++ = '\\';
             s--;
@@ -1197,11 +1212,11 @@ PyObject *PyBytes_DecodeEscape(const char *s,
                              UTF-8 bytes may follow. */
         }
     }
-    if (p-buf < newlen)
-        _PyBytes_Resize(&v, p - buf);
-    return v;
+
+    return _PyBytesWriter_Finish(&writer, p);
+
   failed:
-    Py_DECREF(v);
+    _PyBytesWriter_Dealloc(&writer);
     return NULL;
 }
 
