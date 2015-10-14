@@ -686,11 +686,10 @@ do_richcompare(PyObject *v, PyObject *w, int op)
         res = (v != w) ? Py_True : Py_False;
         break;
     default:
-        /* XXX Special-case None so it doesn't show as NoneType() */
         PyErr_Format(PyExc_TypeError,
-                     "unorderable types: %.100s() %s %.100s()",
-                     v->ob_type->tp_name,
+                     "'%s' not supported between instances of '%.100s' and '%.100s'",
                      opstrings[op],
+                     v->ob_type->tp_name,
                      w->ob_type->tp_name);
         return NULL;
     }

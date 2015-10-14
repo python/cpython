@@ -547,7 +547,8 @@ And this is what it gives:
    Traceback (most recent call last):
      File "prog.py", line 11, in <module>
        if args.verbosity >= 2:
-   TypeError: unorderable types: NoneType() >= int()
+   TypeError: '>=' not supported between instances of 'NoneType' and 'int'
+
 
 * First output went well, and fixes the bug we had before.
   That is, we want any value >= 2 to be as verbose as possible.
