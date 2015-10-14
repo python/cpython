@@ -195,7 +195,7 @@ Paths of a different flavour compare unequal and cannot be ordered::
    >>> PureWindowsPath('foo') < PurePosixPath('foo')
    Traceback (most recent call last):
      File "<stdin>", line 1, in <module>
-   TypeError: unorderable types: PureWindowsPath() < PurePosixPath()
+   TypeError: '<' not supported between instances of 'PureWindowsPath' and 'PurePosixPath'
 
 
 Operators
