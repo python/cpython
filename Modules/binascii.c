@@ -800,14 +800,15 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
         return PyErr_NoMemory();
 
     /* Allocate a buffer of reasonable size. Resized when needed */
-    out_len = in_len * 2;
+    out_len = in_len;
     out_data = _PyBytesWriter_Alloc(&writer, out_len);
     if (out_data == NULL)
         return NULL;
 
     /* Use overallocation */
     writer.overallocate = 1;
-    out_len_left = writer.allocated;
+    out_len = writer.allocated;
+    out_len_left = out_len;
 
     /*
     ** We need two macros here to get/put bytes and handle
@@ -830,10 +831,12 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
                     overallocate the buffer anymore */                  \
                  writer.overallocate = 0;                               \
              }                                                          \
-             out_data = _PyBytesWriter_Prepare(&writer, out_data, 1);   \
+             out_data = _PyBytesWriter_Resize(&writer, out_data,        \
+                                              writer.allocated + 1);    \
              if (out_data == NULL)                                      \
                  goto error;                                            \
-             out_len_left = writer.allocated;                           \
+             out_len_left = writer.allocated - out_len - 1;             \
+             out_len = writer.allocated;                                \
          }                                                              \
          *out_data++ = b;                                               \
     } while(0)
