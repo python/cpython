@@ -34,6 +34,7 @@ set BUILDX86=
 set BUILDX64=
 set TARGET=Rebuild
 set TESTTARGETDIR=
+set PGO=
 
 
 :CheckOpts
@@ -52,6 +53,9 @@ if "%1" EQU "-b" (set TARGET=Build) && shift && goto CheckOpts
 if "%1" EQU "--build" (set TARGET=Build) && shift && goto CheckOpts
 if "%1" EQU "-x86" (set BUILDX86=1) && shift && goto CheckOpts
 if "%1" EQU "-x64" (set BUILDX64=1) && shift && goto CheckOpts
+if "%1" EQU "--pgo" (set PGO=%~2) && shift && shift && goto CheckOpts
+
+if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
@@ -81,7 +85,7 @@ if defined BUILDX86 (
 )
 
 if defined BUILDX64 (
-    call :build x64
+    call :build x64 "%PGO%"
     if errorlevel 1 exit /B
 )
 
@@ -101,8 +105,15 @@ if "%1" EQU "x86" (
     set BUILD_PLAT=Win32
     set OUTDIR_PLAT=win32
     set OBJDIR_PLAT=x86
-) ELSE (
-    call "%PCBUILD%env.bat" x86_amd64
+) else if "%~2" NEQ "" (
+    call "%PCBUILD%env.bat" amd64
+    set PGO=%~2
+    set BUILD=%PCBUILD%amd64-pgo\
+    set BUILD_PLAT=x64
+    set OUTDIR_PLAT=amd64
+    set OBJDIR_PLAT=x64
+) else (
+    call "%PCBUILD%env.bat" amd64
     set BUILD=%PCBUILD%amd64\
     set BUILD_PLAT=x64
     set OUTDIR_PLAT=amd64
@@ -128,17 +139,41 @@ if not "%CERTNAME%" EQU "" (
 )
 
 if not "%SKIPBUILD%" EQU "1" (
-    call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -d -t %TARGET% %CERTOPTS%
-    if errorlevel 1 exit /B
-    call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %CERTOPTS%
-    if errorlevel 1 exit /B
+    @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -d -t %TARGET% %CERTOPTS%
+    @if errorlevel 1 exit /B
     @rem build.bat turns echo back on, so we disable it again
+    @echo off
+    
+    if "%PGO%" EQU "" (
+        @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -t %TARGET% %CERTOPTS%
+    ) else (
+        @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -c PGInstrument -t %TARGET% %CERTOPTS%
+        @if errorlevel 1 exit /B
+        
+        @del "%BUILD%*.pgc"
+        if "%PGO%" EQU "default" (
+            "%BUILD%python.exe" -m test -q --pgo
+        ) else if "%PGO%" EQU "default2" (
+            "%BUILD%python.exe" -m test -r -q --pgo
+            "%BUILD%python.exe" -m test -r -q --pgo
+        ) else if "%PGO%" EQU "default10" (
+            for /L %%i in (0, 1, 9) do "%BUILD%python.exe" -m test -q -r --pgo
+        ) else if "%PGO%" EQU "pybench" (
+            "%BUILD%python.exe" "%PCBUILD%..\Tools\pybench\pybench.py"
+        ) else (
+            "%BUILD%python.exe" %PGO%
+        )
+        
+        @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -c PGUpdate -t %TARGET% %CERTOPTS%
+    )
+    @if errorlevel 1 exit /B
     @echo off
 )
 
 "%BUILD%python.exe" "%D%get_wix.py"
 
 set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_URL% /p:DownloadUrlBase=%DOWNLOAD_URL_BASE% /p:ReleaseUri=%RELEASE_URI%
+if "%PGO%" NEQ "" set BUILDOPTS=%BUILDOPTS% /p:PGOBuildPath=%BUILD%
 msbuild "%D%bundle\releaselocal.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=true
 if errorlevel 1 exit /B
 msbuild "%D%bundle\releaseweb.wixproj" /t:Rebuild %BUILDOPTS% %CERTOPTS% /p:RebuildAll=false
@@ -158,7 +193,8 @@ exit /B 0
 
 :Help
 echo buildrelease.bat [--out DIR] [-x86] [-x64] [--certificate CERTNAME] [--build] [--skip-build]
-echo                  [--skip-doc] [--download DOWNLOAD URL] [--test TARGETDIR] [-h]
+echo                  [--pgo COMMAND] [--skip-doc] [--download DOWNLOAD URL] [--test TARGETDIR]
+echo                  [-h]
 echo.
 echo    --out (-o)          Specify an additional output directory for installers
 echo    -x86                Build x86 installers
@@ -166,12 +202,21 @@ echo    -x64                Build x64 installers
 echo    --build (-b)        Incrementally build Python rather than rebuilding
 echo    --skip-build (-B)   Do not build Python (just do the installers)
 echo    --skip-doc (-D)     Do not build documentation
+echo    --pgo               Build x64 installers using PGO
 echo    --download          Specify the full download URL for MSIs
 echo    --test              Specify the test directory to run the installer tests
 echo    -h                  Display this help information
 echo.
 echo If no architecture is specified, all architectures will be built.
 echo If --test is not specified, the installer tests are not run.
+echo.
+echo For the --pgo option, any Python command line can be used as well as the
+echo following shortcuts:
+echo     Shortcut        Description
+echo     default         Test suite with --pgo
+echo     default2        2x test suite with --pgo and randomized test order
+echo     default10       10x test suite with --pgo and randomized test order
+echo     pybench         pybench script
 echo.
 echo The following substitutions will be applied to the download URL:
 echo     Variable        Description         Example

@@ -110,7 +110,10 @@
         </LinkerBindInputPaths>
     </ItemDefinitionGroup>
     <ItemGroup>
-        <LinkerBindInputPaths Include="$(BuildPath);$(PySourcePath)Doc\build\htmlhelp">
+        <LinkerBindInputPaths Include="$(PGOBuildPath);$(BuildPath)">
+            <BindName></BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(PySourcePath)Doc\build\htmlhelp">
             <BindName></BindName>
         </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(PySourcePath)">
