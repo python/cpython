@@ -282,26 +282,14 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
 static PyObject *
 bytearray_format(PyByteArrayObject *self, PyObject *args)
 {
-    PyObject *bytes_in, *bytes_out, *res;
-    char *bytestring;
-
-    if (self == NULL || !PyByteArray_Check(self) || args == NULL) {
+    if (self == NULL || !PyByteArray_Check(self)) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    bytestring = PyByteArray_AS_STRING(self);
-    bytes_in = PyBytes_FromString(bytestring);
-    if (bytes_in == NULL)
-        return NULL;
-    bytes_out = _PyBytes_Format(bytes_in, args);
-    Py_DECREF(bytes_in);
-    if (bytes_out == NULL)
-        return NULL;
-    res = PyByteArray_FromObject(bytes_out);
-    Py_DECREF(bytes_out);
-    if (res == NULL)
-        return NULL;
-    return res;
+
+    return _PyBytes_FormatEx(PyByteArray_AS_STRING(self),
+                             PyByteArray_GET_SIZE(self),
+                             args, 1);
 }
 
 /* Functions stuffed into the type object */

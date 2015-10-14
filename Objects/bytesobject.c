@@ -568,28 +568,32 @@ format_obj(PyObject *v, const char **pbuf, Py_ssize_t *plen)
 /* fmt%(v1,v2,...) is roughly equivalent to sprintf(fmt, v1, v2, ...) */
 
 PyObject *
-_PyBytes_Format(PyObject *format, PyObject *args)
+_PyBytes_FormatEx(const char *format, Py_ssize_t format_len,
+                  PyObject *args, int use_bytearray)
 {
-    char *fmt, *res;
+    const char *fmt;
+    char *res;
     Py_ssize_t arglen, argidx;
     Py_ssize_t fmtcnt;
     int args_owned = 0;
     PyObject *dict = NULL;
     _PyBytesWriter writer;
 
-    if (format == NULL || !PyBytes_Check(format) || args == NULL) {
+    if (args == NULL) {
         PyErr_BadInternalCall();
         return NULL;
     }
-    fmt = PyBytes_AS_STRING(format);
-    fmtcnt = PyBytes_GET_SIZE(format);
+    fmt = format;
+    fmtcnt = format_len;
 
     _PyBytesWriter_Init(&writer);
+    writer.use_bytearray = use_bytearray;
 
     res = _PyBytesWriter_Alloc(&writer, fmtcnt);
     if (res == NULL)
         return NULL;
-    writer.overallocate = 1;
+    if (!use_bytearray)
+        writer.overallocate = 1;
 
     if (PyTuple_Check(args)) {
         arglen = PyTuple_GET_SIZE(args);
@@ -613,10 +617,8 @@ _PyBytes_Format(PyObject *format, PyObject *args)
             pos = strchr(fmt + 1, '%');
             if (pos != NULL)
                 len = pos - fmt;
-            else {
-                len = PyBytes_GET_SIZE(format);
-                len -= (fmt - PyBytes_AS_STRING(format));
-            }
+            else
+                len = format_len - (fmt - format);
             assert(len != 0);
 
             Py_MEMCPY(res, fmt, len);
@@ -644,7 +646,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
 
             fmt++;
             if (*fmt == '(') {
-                char *keystart;
+                const char *keystart;
                 Py_ssize_t keylen;
                 PyObject *key;
                 int pcount = 1;
@@ -924,8 +926,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
                   "unsupported format character '%c' (0x%x) "
                   "at index %zd",
                   c, c,
-                  (Py_ssize_t)(fmt - 1 -
-                               PyBytes_AsString(format)));
+                  (Py_ssize_t)(fmt - 1 - format));
                 goto error;
             }
 
@@ -1028,7 +1029,7 @@ _PyBytes_Format(PyObject *format, PyObject *args)
 
         /* If overallocation was disabled, ensure that it was the last
            write. Otherwise, we missed an optimization */
-        assert(writer.overallocate || fmtcnt < 0);
+        assert(writer.overallocate || fmtcnt < 0 || use_bytearray);
     } /* until end */
 
     if (argidx < arglen && !dict) {
@@ -3233,11 +3234,15 @@ bytes_methods[] = {
 };
 
 static PyObject *
-bytes_mod(PyObject *v, PyObject *w)
+bytes_mod(PyObject *self, PyObject *args)
 {
-    if (!PyBytes_Check(v))
-        Py_RETURN_NOTIMPLEMENTED;
-    return _PyBytes_Format(v, w);
+    if (self == NULL || !PyBytes_Check(self)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    return _PyBytes_FormatEx(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
+                             args, 0);
 }
 
 static PyNumberMethods bytes_as_number = {
