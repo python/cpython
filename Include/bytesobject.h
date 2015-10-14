@@ -178,11 +178,28 @@ PyAPI_FUNC(void) _PyBytesWriter_Dealloc(_PyBytesWriter *writer);
 PyAPI_FUNC(void*) _PyBytesWriter_Alloc(_PyBytesWriter *writer,
     Py_ssize_t size);
 
-/* Add *size* bytes to the buffer.
+/* Ensure that the buffer is large enough to write *size* bytes.
+   Add size to the writer minimum size (min_size attribute).
+
    str is the current pointer inside the buffer.
    Return the updated current pointer inside the buffer.
    Raise an exception and return NULL on error. */
 PyAPI_FUNC(void*) _PyBytesWriter_Prepare(_PyBytesWriter *writer,
+    void *str,
+    Py_ssize_t size);
+
+/* Resize the buffer to make it larger.
+   The new buffer may be larger than size bytes because of overallocation.
+   Return the updated current pointer inside the buffer.
+   Raise an exception and return NULL on error.
+
+   Note: size must be greater than the number of allocated bytes in the writer.
+
+   This function doesn't use the writer minimum size (min_size attribute).
+
+   See also _PyBytesWriter_Prepare().
+   */
+PyAPI_FUNC(void*) _PyBytesWriter_Resize(_PyBytesWriter *writer,
     void *str,
     Py_ssize_t size);
 
