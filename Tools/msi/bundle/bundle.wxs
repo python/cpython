@@ -22,20 +22,22 @@
 
     <Variable Name="ShortVersion" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)" />
     <Variable Name="ShortVersionNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)" />
+    <Variable Name="WinVer" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)$(var.Suffix32)" />
+    <Variable Name="WinVerNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.Suffix32)" />
 
     <Variable Name="InstallAllUsers" Value="0" bal:Overridable="yes" />
     <Variable Name="InstallLauncherAllUsers" Value="1" bal:Overridable="yes" />
     <Variable Name="TargetDir" Value="" bal:Overridable="yes" />
     <?if $(var.Platform)~="x64" ?>
-    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]$(var.TestPrefix)Python [ShortVersion]" bal:Overridable="yes" />
+    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]$(var.TestPrefix)Python[WinVerNoDot]" bal:Overridable="yes" />
     <Variable Name="TargetPlatform" Value="x64" />
     <?else ?>
-    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesFolder]$(var.TestPrefix)Python [ShortVersion]" bal:Overridable="yes" />
+    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesFolder]$(var.TestPrefix)Python[WinVerNoDot]" bal:Overridable="yes" />
     <Variable Name="TargetPlatform" Value="x86" />
     <?endif ?>
-    <Variable Name="DefaultJustForMeTargetDir" Value="[LocalAppDataFolder]Programs\$(var.TestPrefix)Python\Python[ShortVersionNoDot]$(var.Suffix32)" bal:Overridable="yes" />
-    <Variable Name="OptionalFeaturesRegistryKey" Value="Software\$(var.TestPrefix)Python\PythonCore\[ShortVersion]$(var.Suffix32)\InstalledFeatures" />
-    <Variable Name="TargetDirRegistryKey" Value="Software\$(var.TestPrefix)Python\PythonCore\[ShortVersion]$(var.Suffix32)\InstallPath" />
+    <Variable Name="DefaultJustForMeTargetDir" Value="[LocalAppDataFolder]Programs\$(var.TestPrefix)Python\Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="OptionalFeaturesRegistryKey" Value="Software\$(var.TestPrefix)Python\PythonCore\[WinVer]\InstalledFeatures" />
+    <Variable Name="TargetDirRegistryKey" Value="Software\$(var.TestPrefix)Python\PythonCore\[WinVer]\InstallPath" />
     
     <!--
     An empty string will use the other defaults based on InstallAllUsers
