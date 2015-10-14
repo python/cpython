@@ -618,37 +618,26 @@ _odict_find_node(PyODictObject *od, PyObject *key)
 static void
 _odict_add_head(PyODictObject *od, _ODictNode *node)
 {
-    if (_odict_FIRST(od) == NULL) {
-        _odictnode_PREV(node) = NULL;
-        _odictnode_NEXT(node) = NULL;
-        _odict_FIRST(od) = node;
+    _odictnode_PREV(node) = NULL;
+    _odictnode_NEXT(node) = _odict_FIRST(od);
+    if (_odict_FIRST(od) == NULL)
         _odict_LAST(od) = node;
-    }
-    else {
-        _odictnode_PREV(node) = NULL;
-        _odictnode_NEXT(node) = _odict_FIRST(od);
-        _odict_FIRST(od) = node;
+    else
         _odictnode_PREV(_odict_FIRST(od)) = node;
-    }
+    _odict_FIRST(od) = node;
     od->od_state++;
 }
 
 static void
 _odict_add_tail(PyODictObject *od, _ODictNode *node)
 {
-    if (_odict_LAST(od) == NULL) {
-        _odictnode_PREV(node) = NULL;
-        _odictnode_NEXT(node) = NULL;
+    _odictnode_PREV(node) = _odict_LAST(od);
+    _odictnode_NEXT(node) = NULL;
+    if (_odict_LAST(od) == NULL)
         _odict_FIRST(od) = node;
-        _odict_LAST(od) = node;
-    }
-    else {
-        _odictnode_PREV(node) = _odict_LAST(od);
-        _odictnode_NEXT(node) = NULL;
+    else
         _odictnode_NEXT(_odict_LAST(od)) = node;
-        _odict_LAST(od) = node;
-    }
-
+    _odict_LAST(od) = node;
     od->od_state++;
 }
 

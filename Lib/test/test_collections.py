@@ -1995,6 +1995,20 @@ class OrderedDictTests:
         with self.assertRaises(KeyError):
             od.move_to_end('x', 0)
 
+    def test_move_to_end_issue25406(self):
+        OrderedDict = self.module.OrderedDict
+        od = OrderedDict.fromkeys('abc')
+        od.move_to_end('c', last=False)
+        self.assertEqual(list(od), list('cab'))
+        od.move_to_end('a', last=False)
+        self.assertEqual(list(od), list('acb'))
+
+        od = OrderedDict.fromkeys('abc')
+        od.move_to_end('a')
+        self.assertEqual(list(od), list('bca'))
+        od.move_to_end('c')
+        self.assertEqual(list(od), list('bac'))
+
     def test_sizeof(self):
         OrderedDict = self.module.OrderedDict
         # Wimpy test: Just verify the reported size is larger than a regular dict
