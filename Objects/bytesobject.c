@@ -3384,88 +3384,99 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return PyBytes_FromObject(x);
 }
 
-PyObject *
-PyBytes_FromObject(PyObject *x)
+static PyObject*
+_PyBytes_FromBuffer(PyObject *x)
+{
+    PyObject *new;
+    Py_buffer view;
+
+    if (PyObject_GetBuffer(x, &view, PyBUF_FULL_RO) < 0)
+        return NULL;
+
+    new = PyBytes_FromStringAndSize(NULL, view.len);
+    if (!new)
+        goto fail;
+    if (PyBuffer_ToContiguous(((PyBytesObject *)new)->ob_sval,
+                &view, view.len, 'C') < 0)
+        goto fail;
+    PyBuffer_Release(&view);
+    return new;
+
+fail:
+    Py_XDECREF(new);
+    PyBuffer_Release(&view);
+    return NULL;
+}
+
+static PyObject*
+_PyBytes_FromList(PyObject *x)
+{
+    PyObject *new;
+    Py_ssize_t i;
+    Py_ssize_t value;
+    char *str;
+
+    new = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));
+    if (new == NULL)
+        return NULL;
+    str = ((PyBytesObject *)new)->ob_sval;
+
+    for (i = 0; i < Py_SIZE(x); i++) {
+        value = PyNumber_AsSsize_t(PyList_GET_ITEM(x, i), PyExc_ValueError);
+        if (value == -1 && PyErr_Occurred())
+            goto error;
+
+        if (value < 0 || value >= 256) {
+            PyErr_SetString(PyExc_ValueError,
+                    "bytes must be in range(0, 256)");
+            goto error;
+        }
+        *str++ = (char) value;
+    }
+    return new;
+
+error:
+    Py_DECREF(new);
+    return NULL;
+}
+
+static PyObject*
+_PyBytes_FromTuple(PyObject *x)
+{
+    PyObject *new;
+    Py_ssize_t i;
+    Py_ssize_t value;
+    char *str;
+
+    new = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));
+    if (new == NULL)
+        return NULL;
+    str = ((PyBytesObject *)new)->ob_sval;
+
+    for (i = 0; i < Py_SIZE(x); i++) {
+        value = PyNumber_AsSsize_t(PyTuple_GET_ITEM(x, i), PyExc_ValueError);
+        if (value == -1 && PyErr_Occurred())
+            goto error;
+
+        if (value < 0 || value >= 256) {
+            PyErr_SetString(PyExc_ValueError,
+                    "bytes must be in range(0, 256)");
+            goto error;
+        }
+        *str++ = (char) value;
+    }
+    return new;
+
+error:
+    Py_DECREF(new);
+    return NULL;
+}
+
+static PyObject *
+_PyBytes_FromIterator(PyObject *x)
 {
     PyObject *new, *it;
     Py_ssize_t i, size;
-
-    if (x == NULL) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-
-    if (PyBytes_CheckExact(x)) {
-        Py_INCREF(x);
-        return x;
-    }
-
-    /* Use the modern buffer interface */
-    if (PyObject_CheckBuffer(x)) {
-        Py_buffer view;
-        if (PyObject_GetBuffer(x, &view, PyBUF_FULL_RO) < 0)
-            return NULL;
-        new = PyBytes_FromStringAndSize(NULL, view.len);
-        if (!new)
-            goto fail;
-        if (PyBuffer_ToContiguous(((PyBytesObject *)new)->ob_sval,
-                                  &view, view.len, 'C') < 0)
-            goto fail;
-        PyBuffer_Release(&view);
-        return new;
-      fail:
-        Py_XDECREF(new);
-        PyBuffer_Release(&view);
-        return NULL;
-    }
-    if (PyUnicode_Check(x)) {
-        PyErr_SetString(PyExc_TypeError,
-                        "cannot convert unicode object to bytes");
-        return NULL;
-    }
-
-    if (PyList_CheckExact(x)) {
-        new = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));
-        if (new == NULL)
-            return NULL;
-        for (i = 0; i < Py_SIZE(x); i++) {
-            Py_ssize_t value = PyNumber_AsSsize_t(
-                PyList_GET_ITEM(x, i), PyExc_ValueError);
-            if (value == -1 && PyErr_Occurred()) {
-                Py_DECREF(new);
-                return NULL;
-            }
-            if (value < 0 || value >= 256) {
-                PyErr_SetString(PyExc_ValueError,
-                                "bytes must be in range(0, 256)");
-                Py_DECREF(new);
-                return NULL;
-            }
-            ((PyBytesObject *)new)->ob_sval[i] = (char) value;
-        }
-        return new;
-    }
-    if (PyTuple_CheckExact(x)) {
-        new = PyBytes_FromStringAndSize(NULL, Py_SIZE(x));
-        if (new == NULL)
-            return NULL;
-        for (i = 0; i < Py_SIZE(x); i++) {
-            Py_ssize_t value = PyNumber_AsSsize_t(
-                PyTuple_GET_ITEM(x, i), PyExc_ValueError);
-            if (value == -1 && PyErr_Occurred()) {
-                Py_DECREF(new);
-                return NULL;
-            }
-            if (value < 0 || value >= 256) {
-                PyErr_SetString(PyExc_ValueError,
-                                "bytes must be in range(0, 256)");
-                Py_DECREF(new);
-                return NULL;
-            }
-            ((PyBytesObject *)new)->ob_sval[i] = (char) value;
-        }
-        return new;
-    }
 
     /* For iterator version, create a string object and resize as needed */
     size = PyObject_LengthHint(x, 64);
@@ -3531,6 +3542,38 @@ PyBytes_FromObject(PyObject *x)
     Py_XDECREF(it);
     Py_XDECREF(new);
     return NULL;
+}
+
+PyObject *
+PyBytes_FromObject(PyObject *x)
+{
+    if (x == NULL) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+
+    if (PyBytes_CheckExact(x)) {
+        Py_INCREF(x);
+        return x;
+    }
+
+    /* Use the modern buffer interface */
+    if (PyObject_CheckBuffer(x))
+        return _PyBytes_FromBuffer(x);
+
+    if (PyList_CheckExact(x))
+        return _PyBytes_FromList(x);
+
+    if (PyTuple_CheckExact(x))
+        return _PyBytes_FromTuple(x);
+
+    if (PyUnicode_Check(x)) {
+        PyErr_SetString(PyExc_TypeError,
+                        "cannot convert unicode object to bytes");
+        return NULL;
+    }
+
+    return _PyBytes_FromIterator(x);
 }
 
 static PyObject *
