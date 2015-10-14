@@ -12,8 +12,8 @@
                         SourceFile="py.exe"
                         Compressed="yes"
                         DisplayName="!(loc.CompileAllDescription)"
-                        InstallCommand='-$(var.ShortVersion)$(var.Suffix32) -m pip install requests-2.7.0-py2.py3-none-any.whl'
-                        UninstallCommand='-$(var.ShortVersion)$(var.Suffix32) -m pip uninstall -y requests'
+                        InstallCommand='-[WinVer] -m pip install requests-2.7.0-py2.py3-none-any.whl'
+                        UninstallCommand='-[WinVer] -m pip uninstall -y requests'
                         Vital="no"
                         InstallCondition="Include_pip and not LauncherOnly">
                 <Payload SourceFile="requests-2.7.0-py2.py3-none-any.whl"

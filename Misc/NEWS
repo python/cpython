@@ -320,6 +320,9 @@ Build
 Windows
 -------
 
+- Issue #25164: Changes default all-users install directory to match per-user
+  directory.
+
 - Issue #25143: Improves installer error messages for unsupported platforms.
 
 - Issue #25163: Display correct directory in installer when using non-default
