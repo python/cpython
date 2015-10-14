@@ -257,7 +257,7 @@ members are not integers (but see `IntEnum`_ below)::
     >>> Color.red < Color.blue
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: unorderable types: Color() < Color()
+    TypeError: '<' not supported between instances of 'Color' and 'Color'
 
 Equality comparisons are defined though::
 
