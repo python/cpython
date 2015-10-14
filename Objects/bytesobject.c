@@ -4053,8 +4053,20 @@ _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
 
     writer->use_small_buffer = 1;
 #ifdef Py_DEBUG
-    /* the last byte is reserved, it must be '\0' */
     writer->allocated = sizeof(writer->small_buffer) - 1;
+    /* In debug mode, don't use the full small buffer because it is less
+       efficient than bytes and bytearray objects to detect buffer underflow
+       and buffer overflow. Use 10 bytes of the small buffer to test also
+       code using the smaller buffer in debug mode.
+
+       Don't modify the _PyBytesWriter structure (use a shorter small buffer)
+       in debug mode to also be able to detect stack overflow when running
+       tests in debug mode. The _PyBytesWriter is large (more than 512 bytes),
+       if Py_EnterRecursiveCall() is not used in deep C callback, we may hit a
+       stack overflow. */
+    writer->allocated = Py_MIN(writer->allocated, 10);
+    /* _PyBytesWriter_CheckConsistency() requires the last byte to be 0,
+       to detect buffer overflow */
     writer->small_buffer[writer->allocated] = 0;
 #else
     writer->allocated = sizeof(writer->small_buffer);
