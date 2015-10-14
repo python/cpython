@@ -159,10 +159,24 @@ class BinASCIITest(unittest.TestCase):
         # Then calculate the hexbin4 binary-to-ASCII translation
         rle = binascii.rlecode_hqx(self.data)
         a = binascii.b2a_hqx(self.type2test(rle))
+
         b, _ = binascii.a2b_hqx(self.type2test(a))
         res = binascii.rledecode_hqx(b)
-
         self.assertEqual(res, self.rawdata)
+
+    def test_rle(self):
+        # test repetition with a repetition longer than the limit of 255
+        data = (b'a' * 100 + b'b' + b'c' * 300)
+
+        encoded = binascii.rlecode_hqx(data)
+        self.assertEqual(encoded,
+                         (b'a\x90d'      # 'a' * 100
+                          b'b'           # 'b'
+                          b'c\x90\xff'   # 'c' * 255
+                          b'c\x90-'))    # 'c' * 45
+
+        decoded = binascii.rledecode_hqx(encoded)
+        self.assertEqual(decoded, data)
 
     def test_hex(self):
         # test hexlification
