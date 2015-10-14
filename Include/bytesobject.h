@@ -67,6 +67,9 @@ PyAPI_FUNC(PyObject*) _PyBytes_FormatEx(
     Py_ssize_t format_len,
     PyObject *args,
     int use_bytearray);
+PyAPI_FUNC(PyObject*) _PyBytes_FromHex(
+    PyObject *string,
+    int use_bytearray);
 #endif
 PyAPI_FUNC(PyObject *) PyBytes_DecodeEscape(const char *, Py_ssize_t,
 						   const char *, Py_ssize_t,
