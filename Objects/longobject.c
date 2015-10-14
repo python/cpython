@@ -1836,7 +1836,7 @@ long_format_binary(PyObject *aa, int base, int alternate,
         kind = writer->kind;
         v = NULL;
     }
-    else if (writer) {
+    else if (bytes_writer) {
         *bytes_str = _PyBytesWriter_Prepare(bytes_writer, *bytes_str, sz);
         if (*bytes_str == NULL)
             return -1;
