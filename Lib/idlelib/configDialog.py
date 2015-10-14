@@ -1190,7 +1190,7 @@ class ConfigDialog(Toplevel):
         This code is generic - it works for any and all IDLE extensions.
 
         IDLE extensions save their configuration options using idleConf.
-        This code reads the current configuration using idleConf, supplies a 
+        This code reads the current configuration using idleConf, supplies a
         GUI interface to change the configuration values, and saves the
         changes using idleConf.
 
