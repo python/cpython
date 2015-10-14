@@ -782,7 +782,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
 
     # Test PyBytes_FromFormat()
     def test_from_format(self):
-        test.support.import_module('ctypes')
+        ctypes = test.support.import_module('ctypes')
         _testcapi = test.support.import_module('_testcapi')
         from ctypes import pythonapi, py_object
         from ctypes import (
@@ -825,9 +825,12 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
                          b'i=-123')
         self.assertEqual(PyBytes_FromFormat(b'x=%x', c_int(0xabc)),
                          b'x=abc')
-        self.assertEqual(PyBytes_FromFormat(b'ptr=%p',
-                                            c_char_p(0xabcdef)),
-                         b'ptr=0xabcdef')
+        ptr = 0xabcdef
+        expected = [b'ptr=%#x' % ptr]
+        win_format = 'ptr=0x%0{}X'.format(2 * ctypes.sizeof(c_char_p))
+        expected.append((win_format % ptr).encode('ascii'))
+        self.assertIn(PyBytes_FromFormat(b'ptr=%p', c_char_p(ptr)),
+                      expected)
         self.assertEqual(PyBytes_FromFormat(b's=%s', c_char_p(b'cstr')),
                          b's=cstr')
 
