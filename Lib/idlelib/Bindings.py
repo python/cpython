@@ -78,7 +78,6 @@ menudefs = [
    ]),
  ('options', [
    ('Configure _IDLE', '<<open-config-dialog>>'),
-   ('Configure _Extensions', '<<open-config-extensions-dialog>>'),
    None,
    ]),
  ('help', [
