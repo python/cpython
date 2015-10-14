@@ -141,16 +141,25 @@ Optimizations
 =============
 
 * The ASCII decoder is now up to 60 times as fast for error handlers:
-  ``surrogateescape``, ``ignore`` and ``replace``.
+  ``surrogateescape``, ``ignore`` and ``replace`` (Contributed
+  by Victor Stinner in :issue:`24870`).
 
 * The ASCII and the Latin1 encoders are now up to 3 times as fast for the error
-  error ``surrogateescape``.
+  error ``surrogateescape`` (Contributed by Victor Stinner in :issue:`25227`).
 
 * The UTF-8 encoder is now up to 75 times as fast for error handlers:
-  ``ignore``, ``replace``, ``surrogateescape``, ``surrogatepass``.
+  ``ignore``, ``replace``, ``surrogateescape``, ``surrogatepass`` (Contributed
+  by Victor Stinner in :issue:`25267`).
 
 * The UTF-8 decoder is now up to 15 times as fast for error handlers:
-  ``ignore``, ``replace`` and ``surrogateescape``.
+  ``ignore``, ``replace`` and ``surrogateescape`` (Contributed
+  by Victor Stinner in :issue:`25301`).
+
+* ``bytes % args`` is now up to 2 times faster. (Contributed by Victor Stinner
+  in :issue:`25349`).
+
+* ``bytearray % args`` is now between 2.5 and 5 times faster. (Contributed by
+  Victor Stinner in :issue:`25399`).
 
 
 Build and C API Changes

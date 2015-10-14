@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25399: Optimize bytearray % args using the new private _PyBytesWriter
+  API. Formatting is now between 2.5 and 5 times faster.
+
 - Issue #25274: sys.setrecursionlimit() now raises a RecursionError if the new
   recursion limit is too low depending at the current recursion depth. Modify
   also the "lower-water mark" formula to make it monotonic. This mark is used
@@ -19,6 +22,7 @@ Core and Builtins
   sys.stdout.fileno() fails.
 
 - Issue #25349: Optimize bytes % args using the new private _PyBytesWriter API.
+  Formatting is now up to 2 times faster.
 
 - Issue #24806: Prevent builtin types that are not allowed to be subclassed from
   being subclassed through multiple inheritance.
