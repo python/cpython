@@ -26,8 +26,8 @@
                         SourceFile="py.exe"
                         Compressed="yes"
                         DisplayName="!(loc.CompileAllDescription)"
-                        InstallCommand='-$(var.ShortVersion)$(var.Suffix32) $(var.CompileAllCommand)'
-                        RepairCommand='-$(var.ShortVersion)$(var.Suffix32) $(var.CompileAllCommand)'
+                        InstallCommand='-[WinVer] $(var.CompileAllCommand)'
+                        RepairCommand='-[WinVer] $(var.CompileAllCommand)'
                         Permanent="yes"
                         PerMachine="yes"
                         Vital="no"
@@ -36,8 +36,8 @@
                         SourceFile="py.exe"
                         Compressed="yes"
                         DisplayName="!(loc.CompileAllODescription)"
-                        InstallCommand='-$(var.ShortVersion)$(var.Suffix32) -O $(var.CompileAllCommand)'
-                        RepairCommand='-$(var.ShortVersion)$(var.Suffix32) -O $(var.CompileAllCommand)'
+                        InstallCommand='-[WinVer] -O $(var.CompileAllCommand)'
+                        RepairCommand='-[WinVer] -O $(var.CompileAllCommand)'
                         Permanent="yes"
                         PerMachine="yes"
                         Vital="no"
@@ -46,8 +46,8 @@
                         SourceFile="py.exe"
                         Compressed="yes"
                         DisplayName="!(loc.CompileAllOODescription)"
-                        InstallCommand='-$(var.ShortVersion)$(var.Suffix32) -OO $(var.CompileAllCommand)'
-                        RepairCommand='-$(var.ShortVersion)$(var.Suffix32) -OO $(var.CompileAllCommand)'
+                        InstallCommand='-[WinVer] -OO $(var.CompileAllCommand)'
+                        RepairCommand='-[WinVer] -OO $(var.CompileAllCommand)'
                         Permanent="yes"
                         PerMachine="yes"
                         Vital="no"
@@ -57,8 +57,8 @@
                         SourceFile="py.exe"
                         Compressed="yes"
                         DisplayName="!(loc.CompileAllDescription)"
-                        InstallCommand='-$(var.ShortVersion)$(var.Suffix32) $(var.CompileAllCommand)'
-                        RepairCommand='-$(var.ShortVersion)$(var.Suffix32) $(var.CompileAllCommand)'
+                        InstallCommand='-[WinVer] $(var.CompileAllCommand)'
+                        RepairCommand='-[WinVer] $(var.CompileAllCommand)'
                         Permanent="yes"
                         PerMachine="no"
                         Vital="no"
@@ -67,8 +67,8 @@
                         SourceFile="py.exe"
                         Compressed="yes"
                         DisplayName="!(loc.CompileAllODescription)"
-                        InstallCommand='-$(var.ShortVersion)$(var.Suffix32) -O $(var.CompileAllCommand)'
-                        RepairCommand='-$(var.ShortVersion)$(var.Suffix32) -O $(var.CompileAllCommand)'
+                        InstallCommand='-[WinVer] -O $(var.CompileAllCommand)'
+                        RepairCommand='-[WinVer] -O $(var.CompileAllCommand)'
                         Permanent="yes"
                         PerMachine="no"
                         Vital="no"
@@ -77,8 +77,8 @@
                         SourceFile="py.exe"
                         Compressed="yes"
                         DisplayName="!(loc.CompileAllOODescription)"
-                        InstallCommand='-$(var.ShortVersion)$(var.Suffix32) -OO $(var.CompileAllCommand)'
-                        RepairCommand='-$(var.ShortVersion)$(var.Suffix32) -OO $(var.CompileAllCommand)'
+                        InstallCommand='-[WinVer] -OO $(var.CompileAllCommand)'
+                        RepairCommand='-[WinVer] -OO $(var.CompileAllCommand)'
                         Permanent="yes"
                         PerMachine="no"
                         Vital="no"
