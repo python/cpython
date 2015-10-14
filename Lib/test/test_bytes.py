@@ -839,12 +839,22 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
                          b'i=-123')
         self.assertEqual(PyBytes_FromFormat(b'x=%x', c_int(0xabc)),
                          b'x=abc')
+
+        sizeof_ptr = ctypes.sizeof(c_char_p)
+
+        if os.name == 'nt':
+            # Windows (MSCRT)
+            ptr_format = '0x%0{}X'.format(2 * sizeof_ptr)
+            def ptr_formatter(ptr):
+                return (ptr_format % ptr)
+        else:
+            # UNIX (glibc)
+            def ptr_formatter(ptr):
+                return '%#x' % ptr
+
         ptr = 0xabcdef
-        expected = [b'ptr=%#x' % ptr]
-        win_format = 'ptr=0x%0{}X'.format(2 * ctypes.sizeof(c_char_p))
-        expected.append((win_format % ptr).encode('ascii'))
-        self.assertIn(PyBytes_FromFormat(b'ptr=%p', c_char_p(ptr)),
-                      expected)
+        self.assertEqual(PyBytes_FromFormat(b'ptr=%p', c_char_p(ptr)),
+                         ('ptr=' + ptr_formatter(ptr)).encode('ascii'))
         self.assertEqual(PyBytes_FromFormat(b's=%s', c_char_p(b'cstr')),
                          b's=cstr')
 
@@ -859,7 +869,7 @@ class BytesTest(BaseBytesTest, unittest.TestCase):
             (b'%zd', c_ssize_t, _testcapi.PY_SSIZE_T_MIN, str),
             (b'%zd', c_ssize_t, _testcapi.PY_SSIZE_T_MAX, str),
             (b'%zu', c_size_t, size_max, str),
-            (b'%p', c_char_p, size_max, lambda value: '%#x' % value),
+            (b'%p', c_char_p, size_max, ptr_formatter),
         ):
             self.assertEqual(PyBytes_FromFormat(formatstr, ctypes_type(value)),
                              py_formatter(value).encode('ascii')),
