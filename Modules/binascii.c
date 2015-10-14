@@ -784,7 +784,7 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
 {
     unsigned char *in_data, *out_data;
     unsigned char in_byte, in_repeat;
-    Py_ssize_t in_len, out_len, out_len_left;
+    Py_ssize_t in_len;
     _PyBytesWriter writer;
 
     in_data = data->buf;
@@ -800,15 +800,12 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
         return PyErr_NoMemory();
 
     /* Allocate a buffer of reasonable size. Resized when needed */
-    out_len = in_len;
-    out_data = _PyBytesWriter_Alloc(&writer, out_len);
+    out_data = _PyBytesWriter_Alloc(&writer, in_len);
     if (out_data == NULL)
         return NULL;
 
     /* Use overallocation */
     writer.overallocate = 1;
-    out_len = writer.allocated;
-    out_len_left = out_len;
 
     /*
     ** We need two macros here to get/put bytes and handle
@@ -823,24 +820,6 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
          b = *in_data++;                                                \
     } while(0)
 
-#define OUTBYTE(b)                                                      \
-    do {                                                                \
-         if ( --out_len_left < 0 ) {                                    \
-             if (in_len <= 0) {                                         \
-                 /* We are done after this write, no need to            \
-                    overallocate the buffer anymore */                  \
-                 writer.overallocate = 0;                               \
-             }                                                          \
-             out_data = _PyBytesWriter_Resize(&writer, out_data,        \
-                                              writer.allocated + 1);    \
-             if (out_data == NULL)                                      \
-                 goto error;                                            \
-             out_len_left = writer.allocated - out_len - 1;             \
-             out_len = writer.allocated;                                \
-         }                                                              \
-         *out_data++ = b;                                               \
-    } while(0)
-
     /*
     ** Handle first byte separately (since we have to get angry
     ** in case of an orphaned RLE code).
@@ -849,6 +828,10 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
 
     if (in_byte == RUNCHAR) {
         INBYTE(in_repeat);
+        /* only 1 byte will be written, but 2 bytes were preallocated:
+           substract 1 byte to prevent overallocation */
+        writer.min_size--;
+
         if (in_repeat != 0) {
             /* Note Error, not Incomplete (which is at the end
             ** of the string only). This is a programmer error.
@@ -856,9 +839,9 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
             PyErr_SetString(Error, "Orphaned RLE code at start");
             goto error;
         }
-        OUTBYTE(RUNCHAR);
+        *out_data++ = RUNCHAR;
     } else {
-        OUTBYTE(in_byte);
+        *out_data++ = in_byte;
     }
 
     while( in_len > 0 ) {
@@ -866,18 +849,32 @@ binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
 
         if (in_byte == RUNCHAR) {
             INBYTE(in_repeat);
+            /* only 1 byte will be written, but 2 bytes were preallocated:
+               substract 1 byte to prevent overallocation */
+            writer.min_size--;
+
             if ( in_repeat == 0 ) {
                 /* Just an escaped RUNCHAR value */
-                OUTBYTE(RUNCHAR);
+                *out_data++ = RUNCHAR;
             } else {
                 /* Pick up value and output a sequence of it */
                 in_byte = out_data[-1];
+
+                /* enlarge the buffer if needed */
+                if (in_repeat > 1) {
+                    /* -1 because we already preallocated 1 byte */
+                    out_data = _PyBytesWriter_Prepare(&writer, out_data,
+                                                      in_repeat - 1);
+                    if (out_data == NULL)
+                        goto error;
+                }
+
                 while ( --in_repeat > 0 )
-                    OUTBYTE(in_byte);
+                    *out_data++ = in_byte;
             }
         } else {
             /* Normal byte */
-            OUTBYTE(in_byte);
+            *out_data++ = in_byte;
         }
     }
     return _PyBytesWriter_Finish(&writer, out_data);
