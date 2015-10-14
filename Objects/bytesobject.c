@@ -30,6 +30,10 @@ static PyBytesObject *nullstring;
 */
 #define PyBytesObject_SIZE (offsetof(PyBytesObject, ob_sval) + 1)
 
+/* Forward declaration */
+Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
+                                                   char *str);
+
 /*
    For PyBytes_FromString(), the parameter `str' points to a null-terminated
    string containing exactly `size' bytes.
@@ -3078,22 +3082,6 @@ bytes_splitlines_impl(PyBytesObject*self, int keepends)
         );
 }
 
-static int
-hex_digit_to_int(Py_UCS4 c)
-{
-    if (c >= 128)
-        return -1;
-    if (Py_ISDIGIT(c))
-        return c - '0';
-    else {
-        if (Py_ISUPPER(c))
-            c = Py_TOLOWER(c);
-        if (c >= 'a' && c <= 'f')
-            return c - 'a' + 10;
-    }
-    return -1;
-}
-
 /*[clinic input]
 @classmethod
 bytes.fromhex
@@ -3111,47 +3099,83 @@ static PyObject *
 bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
 /*[clinic end generated code: output=0973acc63661bb2e input=bf4d1c361670acd3]*/
 {
-    PyObject *newstring;
+    return _PyBytes_FromHex(string, 0);
+}
+
+PyObject*
+_PyBytes_FromHex(PyObject *string, int use_bytearray)
+{
     char *buf;
-    Py_ssize_t hexlen, byteslen, i, j;
-    int top, bot;
-    void *data;
-    unsigned int kind;
+    Py_ssize_t hexlen, invalid_char;
+    unsigned int top, bot;
+    Py_UCS1 *str, *end;
+    _PyBytesWriter writer;
+
+    _PyBytesWriter_Init(&writer);
+    writer.use_bytearray = use_bytearray;
 
     assert(PyUnicode_Check(string));
     if (PyUnicode_READY(string))
         return NULL;
-    kind = PyUnicode_KIND(string);
-    data = PyUnicode_DATA(string);
     hexlen = PyUnicode_GET_LENGTH(string);
 
-    byteslen = hexlen/2; /* This overestimates if there are spaces */
-    newstring = PyBytes_FromStringAndSize(NULL, byteslen);
-    if (!newstring)
+    if (!PyUnicode_IS_ASCII(string)) {
+        void *data = PyUnicode_DATA(string);
+        unsigned int kind = PyUnicode_KIND(string);
+        Py_ssize_t i;
+
+        /* search for the first non-ASCII character */
+        for (i = 0; i < hexlen; i++) {
+            if (PyUnicode_READ(kind, data, i) >= 128)
+                break;
+        }
+        invalid_char = i;
+        goto error;
+    }
+
+    assert(PyUnicode_KIND(string) == PyUnicode_1BYTE_KIND);
+    str = PyUnicode_1BYTE_DATA(string);
+
+    /* This overestimates if there are spaces */
+    buf = _PyBytesWriter_Alloc(&writer, hexlen / 2);
+    if (buf == NULL)
         return NULL;
-    buf = PyBytes_AS_STRING(newstring);
-    for (i = j = 0; i < hexlen; i += 2) {
+
+    end = str + hexlen;
+    while (str < end) {
         /* skip over spaces in the input */
-        while (PyUnicode_READ(kind, data, i) == ' ')
-            i++;
-        if (i >= hexlen)
-            break;
-        top = hex_digit_to_int(PyUnicode_READ(kind, data, i));
-        bot = hex_digit_to_int(PyUnicode_READ(kind, data, i+1));
-        if (top == -1 || bot == -1) {
-            PyErr_Format(PyExc_ValueError,
-                         "non-hexadecimal number found in "
-                         "fromhex() arg at position %zd", i);
+        if (*str == ' ') {
+            do {
+                str++;
+            } while (*str == ' ');
+            if (str >= end)
+                break;
+        }
+
+        top = _PyLong_DigitValue[*str];
+        if (top >= 16) {
+            invalid_char = str - PyUnicode_1BYTE_DATA(string);
             goto error;
         }
-        buf[j++] = (top << 4) + bot;
+        str++;
+
+        bot = _PyLong_DigitValue[*str];
+        if (bot >= 16) {
+            invalid_char = str - PyUnicode_1BYTE_DATA(string);
+            goto error;
+        }
+        str++;
+
+        *buf++ = (unsigned char)((top << 4) + bot);
     }
-    if (j != byteslen && _PyBytes_Resize(&newstring, j) < 0)
-        goto error;
-    return newstring;
+
+    return _PyBytesWriter_Finish(&writer, buf);
 
   error:
-    Py_XDECREF(newstring);
+    PyErr_Format(PyExc_ValueError,
+                 "non-hexadecimal number found in "
+                 "fromhex() arg at position %zd", invalid_char);
+    _PyBytesWriter_Dealloc(&writer);
     return NULL;
 }
 
@@ -3888,7 +3912,7 @@ _PyBytesWriter_AsString(_PyBytesWriter *writer)
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
-_PyBytesWriter_GetPos(_PyBytesWriter *writer, char *str)
+_PyBytesWriter_GetSize(_PyBytesWriter *writer, char *str)
 {
     char *start = _PyBytesWriter_AsString(writer);
     assert(str != NULL);
@@ -3963,7 +3987,7 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
         allocated += allocated / OVERALLOCATE_FACTOR;
     }
 
-    pos = _PyBytesWriter_GetPos(writer, str);
+    pos = _PyBytesWriter_GetSize(writer, str);
     if (!writer->use_small_buffer) {
         if (writer->use_bytearray) {
             if (PyByteArray_Resize(writer->buffer, allocated))
@@ -4041,33 +4065,33 @@ _PyBytesWriter_Alloc(_PyBytesWriter *writer, Py_ssize_t size)
 PyObject *
 _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
 {
-    Py_ssize_t pos;
+    Py_ssize_t size;
     PyObject *result;
 
     _PyBytesWriter_CheckConsistency(writer, str);
 
-    pos = _PyBytesWriter_GetPos(writer, str);
-    if (pos == 0 && !writer->use_bytearray) {
+    size = _PyBytesWriter_GetSize(writer, str);
+    if (size == 0 && !writer->use_bytearray) {
         Py_CLEAR(writer->buffer);
         /* Get the empty byte string singleton */
         result = PyBytes_FromStringAndSize(NULL, 0);
     }
     else if (writer->use_small_buffer) {
-        result = PyBytes_FromStringAndSize(writer->small_buffer, pos);
+        result = PyBytes_FromStringAndSize(writer->small_buffer, size);
     }
     else {
         result = writer->buffer;
         writer->buffer = NULL;
 
-        if (pos != writer->allocated) {
+        if (size != writer->allocated) {
             if (writer->use_bytearray) {
-                if (PyByteArray_Resize(result, pos)) {
+                if (PyByteArray_Resize(result, size)) {
                     Py_DECREF(result);
                     return NULL;
                 }
             }
             else {
-                if (_PyBytes_Resize(&result, pos)) {
+                if (_PyBytes_Resize(&result, size)) {
                     assert(result == NULL);
                     return NULL;
                 }

@@ -161,6 +161,9 @@ Optimizations
 * ``bytearray % args`` is now between 2.5 and 5 times faster. (Contributed by
   Victor Stinner in :issue:`25399`).
 
+* Optimize :meth:`bytes.fromhex` and :meth:`bytearray.fromhex`: they are now
+  between 2x and 3.5x faster. (Contributed by Victor Stinner in :issue:`25401`).
+
 
 Build and C API Changes
 =======================

@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25401: Optimize bytes.fromhex() and bytearray.fromhex(): they are now
+  between 2x and 3.5x faster.
+
 - Issue #25399: Optimize bytearray % args using the new private _PyBytesWriter
   API. Formatting is now between 2.5 and 5 times faster.
 
