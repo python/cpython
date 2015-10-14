@@ -301,6 +301,20 @@ class BaseBytesTest:
         self.assertRaises(ValueError, self.type2test.fromhex, '\x00')
         self.assertRaises(ValueError, self.type2test.fromhex, '12   \x00   34')
 
+        for data, pos in (
+            # invalid first hexadecimal character
+            ('12 x4 56', 3),
+            # invalid second hexadecimal character
+            ('12 3x 56', 4),
+            # two invalid hexadecimal characters
+            ('12 xy 56', 3),
+            # test non-ASCII string
+            ('12 3\xff 56', 4),
+        ):
+            with self.assertRaises(ValueError) as cm:
+                self.type2test.fromhex(data)
+            self.assertIn('at position %s' % pos, str(cm.exception))
+
     def test_hex(self):
         self.assertRaises(TypeError, self.type2test.hex)
         self.assertRaises(TypeError, self.type2test.hex, 1)
