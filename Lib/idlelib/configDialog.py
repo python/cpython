@@ -78,12 +78,14 @@ class ConfigDialog(Toplevel):
 
     def CreateWidgets(self):
         self.tabPages = TabbedPageSet(self,
-                page_names=['Fonts/Tabs', 'Highlighting', 'Keys', 'General'])
+                page_names=['Fonts/Tabs', 'Highlighting', 'Keys', 'General',
+                            'Extensions'])
         self.tabPages.pack(side=TOP, expand=TRUE, fill=BOTH)
         self.CreatePageFontTab()
         self.CreatePageHighlight()
         self.CreatePageKeys()
         self.CreatePageGeneral()
+        self.CreatePageExtensions()
         self.create_action_buttons().pack(side=BOTTOM)
 
     def create_action_buttons(self):
@@ -1109,6 +1111,7 @@ class ConfigDialog(Toplevel):
         self.LoadKeyCfg()
         ### general page
         self.LoadGeneralCfg()
+        # note: extension page handled separately
 
     def SaveNewKeySet(self, keySetName, keySet):
         """
@@ -1162,6 +1165,7 @@ class ConfigDialog(Toplevel):
             # save these even if unchanged!
             idleConf.userCfg[configType].Save()
         self.ResetChangedItems() #clear the changed items dict
+        self.save_all_changed_extensions()  # uses a different mechanism
 
     def DeactivateCurrentConfig(self):
         #Before a config is saved, some cleanup of current
@@ -1197,6 +1201,168 @@ class ConfigDialog(Toplevel):
         view_text(self, title='Help for IDLE preferences',
                  text=help_common+help_pages.get(page, ''))
 
+    def CreatePageExtensions(self):
+        """Part of the config dialog used for configuring IDLE extensions.
+
+        This code is generic - it works for any and all IDLE extensions.
+
+        IDLE extensions save their configuration options using idleConf.
+        This code reads the current configuration using idleConf, supplies a 
+        GUI interface to change the configuration values, and saves the
+        changes using idleConf.
+
+        Not all changes take effect immediately - some may require restarting IDLE.
+        This depends on each extension's implementation.
+
+        All values are treated as text, and it is up to the user to supply
+        reasonable values. The only exception to this are the 'enable*' options,
+        which are boolean, and can be toggled with an True/False button.
+        """
+        parent = self.parent
+        frame = self.tabPages.pages['Extensions'].frame
+        self.ext_defaultCfg = idleConf.defaultCfg['extensions']
+        self.ext_userCfg = idleConf.userCfg['extensions']
+        self.is_int = self.register(is_int)
+        self.load_extensions()
+        # create widgets - a listbox shows all available extensions, with the
+        # controls for the extension selected in the listbox to the right
+        self.extension_names = StringVar(self)
+        frame.rowconfigure(0, weight=1)
+        frame.columnconfigure(2, weight=1)
+        self.extension_list = Listbox(frame, listvariable=self.extension_names,
+                                      selectmode='browse')
+        self.extension_list.bind('<<ListboxSelect>>', self.extension_selected)
+        scroll = Scrollbar(frame, command=self.extension_list.yview)
+        self.extension_list.yscrollcommand=scroll.set
+        self.details_frame = LabelFrame(frame, width=250, height=250)
+        self.extension_list.grid(column=0, row=0, sticky='nws')
+        scroll.grid(column=1, row=0, sticky='ns')
+        self.details_frame.grid(column=2, row=0, sticky='nsew', padx=[10, 0])
+        frame.configure(padx=10, pady=10)
+        self.config_frame = {}
+        self.current_extension = None
+
+        self.outerframe = self                      # TEMPORARY
+        self.tabbed_page_set = self.extension_list  # TEMPORARY
+
+        # create the frame holding controls for each extension
+        ext_names = ''
+        for ext_name in sorted(self.extensions):
+            self.create_extension_frame(ext_name)
+            ext_names = ext_names + '{' + ext_name + '} '
+        self.extension_names.set(ext_names)
+        self.extension_list.selection_set(0)
+        self.extension_selected(None)
+
+    def load_extensions(self):
+        "Fill self.extensions with data from the default and user configs."
+        self.extensions = {}
+        for ext_name in idleConf.GetExtensions(active_only=False):
+            self.extensions[ext_name] = []
+
+        for ext_name in self.extensions:
+            opt_list = sorted(self.ext_defaultCfg.GetOptionList(ext_name))
+
+            # bring 'enable' options to the beginning of the list
+            enables = [opt_name for opt_name in opt_list
+                       if opt_name.startswith('enable')]
+            for opt_name in enables:
+                opt_list.remove(opt_name)
+            opt_list = enables + opt_list
+
+            for opt_name in opt_list:
+                def_str = self.ext_defaultCfg.Get(
+                        ext_name, opt_name, raw=True)
+                try:
+                    def_obj = {'True':True, 'False':False}[def_str]
+                    opt_type = 'bool'
+                except KeyError:
+                    try:
+                        def_obj = int(def_str)
+                        opt_type = 'int'
+                    except ValueError:
+                        def_obj = def_str
+                        opt_type = None
+                try:
+                    value = self.ext_userCfg.Get(
+                            ext_name, opt_name, type=opt_type, raw=True,
+                            default=def_obj)
+                except ValueError:  # Need this until .Get fixed
+                    value = def_obj  # bad values overwritten by entry
+                var = StringVar(self)
+                var.set(str(value))
+
+                self.extensions[ext_name].append({'name': opt_name,
+                                                  'type': opt_type,
+                                                  'default': def_str,
+                                                  'value': value,
+                                                  'var': var,
+                                                 })
+
+    def extension_selected(self, event):
+        newsel = self.extension_list.curselection()
+        if newsel:
+            newsel = self.extension_list.get(newsel)
+        if newsel is None or newsel != self.current_extension:
+            if self.current_extension:
+                self.details_frame.config(text='')
+                self.config_frame[self.current_extension].grid_forget()
+                self.current_extension = None
+        if newsel:
+            self.details_frame.config(text=newsel)
+            self.config_frame[newsel].grid(column=0, row=0, sticky='nsew')
+            self.current_extension = newsel
+
+    def create_extension_frame(self, ext_name):
+        """Create a frame holding the widgets to configure one extension"""
+        f = VerticalScrolledFrame(self.details_frame, height=250, width=250)
+        self.config_frame[ext_name] = f
+        entry_area = f.interior
+        # create an entry for each configuration option
+        for row, opt in enumerate(self.extensions[ext_name]):
+            # create a row with a label and entry/checkbutton
+            label = Label(entry_area, text=opt['name'])
+            label.grid(row=row, column=0, sticky=NW)
+            var = opt['var']
+            if opt['type'] == 'bool':
+                Checkbutton(entry_area, textvariable=var, variable=var,
+                            onvalue='True', offvalue='False',
+                            indicatoron=FALSE, selectcolor='', width=8
+                            ).grid(row=row, column=1, sticky=W, padx=7)
+            elif opt['type'] == 'int':
+                Entry(entry_area, textvariable=var, validate='key',
+                      validatecommand=(self.is_int, '%P')
+                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
+
+            else:
+                Entry(entry_area, textvariable=var
+                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
+        return
+
+    def set_extension_value(self, section, opt):
+        name = opt['name']
+        default = opt['default']
+        value = opt['var'].get().strip() or default
+        opt['var'].set(value)
+        # if self.defaultCfg.has_section(section):
+        # Currently, always true; if not, indent to return
+        if (value == default):
+            return self.ext_userCfg.RemoveOption(section, name)
+        # set the option
+        return self.ext_userCfg.SetOption(section, name, value)
+
+    def save_all_changed_extensions(self):
+        """Save configuration changes to the user config file."""
+        has_changes = False
+        for ext_name in self.extensions:
+            options = self.extensions[ext_name]
+            for opt in options:
+                if self.set_extension_value(ext_name, opt):
+                    has_changes = True
+        if has_changes:
+            self.ext_userCfg.Save()
+
+
 help_common = '''\
 When you click either the Apply or Ok buttons, settings in this
 dialog that are different from IDLE's default are saved in
@@ -1213,6 +1379,17 @@ be used with older IDLE releases if it is saved as a custom
 theme, with a different name.
 '''
 }
+
+
+def is_int(s):
+    "Return 's is blank or represents an int'"
+    if not s:
+        return True
+    try:
+        int(s)
+        return True
+    except ValueError:
+        return False
 
 
 class VerticalScrolledFrame(Frame):
@@ -1256,221 +1433,6 @@ class VerticalScrolledFrame(Frame):
         canvas.bind('<Configure>', _configure_canvas)
 
         return
-
-def is_int(s):
-    "Return 's is blank or represents an int'"
-    if not s:
-        return True
-    try:
-        int(s)
-        return True
-    except ValueError:
-        return False
-
-# TODO:
-# * Revert to default(s)? Per option or per extension?
-# * List options in their original order (possible??)
-class ConfigExtensionsDialog(Toplevel):
-    """A dialog for configuring IDLE extensions.
-
-    This dialog is generic - it works for any and all IDLE extensions.
-
-    IDLE extensions save their configuration options using idleConf.
-    ConfigExtensionsDialog reads the current configuration using idleConf,
-    supplies a GUI interface to change the configuration values, and saves the
-    changes using idleConf.
-
-    Not all changes take effect immediately - some may require restarting IDLE.
-    This depends on each extension's implementation.
-
-    All values are treated as text, and it is up to the user to supply
-    reasonable values. The only exception to this are the 'enable*' options,
-    which are boolean, and can be toggled with an True/False button.
-    """
-    def __init__(self, parent, title=None, _htest=False):
-        Toplevel.__init__(self, parent)
-        self.wm_withdraw()
-
-        self.configure(borderwidth=5)
-        self.geometry(
-                "+%d+%d" % (parent.winfo_rootx() + 20,
-                parent.winfo_rooty() + (30 if not _htest else 150)))
-        self.wm_title(title or 'IDLE Extensions Configuration')
-
-        self.defaultCfg = idleConf.defaultCfg['extensions']
-        self.userCfg = idleConf.userCfg['extensions']
-        self.is_int = self.register(is_int)
-        self.load_extensions()
-        self.create_widgets()
-
-        self.resizable(height=FALSE, width=FALSE) # don't allow resizing yet
-        self.transient(parent)
-        self.protocol("WM_DELETE_WINDOW", self.Cancel)
-        self.tabbed_page_set.focus_set()
-        # wait for window to be generated
-        self.update()
-        # set current width as the minimum width
-        self.wm_minsize(self.winfo_width(), 1)
-        # now allow resizing
-        self.resizable(height=TRUE, width=TRUE)
-
-        self.wm_deiconify()
-        if not _htest:
-            self.grab_set()
-            self.wait_window()
-
-    def load_extensions(self):
-        "Fill self.extensions with data from the default and user configs."
-        self.extensions = {}
-        for ext_name in idleConf.GetExtensions(active_only=False):
-            self.extensions[ext_name] = []
-
-        for ext_name in self.extensions:
-            opt_list = sorted(self.defaultCfg.GetOptionList(ext_name))
-
-            # bring 'enable' options to the beginning of the list
-            enables = [opt_name for opt_name in opt_list
-                       if opt_name.startswith('enable')]
-            for opt_name in enables:
-                opt_list.remove(opt_name)
-            opt_list = enables + opt_list
-
-            for opt_name in opt_list:
-                def_str = self.defaultCfg.Get(
-                        ext_name, opt_name, raw=True)
-                try:
-                    def_obj = {'True':True, 'False':False}[def_str]
-                    opt_type = 'bool'
-                except KeyError:
-                    try:
-                        def_obj = int(def_str)
-                        opt_type = 'int'
-                    except ValueError:
-                        def_obj = def_str
-                        opt_type = None
-                try:
-                    value = self.userCfg.Get(
-                            ext_name, opt_name, type=opt_type, raw=True,
-                            default=def_obj)
-                except ValueError:  # Need this until .Get fixed
-                    value = def_obj  # bad values overwritten by entry
-                var = StringVar(self)
-                var.set(str(value))
-
-                self.extensions[ext_name].append({'name': opt_name,
-                                                  'type': opt_type,
-                                                  'default': def_str,
-                                                  'value': value,
-                                                  'var': var,
-                                                 })
-
-    def create_widgets(self):
-        """Create the dialog's widgets."""
-        self.extension_names = StringVar(self)
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(2, weight=1)
-        self.extension_list = Listbox(self, listvariable=self.extension_names,
-                                      selectmode='browse')
-        self.extension_list.bind('<<ListboxSelect>>', self.extension_selected)
-        scroll = Scrollbar(self, command=self.extension_list.yview)
-        self.extension_list.yscrollcommand=scroll.set
-        self.details_frame = LabelFrame(self, width=250, height=250)
-        self.extension_list.grid(column=0, row=0, sticky='nws')
-        scroll.grid(column=1, row=0, sticky='ns')
-        self.details_frame.grid(column=2, row=0, sticky='nsew', padx=[10, 0])
-        self.configure(padx=10, pady=10)
-        self.config_frame = {}
-        self.current_extension = None
-
-        self.outerframe = self                      # TEMPORARY
-        self.tabbed_page_set = self.extension_list  # TEMPORARY
-
-        # create the individual pages
-        ext_names = ''
-        for ext_name in sorted(self.extensions):
-            self.create_extension_frame(ext_name)
-            ext_names = ext_names + '{' + ext_name + '} '
-        self.extension_names.set(ext_names)
-        self.extension_list.selection_set(0)
-        self.extension_selected(None)
-        self.create_action_buttons().grid(row=1, columnspan=3)
-
-    def extension_selected(self, event):
-        newsel = self.extension_list.curselection()
-        if newsel:
-            newsel = self.extension_list.get(newsel)
-        if newsel is None or newsel != self.current_extension:
-            if self.current_extension:
-                self.details_frame.config(text='')
-                self.config_frame[self.current_extension].grid_forget()
-                self.current_extension = None
-        if newsel:
-            self.details_frame.config(text=newsel)
-            self.config_frame[newsel].grid(column=0, row=0, sticky='nsew')
-            self.current_extension = newsel
-
-    create_action_buttons = ConfigDialog.create_action_buttons.im_func
-
-    def create_extension_frame(self, ext_name):
-        """Create a frame holding the widgets to configure one extension"""
-        f = VerticalScrolledFrame(self.details_frame, height=250, width=250)
-        self.config_frame[ext_name] = f
-        entry_area = f.interior
-        # create an entry for each configuration option
-        for row, opt in enumerate(self.extensions[ext_name]):
-            # create a row with a label and entry/checkbutton
-            label = Label(entry_area, text=opt['name'])
-            label.grid(row=row, column=0, sticky=NW)
-            var = opt['var']
-            if opt['type'] == 'bool':
-                Checkbutton(entry_area, textvariable=var, variable=var,
-                            onvalue='True', offvalue='False',
-                            indicatoron=FALSE, selectcolor='', width=8
-                            ).grid(row=row, column=1, sticky=W, padx=7)
-            elif opt['type'] == 'int':
-                Entry(entry_area, textvariable=var, validate='key',
-                      validatecommand=(self.is_int, '%P')
-                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
-
-            else:
-                Entry(entry_area, textvariable=var
-                      ).grid(row=row, column=1, sticky=NSEW, padx=7)
-        return
-
-
-    Ok = ConfigDialog.Ok.im_func
-
-    def Apply(self):
-        self.save_all_changed_configs()
-        pass
-
-    Cancel = ConfigDialog.Cancel.im_func
-
-    def Help(self):
-        pass
-
-    def set_user_value(self, section, opt):
-        name = opt['name']
-        default = opt['default']
-        value = opt['var'].get().strip() or default
-        opt['var'].set(value)
-        # if self.defaultCfg.has_section(section):
-        # Currently, always true; if not, indent to return
-        if (value == default):
-            return self.userCfg.RemoveOption(section, name)
-        # set the option
-        return self.userCfg.SetOption(section, name, value)
-
-    def save_all_changed_configs(self):
-        """Save configuration changes to the user config file."""
-        has_changes = False
-        for ext_name in self.extensions:
-            options = self.extensions[ext_name]
-            for opt in options:
-                if self.set_user_value(ext_name, opt):
-                    has_changes = True
-        if has_changes:
-            self.userCfg.Save()
 
 
 if __name__ == '__main__':
