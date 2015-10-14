@@ -3997,29 +3997,14 @@ _PyBytesWriter_CheckConsistency(_PyBytesWriter *writer, char *str)
 }
 
 void*
-_PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
+_PyBytesWriter_Resize(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 {
     Py_ssize_t allocated, pos;
 
     _PyBytesWriter_CheckConsistency(writer, str);
-    assert(size >= 0);
+    assert(writer->allocated < size);
 
-    if (size == 0) {
-        /* nothing to do */
-        return str;
-    }
-
-    if (writer->min_size > PY_SSIZE_T_MAX - size) {
-        PyErr_NoMemory();
-        goto error;
-    }
-    writer->min_size += size;
-
-    allocated = writer->allocated;
-    if (writer->min_size <= allocated)
-        return str;
-
-    allocated = writer->min_size;
+    allocated = size;
     if (writer->overallocate
         && allocated <= (PY_SSIZE_T_MAX - allocated / OVERALLOCATE_FACTOR)) {
         /* overallocate to limit the number of realloc() */
@@ -4078,6 +4063,33 @@ _PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
 error:
     _PyBytesWriter_Dealloc(writer);
     return NULL;
+}
+
+void*
+_PyBytesWriter_Prepare(_PyBytesWriter *writer, void *str, Py_ssize_t size)
+{
+    Py_ssize_t new_min_size;
+
+    _PyBytesWriter_CheckConsistency(writer, str);
+    assert(size >= 0);
+
+    if (size == 0) {
+        /* nothing to do */
+        return str;
+    }
+
+    if (writer->min_size > PY_SSIZE_T_MAX - size) {
+        PyErr_NoMemory();
+        _PyBytesWriter_Dealloc(writer);
+        return NULL;
+    }
+    new_min_size = writer->min_size + size;
+
+    if (new_min_size > writer->allocated)
+        str = _PyBytesWriter_Resize(writer, str, new_min_size);
+
+    writer->min_size = new_min_size;
+    return str;
 }
 
 /* Allocate the buffer to write size bytes.
