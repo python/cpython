@@ -303,8 +303,8 @@ deque_append(dequeobject *deque, PyObject *item)
     deque->rightindex++;
     deque->rightblock->data[deque->rightindex] = item;
     if (NEEDS_TRIM(deque, deque->maxlen)) {
-        PyObject *rv = deque_popleft(deque, NULL);
-        Py_DECREF(rv);
+        PyObject *olditem = deque_popleft(deque, NULL);
+        Py_DECREF(olditem);
     }
     Py_RETURN_NONE;
 }
@@ -331,8 +331,8 @@ deque_appendleft(dequeobject *deque, PyObject *item)
     deque->leftindex--;
     deque->leftblock->data[deque->leftindex] = item;
     if (NEEDS_TRIM(deque, deque->maxlen)) {
-        PyObject *rv = deque_pop(deque, NULL);
-        Py_DECREF(rv);
+        PyObject *olditem = deque_pop(deque, NULL);
+        Py_DECREF(olditem);
     }
     Py_RETURN_NONE;
 }
@@ -423,8 +423,8 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         deque->rightindex++;
         deque->rightblock->data[deque->rightindex] = item;
         if (NEEDS_TRIM(deque, maxlen)) {
-            PyObject *rv = deque_popleft(deque, NULL);
-            Py_DECREF(rv);
+            PyObject *olditem = deque_popleft(deque, NULL);
+            Py_DECREF(olditem);
         }
     }
     return finalize_iterator(it);
@@ -487,8 +487,8 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         deque->leftindex--;
         deque->leftblock->data[deque->leftindex] = item;
         if (NEEDS_TRIM(deque, maxlen)) {
-            PyObject *rv = deque_pop(deque, NULL);
-            Py_DECREF(rv);
+            PyObject *olditem = deque_pop(deque, NULL);
+            Py_DECREF(olditem);
         }
     }
     return finalize_iterator(it);
@@ -1283,6 +1283,7 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
     PyObject *item;
     Py_ssize_t index;
     Py_ssize_t indexlo = deque->leftindex;
+    Py_ssize_t indexhigh;
 
     for (b = deque->leftblock; b != deque->rightblock; b = b->rightlink) {
         for (index = indexlo; index < BLOCKLEN ; index++) {
@@ -1291,7 +1292,8 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
         }
         indexlo = 0;
     }
-    for (index = indexlo; index <= deque->rightindex; index++) {
+    indexhigh = deque->rightindex;
+    for (index = indexlo; index <= indexhigh; index++) {
         item = b->data[index];
         Py_VISIT(item);
     }
