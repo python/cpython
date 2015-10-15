@@ -272,10 +272,10 @@ PyDoc_STRVAR(popleft_doc, "Remove and return the leftmost element.");
 /* The deque's size limit is d.maxlen.  The limit can be zero or positive.
  * If there is no limit, then d.maxlen == -1.
  *
- * After an item is added to a deque, we check to see if the size has grown past
- * the limit. If it has, we get the size back down to the limit by popping an
- * item off of the opposite end.  The methods that can trigger this are append(),
- * appendleft(), extend(), and extendleft().
+ * After an item is added to a deque, we check to see if the size has
+ * grown past the limit. If it has, we get the size back down to the limit
+ * by popping an item off of the opposite end.  The methods that can
+ * trigger this are append(), appendleft(), extend(), and extendleft().
  *
  * The macro to check whether a deque needs to be trimmed uses a single
  * unsigned test that returns true whenever 0 <= maxlen < Py_SIZE(deque).
