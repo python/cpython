@@ -1482,7 +1482,7 @@ deque_sizeof(dequeobject *deque, void *unused)
     Py_ssize_t blocks;
 
     res = sizeof(dequeobject);
-    blocks = (deque->leftindex + Py_SIZE(deque) + BLOCKLEN - 1) / BLOCKLEN;
+    blocks = (size_t)(deque->leftindex + Py_SIZE(deque) + BLOCKLEN - 1) / BLOCKLEN;
     assert(deque->leftindex + Py_SIZE(deque) - 1 ==
            (blocks - 1) * BLOCKLEN + deque->rightindex);
     res += blocks * sizeof(block);
