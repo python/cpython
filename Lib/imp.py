@@ -30,7 +30,7 @@ import warnings
 
 warnings.warn("the imp module is deprecated in favour of importlib; "
               "see the module's documentation for alternative uses",
-              PendingDeprecationWarning, stacklevel=2)
+              DeprecationWarning, stacklevel=2)
 
 # DEPRECATED
 SEARCH_ERROR = 0
