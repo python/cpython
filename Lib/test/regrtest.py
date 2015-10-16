@@ -508,7 +508,8 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
             for test in tests:
                 args_tuple = (
                     (test, verbose, quiet),
-                    dict(huntrleaks=huntrleaks, use_resources=use_resources)
+                    dict(huntrleaks=huntrleaks, use_resources=use_resources,
+                         pgo=pgo)
                 )
                 yield (test, args_tuple)
         pending = tests_and_args()
@@ -526,9 +527,6 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
                     except StopIteration:
                         output.put((None, None, None, None))
                         return
-                    # required to permit running tests with PGO flag on/off
-                    if pgo:
-                        args_tuple[1]['pgo']=pgo
                     # -E is needed by some tests, e.g. test_import
                     popen = Popen(base_cmd + ['--slaveargs', json.dumps(args_tuple)],
                                    stdout=PIPE, stderr=PIPE,
