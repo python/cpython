@@ -156,12 +156,6 @@ freeblock(block *b)
     }
 }
 
-/* XXX Todo:
-   If aligned memory allocations become available, make the
-   deque object 64 byte aligned so that all of the fields
-   can be retrieved or updated in a single cache line.
-*/
-
 static PyObject *
 deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
