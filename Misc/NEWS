@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25407: Remove mentions of the formatter module being removed in
+  Python 3.6.
+
 - Issue #25406: Fixed a bug in C implementation of OrderedDict.move_to_end()
   that caused segmentation fault or hang in iterating after moving several
   items to the start of ordered dict.
