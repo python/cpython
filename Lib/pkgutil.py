@@ -180,7 +180,7 @@ iter_importer_modules.register(
 def _import_imp():
     global imp
     with warnings.catch_warnings():
-        warnings.simplefilter('ignore', PendingDeprecationWarning)
+        warnings.simplefilter('ignore', DeprecationWarning)
         imp = importlib.import_module('imp')
 
 class ImpImporter:

@@ -228,6 +228,9 @@ Changes in the Python API
   now raises :exc:`ValueError` for out-of-range values, rather than
   returning :const:`None`.  See :issue:`20059`.
 
+* The :mod:`imp` module now raises a :exc:`DeprecationWarning` instead of
+  :exc:`PendingDeprecationWarning`.
+
 
 Changes in the C API
 --------------------
