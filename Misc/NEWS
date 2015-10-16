@@ -289,6 +289,12 @@ Windows
 
 - Issue #25022: Removed very outdated PC/example_nt/ directory.
 
+Tools/Demos
+-----------
+
+- Issue #25154: The pyvenv script has been deprecated in favour of
+  `python3 -m venv`.
+
 
 What's New in Python 3.5.1 release candidate 1?
 ===============================================

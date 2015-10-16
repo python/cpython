@@ -197,7 +197,10 @@ Deprecated functions and types of the C API
 Deprecated features
 -------------------
 
-* None yet.
+* The ``pyvenv`` script has been deprecated in favour of ``python3 -m venv``.
+  This prevents confusion as to what Python interpreter ``pyvenv`` is
+  connected to and thus what Python interpreter will be used by the virtual
+  environment. See :issue:`25154`.
 
 
 Removed
