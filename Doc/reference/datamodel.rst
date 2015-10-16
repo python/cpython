@@ -1341,7 +1341,7 @@ Basic customization
    :meth:`__hash__` method of a class is ``None``, instances of the class will
    raise an appropriate :exc:`TypeError` when a program attempts to retrieve
    their hash value, and will also be correctly identified as unhashable when
-   checking ``isinstance(obj, collections.Hashable``).
+   checking ``isinstance(obj, collections.Hashable)``.
 
    If a class that overrides :meth:`__eq__` needs to retain the implementation
    of :meth:`__hash__` from a parent class, the interpreter must be told this
