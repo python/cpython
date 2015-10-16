@@ -5,9 +5,8 @@
    :synopsis: Generic output formatter and device interface.
    :deprecated:
 
-.. deprecated-removed:: 3.4 3.6
-   Due to lack of usage, the formatter module has been deprecated and is slated
-   for removal in Python 3.6.
+.. deprecated:: 3.4
+   Due to lack of usage, the formatter module has been deprecated.
 
 
 This module supports two interface definitions, each with multiple
