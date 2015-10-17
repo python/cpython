@@ -935,7 +935,7 @@ class SMTPHandlerTest(BaseTest):
                                          timeout=self.TIMEOUT)
         self.assertEqual(h.toaddrs, ['you'])
         self.messages = []
-        r = logging.makeLogRecord({'msg': 'Hello'})
+        r = logging.makeLogRecord({'msg': 'Hello \u2713'})
         self.handled = threading.Event()
         h.handle(r)
         self.handled.wait(self.TIMEOUT)  # 14314: don't wait forever
@@ -946,7 +946,7 @@ class SMTPHandlerTest(BaseTest):
         self.assertEqual(mailfrom, 'me')
         self.assertEqual(rcpttos, ['you'])
         self.assertIn('\nSubject: Log\n', data)
-        self.assertTrue(data.endswith('\n\nHello'))
+        self.assertTrue(data.endswith('\n\nHello \u2713'))
         h.close()
 
     def process_message(self, *args):
