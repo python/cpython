@@ -974,24 +974,26 @@ class SMTPHandler(logging.Handler):
         """
         try:
             import smtplib
-            from email.utils import formatdate
+            from email.message import EmailMessage
+            import email.utils
+
             port = self.mailport
             if not port:
                 port = smtplib.SMTP_PORT
             smtp = smtplib.SMTP(self.mailhost, port, timeout=self.timeout)
-            msg = self.format(record)
-            msg = "From: %s\r\nTo: %s\r\nSubject: %s\r\nDate: %s\r\n\r\n%s" % (
-                            self.fromaddr,
-                            ",".join(self.toaddrs),
-                            self.getSubject(record),
-                            formatdate(), msg)
+            msg = EmailMessage()
+            msg['From'] = self.fromaddr
+            msg['To'] = ','.join(self.toaddrs)
+            msg['Subject'] = self.getSubject(record)
+            msg['Date'] = email.utils.localtime()
+            msg.set_content(self.format(record))
             if self.username:
                 if self.secure is not None:
                     smtp.ehlo()
                     smtp.starttls(*self.secure)
                     smtp.ehlo()
                 smtp.login(self.username, self.password)
-            smtp.sendmail(self.fromaddr, self.toaddrs, msg)
+            smtp.send_message(msg)
             smtp.quit()
         except Exception:
             self.handleError(record)
