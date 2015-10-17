@@ -1304,3 +1304,69 @@ You can of course use the conventional means of decoration::
     @log_if_errors(logger)
     def foo(fail=False):
         ...
+
+
+.. _utc-formatting:
+
+Formatting times using UTC (GMT) via configuration
+--------------------------------------------------
+
+Sometimes you want to format times using UTC, which can be done using a class
+such as `UTCFormatter`, shown below::
+
+    import logging
+    import time
+
+    class UTCFormatter(logging.Formatter):
+        converter = time.gmtime
+
+and you can then use the `UTCFormatter` in your code instead of
+:class:`~logging.Formatter`. If you want to do that via configuration, you can
+use the :func:`~logging.config.dictConfig` API with an approach illustrated by
+the following complete example::
+
+    import logging
+    import logging.config
+    import time
+
+    class UTCFormatter(logging.Formatter):
+        converter = time.gmtime
+
+    LOGGING = {
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters': {
+            'utc': {
+                '()': UTCFormatter,
+                'format': '%(asctime)s %(message)s',
+            },
+            'local': {
+                'format': '%(asctime)s %(message)s',
+            }
+        },
+        'handlers': {
+            'console1': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'utc',
+            },
+            'console2': {
+                'class': 'logging.StreamHandler',
+                'formatter': 'local',
+            },
+        },
+        'root': {
+            'handlers': ['console1', 'console2'],
+       }
+    }
+
+    if __name__ == '__main__':
+        logging.config.dictConfig(LOGGING)
+        logging.warning('The local time is %s', time.asctime())
+
+When this script is run, it should print something like::
+
+    2015-10-17 12:53:29,501 The local time is Sat Oct 17 13:53:29 2015
+    2015-10-17 13:53:29,501 The local time is Sat Oct 17 13:53:29 2015
+
+showing how the time is formatted both as local time and UTC, one for each
+handler.
