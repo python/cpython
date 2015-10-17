@@ -110,12 +110,6 @@ static PyTypeObject deque_type;
 #define CHECK_NOT_END(link)
 #endif
 
-/* To prevent len from overflowing PY_SSIZE_T_MAX, we refuse to
-   allocate new blocks if the current len is nearing overflow.
-*/
-
-#define MAX_DEQUE_LEN (PY_SSIZE_T_MAX - 3*BLOCKLEN)
-
 /* A simple freelisting scheme is used to minimize calls to the memory
    allocator.  It accommodates common use cases where new blocks are being
    added at about the same rate as old blocks are being freed.
@@ -128,11 +122,6 @@ static block *freeblocks[MAXFREEBLOCKS];
 static block *
 newblock(Py_ssize_t len) {
     block *b;
-    if (len >= MAX_DEQUE_LEN) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "cannot add more blocks to the deque");
-        return NULL;
-    }
     if (numfreeblocks) {
         numfreeblocks--;
         return freeblocks[numfreeblocks];
@@ -676,9 +665,6 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
         if (deque->maxlen >= 0 && n > deque->maxlen)
             n = deque->maxlen;
 
-        if (n > MAX_DEQUE_LEN)
-            return PyErr_NoMemory();
-
         deque->state++;
         for (i = 0 ; i < n-1 ; ) {
             if (deque->rightindex == BLOCKLEN - 1) {
@@ -709,7 +695,7 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
         return (PyObject *)deque;
     }
 
-    if ((size_t)size > MAX_DEQUE_LEN / (size_t)n) {
+    if ((size_t)size > PY_SSIZE_T_MAX / (size_t)n) {
         return PyErr_NoMemory();
     }
 
