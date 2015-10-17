@@ -45,6 +45,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25411: Improved Unicode support in SMTPHandler through better use of
+  the email package. Thanks to user simon04 for the patch.
+
 - Issue #25407: Remove mentions of the formatter module being removed in
   Python 3.6.
 
