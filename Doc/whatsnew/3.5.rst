@@ -1478,7 +1478,7 @@ either an another :class:`~pathlib.Path` object, or a string::
 (Contributed by Vajrasky Kok and Antoine Pitrou in :issue:`19775`.)
 
 The :meth:`Path.mkdir() <pathlib.Path.mkdir>` method how accepts a new optional
-*exist_ok* argument to match ``mkdir -p`` and :func:`os.makrdirs`
+*exist_ok* argument to match ``mkdir -p`` and :func:`os.makedirs`
 functionality.  (Contributed by Berker Peksag in :issue:`21539`.)
 
 There is a new :meth:`Path.expanduser() <pathlib.Path.expanduser>` method to
