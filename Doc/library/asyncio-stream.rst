@@ -9,6 +9,13 @@ Streams (high-level API)
 Stream functions
 ================
 
+.. note::
+
+   The top-level functions in this module are meant convenience wrappers
+   only; there's really nothing special there, and if they don't do
+   exactly what you want, feel free to copy their code.
+
+
 .. coroutinefunction:: open_connection(host=None, port=None, \*, loop=None, limit=None, \*\*kwds)
 
    A wrapper for :meth:`~BaseEventLoop.create_connection()` returning a (reader,
@@ -25,10 +32,6 @@ Stream functions
    Additional optional keyword arguments are *loop* (to set the event loop
    instance to use) and *limit* (to set the buffer limit passed to the
    :class:`StreamReader`).
-
-   (If you want to customize the :class:`StreamReader` and/or
-   :class:`StreamReaderProtocol` classes, just copy the code -- there's really
-   nothing special here except some convenience.)
 
    This function is a :ref:`coroutine <coroutine>`.
 
