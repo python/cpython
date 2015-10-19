@@ -653,7 +653,7 @@ os.close(fd)
             q.put(addr)
             clt, _ = sock.accept()
             clt.close()
-        
+
         @asyncio.coroutine
         def client(host, port):
             reader, writer = yield from asyncio.open_connection(host, port, loop=self.loop)
