@@ -301,6 +301,15 @@ class StreamWriter:
             exc = self._reader.exception()
             if exc is not None:
                 raise exc
+        if self._transport is not None:
+            if self._transport._closing:
+                # Yield to the event loop so connection_lost() may be
+                # called.  Without this, _drain_helper() would return
+                # immediately, and code that calls
+                #     write(...); yield from drain()
+                # in a loop would never call connection_lost(), so it
+                # would not see an error when the socket is closed.
+                yield
         yield from self._protocol._drain_helper()
 
 
