@@ -298,6 +298,8 @@ Windows
 Tools/Demos
 -----------
 
+- Issue #25440: Fix output of python-config --extension-suffix.
+
 - Issue #25154: The pyvenv script has been deprecated in favour of
   `python3 -m venv`.
 
