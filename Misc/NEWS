@@ -679,6 +679,8 @@ Documentation
 Tools/Demos
 -----------
 
+- Issue #25440: Fix output of python-config --extension-suffix.
+
 - Issue #23330: h2py now supports arbitrary filenames in #include.
 
 - Issue #24031: make patchcheck now supports git checkouts, too.
