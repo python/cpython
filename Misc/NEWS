@@ -45,6 +45,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25441: asyncio: Raise error from drain() when socket is closed.
+
 - Issue #25410: Cleaned up and fixed minor bugs in C implementation of
   OrderedDict.
 
