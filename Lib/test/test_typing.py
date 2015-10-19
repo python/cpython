@@ -317,6 +317,10 @@ class UnionTests(TestCase):
         with self.assertRaises(TypeError):
             isinstance(42, Union[int, str])
 
+    def test_union_str_pattern(self):
+        # Shouldn't crash; see http://bugs.python.org/issue25390
+        A = Union[str, Pattern]
+
 
 class TypeVarUnionTests(TestCase):
 

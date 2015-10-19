@@ -487,6 +487,9 @@ class UnionMeta(TypingMeta):
                 return Any
             if isinstance(t1, TypeVar):
                 continue
+            if isinstance(t1, _TypeAlias):
+                # _TypeAlias is not a real class.
+                continue
             if any(issubclass(t1, t2)
                    for t2 in all_params - {t1} if not isinstance(t2, TypeVar)):
                 all_params.remove(t1)
