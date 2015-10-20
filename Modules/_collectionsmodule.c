@@ -269,7 +269,6 @@ PyDoc_STRVAR(popleft_doc, "Remove and return the leftmost element.");
 static PyObject *
 deque_append(dequeobject *deque, PyObject *item)
 {
-    deque->state++;
     if (deque->rightindex == BLOCKLEN - 1) {
         block *b = newblock(Py_SIZE(deque));
         if (b == NULL)
@@ -288,6 +287,8 @@ deque_append(dequeobject *deque, PyObject *item)
     if (NEEDS_TRIM(deque, deque->maxlen)) {
         PyObject *olditem = deque_popleft(deque, NULL);
         Py_DECREF(olditem);
+    } else {
+        deque->state++;
     }
     Py_RETURN_NONE;
 }
@@ -297,7 +298,6 @@ PyDoc_STRVAR(append_doc, "Add an element to the right side of the deque.");
 static PyObject *
 deque_appendleft(dequeobject *deque, PyObject *item)
 {
-    deque->state++;
     if (deque->leftindex == 0) {
         block *b = newblock(Py_SIZE(deque));
         if (b == NULL)
@@ -316,6 +316,8 @@ deque_appendleft(dequeobject *deque, PyObject *item)
     if (NEEDS_TRIM(deque, deque->maxlen)) {
         PyObject *olditem = deque_pop(deque, NULL);
         Py_DECREF(olditem);
+    } else {
+        deque->state++;
     }
     Py_RETURN_NONE;
 }
@@ -387,7 +389,6 @@ deque_extend(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        deque->state++;
         if (deque->rightindex == BLOCKLEN - 1) {
             block *b = newblock(Py_SIZE(deque));
             if (b == NULL) {
@@ -408,6 +409,8 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         if (NEEDS_TRIM(deque, maxlen)) {
             PyObject *olditem = deque_popleft(deque, NULL);
             Py_DECREF(olditem);
+        } else {
+            deque->state++;
         }
     }
     return finalize_iterator(it);
@@ -451,7 +454,6 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
-        deque->state++;
         if (deque->leftindex == 0) {
             block *b = newblock(Py_SIZE(deque));
             if (b == NULL) {
@@ -472,6 +474,8 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         if (NEEDS_TRIM(deque, maxlen)) {
             PyObject *olditem = deque_pop(deque, NULL);
             Py_DECREF(olditem);
+        } else {
+            deque->state++;
         }
     }
     return finalize_iterator(it);
