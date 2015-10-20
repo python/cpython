@@ -1440,4 +1440,4 @@ if __name__ == '__main__':
     unittest.main('idlelib.idle_test.test_configdialog',
                   verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
-    run(ConfigDialog, ConfigExtensionsDialog)
+    run(ConfigDialog)
