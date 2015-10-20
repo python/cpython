@@ -648,11 +648,11 @@ _odict_add_new_node(PyODictObject *od, PyObject *key)
     Py_ssize_t i;
     _ODictNode *node;
 
-    Py_INCREF(key);
     hash = PyObject_Hash(key);
     if (hash == -1)
         return -1;
 
+    Py_INCREF(key);
     i = _odict_get_index(od, key);
     if (i < 0) {
         if (!PyErr_Occurred())
