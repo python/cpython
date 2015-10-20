@@ -288,7 +288,7 @@ library/zipapp,31,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,82,:fn,"argument should have the form ""pkg.mod:fn"", where ""pkg.mod"" is a"
 library/zipapp,155,:callable,"""pkg.module:callable"" and the archive will be run by importing"
 library/stdtypes,,::,>>> m[::2].tolist()
-library/sys,1115,`,# ``wrapper`` creates a ``wrap(coro)`` coroutine:
+library/sys,,`,# ``wrapper`` creates a ``wrap(coro)`` coroutine:
 tutorial/venv,77,:c7b9645a6f35,"Python 3.4.3+ (3.4:c7b9645a6f35+, May 22 2015, 09:31:25)"
 whatsnew/3.5,,:root,'WARNING:root:warning\n'
 whatsnew/3.5,,:warning,'WARNING:root:warning\n'
