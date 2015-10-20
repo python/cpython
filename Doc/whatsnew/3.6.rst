@@ -144,7 +144,7 @@ Optimizations
   ``surrogateescape``, ``ignore`` and ``replace`` (Contributed
   by Victor Stinner in :issue:`24870`).
 
-* The ASCII and the Latin1 encoders are now up to 3 times as fast for the error
+* The ASCII and the Latin1 encoders are now up to 3 times as fast for the
   error ``surrogateescape`` (Contributed by Victor Stinner in :issue:`25227`).
 
 * The UTF-8 encoder is now up to 75 times as fast for error handlers:
