@@ -591,12 +591,20 @@ else:
                 flags2 = (flags | _os.O_TMPFILE) & ~_os.O_CREAT
                 fd = _os.open(dir, flags2, 0o600)
             except IsADirectoryError:
-                # Linux kernel older than 3.11 ignores O_TMPFILE flag.
-                # Set flag to False to not try again.
+                # Linux kernel older than 3.11 ignores the O_TMPFILE flag:
+                # O_TMPFILE is read as O_DIRECTORY. Trying to open a directory
+                # with O_RDWR|O_DIRECTORY fails with IsADirectoryError, a
+                # directory cannot be open to write. Set flag to False to not
+                # try again.
                 _O_TMPFILE_WORKS = False
             except OSError:
                 # The filesystem of the directory does not support O_TMPFILE.
                 # For example, OSError(95, 'Operation not supported').
+                #
+                # On Linux kernel older than 3.11, trying to open a regular
+                # file (or a symbolic link to a regular file) with O_TMPFILE
+                # fails with NotADirectoryError, because O_TMPFILE is read as
+                # O_DIRECTORY.
                 pass
             else:
                 try:
