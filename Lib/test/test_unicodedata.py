@@ -9,8 +9,7 @@
 import sys
 import unittest
 import hashlib
-import subprocess
-import test.support
+from test.support import script_helper
 
 encoding = 'utf-8'
 errors = 'surrogatepass'
@@ -234,16 +233,12 @@ class UnicodeMiscTest(UnicodeDatabaseTest):
         code = "import sys;" \
             "sys.modules['unicodedata'] = None;" \
             """eval("'\\\\N{SOFT HYPHEN}'")"""
-        args = [sys.executable, "-c", code]
-        # We use a subprocess because the unicodedata module may already have
-        # been loaded in this process.
-        popen = subprocess.Popen(args, stderr=subprocess.PIPE)
-        popen.wait()
-        self.assertEqual(popen.returncode, 1)
+        # We use a separate process because the unicodedata module may already
+        # have been loaded in this process.
+        result = script_helper.assert_python_failure("-c", code)
         error = "SyntaxError: (unicode error) \\N escapes not supported " \
             "(can't load unicodedata module)"
-        self.assertIn(error, popen.stderr.read().decode("ascii"))
-        popen.stderr.close()
+        self.assertIn(error, result.err.decode("ascii"))
 
     def test_decimal_numeric_consistent(self):
         # Test that decimal and numeric are consistent,
