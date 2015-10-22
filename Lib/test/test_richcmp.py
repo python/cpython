@@ -253,6 +253,31 @@ class MiscTest(unittest.TestCase):
         self.assertTrue(a != b)
         self.assertTrue(a < b)
 
+    def test_exception_message(self):
+        class Spam:
+            pass
+
+        tests = [
+            (lambda: 42 < None, r"'<' .* of 'int' and 'NoneType'"),
+            (lambda: None < 42, r"'<' .* of 'NoneType' and 'int'"),
+            (lambda: 42 > None, r"'>' .* of 'int' and 'NoneType'"),
+            (lambda: "foo" < None, r"'<' .* of 'str' and 'NoneType'"),
+            (lambda: "foo" >= 666, r"'>=' .* of 'str' and 'int'"),
+            (lambda: 42 <= None, r"'<=' .* of 'int' and 'NoneType'"),
+            (lambda: 42 >= None, r"'>=' .* of 'int' and 'NoneType'"),
+            (lambda: 42 < [], r"'<' .* of 'int' and 'list'"),
+            (lambda: () > [], r"'>' .* of 'tuple' and 'list'"),
+            (lambda: None >= None, r"'>=' .* of 'NoneType' and 'NoneType'"),
+            (lambda: Spam() < 42, r"'<' .* of 'Spam' and 'int'"),
+            (lambda: 42 < Spam(), r"'<' .* of 'int' and 'Spam'"),
+            (lambda: Spam() <= Spam(), r"'<=' .* of 'Spam' and 'Spam'"),
+        ]
+        for i, test in enumerate(tests):
+            with self.subTest(test=i):
+                with self.assertRaisesRegex(TypeError, test[1]):
+                    test[0]()
+
+
 class DictTest(unittest.TestCase):
 
     def test_dicts(self):
