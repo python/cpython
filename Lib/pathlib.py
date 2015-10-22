@@ -1017,7 +1017,7 @@ class Path(PurePath):
         return cls(cls()._flavour.gethomedir(None))
 
     def samefile(self, other_path):
-        """Return whether other_path is the same or not as this file.
+        """Return whether other_path is the same or not as this file
         (as returned by os.path.samefile()).
         """
         st = self.stat()
