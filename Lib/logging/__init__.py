@@ -74,7 +74,7 @@ if hasattr(sys, '_getframe'): currentframe = lambda: sys._getframe(3)
 # _srcfile is used when walking the stack to check when we've got the first
 # caller stack frame.
 #
-_srcfile = currentframe.__code__.co_filename
+_srcfile = os.path.normcase(currentframe.__code__.co_filename)
 
 # _srcfile is only used in conjunction with sys._getframe().
 # To provide compatibility with older versions of Python, set _srcfile
