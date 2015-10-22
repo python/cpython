@@ -964,9 +964,8 @@ static PyObject *
 odict_reduce(register PyODictObject *od)
 {
     _Py_IDENTIFIER(__dict__);
-    _Py_IDENTIFIER(__class__);
     _Py_IDENTIFIER(items);
-    PyObject *dict = NULL, *result = NULL, *cls = NULL;
+    PyObject *dict = NULL, *result = NULL;
     PyObject *items_iter, *items, *args = NULL;
 
     /* capture any instance state */
@@ -985,10 +984,6 @@ odict_reduce(register PyODictObject *od)
     }
 
     /* build the result */
-    cls = _PyObject_GetAttrId((PyObject *)od, &PyId___class__);
-    if (cls == NULL)
-        goto Done;
-
     args = PyTuple_New(0);
     if (args == NULL)
         goto Done;
@@ -1002,12 +997,11 @@ odict_reduce(register PyODictObject *od)
     if (items_iter == NULL)
         goto Done;
 
-    result = PyTuple_Pack(5, cls, args, dict ? dict : Py_None, Py_None, items_iter);
+    result = PyTuple_Pack(5, Py_TYPE(od), args, dict ? dict : Py_None, Py_None, items_iter);
     Py_DECREF(items_iter);
 
 Done:
     Py_XDECREF(dict);
-    Py_XDECREF(cls);
     Py_XDECREF(args);
 
     return result;
@@ -1456,21 +1450,23 @@ static PyObject *
 odict_repr(PyODictObject *self)
 {
     int i;
-    _Py_IDENTIFIER(__class__);
-    _Py_IDENTIFIER(__name__);
     _Py_IDENTIFIER(items);
     Py_ssize_t count = -1;
-    PyObject *pieces = NULL, *result = NULL, *cls = NULL;
-    PyObject *classname = NULL;
+    PyObject *pieces = NULL, *result = NULL;
+    const char *classname;
+
+    classname = strrchr(Py_TYPE(self)->tp_name, '.');
+    if (classname == NULL)
+        classname = Py_TYPE(self)->tp_name;
+    else
+        classname++;
+
+    if (PyODict_SIZE(self) == 0)
+        return PyUnicode_FromFormat("%s()", classname);
 
     i = Py_ReprEnter((PyObject *)self);
     if (i != 0) {
         return i > 0 ? PyUnicode_FromString("...") : NULL;
-    }
-
-    if (PyODict_SIZE(self) == 0) {
-        /* "OrderedDict()" */
-        goto Finish;
     }
 
     if (PyODict_CheckExact(self)) {
@@ -1506,23 +1502,10 @@ odict_repr(PyODictObject *self)
             goto Done;
     }
 
-Finish:
-    cls = _PyObject_GetAttrId((PyObject *)self, &PyId___class__);
-    if (cls == NULL)
-        goto Done;
-    classname = _PyObject_GetAttrId(cls, &PyId___name__);
-    if (classname == NULL)
-        goto Done;
-
-    if (pieces == NULL)
-        result = PyUnicode_FromFormat("%S()", classname, pieces);
-    else
-        result = PyUnicode_FromFormat("%S(%R)", classname, pieces);
+    result = PyUnicode_FromFormat("%s(%R)", classname, pieces);
 
 Done:
     Py_XDECREF(pieces);
-    Py_XDECREF(cls);
-    Py_XDECREF(classname);
     Py_ReprLeave((PyObject *)self);
     return result;
 };
