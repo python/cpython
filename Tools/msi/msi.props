@@ -53,7 +53,7 @@
         <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
         <OutDir>$(OutputPath)</OutDir>
         <ReuseCabinetCache>true</ReuseCabinetCache>
-        <CRTRedist Condition="'$(CRTRedist)' == ''">$(ExternalsDir)\redist</CRTRedist>
+        <CRTRedist Condition="'$(CRTRedist)' == ''">$(ExternalsDir)\windows-installer\redist</CRTRedist>
         <CRTRedist Condition="!Exists($(CRTRedist))"></CRTRedist>
         <DocFilename>python$(MajorVersionNumber)$(MinorVersionNumber)$(MicroVersionNumber)$(ReleaseLevelName).chm</DocFilename>
 
