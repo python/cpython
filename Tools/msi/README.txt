@@ -62,10 +62,14 @@ the initial download size by separating them into their own MSIs.
 Building the Installer
 ======================
 
+Before building the installer, download extra build dependencies using
+Tools\msi\get_externals.bat. (Note that this is in addition to the
+similarly named file in PCBuild.)
+
 For testing, the installer should be built with the Tools/msi/build.bat
 script:
 
-    build.bat [-x86] [-x64] [--doc]
+    build.bat [-x86] [-x64] [--doc] [--test-marker] [--pack]
 
 This script will build the required configurations of Python and
 generate an installer layout in PCBuild/(win32|amd64)/en-us.
@@ -80,8 +84,13 @@ available, it will simply be excluded from the installer. Ensure
 also set %HTMLHELP% to the Html Help Compiler (hhc.exe), or put HHC on
 your PATH or in externals/.
 
-If WiX is not found on your system, it will be automatically downloaded
-and extracted to the externals/ directory.
+Specify --test-marker to build an installer that works side-by-side with
+an official Python release. All registry keys and install locations will
+include an extra marker to avoid overwriting files. This marker is
+currently an 'x' prefix, but may change at any time.
+
+Specify --pack to build an installer that does not require all MSIs to
+be available alongside. This takes longer, but is easier to share.
 
 
 For an official release, the installer should be built with the
@@ -174,6 +183,38 @@ The following properties may be passed when building these projects.
   /p:RebuildAll=(true|false)
     When true, rebuilds all of the MSIs making up the layout. Defaults to
     true.
+
+Uploading the Installer
+=======================
+
+For official releases, the uploadrelease.bat script should be used.
+
+You will require PuTTY so that plink.exe and pscp.exe can be used, and your
+SSH key can be activated in pageant.exe. PuTTY should be either on your path
+or in %ProgramFiles(x86)%\PuTTY.
+
+To include signatures for each uploaded file, you will need gpg2.exe on your
+path or have run get_externals.bat. You may also need to "gpg2.exe --import"
+your key before running the upload script.
+
+    uploadrelease.bat --host <host> --user <username> [--dry-run] [--no-gpg]
+
+The host is the URL to the server. This can be provided by the Release
+Manager. You should be able to SSH to this address.
+
+The username is your own username, which you have permission to SSH into
+the server containing downloads.
+
+Use --dry-run to display the generated upload commands without executing
+them. Signatures for each file will be generated but not uploaded unless
+--no-gpg is also passed.
+
+Use --no-gpg to suppress signature generation and upload.
+
+The default target directory (which appears in uploadrelease.proj) is
+correct for official Python releases, but may be overridden with
+--target <path> for other purposes. This path should generally not include
+any version specifier, as that will be added automatically.
 
 Modifying the Installer
 =======================
@@ -298,9 +339,9 @@ based on whether the install is for all users of the machine or just for
 the user performing the installation.
 
 The default installation location when installing for all users is
-"%ProgramFiles%\Python 3.X" for the 64-bit interpreter and
-"%ProgramFiles(x86)%\Python 3.X" for the 32-bit interpreter. (Note that
-the latter path is equivalent to "%ProgramFiles%\Python 3.X" when
+"%ProgramFiles%\Python3X" for the 64-bit interpreter and
+"%ProgramFiles(x86)%\Python3X-32" for the 32-bit interpreter. (Note that
+the latter path is equivalent to "%ProgramFiles%\Python3X-32" when
 running a 32-bit version of Windows.) This location requires
 administrative privileges to install or later modify the installation.
 
@@ -310,6 +351,8 @@ and "%LocalAppData%\Programs\Python\Python3X-32" for the 32-bit
 interpreter. Only the current user can access this location. This
 provides a suitable level of protection against malicious modification
 of Python's files.
+
+(Default installation locations are set in Tools\msi\bundle\bundle.wxs.)
 
 Within this install directory is the following approximate layout:
 
@@ -487,6 +530,6 @@ Removing Python will clean up all the files and registry keys that were
 created by the installer, as well as __pycache__ folders that are
 explicitly handled by the installer. Python packages installed later
 using a tool like pip will not be removed. Some components may be
-installed by other installers (such as the MSVCRT) and these will not be
-removed if another product has a dependency on them.
+installed by other installers and these will not be removed if another
+product has a dependency on them.
 
