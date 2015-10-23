@@ -120,7 +120,7 @@ static Py_ssize_t numfreeblocks = 0;
 static block *freeblocks[MAXFREEBLOCKS];
 
 static block *
-newblock(Py_ssize_t len) {
+newblock(void) {
     block *b;
     if (numfreeblocks) {
         numfreeblocks--;
@@ -156,7 +156,7 @@ deque_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     if (deque == NULL)
         return NULL;
 
-    b = newblock(0);
+    b = newblock();
     if (b == NULL) {
         Py_DECREF(deque);
         return NULL;
@@ -270,7 +270,7 @@ static PyObject *
 deque_append(dequeobject *deque, PyObject *item)
 {
     if (deque->rightindex == BLOCKLEN - 1) {
-        block *b = newblock(Py_SIZE(deque));
+        block *b = newblock();
         if (b == NULL)
             return NULL;
         b->leftlink = deque->rightblock;
@@ -299,7 +299,7 @@ static PyObject *
 deque_appendleft(dequeobject *deque, PyObject *item)
 {
     if (deque->leftindex == 0) {
-        block *b = newblock(Py_SIZE(deque));
+        block *b = newblock();
         if (b == NULL)
             return NULL;
         b->rightlink = deque->leftblock;
@@ -390,7 +390,7 @@ deque_extend(dequeobject *deque, PyObject *iterable)
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
         if (deque->rightindex == BLOCKLEN - 1) {
-            block *b = newblock(Py_SIZE(deque));
+            block *b = newblock();
             if (b == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(it);
@@ -455,7 +455,7 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
         if (deque->leftindex == 0) {
-            block *b = newblock(Py_SIZE(deque));
+            block *b = newblock();
             if (b == NULL) {
                 Py_DECREF(item);
                 Py_DECREF(it);
@@ -586,7 +586,7 @@ deque_clear(dequeobject *deque)
        adversary could cause it to never terminate).
     */
 
-    b = newblock(0);
+    b = newblock();
     if (b == NULL) {
         PyErr_Clear();
         goto alternate_method;
@@ -672,7 +672,7 @@ deque_inplace_repeat(dequeobject *deque, Py_ssize_t n)
         deque->state++;
         for (i = 0 ; i < n-1 ; ) {
             if (deque->rightindex == BLOCKLEN - 1) {
-                block *b = newblock(Py_SIZE(deque) + i);
+                block *b = newblock();
                 if (b == NULL) {
                     Py_SIZE(deque) += i;
                     return NULL;
@@ -786,7 +786,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
     while (n > 0) {
         if (leftindex == 0) {
             if (b == NULL) {
-                b = newblock(len);
+                b = newblock();
                 if (b == NULL)
                     goto done;
             }
@@ -830,7 +830,7 @@ _deque_rotate(dequeobject *deque, Py_ssize_t n)
     while (n < 0) {
         if (rightindex == BLOCKLEN - 1) {
             if (b == NULL) {
-                b = newblock(len);
+                b = newblock();
                 if (b == NULL)
                     goto done;
             }
