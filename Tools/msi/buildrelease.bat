@@ -29,6 +29,7 @@ set DOWNLOAD_URL=https://www.python.org/ftp/python/{version}/{arch}{releasename}
 
 set D=%~dp0
 set PCBUILD=%D%..\..\PCBuild\
+set EXTERNALS=%D%..\..\externals\windows-installer\
 
 set BUILDX86=
 set BUILDX64=
@@ -59,12 +60,15 @@ if "%1" NEQ "" echo Invalid option: "%1" && exit /B 1
 
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
+call "%D%get_externals.bat"
+
 :builddoc
 if "%SKIPBUILD%" EQU "1" goto skipdoc
 if "%SKIPDOC%" EQU "1" goto skipdoc
 
 if not defined PYTHON where py -q || echo Cannot find py on path and PYTHON is not set. && exit /B 1
 if not defined SPHINXBUILD where sphinx-build -q || echo Cannot find sphinx-build on path and SPHINXBUILD is not set. && exit /B 1
+
 call "%D%..\..\doc\make.bat" htmlhelp
 if errorlevel 1 goto :eof
 :skipdoc
@@ -73,7 +77,7 @@ where hg /q || echo Cannot find Mercurial on PATH && exit /B 1
 
 where dlltool /q && goto skipdlltoolsearch
 set _DLLTOOL_PATH=
-where /R "%D%..\..\externals" dlltool > "%TEMP%\dlltool.loc" 2> nul && set /P _DLLTOOL_PATH= < "%TEMP%\dlltool.loc" & del "%TEMP%\dlltool.loc" 
+where /R "%EXTERNALS%\" dlltool > "%TEMP%\dlltool.loc" 2> nul && set /P _DLLTOOL_PATH= < "%TEMP%\dlltool.loc" & del "%TEMP%\dlltool.loc" 
 if not exist "%_DLLTOOL_PATH%" echo Cannot find binutils on PATH or in external && exit /B 1
 for %%f in (%_DLLTOOL_PATH%) do set PATH=%PATH%;%%~dpf
 set _DLLTOOL_PATH=
@@ -169,8 +173,6 @@ if not "%SKIPBUILD%" EQU "1" (
     @if errorlevel 1 exit /B
     @echo off
 )
-
-"%BUILD%python.exe" "%D%get_wix.py"
 
 set BUILDOPTS=/p:Platform=%1 /p:BuildForRelease=true /p:DownloadUrl=%DOWNLOAD_URL% /p:DownloadUrlBase=%DOWNLOAD_URL_BASE% /p:ReleaseUri=%RELEASE_URI%
 if "%PGO%" NEQ "" set BUILDOPTS=%BUILDOPTS% /p:PGOBuildPath=%BUILD%
