@@ -19,6 +19,8 @@ if "%~1" EQU "--pack" (set BUILDPACK=1) && shift && goto CheckOpts
 
 if not defined BUILDX86 if not defined BUILDX64 (set BUILDX86=1) && (set BUILDX64=1)
 
+call "%D%get_externals.bat"
+
 call "%PCBUILD%env.bat" x86
 
 if defined BUILDX86 (
@@ -48,12 +50,10 @@ if defined BUILDPACK (
 )
 
 if defined BUILDX86 (
-    "%PCBUILD%win32\python.exe" "%D%get_wix.py"
     msbuild %BUILD_CMD%
     if errorlevel 1 goto :eof
 )
 if defined BUILDX64 (
-    "%PCBUILD%amd64\python.exe" "%D%get_wix.py"
     msbuild /p:Platform=x64 %BUILD_CMD%
     if errorlevel 1 goto :eof
 )

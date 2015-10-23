@@ -8,6 +8,7 @@ set HOST=
 set USER=
 set TARGET=
 set DRYRUN=false
+set NOGPG=
 
 :CheckOpts
 if "%1" EQU "-h" goto Help
@@ -18,6 +19,7 @@ if "%1" EQU "--user" (set USER=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "-t" (set TARGET=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--target" (set TARGET=%~2) && shift && shift && goto CheckOpts
 if "%1" EQU "--dry-run" (set DRYRUN=true) && shift && goto CheckOpts
+if "%1" EQU "--no-gpg" (set NOGPG=true) && shift && goto CheckOpts
 
 if not defined PLINK where plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
 if not defined PLINK where /R "%ProgramFiles(x86)%\PuTTY" plink > "%TEMP%\plink.loc" 2> nul && set /P PLINK= < "%TEMP%\plink.loc" & del "%TEMP%\plink.loc"
@@ -31,10 +33,15 @@ if not defined PSCP where /R "%ProgramFiles(x86)%" pscp > "%TEMP%\pscp.loc" 2> n
 if not defined PSCP echo Cannot locate pscp.exe & exit /B 1
 echo Found pscp.exe at %PSCP%
 
-if not defined GPG where gpg2 > "%TEMP%\gpg.loc" 2> nul && set /P GPG= < "%TEMP%\gpg.loc" & del "%TEMP%\gpg.loc"
-if not defined GPG where /R "%PCBUILD%..\externals" gpg2 > "%TEMP%\gpg.loc" 2> nul && set /P GPG= < "%TEMP%\gpg.loc" & del "%TEMP%\gpg.loc"
-if not defined GPG echo Cannot locate gpg2.exe. Signatures will not be uploaded & pause
-echo Found gpg2.exe at %GPG%
+if defined NOGPG (
+    set GPG=
+    echo Skipping GPG signature generation because of --no-gpg
+) else  (
+    if not defined GPG where gpg2 > "%TEMP%\gpg.loc" 2> nul && set /P GPG= < "%TEMP%\gpg.loc" & del "%TEMP%\gpg.loc"
+    if not defined GPG where /R "%PCBUILD%..\externals\windows-installer" gpg2 > "%TEMP%\gpg.loc" 2> nul && set /P GPG= < "%TEMP%\gpg.loc" & del "%TEMP%\gpg.loc"
+    if not defined GPG echo Cannot locate gpg2.exe. Signatures will not be uploaded & pause
+    echo Found gpg2.exe at %GPG%
+)
 
 call "%PCBUILD%env.bat" > nul 2> nul
 pushd "%D%"
