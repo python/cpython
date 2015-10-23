@@ -64,16 +64,10 @@
                     <RegistryValue Key="PythonPath" Type="string" Value="[Lib];[DLLs]" />
                 </RegistryKey>
             </Component>
-            <Component Id="Lib_site_packages_README" Directory="Lib_site_packages" Guid="*">
-                <File Id="Lib_site_packages_README" Name="README.txt" Source="!(bindpath.src)Lib\site-packages\README" KeyPath="yes" />
-            </Component>
             <Component Id="Lib2to3_pickle_remove" Directory="Lib_lib2to3" Guid="$(var.RemoveLib2to3PickleComponentGuid)">
                 <RemoveFile Id="Lib2to3_pickle_remove_files" Name="*.pickle" On="uninstall" />
                 <RemoveFolder Id="Lib2to3_pickle_remove_folder" On="uninstall" />
             </Component>
         </ComponentGroup>
-        <DirectoryRef Id="Lib">
-            <Directory Id="Lib_site_packages" Name="site-packages" />
-        </DirectoryRef>
     </Fragment>
 </Wix>
