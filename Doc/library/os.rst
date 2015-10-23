@@ -1608,9 +1608,9 @@ Files and Directories
    recurse into the subdirectories whose names remain in *dirnames*; this can be
    used to prune the search, impose a specific order of visiting, or even to inform
    :func:`walk` about directories the caller creates or renames before it resumes
-   :func:`walk` again.  Modifying *dirnames* when *topdown* is ``False`` is
-   ineffective, because in bottom-up mode the directories in *dirnames* are
-   generated before *dirpath* itself is generated.
+   :func:`walk` again.  Modifying *dirnames* when *topdown* is ``False`` has
+   no effect on the behavior of the walk, because in bottom-up mode the directories
+   in *dirnames* are generated before *dirpath* itself is generated.
 
    By default, errors from the :func:`listdir` call are ignored.  If optional
    argument *onerror* is specified, it should be a function; it will be called with
