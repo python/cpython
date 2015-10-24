@@ -82,6 +82,9 @@ if '%build_tkinter%'=='true' (
         nmake -f makefile.vc MACHINE=%machine% OPTS=%options% INSTALLDIR="%tcltkdir%" install-binaries install-libraries
         popd
     )
+    if not exist "%builddir%tcl86t%tcl_dbg_ext%.dll" (
+        xcopy "%tcltkdir%\bin\tcl86t%tcl_dbg_ext%.dll" "%builddir%"
+    )
 
     if not exist "%tcltkdir%\bin\tk86t%tcl_dbg_ext%.dll" (
         pushd "%tkdir%\win"
@@ -89,6 +92,9 @@ if '%build_tkinter%'=='true' (
         nmake -f makefile.vc MACHINE=%machine% OPTS=%options% INSTALLDIR="%tcltkdir%" TCLDIR="%tcldir%" all
         nmake -f makefile.vc MACHINE=%machine% OPTS=%options% INSTALLDIR="%tcltkdir%" TCLDIR="%tcldir%" install-binaries install-libraries
         popd
+    )
+    if not exist "%builddir%tk86t%tcl_dbg_ext%.dll" (
+        xcopy "%tcltkdir%\bin\tk86t%tcl_dbg_ext%.dll" "%builddir%"
     )
 
     if not exist "%tcltkdir%\lib\tix8.4.3\tix84%tcl_dbg_ext%.dll" (
