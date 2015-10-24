@@ -1,5 +1,6 @@
 import abc
 import collections
+import copy
 from itertools import permutations
 import pickle
 from random import choice
@@ -1251,11 +1252,64 @@ class TestLRU:
         self.assertEqual(b.f.cache_info(), X.f.cache_info())
         self.assertEqual(c.f.cache_info(), X.f.cache_info())
 
-class TestLRUC(TestLRU, unittest.TestCase):
-    module = c_functools
+    def test_pickle(self):
+        cls = self.__class__
+        for f in cls.cached_func[0], cls.cached_meth, cls.cached_staticmeth:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.subTest(proto=proto, func=f):
+                    f_copy = pickle.loads(pickle.dumps(f, proto))
+                    self.assertIs(f_copy, f)
+
+    def test_copy(self):
+        cls = self.__class__
+        for f in cls.cached_func[0], cls.cached_meth, cls.cached_staticmeth:
+            with self.subTest(func=f):
+                f_copy = copy.copy(f)
+                self.assertIs(f_copy, f)
+
+    def test_deepcopy(self):
+        cls = self.__class__
+        for f in cls.cached_func[0], cls.cached_meth, cls.cached_staticmeth:
+            with self.subTest(func=f):
+                f_copy = copy.deepcopy(f)
+                self.assertIs(f_copy, f)
+
+
+@py_functools.lru_cache()
+def py_cached_func(x, y):
+    return 3 * x + y
+
+@c_functools.lru_cache()
+def c_cached_func(x, y):
+    return 3 * x + y
+
 
 class TestLRUPy(TestLRU, unittest.TestCase):
     module = py_functools
+    cached_func = py_cached_func,
+
+    @module.lru_cache()
+    def cached_meth(self, x, y):
+        return 3 * x + y
+
+    @staticmethod
+    @module.lru_cache()
+    def cached_staticmeth(x, y):
+        return 3 * x + y
+
+
+class TestLRUC(TestLRU, unittest.TestCase):
+    module = c_functools
+    cached_func = c_cached_func,
+
+    @module.lru_cache()
+    def cached_meth(self, x, y):
+        return 3 * x + y
+
+    @staticmethod
+    @module.lru_cache()
+    def cached_staticmeth(x, y):
+        return 3 * x + y
 
 
 class TestSingleDispatch(unittest.TestCase):

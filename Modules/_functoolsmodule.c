@@ -1047,6 +1047,12 @@ lru_cache_cache_clear(lru_cache_object *self, PyObject *unused)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+lru_cache_reduce(PyObject *self, PyObject *unused)
+{
+    return PyObject_GetAttrString(self, "__qualname__");
+}
+
 static int
 lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
 {
@@ -1097,6 +1103,7 @@ cache_info_type:    namedtuple class with the fields:\n\
 static PyMethodDef lru_cache_methods[] = {
     {"cache_info", (PyCFunction)lru_cache_cache_info, METH_NOARGS},
     {"cache_clear", (PyCFunction)lru_cache_cache_clear, METH_NOARGS},
+    {"__reduce__", (PyCFunction)lru_cache_reduce, METH_NOARGS},
     {NULL}
 };
 
