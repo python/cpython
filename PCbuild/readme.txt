@@ -225,9 +225,15 @@ _tkinter
     Unlike the other external libraries listed above, Tk must be built
     separately before the _tkinter module can be built. This means that
     a pre-built Tcl/Tk installation is expected in ..\externals\tcltk
-    (tcltk64 for 64-bit) relative to this directory.  See "Getting
-    External Sources" below for the easiest method to ensure Tcl/Tk is
-    built.
+    (tcltk64 for 64-bit) relative to this directory; the easiest way to
+    do so is to build Python using `build.bat -e`, which will build
+    Tcl, Tk, and Tix and install them as expected.  Note that to
+    import and use tkinter, the Tcl and Tk DLLs must be somewhere that
+    python.exe can find them, which means that either
+    ..\externals\tcltk[64]\bin must be added to PATH, or the DLLs must
+    be copied from that folder to be alongside python.exe.  `build.bat`
+    takes care of it for you by copying the DLLs into the build
+    directory.
 
 
 Getting External Sources
