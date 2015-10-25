@@ -3866,6 +3866,7 @@ class NonBlockingTCPTests(ThreadedTCPSocketTest):
         read, write, err = select.select([self.serv], [], [])
         if self.serv in read:
             conn, addr = self.serv.accept()
+            self.assertIsNone(conn.gettimeout())
             conn.close()
         else:
             self.fail("Error trying to do accept after select.")
