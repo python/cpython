@@ -189,6 +189,9 @@ Library
 - Issue #24881: Fixed setting binary mode in Python implementation of FileIO
   on Windows and Cygwin.  Patch from Akira Li.
 
+- Issue #25471: Sockets returned from accept() shouldn't appear to be
+  nonblocking.
+
 - Issue #25319: When threading.Event is reinitialized, the underlying condition
   should use a regular lock rather than a recursive lock.
 
