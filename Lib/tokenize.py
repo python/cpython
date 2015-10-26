@@ -29,6 +29,7 @@ from codecs import lookup, BOM_UTF8
 import collections
 from io import TextIOWrapper
 from itertools import chain
+import itertools as _itertools
 import re
 import sys
 from token import *
@@ -131,7 +132,28 @@ Floatnumber = group(Pointfloat, Expfloat)
 Imagnumber = group(r'[0-9]+[jJ]', Floatnumber + r'[jJ]')
 Number = group(Imagnumber, Floatnumber, Intnumber)
 
-StringPrefix = r'(?:[bB][rR]?|[rR][bB]?|[uU])?'
+# Return the empty string, plus all of the valid string prefixes.
+def _all_string_prefixes():
+    # The valid string prefixes. Only contain the lower case versions,
+    #  and don't contain any permuations (include 'fr', but not
+    #  'rf'). The various permutations will be generated.
+    _valid_string_prefixes = ['b', 'r', 'u', 'f', 'br', 'fr']
+    # if we add binary f-strings, add: ['fb', 'fbr']
+    result = set([''])
+    for prefix in _valid_string_prefixes:
+        for t in _itertools.permutations(prefix):
+            # create a list with upper and lower versions of each
+            #  character
+            for u in _itertools.product(*[(c, c.upper()) for c in t]):
+                result.add(''.join(u))
+    return result
+
+def _compile(expr):
+    return re.compile(expr, re.UNICODE)
+
+# Note that since _all_string_prefixes includes the empty string,
+#  StringPrefix can be the empty string (making it optional).
+StringPrefix = group(*_all_string_prefixes())
 
 # Tail end of ' string.
 Single = r"[^'\\]*(?:\\.[^'\\]*)*'"
@@ -169,50 +191,25 @@ ContStr = group(StringPrefix + r"'[^\n'\\]*(?:\\.[^\n'\\]*)*" +
 PseudoExtras = group(r'\\\r?\n|\Z', Comment, Triple)
 PseudoToken = Whitespace + group(PseudoExtras, Number, Funny, ContStr, Name)
 
-def _compile(expr):
-    return re.compile(expr, re.UNICODE)
+# For a given string prefix plus quotes, endpats maps it to a regex
+#  to match the remainder of that string. _prefix can be empty, for
+#  a normal single or triple quoted string (with no prefix).
+endpats = {}
+for _prefix in _all_string_prefixes():
+    endpats[_prefix + "'"] = Single
+    endpats[_prefix + '"'] = Double
+    endpats[_prefix + "'''"] = Single3
+    endpats[_prefix + '"""'] = Double3
 
-endpats = {"'": Single, '"': Double,
-           "'''": Single3, '"""': Double3,
-           "r'''": Single3, 'r"""': Double3,
-           "b'''": Single3, 'b"""': Double3,
-           "R'''": Single3, 'R"""': Double3,
-           "B'''": Single3, 'B"""': Double3,
-           "br'''": Single3, 'br"""': Double3,
-           "bR'''": Single3, 'bR"""': Double3,
-           "Br'''": Single3, 'Br"""': Double3,
-           "BR'''": Single3, 'BR"""': Double3,
-           "rb'''": Single3, 'rb"""': Double3,
-           "Rb'''": Single3, 'Rb"""': Double3,
-           "rB'''": Single3, 'rB"""': Double3,
-           "RB'''": Single3, 'RB"""': Double3,
-           "u'''": Single3, 'u"""': Double3,
-           "U'''": Single3, 'U"""': Double3,
-           'r': None, 'R': None, 'b': None, 'B': None,
-           'u': None, 'U': None}
-
-triple_quoted = {}
-for t in ("'''", '"""',
-          "r'''", 'r"""', "R'''", 'R"""',
-          "b'''", 'b"""', "B'''", 'B"""',
-          "br'''", 'br"""', "Br'''", 'Br"""',
-          "bR'''", 'bR"""', "BR'''", 'BR"""',
-          "rb'''", 'rb"""', "rB'''", 'rB"""',
-          "Rb'''", 'Rb"""', "RB'''", 'RB"""',
-          "u'''", 'u"""', "U'''", 'U"""',
-          ):
-    triple_quoted[t] = t
-single_quoted = {}
-for t in ("'", '"',
-          "r'", 'r"', "R'", 'R"',
-          "b'", 'b"', "B'", 'B"',
-          "br'", 'br"', "Br'", 'Br"',
-          "bR'", 'bR"', "BR'", 'BR"' ,
-          "rb'", 'rb"', "rB'", 'rB"',
-          "Rb'", 'Rb"', "RB'", 'RB"' ,
-          "u'", 'u"', "U'", 'U"',
-          ):
-    single_quoted[t] = t
+# A set of all of the single and triple quoted string prefixes,
+#  including the opening quotes.
+single_quoted = set()
+triple_quoted = set()
+for t in _all_string_prefixes():
+    for u in (t + '"', t + "'"):
+        single_quoted.add(u)
+    for u in (t + '"""', t + "'''"):
+        triple_quoted.add(u)
 
 tabsize = 8
 
@@ -626,6 +623,7 @@ def _tokenize(readline, encoding):
                         yield stashed
                         stashed = None
                     yield TokenInfo(COMMENT, token, spos, epos, line)
+
                 elif token in triple_quoted:
                     endprog = _compile(endpats[token])
                     endmatch = endprog.match(line, pos)
@@ -638,19 +636,37 @@ def _tokenize(readline, encoding):
                         contstr = line[start:]
                         contline = line
                         break
-                elif initial in single_quoted or \
-                    token[:2] in single_quoted or \
-                    token[:3] in single_quoted:
+
+                # Check up to the first 3 chars of the token to see if
+                #  they're in the single_quoted set. If so, they start
+                #  a string.
+                # We're using the first 3, because we're looking for
+                #  "rb'" (for example) at the start of the token. If
+                #  we switch to longer prefixes, this needs to be
+                #  adjusted.
+                # Note that initial == token[:1].
+                # Also note that single quote checking must come afer
+                #  triple quote checking (above).
+                elif (initial in single_quoted or
+                      token[:2] in single_quoted or
+                      token[:3] in single_quoted):
                     if token[-1] == '\n':                  # continued string
                         strstart = (lnum, start)
-                        endprog = _compile(endpats[initial] or
-                                           endpats[token[1]] or
-                                           endpats[token[2]])
+                        # Again, using the first 3 chars of the
+                        #  token. This is looking for the matching end
+                        #  regex for the correct type of quote
+                        #  character. So it's really looking for
+                        #  endpats["'"] or endpats['"'], by trying to
+                        #  skip string prefix characters, if any.
+                        endprog = _compile(endpats.get(initial) or
+                                           endpats.get(token[1]) or
+                                           endpats.get(token[2]))
                         contstr, needcont = line[start:], 1
                         contline = line
                         break
                     else:                                  # ordinary string
                         yield TokenInfo(STRING, token, spos, epos, line)
+
                 elif initial.isidentifier():               # ordinary name
                     if token in ('async', 'await'):
                         if async_def:

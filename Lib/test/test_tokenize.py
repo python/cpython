@@ -333,6 +333,23 @@ b\
 c"""', """\
     STRING     'rb"\""a\\\\\\nb\\\\\\nc"\""' (1, 0) (3, 4)
     """)
+        self.check_tokenize('f"abc"', """\
+    STRING     'f"abc"'      (1, 0) (1, 6)
+    """)
+        self.check_tokenize('fR"a{b}c"', """\
+    STRING     'fR"a{b}c"'   (1, 0) (1, 9)
+    """)
+        self.check_tokenize('f"""abc"""', """\
+    STRING     'f\"\"\"abc\"\"\"'  (1, 0) (1, 10)
+    """)
+        self.check_tokenize(r'f"abc\
+def"', """\
+    STRING     'f"abc\\\\\\ndef"' (1, 0) (2, 4)
+    """)
+        self.check_tokenize(r'Rf"abc\
+def"', """\
+    STRING     'Rf"abc\\\\\\ndef"' (1, 0) (2, 4)
+    """)
 
     def test_function(self):
         self.check_tokenize("def d22(a, b, c=2, d=2, *k): pass", """\
