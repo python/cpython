@@ -232,44 +232,71 @@ The following exceptions are the exceptions that are usually raised.
    classes to override the method.
 
 
-.. exception:: OSError
+.. exception:: OSError([arg])
+               OSError(errno, strerror[, filename[, winerror[, filename2]]])
 
    .. index:: module: errno
 
    This exception is raised when a system function returns a system-related
    error, including I/O failures such as "file not found" or "disk full"
-   (not for illegal argument types or other incidental errors).  Often a
-   subclass of :exc:`OSError` will actually be raised as described in
-   `OS exceptions`_ below.  The :attr:`errno` attribute is a numeric error
-   code from the C variable :c:data:`errno`.
+   (not for illegal argument types or other incidental errors).
 
-   Under Windows, the :attr:`winerror` attribute gives you the native
-   Windows error code.  The :attr:`errno` attribute is then an approximate
-   translation, in POSIX terms, of that native error code.
+   The second form of the constructor sets the corresponding attributes,
+   described below.  The attributes default to :const:`None` if not
+   specified.  For backwards compatibility, if three arguments are passed,
+   the :attr:`~BaseException.args` attribute contains only a 2-tuple
+   of the first two constructor arguments.
 
-   Under all platforms, the :attr:`strerror` attribute is the corresponding
-   error message as provided by the operating system (as formatted by the C
-   functions :c:func:`perror` under POSIX, and :c:func:`FormatMessage`
-   Windows).
+   The constructor often actually returns a subclass of :exc:`OSError`, as
+   described in `OS exceptions`_ below.  The particular subclass depends on
+   the final :attr:`.errno` value.  This behaviour only occurs when
+   constructing :exc:`OSError` directly or via an alias, and is not
+   inherited when subclassing.
 
-   For exceptions that involve a file system path (such as :func:`open` or
-   :func:`os.unlink`), the exception instance will contain an additional
-   attribute, :attr:`filename`, which is the file name passed to the function.
-   For functions that involve two file system paths (such as
-   :func:`os.rename`), the exception instance will contain a second
-   :attr:`filename2` attribute corresponding to the second file name passed
-   to the function.
+   .. attribute:: errno
+
+      A numeric error code from the C variable :c:data:`errno`.
+
+   .. attribute:: winerror
+
+      Under Windows, this gives you the native
+      Windows error code.  The :attr:`.errno` attribute is then an approximate
+      translation, in POSIX terms, of that native error code.
+
+      Under Windows, if the *winerror* constructor argument is an integer,
+      the :attr:`.errno` attribute is determined from the Windows error code,
+      and the *errno* argument is ignored.  On other platforms, the
+      *winerror* argument is ignored, and the :attr:`winerror` attribute
+      does not exist.
+
+   .. attribute:: strerror
+
+      The corresponding error message, as provided by
+      the operating system.  It is formatted by the C
+      functions :c:func:`perror` under POSIX, and :c:func:`FormatMessage`
+      under Windows.
+
+   .. attribute:: filename
+                  filename2
+
+      For exceptions that involve a file system path (such as :func:`open` or
+      :func:`os.unlink`), :attr:`filename` is the file name passed to the function.
+      For functions that involve two file system paths (such as
+      :func:`os.rename`), :attr:`filename2` corresponds to the second
+      file name passed to the function.
 
 
    .. versionchanged:: 3.3
       :exc:`EnvironmentError`, :exc:`IOError`, :exc:`WindowsError`,
       :exc:`VMSError`, :exc:`socket.error`, :exc:`select.error` and
-      :exc:`mmap.error` have been merged into :exc:`OSError`.
+      :exc:`mmap.error` have been merged into :exc:`OSError`, and the
+      constructor may return a subclass.
 
    .. versionchanged:: 3.4
       The :attr:`filename` attribute is now the original file name passed to
       the function, instead of the name encoded to or decoded from the
-      filesystem encoding.  Also, the :attr:`filename2` attribute was added.
+      filesystem encoding.  Also, the *filename2* constructor argument and
+      attribute was added.
 
 
 .. exception:: OverflowError
