@@ -233,6 +233,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(w.winerror, 3)
             self.assertEqual(w.strerror, 'foo')
             self.assertEqual(w.filename, 'bar')
+            self.assertEqual(w.filename2, None)
             self.assertEqual(str(w), "[WinError 3] foo: 'bar'")
             # Unknown win error becomes EINVAL (22)
             w = OSError(0, 'foo', None, 1001)
@@ -240,6 +241,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(w.winerror, 1001)
             self.assertEqual(w.strerror, 'foo')
             self.assertEqual(w.filename, None)
+            self.assertEqual(w.filename2, None)
             self.assertEqual(str(w), "[WinError 1001] foo")
             # Non-numeric "errno"
             w = OSError('bar', 'foo')
@@ -247,6 +249,7 @@ class ExceptionTests(unittest.TestCase):
             self.assertEqual(w.winerror, None)
             self.assertEqual(w.strerror, 'foo')
             self.assertEqual(w.filename, None)
+            self.assertEqual(w.filename2, None)
 
     @unittest.skipUnless(sys.platform == 'win32',
                          'test specific to Windows')
@@ -271,13 +274,15 @@ class ExceptionTests(unittest.TestCase):
             (SystemExit, ('foo',),
                 {'args' : ('foo',), 'code' : 'foo'}),
             (OSError, ('foo',),
-                {'args' : ('foo',), 'filename' : None,
+                {'args' : ('foo',), 'filename' : None, 'filename2' : None,
                  'errno' : None, 'strerror' : None}),
             (OSError, ('foo', 'bar'),
-                {'args' : ('foo', 'bar'), 'filename' : None,
+                {'args' : ('foo', 'bar'),
+                 'filename' : None, 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
             (OSError, ('foo', 'bar', 'baz'),
-                {'args' : ('foo', 'bar'), 'filename' : 'baz',
+                {'args' : ('foo', 'bar'),
+                 'filename' : 'baz', 'filename2' : None,
                  'errno' : 'foo', 'strerror' : 'bar'}),
             (OSError, ('foo', 'bar', 'baz', None, 'quux'),
                 {'args' : ('foo', 'bar'), 'filename' : 'baz', 'filename2': 'quux'}),
@@ -287,7 +292,8 @@ class ExceptionTests(unittest.TestCase):
                  'filename' : 'filenameStr'}),
             (OSError, (1, 'strErrorStr', 'filenameStr'),
                 {'args' : (1, 'strErrorStr'), 'errno' : 1,
-                 'strerror' : 'strErrorStr', 'filename' : 'filenameStr'}),
+                 'strerror' : 'strErrorStr',
+                 'filename' : 'filenameStr', 'filename2' : None}),
             (SyntaxError, (), {'msg' : None, 'text' : None,
                 'filename' : None, 'lineno' : None, 'offset' : None,
                 'print_file_and_line' : None}),
@@ -343,7 +349,8 @@ class ExceptionTests(unittest.TestCase):
                 (WindowsError, (1, 'strErrorStr', 'filenameStr'),
                     {'args' : (1, 'strErrorStr'),
                      'strerror' : 'strErrorStr', 'winerror' : None,
-                     'errno' : 1, 'filename' : 'filenameStr'})
+                     'errno' : 1,
+                     'filename' : 'filenameStr', 'filename2' : None})
             )
         except NameError:
             pass
