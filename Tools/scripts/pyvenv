@@ -5,7 +5,7 @@ if __name__ == '__main__':
 
     executable = pathlib.Path(sys.executable or 'python3').name
     print('WARNING: the pyenv script is deprecated in favour of '
-          '`{} -m venv`'.format(exeutable), file=sys.stderr)
+          f'`{executable} -m venv`', file=sys.stderr)
 
     rc = 1
     try:
