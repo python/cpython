@@ -887,8 +887,10 @@ class EditorWindow(object):
         except IOError as err:
             if not getattr(self.root, "recentfilelist_error_displayed", False):
                 self.root.recentfilelist_error_displayed = True
-                tkMessageBox.showerror(title='IDLE Error',
-                    message='Unable to update Recent Files list:\n%s'
+                tkMessageBox.showwarning(title='IDLE Warning',
+                    message="Cannot update File menu Recent Files list. "
+                            "Your operating system says:\n%s\n"
+                            "Select OK and IDLE will continue without updating."
                         % str(err),
                     parent=self.text)
         # for each edit window instance, construct the recent files menu
