@@ -687,10 +687,10 @@ section.
    is a type object (new-style class) and *object* is an object of that type or of
    a (direct, indirect or :term:`virtual <abstract base class>`) subclass
    thereof.  If *object* is not a class instance or
-   an object of the given type, the function always returns false.  If *classinfo*
-   is neither a class object nor a type object, it may be a tuple of class or type
-   objects, or may recursively contain other such tuples (other sequence types are
-   not accepted).  If *classinfo* is not a class, type, or tuple of classes, types,
+   an object of the given type, the function always returns false.
+   If *classinfo* is a tuple of class or type objects (or recursively, other
+   such tuples), return true if *object* is an instance of any of the classes
+   or types.  If *classinfo* is not a class, type, or tuple of classes, types,
    and such tuples, a :exc:`TypeError` exception is raised.
 
    .. versionchanged:: 2.2
@@ -1762,4 +1762,3 @@ bypass these functions without concerns about missing something important.
 .. [#] In the current implementation, local variable bindings cannot normally be
    affected this way, but variables retrieved from other scopes (such as modules)
    can be.  This may change.
-
