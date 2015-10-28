@@ -96,6 +96,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21827: Fixed textwrap.dedent() for the case when largest common
+  whitespace is a substring of smallest leading whitespace.
+  Based on patch by Robert Li.
+
 - Issue #25471: Sockets returned from accept() shouldn't appear to be
   nonblocking.
 
