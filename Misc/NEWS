@@ -46,6 +46,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21827: Fixed textwrap.dedent() for the case when largest common
+  whitespace is a substring of smallest leading whitespace.
+  Based on patch by Robert Li.
+
 - Issue #21709: Fix the logging module to not depend upon __file__ being set
   properly to get the filename of its caller from the stack.  This allows it
   to work if run in a frozen or embedded environment where the module's

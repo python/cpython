@@ -647,6 +647,11 @@ def foo():
         expect = "hello there\n  how are you?"
         self.assertEqual(expect, dedent(text))
 
+        # test margin is smaller than smallest indent
+        text = "  \thello there\n   \thow are you?\n \tI'm fine, thanks"
+        expect = " \thello there\n  \thow are you?\n\tI'm fine, thanks"
+        self.assertEqual(expect, dedent(text))
+
 
 def test_main():
     test_support.run_unittest(WrapTestCase,

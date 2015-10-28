@@ -403,11 +403,15 @@ def dedent(text):
         elif margin.startswith(indent):
             margin = indent
 
-        # Current line and previous winner have no common whitespace:
-        # there is no margin.
+        # Find the largest common whitespace between current line and previous
+        # winner.
         else:
-            margin = ""
-            break
+            for i, (x, y) in enumerate(zip(margin, indent)):
+                if x != y:
+                    margin = margin[:i]
+                    break
+            else:
+                margin = margin[:len(indent)]
 
     # sanity check (testing/debugging only)
     if 0 and margin:
