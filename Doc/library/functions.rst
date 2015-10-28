@@ -703,10 +703,10 @@ are always available.  They are listed here in alphabetical order.
    Return true if the *object* argument is an instance of the *classinfo*
    argument, or of a (direct, indirect or :term:`virtual <abstract base
    class>`) subclass thereof.  If *object* is not
-   an object of the given type, the function always returns false.  If
-   *classinfo* is not a class (type object), it may be a tuple of type objects,
-   or may recursively contain other such tuples (other sequence types are not
-   accepted).  If *classinfo* is not a type or tuple of types and such tuples,
+   an object of the given type, the function always returns false.
+   If *classinfo* is a tuple of type objects (or recursively, other such
+   tuples), return true if *object* is an instance of any of the types.
+   If *classinfo* is not a type or tuple of types and such tuples,
    a :exc:`TypeError` exception is raised.
 
 
