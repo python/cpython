@@ -961,7 +961,7 @@ deque([('brown', 2),
  'quick': 1,
  'the': 0}""")
 
-    def test_user_dict(self):
+    def test_user_list(self):
         d = collections.UserList()
         self.assertEqual(pprint.pformat(d, width=1), "[]")
         words = 'the quick brown fox jumped over a lazy dog'.split()
