@@ -63,6 +63,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25503: Fixed inspect.getdoc() for inherited docstrings of properties.
+  Original patch by John Mark Vandenberg.
+
 - Issue #21827: Fixed textwrap.dedent() for the case when largest common
   whitespace is a substring of smallest leading whitespace.
   Based on patch by Robert Li.
