@@ -1289,7 +1289,6 @@ def main(srcfile, dump_module=False):
         f.close()
 
 if __name__ == "__main__":
-    import sys
     import getopt
 
     INC_DIR = ''
