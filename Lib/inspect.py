@@ -527,16 +527,17 @@ def _finddoc(obj):
             cls = self
         else:
             cls = self.__class__
+    # Should be tested before isdatadescriptor().
+    elif isinstance(obj, property):
+        func = obj.fget
+        name = func.__name__
+        cls = _findclass(func)
+        if cls is None or getattr(cls, name) is not obj:
+            return None
     elif ismethoddescriptor(obj) or isdatadescriptor(obj):
         name = obj.__name__
         cls = obj.__objclass__
         if getattr(cls, name) is not obj:
-            return None
-    elif isinstance(obj, property):
-        func = f.fget
-        name = func.__name__
-        cls = _findclass(func)
-        if cls is None or getattr(cls, name) is not obj:
             return None
     else:
         return None
