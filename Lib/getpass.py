@@ -99,7 +99,7 @@ def win_getpass(prompt='Password: ', stream=None):
     """Prompt for password with echo off, using Windows getch()."""
     if sys.stdin is not sys.__stdin__:
         return fallback_getpass(prompt, stream)
-    import msvcrt
+
     for c in prompt:
         msvcrt.putwch(c)
     pw = ""
