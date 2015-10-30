@@ -94,9 +94,9 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       *wrapcolumn* is an optional keyword to specify column number where lines are
       broken and wrapped, defaults to ``None`` where lines are not wrapped.
 
-      *linejunk* and *charjunk* are optional keyword arguments passed into ``ndiff()``
+      *linejunk* and *charjunk* are optional keyword arguments passed into :func:`ndiff`
       (used by :class:`HtmlDiff` to generate the side by side HTML differences).  See
-      ``ndiff()`` documentation for argument default values and descriptions.
+      :func:`ndiff` documentation for argument default values and descriptions.
 
    The following methods are public:
 
