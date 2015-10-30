@@ -189,9 +189,11 @@ _grep_dialog_spec = {
 _io_binding_spec = {
     'file': 'IOBinding',
     'kwds': {},
-    'msg': "Test the following bindings\n"
-           "<Control-o> to display open window from file dialog.\n"
-           "<Control-s> to save the file\n"
+    'msg': "Test the following bindings.\n"
+           "<Control-o> to open file from dialog.\n"
+           "Edit the file.\n"
+           "<Control-s> to save the file.\n"
+           "Check that changes were saved by opening the file elsewhere."
     }
 
 _multi_call_spec = {

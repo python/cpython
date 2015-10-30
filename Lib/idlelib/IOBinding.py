@@ -5,20 +5,17 @@
 #     end-of-line conventions, instead of relying on the standard library,
 #     which will only understand the local convention.
 
+import codecs
+from codecs import BOM_UTF8
 import os
 import pipes
+import re
 import sys
-import codecs
 import tempfile
+
 import tkFileDialog
 import tkMessageBox
-import re
-from Tkinter import *
 from SimpleDialog import SimpleDialog
-
-from idlelib.configHandler import idleConf
-
-from codecs import BOM_UTF8
 
 # Try setting the locale, so that we can find out
 # what encoding to use
@@ -567,8 +564,12 @@ class IOBinding:
         "Update recent file list on all editor windows"
         self.editwin.update_recent_files_list(filename)
 
+
 def _io_binding(parent):  # htest #
-    root = Tk()
+    from Tkinter import Toplevel, Text
+    from idlelib.configHandler import idleConf
+
+    root = Toplevel(parent)
     root.title("Test IOBinding")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
     root.geometry("+%d+%d"%(x, y + 150))
@@ -585,6 +586,7 @@ def _io_binding(parent):  # htest #
             self.text.event_generate("<<open-window-from-file>>")
         def save(self, event):
             self.text.event_generate("<<save-window>>")
+        def update_recent_files_list(s, f): pass
 
     text = Text(root)
     text.pack()
