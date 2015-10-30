@@ -1,17 +1,16 @@
+import codecs
+from codecs import BOM_UTF8
 import os
+import re
 import shlex
 import sys
-import codecs
 import tempfile
+
 import tkinter.filedialog as tkFileDialog
 import tkinter.messagebox as tkMessageBox
-import re
-from tkinter import *
 from tkinter.simpledialog import askstring
 
-from idlelib.configHandler import idleConf
 
-from codecs import BOM_UTF8
 
 # Try setting the locale, so that we can find out
 # what encoding to use
@@ -525,7 +524,10 @@ class IOBinding:
             self.editwin.update_recent_files_list(filename)
 
 def _io_binding(parent):  # htest #
-    root = Tk()
+    from tkinter import Toplevel, Text
+    from idlelib.configHandler import idleConf
+
+    root = Toplevel(parent)
     root.title("Test IOBinding")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
     root.geometry("+%d+%d"%(x, y + 150))
