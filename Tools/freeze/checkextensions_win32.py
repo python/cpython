@@ -118,7 +118,7 @@ def get_extension_defn(moduleName, mapFileName, prefix):
 
     for exc in exclude:
         if exc in module.sourceFiles:
-            modules.sourceFiles.remove(exc)
+            module.sourceFiles.remove(exc)
 
     return module
 
