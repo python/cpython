@@ -12,7 +12,7 @@ from test import support
 import unittest
 import warnings
 with warnings.catch_warnings():
-    warnings.simplefilter('ignore', PendingDeprecationWarning)
+    warnings.simplefilter('ignore', DeprecationWarning)
     import imp
 
 
