@@ -44,6 +44,8 @@ Typical usage:
     UUID('00010203-0405-0607-0809-0a0b0c0d0e0f')
 """
 
+import os
+
 __author__ = 'Ka-Ping Yee <ping@zesty.ca>'
 
 RESERVED_NCS, RFC_4122, RESERVED_MICROSOFT, RESERVED_FUTURE = [
@@ -438,7 +440,7 @@ def _netbios_getnode():
 # Thanks to Thomas Heller for ctypes and for his help with its use here.
 
 # If ctypes is available, use it to find system routines for UUID generation.
-_uuid_generate_random = _uuid_generate_time = _UuidCreate = None
+_uuid_generate_time = _UuidCreate = None
 try:
     import ctypes, ctypes.util
     import sys
@@ -453,12 +455,9 @@ try:
             lib = ctypes.CDLL(ctypes.util.find_library(libname))
         except:
             continue
-        if hasattr(lib, 'uuid_generate_random'):
-            _uuid_generate_random = lib.uuid_generate_random
         if hasattr(lib, 'uuid_generate_time'):
             _uuid_generate_time = lib.uuid_generate_time
-            if _uuid_generate_random is not None:
-                break  # found everything we were looking for
+            break
     del _libnames
 
     # The uuid_generate_* functions are broken on MacOS X 10.5, as noted
@@ -471,7 +470,7 @@ try:
     if sys.platform == 'darwin':
         import os
         if int(os.uname()[2].split('.')[0]) >= 9:
-            _uuid_generate_random = _uuid_generate_time = None
+            _uuid_generate_time = None
 
     # On Windows prior to 2000, UuidCreate gives a UUID containing the
     # hardware address.  On Windows 2000 and later, UuidCreate makes a
@@ -582,21 +581,7 @@ def uuid3(namespace, name):
 
 def uuid4():
     """Generate a random UUID."""
-
-    # When the system provides a version-4 UUID generator, use it.
-    if _uuid_generate_random:
-        _buffer = ctypes.create_string_buffer(16)
-        _uuid_generate_random(_buffer)
-        return UUID(bytes=_buffer.raw)
-
-    # Otherwise, get randomness from urandom or the 'random' module.
-    try:
-        import os
-        return UUID(bytes=os.urandom(16), version=4)
-    except:
-        import random
-        bytes = [chr(random.randrange(256)) for i in range(16)]
-        return UUID(bytes=bytes, version=4)
+    return UUID(bytes=os.urandom(16), version=4)
 
 def uuid5(namespace, name):
     """Generate a UUID from the SHA-1 hash of a namespace UUID and a name."""
