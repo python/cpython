@@ -10,7 +10,7 @@ import types
 import struct
 import warnings
 with warnings.catch_warnings():
-    warnings.simplefilter('ignore', PendingDeprecationWarning)
+    warnings.simplefilter('ignore', DeprecationWarning)
     import imp
 
 # XXX Clean up once str8's cstor matches bytes.
