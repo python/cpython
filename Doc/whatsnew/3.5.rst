@@ -276,7 +276,7 @@ instead of::
     S = dot((dot(H, beta) - r).T,
             dot(inv(dot(dot(H, V), H.T)), dot(H, beta) - r))
 
-An upcoming release of NumPy 1.10 will add support for the new operator::
+NumPy 1.10 has support for the new operator::
 
     >>> import numpy
 
