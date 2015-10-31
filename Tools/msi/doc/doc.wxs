@@ -22,7 +22,8 @@
                 <Shortcut Id="python.chm"
                           Target="[#python.chm]"
                           Name="!(loc.ShortcutName)"
-                          Description="!(loc.ShortcutDescription)" />
+                          Description="!(loc.ShortcutDescription)"
+                          WorkingDirectory="InstallDirectory" />
                 <RemoveFolder Id="Remove_MenuDir" On="uninstall" />
             </Component>
             <?endif ?>
