@@ -64,7 +64,7 @@
         <Checkbox Name="Include_test" X="185" Y="201" Width="-11" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_testLabel)</Checkbox>
         <Text X="205" Y="226" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_testHelpLabel)</Text>
 
-        <Checkbox Name="Include_launcher" X="185" Y="251" Width="100" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="yes">#(loc.Include_launcherLabel)</Checkbox>
+        <Checkbox Name="Include_launcher" X="185" Y="251" Width="100" Height="24" TabStop="yes" FontId="3" HideWhenDisabled="no">#(loc.Include_launcherLabel)</Checkbox>
         <Checkbox Name="CustomInstallLauncherAllUsers" X="285" Y="251" Width="-11" Height="24" TabStop="yes" FontId="3">#(loc.InstallLauncherAllUsersLabel)</Checkbox>
         <Text X="205" Y="276" Width="-11" Height="24" TabStop="no" FontId="5">#(loc.Include_launcherHelpLabel)</Text>
 

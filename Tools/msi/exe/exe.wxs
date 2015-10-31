@@ -20,7 +20,8 @@
                 <Shortcut Id="python.exe"
                           Target="[#python.exe]"
                           Name="!(loc.ShortcutName)"
-                          Description="!(loc.ShortcutDescription)" />
+                          Description="!(loc.ShortcutDescription)"
+                          WorkingDirectory="InstallDirectory" />
                 <RemoveFolder Id="Remove_MenuDir" Directory="MenuDir" On="uninstall" />
                 <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
                     <RegistryValue Key="InstallPath\InstallGroup" Type="string" Value="!(loc.ProductName)" KeyPath="yes" />

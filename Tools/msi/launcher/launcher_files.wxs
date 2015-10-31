@@ -3,22 +3,22 @@
     <Fragment>
         <ComponentGroup Id="launcher_exe">
             <Component Id="py.exe" Directory="LauncherInstallDirectory" Guid="{B5107402-6958-461B-8B0A-4037D3327160}">
-                <File Id="py.exe" Name="py$(var.TestPrefix).exe" Source="py.exe" KeyPath="yes" />
+                <File Id="py.exe" Name="py.exe" Source="py.exe" KeyPath="yes" />
                 <RegistryValue Root="HKMU" Key="Software\Python\PyLauncher" Value="[#py.exe]" Type="string" />
             </Component>
             <Component Id="pyw.exe" Directory="LauncherInstallDirectory" Guid="{8E52B8CD-48BB-4D74-84CD-6238BCD11F20}">
-                <File Id="pyw.exe" Name="pyw$(var.TestPrefix).exe" Source="pyw.exe" KeyPath="yes" />
+                <File Id="pyw.exe" Name="pyw.exe" Source="pyw.exe" KeyPath="yes" />
             </Component>
 
             <Component Id="launcher_path_cu" Directory="LauncherInstallDirectory" Guid="{95AEB930-367C-475C-A17E-A89BFCD4C670}">
                 <Condition>NOT ALLUSERS=1</Condition>
                 
-                <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\$(var.TestPrefix)Python\PyLauncher" Name="InstallDir" Value="[LauncherInstallDirectory]" Type="string" />
+                <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\Python\PyLauncher" Name="InstallDir" Value="[LauncherInstallDirectory]" Type="string" />
                 <Environment Id="PATH_CU" Action="set" Name="PATH" Part="first" Value="[LauncherInstallDirectory]" />
             </Component>
             <Component Id="launcher_path_lm" Directory="LauncherInstallDirectory" Guid="{4A41C365-4E27-4D38-A6D1-4A01B4A6500C}">
                 <Condition>ALLUSERS=1</Condition>
-                <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\$(var.TestPrefix)Python\PyLauncher" Name="InstallDir" Value="[LauncherInstallDirectory]" Type="string" />
+                <RegistryValue KeyPath="yes" Root="HKMU" Key="Software\Python\PyLauncher" Name="InstallDir" Value="[LauncherInstallDirectory]" Type="string" />
             </Component>
         </ComponentGroup>
     </Fragment>

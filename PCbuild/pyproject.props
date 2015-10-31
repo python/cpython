@@ -128,8 +128,8 @@ foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses
   </UsingTask>
   
   <Target Name="KillPython" BeforeTargets="PrepareForBuild" Condition="'$(KillPython)' == 'true'">
-    <Message Text="Killing any running python.exe instances..." Importance="high" />
-    <KillPython FileName="$(OutDir)python$(PyDebugExt).exe" />
+    <Message Text="Killing any running python$(PyDebugExt)$(PyTestExt).exe instances..." Importance="high" />
+    <KillPython FileName="$(OutDir)python$(PyDebugExt)$(PyTestExt).exe" />
   </Target>
   
   <!--
