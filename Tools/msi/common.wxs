@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
     <Fragment>
-        <Property Id="REGISTRYKEY" Value="Software\$(var.TestPrefix)Python\PythonCore\$(var.ShortVersion)$(var.Suffix32)" />
+        <Property Id="REGISTRYKEY" Value="Software\Python\PythonCore\$(var.ShortVersion)$(var.PyArchExt)$(var.PyTestExt)" />
     </Fragment>
     
     <Fragment>
@@ -105,7 +105,7 @@
     <Fragment>
         <DirectoryRef Id="TARGETDIR">
             <Directory Id="ProgramMenuFolder">
-                <Directory Id="MenuDir" Name="$(var.TestPrefix)!(loc.ProductName)" />
+                <Directory Id="MenuDir" Name="!(loc.ProductName)" />
             </Directory>
         </DirectoryRef>
     </Fragment>

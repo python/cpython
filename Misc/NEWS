@@ -519,6 +519,8 @@ Build
 Windows
 -------
 
+- Issue #25450: Updates shortcuts to start Python in installation directory.
+
 - Issue #25164: Changes default all-users install directory to match per-user
   directory.
 

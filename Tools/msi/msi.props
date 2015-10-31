@@ -80,16 +80,12 @@
             NextMajorVersionNumber=$(MajorVersionNumber).$([msbuild]::Add($(MinorVersionNumber), 1)).0.0;
             Bitness=$(Bitness);
             PyDebugExt=$(PyDebugExt);
+            PyArchExt=$(PyArchExt);
+            PyTestExt=$(PyTestExt);
             OptionalFeatureName=$(OutputName);
         </DefineConstants>
         <DefineConstants Condition="'$(CRTRedist)' != ''">
             $(DefineConstants);CRTRedist=$(CRTRedist);
-        </DefineConstants>
-        <DefineConstants Condition="$(UseTestMarker) != 'true'">
-            $(DefineConstants);TestPrefix=;FileExtension=py;
-        </DefineConstants>
-        <DefineConstants Condition="$(UseTestMarker) == 'true'">
-            $(DefineConstants);TestPrefix=x;FileExtension=px;
         </DefineConstants>
         <DefineConstants Condition="$(Platform) != 'x64'">
             $(DefineConstants);Suffix32=-32;
