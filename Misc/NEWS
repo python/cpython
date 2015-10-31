@@ -1403,7 +1403,7 @@ Library
 
 - Issue #21402: tkinter.ttk now works when default root window is not set.
 
-- Issue #10203: sqlite3.Row now truly supports sequence protocol.  In particulr
+- Issue #10203: sqlite3.Row now truly supports sequence protocol.  In particular
   it supports reverse() and negative indices.  Original patch by Claudiu Popa.
 
 - Issue #18807: If copying (no symlinks) specified for a venv, then the python

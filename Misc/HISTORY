@@ -1966,7 +1966,7 @@ Core and Builtins
   change also applies to bytes.splitlines and bytearray.splitlines.
 
 - Issue #7732: Don't open a directory as a file anymore while importing a
-  module. Ignore the direcotry if its name matchs the module name (e.g.
+  module. Ignore the directory if its name matches the module name (e.g.
   "__init__.py") and raise a ImportError instead.
 
 - Issue #13021: Missing decref on an error path.  Thanks to Suman Saha for
