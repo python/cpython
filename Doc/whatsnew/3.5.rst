@@ -860,7 +860,7 @@ The :class:`~collections.deque` class now defines
 :meth:`~collections.deque.copy`, as well as supports ``+`` and ``*`` operators.
 This allows deques to be recognized as a :class:`~collections.abc.MutableSequence`
 and improves their substitutability for lists.
-(Contributed by Raymond Hettinger :issue:`23704`.)
+(Contributed by Raymond Hettinger in :issue:`23704`.)
 
 Docstrings produced by :func:`~collections.namedtuple` can now be updated::
 
@@ -889,7 +889,7 @@ of :class:`tuple`, :class:`list`, etc.
 A new :class:`~collections.abc.Generator` abstract base class. (Contributed
 by Stefan Behnel in :issue:`24018`.)
 
-New :class:`~collections.abc.Awaitable` :class:`~collections.abc.Coroutine`,
+New :class:`~collections.abc.Awaitable`, :class:`~collections.abc.Coroutine`,
 :class:`~collections.abc.AsyncIterator`, and
 :class:`~collections.abc.AsyncIterable` abstract base classes.
 (Contributed by Yury Selivanov in :issue:`24184`.)
@@ -1727,7 +1727,7 @@ the TLS handshake.
 The new
 :meth:`SSLSocket.selected_alpn_protocol() <ssl.SSLSocket.selected_alpn_protocol>`
 returns the protocol that was selected during the TLS handshake.
-:data:`~ssl.HAS_ALPN` flag indicates whether APLN support is present.
+:data:`~ssl.HAS_ALPN` flag indicates whether ALPN support is present.
 
 
 Other Changes
@@ -1782,7 +1782,7 @@ subprocess
 ----------
 
 The new :func:`~subprocess.run` function has been added.
-It runs the specified command and and returns a
+It runs the specified command and returns a
 :class:`~subprocess.CompletedProcess` object, which describes a finished
 process.  The new API is more consistent and is the recommended approach
 to invoking subprocesses in Python code that does not need to maintain
