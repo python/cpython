@@ -88,6 +88,12 @@ attributes:
 |           | __globals__     | global namespace in which |
 |           |                 | this function was defined |
 +-----------+-----------------+---------------------------+
+|           | __annotations__ | mapping of parameters     |
+|           |                 | names to annotations;     |
+|           |                 | ``"return"`` key is       |
+|           |                 | reserved for return       |
+|           |                 | annotations.              |
++-----------+-----------------+---------------------------+
 | traceback | tb_frame        | frame object at this      |
 |           |                 | level                     |
 +-----------+-----------------+---------------------------+
