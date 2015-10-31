@@ -222,7 +222,7 @@ sessions, by only appending the new history. ::
 
    import atexit
    import os
-   import realine
+   import readline
    histfile = os.path.join(os.path.expanduser("~"), ".python_history")
 
    try:
