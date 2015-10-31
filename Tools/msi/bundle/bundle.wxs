@@ -22,22 +22,26 @@
 
     <Variable Name="ShortVersion" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)" />
     <Variable Name="ShortVersionNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)" />
-    <Variable Name="WinVer" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)$(var.Suffix32)" />
-    <Variable Name="WinVerNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.Suffix32)" />
+    <Variable Name="WinVer" Value="$(var.MajorVersionNumber).$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)" />
+    <Variable Name="WinVerNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)" />
 
     <Variable Name="InstallAllUsers" Value="0" bal:Overridable="yes" />
+    <?ifndef PyTestExt ?>
     <Variable Name="InstallLauncherAllUsers" Value="1" bal:Overridable="yes" />
+    <?else ?>
+    <Variable Name="InstallLauncherAllUsers" Value="0" />
+    <?endif ?>
     <Variable Name="TargetDir" Value="" bal:Overridable="yes" />
     <?if $(var.Platform)~="x64" ?>
-    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]$(var.TestPrefix)Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFiles64Folder]Python[WinVerNoDot]" bal:Overridable="yes" />
     <Variable Name="TargetPlatform" Value="x64" />
     <?else ?>
-    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesFolder]$(var.TestPrefix)Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="DefaultAllUsersTargetDir" Value="[ProgramFilesFolder]Python[WinVerNoDot]" bal:Overridable="yes" />
     <Variable Name="TargetPlatform" Value="x86" />
     <?endif ?>
-    <Variable Name="DefaultJustForMeTargetDir" Value="[LocalAppDataFolder]Programs\$(var.TestPrefix)Python\Python[WinVerNoDot]" bal:Overridable="yes" />
-    <Variable Name="OptionalFeaturesRegistryKey" Value="Software\$(var.TestPrefix)Python\PythonCore\[WinVer]\InstalledFeatures" />
-    <Variable Name="TargetDirRegistryKey" Value="Software\$(var.TestPrefix)Python\PythonCore\[WinVer]\InstallPath" />
+    <Variable Name="DefaultJustForMeTargetDir" Value="[LocalAppDataFolder]Programs\Python\Python[WinVerNoDot]" bal:Overridable="yes" />
+    <Variable Name="OptionalFeaturesRegistryKey" Value="Software\Python\PythonCore\[WinVer]\InstalledFeatures" />
+    <Variable Name="TargetDirRegistryKey" Value="Software\Python\PythonCore\[WinVer]\InstallPath" />
     
     <!--
     An empty string will use the other defaults based on InstallAllUsers
@@ -48,7 +52,11 @@
     <Variable Name="DefaultCustomTargetDir" Value="" bal:Overridable="yes" />
 
     <Variable Name="InstallAllUsersState" Value="enabled" />
+    <?ifndef PyTestExt ?>
     <Variable Name="InstallLauncherAllUsersState" Value="enabled" bal:Overridable="yes" />
+    <?else ?>
+    <Variable Name="InstallLauncherAllUsersState" Value="disable" bal:Overridable="yes" />
+    <?endif ?>
     <Variable Name="CustomInstallLauncherAllUsersState" Value="[InstallLauncherAllUsersState]" />
     <Variable Name="TargetDirState" Value="enabled" />
     <Variable Name="CustomBrowseButtonState" Value="enabled" />
@@ -62,7 +70,12 @@
     <Variable Name="Include_tools" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
+    <?ifndef PyTestExt ?>
     <Variable Name="Include_launcher" Value="1" bal:Overridable="yes" />
+    <?else ?>
+    <Variable Name="Include_launcher" Value="0" />
+    <Variable Name="Include_launcherState" Value="disable" />
+    <?endif ?>
     <Variable Name="Include_symbols" Value="0" bal:Overridable="yes" />
     <Variable Name="Include_debug" Value="0" bal:Overridable="yes" />
     
