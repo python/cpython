@@ -460,7 +460,7 @@ Snapshot
 
       All inclusive filters are applied at once, a trace is ignored if no
       inclusive filters match it. A trace is ignored if at least one exclusive
-      filter matchs it.
+      filter matches it.
 
 
    .. classmethod:: load(filename)

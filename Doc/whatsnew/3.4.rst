@@ -2076,7 +2076,7 @@ using ``-Wd``).
 Deprecations in the Python API
 ------------------------------
 
-* As mentioned in :ref:`whatsnew-pep-451`, a number of :mod:`importilb`
+* As mentioned in :ref:`whatsnew-pep-451`, a number of :mod:`importlib`
   methods and functions are deprecated: :meth:`importlib.find_loader` is
   replaced by :func:`importlib.util.find_spec`;
   :meth:`importlib.machinery.PathFinder.find_module` is replaced by
