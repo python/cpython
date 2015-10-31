@@ -827,7 +827,7 @@ SSL sockets also have the following additional methods and attributes:
 
    The :meth:`~SSLSocket.read` and :meth:`~SSLSocket.write` methods are the
    low-level methods that read and write unencrypted, application-level data
-   and and decrypt/encrypt it to encrypted, wire-level data. These methods
+   and decrypt/encrypt it to encrypted, wire-level data. These methods
    require an active SSL connection, i.e. the handshake was completed and
    :meth:`SSLSocket.unwrap` was not called.
 
