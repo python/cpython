@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #25395: Fixed crash when highly nested OrderedDict structures were
+  garbage collected.
+
 - Issue #25274: sys.setrecursionlimit() now raises a RecursionError if the new
   recursion limit is too low depending at the current recursion depth. Modify
   also the "lower-water mark" formula to make it monotonic. This mark is used

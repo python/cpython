@@ -1431,17 +1431,28 @@ static PyMemberDef odict_members[] = {
 static void
 odict_dealloc(PyODictObject *self)
 {
+    PyThreadState *tstate = PyThreadState_GET();
+
     PyObject_GC_UnTrack(self);
-    Py_TRASHCAN_SAFE_BEGIN(self);
+    Py_TRASHCAN_SAFE_BEGIN(self)
+
     Py_XDECREF(self->od_inst_dict);
     if (self->od_weakreflist != NULL)
         PyObject_ClearWeakRefs((PyObject *)self);
 
     _odict_clear_nodes(self);
-    Py_TRASHCAN_SAFE_END(self);
 
-    /* must be last */
+    /* Call the base tp_dealloc().  Since it too uses the trashcan mechanism,
+     * temporarily decrement trash_delete_nesting to prevent triggering it
+     * and putting the partially deallocated object on the trashcan's
+     * to-be-deleted-later list.
+     */
+    --tstate->trash_delete_nesting;
+    assert(_tstate->trash_delete_nesting < PyTrash_UNWIND_LEVEL);
     PyDict_Type.tp_dealloc((PyObject *)self);
+    ++tstate->trash_delete_nesting;
+
+    Py_TRASHCAN_SAFE_END(self)
 };
 
 /* tp_repr */
