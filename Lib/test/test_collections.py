@@ -2033,6 +2033,30 @@ class OrderedDictTests:
         items = [('a', 1), ('c', 3), ('b', 2)]
         self.assertEqual(list(MyOD(items).items()), items)
 
+    def test_highly_nested(self):
+        # Issue 25395: crashes during garbage collection
+        OrderedDict = self.module.OrderedDict
+        obj = None
+        for _ in range(1000):
+            obj = OrderedDict([(None, obj)])
+        del obj
+        support.gc_collect()
+
+    def test_highly_nested_subclass(self):
+        # Issue 25395: crashes during garbage collection
+        OrderedDict = self.module.OrderedDict
+        deleted = []
+        class MyOD(OrderedDict):
+            def __del__(self):
+                deleted.append(self.i)
+        obj = None
+        for i in range(100):
+            obj = MyOD([(None, obj)])
+            obj.i = i
+        del obj
+        support.gc_collect()
+        self.assertEqual(deleted, list(reversed(range(100))))
+
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
