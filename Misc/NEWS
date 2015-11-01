@@ -66,6 +66,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18973: Command-line interface of the calendar module now uses argparse
+  instead of optparse.
+
 - Issue #25510: fileinput.FileInput.readline() now returns b'' instead of ''
   at the end if the FileInput was opened with binary mode.
   Patch by Ryosuke Ito.
