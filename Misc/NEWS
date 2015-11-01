@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25395: Fixed crash when highly nested OrderedDict structures were
+  garbage collected.
+
 - Issue #25401: Optimize bytes.fromhex() and bytearray.fromhex(): they are now
   between 2x and 3.5x faster.
 
