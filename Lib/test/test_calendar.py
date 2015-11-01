@@ -702,19 +702,19 @@ class CommandLineTestCase(unittest.TestCase):
 
     def assertFailure(self, *args):
         rc, stdout, stderr = assert_python_failure('-m', 'calendar', *args)
-        self.assertIn(b'Usage:', stderr)
+        self.assertIn(b'usage:', stderr)
         self.assertEqual(rc, 2)
 
     def test_help(self):
         stdout = self.run_ok('-h')
-        self.assertIn(b'Usage:', stdout)
+        self.assertIn(b'usage:', stdout)
         self.assertIn(b'calendar.py', stdout)
         self.assertIn(b'--help', stdout)
 
     def test_illegal_arguments(self):
         self.assertFailure('-z')
-        #self.assertFailure('spam')
-        #self.assertFailure('2004', 'spam')
+        self.assertFailure('spam')
+        self.assertFailure('2004', 'spam')
         self.assertFailure('-t', 'html', '2004', '1')
 
     def test_output_current_year(self):
