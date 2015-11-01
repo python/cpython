@@ -288,6 +288,21 @@ class FileInputTests(unittest.TestCase):
             with self.assertRaises(UnicodeDecodeError):
                 # Read to the end of file.
                 list(fi)
+            self.assertEqual(fi.readline(), '')
+            self.assertEqual(fi.readline(), '')
+
+    def test_readline_binary_mode(self):
+        with open(TESTFN, 'wb') as f:
+            f.write(b'A\nB\r\nC\rD')
+        self.addCleanup(safe_unlink, TESTFN)
+
+        with FileInput(files=TESTFN, mode='rb') as fi:
+            self.assertEqual(fi.readline(), b'A\n')
+            self.assertEqual(fi.readline(), b'B\r\n')
+            self.assertEqual(fi.readline(), b'C\rD')
+            # Read to the end of file.
+            self.assertEqual(fi.readline(), b'')
+            self.assertEqual(fi.readline(), b'')
 
     def test_context_manager(self):
         try:
