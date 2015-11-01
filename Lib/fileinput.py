@@ -315,7 +315,10 @@ class FileInput:
             return line
         if not self._file:
             if not self._files:
-                return ""
+                if 'b' in self._mode:
+                    return b''
+                else:
+                    return ''
             self._filename = self._files[0]
             self._files = self._files[1:]
             self._filelineno = 0
