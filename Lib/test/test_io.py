@@ -15,7 +15,7 @@
 ################################################################################
 # When writing tests for io, it's important to test both the C and Python
 # implementations. This is usually done by writing a base test that refers to
-# the type it is testing as a attribute. Then it provides custom subclasses to
+# the type it is testing as an attribute. Then it provides custom subclasses to
 # test both implementations. This file has lots of examples.
 ################################################################################
 

@@ -31,7 +31,7 @@ The available exception and functions in this module are:
 
 .. function:: adler32(data[, value])
 
-   Computes a Adler-32 checksum of *data*.  (An Adler-32 checksum is almost as
+   Computes an Adler-32 checksum of *data*.  (An Adler-32 checksum is almost as
    reliable as a CRC32 but can be computed much more quickly.)  If *value* is
    present, it is used as the starting value of the checksum; otherwise, a fixed
    default value is used.  This allows computing a running checksum over the

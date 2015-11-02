@@ -2788,7 +2788,7 @@ load_verify_locations(PySSLContext *self, PyObject *args, PyObject *kwds)
             cadata_ascii = PyUnicode_AsASCIIString(cadata);
             if (cadata_ascii == NULL) {
                 PyErr_SetString(PyExc_TypeError,
-                                "cadata should be a ASCII string or a "
+                                "cadata should be an ASCII string or a "
                                 "bytes-like object");
                 goto error;
             }

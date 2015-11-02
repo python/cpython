@@ -1434,7 +1434,7 @@ class CookieJar:
                         break
                     # convert RFC 2965 Max-Age to seconds since epoch
                     # XXX Strictly you're supposed to follow RFC 2616
-                    #   age-calculation rules.  Remember that zero Max-Age is a
+                    #   age-calculation rules.  Remember that zero Max-Age
                     #   is a request to discard (old and new) cookie, though.
                     k = "expires"
                     v = self._now + v

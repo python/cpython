@@ -62,7 +62,7 @@ Special runs
 
 Additional Option Details:
 
--r randomizes test execution order. You can use --randseed=int to provide a
+-r randomizes test execution order. You can use --randseed=int to provide an
 int seed value for the randomizer; this is useful for reproducing troublesome
 test orders.
 

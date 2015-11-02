@@ -1118,7 +1118,7 @@ changes, or look through the Subversion logs for all the details.
   (Fixed by Daniel Stutzbach; :issue:`8729`.)
 
 * Constructors for the parsing classes in the :mod:`ConfigParser` module now
-  take a *allow_no_value* parameter, defaulting to false; if true,
+  take an *allow_no_value* parameter, defaulting to false; if true,
   options without values will be allowed.  For example::
 
     >>> import ConfigParser, StringIO

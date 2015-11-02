@@ -133,7 +133,7 @@ class.
       methods on file-like objects.
 
       The text contained in *fp* must be formatted as a block of :rfc:`2822`
-      style headers and header continuation lines, optionally preceded by a
+      style headers and header continuation lines, optionally preceded by an
       envelope header.  The header block is terminated either by the end of the
       data or by a blank line.  Following the header block is the body of the
       message (which may contain MIME-encoded subparts).

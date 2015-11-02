@@ -169,7 +169,7 @@ follows::
     username: <username>
     password: <password>
 
-The *distutils* section defines a *index-servers* variable that lists the
+The *distutils* section defines an *index-servers* variable that lists the
 name of all sections describing a repository.
 
 Each section describing a repository defines three variables:

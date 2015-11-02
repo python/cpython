@@ -568,7 +568,7 @@ Skipping tests and expected failures
 .. versionadded:: 2.7
 
 Unittest supports skipping individual test methods and even whole classes of
-tests.  In addition, it supports marking a test as a "expected failure," a test
+tests.  In addition, it supports marking a test as an "expected failure," a test
 that is broken and will fail, but shouldn't be counted as a failure on a
 :class:`TestResult`.
 

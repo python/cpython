@@ -149,7 +149,7 @@ into.  For example, if you've just downloaded a module source distribution
 
 On Windows, you'd probably download :file:`foo-1.0.zip`.  If you downloaded the
 archive file to :file:`C:\\Temp`, then it would unpack into
-:file:`C:\\Temp\\foo-1.0`; you can use either a archive manipulator with a
+:file:`C:\\Temp\\foo-1.0`; you can use either an archive manipulator with a
 graphical user interface (such as WinZip) or a command-line tool (such as
 :program:`unzip` or :program:`pkunzip`) to unpack the archive.  Then, open a
 command prompt window and run::
