@@ -465,7 +465,7 @@ not make an additional system call::
 PEP 475: Retry system calls failing with EINTR
 ----------------------------------------------
 
-A :py:data:`errno.EINTR` error code is returned whenever a system call, that
+An :py:data:`errno.EINTR` error code is returned whenever a system call, that
 is waiting for I/O, is interrupted by a signal.  Previously, Python would
 raise :exc:`InterruptedError` in such case.  This meant that, when writing a
 Python application, the developer had two choices:
