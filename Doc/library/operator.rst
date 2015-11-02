@@ -333,21 +333,6 @@ expect a function argument.
       [('orange', 1), ('banana', 2), ('apple', 3), ('pear', 5)]
 
 
-.. data:: subscript
-
-    A helper to turn subscript notation into indexing objects.  This can be
-    used to create item access patterns ahead of time to pass them into
-    various subscriptable objects.
-
-    For example:
-
-    * ``subscript[5] == 5``
-    * ``subscript[3:7:2] == slice(3, 7, 2)``
-    * ``subscript[5, 8] == (5, 8)``
-
-    .. versionadded:: 3.6
-
-
 .. function:: methodcaller(name[, args...])
 
    Return a callable object that calls the method *name* on its operand.  If
