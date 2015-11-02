@@ -1990,7 +1990,7 @@ Library
 - Issue #23132: Improve performance and introspection support of comparison
   methods created by functool.total_ordering.
 
-- Issue #19776: Add a expanduser() method on Path objects.
+- Issue #19776: Add an expanduser() method on Path objects.
 
 - Issue #23112: Fix SimpleHTTPServer to correctly carry the query string and
   fragment when it redirects to add a trailing slash.

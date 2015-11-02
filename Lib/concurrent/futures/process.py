@@ -456,7 +456,7 @@ class ProcessPoolExecutor(_base.Executor):
     submit.__doc__ = _base.Executor.submit.__doc__
 
     def map(self, fn, *iterables, timeout=None, chunksize=1):
-        """Returns a iterator equivalent to map(fn, iter).
+        """Returns an iterator equivalent to map(fn, iter).
 
         Args:
             fn: A callable that will take as many arguments as there are
