@@ -104,14 +104,6 @@ directives ``%G``, ``%u`` and ``%V``.
 (Contributed by Ashley Anderson in :issue:`12006`.)
 
 
-operator
---------
-
-New object :data:`operator.subscript` makes it easier to create complex
-indexers. For example: ``subscript[0:10:2] == slice(0, 10, 2)``
-(Contributed by Joe Jevnik in :issue:`24379`.)
-
-
 pickle
 ------
 
