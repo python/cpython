@@ -289,7 +289,7 @@ def _val_or_dict(tk, options, *args):
     """Format options then call Tk command with args and options and return
     the appropriate result.
 
-    If no option is specified, a dict is returned. If a option is
+    If no option is specified, a dict is returned. If an option is
     specified with the None value, the value for that option is returned.
     Otherwise, the function just sets the passed options and the caller
     shouldn't be expecting a return value anyway."""

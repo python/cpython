@@ -34,7 +34,7 @@ def _int_to_enum(value, enum_klass):
 
 def _enum_to_int(value):
     """Convert an IntEnum member to a numeric value.
-    If it's not a IntEnum member return the value itself.
+    If it's not an IntEnum member return the value itself.
     """
     try:
         return int(value)

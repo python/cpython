@@ -742,7 +742,7 @@ volume rotations should take care not to penalize the common case.
 
 Conceptually, a rotate by one is equivalent to a pop on one side and an
 append on the other.  However, a pop/append pair is unnecessarily slow
-because it requires a incref/decref pair for an object located randomly
+because it requires an incref/decref pair for an object located randomly
 in memory.  It is better to just move the object pointer from one block
 to the next without changing the reference count.
 
