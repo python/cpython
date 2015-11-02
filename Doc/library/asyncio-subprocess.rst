@@ -12,9 +12,9 @@ On Windows, the default event loop is :class:`SelectorEventLoop` which does not
 support subprocesses. :class:`ProactorEventLoop` should be used instead.
 Example to use it on Windows::
 
-    import asyncio, os
+    import asyncio, sys
 
-    if os.name == 'nt':
+    if sys.platform == 'win32':
         loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(loop)
 
