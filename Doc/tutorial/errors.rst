@@ -336,7 +336,7 @@ example::
 A *finally clause* is always executed before leaving the :keyword:`try`
 statement, whether an exception has occurred or not. When an exception has
 occurred in the :keyword:`try` clause and has not been handled by an
-:keyword:`except` clause (or it has occurred in a :keyword:`except` or
+:keyword:`except` clause (or it has occurred in an :keyword:`except` or
 :keyword:`else` clause), it is re-raised after the :keyword:`finally` clause has
 been executed.  The :keyword:`finally` clause is also executed "on the way out"
 when any other clause of the :keyword:`try` statement is left via a
