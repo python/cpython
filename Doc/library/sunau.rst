@@ -54,8 +54,8 @@ The :mod:`sunau` module defines the following functions:
 
    Note that it does not allow read/write files.
 
-   A *mode* of ``'r'`` returns a :class:`AU_read` object, while a *mode* of ``'w'``
-   or ``'wb'`` returns a :class:`AU_write` object.
+   A *mode* of ``'r'`` returns an :class:`AU_read` object, while a *mode* of ``'w'``
+   or ``'wb'`` returns an :class:`AU_write` object.
 
 
 .. function:: openfp(file, mode)

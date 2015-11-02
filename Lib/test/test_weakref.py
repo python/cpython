@@ -947,7 +947,7 @@ class SubclassableWeakrefTestCase(TestBase):
 class WeakMethodTestCase(unittest.TestCase):
 
     def _subclass(self):
-        """Return a Object subclass overriding `some_method`."""
+        """Return an Object subclass overriding `some_method`."""
         class C(Object):
             def some_method(self):
                 return 6

@@ -951,7 +951,7 @@ Notes:
    runtime cost, you must switch to one of the alternatives below:
 
    * if concatenating :class:`str` objects, you can build a list and use
-     :meth:`str.join` at the end or else write to a :class:`io.StringIO`
+     :meth:`str.join` at the end or else write to an :class:`io.StringIO`
      instance and retrieve its value when complete
 
    * if concatenating :class:`bytes` objects, you can similarly use

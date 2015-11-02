@@ -366,7 +366,7 @@ ffi_closure_unix64:
 	.byte	0x4			/* DW_CFA_advance_loc4 */
 	.long	.LUW1-.LUW0
 
-	/* New stack frame based off rbp.  This is a itty bit of unwind
+	/* New stack frame based off rbp.  This is an itty bit of unwind
 	   trickery in that the CFA *has* changed.  There is no easy way
 	   to describe it correctly on entry to the function.  Fortunately,
 	   it doesn't matter too much since at all points we can correctly
