@@ -1060,7 +1060,7 @@ deque_index(dequeobject *deque, PyObject *args)
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
         if (cmp > 0)
             return PyLong_FromSsize_t(stop - (n + 1));
-        else if (cmp < 0)
+        if (cmp < 0)
             return NULL;
         if (start_state != deque->state) {
             PyErr_SetString(PyExc_RuntimeError,
