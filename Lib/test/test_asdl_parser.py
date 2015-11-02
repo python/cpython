@@ -21,7 +21,7 @@ class TestAsdlParser(unittest.TestCase):
     def setUpClass(cls):
         # Loads the asdl module dynamically, since it's not in a real importable
         # package.
-        # Parses Python.asdl into a ast.Module and run the check on it.
+        # Parses Python.asdl into an ast.Module and run the check on it.
         # There's no need to do this for each test method, hence setUpClass.
         sys.path.insert(0, parser_dir)
         loader = importlib.machinery.SourceFileLoader(
