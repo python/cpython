@@ -289,7 +289,7 @@ the :mod:`glob` module.)
 
    Return ``True`` if both pathname arguments refer to the same file or directory.
    This is determined by the device number and i-node number and raises an
-   exception if a :func:`os.stat` call on either pathname fails.
+   exception if an :func:`os.stat` call on either pathname fails.
 
    Availability: Unix, Windows.
 

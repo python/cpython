@@ -10,9 +10,9 @@ cygwin in no-cygwin mode).
 #
 # * if you use a msvc compiled python version (1.5.2)
 #   1. you have to insert a __GNUC__ section in its config.h
-#   2. you have to generate a import library for its dll
+#   2. you have to generate an import library for its dll
 #      - create a def-file for python??.dll
-#      - create a import library using
+#      - create an import library using
 #             dlltool --dllname python15.dll --def python15.def \
 #                       --output-lib libpython15.a
 #
@@ -318,7 +318,7 @@ class Mingw32CCompiler(CygwinCCompiler):
         self.dll_libraries = get_msvcr()
 
 # Because these compilers aren't configured in Python's pyconfig.h file by
-# default, we should at least warn the user if he is using a unmodified
+# default, we should at least warn the user if he is using an unmodified
 # version.
 
 CONFIG_H_OK = "ok"

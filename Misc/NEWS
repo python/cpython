@@ -333,7 +333,7 @@ Documentation
 Tests
 -----
 
-- Issue #25099: Make test_compileall not fail when a entry on sys.path cannot
+- Issue #25099: Make test_compileall not fail when an entry on sys.path cannot
   be written to (commonly seen in administrative installs on Windows).
 
 - Issue #23919: Prevents assert dialogs appearing in the test suite.
