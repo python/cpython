@@ -1331,7 +1331,7 @@ Core and Builtins
   import as they are meant for use by importlib.
 
 - Issue #14474: Save and restore exception state in thread.start_new_thread()
-  while writing error message if the thread leaves a unhandled exception.
+  while writing error message if the thread leaves an unhandled exception.
 
 - Issue #13019: Fix potential reference leaks in bytearray.extend().  Patch
   by Suman Saha.
@@ -1969,7 +1969,7 @@ Core and Builtins
 
 - Issue #7732: Don't open a directory as a file anymore while importing a
   module. Ignore the directory if its name matches the module name (e.g.
-  "__init__.py") and raise a ImportError instead.
+  "__init__.py") and raise an ImportError instead.
 
 - Issue #13021: Missing decref on an error path.  Thanks to Suman Saha for
   finding the bug and providing a patch.
@@ -2021,7 +2021,7 @@ Core and Builtins
 
 - Issue #10271: Allow warnings.showwarning() be any callable.
 
-- Issue #11627: Fix segfault when __new__ on a exception returns a
+- Issue #11627: Fix segfault when __new__ on an exception returns a
   non-exception class.
 
 - Issue #12149: Update the method cache after a type's dictionary gets
@@ -2050,7 +2050,7 @@ Core and Builtins
   with other data interleaved between marshalled objects.
 
 - Issue #12356: When required positional or keyword-only arguments are not
-  given, produce a informative error message which includes the name(s) of the
+  given, produce an informative error message which includes the name(s) of the
   missing arguments.
 
 - Issue #12370: Fix super with no arguments when __class__ is overriden in the
@@ -2651,7 +2651,7 @@ Library
 - Issue #12529: fix cgi.parse_header issue on strings with double-quotes and
   semicolons together. Patch by Ben Darnell and Petri Lehtinen.
 
-- Issue #13227: functools.lru_cache() now has a option to distinguish
+- Issue #13227: functools.lru_cache() now has an option to distinguish
   calls with different argument types.
 
 - Issue #6090: zipfile raises a ValueError when a document with a timestamp
@@ -2914,7 +2914,7 @@ Library
 
 - Issue #12502: asyncore: fix polling loop with AF_UNIX sockets.
 
-- Issue #4376: ctypes now supports nested structures in a endian different than
+- Issue #4376: ctypes now supports nested structures in an endian different than
   the parent structure. Patch by Vlad Riscutia.
 
 - Raise ValueError when attempting to set the _CHUNK_SIZE attribute of a
@@ -2935,7 +2935,7 @@ Library
   Linux for example, to have the same behaviour on all platforms.
 
 - Issue #12451: pydoc: html_getfile() now uses tokenize.open() to support
-  Python scripts using a encoding different than UTF-8 (read the coding cookie
+  Python scripts using an encoding different than UTF-8 (read the coding cookie
   of the script).
 
 - Issue #12493: subprocess: Popen.communicate() now also handles EINTR errors
@@ -5113,7 +5113,7 @@ Library
   ``MaybeEncodingError`` exception.
 
 - Issue #9244: The ``apply_async()`` and ``map_async()`` methods of
-  ``multiprocessing.Pool`` now accepts a ``error_callback`` argument.  This can
+  ``multiprocessing.Pool`` now accepts an ``error_callback`` argument.  This can
   be a callback with the signature ``callback(exc)``, which will be called if
   the target raises an exception.
 
@@ -5210,7 +5210,7 @@ Library
 
 - Close file objects in modulefinder in a timely manner.
 
-- Close a io.TextIOWrapper object in email.parser in a timely manner.
+- Close an io.TextIOWrapper object in email.parser in a timely manner.
 
 - Close a file object in distutils.sysconfig in a timely manner.
 
@@ -7308,7 +7308,7 @@ Library
 - Issue #7610: Reworked implementation of the internal
   ``zipfile.ZipExtFile`` class used to represent files stored inside an
   archive.  The new implementation is significantly faster and can be wrapped in
-  a ``io.BufferedReader`` object for more speedups.  It also solves an
+  an ``io.BufferedReader`` object for more speedups.  It also solves an
   issue where interleaved calls to `read()` and `readline()` give wrong results.
   Patch by Nir Aides.
 
@@ -8683,7 +8683,7 @@ Library
 
 - Issue #5624: Fix the _winreg module name still used in several modules.
 
-- Issue #5628: Fix io.TextIOWrapper.read() with a unreadable buffer.
+- Issue #5628: Fix io.TextIOWrapper.read() with an unreadable buffer.
 
 - Issue #5619: Multiprocessing children disobey the debug flag and causes
   popups on windows buildbots. Patch applied to work around this issue.
@@ -9649,7 +9649,7 @@ Library
 - Issue #4307: The named tuple that ``inspect.getfullargspec()`` returns now
   uses ``kwonlydefaults`` instead of ``kwdefaults``.
 
-- Issue #4298: Fix a segfault when pickle.loads is passed a ill-formed input.
+- Issue #4298: Fix a segfault when pickle.loads is passed ill-formed input.
 
 - Issue #4283: Fix a left-over "iteritems" call in distutils.
 
@@ -11305,7 +11305,7 @@ Core and builtins
 -----------------
 
 - Bug #1441486: The literal representation of -(sys.maxint - 1)
-  again evaluates to a int object, not a long.
+  again evaluates to an int object, not a long.
 
 - Bug #1501934: The scope of global variables that are locally assigned
   using augmented assignment is now correctly determined.
@@ -15212,7 +15212,7 @@ Core and builtins
   interpreter executions, would fail.
 
 - "%c" % u"a" now returns a unicode string instead of raising a
-  TypeError. u"%c" % 0xffffffff now raises a OverflowError instead
+  TypeError. u"%c" % 0xffffffff now raises an OverflowError instead
   of a ValueError to be consistent with "%c" % 256. See SF patch #710127.
 
 Extension modules
@@ -23105,7 +23105,7 @@ no longer use the default root.
 
 - The interfaces for the bind*() and unbind() widget methods have been
 redesigned; the bind*() methods now return the name of the Tcl command
-created for the callback, and this can be passed as a optional
+created for the callback, and this can be passed as an optional
 argument to unbind() in order to delete the command (normally, such
 commands are automatically unbound when the widget is destroyed, but
 for some applications this isn't enough).

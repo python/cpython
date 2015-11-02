@@ -2358,7 +2358,7 @@ An *asynchronous iterable* is able to call asynchronous code in its
 ``__aiter__`` implementation, and an *asynchronous iterator* can call
 asynchronous code in its ``__anext__`` method.
 
-Asynchronous iterators can be used in a :keyword:`async for` statement.
+Asynchronous iterators can be used in an :keyword:`async for` statement.
 
 .. method:: object.__aiter__(self)
 
@@ -2393,7 +2393,7 @@ Asynchronous Context Managers
 An *asynchronous context manager* is a *context manager* that is able to
 suspend execution in its ``__aenter__`` and ``__aexit__`` methods.
 
-Asynchronous context managers can be used in a :keyword:`async with` statement.
+Asynchronous context managers can be used in an :keyword:`async with` statement.
 
 .. method:: object.__aenter__(self)
 
