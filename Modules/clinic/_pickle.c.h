@@ -77,7 +77,7 @@ PyDoc_STRVAR(_pickle_Pickler___init____doc__,
 "\n"
 "The *file* argument must have a write() method that accepts a single\n"
 "bytes argument. It can thus be a file object opened for binary\n"
-"writing, a io.BytesIO instance, or any other custom object that meets\n"
+"writing, an io.BytesIO instance, or any other custom object that meets\n"
 "this interface.\n"
 "\n"
 "If *fix_imports* is True and protocol is less than 3, pickle will try\n"
@@ -258,7 +258,7 @@ PyDoc_STRVAR(_pickle_Unpickler___init____doc__,
 "The argument *file* must have two methods, a read() method that takes\n"
 "an integer argument, and a readline() method that requires no\n"
 "arguments.  Both methods should return bytes.  Thus *file* can be a\n"
-"binary file object opened for reading, a io.BytesIO object, or any\n"
+"binary file object opened for reading, an io.BytesIO object, or any\n"
 "other custom object that meets this interface.\n"
 "\n"
 "Optional keyword arguments are *fix_imports*, *encoding* and *errors*,\n"
@@ -366,7 +366,7 @@ PyDoc_STRVAR(_pickle_dump__doc__,
 "\n"
 "The *file* argument must have a write() method that accepts a single\n"
 "bytes argument.  It can thus be a file object opened for binary\n"
-"writing, a io.BytesIO instance, or any other custom object that meets\n"
+"writing, an io.BytesIO instance, or any other custom object that meets\n"
 "this interface.\n"
 "\n"
 "If *fix_imports* is True and protocol is less than 3, pickle will try\n"
@@ -459,7 +459,7 @@ PyDoc_STRVAR(_pickle_load__doc__,
 "The argument *file* must have two methods, a read() method that takes\n"
 "an integer argument, and a readline() method that requires no\n"
 "arguments.  Both methods should return bytes.  Thus *file* can be a\n"
-"binary file object opened for reading, a io.BytesIO object, or any\n"
+"binary file object opened for reading, an io.BytesIO object, or any\n"
 "other custom object that meets this interface.\n"
 "\n"
 "Optional keyword arguments are *fix_imports*, *encoding* and *errors*,\n"
@@ -542,4 +542,4 @@ _pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=3aba79576e240c62 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1ba210152e2261d8 input=a9049054013a1b77]*/

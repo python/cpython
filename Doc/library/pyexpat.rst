@@ -763,7 +763,7 @@ The ``errors`` module has the following attributes:
 
 .. data:: XML_ERROR_UNDEFINED_ENTITY
 
-   A reference was made to a entity which was not defined.
+   A reference was made to an entity which was not defined.
 
 
 .. data:: XML_ERROR_UNKNOWN_ENCODING

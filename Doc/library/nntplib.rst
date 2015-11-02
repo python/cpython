@@ -341,7 +341,7 @@ tuples or objects that the method normally returns will be empty.
 
 .. method:: NNTP.over(message_spec, *, file=None)
 
-   Send a ``OVER`` command, or a ``XOVER`` command on legacy servers.
+   Send an ``OVER`` command, or an ``XOVER`` command on legacy servers.
    *message_spec* can be either a string representing a message id, or
    a ``(first, last)`` tuple of numbers indicating a range of articles in
    the current group, or a ``(first, None)`` tuple indicating a range of

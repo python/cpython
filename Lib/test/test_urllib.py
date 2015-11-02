@@ -523,7 +523,7 @@ class urlretrieve_FileTests(unittest.TestCase):
         result = urllib.request.urlretrieve("file:%s" % support.TESTFN)
         self.assertEqual(result[0], support.TESTFN)
         self.assertIsInstance(result[1], email.message.Message,
-                              "did not get a email.message.Message instance "
+                              "did not get an email.message.Message instance "
                               "as second returned value")
 
     def test_copy(self):

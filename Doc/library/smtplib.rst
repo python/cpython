@@ -22,7 +22,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
 
 .. class:: SMTP(host='', port=0, local_hostname=None[, timeout], source_address=None)
 
-   A :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
+   An :class:`SMTP` instance encapsulates an SMTP connection.  It has methods
    that support a full repertoire of SMTP and ESMTP operations. If the optional
    host and port parameters are given, the SMTP :meth:`connect` method is
    called with those parameters during initialization.  If specified,
@@ -65,7 +65,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
                     certfile=None [, timeout], context=None, \
                     source_address=None)
 
-   A :class:`SMTP_SSL` instance behaves exactly the same as instances of
+   An :class:`SMTP_SSL` instance behaves exactly the same as instances of
    :class:`SMTP`. :class:`SMTP_SSL` should be used for situations where SSL is
    required from the beginning of the connection and using :meth:`starttls` is
    not appropriate. If *host* is not specified, the local host is used. If

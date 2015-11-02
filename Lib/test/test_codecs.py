@@ -97,7 +97,7 @@ class ReadTest(MixInCheckStateHandling):
         self.assertEqual(r.read(), "")
         self.assertEqual(r.bytebuffer, b"")
 
-        # do the check again, this time using a incremental decoder
+        # do the check again, this time using an incremental decoder
         d = codecs.getincrementaldecoder(self.encoding)()
         result = ""
         for (c, partialresult) in zip(input.encode(self.encoding), partialresults):

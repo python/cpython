@@ -40,7 +40,7 @@ protocol <bufferobjects>`.  This protocol has two sides:
 
 Simple objects such as :class:`bytes` and :class:`bytearray` expose their
 underlying buffer in byte-oriented form.  Other forms are possible; for example,
-the elements exposed by a :class:`array.array` can be multi-byte values.
+the elements exposed by an :class:`array.array` can be multi-byte values.
 
 An example consumer of the buffer interface is the :meth:`~io.BufferedIOBase.write`
 method of file objects: any object that can export a series of bytes through
