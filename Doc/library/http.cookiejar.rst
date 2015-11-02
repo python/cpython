@@ -176,7 +176,7 @@ contained :class:`Cookie` objects.
 
    The *response* object (usually the result of a call to
    :meth:`urllib.request.urlopen`, or similar) should support an :meth:`info`
-   method, which returns a :class:`email.message.Message` instance.
+   method, which returns an :class:`email.message.Message` instance.
 
    The *request* object (usually a :class:`urllib.request.Request` instance)
    must support the methods :meth:`get_full_url`, :meth:`get_host`,

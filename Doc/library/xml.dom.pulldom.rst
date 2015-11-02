@@ -47,7 +47,7 @@ Example::
 * :data:`PROCESSING_INSTRUCTION`
 * :data:`IGNORABLE_WHITESPACE`
 
-``node`` is a object of type :class:`xml.dom.minidom.Document`,
+``node`` is an object of type :class:`xml.dom.minidom.Document`,
 :class:`xml.dom.minidom.Element` or :class:`xml.dom.minidom.Text`.
 
 Since the document is treated as a "flat" stream of events, the document "tree"

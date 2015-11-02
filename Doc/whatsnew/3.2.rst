@@ -788,7 +788,7 @@ functools
   :issue:`8814`.)
 
 * To help write classes with rich comparison methods, a new decorator
-  :func:`functools.total_ordering` will use a existing equality and inequality
+  :func:`functools.total_ordering` will use existing equality and inequality
   methods to fill in the remaining methods.
 
   For example, supplying *__eq__* and *__lt__* will enable
@@ -1399,7 +1399,7 @@ Aides and Brian Curtin in :issue:`9962`, :issue:`1675951`, :issue:`7471` and
 
 Also, the :class:`zipfile.ZipExtFile` class was reworked internally to represent
 files stored inside an archive.  The new implementation is significantly faster
-and can be wrapped in a :class:`io.BufferedReader` object for more speedups.  It
+and can be wrapped in an :class:`io.BufferedReader` object for more speedups.  It
 also solves an issue where interleaved calls to *read* and *readline* gave the
 wrong results.
 

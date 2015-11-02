@@ -110,7 +110,7 @@ class samplecmdclass(cmd.Cmd):
     5  12  19
     6  13
 
-    This is a interactive test, put some commands in the cmdqueue attribute
+    This is an interactive test, put some commands in the cmdqueue attribute
     and let it execute
     This test includes the preloop(), postloop(), default(), emptyline(),
     parseline(), do_help() functions
