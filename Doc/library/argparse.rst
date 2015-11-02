@@ -530,7 +530,7 @@ allow_abbrev
 ^^^^^^^^^^^^
 
 Normally, when you pass an argument list to the
-:meth:`~ArgumentParser.parse_args` method of a :class:`ArgumentParser`,
+:meth:`~ArgumentParser.parse_args` method of an :class:`ArgumentParser`,
 it :ref:`recognizes abbreviations <prefix-matching>` of long options.
 
 This feature can be disabled by setting ``allow_abbrev`` to ``False``::

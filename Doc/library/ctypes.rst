@@ -39,7 +39,7 @@ loads libraries which export functions using the standard ``cdecl`` calling
 convention, while *windll* libraries call functions using the ``stdcall``
 calling convention. *oledll* also uses the ``stdcall`` calling convention, and
 assumes the functions return a Windows :c:type:`HRESULT` error code. The error
-code is used to automatically raise a :class:`OSError` exception when the
+code is used to automatically raise an :class:`OSError` exception when the
 function call fails.
 
 .. versionchanged:: 3.3

@@ -30,7 +30,7 @@
 /*
  * Helper code to synchronize access to the hash object when the GIL is
  * released around a CPU consuming hashlib operation. All code paths that
- * access a mutable part of obj must be enclosed in a ENTER_HASHLIB /
+ * access a mutable part of obj must be enclosed in an ENTER_HASHLIB /
  * LEAVE_HASHLIB block or explicitly acquire and release the lock inside
  * a PY_BEGIN / END_ALLOW_THREADS block if they wish to release the GIL for
  * an operation.

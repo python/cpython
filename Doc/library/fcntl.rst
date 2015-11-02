@@ -16,13 +16,13 @@ interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.
 
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
-``sys.stdin.fileno()``, or a :class:`io.IOBase` object, such as ``sys.stdin``
+``sys.stdin.fileno()``, or an :class:`io.IOBase` object, such as ``sys.stdin``
 itself, which provides a :meth:`~io.IOBase.fileno` that returns a genuine file
 descriptor.
 
 .. versionchanged:: 3.3
-   Operations in this module used to raise a :exc:`IOError` where they now
-   raise a :exc:`OSError`.
+   Operations in this module used to raise an :exc:`IOError` where they now
+   raise an :exc:`OSError`.
 
 
 The module defines the following functions:

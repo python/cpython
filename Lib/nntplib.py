@@ -201,7 +201,7 @@ def _parse_overview_fmt(lines):
     return fmt
 
 def _parse_overview(lines, fmt, data_process_func=None):
-    """Parse the response to a OVER or XOVER command according to the
+    """Parse the response to an OVER or XOVER command according to the
     overview format `fmt`."""
     n_defaults = len(_DEFAULT_OVERVIEW_FMT)
     overview = []

@@ -1131,7 +1131,7 @@ you wanted a :class:`NonCallableMock` to be used:
       ...
     TypeError: 'NonCallableMock' object is not callable
 
-Another use case might be to replace an object with a :class:`io.StringIO` instance:
+Another use case might be to replace an object with an :class:`io.StringIO` instance:
 
     >>> from io import StringIO
     >>> def foo():
