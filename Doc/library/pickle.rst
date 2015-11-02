@@ -192,7 +192,7 @@ process more convenient:
    number is specified, :data:`HIGHEST_PROTOCOL` is selected.
 
    The *file* argument must have a write() method that accepts a single bytes
-   argument.  It can thus be an on-disk file opened for binary writing, a
+   argument.  It can thus be an on-disk file opened for binary writing, an
    :class:`io.BytesIO` instance, or any other custom object that meets this
    interface.
 
@@ -288,7 +288,7 @@ The :mod:`pickle` module exports two classes, :class:`Pickler` and
    number is specified, :data:`HIGHEST_PROTOCOL` is selected.
 
    The *file* argument must have a write() method that accepts a single bytes
-   argument.  It can thus be an on-disk file opened for binary writing, a
+   argument.  It can thus be an on-disk file opened for binary writing, an
    :class:`io.BytesIO` instance, or any other custom object that meets this
    interface.
 

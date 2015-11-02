@@ -2996,7 +2996,7 @@ _ssl__SSLContext_load_verify_locations_impl(PySSLContext *self,
             cadata_ascii = PyUnicode_AsASCIIString(cadata);
             if (cadata_ascii == NULL) {
                 PyErr_SetString(PyExc_TypeError,
-                                "cadata should be a ASCII string or a "
+                                "cadata should be an ASCII string or a "
                                 "bytes-like object");
                 goto error;
             }

@@ -1701,7 +1701,7 @@ PyUnicode_Resize(PyObject **p_unicode, Py_ssize_t length)
     return unicode_resize(p_unicode, length);
 }
 
-/* Copy a ASCII or latin1 char* string into a Python Unicode string.
+/* Copy an ASCII or latin1 char* string into a Python Unicode string.
 
    WARNING: The function doesn't copy the terminating null character and
    doesn't check the maximum character (may write a latin1 character in an
@@ -7191,7 +7191,7 @@ error:
 }
 
 /*
- * Encode a Unicode string to a Windows code page into a byte string using a
+ * Encode a Unicode string to a Windows code page into a byte string using an
  * error handler.
  *
  * Returns consumed characters if succeed, or raise an OSError and returns

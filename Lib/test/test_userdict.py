@@ -171,7 +171,7 @@ class UserDictTest(mapping_tests.TestHashMappingProtocol):
         # (D) subclass defines __missing__ method returning a value
         # (E) subclass defines __missing__ method raising RuntimeError
         # (F) subclass sets __missing__ instance variable (no effect)
-        # (G) subclass doesn't define __missing__ at a all
+        # (G) subclass doesn't define __missing__ at all
         class D(collections.UserDict):
             def __missing__(self, key):
                 return 42
