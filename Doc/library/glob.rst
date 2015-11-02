@@ -38,7 +38,7 @@ For example, ``'[?]'`` matches the character ``'?'``.
    symlinks are included in the results (as in the shell).
 
    If *recursive* is true, the pattern "``**``" will match any files and zero or
-   more directories and subdirectories.  If the pattern is followed by a
+   more directories and subdirectories.  If the pattern is followed by an
    ``os.sep``, only directories and subdirectories match.
 
    .. note::
