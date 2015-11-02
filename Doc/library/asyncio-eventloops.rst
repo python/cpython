@@ -57,9 +57,9 @@ asyncio currently provides two implementations of event loops:
 
 Example to use a :class:`ProactorEventLoop` on Windows::
 
-    import asyncio, os
+    import asyncio, sys
 
-    if os.name == 'nt':
+    if sys.platform == 'win32':
         loop = asyncio.ProactorEventLoop()
         asyncio.set_event_loop(loop)
 
@@ -198,4 +198,3 @@ Access to the global loop policy
 
    Set the current event loop policy. If *policy* is ``None``, the default
    policy is restored.
-
