@@ -1144,7 +1144,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, char *prompt)
         return NULL;
     }
 
-    /* We got an EOF, return a empty string. */
+    /* We got an EOF, return an empty string. */
     if (p == NULL) {
         p = PyMem_Malloc(1);
         if (p != NULL)

@@ -148,7 +148,7 @@ fmax2018 fma  9.999999 -9.999999  0E+999999  -> -100.000 Inexact Rounded
 fmax2019 fma -9.999999  9.999999  0E+999999  -> -100.000 Inexact Rounded
 fmax2020 fma -9.999999 -9.999999  0E+999999  ->  100.000 Inexact Rounded
 
--- 1999.12.21: next one is a edge case if intermediate longs are used
+-- 1999.12.21: next one is an edge case if intermediate longs are used
 precision: 15
 fmax2059 fma 999999999999 9765625  0E+999999  -> 9.76562499999023E+18 Inexact Rounded
 precision: 30

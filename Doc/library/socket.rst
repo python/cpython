@@ -757,7 +757,7 @@ correspond to Unix system calls applicable to sockets.
    Set blocking or non-blocking mode of the socket: if *flag* is 0, the socket is
    set to non-blocking, else to blocking mode.  Initially all sockets are in
    blocking mode.  In non-blocking mode, if a :meth:`recv` call doesn't find any
-   data, or if a :meth:`send` call can't immediately dispose of the data, a
+   data, or if a :meth:`send` call can't immediately dispose of the data, an
    :exc:`error` exception is raised; in blocking mode, the calls block until they
    can proceed. ``s.setblocking(0)`` is equivalent to ``s.settimeout(0.0)``;
    ``s.setblocking(1)`` is equivalent to ``s.settimeout(None)``.

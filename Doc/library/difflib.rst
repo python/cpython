@@ -276,7 +276,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
    generating the delta lines) in unified diff format.
 
    Unified diffs are a compact way of showing just the lines that have changed plus
-   a few lines of context.  The changes are shown in a inline style (instead of
+   a few lines of context.  The changes are shown in an inline style (instead of
    separate before/after blocks).  The number of context lines is set by *n* which
    defaults to three.
 

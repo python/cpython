@@ -388,7 +388,7 @@ Core and builtins
 -----------------
 
 - Bug #1441486: The literal representation of -(sys.maxint - 1)
-  again evaluates to a int object, not a long.
+  again evaluates to an int object, not a long.
 
 - Bug #1501934: The scope of global variables that are locally assigned
   using augmented assignment is now correctly determined.
@@ -4295,7 +4295,7 @@ Core and builtins
   interpreter executions, would fail.
 
 - "%c" % u"a" now returns a unicode string instead of raising a
-  TypeError. u"%c" % 0xffffffff now raises a OverflowError instead
+  TypeError. u"%c" % 0xffffffff now raises an OverflowError instead
   of a ValueError to be consistent with "%c" % 256. See SF patch #710127.
 
 Extension modules
@@ -12193,7 +12193,7 @@ no longer use the default root.
 
 - The interfaces for the bind*() and unbind() widget methods have been
 redesigned; the bind*() methods now return the name of the Tcl command 
-created for the callback, and this can be passed as a optional
+created for the callback, and this can be passed as an optional
 argument to unbind() in order to delete the command (normally, such
 commands are automatically unbound when the widget is destroyed, but
 for some applications this isn't enough).

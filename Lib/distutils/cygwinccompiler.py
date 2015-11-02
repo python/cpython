@@ -347,7 +347,7 @@ class Mingw32CCompiler (CygwinCCompiler):
 # class Mingw32CCompiler
 
 # Because these compilers aren't configured in Python's pyconfig.h file by
-# default, we should at least warn the user if he is using a unmodified
+# default, we should at least warn the user if he is using an unmodified
 # version.
 
 CONFIG_H_OK = "ok"

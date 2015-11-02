@@ -146,14 +146,14 @@ PyAPI_FUNC(PyObject *) PyCodec_Decoder(
        const char *encoding
        );
 
-/* Get a IncrementalEncoder object for the given encoding. */
+/* Get an IncrementalEncoder object for the given encoding. */
 
 PyAPI_FUNC(PyObject *) PyCodec_IncrementalEncoder(
        const char *encoding,
        const char *errors
        );
 
-/* Get a IncrementalDecoder object function for the given encoding. */
+/* Get an IncrementalDecoder object function for the given encoding. */
 
 PyAPI_FUNC(PyObject *) PyCodec_IncrementalDecoder(
        const char *encoding,

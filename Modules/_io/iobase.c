@@ -35,7 +35,7 @@ PyDoc_STRVAR(iobase_doc,
     "Even though IOBase does not declare read, readinto, or write because\n"
     "their signatures will vary, implementations and clients should\n"
     "consider those methods part of the interface. Also, implementations\n"
-    "may raise a IOError when operations they do not support are called.\n"
+    "may raise an IOError when operations they do not support are called.\n"
     "\n"
     "The basic type used for binary data read from or written to a file is\n"
     "the bytes type. Method arguments may also be bytearray or memoryview\n"

@@ -283,9 +283,9 @@ followed by ``lines`` for the text version or ``binary`` for the binary version.
 
 .. method:: FTP.transfercmd(cmd[, rest])
 
-   Initiate a transfer over the data connection.  If the transfer is active, send a
+   Initiate a transfer over the data connection.  If the transfer is active, send an
    ``EPRT`` or  ``PORT`` command and the transfer command specified by *cmd*, and
-   accept the connection.  If the server is passive, send a ``EPSV`` or ``PASV``
+   accept the connection.  If the server is passive, send an ``EPSV`` or ``PASV``
    command, connect to it, and start the transfer command.  Either way, return the
    socket for the connection.
 

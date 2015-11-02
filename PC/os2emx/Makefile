@@ -102,7 +102,7 @@ ifeq ($(FIXED_PYHOME),yes)
   CFLAGS+=	-DPREFIX=$(DQUOTE)$(LIB_DIR)$(DQUOTE)
 endif
 
-# We're using the OMF format since EMX's ld has a obscure bug
+# We're using the OMF format since EMX's ld has an obscure bug
 # because of which it sometimes fails to build relocations
 # in .data segment that point to another .data locations
 # (except for the final linking if the .EXEs)

@@ -1324,7 +1324,7 @@ Library
 - Issue #22530: Allow the ``group()`` method of regular expression match objects
   to take a ``long`` as an index.
 
-- Issue #22517: When a io.BufferedRWPair object is deallocated, clear its
+- Issue #22517: When an io.BufferedRWPair object is deallocated, clear its
   weakrefs.
 
 - Issue #10510: distutils register and upload methods now use HTML standards
@@ -2989,7 +2989,7 @@ Core and Builtins
   created with PyFile_FromString().
 
 - Issue #14474: Save and restore exception state in thread.start_new_thread()
-  while writing error message if the thread leaves a unhandled exception.
+  while writing error message if the thread leaves an unhandled exception.
 
 - Issue #13019: Fix potential reference leaks in bytearray.extend().  Patch
   by Suman Saha.
@@ -3965,7 +3965,7 @@ Core and Builtins
 - Issues #12610 and #12609: Verify that user generated AST has correct string
   and identifier types before compiling.
 
-- Issue #11627: Fix segfault when __new__ on a exception returns a
+- Issue #11627: Fix segfault when __new__ on an exception returns a
   non-exception class.
 
 - Issue #12149: Update the method cache after a type's dictionnary gets
@@ -4281,7 +4281,7 @@ Library
 
 - Issue #12502: asyncore: fix polling loop with AF_UNIX sockets.
 
-- Issue #4376: ctypes now supports nested structures in a endian different than
+- Issue #4376: ctypes now supports nested structures in an endian different than
   the parent structure. Patch by Vlad Riscutia.
 
 - Issue #12493: subprocess: Popen.communicate() now also handles EINTR errors
@@ -6697,7 +6697,7 @@ Library
 
 - Issue #7610: Reworked implementation of the internal ``zipfile.ZipExtFile``
   class used to represent files stored inside an archive.  The new
-  implementation is significantly faster and can be wrapped in a
+  implementation is significantly faster and can be wrapped in an
   ``io.BufferedReader`` object for more speedups.  It also solves an issue
   where interleaved calls to ``read()`` and ``readline()`` give wrong results.
   Patch by Nir Aides.
@@ -7952,7 +7952,7 @@ Library
   mulitiprocessing.manager so that users can install custom handlers/etc.
 
 - Issue #3551: Patch multiprocessing to raise a proper exception if the size of
-  the object when writefile is called causes a ERROR_NO_SYSTEM_RESOURCES.  Added
+  the object when writefile is called causes an ERROR_NO_SYSTEM_RESOURCES.  Added
   docs to note the limitation.
 
 - unittest.assertNotEqual() now uses the inequality operator (!=) instead of the

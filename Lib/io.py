@@ -19,7 +19,7 @@ streams. BytesIO is a simple stream of in-memory bytes.
 Another IOBase subclass, TextIOBase, deals with the encoding and decoding
 of streams into text. TextIOWrapper, which extends it, is a buffered text
 interface to a buffered raw stream (`BufferedIOBase`). Finally, StringIO
-is a in-memory stream for text.
+is an in-memory stream for text.
 
 Argument names are not part of the specification, and only the arguments
 of open() are intended to be used as keyword arguments.

@@ -148,7 +148,7 @@ msvcrt_get_osfhandle(PyObject *self, PyObject *args)
     if (handle == -1)
         return PyErr_SetFromErrno(PyExc_IOError);
 
-    /* technically 'handle' is not a pointer, but a integer as
+    /* technically 'handle' is not a pointer, but an integer as
        large as a pointer, Python's *VoidPtr interface is the
        most appropriate here */
     return PyLong_FromVoidPtr((void*)handle);

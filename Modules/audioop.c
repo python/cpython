@@ -121,7 +121,7 @@ static PyInt16 _st_ulaw2linear16[256] = {
 
 /*
  * linear2ulaw() accepts a 14-bit signed integer and encodes it as u-law data
- * stored in a unsigned char.  This function should only be called with
+ * stored in an unsigned char.  This function should only be called with
  * the data shifted such that it only contains information in the lower
  * 14-bits.
  *

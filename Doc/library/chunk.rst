@@ -48,7 +48,7 @@ Usually an IFF-type file consists of one or more chunks.  The proposed usage of
 the :class:`Chunk` class defined here is to instantiate an instance at the start
 of each chunk and read from the instance until it reaches the end, after which a
 new instance can be instantiated. At the end of the file, creating a new
-instance will fail with a :exc:`EOFError` exception.
+instance will fail with an :exc:`EOFError` exception.
 
 
 .. class:: Chunk(file[, align, bigendian, inclheader])

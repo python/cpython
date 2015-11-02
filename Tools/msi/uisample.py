@@ -998,7 +998,7 @@ _Validation = [
 (u'CustomAction', u'Source', u'Y', None, None, None, None, u'CustomSource', None, u'The table reference of the source of the code.'),
 (u'CustomAction', u'Target', u'Y', None, None, None, None, u'Formatted', None, u'Execution parameter, depends on the type of custom action'),
 (u'DrLocator', u'Signature_', u'N', None, None, None, None, u'Identifier', None, u'The Signature_ represents a unique file signature and is also the foreign key in the Signature table.'),
-(u'DrLocator', u'Path', u'Y', None, None, None, None, u'AnyPath', None, u'The path on the user system. This is a either a subpath below the value of the Parent or a full path. The path may contain properties enclosed within [ ] that will be expanded.'),
+(u'DrLocator', u'Path', u'Y', None, None, None, None, u'AnyPath', None, u'The path on the user system. This is either a subpath below the value of the Parent or a full path. The path may contain properties enclosed within [ ] that will be expanded.'),
 (u'DrLocator', u'Depth', u'Y', 0, 32767, None, None, None, None, u'The depth below the path to which the Signature_ is recursively searched. If absent, the depth is assumed to be 0.'),
 (u'DrLocator', u'Parent', u'Y', None, None, None, None, u'Identifier', None, u'The parent file signature. It is also a foreign key in the Signature table. If null and the Path column does not expand to a full path, then all the fixed drives of the user system are searched using the Path.'),
 (u'DuplicateFile', u'File_', u'N', None, None, u'File', 1, u'Identifier', None, u'Foreign key referencing the source file to be duplicated.'),

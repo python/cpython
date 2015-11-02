@@ -90,7 +90,7 @@ Operator Module Functions
 The key-function patterns shown above are very common, so Python provides
 convenience functions to make accessor functions easier and faster. The operator
 module has :func:`operator.itemgetter`, :func:`operator.attrgetter`, and
-starting in Python 2.5 a :func:`operator.methodcaller` function.
+starting in Python 2.5 an :func:`operator.methodcaller` function.
 
 Using those functions, the above examples become simpler and faster:
 

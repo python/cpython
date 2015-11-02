@@ -74,7 +74,7 @@ PyDoc_STRVAR(module_doc,
 "Another IOBase subclass, TextIOBase, deals with the encoding and decoding\n"
 "of streams into text. TextIOWrapper, which extends it, is a buffered text\n"
 "interface to a buffered raw stream (`BufferedIOBase`). Finally, StringIO\n"
-"is a in-memory stream for text.\n"
+"is an in-memory stream for text.\n"
 "\n"
 "Argument names are not part of the specification, and only the arguments\n"
 "of open() are intended to be used as keyword arguments.\n"

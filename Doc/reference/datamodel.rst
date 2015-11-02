@@ -1418,7 +1418,7 @@ Basic customization
    will not be usable in hashed collections.  If a class defines mutable objects
    and implements a :meth:`__cmp__` or :meth:`__eq__` method, it should not
    implement :meth:`__hash__`, since hashable collection implementations require
-   that a object's hash value is immutable (if the object's hash value changes,
+   that an object's hash value is immutable (if the object's hash value changes,
    it will be in the wrong hash bucket).
 
    User-defined classes have :meth:`__cmp__` and :meth:`__hash__` methods

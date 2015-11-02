@@ -881,8 +881,8 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
             if (self->encoding == NULL) {
               catch_ImportError:
                 /*
-                 Importing locale can raise a ImportError because of
-                 _functools, and locale.getpreferredencoding can raise a
+                 Importing locale can raise an ImportError because of
+                 _functools, and locale.getpreferredencoding can raise an
                  ImportError if _locale is not available.  These will happen
                  during module building.
                 */

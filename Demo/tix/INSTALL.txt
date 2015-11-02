@@ -4,7 +4,7 @@ Installing Tix.py
 ----------------
 
 0) To use Tix.py, you need Tcl/Tk (V8.3.3), Tix (V8.1.1) and Python (V2.1.1).
-   Tix.py has been written and tested on a Intel Pentium running RH Linux 5.2
+   Tix.py has been written and tested on an Intel Pentium running RH Linux 5.2
    and Mandrake Linux 7.0 and Windows with the above mentioned packages.
 
    Older versions, e.g. Tix 4.1 and Tk 8.0, might also work.

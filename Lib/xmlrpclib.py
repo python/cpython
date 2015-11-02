@@ -970,7 +970,7 @@ class MultiCallIterator:
                   "unexpected type in multicall result"
 
 class MultiCall:
-    """server -> a object used to boxcar method calls
+    """server -> an object used to boxcar method calls
 
     server should be a ServerProxy object.
 
@@ -1334,7 +1334,7 @@ class Transport:
     ##
     # Create parser.
     #
-    # @return A 2-tuple containing a parser and a unmarshaller.
+    # @return A 2-tuple containing a parser and an unmarshaller.
 
     def getparser(self):
         # get parser and unmarshaller

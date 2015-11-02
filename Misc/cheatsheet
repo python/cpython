@@ -953,7 +953,7 @@ dir([object])       localsymbol table. With a module, class or class
                     instanceobject as arg, returns list of names in its attr.
                     dict.
 divmod(a,b)         Returns tuple of (a/b, a%b)
-enumerate(seq)      Return a iterator giving:  (0, seq[0]), (1, seq[1]), ...
+enumerate(seq)      Return an iterator giving:  (0, seq[0]), (1, seq[1]), ...
 eval(s[, globals[,  Eval string s in (optional) globals, locals contexts.s must
 locals]])           have no NUL's or newlines. s can also be acode object.
                     Example: x = 1; incr_x = eval('x + 1')

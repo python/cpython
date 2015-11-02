@@ -59,7 +59,7 @@ class ReplaceDialog(SearchDialogBase):
     def default_command(self, event=None):
         if self.do_find(self.ok):
             if self.do_replace():   # Only find next match if replace succeeded.
-                                    # A bad re can cause a it to fail.
+                                    # A bad re can cause it to fail.
                 self.do_find(0)
 
     def _replace_expand(self, m, repl):

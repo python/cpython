@@ -20,7 +20,7 @@ available.  If text-mode browsers are used, the calling process will block until
 the user exits the browser.
 
 If the environment variable :envvar:`BROWSER` exists, it is interpreted to
-override the platform default list of browsers, as a :data:`os.pathsep`-separated
+override the platform default list of browsers, as an :data:`os.pathsep`-separated
 list of browsers to try in order.  When the value of a list part contains the
 string ``%s``, then it is  interpreted as a literal browser command line to be
 used with the argument URL substituted for ``%s``; if the part does not contain

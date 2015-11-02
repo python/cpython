@@ -221,7 +221,7 @@ I/O Base Classes
    Even though :class:`IOBase` does not declare :meth:`read`, :meth:`readinto`,
    or :meth:`write` because their signatures will vary, implementations and
    clients should consider those methods part of the interface.  Also,
-   implementations may raise a :exc:`IOError` when operations they do not
+   implementations may raise an :exc:`IOError` when operations they do not
    support are called.
 
    The basic type used for binary data read from or written to a file is

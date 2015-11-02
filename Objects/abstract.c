@@ -1641,7 +1641,7 @@ PyNumber_Int(PyObject *o)
         }
         return res;
     }
-    if (PyInt_Check(o)) { /* A int subclass without nb_int */
+    if (PyInt_Check(o)) { /* An int subclass without nb_int */
         PyIntObject *io = (PyIntObject*)o;
         return PyInt_FromLong(io->ob_ival);
     }
