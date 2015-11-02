@@ -255,12 +255,12 @@ class TestDiscovery(unittest.TestCase):
         self.addCleanup(sys.path.remove, abspath('/foo'))
 
         # Test data: we expect the following:
-        # a listdir to find our package, and a isfile and isdir check on it.
+        # a listdir to find our package, and isfile and isdir checks on it.
         # a module-from-name call to turn that into a module
         # followed by load_tests.
         # then our load_tests will call discover() which is messy
         # but that finally chains into find_tests again for the child dir -
-        # which is why we don't have a infinite loop.
+        # which is why we don't have an infinite loop.
         # We expect to see:
         # the module load tests for both package and plain module called,
         # and the plain module result nested by the package module load_tests

@@ -849,7 +849,7 @@ How do I modify a string in place?
 You can't, because strings are immutable.  In most situations, you should
 simply construct a new string from the various parts you want to assemble
 it from.  However, if you need an object with the ability to modify in-place
-unicode data, try using a :class:`io.StringIO` object or the :mod:`array`
+unicode data, try using an :class:`io.StringIO` object or the :mod:`array`
 module::
 
    >>> import io

@@ -49,7 +49,7 @@ mulx018 multiply  9.999999999 -9.999999999 -> -100.000 Inexact Rounded
 mulx019 multiply -9.999999999  9.999999999 -> -100.000 Inexact Rounded
 mulx020 multiply -9.999999999 -9.999999999 ->  100.000 Inexact Rounded
 
--- 1999.12.21: next one is a edge case if intermediate longs are used
+-- 1999.12.21: next one is an edge case if intermediate longs are used
 precision: 15
 mulx059 multiply 999999999999 9765625 -> 9.76562499999023E+18 Inexact Rounded
 precision: 30

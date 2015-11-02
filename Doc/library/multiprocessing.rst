@@ -1046,7 +1046,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
       readable.
 
       .. versionchanged:: 3.3
-         This function used to raise a :exc:`IOError`, which is now an
+         This function used to raise :exc:`IOError`, which is now an
          alias of :exc:`OSError`.
 
 

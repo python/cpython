@@ -257,7 +257,7 @@ atexit_free(PyObject *m)
 PyDoc_STRVAR(atexit_unregister__doc__,
 "unregister(func) -> None\n\
 \n\
-Unregister a exit function which was previously registered using\n\
+Unregister an exit function which was previously registered using\n\
 atexit.register\n\
 \n\
     func - function to be unregistered");
