@@ -30,7 +30,7 @@ class CallbackTracbackTestCase(unittest.TestCase):
     # value is printed correctly.
     #
     # Changed in 0.9.3: No longer is '(in callback)' prepended to the
-    # error message - instead a additional frame for the C code is
+    # error message - instead an additional frame for the C code is
     # created, then a full traceback printed.  When SystemExit is
     # raised in a callback function, the interpreter exits.
 
