@@ -3273,7 +3273,7 @@ _servername_callback(SSL *s, int *al, void *args)
     ssl = SSL_get_app_data(s);
     assert(PySSLSocket_Check(ssl));
 
-    /* The servername callback expects a argument that represents the current
+    /* The servername callback expects an argument that represents the current
      * SSL connection and that has a .context attribute that can be changed to
      * identify the requested hostname. Since the official API is the Python
      * level API we want to pass the callback a Python level object rather than
