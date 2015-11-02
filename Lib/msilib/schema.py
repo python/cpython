@@ -733,7 +733,7 @@ _Validation_records = [
 ('CustomAction','Source','Y',None, None, None, None, 'CustomSource',None, 'The table reference of the source of the code.',),
 ('CustomAction','Target','Y',None, None, None, None, 'Formatted',None, 'Excecution parameter, depends on the type of custom action',),
 ('DrLocator','Signature_','N',None, None, None, None, 'Identifier',None, 'The Signature_ represents a unique file signature and is also the foreign key in the Signature table.',),
-('DrLocator','Path','Y',None, None, None, None, 'AnyPath',None, 'The path on the user system. This is a either a subpath below the value of the Parent or a full path. The path may contain properties enclosed within [ ] that will be expanded.',),
+('DrLocator','Path','Y',None, None, None, None, 'AnyPath',None, 'The path on the user system. This is either a subpath below the value of the Parent or a full path. The path may contain properties enclosed within [ ] that will be expanded.',),
 ('DrLocator','Depth','Y',0,32767,None, None, None, None, 'The depth below the path to which the Signature_ is recursively searched. If absent, the depth is assumed to be 0.',),
 ('DrLocator','Parent','Y',None, None, None, None, 'Identifier',None, 'The parent file signature. It is also a foreign key in the Signature table. If null and the Path column does not expand to a full path, then all the fixed drives of the user system are searched using the Path.',),
 ('DuplicateFile','File_','N',None, None, 'File',1,'Identifier',None, 'Foreign key referencing the source file to be duplicated.',),

@@ -2155,7 +2155,7 @@ Major performance enhancements have been added:
   * encode an ASCII string to UTF-8 doesn't need to encode characters anymore,
     the UTF-8 representation is shared with the ASCII representation
   * the UTF-8 encoder has been optimized
-  * repeating a single ASCII letter and getting a substring of a ASCII strings
+  * repeating a single ASCII letter and getting a substring of an ASCII string
     is 4 times faster
 
 * UTF-8 is now 2x to 4x faster.  UTF-16 encoding is now up to 10x faster.

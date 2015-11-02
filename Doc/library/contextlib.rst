@@ -142,7 +142,7 @@ Functions and classes provided:
    is hardwired to stdout.
 
    For example, the output of :func:`help` normally is sent to *sys.stdout*.
-   You can capture that output in a string by redirecting the output to a
+   You can capture that output in a string by redirecting the output to an
    :class:`io.StringIO` object::
 
         f = io.StringIO()
