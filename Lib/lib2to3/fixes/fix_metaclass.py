@@ -114,7 +114,7 @@ def find_metas(cls_node):
                 left_node = expr_node.children[0]
                 if isinstance(left_node, Leaf) and \
                         left_node.value == '__metaclass__':
-                    # We found a assignment to __metaclass__.
+                    # We found an assignment to __metaclass__.
                     fixup_simple_stmt(node, i, simple_node)
                     remove_trailing_newline(simple_node)
                     yield (node, i, simple_node)

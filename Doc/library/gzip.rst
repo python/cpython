@@ -64,7 +64,7 @@ The module defines the following items:
    method.  At least one of *fileobj* and *filename* must be given a non-trivial
    value.
 
-   The new class instance is based on *fileobj*, which can be a regular file, a
+   The new class instance is based on *fileobj*, which can be a regular file, an
    :class:`io.BytesIO` object, or any other object which simulates a file.  It
    defaults to ``None``, in which case *filename* is opened to provide a file
    object.
