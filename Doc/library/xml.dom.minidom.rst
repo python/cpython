@@ -54,7 +54,7 @@ instead:
 
 .. function:: parseString(string, parser=None)
 
-   Return a :class:`Document` that represents the *string*. This method creates a
+   Return a :class:`Document` that represents the *string*. This method creates an
    :class:`io.StringIO` object for the string and passes that on to :func:`parse`.
 
 Both functions return a :class:`Document` object representing the content of the

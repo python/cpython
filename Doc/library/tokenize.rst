@@ -41,7 +41,7 @@ The primary entry point is a :term:`generator`:
    returned as a :term:`named tuple` with the field names:
    ``type string start end line``.
 
-   The returned :term:`named tuple` has a additional property named
+   The returned :term:`named tuple` has an additional property named
    ``exact_type`` that contains the exact operator type for
    :data:`token.OP` tokens.  For all other token types ``exact_type``
    equals the named tuple ``type`` field.
