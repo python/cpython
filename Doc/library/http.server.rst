@@ -176,7 +176,7 @@ of which this module provides three different variants:
 
    .. method:: handle_expect_100()
 
-      When a HTTP/1.1 compliant server receives a ``Expect: 100-continue``
+      When a HTTP/1.1 compliant server receives an ``Expect: 100-continue``
       request header it responds back with a ``100 Continue`` followed by ``200
       OK`` headers.
       This method can be overridden to raise an error if the server does not
@@ -210,7 +210,7 @@ of which this module provides three different variants:
       are picked up from the :meth:`version_string` and
       :meth:`date_time_string` methods, respectively. If the server does not
       intend to send any other headers using the :meth:`send_header` method,
-      then :meth:`send_response` should be followed by a :meth:`end_headers`
+      then :meth:`send_response` should be followed by an :meth:`end_headers`
       call.
 
       .. versionchanged:: 3.3

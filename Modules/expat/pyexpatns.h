@@ -21,7 +21,7 @@
  *
  *
  * The Solution:
- * Prefix all a exported symbols with "PyExpat_". This is similar to
+ * Prefix all exported symbols with "PyExpat_". This is similar to
  * what Mozilla does for some common libs:
  * http://lxr.mozilla.org/seamonkey/source/modules/libimg/png/mozpngconf.h#115
  *

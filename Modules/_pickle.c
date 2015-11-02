@@ -4032,7 +4032,7 @@ version of Python needed to read the pickle produced.
 
 The *file* argument must have a write() method that accepts a single
 bytes argument. It can thus be a file object opened for binary
-writing, a io.BytesIO instance, or any other custom object that meets
+writing, an io.BytesIO instance, or any other custom object that meets
 this interface.
 
 If *fix_imports* is True and protocol is less than 3, pickle will try
@@ -4042,7 +4042,7 @@ to map the new Python 3 names to the old module names used in Python
 
 static int
 _pickle_Pickler___init___impl(PicklerObject *self, PyObject *file, PyObject *protocol, int fix_imports)
-/*[clinic end generated code: output=56e229f3b1f4332f input=b8cdeb7e3f5ee674]*/
+/*[clinic end generated code: output=56e229f3b1f4332f input=4faabdbc763c2389]*/
 {
     _Py_IDENTIFIER(persistent_id);
     _Py_IDENTIFIER(dispatch_table);
@@ -6443,7 +6443,7 @@ representation are ignored.
 The argument *file* must have two methods, a read() method that takes
 an integer argument, and a readline() method that requires no
 arguments.  Both methods should return bytes.  Thus *file* can be a
-binary file object opened for reading, a io.BytesIO object, or any
+binary file object opened for reading, an io.BytesIO object, or any
 other custom object that meets this interface.
 
 Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
@@ -6458,7 +6458,7 @@ string instances as bytes objects.
 
 static int
 _pickle_Unpickler___init___impl(UnpicklerObject *self, PyObject *file, int fix_imports, const char *encoding, const char *errors)
-/*[clinic end generated code: output=b9ed1d84d315f3b5 input=30b4dc9e976b890c]*/
+/*[clinic end generated code: output=b9ed1d84d315f3b5 input=04ece661aa884837]*/
 {
     _Py_IDENTIFIER(persistent_load);
 
@@ -6877,7 +6877,7 @@ version of Python needed to read the pickle produced.
 
 The *file* argument must have a write() method that accepts a single
 bytes argument.  It can thus be a file object opened for binary
-writing, a io.BytesIO instance, or any other custom object that meets
+writing, an io.BytesIO instance, or any other custom object that meets
 this interface.
 
 If *fix_imports* is True and protocol is less than 3, pickle will try
@@ -6887,7 +6887,7 @@ to map the new Python 3 names to the old module names used in Python
 
 static PyObject *
 _pickle_dump_impl(PyModuleDef *module, PyObject *obj, PyObject *file, PyObject *protocol, int fix_imports)
-/*[clinic end generated code: output=a606e626d553850d input=e9e5fdd48de92eae]*/
+/*[clinic end generated code: output=a606e626d553850d input=830f8a64cef6f042]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -6985,7 +6985,7 @@ representation are ignored.
 The argument *file* must have two methods, a read() method that takes
 an integer argument, and a readline() method that requires no
 arguments.  Both methods should return bytes.  Thus *file* can be a
-binary file object opened for reading, a io.BytesIO object, or any
+binary file object opened for reading, an io.BytesIO object, or any
 other custom object that meets this interface.
 
 Optional keyword arguments are *fix_imports*, *encoding* and *errors*,
@@ -7000,7 +7000,7 @@ string instances as bytes objects.
 
 static PyObject *
 _pickle_load_impl(PyModuleDef *module, PyObject *file, int fix_imports, const char *encoding, const char *errors)
-/*[clinic end generated code: output=568c61356c172654 input=da97372e38e510a6]*/
+/*[clinic end generated code: output=568c61356c172654 input=2df7c7a1e6742204]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();

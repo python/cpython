@@ -867,7 +867,7 @@ OSError_init(PyOSErrorObject *self, PyObject *args, PyObject *kwds);
 static int
 oserror_use_init(PyTypeObject *type)
 {
-    /* When __init__ is defined in a OSError subclass, we want any
+    /* When __init__ is defined in an OSError subclass, we want any
        extraneous argument to __new__ to be ignored.  The only reasonable
        solution, given __new__ takes a variable number of arguments,
        is to defer arg parsing and initialization to __init__.

@@ -1029,9 +1029,9 @@ are always available.  They are listed here in alphabetical order.
    :class:`io.TextIOBase` (specifically :class:`io.TextIOWrapper`).  When used
    to open a file in a binary mode with buffering, the returned class is a
    subclass of :class:`io.BufferedIOBase`.  The exact class varies: in read
-   binary mode, it returns a :class:`io.BufferedReader`; in write binary and
-   append binary modes, it returns a :class:`io.BufferedWriter`, and in
-   read/write mode, it returns a :class:`io.BufferedRandom`.  When buffering is
+   binary mode, it returns an :class:`io.BufferedReader`; in write binary and
+   append binary modes, it returns an :class:`io.BufferedWriter`, and in
+   read/write mode, it returns an :class:`io.BufferedRandom`.  When buffering is
    disabled, the raw stream, a subclass of :class:`io.RawIOBase`,
    :class:`io.FileIO`, is returned.
 

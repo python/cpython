@@ -1160,7 +1160,7 @@ class IpaddrUnitTest(unittest.TestCase):
         # test a /24 is summarized properly
         self.assertEqual(list(summarize(ip1, ip2))[0],
                          ipaddress.ip_network('1.1.1.0/24'))
-        # test an  IPv4 range that isn't on a network byte boundary
+        # test an IPv4 range that isn't on a network byte boundary
         ip2 = ipaddress.ip_address('1.1.1.8')
         self.assertEqual(list(summarize(ip1, ip2)),
                          [ipaddress.ip_network('1.1.1.0/29'),
@@ -1173,7 +1173,7 @@ class IpaddrUnitTest(unittest.TestCase):
 
         ip1 = ipaddress.ip_address('1::')
         ip2 = ipaddress.ip_address('1:ffff:ffff:ffff:ffff:ffff:ffff:ffff')
-        # test a IPv6 is sumamrized properly
+        # test an IPv6 is summarized properly
         self.assertEqual(list(summarize(ip1, ip2))[0],
                          ipaddress.ip_network('1::/16'))
         # test an IPv6 range that isn't on a network byte boundary

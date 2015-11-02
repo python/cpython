@@ -255,7 +255,7 @@ class StreamWriter:
     def __init__(self, transport, protocol, reader, loop):
         self._transport = transport
         self._protocol = protocol
-        # drain() expects that the reader has a exception() method
+        # drain() expects that the reader has an exception() method
         assert reader is None or isinstance(reader, StreamReader)
         self._reader = reader
         self._loop = loop

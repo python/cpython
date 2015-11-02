@@ -1421,7 +1421,7 @@ can be used to directly manage when the accumlated headers are sent.
 
 :class:`http.client.HTTPResponse` now has a
 :meth:`~http.client.HTTPResponse.readinto` method, which means it can be used
-as a :class:`io.RawIOBase` class.  (Contributed by John Kuhn in
+as an :class:`io.RawIOBase` class.  (Contributed by John Kuhn in
 :issue:`13464`.)
 
 
