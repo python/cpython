@@ -982,7 +982,7 @@ _PyUnicodeWriter_WriteSubstring(_PyUnicodeWriter *writer,
     Py_ssize_t end
     );
 
-/* Append a ASCII-encoded byte string.
+/* Append an ASCII-encoded byte string.
    Return 0 on success, raise an exception and return -1 on error. */
 PyAPI_FUNC(int)
 _PyUnicodeWriter_WriteASCIIString(_PyUnicodeWriter *writer,
@@ -2058,7 +2058,7 @@ PyAPI_FUNC(PyObject *) PyUnicode_RichCompare(
     int op                      /* Operation: Py_EQ, Py_NE, Py_GT, etc. */
     );
 
-/* Apply a argument tuple or dictionary to a format string and return
+/* Apply an argument tuple or dictionary to a format string and return
    the resulting Unicode string. */
 
 PyAPI_FUNC(PyObject *) PyUnicode_Format(

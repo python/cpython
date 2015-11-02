@@ -25,7 +25,7 @@ python -E -Wd -m test [options] [test_name1 ...]
 EPILOG = """\
 Additional option details:
 
--r randomizes test execution order. You can use --randseed=int to provide a
+-r randomizes test execution order. You can use --randseed=int to provide an
 int seed value for the randomizer; this is useful for reproducing troublesome
 test orders.
 
