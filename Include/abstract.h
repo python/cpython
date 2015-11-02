@@ -95,7 +95,7 @@ Proposal
   numeric, sequence, and mapping.  Each protocol consists of a
   collection of related operations.  If an operation that is not
   provided by a particular type is invoked, then a standard exception,
-  NotImplementedError is raised with a operation name as an argument.
+  NotImplementedError is raised with an operation name as an argument.
   In addition, for convenience this interface defines a set of
   constructors for building objects of built-in types.  This is needed
   so new objects can be returned from C functions that otherwise treat

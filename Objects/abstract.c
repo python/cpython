@@ -1243,7 +1243,7 @@ PyNumber_Long(PyObject *o)
         if (truncated == NULL || PyLong_Check(truncated))
             return truncated;
         /* __trunc__ is specified to return an Integral type,
-           but int() needs to return a int. */
+           but int() needs to return an int. */
         m = truncated->ob_type->tp_as_number;
         if (m == NULL || m->nb_int == NULL) {
             PyErr_Format(

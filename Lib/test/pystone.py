@@ -35,7 +35,7 @@ Version History:
                 Under Python 3 version 1.1 would use the normal division
                 operator, resulting in some of the operations mistakenly
                 yielding floats. Version 1.2 instead uses floor division
-                making the benchmark a integer benchmark again.
+                making the benchmark an integer benchmark again.
 
 """
 
