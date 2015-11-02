@@ -762,7 +762,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: sethostname(name)
 
-   Set the machine's hostname to *name*.  This will raise a
+   Set the machine's hostname to *name*.  This will raise an
    :exc:`OSError` if you don't have enough rights.
 
    Availability: Unix.
@@ -794,7 +794,7 @@ The :mod:`socket` module also offers various network-related services:
 
 .. function:: if_indextoname(if_index)
 
-   Return a network interface name corresponding to a
+   Return a network interface name corresponding to an
    interface index number.
    :exc:`OSError` if no interface with the given index exists.
 

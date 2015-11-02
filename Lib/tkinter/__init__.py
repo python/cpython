@@ -1117,7 +1117,7 @@ class Misc:
 
         return self._bind(('bind', className), sequence, func, add, 0)
     def unbind_class(self, className, sequence):
-        """Unbind for a all widgets with bindtag CLASSNAME for event SEQUENCE
+        """Unbind for all widgets with bindtag CLASSNAME for event SEQUENCE
         all functions."""
         self.tk.call('bind', className , sequence, '')
     def mainloop(self, n=0):

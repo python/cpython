@@ -4651,7 +4651,7 @@ class TestUnixDomain(unittest.TestCase):
         except OSError as e:
             if str(e) == "AF_UNIX path too long":
                 self.skipTest(
-                    "Pathname {0!a} is too long to serve as a AF_UNIX path"
+                    "Pathname {0!a} is too long to serve as an AF_UNIX path"
                     .format(path))
             else:
                 raise
