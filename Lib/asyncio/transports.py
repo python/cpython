@@ -62,7 +62,7 @@ class WriteTransport(BaseTransport):
         high-water limit.  Neither value can be negative.
 
         The defaults are implementation-specific.  If only the
-        high-water limit is given, the low-water limit defaults to a
+        high-water limit is given, the low-water limit defaults to an
         implementation-specific value less than or equal to the
         high-water limit.  Setting high to zero forces low to zero as
         well, and causes pause_writing() to be called whenever the
