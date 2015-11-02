@@ -548,7 +548,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
         return 0;
     }
     if (u->u_ste->ste_needs_class_closure) {
-        /* Cook up a implicit __class__ cell. */
+        /* Cook up an implicit __class__ cell. */
         _Py_IDENTIFIER(__class__);
         PyObject *tuple, *name, *zero;
         int res;
