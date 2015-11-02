@@ -1017,11 +1017,12 @@ deque_len(dequeobject *deque)
 static PyObject *
 deque_index(dequeobject *deque, PyObject *args)
 {
-    Py_ssize_t i, start=0, stop=Py_SIZE(deque);
+    Py_ssize_t i, n, start=0, stop=Py_SIZE(deque);
     PyObject *v, *item;
     block *b = deque->leftblock;
     Py_ssize_t index = deque->leftindex;
     size_t start_state = deque->state;
+    int cmp;
 
     if (!PyArg_ParseTuple(args, "O|O&O&:index", &v,
                                 _PyEval_SliceIndex, &start,
@@ -1039,22 +1040,32 @@ deque_index(dequeobject *deque, PyObject *args)
     }
     if (stop > Py_SIZE(deque))
         stop = Py_SIZE(deque);
+    if (start > stop)
+        start = stop;
+    assert(0 <= start && start <= stop && stop <= Py_SIZE(deque));
 
-    for (i=0 ; i<stop ; i++) {
-        if (i >= start) {
-            int cmp;
-            CHECK_NOT_END(b);
-            item = b->data[index];
-            cmp = PyObject_RichCompareBool(item, v, Py_EQ);
-            if (cmp > 0)
-                return PyLong_FromSsize_t(i);
-            else if (cmp < 0)
-                return NULL;
-            if (start_state != deque->state) {
-                PyErr_SetString(PyExc_RuntimeError,
-                                "deque mutated during iteration");
-                return NULL;
-            }
+    /* XXX Replace this loop with faster code from deque_item() */
+    for (i=0 ; i<start ; i++) {
+        index++;
+        if (index == BLOCKLEN) {
+            b = b->rightlink;
+            index = 0;
+        }
+    }
+
+    n = stop - i;
+    while (n--) {
+        CHECK_NOT_END(b);
+        item = b->data[index];
+        cmp = PyObject_RichCompareBool(item, v, Py_EQ);
+        if (cmp > 0)
+            return PyLong_FromSsize_t(stop - (n + 1));
+        else if (cmp < 0)
+            return NULL;
+        if (start_state != deque->state) {
+            PyErr_SetString(PyExc_RuntimeError,
+                            "deque mutated during iteration");
+            return NULL;
         }
         index++;
         if (index == BLOCKLEN) {
