@@ -214,4 +214,6 @@ def_op('BUILD_MAP_UNPACK_WITH_CALL', 151)
 def_op('BUILD_TUPLE_UNPACK', 152)
 def_op('BUILD_SET_UNPACK', 153)
 
+def_op('FORMAT_VALUE', 155)
+
 del def_op, name_op, jrel_op, jabs_op

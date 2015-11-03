@@ -223,12 +223,13 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.5b1  3330 (PEP 448: Additional Unpacking Generalizations)
 #     Python 3.5b2  3340 (fix dictionary display evaluation order #11205)
 #     Python 3.5b2  3350 (add GET_YIELD_FROM_ITER opcode #24400)
+#     Python 3.6a0  3360 (add FORMAT_VALUE opcode #25483)
 #
 # MAGIC must change whenever the bytecode emitted by the compiler may no
 # longer be understood by older implementations of the eval loop (usually
 # due to the addition of new opcodes).
 
-MAGIC_NUMBER = (3350).to_bytes(2, 'little') + b'\r\n'
+MAGIC_NUMBER = (3360).to_bytes(2, 'little') + b'\r\n'
 _RAW_MAGIC_NUMBER = int.from_bytes(MAGIC_NUMBER, 'little')  # For import.c
 
 _PYCACHE = '__pycache__'

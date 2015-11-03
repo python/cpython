@@ -1067,6 +1067,10 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 1;
         case GET_YIELD_FROM_ITER:
             return 0;
+        case FORMAT_VALUE:
+            /* If there's a fmt_spec on the stack, we go from 2->1,
+               else 1->1. */
+            return (oparg & FVS_MASK) == FVS_HAVE_SPEC ? -1 : 0;
         default:
             return PY_INVALID_STACK_EFFECT;
     }
@@ -3241,83 +3245,47 @@ compiler_joined_str(struct compiler *c, expr_ty e)
     return 1;
 }
 
-/* Note that this code uses the builtin functions format(), str(),
-   repr(), and ascii(). You can break this code, or make it do odd
-   things, by redefining those functions. */
+/* Used to implement f-strings. Format a single value. */
 static int
 compiler_formatted_value(struct compiler *c, expr_ty e)
 {
-    PyObject *conversion_name = NULL;
+    /* Our oparg encodes 2 pieces of information: the conversion
+       character, and whether or not a format_spec was provided.
 
-    static PyObject *format_string;
-    static PyObject *str_string;
-    static PyObject *repr_string;
-    static PyObject *ascii_string;
+       Convert the conversion char to 2 bits:
+       None: 000  0x0  FVC_NONE
+       !s  : 001  0x1  FVC_STR
+       !r  : 010  0x2  FVC_REPR
+       !a  : 011  0x3  FVC_ASCII
 
-    if (!format_string) {
-        format_string = PyUnicode_InternFromString("format");
-        if (!format_string)
-            return 0;
-    }
+       next bit is whether or not we have a format spec:
+       yes : 100  0x4
+       no  : 000  0x0
+    */
 
-    if (!str_string) {
-        str_string = PyUnicode_InternFromString("str");
-        if (!str_string)
-            return 0;
-    }
+    int oparg;
 
-    if (!repr_string) {
-        repr_string = PyUnicode_InternFromString("repr");
-        if (!repr_string)
-            return 0;
-    }
-    if (!ascii_string) {
-        ascii_string = PyUnicode_InternFromString("ascii");
-        if (!ascii_string)
-            return 0;
-    }
-
-    ADDOP_NAME(c, LOAD_GLOBAL, format_string, names);
-
-    /* If needed, convert via str, repr, or ascii. */
-    if (e->v.FormattedValue.conversion != -1) {
-        switch (e->v.FormattedValue.conversion) {
-        case 's':
-            conversion_name = str_string;
-            break;
-        case 'r':
-            conversion_name = repr_string;
-            break;
-        case 'a':
-            conversion_name = ascii_string;
-            break;
-        default:
-            PyErr_SetString(PyExc_SystemError,
-                            "Unrecognized conversion character");
-            return 0;
-        }
-        ADDOP_NAME(c, LOAD_GLOBAL, conversion_name, names);
-    }
-
-    /* Evaluate the value. */
+    /* Evaluate the expression to be formatted. */
     VISIT(c, expr, e->v.FormattedValue.value);
 
-    /* If needed, convert via str, repr, or ascii. */
-    if (conversion_name) {
-        /* Call the function we previously pushed. */
-        ADDOP_I(c, CALL_FUNCTION, 1);
+    switch (e->v.FormattedValue.conversion) {
+    case 's': oparg = FVC_STR;   break;
+    case 'r': oparg = FVC_REPR;  break;
+    case 'a': oparg = FVC_ASCII; break;
+    case -1:  oparg = FVC_NONE;  break;
+    default:
+        PyErr_SetString(PyExc_SystemError,
+                        "Unrecognized conversion character");
+        return 0;
     }
-
-    /* If we have a format spec, use format(value, format_spec). Otherwise,
-       use the single argument form. */
     if (e->v.FormattedValue.format_spec) {
+        /* Evaluate the format spec, and update our opcode arg. */
         VISIT(c, expr, e->v.FormattedValue.format_spec);
-        ADDOP_I(c, CALL_FUNCTION, 2);
-    } else {
-        /* No format spec specified, call format(value). */
-        ADDOP_I(c, CALL_FUNCTION, 1);
+        oparg |= FVS_HAVE_SPEC;
     }
 
+    /* And push our opcode and oparg */
+    ADDOP_I(c, FORMAT_VALUE, oparg);
     return 1;
 }
 
