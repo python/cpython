@@ -995,7 +995,7 @@ the more significant byte last.
    an optional *fmt_spec* from the stack, then a required *value*.
    *flags* is interpreted as follows:
 
-   * ``(flags & 0x03) == 0x00``: *value* is formattedd as-is.
+   * ``(flags & 0x03) == 0x00``: *value* is formatted as-is.
    * ``(flags & 0x03) == 0x01``: call :func:`str` on *value* before
      formatting it.
    * ``(flags & 0x03) == 0x02``: call :func:`repr` on *value* before
@@ -1006,6 +1006,8 @@ the more significant byte last.
      it, else use an empty *fmt_spec*.
 
    Formatting is performed using the :c:func:`PyObject_Format` function.
+
+   .. versionadded:: 3.6
 
 
 .. opcode:: HAVE_ARGUMENT
