@@ -122,6 +122,7 @@ extern "C" {
 #define BUILD_TUPLE_UNPACK      152
 #define BUILD_SET_UNPACK        153
 #define SETUP_ASYNC_WITH        154
+#define FORMAT_VALUE            155
 
 /* EXCEPT_HANDLER is a special, implicit block type which is created when
    entering an except handler. It is not an opcode but we define it here
