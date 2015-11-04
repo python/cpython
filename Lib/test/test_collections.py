@@ -2153,6 +2153,60 @@ class OrderedDictTests:
                 key = c0 + c1
                 od[key] = key
 
+    # Direct use of dict methods
+
+    def test_dict_setitem(self):
+        OrderedDict = self.OrderedDict
+        od = OrderedDict()
+        dict.__setitem__(od, 'spam', 1)
+        self.assertNotIn('NULL', repr(od))
+
+    def test_dict_delitem(self):
+        OrderedDict = self.OrderedDict
+        od = OrderedDict()
+        od['spam'] = 1
+        od['ham'] = 2
+        dict.__delitem__(od, 'spam')
+        with self.assertRaises(KeyError):
+            repr(od)
+
+    def test_dict_clear(self):
+        OrderedDict = self.OrderedDict
+        od = OrderedDict()
+        od['spam'] = 1
+        od['ham'] = 2
+        dict.clear(od)
+        self.assertNotIn('NULL', repr(od))
+
+    def test_dict_pop(self):
+        OrderedDict = self.OrderedDict
+        od = OrderedDict()
+        od['spam'] = 1
+        od['ham'] = 2
+        dict.pop(od, 'spam')
+        with self.assertRaises(KeyError):
+            repr(od)
+
+    def test_dict_popitem(self):
+        OrderedDict = self.OrderedDict
+        od = OrderedDict()
+        od['spam'] = 1
+        od['ham'] = 2
+        dict.popitem(od)
+        with self.assertRaises(KeyError):
+            repr(od)
+
+    def test_dict_setdefault(self):
+        OrderedDict = self.OrderedDict
+        od = OrderedDict()
+        dict.setdefault(od, 'spam', 1)
+        self.assertNotIn('NULL', repr(od))
+
+    def test_dict_update(self):
+        od = OrderedDict()
+        dict.update(od, [('spam', 1)])
+        self.assertNotIn('NULL', repr(od))
+
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
