@@ -1307,7 +1307,7 @@ PyAPI_FUNC(PyObject *) PyUnicode_RichCompare(
     int op                      /* Operation: Py_EQ, Py_NE, Py_GT, etc. */
     );
 
-/* Apply a argument tuple or dictionary to a format string and return
+/* Apply an argument tuple or dictionary to a format string and return
    the resulting Unicode string. */
 
 PyAPI_FUNC(PyObject *) PyUnicode_Format(

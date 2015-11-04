@@ -1495,7 +1495,7 @@ Extension Modules
 
 - Bug #1194181: bz2.BZ2File didn't handle mode 'U' correctly.
 
-- Patch #1212117: os.stat().st_flags is now accessible as a attribute
+- Patch #1212117: os.stat().st_flags is now accessible as an attribute
   if available on the platform.
 
 - Patch #1103951: Expose O_SHLOCK and O_EXLOCK in the posix module if

@@ -1410,7 +1410,7 @@ PyDoc_STRVAR(starmap_doc,
 "starmap(function, sequence) --> starmap object\n\
 \n\
 Return an iterator whose values are returned from the function evaluated\n\
-with a argument tuple taken from the given sequence.");
+with an argument tuple taken from the given sequence.");
 
 static PyTypeObject starmap_type = {
     PyVarObject_HEAD_INIT(NULL, 0)

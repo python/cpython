@@ -325,7 +325,7 @@ Non-data descriptors provide a simple mechanism for variations on the usual
 patterns of binding functions into methods.
 
 To recap, functions have a :meth:`__get__` method so that they can be converted
-to a method when accessed as attributes.  The non-data descriptor transforms a
+to a method when accessed as attributes.  The non-data descriptor transforms an
 ``obj.f(*args)`` call into ``f(obj, *args)``.  Calling ``klass.f(*args)``
 becomes ``f(*args)``.
 
