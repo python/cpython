@@ -1641,7 +1641,7 @@ def replaced_module(name, replacement):
 class OrderedDictTests:
 
     def test_init(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         with self.assertRaises(TypeError):
             OrderedDict([('a', 1), ('b', 2)], None)                                 # too many args
         pairs = [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
@@ -1665,7 +1665,7 @@ class OrderedDictTests:
             [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5), ('f', 6), ('g', 7)])
 
     def test_update(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         with self.assertRaises(TypeError):
             OrderedDict().update([('a', 1), ('b', 2)], None)                        # too many args
         pairs = [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
@@ -1711,7 +1711,7 @@ class OrderedDictTests:
         self.assertRaises(TypeError, OrderedDict.update)
 
     def test_fromkeys(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         od = OrderedDict.fromkeys('abc')
         self.assertEqual(list(od.items()), [(c, None) for c in 'abc'])
         od = OrderedDict.fromkeys('abc', value=None)
@@ -1720,12 +1720,12 @@ class OrderedDictTests:
         self.assertEqual(list(od.items()), [(c, 0) for c in 'abc'])
 
     def test_abc(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         self.assertIsInstance(OrderedDict(), MutableMapping)
         self.assertTrue(issubclass(OrderedDict, MutableMapping))
 
     def test_clear(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         shuffle(pairs)
         od = OrderedDict(pairs)
@@ -1734,7 +1734,7 @@ class OrderedDictTests:
         self.assertEqual(len(od), 0)
 
     def test_delitem(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         od = OrderedDict(pairs)
         del od['a']
@@ -1744,7 +1744,7 @@ class OrderedDictTests:
         self.assertEqual(list(od.items()), pairs[:2] + pairs[3:])
 
     def test_setitem(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         od = OrderedDict([('d', 1), ('b', 2), ('c', 3), ('a', 4), ('e', 5)])
         od['c'] = 10           # existing element
         od['f'] = 20           # new element
@@ -1752,7 +1752,7 @@ class OrderedDictTests:
                          [('d', 1), ('b', 2), ('c', 10), ('a', 4), ('e', 5), ('f', 20)])
 
     def test_iterators(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         shuffle(pairs)
         od = OrderedDict(pairs)
@@ -1769,7 +1769,7 @@ class OrderedDictTests:
         self.assertEqual(list(reversed(od.items())), list(reversed(pairs)))
 
     def test_detect_deletion_during_iteration(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         od = OrderedDict.fromkeys('abc')
         it = iter(od)
         key = next(it)
@@ -1780,7 +1780,7 @@ class OrderedDictTests:
             next(it)
 
     def test_sorted_iterators(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         with self.assertRaises(TypeError):
             OrderedDict([('a', 1), ('b', 2)], None)
         pairs = [('a', 1), ('b', 2), ('c', 3), ('d', 4), ('e', 5)]
@@ -1793,7 +1793,7 @@ class OrderedDictTests:
                          sorted([t[0] for t in reversed(pairs)]))
 
     def test_iterators_empty(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         od = OrderedDict()
         empty = []
         self.assertEqual(list(od), empty)
@@ -1806,7 +1806,7 @@ class OrderedDictTests:
         self.assertEqual(list(reversed(od.items())), empty)
 
     def test_popitem(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         shuffle(pairs)
         od = OrderedDict(pairs)
@@ -1817,7 +1817,7 @@ class OrderedDictTests:
         self.assertEqual(len(od), 0)
 
     def test_popitem_last(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         pairs = [(i, i) for i in range(30)]
 
         obj = OrderedDict(pairs)
@@ -1828,7 +1828,7 @@ class OrderedDictTests:
         self.assertEqual(len(obj), 20)
 
     def test_pop(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         shuffle(pairs)
         od = OrderedDict(pairs)
@@ -1854,7 +1854,7 @@ class OrderedDictTests:
             m.pop('a')
 
     def test_equality(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         shuffle(pairs)
         od1 = OrderedDict(pairs)
@@ -1870,7 +1870,7 @@ class OrderedDictTests:
         self.assertNotEqual(od1, OrderedDict(pairs[:-1]))
 
     def test_copying(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         # Check that ordered dicts are copyable, deepcopyable, picklable,
         # and have a repr/eval round-trip
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
@@ -1897,7 +1897,7 @@ class OrderedDictTests:
         check(OrderedDict(od))
 
     def test_yaml_linkage(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         # Verify that __reduce__ is setup in a way that supports PyYAML's dump() feature.
         # In yaml, lists are native but tuples are not.
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
@@ -1907,7 +1907,7 @@ class OrderedDictTests:
         self.assertTrue(all(type(pair)==list for pair in od.__reduce__()[1]))
 
     def test_reduce_not_too_fat(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         # do not save instance dictionary if not needed
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         od = OrderedDict(pairs)
@@ -1916,7 +1916,7 @@ class OrderedDictTests:
         self.assertIsNotNone(od.__reduce__()[2])
 
     def test_pickle_recursive(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         od = OrderedDict()
         od[1] = od
 
@@ -1929,7 +1929,7 @@ class OrderedDictTests:
                 self.assertIs(dup[1], dup)
 
     def test_repr(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         od = OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])
         self.assertEqual(repr(od),
             "OrderedDict([('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)])")
@@ -1937,7 +1937,7 @@ class OrderedDictTests:
         self.assertEqual(repr(OrderedDict()), "OrderedDict()")
 
     def test_repr_recursive(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         # See issue #9826
         od = OrderedDict.fromkeys('abc')
         od['x'] = od
@@ -1945,7 +1945,7 @@ class OrderedDictTests:
             "OrderedDict([('a', None), ('b', None), ('c', None), ('x', ...)])")
 
     def test_setdefault(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         shuffle(pairs)
         od = OrderedDict(pairs)
@@ -1965,7 +1965,7 @@ class OrderedDictTests:
         self.assertEqual(Missing().setdefault(5, 9), 9)
 
     def test_reinsert(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         # Given insert a, insert b, delete a, re-insert a,
         # verify that a is now later than b.
         od = OrderedDict()
@@ -1977,7 +1977,7 @@ class OrderedDictTests:
         self.assertEqual(list(od.items()), [('b', 2), ('a', 1)])
 
     def test_move_to_end(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         od = OrderedDict.fromkeys('abcde')
         self.assertEqual(list(od), list('abcde'))
         od.move_to_end('c')
@@ -1996,7 +1996,7 @@ class OrderedDictTests:
             od.move_to_end('x', 0)
 
     def test_move_to_end_issue25406(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         od = OrderedDict.fromkeys('abc')
         od.move_to_end('c', last=False)
         self.assertEqual(list(od), list('cab'))
@@ -2010,14 +2010,14 @@ class OrderedDictTests:
         self.assertEqual(list(od), list('bac'))
 
     def test_sizeof(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         # Wimpy test: Just verify the reported size is larger than a regular dict
         d = dict(a=1)
         od = OrderedDict(**d)
         self.assertGreater(sys.getsizeof(od), sys.getsizeof(d))
 
     def test_views(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         # See http://bugs.python.org/issue24286
         s = 'the quick brown fox jumped over a lazy dog yesterday before dawn'.split()
         od = OrderedDict.fromkeys(s)
@@ -2025,7 +2025,7 @@ class OrderedDictTests:
         self.assertEqual(od.items(), dict(od).items())
 
     def test_override_update(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         # Verify that subclasses can override update() without breaking __init__()
         class MyOD(OrderedDict):
             def update(self, *args, **kwds):
@@ -2035,7 +2035,7 @@ class OrderedDictTests:
 
     def test_highly_nested(self):
         # Issue 25395: crashes during garbage collection
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         obj = None
         for _ in range(1000):
             obj = OrderedDict([(None, obj)])
@@ -2044,7 +2044,7 @@ class OrderedDictTests:
 
     def test_highly_nested_subclass(self):
         # Issue 25395: crashes during garbage collection
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
         deleted = []
         class MyOD(OrderedDict):
             def __del__(self):
@@ -2057,19 +2057,8 @@ class OrderedDictTests:
         support.gc_collect()
         self.assertEqual(deleted, list(reversed(range(100))))
 
-
-class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
-
-    module = py_coll
-
-
-@unittest.skipUnless(c_coll, 'requires the C version of the collections module')
-class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
-
-    module = c_coll
-
     def test_delitem_hash_collision(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
 
         class Key:
             def __init__(self, hash):
@@ -2107,25 +2096,8 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         del od[colliding]
         self.assertEqual(list(od.items()), [(key, ...), ('after', ...)])
 
-    def test_key_change_during_iteration(self):
-        OrderedDict = self.module.OrderedDict
-
-        od = OrderedDict.fromkeys('abcde')
-        self.assertEqual(list(od), list('abcde'))
-        with self.assertRaises(RuntimeError):
-            for i, k in enumerate(od):
-                od.move_to_end(k)
-                self.assertLess(i, 5)
-        with self.assertRaises(RuntimeError):
-            for k in od:
-                od['f'] = None
-        with self.assertRaises(RuntimeError):
-            for k in od:
-                del od['c']
-        self.assertEqual(list(od), list('bdeaf'))
-
     def test_issue24347(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
 
         class Key:
             def __hash__(self):
@@ -2138,12 +2110,16 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
         # These should not crash.
         with self.assertRaises(KeyError):
+            list(od.values())
+        with self.assertRaises(KeyError):
+            list(od.items())
+        with self.assertRaises(KeyError):
             repr(od)
         with self.assertRaises(KeyError):
             od.copy()
 
     def test_issue24348(self):
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
 
         class Key:
             def __hash__(self):
@@ -2166,7 +2142,7 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
         that we will keep the size of the odict the same at each popitem
         call.  This verifies that we handled the dict resize properly.
         """
-        OrderedDict = self.module.OrderedDict
+        OrderedDict = self.OrderedDict
 
         od = OrderedDict()
         for c0 in '0123456789ABCDEF':
@@ -2176,6 +2152,50 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
                     od.popitem(last=False)
                 key = c0 + c1
                 od[key] = key
+
+
+class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
+
+    module = py_coll
+    OrderedDict = py_coll.OrderedDict
+
+
+@unittest.skipUnless(c_coll, 'requires the C version of the collections module')
+class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
+
+    module = c_coll
+    OrderedDict = c_coll.OrderedDict
+
+    def test_key_change_during_iteration(self):
+        OrderedDict = self.OrderedDict
+
+        od = OrderedDict.fromkeys('abcde')
+        self.assertEqual(list(od), list('abcde'))
+        with self.assertRaises(RuntimeError):
+            for i, k in enumerate(od):
+                od.move_to_end(k)
+                self.assertLess(i, 5)
+        with self.assertRaises(RuntimeError):
+            for k in od:
+                od['f'] = None
+        with self.assertRaises(RuntimeError):
+            for k in od:
+                del od['c']
+        self.assertEqual(list(od), list('bdeaf'))
+
+
+class PurePythonOrderedDictSubclassTests(PurePythonOrderedDictTests):
+
+    module = py_coll
+    class OrderedDict(py_coll.OrderedDict):
+        pass
+
+
+class CPythonOrderedDictSubclassTests(CPythonOrderedDictTests):
+
+    module = c_coll
+    class OrderedDict(c_coll.OrderedDict):
+        pass
 
 
 class PurePythonGeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
@@ -2239,6 +2259,8 @@ def test_main(verbose=None):
     test_classes = [TestNamedTuple, NamedTupleDocs, TestOneTrickPonyABCs,
                     TestCollectionABCs, TestCounter, TestChainMap,
                     PurePythonOrderedDictTests, CPythonOrderedDictTests,
+                    PurePythonOrderedDictSubclassTests,
+                    CPythonOrderedDictSubclassTests,
                     PurePythonGeneralMappingTests, CPythonGeneralMappingTests,
                     PurePythonSubclassMappingTests, CPythonSubclassMappingTests,
                     TestUserObjects,
