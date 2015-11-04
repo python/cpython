@@ -1462,7 +1462,6 @@ odict_repr(PyODictObject *self)
 {
     int i;
     _Py_IDENTIFIER(items);
-    Py_ssize_t count = -1;
     PyObject *pieces = NULL, *result = NULL;
     const char *classname;
 
@@ -1481,6 +1480,7 @@ odict_repr(PyODictObject *self)
     }
 
     if (PyODict_CheckExact(self)) {
+        Py_ssize_t count = 0;
         _ODictNode *node;
         pieces = PyList_New(PyODict_SIZE(self));
         if (pieces == NULL)
@@ -1499,8 +1499,19 @@ odict_repr(PyODictObject *self)
             if (pair == NULL)
                 goto Done;
 
-            PyList_SET_ITEM(pieces, ++count, pair);  /* steals reference */
+            if (count < PyList_GET_SIZE(pieces))
+                PyList_SET_ITEM(pieces, count, pair);  /* steals reference */
+            else {
+                if (PyList_Append(pieces, pair) < 0) {
+                    Py_DECREF(pair);
+                    goto Done;
+                }
+                Py_DECREF(pair);
+            }
+            count++;
         }
+        if (count < PyList_GET_SIZE(pieces))
+            PyList_GET_SIZE(pieces) = count;
     }
     else {
         PyObject *items = _PyObject_CallMethodIdObjArgs((PyObject *)self,
