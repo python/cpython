@@ -10,7 +10,7 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
-- Issue #25449: Fixed a crash and leaking NULL in repr() of OrderedDict that
+- Issue #24726: Fixed a crash and leaking NULL in repr() of OrderedDict that
   was mutated by direct calls of dict methods.
 
 - Issue #25449: Iterating OrderedDict with keys with unstable hash now raises
