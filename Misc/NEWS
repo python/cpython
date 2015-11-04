@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25449: Iterating OrderedDict with keys with unstable hash now raises
+  KeyError in C implementations as well as in Python implementation.
+
 - Issue #25395: Fixed crash when highly nested OrderedDict structures were
   garbage collected.
 
@@ -297,6 +300,8 @@ Documentation
 
 Tests
 -----
+
+- Issue #25449: Added tests for OrderedDict subclasses.
 
 - Issue #25188: Add -P/--pgo to test.regrtest to suppress error output when
   running the test suite for the purposes of a PGO build. Initial patch by
