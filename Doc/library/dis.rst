@@ -1005,7 +1005,8 @@ the more significant byte last.
    * ``(flags & 0x04) == 0x04``: pop *fmt_spec* from the stack and use
      it, else use an empty *fmt_spec*.
 
-   Formatting is performed using the :c:func:`PyObject_Format` function.
+   Formatting is performed using :c:func:`PyObject_Format`.  The
+   result is pushed on the stack.
 
    .. versionadded:: 3.6
 
