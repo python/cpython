@@ -21,7 +21,7 @@ from test.libregrtest.setup import setup_tests
 PROGRESS_MIN_TIME = 30.0   # seconds
 
 # Display the running tests if nothing happened last N seconds
-PROGRESS_UPDATE = 60.0   # seconds
+PROGRESS_UPDATE = 30.0   # seconds
 
 
 def run_test_in_subprocess(testname, ns):
