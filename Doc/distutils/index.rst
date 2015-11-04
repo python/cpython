@@ -15,10 +15,9 @@ very little overhead for build/release/install mechanics.
 .. note::
 
    This guide only covers the basic tools for building and distributing
-   extensions that are provided as part of this version of Python. Third
-   party tools offer easier to use and more secure alternatives. Refer to the
-   `quick recommendations section
-   <https://python-packaging-user-guide.readthedocs.org/en/latest/current.html>`__
+   extensions that are provided as part of this version of Python. Third party
+   tools offer easier to use and more secure alternatives. Refer to the `quick
+   recommendations section <https://packaging.python.org/en/latest/current/>`__
    in the Python Packaging User Guide for more information.
 
 
