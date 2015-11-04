@@ -1789,6 +1789,8 @@ odictiter_nextkey(odictiterobject *di)
     /* Get the key. */
     node = _odict_find_node(di->di_odict, di->di_current);
     if (node == NULL) {
+        if (!PyErr_Occurred())
+            PyErr_SetObject(PyExc_KeyError, di->di_current);
         /* Must have been deleted. */
         Py_CLEAR(di->di_current);
         return NULL;
