@@ -488,6 +488,10 @@ def as_completed(fs, *, loop=None, timeout=None):
 @coroutine
 def sleep(delay, result=None, *, loop=None):
     """Coroutine that completes after a given time (in seconds)."""
+    if delay == 0:
+        yield
+        return result
+
     future = futures.Future(loop=loop)
     h = future._loop.call_later(delay,
                                 future._set_result_unless_cancelled, result)
