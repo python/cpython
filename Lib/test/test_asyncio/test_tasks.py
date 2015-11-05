@@ -2188,5 +2188,29 @@ class RunCoroutineThreadsafeTests(test_utils.TestCase):
         self.assertEqual(context['exception'], exc_context.exception)
 
 
+class SleepTests(test_utils.TestCase):
+    def setUp(self):
+        self.loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(None)
+
+    def test_sleep_zero(self):
+        result = 0
+
+        def inc_result(num):
+            nonlocal result
+            result += num
+
+        @asyncio.coroutine
+        def coro():
+            self.loop.call_soon(inc_result, 1)
+            self.assertEqual(result, 0)
+            num = yield from asyncio.sleep(0, loop=self.loop, result=10)
+            self.assertEqual(result, 1) # inc'ed by call_soon
+            inc_result(num) # num should be 11
+
+        self.loop.run_until_complete(coro())
+        self.assertEqual(result, 11)
+
+
 if __name__ == '__main__':
     unittest.main()
