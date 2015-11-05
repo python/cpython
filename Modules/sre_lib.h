@@ -367,14 +367,12 @@ SRE(info)(SRE_STATE* state, SRE_CODE* pattern)
 #define RETURN_ON_FAILURE(i) \
     do { RETURN_ON_ERROR(i); if (i == 0) RETURN_FAILURE; } while (0)
 
-#define SFY(x) #x
-
 #define DATA_STACK_ALLOC(state, type, ptr) \
 do { \
     alloc_pos = state->data_stack_base; \
     TRACE(("allocating %s in %" PY_FORMAT_SIZE_T "d " \
            "(%" PY_FORMAT_SIZE_T "d)\n", \
-           SFY(type), alloc_pos, sizeof(type))); \
+           Py_STRINGIFY(type), alloc_pos, sizeof(type))); \
     if (sizeof(type) > state->data_stack_size - alloc_pos) { \
         int j = data_stack_grow(state, sizeof(type)); \
         if (j < 0) return j; \
@@ -387,7 +385,7 @@ do { \
 
 #define DATA_STACK_LOOKUP_AT(state, type, ptr, pos) \
 do { \
-    TRACE(("looking up %s at %" PY_FORMAT_SIZE_T "d\n", SFY(type), pos)); \
+    TRACE(("looking up %s at %" PY_FORMAT_SIZE_T "d\n", Py_STRINGIFY(type), pos)); \
     ptr = (type*)(state->data_stack+pos); \
 } while (0)
 
