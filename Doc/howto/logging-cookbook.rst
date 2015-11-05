@@ -1320,7 +1320,7 @@ such as `UTCFormatter`, shown below::
     class UTCFormatter(logging.Formatter):
         converter = time.gmtime
 
-and you can then use the `UTCFormatter` in your code instead of
+and you can then use the ``UTCFormatter`` in your code instead of
 :class:`~logging.Formatter`. If you want to do that via configuration, you can
 use the :func:`~logging.config.dictConfig` API with an approach illustrated by
 the following complete example::
