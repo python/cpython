@@ -141,8 +141,11 @@ PyObject_GetItem(PyObject *o, PyObject *key)
         return null_error();
 
     m = o->ob_type->tp_as_mapping;
-    if (m && m->mp_subscript)
-        return m->mp_subscript(o, key);
+    if (m && m->mp_subscript) {
+        PyObject *item = m->mp_subscript(o, key);
+        assert((item != NULL) ^ (PyErr_Occurred() != NULL));
+        return item;
+    }
 
     if (o->ob_type->tp_as_sequence) {
         if (PyIndex_Check(key)) {
@@ -1526,8 +1529,10 @@ PySequence_GetItem(PyObject *s, Py_ssize_t i)
         if (i < 0) {
             if (m->sq_length) {
                 Py_ssize_t l = (*m->sq_length)(s);
-                if (l < 0)
+                if (l < 0) {
+                    assert(PyErr_Occurred());
                     return NULL;
+                }
                 i += l;
             }
         }
