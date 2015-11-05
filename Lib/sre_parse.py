@@ -70,14 +70,14 @@ class Pattern:
     def __init__(self):
         self.flags = 0
         self.groupdict = {}
-        self.subpatterns = [None]  # group 0
+        self.groupwidths = [None]  # group 0
         self.lookbehindgroups = None
     @property
     def groups(self):
-        return len(self.subpatterns)
+        return len(self.groupwidths)
     def opengroup(self, name=None):
         gid = self.groups
-        self.subpatterns.append(None)
+        self.groupwidths.append(None)
         if self.groups > MAXGROUPS:
             raise error("too many groups")
         if name is not None:
@@ -88,9 +88,9 @@ class Pattern:
             self.groupdict[name] = gid
         return gid
     def closegroup(self, gid, p):
-        self.subpatterns[gid] = p
+        self.groupwidths[gid] = p.getwidth()
     def checkgroup(self, gid):
-        return gid < self.groups and self.subpatterns[gid] is not None
+        return gid < self.groups and self.groupwidths[gid] is not None
 
     def checklookbehindgroup(self, gid, source):
         if self.lookbehindgroups is not None:
@@ -195,7 +195,7 @@ class SubPattern:
                 lo = lo + 1
                 hi = hi + 1
             elif op is GROUPREF:
-                i, j = self.pattern.subpatterns[av].getwidth()
+                i, j = self.pattern.groupwidths[av]
                 lo = lo + i
                 hi = hi + j
             elif op is GROUPREF_EXISTS:

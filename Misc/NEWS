@@ -72,6 +72,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25554: Got rid of circular references in regular expression parsing.
+
 - Issue #18973: Command-line interface of the calendar module now uses argparse
   instead of optparse.
 
