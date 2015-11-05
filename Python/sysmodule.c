@@ -1643,15 +1643,11 @@ make_version_info(void)
 /* sys.implementation values */
 #define NAME "cpython"
 const char *_PySys_ImplName = NAME;
-#define QUOTE(arg) #arg
-#define STRIFY(name) QUOTE(name)
-#define MAJOR STRIFY(PY_MAJOR_VERSION)
-#define MINOR STRIFY(PY_MINOR_VERSION)
+#define MAJOR Py_STRINGIFY(PY_MAJOR_VERSION)
+#define MINOR Py_STRINGIFY(PY_MINOR_VERSION)
 #define TAG NAME "-" MAJOR MINOR
 const char *_PySys_ImplCacheTag = TAG;
 #undef NAME
-#undef QUOTE
-#undef STRIFY
 #undef MAJOR
 #undef MINOR
 #undef TAG
