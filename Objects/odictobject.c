@@ -1829,7 +1829,7 @@ done:
 static PyObject *
 odictiter_iternext(odictiterobject *di)
 {
-    PyObject *value;
+    PyObject *result, *value;
     PyObject *key = odictiter_nextkey(di);  /* new reference */
 
     if (key == NULL)
@@ -1840,52 +1840,43 @@ odictiter_iternext(odictiterobject *di)
         return key;
     }
 
-    /* Handle the items case. */
-    if (di->kind & _odict_ITER_KEYS) {
-        PyObject *result = di->di_result;
-
-        value = PyODict_GetItem((PyObject *)di->di_odict, key);  /* borrowed */
-        if (value == NULL) {
-            if (!PyErr_Occurred())
-                PyErr_SetObject(PyExc_KeyError, key);
-            Py_DECREF(key);
-            goto done;
-        }
-        Py_INCREF(value);
-
-        if (result->ob_refcnt == 1) {
-            /* not in use so we can reuse it
-             * (the common case during iteration) */
-            Py_INCREF(result);
-            Py_DECREF(PyTuple_GET_ITEM(result, 0));  /* borrowed */
-            Py_DECREF(PyTuple_GET_ITEM(result, 1));  /* borrowed */
-        }
-        else {
-            result = PyTuple_New(2);
-            if (result == NULL) {
-                Py_DECREF(key);
-                Py_DECREF(value);
-                goto done;
-            }
-        }
-
-        PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
-        PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
-
-        return result;
-    }
-    /* Handle the values case. */
-    else {
-        value = PyODict_GetItem((PyObject *)di->di_odict, key);
+    value = PyODict_GetItem((PyObject *)di->di_odict, key);  /* borrowed */
+    if (value == NULL) {
+        if (!PyErr_Occurred())
+            PyErr_SetObject(PyExc_KeyError, key);
         Py_DECREF(key);
-        if (value == NULL) {
-            if (!PyErr_Occurred())
-                PyErr_SetObject(PyExc_KeyError, key);
-            goto done;
-        }
-        Py_INCREF(value);
+        goto done;
+    }
+    Py_INCREF(value);
+
+    /* Handle the values case. */
+    if (!(di->kind & _odict_ITER_KEYS)) {
+        Py_DECREF(key);
         return value;
     }
+
+    /* Handle the items case. */
+    result = di->di_result;
+
+    if (Py_REFCNT(result) == 1) {
+        /* not in use so we can reuse it
+         * (the common case during iteration) */
+        Py_INCREF(result);
+        Py_DECREF(PyTuple_GET_ITEM(result, 0));  /* borrowed */
+        Py_DECREF(PyTuple_GET_ITEM(result, 1));  /* borrowed */
+    }
+    else {
+        result = PyTuple_New(2);
+        if (result == NULL) {
+            Py_DECREF(key);
+            Py_DECREF(value);
+            goto done;
+        }
+    }
+
+    PyTuple_SET_ITEM(result, 0, key);  /* steals reference */
+    PyTuple_SET_ITEM(result, 1, value);  /* steals reference */
+    return result;
 
 done:
     Py_CLEAR(di->di_current);
