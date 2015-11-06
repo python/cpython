@@ -602,8 +602,9 @@ excepthandler_ty _Py_ExceptHandler(expr_ty type, identifier name, asdl_seq *
 arguments_ty _Py_arguments(asdl_seq * args, arg_ty vararg, asdl_seq *
                            kwonlyargs, asdl_seq * kw_defaults, arg_ty kwarg,
                            asdl_seq * defaults, PyArena *arena);
-#define arg(a0, a1, a2) _Py_arg(a0, a1, a2)
-arg_ty _Py_arg(identifier arg, expr_ty annotation, PyArena *arena);
+#define arg(a0, a1, a2, a3, a4) _Py_arg(a0, a1, a2, a3, a4)
+arg_ty _Py_arg(identifier arg, expr_ty annotation, int lineno, int col_offset,
+               PyArena *arena);
 #define keyword(a0, a1, a2) _Py_keyword(a0, a1, a2)
 keyword_ty _Py_keyword(identifier arg, expr_ty value, PyArena *arena);
 #define alias(a0, a1, a2) _Py_alias(a0, a1, a2)
