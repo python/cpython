@@ -96,6 +96,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18010: Fix the pydoc web server's module search function to handle
+  exceptions from importing packages.
+
 - Issue #25510: fileinput.FileInput.readline() now returns b'' instead of ''
   at the end if the FileInput was opened with binary mode.
   Patch by Ryosuke Ito.

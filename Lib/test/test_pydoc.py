@@ -403,6 +403,13 @@ class PydocBaseTest(unittest.TestCase):
         finally:
             pkgutil.walk_packages = walk_packages
 
+    def call_url_handler(self, url, expected_title):
+        text = pydoc._url_handler(url, "text/html")
+        result = get_html_title(text)
+        # Check the title to ensure an unexpected error page was not returned
+        self.assertEqual(result, expected_title, text)
+        return text
+
 
 class PydocDocTest(unittest.TestCase):
 
@@ -715,6 +722,29 @@ class PydocImportTest(PydocBaseTest):
         finally:
             os.chmod(pkgdir, current_mode)
 
+    def test_url_search_package_error(self):
+        # URL handler search should cope with packages that raise exceptions
+        pkgdir = os.path.join(TESTFN, "test_error_package")
+        os.mkdir(pkgdir)
+        init = os.path.join(pkgdir, "__init__.py")
+        with open(init, "wt", encoding="ascii") as f:
+            f.write("""raise ValueError("ouch")\n""")
+        with self.restrict_walk_packages(path=[TESTFN]):
+            # Package has to be importable for the error to have any effect
+            saved_paths = tuple(sys.path)
+            sys.path.insert(0, TESTFN)
+            try:
+                with self.assertRaisesRegex(ValueError, "ouch"):
+                    import test_error_package  # Sanity check
+
+                text = self.call_url_handler("search?key=test_error_package",
+                    "Pydoc: Search Results")
+                found = ('<a href="test_error_package.html">'
+                    'test_error_package</a>')
+                self.assertIn(found, text)
+            finally:
+                sys.path[:] = saved_paths
+
     @unittest.skip('causes undesireable side-effects (#20128)')
     def test_modules(self):
         # See Helper.listmodules().
@@ -891,16 +921,12 @@ class PydocUrlHandlerTest(PydocBaseTest):
 
         with self.restrict_walk_packages():
             for url, title in requests:
-                text = pydoc._url_handler(url, "text/html")
-                result = get_html_title(text)
-                self.assertEqual(result, title, text)
+                self.call_url_handler(url, title)
 
             path = string.__file__
             title = "Pydoc: getfile " + path
             url = "getfile?key=" + path
-            text = pydoc._url_handler(url, "text/html")
-            result = get_html_title(text)
-            self.assertEqual(result, title)
+            self.call_url_handler(url, title)
 
 
 class TestHelper(unittest.TestCase):
