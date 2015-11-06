@@ -1721,7 +1721,13 @@ PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value) {
     int res = PyDict_SetItem(od, key, value);
     if (res == 0) {
         res = _odict_add_new_node((PyODictObject *)od, key);
-        /* XXX Revert setting the value on the dict? */
+        if (res < 0) {
+            /* Revert setting the value on the dict */
+            PyObject *exc, *val, *tb;
+            PyErr_Fetch(&exc, &val, &tb);
+            (void) PyDict_DelItem(od, key);
+            _PyErr_ChainExceptions(exc, val, tb);
+        }
     }
     return res;
 };
