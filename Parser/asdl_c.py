@@ -275,7 +275,9 @@ class PrototypeVisitor(EmitVisitor):
 
     def visitProduct(self, prod, name):
         self.emit_function(name, get_c_type(name),
-                           self.get_args(prod.fields), [], union=False)
+                           self.get_args(prod.fields),
+                           self.get_args(prod.attributes),
+                           union=False)
 
 
 class FunctionVisitor(PrototypeVisitor):
@@ -329,7 +331,8 @@ class FunctionVisitor(PrototypeVisitor):
             self.emit(s, depth, reflow)
         for argtype, argname, opt in args:
             emit("p->%s = %s;" % (argname, argname), 1)
-        assert not attrs
+        for argtype, argname, opt in attrs:
+            emit("p->%s = %s;" % (argname, argname), 1)
 
 
 class PickleVisitor(EmitVisitor):
@@ -452,10 +455,15 @@ class Obj2ModVisitor(PickleVisitor):
         self.emit("PyObject* tmp = NULL;", 1)
         for f in prod.fields:
             self.visitFieldDeclaration(f, name, prod=prod, depth=1)
+        for a in prod.attributes:
+            self.visitFieldDeclaration(a, name, prod=prod, depth=1)
         self.emit("", 0)
         for f in prod.fields:
             self.visitField(f, name, prod=prod, depth=1)
+        for a in prod.attributes:
+            self.visitField(a, name, prod=prod, depth=1)
         args = [f.name for f in prod.fields]
+        args.extend([a.name for a in prod.attributes])
         self.emit("*out = %s(%s);" % (name, self.buildArgs(args)), 1)
         self.emit("return 0;", 1)
         self.emit("failed:", 0)
