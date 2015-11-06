@@ -2425,7 +2425,8 @@ arguments(asdl_seq * args, arg_ty vararg, asdl_seq * kwonlyargs, asdl_seq *
 }
 
 arg_ty
-arg(identifier arg, expr_ty annotation, PyArena *arena)
+arg(identifier arg, expr_ty annotation, int lineno, int col_offset, PyArena
+    *arena)
 {
     arg_ty p;
     if (!arg) {
@@ -2438,6 +2439,8 @@ arg(identifier arg, expr_ty annotation, PyArena *arena)
         return NULL;
     p->arg = arg;
     p->annotation = annotation;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
     return p;
 }
 
@@ -7247,6 +7250,8 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     PyObject* tmp = NULL;
     identifier arg;
     expr_ty annotation;
+    int lineno;
+    int col_offset;
 
     if (_PyObject_HasAttrId(obj, &PyId_arg)) {
         int res;
@@ -7269,7 +7274,29 @@ obj2ast_arg(PyObject* obj, arg_ty* out, PyArena* arena)
     } else {
         annotation = NULL;
     }
-    *out = arg(arg, annotation, arena);
+    if (_PyObject_HasAttrId(obj, &PyId_lineno)) {
+        int res;
+        tmp = _PyObject_GetAttrId(obj, &PyId_lineno);
+        if (tmp == NULL) goto failed;
+        res = obj2ast_int(tmp, &lineno, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "required field \"lineno\" missing from arg");
+        return 1;
+    }
+    if (_PyObject_HasAttrId(obj, &PyId_col_offset)) {
+        int res;
+        tmp = _PyObject_GetAttrId(obj, &PyId_col_offset);
+        if (tmp == NULL) goto failed;
+        res = obj2ast_int(tmp, &col_offset, arena);
+        if (res != 0) goto failed;
+        Py_CLEAR(tmp);
+    } else {
+        PyErr_SetString(PyExc_TypeError, "required field \"col_offset\" missing from arg");
+        return 1;
+    }
+    *out = arg(arg, annotation, lineno, col_offset, arena);
     return 0;
 failed:
     Py_XDECREF(tmp);
