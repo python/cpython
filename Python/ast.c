@@ -1173,11 +1173,9 @@ ast_for_arg(struct compiling *c, const node *n)
             return NULL;
     }
 
-    ret = arg(name, annotation, c->c_arena);
+    ret = arg(name, annotation, LINENO(n), n->n_col_offset, c->c_arena);
     if (!ret)
         return NULL;
-    ret->lineno = LINENO(n);
-    ret->col_offset = n->n_col_offset;
     return ret;
 }
 
@@ -1233,11 +1231,10 @@ handle_keywordonly_args(struct compiling *c, const node *n, int start,
                     goto error;
                 if (forbidden_name(c, argname, ch, 0))
                     goto error;
-                arg = arg(argname, annotation, c->c_arena);
+                arg = arg(argname, annotation, LINENO(ch), ch->n_col_offset,
+                          c->c_arena);
                 if (!arg)
                     goto error;
-                arg->lineno = LINENO(ch);
-                arg->col_offset = ch->n_col_offset;
                 asdl_seq_SET(kwonlyargs, j++, arg);
                 i += 2; /* the name and the comma */
                 break;
