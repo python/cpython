@@ -481,10 +481,12 @@ struct _odictobject {
     PyDictObject od_dict;        /* the underlying dict */
     _ODictNode *od_first;        /* first node in the linked list, if any */
     _ODictNode *od_last;         /* last node in the linked list, if any */
-    /* od_fast_nodes and od_resize_sentinel are managed by _odict_resize()
+    /* od_fast_nodes, od_fast_nodes_size and od_resize_sentinel are managed
+     * by _odict_resize().
      * Note that we rely on implementation details of dict for both. */
     _ODictNode **od_fast_nodes;  /* hash table that mirrors the dict table */
-    Py_uintptr_t od_resize_sentinel;  /* changes if odict should be resized */
+    Py_ssize_t od_fast_nodes_size;
+    void *od_resize_sentinel;    /* changes if odict should be resized */
 
     size_t od_state;             /* incremented whenever the LL changes */
     PyObject *od_inst_dict;      /* OrderedDict().__dict__ */
@@ -573,7 +575,8 @@ _odict_resize(PyODictObject *od) {
     /* Replace the old fast nodes table. */
     _odict_free_fast_nodes(od);
     od->od_fast_nodes = fast_nodes;
-    od->od_resize_sentinel = (Py_uintptr_t)(((PyDictObject *)od)->ma_keys);
+    od->od_fast_nodes_size = size;
+    od->od_resize_sentinel = ((PyDictObject *)od)->ma_keys;
     return 0;
 }
 
@@ -591,7 +594,8 @@ _odict_get_index(PyODictObject *od, PyObject *key)
     keys = ((PyDictObject *)od)->ma_keys;
 
     /* Ensure od_fast_nodes and dk_entries are in sync. */
-    if (od->od_resize_sentinel != (Py_uintptr_t)keys) {
+    if (od->od_resize_sentinel != keys ||
+        od->od_fast_nodes_size != keys->dk_size) {
         int resize_res = _odict_resize(od);
         if (resize_res < 0)
             return -1;
