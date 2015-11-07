@@ -379,7 +379,7 @@ _PyRandom_Init(void)
     char *env;
     unsigned char *secret = (unsigned char *)&_Py_HashSecret.uc;
     Py_ssize_t secret_size = sizeof(_Py_HashSecret_t);
-    assert(secret_size == sizeof(_Py_HashSecret.uc));
+    Py_BUILD_ASSERT(sizeof(_Py_HashSecret_t) == sizeof(_Py_HashSecret.uc));
 
     if (_Py_HashSecret_Initialized)
         return;

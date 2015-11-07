@@ -5329,19 +5329,19 @@ PyInit__datetime(void)
     /* A 4-year cycle has an extra leap day over what we'd get from
      * pasting together 4 single years.
      */
-    assert(DI4Y == 4 * 365 + 1);
+    Py_BUILD_ASSERT(DI4Y == 4 * 365 + 1);
     assert(DI4Y == days_before_year(4+1));
 
     /* Similarly, a 400-year cycle has an extra leap day over what we'd
      * get from pasting together 4 100-year cycles.
      */
-    assert(DI400Y == 4 * DI100Y + 1);
+    Py_BUILD_ASSERT(DI400Y == 4 * DI100Y + 1);
     assert(DI400Y == days_before_year(400+1));
 
     /* OTOH, a 100-year cycle has one fewer leap day than we'd get from
      * pasting together 25 4-year cycles.
      */
-    assert(DI100Y == 25 * DI4Y - 1);
+    Py_BUILD_ASSERT(DI100Y == 25 * DI4Y - 1);
     assert(DI100Y == days_before_year(100+1));
 
     one = PyLong_FromLong(1);
