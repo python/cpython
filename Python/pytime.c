@@ -43,7 +43,7 @@ _PyLong_AsTime_t(PyObject *obj)
     val = PyLong_AsLongLong(obj);
 #else
     long val;
-    assert(sizeof(time_t) <= sizeof(long));
+    Py_BUILD_ASSERT(sizeof(time_t) <= sizeof(long));
     val = PyLong_AsLong(obj);
 #endif
     if (val == -1 && PyErr_Occurred()) {
@@ -60,7 +60,7 @@ _PyLong_FromTime_t(time_t t)
 #if defined(HAVE_LONG_LONG) && SIZEOF_TIME_T == SIZEOF_LONG_LONG
     return PyLong_FromLongLong((PY_LONG_LONG)t);
 #else
-    assert(sizeof(time_t) <= sizeof(long));
+    Py_BUILD_ASSERT(sizeof(time_t) <= sizeof(long));
     return PyLong_FromLong((long)t);
 #endif
 }
@@ -209,6 +209,8 @@ _PyTime_FromSeconds(int seconds)
     /* ensure that integer overflow cannot happen, int type should have 32
        bits, whereas _PyTime_t type has at least 64 bits (SEC_TO_MS takes 30
        bits). */
+    Py_BUILD_ASSERT(INT_MAX <= _PyTime_MAX / SEC_TO_NS);
+    Py_BUILD_ASSERT(INT_MIN >= _PyTime_MIN / SEC_TO_NS);
     assert((t >= 0 && t <= _PyTime_MAX / SEC_TO_NS)
            || (t < 0 && t >= _PyTime_MIN / SEC_TO_NS));
     t *= SEC_TO_NS;
@@ -219,7 +221,7 @@ _PyTime_t
 _PyTime_FromNanoseconds(PY_LONG_LONG ns)
 {
     _PyTime_t t;
-    assert(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
+    Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
     t = Py_SAFE_DOWNCAST(ns, PY_LONG_LONG, _PyTime_t);
     return t;
 }
@@ -231,7 +233,7 @@ _PyTime_FromTimespec(_PyTime_t *tp, struct timespec *ts, int raise)
     _PyTime_t t;
     int res = 0;
 
-    assert(sizeof(ts->tv_sec) <= sizeof(_PyTime_t));
+    Py_BUILD_ASSERT(sizeof(ts->tv_sec) <= sizeof(_PyTime_t));
     t = (_PyTime_t)ts->tv_sec;
 
     if (_PyTime_check_mul_overflow(t, SEC_TO_NS)) {
@@ -253,7 +255,7 @@ _PyTime_FromTimeval(_PyTime_t *tp, struct timeval *tv, int raise)
     _PyTime_t t;
     int res = 0;
 
-    assert(sizeof(tv->tv_sec) <= sizeof(_PyTime_t));
+    Py_BUILD_ASSERT(sizeof(tv->tv_sec) <= sizeof(_PyTime_t));
     t = (_PyTime_t)tv->tv_sec;
 
     if (_PyTime_check_mul_overflow(t, SEC_TO_NS)) {
@@ -304,12 +306,12 @@ _PyTime_FromObject(_PyTime_t *t, PyObject *obj, _PyTime_round_t round,
     else {
 #ifdef HAVE_LONG_LONG
         PY_LONG_LONG sec;
-        assert(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
+        Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
 
         sec = PyLong_AsLongLong(obj);
 #else
         long sec;
-        assert(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
+        Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) <= sizeof(_PyTime_t));
 
         sec = PyLong_AsLong(obj);
 #endif
@@ -364,10 +366,10 @@ PyObject *
 _PyTime_AsNanosecondsObject(_PyTime_t t)
 {
 #ifdef HAVE_LONG_LONG
-    assert(sizeof(PY_LONG_LONG) >= sizeof(_PyTime_t));
+    Py_BUILD_ASSERT(sizeof(PY_LONG_LONG) >= sizeof(_PyTime_t));
     return PyLong_FromLongLong((PY_LONG_LONG)t);
 #else
-    assert(sizeof(long) >= sizeof(_PyTime_t));
+    Py_BUILD_ASSERT(sizeof(long) >= sizeof(_PyTime_t));
     return PyLong_FromLong((long)t);
 #endif
 }
@@ -650,7 +652,7 @@ pymonotonic(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
     assert(info == NULL || raise);
 
     ticks = GetTickCount64();
-    assert(sizeof(ticks) <= sizeof(_PyTime_t));
+    Py_BUILD_ASSERT(sizeof(ticks) <= sizeof(_PyTime_t));
     t = (_PyTime_t)ticks;
 
     if (_PyTime_check_mul_overflow(t, MS_TO_NS)) {
@@ -774,8 +776,5 @@ _PyTime_Init(void)
     if (_PyTime_GetMonotonicClockWithInfo(&t, NULL) < 0)
         return -1;
 
-    /* check that _PyTime_FromSeconds() cannot overflow */
-    assert(INT_MAX <= _PyTime_MAX / SEC_TO_NS);
-    assert(INT_MIN >= _PyTime_MIN / SEC_TO_NS);
     return 0;
 }

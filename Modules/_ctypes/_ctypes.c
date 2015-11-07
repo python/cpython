@@ -2386,7 +2386,7 @@ unique_key(CDataObject *target, Py_ssize_t index)
     char *cp = string;
     size_t bytes_left;
 
-    assert(sizeof(string) - 1 > sizeof(Py_ssize_t) * 2);
+    Py_BUILD_ASSERT(sizeof(string) - 1 > sizeof(Py_ssize_t) * 2);
     cp += sprintf(cp, "%x", Py_SAFE_DOWNCAST(index, Py_ssize_t, int));
     while (target->b_base) {
         bytes_left = sizeof(string) - (cp - string) - 1;

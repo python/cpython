@@ -747,7 +747,8 @@ pyexpat_xmlparser_Parse_impl(xmlparseobject *self, PyObject *data,
         s += MAX_CHUNK_SIZE;
         slen -= MAX_CHUNK_SIZE;
     }
-    assert(MAX_CHUNK_SIZE < INT_MAX && slen < INT_MAX);
+    Py_BUILD_ASSERT(MAX_CHUNK_SIZE <= INT_MAX);
+    assert(slen <= INT_MAX);
     rc = XML_Parse(self->itself, s, (int)slen, isfinal);
 
 done:
