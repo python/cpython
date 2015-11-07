@@ -169,6 +169,14 @@ class AbstractCompatTests(AbstractPickleTests):
                 u2 = self.loads(p)
                 self.assertEqual(u2, u)
 
+    # The ability to pickle recursive objects was added in 2.7.11 to fix
+    # a crash in CPickle (issue #892902).
+    test_recursive_list_subclass_and_inst = None
+    test_recursive_tuple_subclass_and_inst = None
+    test_recursive_dict_subclass_and_inst = None
+    test_recursive_set_and_inst = None
+    test_recursive_frozenset_and_inst = None
+
 
 # Test backwards compatibility with Python 2.4.
 class CPicklePython24Compat(AbstractCompatTests):
