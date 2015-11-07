@@ -998,12 +998,14 @@ def add_files(db):
     if launchersrc.lower() == 'pcbuild\\amd64':
         launchersrc = 'PCBuild'
     launcher = os.path.join(srcdir, launchersrc, "py.exe")
-    launcherdir.start_component("launcher", flags = 8+256, keyfile="py.exe")
+    launcherdir.start_component("launcher", flags = 8+256, keyfile="py.exe",
+                                uuid="{B5107402-6958-461B-8B0A-4037D3327160}")
     launcherdir.add_file(launcher,
                          version=installer.FileVersion(launcher, 0),
                          language=installer.FileVersion(launcher, 1))
     launcherw = os.path.join(srcdir, launchersrc, "pyw.exe")
-    launcherdir.start_component("launcherw", flags = 8+256, keyfile="pyw.exe")
+    launcherdir.start_component("launcherw", flags = 8+256, keyfile="pyw.exe",
+                                uuid="{8E52B8CD-48BB-4D74-84CD-6238BCD11F20}")
     launcherdir.add_file(launcherw,
                          version=installer.FileVersion(launcherw, 0),
                          language=installer.FileVersion(launcherw, 1))
