@@ -767,7 +767,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     int got_bracket=0;
     PyObject *s_buffer = NULL;
     Py_ssize_t len;
-    Py_buffer view = {NULL, NULL};
 
     if (PyUnicode_Check(v)) {
         s_buffer = _PyUnicode_TransformDecimalAndSpaceToASCII(v);
@@ -776,10 +775,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
         s = PyUnicode_AsUTF8AndSize(s_buffer, &len);
         if (s == NULL)
             goto error;
-    }
-    else if (PyObject_GetBuffer(v, &view, PyBUF_SIMPLE) == 0) {
-        s = (const char *)view.buf;
-        len = view.len;
     }
     else {
         PyErr_Format(PyExc_TypeError,
@@ -895,7 +890,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     if (s-start != len)
         goto parse_error;
 
-    PyBuffer_Release(&view);
     Py_XDECREF(s_buffer);
     return complex_subtype_from_doubles(type, x, y);
 
@@ -903,7 +897,6 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
     PyErr_SetString(PyExc_ValueError,
                     "complex() arg is a malformed string");
   error:
-    PyBuffer_Release(&view);
     Py_XDECREF(s_buffer);
     return NULL;
 }

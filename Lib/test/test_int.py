@@ -276,16 +276,40 @@ class IntTestCases(unittest.TestCase):
         class CustomBytes(bytes): pass
         class CustomByteArray(bytearray): pass
 
-        values = [b'100',
-                  bytearray(b'100'),
-                  CustomStr('100'),
-                  CustomBytes(b'100'),
-                  CustomByteArray(b'100')]
+        factories = [
+            bytes,
+            bytearray,
+            lambda b: CustomStr(b.decode()),
+            CustomBytes,
+            CustomByteArray,
+            memoryview,
+        ]
+        try:
+            from array import array
+        except ImportError:
+            pass
+        else:
+            factories.append(lambda b: array('B', b))
 
-        for x in values:
-            msg = 'x has type %s' % type(x).__name__
-            self.assertEqual(int(x), 100, msg=msg)
-            self.assertEqual(int(x, 2), 4, msg=msg)
+        for f in factories:
+            x = f(b'100')
+            with self.subTest(type(x)):
+                self.assertEqual(int(x), 100)
+                if isinstance(x, (str, bytes, bytearray)):
+                    self.assertEqual(int(x, 2), 4)
+                else:
+                    msg = "can't convert non-string"
+                    with self.assertRaisesRegex(TypeError, msg):
+                        int(x, 2)
+                with self.assertRaisesRegex(ValueError, 'invalid literal'):
+                    int(f(b'A' * 0x10))
+
+    def test_int_memoryview(self):
+        self.assertEqual(int(memoryview(b'123')[1:3]), 23)
+        self.assertEqual(int(memoryview(b'123\x00')[1:3]), 23)
+        self.assertEqual(int(memoryview(b'123 ')[1:3]), 23)
+        self.assertEqual(int(memoryview(b'123A')[1:3]), 23)
+        self.assertEqual(int(memoryview(b'1234')[1:3]), 23)
 
     def test_string_float(self):
         self.assertRaises(ValueError, int, '1.2')
