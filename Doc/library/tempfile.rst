@@ -33,7 +33,7 @@ is recommended to use keyword arguments for clarity.
 
 The module defines the following user-callable items:
 
-.. function:: TemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix='', prefix='tmp', dir=None)
+.. function:: TemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None)
 
    Return a :term:`file-like object` that can be used as a temporary storage area.
    The file is created securely, using the same rules as :func:`mkstemp`. It will be destroyed as soon
@@ -54,8 +54,8 @@ The module defines the following user-callable items:
    stored.  *buffering*, *encoding* and *newline* are interpreted as for
    :func:`open`.
 
-   The *dir*, *prefix* and *suffix* parameters have the same meaning
-   as with :func:`mkstemp`.
+   The *dir*, *prefix* and *suffix* parameters have the same meaning and
+   defaults as with :func:`mkstemp`.
 
    The returned object is a true file object on POSIX platforms.  On other
    platforms, it is a file-like object whose :attr:`!file` attribute is the
@@ -69,7 +69,7 @@ The module defines the following user-callable items:
       The :py:data:`os.O_TMPFILE` flag is now used if available.
 
 
-.. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix='', prefix='tmp', dir=None, delete=True)
+.. function:: NamedTemporaryFile(mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None, delete=True)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    the file is guaranteed to have a visible name in the file system (on
@@ -84,7 +84,7 @@ The module defines the following user-callable items:
    be used in a :keyword:`with` statement, just like a normal file.
 
 
-.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix='', prefix='tmp', dir=None)
+.. function:: SpooledTemporaryFile(max_size=0, mode='w+b', buffering=None, encoding=None, newline=None, suffix=None, prefix=None, dir=None)
 
    This function operates exactly as :func:`TemporaryFile` does, except that
    data is spooled in memory until the file size exceeds *max_size*, or
@@ -106,7 +106,7 @@ The module defines the following user-callable items:
       the truncate method now accepts a ``size`` argument.
 
 
-.. function:: TemporaryDirectory(suffix='', prefix='tmp', dir=None)
+.. function:: TemporaryDirectory(suffix=None, prefix=None, dir=None)
 
    This function securely creates a temporary directory using the same rules as :func:`mkdtemp`.
    The resulting object can be used as a context manager (see
@@ -138,15 +138,16 @@ The module defines the following user-callable items:
    Unlike :func:`TemporaryFile`, the user of :func:`mkstemp` is responsible
    for deleting the temporary file when done with it.
 
-   If *suffix* is specified, the file name will end with that suffix,
+   If *suffix* is not ``None``, the file name will end with that suffix,
    otherwise there will be no suffix.  :func:`mkstemp` does not put a dot
    between the file name and the suffix; if you need one, put it at the
    beginning of *suffix*.
 
-   If *prefix* is specified, the file name will begin with that prefix;
-   otherwise, a default prefix is used.
+   If *prefix* is not ``None``, the file name will begin with that prefix;
+   otherwise, a default prefix is used.  The default is the return value of
+   :func:`gettempprefix` or :func:`gettempprefixb`, as appropriate.
 
-   If *dir* is specified, the file will be created in that directory;
+   If *dir* is not ``None``, the file will be created in that directory;
    otherwise, a default directory is used.  The default directory is chosen
    from a platform-dependent list, but the user of the application can
    control the directory location by setting the *TMPDIR*, *TEMP* or *TMP*
@@ -154,15 +155,11 @@ The module defines the following user-callable items:
    filename will have any nice properties, such as not requiring quoting
    when passed to external commands via ``os.popen()``.
 
-   *suffix*, *prefix*, and *dir* must all contain the same type, if specified.
+   If any of *suffix*, *prefix*, and *dir* are not
+   ``None``, they must be the same type.
    If they are bytes, the returned name will be bytes instead of str.
    If you want to force a bytes return value with otherwise default behavior,
    pass ``suffix=b''``.
-
-   A *prefix* value of ``None`` means use the return value of
-   :func:`gettempprefix` or :func:`gettempprefixb` as appropriate.
-
-   A *suffix* value of ``None`` means use an appropriate empty value.
 
    If *text* is specified, it indicates whether to open the file in binary
    mode (the default) or text mode.  On some platforms, this makes no
@@ -241,7 +238,7 @@ The module defines the following user-callable items:
 
 .. function:: gettempprefixb()
 
-   Same as :func:`gettempprefixb` but the return value is in bytes.
+   Same as :func:`gettempprefix` but the return value is in bytes.
 
    .. versionadded:: 3.5
 
@@ -314,8 +311,9 @@ other functions described above.
       Use :func:`mkstemp` instead.
 
    Return an absolute pathname of a file that did not exist at the time the
-   call is made.  The *prefix*, *suffix*, and *dir* arguments are the same
-   as for :func:`mkstemp`.
+   call is made.  The *prefix*, *suffix*, and *dir* arguments are similar
+   to those of :func:`mkstemp`, except that bytes file names, ``suffix=None``
+   and ``prefix=None`` are not supported.
 
    .. warning::
 
