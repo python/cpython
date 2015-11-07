@@ -31,7 +31,6 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertEqual(float(3.14), 3.14)
         self.assertEqual(float(314), 314.0)
         self.assertEqual(float("  3.14  "), 3.14)
-        self.assertEqual(float(b" 3.14  "), 3.14)
         self.assertRaises(ValueError, float, "  0x3.1  ")
         self.assertRaises(ValueError, float, "  -0x3.p-1  ")
         self.assertRaises(ValueError, float, "  +0x3.p-1  ")
@@ -43,7 +42,6 @@ class GeneralFloatCases(unittest.TestCase):
         self.assertRaises(ValueError, float, "+.inf")
         self.assertRaises(ValueError, float, ".")
         self.assertRaises(ValueError, float, "-.")
-        self.assertRaises(ValueError, float, b"-")
         self.assertRaises(TypeError, float, {})
         self.assertRaisesRegex(TypeError, "not 'dict'", float, {})
         # Lone surrogate
@@ -56,6 +54,42 @@ class GeneralFloatCases(unittest.TestCase):
         # extra long strings should not be a problem
         float(b'.' + b'1'*1000)
         float('.' + '1'*1000)
+
+    def test_non_numeric_input_types(self):
+        # Test possible non-numeric types for the argument x, including
+        # subclasses of the explicitly documented accepted types.
+        class CustomStr(str): pass
+        class CustomBytes(bytes): pass
+        class CustomByteArray(bytearray): pass
+
+        factories = [
+            bytes,
+            bytearray,
+            lambda b: CustomStr(b.decode()),
+            CustomBytes,
+            CustomByteArray,
+            memoryview,
+        ]
+        try:
+            from array import array
+        except ImportError:
+            pass
+        else:
+            factories.append(lambda b: array('B', b))
+
+        for f in factories:
+            x = f(b" 3.14  ")
+            with self.subTest(type(x)):
+                self.assertEqual(float(x), 3.14)
+                with self.assertRaisesRegex(ValueError, "could not convert"):
+                    float(f(b'A' * 0x10))
+
+    def test_float_memoryview(self):
+        self.assertEqual(float(memoryview(b'12.3')[1:4]), 2.3)
+        self.assertEqual(float(memoryview(b'12.3\x00')[1:4]), 2.3)
+        self.assertEqual(float(memoryview(b'12.3 ')[1:4]), 2.3)
+        self.assertEqual(float(memoryview(b'12.3A')[1:4]), 2.3)
+        self.assertEqual(float(memoryview(b'12.34')[1:4]), 2.3)
 
     def test_error_message(self):
         testlist = ('\xbd', '123\xbd', '  123 456  ')
