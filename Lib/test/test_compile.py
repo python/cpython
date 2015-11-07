@@ -530,6 +530,27 @@ if 1:
         check_limit("a", "[0]")
         check_limit("a", "*a")
 
+    def test_null_terminated(self):
+        # The source code is null-terminated internally, but bytes-like
+        # objects are accepted, which could be not terminated.
+        # Exception changed from TypeError to ValueError in 3.5
+        with self.assertRaisesRegex(Exception, "cannot contain null"):
+            compile("123\x00", "<dummy>", "eval")
+        with self.assertRaisesRegex(Exception, "cannot contain null"):
+            compile(memoryview(b"123\x00"), "<dummy>", "eval")
+        code = compile(memoryview(b"123\x00")[1:-1], "<dummy>", "eval")
+        self.assertEqual(eval(code), 23)
+        code = compile(memoryview(b"1234")[1:-1], "<dummy>", "eval")
+        self.assertEqual(eval(code), 23)
+        code = compile(memoryview(b"$23$")[1:-1], "<dummy>", "eval")
+        self.assertEqual(eval(code), 23)
+
+        # Also test when eval() and exec() do the compilation step
+        self.assertEqual(eval(memoryview(b"1234")[1:-1]), 23)
+        namespace = dict()
+        exec(memoryview(b"ax = 123")[1:-1], namespace)
+        self.assertEqual(namespace['x'], 12)
+
 
 class TestStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
