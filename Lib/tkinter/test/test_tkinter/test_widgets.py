@@ -91,9 +91,10 @@ class ToplevelTest(AbstractToplevelTest, unittest.TestCase):
         widget = self.create()
         self.assertEqual(widget['use'], '')
         parent = self.create(container=True)
-        wid = parent.winfo_id()
-        widget2 = self.create(use=wid)
-        self.assertEqual(int(widget2['use']), wid)
+        wid = hex(parent.winfo_id())
+        with self.subTest(wid=wid):
+            widget2 = self.create(use=wid)
+            self.assertEqual(widget2['use'], wid)
 
 
 @add_standard_options(StandardOptionsTests)
