@@ -46,6 +46,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18010: Fix the pydoc GUI's search function to handle exceptions
+  from importing packages.
+
 - Issue #25515: Always use os.urandom as a source of randomness in uuid.uuid4.
 
 - Issue #21827: Fixed textwrap.dedent() for the case when largest common

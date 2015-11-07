@@ -2244,8 +2244,11 @@ def gui():
             if self.scanner:
                 self.scanner.quit = 1
             self.scanner = ModuleScanner()
+            def onerror(modname):
+                pass
             threading.Thread(target=self.scanner.run,
-                             args=(self.update, key, self.done)).start()
+                             args=(self.update, key, self.done),
+                             kwargs=dict(onerror=onerror)).start()
 
         def update(self, path, modname, desc):
             if modname[-9:] == '.__init__':
