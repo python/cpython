@@ -708,6 +708,9 @@ Tools/Demos
 Windows
 -------
 
+- Issue #24306: Sets component ID for launcher to match 3.5 and later
+  to avoid downgrading.
+
 - Issue #25022: Removed very outdated PC/example_nt/ directory.
 
 
