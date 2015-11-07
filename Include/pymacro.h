@@ -36,6 +36,10 @@
 #define Py_BUILD_ASSERT_EXPR(cond) \
     (sizeof(char [1 - 2*!(cond)]) - 1)
 
+#define Py_BUILD_ASSERT(cond)  do {         \
+        (void)Py_BUILD_ASSERT_EXPR(cond);   \
+    } while(0)
+
 /* Get the number of elements in a visible array
 
    This does not work on pointers, or arrays declared as [], or function

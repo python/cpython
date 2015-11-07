@@ -874,7 +874,7 @@ _write_size64(char *out, size_t value)
 {
     size_t i;
 
-    assert(sizeof(size_t) <= 8);
+    Py_BUILD_ASSERT(sizeof(size_t) <= 8);
 
     for (i = 0; i < sizeof(size_t); i++) {
         out[i] = (unsigned char)((value >> (8 * i)) & 0xff);
