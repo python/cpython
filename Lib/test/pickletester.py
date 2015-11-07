@@ -117,6 +117,18 @@ class E(C):
     def __getinitargs__(self):
         return ()
 
+class H(object):
+    pass
+
+# Hashable mutable key
+class K(object):
+    def __init__(self, value):
+        self.value = value
+
+    def __reduce__(self):
+        # Shouldn't support the recursion itself
+        return K, (self.value,)
+
 import __main__
 __main__.C = C
 C.__module__ = "__main__"
@@ -124,6 +136,10 @@ __main__.D = D
 D.__module__ = "__main__"
 __main__.E = E
 E.__module__ = "__main__"
+__main__.H = H
+H.__module__ = "__main__"
+__main__.K = K
+K.__module__ = "__main__"
 
 class myint(int):
     def __init__(self, x):
@@ -676,18 +692,21 @@ class AbstractPickleTests(unittest.TestCase):
         for proto in protocols:
             s = self.dumps(l, proto)
             x = self.loads(s)
+            self.assertIsInstance(x, list)
             self.assertEqual(len(x), 1)
-            self.assertTrue(x is x[0])
+            self.assertIs(x[0], x)
 
-    def test_recursive_tuple(self):
+    def test_recursive_tuple_and_list(self):
         t = ([],)
         t[0].append(t)
         for proto in protocols:
             s = self.dumps(t, proto)
             x = self.loads(s)
+            self.assertIsInstance(x, tuple)
             self.assertEqual(len(x), 1)
+            self.assertIsInstance(x[0], list)
             self.assertEqual(len(x[0]), 1)
-            self.assertTrue(x is x[0][0])
+            self.assertIs(x[0][0], x)
 
     def test_recursive_dict(self):
         d = {}
@@ -695,8 +714,50 @@ class AbstractPickleTests(unittest.TestCase):
         for proto in protocols:
             s = self.dumps(d, proto)
             x = self.loads(s)
+            self.assertIsInstance(x, dict)
             self.assertEqual(x.keys(), [1])
-            self.assertTrue(x[1] is x)
+            self.assertIs(x[1], x)
+
+    def test_recursive_dict_key(self):
+        d = {}
+        k = K(d)
+        d[k] = 1
+        for proto in protocols:
+            s = self.dumps(d, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, dict)
+            self.assertEqual(len(x.keys()), 1)
+            self.assertIsInstance(x.keys()[0], K)
+            self.assertIs(x.keys()[0].value, x)
+
+    def test_recursive_list_subclass(self):
+        y = MyList()
+        y.append(y)
+        s = self.dumps(y, 2)
+        x = self.loads(s)
+        self.assertIsInstance(x, MyList)
+        self.assertEqual(len(x), 1)
+        self.assertIs(x[0], x)
+
+    def test_recursive_dict_subclass(self):
+        d = MyDict()
+        d[1] = d
+        s = self.dumps(d, 2)
+        x = self.loads(s)
+        self.assertIsInstance(x, MyDict)
+        self.assertEqual(x.keys(), [1])
+        self.assertIs(x[1], x)
+
+    def test_recursive_dict_subclass_key(self):
+        d = MyDict()
+        k = K(d)
+        d[k] = 1
+        s = self.dumps(d, 2)
+        x = self.loads(s)
+        self.assertIsInstance(x, MyDict)
+        self.assertEqual(len(x.keys()), 1)
+        self.assertIsInstance(x.keys()[0], K)
+        self.assertIs(x.keys()[0].value, x)
 
     def test_recursive_inst(self):
         i = C()
@@ -720,6 +781,42 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(dir(x[0]), dir(i))
             self.assertEqual(x[0].attr.keys(), [1])
             self.assertTrue(x[0].attr[1] is x)
+
+    def check_recursive_collection_and_inst(self, factory):
+        h = H()
+        y = factory([h])
+        h.attr = y
+        for proto in protocols:
+            s = self.dumps(y, proto)
+            x = self.loads(s)
+            self.assertIsInstance(x, type(y))
+            self.assertEqual(len(x), 1)
+            self.assertIsInstance(list(x)[0], H)
+            self.assertIs(list(x)[0].attr, x)
+
+    def test_recursive_list_and_inst(self):
+        self.check_recursive_collection_and_inst(list)
+
+    def test_recursive_tuple_and_inst(self):
+        self.check_recursive_collection_and_inst(tuple)
+
+    def test_recursive_dict_and_inst(self):
+        self.check_recursive_collection_and_inst(dict.fromkeys)
+
+    def test_recursive_set_and_inst(self):
+        self.check_recursive_collection_and_inst(set)
+
+    def test_recursive_frozenset_and_inst(self):
+        self.check_recursive_collection_and_inst(frozenset)
+
+    def test_recursive_list_subclass_and_inst(self):
+        self.check_recursive_collection_and_inst(MyList)
+
+    def test_recursive_tuple_subclass_and_inst(self):
+        self.check_recursive_collection_and_inst(MyTuple)
+
+    def test_recursive_dict_subclass_and_inst(self):
+        self.check_recursive_collection_and_inst(MyDict.fromkeys)
 
     if have_unicode:
         def test_unicode(self):

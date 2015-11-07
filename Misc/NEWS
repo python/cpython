@@ -46,6 +46,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #892902: Fixed pickling recursive objects.
+
 - Issue #18010: Fix the pydoc GUI's search function to handle exceptions
   from importing packages.
 
