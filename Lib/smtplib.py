@@ -630,12 +630,12 @@ class SMTP:
             (code, resp) = self.docmd("AUTH", mechanism + " " + response)
         else:
             (code, resp) = self.docmd("AUTH", mechanism)
-            # Server replies with 334 (challenge) or 535 (not supported)
-            if code == 334:
-                challenge = base64.decodebytes(resp)
-                response = encode_base64(
-                    authobject(challenge).encode('ascii'), eol='')
-                (code, resp) = self.docmd(response)
+        # If server responds with a challenge, send the response.
+        if code == 334:
+            challenge = base64.decodebytes(resp)
+            response = encode_base64(
+                authobject(challenge).encode('ascii'), eol='')
+            (code, resp) = self.docmd(response)
         if code in (235, 503):
             return (code, resp)
         raise SMTPAuthenticationError(code, resp)
@@ -657,11 +657,10 @@ class SMTP:
     def auth_login(self, challenge=None):
         """ Authobject to use with LOGIN authentication. Requires self.user and
         self.password to be set."""
-        (code, resp) = self.docmd(
-            encode_base64(self.user.encode('ascii'), eol=''))
-        if code == 334:
+        if challenge is None:
+            return self.user
+        else:
             return self.password
-        raise SMTPAuthenticationError(code, resp)
 
     def login(self, user, password, *, initial_response_ok=True):
         """Log in on an SMTP server that requires authentication.
