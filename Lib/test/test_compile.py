@@ -545,10 +545,9 @@ if 1:
     def test_null_terminated(self):
         # The source code is null-terminated internally, but bytes-like
         # objects are accepted, which could be not terminated.
-        # Exception changed from TypeError to ValueError in 3.5
-        with self.assertRaisesRegex(Exception, "cannot contain null"):
+        with self.assertRaisesRegex(ValueError, "cannot contain null"):
             compile("123\x00", "<dummy>", "eval")
-        with self.assertRaisesRegex(Exception, "cannot contain null"):
+        with self.assertRaisesRegex(ValueError, "cannot contain null"):
             compile(memoryview(b"123\x00"), "<dummy>", "eval")
         code = compile(memoryview(b"123\x00")[1:-1], "<dummy>", "eval")
         self.assertEqual(eval(code), 23)
