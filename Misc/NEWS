@@ -79,6 +79,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25446: Fix regression in smtplib's AUTH LOGIN support.
+
 - Issue #18010: Fix the pydoc web server's module search function to handle
   exceptions from importing packages.
 
