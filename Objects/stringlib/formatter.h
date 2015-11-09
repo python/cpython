@@ -789,6 +789,7 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
         x = PyLong_AsLong(value);
         if (x == -1 && PyErr_Occurred())
             goto done;
+#if STRINGLIB_IS_UNICODE
 #ifdef Py_UNICODE_WIDE
         if (x < 0 || x > 0x10ffff) {
             PyErr_SetString(PyExc_OverflowError,
@@ -801,6 +802,13 @@ format_int_or_long_internal(PyObject *value, const InternalFormatSpec *format,
             PyErr_SetString(PyExc_OverflowError,
                             "%c arg not in range(0x10000) "
                             "(narrow Python build)");
+            goto done;
+        }
+#endif
+#else
+        if (x < 0 || x > 0xff) {
+            PyErr_SetString(PyExc_OverflowError,
+                            "%c arg not in range(0x100)");
             goto done;
         }
 #endif

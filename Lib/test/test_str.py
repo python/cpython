@@ -428,6 +428,11 @@ class StrTest(
         self.assertEqual('{:{f}}{g}{}'.format(1, 3, g='g', f=2), ' 1g3')
         self.assertEqual('{f:{}}{}{g}'.format(2, 4, f=1, g='g'), ' 14g')
 
+    def test_format_c_overflow(self):
+        # issue #7267
+        self.assertRaises(OverflowError, '{0:c}'.format, -1)
+        self.assertRaises(OverflowError, '{0:c}'.format, 256)
+
     def test_buffer_is_readonly(self):
         self.assertRaises(TypeError, sys.stdin.readinto, b"")
 

@@ -10,6 +10,9 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #7267: format(int, 'c') now raises OverflowError when the argument is
+  not in range(0, 256).
+
 - Issue #24806: Prevent builtin types that are not allowed to be subclassed from
   being subclassed through multiple inheritance.
 
