@@ -30,6 +30,13 @@ def iglob(pathname, *, recursive=False):
     If recursive is true, the pattern '**' will match any files and
     zero or more directories and subdirectories.
     """
+    it = _iglob(pathname, recursive)
+    if recursive and _isrecursive(pathname):
+        s = next(it)  # skip empty string
+        assert not s
+    return it
+
+def _iglob(pathname, recursive):
     dirname, basename = os.path.split(pathname)
     if not has_magic(pathname):
         if basename:
@@ -50,7 +57,7 @@ def iglob(pathname, *, recursive=False):
     # drive or UNC path.  Prevent an infinite recursion if a drive or UNC path
     # contains magic characters (i.e. r'\\?\C:').
     if dirname != pathname and has_magic(dirname):
-        dirs = iglob(dirname, recursive=recursive)
+        dirs = _iglob(dirname, recursive)
     else:
         dirs = [dirname]
     if has_magic(basename):
@@ -98,12 +105,10 @@ def glob0(dirname, basename):
 
 def glob2(dirname, pattern):
     assert _isrecursive(pattern)
-    if dirname:
-        yield pattern[:0]
+    yield pattern[:0]
     yield from _rlistdir(dirname)
 
 # Recursively yields relative pathnames inside a literal directory.
-
 def _rlistdir(dirname):
     if not dirname:
         if isinstance(dirname, bytes):
