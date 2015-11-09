@@ -114,5 +114,9 @@ class Structures(unittest.TestCase):
             self.assertEqual(ret.top, top.value)
             self.assertEqual(ret.bottom, bottom.value)
 
+        # to not leak references, we must clean _pointer_type_cache
+        from ctypes import _pointer_type_cache
+        del _pointer_type_cache[RECT]
+
 if __name__ == '__main__':
     unittest.main()
