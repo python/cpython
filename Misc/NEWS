@@ -1675,7 +1675,7 @@ Core and Builtins
 - Issue #20637: Key-sharing now also works for instance dictionaries of
   subclasses.  Patch by Peter Ingebretson.
 
-- Issue #12546: Allow \x00 to be used as a fill character when using str, int,
+- Issue #12546: Allow ``\x00`` to be used as a fill character when using str, int,
   float, and complex __format__ methods.
 
 - Issue #13598: Modify string.Formatter to support auto-numbering of
@@ -3418,7 +3418,7 @@ Build
   upgrade pip by default, using the bundled pip provided by the new ensurepip
   module.  A new configure option, --with-ensurepip[=upgrade|install|no], is
   available to override the default ensurepip "--upgrade" option.  The option
-  can also be set with "make [alt]install ENSUREPIP=[upgrade|install\no]".
+  can also be set with "make [alt]install ENSUREPIP=[upgrade|install|no]".
 
 - Issue #19551: PEP 453 - the OS X installer now installs pip by default.
 
@@ -3587,7 +3587,7 @@ Library
 - Issue #10712: 2to3 has a new "asserts" fixer that replaces deprecated names
   of unittest methods (e.g. failUnlessEqual -> assertEqual).
 
-- Issue #18037: 2to3 now escapes '\u' and '\U' in native strings.
+- Issue #18037: 2to3 now escapes ``'\u'`` and ``'\U'`` in native strings.
 
 - Issue #17839: base64.decodebytes and base64.encodebytes now accept any
   object that exports a 1 dimensional array of bytes (this means the same
@@ -4254,7 +4254,7 @@ Core and Builtins
 - Issue #5308: Raise ValueError when marshalling too large object (a sequence
   with size >= 2**31), instead of producing illegal marshal data.
 
-- Issue #12983: Bytes literals with invalid \x escape now raise a SyntaxError
+- Issue #12983: Bytes literals with invalid ``\x`` escape now raise a SyntaxError
   and a full traceback including line number.
 
 - Issue #16967: In function definition, evaluate positional defaults before
@@ -4625,7 +4625,7 @@ Library
   loaded X.509 certs, X.509 CA certs and CRLs.
 
 - Issue #18167: cgi.FieldStorage no longer fails to handle multipart/form-data
-  when \r\n appears at end of 65535 bytes without other newlines.
+  when ``\r\n`` appears at end of 65535 bytes without other newlines.
 
 - Issue #18076: Introduce importlib.util.decode_source().
 
@@ -5238,8 +5238,9 @@ Library
 
 - Issue #16900: Issue a ResourceWarning when an ssl socket is left unclosed.
 
-- Issue #13899: \A, \Z, and \B now correctly match the A, Z, and B literals
-  when used inside character classes (e.g. '[\A]').  Patch by Matthew Barnett.
+- Issue #13899: ``\A``, ``\Z``, and ``\B`` now correctly match the A, Z,
+  and B literals when used inside character classes (e.g. ``'[\A]'``).
+  Patch by Matthew Barnett.
 
 - Issue #15545: Fix regression in sqlite3's iterdump method where it was
   failing if the connection used a row factory (such as sqlite3.Row) that
