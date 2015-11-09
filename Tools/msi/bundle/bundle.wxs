@@ -26,7 +26,7 @@
     <Variable Name="WinVerNoDot" Value="$(var.MajorVersionNumber)$(var.MinorVersionNumber)$(var.PyArchExt)$(var.PyTestExt)" />
 
     <Variable Name="InstallAllUsers" Value="0" bal:Overridable="yes" />
-    <?ifndef PyTestExt ?>
+    <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="InstallLauncherAllUsers" Value="1" bal:Overridable="yes" />
     <?else ?>
     <Variable Name="InstallLauncherAllUsers" Value="0" />
@@ -52,7 +52,7 @@
     <Variable Name="DefaultCustomTargetDir" Value="" bal:Overridable="yes" />
 
     <Variable Name="InstallAllUsersState" Value="enabled" />
-    <?ifndef PyTestExt ?>
+    <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="InstallLauncherAllUsersState" Value="enabled" bal:Overridable="yes" />
     <?else ?>
     <Variable Name="InstallLauncherAllUsersState" Value="disable" bal:Overridable="yes" />
@@ -70,7 +70,7 @@
     <Variable Name="Include_tools" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_tcltk" Value="1" bal:Overridable="yes" />
     <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
-    <?ifndef PyTestExt ?>
+    <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="Include_launcher" Value="1" bal:Overridable="yes" />
     <?else ?>
     <Variable Name="Include_launcher" Value="0" />
