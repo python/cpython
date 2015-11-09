@@ -79,6 +79,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25584: Fixed recursive glob() with patterns starting with '\*\*'.
+
 - Issue #25446: Fix regression in smtplib's AUTH LOGIN support.
 
 - Issue #18010: Fix the pydoc web server's module search function to handle
