@@ -3076,7 +3076,7 @@ IDLE
 - Issue #16504: IDLE now catches SyntaxErrors raised by tokenizer. Patch by
   Roger Serwy.
 
-- Issue #1207589: Add Cut/Copy/Paste items to IDLE right click Context Menu
+- Issue #1207589: Add Cut/Copy/Paste items to IDLE right click Context Menu.
   Patch by Todd Rovito.
 
 - Issue #13052: Fix IDLE crashing when replace string in Search/Replace dialog
@@ -3272,7 +3272,7 @@ Tools/Demos
 
 - Issue #16476: Fix json.tool to avoid including trailing whitespace.
 
-- Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py
+- Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py.
   Patch by Serhiy Storchaka.
 
 Documentation
