@@ -4,7 +4,7 @@ import os
 import re
 import fnmatch
 
-__all__ = ["glob", "iglob"]
+__all__ = ["glob", "iglob", "escape"]
 
 def glob(pathname, *, recursive=False):
     """Return a list of paths matching a pathname pattern.
