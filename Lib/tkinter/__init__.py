@@ -845,8 +845,7 @@ class Misc:
             self.tk.call('winfo', 'height', self._w))
     def winfo_id(self):
         """Return identifier ID for this widget."""
-        return self.tk.getint(
-            self.tk.call('winfo', 'id', self._w))
+        return int(self.tk.call('winfo', 'id', self._w), 0)
     def winfo_interps(self, displayof=0):
         """Return the name of all Tcl interpreters for this display."""
         args = ('winfo', 'interps') + self._displayof(displayof)
