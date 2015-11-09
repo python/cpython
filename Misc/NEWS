@@ -61,6 +61,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25584: Added "escape" to the __all__ list in the glob module.
+
 - Issue #25584: Fixed recursive glob() with patterns starting with '\*\*'.
 
 - Issue #25446: Fix regression in smtplib's AUTH LOGIN support.
