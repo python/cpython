@@ -1164,7 +1164,7 @@ Library
 - Issue #23703: Fix a regression in urljoin() introduced in 901e4e52b20a.
   Patch by Demian Brecht.
 
-- Issue #4254: Adds _curses.update_lines_cols() Patch by Arnon Yaari
+- Issue #4254: Adds _curses.update_lines_cols().  Patch by Arnon Yaari
 
 - Issue #19933: Provide default argument for ndigits in round. Patch by
   Vajrasky Kok.
@@ -6380,7 +6380,7 @@ Library
 - Issue #17016: Get rid of possible pointer wraparounds and integer overflows
   in the re module.  Patch by Nickolai Zeldovich.
 
-- Issue #16658: add missing return to HTTPConnection.send()
+- Issue #16658: add missing return to HTTPConnection.send().
   Patch by Jeff Knupp.
 
 - Issue #9556: the logging package now allows specifying a time-of-day for a
@@ -6978,7 +6978,7 @@ Library
 - Issue #16431: Use the type information when constructing a Decimal subtype
   from a Decimal argument.
 
-- Issue #15641: Clean up deprecated classes from importlib
+- Issue #15641: Clean up deprecated classes from importlib.
   Patch by Taras Lyapun.
 
 - Issue #16350: zlib.decompressobj().decompress() now accumulates data from
@@ -7247,7 +7247,7 @@ IDLE
 - Issue #16511: Use default IDLE width and height if config param is not valid.
   Patch Serhiy Storchaka.
 
-- Issue #1207589: Add Cut/Copy/Paste items to IDLE right click Context Menu
+- Issue #1207589: Add Cut/Copy/Paste items to IDLE right click Context Menu.
   Patch by Todd Rovito.
 
 - Issue #16123: IDLE - deprecate running without a subprocess.
@@ -7760,7 +7760,7 @@ Tools/Demos
 - Issue #16549: Make json.tool work again on Python 3 and add tests.
   Initial patch by Berker Peksag and Serhiy Storchaka.
 
-- Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py
+- Issue #13301: use ast.literal_eval() instead of eval() in Tools/i18n/msgfmt.py.
   Patch by Serhiy Storchaka.
 
 Windows
