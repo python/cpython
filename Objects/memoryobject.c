@@ -2156,8 +2156,23 @@ static PyObject *
 memory_hex(PyMemoryViewObject *self, PyObject *dummy)
 {
     Py_buffer *src = VIEW_ADDR(self);
+    PyObject *bytes;
+    PyObject *ret;
+
     CHECK_RELEASED(self);
-    return _Py_strhex(src->buf, src->len);
+
+    if (MV_C_CONTIGUOUS(self->flags)) {
+        return _Py_strhex(src->buf, src->len);
+    }
+
+    bytes = memory_tobytes(self, dummy);
+    if (bytes == NULL)
+        return NULL;
+
+    ret = _Py_strhex(PyBytes_AS_STRING(bytes), Py_SIZE(bytes));
+    Py_DECREF(bytes);
+
+    return ret;
 }
 
 static PyObject *
