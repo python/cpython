@@ -841,6 +841,11 @@ class TestBufferProtocol(unittest.TestCase):
                 # test tobytes()
                 self.assertEqual(result.tobytes(), b)
 
+                # test hex()
+                m = memoryview(result)
+                h = "".join("%02x" % c for c in b)
+                self.assertEqual(m.hex(), h)
+
                 # lst := expected multi-dimensional logical representation
                 # flatten(lst) := elements in C-order
                 ff = fmt if fmt else 'B'
