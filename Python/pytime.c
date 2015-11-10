@@ -449,7 +449,7 @@ _PyTime_AsTimespec(_PyTime_t t, struct timespec *ts)
 #endif
 
 static int
-pygettimeofday_new(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
+pygettimeofday(_PyTime_t *tp, _Py_clock_info_t *info, int raise)
 {
 #ifdef MS_WINDOWS
     FILETIME system_time;
@@ -541,7 +541,7 @@ _PyTime_t
 _PyTime_GetSystemClock(void)
 {
     _PyTime_t t;
-    if (pygettimeofday_new(&t, NULL, 0) < 0) {
+    if (pygettimeofday(&t, NULL, 0) < 0) {
         /* should not happen, _PyTime_Init() checked the clock at startup */
         assert(0);
 
@@ -554,7 +554,7 @@ _PyTime_GetSystemClock(void)
 int
 _PyTime_GetSystemClockWithInfo(_PyTime_t *t, _Py_clock_info_t *info)
 {
-    return pygettimeofday_new(t, info, 1);
+    return pygettimeofday(t, info, 1);
 }
 
 
