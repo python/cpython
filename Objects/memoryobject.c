@@ -2242,7 +2242,7 @@ ptr_from_tuple(Py_buffer *view, PyObject *tup)
                                    PyExc_IndexError);
         if (index == -1 && PyErr_Occurred())
             return NULL;
-        ptr = lookup_dimension(view, ptr, dim, index);
+        ptr = lookup_dimension(view, ptr, (int)dim, index);
         if (ptr == NULL)
             return NULL;
     }
