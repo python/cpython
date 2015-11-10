@@ -12,7 +12,7 @@ class FontTest(AbstractTkTest, unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        AbstractTkTest.setUpClass()
+        AbstractTkTest.setUpClass.__func__(cls)
         try:
             cls.font = font.Font(root=cls.root, name=fontname, exists=True)
         except tkinter.TclError:
