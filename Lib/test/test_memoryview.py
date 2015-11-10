@@ -512,6 +512,13 @@ class OtherTest(unittest.TestCase):
                 m[2:] = memoryview(p6).cast(format)[2:]
                 self.assertEqual(d.value, 0.6)
 
+    def test_memoryview_hex(self):
+        # Issue #9951: memoryview.hex() segfaults with non-contiguous buffers.
+        x = b'0' * 200000
+        m1 = memoryview(x)
+        m2 = m1[::-1]
+        self.assertEqual(m2.hex(), '30' * 200000)
+
 
 if __name__ == "__main__":
     unittest.main()
