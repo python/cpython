@@ -3164,7 +3164,10 @@ Foo
                 self.msgids = []
                 append = self.msgids.append
                 make_msgid = utils.make_msgid
-                clock = time.clock
+                try:
+                    clock = time.monotonic
+                except AttributeError:
+                    clock = time.time
                 tfin = clock() + 3.0
                 while clock() < tfin:
                     append(make_msgid(domain='testdomain-string'))
