@@ -3,7 +3,6 @@ from .. import util
 importlib = util.import_importlib('importlib')
 machinery = util.import_importlib('importlib.machinery')
 
-import errno
 import os
 import sys
 import tempfile
@@ -160,17 +159,24 @@ class FinderTests:
             got = self.machinery.PathFinder.find_spec('whatever', [path])
         self.assertEqual(got, success_finder.spec)
 
-    @unittest.skipIf(sys.platform == 'win32', "cwd can't not exist on Windows")
     def test_deleted_cwd(self):
         # Issue #22834
-        self.addCleanup(os.chdir, os.getcwd())
+        old_dir = os.getcwd()
+        self.addCleanup(os.chdir, old_dir)
+        new_dir = tempfile.mkdtemp()
         try:
-            with tempfile.TemporaryDirectory() as path:
-                os.chdir(path)
-        except OSError as exc:
-            if exc.errno == errno.EINVAL:
-                self.skipTest("platform does not allow the deletion of the cwd")
+            os.chdir(new_dir)
+            try:
+                os.rmdir(new_dir)
+            except OSError:
+                # EINVAL on Solaris, EBUSY on AIX, ENOTEMPTY on Windows
+                self.skipTest("platform does not allow "
+                              "the deletion of the cwd")
+        except:
+            os.chdir(old_dir)
+            os.rmdir(new_dir)
             raise
+
         with util.import_state(path=['']):
             # Do not want FileNotFoundError raised.
             self.assertIsNone(self.machinery.PathFinder.find_spec('whatever'))
