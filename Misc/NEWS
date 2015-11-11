@@ -49,6 +49,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #7759: Fixed the mhlib module on filesystems that doesn't support
+  link counting for directories.
+
 - Issue #892902: Fixed pickling recursive objects.
 
 - Issue #18010: Fix the pydoc GUI's search function to handle exceptions

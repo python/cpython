@@ -159,7 +159,7 @@ class MH:
         # Get the link count so we can avoid listing folders
         # that have no subfolders.
         nlinks = os.stat(fullname).st_nlink
-        if nlinks <= 2:
+        if nlinks == 2:
             return []
         subfolders = []
         subnames = os.listdir(fullname)
@@ -171,7 +171,7 @@ class MH:
                 # Stop looking for subfolders when
                 # we've seen them all
                 nlinks = nlinks - 1
-                if nlinks <= 2:
+                if nlinks == 2:
                     break
         subfolders.sort()
         return subfolders
@@ -186,7 +186,7 @@ class MH:
         # Get the link count so we can avoid listing folders
         # that have no subfolders.
         nlinks = os.stat(fullname).st_nlink
-        if nlinks <= 2:
+        if nlinks == 2:
             return []
         subfolders = []
         subnames = os.listdir(fullname)
@@ -203,7 +203,7 @@ class MH:
                 # Stop looking for subfolders when
                 # we've seen them all
                 nlinks = nlinks - 1
-                if nlinks <= 2:
+                if nlinks == 2:
                     break
         subfolders.sort()
         return subfolders
