@@ -2046,6 +2046,8 @@ context_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     options = SSL_OP_ALL & ~SSL_OP_DONT_INSERT_EMPTY_FRAGMENTS;
     if (proto_version != PY_SSL_VERSION_SSL2)
         options |= SSL_OP_NO_SSLv2;
+    if (proto_version != PY_SSL_VERSION_SSL3)
+        options |= SSL_OP_NO_SSLv3;
     SSL_CTX_set_options(self->ctx, options);
 
 #ifndef OPENSSL_NO_ECDH
