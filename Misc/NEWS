@@ -233,6 +233,8 @@ Library
 - Issue #13248: Remove deprecated inspect.getargspec and inspect.getmoduleinfo
   functions.
 
+- Issue #25569: Fix memory leak in SSLSocket.getpeercert().
+
 - Issue #25471: Sockets returned from accept() shouldn't appear to be
   nonblocking.
 
