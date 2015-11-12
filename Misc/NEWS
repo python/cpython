@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #22995: Default implementation of __reduce__ and __reduce_ex__ now
+  rejects builtin types with not defined __new__.
+
 - Issue #25555: Fix parser and AST: fill lineno and col_offset of "arg" node
   when compiling AST from Python objects.
 

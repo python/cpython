@@ -1,4 +1,6 @@
+import copy
 import gc
+import pickle
 import sys
 import unittest
 import warnings
@@ -110,6 +112,21 @@ class GeneratorTest(unittest.TestCase):
                          "<genexpr>")
         self.assertEqual(gen.__qualname__,
                          "GeneratorTest.test_name.<locals>.<genexpr>")
+
+    def test_copy(self):
+        def f():
+            yield 1
+        g = f()
+        with self.assertRaises(TypeError):
+            copy.copy(g)
+
+    def test_pickle(self):
+        def f():
+            yield 1
+        g = f()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises((TypeError, pickle.PicklingError)):
+                pickle.dumps(g, proto)
 
 
 class ExceptionTest(unittest.TestCase):
