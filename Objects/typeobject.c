@@ -3980,6 +3980,12 @@ reduce_4(PyObject *obj)
     PyObject *result;
     _Py_IDENTIFIER(__newobj_ex__);
 
+    if (Py_TYPE(obj)->tp_new == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "can't pickle %s objects",
+                     Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
     if (_PyObject_GetNewArguments(obj, &args, &kwargs) < 0) {
         return NULL;
     }
@@ -4046,6 +4052,12 @@ reduce_2(PyObject *obj)
     Py_ssize_t i, n;
     _Py_IDENTIFIER(__newobj__);
 
+    if (Py_TYPE(obj)->tp_new == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "can't pickle %s objects",
+                     Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
     if (_PyObject_GetNewArguments(obj, &args, &kwargs) < 0) {
         return NULL;
     }
