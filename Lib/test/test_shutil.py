@@ -443,7 +443,7 @@ class TestShutil(unittest.TestCase):
         # now create another tarball using `tar`
         tarball2 = os.path.join(root_dir, 'archive2.tar')
         tar_cmd = ['tar', '-cf', 'archive2.tar', base_dir]
-        with support.change_cwd(root_dir), captured_stdout():
+        with support.change_cwd(root_dir):
             spawn(tar_cmd)
 
         self.assertTrue(os.path.isfile(tarball2))

@@ -13,6 +13,7 @@ from distutils.cmd import Command
 import distutils.dist
 from test.test_support import TESTFN, captured_stdout, run_unittest, unlink
 from distutils.tests import support
+from distutils import log
 
 
 class test_dist(Command):
@@ -397,6 +398,7 @@ class MetadataTestCase(support.TempdirManager, support.EnvironGuard,
 
     def test_show_help(self):
         # smoke test, just makes sure some help is displayed
+        self.addCleanup(log.set_threshold, log._global_log.threshold)
         dist = Distribution()
         sys.argv = []
         dist.help = 1
