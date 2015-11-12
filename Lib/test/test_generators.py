@@ -1,4 +1,6 @@
+import copy
 import gc
+import pickle
 import sys
 import unittest
 import weakref
@@ -68,6 +70,24 @@ class FinalizationTest(unittest.TestCase):
             with self.assertRaises(StopIteration) as cm:
                 gen.send(2)
             self.assertEqual(cm.exception.value, 2)
+
+
+class GeneratorTest(unittest.TestCase):
+
+    def test_copy(self):
+        def f():
+            yield 1
+        g = f()
+        with self.assertRaises(TypeError):
+            copy.copy(g)
+
+    def test_pickle(self):
+        def f():
+            yield 1
+        g = f()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises((TypeError, pickle.PicklingError)):
+                pickle.dumps(g, proto)
 
 
 class ExceptionTest(unittest.TestCase):

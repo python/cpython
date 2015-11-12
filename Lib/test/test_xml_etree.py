@@ -5,6 +5,7 @@
 # For this purpose, the module-level "ET" symbol is temporarily
 # monkey-patched when running the "test_xml_etree_c" test suite.
 
+import copy
 import html
 import io
 import operator
@@ -2081,6 +2082,19 @@ class ElementIterTest(unittest.TestCase):
                     'shed', 'house', 'room']
         self.assertEqual(self._ilist(doc), all_tags)
         self.assertEqual(self._ilist(doc, '*'), all_tags)
+
+    def test_copy(self):
+        a = ET.Element('a')
+        it = a.iter()
+        with self.assertRaises(TypeError):
+            copy.copy(it)
+
+    def test_pickle(self):
+        a = ET.Element('a')
+        it = a.iter()
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises((TypeError, pickle.PicklingError)):
+                pickle.dumps(it, proto)
 
 
 class TreeBuilderTest(unittest.TestCase):
