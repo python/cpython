@@ -65,6 +65,8 @@ num-spaces= 4
 [Theme]
 default= 1
 name= IDLE Classic
+name2=
+# name2 set in user config-main.cfg for themes added after 2015 Oct 1
 
 [Keys]
 default= 1

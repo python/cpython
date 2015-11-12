@@ -373,8 +373,32 @@ class IdleConf:
         return theme
 
     def CurrentTheme(self):
-        "Return the name of the currently active theme."
-        return self.GetOption('main', 'Theme', 'name', default='')
+        """Return the name of the currently active text color theme.
+
+        idlelib.config-main.def includes this section
+        [Theme]
+        default= 1
+        name= IDLE Classic
+        name2=
+        # name2 set in user config-main.cfg for themes added after 2015 Oct 1
+
+        Item name2 is needed because setting name to a new builtin
+        causes older IDLEs to display multiple error messages or quit.
+        See https://bugs.python.org/issue25313.
+        When default = True, name2 takes precedence over name,
+        while older IDLEs will just use name.
+        """
+        default = self.GetOption('main', 'Theme', 'default',
+                                 type='bool', default=True)
+        if default:
+            theme = self.GetOption('main', 'Theme', 'name2', default='')
+        if default and not theme or not default:
+            theme = self.GetOption('main', 'Theme', 'name', default='')
+        source = self.defaultCfg if default else self.userCfg
+        if source['highlight'].has_section(theme):
+                return theme
+        else:    
+            return "IDLE Classic"
 
     def CurrentKeys(self):
         "Return the name of the currently active key set."
