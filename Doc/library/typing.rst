@@ -478,7 +478,7 @@ The module defines the following classes, functions and decorators:
 
    Usage::
 
-       Employee = typing.NamedTuple('Employee', [('name', str), 'id', int)])
+       Employee = typing.NamedTuple('Employee', [('name', str), ('id', int)])
 
    This is equivalent to::
 
