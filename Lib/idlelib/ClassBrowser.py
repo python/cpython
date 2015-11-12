@@ -56,7 +56,7 @@ class ClassBrowser:
         self.settitle()
         top.focus_set()
         # create scrolled canvas
-        theme = idleConf.GetOption('main','Theme','name')
+        theme = idleConf.CurrentTheme()
         background = idleConf.GetHighlight(theme, 'normal')['background']
         sc = ScrolledCanvas(top, bg=background, highlightthickness=0, takefocus=1)
         sc.frame.pack(expand=1, fill="both")
