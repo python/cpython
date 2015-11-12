@@ -651,7 +651,7 @@ deque_clear(dequeobject *deque)
     Py_ssize_t n;
     PyObject *item;
 
-    if (Py_SIZE(deque) == 0)
+    if (deque->len == 0)
         return;
 
     /* During the process of clearing a deque, decrefs can cause the
