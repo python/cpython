@@ -4108,6 +4108,12 @@ reduce_newobj(PyObject *obj)
     PyObject *newobj, *newargs, *state, *listitems, *dictitems;
     PyObject *result;
 
+    if (Py_TYPE(obj)->tp_new == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "can't pickle %s objects",
+                     Py_TYPE(obj)->tp_name);
+        return NULL;
+    }
     if (_PyObject_GetNewArguments(obj, &args, &kwargs) < 0)
         return NULL;
 
