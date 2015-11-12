@@ -14,8 +14,8 @@ class TestLog(unittest.TestCase):
         # error handler)
         old_stdout = sys.stdout
         old_stderr = sys.stderr
+        old_threshold = log.set_threshold(log.DEBUG)
         try:
-            log.set_threshold(log.DEBUG)
             with NamedTemporaryFile(mode="w+", encoding='ascii') as stdout, \
                  NamedTemporaryFile(mode="w+", encoding='ascii') as stderr:
                 sys.stdout = stdout
@@ -27,6 +27,7 @@ class TestLog(unittest.TestCase):
                 stderr.seek(0)
                 self.assertEqual(stderr.read().rstrip(), "fatal:\\xe9")
         finally:
+            log.set_threshold(old_threshold)
             sys.stdout = old_stdout
             sys.stderr = old_stderr
 
