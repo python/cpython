@@ -1,3 +1,5 @@
+import copy
+import pickle
 import unittest
 import collections
 from test import test_support
@@ -185,6 +187,22 @@ class DictSetTest(unittest.TestCase):
         self.assertIsInstance(d.viewitems(), collections.Sized)
         self.assertIsInstance(d.viewitems(), collections.Iterable)
         self.assertIsInstance(d.viewitems(), collections.Container)
+
+    def test_copy(self):
+        d = {1: 10, "a": "ABC"}
+        self.assertRaises(TypeError, copy.copy, d.viewkeys())
+        self.assertRaises(TypeError, copy.copy, d.viewvalues())
+        self.assertRaises(TypeError, copy.copy, d.viewitems())
+
+    def test_pickle(self):
+        d = {1: 10, "a": "ABC"}
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            self.assertRaises((TypeError, pickle.PicklingError),
+                pickle.dumps, d.viewkeys(), proto)
+            self.assertRaises((TypeError, pickle.PicklingError),
+                pickle.dumps, d.viewvalues(), proto)
+            self.assertRaises((TypeError, pickle.PicklingError),
+                pickle.dumps, d.viewitems(), proto)
 
 
 def test_main():
