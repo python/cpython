@@ -229,6 +229,8 @@ Library
 - Issue #24881: Fixed setting binary mode in Python implementation of FileIO
   on Windows and Cygwin.  Patch from Akira Li.
 
+- Issue #25569: Fix memory leak in SSLSocket.getpeercert().
+
 - Issue #25471: Sockets returned from accept() shouldn't appear to be
   nonblocking.
 
