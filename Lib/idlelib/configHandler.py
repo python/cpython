@@ -397,7 +397,7 @@ class IdleConf:
         source = self.defaultCfg if default else self.userCfg
         if source['highlight'].has_section(theme):
                 return theme
-        else:    
+        else:
             return "IDLE Classic"
 
     def CurrentKeys(self):
