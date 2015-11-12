@@ -396,7 +396,7 @@ class IdleConf:
             theme = self.GetOption('main', 'Theme', 'name', default='')
         source = self.defaultCfg if default else self.userCfg
         if source['highlight'].has_section(theme):
-                return theme
+            return theme
         else:
             return "IDLE Classic"
 
