@@ -647,6 +647,13 @@ the more significant byte last.
    Works as ``BUILD_TUPLE``, but creates a list.
 
 
+.. opcode:: BUILD_SET (count)
+
+   Works as ``BUILD_TUPLE``, but creates a set.
+
+   .. versionadded:: 2.7
+
+
 .. opcode:: BUILD_MAP (count)
 
    Pushes a new dictionary object onto the stack.  The dictionary is pre-sized
