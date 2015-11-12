@@ -514,13 +514,15 @@ form.
 .. data:: X
           VERBOSE
 
-   This flag allows you to write regular expressions that look nicer. Whitespace
-   within the pattern is ignored, except when in a character class or preceded by
-   an unescaped backslash, and, when a line contains a ``'#'`` neither in a
-   character class or preceded by an unescaped backslash, all characters from the
-   leftmost such ``'#'`` through the end of the line are ignored.
+   This flag allows you to write regular expressions that look nicer and are
+   more readable by allowing you to visually separate logical sections of the
+   pattern and add comments. Whitespace within the pattern is ignored, except
+   when in a character class or when preceded by an unescaped backslash.
+   When a line contains a ``#`` that is not in a character class and is not
+   preceded by an unescaped backslash, all characters from the leftmost such
+   ``#`` through the end of the line are ignored.
 
-   That means that the two following regular expression objects that match a
+   This means that the two following regular expression objects that match a
    decimal number are functionally equal::
 
       a = re.compile(r"""\d +  # the integral part
