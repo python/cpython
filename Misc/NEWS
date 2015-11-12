@@ -49,6 +49,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25569: Fix memory leak in SSLSocket.getpeercert().
+
 - Issue #7759: Fixed the mhlib module on filesystems that doesn't support
   link counting for directories.
 
