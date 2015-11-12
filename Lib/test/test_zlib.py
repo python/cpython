@@ -1,6 +1,7 @@
 import unittest
 from test import support
 import binascii
+import pickle
 import random
 import sys
 from test.support import bigmemtest, _1G, _4G
@@ -599,6 +600,16 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         d.decompress(data)
         d.flush()
         self.assertRaises(ValueError, d.copy)
+
+    def test_compresspickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises((TypeError, pickle.PicklingError)):
+                pickle.dumps(zlib.compressobj(zlib.Z_BEST_COMPRESSION), proto)
+
+    def test_decompresspickle(self):
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises((TypeError, pickle.PicklingError)):
+                pickle.dumps(zlib.decompressobj(), proto)
 
     # Memory use of the following functions takes into account overallocation
 
