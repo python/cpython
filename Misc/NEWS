@@ -10,6 +10,9 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #22995: Default implementation of __reduce__ and __reduce_ex__ now
+  rejects builtin types with not defined __new__.
+
 - Issue #7267: format(int, 'c') now raises OverflowError when the argument is
   not in range(0, 256).
 

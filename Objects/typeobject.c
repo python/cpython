@@ -3214,6 +3214,13 @@ reduce_2(PyObject *obj)
     if (cls == NULL)
         return NULL;
 
+    if (PyType_Check(cls) && ((PyTypeObject *)cls)->tp_new == NULL) {
+        PyErr_Format(PyExc_TypeError,
+                     "can't pickle %s objects",
+                     ((PyTypeObject *)cls)->tp_name);
+        return NULL;
+    }
+
     getnewargs = PyObject_GetAttrString(obj, "__getnewargs__");
     if (getnewargs != NULL) {
         args = PyObject_CallObject(getnewargs, NULL);
