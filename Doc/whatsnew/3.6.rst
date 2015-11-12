@@ -98,8 +98,8 @@ Improved Modules
 datetime
 --------
 
-:meth:`datetime.stftime <datetime.datetime.stftime>` and
-:meth:`date.stftime <datetime.date.stftime>` methods now support ISO 8601 date
+:meth:`datetime.strftime <datetime.datetime.strftime>` and
+:meth:`date.strftime <datetime.date.strftime>` methods now support ISO 8601 date
 directives ``%G``, ``%u`` and ``%V``.
 (Contributed by Ashley Anderson in :issue:`12006`.)
 
