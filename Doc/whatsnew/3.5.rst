@@ -2098,7 +2098,7 @@ Method caching was slightly improved, yielding up to 5% performance
 improvement in some benchmarks.
 (Contributed by Antoine Pitrou in :issue:`22847`.)
 
-Objects from :mod:`random` module now use two times less memory on 64-bit
+Objects from :mod:`random` module now use 50% less memory on 64-bit
 builds.  (Contributed by Serhiy Storchaka in :issue:`23488`.)
 
 The :func:`property` getter calls are up to 25% faster.
