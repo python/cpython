@@ -120,6 +120,10 @@ Private and special attribute names now are omitted unless the prefix starts
 with underscores.  A space or a colon can be added after completed keyword.
 (Contributed by Serhiy Storchaka in :issue:`25011` and :issue:`25209`.)
 
+Names of most attributes listed by :func:`dir` are now completed.
+Previously, names of properties and slots which were not yet created on
+an instance were excluded.  (Contributed by Martin Panter in :issue:`25590`.)
+
 
 urllib.robotparser
 ------------------
