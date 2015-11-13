@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25462: The hash of the key now is calculated only once in most
+  operations in C implementation of OrderedDict.
+
 - Issue #22995: Default implementation of __reduce__ and __reduce_ex__ now
   rejects builtin types with not defined __new__.
 
