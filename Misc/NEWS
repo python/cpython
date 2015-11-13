@@ -103,6 +103,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #25498: Fix a crash when garbage-collecting ctypes objects created
+  by wrapping a memoryview.  This was a regression made in 3.4.3.  Based
+  on patch by Eryksun.
+
 - Issue #18010: Fix the pydoc web server's module search function to handle
   exceptions from importing packages.
 

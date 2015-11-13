@@ -38,10 +38,31 @@ class Test(unittest.TestCase):
         del a; gc.collect(); gc.collect(); gc.collect()
         self.assertEqual(x[:], expected)
 
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not writable"):
             (c_char * 16).from_buffer(b"a" * 16)
-        with self.assertRaises(TypeError):
+        with self.assertRaisesRegex(TypeError, "not writable"):
+            (c_char * 16).from_buffer(memoryview(b"a" * 16))
+        with self.assertRaisesRegex(TypeError, "not C contiguous"):
+            (c_char * 16).from_buffer(memoryview(bytearray(b"a" * 16))[::-1])
+        msg = "does not have the buffer interface"
+        with self.assertRaisesRegex(TypeError, msg):
             (c_char * 16).from_buffer("a" * 16)
+
+    def test_fortran_contiguous(self):
+        try:
+            import _testbuffer
+        except ImportError as err:
+            self.skipTest(str(err))
+        flags = _testbuffer.ND_WRITABLE | _testbuffer.ND_FORTRAN
+        array = _testbuffer.ndarray(
+            [97] * 16, format="B", shape=[4, 4], flags=flags)
+        with self.assertRaisesRegex(TypeError, "not C contiguous"):
+            (c_char * 16).from_buffer(array)
+        array = memoryview(array)
+        self.assertTrue(array.f_contiguous)
+        self.assertFalse(array.c_contiguous)
+        with self.assertRaisesRegex(TypeError, "not C contiguous"):
+            (c_char * 16).from_buffer(array)
 
     def test_from_buffer_with_offset(self):
         a = array.array("i", range(16))
@@ -54,6 +75,12 @@ class Test(unittest.TestCase):
             (c_int * 16).from_buffer(a, sizeof(c_int))
         with self.assertRaises(ValueError):
             (c_int * 1).from_buffer(a, 16 * sizeof(c_int))
+
+    def test_from_buffer_memoryview(self):
+        a = [c_char.from_buffer(memoryview(bytearray(b'a')))]
+        a.append(a)
+        del a
+        gc.collect()  # Should not crash
 
     def test_from_buffer_copy(self):
         a = array.array("i", range(16))
