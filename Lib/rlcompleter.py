@@ -159,9 +159,11 @@ class Completer:
         while True:
             for word in words:
                 if (word[:n] == attr and
-                    not (noprefix and word[:n+1] == noprefix) and
-                    hasattr(thisobject, word)):
-                    val = getattr(thisobject, word)
+                    not (noprefix and word[:n+1] == noprefix)):
+                    try:
+                        val = getattr(thisobject, word)
+                    except Exception:
+                        continue  # Exclude properties that are not set
                     word = self._callable_postfix(val, "%s.%s" % (expr, word))
                     matches.append(word)
             if matches or not noprefix:
