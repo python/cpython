@@ -82,6 +82,8 @@ The module defines the following functions:
    which is a change from versions 2.3 and 2.4. Supply the argument explicitly if
    version portability is a priority.
 
+   If the :c:func:`ioctl` fails, an :exc:`IOError` exception is raised.
+
    An example::
 
       >>> import array, fcntl, struct, termios, os
@@ -102,6 +104,8 @@ The module defines the following functions:
    a :meth:`~io.IOBase.fileno` method are accepted as well). See the Unix manual
    :manpage:`flock(2)` for details.  (On some systems, this function is emulated
    using :c:func:`fcntl`.)
+
+   If the :c:func:`flock` fails, an :exc:`IOError` exception is raised.
 
 
 .. function:: lockf(fd, operation, [length, [start, [whence]]])
