@@ -52,6 +52,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25590: In the Readline completer, only call getattr() once per
+  attribute.
+
 - Issue #25530: Disable the vulnerable SSLv3 protocol by default when creating
   ssl.SSLContext.
 

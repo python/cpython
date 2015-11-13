@@ -135,20 +135,23 @@ class Completer:
             return []
 
         # get the content of the object, except __builtins__
-        words = dir(thisobject)
-        if "__builtins__" in words:
-            words.remove("__builtins__")
+        words = set(dir(thisobject))
+        words.discard("__builtins__")
 
         if hasattr(thisobject, '__class__'):
-            words.append('__class__')
-            words.extend(get_class_members(thisobject.__class__))
+            words.add('__class__')
+            words.update(get_class_members(thisobject.__class__))
         matches = []
         n = len(attr)
         for word in words:
-            if word[:n] == attr and hasattr(thisobject, word):
-                val = getattr(thisobject, word)
+            if word[:n] == attr:
+                try:
+                    val = getattr(thisobject, word)
+                except Exception:
+                    continue  # Exclude properties that are not set
                 word = self._callable_postfix(val, "%s.%s" % (expr, word))
                 matches.append(word)
+        matches.sort()
         return matches
 
 def get_class_members(klass):
