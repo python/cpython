@@ -44,7 +44,7 @@ class Test(unittest.TestCase):
             (c_char * 16).from_buffer(memoryview(b"a" * 16))
         with self.assertRaisesRegex(TypeError, "not C contiguous"):
             (c_char * 16).from_buffer(memoryview(bytearray(b"a" * 16))[::-1])
-        msg = "does not have the buffer interface"
+        msg = "bytes-like object is required"
         with self.assertRaisesRegex(TypeError, msg):
             (c_char * 16).from_buffer("a" * 16)
 
