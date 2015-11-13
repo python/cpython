@@ -160,12 +160,14 @@ class Completer:
             for word in words:
                 if (word[:n] == attr and
                     not (noprefix and word[:n+1] == noprefix)):
+                    match = "%s.%s" % (expr, word)
                     try:
                         val = getattr(thisobject, word)
                     except Exception:
-                        continue  # Exclude properties that are not set
-                    word = self._callable_postfix(val, "%s.%s" % (expr, word))
-                    matches.append(word)
+                        pass  # Include even if attribute not set
+                    else:
+                        match = self._callable_postfix(val, match)
+                    matches.append(match)
             if matches or not noprefix:
                 break
             if noprefix == '_':

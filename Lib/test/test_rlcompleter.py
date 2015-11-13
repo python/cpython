@@ -92,6 +92,14 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
         self.assertEqual(f.calls, 1)
 
+    def test_uncreated_attr(self):
+        # Attributes like properties and slots should be completed even when
+        # they haven't been created on an instance
+        class Foo:
+            __slots__ = ("bar",)
+        completer = rlcompleter.Completer(dict(f=Foo()))
+        self.assertEqual(completer.complete('f.', 0), 'f.bar')
+
     def test_complete(self):
         completer = rlcompleter.Completer()
         self.assertEqual(completer.complete('', 0), '\t')
