@@ -88,15 +88,16 @@ For adding nodes:
 
 * _odict_add_head(od, node)
 * _odict_add_tail(od, node)
-* _odict_add_new_node(od, key)
+* _odict_add_new_node(od, key, hash)
 
 For removing nodes:
 
-* _odict_clear_node(od, node)
+* _odict_clear_node(od, node, key, hash)
 * _odict_clear_nodes(od, clear_each)
 
 Others:
 
+* _odict_find_node_hash(od, key, hash)
 * _odict_find_node(od, key)
 * _odict_keys_equal(od1, od2)
 
@@ -532,7 +533,7 @@ _odict_free_fast_nodes(PyODictObject *od) {
 
 /* Return the index into the hash table, regardless of a valid node. */
 static Py_ssize_t
-_odict_get_index_hash(PyODictObject *od, PyObject *key, Py_hash_t hash)
+_odict_get_index_raw(PyODictObject *od, PyObject *key, Py_hash_t hash)
 {
     PyObject **value_addr = NULL;
     PyDictKeyEntry *ep;
@@ -563,7 +564,7 @@ _odict_resize(PyODictObject *od) {
 
     /* Copy the current nodes into the table. */
     _odict_FOREACH(od, node) {
-        i = _odict_get_index_hash(od, _odictnode_KEY(node),
+        i = _odict_get_index_raw(od, _odictnode_KEY(node),
                                   _odictnode_HASH(node));
         if (i < 0) {
             PyMem_FREE(fast_nodes);
@@ -582,15 +583,11 @@ _odict_resize(PyODictObject *od) {
 
 /* Return the index into the hash table, regardless of a valid node. */
 static Py_ssize_t
-_odict_get_index(PyODictObject *od, PyObject *key)
+_odict_get_index(PyODictObject *od, PyObject *key, Py_hash_t hash)
 {
-    Py_hash_t hash;
     PyDictKeysObject *keys;
 
     assert(key != NULL);
-    hash = PyObject_Hash(key);
-    if (hash == -1)
-        return -1;
     keys = ((PyDictObject *)od)->ma_keys;
 
     /* Ensure od_fast_nodes and dk_entries are in sync. */
@@ -601,18 +598,35 @@ _odict_get_index(PyODictObject *od, PyObject *key)
             return -1;
     }
 
-    return _odict_get_index_hash(od, key, hash);
+    return _odict_get_index_raw(od, key, hash);
 }
 
 /* Returns NULL if there was some error or the key was not found. */
 static _ODictNode *
-_odict_find_node(PyODictObject *od, PyObject *key)
+_odict_find_node_hash(PyODictObject *od, PyObject *key, Py_hash_t hash)
 {
     Py_ssize_t index;
 
     if (_odict_EMPTY(od))
         return NULL;
-    index = _odict_get_index(od, key);
+    index = _odict_get_index(od, key, hash);
+    if (index < 0)
+        return NULL;
+    return od->od_fast_nodes[index];
+}
+
+static _ODictNode *
+_odict_find_node(PyODictObject *od, PyObject *key)
+{
+    Py_ssize_t index;
+    Py_hash_t hash;
+
+    if (_odict_EMPTY(od))
+        return NULL;
+    hash = PyObject_Hash(key);
+    if (hash == -1)
+        return NULL;
+    index = _odict_get_index(od, key, hash);
     if (index < 0)
         return NULL;
     return od->od_fast_nodes[index];
@@ -646,18 +660,13 @@ _odict_add_tail(PyODictObject *od, _ODictNode *node)
 
 /* adds the node to the end of the list */
 static int
-_odict_add_new_node(PyODictObject *od, PyObject *key)
+_odict_add_new_node(PyODictObject *od, PyObject *key, Py_hash_t hash)
 {
-    Py_hash_t hash;
     Py_ssize_t i;
     _ODictNode *node;
 
-    hash = PyObject_Hash(key);
-    if (hash == -1)
-        return -1;
-
     Py_INCREF(key);
-    i = _odict_get_index(od, key);
+    i = _odict_get_index(od, key, hash);
     if (i < 0) {
         if (!PyErr_Occurred())
             PyErr_SetObject(PyExc_KeyError, key);
@@ -728,7 +737,8 @@ _odict_remove_node(PyODictObject *od, _ODictNode *node)
    we modify od_fast_nodes.
 */
 static int
-_odict_clear_node(PyODictObject *od, _ODictNode *node, PyObject *key)
+_odict_clear_node(PyODictObject *od, _ODictNode *node, PyObject *key,
+                  Py_hash_t hash)
 {
     Py_ssize_t i;
 
@@ -738,7 +748,7 @@ _odict_clear_node(PyODictObject *od, _ODictNode *node, PyObject *key)
         return 0;
     }
 
-    i = _odict_get_index(od, key);
+    i = _odict_get_index(od, key, hash);
     if (i < 0)
         return PyErr_Occurred() ? -1 : 0;
 
@@ -1091,7 +1101,8 @@ odict_pop(PyObject *od, PyObject *args, PyObject *kwargs)
 }
 
 static PyObject *
-_odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
+_odict_popkey_hash(PyObject *od, PyObject *key, PyObject *failobj,
+                   Py_hash_t hash)
 {
     _ODictNode *node;
     PyObject *value = NULL;
@@ -1099,13 +1110,13 @@ _odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
     /* Pop the node first to avoid a possible dict resize (due to
        eval loop reentrancy) and complications due to hash collision
        resolution. */
-    node = _odict_find_node((PyODictObject *)od, key);
+    node = _odict_find_node_hash((PyODictObject *)od, key, hash);
     if (node == NULL) {
         if (PyErr_Occurred())
             return NULL;
     }
     else {
-        int res = _odict_clear_node((PyODictObject *)od, node, key);
+        int res = _odict_clear_node((PyODictObject *)od, node, key, hash);
         if (res < 0) {
             return NULL;
         }
@@ -1114,8 +1125,14 @@ _odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
     /* Now delete the value from the dict. */
     if (PyODict_CheckExact(od)) {
         if (node != NULL) {
-            /* We could do PyDict_GetItem() and PyDict_DelItem() directly... */
-            value = _PyDict_Pop((PyDictObject *)od, key, failobj);
+            value = _PyDict_GetItem_KnownHash(od, key, hash);  /* borrowed */
+            if (value != NULL) {
+                Py_INCREF(value);
+                if (_PyDict_DelItem_KnownHash(od, key, hash) < 0) {
+                    Py_DECREF(value);
+                    return NULL;
+                }
+            }
         }
     }
     else {
@@ -1144,6 +1161,16 @@ _odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
     }
 
     return value;
+}
+
+static PyObject *
+_odict_popkey(PyObject *od, PyObject *key, PyObject *failobj)
+{
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1)
+        return NULL;
+
+    return _odict_popkey_hash(od, key, failobj, hash);
 }
 
 /* popitem() */
@@ -1178,7 +1205,7 @@ odict_popitem(PyObject *od, PyObject *args, PyObject *kwargs)
     node = last ? _odict_LAST(od) : _odict_FIRST(od);
     key = _odictnode_KEY(node);
     Py_INCREF(key);
-    value = _odict_popkey(od, key, NULL);
+    value = _odict_popkey_hash(od, key, NULL, _odictnode_HASH(node));
     if (value == NULL)
         return NULL;
     item = PyTuple_Pack(2, key, value);
@@ -1237,6 +1264,10 @@ odict_clear(register PyODictObject *od)
 
 /* copy() */
 
+/* forward */
+static int _PyODict_SetItem_KnownHash(PyObject *, PyObject *, PyObject *,
+                                      Py_hash_t);
+
 PyDoc_STRVAR(odict_copy__doc__, "od.copy() -> a shallow copy of od");
 
 static PyObject *
@@ -1261,7 +1292,8 @@ odict_copy(register PyODictObject *od)
                     PyErr_SetObject(PyExc_KeyError, key);
                 goto fail;
             }
-            if (PyODict_SetItem((PyObject *)od_copy, key, value) != 0)
+            if (_PyODict_SetItem_KnownHash((PyObject *)od_copy, key, value,
+                                           _odictnode_HASH(node)) != 0)
                 goto fail;
         }
     }
@@ -1720,16 +1752,18 @@ PyODict_New(void) {
     return odict_new(&PyODict_Type, NULL, NULL);
 };
 
-int
-PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value) {
-    int res = PyDict_SetItem(od, key, value);
+static int
+_PyODict_SetItem_KnownHash(PyObject *od, PyObject *key, PyObject *value,
+                           Py_hash_t hash)
+{
+    int res = _PyDict_SetItem_KnownHash(od, key, value, hash);
     if (res == 0) {
-        res = _odict_add_new_node((PyODictObject *)od, key);
+        res = _odict_add_new_node((PyODictObject *)od, key, hash);
         if (res < 0) {
             /* Revert setting the value on the dict */
             PyObject *exc, *val, *tb;
             PyErr_Fetch(&exc, &val, &tb);
-            (void) PyDict_DelItem(od, key);
+            (void) _PyDict_DelItem_KnownHash(od, key, hash);
             _PyErr_ChainExceptions(exc, val, tb);
         }
     }
@@ -1737,11 +1771,25 @@ PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value) {
 };
 
 int
-PyODict_DelItem(PyObject *od, PyObject *key) {
-    int res = _odict_clear_node((PyODictObject *)od, NULL, key);
+PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value)
+{
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1)
+        return -1;
+    return _PyODict_SetItem_KnownHash(od, key, value, hash);
+};
+
+int
+PyODict_DelItem(PyObject *od, PyObject *key)
+{
+    int res;
+    Py_hash_t hash = PyObject_Hash(key);
+    if (hash == -1)
+        return -1;
+    res = _odict_clear_node((PyODictObject *)od, NULL, key, hash);
     if (res < 0)
         return -1;
-    return PyDict_DelItem(od, key);
+    return _PyDict_DelItem_KnownHash(od, key, hash);
 };
 
 
