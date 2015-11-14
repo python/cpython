@@ -3380,7 +3380,7 @@ PySSL_get_default_verify_paths(PyObject *self)
         else if ((target = PyUnicode_DecodeFSDefault(tmp)) == NULL) { \
             target = PyBytes_FromString(tmp); } \
         if (!target) goto error; \
-    } 
+    }
 
     CONVERT(X509_get_default_cert_file_env(), ofile_env);
     CONVERT(X509_get_default_cert_file(), ofile);
