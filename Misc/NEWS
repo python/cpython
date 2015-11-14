@@ -55,6 +55,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25578: Fix (another) memory leak in SSLSocket.getpeercer().
+
 - Issue #25590: In the Readline completer, only call getattr() once per
   attribute.
 
