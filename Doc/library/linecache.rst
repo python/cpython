@@ -49,7 +49,7 @@ The :mod:`linecache` module defines the following functions:
 
 .. function:: lazycache(filename, module_globals)
 
-   Capture enough detail about a non-file based module to permit getting its
+   Capture enough detail about a non-file-based module to permit getting its
    lines later via :func:`getline` even if *module_globals* is None in the later
    call. This avoids doing I/O until a line is actually needed, without having
    to carry the module globals around indefinitely.
