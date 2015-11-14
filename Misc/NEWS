@@ -11,6 +11,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #25388: Fixed tokenizer crash when processing undecodable source code
+  with a null byte.
+
 - Issue #25462: The hash of the key now is calculated only once in most
   operations in C implementation of OrderedDict.
 

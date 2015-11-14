@@ -196,7 +196,8 @@ error_ret(struct tok_state *tok) /* XXX */
     tok->decoding_erred = 1;
     if (tok->fp != NULL && tok->buf != NULL) /* see PyTokenizer_Free */
         PyMem_FREE(tok->buf);
-    tok->buf = NULL;
+    tok->buf = tok->cur = tok->end = tok->inp = tok->start = NULL;
+    tok->done = E_DECODE;
     return NULL;                /* as if it were EOF */
 }
 
@@ -952,11 +953,6 @@ tok_nextc(struct tok_state *tok)
                 }
                 buflen = PyBytes_GET_SIZE(u);
                 buf = PyBytes_AS_STRING(u);
-                if (!buf) {
-                    Py_DECREF(u);
-                    tok->done = E_DECODE;
-                    return EOF;
-                }
                 newtok = PyMem_MALLOC(buflen+1);
                 strcpy(newtok, buf);
                 Py_DECREF(u);
@@ -998,7 +994,6 @@ tok_nextc(struct tok_state *tok)
                 if (tok->buf != NULL)
                     PyMem_FREE(tok->buf);
                 tok->buf = newtok;
-                tok->line_start = tok->buf;
                 tok->cur = tok->buf;
                 tok->line_start = tok->buf;
                 tok->inp = strchr(tok->buf, '\0');
@@ -1021,7 +1016,8 @@ tok_nextc(struct tok_state *tok)
                 }
                 if (decoding_fgets(tok->buf, (int)(tok->end - tok->buf),
                           tok) == NULL) {
-                    tok->done = E_EOF;
+                    if (!tok->decoding_erred)
+                        tok->done = E_EOF;
                     done = 1;
                 }
                 else {
@@ -1055,6 +1051,8 @@ tok_nextc(struct tok_state *tok)
                     return EOF;
                 }
                 tok->buf = newbuf;
+                tok->cur = tok->buf + cur;
+                tok->line_start = tok->cur;
                 tok->inp = tok->buf + curvalid;
                 tok->end = tok->buf + newsize;
                 tok->start = curstart < 0 ? NULL :
