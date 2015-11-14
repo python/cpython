@@ -32,52 +32,98 @@
 #define STRINGLIB_BLOOM(mask, ch)     \
     ((mask &  (1UL << ((ch) & (STRINGLIB_BLOOM_WIDTH -1)))))
 
+Py_LOCAL_INLINE(Py_ssize_t)
+STRINGLIB(find_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
+{
+    const STRINGLIB_CHAR *p, *e;
+
+    p = s;
+    e = s + n;
+    if (n > 10) {
+#if STRINGLIB_SIZEOF_CHAR == 1
+        p = memchr(s, ch, n);
+        if (p != NULL)
+            return (p - s);
+        return -1;
+#else
+        /* use memchr if we can choose a needle without two many likely
+           false positives */
+        unsigned char needle = ch & 0xff;
+        /* If looking for a multiple of 256, we'd have too
+           many false positives looking for the '\0' byte in UCS2
+           and UCS4 representations. */
+        if (needle != 0) {
+            while (p < e) {
+                void *candidate = memchr(p, needle,
+                                         (e - p) * sizeof(STRINGLIB_CHAR));
+                if (candidate == NULL)
+                    return -1;
+                p = (const STRINGLIB_CHAR *)
+                        _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR));
+                if (*p == ch)
+                    return (p - s);
+                /* False positive */
+                p++;
+            }
+            return -1;
+        }
+#endif
+    }
+    while (p < e) {
+        if (*p == ch)
+            return (p - s);
+        p++;
+    }
+    return -1;
+}
 
 Py_LOCAL_INLINE(Py_ssize_t)
-STRINGLIB(fastsearch_memchr_1char)(const STRINGLIB_CHAR* s, Py_ssize_t n,
-                                   STRINGLIB_CHAR ch, unsigned char needle,
-                                   int mode)
+STRINGLIB(rfind_char)(const STRINGLIB_CHAR* s, Py_ssize_t n, STRINGLIB_CHAR ch)
 {
-    if (mode == FAST_SEARCH) {
-        const STRINGLIB_CHAR *ptr = s;
-        const STRINGLIB_CHAR *e = s + n;
-        while (ptr < e) {
-            void *candidate = memchr((const void *) ptr, needle, (e - ptr) * sizeof(STRINGLIB_CHAR));
-            if (candidate == NULL)
-                return -1;
-            ptr = (const STRINGLIB_CHAR *) _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR));
-            if (sizeof(STRINGLIB_CHAR) == 1 || *ptr == ch)
-                return (ptr - s);
-            /* False positive */
-            ptr++;
-        }
-        return -1;
-    }
+    const STRINGLIB_CHAR *p;
 #ifdef HAVE_MEMRCHR
     /* memrchr() is a GNU extension, available since glibc 2.1.91.
        it doesn't seem as optimized as memchr(), but is still quite
-       faster than our hand-written loop in FASTSEARCH below */
-    else if (mode == FAST_RSEARCH) {
-        while (n > 0) {
-            const STRINGLIB_CHAR *found;
-            void *candidate = memrchr((const void *) s, needle, n * sizeof(STRINGLIB_CHAR));
-            if (candidate == NULL)
-                return -1;
-            found = (const STRINGLIB_CHAR *) _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR));
-            n = found - s;
-            if (sizeof(STRINGLIB_CHAR) == 1 || *found == ch)
-                return n;
-            /* False positive */
-        }
-        return -1;
-    }
-#endif
-    else {
-        assert(0); /* Should never get here */
-        return 0;
-    }
+       faster than our hand-written loop below */
 
-#undef DO_MEMCHR
+    if (n > 10) {
+#if STRINGLIB_SIZEOF_CHAR == 1
+        p = memrchr(s, ch, n);
+        if (p != NULL)
+            return (p - s);
+        return -1;
+#else
+        /* use memrchr if we can choose a needle without two many likely
+           false positives */
+        unsigned char needle = ch & 0xff;
+        /* If looking for a multiple of 256, we'd have too
+           many false positives looking for the '\0' byte in UCS2
+           and UCS4 representations. */
+        if (needle != 0) {
+            while (n > 0) {
+                void *candidate = memrchr(s, needle,
+                                          n * sizeof(STRINGLIB_CHAR));
+                if (candidate == NULL)
+                    return -1;
+                p = (const STRINGLIB_CHAR *)
+                        _Py_ALIGN_DOWN(candidate, sizeof(STRINGLIB_CHAR));
+                n = p - s;
+                if (*p == ch)
+                    return n;
+                /* False positive */
+            }
+            return -1;
+        }
+#endif
+    }
+#endif  /* HAVE_MEMRCHR */
+    p = s + n;
+    while (p > s) {
+        p--;
+        if (*p == ch)
+            return (p - s);
+    }
+    return -1;
 }
 
 Py_LOCAL_INLINE(Py_ssize_t)
@@ -99,25 +145,11 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
         if (m <= 0)
             return -1;
         /* use special case for 1-character strings */
-        if (n > 10 && (mode == FAST_SEARCH
-#ifdef HAVE_MEMRCHR
-                    || mode == FAST_RSEARCH
-#endif
-                    )) {
-            /* use memchr if we can choose a needle without two many likely
-               false positives */
-            unsigned char needle;
-            needle = p[0] & 0xff;
-#if STRINGLIB_SIZEOF_CHAR > 1
-            /* If looking for a multiple of 256, we'd have too
-               many false positives looking for the '\0' byte in UCS2
-               and UCS4 representations. */
-            if (needle != 0)
-#endif
-                return STRINGLIB(fastsearch_memchr_1char)
-                       (s, n, p[0], needle, mode);
-        }
-        if (mode == FAST_COUNT) {
+        if (mode == FAST_SEARCH)
+            return STRINGLIB(find_char)(s, n, p[0]);
+        else if (mode == FAST_RSEARCH)
+            return STRINGLIB(rfind_char)(s, n, p[0]);
+        else {  /* FAST_COUNT */
             for (i = 0; i < n; i++)
                 if (s[i] == p[0]) {
                     count++;
@@ -125,14 +157,6 @@ FASTSEARCH(const STRINGLIB_CHAR* s, Py_ssize_t n,
                         return maxcount;
                 }
             return count;
-        } else if (mode == FAST_SEARCH) {
-            for (i = 0; i < n; i++)
-                if (s[i] == p[0])
-                    return i;
-        } else {    /* FAST_RSEARCH */
-            for (i = n - 1; i > -1; i--)
-                if (s[i] == p[0])
-                    return i;
         }
         return -1;
     }
