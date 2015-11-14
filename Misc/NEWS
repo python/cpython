@@ -255,6 +255,8 @@ Library
 - Issue #13248: Remove deprecated inspect.getargspec and inspect.getmoduleinfo
   functions.
 
+- Issue #25578: Fix (another) memory leak in SSLSocket.getpeercer().
+
 - Issue #25530: Disable the vulnerable SSLv3 protocol by default when creating
   ssl.SSLContext.
 
