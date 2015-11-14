@@ -440,6 +440,12 @@ class GettextCacheTestCase(GettextBaseTest):
         self.assertEqual(t.__class__, DummyGNUTranslations)
 
 
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        blacklist = {'c2py', 'ENOENT'}
+        support.check__all__(self, gettext, blacklist=blacklist)
+
+
 def test_main():
     support.run_unittest(__name__)
 
