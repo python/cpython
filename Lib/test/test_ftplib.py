@@ -1049,10 +1049,19 @@ class TestTimeouts(TestCase):
         ftp.close()
 
 
+class MiscTestCase(TestCase):
+    def test__all__(self):
+        blacklist = {'MSG_OOB', 'FTP_PORT', 'MAXLINE', 'CRLF', 'B_CRLF',
+                     'Error', 'parse150', 'parse227', 'parse229', 'parse257',
+                     'print_line', 'ftpcp', 'test'}
+        support.check__all__(self, ftplib, blacklist=blacklist)
+
+
 def test_main():
     tests = [TestFTPClass, TestTimeouts,
              TestIPv6Environment,
-             TestTLS_FTPClassMixin, TestTLS_FTPClass]
+             TestTLS_FTPClassMixin, TestTLS_FTPClass,
+             MiscTestCase]
 
     thread_info = support.threading_setup()
     try:

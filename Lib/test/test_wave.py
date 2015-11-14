@@ -1,6 +1,7 @@
 from test.support import TESTFN
 import unittest
 from test import audiotests
+from test import support
 from audioop import byteswap
 import sys
 import wave
@@ -101,6 +102,12 @@ class WavePCM32Test(WaveTest, unittest.TestCase):
       """)
     if sys.byteorder != 'big':
         frames = byteswap(frames, 4)
+
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        blacklist = {'WAVE_FORMAT_PCM'}
+        support.check__all__(self, wave, blacklist=blacklist)
 
 
 if __name__ == '__main__':

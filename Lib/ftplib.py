@@ -42,7 +42,8 @@ import socket
 import warnings
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
-__all__ = ["FTP"]
+__all__ = ["FTP", "error_reply", "error_temp", "error_perm", "error_proto",
+           "all_errors"]
 
 # Magic number from <socket.h>
 MSG_OOB = 0x1                           # Process data out of band

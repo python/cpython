@@ -38,7 +38,8 @@ __all__ = ['Option',
            'OptionError',
            'OptionConflictError',
            'OptionValueError',
-           'BadOptionError']
+           'BadOptionError',
+           'check_choice']
 
 __copyright__ = """
 Copyright (c) 2001-2006 Gregory P. Ward.  All rights reserved.
