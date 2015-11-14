@@ -85,6 +85,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #23883: Added missing APIs to __all__ to match the documented APIs
+  for the following modules: csv, enum, ftplib, logging, optparse, threading
+  and wave.  Also added a test.support.check__all__() helper.  Patches by
+  Jacek Kołodziej.
+
 - Issue #25590: In the Readline completer, only call getattr() once per
   attribute.  Also complete names of attributes such as properties and slots
   which are listed by dir() but not yet created on an instance.
