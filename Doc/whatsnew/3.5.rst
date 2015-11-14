@@ -113,7 +113,7 @@ Significant improvements in the standard library:
   :ref:`implemented in C <whatsnew-ordereddict>`, which makes it
   4 to 100 times faster.
 
-* :mod:`ssl` module gained
+* The :mod:`ssl` module gained
   :ref:`support for Memory BIO <whatsnew-sslmemorybio>`, which decouples SSL
   protocol handling from network IO.
 
@@ -346,7 +346,7 @@ unpackings::
 PEP 461 - % formatting support for bytes and bytearray
 ------------------------------------------------------
 
-:pep:`461` adds support for ``%``
+:pep:`461` adds support for the ``%``
 :ref:`interpolation operator <bytes-formatting>` to :class:`bytes`
 and :class:`bytearray`.
 
@@ -467,7 +467,7 @@ PEP 475: Retry system calls failing with EINTR
 
 An :py:data:`errno.EINTR` error code is returned whenever a system call, that
 is waiting for I/O, is interrupted by a signal.  Previously, Python would
-raise :exc:`InterruptedError` in such case.  This meant that, when writing a
+raise :exc:`InterruptedError` in such cases.  This meant that, when writing a
 Python application, the developer had two choices:
 
 #. Ignore the ``InterruptedError``.
@@ -514,7 +514,7 @@ by a signal:
   :func:`~os.writev`;
 
 * special cases: :func:`os.close` and :func:`os.dup2` now ignore
-  :py:data:`~errno.EINTR` error, the syscall is not retried (see the PEP
+  :py:data:`~errno.EINTR` errors; the syscall is not retried (see the PEP
   for the rationale);
 
 * :mod:`select` functions: :func:`devpoll.poll() <select.devpoll.poll>`,
@@ -757,7 +757,7 @@ Steven Bethard, paul j3 and Daniel Eriksson in :issue:`14910`.)
 asyncio
 -------
 
-Since :mod:`asyncio` module is :term:`provisional <provisional api>`,
+Since the :mod:`asyncio` module is :term:`provisional <provisional api>`,
 all changes introduced in Python 3.5 have also been backported to Python 3.4.x.
 
 Notable changes in the :mod:`asyncio` module since Python 3.4.0:
@@ -857,7 +857,7 @@ makes it 4 to 100 times faster.  (Contributed by Eric Snow in :issue:`16991`.)
 
 The :class:`~collections.deque` class now defines
 :meth:`~collections.deque.index`, :meth:`~collections.deque.insert`, and
-:meth:`~collections.deque.copy`, as well as supports ``+`` and ``*`` operators.
+:meth:`~collections.deque.copy`, and supports the ``+`` and ``*`` operators.
 This allows deques to be recognized as a :class:`~collections.abc.MutableSequence`
 and improves their substitutability for lists.
 (Contributed by Raymond Hettinger in :issue:`23704`.)
@@ -871,7 +871,7 @@ Docstrings produced by :func:`~collections.namedtuple` can now be updated::
 
 (Contributed by Berker Peksag in :issue:`24064`.)
 
-The :class:`~collections.UserString` class now implements
+The :class:`~collections.UserString` class now implements the
 :meth:`__getnewargs__`, :meth:`__rmod__`, :meth:`~str.casefold`,
 :meth:`~str.format_map`, :meth:`~str.isprintable`, and :meth:`~str.maketrans`
 methods to match the corresponding methods of :class:`str`.
@@ -925,8 +925,8 @@ The :meth:`Executor.map() <concurrent.futures.Executor.map>` method now accepts 
 :meth:`~concurrent.futures.ProcessPoolExecutor` is used.
 (Contributed by Dan O'Reilly in :issue:`11271`.)
 
-A number of workers in :class:`~concurrent.futures.ThreadPoolExecutor` constructor is
-optional now.  The default value equals to 5 times the number of CPUs.
+The number of workers in the :class:`~concurrent.futures.ThreadPoolExecutor`
+constructor is optional now.  The default value is 5 times the number of CPUs.
 (Contributed by Claudiu Popa in :issue:`21527`.)
 
 
@@ -934,10 +934,10 @@ configparser
 ------------
 
 :mod:`configparser` now provides a way to customize the conversion
-of values by specifying a dictionary of converters in
+of values by specifying a dictionary of converters in the
 :class:`~configparser.ConfigParser` constructor, or by defining them
 as methods in ``ConfigParser`` subclasses.  Converters defined in
-parser instance are inherited by its section proxies.
+a parser instance are inherited by its section proxies.
 
 Example::
 
@@ -989,9 +989,9 @@ not just sequences.  (Contributed by Serhiy Storchaka in :issue:`23171`.)
 curses
 ------
 
-The new :func:`~curses.update_lines_cols` function updates :envvar:`LINES`
+The new :func:`~curses.update_lines_cols` function updates the :envvar:`LINES`
 and :envvar:`COLS` environment variables.  This is useful for detecting
-manual screen resize.  (Contributed by Arnon Yaari in :issue:`4254`.)
+manual screen resizing.  (Contributed by Arnon Yaari in :issue:`4254`.)
 
 
 dbm
@@ -1019,7 +1019,7 @@ strings.  This fixes a regression from Python 2.
 distutils
 ---------
 
-Both ``build`` and ``build_ext`` commands now accept a ``-j`` option to
+Both the ``build`` and ``build_ext`` commands now accept a ``-j`` option to
 enable parallel building of extension modules.
 (Contributed by Antoine Pitrou in :issue:`5309`.)
 
@@ -1032,7 +1032,7 @@ doctest
 -------
 
 The :func:`~doctest.DocTestSuite` function returns an empty
-:class:`unittest.TestSuite` if *module* contains no docstrings instead of
+:class:`unittest.TestSuite` if *module* contains no docstrings, instead of
 raising :exc:`ValueError`.  (Contributed by Glenn Jones in :issue:`15916`.)
 
 
@@ -1081,7 +1081,7 @@ specify the initial number of enum values if only *names* are provided::
 faulthandler
 ------------
 
-:func:`~faulthandler.enable`, :func:`~faulthandler.register`,
+The :func:`~faulthandler.enable`, :func:`~faulthandler.register`,
 :func:`~faulthandler.dump_traceback` and
 :func:`~faulthandler.dump_traceback_later` functions now accept file
 descriptors in addition to file-like objects.
@@ -1093,7 +1093,7 @@ functools
 
 .. _whatsnew-lrucache:
 
-Most of :func:`~functools.lru_cache` machinery is now implemented in C, making
+Most of the :func:`~functools.lru_cache` machinery is now implemented in C, making
 it significantly faster.  (Contributed by Matt Joiner, Alexey Kachayev, and
 Serhiy Storchaka in :issue:`14373`.)
 
@@ -1101,15 +1101,15 @@ Serhiy Storchaka in :issue:`14373`.)
 glob
 ----
 
-:func:`~glob.iglob` and :func:`~glob.glob` functions now support recursive
-search in subdirectories using the ``"**"`` pattern.
+The :func:`~glob.iglob` and :func:`~glob.glob` functions now support recursive
+search in subdirectories, using the ``"**"`` pattern.
 (Contributed by Serhiy Storchaka in :issue:`13968`.)
 
 
 gzip
 ----
 
-The *mode* argument of :class:`~gzip.GzipFile` constructor now
+The *mode* argument of the :class:`~gzip.GzipFile` constructor now
 accepts ``"x"`` to request exclusive creation.
 (Contributed by Tim Heaney in :issue:`19222`.)
 
@@ -1176,7 +1176,7 @@ from the IDLE :menuselection:`Help --> About IDLE` dialog.
 imaplib
 -------
 
-The :class:`~imaplib.IMAP4` class now supports :term:`context manager` protocol.
+The :class:`~imaplib.IMAP4` class now supports the :term:`context manager` protocol.
 When used in a :keyword:`with` statement, the IMAP4 ``LOGOUT``
 command will be called automatically at the end of the block.
 (Contributed by Tarek Ziadé and Serhiy Storchaka in :issue:`4972`.)
@@ -1184,7 +1184,7 @@ command will be called automatically at the end of the block.
 The :mod:`imaplib` module now supports :rfc:`5161` (ENABLE Extension)
 and :rfc:`6855` (UTF-8 Support) via the :meth:`IMAP4.enable() <imaplib.IMAP4.enable>`
 method.  A new :attr:`IMAP4.utf8_enabled <imaplib.IMAP4.utf8_enabled>`
-attribute, tracks whether or not :rfc:`6855` support is enabled.
+attribute tracks whether or not :rfc:`6855` support is enabled.
 (Contributed by Milan Oberkirch, R. David Murray, and Maciej Szulik in
 :issue:`21800`.)
 
@@ -1226,7 +1226,7 @@ spec object.  (Contributed by Brett Cannon in :issue:`20383`.)
 inspect
 -------
 
-Both :class:`~inspect.Signature` and :class:`~inspect.Parameter` classes are
+Both the :class:`~inspect.Signature` and :class:`~inspect.Parameter` classes are
 now picklable and hashable.  (Contributed by Yury Selivanov in :issue:`20726`
 and :issue:`20334`.)
 
@@ -1260,7 +1260,7 @@ A set of new functions to inspect
 and :func:`~inspect.getcoroutinestate`.
 (Contributed by Yury Selivanov in :issue:`24017` and :issue:`24400`.)
 
-:func:`~inspect.stack`, :func:`~inspect.trace`,
+The :func:`~inspect.stack`, :func:`~inspect.trace`,
 :func:`~inspect.getouterframes`, and :func:`~inspect.getinnerframes`
 functions now return a list of named tuples.
 (Contributed by Daniel Shahaf in :issue:`16808`.)
@@ -1279,7 +1279,7 @@ method, that uses at most one call to the underlying raw stream's
 ipaddress
 ---------
 
-Both :class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` classes
+Both the :class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` classes
 now accept an ``(address, netmask)`` tuple argument, so as to easily construct
 network objects from existing addresses::
 
@@ -1291,7 +1291,7 @@ network objects from existing addresses::
 
 (Contributed by Peter Moody and Antoine Pitrou in :issue:`16531`.)
 
-A new :attr:`~ipaddress.IPv4Network.reverse_pointer` attribute for
+A new :attr:`~ipaddress.IPv4Network.reverse_pointer` attribute for the
 :class:`~ipaddress.IPv4Network` and :class:`~ipaddress.IPv6Network` classes
 returns the name of the reverse DNS PTR record::
 
@@ -1323,7 +1323,7 @@ linecache
 ---------
 
 A new :func:`~linecache.lazycache` function can be used to capture information
-about a non-file based module to permit getting its lines later via
+about a non-file-based module to permit getting its lines later via
 :func:`~linecache.getline`. This avoids doing I/O until a line is actually
 needed, without having to carry the module globals around indefinitely.
 (Contributed by Robert Collins in :issue:`17911`.)
@@ -1436,13 +1436,13 @@ attribute is now available.  It corresponds to the ``dwFileAttributes`` member
 of the ``BY_HANDLE_FILE_INFORMATION`` structure returned by
 ``GetFileInformationByHandle()``.  (Contributed by Ben Hoyt in :issue:`21719`.)
 
-The :func:`~os.urandom` function now uses ``getrandom()`` syscall on Linux 3.17
+The :func:`~os.urandom` function now uses the ``getrandom()`` syscall on Linux 3.17
 or newer, and ``getentropy()`` on OpenBSD 5.6 and newer, removing the need to
 use ``/dev/urandom`` and avoiding failures due to potential file descriptor
 exhaustion.  (Contributed by Victor Stinner in :issue:`22181`.)
 
 New :func:`~os.get_blocking` and :func:`~os.set_blocking` functions allow to
-get and set a file descriptor blocking mode (:data:`~os.O_NONBLOCK`.)
+get and set a file descriptor's blocking mode (:data:`~os.O_NONBLOCK`.)
 (Contributed by Victor Stinner in :issue:`22054`.)
 
 The :func:`~os.truncate` and :func:`~os.ftruncate` functions are now supported
@@ -1466,8 +1466,8 @@ pathlib
 -------
 
 The new :meth:`Path.samefile() <pathlib.Path.samefile>` method can be used
-to check whether the path points to the same file as other path, which can be
-either an another :class:`~pathlib.Path` object, or a string::
+to check whether the path points to the same file as another path, which can
+be either another :class:`~pathlib.Path` object, or a string::
 
     >>> import pathlib
     >>> p1 = pathlib.Path('/etc/hosts')
@@ -1486,7 +1486,7 @@ expand ``~`` and ``~user`` prefixes.  (Contributed by Serhiy Storchaka and
 Claudiu Popa in :issue:`19776`.)
 
 A new :meth:`Path.home() <pathlib.Path.home>` class method can be used to get
-an instance of :class:`~pathlib.Path` object representing the user’s home
+a :class:`~pathlib.Path` instance representing the user’s home
 directory.
 (Contributed by Victor Salgado and Mayank Tripathi in :issue:`19777`.)
 
@@ -1539,17 +1539,17 @@ allowed in lookbehind assertions::
 
 (Contributed by Serhiy Storchaka in :issue:`9179`.)
 
-The number of capturing groups in regular expression is no longer limited by
+The number of capturing groups in regular expressions is no longer limited to
 100.  (Contributed by Serhiy Storchaka in :issue:`22437`.)
 
 The :func:`~re.sub` and :func:`~re.subn` functions now replace unmatched
 groups with empty strings instead of raising an exception.
 (Contributed by Serhiy Storchaka in :issue:`1519638`.)
 
-The :class:`re.error` exceptions have new attributes:
+The :class:`re.error` exceptions have new attributes,
 :attr:`~re.error.msg`, :attr:`~re.error.pattern`,
 :attr:`~re.error.pos`, :attr:`~re.error.lineno`,
-and :attr:`~re.error.colno` that provide better context
+and :attr:`~re.error.colno`, that provide better context
 information about the error::
 
     >>> re.compile("""
@@ -1607,7 +1607,7 @@ during debugging, instead of integer "magic numbers".
 smtpd
 -----
 
-Both :class:`~smtpd.SMTPServer` and :class:`~smtpd.SMTPChannel` classes now
+Both the :class:`~smtpd.SMTPServer` and :class:`~smtpd.SMTPChannel` classes now
 accept a *decode_data* keyword argument to determine if the ``DATA`` portion of
 the SMTP transaction is decoded using the ``"utf-8"`` codec or is instead
 provided to the
@@ -1649,7 +1649,7 @@ The :meth:`SMTP.set_debuglevel() <smtplib.SMTP.set_debuglevel>` method now
 accepts an additional debuglevel (2), which enables timestamps in debug
 messages. (Contributed by Gavin Chappell and Maciej Szulik in :issue:`16914`.)
 
-Both :meth:`SMTP.sendmail() <smtplib.SMTP.sendmail>` and
+Both the :meth:`SMTP.sendmail() <smtplib.SMTP.sendmail>` and
 :meth:`SMTP.send_message() <smtplib.SMTP.send_message>` methods now
 support support :rfc:`6531` (SMTPUTF8).
 (Contributed by Milan Oberkirch and R. David Murray in :issue:`22027`.)
@@ -1658,7 +1658,7 @@ support support :rfc:`6531` (SMTPUTF8).
 sndhdr
 ------
 
-:func:`~sndhdr.what` and :func:`~sndhdr.whathdr` functions  now return
+The :func:`~sndhdr.what` and :func:`~sndhdr.whathdr` functions  now return
 a :func:`~collections.namedtuple`.  (Contributed by Claudiu Popa in
 :issue:`18615`.)
 
@@ -1671,7 +1671,7 @@ Functions with timeouts now use a monotonic clock, instead of a system clock.
 
 A new :meth:`socket.sendfile() <socket.socket.sendfile>` method allows to
 send a file over a socket by using the high-performance :func:`os.sendfile`
-function on UNIX resulting in uploads being from 2 to 3 times faster than when
+function on UNIX, resulting in uploads being from 2 to 3 times faster than when
 using plain :meth:`socket.send() <socket.socket.send>`.
 (Contributed by Giampaolo Rodola' in :issue:`17552`.)
 
@@ -1682,7 +1682,7 @@ now the maximum total duration to send all data.
 
 The *backlog* argument of the :meth:`socket.listen() <socket.socket.listen>`
 method is now optional.  By default it is set to
-:data:`SOMAXCONN <socket.SOMAXCONN>` or to ``128`` whichever is less.
+:data:`SOMAXCONN <socket.SOMAXCONN>` or to ``128``, whichever is less.
 (Contributed by Charles-François Natali in :issue:`21455`.)
 
 
@@ -1698,7 +1698,7 @@ Memory BIO Support
 
 The new :class:`~ssl.SSLObject` class has been added to provide SSL protocol
 support for cases when the network I/O capabilities of :class:`~ssl.SSLSocket`
-are not necessary or suboptimal.  ``SSLObject`` represents
+are not necessary or are suboptimal.  ``SSLObject`` represents
 an SSL protocol instance, but does not implement any network I/O methods, and
 instead provides a memory buffer interface.  The new :class:`~ssl.MemoryBIO`
 class can be used to pass data between Python and an SSL protocol instance.
@@ -1716,8 +1716,8 @@ Application-Layer Protocol Negotiation Support
 
 (Contributed by Benjamin Peterson in :issue:`20188`.)
 
-Where OpenSSL support is present, :mod:`ssl` module now implements
-*Application-Layer Protocol Negotiation* TLS extension as described
+Where OpenSSL support is present, the :mod:`ssl` module now implements
+the *Application-Layer Protocol Negotiation* TLS extension as described
 in :rfc:`7301`.
 
 The new :meth:`SSLContext.set_alpn_protocols() <ssl.SSLContext.set_alpn_protocols>`
@@ -1727,7 +1727,7 @@ the TLS handshake.
 The new
 :meth:`SSLSocket.selected_alpn_protocol() <ssl.SSLSocket.selected_alpn_protocol>`
 returns the protocol that was selected during the TLS handshake.
-:data:`~ssl.HAS_ALPN` flag indicates whether ALPN support is present.
+The :data:`~ssl.HAS_ALPN` flag indicates whether ALPN support is present.
 
 
 Other Changes
@@ -1742,7 +1742,7 @@ a :meth:`SSLSocket.sendfile() <ssl.SSLSocket.sendfile>` method.
 (Contributed by Giampaolo Rodola' in :issue:`17552`.)
 
 The :meth:`SSLSocket.send() <ssl.SSLSocket.send>` method now raises either
-:exc:`ssl.SSLWantReadError` or :exc:`ssl.SSLWantWriteError` exception on a
+the :exc:`ssl.SSLWantReadError` or :exc:`ssl.SSLWantWriteError` exception on a
 non-blocking socket if the operation would block. Previously, it would return
 ``0``.  (Contributed by Nikolaus Rath in :issue:`20951`.)
 
@@ -1758,7 +1758,7 @@ the list of ciphers sent by the client during the handshake.
 The :meth:`SSLSocket.do_handshake() <ssl.SSLSocket.do_handshake>`,
 :meth:`SSLSocket.read() <ssl.SSLSocket.read>`,
 :meth:`SSLSocket.shutdown() <ssl.SSLSocket.shutdown>`, and
-:meth:`SSLSocket.write() <ssl.SSLSocket.write>` methods of :class:`~ssl.SSLSocket`
+:meth:`SSLSocket.write() <ssl.SSLSocket.write>` methods of the :class:`~ssl.SSLSocket`
 class no longer reset the socket timeout every time bytes are received or sent.
 The socket timeout is now the maximum total duration of the method.
 (Contributed by Victor Stinner in :issue:`23853`.)
@@ -1770,7 +1770,7 @@ The :func:`~ssl.match_hostname` function now supports matching of IP addresses.
 sqlite3
 -------
 
-The :class:`~sqlite3.Row` class now fully supports sequence protocol,
+The :class:`~sqlite3.Row` class now fully supports the sequence protocol,
 in particular :func:`reversed` iteration and slice indexing.
 (Contributed by Claudiu Popa in :issue:`10203`; by Lucas Sinclair,
 Jessica McKellar, and  Serhiy Storchaka in :issue:`13583`.)
@@ -1824,7 +1824,7 @@ sysconfig
 ---------
 
 The name of the user scripts directory on Windows now includes the first
-two components of Python version. (Contributed by Paul Moore
+two components of the Python version. (Contributed by Paul Moore
 in :issue:`23437`.)
 
 
@@ -1834,7 +1834,7 @@ tarfile
 The *mode* argument of the :func:`~tarfile.open` function now accepts ``"x"``
 to request exclusive creation.  (Contributed by Berker Peksag in :issue:`21717`.)
 
-:meth:`TarFile.extractall() <tarfile.TarFile.extractall>` and
+The :meth:`TarFile.extractall() <tarfile.TarFile.extractall>` and
 :meth:`TarFile.extract() <tarfile.TarFile.extract>` methods now take a keyword
 argument *numeric_only*.  If set to ``True``, the extracted files and
 directories will be owned by the numeric ``uid`` and ``gid`` from the tarfile.
@@ -1851,7 +1851,7 @@ by :meth:`TarFile.getmembers() <tarfile.TarFile.getmembers>`.
 threading
 ---------
 
-Both :meth:`Lock.acquire() <threading.Lock.acquire>` and
+Both the :meth:`Lock.acquire() <threading.Lock.acquire>` and
 :meth:`RLock.acquire() <threading.RLock.acquire>` methods
 now use a monotonic clock for timeout management.
 (Contributed by Victor Stinner in :issue:`22043`.)
@@ -1898,7 +1898,7 @@ New lightweight classes: :class:`~traceback.TracebackException`,
 :class:`~traceback.StackSummary`, and :class:`~traceback.FrameSummary`.
 (Contributed by Robert Collins in :issue:`17911`.)
 
-Both :func:`~traceback.print_tb` and :func:`~traceback.print_stack` functions
+Both the :func:`~traceback.print_tb` and :func:`~traceback.print_stack` functions
 now support negative values for the *limit* argument.
 (Contributed by Dmitry Kazakov in :issue:`22619`.)
 
@@ -1912,8 +1912,8 @@ A new :func:`~types.coroutine` function to transform
 :term:`awaitables <awaitable>`.
 (Contributed by Yury Selivanov in :issue:`24017`.)
 
-A new :class:`~types.CoroutineType` is the type of :term:`coroutine` objects
-created by :keyword:`async def` functions.
+A new type called :class:`~types.CoroutineType`, which is used for
+:term:`coroutine` objects created by :keyword:`async def` functions.
 (Contributed by Yury Selivanov in :issue:`24400`.)
 
 
@@ -1934,7 +1934,7 @@ method now accepts a keyword-only argument *pattern* which is passed to
 is impossible for a package name to match the default pattern.
 (Contributed by Robert Collins and Barry A. Warsaw in :issue:`16662`.)
 
-Unittest discovery errors now are exposed in
+Unittest discovery errors now are exposed in the
 :data:`TestLoader.errors <unittest.TestLoader.errors>` attribute of the
 :class:`~unittest.TestLoader` instance.
 (Contributed by Robert Collins in :issue:`19746`.)
@@ -1948,7 +1948,7 @@ unittest.mock
 
 The :class:`~unittest.mock.Mock` class has the following improvements:
 
-* Class constructor has a new *unsafe* parameter, which causes mock
+* The class constructor has a new *unsafe* parameter, which causes mock
   objects to raise :exc:`AttributeError` on attribute names starting
   with ``"assert"``.
   (Contributed by Kushal Das in :issue:`21238`.)
@@ -2006,10 +2006,10 @@ xmlrpc
 ------
 
 The :class:`client.ServerProxy <xmlrpc.client.ServerProxy>` class now supports
-:term:`context manager` protocol.
+the :term:`context manager` protocol.
 (Contributed by Claudiu Popa in :issue:`20627`.)
 
-:class:`client.ServerProxy <xmlrpc.client.ServerProxy>` constructor now accepts
+The :class:`client.ServerProxy <xmlrpc.client.ServerProxy>` constructor now accepts
 an optional :class:`ssl.SSLContext` instance.
 (Contributed by Alex Gaynor in :issue:`22960`.)
 
@@ -2039,7 +2039,7 @@ accepts ``"x"`` to request exclusive creation.
 Other module-level changes
 ==========================
 
-Many functions in :mod:`mmap`, :mod:`ossaudiodev`, :mod:`socket`,
+Many functions in the :mod:`mmap`, :mod:`ossaudiodev`, :mod:`socket`,
 :mod:`ssl`, and :mod:`codecs` modules now accept writable
 :term:`bytes-like objects <bytes-like object>`.
 (Contributed by Serhiy Storchaka in :issue:`23001`.)
@@ -2098,7 +2098,7 @@ Method caching was slightly improved, yielding up to 5% performance
 improvement in some benchmarks.
 (Contributed by Antoine Pitrou in :issue:`22847`.)
 
-Objects from :mod:`random` module now use 50% less memory on 64-bit
+Objects from the :mod:`random` module now use 50% less memory on 64-bit
 builds.  (Contributed by Serhiy Storchaka in :issue:`23488`.)
 
 The :func:`property` getter calls are up to 25% faster.
@@ -2108,7 +2108,7 @@ Instantiation of :class:`fractions.Fraction` is now up to 30% faster.
 (Contributed by Stefan Behnel in :issue:`22464`.)
 
 String methods :meth:`~str.find`, :meth:`~str.rfind`, :meth:`~str.split`,
-:meth:`~str.partition` and :keyword:`in` string operator are now significantly
+:meth:`~str.partition` and the :keyword:`in` string operator are now significantly
 faster for searching 1-character substrings.
 (Contributed by Serhiy Storchaka in :issue:`23573`.)
 
@@ -2154,14 +2154,14 @@ multiplication.
 (Contributed by Benjamin Peterson in :issue:`21176`.  See also :pep:`465`
 for details.)
 
-The :c:member:`PyTypeObject.tp_finalize` slot is now part of stable ABI.
+The :c:member:`PyTypeObject.tp_finalize` slot is now part of the stable ABI.
 
 Windows builds now require Microsoft Visual C++ 14.0, which
 is available as part of `Visual Studio 2015 <http://www.visualstudio.com>`_.
 
-Extension modules now include platform information tag in their filename on
+Extension modules now include a platform information tag in their filename on
 some platforms (the tag is optional, and CPython will import extensions without
-it; although if the tag is present and mismatched, the extension won't be
+it, although if the tag is present and mismatched, the extension won't be
 loaded):
 
 * On Linux, extension module filenames end with
@@ -2217,7 +2217,7 @@ become proper keywords in Python 3.7.
 Deprecated Python Behavior
 --------------------------
 
-Raising :exc:`StopIteration` exception inside a generator will now generate a silent
+Raising the :exc:`StopIteration` exception inside a generator will now generate a silent
 :exc:`PendingDeprecationWarning`, which will become a non-silent deprecation
 warning in Python 3.6 and will trigger a :exc:`RuntimeError` in Python 3.7.
 See :ref:`PEP 479: Change StopIteration handling inside generators <whatsnew-pep-479>`
@@ -2276,7 +2276,7 @@ The :mod:`inspect` :func:`~inspect.getfullargspec`,
 :func:`~inspect.getargvalues`, :func:`~inspect.getcallargs`,
 :func:`~inspect.getargvalues`, :func:`~inspect.formatargspec`, and
 :func:`~inspect.formatargvalues` functions are deprecated in favor of
-:func:`inspect.signature` API.
+the :func:`inspect.signature` API.
 (Contributed by Yury Selivanov in :issue:`20438`.)
 
 Use of :const:`re.LOCALE` flag with str patterns or :const:`re.ASCII` is now
@@ -2354,7 +2354,7 @@ Changes in the Python API
   on a non-blocking socket if the operation would block.  Previously,
   it would return ``0``.  (Contributed by Nikolaus Rath in :issue:`20951`.)
 
-* The ``__name__`` attribute of generator is now set from the function name,
+* The ``__name__`` attribute of generators is now set from the function name,
   instead of being set from the code name. Use ``gen.gi_code.co_name`` to
   retrieve the code name. Generators also have a new ``__qualname__``
   attribute, the qualified name, which is now used for the representation
@@ -2376,7 +2376,7 @@ Changes in the Python API
 * If the current directory is set to a directory that no longer exists then
   :exc:`FileNotFoundError` will no longer be raised and instead
   :meth:`~importlib.machinery.FileFinder.find_spec` will return ``None``
-  **without** caching ``None`` in :data:`sys.path_importer_cache` which is
+  **without** caching ``None`` in :data:`sys.path_importer_cache`, which is
   different than the typical case (:issue:`22834`).
 
 * HTTP status code and messages from :mod:`http.client` and :mod:`http.server`
@@ -2395,7 +2395,7 @@ Changes in the Python API
 * The :func:`re.split` function always ignored empty pattern matches, so the
   ``"x*"`` pattern worked the same as ``"x+"``, and the ``"\b"`` pattern never
   worked.  Now :func:`re.split` raises a warning if the pattern could match
-  an empty string.  For compatibility use patterns that never match an empty
+  an empty string.  For compatibility, use patterns that never match an empty
   string (e.g. ``"x+"`` instead of ``"x*"``).  Patterns that could only match
   an empty string (such as ``"\b"``) now raise an error.
   (Contributed by Serhiy Storchaka in :issue:`22818`.)
@@ -2431,9 +2431,9 @@ Changes in the Python API
 * The ``pygettext.py`` Tool now uses the standard +NNNN format for timezones in
   the POT-Creation-Date header.
 
-* The :mod:`smtplib` module now uses :data:`sys.stderr` instead of previous
-  module level :data:`stderr` variable for debug output.  If your (test)
-  program depends on patching the module level variable to capture the debug
+* The :mod:`smtplib` module now uses :data:`sys.stderr` instead of the previous
+  module-level :data:`stderr` variable for debug output.  If your (test)
+  program depends on patching the module-level variable to capture the debug
   output, you will need to update it to capture sys.stderr instead.
 
 * The :meth:`str.startswith` and :meth:`str.endswith` methods no longer return
@@ -2471,11 +2471,12 @@ Changes in the C API
   (Contributed by Serhiy Storchaka in :issue:`22453`.)
 
 * Because the lack of the :attr:`__module__` attribute breaks pickling and
-  introspection, a deprecation warning now is raised for builtin type without
-  the :attr:`__module__` attribute.  Would be an AttributeError in future.
+  introspection, a deprecation warning is now raised for builtin types without
+  the :attr:`__module__` attribute.  This would be an AttributeError in
+  the future.
   (Contributed by Serhiy Storchaka in :issue:`20204`.)
 
-* As part of :pep:`492` implementation, ``tp_reserved`` slot of
+* As part of the :pep:`492` implementation, the ``tp_reserved`` slot of
   :c:type:`PyTypeObject` was replaced with a
   :c:member:`tp_as_async` slot.  Refer to :ref:`coro-objects` for
   new types, structures and functions.
