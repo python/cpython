@@ -98,8 +98,8 @@ Improved Modules
 datetime
 --------
 
-:meth:`datetime.strftime <datetime.datetime.strftime>` and
-:meth:`date.strftime <datetime.date.strftime>` methods now support ISO 8601 date
+The :meth:`datetime.strftime() <datetime.datetime.strftime>` and
+:meth:`date.strftime() <datetime.date.strftime>` methods now support ISO 8601 date
 directives ``%G``, ``%u`` and ``%V``.
 (Contributed by Ashley Anderson in :issue:`12006`.)
 
@@ -107,17 +107,17 @@ directives ``%G``, ``%u`` and ``%V``.
 pickle
 ------
 
-Objects that need calling ``__new__`` with keyword arguments, can now be pickled
+Objects that need calling ``__new__`` with keyword arguments can now be pickled
 using :ref:`pickle protocols <pickle-protocols>` older than protocol version 4.
 Protocol version 4 already supports this case.  (Contributed by Serhiy
 Storchaka in :issue:`24164`.)
 
 
-rlcomplete
-----------
+rlcompleter
+-----------
 
 Private and special attribute names now are omitted unless the prefix starts
-with underscores.  A space or a colon can be added after completed keyword.
+with underscores.  A space or a colon is added after some completed keywords.
 (Contributed by Serhiy Storchaka in :issue:`25011` and :issue:`25209`.)
 
 Names of most attributes listed by :func:`dir` are now completed.
@@ -128,7 +128,7 @@ an instance were excluded.  (Contributed by Martin Panter in :issue:`25590`.)
 urllib.robotparser
 ------------------
 
-:class:`~urllib.robotparser.RobotFileParser` now supports ``Crawl-delay`` and
+:class:`~urllib.robotparser.RobotFileParser` now supports the ``Crawl-delay`` and
 ``Request-rate`` extensions.
 (Contributed by Nikolay Bogoychev in :issue:`16099`.)
 
@@ -136,18 +136,18 @@ urllib.robotparser
 Optimizations
 =============
 
-* The ASCII decoder is now up to 60 times as fast for error handlers:
+* The ASCII decoder is now up to 60 times as fast for error handlers
   ``surrogateescape``, ``ignore`` and ``replace`` (Contributed
   by Victor Stinner in :issue:`24870`).
 
 * The ASCII and the Latin1 encoders are now up to 3 times as fast for the
-  error ``surrogateescape`` (Contributed by Victor Stinner in :issue:`25227`).
+  error handler ``surrogateescape`` (Contributed by Victor Stinner in :issue:`25227`).
 
-* The UTF-8 encoder is now up to 75 times as fast for error handlers:
+* The UTF-8 encoder is now up to 75 times as fast for error handlers
   ``ignore``, ``replace``, ``surrogateescape``, ``surrogatepass`` (Contributed
   by Victor Stinner in :issue:`25267`).
 
-* The UTF-8 decoder is now up to 15 times as fast for error handlers:
+* The UTF-8 decoder is now up to 15 times as fast for error handlers
   ``ignore``, ``replace`` and ``surrogateescape`` (Contributed
   by Victor Stinner in :issue:`25301`).
 
