@@ -7,6 +7,8 @@
 
 .. deprecated:: 2.6
     The :mod:`htmllib` module has been removed in Python 3.
+    Use :mod:`HTMLParser` instead in Python 2, and the equivalent,
+    :mod:`html.parser`, in Python 3.
 
 
 .. index::
