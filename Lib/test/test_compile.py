@@ -516,6 +516,16 @@ if 1:
             res = script_helper.run_python_until_end(fn)[0]
         self.assertIn(b"Non-UTF-8", res.err)
 
+    def test_yet_more_evil_still_undecodable(self):
+        # Issue #25388
+        src = b"#\x00\n#\xfd\n"
+        with tempfile.TemporaryDirectory() as tmpd:
+            fn = os.path.join(tmpd, "bad.py")
+            with open(fn, "wb") as fp:
+                fp.write(src)
+            res = script_helper.run_python_until_end(fn)[0]
+        self.assertIn(b"Non-UTF-8", res.err)
+
     @support.cpython_only
     def test_compiler_recursion_limit(self):
         # Expected limit is sys.getrecursionlimit() * the scaling factor
