@@ -1937,16 +1937,15 @@ bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
     ADJUST_INDICES(start, end, len);
     if (end - start < sub_len)
         res = -1;
-    else if (sub_len == 1
-#ifndef HAVE_MEMRCHR
-            && dir > 0
-#endif
-    ) {
-        unsigned char needle = *sub;
-        int mode = (dir > 0) ? FAST_SEARCH : FAST_RSEARCH;
-        res = stringlib_fastsearch_memchr_1char(
-            PyBytes_AS_STRING(self) + start, end - start,
-            needle, needle, mode);
+    else if (sub_len == 1) {
+        if (dir > 0)
+            res = stringlib_find_char(
+                PyBytes_AS_STRING(self) + start, end - start,
+                *sub);
+        else
+            res = stringlib_rfind_char(
+                PyBytes_AS_STRING(self) + start, end - start,
+                *sub);
         if (res >= 0)
             res += start;
     }

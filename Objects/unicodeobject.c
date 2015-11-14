@@ -811,27 +811,26 @@ Py_LOCAL_INLINE(Py_ssize_t) findchar(const void *s, int kind,
                                      Py_ssize_t size, Py_UCS4 ch,
                                      int direction)
 {
-    int mode = (direction == 1) ? FAST_SEARCH : FAST_RSEARCH;
-
     switch (kind) {
     case PyUnicode_1BYTE_KIND:
-        {
-            Py_UCS1 ch1 = (Py_UCS1) ch;
-            if (ch1 == ch)
-                return ucs1lib_fastsearch((Py_UCS1 *) s, size, &ch1, 1, 0, mode);
-            else
-                return -1;
-        }
+        if ((Py_UCS1) ch != ch)
+            return -1;
+        if (direction > 0)
+            return ucs1lib_find_char((Py_UCS1 *) s, size, (Py_UCS1) ch);
+        else
+            return ucs1lib_rfind_char((Py_UCS1 *) s, size, (Py_UCS1) ch);
     case PyUnicode_2BYTE_KIND:
-        {
-            Py_UCS2 ch2 = (Py_UCS2) ch;
-            if (ch2 == ch)
-                return ucs2lib_fastsearch((Py_UCS2 *) s, size, &ch2, 1, 0, mode);
-            else
-                return -1;
-        }
+        if ((Py_UCS2) ch != ch)
+            return -1;
+        if (direction > 0)
+            return ucs2lib_find_char((Py_UCS2 *) s, size, (Py_UCS2) ch);
+        else
+            return ucs2lib_rfind_char((Py_UCS2 *) s, size, (Py_UCS2) ch);
     case PyUnicode_4BYTE_KIND:
-        return ucs4lib_fastsearch((Py_UCS4 *) s, size, &ch, 1, 0, mode);
+        if (direction > 0)
+            return ucs4lib_find_char((Py_UCS4 *) s, size, ch);
+        else
+            return ucs4lib_rfind_char((Py_UCS4 *) s, size, ch);
     default:
         assert(0);
         return -1;
