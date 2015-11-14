@@ -1107,7 +1107,7 @@ The code for the sample CGI used in the above example is::
    #!/usr/bin/env python
    import sys
    data = sys.stdin.read()
-   print('Content-type: text-plain\n\nGot Data: "%s"' % data)
+   print('Content-type: text/plain\n\nGot Data: "%s"' % data)
 
 Here is an example of doing a ``PUT`` request using :class:`Request`::
 
