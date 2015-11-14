@@ -245,6 +245,8 @@ Library
 - Issue #24881: Fixed setting binary mode in Python implementation of FileIO
   on Windows and Cygwin.  Patch from Akira Li.
 
+- Issue #25578: Fix (another) memory leak in SSLSocket.getpeercer().
+
 - Issue #25530: Disable the vulnerable SSLv3 protocol by default when creating
   ssl.SSLContext.
 
