@@ -1674,7 +1674,7 @@ Build
 C API
 -----
 
-- Issue #20204: Deprecation warning is now raised for builtin type without the
+- Issue #20204: Deprecation warning is now raised for builtin types without the
   __module__ attribute.
 
 Windows
