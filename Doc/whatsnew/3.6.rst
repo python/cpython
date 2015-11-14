@@ -230,6 +230,12 @@ Changes in the Python API
 * The :mod:`imp` module now raises a :exc:`DeprecationWarning` instead of
   :exc:`PendingDeprecationWarning`.
 
+* The following modules have had missing APIs added to their :attr:`__all__`
+  attributes to match the documented APIs: :mod:`csv`, :mod:`enum`,
+  :mod:`ftplib`, :mod:`logging`, :mod:`optparse`, :mod:`threading` and
+  :mod:`wave`.  This means they will export new symbols when ``import *``
+  is used.  See :issue:`23883`.
+
 
 Changes in the C API
 --------------------
