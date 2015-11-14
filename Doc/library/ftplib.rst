@@ -418,8 +418,8 @@ FTP_TLS Objects
 
 .. method:: FTP_TLS.auth()
 
-   Set up secure control connection by using TLS or SSL, depending on what
-   specified in :meth:`ssl_version` attribute.
+   Set up a secure control connection by using TLS or SSL, depending on what
+   is specified in the :attr:`ssl_version` attribute.
 
    .. versionchanged:: 3.4
       The method now supports hostname check with
