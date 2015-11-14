@@ -3433,7 +3433,7 @@ PySSL_get_default_verify_paths(PyObject *self)
         if (!tmp) { Py_INCREF(Py_None); target = Py_None; } \
         else { target = PyBytes_FromString(tmp); } \
         if (!target) goto error; \
-    } 
+    }
 
     CONVERT(X509_get_default_cert_file_env(), ofile_env);
     CONVERT(X509_get_default_cert_file(), ofile);
