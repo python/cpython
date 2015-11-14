@@ -1573,7 +1573,7 @@ class OutputChecker:
 
         # If `want` contains hex-escaped character such as "\u1234",
         # then `want` is a string of six characters(e.g. [\,u,1,2,3,4]).
-        # On the other hand, `got` could be an another sequence of
+        # On the other hand, `got` could be another sequence of
         # characters such as [\u1234], so `want` and `got` should
         # be folded to hex-escaped ASCII string to compare.
         got = self._toAscii(got)
