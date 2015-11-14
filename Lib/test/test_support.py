@@ -312,6 +312,28 @@ class TestSupport(unittest.TestCase):
                 self.OtherClass, self.RefClass, ignore=ignore)
         self.assertEqual(set(), missing_items)
 
+    def test_check__all__(self):
+        extra = {'tempdir'}
+        blacklist = {'template'}
+        support.check__all__(self,
+                             tempfile,
+                             extra=extra,
+                             blacklist=blacklist)
+
+        extra = {'TextTestResult', 'installHandler'}
+        blacklist = {'load_tests', "TestProgram", "BaseTestSuite"}
+
+        support.check__all__(self,
+                             unittest,
+                             ("unittest.result", "unittest.case",
+                              "unittest.suite", "unittest.loader",
+                              "unittest.main", "unittest.runner",
+                              "unittest.signals"),
+                             extra=extra,
+                             blacklist=blacklist)
+
+        self.assertRaises(AssertionError, support.check__all__, self, unittest)
+
     # XXX -follows a list of untested API
     # make_legacy_pyc
     # is_resource_enabled
