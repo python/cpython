@@ -8,7 +8,7 @@ except ImportError:
     from collections import OrderedDict
 
 
-__all__ = ['Enum', 'IntEnum', 'unique']
+__all__ = ['EnumMeta', 'Enum', 'IntEnum', 'unique']
 
 
 def _is_descriptor(obj):

@@ -6,6 +6,7 @@ from collections import OrderedDict
 from enum import Enum, IntEnum, EnumMeta, unique
 from io import StringIO
 from pickle import dumps, loads, PicklingError, HIGHEST_PROTOCOL
+from test import support
 
 # for pickle tests
 try:
@@ -1707,6 +1708,12 @@ class TestStdLib(unittest.TestCase):
                 failed = True
         if failed:
             self.fail("result does not equal expected, see print above")
+
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        support.check__all__(self, enum)
+
 
 if __name__ == '__main__':
     unittest.main()

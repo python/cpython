@@ -1084,5 +1084,11 @@ class TestUnicode(unittest.TestCase):
             self.assertEqual(fileobj.read(), expected)
 
 
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        extra = {'__doc__', '__version__'}
+        support.check__all__(self, csv, ('csv', '_csv'), extra=extra)
+
+
 if __name__ == '__main__':
     unittest.main()

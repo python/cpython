@@ -18,6 +18,7 @@ import os
 import subprocess
 
 from test import lock_tests
+from test import support
 
 
 # Between fork() and exec(), only async-safe functions are allowed (issues
@@ -1097,6 +1098,13 @@ class BoundedSemaphoreTests(lock_tests.BoundedSemaphoreTests):
 
 class BarrierTests(lock_tests.BarrierTests):
     barriertype = staticmethod(threading.Barrier)
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        extra = {"ThreadError"}
+        blacklist = {'currentThread', 'activeCount'}
+        support.check__all__(self, threading, ('threading', '_thread'),
+                             extra=extra, blacklist=blacklist)
 
 if __name__ == "__main__":
     unittest.main()

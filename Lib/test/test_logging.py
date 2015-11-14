@@ -4159,6 +4159,17 @@ class NTEventLogHandlerTest(BaseTest):
         msg = 'Record not found in event log, went back %d records' % GO_BACK
         self.assertTrue(found, msg=msg)
 
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        blacklist = {'logThreads', 'logMultiprocessing',
+                     'logProcesses', 'currentframe',
+                     'PercentStyle', 'StrFormatStyle', 'StringTemplateStyle',
+                     'Filterer', 'PlaceHolder', 'Manager', 'RootLogger',
+                     'root'}
+        support.check__all__(self, logging, blacklist=blacklist)
+
+
 # Set the locale to the platform-dependent default.  I have no idea
 # why the test does this, but in any case we save the current locale
 # first and restore it at the end.
@@ -4175,7 +4186,8 @@ def test_main():
         RotatingFileHandlerTest,  LastResortTest, LogRecordTest,
         ExceptionTest, SysLogHandlerTest, HTTPHandlerTest,
         NTEventLogHandlerTest, TimedRotatingFileHandlerTest,
-        UnixSocketHandlerTest, UnixDatagramHandlerTest, UnixSysLogHandlerTest)
+        UnixSocketHandlerTest, UnixDatagramHandlerTest, UnixSysLogHandlerTest,
+        MiscTestCase)
 
 if __name__ == "__main__":
     test_main()
