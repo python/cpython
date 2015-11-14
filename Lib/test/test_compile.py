@@ -3,6 +3,9 @@ import unittest
 import sys
 import _ast
 from test import test_support
+from test import script_helper
+import os
+import tempfile
 import textwrap
 
 class TestSpecifics(unittest.TestCase):
@@ -554,6 +557,19 @@ if 1:
         ast = _ast.Module()
         ast.body = [_ast.BoolOp()]
         self.assertRaises(TypeError, compile, ast, '<ast>', 'exec')
+
+    def test_yet_more_evil_still_undecodable(self):
+        # Issue #25388
+        src = b"#\x00\n#\xfd\n"
+        tmpd = tempfile.mkdtemp()
+        try:
+            fn = os.path.join(tmpd, "bad.py")
+            with open(fn, "wb") as fp:
+                fp.write(src)
+            rc, out, err = script_helper.assert_python_failure(fn)
+        finally:
+            test_support.rmtree(tmpd)
+        self.assertIn(b"Non-ASCII", err)
 
 
 class TestStackSize(unittest.TestCase):

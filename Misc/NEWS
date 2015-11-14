@@ -10,6 +10,9 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #25388: Fixed tokenizer hang when processing undecodable source code
+  with a null byte.
+
 - Issue #22995: Default implementation of __reduce__ and __reduce_ex__ now
   rejects builtin types with not defined __new__.
 
