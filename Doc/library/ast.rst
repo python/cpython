@@ -104,7 +104,7 @@ The abstract grammar is currently defined as follows:
 :mod:`ast` Helpers
 ------------------
 
-Apart from the node classes, :mod:`ast` module defines these utility functions
+Apart from the node classes, the :mod:`ast` module defines these utility functions
 and classes for traversing abstract syntax trees:
 
 .. function:: parse(source, filename='<unknown>', mode='exec')
