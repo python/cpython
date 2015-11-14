@@ -3026,7 +3026,7 @@ class TestShortColumns(HelpTestCase):
     '''Test extremely small number of columns.
 
     TestCase prevents "COLUMNS" from being too small in the tests themselves,
-    but we don't want any exceptions thrown in such case. Only ugly representation.
+    but we don't want any exceptions thrown in such cases. Only ugly representation.
     '''
     def setUp(self):
         env = support.EnvironmentVarGuard()
