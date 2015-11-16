@@ -15,7 +15,7 @@ class MultiStatusBar(Frame):
             self.labels[name] = label
         else:
             label = self.labels[name]
-        if width != 0: 
+        if width != 0:
             label.config(width=width)
         label.config(text=text)
 
