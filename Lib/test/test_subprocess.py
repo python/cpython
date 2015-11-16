@@ -2312,8 +2312,6 @@ class POSIXProcessTestCase(BaseTestCase):
             func = lambda: None
             gc.enable()
 
-            executable_list = "exec"   # error: must be a sequence
-
             for args, exe_list, cwd, env_list in (
                 (123,      [b"exe"], None, [b"env"]),
                 ([b"arg"], 123,      None, [b"env"]),
@@ -2331,6 +2329,34 @@ class POSIXProcessTestCase(BaseTestCase):
             if not gc_enabled:
                 gc.disable()
 
+    @support.cpython_only
+    def test_fork_exec_sorted_fd_sanity_check(self):
+        # Issue #23564: sanity check the fork_exec() fds_to_keep sanity check.
+        import _posixsubprocess
+        gc_enabled = gc.isenabled()
+        try:
+            gc.enable()
+
+            for fds_to_keep in (
+                (-1, 2, 3, 4, 5),  # Negative number.
+                ('str', 4),  # Not an int.
+                (18, 23, 42, 2**63),  # Out of range.
+                (5, 4),  # Not sorted.
+                (6, 7, 7, 8),  # Duplicate.
+            ):
+                with self.assertRaises(
+                        ValueError,
+                        msg='fds_to_keep={}'.format(fds_to_keep)) as c:
+                    _posixsubprocess.fork_exec(
+                        [b"false"], [b"false"],
+                        True, fds_to_keep, None, [b"env"],
+                        -1, -1, -1, -1,
+                        1, 2, 3, 4,
+                        True, True, None)
+                self.assertIn('fds_to_keep', str(c.exception))
+        finally:
+            if not gc_enabled:
+                gc.disable()
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
