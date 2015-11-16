@@ -54,7 +54,9 @@ class TestImaplib(unittest.TestCase):
                 '"18-May-2033 05:33:20 +0200"']
 
     @run_with_locale('LC_ALL', 'de_DE', 'fr_FR')
-    @run_with_tz('STD-1DST')
+    # DST rules included to work around quirk where the Gnu C library may not
+    # otherwise restore the previous time zone
+    @run_with_tz('STD-1DST,M3.2.0,M11.1.0')
     def test_Time2Internaldate(self):
         expected = '"18-May-2033 05:33:20 +0200"'
 
