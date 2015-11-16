@@ -8,13 +8,15 @@ class MultiStatusBar(Frame):
         Frame.__init__(self, master, **kw)
         self.labels = {}
 
-    def set_label(self, name, text='', side=LEFT):
+    def set_label(self, name, text='', side=LEFT, width=0):
         if name not in self.labels:
-            label = Label(self, bd=1, relief=SUNKEN, anchor=W)
-            label.pack(side=side)
+            label = Label(self, borderwidth=0, anchor=W)
+            label.pack(side=side, pady=0, padx=4)
             self.labels[name] = label
         else:
             label = self.labels[name]
+        if width != 0: 
+            label.config(width=width)
         label.config(text=text)
 
 def _multistatus_bar(parent):
