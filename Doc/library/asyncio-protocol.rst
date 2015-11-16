@@ -41,6 +41,11 @@ BaseTransport
       protocol's :meth:`connection_lost` method will be called with
       :const:`None` as its argument.
 
+   .. method:: is_closing(self)
+
+      Return ``True`` if the transport is closing or is closed.
+
+      .. versionadded:: 3.5.1
 
    .. method:: get_extra_info(name, default=None)
 
