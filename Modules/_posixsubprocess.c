@@ -109,10 +109,11 @@ _sanity_check_python_fd_sequence(PyObject *fd_sequence)
     for (seq_idx = 0; seq_idx < seq_len; ++seq_idx) {
         PyObject* py_fd = PySequence_Fast_GET_ITEM(fd_sequence, seq_idx);
         long iter_fd = PyLong_AsLong(py_fd);
-        if (iter_fd < 0 || iter_fd < prev_fd || iter_fd > INT_MAX) {
+        if (iter_fd < 0 || iter_fd <= prev_fd || iter_fd > INT_MAX) {
             /* Negative, overflow, not a Long, unsorted, too big for a fd. */
             return 1;
         }
+        prev_fd = iter_fd;
     }
     return 0;
 }
