@@ -3775,6 +3775,7 @@ PyUnicode_FSConverter(PyObject* arg, void* addr)
     void *data;
     if (arg == NULL) {
         Py_DECREF(*(PyObject**)addr);
+        *(PyObject**)addr = NULL;
         return 1;
     }
     if (PyBytes_Check(arg)) {
