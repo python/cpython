@@ -440,7 +440,7 @@ class UnixReadPipeTransportTests(test_utils.TestCase):
         tr = self.read_pipe_transport()
         err = object()
         tr._close(err)
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertFalse(self.loop.readers)
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(err)
@@ -598,7 +598,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         tr._read_ready()
         self.assertFalse(self.loop.readers)
         self.assertFalse(self.loop.writers)
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(None)
 
@@ -658,7 +658,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertFalse(self.loop.writers)
         self.assertFalse(self.loop.readers)
         self.assertEqual([], tr._buffer)
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         m_logexc.assert_called_with(
             test_utils.MockPattern(
                 'Fatal write error on pipe transport'
@@ -694,7 +694,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         self.assertFalse(self.loop.readers)
         self.assertFalse(self.loop.writers)
         self.assertEqual([], tr._buffer)
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(None)
 
@@ -743,7 +743,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
     def test_write_eof(self):
         tr = self.write_pipe_transport()
         tr.write_eof()
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertFalse(self.loop.readers)
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(None)
@@ -752,7 +752,7 @@ class UnixWritePipeTransportTests(test_utils.TestCase):
         tr = self.write_pipe_transport()
         tr._buffer = [b'data']
         tr.write_eof()
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertFalse(self.protocol.connection_lost.called)
 
 

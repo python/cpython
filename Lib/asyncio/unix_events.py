@@ -364,6 +364,9 @@ class _UnixReadPipeTransport(transports.ReadTransport):
     def resume_reading(self):
         self._loop.add_reader(self._fileno, self._read_ready)
 
+    def is_closing(self):
+        return self._closing
+
     def close(self):
         if not self._closing:
             self._close(None)
@@ -547,6 +550,9 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
         if not self._buffer:
             self._loop.remove_reader(self._fileno)
             self._loop.call_soon(self._call_connection_lost, None)
+
+    def is_closing(self):
+        return self._closing
 
     def close(self):
         if self._pipe is not None and not self._closing:

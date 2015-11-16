@@ -698,7 +698,7 @@ class SelectorTransportTests(test_utils.TestCase):
         tr = self.create_transport()
         tr.close()
 
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertEqual(1, self.loop.remove_reader_count[7])
         self.protocol.connection_lost(None)
         self.assertEqual(tr._conn_lost, 1)
@@ -723,7 +723,7 @@ class SelectorTransportTests(test_utils.TestCase):
         self.loop.add_writer(7, mock.sentinel)
         tr._force_close(None)
 
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertEqual(tr._buffer, list_to_buffer())
         self.assertFalse(self.loop.readers)
         self.assertFalse(self.loop.writers)
@@ -1436,7 +1436,7 @@ class SelectorSslTransportTests(test_utils.TestCase):
         tr = self._make_one()
         tr.close()
 
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertEqual(1, self.loop.remove_reader_count[1])
         self.assertEqual(tr._conn_lost, 1)
 

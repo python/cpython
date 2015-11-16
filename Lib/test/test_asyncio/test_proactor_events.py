@@ -204,7 +204,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr.close()
         test_utils.run_briefly(self.loop)
         self.protocol.connection_lost.assert_called_with(None)
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertEqual(tr._conn_lost, 1)
 
         self.protocol.connection_lost.reset_mock()
@@ -298,7 +298,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
             self.loop, self.sock, self.protocol)
         self.assertTrue(tr.can_write_eof())
         tr.write_eof()
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.loop._run_once()
         self.assertTrue(self.sock.close.called)
         tr.close()
@@ -309,7 +309,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
         tr._loop._proactor.send.return_value = f
         tr.write(b'data')
         tr.write_eof()
-        self.assertTrue(tr._closing)
+        self.assertTrue(tr.is_closing())
         self.assertFalse(self.sock.shutdown.called)
         tr._loop._proactor.send.assert_called_with(self.sock, b'data')
         f.set_result(4)

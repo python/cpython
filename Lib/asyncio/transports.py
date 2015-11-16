@@ -19,6 +19,10 @@ class BaseTransport:
         """Get optional transport information."""
         return self._extra.get(name, default)
 
+    def is_closing(self):
+        """Return True if the transport is closing or closed."""
+        raise NotImplementedError
+
     def close(self):
         """Close the transport.
 

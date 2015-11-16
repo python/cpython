@@ -302,7 +302,7 @@ class StreamWriter:
             if exc is not None:
                 raise exc
         if self._transport is not None:
-            if self._transport._closing:
+            if self._transport.is_closing():
                 # Yield to the event loop so connection_lost() may be
                 # called.  Without this, _drain_helper() would return
                 # immediately, and code that calls
