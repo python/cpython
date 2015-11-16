@@ -61,7 +61,7 @@ class SubprocessTransportTests(test_utils.TestCase):
         self.assertTrue(protocol.connection_lost.called)
         self.assertEqual(protocol.connection_lost.call_args[0], (None,))
 
-        self.assertFalse(transport._closed)
+        self.assertFalse(transport.is_closing())
         self.assertIsNone(transport._loop)
         self.assertIsNone(transport._proc)
         self.assertIsNone(transport._protocol)
