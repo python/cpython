@@ -3,6 +3,7 @@
 See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
 
+import copy
 import sys
 import pickle
 import random
@@ -223,7 +224,6 @@ class TestTimeZone(unittest.TestCase):
             tzrep = repr(tz)
             self.assertEqual(tz, eval(tzrep))
 
-
     def test_class_members(self):
         limit = timedelta(hours=23, minutes=59)
         self.assertEqual(timezone.utc.utcoffset(None), ZERO)
@@ -309,6 +309,33 @@ class TestTimeZone(unittest.TestCase):
                              t.replace(tzinfo=tz).utcoffset())
             self.assertEqual(tz.dst(t),
                              t.replace(tzinfo=tz).dst())
+
+    def test_pickle(self):
+        for tz in self.ACDT, self.EST, timezone.min, timezone.max:
+            for pickler, unpickler, proto in pickle_choices:
+                tz_copy = unpickler.loads(pickler.dumps(tz, proto))
+                self.assertEqual(tz_copy, tz)
+        tz = timezone.utc
+        for pickler, unpickler, proto in pickle_choices:
+            tz_copy = unpickler.loads(pickler.dumps(tz, proto))
+            self.assertIs(tz_copy, tz)
+
+    def test_copy(self):
+        for tz in self.ACDT, self.EST, timezone.min, timezone.max:
+            tz_copy = copy.copy(tz)
+            self.assertEqual(tz_copy, tz)
+        tz = timezone.utc
+        tz_copy = copy.copy(tz)
+        self.assertIs(tz_copy, tz)
+
+    def test_deepcopy(self):
+        for tz in self.ACDT, self.EST, timezone.min, timezone.max:
+            tz_copy = copy.deepcopy(tz)
+            self.assertEqual(tz_copy, tz)
+        tz = timezone.utc
+        tz_copy = copy.deepcopy(tz)
+        self.assertIs(tz_copy, tz)
+
 
 #############################################################################
 # Base class for testing a particular aspect of timedelta, time, date and
