@@ -304,6 +304,9 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
         """Get optional transport information."""
         return self._ssl_protocol._get_extra_info(name, default)
 
+    def is_closing(self):
+        return self._closed
+
     def close(self):
         """Close the transport.
 

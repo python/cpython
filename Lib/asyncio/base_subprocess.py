@@ -87,6 +87,9 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
     def _start(self, args, shell, stdin, stdout, stderr, bufsize, **kwargs):
         raise NotImplementedError
 
+    def is_closing(self):
+        return self._closed
+
     def close(self):
         if self._closed:
             return
