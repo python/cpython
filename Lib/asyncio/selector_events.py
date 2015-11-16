@@ -556,6 +556,9 @@ class _SelectorTransport(transports._FlowControlMixin,
     def abort(self):
         self._force_close(None)
 
+    def is_closing(self):
+        return self._closing
+
     def close(self):
         if self._closing:
             return
