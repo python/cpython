@@ -156,6 +156,7 @@ class EditorWindow(object):
                 'name': 'text',
                 'padx': 5,
                 'wrap': 'none',
+                'highlightthickness': 0,
                 'width': self.width,
                 'height': idleConf.GetOption('main', 'EditorWindow',
                                              'height', type='int')}
@@ -380,6 +381,7 @@ class EditorWindow(object):
 
     def set_status_bar(self):
         self.status_bar = self.MultiStatusBar(self.top)
+        sep = Frame(self.top, height=1, borderwidth=1, background='grey75')
         if sys.platform == "darwin":
             # Insert some padding to avoid obscuring some of the statusbar
             # by the resize widget.
@@ -387,6 +389,7 @@ class EditorWindow(object):
         self.status_bar.set_label('column', 'Col: ?', side=RIGHT)
         self.status_bar.set_label('line', 'Ln: ?', side=RIGHT)
         self.status_bar.pack(side=BOTTOM, fill=X)
+        sep.pack(side=BOTTOM, fill=X)
         self.text.bind("<<set-line-and-column>>", self.set_line_and_column)
         self.text.event_add("<<set-line-and-column>>",
                             "<KeyRelease>", "<ButtonRelease>")
