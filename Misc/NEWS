@@ -88,6 +88,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #6973: When we know a subprocess.Popen process has died, do
+  not allow the send_signal(), terminate(), or kill() methods to do
+  anything as they could potentially signal a different process.
+
 - Issue #23883: Added missing APIs to __all__ to match the documented APIs
   for the following modules: csv, enum, ftplib, logging, optparse, threading
   and wave.  Also added a test.support.check__all__() helper.  Patches by
