@@ -2006,16 +2006,7 @@ class TestDateTime(TestDate):
                 seconds = tzseconds
             hours, minutes = divmod(seconds//60, 60)
             dtstr = "{}{:02d}{:02d} {}".format(sign, hours, minutes, tzname)
-            try:
-                dt = strptime(dtstr, "%z %Z")
-            except ValueError:
-                import os
-                self.fail(
-                    "Issue #25168 strptime() failure info:\n"
-                    f"_TimeRE_cache['Z']={_strptime._TimeRE_cache['Z']!r}\n"
-                    f"TZ={os.environ.get('TZ')!r}, or {os.getenv('TZ')!r} via getenv()\n"
-                    f"_regex_cache={_strptime._regex_cache!r}\n"
-                )
+            dt = strptime(dtstr, "%z %Z")
             self.assertEqual(dt.utcoffset(), timedelta(seconds=tzseconds))
             self.assertEqual(dt.tzname(), tzname)
         # Can produce inconsistent datetime
