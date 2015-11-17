@@ -254,9 +254,10 @@ set_add_entry(PySetObject *so, PyObject *key, Py_hash_t hash)
 Internal routine used by set_table_resize() to insert an item which is
 known to be absent from the set.  This routine also assumes that
 the set contains no deleted entries.  Besides the performance benefit,
-using set_insert_clean() in set_table_resize() is dangerous (SF bug #1456209).
-Note that no refcounts are changed by this routine; if needed, the caller
-is responsible for incref'ing `key`.
+there is also safety benefit since using set_add_entry() risks making
+a callback in the middle of a set_table_resize(), see issue 1456209.
+The caller is responsible for updating the key's reference count and
+the setobject's fill and used fields.
 */
 static void
 set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
@@ -285,8 +286,6 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
   found_null:
     entry->key = key;
     entry->hash = hash;
-    so->fill++;
-    so->used++;
 }
 
 /* ======== End logic for probing the hash table ========================== */
@@ -356,8 +355,8 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     /* Make the set empty, using the new table. */
     assert(newtable != oldtable);
     memset(newtable, 0, sizeof(setentry) * newsize);
-    so->fill = 0;
-    so->used = 0;
+    so->fill = oldused;
+    so->used = oldused;
     so->mask = newsize - 1;
     so->table = newtable;
 
@@ -676,6 +675,8 @@ set_merge(PySetObject *so, PyObject *otherset)
 
     /* If our table is empty, we can use set_insert_clean() */
     if (so->fill == 0) {
+        so->fill = other->used;
+        so->used = other->used;
         for (i = 0; i <= other->mask; i++, other_entry++) {
             key = other_entry->key;
             if (key != NULL && key != dummy) {
