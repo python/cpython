@@ -223,10 +223,7 @@ These functions are used to retrieve resource usage information:
 .. function:: getpagesize()
 
    Returns the number of bytes in a system page. (This need not be the same as the
-   hardware page size.) This function is useful for determining the number of bytes
-   of memory a process is using. The third element of the tuple returned by
-   :func:`getrusage` describes memory usage in pages; multiplying by page size
-   produces number of bytes.
+   hardware page size.)
 
 The following :const:`RUSAGE_\*` symbols are passed to the :func:`getrusage`
 function to specify which processes information should be provided for.
