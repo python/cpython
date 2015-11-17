@@ -154,7 +154,7 @@ class Future:
         if self._loop.get_debug():
             self._source_traceback = traceback.extract_stack(sys._getframe(1))
 
-    def _format_callbacks(self):
+    def __format_callbacks(self):
         cb = self._callbacks
         size = len(cb)
         if not size:
@@ -184,7 +184,7 @@ class Future:
                 result = reprlib.repr(self._result)
                 info.append('result={}'.format(result))
         if self._callbacks:
-            info.append(self._format_callbacks())
+            info.append(self.__format_callbacks())
         if self._source_traceback:
             frame = self._source_traceback[-1]
             info.append('created at %s:%s' % (frame[0], frame[1]))
@@ -319,12 +319,6 @@ class Future:
 
     # So-called internal methods (note: no set_running_or_notify_cancel()).
 
-    def _set_result_unless_cancelled(self, result):
-        """Helper setting the result only if the future was not cancelled."""
-        if self.cancelled():
-            return
-        self.set_result(result)
-
     def set_result(self, result):
         """Mark the future done and set its result.
 
@@ -358,27 +352,6 @@ class Future:
             # have had a chance to call result() or exception().
             self._loop.call_soon(self._tb_logger.activate)
 
-    # Truly internal methods.
-
-    def _copy_state(self, other):
-        """Internal helper to copy state from another Future.
-
-        The other Future may be a concurrent.futures.Future.
-        """
-        assert other.done()
-        if self.cancelled():
-            return
-        assert not self.done()
-        if other.cancelled():
-            self.cancel()
-        else:
-            exception = other.exception()
-            if exception is not None:
-                self.set_exception(exception)
-            else:
-                result = other.result()
-                self.set_result(result)
-
     def __iter__(self):
         if not self.done():
             self._blocking = True
@@ -388,6 +361,13 @@ class Future:
 
     if compat.PY35:
         __await__ = __iter__ # make compatible with 'await' expression
+
+
+def _set_result_unless_cancelled(fut, result):
+    """Helper setting the result only if the future was not cancelled."""
+    if fut.cancelled():
+        return
+    fut.set_result(result)
 
 
 def _set_concurrent_future_state(concurrent, source):
@@ -403,6 +383,26 @@ def _set_concurrent_future_state(concurrent, source):
     else:
         result = source.result()
         concurrent.set_result(result)
+
+
+def _copy_future_state(source, dest):
+    """Internal helper to copy state from another Future.
+
+    The other Future may be a concurrent.futures.Future.
+    """
+    assert source.done()
+    if dest.cancelled():
+        return
+    assert not dest.done()
+    if source.cancelled():
+        dest.cancel()
+    else:
+        exception = source.exception()
+        if exception is not None:
+            dest.set_exception(exception)
+        else:
+            result = source.result()
+            dest.set_result(result)
 
 
 def _chain_future(source, destination):
@@ -421,7 +421,7 @@ def _chain_future(source, destination):
 
     def _set_state(future, other):
         if isinstance(future, Future):
-            future._copy_state(other)
+            _copy_future_state(other, future)
         else:
             _set_concurrent_future_state(future, other)
 
