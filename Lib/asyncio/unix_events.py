@@ -319,7 +319,8 @@ class _UnixReadPipeTransport(transports.ReadTransport):
                              self._fileno, self._read_ready)
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
-            self._loop.call_soon(waiter._set_result_unless_cancelled, None)
+            self._loop.call_soon(futures._set_result_unless_cancelled,
+                                 waiter, None)
 
     def __repr__(self):
         info = [self.__class__.__name__]
@@ -442,7 +443,8 @@ class _UnixWritePipeTransport(transports._FlowControlMixin,
 
         if waiter is not None:
             # only wake up the waiter when connection_made() has been called
-            self._loop.call_soon(waiter._set_result_unless_cancelled, None)
+            self._loop.call_soon(futures._set_result_unless_cancelled,
+                                 waiter, None)
 
     def __repr__(self):
         info = [self.__class__.__name__]
