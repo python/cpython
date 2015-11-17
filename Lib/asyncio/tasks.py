@@ -500,7 +500,8 @@ def sleep(delay, result=None, *, loop=None):
 
     future = futures.Future(loop=loop)
     h = future._loop.call_later(delay,
-                                future._set_result_unless_cancelled, result)
+                                futures._set_result_unless_cancelled,
+                                future, result)
     try:
         return (yield from future)
     finally:
