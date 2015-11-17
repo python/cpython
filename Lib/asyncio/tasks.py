@@ -93,7 +93,6 @@ class Task(futures.Future):
             futures.Future.__del__(self)
 
     def _repr_info(self):
-        # Private method, do not use it.
         info = super()._repr_info()
 
         if self._must_cancel:
@@ -222,7 +221,6 @@ class Task(futures.Future):
         return True
 
     def _step(self, value=None, exc=None):
-        # Private method, do not use it.
         assert not self.done(), \
             '_step(): already done: {!r}, {!r}, {!r}'.format(self, value, exc)
         if self._must_cancel:
@@ -286,7 +284,6 @@ class Task(futures.Future):
             self = None  # Needed to break cycles when an exception occurs.
 
     def _wakeup(self, future):
-        # Private method, do not use it.
         try:
             future.result()
         except Exception as exc:
