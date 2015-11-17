@@ -193,6 +193,7 @@ _Pickle_ClearState(PickleState *st)
     Py_CLEAR(st->import_mapping_3to2);
     Py_CLEAR(st->codecs_encode);
     Py_CLEAR(st->getattr);
+    Py_CLEAR(st->partial);
 }
 
 /* Initialize the given pickle module state. */
