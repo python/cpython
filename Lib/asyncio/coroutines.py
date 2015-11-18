@@ -140,7 +140,13 @@ class CoroWrapper:
 
     if compat.PY35:
 
-        __await__ = __iter__ # make compatible with 'await' expression
+        def __await__(self):
+            cr_await = getattr(self.gen, 'cr_await', None)
+            if cr_await is not None:
+                raise RuntimeError(
+                    "Cannot await on coroutine {!r} while it's "
+                    "awaiting for {!r}".format(self.gen, cr_await))
+            return self
 
         @property
         def gi_yieldfrom(self):
