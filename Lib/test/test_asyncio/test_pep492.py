@@ -203,6 +203,26 @@ class CoroutineTests(BaseTest):
 
         self.loop.run_until_complete(runner())
 
+    def test_double_await(self):
+        async def afunc():
+            await asyncio.sleep(0.1, loop=self.loop)
+
+        async def runner():
+            coro = afunc()
+            t = asyncio.Task(coro, loop=self.loop)
+            try:
+                await asyncio.sleep(0, loop=self.loop)
+                await coro
+            finally:
+                t.cancel()
+
+        self.loop.set_debug(True)
+        with self.assertRaisesRegex(
+            RuntimeError,
+            r'Cannot await.*test_double_await.*\bafunc\b.*while.*\bsleep\b'):
+
+            self.loop.run_until_complete(runner())
+
 
 if __name__ == '__main__':
     unittest.main()
