@@ -269,6 +269,7 @@ set_insert_clean(PySetObject *so, PyObject *key, Py_hash_t hash)
     size_t i = (size_t)hash & mask;
     size_t j;
 
+    assert(so->fill == so->used);
     while (1) {
         entry = &table[i];
         if (entry->key == NULL)
