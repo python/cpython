@@ -699,4 +699,4 @@ Task functions
       Unlike the functions above, :func:`run_coroutine_threadsafe` requires the
       *loop* argument to be passed explicitely.
 
-   .. versionadded:: 3.4.4
+   .. versionadded:: 3.4.4, 3.5.1
