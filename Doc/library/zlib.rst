@@ -221,7 +221,7 @@ Decompression objects support the following methods, and two attributes:
    :meth:`decompress` method.  Some of the input data may be preserved in internal
    buffers for later processing.
 
-   If the optional parameter *max_length* is supplied then the return value will be
+   If the optional parameter *max_length* is non-zero then the return value will be
    no longer than *max_length*. This may mean that not all of the compressed input
    can be processed; and unconsumed data will be stored in the attribute
    :attr:`unconsumed_tail`. This string must be passed to a subsequent call to
