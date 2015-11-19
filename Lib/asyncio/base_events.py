@@ -70,10 +70,6 @@ def _format_pipe(fd):
         return repr(fd)
 
 
-class _StopError(BaseException):
-    """Raised to stop the event loop."""
-
-
 def _check_resolved_address(sock, address):
     # Ensure that the address is already resolved to avoid the trap of hanging
     # the entire event loop when the address requires doing a DNS lookup.
@@ -118,9 +114,6 @@ def _check_resolved_address(sock, address):
                              "got host %r: %s"
                              % (host, err))
 
-def _raise_stop_error(*args):
-    raise _StopError
-
 
 def _run_until_complete_cb(fut):
     exc = fut._exception
@@ -129,7 +122,7 @@ def _run_until_complete_cb(fut):
         # Issue #22429: run_forever() already finished, no need to
         # stop it.
         return
-    _raise_stop_error()
+    fut._loop.stop()
 
 
 class Server(events.AbstractServer):
@@ -184,6 +177,7 @@ class BaseEventLoop(events.AbstractEventLoop):
     def __init__(self):
         self._timer_cancelled_count = 0
         self._closed = False
+        self._stopping = False
         self._ready = collections.deque()
         self._scheduled = []
         self._default_executor = None
@@ -298,11 +292,11 @@ class BaseEventLoop(events.AbstractEventLoop):
         self._thread_id = threading.get_ident()
         try:
             while True:
-                try:
-                    self._run_once()
-                except _StopError:
+                self._run_once()
+                if self._stopping:
                     break
         finally:
+            self._stopping = False
             self._thread_id = None
             self._set_coroutine_wrapper(False)
 
@@ -345,11 +339,10 @@ class BaseEventLoop(events.AbstractEventLoop):
     def stop(self):
         """Stop running the event loop.
 
-        Every callback scheduled before stop() is called will run. Callbacks
-        scheduled after stop() is called will not run. However, those callbacks
-        will run if run_forever is called again later.
+        Every callback already scheduled will still run.  This simply informs
+        run_forever to stop looping after a complete iteration.
         """
-        self.call_soon(_raise_stop_error)
+        self._stopping = True
 
     def close(self):
         """Close the event loop.
@@ -1194,7 +1187,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                 handle._scheduled = False
 
         timeout = None
-        if self._ready:
+        if self._ready or self._stopping:
             timeout = 0
         elif self._scheduled:
             # Compute the desired timeout.

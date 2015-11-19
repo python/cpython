@@ -71,12 +71,13 @@ def run_until(loop, pred, timeout=30):
 
 
 def run_once(loop):
-    """loop.stop() schedules _raise_stop_error()
-    and run_forever() runs until _raise_stop_error() callback.
-    this wont work if test waits for some IO events, because
-    _raise_stop_error() runs before any of io events callbacks.
+    """Legacy API to run once through the event loop.
+
+    This is the recommended pattern for test code.  It will poll the
+    selector once and run all callbacks scheduled in response to I/O
+    events.
     """
-    loop.stop()
+    loop.call_soon(loop.stop)
     loop.run_forever()
 
 
