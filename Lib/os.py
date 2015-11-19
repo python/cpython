@@ -226,7 +226,7 @@ def makedirs(name, mode=0o777, exist_ok=False):
         try:
             makedirs(head, mode, exist_ok)
         except FileExistsError:
-            # be happy if someone already created the path
+            # Defeats race condition when another thread created the path
             pass
         cdir = curdir
         if isinstance(tail, bytes):
@@ -235,8 +235,10 @@ def makedirs(name, mode=0o777, exist_ok=False):
             return
     try:
         mkdir(name, mode)
-    except OSError as e:
-        if not exist_ok or e.errno != errno.EEXIST or not path.isdir(name):
+    except OSError:
+        # Cannot rely on checking for EEXIST, since the operating system
+        # could give priority to other errors like EACCES or EROFS
+        if not exist_ok or not path.isdir(name):
             raise
 
 def removedirs(name):

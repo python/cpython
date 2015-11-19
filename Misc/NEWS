@@ -106,6 +106,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25583: Avoid incorrect errors raised by os.makedirs(exist_ok=True)
+  when the OS gives priority to errors such as EACCES over EEXIST.
+
 - Issue #25593: Change semantics of EventLoop.stop() in asyncio.
 
 - Issue #6973: When we know a subprocess.Popen process has died, do
