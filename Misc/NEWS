@@ -55,6 +55,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #10128: backport issue #10845's mitigation of incompatibilities between
+  the multiprocessing module and directory and zipfile execution.
+  Multiprocessing on Windows will now automatically skip rerunning __main__ in
+  spawned processes, rather than failing with AssertionError.
+
 - Issue #25578: Fix (another) memory leak in SSLSocket.getpeercer().
 
 - Issue #25590: In the Readline completer, only call getattr() once per
