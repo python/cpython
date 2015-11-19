@@ -757,6 +757,59 @@ class BaseEventLoopTests(test_utils.TestCase):
             pass
         self.assertTrue(func.called)
 
+    def test_single_selecter_event_callback_after_stopping(self):
+        # Python issue #25593: A stopped event loop may cause event callbacks
+        # to run more than once.
+        event_sentinel = object()
+        callcount = 0
+        doer = None
+
+        def proc_events(event_list):
+            nonlocal doer
+            if event_sentinel in event_list:
+                doer = self.loop.call_soon(do_event)
+
+        def do_event():
+            nonlocal callcount
+            callcount += 1
+            self.loop.call_soon(clear_selector)
+
+        def clear_selector():
+            doer.cancel()
+            self.loop._selector.select.return_value = ()
+
+        self.loop._process_events = proc_events
+        self.loop._selector.select.return_value = (event_sentinel,)
+
+        for i in range(1, 3):
+            with self.subTest('Loop %d/2' % i):
+                self.loop.call_soon(self.loop.stop)
+                self.loop.run_forever()
+                self.assertEqual(callcount, 1)
+
+    def test_run_once(self):
+        # Simple test for test_utils.run_once().  It may seem strange
+        # to have a test for this (the function isn't even used!) but
+        # it's a de-factor standard API for library tests.  This tests
+        # the idiom: loop.call_soon(loop.stop); loop.run_forever().
+        count = 0
+
+        def callback():
+            nonlocal count
+            count += 1
+
+        self.loop._process_events = mock.Mock()
+        self.loop.call_soon(callback)
+        test_utils.run_once(self.loop)
+        self.assertEqual(count, 1)
+
+    def test_run_forever_pre_stopped(self):
+        # Test that the old idiom for pre-stopping the loop works.
+        self.loop._process_events = mock.Mock()
+        self.loop.stop()
+        self.loop.run_forever()
+        self.loop._selector.select.assert_called_once_with(0)
+
 
 class MyProto(asyncio.Protocol):
     done = None
