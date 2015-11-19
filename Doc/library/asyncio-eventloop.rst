@@ -29,7 +29,16 @@ Run an event loop
 
 .. method:: BaseEventLoop.run_forever()
 
-   Run until :meth:`stop` is called.
+   Run until :meth:`stop` is called.  If :meth:`stop` is called before
+   :meth:`run_forever()` is called, this polls the I/O selector once
+   with a timeout of zero, runs all callbacks scheduled in response to
+   I/O events (and those that were already scheduled), and then exits.
+   If :meth:`stop` is called while :meth:`run_forever` is running,
+   this will run the current batch of callbacks and then exit.  Note
+   that callbacks scheduled by callbacks will not run in that case;
+   they will run the next time :meth:`run_forever` is called.
+
+   .. versionchanged:: 3.4.4
 
 .. method:: BaseEventLoop.run_until_complete(future)
 
@@ -48,10 +57,10 @@ Run an event loop
 
    Stop running the event loop.
 
-   Every callback scheduled before :meth:`stop` is called will run.
-   Callbacks scheduled after :meth:`stop` is called will not run.
-   However, those callbacks will run if :meth:`run_forever` is called
-   again later.
+   This causes :meth:`run_forever` to exit at the next suitable
+   opportunity (see there for more details).
+
+   .. versionchanged:: 3.4.4
 
 .. method:: BaseEventLoop.is_closed()
 
@@ -61,7 +70,8 @@ Run an event loop
 
 .. method:: BaseEventLoop.close()
 
-   Close the event loop. The loop must not be running.
+   Close the event loop. The loop must not be running.  Pending
+   callbacks will be lost.
 
    This clears the queues and shuts down the executor, but does not wait for
    the executor to finish.
