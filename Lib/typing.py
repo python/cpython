@@ -981,7 +981,7 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
                         "Cannot substitute %s for %s in %s" %
                         (_type_repr(new), _type_repr(old), self))
 
-        return self.__class__(self.__name__, self.__bases__,
+        return self.__class__(self.__name__, (self,) + self.__bases__,
                               dict(self.__dict__),
                               parameters=params,
                               origin=self,
