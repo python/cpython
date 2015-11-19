@@ -1,12 +1,7 @@
-from collections import namedtuple
 import pickle
 import re
 import sys
 from unittest import TestCase, main
-try:
-    from unittest import mock
-except ImportError:
-    import mock  # 3rd party install, for PY3.2.
 
 from typing import Any
 from typing import TypeVar, AnyStr
