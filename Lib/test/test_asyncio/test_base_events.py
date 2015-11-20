@@ -782,7 +782,7 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop._selector.select.return_value = (event_sentinel,)
 
         for i in range(1, 3):
-            with self.subTest('Loop %d/2' % i):
+            # with self.subTest('Loop %d/2' % i):  # Not in Python 3.3.
                 self.loop.call_soon(self.loop.stop)
                 self.loop.run_forever()
                 self.assertEqual(callcount, 1)
