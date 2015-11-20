@@ -2347,26 +2347,33 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             PyObject *name = GETITEM(names, oparg);
             PyObject *v;
             if (PyDict_CheckExact(f->f_globals)
-                && PyDict_CheckExact(f->f_builtins)) {
+                && PyDict_CheckExact(f->f_builtins))
+            {
                 v = _PyDict_LoadGlobal((PyDictObject *)f->f_globals,
                                        (PyDictObject *)f->f_builtins,
                                        name);
                 if (v == NULL) {
-                    if (!_PyErr_OCCURRED())
+                    if (!_PyErr_OCCURRED()) {
+                        /* _PyDict_LoadGlobal() returns NULL without raising
+                         * an exception if the key doesn't exist */
                         format_exc_check_arg(PyExc_NameError,
                                              NAME_ERROR_MSG, name);
+                    }
                     goto error;
                 }
                 Py_INCREF(v);
             }
             else {
                 /* Slow-path if globals or builtins is not a dict */
+
+                /* namespace 1: globals */
                 v = PyObject_GetItem(f->f_globals, name);
                 if (v == NULL) {
                     if (!PyErr_ExceptionMatches(PyExc_KeyError))
                         goto error;
                     PyErr_Clear();
 
+                    /* namespace 2: builtins */
                     v = PyObject_GetItem(f->f_builtins, name);
                     if (v == NULL) {
                         if (PyErr_ExceptionMatches(PyExc_KeyError))
