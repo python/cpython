@@ -602,11 +602,12 @@ class GenericTests(TestCase):
         c = C()
         c.foo = 42
         c.bar = 'abc'
-        z = pickle.dumps(c)
-        x = pickle.loads(z)
-        self.assertEqual(x.foo, 42)
-        self.assertEqual(x.bar, 'abc')
-        self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z = pickle.dumps(c, proto)
+            x = pickle.loads(z)
+            self.assertEqual(x.foo, 42)
+            self.assertEqual(x.bar, 'abc')
+            self.assertEqual(x.__dict__, {'foo': 42, 'bar': 'abc'})
 
     def test_errors(self):
         with self.assertRaises(TypeError):
@@ -1167,9 +1168,10 @@ class NamedTupleTests(TestCase):
         global Emp  # pickle wants to reference the class by name
         Emp = NamedTuple('Emp', [('name', str), ('id', int)])
         jane = Emp('jane', 37)
-        z = pickle.dumps(jane)
-        jane2 = pickle.loads(z)
-        assert jane == jane2
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            z = pickle.dumps(jane, proto)
+            jane2 = pickle.loads(z)
+            self.assertEqual(jane2, jane)
 
 
 class IOTests(TestCase):
