@@ -989,7 +989,7 @@ class PyShell(OutputWindow):
         if self.executing:
             response = tkMessageBox.askokcancel(
                 "Kill?",
-                "The program is still running!\n Do you want to kill it?",
+                "Your program is still running!\n Do you want to kill it?",
                 default="ok",
                 parent=self.text)
             if response is False:
