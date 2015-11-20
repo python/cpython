@@ -24,6 +24,7 @@ except ImportError:  # pragma: no cover
     ssl = None
 
 from . import base_events
+from . import compat
 from . import events
 from . import futures
 from . import selectors
@@ -420,6 +421,16 @@ class TestCase(unittest.TestCase):
         # Detect CPython bug #23353: ensure that yield/yield-from is not used
         # in an except block of a generator
         self.assertEqual(sys.exc_info(), (None, None, None))
+
+    if not compat.PY34:
+        # Python 3.3 compatibility
+        def subTest(self, *args, **kwargs):
+            class EmptyCM:
+                def __enter__(self):
+                    pass
+                def __exit__(self, *exc):
+                    pass
+            return EmptyCM()
 
 
 @contextlib.contextmanager
