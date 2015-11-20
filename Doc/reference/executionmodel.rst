@@ -11,8 +11,8 @@ Execution model
 
 .. _prog_structure:
 
-Structure of a programm
-=======================
+Structure of a program
+======================
 
 .. index:: block
 
@@ -270,4 +270,3 @@ and :keyword:`raise` statement in section :ref:`raise`.
 
 .. [#] This limitation occurs because the code that is executed by these operations
        is not available at the time the module is compiled.
-
