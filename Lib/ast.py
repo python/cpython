@@ -293,7 +293,6 @@ class NodeTransformer(NodeVisitor):
 
     def generic_visit(self, node):
         for field, old_value in iter_fields(node):
-            old_value = getattr(node, field, None)
             if isinstance(old_value, list):
                 new_values = []
                 for value in old_value:
