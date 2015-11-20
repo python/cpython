@@ -1608,12 +1608,15 @@ class _MemoryWatchdog:
 def bigmemtest(size, memuse, dry_run=True):
     """Decorator for bigmem tests.
 
-    'minsize' is the minimum useful size for the test (in arbitrary,
-    test-interpreted units.) 'memuse' is the number of 'bytes per size' for
-    the test, or a good estimate of it.
+    'size' is a requested size for the test (in arbitrary, test-interpreted
+    units.) 'memuse' is the number of bytes per unit for the test, or a good
+    estimate of it. For example, a test that needs two byte buffers, of 4 GiB
+    each, could be decorated with @bigmemtest(size=_4G, memuse=2).
 
-    if 'dry_run' is False, it means the test doesn't support dummy runs
-    when -M is not specified.
+    The 'size' argument is normally passed to the decorated test method as an
+    extra argument. If 'dry_run' is true, the value passed to the test method
+    may be less than the requested value. If 'dry_run' is false, it means the
+    test doesn't support dummy runs when -M is not specified.
     """
     def decorator(f):
         def wrapper(self):
