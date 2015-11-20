@@ -340,20 +340,37 @@ class IntTestCases(IntLongCommonTests, unittest.TestCase):
         # Test possible valid non-numeric types for x, including subclasses
         # of the allowed built-in types.
         class CustomStr(str): pass
-        values = ['100', CustomStr('100')]
+        class CustomByteArray(bytearray): pass
+        factories = [str, bytearray, CustomStr, CustomByteArray, buffer]
 
         if have_unicode:
             class CustomUnicode(unicode): pass
-            values += [unicode('100'), CustomUnicode(unicode('100'))]
+            factories += [unicode, CustomUnicode]
 
-        for x in values:
+        for f in factories:
+            x = f('100')
             msg = 'x has value %s and type %s' % (x, type(x).__name__)
             try:
                 self.assertEqual(int(x), 100, msg=msg)
-                self.assertEqual(int(x, 2), 4, msg=msg)
+                if isinstance(x, basestring):
+                    self.assertEqual(int(x, 2), 4, msg=msg)
             except TypeError, err:
                 raise AssertionError('For %s got TypeError: %s' %
                                      (type(x).__name__, err))
+            if not isinstance(x, basestring):
+                errmsg = "can't convert non-string"
+                with self.assertRaisesRegexp(TypeError, errmsg, msg=msg):
+                    int(x, 2)
+            errmsg = 'invalid literal'
+            with self.assertRaisesRegexp(ValueError, errmsg, msg=msg):
+                int(f('A' * 0x10))
+
+    def test_int_buffer(self):
+        self.assertEqual(int(buffer('123', 1, 2)), 23)
+        self.assertEqual(int(buffer('123\x00', 1, 2)), 23)
+        self.assertEqual(int(buffer('123 ', 1, 2)), 23)
+        self.assertEqual(int(buffer('123A', 1, 2)), 23)
+        self.assertEqual(int(buffer('1234', 1, 2)), 23)
 
     def test_error_on_string_float_for_x(self):
         self.assertRaises(ValueError, int, '1.2')

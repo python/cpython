@@ -538,18 +538,29 @@ builtin_compile(PyObject *self, PyObject *args, PyObject *kwds)
         }
         return result;
     }
-
+    if (PyString_Check(cmd)) {
+        str = PyString_AS_STRING(cmd);
+        length = PyString_GET_SIZE(cmd);
+    }
 #ifdef Py_USING_UNICODE
-    if (PyUnicode_Check(cmd)) {
+    else if (PyUnicode_Check(cmd)) {
         tmp = PyUnicode_AsUTF8String(cmd);
         if (tmp == NULL)
             return NULL;
-        cmd = tmp;
         cf.cf_flags |= PyCF_SOURCE_IS_UTF8;
+        str = PyString_AS_STRING(tmp);
+        length = PyString_GET_SIZE(tmp);
     }
 #endif
-
-    if (PyObject_AsReadBuffer(cmd, (const void **)&str, &length))
+    else if (!PyObject_AsReadBuffer(cmd, (const void **)&str, &length)) {
+        /* Copy to NUL-terminated buffer. */
+        tmp = PyString_FromStringAndSize(str, length);
+        if (tmp == NULL)
+            return NULL;
+        str = PyString_AS_STRING(tmp);
+        length = PyString_GET_SIZE(tmp);
+    }
+    else
         goto cleanup;
     if ((size_t)length != strlen(str)) {
         PyErr_SetString(PyExc_TypeError,

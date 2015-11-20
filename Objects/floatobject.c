@@ -180,6 +180,7 @@ PyFloat_FromString(PyObject *v, char **pend)
     char *s_buffer = NULL;
 #endif
     Py_ssize_t len;
+    PyObject *str = NULL;
     PyObject *result = NULL;
 
     if (pend)
@@ -202,7 +203,14 @@ PyFloat_FromString(PyObject *v, char **pend)
         len = strlen(s);
     }
 #endif
-    else if (PyObject_AsCharBuffer(v, &s, &len)) {
+    else if (!PyObject_AsCharBuffer(v, &s, &len)) {
+        /* Copy to NUL-terminated buffer. */
+        str = PyString_FromStringAndSize(s, len);
+        if (str == NULL)
+            return NULL;
+        s = PyString_AS_STRING(str);
+    }
+    else {
         PyErr_SetString(PyExc_TypeError,
             "float() argument must be a string or a number");
         return NULL;
@@ -233,6 +241,7 @@ PyFloat_FromString(PyObject *v, char **pend)
     if (s_buffer)
         PyMem_FREE(s_buffer);
 #endif
+    Py_XDECREF(str);
     return result;
 }
 

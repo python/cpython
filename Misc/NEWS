@@ -10,6 +10,10 @@ What's New in Python 2.7.11?
 Core and Builtins
 -----------------
 
+- Issue #25678: Avoid buffer overreads when int(), long(), float(), and
+  compile() are passed buffer objects.  These objects are not necessarily
+  terminated by a null byte, but the functions assumed they were.
+
 - Issue #25388: Fixed tokenizer hang when processing undecodable source code
   with a null byte.
 

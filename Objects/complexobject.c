@@ -1000,7 +1000,7 @@ complex_subtype_from_string(PyTypeObject *type, PyObject *v)
         len = strlen(s);
     }
 #endif
-    else if (PyObject_AsCharBuffer(v, &s, &len)) {
+    else {
         PyErr_SetString(PyExc_TypeError,
                         "complex() arg is not a string");
         return NULL;

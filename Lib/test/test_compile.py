@@ -571,6 +571,19 @@ if 1:
             test_support.rmtree(tmpd)
         self.assertIn(b"Non-ASCII", err)
 
+    def test_null_terminated(self):
+        # The source code is null-terminated internally, but bytes-like
+        # objects are accepted, which could be not terminated.
+        with self.assertRaisesRegexp(TypeError, "without null bytes"):
+            compile(u"123\x00", "<dummy>", "eval")
+        with self.assertRaisesRegexp(TypeError, "without null bytes"):
+            compile(buffer("123\x00"), "<dummy>", "eval")
+        code = compile(buffer("123\x00", 1, 2), "<dummy>", "eval")
+        self.assertEqual(eval(code), 23)
+        code = compile(buffer("1234", 1, 2), "<dummy>", "eval")
+        self.assertEqual(eval(code), 23)
+        code = compile(buffer("$23$", 1, 2), "<dummy>", "eval")
+        self.assertEqual(eval(code), 23)
 
 class TestStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object
