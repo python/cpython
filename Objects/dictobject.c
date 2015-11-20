@@ -1165,39 +1165,42 @@ _PyDict_GetItemIdWithError(PyObject *dp, struct _Py_Identifier *key)
     return PyDict_GetItemWithError(dp, kv);
 }
 
-/* Fast version of global value lookup.
+/* Fast version of global value lookup (LOAD_GLOBAL).
  * Lookup in globals, then builtins.
+ *
+ * Raise an exception and return NULL if an error occurred (ex: computing the
+ * key hash failed, key comparison failed, ...). Return NULL if the key doesn't
+ * exist. Return the value if the key exists.
  */
 PyObject *
 _PyDict_LoadGlobal(PyDictObject *globals, PyDictObject *builtins, PyObject *key)
 {
-    PyObject *x;
-    if (PyUnicode_CheckExact(key)) {
-        PyObject **value_addr;
-        Py_hash_t hash = ((PyASCIIObject *)key)->hash;
-        if (hash != -1) {
-            PyDictKeyEntry *e;
-            e = globals->ma_keys->dk_lookup(globals, key, hash, &value_addr);
-            if (e == NULL) {
-                return NULL;
-            }
-            x = *value_addr;
-            if (x != NULL)
-                return x;
-            e = builtins->ma_keys->dk_lookup(builtins, key, hash, &value_addr);
-            if (e == NULL) {
-                return NULL;
-            }
-            x = *value_addr;
-            return x;
-        }
+    Py_hash_t hash;
+    PyDictKeyEntry *entry;
+    PyObject **value_addr;
+    PyObject *value;
+
+    if (!PyUnicode_CheckExact(key) ||
+        (hash = ((PyASCIIObject *) key)->hash) == -1)
+    {
+        hash = PyObject_Hash(key);
+        if (hash == -1)
+            return NULL;
     }
-    x = PyDict_GetItemWithError((PyObject *)globals, key);
-    if (x != NULL)
-        return x;
-    if (PyErr_Occurred())
+
+    /* namespace 1: globals */
+    entry = globals->ma_keys->dk_lookup(globals, key, hash, &value_addr);
+    if (entry == NULL)
         return NULL;
-    return PyDict_GetItemWithError((PyObject *)builtins, key);
+    value = *value_addr;
+    if (value != NULL)
+        return value;
+
+    /* namespace 2: builtins */
+    entry = builtins->ma_keys->dk_lookup(builtins, key, hash, &value_addr);
+    if (entry == NULL)
+        return NULL;
+    return *value_addr;
 }
 
 /* CAUTION: PyDict_SetItem() must guarantee that it won't resize the
