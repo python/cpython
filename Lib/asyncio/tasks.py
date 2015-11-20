@@ -220,9 +220,9 @@ class Task(futures.Future):
         self._must_cancel = True
         return True
 
-    def _step(self, value=None, exc=None):
+    def _step(self, exc=None):
         assert not self.done(), \
-            '_step(): already done: {!r}, {!r}, {!r}'.format(self, value, exc)
+            '_step(): already done: {!r}, {!r}'.format(self, exc)
         if self._must_cancel:
             if not isinstance(exc, futures.CancelledError):
                 exc = futures.CancelledError()
@@ -231,12 +231,14 @@ class Task(futures.Future):
         self._fut_waiter = None
 
         self.__class__._current_tasks[self._loop] = self
-        # Call either coro.throw(exc) or coro.send(value).
+        # Call either coro.throw(exc) or coro.send(None).
         try:
-            if exc is not None:
-                result = coro.throw(exc)
+            if exc is None:
+                # We use the `send` method directly, because coroutines
+                # don't have `__iter__` and `__next__` methods.
+                result = coro.send(None)
             else:
-                result = coro.send(value)
+                result = coro.throw(exc)
         except StopIteration as exc:
             self.set_result(exc.value)
         except futures.CancelledError as exc:
@@ -258,7 +260,7 @@ class Task(futures.Future):
                             self._must_cancel = False
                 else:
                     self._loop.call_soon(
-                        self._step, None,
+                        self._step,
                         RuntimeError(
                             'yield was used instead of yield from '
                             'in task {!r} with {!r}'.format(self, result)))
@@ -268,7 +270,7 @@ class Task(futures.Future):
             elif inspect.isgenerator(result):
                 # Yielding a generator is just wrong.
                 self._loop.call_soon(
-                    self._step, None,
+                    self._step,
                     RuntimeError(
                         'yield was used instead of yield from for '
                         'generator in task {!r} with {}'.format(
@@ -276,7 +278,7 @@ class Task(futures.Future):
             else:
                 # Yielding something else is an error.
                 self._loop.call_soon(
-                    self._step, None,
+                    self._step,
                     RuntimeError(
                         'Task got bad yield: {!r}'.format(result)))
         finally:
@@ -288,7 +290,7 @@ class Task(futures.Future):
             future.result()
         except Exception as exc:
             # This may also be a cancellation.
-            self._step(None, exc)
+            self._step(exc)
         else:
             # Don't pass the value of `future.result()` explicitly,
             # as `Future.__iter__` and `Future.__await__` don't need it.
