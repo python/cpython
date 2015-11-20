@@ -730,18 +730,24 @@ member instances.
 Finer Points
 ^^^^^^^^^^^^
 
-Enum members are instances of an Enum class, and even though they are
-accessible as `EnumClass.member`, they are not accessible directly from
-the member::
+:class:`Enum` members are instances of an :class:`Enum` class, and even
+though they are accessible as `EnumClass.member`, they should not be accessed
+directly from the member as that lookup may fail or, worse, return something
+besides the :class:`Enum` member you looking for::
 
-    >>> Color.red
-    <Color.red: 1>
-    >>> Color.red.blue
-    Traceback (most recent call last):
+    >>> class FieldTypes(Enum):
+    ...     name = 0
+    ...     value = 1
+    ...     size = 2
     ...
-    AttributeError: 'Color' object has no attribute 'blue'
+    >>> FieldTypes.value.size
+    <FieldTypes.size: 2>
+    >>> FieldTypes.size.value
+    2
 
-Likewise, the :attr:`__members__` is only available on the class.
+.. versionchanged:: 3.5
+
+The :attr:`__members__` attribute is only available on the class.
 
 If you give your :class:`Enum` subclass extra methods, like the `Planet`_
 class above, those methods will show up in a :func:`dir` of the member,
