@@ -429,6 +429,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25583: Avoid incorrect errors raised by os.makedirs(exist_ok=True)
+  when the OS gives priority to errors such as EACCES over EEXIST.
+
 - Issue #25590: In the Readline completer, only call getattr() once per
   attribute.
 
