@@ -226,42 +226,42 @@ zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int level)
 
 /*[python input]
 
-class uint_converter(CConverter):
+class capped_uint_converter(CConverter):
     type = 'unsigned int'
-    converter = 'uint_converter'
+    converter = 'capped_uint_converter'
     c_ignored_default = "0"
 
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=22263855f7a3ebfd]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=35521e4e733823c7]*/
 
 static int
-uint_converter(PyObject *obj, void *ptr)
+capped_uint_converter(PyObject *obj, void *ptr)
 {
-    long val;
-    unsigned long uval;
+    PyObject *long_obj;
+    Py_ssize_t val;
 
-    val = PyLong_AsLong(obj);
+    long_obj = (PyObject *)_PyLong_FromNbInt(obj);
+    if (long_obj == NULL) {
+        return 0;
+    }
+    val = PyLong_AsSsize_t(long_obj);
+    Py_DECREF(long_obj);
     if (val == -1 && PyErr_Occurred()) {
-        uval = PyLong_AsUnsignedLong(obj);
-        if (uval == (unsigned long)-1 && PyErr_Occurred())
-            return 0;
+        return 0;
     }
-    else {
-        if (val < 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "value must be positive");
-            return 0;
-        }
-        uval = (unsigned long)val;
-    }
-
-    if (uval > UINT_MAX) {
-        PyErr_SetString(PyExc_OverflowError,
-                        "Python int too large for C unsigned int");
+    if (val < 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "value must be positive");
         return 0;
     }
 
-    *(unsigned int *)ptr = Py_SAFE_DOWNCAST(uval, unsigned long, unsigned int);
+    if ((size_t)val > UINT_MAX) {
+        *(unsigned int *)ptr = UINT_MAX;
+    }
+    else {
+        *(unsigned int *)ptr = Py_SAFE_DOWNCAST(val, Py_ssize_t,
+            unsigned int);
+    }
     return 1;
 }
 
@@ -272,7 +272,7 @@ zlib.decompress
         Compressed data.
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
         The window buffer size.
-    bufsize: uint(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
+    bufsize: capped_uint(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
         The initial output buffer size.
     /
 
@@ -282,7 +282,7 @@ Returns a bytes object containing the uncompressed data.
 static PyObject *
 zlib_decompress_impl(PyModuleDef *module, Py_buffer *data, int wbits,
                      unsigned int bufsize)
-/*[clinic end generated code: output=444d0987f3429574 input=0f4b9abb7103f50e]*/
+/*[clinic end generated code: output=444d0987f3429574 input=da095118b3243b27]*/
 {
     PyObject *result_str = NULL;
     Byte *input;
@@ -691,7 +691,7 @@ zlib.Decompress.decompress
 
     data: Py_buffer
         The binary data to decompress.
-    max_length: uint = 0
+    max_length: capped_uint = 0
         The maximum allowable length of the decompressed data.
         Unconsumed input data will be stored in
         the unconsumed_tail attribute.
@@ -707,7 +707,7 @@ Call the flush() method to clear these buffers.
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
                                 unsigned int max_length)
-/*[clinic end generated code: output=b82e2a2c19f5fe7b input=02cfc047377cec86]*/
+/*[clinic end generated code: output=b82e2a2c19f5fe7b input=68b6508ab07c2cf0]*/
 {
     int err;
     unsigned int old_length, length = DEF_BUF_SIZE;
@@ -1048,7 +1048,7 @@ error:
 /*[clinic input]
 zlib.Decompress.flush
 
-    length: uint(c_default="DEF_BUF_SIZE") = zlib.DEF_BUF_SIZE
+    length: capped_uint(c_default="DEF_BUF_SIZE") = zlib.DEF_BUF_SIZE
         the initial size of the output buffer.
     /
 
@@ -1057,7 +1057,7 @@ Return a bytes object containing any remaining decompressed data.
 
 static PyObject *
 zlib_Decompress_flush_impl(compobject *self, unsigned int length)
-/*[clinic end generated code: output=db6fb753ab698e22 input=1580956505978993]*/
+/*[clinic end generated code: output=db6fb753ab698e22 input=1bb961eb21b62aa0]*/
 {
     int err;
     unsigned int new_length;
