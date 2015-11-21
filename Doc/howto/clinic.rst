@@ -1249,18 +1249,18 @@ Here's the simplest example of a custom converter, from ``Modules/zlibmodule.c``
 
     /*[python input]
 
-    class uint_converter(CConverter):
+    class capped_uint_converter(CConverter):
         type = 'unsigned int'
-        converter = 'uint_converter'
+        converter = 'capped_uint_converter'
 
     [python start generated code]*/
-    /*[python end generated code: checksum=da39a3ee5e6b4b0d3255bfef95601890afd80709]*/
+    /*[python end generated code: output=da39a3ee5e6b4b0d input=35521e4e733823c7]*/
 
-This block adds a converter to Argument Clinic named ``uint``.  Parameters
-declared as ``uint`` will be declared as type ``unsigned int``, and will
-be parsed by the ``'O&'`` format unit, which will call the ``uint_converter``
-converter function.
-``uint`` variables automatically support default values.
+This block adds a converter to Argument Clinic named ``capped_uint``.  Parameters
+declared as ``capped_uint`` will be declared as type ``unsigned int``, and will
+be parsed by the ``'O&'`` format unit, which will call the
+``capped_uint_converter`` converter function.  ``capped_uint`` variables
+automatically support default values.
 
 More sophisticated custom converters can insert custom C code to
 handle initialization and cleanup.
