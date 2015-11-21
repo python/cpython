@@ -68,7 +68,7 @@ zlib_decompress(PyModuleDef *module, PyObject *args)
     unsigned int bufsize = DEF_BUF_SIZE;
 
     if (!PyArg_ParseTuple(args, "y*|iO&:decompress",
-        &data, &wbits, uint_converter, &bufsize))
+        &data, &wbits, capped_uint_converter, &bufsize))
         goto exit;
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
 
@@ -242,7 +242,7 @@ zlib_Decompress_decompress(compobject *self, PyObject *args)
     unsigned int max_length = 0;
 
     if (!PyArg_ParseTuple(args, "y*|O&:decompress",
-        &data, uint_converter, &max_length))
+        &data, capped_uint_converter, &max_length))
         goto exit;
     return_value = zlib_Decompress_decompress_impl(self, &data, max_length);
 
@@ -353,7 +353,7 @@ zlib_Decompress_flush(compobject *self, PyObject *args)
     unsigned int length = DEF_BUF_SIZE;
 
     if (!PyArg_ParseTuple(args, "|O&:flush",
-        uint_converter, &length))
+        capped_uint_converter, &length))
         goto exit;
     return_value = zlib_Decompress_flush_impl(self, length);
 
@@ -438,4 +438,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=56ed1147bbbb4788 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7734aec079550bc8 input=a9049054013a1b77]*/
