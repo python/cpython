@@ -17,7 +17,10 @@ class Idb(bdb.Bdb):
             self.set_step()
             return
         message = self.__frame2message(frame)
-        self.gui.interaction(message, frame)
+        try:
+            self.gui.interaction(message, frame)
+        except (TclError, RuntimeError):
+            pass
 
     def user_exception(self, frame, info):
         if self.in_rpc_code(frame):
@@ -59,8 +62,42 @@ class Debugger:
         self.frame = None
         self.make_gui()
         self.interacting = 0
+        self.nesting_level = 0
 
     def run(self, *args):
+        # Deal with the scenario where we've already got a program running
+        # in the debugger and we want to start another. If that is the case,
+        # our second 'run' was invoked from an event dispatched not from
+        # the main event loop, but from the nested event loop in 'interaction'
+        # below. So our stack looks something like this:
+        #       outer main event loop
+        #         run()
+        #           <running program with traces>
+        #             callback to debugger's interaction()
+        #               nested event loop
+        #                 run() for second command
+        #
+        # This kind of nesting of event loops causes all kinds of problems
+        # (see e.g. issue #24455) especially when dealing with running as a
+        # subprocess, where there's all kinds of extra stuff happening in
+        # there - insert a traceback.print_stack() to check it out.
+        #
+        # By this point, we've already called restart_subprocess() in
+        # ScriptBinding. However, we also need to unwind the stack back to
+        # that outer event loop.  To accomplish this, we:
+        #   - return immediately from the nested run()
+        #   - abort_loop ensures the nested event loop will terminate
+        #   - the debugger's interaction routine completes normally
+        #   - the restart_subprocess() will have taken care of stopping
+        #     the running program, which will also let the outer run complete
+        #
+        # That leaves us back at the outer main event loop, at which point our
+        # after event can fire, and we'll come back to this routine with a
+        # clean stack.
+        if self.nesting_level > 0:
+            self.abort_loop()
+            self.root.after(100, lambda: self.run(*args))
+            return
         try:
             self.interacting = 1
             return self.idb.run(*args)
@@ -71,6 +108,7 @@ class Debugger:
         if self.interacting:
             self.top.bell()
             return
+        self.abort_loop()
         if self.stackviewer:
             self.stackviewer.close(); self.stackviewer = None
         # Clean up pyshell if user clicked debugger control close widget.
@@ -191,7 +229,12 @@ class Debugger:
             b.configure(state="normal")
         #
         self.top.wakeup()
-        self.root.mainloop()
+        # Nested main loop: Tkinter's main loop is not reentrant, so use
+        # Tcl's vwait facility, which reenters the event loop until an
+        # event handler sets the variable we're waiting on
+        self.nesting_level += 1
+        self.root.tk.call('vwait', '::idledebugwait')
+        self.nesting_level -= 1
         #
         for b in self.buttons:
             b.configure(state="disabled")
@@ -215,23 +258,26 @@ class Debugger:
 
     def cont(self):
         self.idb.set_continue()
-        self.root.quit()
+        self.abort_loop()
 
     def step(self):
         self.idb.set_step()
-        self.root.quit()
+        self.abort_loop()
 
     def next(self):
         self.idb.set_next(self.frame)
-        self.root.quit()
+        self.abort_loop()
 
     def ret(self):
         self.idb.set_return(self.frame)
-        self.root.quit()
+        self.abort_loop()
 
     def quit(self):
         self.idb.set_quit()
-        self.root.quit()
+        self.abort_loop()
+
+    def abort_loop(self):
+        self.root.tk.call('set', '::idledebugwait', '1')
 
     stackviewer = None
 
