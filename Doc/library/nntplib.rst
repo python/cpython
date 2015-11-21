@@ -69,9 +69,9 @@ The module itself defines the following classes:
    connecting to an NNTP server on the local machine and intend to call
    reader-specific commands, such as ``group``.  If you get unexpected
    :exc:`NNTPPermanentError`\ s, you might need to set *readermode*.
-   :class:`NNTP` class supports the :keyword:`with` statement to
+   The :class:`NNTP` class supports the :keyword:`with` statement to
    unconditionally consume :exc:`OSError` exceptions and to close the NNTP
-   connection when done. Here is a sample on how using it:
+   connection when done, e.g.:
 
     >>> from nntplib import NNTP
     >>> with NNTP('news.gmane.org') as n:
