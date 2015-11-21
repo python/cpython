@@ -8,8 +8,8 @@ import stat
 import os
 import os.path
 import errno
-from os.path import splitdrive
-from distutils.spawn import find_executable, spawn
+import subprocess
+from distutils.spawn import find_executable
 from shutil import (make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats)
@@ -443,8 +443,7 @@ class TestShutil(unittest.TestCase):
         # now create another tarball using `tar`
         tarball2 = os.path.join(root_dir, 'archive2.tar')
         tar_cmd = ['tar', '-cf', 'archive2.tar', base_dir]
-        with support.change_cwd(root_dir):
-            spawn(tar_cmd)
+        subprocess.check_call(tar_cmd, cwd=root_dir)
 
         self.assertTrue(os.path.isfile(tarball2))
         # let's compare both tarballs
@@ -502,8 +501,7 @@ class TestShutil(unittest.TestCase):
         # now create another ZIP file using `zip`
         archive2 = os.path.join(root_dir, 'archive2.zip')
         zip_cmd = ['zip', '-q', '-r', 'archive2.zip', base_dir]
-        with support.change_cwd(root_dir):
-            spawn(zip_cmd)
+        subprocess.check_call(zip_cmd, cwd=root_dir)
 
         self.assertTrue(os.path.isfile(archive2))
         # let's compare both ZIP files
