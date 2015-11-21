@@ -12,8 +12,6 @@ import errno
 import functools
 import subprocess
 from contextlib import ExitStack
-from os.path import splitdrive
-from distutils.spawn import find_executable, spawn
 from shutil import (make_archive,
                     register_archive_format, unregister_archive_format,
                     get_archive_formats, Error, unpack_archive,
@@ -51,7 +49,7 @@ try:
     import zipfile
     ZIP_SUPPORT = True
 except ImportError:
-    ZIP_SUPPORT = find_executable('zip')
+    ZIP_SUPPORT = shutil.which('zip')
 
 def _fake_rename(*args, **kwargs):
     # Pretend the destination path is on a different filesystem.
@@ -1023,7 +1021,7 @@ class TestShutil(unittest.TestCase):
         return root_dir, base_dir
 
     @requires_zlib
-    @unittest.skipUnless(find_executable('tar'),
+    @unittest.skipUnless(shutil.which('tar'),
                          'Need the tar command to run')
     def test_tarfile_vs_tar(self):
         root_dir, base_dir = self._create_files()
@@ -1037,8 +1035,8 @@ class TestShutil(unittest.TestCase):
         # now create another tarball using `tar`
         tarball2 = os.path.join(root_dir, 'archive2.tar')
         tar_cmd = ['tar', '-cf', 'archive2.tar', base_dir]
-        with support.change_cwd(root_dir):
-            spawn(tar_cmd)
+        subprocess.check_call(tar_cmd, cwd=root_dir,
+                              stdout=subprocess.DEVNULL)
 
         self.assertTrue(os.path.isfile(tarball2))
         # let's compare both tarballs
@@ -1082,7 +1080,7 @@ class TestShutil(unittest.TestCase):
 
     @requires_zlib
     @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
-    @unittest.skipUnless(find_executable('zip'),
+    @unittest.skipUnless(shutil.which('zip'),
                          'Need the zip command to run')
     def test_zipfile_vs_zip(self):
         root_dir, base_dir = self._create_files()
@@ -1096,8 +1094,8 @@ class TestShutil(unittest.TestCase):
         # now create another ZIP file using `zip`
         archive2 = os.path.join(root_dir, 'archive2.zip')
         zip_cmd = ['zip', '-q', '-r', 'archive2.zip', base_dir]
-        with support.change_cwd(root_dir):
-            spawn(zip_cmd)
+        subprocess.check_call(zip_cmd, cwd=root_dir,
+                              stdout=subprocess.DEVNULL)
 
         self.assertTrue(os.path.isfile(archive2))
         # let's compare both ZIP files
