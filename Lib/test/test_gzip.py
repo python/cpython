@@ -3,6 +3,7 @@
 
 import unittest
 from test import support
+from test.support import bigmemtest, _4G
 import os
 import io
 import struct
@@ -115,6 +116,14 @@ class TestGzip(BaseTest):
                 # Check that position was updated correctly (see issue10791).
                 self.assertEqual(f.tell(), nread)
         self.assertEqual(b''.join(blocks), data1 * 50)
+
+    @bigmemtest(size=_4G, memuse=1)
+    def test_read_large(self, size):
+        # Read chunk size over UINT_MAX should be supported, despite zlib's
+        # limitation per low-level call
+        compressed = gzip.compress(data1, compresslevel=1)
+        f = gzip.GzipFile(fileobj=io.BytesIO(compressed), mode='rb')
+        self.assertEqual(f.read(size), data1)
 
     def test_io_on_closed_object(self):
         # Test that I/O operations on closed GzipFile objects raise a
