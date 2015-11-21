@@ -1,28 +1,54 @@
 What's New in IDLE 2.7.11?
-=========================
-*Release date:
+==========================
+*Release date: 2015-12-06*
+
+- Issue 15348: Stop the debugger engine (normally in a user process)
+  before closing the debugger window (running in the IDLE process).
+  This prevents the RuntimeErrors that were being caught and ignored.
+
+- Issue #24455: Prevent IDLE from hanging when a) closing the shell while the
+  debugger is active (15347); b) closing the debugger with the [X] button
+  (15348); and c) activating the debugger when already active (24455).
+  The patch by Mark Roseman does this by making two changes.
+  1. Suspend and resume the gui.interaction method with the tcl vwait
+  mechanism intended for this purpose (instead of root.mainloop & .quit).
+  2. In gui.run, allow any existing interaction to terminate first.
+
+- Change 'The program' to 'Your program' in an IDLE 'kill program?' message
+  to make it clearer that the program referred to is the currently running
+  user program, not IDLE itself.
+
+- Issue #24750: Improve the appearance of the IDLE editor window status bar.
+  Patch by Mark Roseman.
+
+- Issue #25313: Change the handling of new built-in text color themes to better
+  address the compatibility problem introduced by the addition of IDLE Dark.
+  Consistently use the revised idleConf.CurrentTheme everywhere in idlelib.
+
+- Issue #24782: Extension configuration is now a tab in the IDLE Preferences
+  dialog rather than a separate dialog.   The former tabs are now a sorted
+  list.  Patch by Mark Roseman.
+
+- Issue #22726: Re-activate the config dialog help button with some content
+  about the other buttons and the new IDLE Dark theme.
 
 - Issue #24820: IDLE now has an 'IDLE Dark' built-in text color theme.
   It is more or less IDLE Classic inverted, with a cobalt blue background.
   Strings, comments, keywords, ... are still green, red, orange, ... .
-  Selecting it displays the following warning and solution.
-  "IDLE Dark is new in October, 2015.  Trying to run earlier versions
-  of IDLE with it selected will disable colorizing, or worse.
-  If you might ever run an earlier release of IDLE, then before
-  exiting this version, either switch to another theme or hit the
-  'Save as New Custom Theme' button.  The latter requires a new name,
-  such as 'Custom Dark', but the custom theme will work with any IDLE
-  release, and can be modified."
+  To use it with IDLEs released before November 2015, hit the
+  'Save as New Custom Theme' button and enter a new name,
+  such as 'Custom Dark'.  The custom theme will work with any IDLE
+  release, and can be modified.
 
 - Issue #25224: README.txt is now an idlelib index for IDLE developers and
-  curious users.  The previous user content is now in the IDLE doc and is
-  redundant.  IDLE now means 'Integrated Development and Learning Environment'.
+  curious users.  The previous user content is now in the IDLE doc chapter.
+  'IDLE' now means 'Integrated Development and Learning Environment'.
 
 - Issue #24820: Users can now set breakpoint colors in
   Settings -> Custom Highlighting.  Original patch by Mark Roseman.
 
 - Issue #24972: Inactive selection background now matches active selection
-  background, as configured by user, on all systems.  Found items are now
+  background, as configured by users, on all systems.  Found items are now
   always highlighted on Windows.  Initial patch by Mark Roseman.
 
 - Issue #24570: Idle: make calltip and completion boxes appear on Macs
@@ -42,7 +68,7 @@ What's New in IDLE 2.7.11?
   * Give code snippet a very Sphinx-like light blueish-gray background.
   * Re-use initial width and height set by users for shell and editor.
   * When the Table of Contents (TOC) menu is used, put the section header
-    at the top of the screen.
+  at the top of the screen.
 
 - Issue #25225: Condense and rewrite Idle doc section on text colors.
 
@@ -67,9 +93,6 @@ What's New in IDLE 2.7.11?
   The now unused EditorWindow.HelpDialog class and helt.txt file are deprecated.
 
 - Issue #24199: Deprecate unused idlelib.idlever with possible removal in 3.6.
-
-- Issue #24782: In Idle extension config dialog, replace tabs with sorted list.
-  Patch by Mark Roseman.
 
 - Issue #24790: Remove extraneous code (which also create 2 & 3 conflicts).
 
