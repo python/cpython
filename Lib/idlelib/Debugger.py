@@ -19,7 +19,7 @@ class Idb(bdb.Bdb):
         message = self.__frame2message(frame)
         try:
             self.gui.interaction(message, frame)
-        except (TclError, RuntimeError):
+        except TclError:  # When closing debugger window with [x] in 3.x
             pass
 
     def user_exception(self, frame, info):
@@ -105,10 +105,13 @@ class Debugger:
             self.interacting = 0
 
     def close(self, event=None):
+        try:
+            self.quit()
+        except Exception:
+            pass
         if self.interacting:
             self.top.bell()
             return
-        self.abort_loop()
         if self.stackviewer:
             self.stackviewer.close(); self.stackviewer = None
         # Clean up pyshell if user clicked debugger control close widget.
