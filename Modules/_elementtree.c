@@ -1390,15 +1390,17 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
 
         if (step !=  1 && newlen != slicelen)
         {
+            Py_XDECREF(seq);
             PyErr_Format(PyExc_ValueError,
 #if (PY_VERSION_HEX < 0x02050000)
                 "attempt to assign sequence of size %d "
                 "to extended slice of size %d",
+                (int)newlen, (int)slicelen
 #else
                 "attempt to assign sequence of size %zd "
                 "to extended slice of size %zd",
-#endif
                 newlen, slicelen
+#endif
                 );
             return -1;
         }
@@ -1407,9 +1409,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
         /* Resize before creating the recycle bin, to prevent refleaks. */
         if (newlen > slicelen) {
             if (element_resize(self, newlen - slicelen) < 0) {
-                if (seq) {
-                    Py_DECREF(seq);
-                }
+                Py_XDECREF(seq);
                 return -1;
             }
         }
@@ -1420,9 +1420,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
                we're done modifying the element */
             recycle = PyList_New(slicelen);
             if (!recycle) {
-                if (seq) {
-                    Py_DECREF(seq);
-                }
+                Py_XDECREF(seq);
                 return -1;
             }
             for (cur = start, i = 0; i < slicelen;
@@ -1450,9 +1448,7 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
 
         self->extra->length += newlen - slicelen;
 
-        if (seq) {
-            Py_DECREF(seq);
-        }
+        Py_XDECREF(seq);
 
         /* discard the recycle bin, and everything in it */
         Py_XDECREF(recycle);
