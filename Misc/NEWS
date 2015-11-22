@@ -106,6 +106,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25624: ZipFile now always writes a ZIP_STORED header for directory
+  entries.  Patch by Dingyuan Wang.
+
 - Issue #25583: Avoid incorrect errors raised by os.makedirs(exist_ok=True)
   when the OS gives priority to errors such as EACCES over EEXIST.
 
