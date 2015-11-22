@@ -2350,6 +2350,7 @@ class ElementSlicingTest(unittest.TestCase):
         self.assertEqual(e[-2].tag, 'a8')
 
         self.assertRaises(IndexError, lambda: e[12])
+        self.assertRaises(IndexError, lambda: e[-12])
 
     def test_getslice_range(self):
         e = self._make_elem_with_children(6)
@@ -2368,12 +2369,17 @@ class ElementSlicingTest(unittest.TestCase):
         self.assertEqual(self._elem_tags(e[::3]), ['a0', 'a3', 'a6', 'a9'])
         self.assertEqual(self._elem_tags(e[::8]), ['a0', 'a8'])
         self.assertEqual(self._elem_tags(e[1::8]), ['a1', 'a9'])
+        self.assertEqual(self._elem_tags(e[3::sys.maxsize]), ['a3'])
+        self.assertEqual(self._elem_tags(e[3::sys.maxsize<<64]), ['a3'])
 
     def test_getslice_negative_steps(self):
         e = self._make_elem_with_children(4)
 
         self.assertEqual(self._elem_tags(e[::-1]), ['a3', 'a2', 'a1', 'a0'])
         self.assertEqual(self._elem_tags(e[::-2]), ['a3', 'a1'])
+        self.assertEqual(self._elem_tags(e[3::-sys.maxsize]), ['a3'])
+        self.assertEqual(self._elem_tags(e[3::-sys.maxsize-1]), ['a3'])
+        self.assertEqual(self._elem_tags(e[3::-sys.maxsize<<64]), ['a3'])
 
     def test_delslice(self):
         e = self._make_elem_with_children(4)
@@ -2399,6 +2405,75 @@ class ElementSlicingTest(unittest.TestCase):
         e = self._make_elem_with_children(2)
         del e[::2]
         self.assertEqual(self._subelem_tags(e), ['a1'])
+
+    def test_setslice_single_index(self):
+        e = self._make_elem_with_children(4)
+        e[1] = ET.Element('b')
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b', 'a2', 'a3'])
+
+        e[-2] = ET.Element('c')
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b', 'c', 'a3'])
+
+        with self.assertRaises(IndexError):
+            e[5] = ET.Element('d')
+        with self.assertRaises(IndexError):
+            e[-5] = ET.Element('d')
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b', 'c', 'a3'])
+
+    def test_setslice_range(self):
+        e = self._make_elem_with_children(4)
+        e[1:3] = [ET.Element('b%s' % i) for i in range(2)]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b0', 'b1', 'a3'])
+
+        e = self._make_elem_with_children(4)
+        e[1:3] = [ET.Element('b')]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b', 'a3'])
+
+        e = self._make_elem_with_children(4)
+        e[1:3] = [ET.Element('b%s' % i) for i in range(3)]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b0', 'b1', 'b2', 'a3'])
+
+    def test_setslice_steps(self):
+        e = self._make_elem_with_children(6)
+        e[1:5:2] = [ET.Element('b%s' % i) for i in range(2)]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b0', 'a2', 'b1', 'a4', 'a5'])
+
+        e = self._make_elem_with_children(6)
+        with self.assertRaises(ValueError):
+            e[1:5:2] = [ET.Element('b')]
+        with self.assertRaises(ValueError):
+            e[1:5:2] = [ET.Element('b%s' % i) for i in range(3)]
+        with self.assertRaises(ValueError):
+            e[1:5:2] = []
+        self.assertEqual(self._subelem_tags(e), ['a0', 'a1', 'a2', 'a3', 'a4', 'a5'])
+
+        e = self._make_elem_with_children(4)
+        e[1::sys.maxsize] = [ET.Element('b')]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b', 'a2', 'a3'])
+        e[1::sys.maxsize<<64] = [ET.Element('c')]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'c', 'a2', 'a3'])
+
+    def test_setslice_negative_steps(self):
+        e = self._make_elem_with_children(4)
+        e[2:0:-1] = [ET.Element('b%s' % i) for i in range(2)]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b1', 'b0', 'a3'])
+
+        e = self._make_elem_with_children(4)
+        with self.assertRaises(ValueError):
+            e[2:0:-1] = [ET.Element('b')]
+        with self.assertRaises(ValueError):
+            e[2:0:-1] = [ET.Element('b%s' % i) for i in range(3)]
+        with self.assertRaises(ValueError):
+            e[2:0:-1] = []
+        self.assertEqual(self._subelem_tags(e), ['a0', 'a1', 'a2', 'a3'])
+
+        e = self._make_elem_with_children(4)
+        e[1::-sys.maxsize] = [ET.Element('b')]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'b', 'a2', 'a3'])
+        e[1::-sys.maxsize-1] = [ET.Element('c')]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'c', 'a2', 'a3'])
+        e[1::-sys.maxsize<<64] = [ET.Element('d')]
+        self.assertEqual(self._subelem_tags(e), ['a0', 'd', 'a2', 'a3'])
 
 
 class IOTest(unittest.TestCase):
