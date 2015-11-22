@@ -511,6 +511,29 @@ class TestShutil(unittest.TestCase):
             names2 = zf.namelist()
         self.assertEqual(sorted(names), sorted(names2))
 
+    @unittest.skipUnless(zlib, "Requires zlib")
+    @unittest.skipUnless(ZIP_SUPPORT, 'Need zip support to run')
+    @unittest.skipUnless(find_executable('unzip'),
+                         'Need the unzip command to run')
+    def test_unzip_zipfile(self):
+        root_dir, base_dir = self._create_files()
+        base_name = os.path.join(self.mkdtemp(), 'archive')
+        archive = make_archive(base_name, 'zip', root_dir, base_dir)
+
+        # check if ZIP file  was created
+        self.assertEqual(archive, base_name + '.zip')
+        self.assertTrue(os.path.isfile(archive))
+
+        # now check the ZIP file using `unzip -t`
+        zip_cmd = ['unzip', '-t', archive]
+        with support.change_cwd(root_dir):
+            try:
+                subprocess.check_output(zip_cmd, stderr=subprocess.STDOUT)
+            except subprocess.CalledProcessError as exc:
+                details = exc.output
+                msg = "{}\n\n**Unzip Output**\n{}"
+                self.fail(msg.format(exc, details))
+
     def test_make_archive(self):
         tmpdir = self.mkdtemp()
         base_name = os.path.join(tmpdir, 'archive')
