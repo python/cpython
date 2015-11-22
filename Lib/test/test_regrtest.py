@@ -14,6 +14,7 @@ import platform
 import re
 import subprocess
 import sys
+import sysconfig
 import textwrap
 import unittest
 from test import libregrtest
@@ -306,7 +307,7 @@ class BaseTestCase(unittest.TestCase):
     TESTNAME_REGEX = r'test_[a-z0-9_]+'
 
     def setUp(self):
-        self.testdir = os.path.join(ROOT_DIR, 'Lib', 'test')
+        self.testdir = os.path.realpath(os.path.dirname(__file__))
 
         # When test_regrtest is interrupted by CTRL+c, it can leave
         # temporary test files
@@ -330,8 +331,13 @@ class BaseTestCase(unittest.TestCase):
 
         self.addCleanup(support.unlink, path)
         # Use 'x' mode to ensure that we do not override existing tests
-        with open(path, 'x', encoding='utf-8') as fp:
-            fp.write(code)
+        try:
+            with open(path, 'x', encoding='utf-8') as fp:
+                fp.write(code)
+        except PermissionError as exc:
+            if not sysconfig.is_python_build():
+                self.skipTest("cannot write %s: %s" % (path, exc))
+            raise
         return name
 
     def regex_search(self, regex, output):
@@ -471,7 +477,7 @@ class ProgramsTestCase(BaseTestCase):
 
     def test_script_regrtest(self):
         # Lib/test/regrtest.py
-        script = os.path.join(ROOT_DIR, 'Lib', 'test', 'regrtest.py')
+        script = os.path.join(self.testdir, 'regrtest.py')
 
         args = [*self.python_args, script, *self.regrtest_args, *self.tests]
         self.run_tests(args)
@@ -503,10 +509,12 @@ class ProgramsTestCase(BaseTestCase):
 
     def test_script_autotest(self):
         # Lib/test/autotest.py
-        script = os.path.join(ROOT_DIR, 'Lib', 'test', 'autotest.py')
+        script = os.path.join(self.testdir, 'autotest.py')
         args = [*self.python_args, script, *self.regrtest_args, *self.tests]
         self.run_tests(args)
 
+    @unittest.skipUnless(sysconfig.is_python_build(),
+                         'run_tests.py script is not installed')
     def test_tools_script_run_tests(self):
         # Tools/scripts/run_tests.py
         script = os.path.join(ROOT_DIR, 'Tools', 'scripts', 'run_tests.py')
@@ -516,6 +524,8 @@ class ProgramsTestCase(BaseTestCase):
         proc = self.run_command(args)
         self.check_output(proc.stdout)
 
+    @unittest.skipUnless(sysconfig.is_python_build(),
+                         'test.bat script is not installed')
     @unittest.skipUnless(sys.platform == 'win32', 'Windows only')
     def test_tools_buildbot_test(self):
         # Tools\buildbot\test.bat
