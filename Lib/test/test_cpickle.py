@@ -51,6 +51,7 @@ class cPickleTests(AbstractUnpickleTests, AbstractPickleTests,
 
     error = cPickle.BadPickleGet
     module = cPickle
+    bad_stack_errors = (cPickle.UnpicklingError,)
 
 class cPickleUnpicklerTests(AbstractUnpickleTests):
 
@@ -63,6 +64,7 @@ class cPickleUnpicklerTests(AbstractUnpickleTests):
             self.close(f)
 
     error = cPickle.BadPickleGet
+    bad_stack_errors = (cPickle.UnpicklingError,)
 
 class cStringIOCUnpicklerTests(cStringIOMixin, cPickleUnpicklerTests):
     pass

@@ -3945,6 +3945,10 @@ load_obj(Unpicklerobject *self)
     Py_ssize_t i;
 
     if ((i = marker(self)) < 0) return -1;
+
+    if (self->stack->length - i < 1)
+        return stackUnderflow();
+
     if (!( tup=Pdata_popTuple(self->stack, i+1)))  return -1;
     PDATA_POP(self->stack, class);
     if (class) {
@@ -4496,6 +4500,8 @@ do_append(Unpicklerobject *self, Py_ssize_t  x)
 static int
 load_append(Unpicklerobject *self)
 {
+    if (self->stack->length - 1 <= 0)
+        return stackUnderflow();
     return do_append(self, self->stack->length - 1);
 }
 
@@ -4503,7 +4509,10 @@ load_append(Unpicklerobject *self)
 static int
 load_appends(Unpicklerobject *self)
 {
-    return do_append(self, marker(self));
+    Py_ssize_t i = marker(self);
+    if (i < 0)
+        return -1;
+    return do_append(self, i);
 }
 
 
@@ -4515,6 +4524,14 @@ do_setitems(Unpicklerobject *self, Py_ssize_t x)
 
     if (!( (len=self->stack->length) >= x
            && x > 0 ))  return stackUnderflow();
+    if (len == x)  /* nothing to do */
+        return 0;
+    if ((len - x) % 2 != 0) {
+        /* Currupt or hostile pickle -- we never write one like this. */
+        PyErr_SetString(UnpicklingError,
+                        "odd number of items for SETITEMS");
+        return -1;
+    }
 
     dict=self->stack->data[x-1];
 
@@ -4542,7 +4559,10 @@ load_setitem(Unpicklerobject *self)
 static int
 load_setitems(Unpicklerobject *self)
 {
-    return do_setitems(self, marker(self));
+    Py_ssize_t i = marker(self);
+    if (i < 0)
+        return -1;
+    return do_setitems(self, i);
 }
 
 

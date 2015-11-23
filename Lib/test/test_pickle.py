@@ -23,16 +23,17 @@ class PickleTests(AbstractUnpickleTests, AbstractPickleTests,
 
     module = pickle
     error = KeyError
+    bad_stack_errors = (IndexError,)
 
 class UnpicklerTests(AbstractUnpickleTests):
 
     error = KeyError
+    bad_stack_errors = (IndexError,)
 
     def loads(self, buf):
         f = StringIO(buf)
         u = pickle.Unpickler(f)
         return u.load()
-
 
 class PicklerTests(AbstractPickleTests):
 
