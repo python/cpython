@@ -13,7 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #25688: Fixed file leak in ElementTree.iterparse() raising an error.
+
 - Issue #23914: Fixed SystemError raised by CPickle unpickler on broken data.
+
 
 What's New in Python 2.7.11?
 ============================

@@ -1198,9 +1198,14 @@ def iterparse(source, events=None, parser=None):
     if not hasattr(source, "read"):
         source = open(source, "rb")
         close_source = True
-    if not parser:
-        parser = XMLParser(target=TreeBuilder())
-    return _IterParseIterator(source, events, parser, close_source)
+    try:
+        if not parser:
+            parser = XMLParser(target=TreeBuilder())
+        return _IterParseIterator(source, events, parser, close_source)
+    except:
+        if close_source:
+            source.close()
+        raise
 
 class _IterParseIterator(object):
 
@@ -1252,34 +1257,40 @@ class _IterParseIterator(object):
                 raise ValueError("unknown event %r" % event)
 
     def next(self):
-        while 1:
-            try:
-                item = self._events[self._index]
-                self._index += 1
-                return item
-            except IndexError:
-                pass
-            if self._error:
-                e = self._error
-                self._error = None
-                raise e
-            if self._parser is None:
-                self.root = self._root
-                if self._close_file:
-                    self._file.close()
-                raise StopIteration
-            # load event buffer
-            del self._events[:]
-            self._index = 0
-            data = self._file.read(16384)
-            if data:
+        try:
+            while 1:
                 try:
-                    self._parser.feed(data)
-                except SyntaxError as exc:
-                    self._error = exc
-            else:
-                self._root = self._parser.close()
-                self._parser = None
+                    item = self._events[self._index]
+                    self._index += 1
+                    return item
+                except IndexError:
+                    pass
+                if self._error:
+                    e = self._error
+                    self._error = None
+                    raise e
+                if self._parser is None:
+                    self.root = self._root
+                    break
+                # load event buffer
+                del self._events[:]
+                self._index = 0
+                data = self._file.read(16384)
+                if data:
+                    try:
+                        self._parser.feed(data)
+                    except SyntaxError as exc:
+                        self._error = exc
+                else:
+                    self._root = self._parser.close()
+                    self._parser = None
+        except:
+            if self._close_file:
+                self._file.close()
+            raise
+        if self._close_file:
+            self._file.close()
+        raise StopIteration
 
     def __iter__(self):
         return self
