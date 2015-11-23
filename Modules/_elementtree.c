@@ -1921,6 +1921,12 @@ static int
 element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
 {
     char *name = "";
+
+    if (value == NULL) {
+        PyErr_SetString(PyExc_AttributeError,
+            "can't delete attribute");
+        return -1;
+    }
     if (PyUnicode_Check(nameobj))
         name = _PyUnicode_AsString(nameobj);
     if (name == NULL)
