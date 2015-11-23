@@ -459,8 +459,8 @@ Pdata_grow(Pdata *self)
 static PyObject *
 Pdata_pop(Pdata *self)
 {
-    PickleState *st = _Pickle_GetGlobalState();
     if (Py_SIZE(self) == 0) {
+        PickleState *st = _Pickle_GetGlobalState();
         PyErr_SetString(st->UnpicklingError, "bad pickle data");
         return NULL;
     }
@@ -5148,6 +5148,9 @@ load_obj(UnpicklerObject *self)
     if ((i = marker(self)) < 0)
         return -1;
 
+    if (Py_SIZE(self->stack) - i < 1)
+        return stack_underflow();
+
     args = Pdata_poptuple(self->stack, i + 1);
     if (args == NULL)
         return -1;
@@ -5806,13 +5809,18 @@ do_append(UnpicklerObject *self, Py_ssize_t x)
 static int
 load_append(UnpicklerObject *self)
 {
+    if (Py_SIZE(self->stack) - 1 <= 0)
+        return stack_underflow();
     return do_append(self, Py_SIZE(self->stack) - 1);
 }
 
 static int
 load_appends(UnpicklerObject *self)
 {
-    return do_append(self, marker(self));
+    Py_ssize_t i = marker(self);
+    if (i < 0)
+        return -1;
+    return do_append(self, i);
 }
 
 static int
@@ -5862,7 +5870,10 @@ load_setitem(UnpicklerObject *self)
 static int
 load_setitems(UnpicklerObject *self)
 {
-    return do_setitems(self, marker(self));
+    Py_ssize_t i = marker(self);
+    if (i < 0)
+        return -1;
+    return do_setitems(self, i);
 }
 
 static int
@@ -5872,6 +5883,8 @@ load_additems(UnpicklerObject *self)
     Py_ssize_t mark, len, i;
 
     mark =  marker(self);
+    if (mark < 0)
+        return -1;
     len = Py_SIZE(self->stack);
     if (mark > len || mark <= 0)
         return stack_underflow();

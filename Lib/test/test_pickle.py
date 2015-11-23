@@ -32,6 +32,7 @@ class PickleTests(AbstractPickleModuleTests):
 class PyUnpicklerTests(AbstractUnpickleTests):
 
     unpickler = pickle._Unpickler
+    bad_stack_errors = (IndexError,)
 
     def loads(self, buf, **kwds):
         f = io.BytesIO(buf)
@@ -62,6 +63,7 @@ class InMemoryPickleTests(AbstractPickleTests, AbstractUnpickleTests,
 
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
+    bad_stack_errors = (pickle.UnpicklingError, IndexError)
 
     def dumps(self, arg, protocol=None):
         return pickle.dumps(arg, protocol)
@@ -119,6 +121,7 @@ class PyChainDispatchTableTests(AbstractDispatchTableTests):
 if has_c_implementation:
     class CUnpicklerTests(PyUnpicklerTests):
         unpickler = _pickle.Unpickler
+        bad_stack_errors = (pickle.UnpicklingError,)
 
     class CPicklerTests(PyPicklerTests):
         pickler = _pickle.Pickler
