@@ -2940,7 +2940,7 @@ place, and instead produce new objects.
 
    Return true if all bytes in the sequence are ASCII whitespace and the
    sequence is not empty, false otherwise.  ASCII whitespace characters are
-   those byte values in the sequence b' \t\n\r\x0b\f' (space, tab, newline,
+   those byte values in the sequence ``b' \t\n\r\x0b\f'`` (space, tab, newline,
    carriage return, vertical tab, form feed).
 
 
