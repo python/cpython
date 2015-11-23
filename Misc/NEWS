@@ -13,9 +13,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #25624: ZipFile now always writes a ZIP_STORED header for directory
-  entries.  Patch by Dingyuan Wang.
-
 
 What's New in Python 2.7.11?
 ============================
