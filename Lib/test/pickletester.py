@@ -12,7 +12,7 @@ import weakref
 from http.cookies import SimpleCookie
 
 from test.support import (
-    TestFailed, TESTFN, run_with_locale, no_tracing,
+    TestFailed, TESTFN, run_with_locale, no_tracing, captured_stdout,
     _2G, _4G, bigmemtest,
     )
 
@@ -986,6 +986,89 @@ class AbstractUnpickleTests(unittest.TestCase):
             unpickled = self.loads(pickled)
             self.assertIs(type(unpickled), collections.UserDict)
             self.assertEqual(unpickled, collections.UserDict({1: 2}))
+
+    def test_bad_stack(self):
+        badpickles = [
+            b'0.',              # POP
+            b'1.',              # POP_MARK
+            b'2.',              # DUP
+            # b'(2.',           # PyUnpickler doesn't raise
+            b'R.',              # REDUCE
+            b')R.',
+            b'a.',              # APPEND
+            b'Na.',
+            b'b.',              # BUILD
+            b'Nb.',
+            b'd.',              # DICT
+            b'e.',              # APPENDS
+            # b'(e.',           # PyUnpickler raises AttributeError
+            b'ibuiltins\nlist\n.',  # INST
+            b'l.',              # LIST
+            b'o.',              # OBJ
+            b'(o.',
+            b'p1\n.',           # PUT
+            b'q\x00.',          # BINPUT
+            b'r\x00\x00\x00\x00.',  # LONG_BINPUT
+            b's.',              # SETITEM
+            b'Ns.',
+            b'NNs.',
+            b't.',              # TUPLE
+            b'u.',              # SETITEMS
+            b'(u.',
+            b'}(Nu.',
+            b'\x81.',           # NEWOBJ
+            b')\x81.',
+            b'\x85.',           # TUPLE1
+            b'\x86.',           # TUPLE2
+            b'N\x86.',
+            b'\x87.',           # TUPLE3
+            b'N\x87.',
+            b'NN\x87.',
+            b'\x90.',           # ADDITEMS
+            # b'(\x90.',        # PyUnpickler raises AttributeError
+            b'\x91.',           # FROZENSET
+            b'\x92.',           # NEWOBJ_EX
+            b')}\x92.',
+            b'\x93.',           # STACK_GLOBAL
+            b'Vlist\n\x93.',
+            b'\x94.',           # MEMOIZE
+        ]
+        for p in badpickles:
+            with self.subTest(p):
+                self.assertRaises(self.bad_stack_errors, self.loads, p)
+
+    def test_bad_mark(self):
+        badpickles = [
+            b'cbuiltins\nlist\n)(R.',           # REDUCE
+            b'cbuiltins\nlist\n()R.',
+            b']N(a.',                           # APPEND
+            b'cbuiltins\nValueError\n)R}(b.',   # BUILD
+            b'cbuiltins\nValueError\n)R(}b.',
+            b'(Nd.',                            # DICT
+            b'}NN(s.',                          # SETITEM
+            b'}N(Ns.',
+            b'cbuiltins\nlist\n)(\x81.',        # NEWOBJ
+            b'cbuiltins\nlist\n()\x81.',
+            b'N(\x85.',                         # TUPLE1
+            b'NN(\x86.',                        # TUPLE2
+            b'N(N\x86.',
+            b'NNN(\x87.',                       # TUPLE3
+            b'NN(N\x87.',
+            b'N(NN\x87.',
+            b'cbuiltins\nlist\n)}(\x92.',       # NEWOBJ_EX
+            b'cbuiltins\nlist\n)(}\x92.',
+            b'cbuiltins\nlist\n()}\x92.',
+            b'Vbuiltins\n(Vlist\n\x93.',        # STACK_GLOBAL
+            b'Vbuiltins\nVlist\n(\x93.',
+        ]
+        for p in badpickles:
+            # PyUnpickler prints reduce errors to stdout
+            with self.subTest(p), captured_stdout():
+                try:
+                    self.loads(p)
+                except (IndexError, AttributeError, TypeError,
+                        pickle.UnpicklingError):
+                    pass
 
 
 class AbstractPickleTests(unittest.TestCase):
