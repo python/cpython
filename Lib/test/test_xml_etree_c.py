@@ -30,6 +30,38 @@ class MiscTests(unittest.TestCase):
         finally:
             data = None
 
+    def test_del_attribute(self):
+        element = cET.Element('tag')
+
+        element.tag = 'TAG'
+        with self.assertRaises(AttributeError):
+            del element.tag
+        self.assertEqual(element.tag, 'TAG')
+
+        with self.assertRaises(AttributeError):
+            del element.text
+        self.assertIsNone(element.text)
+        element.text = 'TEXT'
+        with self.assertRaises(AttributeError):
+            del element.text
+        self.assertEqual(element.text, 'TEXT')
+
+        with self.assertRaises(AttributeError):
+            del element.tail
+        self.assertIsNone(element.tail)
+        element.tail = 'TAIL'
+        with self.assertRaises(AttributeError):
+            del element.tail
+        self.assertEqual(element.tail, 'TAIL')
+
+        with self.assertRaises(AttributeError):
+            del element.attrib
+        self.assertEqual(element.attrib, {})
+        element.attrib = {'A': 'B', 'C': 'D'}
+        with self.assertRaises(AttributeError):
+            del element.attrib
+        self.assertEqual(element.attrib, {'A': 'B', 'C': 'D'})
+
 
 def test_main():
     from test import test_xml_etree, test_xml_etree_c
