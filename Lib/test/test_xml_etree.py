@@ -244,6 +244,33 @@ class ElementTreeTest(unittest.TestCase):
         self.assertEqual(ET.XML, ET.fromstring)
         self.assertEqual(ET.PI, ET.ProcessingInstruction)
 
+    def test_set_attribute(self):
+        element = ET.Element('tag')
+
+        self.assertEqual(element.tag, 'tag')
+        element.tag = 'Tag'
+        self.assertEqual(element.tag, 'Tag')
+        element.tag = 'TAG'
+        self.assertEqual(element.tag, 'TAG')
+
+        self.assertIsNone(element.text)
+        element.text = 'Text'
+        self.assertEqual(element.text, 'Text')
+        element.text = 'TEXT'
+        self.assertEqual(element.text, 'TEXT')
+
+        self.assertIsNone(element.tail)
+        element.tail = 'Tail'
+        self.assertEqual(element.tail, 'Tail')
+        element.tail = 'TAIL'
+        self.assertEqual(element.tail, 'TAIL')
+
+        self.assertEqual(element.attrib, {})
+        element.attrib = {'a': 'b', 'c': 'd'}
+        self.assertEqual(element.attrib, {'a': 'b', 'c': 'd'})
+        element.attrib = {'A': 'B', 'C': 'D'}
+        self.assertEqual(element.attrib, {'A': 'B', 'C': 'D'})
+
     def test_simpleops(self):
         # Basic method sanity checks.
 
