@@ -16,7 +16,7 @@
     
     <PropertyGroup>
         <EXETarget>$(DownloadUrlBase.TrimEnd(`/`))/$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</EXETarget>
-        <MSITarget>$(DownloadUrl.TrimEnd(`/`))</MSITarget>
+        <MSITarget>$(DownloadUrl.Replace(`{version}`, `$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)`).Replace(`{arch}`, `$(ArchName)`).Replace(`{releasename}`, `$(ReleaseLevelName)`).Replace(`{msi}`, ``).TrimEnd(`/`))</MSITarget>
     </PropertyGroup>
     
     <ItemGroup>
