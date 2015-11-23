@@ -106,6 +106,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25663: In the Readline completer, avoid listing duplicate global
+  names, and search the global namespace before searching builtins.
+
 - Issue #25688: Fixed file leak in ElementTree.iterparse() raising an error.
 
 - Issue #23914: Fixed SystemError raised by unpickler on broken pickle data.
