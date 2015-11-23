@@ -2,6 +2,23 @@
 Python News
 +++++++++++
 
+What's New in Python 3.5.2 release candidate 1?
+===============================================
+
+Release date: XXXX-XX-XX
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+- Issue #25691: Fixed crash on deleting ElementTree.Element attributes.
+
+- Issue #25624: ZipFile now always writes a ZIP_STORED header for directory
+  entries.  Patch by Dingyuan Wang.
+
+
 What's New in Python 3.5.1 final?
 =================================
 
