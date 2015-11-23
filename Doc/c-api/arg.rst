@@ -322,7 +322,7 @@ Other objects
       ``Py_CLEANUP_SUPPORTED`` was added.
 
 ``p`` (:class:`bool`) [int]
-   Tests the value passed in for truth (a boolean **p**\redicate) and converts
+   Tests the value passed in for truth (a boolean **p**\ redicate) and converts
    the result to its equivalent C true/false integer value.
    Sets the int to 1 if the expression was true and 0 if it was false.
    This accepts any valid Python value.  See :ref:`truth` for more
