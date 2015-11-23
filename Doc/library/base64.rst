@@ -148,7 +148,7 @@ The modern interface provides:
    instead of 4 consecutive spaces (ASCII 0x20) as supported by 'btoa'. This
    feature is not supported by the "standard" Ascii85 encoding.
 
-   *wrapcol* controls whether the output should have newline ('\n')
+   *wrapcol* controls whether the output should have newline (``'\n'``)
    characters added to it. If this is non-zero, each output line will be
    at most this many characters long.
 
@@ -161,7 +161,7 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-.. function:: a85decode(s, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v')
+.. function:: a85decode(s, *, foldspaces=False, adobe=False, ignorechars=b' \\t\\n\\r\\v')
 
    Decode an Ascii85 encoded byte string.
 
