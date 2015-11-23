@@ -106,6 +106,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25688: Fixed file leak in ElementTree.iterparse() raising an error.
+
 - Issue #23914: Fixed SystemError raised by unpickler on broken pickle data.
 
 - Issue #25691: Fixed crash on deleting ElementTree.Element attributes.
