@@ -9,13 +9,11 @@ import errno
 from test import support
 
 TESTFN = support.TESTFN
-TESTDIRN = os.path.basename(tempfile.mkdtemp(dir='.'))
 
 
 class TestSupport(unittest.TestCase):
     def setUp(self):
         support.unlink(TESTFN)
-        support.rmtree(TESTDIRN)
     tearDown = setUp
 
     def test_import_module(self):
@@ -48,6 +46,10 @@ class TestSupport(unittest.TestCase):
         support.unlink(TESTFN)
 
     def test_rmtree(self):
+        TESTDIRN = os.path.basename(tempfile.mkdtemp(dir='.'))
+        self.addCleanup(support.rmtree, TESTDIRN)
+        support.rmtree(TESTDIRN)
+
         os.mkdir(TESTDIRN)
         os.mkdir(os.path.join(TESTDIRN, TESTDIRN))
         support.rmtree(TESTDIRN)
