@@ -934,6 +934,9 @@ fields:
    >>> Book.title.__doc__ = 'Title of first printing'
    >>> Book.authors.__doc__ = 'List of authors sorted by last name'
 
+.. versionchanged:: 3.5
+   Property docstrings became writeable.
+
 Default values can be implemented by using :meth:`_replace` to
 customize a prototype instance:
 
