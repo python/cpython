@@ -519,10 +519,11 @@ task isn't already covered by the URL parsing functions above.
 .. function:: urlencode(query, doseq=False, safe='', encoding=None, errors=None)
 
    Convert a mapping object or a sequence of two-element tuples, which may
-   contain :class:`str` or :class:`bytes` objects, to a "percent-encoded"
-   string.  If the resultant string is to be used as a *data* for POST
-   operation with :func:`~urllib.request.urlopen` function, then it should be
-   properly encoded to bytes, otherwise it would result in a :exc:`TypeError`.
+   contain :class:`str` or :class:`bytes` objects, to a percent-encoded ASCII
+   text string.  If the resultant string is to be used as a *data* for POST
+   operation with the :func:`~urllib.request.urlopen` function, then
+   it should be encoded to bytes, otherwise it would result in a
+   :exc:`TypeError`.
 
    The resulting string is a series of ``key=value`` pairs separated by ``'&'``
    characters, where both *key* and *value* are quoted using :func:`quote_plus`
