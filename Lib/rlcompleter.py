@@ -103,9 +103,11 @@ class Completer:
         """
         import keyword
         matches = []
+        seen = {"__builtins__"}
         n = len(text)
         for word in keyword.kwlist:
             if word[:n] == text:
+                seen.add(word)
                 if word in {'finally', 'try'}:
                     word = word + ':'
                 elif word not in {'False', 'None', 'True',
@@ -113,9 +115,10 @@ class Completer:
                                   'else'}:
                     word = word + ' '
                 matches.append(word)
-        for nspace in [builtins.__dict__, self.namespace]:
+        for nspace in [self.namespace, builtins.__dict__]:
             for word, val in nspace.items():
-                if word[:n] == text and word != "__builtins__":
+                if word[:n] == text and word not in seen:
+                    seen.add(word)
                     matches.append(self._callable_postfix(val, word))
         return matches
 
