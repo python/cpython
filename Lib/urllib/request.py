@@ -149,13 +149,8 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
 
     *data* should be a buffer in the standard application/x-www-form-urlencoded
     format. The urllib.parse.urlencode() function takes a mapping or sequence
-    of 2-tuples and returns a string in this format. It should be encoded to
-    bytes before being used as the data parameter. The charset parameter in
-    Content-Type header may be used to specify the encoding. If charset
-    parameter is not sent with the Content-Type header, the server following
-    the HTTP 1.1 recommendation may assume that the data is encoded in
-    ISO-8859-1 encoding. It is advisable to use charset parameter with encoding
-    used in Content-Type header with the Request.
+    of 2-tuples and returns an ASCII text string in this format. It should be
+    encoded to bytes before being used as the data parameter.
 
     urllib.request module uses HTTP/1.1 and includes a "Connection:close"
     header in its HTTP requests.
