@@ -79,6 +79,12 @@ if test_support.have_unicode:
         (unichr(0x200), ValueError),
 ]
 
+class LongSubclass(long):
+    pass
+
+class OtherLongSubclass(long):
+    pass
+
 class LongTest(test_int.IntLongCommonTests, unittest.TestCase):
 
     ntype = long
@@ -538,6 +544,17 @@ class LongTest(test_int.IntLongCommonTests, unittest.TestCase):
                 else:
                     self.fail("Failed to raise TypeError with %s" %
                               ((base, trunc_result_base),))
+
+                class TruncReturnsLongSubclass(base):
+                    def __long__(self):
+                        return OtherLongSubclass(42L)
+                good_int = TruncReturnsLongSubclass()
+                n = long(good_int)
+                self.assertEqual(n, 42L)
+                self.assertIs(type(n), OtherLongSubclass)
+                n = LongSubclass(good_int)
+                self.assertEqual(n, 42L)
+                self.assertIs(type(n), LongSubclass)
 
     def test_misc(self):
 

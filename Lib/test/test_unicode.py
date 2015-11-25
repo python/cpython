@@ -33,6 +33,9 @@ def search_function(encoding):
         return None
 codecs.register(search_function)
 
+class UnicodeSubclass(unicode):
+    pass
+
 class UnicodeTest(
     string_tests.CommonTest,
     string_tests.MixinStrUnicodeUserStringTest,
@@ -685,9 +688,6 @@ class UnicodeTest(
             u'unicode remains unicode'
         )
 
-        class UnicodeSubclass(unicode):
-            pass
-
         self.assertEqual(
             unicode(UnicodeSubclass('unicode subclass becomes unicode')),
             u'unicode subclass becomes unicode'
@@ -1269,6 +1269,9 @@ class UnicodeTest(
         self.assertEqual(unicode(Foo6("bar")), u"foou")
         self.assertEqual(unicode(Foo7("bar")), u"foou")
         self.assertEqual(unicode(Foo8("foo")), u"foofoo")
+        self.assertIs(type(unicode(Foo8("foo"))), Foo8)
+        self.assertEqual(UnicodeSubclass(Foo8("foo")), u"foofoo")
+        self.assertIs(type(UnicodeSubclass(Foo8("foo"))), UnicodeSubclass)
         self.assertEqual(str(Foo9("foo")), "string")
         self.assertEqual(unicode(Foo9("foo")), u"not unicode")
 

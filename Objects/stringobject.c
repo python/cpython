@@ -3719,7 +3719,7 @@ str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     tmp = string_new(&PyString_Type, args, kwds);
     if (tmp == NULL)
         return NULL;
-    assert(PyString_CheckExact(tmp));
+    assert(PyString_Check(tmp));
     n = PyString_GET_SIZE(tmp);
     pnew = type->tp_alloc(type, n);
     if (pnew != NULL) {

@@ -45,6 +45,9 @@ if have_unicode:
         (unichr(0x200), ValueError),
 ]
 
+class IntSubclass(int):
+    pass
+
 class IntLongCommonTests(object):
 
     """Mixin of test cases to share between both test_int and test_long."""
@@ -476,6 +479,18 @@ class IntTestCases(IntLongCommonTests, unittest.TestCase):
                 else:
                     self.fail("Failed to raise TypeError with %s" %
                               ((base, trunc_result_base),))
+
+                class TruncReturnsIntSubclass(base):
+                    def __trunc__(self):
+                        return True
+                good_int = TruncReturnsIntSubclass()
+                n = int(good_int)
+                self.assertEqual(n, 1)
+                self.assertIs(type(n), bool)
+                n = IntSubclass(good_int)
+                self.assertEqual(n, 1)
+                self.assertIs(type(n), IntSubclass)
+
 
 def test_main():
     run_unittest(IntTestCases)

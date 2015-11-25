@@ -4068,7 +4068,7 @@ long_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     tmp = (PyLongObject *)long_new(&PyLong_Type, args, kwds);
     if (tmp == NULL)
         return NULL;
-    assert(PyLong_CheckExact(tmp));
+    assert(PyLong_Check(tmp));
     n = Py_SIZE(tmp);
     if (n < 0)
         n = -n;

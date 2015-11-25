@@ -1839,7 +1839,7 @@ float_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     tmp = float_new(&PyFloat_Type, args, kwds);
     if (tmp == NULL)
         return NULL;
-    assert(PyFloat_CheckExact(tmp));
+    assert(PyFloat_Check(tmp));
     newobj = type->tp_alloc(type, 0);
     if (newobj == NULL) {
         Py_DECREF(tmp);
