@@ -3798,35 +3798,26 @@ load_binunicode(Unpicklerobject *self)
 
 
 static int
-load_tuple(Unpicklerobject *self)
+load_counted_tuple(Unpicklerobject *self, int len)
 {
     PyObject *tup;
-    Py_ssize_t i;
 
-    if ((i = marker(self)) < 0) return -1;
-    if (!( tup=Pdata_popTuple(self->stack, i)))  return -1;
+    if (self->stack->length < len)
+        return stackUnderflow();
+
+    if (!(tup = Pdata_popTuple(self->stack, self->stack->length - len)))
+        return -1;
     PDATA_PUSH(self->stack, tup, -1);
     return 0;
 }
 
 static int
-load_counted_tuple(Unpicklerobject *self, int len)
+load_tuple(Unpicklerobject *self)
 {
-    PyObject *tup = PyTuple_New(len);
+    Py_ssize_t i;
 
-    if (tup == NULL)
-        return -1;
-
-    while (--len >= 0) {
-        PyObject *element;
-
-        PDATA_POP(self->stack, element);
-        if (element == NULL)
-            return -1;
-        PyTuple_SET_ITEM(tup, len, element);
-    }
-    PDATA_PUSH(self->stack, tup, -1);
-    return 0;
+    if ((i = marker(self)) < 0) return -1;
+    return load_counted_tuple(self, self->stack->length - i);
 }
 
 static int
