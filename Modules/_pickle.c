@@ -5047,15 +5047,14 @@ load_counted_binunicode(UnpicklerObject *self, int nbytes)
 }
 
 static int
-load_tuple(UnpicklerObject *self)
+load_counted_tuple(UnpicklerObject *self, int len)
 {
     PyObject *tuple;
-    Py_ssize_t i;
 
-    if ((i = marker(self)) < 0)
-        return -1;
+    if (Py_SIZE(self->stack) < len)
+        return stack_underflow();
 
-    tuple = Pdata_poptuple(self->stack, i);
+    tuple = Pdata_poptuple(self->stack, Py_SIZE(self->stack) - len);
     if (tuple == NULL)
         return -1;
     PDATA_PUSH(self->stack, tuple, -1);
@@ -5063,24 +5062,14 @@ load_tuple(UnpicklerObject *self)
 }
 
 static int
-load_counted_tuple(UnpicklerObject *self, int len)
+load_tuple(UnpicklerObject *self)
 {
-    PyObject *tuple;
+    Py_ssize_t i;
 
-    tuple = PyTuple_New(len);
-    if (tuple == NULL)
+    if ((i = marker(self)) < 0)
         return -1;
 
-    while (--len >= 0) {
-        PyObject *item;
-
-        PDATA_POP(self->stack, item);
-        if (item == NULL)
-            return -1;
-        PyTuple_SET_ITEM(tuple, len, item);
-    }
-    PDATA_PUSH(self->stack, tuple, -1);
-    return 0;
+    return load_counted_tuple(self, Py_SIZE(self->stack) - i);
 }
 
 static int
