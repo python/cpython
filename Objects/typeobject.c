@@ -3269,12 +3269,16 @@ reduce_2(PyObject *obj)
             for (i = 0; i < PyList_GET_SIZE(names); i++) {
                 PyObject *name, *value;
                 name = PyList_GET_ITEM(names, i);
+                Py_INCREF(name);
                 value = PyObject_GetAttr(obj, name);
-                if (value == NULL)
+                if (value == NULL) {
+                    Py_DECREF(name);
                     PyErr_Clear();
+                }
                 else {
                     int err = PyDict_SetItem(slots, name,
                                              value);
+                    Py_DECREF(name);
                     Py_DECREF(value);
                     if (err)
                         goto end;

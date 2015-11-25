@@ -10,6 +10,9 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #24097: Fixed crash in object.__reduce__() if slot name is freed inside
+  __getattr__.
+
 - Issue #24731: Fixed crash on converting objects with special methods
   __str__, __trunc__, and __float__ returning instances of subclasses of
   str, long, and float to subclasses of str, long, and float correspondingly.
