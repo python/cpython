@@ -24,6 +24,9 @@ L = [
         ("\u0200", ValueError)
 ]
 
+class IntSubclass(int):
+    pass
+
 class IntTestCases(unittest.TestCase):
 
     def test_basic(self):
@@ -441,6 +444,10 @@ class IntTestCases(unittest.TestCase):
         good_int = TruncReturnsIntSubclass()
         n = int(good_int)
         self.assertEqual(n, 1)
+        self.assertIs(type(n), bool)
+        n = IntSubclass(good_int)
+        self.assertEqual(n, 1)
+        self.assertIs(type(n), IntSubclass)
 
     def test_error_message(self):
         def check(s, base=None):
