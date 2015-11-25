@@ -27,6 +27,12 @@ Library
 
 - Issue #23914: Fixed SystemError raised by CPickle unpickler on broken data.
 
+Tests
+-----
+
+- Issue #25616: Tests for OrderedDict are extracted from test_collections
+  into separate file test_ordered_dict.
+
 
 What's New in Python 2.7.11?
 ============================
