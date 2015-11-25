@@ -1870,94 +1870,92 @@ element_ass_subscr(PyObject* self_, PyObject* item, PyObject* value)
 }
 
 static PyObject*
-element_getattro(ElementObject* self, PyObject* nameobj)
+element_tag_getter(ElementObject *self, void *closure)
 {
-    PyObject* res;
-    char *name = "";
-
-    if (PyUnicode_Check(nameobj))
-        name = _PyUnicode_AsString(nameobj);
-
-    if (name == NULL)
-        return NULL;
-
-    /* handle common attributes first */
-    if (strcmp(name, "tag") == 0) {
-        res = self->tag;
-        Py_INCREF(res);
-        return res;
-    } else if (strcmp(name, "text") == 0) {
-        res = element_get_text(self);
-        Py_XINCREF(res);
-        return res;
-    }
-
-    /* methods */
-    res = PyObject_GenericGetAttr((PyObject*) self, nameobj);
-    if (res)
-        return res;
-
-    /* less common attributes */
-    if (strcmp(name, "tail") == 0) {
-        PyErr_Clear();
-        res = element_get_tail(self);
-    } else if (strcmp(name, "attrib") == 0) {
-        PyErr_Clear();
-        if (!self->extra) {
-            if (create_extra(self, NULL) < 0)
-                return NULL;
-        }
-        res = element_get_attrib(self);
-    }
-
-    if (!res)
-        return NULL;
-
+    PyObject *res = self->tag;
     Py_INCREF(res);
     return res;
 }
 
-static int
-element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
+static PyObject*
+element_text_getter(ElementObject *self, void *closure)
 {
-    char *name = "";
+    PyObject *res = element_get_text(self);
+    Py_XINCREF(res);
+    return res;
+}
 
-    if (value == NULL) {
-        PyErr_SetString(PyExc_AttributeError,
-            "can't delete attribute");
-        return -1;
+static PyObject*
+element_tail_getter(ElementObject *self, void *closure)
+{
+    PyObject *res = element_get_tail(self);
+    Py_XINCREF(res);
+    return res;
+}
+
+static PyObject*
+element_attrib_getter(ElementObject *self, void *closure)
+{
+    PyObject *res;
+    if (!self->extra) {
+        if (create_extra(self, NULL) < 0)
+            return NULL;
     }
-    if (PyUnicode_Check(nameobj))
-        name = _PyUnicode_AsString(nameobj);
-    if (name == NULL)
-        return -1;
+    res = element_get_attrib(self);
+    Py_XINCREF(res);
+    return res;
+}
 
-    if (strcmp(name, "tag") == 0) {
-        Py_DECREF(self->tag);
-        self->tag = value;
-        Py_INCREF(self->tag);
-    } else if (strcmp(name, "text") == 0) {
-        Py_DECREF(JOIN_OBJ(self->text));
-        self->text = value;
-        Py_INCREF(self->text);
-    } else if (strcmp(name, "tail") == 0) {
-        Py_DECREF(JOIN_OBJ(self->tail));
-        self->tail = value;
-        Py_INCREF(self->tail);
-    } else if (strcmp(name, "attrib") == 0) {
-        if (!self->extra) {
-            if (create_extra(self, NULL) < 0)
-                return -1;
-        }
-        Py_DECREF(self->extra->attrib);
-        self->extra->attrib = value;
-        Py_INCREF(self->extra->attrib);
-    } else {
-        PyErr_SetString(PyExc_AttributeError,
-            "Can't set arbitrary attributes on Element");
-        return -1;
+/* macro for setter validation */
+#define _VALIDATE_ATTR_VALUE(V)                     \
+    if ((V) == NULL) {                              \
+        PyErr_SetString(                            \
+            PyExc_AttributeError,                   \
+            "can't delete element attribute");      \
+        return -1;                                  \
     }
 
+static int
+element_tag_setter(ElementObject *self, PyObject *value, void *closure)
+{
+    _VALIDATE_ATTR_VALUE(value);
+    Py_INCREF(value);
+    Py_DECREF(self->tag);
+    self->tag = value;
+    return 0;
+}
+
+static int
+element_text_setter(ElementObject *self, PyObject *value, void *closure)
+{
+    _VALIDATE_ATTR_VALUE(value);
+    Py_INCREF(value);
+    Py_DECREF(JOIN_OBJ(self->text));
+    self->text = value;
+    return 0;
+}
+
+static int
+element_tail_setter(ElementObject *self, PyObject *value, void *closure)
+{
+    _VALIDATE_ATTR_VALUE(value);
+    Py_INCREF(value);
+    Py_DECREF(JOIN_OBJ(self->tail));
+    self->tail = value;
+    return 0;
+}
+
+static int
+element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
+{
+    _VALIDATE_ATTR_VALUE(value);
+    if (!self->extra) {
+        if (create_extra(self, NULL) < 0)
+            return -1;
+    }
+    Py_INCREF(value);
+    Py_DECREF(self->extra->attrib);
+    self->extra->attrib = value;
     return 0;
 }
 
@@ -3770,6 +3768,26 @@ static PyMappingMethods element_as_mapping = {
     (objobjargproc) element_ass_subscr,
 };
 
+static PyGetSetDef element_getsetlist[] = {
+    {"tag",
+        (getter)element_tag_getter,
+        (setter)element_tag_setter,
+        "A string identifying what kind of data this element represents"},
+    {"text",
+        (getter)element_text_getter,
+        (setter)element_text_setter,
+        "A string of text directly after the start tag, or None"},
+    {"tail",
+        (getter)element_tail_getter,
+        (setter)element_tail_setter,
+        "A string of text directly after the end tag, or None"},
+    {"attrib",
+        (getter)element_attrib_getter,
+        (setter)element_attrib_setter,
+        "A dictionary containing the element's attributes"},
+    {NULL},
+};
+
 static PyTypeObject Element_Type = {
     PyVarObject_HEAD_INIT(NULL, 0)
     "xml.etree.ElementTree.Element", sizeof(ElementObject), 0,
@@ -3786,8 +3804,8 @@ static PyTypeObject Element_Type = {
     0,                                              /* tp_hash */
     0,                                              /* tp_call */
     0,                                              /* tp_str */
-    (getattrofunc)element_getattro,                 /* tp_getattro */
-    (setattrofunc)element_setattro,                 /* tp_setattro */
+    PyObject_GenericGetAttr,                        /* tp_getattro */
+    0,                                              /* tp_setattro */
     0,                                              /* tp_as_buffer */
     Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE | Py_TPFLAGS_HAVE_GC,
                                                     /* tp_flags */
@@ -3800,7 +3818,7 @@ static PyTypeObject Element_Type = {
     0,                                              /* tp_iternext */
     element_methods,                                /* tp_methods */
     0,                                              /* tp_members */
-    0,                                              /* tp_getset */
+    element_getsetlist,                             /* tp_getset */
     0,                                              /* tp_base */
     0,                                              /* tp_dict */
     0,                                              /* tp_descr_get */

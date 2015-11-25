@@ -182,10 +182,12 @@ class ElementTreeTest(unittest.TestCase):
 
         def check_element(element):
             self.assertTrue(ET.iselement(element), msg="not an element")
-            self.assertTrue(hasattr(element, "tag"), msg="no tag member")
-            self.assertTrue(hasattr(element, "attrib"), msg="no attrib member")
-            self.assertTrue(hasattr(element, "text"), msg="no text member")
-            self.assertTrue(hasattr(element, "tail"), msg="no tail member")
+            direlem = dir(element)
+            for attr in 'tag', 'attrib', 'text', 'tail':
+                self.assertTrue(hasattr(element, attr),
+                        msg='no %s member' % attr)
+                self.assertIn(attr, direlem,
+                        msg='no %s visible by dir' % attr)
 
             check_string(element.tag)
             check_mapping(element.attrib)
