@@ -412,7 +412,10 @@ class SysModuleTest(unittest.TestCase):
     def test_43581(self):
         # Can't use sys.stdout, as this is a cStringIO object when
         # the test runs under regrtest.
-        self.assertTrue(sys.__stdout__.encoding == sys.__stderr__.encoding)
+        if not (os.environ.get('PYTHONIOENCODING') or
+                (sys.__stdout__.isatty() and sys.__stderr__.isatty())):
+            self.skipTest('stdout/stderr encoding is not set')
+        self.assertEqual(sys.__stdout__.encoding, sys.__stderr__.encoding)
 
     def test_sys_flags(self):
         self.assertTrue(sys.flags)
