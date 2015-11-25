@@ -694,6 +694,9 @@ IDLE
 Tests
 -----
 
+- Issue #25616: Tests for OrderedDict are extracted from test_collections
+  into separate file test_ordered_dict.
+
 - Issue #25099: Make test_compileall not fail when an entry on sys.path cannot
   be written to (commonly seen in administrative installs on Windows).
 
