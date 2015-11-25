@@ -3768,8 +3768,10 @@ _PyObject_GetState(PyObject *obj)
                 PyObject *name, *value;
 
                 name = PyList_GET_ITEM(slotnames, i);
+                Py_INCREF(name);
                 value = PyObject_GetAttr(obj, name);
                 if (value == NULL) {
+                    Py_DECREF(name);
                     if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
                         goto error;
                     }
@@ -3778,6 +3780,7 @@ _PyObject_GetState(PyObject *obj)
                 }
                 else {
                     int err = PyDict_SetItem(slots, name, value);
+                    Py_DECREF(name);
                     Py_DECREF(value);
                     if (err) {
                         goto error;
