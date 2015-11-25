@@ -3291,7 +3291,7 @@ static PyNumberMethods bytes_as_number = {
 };
 
 static PyObject *
-str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
+bytes_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
 
 static PyObject *
 bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
@@ -3306,7 +3306,7 @@ bytes_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     _Py_IDENTIFIER(__bytes__);
 
     if (type != &PyBytes_Type)
-        return str_subtype_new(type, args, kwds);
+        return bytes_subtype_new(type, args, kwds);
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "|Oss:bytes", kwlist, &x,
                                      &encoding, &errors))
         return NULL;
@@ -3556,7 +3556,7 @@ PyBytes_FromObject(PyObject *x)
 }
 
 static PyObject *
-str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+bytes_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     PyObject *tmp, *pnew;
     Py_ssize_t n;
@@ -3565,7 +3565,7 @@ str_subtype_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     tmp = bytes_new(&PyBytes_Type, args, kwds);
     if (tmp == NULL)
         return NULL;
-    assert(PyBytes_CheckExact(tmp));
+    assert(PyBytes_Check(tmp));
     n = PyBytes_GET_SIZE(tmp);
     pnew = type->tp_alloc(type, n);
     if (pnew != NULL) {
