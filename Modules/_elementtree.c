@@ -1260,7 +1260,7 @@ element_set(ElementObject* self, PyObject* args)
 }
 
 static int
-element_setitem(PyObject* self_, Py_ssize_t index, PyObject* item)
+element_setitem(PyObject* self_, Py_ssize_t index_, PyObject* item)
 {
     ElementObject* self = (ElementObject*) self_;
     int i, index;
