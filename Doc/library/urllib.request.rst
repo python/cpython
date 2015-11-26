@@ -59,13 +59,7 @@ The :mod:`urllib.request` module defines the following functions:
 
    The *cadefault* parameter is ignored.
 
-   For http and https urls, this function returns a
-   :class:`http.client.HTTPResponse` object which has the following
-   :ref:`httpresponse-objects` methods.
-
-   For ftp, file, and data urls and requests explicitly handled by legacy
-   :class:`URLopener` and :class:`FancyURLopener` classes, this function
-   returns a :class:`urllib.response.addinfourl` object which can work as
+   This function always returns an object which can work as
    :term:`context manager` and has methods such as
 
    * :meth:`~urllib.response.addinfourl.geturl` --- return the URL of the resource retrieved,
@@ -76,6 +70,18 @@ The :mod:`urllib.request` module defines the following functions:
      `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
 
    * :meth:`~urllib.response.addinfourl.getcode` -- return the HTTP status code of the response.
+
+   For http and https urls, this function returns a
+   :class:`http.client.HTTPResponse` object slightly modified. In addition
+   to the three new methods above, the msg attribute contains the
+   same information as the :attr:`~http.client.HTTPResponse.reason`
+   attribute --- the reason phrase returned by server --- instead of
+   the response headers as it is specified in the documentation for
+   :class:`~http.client.HTTPResponse`.
+
+   For ftp, file, and data urls and requests explicitly handled by legacy
+   :class:`URLopener` and :class:`FancyURLopener` classes, this function
+   returns a :class:`urllib.response.addinfourl` object.
 
    Raises :exc:`~urllib.error.URLError` on errors.
 
