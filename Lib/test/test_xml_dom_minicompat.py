@@ -1,5 +1,6 @@
 # Tests for xml.dom.minicompat
 
+import copy
 import pickle
 import unittest
 
@@ -89,6 +90,7 @@ class NodeListTestCase(unittest.TestCase):
             node_list = NodeList()
             pickled = pickle.dumps(node_list, proto)
             unpickled = pickle.loads(pickled)
+            self.assertIsNot(unpickled, node_list)
             self.assertEqual(unpickled, node_list)
 
             # Non-empty NodeList.
@@ -96,7 +98,41 @@ class NodeListTestCase(unittest.TestCase):
             node_list.append(2)
             pickled = pickle.dumps(node_list, proto)
             unpickled = pickle.loads(pickled)
+            self.assertIsNot(unpickled, node_list)
             self.assertEqual(unpickled, node_list)
+
+    def test_nodelist_copy(self):
+        # Empty NodeList.
+        node_list = NodeList()
+        copied = copy.copy(node_list)
+        self.assertIsNot(copied, node_list)
+        self.assertEqual(copied, node_list)
+
+        # Non-empty NodeList.
+        node_list.append([1])
+        node_list.append([2])
+        copied = copy.copy(node_list)
+        self.assertIsNot(copied, node_list)
+        self.assertEqual(copied, node_list)
+        for x, y in zip(copied, node_list):
+            self.assertIs(x, y)
+
+    def test_nodelist_deepcopy(self):
+        # Empty NodeList.
+        node_list = NodeList()
+        copied = copy.deepcopy(node_list)
+        self.assertIsNot(copied, node_list)
+        self.assertEqual(copied, node_list)
+
+        # Non-empty NodeList.
+        node_list.append([1])
+        node_list.append([2])
+        copied = copy.deepcopy(node_list)
+        self.assertIsNot(copied, node_list)
+        self.assertEqual(copied, node_list)
+        for x, y in zip(copied, node_list):
+            self.assertIsNot(x, y)
+            self.assertEqual(x, y)
 
 if __name__ == '__main__':
     unittest.main()
