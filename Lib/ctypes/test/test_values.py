@@ -75,7 +75,7 @@ class PythonValuesTestCase(unittest.TestCase):
             if entry.name in bootstrap_expected:
                 bootstrap_seen.append(entry.name)
                 self.assertTrue(entry.size,
-                    "{} was reported as having no size".format(entry.name))
+                    "{!r} was reported as having no size".format(entry.name))
                 continue
             items.append((entry.name, entry.size))
 
