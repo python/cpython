@@ -1,5 +1,6 @@
 # test for xml.dom.minidom
 
+import copy
 import pickle
 from StringIO import StringIO
 from test.test_support import verbose, run_unittest, findfile
@@ -14,7 +15,13 @@ from xml.dom.minidom import getDOMImplementation
 
 
 tstfile = findfile("test.xml", subdir="xmltestdata")
-
+sample = ("<?xml version='1.0' encoding='us-ascii'?>\n"
+          "<!DOCTYPE doc PUBLIC 'http://xml.python.org/public'"
+          " 'http://xml.python.org/system' [\n"
+          "  <!ELEMENT e EMPTY>\n"
+          "  <!ENTITY ent SYSTEM 'http://xml.python.org/entity'>\n"
+          "]><doc attr='value'> text\n"
+          "<?pi sample?> <!-- comment --> <e/> </doc>")
 
 # The tests of DocumentType importing use these helpers to construct
 # the documents to work with, since not all DOM builders actually
@@ -1377,52 +1384,54 @@ class MinidomTest(unittest.TestCase):
         self.confirm(e.isSameNode(doc.getElementById("w"))
                 and a2.isId)
 
+    def assert_recursive_equal(self, doc, doc2):
+        stack = [(doc, doc2)]
+        while stack:
+            n1, n2 = stack.pop()
+            self.assertEqual(n1.nodeType, n2.nodeType)
+            self.assertEqual(len(n1.childNodes), len(n2.childNodes))
+            self.assertEqual(n1.nodeName, n2.nodeName)
+            self.assertFalse(n1.isSameNode(n2))
+            self.assertFalse(n2.isSameNode(n1))
+            if n1.nodeType == Node.DOCUMENT_TYPE_NODE:
+                len(n1.entities)
+                len(n2.entities)
+                len(n1.notations)
+                len(n2.notations)
+                self.assertEqual(len(n1.entities), len(n2.entities))
+                self.assertEqual(len(n1.notations), len(n2.notations))
+                for i in range(len(n1.notations)):
+                    # XXX this loop body doesn't seem to be executed?
+                    no1 = n1.notations.item(i)
+                    no2 = n1.notations.item(i)
+                    self.assertEqual(no1.name, no2.name)
+                    self.assertEqual(no1.publicId, no2.publicId)
+                    self.assertEqual(no1.systemId, no2.systemId)
+                    stack.append((no1, no2))
+                for i in range(len(n1.entities)):
+                    e1 = n1.entities.item(i)
+                    e2 = n2.entities.item(i)
+                    self.assertEqual(e1.notationName, e2.notationName)
+                    self.assertEqual(e1.publicId, e2.publicId)
+                    self.assertEqual(e1.systemId, e2.systemId)
+                    stack.append((e1, e2))
+            if n1.nodeType != Node.DOCUMENT_NODE:
+                self.assertTrue(n1.ownerDocument.isSameNode(doc))
+                self.assertTrue(n2.ownerDocument.isSameNode(doc2))
+            for i in range(len(n1.childNodes)):
+                stack.append((n1.childNodes[i], n2.childNodes[i]))
+
     def testPickledDocument(self):
-        doc = parseString("<?xml version='1.0' encoding='us-ascii'?>\n"
-                    "<!DOCTYPE doc PUBLIC 'http://xml.python.org/public'"
-                    " 'http://xml.python.org/system' [\n"
-                    "  <!ELEMENT e EMPTY>\n"
-                    "  <!ENTITY ent SYSTEM 'http://xml.python.org/entity'>\n"
-                    "]><doc attr='value'> text\n"
-                    "<?pi sample?> <!-- comment --> <e/> </doc>")
-        for proto in range(2, pickle.HIGHEST_PROTOCOL + 1):
+        doc = parseString(sample)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             s = pickle.dumps(doc, proto)
             doc2 = pickle.loads(s)
-            stack = [(doc, doc2)]
-            while stack:
-                n1, n2 = stack.pop()
-                self.confirm(n1.nodeType == n2.nodeType
-                        and len(n1.childNodes) == len(n2.childNodes)
-                        and n1.nodeName == n2.nodeName
-                        and not n1.isSameNode(n2)
-                        and not n2.isSameNode(n1))
-                if n1.nodeType == Node.DOCUMENT_TYPE_NODE:
-                    len(n1.entities)
-                    len(n2.entities)
-                    len(n1.notations)
-                    len(n2.notations)
-                    self.confirm(len(n1.entities) == len(n2.entities)
-                            and len(n1.notations) == len(n2.notations))
-                    for i in range(len(n1.notations)):
-                        # XXX this loop body doesn't seem to be executed?
-                        no1 = n1.notations.item(i)
-                        no2 = n1.notations.item(i)
-                        self.confirm(no1.name == no2.name
-                                and no1.publicId == no2.publicId
-                                and no1.systemId == no2.systemId)
-                        stack.append((no1, no2))
-                    for i in range(len(n1.entities)):
-                        e1 = n1.entities.item(i)
-                        e2 = n2.entities.item(i)
-                        self.confirm(e1.notationName == e2.notationName
-                                and e1.publicId == e2.publicId
-                                and e1.systemId == e2.systemId)
-                        stack.append((e1, e2))
-                if n1.nodeType != Node.DOCUMENT_NODE:
-                    self.confirm(n1.ownerDocument.isSameNode(doc)
-                            and n2.ownerDocument.isSameNode(doc2))
-                for i in range(len(n1.childNodes)):
-                    stack.append((n1.childNodes[i], n2.childNodes[i]))
+            self.assert_recursive_equal(doc, doc2)
+
+    def testDeepcopiedDocument(self):
+        doc = parseString(sample)
+        doc2 = copy.deepcopy(doc)
+        self.assert_recursive_equal(doc, doc2)
 
     def testSerializeCommentNodeWithDoubleHyphen(self):
         doc = create_doc_without_doctype()
