@@ -7,7 +7,7 @@ import cStringIO
 import pickletools
 import copy_reg
 
-from test.test_support import TestFailed, verbose, have_unicode, TESTFN, captured_stdout
+from test.test_support import TestFailed, verbose, have_unicode, TESTFN
 try:
     from test.test_support import _2G, _1M, precisionbigmemtest
 except ImportError:
@@ -636,41 +636,41 @@ class AbstractUnpickleTests(unittest.TestCase):
 
     def test_bad_stack(self):
         badpickles = [
-            b'0.',              # POP
-            b'1.',              # POP_MARK
-            b'2.',              # DUP
-            # b'(2.',           # PyUnpickler doesn't raise
-            b'R.',              # REDUCE
-            b')R.',
-            b'a.',              # APPEND
-            b'Na.',
-            b'b.',              # BUILD
-            b'Nb.',
-            b'd.',              # DICT
-            b'e.',              # APPENDS
-            # b'(e.',           # PyUnpickler raises AttributeError
-            b'i__builtin__\nlist\n.',  # INST
-            b'l.',              # LIST
-            b'o.',              # OBJ
-            b'(o.',
-            b'p1\n.',           # PUT
-            b'q\x00.',          # BINPUT
-            b'r\x00\x00\x00\x00.',  # LONG_BINPUT
-            b's.',              # SETITEM
-            b'Ns.',
-            b'NNs.',
-            b't.',              # TUPLE
-            b'u.',              # SETITEMS
-            b'(u.',
-            b'}(Nu.',
-            b'\x81.',           # NEWOBJ
-            b')\x81.',
-            b'\x85.',           # TUPLE1
-            b'\x86.',           # TUPLE2
-            b'N\x86.',
-            b'\x87.',           # TUPLE3
-            b'N\x87.',
-            b'NN\x87.',
+            '0.',              # POP
+            '1.',              # POP_MARK
+            '2.',              # DUP
+            # '(2.',           # PyUnpickler doesn't raise
+            'R.',              # REDUCE
+            ')R.',
+            'a.',              # APPEND
+            'Na.',
+            'b.',              # BUILD
+            'Nb.',
+            'd.',              # DICT
+            'e.',              # APPENDS
+            # '(e.',           # PyUnpickler raises AttributeError
+            'i__builtin__\nlist\n.',  # INST
+            'l.',              # LIST
+            'o.',              # OBJ
+            '(o.',
+            'p1\n.',           # PUT
+            'q\x00.',          # BINPUT
+            'r\x00\x00\x00\x00.',  # LONG_BINPUT
+            's.',              # SETITEM
+            'Ns.',
+            'NNs.',
+            't.',              # TUPLE
+            'u.',              # SETITEMS
+            '(u.',
+            '}(Nu.',
+            '\x81.',           # NEWOBJ
+            ')\x81.',
+            '\x85.',           # TUPLE1
+            '\x86.',           # TUPLE2
+            'N\x86.',
+            '\x87.',           # TUPLE3
+            'N\x87.',
+            'NN\x87.',
         ]
         for p in badpickles:
             try:
@@ -681,25 +681,24 @@ class AbstractUnpickleTests(unittest.TestCase):
 
     def test_bad_mark(self):
         badpickles = [
-            b'c__builtin__\nlist\n)(R.',        # REDUCE
-            b'c__builtin__\nlist\n()R.',
-            b']N(a.',                           # APPEND
-            b'cexceptions\nValueError\n)R}(b.',  # BUILD
-            b'cexceptions\nValueError\n)R(}b.',
-            b'(Nd.',                            # DICT
-            b'}NN(s.',                          # SETITEM
-            b'}N(Ns.',
-            b'c__builtin__\nlist\n)(\x81.',     # NEWOBJ
-            b'c__builtin__\nlist\n()\x81.',
-            b'N(\x85.',                         # TUPLE1
-            b'NN(\x86.',                        # TUPLE2
-            b'N(N\x86.',
-            b'NNN(\x87.',                       # TUPLE3
-            b'NN(N\x87.',
-            b'N(NN\x87.',
+            'c__builtin__\nlist\n)(R.',        # REDUCE
+            'c__builtin__\nlist\n()R.',
+            ']N(a.',                           # APPEND
+            'cexceptions\nValueError\n)R}(b.',  # BUILD
+            'cexceptions\nValueError\n)R(}b.',
+            '(Nd.',                            # DICT
+            '}NN(s.',                          # SETITEM
+            '}N(Ns.',
+            'c__builtin__\nlist\n)(\x81.',     # NEWOBJ
+            'c__builtin__\nlist\n()\x81.',
+            'N(\x85.',                         # TUPLE1
+            'NN(\x86.',                        # TUPLE2
+            'N(N\x86.',
+            'NNN(\x87.',                       # TUPLE3
+            'NN(N\x87.',
+            'N(NN\x87.',
         ]
         for p in badpickles:
-            # PyUnpickler prints reduce errors to stdout
             try:
                 self.loads(p)
             except (IndexError, AttributeError, TypeError,
