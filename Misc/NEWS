@@ -20,6 +20,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25742: :func:`locale.setlocale` now accepts a Unicode string for
+  its second parameter.
+
 - Issue #10131: Fixed deep copying of minidom documents.  Based on patch
   by Marian Ganisin.
 

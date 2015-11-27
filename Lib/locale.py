@@ -18,6 +18,10 @@ import re
 import operator
 import functools
 
+# keep a copy of the builtin str type, because 'str' name is overriden
+# in globals by a function below
+_str = str
+
 try:
     _unicode = unicode
 except NameError:
@@ -573,7 +577,7 @@ def setlocale(category, locale=None):
         category may be given as one of the LC_* values.
 
     """
-    if locale and type(locale) is not type(""):
+    if locale and not isinstance(locale, (_str, _unicode)):
         # convert to string
         locale = normalize(_build_localename(locale))
     return _setlocale(category, locale)
