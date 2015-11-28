@@ -125,6 +125,13 @@ Previously, names of properties and slots which were not yet created on
 an instance were excluded.  (Contributed by Martin Panter in :issue:`25590`.)
 
 
+telnetlib
+---------
+
+:class:`~telnetlib.Telnet` is now a context manager (contributed by
+Stéphane Wirtel in :issue:`25485`).
+
+
 urllib.robotparser
 ------------------
 
