@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import patch
 import builtins
 import rlcompleter
 
@@ -72,12 +73,12 @@ class TestRlcompleter(unittest.TestCase):
         self.assertIn('CompleteMe.__name__', matches)
         self.assertIn('CompleteMe.__new__(', matches)
 
-        CompleteMe.me = CompleteMe
-        self.assertEqual(self.completer.attr_matches('CompleteMe.me.me.sp'),
-                         ['CompleteMe.me.me.spam'])
-        self.assertEqual(self.completer.attr_matches('egg.s'),
-                         ['egg.{}('.format(x) for x in dir(str)
-                          if x.startswith('s')])
+        with patch.object(CompleteMe, "me", CompleteMe, create=True):
+            self.assertEqual(self.completer.attr_matches('CompleteMe.me.me.sp'),
+                             ['CompleteMe.me.me.spam'])
+            self.assertEqual(self.completer.attr_matches('egg.s'),
+                             ['egg.{}('.format(x) for x in dir(str)
+                              if x.startswith('s')])
 
     def test_excessive_getattr(self):
         # Ensure getattr() is invoked no more than once per attribute
