@@ -43,6 +43,17 @@ Character), EL (Erase Line), GA (Go Ahead), SB (Subnegotiation Begin).
    :exc:`EOFError` when the end of the connection is read, because they can return
    an empty string for other reasons.  See the individual descriptions below.
 
+   A :class:`Telnet` object is a context manager and can be used in a
+   :keyword:`with` statement.  When the :keyword:`with` block ends, the
+   :meth:`close` method is called::
+
+       >>> from telnetlib import Telnet
+       >>> with Telnet('localhost', 23) as tn:
+       ...     tn.interact()
+       ...
+
+   .. versionchanged:: 3.6 Context manager support added
+
 
 .. seealso::
 
