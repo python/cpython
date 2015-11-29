@@ -746,7 +746,7 @@ class AbstractUnpickleTests(unittest.TestCase):
             # 'P',                        # PERSID
             # 'Pabc',
             'S',                        # STRING
-            b"S'abc'",
+            "S'abc'",
             'T',                        # BINSTRING
             'T\x03\x00\x00',
             'T\x03\x00\x00\x00',
