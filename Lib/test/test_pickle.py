@@ -1,4 +1,5 @@
 import pickle
+import struct
 from cStringIO import StringIO
 
 from test import test_support
@@ -24,11 +25,23 @@ class PickleTests(AbstractUnpickleTests, AbstractPickleTests,
     module = pickle
     error = KeyError
     bad_stack_errors = (IndexError,)
+    bad_mark_errors = (IndexError, pickle.UnpicklingError,
+                       TypeError, AttributeError, EOFError)
+    truncated_errors = (pickle.UnpicklingError, EOFError,
+                        AttributeError, ValueError,
+                        struct.error, IndexError, ImportError,
+                        TypeError, KeyError)
 
 class UnpicklerTests(AbstractUnpickleTests):
 
     error = KeyError
     bad_stack_errors = (IndexError,)
+    bad_mark_errors = (IndexError, pickle.UnpicklingError,
+                       TypeError, AttributeError, EOFError)
+    truncated_errors = (pickle.UnpicklingError, EOFError,
+                        AttributeError, ValueError,
+                        struct.error, IndexError, ImportError,
+                        TypeError, KeyError)
 
     def loads(self, buf):
         f = StringIO(buf)

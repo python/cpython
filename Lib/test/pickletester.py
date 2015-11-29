@@ -6,7 +6,9 @@ import StringIO
 import cStringIO
 import pickletools
 import copy_reg
+import sys
 
+from test import test_support as support
 from test.test_support import TestFailed, verbose, have_unicode, TESTFN
 try:
     from test.test_support import _2G, _1M, precisionbigmemtest
@@ -473,6 +475,17 @@ class AbstractUnpickleTests(unittest.TestCase):
                 self.assertEqual(getattr(obj, slot, None),
                                  getattr(objcopy, slot, None), msg=msg)
 
+    def check_unpickling_error(self, errors, data):
+        with self.assertRaises(errors):
+            try:
+                self.loads(data)
+            except:
+                if support.verbose > 1:
+                    exc = sys.exc_info()[1]
+                    print('%-32r - %s: %s' %
+                          (data, exc.__class__.__name__, exc))
+                raise
+
     def test_load_from_canned_string(self):
         expected = self._testdata
         for canned in DATA0, DATA1, DATA2:
@@ -480,7 +493,7 @@ class AbstractUnpickleTests(unittest.TestCase):
             self.assert_is_copy(expected, got)
 
     def test_garyp(self):
-        self.assertRaises(self.error, self.loads, 'garyp')
+        self.check_unpickling_error(self.error, 'garyp')
 
     def test_maxint64(self):
         maxint64 = (1L << 63) - 1
@@ -490,7 +503,7 @@ class AbstractUnpickleTests(unittest.TestCase):
 
         # Try too with a bogus literal.
         data = 'I' + str(maxint64) + 'JUNK\n.'
-        self.assertRaises(ValueError, self.loads, data)
+        self.check_unpickling_error(ValueError, data)
 
     def test_insecure_strings(self):
         insecure = ["abc", "2 + 2", # not quoted
@@ -511,7 +524,7 @@ class AbstractUnpickleTests(unittest.TestCase):
                     ]
         for s in insecure:
             buf = "S" + s + "\n."
-            self.assertRaises(ValueError, self.loads, buf)
+            self.check_unpickling_error(ValueError, buf)
 
     def test_correctly_quoted_string(self):
         goodpickles = [("S''\n.", ''),
@@ -578,11 +591,6 @@ class AbstractUnpickleTests(unittest.TestCase):
                        'q\x00oq\x01}q\x02b.').replace('X', xname)
             self.assert_is_copy(X(*args), self.loads(pickle2))
 
-    def test_pop_empty_stack(self):
-        # Test issue7455
-        s = '0'
-        self.assertRaises((cPickle.UnpicklingError, IndexError), self.loads, s)
-
     def test_load_str(self):
         # From Python 2: pickle.dumps('a\x00\xa0', protocol=0)
         self.assertEqual(self.loads("S'a\\x00\\xa0'\n."), 'a\x00\xa0')
@@ -607,8 +615,8 @@ class AbstractUnpickleTests(unittest.TestCase):
         self.assertIs(self.loads('I00\n.'), False)
 
     def test_misc_get(self):
-        self.assertRaises(self.error, self.loads, 'g0\np0\n')
-        self.assertRaises(self.error, self.loads, 'h\x00q\x00')
+        self.check_unpickling_error(self.error, 'g0\np0\n')
+        self.check_unpickling_error(self.error, 'h\x00q\x00')
 
     def test_get(self):
         pickled = '((lp100000\ng100000\nt.'
@@ -636,74 +644,145 @@ class AbstractUnpickleTests(unittest.TestCase):
 
     def test_bad_stack(self):
         badpickles = [
-            '0.',              # POP
-            '1.',              # POP_MARK
-            '2.',              # DUP
-            # '(2.',           # PyUnpickler doesn't raise
-            'R.',              # REDUCE
-            ')R.',
-            'a.',              # APPEND
-            'Na.',
-            'b.',              # BUILD
-            'Nb.',
-            'd.',              # DICT
-            'e.',              # APPENDS
-            # '(e.',           # PyUnpickler raises AttributeError
-            'i__builtin__\nlist\n.',  # INST
-            'l.',              # LIST
-            'o.',              # OBJ
-            '(o.',
-            'p1\n.',           # PUT
-            'q\x00.',          # BINPUT
-            'r\x00\x00\x00\x00.',  # LONG_BINPUT
-            's.',              # SETITEM
-            'Ns.',
-            'NNs.',
-            't.',              # TUPLE
-            'u.',              # SETITEMS
-            '(u.',
-            '}(Nu.',
-            '\x81.',           # NEWOBJ
-            ')\x81.',
-            '\x85.',           # TUPLE1
-            '\x86.',           # TUPLE2
-            'N\x86.',
-            '\x87.',           # TUPLE3
-            'N\x87.',
-            'NN\x87.',
+            '.',                        # STOP
+            '0',                        # POP
+            '1',                        # POP_MARK
+            '2',                        # DUP
+            # '(2',                     # PyUnpickler doesn't raise
+            'R',                        # REDUCE
+            ')R',
+            'a',                        # APPEND
+            'Na',
+            'b',                        # BUILD
+            'Nb',
+            'd',                        # DICT
+            'e',                        # APPENDS
+            # '(e',                     # PyUnpickler raises AttributeError
+            'i__builtin__\nlist\n',     # INST
+            'l',                        # LIST
+            'o',                        # OBJ
+            '(o',
+            'p1\n',                     # PUT
+            'q\x00',                    # BINPUT
+            'r\x00\x00\x00\x00',        # LONG_BINPUT
+            's',                        # SETITEM
+            'Ns',
+            'NNs',
+            't',                        # TUPLE
+            'u',                        # SETITEMS
+            # '(u',                     # PyUnpickler doesn't raise
+            '}(Nu',
+            '\x81',                     # NEWOBJ
+            ')\x81',
+            '\x85',                     # TUPLE1
+            '\x86',                     # TUPLE2
+            'N\x86',
+            '\x87',                     # TUPLE3
+            'N\x87',
+            'NN\x87',
         ]
         for p in badpickles:
-            try:
-                self.assertRaises(self.bad_stack_errors, self.loads, p)
-            except:
-                print '***', repr(p)
-                raise
+            self.check_unpickling_error(self.bad_stack_errors, p)
 
     def test_bad_mark(self):
         badpickles = [
-            'c__builtin__\nlist\n)(R.',        # REDUCE
-            'c__builtin__\nlist\n()R.',
-            ']N(a.',                           # APPEND
-            'cexceptions\nValueError\n)R}(b.',  # BUILD
-            'cexceptions\nValueError\n)R(}b.',
-            '(Nd.',                            # DICT
-            '}NN(s.',                          # SETITEM
-            '}N(Ns.',
-            'c__builtin__\nlist\n)(\x81.',     # NEWOBJ
-            'c__builtin__\nlist\n()\x81.',
-            'N(\x85.',                         # TUPLE1
-            'NN(\x86.',                        # TUPLE2
-            'N(N\x86.',
-            'NNN(\x87.',                       # TUPLE3
-            'NN(N\x87.',
-            'N(NN\x87.',
+            # 'N(.',                      # STOP
+            'N(2',                      # DUP
+            'c__builtin__\nlist\n)(R',  # REDUCE
+            'c__builtin__\nlist\n()R',
+            ']N(a',                     # APPEND
+                                        # BUILD
+            'c__builtin__\nValueError\n)R}(b',
+            'c__builtin__\nValueError\n)R(}b',
+            '(Nd',                      # DICT
+            'N(p1\n',                   # PUT
+            'N(q\x00',                  # BINPUT
+            'N(r\x00\x00\x00\x00',      # LONG_BINPUT
+            '}NN(s',                    # SETITEM
+            '}N(Ns',
+            '}(NNs',
+            '}((u',                     # SETITEMS
+                                        # NEWOBJ
+            'c__builtin__\nlist\n)(\x81',
+            'c__builtin__\nlist\n()\x81',
+            'N(\x85',                   # TUPLE1
+            'NN(\x86',                  # TUPLE2
+            'N(N\x86',
+            'NNN(\x87',                 # TUPLE3
+            'NN(N\x87',
+            'N(NN\x87',
         ]
         for p in badpickles:
-            try:
-                self.loads(p)
-            except (IndexError, AttributeError, TypeError,
-                    pickle.UnpicklingError):
-                pass
+            self.check_unpickling_error(self.bad_mark_errors, p)
+
+    def test_truncated_data(self):
+        self.check_unpickling_error(EOFError, b'')
+        self.check_unpickling_error(EOFError, b'N')
+        badpickles = [
+            'F',                        # FLOAT
+            'F0.0',
+            'F0.00',
+            'G',                        # BINFLOAT
+            'G\x00\x00\x00\x00\x00\x00\x00',
+            'I',                        # INT
+            'I0',
+            'J',                        # BININT
+            'J\x00\x00\x00',
+            'K',                        # BININT1
+            'L',                        # LONG
+            'L0',
+            'L10',
+            'L0L',
+            'L10L',
+            'M',                        # BININT2
+            'M\x00',
+            # 'P',                        # PERSID
+            # 'Pabc',
+            'S',                        # STRING
+            b"S'abc'",
+            'T',                        # BINSTRING
+            'T\x03\x00\x00',
+            'T\x03\x00\x00\x00',
+            'T\x03\x00\x00\x00ab',
+            'U',                        # SHORT_BINSTRING
+            'U\x03',
+            'U\x03ab',
+            'V',                        # UNICODE
+            'Vabc',
+            'X',                        # BINUNICODE
+            'X\x03\x00\x00',
+            'X\x03\x00\x00\x00',
+            'X\x03\x00\x00\x00ab',
+            '(c',                       # GLOBAL
+            '(c__builtin__',
+            '(c__builtin__\n',
+            '(c__builtin__\nlist',
+            'Ng',                       # GET
+            'Ng0',
+            '(i',                       # INST
+            '(i__builtin__',
+            '(i__builtin__\n',
+            '(i__builtin__\nlist',
+            'Nh',                       # BINGET
+            'Nj',                       # LONG_BINGET
+            'Nj\x00\x00\x00',
+            'Np',                       # PUT
+            'Np0',
+            'Nq',                       # BINPUT
+            'Nr',                       # LONG_BINPUT
+            'Nr\x00\x00\x00',
+            '\x80',                     # PROTO
+            '\x82',                     # EXT1
+            '\x83',                     # EXT2
+            '\x84\x01',
+            '\x84',                     # EXT4
+            '\x84\x01\x00\x00',
+            '\x8a',                     # LONG1
+            '\x8b',                     # LONG4
+            '\x8b\x00\x00\x00',
+        ]
+        for p in badpickles:
+            self.check_unpickling_error(self.truncated_errors, p)
 
 
 class AbstractPickleTests(unittest.TestCase):
@@ -1467,11 +1546,7 @@ class AbstractPickleModuleTests(unittest.TestCase):
         # Test issue4298
         s = '\x58\0\0\0\x54'
         self.assertRaises(EOFError, self.module.loads, s)
-        # Test issue7455
-        s = '0'
-        # XXX Why doesn't pickle raise UnpicklingError?
-        self.assertRaises((IndexError, cPickle.UnpicklingError),
-                          self.module.loads, s)
+
 
 class AbstractPersistentPicklerTests(unittest.TestCase):
 
