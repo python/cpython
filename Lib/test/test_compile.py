@@ -576,14 +576,15 @@ if 1:
         # objects are accepted, which could be not terminated.
         with self.assertRaisesRegexp(TypeError, "without null bytes"):
             compile(u"123\x00", "<dummy>", "eval")
-        with self.assertRaisesRegexp(TypeError, "without null bytes"):
-            compile(buffer("123\x00"), "<dummy>", "eval")
-        code = compile(buffer("123\x00", 1, 2), "<dummy>", "eval")
-        self.assertEqual(eval(code), 23)
-        code = compile(buffer("1234", 1, 2), "<dummy>", "eval")
-        self.assertEqual(eval(code), 23)
-        code = compile(buffer("$23$", 1, 2), "<dummy>", "eval")
-        self.assertEqual(eval(code), 23)
+        with test_support.check_py3k_warnings():
+            with self.assertRaisesRegexp(TypeError, "without null bytes"):
+                compile(buffer("123\x00"), "<dummy>", "eval")
+            code = compile(buffer("123\x00", 1, 2), "<dummy>", "eval")
+            self.assertEqual(eval(code), 23)
+            code = compile(buffer("1234", 1, 2), "<dummy>", "eval")
+            self.assertEqual(eval(code), 23)
+            code = compile(buffer("$23$", 1, 2), "<dummy>", "eval")
+            self.assertEqual(eval(code), 23)
 
 class TestStackSize(unittest.TestCase):
     # These tests check that the computed stack size for a code object

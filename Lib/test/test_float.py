@@ -71,7 +71,8 @@ class GeneralFloatCases(unittest.TestCase):
             factories += [unicode, CustomUnicode]
 
         for f in factories:
-            x = f(" 3.14  ")
+            with test_support.check_py3k_warnings(quiet=True):
+                x = f(" 3.14  ")
             msg = 'x has value %s and type %s' % (x, type(x).__name__)
             try:
                 self.assertEqual(float(x), 3.14, msg=msg)
@@ -79,15 +80,17 @@ class GeneralFloatCases(unittest.TestCase):
                 raise AssertionError('For %s got TypeError: %s' %
                                      (type(x).__name__, err))
             errmsg = "could not convert"
-            with self.assertRaisesRegexp(ValueError, errmsg, msg=msg):
+            with self.assertRaisesRegexp(ValueError, errmsg, msg=msg), \
+                 test_support.check_py3k_warnings(quiet=True):
                 float(f('A' * 0x10))
 
     def test_float_buffer(self):
-        self.assertEqual(float(buffer('12.3', 1, 3)), 2.3)
-        self.assertEqual(float(buffer('12.3\x00', 1, 3)), 2.3)
-        self.assertEqual(float(buffer('12.3 ', 1, 3)), 2.3)
-        self.assertEqual(float(buffer('12.3A', 1, 3)), 2.3)
-        self.assertEqual(float(buffer('12.34', 1, 3)), 2.3)
+        with test_support.check_py3k_warnings():
+            self.assertEqual(float(buffer('12.3', 1, 3)), 2.3)
+            self.assertEqual(float(buffer('12.3\x00', 1, 3)), 2.3)
+            self.assertEqual(float(buffer('12.3 ', 1, 3)), 2.3)
+            self.assertEqual(float(buffer('12.3A', 1, 3)), 2.3)
+            self.assertEqual(float(buffer('12.34', 1, 3)), 2.3)
 
     def check_conversion_to_int(self, x):
         """Check that int(x) has the correct value and type, for a float x."""
