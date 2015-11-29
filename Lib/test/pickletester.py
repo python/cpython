@@ -476,15 +476,22 @@ class AbstractUnpickleTests(unittest.TestCase):
                                  getattr(objcopy, slot, None), msg=msg)
 
     def check_unpickling_error(self, errors, data):
-        with self.assertRaises(errors):
+        try:
             try:
                 self.loads(data)
             except:
                 if support.verbose > 1:
-                    exc = sys.exc_info()[1]
-                    print('%-32r - %s: %s' %
-                          (data, exc.__class__.__name__, exc))
+                    exc_type, exc, tb = sys.exc_info()
+                    print '%-32r - %s: %s' % (data, exc_type.__name__, exc)
                 raise
+        except errors:
+            pass
+        else:
+            try:
+                exc_name = errors.__name__
+            except AttributeError:
+                exc_name = str(errors)
+            raise self.failureException('%s not raised' % exc_name)
 
     def test_load_from_canned_string(self):
         expected = self._testdata
