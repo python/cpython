@@ -723,8 +723,8 @@ class AbstractUnpickleTests(unittest.TestCase):
             self.check_unpickling_error(self.bad_mark_errors, p)
 
     def test_truncated_data(self):
-        self.check_unpickling_error(EOFError, b'')
-        self.check_unpickling_error(EOFError, b'N')
+        self.check_unpickling_error(EOFError, '')
+        self.check_unpickling_error(EOFError, 'N')
         badpickles = [
             'F',                        # FLOAT
             'F0.0',
