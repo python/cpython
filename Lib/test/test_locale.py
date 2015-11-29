@@ -494,14 +494,14 @@ class TestMiscellaneous(unittest.TestCase):
         self.assertEqual(locale.normalize(u'en_US'), 'en_US.ISO8859-1')
 
     def test_setlocale_unicode(self):
-        old_loc = locale.getlocale(locale.LC_ALL)
-        try:
-            user_locale = locale.setlocale(locale.LC_ALL, '')
-            unicode_locale = user_locale.decode('utf-8')
-            user_locale2 = locale.setlocale(locale.LC_ALL, unicode_locale)
-            self.assertEqual(user_locale, user_locale2)
-        finally:
-            locale.setlocale(locale.LC_ALL, old_loc)
+        oldlocale = locale.getlocale()
+        self.addCleanup(locale.setlocale, locale.LC_CTYPE, oldlocale)
+
+        user_locale = locale.setlocale(locale.LC_CTYPE, '')
+        unicode_locale = user_locale.decode('utf-8')
+
+        user_locale2 = locale.setlocale(locale.LC_CTYPE, unicode_locale)
+        self.assertEqual(user_locale, user_locale2)
 
 
 def test_main():
