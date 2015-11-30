@@ -99,7 +99,9 @@ Py_FrozenMain(int argc, char **argv)
 #ifdef MS_WINDOWS
     PyWinFreeze_ExeTerm();
 #endif
-    Py_Finalize();
+    if (Py_FinalizeEx() < 0) {
+        sts = 120;
+    }
 
 error:
     PyMem_RawFree(argv_copy);

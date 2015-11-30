@@ -648,6 +648,7 @@ EXPORTS
   Py_FatalError=python36.Py_FatalError
   Py_FileSystemDefaultEncoding=python36.Py_FileSystemDefaultEncoding DATA
   Py_Finalize=python36.Py_Finalize
+  Py_FinalizeEx=python36.Py_FinalizeEx
   Py_GetBuildInfo=python36.Py_GetBuildInfo
   Py_GetCompiler=python36.Py_GetCompiler
   Py_GetCopyright=python36.Py_GetCopyright

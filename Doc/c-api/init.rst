@@ -25,7 +25,7 @@ Initializing and finalizing the interpreter
       triple: module; search; path
       single: PySys_SetArgv()
       single: PySys_SetArgvEx()
-      single: Py_Finalize()
+      single: Py_FinalizeEx()
 
    Initialize the Python interpreter.  In an application embedding  Python, this
    should be called before using any other Python/C API functions; with the
@@ -34,7 +34,7 @@ Initializing and finalizing the interpreter
    modules :mod:`builtins`, :mod:`__main__` and :mod:`sys`.  It also initializes
    the module search path (``sys.path``). It does not set ``sys.argv``; use
    :c:func:`PySys_SetArgvEx` for that.  This is a no-op when called for a second time
-   (without calling :c:func:`Py_Finalize` first).  There is no return value; it is a
+   (without calling :c:func:`Py_FinalizeEx` first).  There is no return value; it is a
    fatal error if the initialization fails.
 
 
@@ -48,19 +48,20 @@ Initializing and finalizing the interpreter
 .. c:function:: int Py_IsInitialized()
 
    Return true (nonzero) when the Python interpreter has been initialized, false
-   (zero) if not.  After :c:func:`Py_Finalize` is called, this returns false until
+   (zero) if not.  After :c:func:`Py_FinalizeEx` is called, this returns false until
    :c:func:`Py_Initialize` is called again.
 
 
-.. c:function:: void Py_Finalize()
+.. c:function:: int Py_FinalizeEx()
 
    Undo all initializations made by :c:func:`Py_Initialize` and subsequent use of
    Python/C API functions, and destroy all sub-interpreters (see
    :c:func:`Py_NewInterpreter` below) that were created and not yet destroyed since
    the last call to :c:func:`Py_Initialize`.  Ideally, this frees all memory
    allocated by the Python interpreter.  This is a no-op when called for a second
-   time (without calling :c:func:`Py_Initialize` again first).  There is no return
-   value; errors during finalization are ignored.
+   time (without calling :c:func:`Py_Initialize` again first).  Normally the
+   return value is 0.  If there were errors during finalization
+   (flushing buffered data), -1 is returned.
 
    This function is provided for a number of reasons.  An embedding application
    might want to restart Python without having to restart the application itself.
@@ -79,7 +80,15 @@ Initializing and finalizing the interpreter
    freed.  Some memory allocated by extension modules may not be freed.  Some
    extensions may not work properly if their initialization routine is called more
    than once; this can happen if an application calls :c:func:`Py_Initialize` and
-   :c:func:`Py_Finalize` more than once.
+   :c:func:`Py_FinalizeEx` more than once.
+
+   .. versionadded:: 3.6
+
+
+.. c:function:: void Py_Finalize()
+
+   This is a backwards-compatible version of :c:func:`Py_FinalizeEx` that
+   disregards the return value.
 
 
 Process-wide parameters
@@ -107,7 +116,7 @@ Process-wide parameters
    Note that :data:`sys.stderr` always uses the "backslashreplace" error
    handler, regardless of this (or any other) setting.
 
-   If :c:func:`Py_Finalize` is called, this function will need to be called
+   If :c:func:`Py_FinalizeEx` is called, this function will need to be called
    again in order to affect subsequent calls to :c:func:`Py_Initialize`.
 
    Returns 0 if successful, a nonzero value on error (e.g. calling after the
@@ -918,7 +927,7 @@ using the following functions:
    entry.)
 
    .. index::
-      single: Py_Finalize()
+      single: Py_FinalizeEx()
       single: Py_Initialize()
 
    Extension modules are shared between (sub-)interpreters as follows: the first
@@ -928,7 +937,7 @@ using the following functions:
    and filled with the contents of this copy; the extension's ``init`` function is
    not called.  Note that this is different from what happens when an extension is
    imported after the interpreter has been completely re-initialized by calling
-   :c:func:`Py_Finalize` and :c:func:`Py_Initialize`; in that case, the extension's
+   :c:func:`Py_FinalizeEx` and :c:func:`Py_Initialize`; in that case, the extension's
    ``initmodule`` function *is* called again.
 
    .. index:: single: close() (in module os)
@@ -936,14 +945,14 @@ using the following functions:
 
 .. c:function:: void Py_EndInterpreter(PyThreadState *tstate)
 
-   .. index:: single: Py_Finalize()
+   .. index:: single: Py_FinalizeEx()
 
    Destroy the (sub-)interpreter represented by the given thread state. The given
    thread state must be the current thread state.  See the discussion of thread
    states below.  When the call returns, the current thread state is *NULL*.  All
    thread states associated with this interpreter are destroyed.  (The global
    interpreter lock must be held before calling this function and is still held
-   when it returns.)  :c:func:`Py_Finalize` will destroy all sub-interpreters that
+   when it returns.)  :c:func:`Py_FinalizeEx` will destroy all sub-interpreters that
    haven't been explicitly destroyed at that point.
 
 

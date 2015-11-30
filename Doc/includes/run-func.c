@@ -63,6 +63,8 @@ main(int argc, char *argv[])
         fprintf(stderr, "Failed to load \"%s\"\n", argv[1]);
         return 1;
     }
-    Py_Finalize();
+    if (Py_FinalizeEx() < 0) {
+        return 120;
+    }
     return 0;
 }

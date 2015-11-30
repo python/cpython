@@ -709,7 +709,7 @@ static int prepare_script_environment(HINSTANCE hPython)
  * 1 if the Python-dll does not export the functions we need
  * 2 if no install-script is specified in pathname
  * 3 if the install-script file could not be opened
- * the return value of PyRun_SimpleString() otherwise,
+ * the return value of PyRun_SimpleString() or Py_FinalizeEx() otherwise,
  * which is 0 if everything is ok, -1 if an exception had occurred
  * in the install-script.
  */
@@ -722,7 +722,7 @@ do_run_installscript(HINSTANCE hPython, char *pathname, int argc, char **argv)
     DECLPROC(hPython, void, Py_Initialize, (void));
     DECLPROC(hPython, int, PySys_SetArgv, (int, wchar_t **));
     DECLPROC(hPython, int, PyRun_SimpleString, (char *));
-    DECLPROC(hPython, void, Py_Finalize, (void));
+    DECLPROC(hPython, int, Py_FinalizeEx, (void));
     DECLPROC(hPython, PyObject *, Py_BuildValue, (char *, ...));
     DECLPROC(hPython, PyObject *, PyCFunction_New,
              (PyMethodDef *, PyObject *));
@@ -730,7 +730,7 @@ do_run_installscript(HINSTANCE hPython, char *pathname, int argc, char **argv)
     DECLPROC(hPython, PyObject *, PyErr_Format, (PyObject *, char *));
 
     if (!Py_Initialize || !PySys_SetArgv
-        || !PyRun_SimpleString || !Py_Finalize)
+        || !PyRun_SimpleString || !Py_FinalizeEx)
         return 1;
 
     if (!Py_BuildValue || !PyArg_ParseTuple || !PyErr_Format)
@@ -777,7 +777,9 @@ do_run_installscript(HINSTANCE hPython, char *pathname, int argc, char **argv)
             }
         }
     }
-    Py_Finalize();
+    if (Py_FinalizeEx() < 0) {
+        result = -1;
+    }
 
     close(fh);
     return result;
@@ -839,11 +841,11 @@ static int do_run_simple_script(HINSTANCE hPython, char *script)
     int rc;
     DECLPROC(hPython, void, Py_Initialize, (void));
     DECLPROC(hPython, void, Py_SetProgramName, (wchar_t *));
-    DECLPROC(hPython, void, Py_Finalize, (void));
+    DECLPROC(hPython, int, Py_FinalizeEx, (void));
     DECLPROC(hPython, int, PyRun_SimpleString, (char *));
     DECLPROC(hPython, void, PyErr_Print, (void));
 
-    if (!Py_Initialize || !Py_SetProgramName || !Py_Finalize ||
+    if (!Py_Initialize || !Py_SetProgramName || !Py_FinalizeEx ||
         !PyRun_SimpleString || !PyErr_Print)
         return -1;
 
@@ -853,7 +855,9 @@ static int do_run_simple_script(HINSTANCE hPython, char *script)
     rc = PyRun_SimpleString(script);
     if (rc)
         PyErr_Print();
-    Py_Finalize();
+    if (Py_FinalizeEx() < 0) {
+        rc = -1;
+    }
     return rc;
 }
 

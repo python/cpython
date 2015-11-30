@@ -171,7 +171,8 @@ Optimizations
 Build and C API Changes
 =======================
 
-* None yet.
+* New :c:func:`Py_FinalizeEx` API which indicates if flushing buffered data
+  failed (:issue:`5319`).
 
 
 Deprecated
@@ -247,4 +248,5 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
-* None yet.
+* :c:func:`Py_Exit` (and the main interpreter) now override the exit status
+  with 120 if flushing buffered data failed.  See :issue:`5319`.
