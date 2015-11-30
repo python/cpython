@@ -180,6 +180,9 @@ class TestCopy(unittest.TestCase):
                 return self.foo == other.foo
         x = C(42)
         self.assertEqual(copy.copy(x), x)
+        # State with boolean value is false (issue #25718)
+        x = C(0.0)
+        self.assertEqual(copy.copy(x), x)
 
     # The deepcopy() method
 
@@ -444,6 +447,12 @@ class TestCopy(unittest.TestCase):
             def __eq__(self, other):
                 return self.foo == other.foo
         x = C([42])
+        y = copy.deepcopy(x)
+        self.assertEqual(y, x)
+        self.assertIsNot(y, x)
+        self.assertIsNot(y.foo, x.foo)
+        # State with boolean value is false (issue #25718)
+        x = C([])
         y = copy.deepcopy(x)
         self.assertEqual(y, x)
         self.assertIsNot(y, x)
