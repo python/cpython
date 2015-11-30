@@ -1391,13 +1391,7 @@ class _Unpickler:
         stack = self.stack
         args = stack.pop()
         func = stack[-1]
-        try:
-            value = func(*args)
-        except:
-            print(sys.exc_info())
-            print(func, args)
-            raise
-        stack[-1] = value
+        stack[-1] = func(*args)
     dispatch[REDUCE[0]] = load_reduce
 
     def load_pop(self):
