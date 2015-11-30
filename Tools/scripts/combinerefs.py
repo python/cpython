@@ -6,7 +6,7 @@ combinerefs path
 A helper for analyzing PYTHONDUMPREFS output.
 
 When the PYTHONDUMPREFS envar is set in a debug build, at Python shutdown
-time Py_Finalize() prints the list of all live objects twice:  first it
+time Py_FinalizeEx() prints the list of all live objects twice:  first it
 prints the repr() of each object while the interpreter is still fully intact.
 After cleaning up everything it can, it prints all remaining live objects
 again, but the second time just prints their addresses, refcounts, and type
@@ -41,7 +41,7 @@ CAUTION:  If object is a container type, it may not actually contain all the
 objects shown in the repr:  the repr was captured from the first output block,
 and some of the containees may have been released since then.  For example,
 it's common for the line showing the dict of interned strings to display
-strings that no longer exist at the end of Py_Finalize; this can be recognized
+strings that no longer exist at the end of Py_FinalizeEx; this can be recognized
 (albeit painfully) because such containees don't have a line of their own.
 
 The objects are listed in allocation order, with most-recently allocated

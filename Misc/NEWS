@@ -10,6 +10,9 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #5319: New Py_FinalizeEx() API allowing Python to set an exit status
+  of 120 on failure to flush buffered streams.
+
 - Issue #25485: telnetlib.Telnet is now a context manager.
 
 - Issue #24097: Fixed crash in object.__reduce__() if slot name is freed inside

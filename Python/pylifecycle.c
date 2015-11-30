@@ -154,8 +154,8 @@ Py_SetStandardStreamEncoding(const char *encoding, const char *errors)
     return 0;
 }
 
-/* Global initializations.  Can be undone by Py_Finalize().  Don't
-   call this twice without an intervening Py_Finalize() call.  When
+/* Global initializations.  Can be undone by Py_FinalizeEx().  Don't
+   call this twice without an intervening Py_FinalizeEx() call.  When
    initializations fail, a fatal error is issued and the function does
    not return.  On return, the first thread and interpreter state have
    been created.
@@ -327,11 +327,11 @@ _Py_InitializeEx_Private(int install_sigs, int install_importlib)
     (void) PyThreadState_Swap(tstate);
 
 #ifdef WITH_THREAD
-    /* We can't call _PyEval_FiniThreads() in Py_Finalize because
+    /* We can't call _PyEval_FiniThreads() in Py_FinalizeEx because
        destroying the GIL might fail when it is being referenced from
        another running thread (see issue #9901).
        Instead we destroy the previously created GIL here, which ensures
-       that we can call Py_Initialize / Py_Finalize multiple times. */
+       that we can call Py_Initialize / Py_FinalizeEx multiple times. */
     _PyEval_FiniThreads();
 
     /* Auto-thread-state API */
@@ -477,28 +477,35 @@ file_is_closed(PyObject *fobj)
     return r > 0;
 }
 
-static void
+static int
 flush_std_files(void)
 {
     PyObject *fout = _PySys_GetObjectId(&PyId_stdout);
     PyObject *ferr = _PySys_GetObjectId(&PyId_stderr);
     PyObject *tmp;
+    int status = 0;
 
     if (fout != NULL && fout != Py_None && !file_is_closed(fout)) {
         tmp = _PyObject_CallMethodId(fout, &PyId_flush, "");
-        if (tmp == NULL)
+        if (tmp == NULL) {
             PyErr_WriteUnraisable(fout);
+            status = -1;
+        }
         else
             Py_DECREF(tmp);
     }
 
     if (ferr != NULL && ferr != Py_None && !file_is_closed(ferr)) {
         tmp = _PyObject_CallMethodId(ferr, &PyId_flush, "");
-        if (tmp == NULL)
+        if (tmp == NULL) {
             PyErr_Clear();
+            status = -1;
+        }
         else
             Py_DECREF(tmp);
     }
+
+    return status;
 }
 
 /* Undo the effect of Py_Initialize().
@@ -515,14 +522,15 @@ flush_std_files(void)
 
 */
 
-void
-Py_Finalize(void)
+int
+Py_FinalizeEx(void)
 {
     PyInterpreterState *interp;
     PyThreadState *tstate;
+    int status = 0;
 
     if (!initialized)
-        return;
+        return status;
 
     wait_for_thread_shutdown();
 
@@ -547,7 +555,9 @@ Py_Finalize(void)
     initialized = 0;
 
     /* Flush sys.stdout and sys.stderr */
-    flush_std_files();
+    if (flush_std_files() < 0) {
+        status = -1;
+    }
 
     /* Disable signal handling */
     PyOS_FiniInterrupts();
@@ -576,7 +586,9 @@ Py_Finalize(void)
     PyImport_Cleanup();
 
     /* Flush sys.stdout and sys.stderr (again, in case more was printed) */
-    flush_std_files();
+    if (flush_std_files() < 0) {
+        status = -1;
+    }
 
     /* Collect final garbage.  This disposes of cycles created by
      * class definitions, for example.
@@ -696,6 +708,13 @@ Py_Finalize(void)
 #endif
 
     call_ll_exitfuncs();
+    return status;
+}
+
+void
+Py_Finalize(void)
+{
+    Py_FinalizeEx();
 }
 
 /* Create and initialize a new interpreter and thread, and return the
@@ -803,7 +822,7 @@ handle_error:
    frames, and that it is its interpreter's only remaining thread.
    It is a fatal error to violate these constraints.
 
-   (Py_Finalize() doesn't have these constraints -- it zaps
+   (Py_FinalizeEx() doesn't have these constraints -- it zaps
    everything, regardless.)
 
    Locking: as above.
@@ -1016,7 +1035,8 @@ create_stdio(PyObject* io,
         mode = "rb";
     buf = _PyObject_CallMethodId(io, &PyId_open, "isiOOOi",
                                  fd, mode, buffering,
-                                 Py_None, Py_None, Py_None, 0);
+                                 Py_None, Py_None, /* encoding, errors */
+                                 Py_None, 0); /* newline, closefd */
     if (buf == NULL)
         goto error;
 
@@ -1450,7 +1470,9 @@ call_ll_exitfuncs(void)
 void
 Py_Exit(int sts)
 {
-    Py_Finalize();
+    if (Py_FinalizeEx() < 0) {
+        sts = 120;
+    }
 
     exit(sts);
 }

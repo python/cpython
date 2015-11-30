@@ -686,7 +686,7 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
 }
 
 /* Internal initialization/finalization functions called by
-   Py_Initialize/Py_Finalize
+   Py_Initialize/Py_FinalizeEx
 */
 void
 _PyGILState_Init(PyInterpreterState *i, PyThreadState *t)

@@ -27,6 +27,7 @@ PyAPI_FUNC(void) Py_InitializeEx(int);
 PyAPI_FUNC(void) _Py_InitializeEx_Private(int, int);
 #endif
 PyAPI_FUNC(void) Py_Finalize(void);
+PyAPI_FUNC(int) Py_FinalizeEx(void);
 PyAPI_FUNC(int) Py_IsInitialized(void);
 PyAPI_FUNC(PyThreadState *) Py_NewInterpreter(void);
 PyAPI_FUNC(void) Py_EndInterpreter(PyThreadState *);

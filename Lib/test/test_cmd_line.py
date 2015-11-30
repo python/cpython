@@ -348,8 +348,9 @@ class CmdLineTest(unittest.TestCase):
             test.support.SuppressCrashReport().__enter__()
             sys.stdout.write('x')
             os.close(sys.stdout.fileno())"""
-        rc, out, err = assert_python_ok('-c', code)
+        rc, out, err = assert_python_failure('-c', code)
         self.assertEqual(b'', out)
+        self.assertEqual(120, rc)
         self.assertRegex(err.decode('ascii', 'ignore'),
                          'Exception ignored in.*\nOSError: .*')
 
