@@ -5247,8 +5247,10 @@ load_inst(UnpicklerObject *self)
         return -1;
 
     if ((len = _Unpickler_Readline(self, &s)) >= 0) {
-        if (len < 2)
+        if (len < 2) {
+            Py_DECREF(module_name);
             return bad_readline();
+        }
         class_name = PyUnicode_DecodeASCII(s, len - 1, "strict");
         if (class_name != NULL) {
             cls = find_class(self, module_name, class_name);
