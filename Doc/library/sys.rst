@@ -255,7 +255,7 @@ always available.
    (defaulting to zero), or another type of object.  If it is an integer, zero
    is considered "successful termination" and any nonzero value is considered
    "abnormal termination" by shells and the like.  Most systems require it to be
-   in the range 0-127, and produce undefined results otherwise.  Some systems
+   in the range 0--127, and produce undefined results otherwise.  Some systems
    have a convention for assigning specific meanings to specific exit codes, but
    these are generally underdeveloped; Unix programs generally use 2 for command
    line syntax errors and 1 for all other kind of errors.  If another type of
@@ -267,6 +267,11 @@ always available.
    Since :func:`exit` ultimately "only" raises an exception, it will only exit
    the process when called from the main thread, and the exception is not
    intercepted.
+
+   .. versionchanged:: 3.6
+      If an error occurs in the cleanup after the Python interpreter
+      has caught :exc:`SystemExit` (such as an error flushing buffered data
+      in the standard streams), the exit status is changed to 120.
 
 
 .. data:: flags

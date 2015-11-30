@@ -654,7 +654,7 @@ Py_Main(int argc, wchar_t **argv)
             Py_SetProgramName(wbuf);
 
             /* Don't free wbuf, the argument to Py_SetProgramName
-             * must remain valid until the Py_Finalize is called.
+             * must remain valid until Py_FinalizeEx is called.
              */
         } else {
             Py_SetProgramName(argv[0]);
@@ -785,7 +785,11 @@ Py_Main(int argc, wchar_t **argv)
         sts = PyRun_AnyFileFlags(stdin, "<stdin>", &cf) != 0;
     }
 
-    Py_Finalize();
+    if (Py_FinalizeEx() < 0) {
+        /* Value unlikely to be confused with a non-error exit status or
+        other special meaning */
+        sts = 120;
+    }
 
 #ifdef __INSURE__
     /* Insure++ is a memory analysis tool that aids in discovering
