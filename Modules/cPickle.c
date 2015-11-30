@@ -3969,7 +3969,10 @@ load_inst(Unpicklerobject *self)
     if (!module_name)  return -1;
 
     if ((len = self->readline_func(self, &s)) >= 0) {
-        if (len < 2) return bad_readline();
+        if (len < 2) {
+            Py_DECREF(module_name);
+            return bad_readline();
+        }
         if ((class_name = PyString_FromStringAndSize(s, len - 1))) {
             class = find_class(module_name, class_name,
                                self->find_class);
