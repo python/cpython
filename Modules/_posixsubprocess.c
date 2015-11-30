@@ -47,17 +47,25 @@
 #define POSIX_CALL(call)   do { if ((call) == -1) goto error; } while (0)
 
 
-/* Given the gc module call gc.enable() and return 0 on success. */
+/* If gc was disabled, call gc.enable().  Return 0 on success. */
 static int
-_enable_gc(PyObject *gc_module)
+_enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 {
     PyObject *result;
     _Py_IDENTIFIER(enable);
+    PyObject *exctype, *val, *tb;
 
-    result = _PyObject_CallMethodId(gc_module, &PyId_enable, NULL);
-    if (result == NULL)
-        return 1;
-    Py_DECREF(result);
+    if (need_to_reenable_gc) {
+        PyErr_Fetch(&exctype, &val, &tb);
+        result = _PyObject_CallMethodId(gc_module, &PyId_enable, NULL);
+        if (exctype != NULL) {
+            PyErr_Restore(exctype, val, tb);
+        }
+        if (result == NULL) {
+            return 1;
+        }
+        Py_DECREF(result);
+    }
     return 0;
 }
 
@@ -691,6 +699,7 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
         _PyImport_ReleaseLock() < 0 && !PyErr_Occurred()) {
         PyErr_SetString(PyExc_RuntimeError,
                         "not holding the import lock");
+        pid = -1;
     }
     import_lock_held = 0;
 
@@ -702,9 +711,8 @@ subprocess_fork_exec(PyObject* self, PyObject *args)
     _Py_FreeCharPArray(exec_array);
 
     /* Reenable gc in the parent process (or if fork failed). */
-    if (need_to_reenable_gc && _enable_gc(gc_module)) {
-        Py_XDECREF(gc_module);
-        return NULL;
+    if (_enable_gc(need_to_reenable_gc, gc_module)) {
+        pid = -1;
     }
     Py_XDECREF(preexec_fn_args_tuple);
     Py_XDECREF(gc_module);
@@ -726,14 +734,7 @@ cleanup:
     Py_XDECREF(converted_args);
     Py_XDECREF(fast_args);
     Py_XDECREF(preexec_fn_args_tuple);
-
-    /* Reenable gc if it was disabled. */
-    if (need_to_reenable_gc) {
-        PyObject *exctype, *val, *tb;
-        PyErr_Fetch(&exctype, &val, &tb);
-        _enable_gc(gc_module);
-        PyErr_Restore(exctype, val, tb);
-    }
+    _enable_gc(need_to_reenable_gc, gc_module);
     Py_XDECREF(gc_module);
     return NULL;
 }
