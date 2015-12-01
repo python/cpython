@@ -107,7 +107,7 @@ Common limits of Windows event loops:
 The resolution of the monotonic clock on Windows is usually around 15.6 msec.
 The best resolution is 0.5 msec. The resolution depends on the hardware
 (availability of `HPET
-<http://fr.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the Windows
+<http://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the Windows
 configuration. See :ref:`asyncio delayed calls <asyncio-delayed-calls>`.
 
 .. versionchanged:: 3.5
