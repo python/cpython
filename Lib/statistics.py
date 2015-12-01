@@ -104,6 +104,8 @@ import math
 
 from fractions import Fraction
 from decimal import Decimal
+from itertools import groupby
+
 
 
 # === Exceptions ===
@@ -115,86 +117,102 @@ class StatisticsError(ValueError):
 # === Private utilities ===
 
 def _sum(data, start=0):
-    """_sum(data [, start]) -> value
+    """_sum(data [, start]) -> (type, sum, count)
 
-    Return a high-precision sum of the given numeric data. If optional
-    argument ``start`` is given, it is added to the total. If ``data`` is
-    empty, ``start`` (defaulting to 0) is returned.
+    Return a high-precision sum of the given numeric data as a fraction,
+    together with the type to be converted to and the count of items.
+
+    If optional argument ``start`` is given, it is added to the total.
+    If ``data`` is empty, ``start`` (defaulting to 0) is returned.
 
 
     Examples
     --------
 
     >>> _sum([3, 2.25, 4.5, -0.5, 1.0], 0.75)
-    11.0
+    (<class 'float'>, Fraction(11, 1), 5)
 
     Some sources of round-off error will be avoided:
 
     >>> _sum([1e50, 1, -1e50] * 1000)  # Built-in sum returns zero.
-    1000.0
+    (<class 'float'>, Fraction(1000, 1), 3000)
 
     Fractions and Decimals are also supported:
 
     >>> from fractions import Fraction as F
     >>> _sum([F(2, 3), F(7, 5), F(1, 4), F(5, 6)])
-    Fraction(63, 20)
+    (<class 'fractions.Fraction'>, Fraction(63, 20), 4)
 
     >>> from decimal import Decimal as D
     >>> data = [D("0.1375"), D("0.2108"), D("0.3061"), D("0.0419")]
     >>> _sum(data)
-    Decimal('0.6963')
+    (<class 'decimal.Decimal'>, Fraction(6963, 10000), 4)
 
     Mixed types are currently treated as an error, except that int is
     allowed.
     """
-    # We fail as soon as we reach a value that is not an int or the type of
-    # the first value which is not an int. E.g. _sum([int, int, float, int])
-    # is okay, but sum([int, int, float, Fraction]) is not.
-    allowed_types = set([int, type(start)])
+    count = 0
     n, d = _exact_ratio(start)
-    partials = {d: n}  # map {denominator: sum of numerators}
-    # Micro-optimizations.
-    exact_ratio = _exact_ratio
+    partials = {d: n}
     partials_get = partials.get
-    # Add numerators for each denominator.
-    for x in data:
-        _check_type(type(x), allowed_types)
-        n, d = exact_ratio(x)
-        partials[d] = partials_get(d, 0) + n
-    # Find the expected result type. If allowed_types has only one item, it
-    # will be int; if it has two, use the one which isn't int.
-    assert len(allowed_types) in (1, 2)
-    if len(allowed_types) == 1:
-        assert allowed_types.pop() is int
-        T = int
-    else:
-        T = (allowed_types - set([int])).pop()
+    T = _coerce(int, type(start))
+    for typ, values in groupby(data, type):
+        T = _coerce(T, typ)  # or raise TypeError
+        for n,d in map(_exact_ratio, values):
+            count += 1
+            partials[d] = partials_get(d, 0) + n
     if None in partials:
-        assert issubclass(T, (float, Decimal))
-        assert not math.isfinite(partials[None])
-        return T(partials[None])
-    total = Fraction()
-    for d, n in sorted(partials.items()):
-        total += Fraction(n, d)
-    if issubclass(T, int):
-        assert total.denominator == 1
-        return T(total.numerator)
-    if issubclass(T, Decimal):
-        return T(total.numerator)/total.denominator
-    return T(total)
+        # The sum will be a NAN or INF. We can ignore all the finite
+        # partials, and just look at this special one.
+        total = partials[None]
+        assert not _isfinite(total)
+    else:
+        # Sum all the partial sums using builtin sum.
+        # FIXME is this faster if we sum them in order of the denominator?
+        total = sum(Fraction(n, d) for d, n in sorted(partials.items()))
+    return (T, total, count)
 
 
-def _check_type(T, allowed):
-    if T not in allowed:
-        if len(allowed) == 1:
-            allowed.add(T)
-        else:
-            types = ', '.join([t.__name__ for t in allowed] + [T.__name__])
-            raise TypeError("unsupported mixed types: %s" % types)
+def _isfinite(x):
+    try:
+        return x.is_finite()  # Likely a Decimal.
+    except AttributeError:
+        return math.isfinite(x)  # Coerces to float first.
+
+
+def _coerce(T, S):
+    """Coerce types T and S to a common type, or raise TypeError.
+
+    Coercion rules are currently an implementation detail. See the CoerceTest
+    test class in test_statistics for details.
+    """
+    # See http://bugs.python.org/issue24068.
+    assert T is not bool, "initial type T is bool"
+    # If the types are the same, no need to coerce anything. Put this
+    # first, so that the usual case (no coercion needed) happens as soon
+    # as possible.
+    if T is S:  return T
+    # Mixed int & other coerce to the other type.
+    if S is int or S is bool:  return T
+    if T is int:  return S
+    # If one is a (strict) subclass of the other, coerce to the subclass.
+    if issubclass(S, T):  return S
+    if issubclass(T, S):  return T
+    # Ints coerce to the other type.
+    if issubclass(T, int):  return S
+    if issubclass(S, int):  return T
+    # Mixed fraction & float coerces to float (or float subclass).
+    if issubclass(T, Fraction) and issubclass(S, float):
+        return S
+    if issubclass(T, float) and issubclass(S, Fraction):
+        return T
+    # Any other combination is disallowed.
+    msg = "don't know how to coerce %s and %s"
+    raise TypeError(msg % (T.__name__, S.__name__))
 
 
 def _exact_ratio(x):
-    """Convert Real number x exactly to (numerator, denominator) pair.
+    """Return Real number x to exact (numerator, denominator) pair.
 
     >>> _exact_ratio(0.25)
     (1, 4)
@@ -202,29 +220,31 @@ def _exact_ratio(x):
     x is expected to be an int, Fraction, Decimal or float.
     """
     try:
+        # Optimise the common case of floats. We expect that the most often
+        # used numeric type will be builtin floats, so try to make this as
+        # fast as possible.
+        if type(x) is float:
+            return x.as_integer_ratio()
         try:
-            # int, Fraction
+            # x may be an int, Fraction, or Integral ABC.
             return (x.numerator, x.denominator)
         except AttributeError:
-            # float
             try:
+                # x may be a float subclass.
                 return x.as_integer_ratio()
             except AttributeError:
-                # Decimal
                 try:
+                    # x may be a Decimal.
                     return _decimal_to_ratio(x)
                 except AttributeError:
-                    msg = "can't convert type '{}' to numerator/denominator"
-                    raise TypeError(msg.format(type(x).__name__)) from None
+                    # Just give up?
+                    pass
     except (OverflowError, ValueError):
-        # INF or NAN
-        if __debug__:
-            # Decimal signalling NANs cannot be converted to float :-(
-            if isinstance(x, Decimal):
-                assert not x.is_finite()
-            else:
-                assert not math.isfinite(x)
+        # float NAN or INF.
+        assert not math.isfinite(x)
         return (x, None)
+    msg = "can't convert type '{}' to numerator/denominator"
+    raise TypeError(msg.format(type(x).__name__))
 
 
 # FIXME This is faster than Fraction.from_decimal, but still too slow.
@@ -239,7 +259,7 @@ def _decimal_to_ratio(d):
     sign, digits, exp = d.as_tuple()
     if exp in ('F', 'n', 'N'):  # INF, NAN, sNAN
         assert not d.is_finite()
-        raise ValueError
+        return (d, None)
     num = 0
     for digit in digits:
         num = num*10 + digit
@@ -251,6 +271,24 @@ def _decimal_to_ratio(d):
     if sign:
         num = -num
     return (num, den)
+
+
+def _convert(value, T):
+    """Convert value to given numeric type T."""
+    if type(value) is T:
+        # This covers the cases where T is Fraction, or where value is
+        # a NAN or INF (Decimal or float).
+        return value
+    if issubclass(T, int) and value.denominator != 1:
+        T = float
+    try:
+        # FIXME: what do we do if this overflows?
+        return T(value)
+    except TypeError:
+        if issubclass(T, Decimal):
+            return T(value.numerator)/T(value.denominator)
+        else:
+            raise
 
 
 def _counts(data):
@@ -290,7 +328,9 @@ def mean(data):
     n = len(data)
     if n < 1:
         raise StatisticsError('mean requires at least one data point')
-    return _sum(data)/n
+    T, total, count = _sum(data)
+    assert count == n
+    return _convert(total/n, T)
 
 
 # FIXME: investigate ways to calculate medians without sorting? Quickselect?
@@ -460,12 +500,14 @@ def _ss(data, c=None):
     """
     if c is None:
         c = mean(data)
-    ss = _sum((x-c)**2 for x in data)
+    T, total, count = _sum((x-c)**2 for x in data)
     # The following sum should mathematically equal zero, but due to rounding
     # error may not.
-    ss -= _sum((x-c) for x in data)**2/len(data)
-    assert not ss < 0, 'negative sum of square deviations: %f' % ss
-    return ss
+    U, total2, count2 = _sum((x-c) for x in data)
+    assert T == U and count == count2
+    total -=  total2**2/len(data)
+    assert not total < 0, 'negative sum of square deviations: %f' % total
+    return (T, total)
 
 
 def variance(data, xbar=None):
@@ -511,8 +553,8 @@ def variance(data, xbar=None):
     n = len(data)
     if n < 2:
         raise StatisticsError('variance requires at least two data points')
-    ss = _ss(data, xbar)
-    return ss/(n-1)
+    T, ss = _ss(data, xbar)
+    return _convert(ss/(n-1), T)
 
 
 def pvariance(data, mu=None):
@@ -560,7 +602,8 @@ def pvariance(data, mu=None):
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
     ss = _ss(data, mu)
-    return ss/n
+    T, ss = _ss(data, mu)
+    return _convert(ss/n, T)
 
 
 def stdev(data, xbar=None):
