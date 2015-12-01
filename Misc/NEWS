@@ -113,6 +113,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #25177: Fixed problem with the mean of very small and very large
+  numbers. As a side effect, statistics.mean and statistics.variance should
+  be significantly faster.
+
 - Issue #25718: Fixed copying object with state with boolean value is false.
 
 - Issue #10131: Fixed deep copying of minidom documents.  Based on patch
