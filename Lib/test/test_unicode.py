@@ -2672,6 +2672,23 @@ class UnicodeTest(string_tests.CommonTest,
         self.assertTrue(astral >= bmp2)
         self.assertFalse(astral >= astral2)
 
+    @support.cpython_only
+    def test_pep393_utf8_caching_bug(self):
+        # Issue #25709: Problem with string concatenation and utf-8 cache
+        from _testcapi import getargs_s_hash
+        for k in 0x24, 0xa4, 0x20ac, 0x1f40d:
+            s = ''
+            for i in range(5):
+                # Due to CPython specific optimization the 's' string can be
+                # resized in-place.
+                s += chr(k)
+                # Parsing with the "s#" format code calls indirectly
+                # PyUnicode_AsUTF8AndSize() which creates the UTF-8
+                # encoded string cached in the Unicode object.
+                self.assertEqual(getargs_s_hash(s), chr(k).encode() * (i + 1))
+                # Check that the second call returns the same result
+                self.assertEqual(getargs_s_hash(s), chr(k).encode() * (i + 1))
+
 
 class StringModuleTest(unittest.TestCase):
     def test_formatter_parser(self):
