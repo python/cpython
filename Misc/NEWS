@@ -10,6 +10,8 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25709: Fixed problem with in-place string concatenation and utf-8 cache.
+
 - Issue #24097: Fixed crash in object.__reduce__() if slot name is freed inside
   __getattr__.
 
