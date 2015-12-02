@@ -51,7 +51,7 @@
     -->
     <Variable Name="DefaultCustomTargetDir" Value="" bal:Overridable="yes" />
 
-    <Variable Name="InstallAllUsersState" Value="enabled" />
+    <Variable Name="InstallAllUsersState" Value="enabled" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="InstallLauncherAllUsersState" Value="enabled" bal:Overridable="yes" />
     <?else ?>
@@ -72,6 +72,7 @@
     <Variable Name="Include_pip" Value="1" bal:Overridable="yes" />
     <?if "$(var.PyTestExt)"="" ?>
     <Variable Name="Include_launcher" Value="1" bal:Overridable="yes" />
+    <Variable Name="Include_launcherState" Value="enabled" bal:Overridable="yes" />
     <?else ?>
     <Variable Name="Include_launcher" Value="0" />
     <Variable Name="Include_launcherState" Value="disable" />
@@ -81,6 +82,7 @@
     
     <Variable Name="LauncherOnly" Value="0" bal:Overridable="yes" />
     <Variable Name="DetectedLauncher" Value="0" />
+    <Variable Name="DetectedOldLauncher" Value="0" />
     
     <Variable Name="AssociateFiles" Value="1" bal:Overridable="yes" />
     <Variable Name="Shortcuts" Value="1" bal:Overridable="yes" />
