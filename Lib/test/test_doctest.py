@@ -2647,7 +2647,7 @@ Windows line endings first:
     >>> with open(fn, 'wb') as f:
     ...    f.write(b'Test:\r\n\r\n  >>> x = 1 + 1\r\n\r\nDone.\r\n')
     35
-    >>> doctest.testfile(fn, False)
+    >>> doctest.testfile(fn, module_relative=False, verbose=False)
     TestResults(failed=0, attempted=1)
     >>> os.remove(fn)
 
@@ -2657,7 +2657,7 @@ And now *nix line endings:
     >>> with open(fn, 'wb') as f:
     ...     f.write(b'Test:\n\n  >>> x = 1 + 1\n\nDone.\n')
     30
-    >>> doctest.testfile(fn, False)
+    >>> doctest.testfile(fn, module_relative=False, verbose=False)
     TestResults(failed=0, attempted=1)
     >>> os.remove(fn)
 
