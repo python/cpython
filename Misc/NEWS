@@ -10,8 +10,13 @@ Release date: 2015-12-06
 Core and Builtins
 -----------------
 
-Library
+- Issue #25709: Fixed problem with in-place string concatenation and utf-8 cache.
+
+Windows
 -------
+
+- Issue #25715: Python 3.5.1 installer shows wrong upgrade path and incorrect
+  logic for launcher detection.
 
 
 What's New in Python 3.5.1 release candidate 1?
