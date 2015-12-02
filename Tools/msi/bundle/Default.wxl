@@ -76,7 +76,9 @@ Select Customize to review current options.</String>
   <String Id="Include_testLabel">Python &amp;test suite</String>
   <String Id="Include_testHelpLabel">Installs the standard library test suite.</String>
   <String Id="Include_launcherLabel">py &amp;launcher</String>
-  <String Id="Include_launcherHelpLabel">Installs the global 'py' launcher to make it easier to start Python.</String>
+  <String Id="Include_launcherHelp">Installs the global 'py' launcher to make it easier to start Python.</String>
+  <String Id="Include_launcherRemove">Use Programs and Features to remove the 'py' launcher.</String>
+  <String Id="Include_launcherUpgrade">Upgrades the global 'py' launcher from the previous version.</String>
   
   <String Id="AssociateFilesLabel">Associate &amp;files with Python (requires the py launcher)</String>
   <String Id="ShortcutsLabel">Create shortcuts for installed applications</String>
