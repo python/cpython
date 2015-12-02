@@ -10,6 +10,8 @@ Release date: XXXX-XX-XX
 Core and Builtins
 -----------------
 
+- Issue #25709: Fixed problem with in-place string concatenation and utf-8 cache.
+
 - Issue #5319: New Py_FinalizeEx() API allowing Python to set an exit status
   of 120 on failure to flush buffered streams.
 
