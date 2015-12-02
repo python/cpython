@@ -11,7 +11,7 @@
                         EnableFeatureSelection="yes"
                         Permanent="yes"
                         Visible="yes"
-                        InstallCondition="(InstallAllUsers or InstallLauncherAllUsers) and Include_launcher" />
+                        InstallCondition="(InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not DetectedLauncher" />
 
             <MsiPackage Id="launcher_JustForMe"
                         SourceFile="launcher.msi"
@@ -21,7 +21,7 @@
                         EnableFeatureSelection="yes"
                         Permanent="yes"
                         Visible="yes"
-                        InstallCondition="not (InstallAllUsers or InstallLauncherAllUsers) and Include_launcher" />
+                        InstallCondition="not (InstallAllUsers or InstallLauncherAllUsers) and Include_launcher and not DetectedLauncher" />
         </PackageGroup>
     </Fragment>
 </Wix>
