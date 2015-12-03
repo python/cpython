@@ -40,7 +40,7 @@ __all__ = ["Error", "TestFailed", "ResourceDenied", "import_module",
            "threading_cleanup", "reap_threads", "start_threads", "cpython_only",
            "check_impl_detail", "get_attribute", "py3k_bytes",
            "import_fresh_module", "threading_cleanup", "reap_children",
-           "strip_python_stderr", "IPV6_ENABLED"]
+           "strip_python_stderr", "IPV6_ENABLED", "run_with_tz"]
 
 class Error(Exception):
     """Base class for regression test exceptions."""
@@ -1221,6 +1221,39 @@ def run_with_locale(catstr, *locales):
                 if locale and orig_locale:
                     locale.setlocale(category, orig_locale)
         inner.func_name = func.func_name
+        inner.__doc__ = func.__doc__
+        return inner
+    return decorator
+
+#=======================================================================
+# Decorator for running a function in a specific timezone, correctly
+# resetting it afterwards.
+
+def run_with_tz(tz):
+    def decorator(func):
+        def inner(*args, **kwds):
+            try:
+                tzset = time.tzset
+            except AttributeError:
+                raise unittest.SkipTest("tzset required")
+            if 'TZ' in os.environ:
+                orig_tz = os.environ['TZ']
+            else:
+                orig_tz = None
+            os.environ['TZ'] = tz
+            tzset()
+
+            # now run the function, resetting the tz on exceptions
+            try:
+                return func(*args, **kwds)
+            finally:
+                if orig_tz is None:
+                    del os.environ['TZ']
+                else:
+                    os.environ['TZ'] = orig_tz
+                time.tzset()
+
+        inner.__name__ = func.__name__
         inner.__doc__ = func.__doc__
         return inner
     return decorator
