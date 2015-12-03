@@ -4,6 +4,7 @@ import unittest
 import time
 import locale
 import re
+import os
 import sys
 from test import support
 from datetime import date as datetime_date
@@ -324,9 +325,10 @@ class StrptimeTests(unittest.TestCase):
         tz_name = time.tzname[0]
         if tz_name.upper() in ("UTC", "GMT"):
             self.skipTest('need non-UTC/GMT timezone')
-        try:
-            original_tzname = time.tzname
-            original_daylight = time.daylight
+
+        with support.swap_attr(time, 'tzname', (tz_name, tz_name)), \
+             support.swap_attr(time, 'daylight', 1), \
+             support.swap_attr(time, 'tzset', lambda: None):
             time.tzname = (tz_name, tz_name)
             time.daylight = 1
             tz_value = _strptime._strptime_time(tz_name, "%Z")[8]
@@ -334,9 +336,6 @@ class StrptimeTests(unittest.TestCase):
                     "%s lead to a timezone value of %s instead of -1 when "
                     "time.daylight set to %s and passing in %s" %
                     (time.tzname, tz_value, time.daylight, tz_name))
-        finally:
-            time.tzname = original_tzname
-            time.daylight = original_daylight
 
     def test_date_time(self):
         # Test %c directive
@@ -548,7 +547,7 @@ class CacheTests(unittest.TestCase):
         _strptime._strptime_time("10", "%d")
         self.assertIsNot(locale_time_id, _strptime._TimeRE_cache.locale_time)
 
-    def test_TimeRE_recreation(self):
+    def test_TimeRE_recreation_locale(self):
         # The TimeRE instance should be recreated upon changing the locale.
         locale_info = locale.getlocale(locale.LC_TIME)
         try:
@@ -576,6 +575,33 @@ class CacheTests(unittest.TestCase):
         # test.
         finally:
             locale.setlocale(locale.LC_TIME, locale_info)
+
+    @support.run_with_tz('STD-1DST')
+    def test_TimeRE_recreation_timezone(self):
+        # The TimeRE instance should be recreated upon changing the timezone.
+        oldtzname = time.tzname
+        tm = _strptime._strptime_time(time.tzname[0], '%Z')
+        self.assertEqual(tm.tm_isdst, 0)
+        tm = _strptime._strptime_time(time.tzname[1], '%Z')
+        self.assertEqual(tm.tm_isdst, 1)
+        # Get id of current cache object.
+        first_time_re = _strptime._TimeRE_cache
+        # Change the timezone and force a recreation of the cache.
+        os.environ['TZ'] = 'EST+05EDT,M3.2.0,M11.1.0'
+        time.tzset()
+        tm = _strptime._strptime_time(time.tzname[0], '%Z')
+        self.assertEqual(tm.tm_isdst, 0)
+        tm = _strptime._strptime_time(time.tzname[1], '%Z')
+        self.assertEqual(tm.tm_isdst, 1)
+        # Get the new cache object's id.
+        second_time_re = _strptime._TimeRE_cache
+        # They should not be equal.
+        self.assertIsNot(first_time_re, second_time_re)
+        # Make sure old names no longer accepted.
+        with self.assertRaises(ValueError):
+            _strptime._strptime_time(oldtzname[0], '%Z')
+        with self.assertRaises(ValueError):
+            _strptime._strptime_time(oldtzname[1], '%Z')
 
 
 def test_main():
