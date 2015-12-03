@@ -1037,10 +1037,12 @@ class UnicodeTest(
         self.assertEqual(unicode('Andr\202 x','ascii','ignore'), u"Andr x")
         self.assertEqual(unicode('Andr\202 x','ascii','replace'), u'Andr\uFFFD x')
         self.assertEqual(unicode('\202 x', 'ascii', 'replace'), u'\uFFFD x')
-        self.assertEqual(u'abcde'.decode('ascii', 'ignore'),
-                         u'abcde'.decode('ascii', errors='ignore'))
-        self.assertEqual(u'abcde'.decode('ascii', 'replace'),
-                         u'abcde'.decode(encoding='ascii', errors='replace'))
+        with test_support.check_py3k_warnings():
+            self.assertEqual(u'abcde'.decode('ascii', 'ignore'),
+                             u'abcde'.decode('ascii', errors='ignore'))
+        with test_support.check_py3k_warnings():
+            self.assertEqual(u'abcde'.decode('ascii', 'replace'),
+                             u'abcde'.decode(encoding='ascii', errors='replace'))
 
         # Error handling (unknown character names)
         self.assertEqual("\\N{foo}xx".decode("unicode-escape", "ignore"), u"xx")

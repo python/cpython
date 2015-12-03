@@ -10,6 +10,8 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #19543: Added Py3k warning for decoding unicode.
+
 - Issue #24097: Fixed crash in object.__reduce__() if slot name is freed inside
   __getattr__.
 

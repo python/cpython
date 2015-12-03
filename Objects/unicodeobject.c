@@ -1288,6 +1288,9 @@ PyObject *PyUnicode_AsDecodedObject(PyObject *unicode,
         goto onError;
     }
 
+    if (PyErr_WarnPy3k("decoding Unicode is not supported in 3.x", 1) < 0)
+        goto onError;
+
     if (encoding == NULL)
         encoding = PyUnicode_GetDefaultEncoding();
 
