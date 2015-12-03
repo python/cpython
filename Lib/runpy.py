@@ -99,7 +99,7 @@ def _run_module_code(code, init_globals=None,
     return mod_globals.copy()
 
 # Helper to get the loader, code and filename for a module
-def _get_module_details(mod_name):
+def _get_module_details(mod_name, error=ImportError):
     try:
         spec = importlib.util.find_spec(mod_name)
     except (ImportError, AttributeError, TypeError, ValueError) as ex:
@@ -107,26 +107,33 @@ def _get_module_details(mod_name):
         # importlib, where the latter raises other errors for cases where
         # pkgutil previously raised ImportError
         msg = "Error while finding spec for {!r} ({}: {})"
-        raise ImportError(msg.format(mod_name, type(ex), ex)) from ex
+        raise error(msg.format(mod_name, type(ex), ex)) from ex
     if spec is None:
-        raise ImportError("No module named %s" % mod_name)
+        raise error("No module named %s" % mod_name)
     if spec.submodule_search_locations is not None:
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
-            raise ImportError("Cannot use package as __main__ module")
+            raise error("Cannot use package as __main__ module")
+        __import__(mod_name)  # Do not catch exceptions initializing package
         try:
             pkg_main_name = mod_name + ".__main__"
             return _get_module_details(pkg_main_name)
         except ImportError as e:
-            raise ImportError(("%s; %r is a package and cannot " +
+            raise error(("%s; %r is a package and cannot " +
                                "be directly executed") %(e, mod_name))
     loader = spec.loader
     if loader is None:
-        raise ImportError("%r is a namespace package and cannot be executed"
+        raise error("%r is a namespace package and cannot be executed"
                                                                  % mod_name)
-    code = loader.get_code(mod_name)
+    try:
+        code = loader.get_code(mod_name)
+    except ImportError as e:
+        raise error(format(e)) from e
     if code is None:
-        raise ImportError("No code object available for %s" % mod_name)
+        raise error("No code object available for %s" % mod_name)
     return mod_name, spec, code
+
+class _Error(Exception):
+    """Error that _run_module_as_main() should report without a traceback"""
 
 # XXX ncoghlan: Should this be documented and made public?
 # (Current thoughts: don't repeat the mistake that lead to its
@@ -148,20 +155,11 @@ def _run_module_as_main(mod_name, alter_argv=True):
     """
     try:
         if alter_argv or mod_name != "__main__": # i.e. -m switch
-            mod_name, mod_spec, code = _get_module_details(mod_name)
+            mod_name, mod_spec, code = _get_module_details(mod_name, _Error)
         else:          # i.e. directory or zipfile execution
-            mod_name, mod_spec, code = _get_main_module_details()
-    except ImportError as exc:
-        # Try to provide a good error message
-        # for directories, zip files and the -m switch
-        if alter_argv:
-            # For -m switch, just display the exception
-            info = str(exc)
-        else:
-            # For directories/zipfiles, let the user
-            # know what the code was looking for
-            info = "can't find '__main__' module in %r" % sys.argv[0]
-        msg = "%s: %s" % (sys.executable, info)
+            mod_name, mod_spec, code = _get_main_module_details(_Error)
+    except _Error as exc:
+        msg = "%s: %s" % (sys.executable, exc)
         sys.exit(msg)
     main_globals = sys.modules["__main__"].__dict__
     if alter_argv:
@@ -184,7 +182,7 @@ def run_module(mod_name, init_globals=None,
         # Leave the sys module alone
         return _run_code(code, {}, init_globals, run_name, mod_spec)
 
-def _get_main_module_details():
+def _get_main_module_details(error=ImportError):
     # Helper that gives a nicer error message when attempting to
     # execute a zipfile or directory by invoking __main__.py
     # Also moves the standard __main__ out of the way so that the
@@ -196,7 +194,7 @@ def _get_main_module_details():
         return _get_module_details(main_name)
     except ImportError as exc:
         if main_name in str(exc):
-            raise ImportError("can't find %r module in %r" %
+            raise error("can't find %r module in %r" %
                               (main_name, sys.path[0])) from exc
         raise
     finally:
