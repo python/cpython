@@ -1,5 +1,6 @@
 # Tests command line execution of scripts
 
+import contextlib
 import unittest
 import os
 import os.path
@@ -207,18 +208,69 @@ class CmdLineTest(unittest.TestCase):
             launch_name = _make_launch_script(script_dir, 'launch', 'test_pkg')
             self._check_import_error(launch_name, msg)
 
+    @contextlib.contextmanager
+    def setup_test_pkg(self, *args):
+        with temp_dir() as script_dir, \
+                test.test_support.change_cwd(script_dir):
+            pkg_dir = os.path.join(script_dir, 'test_pkg')
+            make_pkg(pkg_dir, *args)
+            yield pkg_dir
+
+    def check_dash_m_failure(self, *args):
+        rc, out, err = assert_python_failure('-m', *args)
+        if verbose > 1:
+            print(out)
+        self.assertEqual(rc, 1)
+        return err
+
     def test_dash_m_error_code_is_one(self):
         # If a module is invoked with the -m command line flag
         # and results in an error that the return code to the
         # shell is '1'
-        with temp_dir() as script_dir:
-            pkg_dir = os.path.join(script_dir, 'test_pkg')
-            make_pkg(pkg_dir)
+        with self.setup_test_pkg() as pkg_dir:
             script_name = _make_test_script(pkg_dir, 'other', "if __name__ == '__main__': raise ValueError")
-            rc, out, err = assert_python_failure('-m', 'test_pkg.other', *example_args)
-            if verbose > 1:
-                print(out)
+            err = self.check_dash_m_failure('test_pkg.other', *example_args)
+            self.assertIn(b'ValueError', err)
+
+    def test_dash_m_errors(self):
+        # Exercise error reporting for various invalid package executions
+        tests = (
+            ('__builtin__', br'No code object available'),
+            ('__builtin__.x', br'No module named'),
+            ('__builtin__.x.y', br'No module named'),
+            ('os.path', br'Loader.*cannot handle'),
+            ('importlib', br'No module named.*'
+                br'is a package and cannot be directly executed'),
+            ('importlib.nonexistant', br'No module named'),
+        )
+        for name, regex in tests:
+            rc, _, err = assert_python_failure('-m', name)
             self.assertEqual(rc, 1)
+            self.assertRegexpMatches(err, regex)
+            self.assertNotIn(b'Traceback', err)
+
+    def test_dash_m_init_traceback(self):
+        # These were wrapped in an ImportError and tracebacks were
+        # suppressed; see Issue 14285
+        exceptions = (ImportError, AttributeError, TypeError, ValueError)
+        for exception in exceptions:
+            exception = exception.__name__
+            init = "raise {0}('Exception in __init__.py')".format(exception)
+            with self.setup_test_pkg(init) as pkg_dir:
+                err = self.check_dash_m_failure('test_pkg')
+                self.assertIn(exception.encode('ascii'), err)
+                self.assertIn(b'Exception in __init__.py', err)
+                self.assertIn(b'Traceback', err)
+
+    def test_dash_m_main_traceback(self):
+        # Ensure that an ImportError's traceback is reported
+        with self.setup_test_pkg() as pkg_dir:
+            main = "raise ImportError('Exception in __main__ module')"
+            _make_test_script(pkg_dir, '__main__', main)
+            err = self.check_dash_m_failure('test_pkg')
+            self.assertIn(b'ImportError', err)
+            self.assertIn(b'Exception in __main__ module', err)
+            self.assertIn(b'Traceback', err)
 
 
 def test_main():

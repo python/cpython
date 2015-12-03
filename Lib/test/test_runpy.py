@@ -270,6 +270,30 @@ from ..uncle.cousin import nephew
             if verbose: print "Testing package depth:", depth
             self._check_package(depth)
 
+    def test_run_package_init_exceptions(self):
+        # These were previously wrapped in an ImportError; see Issue 14285
+        exceptions = (ImportError, AttributeError, TypeError, ValueError)
+        for exception in exceptions:
+            name = exception.__name__
+            source = "raise {0}('{0} in __init__.py.')".format(name)
+
+            result = self._make_pkg("", 1, "__main__")
+            pkg_dir, _, mod_name = result
+            mod_name = mod_name.replace(".__main__", "")
+            try:
+                init = os.path.join(pkg_dir, "__runpy_pkg__", "__init__.py")
+                with open(init, "wt") as mod_file:
+                    mod_file.write(source)
+                try:
+                    run_module(mod_name)
+                except exception as err:
+                    msg = "cannot be directly executed"
+                    self.assertNotIn(msg, format(err))
+                else:
+                    self.fail("Nothing raised; expected {}".format(name))
+            finally:
+                self._del_pkg(pkg_dir, 1, mod_name)
+
     def test_explicit_relative_import(self):
         for depth in range(2, 5):
             if verbose: print "Testing relative imports at depth:", depth

@@ -134,9 +134,9 @@ def make_zip_script(zip_dir, zip_basename, script_name, name_in_zip=None):
     #    zip_file.close()
     return zip_name, os.path.join(zip_name, name_in_zip)
 
-def make_pkg(pkg_dir):
+def make_pkg(pkg_dir, init_source=''):
     os.mkdir(pkg_dir)
-    make_script(pkg_dir, '__init__', '')
+    make_script(pkg_dir, '__init__', init_source)
 
 def make_zip_pkg(zip_dir, zip_basename, pkg_name, script_basename,
                  source, depth=1, compiled=False):

@@ -22,6 +22,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #14285: When executing a package with the "python -m package" option,
+  and package initialization raises ImportError, a proper traceback is now
+  reported.
+
 - Issue #6478: _strptime's regexp cache now is reset after changing timezone
   with time.tzset().
 

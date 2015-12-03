@@ -97,27 +97,35 @@ def _get_filename(loader, mod_name):
     return None
 
 # Helper to get the loader, code and filename for a module
-def _get_module_details(mod_name):
-    loader = get_loader(mod_name)
-    if loader is None:
-        raise ImportError("No module named %s" % mod_name)
-    if loader.is_package(mod_name):
+def _get_module_details(mod_name, error=ImportError):
+    try:
+        loader = get_loader(mod_name)
+        if loader is None:
+            raise error("No module named %s" % mod_name)
+        ispkg = loader.is_package(mod_name)
+    except ImportError as e:
+        raise error(format(e))
+    if ispkg:
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
-            raise ImportError("Cannot use package as __main__ module")
+            raise error("Cannot use package as __main__ module")
+        __import__(mod_name)  # Do not catch exceptions initializing package
         try:
             pkg_main_name = mod_name + ".__main__"
             return _get_module_details(pkg_main_name)
         except ImportError, e:
-            raise ImportError(("%s; %r is a package and cannot " +
+            raise error(("%s; %r is a package and cannot " +
                                "be directly executed") %(e, mod_name))
-    code = loader.get_code(mod_name)
+    try:
+        code = loader.get_code(mod_name)
+    except ImportError as e:
+        raise error(format(e))
     if code is None:
-        raise ImportError("No code object available for %s" % mod_name)
+        raise error("No code object available for %s" % mod_name)
     filename = _get_filename(loader, mod_name)
     return mod_name, loader, code, filename
 
 
-def _get_main_module_details():
+def _get_main_module_details(error=ImportError):
     # Helper that gives a nicer error message when attempting to
     # execute a zipfile or directory by invoking __main__.py
     main_name = "__main__"
@@ -125,9 +133,12 @@ def _get_main_module_details():
         return _get_module_details(main_name)
     except ImportError as exc:
         if main_name in str(exc):
-            raise ImportError("can't find %r module in %r" %
+            raise error("can't find %r module in %r" %
                               (main_name, sys.path[0]))
         raise
+
+class _Error(Exception):
+    """Error that _run_module_as_main() should report without a traceback"""
 
 # This function is the actual implementation of the -m switch and direct
 # execution of zipfiles and directories and is deliberately kept private.
@@ -148,11 +159,12 @@ def _run_module_as_main(mod_name, alter_argv=True):
     """
     try:
         if alter_argv or mod_name != "__main__": # i.e. -m switch
-            mod_name, loader, code, fname = _get_module_details(mod_name)
+            mod_name, loader, code, fname = _get_module_details(
+                mod_name, _Error)
         else:          # i.e. directory or zipfile execution
-            mod_name, loader, code, fname = _get_main_module_details()
-    except ImportError as exc:
-        msg = "%s: %s" % (sys.executable, str(exc))
+            mod_name, loader, code, fname = _get_main_module_details(_Error)
+    except _Error as exc:
+        msg = "%s: %s" % (sys.executable, exc)
         sys.exit(msg)
     pkg_name = mod_name.rpartition('.')[0]
     main_globals = sys.modules["__main__"].__dict__
