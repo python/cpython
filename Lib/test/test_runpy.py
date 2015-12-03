@@ -439,6 +439,28 @@ from ..uncle.cousin import nephew
             if verbose > 1: print("Testing package depth:", depth)
             self._check_package(depth)
 
+    def test_run_package_init_exceptions(self):
+        # These were previously wrapped in an ImportError; see Issue 14285
+        result = self._make_pkg("", 1, "__main__")
+        pkg_dir, _, mod_name, _ = result
+        mod_name = mod_name.replace(".__main__", "")
+        self.addCleanup(self._del_pkg, pkg_dir, 1, mod_name)
+        init = os.path.join(pkg_dir, "__runpy_pkg__", "__init__.py")
+
+        exceptions = (ImportError, AttributeError, TypeError, ValueError)
+        for exception in exceptions:
+            name = exception.__name__
+            with self.subTest(name):
+                source = "raise {0}('{0} in __init__.py.')".format(name)
+                with open(init, "wt", encoding="ascii") as mod_file:
+                    mod_file.write(source)
+                try:
+                    run_module(mod_name)
+                except exception as err:
+                    self.assertNotIn("finding spec", format(err))
+                else:
+                    self.fail("Nothing raised; expected {}".format(name))
+
     def test_run_package_in_namespace_package(self):
         for depth in range(1, 4):
             if verbose > 1: print("Testing package depth:", depth)
