@@ -28,6 +28,9 @@ __all__ = [
 
     # ABCs (from collections.abc).
     'AbstractSet',  # collections.abc.Set.
+    'Awaitable',
+    'AsyncIterator',
+    'AsyncIterable',
     'ByteString',
     'Container',
     'Hashable',
@@ -1259,6 +1262,18 @@ class _Protocol(metaclass=_ProtocolMeta):
 # A few are simply re-exported for completeness.
 
 Hashable = collections_abc.Hashable  # Not generic.
+
+
+class Awaitable(Generic[T_co], extra=collections_abc.Awaitable):
+    __slots__ = ()
+
+
+class AsyncIterable(Generic[T_co], extra=collections_abc.AsyncIterable):
+    __slots__ = ()
+
+
+class AsyncIterator(AsyncIterable[T_co], extra=collections_abc.AsyncIterator):
+    __slots__ = ()
 
 
 class Iterable(Generic[T_co], extra=collections_abc.Iterable):
