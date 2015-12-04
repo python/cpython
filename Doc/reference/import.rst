@@ -29,11 +29,10 @@ such as the importing of parent packages, and the updating of various caches
 a name binding operation.
 
 When calling :func:`__import__` as part of an import statement, the
-import system first checks the module global namespace for a function by
-that name. If it is not found, then the standard builtin :func:`__import__`
-is called. Other mechanisms for invoking the import system (such as
-:func:`importlib.import_module`) do not perform this check and will always
-use the standard import system.
+standard builtin :func:`__import__` is called. Other mechanisms for
+invoking the import system (such as :func:`importlib.import_module`) may
+choose to subvert :func:`__import__` and use its own solution to
+implement import semantics.
 
 When a module is first imported, Python searches for the module and if found,
 it creates a module object [#fnmo]_, initializing it.  If the named module
