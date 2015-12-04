@@ -54,6 +54,12 @@ Library
 - Issue #25624: ZipFile now always writes a ZIP_STORED header for directory
   entries.  Patch by Dingyuan Wang.
 
+Documentation
+-------------
+
+- Issue #25500: Fix documentation to not claim that __import__ is searched for
+  in the global scope.
+
 Tests
 -----
 
