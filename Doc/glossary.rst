@@ -308,10 +308,14 @@ Glossary
       A synonym for :term:`file object`.
 
    finder
-      An object that tries to find the :term:`loader` for a module. It must
-      implement either a method named :meth:`find_loader` or a method named
-      :meth:`find_module`. See :pep:`302` and :pep:`420` for details and
-      :class:`importlib.abc.Finder` for an :term:`abstract base class`.
+      An object that tries to find the :term:`loader` for a module that is
+      being imported.
+
+      Since Python 3.3, there are two types of finder: :term:`meta path finders
+      <meta path finder>` for use with :data:`sys.meta_path`, and :term:`path
+      entry finders <path entry finder>` for use with :data:`sys.path_hooks`.
+
+      See :pep:`302`, :pep:`420` and :pep:`451` for much more detail.
 
    floor division
       Mathematical division that rounds down to nearest integer.  The floor
@@ -593,9 +597,12 @@ Glossary
       :class:`collections.OrderedDict` and :class:`collections.Counter`.
 
    meta path finder
-      A finder returned by a search of :data:`sys.meta_path`.  Meta path
+      A :term:`finder` returned by a search of :data:`sys.meta_path`.  Meta path
       finders are related to, but different from :term:`path entry finders
       <path entry finder>`.
+
+      See :class:`importlib.abc.MetaPathFinder` for the methods that meta path
+      finders implement.
 
    metaclass
       The class of a class.  Class definitions create a class name, a class
@@ -630,7 +637,7 @@ Glossary
 
    module spec
       A namespace containing the import-related information used to load a
-      module.
+      module. An instance of :class:`importlib.machinery.ModuleSpec`.
 
    MRO
       See :term:`method resolution order`.
@@ -756,6 +763,9 @@ Glossary
       A :term:`finder` returned by a callable on :data:`sys.path_hooks`
       (i.e. a :term:`path entry hook`) which knows how to locate modules given
       a :term:`path entry`.
+
+      See :class:`importlib.abc.PathEntryFinder` for the methods that path entry
+      finders implement.
 
    path entry hook
       A callable on the :data:`sys.path_hook` list which returns a :term:`path
