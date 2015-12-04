@@ -109,6 +109,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25771: Tweak the exception message for importlib.util.resolve_name()
+  when 'package' isn't specified but necessary.
+
 - Issue #6478: _strptime's regexp cache now is reset after changing timezone
   with time.tzset().
 
