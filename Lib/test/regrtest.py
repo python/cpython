@@ -462,7 +462,7 @@ def main(tests=None, testdir=None, verbose=0, quiet=False,
 
     test_times = []
     test_support.use_resources = use_resources
-    save_modules = sys.modules.keys()
+    save_modules = set(sys.modules.keys())
 
     def accumulate_result(test, result):
         ok, test_time = result
