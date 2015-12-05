@@ -1406,8 +1406,9 @@ Library
 - Issue #21349: Passing a memoryview to _winreg.SetValueEx now correctly raises
   a TypeError where it previously crashed the interpreter. Patch by Brian Kearns
 
-- Fix arbitrary memory access in JSONDecoder.raw_decode with a negative second
-  parameter. Bug reported by Guido Vranken.
+- Issue #21529 (CVE-2014-4616): Fix arbitrary memory access in
+  JSONDecoder.raw_decode with a negative second parameter. Bug reported by Guido
+  Vranken.
 
 - Issue #21172: isinstance check relaxed from dict to collections.Mapping.
 
