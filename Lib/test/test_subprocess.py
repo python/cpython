@@ -1518,21 +1518,12 @@ class POSIXProcessTestCase(BaseTestCase):
         # The internal code did not preserve the previous exception when
         # re-enabling garbage collection
         try:
-            from resource import getrlimit, setrlimit, RLIMIT_NPROC, RLIM_INFINITY
+            from resource import getrlimit, setrlimit, RLIMIT_NPROC
         except ImportError as err:
             self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         limits = getrlimit(RLIMIT_NPROC)
         [_, hard] = limits
-        try:
-            setrlimit(RLIMIT_NPROC, limits)
-            setrlimit(RLIMIT_NPROC, (0, hard))
-        except ValueError as err:
-            # Seems to happen on various OS X buildbots
-            print(
-                f"Setting NPROC failed: {err!r}, limits={limits!r}, "
-                f"RLIM_INFINITY={RLIM_INFINITY!r}, "
-                f"getrlimit() -> {getrlimit(RLIMIT_NPROC)!r}")
-            self.skipTest("Setting NPROC limit failed")
+        setrlimit(RLIMIT_NPROC, (0, hard))
         self.addCleanup(setrlimit, RLIMIT_NPROC, limits)
         # Forking should raise EAGAIN, translated to BlockingIOError
         with self.assertRaises(BlockingIOError):
