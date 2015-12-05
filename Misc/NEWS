@@ -109,6 +109,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25764: In the subprocess module, preserve any exception caused by
+  fork() failure when preexec_fn is used.
+
 - Issue #25771: Tweak the exception message for importlib.util.resolve_name()
   when 'package' isn't specified but necessary.
 
