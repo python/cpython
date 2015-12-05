@@ -196,9 +196,6 @@ def main():
 
     compile_dests = args.compile_dest
 
-    if (args.ddir and (len(compile_dests) != 1
-            or not os.path.isdir(compile_dests[0]))):
-        parser.exit('-d destdir requires exactly one directory argument')
     if args.rx:
         import re
         args.rx = re.compile(args.rx)
