@@ -1,6 +1,7 @@
 import sys
 from test import support, list_tests
 import pickle
+import unittest
 
 class ListTest(list_tests.CommonTest):
     type2test = list
