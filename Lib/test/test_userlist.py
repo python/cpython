@@ -2,6 +2,7 @@
 
 from collections import UserList
 from test import support, list_tests
+import unittest
 
 class UserListTest(list_tests.CommonTest):
     type2test = UserList

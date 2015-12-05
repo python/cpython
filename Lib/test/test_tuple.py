@@ -1,4 +1,5 @@
 from test import support, seq_tests
+import unittest
 
 import gc
 import pickle

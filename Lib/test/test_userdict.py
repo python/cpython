@@ -1,6 +1,7 @@
 # Check every path through every method of UserDict
 
 from test import support, mapping_tests
+import unittest
 import collections
 
 d0 = {}

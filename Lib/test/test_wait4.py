@@ -4,6 +4,7 @@
 import os
 import time
 import sys
+import unittest
 from test.fork_wait import ForkWait
 from test.support import reap_children, get_attribute
 
