@@ -47,10 +47,6 @@ Library
 - Issue #23365: Fixed possible integer overflow in
   itertools.combinations_with_replacement.
 
-- Issue #21529 (CVE-2014-4616): Fix arbitrary memory access in
-  JSONDecoder.raw_decode with a negative second parameter. Bug reported by Guido
-  Vranken.
-
 C API
 -----
 
@@ -122,6 +118,10 @@ Library
 
 - Issue #21323: Fix http.server to again handle scripts in CGI subdirectories,
   broken by the fix for security issue #19435.  Patch by Zach Byrne.
+
+- Issue #21529 (CVE-2014-4616): Fix arbitrary memory access in
+  JSONDecoder.raw_decode with a negative second parameter. Bug reported by Guido
+  Vranken.
 
 Tests
 -----
