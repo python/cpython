@@ -398,14 +398,6 @@ class CommandLineTests(unittest.TestCase):
         self.assertCompiled(init2fn)
         self.assertCompiled(bar2fn)
 
-    def test_d_takes_exactly_one_dir(self):
-        rc, out, err = self.assertRunNotOK('-d', 'foo')
-        self.assertEqual(out, b'')
-        self.assertRegex(err, b'-d')
-        rc, out, err = self.assertRunNotOK('-d', 'foo', 'bar')
-        self.assertEqual(out, b'')
-        self.assertRegex(err, b'-d')
-
     def test_d_compile_error(self):
         script_helper.make_script(self.pkgdir, 'crunchyfrog', 'bad(syntax')
         rc, out, err = self.assertRunNotOK('-q', '-d', 'dinsdale', self.pkgdir)
