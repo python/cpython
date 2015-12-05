@@ -4,8 +4,8 @@ import telnetlib
 import time
 import contextlib
 
-from unittest import TestCase
 from test import support
+import unittest
 threading = support.import_module('threading')
 
 HOST = support.HOST
@@ -21,7 +21,7 @@ def server(evt, serv):
     finally:
         serv.close()
 
-class GeneralTests(TestCase):
+class GeneralTests(unittest.TestCase):
 
     def setUp(self):
         self.evt = threading.Event()
@@ -170,7 +170,7 @@ def test_telnet(reads=(), cls=TelnetAlike):
         telnet._messages = '' # debuglevel output
     return telnet
 
-class ExpectAndReadTestCase(TestCase):
+class ExpectAndReadTestCase(unittest.TestCase):
     def setUp(self):
         self.old_selector = telnetlib._TelnetSelector
         telnetlib._TelnetSelector = MockSelector
@@ -289,7 +289,7 @@ class nego_collector(object):
 
 tl = telnetlib
 
-class WriteTests(TestCase):
+class WriteTests(unittest.TestCase):
     '''The only thing that write does is replace each tl.IAC for
     tl.IAC+tl.IAC'''
 
@@ -305,7 +305,7 @@ class WriteTests(TestCase):
             written = b''.join(telnet.sock.writes)
             self.assertEqual(data.replace(tl.IAC,tl.IAC+tl.IAC), written)
 
-class OptionTests(TestCase):
+class OptionTests(unittest.TestCase):
     # RFC 854 commands
     cmds = [tl.AO, tl.AYT, tl.BRK, tl.EC, tl.EL, tl.GA, tl.IP, tl.NOP]
 
