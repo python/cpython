@@ -1516,10 +1516,16 @@ class POSIXProcessTestCase(BaseTestCase):
         # The internal code did not preserve the previous exception when
         # re-enabling garbage collection
         try:
-            from resource import getrlimit, setrlimit, RLIMIT_NPROC
+            from resource import getrlimit, setrlimit, RLIMIT_NPROC, RLIM_INFINITY
         except ImportError as err:
             self.skipTest(err)  # RLIMIT_NPROC is specific to Linux and BSD
         limits = getrlimit(RLIMIT_NPROC)
+        try:
+            setrlimit(RLIMIT_NPROC, limits)
+        except ValueError as err:
+            # Seems to happen on AMD64 Snow Leop and x86-64 Yosemite buildbots
+            print(f"Setting NPROC to {limits!r}: {err!r}, RLIM_INFINITY={RLIM_INFINITY!r}")
+            self.skipTest("Setting existing NPROC limit failed")
         [_, hard] = limits
         setrlimit(RLIMIT_NPROC, (0, hard))
         self.addCleanup(setrlimit, RLIMIT_NPROC, limits)
