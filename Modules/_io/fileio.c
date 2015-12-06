@@ -443,6 +443,9 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
     fstat_result = _Py_fstat_noraise(self->fd, &fdfstat);
     Py_END_ALLOW_THREADS
     if (fstat_result < 0) {
+        /* Tolerate fstat() errors other than EBADF.  See Issue #25717, where
+        an anonymous file on a Virtual Box shared folder filesystem would
+        raise ENOENT. */
 #ifdef MS_WINDOWS
         if (GetLastError() == ERROR_INVALID_HANDLE) {
             PyErr_SetFromWindowsErr(0);
