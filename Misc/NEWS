@@ -22,6 +22,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #25717: Restore the previous behaviour of tolerating most fstat()
+  errors when opening files.  This was a regression in 3.5a1, and stopped
+  anonymous temporary files from working in special cases.
+
 - Issue #24903: Fix regression in number of arguments compileall accepts when
   '-d' is specified.  The check on the number of arguments has been dropped
   completely as it never worked correctly anyway.
