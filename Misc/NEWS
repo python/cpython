@@ -486,6 +486,8 @@ Build
 - Issue #24986: It is now possible to build Python on Windows without errors
   when external libraries are not available.
 
+- Issue #25798: Update OS X 10.5 installer to use OpenSSL 1.0.2e.
+
 Windows
 -------
 
