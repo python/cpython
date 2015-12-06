@@ -2448,6 +2448,23 @@ treebuilder_add_subelement(PyObject *element, PyObject *child)
     }
 }
 
+LOCAL(int)
+treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
+                         PyObject *node)
+{
+    if (action != NULL) {
+        PyObject *res = PyTuple_Pack(2, action, node);
+        if (res == NULL)
+            return -1;
+        if (PyList_Append(self->events, res) < 0) {
+            Py_DECREF(res);
+            return -1;
+        }
+        Py_DECREF(res);
+    }
+    return 0;
+}
+
 /* -------------------------------------------------------------------- */
 /* handlers */
 
@@ -2515,16 +2532,8 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     Py_INCREF(node);
     self->last = node;
 
-    if (self->start_event_obj) {
-        PyObject* res;
-        PyObject* action = self->start_event_obj;
-        res = PyTuple_Pack(2, action, node);
-        if (res) {
-            PyList_Append(self->events, res);
-            Py_DECREF(res);
-        } else
-            PyErr_Clear(); /* FIXME: propagate error */
-    }
+    if (treebuilder_append_event(self, self->start_event_obj, node) < 0)
+        goto error;
 
     return node;
 
@@ -2604,63 +2613,11 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
     self->last = self->this;
     self->this = item;
 
-    if (self->end_event_obj) {
-        PyObject* res;
-        PyObject* action = self->end_event_obj;
-        PyObject* node = (PyObject*) self->last;
-        res = PyTuple_Pack(2, action, node);
-        if (res) {
-            PyList_Append(self->events, res);
-            Py_DECREF(res);
-        } else
-            PyErr_Clear(); /* FIXME: propagate error */
-    }
+    if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0)
+        return NULL;
 
     Py_INCREF(self->last);
     return (PyObject*) self->last;
-}
-
-LOCAL(void)
-treebuilder_handle_namespace(TreeBuilderObject* self, int start,
-                             PyObject *prefix, PyObject *uri)
-{
-    PyObject* res;
-    PyObject* action;
-    PyObject* parcel;
-
-    if (!self->events)
-        return;
-
-    if (start) {
-        if (!self->start_ns_event_obj)
-            return;
-        action = self->start_ns_event_obj;
-        parcel = Py_BuildValue("OO", prefix, uri);
-        if (!parcel)
-            return;
-        Py_INCREF(action);
-    } else {
-        if (!self->end_ns_event_obj)
-            return;
-        action = self->end_ns_event_obj;
-        Py_INCREF(action);
-        parcel = Py_None;
-        Py_INCREF(parcel);
-    }
-
-    res = PyTuple_New(2);
-
-    if (res) {
-        PyTuple_SET_ITEM(res, 0, action);
-        PyTuple_SET_ITEM(res, 1, parcel);
-        PyList_Append(self->events, res);
-        Py_DECREF(res);
-    }
-    else {
-        Py_DECREF(action);
-        Py_DECREF(parcel);
-        PyErr_Clear(); /* FIXME: propagate error */
-    }
 }
 
 /* -------------------------------------------------------------------- */
@@ -3100,45 +3057,39 @@ static void
 expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix,
                        const XML_Char *uri)
 {
-    PyObject* sprefix = NULL;
-    PyObject* suri = NULL;
+    TreeBuilderObject *target = (TreeBuilderObject*) self->target;
+    PyObject *parcel;
 
     if (PyErr_Occurred())
         return;
 
-    if (uri)
-        suri = PyUnicode_DecodeUTF8(uri, strlen(uri), "strict");
-    else
-        suri = PyUnicode_FromString("");
-    if (!suri)
+    if (!target->events || !target->start_ns_event_obj)
         return;
 
-    if (prefix)
-        sprefix = PyUnicode_DecodeUTF8(prefix, strlen(prefix), "strict");
-    else
-        sprefix = PyUnicode_FromString("");
-    if (!sprefix) {
-        Py_DECREF(suri);
+    if (!uri)
+        uri = "";
+    if (!prefix)
+        prefix = "";
+
+    parcel = Py_BuildValue("ss", prefix, uri);
+    if (!parcel)
         return;
-    }
-
-    treebuilder_handle_namespace(
-        (TreeBuilderObject*) self->target, 1, sprefix, suri
-        );
-
-    Py_DECREF(sprefix);
-    Py_DECREF(suri);
+    treebuilder_append_event(target, target->start_ns_event_obj, parcel);
+    Py_DECREF(parcel);
 }
 
 static void
 expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
 {
+    TreeBuilderObject *target = (TreeBuilderObject*) self->target;
+
     if (PyErr_Occurred())
         return;
 
-    treebuilder_handle_namespace(
-        (TreeBuilderObject*) self->target, 0, NULL, NULL
-        );
+    if (!target->events)
+        return;
+
+    treebuilder_append_event(target, target->end_ns_event_obj, Py_None);
 }
 
 static void
