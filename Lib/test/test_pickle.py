@@ -33,8 +33,6 @@ class PyUnpicklerTests(AbstractUnpickleTests):
 
     unpickler = pickle._Unpickler
     bad_stack_errors = (IndexError,)
-    bad_mark_errors = (IndexError, pickle.UnpicklingError,
-                       TypeError, AttributeError, EOFError)
     truncated_errors = (pickle.UnpicklingError, EOFError,
                         AttributeError, ValueError,
                         struct.error, IndexError, ImportError)
@@ -69,8 +67,6 @@ class InMemoryPickleTests(AbstractPickleTests, AbstractUnpickleTests,
     pickler = pickle._Pickler
     unpickler = pickle._Unpickler
     bad_stack_errors = (pickle.UnpicklingError, IndexError)
-    bad_mark_errors = (pickle.UnpicklingError, IndexError,
-                       TypeError, AttributeError, EOFError)
     truncated_errors = (pickle.UnpicklingError, EOFError,
                         AttributeError, ValueError,
                         struct.error, IndexError, ImportError)
@@ -132,7 +128,6 @@ if has_c_implementation:
     class CUnpicklerTests(PyUnpicklerTests):
         unpickler = _pickle.Unpickler
         bad_stack_errors = (pickle.UnpicklingError,)
-        bad_mark_errors = (EOFError,)
         truncated_errors = (pickle.UnpicklingError, EOFError,
                             AttributeError, ValueError)
 
