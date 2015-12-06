@@ -53,6 +53,12 @@ Tests
 - Issue #25616: Tests for OrderedDict are extracted from test_collections
   into separate file test_ordered_dict.
 
+Build
+-----
+
+- Issue #25798: Update OS X 10.5+ 32-bit-only installer to build
+  and link with OpenSSL 1.0.2e.
+
 
 What's New in Python 2.7.11?
 ============================
