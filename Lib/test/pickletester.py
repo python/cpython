@@ -1000,7 +1000,7 @@ class AbstractUnpickleTests(unittest.TestCase):
             b'0',                       # POP
             b'1',                       # POP_MARK
             b'2',                       # DUP
-            # b'(2',                    # PyUnpickler doesn't raise
+            b'(2',
             b'R',                       # REDUCE
             b')R',
             b'a',                       # APPEND
@@ -1009,7 +1009,7 @@ class AbstractUnpickleTests(unittest.TestCase):
             b'Nb',
             b'd',                       # DICT
             b'e',                       # APPENDS
-            # b'(e',                    # PyUnpickler raises AttributeError
+            b'(e',
             b'ibuiltins\nlist\n',       # INST
             b'l',                       # LIST
             b'o',                       # OBJ
@@ -1022,7 +1022,7 @@ class AbstractUnpickleTests(unittest.TestCase):
             b'NNs',
             b't',                       # TUPLE
             b'u',                       # SETITEMS
-            # b'(u',                    # PyUnpickler doesn't raise
+            b'(u',
             b'}(Nu',
             b'\x81',                    # NEWOBJ
             b')\x81',
@@ -1033,7 +1033,7 @@ class AbstractUnpickleTests(unittest.TestCase):
             b'N\x87',
             b'NN\x87',
             b'\x90',                    # ADDITEMS
-            # b'(\x90',                 # PyUnpickler raises AttributeError
+            b'(\x90',
             b'\x91',                    # FROZENSET
             b'\x92',                    # NEWOBJ_EX
             b')}\x92',
@@ -1046,7 +1046,7 @@ class AbstractUnpickleTests(unittest.TestCase):
 
     def test_bad_mark(self):
         badpickles = [
-            # b'N(.',                     # STOP
+            b'N(.',                     # STOP
             b'N(2',                     # DUP
             b'cbuiltins\nlist\n)(R',    # REDUCE
             b'cbuiltins\nlist\n()R',
@@ -1081,7 +1081,7 @@ class AbstractUnpickleTests(unittest.TestCase):
             b'N(\x94',                  # MEMOIZE
         ]
         for p in badpickles:
-            self.check_unpickling_error(self.bad_mark_errors, p)
+            self.check_unpickling_error(self.bad_stack_errors, p)
 
     def test_truncated_data(self):
         self.check_unpickling_error(EOFError, b'')
@@ -2580,11 +2580,6 @@ class AbstractPickleModuleTests(unittest.TestCase):
 
         self.assertRaises(pickle.PicklingError, BadPickler().dump, 0)
         self.assertRaises(pickle.UnpicklingError, BadUnpickler().load)
-
-    def test_bad_input(self):
-        # Test issue4298
-        s = bytes([0x58, 0, 0, 0, 0x54])
-        self.assertRaises(EOFError, pickle.loads, s)
 
 
 class AbstractPersistentPicklerTests(unittest.TestCase):
