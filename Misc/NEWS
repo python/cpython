@@ -5,12 +5,13 @@ Python News
 What's New in Python 3.4.4rc1?
 ==============================
 
-Release date: tba
+Release date: 2015/12/06
 
 Core and Builtins
 -----------------
 
-- Issue #25709: Fixed problem with in-place string concatenation and utf-8 cache.
+- Issue #25709: Fixed problem with in-place string concatenation and utf-8
+  cache.
 
 - Issue #24097: Fixed crash in object.__reduce__() if slot name is freed inside
   __getattr__.
