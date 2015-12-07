@@ -5152,6 +5152,7 @@ load_dict(UnpicklerObject *self)
     if ((j - i) % 2 != 0) {
         PickleState *st = _Pickle_GetGlobalState();
         PyErr_SetString(st->UnpicklingError, "odd number of items for DICT");
+        Py_DECREF(dict);
         return -1;
     }
 
