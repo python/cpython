@@ -668,12 +668,13 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *args)
     PyObject *events_queue;
     PyObject *events_to_report = Py_None;
 
-    if (!PyArg_ParseTuple(args, "O!|O:_setevents",
-        &PyList_Type, &events_queue, &events_to_report))
+    if (!PyArg_UnpackTuple(args, "_setevents",
+        1, 2,
+        &events_queue, &events_to_report))
         goto exit;
     return_value = _elementtree_XMLParser__setevents_impl(self, events_queue, events_to_report);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=25b8bf7e7f2151ca input=a9049054013a1b77]*/
+/*[clinic end generated code: output=19d94e2d2726d3aa input=a9049054013a1b77]*/
