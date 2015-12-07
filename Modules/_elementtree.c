@@ -2289,7 +2289,7 @@ typedef struct {
     PyObject *element_factory;
 
     /* element tracing */
-    PyObject *events; /* list of events, or NULL if not collecting */
+    PyObject *events_append; /* the append method of the list of events, or NULL */
     PyObject *start_event_obj; /* event objects (NULL to ignore) */
     PyObject *end_event_obj;
     PyObject *start_ns_event_obj;
@@ -2324,7 +2324,7 @@ treebuilder_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         }
         t->index = 0;
 
-        t->events = NULL;
+        t->events_append = NULL;
         t->start_event_obj = t->end_event_obj = NULL;
         t->start_ns_event_obj = t->end_ns_event_obj = NULL;
     }
@@ -2374,7 +2374,7 @@ treebuilder_gc_clear(TreeBuilderObject *self)
     Py_CLEAR(self->start_ns_event_obj);
     Py_CLEAR(self->end_event_obj);
     Py_CLEAR(self->start_event_obj);
-    Py_CLEAR(self->events);
+    Py_CLEAR(self->events_append);
     Py_CLEAR(self->stack);
     Py_CLEAR(self->data);
     Py_CLEAR(self->last);
@@ -2455,13 +2455,14 @@ treebuilder_append_event(TreeBuilderObject *self, PyObject *action,
                          PyObject *node)
 {
     if (action != NULL) {
-        PyObject *res = PyTuple_Pack(2, action, node);
+        PyObject *res;
+        PyObject *event = PyTuple_Pack(2, action, node);
+        if (event == NULL)
+            return -1;
+        res = PyObject_CallFunctionObjArgs(self->events_append, event, NULL);
+        Py_DECREF(event);
         if (res == NULL)
             return -1;
-        if (PyList_Append(self->events, res) < 0) {
-            Py_DECREF(res);
-            return -1;
-        }
         Py_DECREF(res);
     }
     return 0;
@@ -3039,7 +3040,7 @@ expat_start_ns_handler(XMLParserObject* self, const XML_Char* prefix,
     if (PyErr_Occurred())
         return;
 
-    if (!target->events || !target->start_ns_event_obj)
+    if (!target->events_append || !target->start_ns_event_obj)
         return;
 
     if (!uri)
@@ -3062,7 +3063,7 @@ expat_end_ns_handler(XMLParserObject* self, const XML_Char* prefix_in)
     if (PyErr_Occurred())
         return;
 
-    if (!target->events)
+    if (!target->events_append)
         return;
 
     treebuilder_append_event(target, target->end_ns_event_obj, Py_None);
@@ -3551,7 +3552,7 @@ _elementtree_XMLParser_doctype_impl(XMLParserObject *self, PyObject *name,
 /*[clinic input]
 _elementtree.XMLParser._setevents
 
-    events_queue: object(subclass_of='&PyList_Type')
+    events_queue: object
     events_to_report: object = None
     /
 
@@ -3561,12 +3562,12 @@ static PyObject *
 _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
                                        PyObject *events_queue,
                                        PyObject *events_to_report)
-/*[clinic end generated code: output=1440092922b13ed1 input=59db9742910c6174]*/
+/*[clinic end generated code: output=1440092922b13ed1 input=abf90830a1c3b0fc]*/
 {
     /* activate element event reporting */
     Py_ssize_t i, seqlen;
     TreeBuilderObject *target;
-    PyObject *events_seq;
+    PyObject *events_append, *events_seq;
 
     if (!TreeBuilder_CheckExact(self->target)) {
         PyErr_SetString(
@@ -3579,9 +3580,11 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 
     target = (TreeBuilderObject*) self->target;
 
-    Py_INCREF(events_queue);
-    Py_XDECREF(target->events);
-    target->events = events_queue;
+    events_append = PyObject_GetAttrString(events_queue, "append");
+    if (events_append == NULL)
+        return NULL;
+    Py_XDECREF(target->events_append);
+    target->events_append = events_append;
 
     /* clear out existing events */
     Py_CLEAR(target->start_event_obj);
