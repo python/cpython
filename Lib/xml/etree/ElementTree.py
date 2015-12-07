@@ -95,6 +95,7 @@ import sys
 import re
 import warnings
 import io
+import collections
 import contextlib
 
 from . import ElementPath
@@ -1198,16 +1199,37 @@ def iterparse(source, events=None, parser=None):
     Returns an iterator providing (event, elem) pairs.
 
     """
+    # Use the internal, undocumented _parser argument for now; When the
+    # parser argument of iterparse is removed, this can be killed.
+    pullparser = XMLPullParser(events=events, _parser=parser)
+    def iterator():
+        try:
+            while True:
+                yield from pullparser.read_events()
+                # load event buffer
+                data = source.read(16 * 1024)
+                if not data:
+                    break
+                pullparser.feed(data)
+            root = pullparser._close_and_return_root()
+            yield from pullparser.read_events()
+            it.root = root
+        finally:
+            if close_source:
+                source.close()
+
+    class IterParseIterator(collections.Iterator):
+        __next__ = iterator().__next__
+    it = IterParseIterator()
+    it.root = None
+    del iterator, IterParseIterator
+
     close_source = False
     if not hasattr(source, "read"):
         source = open(source, "rb")
         close_source = True
-    try:
-        return _IterParseIterator(source, events, parser, close_source)
-    except:
-        if close_source:
-            source.close()
-        raise
+
+    return it
 
 
 class XMLPullParser:
@@ -1217,9 +1239,7 @@ class XMLPullParser:
         # upon in user code. It will be removed in a future release.
         # See http://bugs.python.org/issue17741 for more details.
 
-        # _elementtree.c expects a list, not a deque
-        self._events_queue = []
-        self._index = 0
+        self._events_queue = collections.deque()
         self._parser = _parser or XMLParser(target=TreeBuilder())
         # wire up the parser for event reporting
         if events is None:
@@ -1257,62 +1277,12 @@ class XMLPullParser:
         retrieved from the iterator.
         """
         events = self._events_queue
-        while True:
-            index = self._index
-            try:
-                event = events[self._index]
-                # Avoid retaining references to past events
-                events[self._index] = None
-            except IndexError:
-                break
-            index += 1
-            # Compact the list in a O(1) amortized fashion
-            # As noted above, _elementree.c needs a list, not a deque
-            if index * 2 >= len(events):
-                events[:index] = []
-                self._index = 0
-            else:
-                self._index = index
+        while events:
+            event = events.popleft()
             if isinstance(event, Exception):
                 raise event
             else:
                 yield event
-
-
-class _IterParseIterator:
-
-    def __init__(self, source, events, parser, close_source=False):
-        # Use the internal, undocumented _parser argument for now; When the
-        # parser argument of iterparse is removed, this can be killed.
-        self._parser = XMLPullParser(events=events, _parser=parser)
-        self._file = source
-        self._close_file = close_source
-        self.root = self._root = None
-
-    def __next__(self):
-        try:
-            while 1:
-                for event in self._parser.read_events():
-                    return event
-                if self._parser._parser is None:
-                    break
-                # load event buffer
-                data = self._file.read(16 * 1024)
-                if data:
-                    self._parser.feed(data)
-                else:
-                    self._root = self._parser._close_and_return_root()
-            self.root = self._root
-        except:
-            if self._close_file:
-                self._file.close()
-            raise
-        if self._close_file:
-            self._file.close()
-        raise StopIteration
-
-    def __iter__(self):
-        return self
 
 
 def XML(text, parser=None):
