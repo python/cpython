@@ -230,7 +230,7 @@ ABC hierarchy::
    .. deprecated:: 3.3
       Use :class:`MetaPathFinder` or :class:`PathEntryFinder` instead.
 
-   .. method:: find_module(fullname, path=None)
+   .. abstractmethod:: find_module(fullname, path=None)
 
       An abstact method for finding a :term:`loader` for the specified
       module.  Originally specified in :pep:`302`, this method was meant
@@ -453,7 +453,7 @@ ABC hierarchy::
     :pep:`302` protocol for loading arbitrary resources from the storage
     back-end.
 
-    .. method:: get_data(path)
+    .. abstractmethod:: get_data(path)
 
         An abstract method to return the bytes for the data located at *path*.
         Loaders that have a file-like storage back-end
@@ -489,7 +489,7 @@ ABC hierarchy::
         .. versionchanged:: 3.4
            No longer abstract and a concrete implementation is provided.
 
-    .. method:: get_source(fullname)
+    .. abstractmethod:: get_source(fullname)
 
         An abstract method to return the source of a module. It is returned as
         a text string using :term:`universal newlines`, translating all
@@ -546,7 +546,7 @@ ABC hierarchy::
     when implemented, helps a module to be executed as a script. The ABC
     represents an optional :pep:`302` protocol.
 
-    .. method:: get_filename(fullname)
+    .. abstractmethod:: get_filename(fullname)
 
         An abstract method that is to return the value of :attr:`__file__` for
         the specified module. If no path is available, :exc:`ImportError` is
@@ -586,11 +586,11 @@ ABC hierarchy::
       .. deprecated:: 3.4
          Use :meth:`Loader.exec_module` instead.
 
-   .. method:: get_filename(fullname)
+   .. abstractmethod:: get_filename(fullname)
 
       Returns :attr:`path`.
 
-   .. method:: get_data(path)
+   .. abstractmethod:: get_data(path)
 
       Reads *path* as a binary file and returns the bytes from it.
 

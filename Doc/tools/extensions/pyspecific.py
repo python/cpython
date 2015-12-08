@@ -164,6 +164,19 @@ class PyCoroutineMethod(PyCoroutineMixin, PyClassmember):
         return PyClassmember.run(self)
 
 
+class PyAbstractMethod(PyClassmember):
+
+    def handle_signature(self, sig, signode):
+        ret = super(PyAbstractMethod, self).handle_signature(sig, signode)
+        signode.insert(0, addnodes.desc_annotation('abstractmethod ',
+                                                   'abstractmethod '))
+        return ret
+
+    def run(self):
+        self.name = 'py:method'
+        return PyClassmember.run(self)
+
+
 # Support for documenting version of removal in deprecations
 
 class DeprecatedRemoved(Directive):
@@ -368,5 +381,6 @@ def setup(app):
     app.add_directive_to_domain('py', 'decoratormethod', PyDecoratorMethod)
     app.add_directive_to_domain('py', 'coroutinefunction', PyCoroutineFunction)
     app.add_directive_to_domain('py', 'coroutinemethod', PyCoroutineMethod)
+    app.add_directive_to_domain('py', 'abstractmethod', PyAbstractMethod)
     app.add_directive('miscnews', MiscNews)
     return {'version': '1.0', 'parallel_read_safe': True}
