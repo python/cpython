@@ -78,6 +78,7 @@ siftup(PyListObject *heap, Py_ssize_t pos)
             if (cmp < 0)
                 return -1;
             childpos += ((unsigned)cmp ^ 1);   /* increment when cmp==0 */
+            arr = _PyList_ITEMS(heap);         /* arr may have changed */
             if (endpos != PyList_GET_SIZE(heap)) {
                 PyErr_SetString(PyExc_RuntimeError,
                                 "list changed size during iteration");
@@ -85,7 +86,6 @@ siftup(PyListObject *heap, Py_ssize_t pos)
             }
         }
         /* Move the smaller child up. */
-        arr = _PyList_ITEMS(heap);
         tmp1 = arr[childpos];
         tmp2 = arr[pos];
         arr[childpos] = tmp2;
@@ -432,6 +432,7 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
             if (cmp < 0)
                 return -1;
             childpos += ((unsigned)cmp ^ 1);   /* increment when cmp==0 */
+            arr = _PyList_ITEMS(heap);         /* arr may have changed */
             if (endpos != PyList_GET_SIZE(heap)) {
                 PyErr_SetString(PyExc_RuntimeError,
                                 "list changed size during iteration");
@@ -439,7 +440,6 @@ siftup_max(PyListObject *heap, Py_ssize_t pos)
             }
         }
         /* Move the smaller child up. */
-        arr = _PyList_ITEMS(heap);
         tmp1 = arr[childpos];
         tmp2 = arr[pos];
         arr[childpos] = tmp2;
