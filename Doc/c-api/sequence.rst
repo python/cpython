@@ -62,9 +62,13 @@ Sequence Protocol
 
 .. c:function:: int PySequence_SetItem(PyObject *o, Py_ssize_t i, PyObject *v)
 
-   Assign object *v* to the *i*\ th element of *o*.  Returns ``-1`` on failure.  This
+   Assign object *v* to the *i*\ th element of *o*.  Raise an exception
+   and return ``-1`` on failure; return ``0`` on success.  This
    is the equivalent of the Python statement ``o[i] = v``.  This function *does
    not* steal a reference to *v*.
+
+   If *v* is *NULL*, the element is deleted, however this feature is
+   deprecated in favour of using :c:func:`PySequence_DelItem`.
 
 
 .. c:function:: int PySequence_DelItem(PyObject *o, Py_ssize_t i)
