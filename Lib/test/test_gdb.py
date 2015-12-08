@@ -89,7 +89,6 @@ if not gdbpy_version:
 
 # Verify that "gdb" can load our custom hooks, as OS security settings may
 # disallow this without a customised .gdbinit.
-cmd = ['--args', sys.executable]
 _, gdbpy_errors = run_gdb('--args', sys.executable)
 if "auto-loading has been declined" in gdbpy_errors:
     msg = "gdb security settings prevent use of custom hooks: "
@@ -171,8 +170,7 @@ class DebuggerTests(unittest.TestCase):
         # print commands
 
         # Use "commands" to generate the arguments with which to invoke "gdb":
-        args = ["gdb", "--batch", "-nx"]
-        args += ['--eval-command=%s' % cmd for cmd in commands]
+        args = ['--eval-command=%s' % cmd for cmd in commands]
         args += ["--args",
                  sys.executable]
 
