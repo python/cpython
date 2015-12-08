@@ -192,8 +192,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      int PyObject_SetAttrString(PyObject *o, const char *attr_name, PyObject *v);
 
      Set the value of the attribute named attr_name, for object o,
-     to the value, v. Returns -1 on failure.  This is
-     the equivalent of the Python statement: o.attr_name=v.
+     to the value v. Raise an exception and return -1 on failure; return 0 on
+     success.  This is the equivalent of the Python statement o.attr_name=v.
 
        */
 
@@ -202,8 +202,8 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      int PyObject_SetAttr(PyObject *o, PyObject *attr_name, PyObject *v);
 
      Set the value of the attribute named attr_name, for object o,
-     to the value, v. Returns -1 on failure.  This is
-     the equivalent of the Python statement: o.attr_name=v.
+     to the value v. Raise an exception and return -1 on failure; return 0 on
+     success.  This is the equivalent of the Python statement o.attr_name=v.
 
        */
 
@@ -435,9 +435,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(int) PyObject_SetItem(PyObject *o, PyObject *key, PyObject *v);
 
        /*
-     Map the object, key, to the value, v.  Returns
-     -1 on failure.  This is the equivalent of the Python
-     statement: o[key]=v.
+     Map the object key to the value v.  Raise an exception and return -1
+     on failure; return 0 on success.  This is the equivalent of the Python
+     statement o[key]=v.
        */
 
      PyAPI_FUNC(int) PyObject_DelItemString(PyObject *o, const char *key);
@@ -993,9 +993,9 @@ xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx*/
      PyAPI_FUNC(int) PySequence_SetItem(PyObject *o, Py_ssize_t i, PyObject *v);
 
        /*
-     Assign object v to the ith element of o.  Returns
-     -1 on failure.  This is the equivalent of the Python
-     statement: o[i]=v.
+     Assign object v to the ith element of o.  Raise an exception and return
+     -1 on failure; return 0 on success.  This is the equivalent of the
+     Python statement o[i]=v.
        */
 
      PyAPI_FUNC(int) PySequence_DelItem(PyObject *o, Py_ssize_t i);
