@@ -2934,8 +2934,10 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
     /* attributes */
     if (attrib_in[0]) {
         attrib = PyDict_New();
-        if (!attrib)
+        if (!attrib) {
+            Py_DECREF(tag);
             return;
+        }
         while (attrib_in[0] && attrib_in[1]) {
             PyObject* key = makeuniversal(self, attrib_in[0]);
             PyObject* value = PyUnicode_DecodeUTF8(attrib_in[1], strlen(attrib_in[1]), "strict");
@@ -2943,6 +2945,7 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
                 Py_XDECREF(value);
                 Py_XDECREF(key);
                 Py_DECREF(attrib);
+                Py_DECREF(tag);
                 return;
             }
             ok = PyDict_SetItem(attrib, key, value);
@@ -2950,6 +2953,7 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
             Py_DECREF(key);
             if (ok < 0) {
                 Py_DECREF(attrib);
+                Py_DECREF(tag);
                 return;
             }
             attrib_in += 2;
@@ -2957,8 +2961,10 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
     } else {
         /* Pass an empty dictionary on */
         attrib = PyDict_New();
-        if (!attrib)
+        if (!attrib) {
+            Py_DECREF(tag);
             return;
+        }
     }
 
     if (TreeBuilder_CheckExact(self->target)) {
