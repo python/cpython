@@ -16,7 +16,8 @@ If you find a bug in this documentation or would like to propose an improvement,
 please submit a bug report on the :ref:`tracker <using-the-tracker>`.  If you
 have a suggestion how to fix it, include that as well.
 
-If you're short on time, you can also email your bug report to docs@python.org.
+If you're short on time, you can also email documentation bug reports to
+docs@python.org (behavioral bugs can be sent to python-list@python.org).
 'docs@' is a mailing list run by volunteers; your request will be noticed,
 though it may take a while to be processed.
 
