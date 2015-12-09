@@ -1373,6 +1373,17 @@ static PyObject *
 _elementtree_Element_iter_impl(ElementObject *self, PyObject *tag)
 /*[clinic end generated code: output=3f49f9a862941cc5 input=774d5b12e573aedd]*/
 {
+    if (PyUnicode_Check(tag)) {
+        if (PyUnicode_READY(tag) < 0)
+            return NULL;
+        if (PyUnicode_GET_LENGTH(tag) == 1 && PyUnicode_READ_CHAR(tag, 0) == '*')
+            tag = Py_None;
+    }
+    else if (PyBytes_Check(tag)) {
+        if (PyBytes_GET_SIZE(tag) == 1 && *PyBytes_AS_STRING(tag) == '*')
+            tag = Py_None;
+    }
+
     return create_elementiter(self, tag, 0);
 }
 
@@ -2235,17 +2246,6 @@ create_elementiter(ElementObject *self, PyObject *tag, int gettext)
     it = PyObject_GC_New(ElementIterObject, &ElementIter_Type);
     if (!it)
         return NULL;
-
-    if (PyUnicode_Check(tag)) {
-        if (PyUnicode_READY(tag) < 0)
-            return NULL;
-        if (PyUnicode_GET_LENGTH(tag) == 1 && PyUnicode_READ_CHAR(tag, 0) == '*')
-            tag = Py_None;
-    }
-    else if (PyBytes_Check(tag)) {
-        if (PyBytes_GET_SIZE(tag) == 1 && *PyBytes_AS_STRING(tag) == '*')
-            tag = Py_None;
-    }
 
     Py_INCREF(tag);
     it->sought_tag = tag;
