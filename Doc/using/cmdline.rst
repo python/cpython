@@ -77,7 +77,7 @@ source.
    the :mod:`__main__` module.
 
    Since the argument is a *module* name, you must not give a file extension
-   (``.py``).  The ``module-name`` should be a valid Python module name, but
+   (``.py``).  The module name should be a valid absolute Python module name, but
    the implementation may not always enforce this (e.g. it may allow you to
    use a name that includes a hyphen).
 
