@@ -110,6 +110,7 @@ Library
 -------
 
 - Issue #25638: Optimized ElementTree.iterparse(); it is now 2x faster.
+  Optimized ElementTree parsing; it is now 10% faster.
 
 - Issue #25761: Improved detecting errors in broken pickle data.
 
