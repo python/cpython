@@ -2491,10 +2491,17 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
         self->data = NULL;
     }
 
-    if (self->element_factory && self->element_factory != Py_None) {
-        node = PyObject_CallFunction(self->element_factory, "OO", tag, attrib);
-    } else {
+    if (!self->element_factory || self->element_factory == Py_None) {
         node = create_new_element(tag, attrib);
+    } else if (attrib == Py_None) {
+        attrib = PyDict_New();
+        if (!attrib)
+            return NULL;
+        node = PyObject_CallFunction(self->element_factory, "OO", tag, attrib);
+        Py_DECREF(attrib);
+    }
+    else {
+        node = PyObject_CallFunction(self->element_factory, "OO", tag, attrib);
     }
     if (!node) {
         return NULL;
@@ -2959,12 +2966,8 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
             attrib_in += 2;
         }
     } else {
-        /* Pass an empty dictionary on */
-        attrib = PyDict_New();
-        if (!attrib) {
-            Py_DECREF(tag);
-            return;
-        }
+        Py_INCREF(Py_None);
+        attrib = Py_None;
     }
 
     if (TreeBuilder_CheckExact(self->target)) {
@@ -2973,6 +2976,14 @@ expat_start_handler(XMLParserObject* self, const XML_Char* tag_in,
                                        tag, attrib);
     }
     else if (self->handle_start) {
+        if (attrib == Py_None) {
+            Py_DECREF(attrib);
+            attrib = PyDict_New();
+            if (!attrib) {
+                Py_DECREF(tag);
+                return;
+            }
+        }
         res = PyObject_CallFunction(self->handle_start, "OO", tag, attrib);
     } else
         res = NULL;
