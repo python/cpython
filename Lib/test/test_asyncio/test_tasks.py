@@ -76,6 +76,21 @@ class TaskTests(test_utils.TestCase):
     def setUp(self):
         self.loop = self.new_test_loop()
 
+    def test_other_loop_future(self):
+        other_loop = asyncio.new_event_loop()
+        fut = asyncio.Future(loop=other_loop)
+
+        @asyncio.coroutine
+        def run(fut):
+            yield from fut
+
+        try:
+            with self.assertRaisesRegex(RuntimeError,
+                                        r'Task .* got Future .* attached'):
+                self.loop.run_until_complete(run(fut))
+        finally:
+            other_loop.close()
+
     def test_task_class(self):
         @asyncio.coroutine
         def notmuch():
