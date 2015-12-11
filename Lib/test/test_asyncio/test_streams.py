@@ -351,8 +351,8 @@ class StreamReaderTests(test_utils.TestCase):
         self.assertEqual(b'', data)
         self.assertEqual(self.DATA, stream._buffer)
 
-        data = self.loop.run_until_complete(stream.readexactly(-1))
-        self.assertEqual(b'', data)
+        with self.assertRaisesRegexp(ValueError, 'less than zero'):
+            self.loop.run_until_complete(stream.readexactly(-1))
         self.assertEqual(self.DATA, stream._buffer)
 
     def test_readexactly(self):
