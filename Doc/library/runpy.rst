@@ -36,7 +36,8 @@ The :mod:`runpy` module provides two functions:
    import mechanism (refer to :pep:`302` for details) and then executed in a
    fresh module namespace.
 
-   If the supplied module name refers to a package rather than a normal
+   The *mod_name* argument should be an absolute module name.
+   If the module name refers to a package rather than a normal
    module, then that package is imported and the ``__main__`` submodule within
    that package is then executed and the resulting module globals dictionary
    returned.

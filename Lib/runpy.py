@@ -100,6 +100,21 @@ def _run_module_code(code, init_globals=None,
 
 # Helper to get the loader, code and filename for a module
 def _get_module_details(mod_name, error=ImportError):
+    if mod_name.startswith("."):
+        raise error("Relative module names not supported")
+    pkg_name, _, _ = mod_name.rpartition(".")
+    if pkg_name:
+        # Try importing the parent to avoid catching initialization errors
+        try:
+            __import__(pkg_name)
+        except ImportError as e:
+            # If the parent or higher ancestor package is missing, let the
+            # error be raised by find_spec() below and then be caught. But do
+            # not allow other errors to be caught.
+            if e.name is None or (e.name != pkg_name and
+                    not pkg_name.startswith(e.name + ".")):
+                raise
+
     try:
         spec = importlib.util.find_spec(mod_name)
     except (ImportError, AttributeError, TypeError, ValueError) as ex:
@@ -107,17 +122,16 @@ def _get_module_details(mod_name, error=ImportError):
         # importlib, where the latter raises other errors for cases where
         # pkgutil previously raised ImportError
         msg = "Error while finding spec for {!r} ({}: {})"
-        raise error(msg.format(mod_name, type(ex), ex)) from ex
+        raise error(msg.format(mod_name, type(ex).__name__, ex)) from ex
     if spec is None:
         raise error("No module named %s" % mod_name)
     if spec.submodule_search_locations is not None:
         if mod_name == "__main__" or mod_name.endswith(".__main__"):
             raise error("Cannot use package as __main__ module")
-        __import__(mod_name)  # Do not catch exceptions initializing package
         try:
             pkg_main_name = mod_name + ".__main__"
-            return _get_module_details(pkg_main_name)
-        except ImportError as e:
+            return _get_module_details(pkg_main_name, error)
+        except error as e:
             raise error(("%s; %r is a package and cannot " +
                                "be directly executed") %(e, mod_name))
     loader = spec.loader
