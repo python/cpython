@@ -197,8 +197,11 @@ class RunModuleTestCase(unittest.TestCase, CodeExecutionMixin):
         self.expect_import_error("sys.imp.eric")
         self.expect_import_error("os.path.half")
         self.expect_import_error("a.bee")
+        # Relative names not allowed
         self.expect_import_error(".howard")
         self.expect_import_error("..eaten")
+        self.expect_import_error(".test_runpy")
+        self.expect_import_error(".unittest")
         # Package without __main__.py
         self.expect_import_error("multiprocessing")
 
@@ -456,6 +459,12 @@ from ..uncle.cousin import nephew
                     mod_file.write(source)
                 try:
                     run_module(mod_name)
+                except exception as err:
+                    self.assertNotIn("finding spec", format(err))
+                else:
+                    self.fail("Nothing raised; expected {}".format(name))
+                try:
+                    run_module(mod_name + ".submodule")
                 except exception as err:
                     self.assertNotIn("finding spec", format(err))
                 else:
