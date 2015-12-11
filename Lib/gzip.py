@@ -210,7 +210,7 @@ class GzipFile(_compression.BaseStream):
 
     def _init_write(self, filename):
         self.name = filename
-        self.crc = zlib.crc32(b"") & 0xffffffff
+        self.crc = zlib.crc32(b"")
         self.size = 0
         self.writebuf = []
         self.bufsize = 0
@@ -261,7 +261,7 @@ class GzipFile(_compression.BaseStream):
         if length > 0:
             self.fileobj.write(self.compress.compress(data))
             self.size += length
-            self.crc = zlib.crc32(data, self.crc) & 0xffffffff
+            self.crc = zlib.crc32(data, self.crc)
             self.offset += length
 
         return length
@@ -381,7 +381,7 @@ class _GzipReader(_compression.DecompressReader):
         self._last_mtime = None
 
     def _init_read(self):
-        self._crc = zlib.crc32(b"") & 0xffffffff
+        self._crc = zlib.crc32(b"")
         self._stream_size = 0  # Decompressed size of unconcatenated stream
 
     def _read_exact(self, n):
@@ -485,7 +485,7 @@ class _GzipReader(_compression.DecompressReader):
         return uncompress
 
     def _add_read_data(self, data):
-        self._crc = zlib.crc32(data, self._crc) & 0xffffffff
+        self._crc = zlib.crc32(data, self._crc)
         self._stream_size = self._stream_size + len(data)
 
     def _read_eof(self):

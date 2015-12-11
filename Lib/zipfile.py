@@ -734,7 +734,7 @@ class ZipExtFile(io.BufferedIOBase):
 
         if hasattr(zipinfo, 'CRC'):
             self._expected_crc = zipinfo.CRC
-            self._running_crc = crc32(b'') & 0xffffffff
+            self._running_crc = crc32(b'')
         else:
             self._expected_crc = None
 
@@ -856,7 +856,7 @@ class ZipExtFile(io.BufferedIOBase):
         if self._expected_crc is None:
             # No need to compute the CRC if we don't have a reference value
             return
-        self._running_crc = crc32(newdata, self._running_crc) & 0xffffffff
+        self._running_crc = crc32(newdata, self._running_crc)
         # Check the CRC if we're at the end of the file
         if self._eof and self._running_crc != self._expected_crc:
             raise BadZipFile("Bad CRC-32 for file %r" % self.name)
@@ -1492,7 +1492,7 @@ class ZipFile:
                     if not buf:
                         break
                     file_size = file_size + len(buf)
-                    CRC = crc32(buf, CRC) & 0xffffffff
+                    CRC = crc32(buf, CRC)
                     if cmpr:
                         buf = cmpr.compress(buf)
                         compress_size = compress_size + len(buf)
@@ -1567,7 +1567,7 @@ class ZipFile:
 
             self._writecheck(zinfo)
             self._didModify = True
-            zinfo.CRC = crc32(data) & 0xffffffff       # CRC-32 checksum
+            zinfo.CRC = crc32(data)       # CRC-32 checksum
             co = _get_compressor(zinfo.compress_type)
             if co:
                 data = co.compress(data) + co.flush()

@@ -459,13 +459,7 @@ class _Stream:
                 self.fileobj.write(self.buf)
                 self.buf = b""
                 if self.comptype == "gz":
-                    # The native zlib crc is an unsigned 32-bit integer, but
-                    # the Python wrapper implicitly casts that to a signed C
-                    # long.  So, on a 32-bit box self.crc may "look negative",
-                    # while the same crc on a 64-bit box may "look positive".
-                    # To avoid irksome warnings from the `struct` module, force
-                    # it to look positive on all boxes.
-                    self.fileobj.write(struct.pack("<L", self.crc & 0xffffffff))
+                    self.fileobj.write(struct.pack("<L", self.crc))
                     self.fileobj.write(struct.pack("<L", self.pos & 0xffffFFFF))
         finally:
             if not self._extfileobj:
