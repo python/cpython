@@ -76,13 +76,6 @@ class PropertyNewGetter(object):
         """new docstring"""
         return 8
 
-class PropertyWritableDoc(object):
-
-    @property
-    def spam(self):
-        """Eggs"""
-        return "eggs"
-
 class PropertyTests(unittest.TestCase):
     def test_property_decorator_baseclass(self):
         # see #1620
@@ -168,6 +161,13 @@ class PropertyTests(unittest.TestCase):
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_property_decorator_doc_writable(self):
+        class PropertyWritableDoc(object):
+
+            @property
+            def spam(self):
+                """Eggs"""
+                return "eggs"
+
         sub = PropertyWritableDoc()
         self.assertEqual(sub.__class__.spam.__doc__, 'Eggs')
         sub.__class__.spam.__doc__ = 'Spam'
