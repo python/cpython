@@ -1525,10 +1525,14 @@ class POSIXProcessTestCase(BaseTestCase):
         [_, hard] = limits
         setrlimit(RLIMIT_NPROC, (0, hard))
         self.addCleanup(setrlimit, RLIMIT_NPROC, limits)
-        # Forking should raise EAGAIN, translated to BlockingIOError
-        with self.assertRaises(BlockingIOError):
+        try:
             subprocess.call([sys.executable, '-c', ''],
                             preexec_fn=lambda: None)
+        except BlockingIOError:
+            # Forking should raise EAGAIN, translated to BlockingIOError
+            pass
+        else:
+            self.skipTest('RLIMIT_NPROC had no effect; probably superuser')
 
     def test_args_string(self):
         # args is a string
