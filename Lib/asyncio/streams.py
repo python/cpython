@@ -494,6 +494,9 @@ class StreamReader:
 
     @coroutine
     def readexactly(self, n):
+        if n < 0:
+            raise ValueError('readexactly size can not be less than zero')
+
         if self._exception is not None:
             raise self._exception
 
