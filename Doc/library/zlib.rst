@@ -31,22 +31,19 @@ The available exception and functions in this module are:
 .. function:: adler32(data[, value])
 
    Computes an Adler-32 checksum of *data*.  (An Adler-32 checksum is almost as
-   reliable as a CRC32 but can be computed much more quickly.)  If *value* is
-   present, it is used as the starting value of the checksum; otherwise, a fixed
-   default value is used.  This allows computing a running checksum over the
+   reliable as a CRC32 but can be computed much more quickly.)  The result
+   is an unsigned 32-bit integer.  If *value* is present, it is used as
+   the starting value of the checksum; otherwise, a default value of 1
+   is used.  Passing in *value* allows computing a running checksum over the
    concatenation of several inputs.  The algorithm is not cryptographically
    strong, and should not be used for authentication or digital signatures.  Since
    the algorithm is designed for use as a checksum algorithm, it is not suitable
    for use as a general hash algorithm.
 
-   Always returns an unsigned 32-bit integer.
-
-.. note::
-   To generate the same numeric value across all Python versions and
-   platforms use adler32(data) & 0xffffffff.  If you are only using
-   the checksum in packed binary format this is not necessary as the
-   return value is the correct 32bit binary representation
-   regardless of sign.
+   .. versionchanged:: 3.0
+      Always returns an unsigned value.
+      To generate the same numeric value across all Python versions and
+      platforms, use ``adler32(data) & 0xffffffff``.
 
 
 .. function:: compress(data[, level])
@@ -97,23 +94,19 @@ The available exception and functions in this module are:
       single: Cyclic Redundancy Check
       single: checksum; Cyclic Redundancy Check
 
-   Computes a CRC (Cyclic Redundancy Check)  checksum of *data*. If *value* is
-   present, it is used as the starting value of the checksum; otherwise, a fixed
-   default value is used.  This allows computing a running checksum over the
+   Computes a CRC (Cyclic Redundancy Check) checksum of *data*. The
+   result is an unsigned 32-bit integer. If *value* is present, it is used
+   as the starting value of the checksum; otherwise, a default value of 0
+   is used.  Passing in *value* allows computing a running checksum over the
    concatenation of several inputs.  The algorithm is not cryptographically
    strong, and should not be used for authentication or digital signatures.  Since
    the algorithm is designed for use as a checksum algorithm, it is not suitable
    for use as a general hash algorithm.
 
-   Always returns an unsigned 32-bit integer.
-
-   .. note::
-
+   .. versionchanged:: 3.0
+      Always returns an unsigned value.
       To generate the same numeric value across all Python versions and
-      platforms, use ``crc32(data) & 0xffffffff``.  If you are only using
-      the checksum in packed binary format this is not necessary as the
-      return value is the correct 32-bit binary representation
-      regardless of sign.
+      platforms, use ``crc32(data) & 0xffffffff``.
 
 
 .. function:: decompress(data[, wbits[, bufsize]])
