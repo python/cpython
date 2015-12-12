@@ -136,6 +136,10 @@ Library
   "runpy" module now lets exceptions from package initialization pass back to
   the caller, rather than raising ImportError.
 
+- Issue #19771: Also in runpy and the "-m" option, omit the irrelevant
+  message ". . . is a package and cannot be directly executed" if the package
+  could not even be initialized (e.g. due to a bad *.pyc file).
+
 - Issue #25177: Fixed problem with the mean of very small and very large
   numbers. As a side effect, statistics.mean and statistics.variance should
   be significantly faster.
