@@ -39,7 +39,9 @@ if "MSC v.1200" in sys.version:
 known_numerics = {
     'en_US': ('.', ','),
     'de_DE' : (',', '.'),
-    'fr_FR.UTF-8' : (',', ' '),
+    # The French thousands separator may be a breaking or non-breaking space
+    # depending on the platform, so do not test it
+    'fr_FR' : (',', ''),
     'ps_AF.UTF-8' : ('\xd9\xab', '\xd9\xac'),
 }
 
