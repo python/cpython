@@ -132,6 +132,8 @@ def _get_module_details(mod_name, error=ImportError):
             pkg_main_name = mod_name + ".__main__"
             return _get_module_details(pkg_main_name, error)
         except error as e:
+            if mod_name not in sys.modules:
+                raise  # No module loaded; being a package is irrelevant
             raise error(("%s; %r is a package and cannot " +
                                "be directly executed") %(e, mod_name))
     loader = spec.loader
