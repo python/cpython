@@ -442,6 +442,19 @@ class CmdLineTest(unittest.TestCase):
                 self.assertRegex(err, regex)
                 self.assertNotIn(b'Traceback', err)
 
+    def test_dash_m_bad_pyc(self):
+        with support.temp_dir() as script_dir, \
+                support.change_cwd(path=script_dir):
+            os.mkdir('test_pkg')
+            # Create invalid *.pyc as empty file
+            with open('test_pkg/__init__.pyc', 'wb'):
+                pass
+            err = self.check_dash_m_failure('test_pkg')
+            self.assertRegex(err, br'Error while finding spec.*'
+                br'ImportError.*bad magic number')
+            self.assertNotIn(b'is a package', err)
+            self.assertNotIn(b'Traceback', err)
+
     def test_dash_m_init_traceback(self):
         # These were wrapped in an ImportError and tracebacks were
         # suppressed; see Issue 14285
