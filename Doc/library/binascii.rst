@@ -56,9 +56,7 @@ The :mod:`binascii` module defines the following functions:
 
    Convert binary data to a line of ASCII characters in base64 coding. The return
    value is the converted line, including a newline char if *newline* is
-   true. The length of *data* should be at most 57 to adhere to the
-   base64 standard.
-
+   true.  The output of this function conforms to :rfc:`3548`.
 
    .. versionchanged:: 3.6
       Added the *newline* parameter.
@@ -172,7 +170,8 @@ The :mod:`binascii` module defines the following functions:
 .. seealso::
 
    Module :mod:`base64`
-      Support for base64 encoding used in MIME email messages.
+      Support for RFC compliant base64-style encoding in base 16, 32, 64,
+      and 85.
 
    Module :mod:`binhex`
       Support for the binhex format used on the Macintosh.
