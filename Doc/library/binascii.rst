@@ -45,8 +45,10 @@ The :mod:`binascii` module defines the following functions:
 .. function:: b2a_base64(data)
 
    Convert binary data to a line of ASCII characters in base64 coding. The return
-   value is the converted line, including a newline char. The length of *data*
-   should be at most 57 to adhere to the base64 standard.
+   value is the converted line, including a newline char.  The newline is
+   added because the original use case for this function was to feed it a
+   series of 57 byte input lines to get output lines that conform to the
+   MIME-base64 standard.  Otherwise the output conforms to :rfc:`3548`.
 
 
 .. function:: a2b_qp(string[, header])
@@ -165,7 +167,7 @@ The :mod:`binascii` module defines the following functions:
 .. seealso::
 
    Module :mod:`base64`
-      Support for base64 encoding used in MIME email messages.
+      Support for RFC compliant base64-style encoding in base 16, 32, and 64.
 
    Module :mod:`binhex`
       Support for the binhex format used on the Macintosh.
