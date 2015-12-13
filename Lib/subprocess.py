@@ -498,7 +498,6 @@ def _args_from_interpreter_flags():
         'ignore_environment': 'E',
         'verbose': 'v',
         'bytes_warning': 'b',
-        'hash_randomization': 'R',
         'py3k_warning': '3',
     }
     args = []
@@ -506,6 +505,8 @@ def _args_from_interpreter_flags():
         v = getattr(sys.flags, flag)
         if v > 0:
             args.append('-' + opt * v)
+    if getattr(sys.flags, 'hash_randomization') != 0:
+        args.append('-R')
     for opt in sys.warnoptions:
         args.append('-W' + opt)
     return args
