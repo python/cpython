@@ -1354,7 +1354,7 @@ win32_wchdir(LPCWSTR path)
     result = GetCurrentDirectoryW(Py_ARRAY_LENGTH(path_buf), new_path);
     if (!result)
         return FALSE;
-    if (result > Py_ARRAY_LENGTH(new_path)) {
+    if (result > Py_ARRAY_LENGTH(path_buf)) {
         new_path = PyMem_RawMalloc(result * sizeof(wchar_t));
         if (!new_path) {
             SetLastError(ERROR_OUTOFMEMORY);
