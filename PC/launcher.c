@@ -114,7 +114,7 @@ static wchar_t * get_env(wchar_t * key)
     if (result >= BUFSIZE) {
         /* Large environment variable. Accept some leakage */
         wchar_t *buf2 = (wchar_t*)malloc(sizeof(wchar_t) * (result+1));
-        if (buf2 = NULL) {
+        if (buf2 == NULL) {
             error(RC_NO_MEMORY, L"Could not allocate environment buffer");
         }
         GetEnvironmentVariableW(key, buf2, result);
@@ -1219,7 +1219,7 @@ path '%s'", command);
                              * is no version specification.
                              */
                             debug(L"searching PATH for python executable\n");
-                            cmd = find_on_path(L"python");
+                            cmd = find_on_path(PYTHON_EXECUTABLE);
                             debug(L"Python on path: %s\n", cmd ? cmd->value : L"<not found>");
                             if (cmd) {
                                 debug(L"located python on PATH: %s\n", cmd->value);
