@@ -4,7 +4,10 @@ import collections.abc
 import types
 import unittest
 
-from test import support
+try:
+    from test import support
+except ImportError:
+    from asyncio import test_support as support
 from unittest import mock
 
 import asyncio
