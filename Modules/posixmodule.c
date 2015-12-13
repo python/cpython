@@ -1345,13 +1345,13 @@ win32_chdir(LPCSTR path)
 static BOOL __stdcall
 win32_wchdir(LPCWSTR path)
 {
-    wchar_t _new_path[MAX_PATH], *new_path = _new_path;
+    wchar_t path_buf[MAX_PATH], *new_path = path_buf;
     int result;
     wchar_t env[4] = L"=x:";
 
     if(!SetCurrentDirectoryW(path))
         return FALSE;
-    result = GetCurrentDirectoryW(Py_ARRAY_LENGTH(new_path), new_path);
+    result = GetCurrentDirectoryW(Py_ARRAY_LENGTH(path_buf), new_path);
     if (!result)
         return FALSE;
     if (result > Py_ARRAY_LENGTH(new_path)) {
@@ -1372,7 +1372,7 @@ win32_wchdir(LPCWSTR path)
         return TRUE;
     env[1] = new_path[0];
     result = SetEnvironmentVariableW(env, new_path);
-    if (new_path != _new_path)
+    if (new_path != path_buf)
         PyMem_RawFree(new_path);
     return result;
 }
