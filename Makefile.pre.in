@@ -1110,7 +1110,7 @@ altbininstall: $(BUILDPYTHON) @FRAMEWORKPYTHONW@
 	fi
 
 bininstall: altbininstall
-	-if test ! -d $(DESTDIR)$(LIBPC); then \
+	if test ! -d $(DESTDIR)$(LIBPC); then \
 		echo "Creating directory $(LIBPC)"; \
 		$(INSTALL) -d -m $(DIRMODE) $(DESTDIR)$(LIBPC); \
 	fi
