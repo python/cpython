@@ -114,7 +114,7 @@ static wchar_t * get_env(wchar_t * key)
     if (result >= BUFSIZE) {
         /* Large environment variable. Accept some leakage */
         wchar_t *buf2 = (wchar_t*)malloc(sizeof(wchar_t) * (result+1));
-        if (buf2 = NULL) {
+        if (buf2 == NULL) {
             error(RC_NO_MEMORY, L"Could not allocate environment buffer");
         }
         GetEnvironmentVariableW(key, buf2, result);
