@@ -107,7 +107,7 @@ def assert_python_ok(*args, **env_vars):
     variables `env_vars` succeeds (rc == 0) and return a (return code, stdout,
     stderr) tuple.
 
-    If the __cleanenv keyword is set, env_vars is used a fresh environment.
+    If the __cleanenv keyword is set, env_vars is used as a fresh environment.
 
     Python is started in isolated mode (command line option -I),
     except if the __isolated keyword is set to False.
