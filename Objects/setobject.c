@@ -282,8 +282,8 @@ set_insert_clean(setentry *table, size_t mask, PyObject *key, Py_hash_t hash)
         i = (i * 5 + 1 + perturb) & mask;
     }
   found_null:
-    entry->hash = hash;
     entry->key = key;
+    entry->hash = hash;
 }
 
 /* ======== End logic for probing the hash table ========================== */
