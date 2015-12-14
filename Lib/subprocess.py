@@ -512,14 +512,11 @@ def _args_from_interpreter_flags():
         'verbose': 'v',
         'bytes_warning': 'b',
         'quiet': 'q',
-        'hash_randomization': 'R',
     }
     args = []
     for flag, opt in flag_opt_map.items():
         v = getattr(sys.flags, flag)
         if v > 0:
-            if flag == 'hash_randomization':
-                v = 1 # Handle specification of an exact seed
             args.append('-' + opt * v)
     for opt in sys.warnoptions:
         args.append('-W' + opt)
