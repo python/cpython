@@ -16,7 +16,8 @@ email, used as parts of URLs, or included as part of an HTTP POST request.  The
 encoding algorithm is not the same as the :program:`uuencode` program.
 
 There are two interfaces provided by this module.  The modern interface supports
-encoding and decoding string objects using all three alphabets.  The legacy
+encoding and decoding string objects using all three :rfc:`3548` defined
+alphabets (normal, URL-safe, and filesystem-safe).  The legacy
 interface provides for encoding and decoding to and from file-like objects as
 well as strings, but only using the Base64 standard alphabet.
 
