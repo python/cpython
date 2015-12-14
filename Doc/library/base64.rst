@@ -45,9 +45,9 @@ The modern interface, which was introduced in Python 2.4, provides:
    length 2 (additional characters are ignored) which specifies the alternative
    alphabet used instead of the ``+`` and ``/`` characters.
 
-   The decoded string is returned.  A :exc:`TypeError` is raised if *s* were
-   incorrectly padded or if there are non-alphabet characters present in the
-   string.
+   The decoded string is returned.  A :exc:`TypeError` is raised if *s* is
+   incorrectly padded.  Non-base64-alphabet characters are
+   discarded prior to the padding check.
 
 
 .. function:: standard_b64encode(s)

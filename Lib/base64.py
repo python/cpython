@@ -64,9 +64,9 @@ def b64decode(s, altchars=None):
     length 2 (additional characters are ignored) which specifies the
     alternative alphabet used instead of the '+' and '/' characters.
 
-    The decoded string is returned.  A TypeError is raised if s were
-    incorrectly padded or if there are non-alphabet characters present in the
-    string.
+    The decoded string is returned.  A TypeError is raised if s is
+    incorrectly padded.  Non-base64-alphabet characters are discarded prior
+    to the padding check.
     """
     if altchars is not None:
         s = s.translate(string.maketrans(altchars[:2], '+/'))
