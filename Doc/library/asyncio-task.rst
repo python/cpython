@@ -539,6 +539,9 @@ Task functions
 
    .. versionadded:: 3.4.4
 
+   .. versionchanged:: 3.5.1
+      The function accepts any :term:`awaitable` object.
+
    .. seealso::
 
       The :meth:`BaseEventLoop.create_task` method.
@@ -721,4 +724,4 @@ Task functions
       Unlike the functions above, :func:`run_coroutine_threadsafe` requires the
       *loop* argument to be passed explicitely.
 
-   .. versionadded:: 3.4.4, 3.5.1
+   .. versionadded:: 3.5.1
