@@ -810,6 +810,18 @@ Updates in 3.5.1:
   now accept all kinds of :term:`awaitable objects <awaitable>`.
   (Contributed by Yury Selivanov.)
 
+* New :func:`~asyncio.run_coroutine_threadsafe` function to submit
+  coroutines to event loops from other threads.
+  (Contributed by Vincent Michel.)
+
+* New :meth:`Transport.is_closing() <asyncio.Transport.is_closing>`
+  method to check if the transport is closing or closed.
+  (Contributed by Yury Selivanov.)
+
+* The :meth:`loop.create_server() <asyncio.BaseEventLoop.create_server>`
+  method can now accept a list of hosts.
+  (Contributed by Yann Sionneau.)
+
 
 bz2
 ---
