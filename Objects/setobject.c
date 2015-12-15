@@ -678,7 +678,7 @@ set_merge(PySetObject *so, PyObject *otherset)
         size_t newmask = (size_t)so->mask;
         so->fill = other->used;
         so->used = other->used;
-        for (i = 0; i <= other->mask; i++, other_entry++) {
+        for (i = other->mask + 1; i > 0 ; i--, other_entry++) {
             key = other_entry->key;
             if (key != NULL && key != dummy) {
                 Py_INCREF(key);
