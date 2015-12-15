@@ -377,10 +377,10 @@ class SignalEINTRTest(EINTRBaseTest):
     @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
                          'need signal.sigwaitinfo()')
     def test_sigwaitinfo(self):
-        # Issue #25277: The sleep is a weak synchronization between the parent
-        # and the child process. If the sleep is too low, the test hangs on
-        # slow or highly loaded systems.
-        self.sleep_time = 2.0
+        # Issue #25277, #25868: give a few miliseconds to the parent process
+        # between os.write() and signal.sigwaitinfo() to works around a race
+        # condition
+        self.sleep_time = 0.100
 
         signum = signal.SIGUSR1
         pid = os.getpid()
@@ -388,18 +388,28 @@ class SignalEINTRTest(EINTRBaseTest):
         old_handler = signal.signal(signum, lambda *args: None)
         self.addCleanup(signal.signal, signum, old_handler)
 
+        rpipe, wpipe = os.pipe()
+
         code = '\n'.join((
             'import os, time',
             'pid = %s' % os.getpid(),
             'signum = %s' % int(signum),
             'sleep_time = %r' % self.sleep_time,
+            'rpipe = %r' % rpipe,
+            'os.read(rpipe, 1)',
+            'os.close(rpipe)',
             'time.sleep(sleep_time)',
             'os.kill(pid, signum)',
         ))
 
         t0 = time.monotonic()
-        proc = self.subprocess(code)
+        proc = self.subprocess(code, pass_fds=(rpipe,))
+        os.close(rpipe)
         with kill_on_error(proc):
+            # sync child-parent
+            os.write(wpipe, b'x')
+            os.close(wpipe)
+
             # parent
             signal.sigwaitinfo([signum])
             dt = time.monotonic() - t0
