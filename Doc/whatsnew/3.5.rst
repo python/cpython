@@ -814,7 +814,7 @@ Updates in 3.5.1:
   coroutines to event loops from other threads.
   (Contributed by Vincent Michel.)
 
-* New :meth:`Transport.is_closing() <asyncio.Transport.is_closing>`
+* New :meth:`Transport.is_closing() <asyncio.BaseTransport.is_closing>`
   method to check if the transport is closing or closed.
   (Contributed by Yury Selivanov.)
 
