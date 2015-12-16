@@ -113,7 +113,25 @@ class urlopenNetworkTests(unittest.TestCase):
     def test_bad_address(self):
         # Make sure proper exception is raised when connecting to a bogus
         # address.
-        bogus_domain = "sadflkjsasf.i.nvali.d"
+
+        # Given that both VeriSign and various ISPs have in
+        # the past or are presently hijacking various invalid
+        # domain name requests in an attempt to boost traffic
+        # to their own sites, finding a domain name to use
+        # for this test is difficult.  RFC2606 leads one to
+        # believe that '.invalid' should work, but experience
+        # seemed to indicate otherwise.  Single character
+        # TLDs are likely to remain invalid, so this seems to
+        # be the best choice. The trailing '.' prevents a
+        # related problem: The normal DNS resolver appends
+        # the domain names from the search path if there is
+        # no '.' the end and, and if one of those domains
+        # implements a '*' rule a result is returned.
+        # However, none of this will prevent the test from
+        # failing if the ISP hijacks all invalid domain
+        # requests.  The real solution would be to be able to
+        # parameterize the framework with a mock resolver.
+        bogus_domain = "sadflkjsasf.i.nvali.d."
         try:
             socket.gethostbyname(bogus_domain)
         except OSError:
@@ -128,11 +146,7 @@ class urlopenNetworkTests(unittest.TestCase):
                                'can be caused by a broken DNS server '
                                '(e.g. returns 404 or hijacks page)')
         with self.assertRaises(OSError, msg=failure_explanation):
-            # SF patch 809915:  In Sep 2003, VeriSign started highjacking
-            # invalid .com and .net addresses to boost traffic to their own
-            # site.  This test started failing then.  One hopes the .invalid
-            # domain will be spared to serve its defined purpose.
-            urllib.request.urlopen("http://sadflkjsasf.i.nvali.d/")
+            urllib.request.urlopen("http://{}/".format(bogus_domain))
 
 
 class urlretrieveNetworkTests(unittest.TestCase):
