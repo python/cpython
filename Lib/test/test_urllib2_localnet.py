@@ -626,35 +626,6 @@ class TestUrlopen(unittest.TestCase):
         url = open_url.geturl()
         self.assertEqual(url, "http://localhost:%s" % handler.port)
 
-    def test_bad_address(self):
-        # Make sure proper exception is raised when connecting to a bogus
-        # address.
-
-        # as indicated by the comment below, this might fail with some ISP,
-        # so we run the test only when -unetwork/-uall is specified to
-        # mitigate the problem a bit (see #17564)
-        support.requires('network')
-        self.assertRaises(OSError,
-                          # Given that both VeriSign and various ISPs have in
-                          # the past or are presently hijacking various invalid
-                          # domain name requests in an attempt to boost traffic
-                          # to their own sites, finding a domain name to use
-                          # for this test is difficult.  RFC2606 leads one to
-                          # believe that '.invalid' should work, but experience
-                          # seemed to indicate otherwise.  Single character
-                          # TLDs are likely to remain invalid, so this seems to
-                          # be the best choice. The trailing '.' prevents a
-                          # related problem: The normal DNS resolver appends
-                          # the domain names from the search path if there is
-                          # no '.' the end and, and if one of those domains
-                          # implements a '*' rule a result is returned.
-                          # However, none of this will prevent the test from
-                          # failing if the ISP hijacks all invalid domain
-                          # requests.  The real solution would be to be able to
-                          # parameterize the framework with a mock resolver.
-                          urllib.request.urlopen,
-                          "http://sadflkjsasf.i.nvali.d./")
-
     def test_iteration(self):
         expected_response = b"pycon 2008..."
         handler = self.start_server([(200, [], expected_response)])
