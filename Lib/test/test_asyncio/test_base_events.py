@@ -127,23 +127,27 @@ class BaseEventTests(test_utils.TestCase):
 
     def test_check_resolved_address(self):
         sock = socket.socket(socket.AF_INET)
-        base_events._check_resolved_address(sock, ('1.2.3.4', 1))
+        with sock:
+            base_events._check_resolved_address(sock, ('1.2.3.4', 1))
 
         sock = socket.socket(socket.AF_INET6)
-        base_events._check_resolved_address(sock, ('::3', 1))
-        base_events._check_resolved_address(sock, ('::3%lo0', 1))
-        self.assertRaises(ValueError,
-                          base_events._check_resolved_address, sock, ('foo', 1))
+        with sock:
+            base_events._check_resolved_address(sock, ('::3', 1))
+            base_events._check_resolved_address(sock, ('::3%lo0', 1))
+            with self.assertRaises(ValueError):
+                base_events._check_resolved_address(sock, ('foo', 1))
 
     def test_check_resolved_sock_type(self):
         # Ensure we ignore extra flags in sock.type.
         if hasattr(socket, 'SOCK_NONBLOCK'):
             sock = socket.socket(type=socket.SOCK_STREAM | socket.SOCK_NONBLOCK)
-            base_events._check_resolved_address(sock, ('1.2.3.4', 1))
+            with sock:
+                base_events._check_resolved_address(sock, ('1.2.3.4', 1))
 
         if hasattr(socket, 'SOCK_CLOEXEC'):
             sock = socket.socket(type=socket.SOCK_STREAM | socket.SOCK_CLOEXEC)
-            base_events._check_resolved_address(sock, ('1.2.3.4', 1))
+            with sock:
+                base_events._check_resolved_address(sock, ('1.2.3.4', 1))
 
 
 class BaseEventLoopTests(test_utils.TestCase):
