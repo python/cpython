@@ -1,8 +1,8 @@
 .. currentmodule:: asyncio
 
-+++++++++++++++++++++++++++++++++++++++++
-Transports  and protocols (low-level API)
-+++++++++++++++++++++++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++++++++
+Transports  and protocols (callback based API)
+++++++++++++++++++++++++++++++++++++++++++++++
 
 .. _asyncio-transport:
 
