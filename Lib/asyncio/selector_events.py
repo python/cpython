@@ -397,8 +397,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
             raise ValueError("the socket must be non-blocking")
         fut = futures.Future(loop=self)
         try:
-            if self._debug:
-                base_events._check_resolved_address(sock, address)
+            base_events._check_resolved_address(sock, address)
         except ValueError as err:
             fut.set_exception(err)
         else:
