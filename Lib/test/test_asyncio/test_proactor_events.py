@@ -436,7 +436,7 @@ class ProactorSocketTransportTests(test_utils.TestCase):
 class BaseProactorEventLoopTests(test_utils.TestCase):
 
     def setUp(self):
-        self.sock = mock.Mock(socket.socket)
+        self.sock = test_utils.mock_nonblocking_socket()
         self.proactor = mock.Mock()
 
         self.ssock, self.csock = mock.Mock(), mock.Mock()
@@ -491,8 +491,8 @@ class BaseProactorEventLoopTests(test_utils.TestCase):
         self.proactor.send.assert_called_with(self.sock, b'data')
 
     def test_sock_connect(self):
-        self.loop.sock_connect(self.sock, 123)
-        self.proactor.connect.assert_called_with(self.sock, 123)
+        self.loop.sock_connect(self.sock, ('1.2.3.4', 123))
+        self.proactor.connect.assert_called_with(self.sock, ('1.2.3.4', 123))
 
     def test_sock_accept(self):
         self.loop.sock_accept(self.sock)
