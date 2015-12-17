@@ -446,9 +446,14 @@ def disable_logger():
     finally:
         logger.setLevel(old_level)
 
-def mock_nonblocking_socket():
+
+def mock_nonblocking_socket(proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM,
+                            family=socket.AF_INET):
     """Create a mock of a non-blocking socket."""
-    sock = mock.Mock(socket.socket)
+    sock = mock.MagicMock(socket.socket)
+    sock.proto = proto
+    sock.type = type
+    sock.family = family
     sock.gettimeout.return_value = 0.0
     return sock
 
