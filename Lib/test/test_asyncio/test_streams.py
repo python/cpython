@@ -647,12 +647,13 @@ os.close(fd)
         def server():
             # Runs in a separate thread.
             sock = socket.socket()
-            sock.bind(('localhost', 0))
-            sock.listen(1)
-            addr = sock.getsockname()
-            q.put(addr)
-            clt, _ = sock.accept()
-            clt.close()
+            with sock:
+                sock.bind(('localhost', 0))
+                sock.listen(1)
+                addr = sock.getsockname()
+                q.put(addr)
+                clt, _ = sock.accept()
+                clt.close()
 
         @asyncio.coroutine
         def client(host, port):
