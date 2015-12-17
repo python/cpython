@@ -3,7 +3,7 @@
 # from test_zipfile
 from test import support
 
-# XXX(nnorwitz): disable this test by looking for extra largfile resource
+# XXX(nnorwitz): disable this test by looking for extralargefile resource,
 # which doesn't exist.  This test takes over 30 minutes to run in general
 # and requires more disk space than most of the buildbots.
 support.requires(
