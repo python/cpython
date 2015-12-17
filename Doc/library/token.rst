@@ -97,10 +97,16 @@ The token constants are:
           RARROW
           ELLIPSIS
           OP
+          AWAIT
+          ASYNC
           ERRORTOKEN
           N_TOKENS
           NT_OFFSET
 
+   .. versionchanged:: 3.5
+      Added :data:`AWAIT` and :data:`ASYNC` tokens. Starting with
+      Python 3.7, "async" and "await" will be tokenized as :data:`NAME`
+      tokens, and :data:`AWAIT` and :data:`ASYNC` will be removed.
 
 .. seealso::
 
