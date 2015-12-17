@@ -2,9 +2,9 @@
 
 .. _asyncio-streams:
 
-++++++++++++++++++++++++
-Streams (high-level API)
-++++++++++++++++++++++++
++++++++++++++++++++++++++++++
+Streams (coroutine based API)
++++++++++++++++++++++++++++++
 
 Stream functions
 ================
