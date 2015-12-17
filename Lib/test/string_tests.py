@@ -685,7 +685,7 @@ class BaseTest:
 
 
 class CommonTest(BaseTest):
-    # This testcase contains test that can be used in all
+    # This testcase contains tests that can be used in all
     # stringlike classes. Currently this is str, unicode
     # UserString and the string module.
 
