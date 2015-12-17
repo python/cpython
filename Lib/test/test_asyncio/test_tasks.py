@@ -2212,6 +2212,10 @@ class SleepTests(test_utils.TestCase):
         self.loop = asyncio.new_event_loop()
         asyncio.set_event_loop(None)
 
+    def tearDown(self):
+        self.loop.close()
+        self.loop = None
+
     def test_sleep_zero(self):
         result = 0
 
