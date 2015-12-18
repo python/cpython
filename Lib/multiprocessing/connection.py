@@ -397,7 +397,7 @@ class Connection(_ConnectionBase):
             self._send(header)
             self._send(buf)
         else:
-            # Issue # 20540: concatenate before sending, to avoid delays due
+            # Issue #20540: concatenate before sending, to avoid delays due
             # to Nagle's algorithm on a TCP socket.
             # Also note we want to avoid sending a 0-length buffer separately,
             # to avoid "broken pipe" errors if the other end closed the pipe.
