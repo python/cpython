@@ -138,7 +138,7 @@ Library
 
 - Issue #19771: Also in runpy and the "-m" option, omit the irrelevant
   message ". . . is a package and cannot be directly executed" if the package
-  could not even be initialized (e.g. due to a bad *.pyc file).
+  could not even be initialized (e.g. due to a bad ``*.pyc`` file).
 
 - Issue #25177: Fixed problem with the mean of very small and very large
   numbers. As a side effect, statistics.mean and statistics.variance should
@@ -236,7 +236,7 @@ Library
 - Issue #25411: Improved Unicode support in SMTPHandler through better use of
   the email package. Thanks to user simon04 for the patch.
 
-- Move the imp module  from a PendingDeprecationWarning to DeprecationWarning.
+- Move the imp module from a PendingDeprecationWarning to DeprecationWarning.
 
 - Issue #25407: Remove mentions of the formatter module being removed in
   Python 3.6.
@@ -311,11 +311,11 @@ Library
 
 - Issue #24633: site-packages/README -> README.txt.
 
-- Issue #24879:  help() and pydoc can now list named tuple fields in the
+- Issue #24879: help() and pydoc can now list named tuple fields in the
   order they were defined rather than alphabetically.  The ordering is
   determined by the _fields attribute if present.
 
-- Issue #24874:  Improve speed of itertools.cycle() and make its
+- Issue #24874: Improve speed of itertools.cycle() and make its
   pickle more compact.
 
 - Fix crash in itertools.cycle.__setstate__() when the first argument wasn't
@@ -390,7 +390,7 @@ IDLE
   Consistently use the revised idleConf.CurrentTheme everywhere in idlelib.
 
 - Issue #24782: Extension configuration is now a tab in the IDLE Preferences
-  dialog rather than a separate dialog.   The former tabs are now a sorted
+  dialog rather than a separate dialog.  The former tabs are now a sorted
   list.  Patch by Mark Roseman.
 
 - Issue #22726: Re-activate the config dialog help button with some content
@@ -859,7 +859,7 @@ IDLE
   Consistently use the revised idleConf.CurrentTheme everywhere in idlelib.
 
 - Issue #24782: Extension configuration is now a tab in the IDLE Preferences
-  dialog rather than a separate dialog.   The former tabs are now a sorted
+  dialog rather than a separate dialog.  The former tabs are now a sorted
   list.  Patch by Mark Roseman.
 
 - Issue #22726: Re-activate the config dialog help button with some content
