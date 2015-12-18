@@ -1106,7 +1106,7 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
  */
     FILE * fp;
     errno_t rc = _wfopen_s(&fp, *argv, L"rb");
-    unsigned char buffer[BUFSIZE];
+    char buffer[BUFSIZE];
     wchar_t shebang_line[BUFSIZE + 1];
     size_t read;
     char *p;
@@ -1128,7 +1128,8 @@ maybe_handle_shebang(wchar_t ** argv, wchar_t * cmdline)
         fclose(fp);
 
         if ((read >= 4) && (buffer[3] == '\n') && (buffer[2] == '\r')) {
-            ip = find_by_magic((buffer[1] << 8 | buffer[0]) & 0xFFFF);
+            ip = find_by_magic((((unsigned char)buffer[1]) << 8 |
+                                (unsigned char)buffer[0]) & 0xFFFF);
             if (ip != NULL) {
                 debug(L"script file is compiled against Python %ls\n",
                       ip->version);
