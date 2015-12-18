@@ -735,9 +735,9 @@ class HTTPResponse(io.BufferedIOBase):
         guessed.
 
         When the method is local-file, returned headers will include
-        a Date representing the file’s last-modified time, a
+        a Date representing the file's last-modified time, a
         Content-Length giving file size, and a Content-Type
-        containing a guess at the file’s type. See also the
+        containing a guess at the file's type. See also the
         description of the mimetools module.
 
         '''

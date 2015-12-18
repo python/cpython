@@ -179,14 +179,14 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     urllib.response.addinfourl object which can work as context manager and has
     methods such as:
 
-    * geturl() — return the URL of the resource retrieved, commonly used to
+    * geturl() - return the URL of the resource retrieved, commonly used to
       determine if a redirect was followed
 
-    * info() — return the meta-information of the page, such as headers, in the
+    * info() - return the meta-information of the page, such as headers, in the
       form of an email.message_from_string() instance (see Quick Reference to
       HTTP Headers)
 
-    * getcode() – return the HTTP status code of the response.  Raises URLError
+    * getcode() - return the HTTP status code of the response.  Raises URLError
       on errors.
 
     Note that *None& may be returned if no handler handles the request (though
