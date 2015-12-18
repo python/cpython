@@ -3460,7 +3460,6 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
     BOOL result;
     WIN32_FIND_DATA FileData;
     char namebuf[MAX_PATH+4]; /* Overallocate for "\*.*" */
-    char *bufptr = namebuf;
     /* only claim to have space for MAX_PATH */
     Py_ssize_t len = Py_ARRAY_LENGTH(namebuf)-4;
     wchar_t *wnamebuf = NULL;
