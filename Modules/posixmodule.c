@@ -3463,7 +3463,6 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
     char *bufptr = namebuf;
     /* only claim to have space for MAX_PATH */
     Py_ssize_t len = Py_ARRAY_LENGTH(namebuf)-4;
-    PyObject *po = NULL;
     wchar_t *wnamebuf = NULL;
 
     if (!path->narrow) {
@@ -12380,7 +12379,6 @@ enable_symlink()
     HANDLE tok;
     TOKEN_PRIVILEGES tok_priv;
     LUID luid;
-    int meth_idx = 0;
 
     if (!OpenProcessToken(GetCurrentProcess(), TOKEN_ALL_ACCESS, &tok))
         return 0;
