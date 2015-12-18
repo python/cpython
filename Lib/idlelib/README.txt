@@ -1,6 +1,6 @@
 README.txt: an index to idlelib files and the IDLE menu.
 
-IDLE is Python’s Integrated Development and Learning
+IDLE is Python's Integrated Development and Learning
 Environment.  The user documentation is part of the Library Reference and
 is available in IDLE by selecting Help => IDLE Help.  This README documents
 idlelib for IDLE developers and curious users.
