@@ -486,7 +486,7 @@ sub-run, yet finding such very efficiently when they exist.
 I first learned about the galloping strategy in a related context; see:
 
     "Adaptive Set Intersections, Unions, and Differences" (2000)
-    Erik D. Demaine, Alejandro López-Ortiz, J. Ian Munro
+    Erik D. Demaine, Alejandro LÃ³pez-Ortiz, J. Ian Munro
 
 and its followup(s).  An earlier paper called the same strategy
 "exponential search":
