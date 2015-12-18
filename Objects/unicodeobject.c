@@ -7332,7 +7332,6 @@ encode_code_page_strict(UINT code_page, PyObject **outbytes,
     BOOL usedDefaultChar = FALSE;
     BOOL *pusedDefaultChar = &usedDefaultChar;
     int outsize;
-    PyObject *exc = NULL;
     wchar_t *p;
     Py_ssize_t size;
     const DWORD flags = encode_code_page_flags(code_page, NULL);
