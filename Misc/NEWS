@@ -43,7 +43,7 @@ Library
 
 - Issue #19771: Also in runpy and the "-m" option, omit the irrelevant
   message ". . . is a package and cannot be directly executed" if the package
-  could not even be initialized (e.g. due to a bad *.pyc file).
+  could not even be initialized (e.g. due to a bad ``*.pyc`` file).
 
 - Issue #25177: Fixed problem with the mean of very small and very large
   numbers. As a side effect, statistics.mean and statistics.variance should
@@ -435,7 +435,7 @@ IDLE
   Consistently use the revised idleConf.CurrentTheme everywhere in idlelib.
 
 - Issue #24782: Extension configuration is now a tab in the IDLE Preferences
-  dialog rather than a separate dialog.   The former tabs are now a sorted
+  dialog rather than a separate dialog.  The former tabs are now a sorted
   list.  Patch by Mark Roseman.
 
 - Issue #22726: Re-activate the config dialog help button with some content
