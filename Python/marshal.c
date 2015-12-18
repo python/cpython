@@ -1644,7 +1644,7 @@ The file must be an open file object such as sys.stdout or returned by\n\
 open() or os.popen(). It must be opened in binary mode ('wb' or 'w+b').\n\
 \n\
 If the value has (or contains an object that has) an unsupported type, a\n\
-ValueError exception is raised — but garbage data will also be written\n\
+ValueError exception is raised - but garbage data will also be written\n\
 to the file. The object will not be properly read back by load()\n\
 \n\
 The version argument indicates the data format that dump should use.");
@@ -1695,7 +1695,7 @@ PyDoc_STRVAR(load_doc,
 "load(file)\n\
 \n\
 Read one value from the open file and return it. If no valid value is\n\
-read (e.g. because the data has a different Python version’s\n\
+read (e.g. because the data has a different Python version's\n\
 incompatible marshal format), raise EOFError, ValueError or TypeError.\n\
 The file must be an open file object opened in binary mode ('rb' or\n\
 'r+b').\n\
