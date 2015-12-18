@@ -321,7 +321,6 @@ getpythonregpath(HKEY keyBase, int skipcore)
     dataBuf = PyMem_RawMalloc((dataSize+1) * sizeof(WCHAR));
     if (dataBuf) {
         WCHAR *szCur = dataBuf;
-        DWORD reqdSize = dataSize;
         /* Copy our collected strings */
         for (index=0;index<numKeys;index++) {
             if (index > 0) {
@@ -349,6 +348,10 @@ getpythonregpath(HKEY keyBase, int skipcore)
             */
             rc = RegQueryValueExW(newKey, NULL, 0, NULL,
                                   (LPBYTE)szCur, &dataSize);
+            if (rc != ERROR_SUCCESS) {
+                PyMem_RawFree(dataBuf);
+                goto done;
+            }
         }
         /* And set the result - caller must free */
         retval = dataBuf;
