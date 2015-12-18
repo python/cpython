@@ -965,10 +965,12 @@ typedef struct {
  */
 static BOM BOMs[] = {
     { 3, { 0xEF, 0xBB, 0xBF }, CP_UTF8 },           /* UTF-8 - keep first */
-    { 2, { 0xFF, 0xFE }, CP_UTF16LE },              /* UTF-16LE */
-    { 2, { 0xFE, 0xFF }, CP_UTF16BE },              /* UTF-16BE */
+    /* Test UTF-32LE before UTF-16LE since UTF-16LE BOM is a prefix
+     * of UTF-32LE BOM. */
     { 4, { 0xFF, 0xFE, 0x00, 0x00 }, CP_UTF32LE },  /* UTF-32LE */
     { 4, { 0x00, 0x00, 0xFE, 0xFF }, CP_UTF32BE },  /* UTF-32BE */
+    { 2, { 0xFF, 0xFE }, CP_UTF16LE },              /* UTF-16LE */
+    { 2, { 0xFE, 0xFF }, CP_UTF16BE },              /* UTF-16BE */
     { 0 }                                           /* sentinel */
 };
 
