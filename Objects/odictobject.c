@@ -951,8 +951,6 @@ odict_sizeof(PyODictObject *od)
     if (res == -1 && PyErr_Occurred())
         return NULL;
 
-    res += sizeof(PyODictObject) - sizeof(PyDictObject);
-
     /* instance dict */
     pylong = _PyDict_SizeOf((PyDictObject *)od->od_inst_dict);
     if (pylong == NULL)

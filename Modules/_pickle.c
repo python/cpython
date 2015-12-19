@@ -4015,7 +4015,7 @@ _pickle_Pickler___sizeof___impl(PicklerObject *self)
 {
     Py_ssize_t res, s;
 
-    res = sizeof(PicklerObject);
+    res = _PyObject_SIZE(Py_TYPE(self));
     if (self->memo != NULL) {
         res += sizeof(PyMemoTable);
         res += self->memo->mt_allocated * sizeof(PyMemoEntry);
@@ -6418,7 +6418,7 @@ _pickle_Unpickler___sizeof___impl(UnpicklerObject *self)
 {
     Py_ssize_t res;
 
-    res = sizeof(UnpicklerObject);
+    res = _PyObject_SIZE(Py_TYPE(self));
     if (self->memo != NULL)
         res += self->memo_size * sizeof(PyObject *);
     if (self->marks != NULL)

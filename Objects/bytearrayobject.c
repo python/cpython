@@ -2974,7 +2974,7 @@ bytearray_sizeof_impl(PyByteArrayObject *self)
 {
     Py_ssize_t res;
 
-    res = sizeof(PyByteArrayObject) + self->ob_alloc * sizeof(char);
+    res = _PyObject_SIZE(Py_TYPE(self)) + self->ob_alloc * sizeof(char);
     return PyLong_FromSsize_t(res);
 }
 
