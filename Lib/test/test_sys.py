@@ -760,7 +760,7 @@ class SizeofTest(unittest.TestCase):
     def check_slots(self, obj, base, extra):
         expected = sys.getsizeof(base) + struct.calcsize(extra)
         if gc.is_tracked(obj) and not gc.is_tracked(base):
-            expected += struct.calcsize('3P')  # PyGC_Head
+            expected += self.gc_headsize
         self.assertEqual(sys.getsizeof(obj), expected)
 
     def test_slots(self):
