@@ -847,7 +847,7 @@ static Py_ssize_t
 _elementtree_Element___sizeof___impl(ElementObject *self)
 /*[clinic end generated code: output=bf73867721008000 input=70f4b323d55a17c1]*/
 {
-    Py_ssize_t result = sizeof(ElementObject);
+    Py_ssize_t result = _PyObject_SIZE(Py_TYPE(self));
     if (self->extra) {
         result += sizeof(ElementObjectExtra);
         if (self->extra->children != self->extra->_children)

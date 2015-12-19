@@ -4529,7 +4529,7 @@ dec_sizeof(PyObject *v, PyObject *dummy UNUSED)
 {
     Py_ssize_t res;
 
-    res = sizeof(PyDecObject);
+    res = _PyObject_SIZE(Py_TYPE(v));
     if (mpd_isdynamic_data(MPD(v))) {
         res += MPD(v)->alloc * sizeof(mpd_uint_t);
     }
