@@ -2560,7 +2560,7 @@ _PyDict_SizeOf(PyDictObject *mp)
     Py_ssize_t size, res;
 
     size = DK_SIZE(mp->ma_keys);
-    res = sizeof(PyDictObject);
+    res = _PyObject_SIZE(Py_TYPE(mp));
     if (mp->ma_values)
         res += size * sizeof(PyObject*);
     /* If the dictionary is split, the keys portion is accounted-for
