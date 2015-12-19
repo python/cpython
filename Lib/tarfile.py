@@ -2372,9 +2372,32 @@ class TarFile(object):
         """Provide an iterator object.
         """
         if self._loaded:
-            return iter(self.members)
-        else:
-            return TarIter(self)
+            yield from self.members
+            return
+
+        # Yield items using TarFile's next() method.
+        # When all members have been read, set TarFile as _loaded.
+        index = 0
+        # Fix for SF #1100429: Under rare circumstances it can
+        # happen that getmembers() is called during iteration,
+        # which will have already exhausted the next() method.
+        if self.firstmember is not None:
+            tarinfo = self.next()
+            index += 1
+            yield tarinfo
+
+        while True:
+            if index < len(self.members):
+                tarinfo = self.members[index]
+            elif not self._loaded:
+                tarinfo = self.next()
+                if not tarinfo:
+                    self._loaded = True
+                    return
+            else:
+                return
+            index += 1
+            yield tarinfo
 
     def _dbg(self, level, msg):
         """Write debugging output to sys.stderr.
@@ -2395,45 +2418,6 @@ class TarFile(object):
             if not self._extfileobj:
                 self.fileobj.close()
             self.closed = True
-# class TarFile
-
-class TarIter:
-    """Iterator Class.
-
-       for tarinfo in TarFile(...):
-           suite...
-    """
-
-    def __init__(self, tarfile):
-        """Construct a TarIter object.
-        """
-        self.tarfile = tarfile
-        self.index = 0
-    def __iter__(self):
-        """Return iterator object.
-        """
-        return self
-    def __next__(self):
-        """Return the next item using TarFile's next() method.
-           When all members have been read, set TarFile as _loaded.
-        """
-        # Fix for SF #1100429: Under rare circumstances it can
-        # happen that getmembers() is called during iteration,
-        # which will cause TarIter to stop prematurely.
-
-        if self.index == 0 and self.tarfile.firstmember is not None:
-            tarinfo = self.tarfile.next()
-        elif self.index < len(self.tarfile.members):
-            tarinfo = self.tarfile.members[self.index]
-        elif not self.tarfile._loaded:
-            tarinfo = self.tarfile.next()
-            if not tarinfo:
-                self.tarfile._loaded = True
-                raise StopIteration
-        else:
-            raise StopIteration
-        self.index += 1
-        return tarinfo
 
 #--------------------
 # exported functions
