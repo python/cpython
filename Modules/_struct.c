@@ -1924,7 +1924,7 @@ s_sizeof(PyStructObject *self, void *unused)
     Py_ssize_t size;
     formatcode *code;
 
-    size = sizeof(PyStructObject) + sizeof(formatcode);
+    size = _PyObject_SIZE(Py_TYPE(self)) + sizeof(formatcode);
     for (code = self->s_codes; code->fmtdef != NULL; code++)
         size += sizeof(formatcode);
     return PyLong_FromSsize_t(size);

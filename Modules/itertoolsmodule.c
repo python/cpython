@@ -2109,7 +2109,7 @@ product_sizeof(productobject *lz, void *unused)
 {
     Py_ssize_t res;
 
-    res = sizeof(productobject);
+    res = _PyObject_SIZE(Py_TYPE(lz));
     res += PyTuple_GET_SIZE(lz->pools) * sizeof(Py_ssize_t);
     return PyLong_FromSsize_t(res);
 }
@@ -2440,7 +2440,7 @@ combinations_sizeof(combinationsobject *co, void *unused)
 {
     Py_ssize_t res;
 
-    res = sizeof(combinationsobject);
+    res = _PyObject_SIZE(Py_TYPE(co));
     res += co->r * sizeof(Py_ssize_t);
     return PyLong_FromSsize_t(res);
 }
@@ -2781,7 +2781,7 @@ cwr_sizeof(cwrobject *co, void *unused)
 {
     Py_ssize_t res;
 
-    res = sizeof(cwrobject);
+    res = _PyObject_SIZE(Py_TYPE(co));
     res += co->r * sizeof(Py_ssize_t);
     return PyLong_FromSsize_t(res);
 }
@@ -3129,7 +3129,7 @@ permutations_sizeof(permutationsobject *po, void *unused)
 {
     Py_ssize_t res;
 
-    res = sizeof(permutationsobject);
+    res = _PyObject_SIZE(Py_TYPE(po));
     res += PyTuple_GET_SIZE(po->pool) * sizeof(Py_ssize_t);
     res += po->r * sizeof(Py_ssize_t);
     return PyLong_FromSsize_t(res);
