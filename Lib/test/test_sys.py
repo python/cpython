@@ -1112,6 +1112,36 @@ class SizeofTest(unittest.TestCase):
         # weakcallableproxy
         check(weakref.proxy(int), size('2Pn2P'))
 
+    def check_slots(self, obj, base, extra):
+        expected = sys.getsizeof(base) + struct.calcsize(extra)
+        if gc.is_tracked(obj) and not gc.is_tracked(base):
+            expected += struct.calcsize('2Pn')  # PyGC_Head
+        self.assertEqual(sys.getsizeof(obj), expected)
+
+    def test_slots(self):
+        # check all subclassable types defined in Objects/ that allow
+        # non-empty __slots__
+        check = self.check_slots
+        class BA(bytearray):
+            __slots__ = 'a', 'b', 'c'
+        check(BA(), bytearray(), '3P')
+        class D(dict):
+            __slots__ = 'a', 'b', 'c'
+        check(D(x=[]), {'x': []}, '3P')
+        class L(list):
+            __slots__ = 'a', 'b', 'c'
+        check(L(), [], '3P')
+        class S(set):
+            __slots__ = 'a', 'b', 'c'
+        check(S(), set(), '3P')
+        class FS(frozenset):
+            __slots__ = 'a', 'b', 'c'
+        check(FS(), frozenset(), '3P')
+        from collections import OrderedDict
+        class OD(OrderedDict):
+            __slots__ = 'a', 'b', 'c'
+        check(OD(x=[]), OrderedDict(x=[]), '3P')
+
     def test_pythontypes(self):
         # check all types defined in Python/
         size = test.support.calcobjsize

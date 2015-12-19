@@ -384,7 +384,7 @@ code_sizeof(PyCodeObject *co, void *unused)
 {
     Py_ssize_t res;
 
-    res = sizeof(PyCodeObject);
+    res = _PyObject_SIZE(Py_TYPE(co));
     if (co->co_cell2arg != NULL && co->co_cellvars != NULL)
         res += PyTuple_GET_SIZE(co->co_cellvars) * sizeof(unsigned char);
     return PyLong_FromSsize_t(res);
