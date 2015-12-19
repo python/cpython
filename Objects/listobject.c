@@ -2469,7 +2469,7 @@ list_sizeof(PyListObject *self)
 {
     Py_ssize_t res;
 
-    res = sizeof(PyListObject) + self->allocated * sizeof(void*);
+    res = _PyObject_SIZE(Py_TYPE(self)) + self->allocated * sizeof(void*);
     return PyInt_FromSsize_t(res);
 }
 

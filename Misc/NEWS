@@ -10,6 +10,10 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #25421: __sizeof__ methods of builtin types now use dynamic basic size.
+  This allows sys.getsize() to work correctly with their subclasses with
+  __slots__ defined.
+
 - Issue #19543: Added Py3k warning for decoding unicode.
 
 - Issue #24097: Fixed crash in object.__reduce__() if slot name is freed inside

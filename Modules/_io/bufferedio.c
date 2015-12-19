@@ -391,7 +391,7 @@ buffered_sizeof(buffered *self, void *unused)
 {
     Py_ssize_t res;
 
-    res = sizeof(buffered);
+    res = _PyObject_SIZE(Py_TYPE(self));
     if (self->buffer)
         res += self->buffer_size;
     return PyLong_FromSsize_t(res);

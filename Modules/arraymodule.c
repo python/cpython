@@ -1541,7 +1541,7 @@ static PyObject *
 array_sizeof(arrayobject *self, PyObject *unused)
 {
     Py_ssize_t res;
-    res = sizeof(arrayobject) + self->allocated * self->ob_descr->itemsize;
+    res = _PyObject_SIZE(Py_TYPE(self)) + self->allocated * self->ob_descr->itemsize;
     return PyLong_FromSsize_t(res);
 }
 

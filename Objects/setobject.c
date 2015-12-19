@@ -1985,7 +1985,7 @@ set_sizeof(PySetObject *so)
 {
     Py_ssize_t res;
 
-    res = sizeof(PySetObject);
+    res = _PyObject_SIZE(Py_TYPE(so));
     if (so->table != so->smalltable)
         res = res + (so->mask + 1) * sizeof(setentry);
     return PyInt_FromSsize_t(res);

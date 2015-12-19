@@ -655,7 +655,7 @@ mmap__sizeof__method(mmap_object *self, void *unused)
 {
     Py_ssize_t res;
 
-    res = sizeof(mmap_object);
+    res = _PyObject_SIZE(Py_TYPE(self));
     if (self->tagname)
         res += strlen(self->tagname) + 1;
     return PyLong_FromSsize_t(res);
