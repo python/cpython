@@ -109,6 +109,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22227: The TarFile iterator is reimplemented using generator.
+  This implementation is simpler that using class.
+
 - Issue #25638: Optimized ElementTree.iterparse(); it is now 2x faster.
   Optimized ElementTree parsing; it is now 10% faster.
 
