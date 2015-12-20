@@ -814,11 +814,6 @@ class SizeofTest(unittest.TestCase):
         self.longdigit = sys.int_info.sizeof_digit
         import _testcapi
         self.gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
-        self.file = open(test.support.TESTFN, 'wb')
-
-    def tearDown(self):
-        self.file.close()
-        test.support.unlink(test.support.TESTFN)
 
     check_sizeof = test.support.check_sizeof
 
