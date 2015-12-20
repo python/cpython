@@ -864,6 +864,7 @@ class SizeofTest(unittest.TestCase):
 
     def test_objecttypes(self):
         # check all types defined in Objects/
+        calcsize = struct.calcsize
         size = test.support.calcobjsize
         vsize = test.support.calcvobjsize
         check = self.check_sizeof
@@ -915,17 +916,23 @@ class SizeofTest(unittest.TestCase):
         # method-wrapper (descriptor object)
         check({}.__iter__, size('2P'))
         # dict
-        check({}, size('n2P' + '2nPn' + 8*'n2P'))
+        check({}, size('n2P') + calcsize('2nPn') + 8*calcsize('n2P'))
         longdict = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(longdict, size('n2P' + '2nPn') + 16*struct.calcsize('n2P'))
-        # dictionary-keyiterator
+        check(longdict, size('n2P') + calcsize('2nPn') + 16*calcsize('n2P'))
+        # dictionary-keyview
         check({}.keys(), size('P'))
-        # dictionary-valueiterator
+        # dictionary-valueview
         check({}.values(), size('P'))
-        # dictionary-itemiterator
+        # dictionary-itemview
         check({}.items(), size('P'))
         # dictionary iterator
         check(iter({}), size('P2nPn'))
+        # dictionary-keyiterator
+        check(iter({}.keys()), size('P2nPn'))
+        # dictionary-valueiterator
+        check(iter({}.values()), size('P2nPn'))
+        # dictionary-itemiterator
+        check(iter({}.items()), size('P2nPn'))
         # dictproxy
         class C(object): pass
         check(C.__dict__, size('P'))
@@ -1044,8 +1051,8 @@ class SizeofTest(unittest.TestCase):
                 check(set(sample), s)
                 check(frozenset(sample), s)
             else:
-                check(set(sample), s + newsize*struct.calcsize('nP'))
-                check(frozenset(sample), s + newsize*struct.calcsize('nP'))
+                check(set(sample), s + newsize*calcsize('nP'))
+                check(frozenset(sample), s + newsize*calcsize('nP'))
         # setiterator
         check(iter(set()), size('P3n'))
         # slice
@@ -1059,11 +1066,15 @@ class SizeofTest(unittest.TestCase):
         # static type: PyTypeObject
         s = vsize('P2n15Pl4Pn9Pn11PIP')
         check(int, s)
-        # (PyTypeObject + PyAsyncMethods + PyNumberMethods + PyMappingMethods +
-        #  PySequenceMethods + PyBufferProcs + 4P)
-        s = vsize('P2n17Pl4Pn9Pn11PIP') + struct.calcsize('34P 3P 3P 10P 2P 4P')
+        s = vsize('P2n15Pl4Pn9Pn11PIP'  # PyTypeObject
+                  '3P'                  # PyAsyncMethods
+                  '36P'                 # PyNumberMethods
+                  '3P'                  # PyMappingMethods
+                  '10P'                 # PySequenceMethods
+                  '2P'                  # PyBufferProcs
+                  '4P')
         # Separate block for PyDictKeysObject with 4 entries
-        s += struct.calcsize("2nPn") + 4*struct.calcsize("n2P")
+        s += calcsize("2nPn") + 4*calcsize("n2P")
         # class
         class newstyleclass(object): pass
         check(newstyleclass, s)
