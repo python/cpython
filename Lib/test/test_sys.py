@@ -484,11 +484,6 @@ class SizeofTest(unittest.TestCase):
         self.longdigit = sys.long_info.sizeof_digit
         import _testcapi
         self.gc_headsize = _testcapi.SIZEOF_PYGC_HEAD
-        self.file = open(test.test_support.TESTFN, 'wb')
-
-    def tearDown(self):
-        self.file.close()
-        test.test_support.unlink(test.test_support.TESTFN)
 
     check_sizeof = test.test_support.check_sizeof
 
@@ -613,7 +608,12 @@ class SizeofTest(unittest.TestCase):
         # enumerate
         check(enumerate([]), size('l3P'))
         # file
-        check(self.file, size('4P2i4P3i3P3i'))
+        f = file(test.test_support.TESTFN, 'wb')
+        try:
+            check(f, size('4P2i4P3i3P3i'))
+        finally:
+            f.close()
+            test.test_support.unlink(test.test_support.TESTFN)
         # float
         check(float(0), size('d'))
         # sys.floatinfo
@@ -793,7 +793,12 @@ class SizeofTest(unittest.TestCase):
         check(_ast.AST(), size(''))
         # imp.NullImporter
         import imp
-        check(imp.NullImporter(self.file.name), size(''))
+        f = open(test.test_support.TESTFN, 'wb')
+        try:
+            check(imp.NullImporter(f.name), size(''))
+        finally:
+            f.close()
+            test.test_support.unlink(test.test_support.TESTFN)
         try:
             raise TypeError
         except TypeError:
