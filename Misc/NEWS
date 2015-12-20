@@ -7,11 +7,10 @@ What's New in Python 3.4.4?
 
 Release date: 2015/12/20
 
-Core and Builtins
------------------
-
-Library
+Windows
 -------
+
+- Issue #25844: Corrected =/== typo potentially leading to crash in launcher.
 
 
 What's New in Python 3.4.4rc1?
