@@ -527,6 +527,7 @@ class SizeofTest(unittest.TestCase):
 
     def test_objecttypes(self):
         # check all types defined in Objects/
+        calcsize = struct.calcsize
         size = test.test_support.calcobjsize
         vsize = test.test_support.calcvobjsize
         check = self.check_sizeof
@@ -590,9 +591,17 @@ class SizeofTest(unittest.TestCase):
         # method-wrapper (descriptor object)
         check({}.__iter__, size('2P'))
         # dict
-        check({}, size('3P2P' + 8*'P2P'))
+        check({}, size('3P2P') + 8*calcsize('P2P'))
         x = {1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:7, 8:8}
-        check(x, size('3P2P' + 8*'P2P') + 16*struct.calcsize('P2P'))
+        check(x, size('3P2P') + 8*calcsize('P2P') + 16*calcsize('P2P'))
+        # dictionary-keyview
+        check({}.viewkeys(), size('P'))
+        # dictionary-valueview
+        check({}.viewvalues(), size('P'))
+        # dictionary-itemview
+        check({}.viewitems(), size('P'))
+        # dictionary iterator
+        check(iter({}), size('P2PPP'))
         # dictionary-keyiterator
         check({}.iterkeys(), size('P2PPP'))
         # dictionary-valueiterator
@@ -710,16 +719,16 @@ class SizeofTest(unittest.TestCase):
                 check(set(sample), s)
                 check(frozenset(sample), s)
             else:
-                check(set(sample), s + newsize*struct.calcsize('lP'))
-                check(frozenset(sample), s + newsize*struct.calcsize('lP'))
+                check(set(sample), s + newsize*calcsize('lP'))
+                check(frozenset(sample), s + newsize*calcsize('lP'))
         # setiterator
         check(iter(set()), size('P3P'))
         # slice
         check(slice(1), size('3P'))
         # str
         vh = test.test_support._vheader
-        check('', struct.calcsize(vh + 'lic'))
-        check('abc', struct.calcsize(vh + 'lic') + 3)
+        check('', calcsize(vh + 'lic'))
+        check('abc', calcsize(vh + 'lic') + 3)
         # super
         check(super(int), size('3P'))
         # tuple
@@ -728,9 +737,12 @@ class SizeofTest(unittest.TestCase):
         # tupleiterator
         check(iter(()), size('lP'))
         # type
-        # (PyTypeObject + PyNumberMethods +  PyMappingMethods +
-        #  PySequenceMethods + PyBufferProcs)
-        s = vsize('P2P15Pl4PP9PP11PI') + struct.calcsize('41P 10P 3P 6P')
+        s = vsize('P2P15Pl4PP9PP11PI'   # PyTypeObject
+                  '39P'                 # PyNumberMethods
+                  '3P'                  # PyMappingMethods
+                  '10P'                 # PySequenceMethods
+                  '6P'                  # PyBufferProcs
+                  '2P')
         class newstyleclass(object):
             pass
         check(newstyleclass, s)
