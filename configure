@@ -801,6 +801,7 @@ with_universal_archs
 with_framework_name
 enable_framework
 with_gcc
+with_icc
 with_cxx_main
 with_suffix
 enable_shared
@@ -1480,6 +1481,7 @@ Optional Packages:
                           specify an alternate name of the framework built
                           with --enable-framework
   --without-gcc           never use gcc
+  --with-icc              build with icc
   --with-cxx-main=<compiler>
                           compile main() and link python executable with C++
                           compiler
@@ -3549,6 +3551,29 @@ fi
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $without_gcc" >&5
 $as_echo "$without_gcc" >&6; }
 
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-icc" >&5
+$as_echo_n "checking for --with-icc... " >&6; }
+
+# Check whether --with-icc was given.
+if test "${with_icc+set}" = set; then :
+  withval=$with_icc;
+	case $withval in
+	no)	CC=${CC:-cc}
+		with_icc=no;;
+	yes)	CC=icc
+		CXX=icpc
+		with_icc=yes;;
+	*)	CC=$withval
+		with_icc=$withval;;
+	esac
+else
+
+	with_icc=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_icc" >&5
+$as_echo "$with_icc" >&6; }
+
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -4928,6 +4953,104 @@ fi
 
   if test "x$ac_pt_CXX" = x; then
     CXX="clang++"
+  else
+    case $cross_compiling:$ac_tool_warned in
+yes:)
+{ $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: using cross tools not prefixed with host triplet" >&5
+$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
+ac_tool_warned=yes ;;
+esac
+    CXX=$ac_pt_CXX
+  fi
+else
+  CXX="$ac_cv_path_CXX"
+fi
+ ;;
+        icc|*/icc)         if test -n "$ac_tool_prefix"; then
+  # Extract the first word of "${ac_tool_prefix}icpc", so it can be a program name with args.
+set dummy ${ac_tool_prefix}icpc; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_CXX="$CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in notfound
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+CXX=$ac_cv_path_CXX
+if test -n "$CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $CXX" >&5
+$as_echo "$CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+fi
+if test -z "$ac_cv_path_CXX"; then
+  ac_pt_CXX=$CXX
+  # Extract the first word of "icpc", so it can be a program name with args.
+set dummy icpc; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_ac_pt_CXX+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $ac_pt_CXX in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ac_pt_CXX="$ac_pt_CXX" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in notfound
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_ac_pt_CXX="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  ;;
+esac
+fi
+ac_pt_CXX=$ac_cv_path_ac_pt_CXX
+if test -n "$ac_pt_CXX"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_pt_CXX" >&5
+$as_echo "$ac_pt_CXX" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+  if test "x$ac_pt_CXX" = x; then
+    CXX="icpc"
   else
     case $cross_compiling:$ac_tool_warned in
 yes:)
@@ -6438,6 +6561,12 @@ fi
 
 
 # Enable PGO flags.
+
+
+
+
+
+
 # Extract the first word of "llvm-profdata", so it can be a program name with args.
 set dummy llvm-profdata; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -6508,6 +6637,12 @@ case $CC in
         LLVM_PROF_FILE=""
         ;;
     esac
+    ;;
+  *icc*)
+    PGO_PROF_GEN_FLAG="-prof-gen"
+    PGO_PROF_USE_FLAG="-prof-use"
+    LLVM_PROF_MERGER="true"
+    LLVM_PROF_FILE=""
     ;;
 esac
 
@@ -6655,6 +6790,13 @@ $as_echo "$ac_cv_no_strict_aliasing" >&6; }
       BASECFLAGS="$BASECFLAGS -fno-strict-aliasing"
     fi
 
+    # ICC doesn't recognize the option, but only emits a warning
+    ## XXX does it emit an unused result warning and can it be disabled?
+    case "$CC" in
+    *icc*)
+    ac_cv_disable_unused_result_warning=no
+    ;;
+    *)
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if we can turn off $CC unused result warning" >&5
 $as_echo_n "checking if we can turn off $CC unused result warning... " >&6; }
      ac_save_cc="$CC"
@@ -6692,6 +6834,8 @@ fi
      CC="$ac_save_cc"
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_disable_unused_result_warning" >&5
 $as_echo "$ac_cv_disable_unused_result_warning" >&6; }
+    ;;
+    esac
 
     if test $ac_cv_disable_unused_result_warning = yes
     then
@@ -6978,6 +7122,13 @@ $as_echo "$MACOSX_DEPLOYMENT_TARGET" >&6; }
 	BASECFLAGS="$BASECFLAGS -belf -Ki486 -DSCO5"
 	;;
     esac
+    ;;
+esac
+
+# ICC needs -fp-model strict or floats behave badly
+case "$CC" in
+*icc*)
+    CFLAGS_NODIST="$CFLAGS_NODIST -fp-model strict"
     ;;
 esac
 

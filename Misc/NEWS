@@ -509,6 +509,9 @@ Tests
 Build
 -----
 
+- Issue #25827: Add support for building with ICC to ``configure``, including
+  a new ``--with-icc`` flag.
+
 - Issue #25696: Fix installation of Python on UNIX with make -j9.
 
 - Issue #24986: It is now possible to build Python on Windows without errors
