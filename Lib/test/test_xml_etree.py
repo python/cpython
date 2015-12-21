@@ -1668,6 +1668,57 @@ class BugsTest(unittest.TestCase):
         ET.register_namespace('test10777', 'http://myuri/')
         ET.register_namespace('test10777', 'http://myuri/')
 
+    def test_lost_text(self):
+        # Issue #25902: Borrowed text can disappear
+        class Text:
+            def __bool__(self):
+                e.text = 'changed'
+                return True
+
+        e = ET.Element('tag')
+        e.text = Text()
+        i = e.itertext()
+        t = next(i)
+        self.assertIsInstance(t, Text)
+        self.assertIsInstance(e.text, str)
+        self.assertEqual(e.text, 'changed')
+
+    def test_lost_tail(self):
+        # Issue #25902: Borrowed tail can disappear
+        class Text:
+            def __bool__(self):
+                e[0].tail = 'changed'
+                return True
+
+        e = ET.Element('root')
+        e.append(ET.Element('tag'))
+        e[0].tail = Text()
+        i = e.itertext()
+        t = next(i)
+        self.assertIsInstance(t, Text)
+        self.assertIsInstance(e[0].tail, str)
+        self.assertEqual(e[0].tail, 'changed')
+
+    def test_lost_elem(self):
+        # Issue #25902: Borrowed element can disappear
+        class Tag:
+            def __eq__(self, other):
+                e[0] = ET.Element('changed')
+                next(i)
+                return True
+
+        e = ET.Element('root')
+        e.append(ET.Element(Tag()))
+        e.append(ET.Element('tag'))
+        i = e.iter('tag')
+        try:
+            t = next(i)
+        except ValueError:
+            self.skipTest('generators are not reentrant')
+        self.assertIsInstance(t.tag, Tag)
+        self.assertIsInstance(e[0].tag, str)
+        self.assertEqual(e[0].tag, 'changed')
+
 
 # --------------------------------------------------------------------
 

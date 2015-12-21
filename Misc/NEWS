@@ -115,6 +115,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25902: Fixed various refcount issues in ElementTree iteration.
+
 - Issue #22227: The TarFile iterator is reimplemented using generator.
   This implementation is simpler that using class.
 
