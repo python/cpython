@@ -573,6 +573,22 @@ AC_ARG_WITH(gcc,
 	esac])
 AC_MSG_RESULT($without_gcc)
 
+AC_MSG_CHECKING(for --with-icc)
+AC_ARG_WITH(icc,
+            AS_HELP_STRING([--with-icc], [build with icc]),
+[
+	case $withval in
+	no)	CC=${CC:-cc}
+		with_icc=no;;
+	yes)	CC=icc
+		CXX=icpc
+		with_icc=yes;;
+	*)	CC=$withval
+		with_icc=$withval;;
+	esac], [
+	with_icc=no])
+AC_MSG_RESULT($with_icc)
+
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
 then
@@ -1266,6 +1282,13 @@ yes)
     ;;
 esac
 
+# ICC needs -fp-model strict or floats behave badly
+case "$CC" in
+*icc*)
+    BASECFLAGS="$BASECFLAGS -fp-model strict"
+    ;;
+esac
+
 if test "$Py_DEBUG" = 'true'; then
   :
 else
@@ -1393,6 +1416,12 @@ case $CC in
         LLVM_PROF_FILE=""
         ;;
     esac
+    ;;
+  *icc*)
+    PGO_PROF_GEN_FLAG="-prof-gen"
+    PGO_PROF_USE_FLAG="-prof-use"
+    LLVM_PROF_MERGER="true"
+    LLVM_PROF_FILE=""
     ;;
 esac
 

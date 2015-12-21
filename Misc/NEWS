@@ -64,6 +64,9 @@ Tests
 Build
 -----
 
+- Issue #25827: Add support for building with ICC to ``configure``, including
+  a new ``--with-icc`` flag.
+
 - Issue #25696: Fix installation of Python on UNIX with make -j9.
 
 - Issue #25798: Update OS X 10.5+ 32-bit-only installer to build

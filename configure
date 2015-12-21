@@ -789,6 +789,7 @@ with_universal_archs
 with_framework_name
 enable_framework
 with_gcc
+with_icc
 with_cxx_main
 with_suffix
 enable_shared
@@ -1469,6 +1470,7 @@ Optional Packages:
                           specify an alternate name of the framework built
                           with --enable-framework
   --without-gcc           never use gcc
+  --with-icc              build with icc
   --with-cxx-main=<compiler>
                           compile main() and link python executable with C++
                           compiler
@@ -3479,6 +3481,29 @@ fi
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: result: $without_gcc" >&5
 $as_echo "$without_gcc" >&6; }
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for --with-icc" >&5
+$as_echo_n "checking for --with-icc... " >&6; }
+
+# Check whether --with-icc was given.
+if test "${with_icc+set}" = set; then :
+  withval=$with_icc;
+	case $withval in
+	no)	CC=${CC:-cc}
+		with_icc=no;;
+	yes)	CC=icc
+		CXX=icpc
+		with_icc=yes;;
+	*)	CC=$withval
+		with_icc=$withval;;
+	esac
+else
+
+	with_icc=no
+fi
+
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $with_icc" >&5
+$as_echo "$with_icc" >&6; }
 
 # If the user switches compilers, we can't believe the cache
 if test ! -z "$ac_cv_prog_CC" -a ! -z "$CC" -a "$CC" != "$ac_cv_prog_CC"
@@ -6188,6 +6213,13 @@ $as_echo "$CC" >&6; }
     ;;
 esac
 
+# ICC needs -fp-model strict or floats behave badly
+case "$CC" in
+*icc*)
+    BASECFLAGS="$BASECFLAGS -fp-model strict"
+    ;;
+esac
+
 if test "$Py_DEBUG" = 'true'; then
   :
 else
@@ -6334,6 +6366,12 @@ fi
 
 
 # Enable PGO flags.
+
+
+
+
+
+
 # Extract the first word of "llvm-profdata", so it can be a program name with args.
 set dummy llvm-profdata; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
@@ -6404,6 +6442,12 @@ case $CC in
         LLVM_PROF_FILE=""
         ;;
     esac
+    ;;
+  *icc*)
+    PGO_PROF_GEN_FLAG="-prof-gen"
+    PGO_PROF_USE_FLAG="-prof-use"
+    LLVM_PROF_MERGER="true"
+    LLVM_PROF_FILE=""
     ;;
 esac
 

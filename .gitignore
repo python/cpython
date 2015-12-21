@@ -9,6 +9,7 @@
 *.gc??
 *.profclang?
 *.profraw
+*.dyn
 Doc/build/
 Doc/tools/docutils/
 Doc/tools/jinja2/
