@@ -2070,6 +2070,7 @@ elementiter_next(ElementIterObject *it)
     ElementObject *cur_parent;
     Py_ssize_t child_index;
     int rc;
+    ElementObject *elem;
 
     while (1) {
         /* Handle the case reached in the beginning and end of iteration, where
@@ -2083,37 +2084,46 @@ elementiter_next(ElementIterObject *it)
                 PyErr_SetNone(PyExc_StopIteration);
                 return NULL;
             } else {
+                elem = it->root_element;
                 it->parent_stack = parent_stack_push_new(it->parent_stack,
-                                                         it->root_element);
+                                                         elem);
                 if (!it->parent_stack) {
                     PyErr_NoMemory();
                     return NULL;
                 }
 
+                Py_INCREF(elem);
                 it->root_done = 1;
                 rc = (it->sought_tag == Py_None);
                 if (!rc) {
-                    rc = PyObject_RichCompareBool(it->root_element->tag,
+                    rc = PyObject_RichCompareBool(elem->tag,
                                                   it->sought_tag, Py_EQ);
-                    if (rc < 0)
+                    if (rc < 0) {
+                        Py_DECREF(elem);
                         return NULL;
+                    }
                 }
                 if (rc) {
                     if (it->gettext) {
-                        PyObject *text = element_get_text(it->root_element);
-                        if (!text)
+                        PyObject *text = element_get_text(elem);
+                        if (!text) {
+                            Py_DECREF(elem);
                             return NULL;
+                        }
+                        Py_INCREF(text);
+                        Py_DECREF(elem);
                         rc = PyObject_IsTrue(text);
+                        if (rc > 0)
+                            return text;
+                        Py_DECREF(text);
                         if (rc < 0)
                             return NULL;
-                        if (rc) {
-                            Py_INCREF(text);
-                            return text;
-                        }
                     } else {
-                        Py_INCREF(it->root_element);
-                        return (PyObject *)it->root_element;
+                        return (PyObject *)elem;
                     }
+                }
+                else {
+                    Py_DECREF(elem);
                 }
             }
         }
@@ -2124,54 +2134,68 @@ elementiter_next(ElementIterObject *it)
         cur_parent = it->parent_stack->parent;
         child_index = it->parent_stack->child_index;
         if (cur_parent->extra && child_index < cur_parent->extra->length) {
-            ElementObject *child = (ElementObject *)
-                cur_parent->extra->children[child_index];
+            elem = (ElementObject *)cur_parent->extra->children[child_index];
             it->parent_stack->child_index++;
             it->parent_stack = parent_stack_push_new(it->parent_stack,
-                                                     child);
+                                                     elem);
             if (!it->parent_stack) {
                 PyErr_NoMemory();
                 return NULL;
             }
 
+            Py_INCREF(elem);
             if (it->gettext) {
-                PyObject *text = element_get_text(child);
-                if (!text)
+                PyObject *text = element_get_text(elem);
+                if (!text) {
+                    Py_DECREF(elem);
                     return NULL;
+                }
+                Py_INCREF(text);
+                Py_DECREF(elem);
                 rc = PyObject_IsTrue(text);
+                if (rc > 0)
+                    return text;
+                Py_DECREF(text);
                 if (rc < 0)
                     return NULL;
-                if (rc) {
-                    Py_INCREF(text);
-                    return text;
-                }
             } else {
                 rc = (it->sought_tag == Py_None);
                 if (!rc) {
-                    rc = PyObject_RichCompareBool(child->tag,
+                    rc = PyObject_RichCompareBool(elem->tag,
                                                   it->sought_tag, Py_EQ);
-                    if (rc < 0)
+                    if (rc < 0) {
+                        Py_DECREF(elem);
                         return NULL;
+                    }
                 }
                 if (rc) {
-                    Py_INCREF(child);
-                    return (PyObject *)child;
+                    return (PyObject *)elem;
                 }
+                Py_DECREF(elem);
             }
         }
         else {
             PyObject *tail;
-            ParentLocator *next = it->parent_stack->next;
+            ParentLocator *next;
             if (it->gettext) {
+                Py_INCREF(cur_parent);
                 tail = element_get_tail(cur_parent);
-                if (!tail)
+                if (!tail) {
+                    Py_DECREF(cur_parent);
                     return NULL;
+                }
+                Py_INCREF(tail);
+                Py_DECREF(cur_parent);
             }
-            else
+            else {
                 tail = Py_None;
-            Py_XDECREF(it->parent_stack->parent);
+                Py_INCREF(tail);
+            }
+            next = it->parent_stack->next;
+            cur_parent = it->parent_stack->parent;
             PyObject_Free(it->parent_stack);
             it->parent_stack = next;
+            Py_XDECREF(cur_parent);
 
             /* Note that extra condition on it->parent_stack->parent here;
              * this is because itertext() is supposed to only return *inner*
@@ -2179,12 +2203,14 @@ elementiter_next(ElementIterObject *it)
              */
             if (it->parent_stack->parent) {
                 rc = PyObject_IsTrue(tail);
+                if (rc > 0)
+                    return tail;
+                Py_DECREF(tail);
                 if (rc < 0)
                     return NULL;
-                if (rc) {
-                    Py_INCREF(tail);
-                    return tail;
-                }
+            }
+            else {
+                Py_DECREF(tail);
             }
         }
     }

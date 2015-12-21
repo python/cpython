@@ -429,12 +429,14 @@ class Element:
         tag = self.tag
         if not isinstance(tag, str) and tag is not None:
             return
-        if self.text:
-            yield self.text
+        t = self.text
+        if t:
+            yield t
         for e in self:
             yield from e.itertext()
-            if e.tail:
-                yield e.tail
+            t = e.tail
+            if t:
+                yield t
 
 
 def SubElement(parent, tag, attrib={}, **extra):
