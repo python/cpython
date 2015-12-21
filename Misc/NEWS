@@ -115,6 +115,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #25873: Optimized iterating ElementTree.  Iterating elements
+  Element.iter() is now 40% faster, iterating text Element.itertext()
+  is now up to 2.5 times faster.
+
 - Issue #25902: Fixed various refcount issues in ElementTree iteration.
 
 - Issue #22227: The TarFile iterator is reimplemented using generator.
