@@ -129,30 +129,6 @@ elementtree_free(void *m)
 /* helpers */
 
 LOCAL(PyObject*)
-deepcopy(PyObject* object, PyObject* memo)
-{
-    /* do a deep copy of the given object */
-    PyObject* args;
-    PyObject* result;
-    elementtreestate *st = ET_STATE_GLOBAL;
-
-    if (!st->deepcopy_obj) {
-        PyErr_SetString(
-            PyExc_RuntimeError,
-            "deepcopy helper not found"
-            );
-        return NULL;
-    }
-
-    args = PyTuple_Pack(2, object, memo);
-    if (!args)
-        return NULL;
-    result = PyObject_CallObject(st->deepcopy_obj, args);
-    Py_DECREF(args);
-    return result;
-}
-
-LOCAL(PyObject*)
 list_join(PyObject* list)
 {
     /* join list elements (destroying the list in the process) */
@@ -748,6 +724,9 @@ _elementtree_Element___copy___impl(ElementObject *self)
     return (PyObject*) element;
 }
 
+/* Helper for a deep copy. */
+LOCAL(PyObject *) deepcopy(PyObject *, PyObject *);
+
 /*[clinic input]
 _elementtree.Element.__deepcopy__
 
@@ -837,6 +816,57 @@ _elementtree_Element___deepcopy__(ElementObject *self, PyObject *memo)
     Py_DECREF(element);
     return NULL;
 }
+
+LOCAL(PyObject *)
+deepcopy(PyObject *object, PyObject *memo)
+{
+    /* do a deep copy of the given object */
+    PyObject *args;
+    PyObject *result;
+    elementtreestate *st;
+
+    /* Fast paths */
+    if (object == Py_None || PyUnicode_CheckExact(object)) {
+        Py_INCREF(object);
+        return object;
+    }
+
+    if (Py_REFCNT(object) == 1) {
+        if (PyDict_CheckExact(object)) {
+            PyObject *key, *value;
+            Py_ssize_t pos = 0;
+            int simple = 1;
+            while (PyDict_Next(object, &pos, &key, &value)) {
+                if (!PyUnicode_CheckExact(key) || !PyUnicode_CheckExact(value)) {
+                    simple = 0;
+                    break;
+                }
+            }
+            if (simple)
+                return PyDict_Copy(object);
+            /* Fall through to general case */
+        }
+        else if (Element_CheckExact(object)) {
+            return _elementtree_Element___deepcopy__((ElementObject *)object, memo);
+        }
+    }
+
+    /* General case */
+    st = ET_STATE_GLOBAL;
+    if (!st->deepcopy_obj) {
+        PyErr_SetString(PyExc_RuntimeError,
+                        "deepcopy helper not found");
+        return NULL;
+    }
+
+    args = PyTuple_Pack(2, object, memo);
+    if (!args)
+        return NULL;
+    result = PyObject_CallObject(st->deepcopy_obj, args);
+    Py_DECREF(args);
+    return result;
+}
+
 
 /*[clinic input]
 _elementtree.Element.__sizeof__ -> Py_ssize_t
