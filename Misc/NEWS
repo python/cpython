@@ -2,16 +2,27 @@
 Python News
 +++++++++++
 
-What's New in Python 3.4.4?
+What's New in Python 3.4.5?
 ===========================
 
-Release date: 2015/12/20
+Release date: tba
 
 Core and Builtins
 -----------------
 
 Library
 -------
+
+
+What's New in Python 3.4.4?
+===========================
+
+Release date: 2015/12/20
+
+Windows
+-------
+
+- Issue #25844: Corrected =/== typo potentially leading to crash in launcher.
 
 
 What's New in Python 3.4.4rc1?
