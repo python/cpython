@@ -1593,6 +1593,7 @@ clean: pycremoval
 profile-removal:
 	find . -name '*.gc??' -exec rm -f {} ';'
 	find . -name '*.profclang?' -exec rm -f {} ';'
+	find . -name '*.dyn' -exec rm -f {} ';'
 	rm -f $(COVERAGE_INFO)
 	rm -rf $(COVERAGE_REPORT)
 
