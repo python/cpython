@@ -791,6 +791,8 @@ class WalkTests(unittest.TestCase):
     # Wrapper to hide minor differences between os.walk and os.fwalk
     # to tests both functions with the same code base
     def walk(self, directory, **kwargs):
+        if 'follow_symlinks' in kwargs:
+            kwargs['followlinks'] = kwargs.pop('follow_symlinks')
         return os.walk(directory, **kwargs)
 
     def setUp(self):
