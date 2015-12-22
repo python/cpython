@@ -790,12 +790,8 @@ class WalkTests(unittest.TestCase):
 
     # Wrapper to hide minor differences between os.walk and os.fwalk
     # to tests both functions with the same code base
-    def walk(self, directory, topdown=True, follow_symlinks=False):
-        walk_it = os.walk(directory,
-                          topdown=topdown,
-                          followlinks=follow_symlinks)
-        for root, dirs, files in walk_it:
-            yield (root, dirs, files)
+    def walk(self, directory, **kwargs):
+        return os.walk(directory, **kwargs)
 
     def setUp(self):
         join = os.path.join
@@ -925,16 +921,29 @@ class WalkTests(unittest.TestCase):
                     os.remove(dirname)
         os.rmdir(support.TESTFN)
 
+    def test_walk_bad_dir(self):
+        # Walk top-down.
+        errors = []
+        walk_it = self.walk(self.walk_path, onerror=errors.append)
+        root, dirs, files = next(walk_it)
+        self.assertFalse(errors)
+        dir1 = dirs[0]
+        dir1new = dir1 + '.new'
+        os.rename(os.path.join(root, dir1), os.path.join(root, dir1new))
+        roots = [r for r, d, f in walk_it]
+        self.assertTrue(errors)
+        self.assertNotIn(os.path.join(root, dir1), roots)
+        self.assertNotIn(os.path.join(root, dir1new), roots)
+        for dir2 in dirs[1:]:
+            self.assertIn(os.path.join(root, dir2), roots)
+
 
 @unittest.skipUnless(hasattr(os, 'fwalk'), "Test needs os.fwalk()")
 class FwalkTests(WalkTests):
     """Tests for os.fwalk()."""
 
-    def walk(self, directory, topdown=True, follow_symlinks=False):
-        walk_it = os.fwalk(directory,
-                           topdown=topdown,
-                           follow_symlinks=follow_symlinks)
-        for root, dirs, files, root_fd in walk_it:
+    def walk(self, directory, **kwargs):
+        for root, dirs, files, root_fd in os.fwalk(directory, **kwargs):
             yield (root, dirs, files)
 
 

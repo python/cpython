@@ -514,7 +514,7 @@ if {open, stat} <= supports_dir_fd and {listdir, stat} <= supports_fd:
             except OSError as err:
                 if onerror is not None:
                     onerror(err)
-                return
+                continue
             try:
                 if follow_symlinks or path.samestat(orig_st, stat(dirfd)):
                     dirpath = path.join(toppath, name)
