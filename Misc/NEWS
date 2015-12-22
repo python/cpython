@@ -28,6 +28,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25860: os.fwalk() no longer skips remaining directories when error
+  occurs.  Original patch by Samson Lee.
+
 - Issue #25914: Fixed and simplified OrderedDict.__sizeof__.
 
 - Issue #25902: Fixed various refcount issues in ElementTree iteration.
