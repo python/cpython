@@ -2554,7 +2554,7 @@ dict_tp_clear(PyObject *op)
 
 static PyObject *dictiter_new(PyDictObject *, PyTypeObject *);
 
-PyObject *
+Py_ssize_t
 _PyDict_SizeOf(PyDictObject *mp)
 {
     Py_ssize_t size, res;
@@ -2567,13 +2567,19 @@ _PyDict_SizeOf(PyDictObject *mp)
        in the type object. */
     if (mp->ma_keys->dk_refcnt == 1)
         res += sizeof(PyDictKeysObject) + (size-1) * sizeof(PyDictKeyEntry);
-    return PyLong_FromSsize_t(res);
+    return res;
 }
 
 Py_ssize_t
 _PyDict_KeysSize(PyDictKeysObject *keys)
 {
     return sizeof(PyDictKeysObject) + (DK_SIZE(keys)-1) * sizeof(PyDictKeyEntry);
+}
+
+PyObject *
+dict_sizeof(PyDictObject *mp)
+{
+    return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
 }
 
 PyDoc_STRVAR(getitem__doc__, "x.__getitem__(y) <==> x[y]");
@@ -2623,7 +2629,7 @@ static PyMethodDef mapp_methods[] = {
     DICT___CONTAINS___METHODDEF
     {"__getitem__", (PyCFunction)dict_subscript,        METH_O | METH_COEXIST,
      getitem__doc__},
-    {"__sizeof__",      (PyCFunction)_PyDict_SizeOf,       METH_NOARGS,
+    {"__sizeof__",      (PyCFunction)dict_sizeof,       METH_NOARGS,
      sizeof__doc__},
     {"get",         (PyCFunction)dict_get,          METH_VARARGS,
      get__doc__},
