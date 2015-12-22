@@ -28,6 +28,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25914: Fixed and simplified OrderedDict.__sizeof__.
+
 - Issue #25902: Fixed various refcount issues in ElementTree iteration.
 
 - Issue #25717: Restore the previous behaviour of tolerating most fstat()
