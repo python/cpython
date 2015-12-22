@@ -940,27 +940,7 @@ PyDoc_STRVAR(odict_sizeof__doc__, "");
 static PyObject *
 odict_sizeof(PyODictObject *od)
 {
-    PyObject *pylong;
-    Py_ssize_t res, temp;
-
-    pylong = _PyDict_SizeOf((PyDictObject *)od);
-    if (pylong == NULL)
-        return NULL;
-    res = PyLong_AsSsize_t(pylong);
-    Py_DECREF(pylong);
-    if (res == -1 && PyErr_Occurred())
-        return NULL;
-
-    /* instance dict */
-    pylong = _PyDict_SizeOf((PyDictObject *)od->od_inst_dict);
-    if (pylong == NULL)
-        return NULL;
-    temp = PyLong_AsSsize_t(pylong);
-    Py_DECREF(pylong);
-    if (temp == -1 && PyErr_Occurred())
-        return NULL;
-    res += temp;
-
+    Py_ssize_t res = _PyDict_SizeOf((PyDictObject *)od);
     res += sizeof(_ODictNode *) * _odict_FAST_SIZE(od);  /* od_fast_nodes */
     if (!_odict_EMPTY(od)) {
         res += sizeof(_ODictNode) * PyODict_SIZE(od);  /* linked-list */

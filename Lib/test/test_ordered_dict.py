@@ -2,6 +2,7 @@ import contextlib
 import copy
 import pickle
 from random import randrange, shuffle
+import struct
 import sys
 import unittest
 from collections.abc import MutableMapping
@@ -604,6 +605,37 @@ class CPythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
     module = c_coll
     OrderedDict = c_coll.OrderedDict
+    check_sizeof = support.check_sizeof
+
+    @support.cpython_only
+    def test_sizeof_exact(self):
+        OrderedDict = self.OrderedDict
+        calcsize = struct.calcsize
+        size = support.calcobjsize
+        check = self.check_sizeof
+
+        basicsize = size('n2P' + '3PnPn2P') + calcsize('2nPn')
+        entrysize = calcsize('n2P') + calcsize('P')
+        nodesize = calcsize('Pn2P')
+
+        od = OrderedDict()
+        check(od, basicsize + 8*entrysize)
+        od.x = 1
+        check(od, basicsize + 8*entrysize)
+        od.update([(i, i) for i in range(3)])
+        check(od, basicsize + 8*entrysize + 3*nodesize)
+        od.update([(i, i) for i in range(3, 10)])
+        check(od, basicsize + 16*entrysize + 10*nodesize)
+
+        check(od.keys(), size('P'))
+        check(od.items(), size('P'))
+        check(od.values(), size('P'))
+
+        itersize = size('iP2n2P')
+        check(iter(od), itersize)
+        check(iter(od.keys()), itersize)
+        check(iter(od.items()), itersize)
+        check(iter(od.values()), itersize)
 
     def test_key_change_during_iteration(self):
         OrderedDict = self.OrderedDict

@@ -115,6 +115,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25914: Fixed and simplified OrderedDict.__sizeof__.
+
 - Issue #25869: Optimized deepcopying ElementTree; it is now 20 times faster.
 
 - Issue #25873: Optimized iterating ElementTree.  Iterating elements
