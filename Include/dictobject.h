@@ -98,7 +98,7 @@ PyAPI_FUNC(PyObject *) _PyDict_NewPresized(Py_ssize_t minused);
 PyAPI_FUNC(void) _PyDict_MaybeUntrack(PyObject *mp);
 PyAPI_FUNC(int) _PyDict_HasOnlyStringKeys(PyObject *mp);
 Py_ssize_t _PyDict_KeysSize(PyDictKeysObject *keys);
-PyObject *_PyDict_SizeOf(PyDictObject *);
+Py_ssize_t _PyDict_SizeOf(PyDictObject *);
 PyObject *_PyDict_Pop(PyDictObject *, PyObject *, PyObject *);
 PyObject *_PyDict_FromKeys(PyObject *, PyObject *, PyObject *);
 #define _PyDict_HasSplitTable(d) ((d)->ma_values != NULL)
