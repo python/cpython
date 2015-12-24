@@ -667,8 +667,7 @@ save_unconsumed_input(compobject *self, int err)
                       PyBytes_AS_STRING(self->unused_data), old_size);
             Py_MEMCPY(PyBytes_AS_STRING(new_data) + old_size,
                       self->zst.next_in, self->zst.avail_in);
-            Py_DECREF(self->unused_data);
-            self->unused_data = new_data;
+            Py_SETREF(self->unused_data, new_data);
             self->zst.avail_in = 0;
         }
     }
@@ -680,8 +679,7 @@ save_unconsumed_input(compobject *self, int err)
                 (char *)self->zst.next_in, self->zst.avail_in);
         if (new_data == NULL)
             return -1;
-        Py_DECREF(self->unconsumed_tail);
-        self->unconsumed_tail = new_data;
+        Py_SETREF(self->unconsumed_tail, new_data);
     }
     return 0;
 }

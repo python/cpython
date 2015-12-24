@@ -236,8 +236,7 @@ BaseException_set_tb(PyBaseExceptionObject *self, PyObject *tb)
     }
 
     Py_XINCREF(tb);
-    Py_XDECREF(self->traceback);
-    self->traceback = tb;
+    Py_SETREF(self->traceback, tb);
     return 0;
 }
 

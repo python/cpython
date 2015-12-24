@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #20440: Massive replacing unsafe attribute setting code with special
+  macro Py_SETREF.
+
 - Issue #25766: Special method __bytes__() now works in str subclasses.
 
 - Issue #25421: __sizeof__ methods of builtin types now use dynamic basic size.

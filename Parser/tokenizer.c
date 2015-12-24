@@ -524,9 +524,8 @@ fp_setreadl(struct tok_state *tok, const char* enc)
     if (stream == NULL)
         goto cleanup;
 
-    Py_XDECREF(tok->decoding_readline);
     readline = _PyObject_GetAttrId(stream, &PyId_readline);
-    tok->decoding_readline = readline;
+    Py_SETREF(tok->decoding_readline, readline);
     if (pos > 0) {
         if (PyObject_CallObject(readline, NULL) == NULL) {
             readline = NULL;

@@ -1066,8 +1066,7 @@ longrangeiter_next(longrangeiterobject *r)
     result = PyNumber_Add(r->start, product);
     Py_DECREF(product);
     if (result) {
-        Py_DECREF(r->index);
-        r->index = new_index;
+        Py_SETREF(r->index, new_index);
     }
     else {
         Py_DECREF(new_index);
