@@ -3598,7 +3598,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 /*[clinic end generated code: output=1440092922b13ed1 input=59db9742910c6174]*/
 {
     /* activate element event reporting */
-    Py_ssize_t i, seqlen;
+    Py_ssize_t i;
     TreeBuilderObject *target;
     PyObject *events_seq;
 
@@ -3614,8 +3614,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     target = (TreeBuilderObject*) self->target;
 
     Py_INCREF(events_queue);
-    Py_XDECREF(target->events);
-    target->events = events_queue;
+    Py_SETREF(target->events, events_queue);
 
     /* clear out existing events */
     Py_CLEAR(target->start_event_obj);
@@ -3634,46 +3633,41 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
         return NULL;
     }
 
-    seqlen = PySequence_Size(events_seq);
-    for (i = 0; i < seqlen; ++i) {
+    for (i = 0; i < PySequence_Size(events_seq); ++i) {
         PyObject *event_name_obj = PySequence_Fast_GET_ITEM(events_seq, i);
         char *event_name = NULL;
         if (PyUnicode_Check(event_name_obj)) {
-            event_name = _PyUnicode_AsString(event_name_obj);
+            event_name = PyUnicode_AsUTF8(event_name_obj);
         } else if (PyBytes_Check(event_name_obj)) {
             event_name = PyBytes_AS_STRING(event_name_obj);
         }
-
         if (event_name == NULL) {
             Py_DECREF(events_seq);
             PyErr_Format(PyExc_ValueError, "invalid events sequence");
             return NULL;
-        } else if (strcmp(event_name, "start") == 0) {
-            Py_INCREF(event_name_obj);
-            target->start_event_obj = event_name_obj;
+        }
+
+        Py_INCREF(event_name_obj);
+        if (strcmp(event_name, "start") == 0) {
+            Py_SETREF(target->start_event_obj, event_name_obj);
         } else if (strcmp(event_name, "end") == 0) {
-            Py_INCREF(event_name_obj);
-            Py_XDECREF(target->end_event_obj);
-            target->end_event_obj = event_name_obj;
+            Py_SETREF(target->end_event_obj, event_name_obj);
         } else if (strcmp(event_name, "start-ns") == 0) {
-            Py_INCREF(event_name_obj);
-            Py_XDECREF(target->start_ns_event_obj);
-            target->start_ns_event_obj = event_name_obj;
+            Py_SETREF(target->start_ns_event_obj, event_name_obj);
             EXPAT(SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
         } else if (strcmp(event_name, "end-ns") == 0) {
-            Py_INCREF(event_name_obj);
-            Py_XDECREF(target->end_ns_event_obj);
-            target->end_ns_event_obj = event_name_obj;
+            Py_SETREF(target->end_ns_event_obj, event_name_obj);
             EXPAT(SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
         } else {
+            Py_DECREF(event_name_obj);
             Py_DECREF(events_seq);
             PyErr_Format(PyExc_ValueError, "unknown event '%s'", event_name);
             return NULL;
