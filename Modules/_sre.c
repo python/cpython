@@ -756,8 +756,7 @@ deepcopy(PyObject** object, PyObject* memo)
     if (!copy)
         return 0;
 
-    Py_DECREF(*object);
-    *object = copy;
+    Py_SETREF(*object, copy);
 
     return 1; /* success */
 }
