@@ -424,8 +424,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         Py_DECREF((PyObject *)dict);
         return NULL;
     }
-    Py_DECREF(result->tp_dict);
-    result->tp_dict = (PyObject *)dict;
+    Py_SETREF(result->tp_dict, (PyObject *)dict);
     dict->format = _ctypes_alloc_format_string(NULL, "B");
     if (dict->format == NULL) {
         Py_DECREF(result);
@@ -903,8 +902,7 @@ PyCPointerType_SetProto(StgDictObject *stgdict, PyObject *proto)
         return -1;
     }
     Py_INCREF(proto);
-    Py_XDECREF(stgdict->proto);
-    stgdict->proto = proto;
+    Py_SETREF(stgdict->proto, proto);
     return 0;
 }
 
@@ -994,8 +992,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_DECREF(result->tp_dict);
-    result->tp_dict = (PyObject *)stgdict;
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -1460,8 +1457,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_DECREF(result->tp_dict);
-    result->tp_dict = (PyObject *)stgdict;
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     /* Special case for character arrays.
        A permanent annoyance: char arrays are also strings!
@@ -1884,8 +1880,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_DECREF(result->tp_dict);
-    result->tp_dict = (PyObject *)stgdict;
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -2393,8 +2388,7 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_DECREF(result->tp_dict);
-    result->tp_dict = (PyObject *)stgdict;
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     if (-1 == make_funcptrtype_dict(stgdict)) {
         Py_DECREF(result);
@@ -2536,8 +2530,7 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
     }
     ob = PyCData_GetContainer(target);
     if (ob->b_objects == NULL || !PyDict_CheckExact(ob->b_objects)) {
-        Py_XDECREF(ob->b_objects);
-        ob->b_objects = keep; /* refcount consumed */
+        Py_SETREF(ob->b_objects, keep); /* refcount consumed */
         return 0;
     }
     key = unique_key(target, index);
@@ -3059,9 +3052,8 @@ PyCFuncPtr_set_errcheck(PyCFuncPtrObject *self, PyObject *ob)
                         "the errcheck attribute must be callable");
         return -1;
     }
-    Py_XDECREF(self->errcheck);
     Py_XINCREF(ob);
-    self->errcheck = ob;
+    Py_SETREF(self->errcheck, ob);
     return 0;
 }
 
@@ -3090,9 +3082,8 @@ PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob)
         return -1;
     }
     Py_XDECREF(self->checker);
-    Py_XDECREF(self->restype);
     Py_INCREF(ob);
-    self->restype = ob;
+    Py_SETREF(self->restype, ob);
     self->checker = PyObject_GetAttrString(ob, "_check_retval_");
     if (self->checker == NULL)
         PyErr_Clear();
@@ -3130,11 +3121,9 @@ PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob)
         converters = converters_from_argtypes(ob);
         if (!converters)
             return -1;
-        Py_XDECREF(self->converters);
-        self->converters = converters;
-        Py_XDECREF(self->argtypes);
+        Py_SETREF(self->converters, converters);
         Py_INCREF(ob);
-        self->argtypes = ob;
+        Py_SETREF(self->argtypes, ob);
     }
     return 0;
 }

@@ -621,8 +621,7 @@ initsignal(void)
     if (Handlers[SIGINT].func == DefaultHandler) {
         /* Install default int handler */
         Py_INCREF(IntHandler);
-        Py_DECREF(Handlers[SIGINT].func);
-        Handlers[SIGINT].func = IntHandler;
+        Py_SETREF(Handlers[SIGINT].func, IntHandler);
         old_siginthandler = PyOS_setsig(SIGINT, signal_handler);
     }
 

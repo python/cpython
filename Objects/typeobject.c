@@ -166,9 +166,8 @@ assign_version_tag(PyTypeObject *type)
            are borrowed reference */
         for (i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
             method_cache[i].value = NULL;
-            Py_XDECREF(method_cache[i].name);
-            method_cache[i].name = Py_None;
             Py_INCREF(Py_None);
+            Py_SETREF(method_cache[i].name, Py_None);
         }
         /* mark all version tags as invalid */
         PyType_Modified(&PyBaseObject_Type);
@@ -2527,8 +2526,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         method_cache[h].version = type->tp_version_tag;
         method_cache[h].value = res;  /* borrowed */
         Py_INCREF(name);
-        Py_DECREF(method_cache[h].name);
-        method_cache[h].name = name;
+        Py_SETREF(method_cache[h].name, name);
     }
     return res;
 }

@@ -859,8 +859,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
             }
         } else if (values[j] != value) {
             Py_XINCREF(value);
-            Py_XDECREF(values[j]);
-            values[j] = value;
+            Py_SETREF(values[j], value);
         }
         Py_XDECREF(value);
     }

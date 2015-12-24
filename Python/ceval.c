@@ -4360,8 +4360,7 @@ call_function(PyObject ***pp_stack, int oparg
             Py_INCREF(self);
             func = PyMethod_GET_FUNCTION(func);
             Py_INCREF(func);
-            Py_DECREF(*pfunc);
-            *pfunc = self;
+            Py_SETREF(*pfunc, self);
             na++;
             n++;
         } else

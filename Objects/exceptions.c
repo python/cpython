@@ -58,9 +58,8 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
         return -1;
 
-    Py_DECREF(self->args);
-    self->args = args;
-    Py_INCREF(self->args);
+    Py_INCREF(args);
+    Py_SETREF(self->args, args);
 
     if (PyTuple_GET_SIZE(self->args) == 1) {
         Py_CLEAR(self->message);
@@ -627,8 +626,7 @@ EnvironmentError_init(PyEnvironmentErrorObject *self, PyObject *args,
         if (!subslice)
             return -1;
 
-        Py_DECREF(self->args);  /* replacing args */
-        self->args = subslice;
+        Py_SETREF(self->args, subslice);
     }
     return 0;
 }

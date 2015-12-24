@@ -628,12 +628,10 @@ CD_addcallback(cdparserobject *self, PyObject *args)
     CDsetcallback(self->ob_cdparser, (CDDATATYPES) type, CD_callback,
                   (void *) self);
 #endif
-    Py_XDECREF(self->ob_cdcallbacks[type].ob_cdcallback);
     Py_INCREF(func);
-    self->ob_cdcallbacks[type].ob_cdcallback = func;
-    Py_XDECREF(self->ob_cdcallbacks[type].ob_cdcallbackarg);
+    Py_SETREF(self->ob_cdcallbacks[type].ob_cdcallback, func);
     Py_INCREF(funcarg);
-    self->ob_cdcallbacks[type].ob_cdcallbackarg = funcarg;
+    Py_SETREF(self->ob_cdcallbacks[type].ob_cdcallbackarg, funcarg);
 
 /*
     if (type == cd_audio) {

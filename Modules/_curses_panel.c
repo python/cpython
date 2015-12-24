@@ -283,9 +283,8 @@ PyCursesPanel_replace_panel(PyCursesPanelObject *self, PyObject *args)
         PyErr_SetString(PyCursesError, "replace_panel() returned ERR");
         return NULL;
     }
-    Py_DECREF(po->wo);
-    po->wo = temp;
-    Py_INCREF(po->wo);
+    Py_INCREF(temp);
+    Py_SETREF(po->wo, temp);
     Py_INCREF(Py_None);
     return Py_None;
 }
