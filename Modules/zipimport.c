@@ -155,8 +155,7 @@ zipimporter_init(ZipImporter *self, PyObject *args, PyObject *kwds)
             tmp = PyUnicode_FromFormat("%U%c", self->prefix, SEP);
             if (tmp == NULL)
                 goto error;
-            Py_DECREF(self->prefix);
-            self->prefix = tmp;
+            Py_SETREF(self->prefix, tmp);
         }
     }
     else

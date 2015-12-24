@@ -1795,8 +1795,7 @@ compiler_class(struct compiler *c, stmt_ty s)
     {
         /* use the class name for name mangling */
         Py_INCREF(s->v.ClassDef.name);
-        Py_XDECREF(c->u->u_private);
-        c->u->u_private = s->v.ClassDef.name;
+        Py_SETREF(c->u->u_private, s->v.ClassDef.name);
         /* load (global) __name__ ... */
         str = PyUnicode_InternFromString("__name__");
         if (!str || !compiler_nameop(c, str, Load)) {
