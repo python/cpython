@@ -2751,8 +2751,7 @@ xmlparser_setevents(XMLParserObject* self, PyObject* args)
     target = (TreeBuilderObject*) self->target;
 
     Py_INCREF(events);
-    Py_XDECREF(target->events);
-    target->events = events;
+    Py_SETREF(target->events, events);
 
     /* clear out existing events */
     Py_CLEAR(target->start_event_obj);
@@ -2774,33 +2773,28 @@ xmlparser_setevents(XMLParserObject* self, PyObject* args)
         char* event;
         if (!PyString_Check(item))
             goto error;
+        Py_INCREF(item);
         event = PyString_AS_STRING(item);
         if (strcmp(event, "start") == 0) {
-            Py_INCREF(item);
-            target->start_event_obj = item;
+            Py_SETREF(target->start_event_obj, item);
         } else if (strcmp(event, "end") == 0) {
-            Py_INCREF(item);
-            Py_XDECREF(target->end_event_obj);
-            target->end_event_obj = item;
+            Py_SETREF(target->end_event_obj, item);
         } else if (strcmp(event, "start-ns") == 0) {
-            Py_INCREF(item);
-            Py_XDECREF(target->start_ns_event_obj);
-            target->start_ns_event_obj = item;
+            Py_SETREF(target->start_ns_event_obj, item);
             EXPAT(SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
         } else if (strcmp(event, "end-ns") == 0) {
-            Py_INCREF(item);
-            Py_XDECREF(target->end_ns_event_obj);
-            target->end_ns_event_obj = item;
+            Py_SETREF(target->end_ns_event_obj, item);
             EXPAT(SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
         } else {
+            Py_DECREF(item);
             PyErr_Format(
                 PyExc_ValueError,
                 "unknown event '%s'", event

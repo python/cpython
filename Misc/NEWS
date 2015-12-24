@@ -29,6 +29,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #24103: Fixed possible use after free in ElementTree.iterparse().
+
 - Issue #20954: _args_from_interpreter_flags used by multiprocessing and some
   tests no longer behaves incorrectly in the presence of the PYTHONHASHSEED
   environment variable.
