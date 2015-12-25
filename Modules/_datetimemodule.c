@@ -184,12 +184,12 @@ divide_nearest(PyObject *m, PyObject *n)
  * and the number of days before that month in the same year.  These
  * are correct for non-leap years only.
  */
-static int _days_in_month[] = {
+static const int _days_in_month[] = {
     0, /* unused; this vector uses 1-based indexing */
     31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
 };
 
-static int _days_before_month[] = {
+static const int _days_before_month[] = {
     0, /* unused; this vector uses 1-based indexing */
     0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
 };
@@ -1009,10 +1009,10 @@ append_keyword_tzinfo(PyObject *repr, PyObject *tzinfo)
 static PyObject *
 format_ctime(PyDateTime_Date *date, int hours, int minutes, int seconds)
 {
-    static const char *DayNames[] = {
+    static const char * const DayNames[] = {
         "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"
     };
-    static const char *MonthNames[] = {
+    static const char * const MonthNames[] = {
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
@@ -2307,7 +2307,7 @@ static PyMethodDef delta_methods[] = {
     {NULL,      NULL},
 };
 
-static char delta_doc[] =
+static const char delta_doc[] =
 PyDoc_STR("Difference between two datetime values.");
 
 static PyNumberMethods delta_as_number = {
@@ -2886,7 +2886,7 @@ static PyMethodDef date_methods[] = {
     {NULL,      NULL}
 };
 
-static char date_doc[] =
+static const char date_doc[] =
 PyDoc_STR("date(year, month, day) --> date object");
 
 static PyNumberMethods date_as_number = {
@@ -3155,7 +3155,7 @@ static PyMethodDef tzinfo_methods[] = {
     {NULL, NULL}
 };
 
-static char tzinfo_doc[] =
+static const char tzinfo_doc[] =
 PyDoc_STR("Abstract base class for time zone info objects.");
 
 static PyTypeObject PyDateTime_TZInfoType = {
@@ -3387,7 +3387,7 @@ static PyMethodDef timezone_methods[] = {
     {NULL, NULL}
 };
 
-static char timezone_doc[] =
+static const char timezone_doc[] =
 PyDoc_STR("Fixed offset from UTC implementation of tzinfo.");
 
 static PyTypeObject PyDateTime_TimeZoneType = {
@@ -3877,7 +3877,7 @@ static PyMethodDef time_methods[] = {
     {NULL,      NULL}
 };
 
-static char time_doc[] =
+static const char time_doc[] =
 PyDoc_STR("time([hour[, minute[, second[, microsecond[, tzinfo]]]]]) --> a time object\n\
 \n\
 All arguments are optional. tzinfo may be None, or an instance of\n\
@@ -5065,7 +5065,7 @@ static PyMethodDef datetime_methods[] = {
     {NULL,      NULL}
 };
 
-static char datetime_doc[] =
+static const char datetime_doc[] =
 PyDoc_STR("datetime(year, month, day[, hour[, minute[, second[, microsecond[,tzinfo]]]]])\n\
 \n\
 The year, month and day arguments are required. tzinfo may be None, or an\n\

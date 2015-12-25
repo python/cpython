@@ -60,10 +60,10 @@ typedef enum {
 
 typedef struct {
     QuoteStyle style;
-    char *name;
+    const char *name;
 } StyleDesc;
 
-static StyleDesc quote_styles[] = {
+static const StyleDesc quote_styles[] = {
     { QUOTE_MINIMAL,    "QUOTE_MINIMAL" },
     { QUOTE_ALL,        "QUOTE_ALL" },
     { QUOTE_NONNUMERIC, "QUOTE_NONNUMERIC" },
@@ -286,7 +286,7 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
 static int
 dialect_check_quoting(int quoting)
 {
-    StyleDesc *qs;
+    const StyleDesc *qs;
 
     for (qs = quote_styles; qs->name; qs++) {
         if ((int)qs->style == quoting)
@@ -1633,7 +1633,7 @@ PyMODINIT_FUNC
 PyInit__csv(void)
 {
     PyObject *module;
-    StyleDesc *style;
+    const StyleDesc *style;
 
     if (PyType_Ready(&Dialect_Type) < 0)
         return NULL;

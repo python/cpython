@@ -169,7 +169,7 @@ PyAPI_FUNC(void) _Py_set_387controlword(unsigned short);
         #pragma float_control (pop)
         #define Py_NAN __icc_nan()
     #else /* ICC_NAN_RELAXED as default for Intel Compiler */
-        static union { unsigned char buf[8]; double __icc_nan; } __nan_store = {0,0,0,0,0,0,0xf8,0x7f};
+        static const union { unsigned char buf[8]; double __icc_nan; } __nan_store = {0,0,0,0,0,0,0xf8,0x7f};
         #define Py_NAN (__nan_store.__icc_nan)
     #endif /* ICC_NAN_STRICT */
 #endif /* __INTEL_COMPILER */

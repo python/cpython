@@ -261,13 +261,13 @@ static PyMethodDef module_methods[] = {
 };
 
 struct _IntConstantPair {
-    char* constant_name;
+    const char *constant_name;
     int constant_value;
 };
 
 typedef struct _IntConstantPair IntConstantPair;
 
-static IntConstantPair _int_constants[] = {
+static const IntConstantPair _int_constants[] = {
     {"PARSE_DECLTYPES", PARSE_DECLTYPES},
     {"PARSE_COLNAMES", PARSE_COLNAMES},
 

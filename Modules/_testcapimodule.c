@@ -887,7 +887,7 @@ static PyObject *
 getargs_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     static char *keywords[] = {"arg1","arg2","arg3","arg4","arg5", NULL};
-    static char *fmt="(ii)i|(i(ii))(iii)i";
+    static const char fmt[] = "(ii)i|(i(ii))(iii)i";
     int int_args[10]={-1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, fmt, keywords,
@@ -3769,7 +3769,7 @@ test_structmembers_new(PyTypeObject *type, PyObject *args, PyObject *kwargs)
         "T_LONGLONG", "T_ULONGLONG",
 #endif
         NULL};
-    static char *fmt = "|bbBhHiIlknfds#"
+    static const char fmt[] = "|bbBhHiIlknfds#"
 #ifdef HAVE_LONG_LONG
         "LK"
 #endif

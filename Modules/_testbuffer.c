@@ -13,7 +13,7 @@ PyObject *Struct = NULL;
 PyObject *calcsize = NULL;
 
 /* cache simple format string */
-static const char *simple_fmt = "B";
+static const char simple_fmt[] = "B";
 PyObject *simple_format = NULL;
 #define SIMPLE_FORMAT(fmt) (fmt == NULL || strcmp(fmt, "B") == 0)
 #define FIX_FORMAT(fmt) (fmt == NULL ? "B" : fmt)

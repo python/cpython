@@ -320,7 +320,7 @@ PyImport_GetModuleDict(void)
 
 
 /* List of names to clear in sys */
-static char* sys_deletes[] = {
+static const char * const sys_deletes[] = {
     "path", "argv", "ps1", "ps2",
     "last_type", "last_value", "last_traceback",
     "path_hooks", "path_importer_cache", "meta_path",
@@ -330,7 +330,7 @@ static char* sys_deletes[] = {
     NULL
 };
 
-static char* sys_files[] = {
+static const char * const sys_files[] = {
     "stdin", "__stdin__",
     "stdout", "__stdout__",
     "stderr", "__stderr__",
@@ -347,7 +347,7 @@ PyImport_Cleanup(void)
     PyInterpreterState *interp = PyThreadState_GET()->interp;
     PyObject *modules = interp->modules;
     PyObject *weaklist = NULL;
-    char **p;
+    const char * const *p;
 
     if (modules == NULL)
         return; /* Already done */

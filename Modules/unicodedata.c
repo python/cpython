@@ -884,7 +884,7 @@ _gethash(const char *s, int len, int scale)
     return h;
 }
 
-static char *hangul_syllables[][3] = {
+static const char * const hangul_syllables[][3] = {
     { "G",  "A",   ""   },
     { "GG", "AE",  "G"  },
     { "N",  "YA",  "GG" },
@@ -1057,7 +1057,7 @@ find_syllable(const char *str, int *len, int *pos, int count, int column)
     int i, len1;
     *len = -1;
     for (i = 0; i < count; i++) {
-        char *s = hangul_syllables[i][column];
+        const char *s = hangul_syllables[i][column];
         len1 = Py_SAFE_DOWNCAST(strlen(s), size_t, int);
         if (len1 <= *len)
             continue;

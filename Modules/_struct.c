@@ -723,7 +723,7 @@ np_void_p(char *p, PyObject *v, const formatdef *f)
     return 0;
 }
 
-static formatdef native_table[] = {
+static const formatdef native_table[] = {
     {'x',       sizeof(char),   0,              NULL},
     {'b',       sizeof(char),   0,              nu_byte,        np_byte},
     {'B',       sizeof(char),   0,              nu_ubyte,       np_ubyte},
@@ -2280,7 +2280,7 @@ PyInit__struct(void)
 
     /* Check endian and swap in faster functions */
     {
-        formatdef *native = native_table;
+        const formatdef *native = native_table;
         formatdef *other, *ptr;
 #if PY_LITTLE_ENDIAN
         other = lilendian_table;

@@ -161,10 +161,10 @@ PyParser_ParseFileFlagsEx(FILE *fp, const char *filename,
 
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
 #if 0
-static char with_msg[] =
+static const char with_msg[] =
 "%s:%d: Warning: 'with' will become a reserved keyword in Python 2.6\n";
 
-static char as_msg[] =
+static const char as_msg[] =
 "%s:%d: Warning: 'as' will become a reserved keyword in Python 2.6\n";
 
 static void
