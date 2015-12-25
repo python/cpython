@@ -272,7 +272,7 @@ raise_encode_exception(PyObject **exceptionObject,
                        const char *reason);
 
 /* Same for linebreaks */
-static unsigned char ascii_linebreak[] = {
+static const unsigned char ascii_linebreak[] = {
     0, 0, 0, 0, 0, 0, 0, 0,
 /*         0x000A, * LINE FEED */
 /*         0x000B, * LINE TABULATION */
@@ -4135,7 +4135,7 @@ unicode_decode_call_errorhandler_wchar(
     Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
     PyObject **output, Py_ssize_t *outpos)
 {
-    static char *argparse = "O!n;decoding error handler must return (str, int) tuple";
+    static const char *argparse = "O!n;decoding error handler must return (str, int) tuple";
 
     PyObject *restuple = NULL;
     PyObject *repunicode = NULL;
@@ -4243,7 +4243,7 @@ unicode_decode_call_errorhandler_writer(
     Py_ssize_t *endinpos, PyObject **exceptionObject, const char **inptr,
     _PyUnicodeWriter *writer /* PyObject **output, Py_ssize_t *outpos */)
 {
-    static char *argparse = "O!n;decoding error handler must return (str, int) tuple";
+    static const char *argparse = "O!n;decoding error handler must return (str, int) tuple";
 
     PyObject *restuple = NULL;
     PyObject *repunicode = NULL;
@@ -6560,7 +6560,7 @@ unicode_encode_call_errorhandler(const char *errors,
                                  Py_ssize_t startpos, Py_ssize_t endpos,
                                  Py_ssize_t *newpos)
 {
-    static char *argparse = "On;encoding error handler must return (str/bytes, int) tuple";
+    static const char *argparse = "On;encoding error handler must return (str/bytes, int) tuple";
     Py_ssize_t len;
     PyObject *restuple;
     PyObject *resunicode;
@@ -8572,7 +8572,7 @@ unicode_translate_call_errorhandler(const char *errors,
                                     Py_ssize_t startpos, Py_ssize_t endpos,
                                     Py_ssize_t *newpos)
 {
-    static char *argparse = "O!n;translating error handler must return (str, int) tuple";
+    static const char *argparse = "O!n;translating error handler must return (str, int) tuple";
 
     Py_ssize_t i_newpos;
     PyObject *restuple;
@@ -12156,7 +12156,7 @@ unicode_lower(PyObject *self)
 #define BOTHSTRIP 2
 
 /* Arrays indexed by above */
-static const char *stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
+static const char * const stripformat[] = {"|O:lstrip", "|O:rstrip", "|O:strip"};
 
 #define STRIPNAME(i) (stripformat[i]+3)
 

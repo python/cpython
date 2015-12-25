@@ -23,8 +23,8 @@ extern dl_funcptr _PyImport_FindSharedFuncptr(const char *prefix,
                                               const char *pathname, FILE *fp);
 #endif
 
-static const char *ascii_only_prefix = "PyInit";
-static const char *nonascii_prefix = "PyInitU";
+static const char * const ascii_only_prefix = "PyInit";
+static const char * const nonascii_prefix = "PyInitU";
 
 /* Get the variable part of a module's export symbol name.
  * Returns a bytes instance. For non-ASCII-named modules, the name is

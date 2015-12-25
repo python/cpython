@@ -870,7 +870,7 @@ get_operator(const node *n)
     }
 }
 
-static const char* FORBIDDEN[] = {
+static const char * const FORBIDDEN[] = {
     "None",
     "True",
     "False",
@@ -887,7 +887,7 @@ forbidden_name(struct compiling *c, identifier name, const node *n,
         return 1;
     }
     if (full_checks) {
-        const char **p;
+        const char * const *p;
         for (p = FORBIDDEN; *p; p++) {
             if (PyUnicode_CompareWithASCIIString(name, *p) == 0) {
                 ast_error(c, n, "assignment to keyword");

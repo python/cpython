@@ -134,7 +134,7 @@ addnfa(nfagrammar *gr, char *name)
 
 #ifdef Py_DEBUG
 
-static char REQNFMT[] = "metacompile: less than %d children\n";
+static const char REQNFMT[] = "metacompile: less than %d children\n";
 
 #define REQN(i, count) do { \
     if (i < count) { \

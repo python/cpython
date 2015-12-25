@@ -51,13 +51,15 @@ fbound(double val, double minval, double maxval)
 #define SEG_SHIFT       (4)             /* Left shift for segment number. */
 #define SEG_MASK        (0x70)          /* Segment field mask. */
 
-static PyInt16 seg_aend[8] = {0x1F, 0x3F, 0x7F, 0xFF,
-                              0x1FF, 0x3FF, 0x7FF, 0xFFF};
-static PyInt16 seg_uend[8] = {0x3F, 0x7F, 0xFF, 0x1FF,
-                              0x3FF, 0x7FF, 0xFFF, 0x1FFF};
+static const PyInt16 seg_aend[8] = {
+    0x1F, 0x3F, 0x7F, 0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF
+};
+static const PyInt16 seg_uend[8] = {
+    0x3F, 0x7F, 0xFF, 0x1FF, 0x3FF, 0x7FF, 0xFFF, 0x1FFF
+};
 
 static PyInt16
-search(PyInt16 val, PyInt16 *table, int size)
+search(PyInt16 val, const PyInt16 *table, int size)
 {
     int i;
 
@@ -70,7 +72,7 @@ search(PyInt16 val, PyInt16 *table, int size)
 #define st_ulaw2linear16(uc) (_st_ulaw2linear16[uc])
 #define st_alaw2linear16(uc) (_st_alaw2linear16[uc])
 
-static PyInt16 _st_ulaw2linear16[256] = {
+static const PyInt16 _st_ulaw2linear16[256] = {
     -32124,  -31100,  -30076,  -29052,  -28028,  -27004,  -25980,
     -24956,  -23932,  -22908,  -21884,  -20860,  -19836,  -18812,
     -17788,  -16764,  -15996,  -15484,  -14972,  -14460,  -13948,
@@ -176,7 +178,7 @@ st_14linear2ulaw(PyInt16 pcm_val)       /* 2's complement (14-bit range) */
 
 }
 
-static PyInt16 _st_alaw2linear16[256] = {
+static const PyInt16 _st_alaw2linear16[256] = {
      -5504,   -5248,   -6016,   -5760,   -4480,   -4224,   -4992,
      -4736,   -7552,   -7296,   -8064,   -7808,   -6528,   -6272,
      -7040,   -6784,   -2752,   -2624,   -3008,   -2880,   -2240,
@@ -270,12 +272,12 @@ st_linear2alaw(PyInt16 pcm_val) /* 2's complement (13-bit range) */
 /* End of code taken from sox */
 
 /* Intel ADPCM step variation table */
-static int indexTable[16] = {
+static const int indexTable[16] = {
     -1, -1, -1, -1, 2, 4, 6, 8,
     -1, -1, -1, -1, 2, 4, 6, 8,
 };
 
-static int stepsizeTable[89] = {
+static const int stepsizeTable[89] = {
     7, 8, 9, 10, 11, 12, 13, 14, 16, 17,
     19, 21, 23, 25, 28, 31, 34, 37, 41, 45,
     50, 55, 60, 66, 73, 80, 88, 97, 107, 118,

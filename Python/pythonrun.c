@@ -785,11 +785,11 @@ print_exception(PyObject *f, PyObject *value)
         PyErr_Clear();
 }
 
-static const char *cause_message =
+static const char cause_message[] =
     "\nThe above exception was the direct cause "
     "of the following exception:\n\n";
 
-static const char *context_message =
+static const char context_message[] =
     "\nDuring handling of the above exception, "
     "another exception occurred:\n\n";
 

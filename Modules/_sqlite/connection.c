@@ -1622,7 +1622,7 @@ pysqlite_connection_exit(pysqlite_Connection* self, PyObject* args)
     Py_RETURN_FALSE;
 }
 
-static char connection_doc[] =
+static const char connection_doc[] =
 PyDoc_STR("SQLite database connection object.");
 
 static PyGetSetDef connection_getset[] = {

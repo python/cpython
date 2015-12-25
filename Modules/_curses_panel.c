@@ -6,7 +6,7 @@
 
 /* Release Number */
 
-static char *PyCursesVersion = "2.1";
+static const char PyCursesVersion[] = "2.1";
 
 /* Includes */
 

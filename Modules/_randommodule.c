@@ -99,7 +99,7 @@ static PY_UINT32_T
 genrand_int32(RandomObject *self)
 {
     PY_UINT32_T y;
-    static PY_UINT32_T mag01[2]={0x0U, MATRIX_A};
+    static const PY_UINT32_T mag01[2] = {0x0U, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
     PY_UINT32_T *mt;
 

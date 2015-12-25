@@ -615,7 +615,7 @@ dbmopen_impl(PyModuleDef *module, const char *name, const char *flags,
     return newdbmobject(name, iflags, mode);
 }
 
-static char dbmmodule_open_flags[] = "rwcn"
+static const char dbmmodule_open_flags[] = "rwcn"
 #ifdef GDBM_FAST
                                      "f"
 #endif
