@@ -9479,7 +9479,7 @@ os__getdiskusage_impl(PyModuleDef *module, Py_UNICODE *path)
  * sufficiently pervasive that it's not worth the loss of readability.
  */
 struct constdef {
-    char *name;
+    const char *name;
     int value;
 };
 
@@ -10822,7 +10822,7 @@ os_getxattr_impl(PyModuleDef *module, path_t *path, path_t *attribute,
     for (i = 0; ; i++) {
         void *ptr;
         ssize_t result;
-        static Py_ssize_t buffer_sizes[] = {128, XATTR_SIZE_MAX, 0};
+        static const Py_ssize_t buffer_sizes[] = {128, XATTR_SIZE_MAX, 0};
         Py_ssize_t buffer_size = buffer_sizes[i];
         if (!buffer_size) {
             path_error(path);
@@ -10988,7 +10988,7 @@ os_listxattr_impl(PyModuleDef *module, path_t *path, int follow_symlinks)
     for (i = 0; ; i++) {
         char *start, *trace, *end;
         ssize_t length;
-        static Py_ssize_t buffer_sizes[] = { 256, XATTR_LIST_MAX, 0 };
+        static const Py_ssize_t buffer_sizes[] = { 256, XATTR_LIST_MAX, 0 };
         Py_ssize_t buffer_size = buffer_sizes[i];
         if (!buffer_size) {
             /* ERANGE */
@@ -12821,7 +12821,7 @@ static struct PyModuleDef posixmodule = {
 };
 
 
-static char *have_functions[] = {
+static const char * const have_functions[] = {
 
 #ifdef HAVE_FACCESSAT
     "HAVE_FACCESSAT",
@@ -12956,7 +12956,7 @@ INITFUNC(void)
 {
     PyObject *m, *v;
     PyObject *list;
-    char **trace;
+    const char * const *trace;
 
 #if defined(HAVE_SYMLINK) && defined(MS_WINDOWS)
     win32_can_symlink = enable_symlink();

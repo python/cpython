@@ -772,7 +772,7 @@ typedef struct {
     encodefunc_t encodefunc;
 } encodefuncentry;
 
-static encodefuncentry encodefuncs[] = {
+static const encodefuncentry encodefuncs[] = {
     {"ascii",       (encodefunc_t) ascii_encode},
     {"iso8859-1",   (encodefunc_t) latin1_encode},
     {"utf-8",       (encodefunc_t) utf8_encode},
@@ -1022,7 +1022,7 @@ _io_TextIOWrapper___init___impl(textio *self, PyObject *buffer,
                 goto error;
         }
         else if (PyUnicode_Check(res)) {
-            encodefuncentry *e = encodefuncs;
+            const encodefuncentry *e = encodefuncs;
             while (e->name != NULL) {
                 if (!PyUnicode_CompareWithASCIIString(res, e->name)) {
                     self->encodefunc = e->encodefunc;

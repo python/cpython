@@ -31,7 +31,7 @@ struct arraydescr {
     int itemsize;
     PyObject * (*getitem)(struct arrayobject *, Py_ssize_t);
     int (*setitem)(struct arrayobject *, Py_ssize_t, PyObject *);
-    char *formats;
+    const char *formats;
     int is_integer_type;
     int is_signed;
 };
@@ -40,7 +40,7 @@ typedef struct arrayobject {
     PyObject_VAR_HEAD
     char *ob_item;
     Py_ssize_t allocated;
-    struct arraydescr *ob_descr;
+    const struct arraydescr *ob_descr;
     PyObject *weakreflist; /* List of weak references */
     int ob_exports;  /* Number of exported buffers */
 } arrayobject;
@@ -511,7 +511,7 @@ d_setitem(arrayobject *ap, Py_ssize_t i, PyObject *v)
  * Don't forget to update typecode_to_mformat_code() if you add a new
  * typecode.
  */
-static struct arraydescr descriptors[] = {
+static const struct arraydescr descriptors[] = {
     {'b', 1, b_getitem, b_setitem, "b", 1, 1},
     {'B', 1, BB_getitem, BB_setitem, "B", 1, 0},
     {'u', sizeof(Py_UNICODE), u_getitem, u_setitem, "u", 0, 0},
@@ -539,7 +539,7 @@ class array.array "arrayobject *" "&Arraytype"
 /*[clinic end generated code: output=da39a3ee5e6b4b0d input=ad43d37e942a8854]*/
 
 static PyObject *
-newarrayobject(PyTypeObject *type, Py_ssize_t size, struct arraydescr *descr)
+newarrayobject(PyTypeObject *type, Py_ssize_t size, const struct arraydescr *descr)
 {
     arrayobject *op;
     size_t nbytes;
@@ -1946,7 +1946,7 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype,
 {
     PyObject *converted_items;
     PyObject *result;
-    struct arraydescr *descr;
+    const struct arraydescr *descr;
 
     if (!PyType_Check(arraytype)) {
         PyErr_Format(PyExc_TypeError,
@@ -2084,7 +2084,7 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype,
         Py_ssize_t itemcount = Py_SIZE(items) / mf_descr.size;
         const unsigned char *memstr =
             (unsigned char *)PyBytes_AS_STRING(items);
-        struct arraydescr *descr;
+        const struct arraydescr *descr;
 
         /* If possible, try to pack array's items using a data type
          * that fits better. This may result in an array with narrower
@@ -2554,7 +2554,7 @@ array_buffer_getbuf(arrayobject *self, Py_buffer *view, int flags)
     view->format = NULL;
     view->internal = NULL;
     if ((flags & PyBUF_FORMAT) == PyBUF_FORMAT) {
-        view->format = self->ob_descr->formats;
+        view->format = (char *)self->ob_descr->formats;
 #ifdef Py_UNICODE_WIDE
         if (self->ob_descr->typecode == 'u') {
             view->format = "w";
@@ -2595,7 +2595,7 @@ array_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
     int c;
     PyObject *initial = NULL, *it = NULL;
-    struct arraydescr *descr;
+    const struct arraydescr *descr;
 
     if (type == &Arraytype && !_PyArg_NoKeywords("array.array()", kwds))
         return NULL;
@@ -2987,7 +2987,7 @@ array_modexec(PyObject *m)
     char buffer[Py_ARRAY_LENGTH(descriptors)], *p;
     PyObject *typecodes;
     Py_ssize_t size = 0;
-    struct arraydescr *descr;
+    const struct arraydescr *descr;
 
     if (PyType_Ready(&Arraytype) < 0)
         return -1;

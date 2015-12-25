@@ -27,7 +27,7 @@
 
 PyObject* pysqlite_cursor_iternext(pysqlite_Cursor* self);
 
-static char* errmsg_fetch_across_rollback = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
+static const char errmsg_fetch_across_rollback[] = "Cursor needed to be reset because of commit/rollback and can no longer be fetched from.";
 
 static pysqlite_StatementKind detect_statement_type(const char* statement)
 {
@@ -1050,7 +1050,7 @@ static struct PyMemberDef cursor_members[] =
     {NULL}
 };
 
-static char cursor_doc[] =
+static const char cursor_doc[] =
 PyDoc_STR("SQLite database cursor class.");
 
 PyTypeObject pysqlite_CursorType = {

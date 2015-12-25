@@ -346,8 +346,10 @@ static PyObject *whatstrings[7] = {NULL, NULL, NULL, NULL, NULL, NULL, NULL};
 static int
 trace_init(void)
 {
-    static char *whatnames[7] = {"call", "exception", "line", "return",
-                                    "c_call", "c_exception", "c_return"};
+    static const char * const whatnames[7] = {
+        "call", "exception", "line", "return",
+        "c_call", "c_exception", "c_return"
+    };
     PyObject *name;
     int i;
     for (i = 0; i < 7; ++i) {

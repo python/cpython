@@ -53,7 +53,7 @@ extern grammar _PyParser_Grammar; /* From graminit.c */
 /*  String constants used to initialize module attributes.
  *
  */
-static char parser_copyright_string[] =
+static const char parser_copyright_string[] =
 "Copyright 1995-1996 by Virginia Polytechnic Institute & State\n\
 University, Blacksburg, Virginia, USA, and Fred L. Drake, Jr., Reston,\n\
 Virginia, USA.  Portions copyright 1991-1995 by Stichting Mathematisch\n\
@@ -63,7 +63,7 @@ Centrum, Amsterdam, The Netherlands.";
 PyDoc_STRVAR(parser_doc_string,
 "This is an interface to Python's internal parser.");
 
-static char parser_version_string[] = "0.5";
+static const char parser_version_string[] = "0.5";
 
 
 typedef PyObject* (*SeqMaker) (Py_ssize_t length);

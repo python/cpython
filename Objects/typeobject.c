@@ -2690,7 +2690,7 @@ error:
     return NULL;
 }
 
-static short slotoffsets[] = {
+static const short slotoffsets[] = {
     -1, /* invalid slot */
 #include "typeslots.inc"
 };

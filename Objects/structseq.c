@@ -4,9 +4,9 @@
 #include "Python.h"
 #include "structmember.h"
 
-static char visible_length_key[] = "n_sequence_fields";
-static char real_length_key[] = "n_fields";
-static char unnamed_fields_key[] = "n_unnamed_fields";
+static const char visible_length_key[] = "n_sequence_fields";
+static const char real_length_key[] = "n_fields";
+static const char unnamed_fields_key[] = "n_unnamed_fields";
 
 /* Fields with this name have only a field index, not a field name.
    They are only allowed for indices < n_visible_fields. */

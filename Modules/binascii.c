@@ -74,7 +74,7 @@ static PyObject *Incomplete;
 #define SKIP 0x7E
 #define FAIL 0x7D
 
-static unsigned char table_a2b_hqx[256] = {
+static const unsigned char table_a2b_hqx[256] = {
 /*       ^@    ^A    ^B    ^C    ^D    ^E    ^F    ^G   */
 /* 0*/  FAIL, FAIL, FAIL, FAIL, FAIL, FAIL, FAIL, FAIL,
 /*       \b    \t    \n    ^K    ^L    \r    ^N    ^O   */
@@ -125,10 +125,10 @@ static unsigned char table_a2b_hqx[256] = {
     FAIL, FAIL, FAIL, FAIL, FAIL, FAIL, FAIL, FAIL,
 };
 
-static unsigned char table_b2a_hqx[] =
+static const unsigned char table_b2a_hqx[] =
 "!\"#$%&'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr";
 
-static char table_a2b_base64[] = {
+static const char table_a2b_base64[] = {
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
     -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
@@ -144,12 +144,12 @@ static char table_a2b_base64[] = {
 /* Max binary chunk size; limited only by available memory */
 #define BASE64_MAXBIN ((PY_SSIZE_T_MAX - 3) / 2)
 
-static unsigned char table_b2a_base64[] =
+static const unsigned char table_b2a_base64[] =
 "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 
 
-static unsigned short crctab_hqx[256] = {
+static const unsigned short crctab_hqx[256] = {
     0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50a5, 0x60c6, 0x70e7,
     0x8108, 0x9129, 0xa14a, 0xb16b, 0xc18c, 0xd1ad, 0xe1ce, 0xf1ef,
     0x1231, 0x0210, 0x3273, 0x2252, 0x52b5, 0x4294, 0x72f7, 0x62d6,
@@ -977,7 +977,7 @@ binascii_crc_hqx_impl(PyModuleDef *module, Py_buffer *data, unsigned int crc)
      using byte-swap instructions.
 ********************************************************************/
 
-static unsigned int crc_32_tab[256] = {
+static const unsigned int crc_32_tab[256] = {
 0x00000000U, 0x77073096U, 0xee0e612cU, 0x990951baU, 0x076dc419U,
 0x706af48fU, 0xe963a535U, 0x9e6495a3U, 0x0edb8832U, 0x79dcb8a4U,
 0xe0d5e91eU, 0x97d2d988U, 0x09b64c2bU, 0x7eb17cbdU, 0xe7b82d07U,
@@ -1201,7 +1201,7 @@ binascii_unhexlify_impl(PyModuleDef *module, Py_buffer *hexstr)
     return binascii_a2b_hex_impl(module, hexstr);
 }
 
-static int table_hex[128] = {
+static const int table_hex[128] = {
   -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
   -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
   -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,

@@ -644,7 +644,7 @@ PyObject_Bytes(PyObject *v)
 /* Map rich comparison operators to their swapped version, e.g. LT <--> GT */
 int _Py_SwappedOp[] = {Py_GT, Py_GE, Py_EQ, Py_NE, Py_LT, Py_LE};
 
-static char *opstrings[] = {"<", "<=", "==", "!=", ">", ">="};
+static const char * const opstrings[] = {"<", "<=", "==", "!=", ">", ">="};
 
 /* Perform a rich comparison, raising TypeError when the requested comparison
    operator is not supported. */

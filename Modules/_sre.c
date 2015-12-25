@@ -35,7 +35,7 @@
  * other compatibility work.
  */
 
-static char copyright[] =
+static const char copyright[] =
     " SRE 2.2.2 Copyright (c) 1997-2002 by Secret Labs AB ";
 
 #define PY_SSIZE_T_CLEAN

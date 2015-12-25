@@ -656,7 +656,7 @@ fill_number(_PyUnicodeWriter *writer, const NumberFieldWidths *spec,
     return 0;
 }
 
-static char no_grouping[1] = {CHAR_MAX};
+static const char no_grouping[1] = {CHAR_MAX};
 
 /* Find the decimal point character(s?), thousands_separator(s?), and
    grouping description, either for the current locale if type is
