@@ -308,7 +308,7 @@ PyBytes_FromFormatV(const char *format, va_list vargs)
         {
             Py_ssize_t i;
 
-            p = va_arg(vargs, char*);
+            p = va_arg(vargs, const char*);
             i = strlen(p);
             if (prec > 0 && i > prec)
                 i = prec;

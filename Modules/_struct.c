@@ -1189,7 +1189,7 @@ static formatdef lilendian_table[] = {
 
 
 static const formatdef *
-whichtable(char **pfmt)
+whichtable(const char **pfmt)
 {
     const char *fmt = (*pfmt)++; /* May be backed out of later */
     switch (*fmt) {
@@ -1268,7 +1268,7 @@ prepare_s(PyStructObject *self)
 
     fmt = PyBytes_AS_STRING(self->s_format);
 
-    f = whichtable((char **)&fmt);
+    f = whichtable(&fmt);
 
     s = fmt;
     size = 0;
@@ -1457,7 +1457,7 @@ s_dealloc(PyStructObject *s)
 }
 
 static PyObject *
-s_unpack_internal(PyStructObject *soself, char *startfrom) {
+s_unpack_internal(PyStructObject *soself, const char *startfrom) {
     formatcode *code;
     Py_ssize_t i = 0;
     PyObject *result = PyTuple_New(soself->s_len);

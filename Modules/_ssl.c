@@ -378,7 +378,7 @@ fail:
 }
 
 static PyObject *
-PySSL_SetError(PySSLSocket *obj, int ret, char *filename, int lineno)
+PySSL_SetError(PySSLSocket *obj, int ret, const char *filename, int lineno)
 {
     PyObject *type = PySSLErrorObject;
     char *errstr = NULL;
@@ -460,7 +460,7 @@ PySSL_SetError(PySSLSocket *obj, int ret, char *filename, int lineno)
 }
 
 static PyObject *
-_setSSLError (char *errstr, int errcode, char *filename, int lineno) {
+_setSSLError (const char *errstr, int errcode, const char *filename, int lineno) {
 
     if (errstr == NULL)
         errcode = ERR_peek_last_error();

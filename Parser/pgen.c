@@ -379,7 +379,7 @@ typedef struct _ss_dfa {
 
 /* Forward */
 static void printssdfa(int xx_nstates, ss_state *xx_state, int nbits,
-                       labellist *ll, char *msg);
+                       labellist *ll, const char *msg);
 static void simplify(int xx_nstates, ss_state *xx_state);
 static void convert(dfa *d, int xx_nstates, ss_state *xx_state);
 
@@ -494,7 +494,7 @@ makedfa(nfagrammar *gr, nfa *nf, dfa *d)
 
 static void
 printssdfa(int xx_nstates, ss_state *xx_state, int nbits,
-           labellist *ll, char *msg)
+           labellist *ll, const char *msg)
 {
     int i, ibit, iarc;
     ss_state *yy;

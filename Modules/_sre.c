@@ -714,7 +714,7 @@ _sre_SRE_Pattern_search_impl(PatternObject *self, PyObject *string,
 }
 
 static PyObject*
-call(char* module, char* function, PyObject* args)
+call(const char* module, const char* function, PyObject* args)
 {
     PyObject* name;
     PyObject* mod;

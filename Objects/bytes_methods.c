@@ -277,7 +277,7 @@ Return a titlecased version of B, i.e. ASCII words start with uppercase\n\
 characters, all remaining cased characters have lowercase.");
 
 void
-_Py_bytes_title(char *result, char *s, Py_ssize_t len)
+_Py_bytes_title(char *result, const char *s, Py_ssize_t len)
 {
     Py_ssize_t i;
     int previous_is_cased = 0;
@@ -306,7 +306,7 @@ Return a copy of B with only its first character capitalized (ASCII)\n\
 and the rest lower-cased.");
 
 void
-_Py_bytes_capitalize(char *result, char *s, Py_ssize_t len)
+_Py_bytes_capitalize(char *result, const char *s, Py_ssize_t len)
 {
     Py_ssize_t i;
 
@@ -336,7 +336,7 @@ Return a copy of B with uppercase ASCII characters converted\n\
 to lowercase ASCII and vice versa.");
 
 void
-_Py_bytes_swapcase(char *result, char *s, Py_ssize_t len)
+_Py_bytes_swapcase(char *result, const char *s, Py_ssize_t len)
 {
     Py_ssize_t i;
 

@@ -265,7 +265,7 @@ insert_head(PyWeakReference *newref, PyWeakReference **list)
 }
 
 static int
-parse_weakref_init_args(char *funcname, PyObject *args, PyObject *kwargs,
+parse_weakref_init_args(const char *funcname, PyObject *args, PyObject *kwargs,
                         PyObject **obp, PyObject **callbackp)
 {
     /* XXX Should check that kwargs == NULL or is empty. */

@@ -2576,8 +2576,8 @@ bytearray_remove_impl(PyByteArrayObject *self, int value)
 /* XXX These two helpers could be optimized if argsize == 1 */
 
 static Py_ssize_t
-lstrip_helper(char *myptr, Py_ssize_t mysize,
-              void *argptr, Py_ssize_t argsize)
+lstrip_helper(const char *myptr, Py_ssize_t mysize,
+              const void *argptr, Py_ssize_t argsize)
 {
     Py_ssize_t i = 0;
     while (i < mysize && memchr(argptr, (unsigned char) myptr[i], argsize))
@@ -2586,8 +2586,8 @@ lstrip_helper(char *myptr, Py_ssize_t mysize,
 }
 
 static Py_ssize_t
-rstrip_helper(char *myptr, Py_ssize_t mysize,
-              void *argptr, Py_ssize_t argsize)
+rstrip_helper(const char *myptr, Py_ssize_t mysize,
+              const void *argptr, Py_ssize_t argsize)
 {
     Py_ssize_t i = mysize - 1;
     while (i >= 0 && memchr(argptr, (unsigned char) myptr[i], argsize))

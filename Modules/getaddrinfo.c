@@ -198,7 +198,7 @@ if (pai->ai_flags & AI_CANONNAME) {\
 
 #define ERR(err) { error = (err); goto bad; }
 
-char *
+const char *
 gai_strerror(int ecode)
 {
     if (ecode < 0 || ecode > EAI_MAX)

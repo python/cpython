@@ -49,7 +49,7 @@ PyDoc_STRVAR(setlocale__doc__,
 
 /* the grouping is terminated by either 0 or CHAR_MAX */
 static PyObject*
-copy_grouping(char* s)
+copy_grouping(const char* s)
 {
     int i;
     PyObject *result, *val = NULL;

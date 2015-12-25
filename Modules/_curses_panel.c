@@ -56,7 +56,7 @@ static struct PyModuleDef _curses_panelmodule;
  */
 
 static PyObject *
-PyCursesCheckERR(int code, char *fname)
+PyCursesCheckERR(int code, const char *fname)
 {
     if (code != ERR) {
         Py_INCREF(Py_None);

@@ -815,7 +815,7 @@ static PyTypeObject ZipImporter_Type = {
    4 bytes, encoded as little endian. This partially reimplements
    marshal.c:r_long() */
 static long
-get_long(unsigned char *buf) {
+get_long(const unsigned char *buf) {
     long x;
     x =  buf[0];
     x |= (long)buf[1] <<  8;

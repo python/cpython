@@ -41,7 +41,7 @@ const char *_PyImport_DynLoadFiletab[] = {
 /* Case insensitive string compare, to avoid any dependencies on particular
    C RTL implementations */
 
-static int strcasecmp (char *string1, char *string2)
+static int strcasecmp (const char *string1, const char *string2)
 {
     int first, second;
 

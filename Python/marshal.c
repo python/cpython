@@ -643,7 +643,7 @@ typedef struct {
     PyObject *refs;  /* a list */
 } RFILE;
 
-static char *
+static const char *
 r_string(Py_ssize_t n, RFILE *p)
 {
     Py_ssize_t read = -1;
@@ -729,7 +729,7 @@ r_byte(RFILE *p)
         c = getc(p->fp);
     }
     else {
-        char *ptr = r_string(1, p);
+        const char *ptr = r_string(1, p);
         if (ptr != NULL)
             c = *(unsigned char *) ptr;
     }
@@ -740,9 +740,9 @@ static int
 r_short(RFILE *p)
 {
     short x = -1;
-    unsigned char *buffer;
+    const unsigned char *buffer;
 
-    buffer = (unsigned char *) r_string(2, p);
+    buffer = (const unsigned char *) r_string(2, p);
     if (buffer != NULL) {
         x = buffer[0];
         x |= buffer[1] << 8;
@@ -756,9 +756,9 @@ static long
 r_long(RFILE *p)
 {
     long x = -1;
-    unsigned char *buffer;
+    const unsigned char *buffer;
 
-    buffer = (unsigned char *) r_string(4, p);
+    buffer = (const unsigned char *) r_string(4, p);
     if (buffer != NULL) {
         x = buffer[0];
         x |= (long)buffer[1] << 8;
@@ -978,7 +978,8 @@ r_object(RFILE *p)
 
     case TYPE_FLOAT:
         {
-            char buf[256], *ptr;
+            char buf[256];
+            const char *ptr;
             double dx;
             n = r_byte(p);
             if (n == EOF) {
@@ -1001,9 +1002,9 @@ r_object(RFILE *p)
 
     case TYPE_BINARY_FLOAT:
         {
-            unsigned char *buf;
+            const unsigned char *buf;
             double x;
-            buf = (unsigned char *) r_string(8, p);
+            buf = (const unsigned char *) r_string(8, p);
             if (buf == NULL)
                 break;
             x = _PyFloat_Unpack8(buf, 1);
@@ -1016,7 +1017,8 @@ r_object(RFILE *p)
 
     case TYPE_COMPLEX:
         {
-            char buf[256], *ptr;
+            char buf[256];
+            const char *ptr;
             Py_complex c;
             n = r_byte(p);
             if (n == EOF) {
@@ -1053,15 +1055,15 @@ r_object(RFILE *p)
 
     case TYPE_BINARY_COMPLEX:
         {
-            unsigned char *buf;
+            const unsigned char *buf;
             Py_complex c;
-            buf = (unsigned char *) r_string(8, p);
+            buf = (const unsigned char *) r_string(8, p);
             if (buf == NULL)
                 break;
             c.real = _PyFloat_Unpack8(buf, 1);
             if (c.real == -1.0 && PyErr_Occurred())
                 break;
-            buf = (unsigned char *) r_string(8, p);
+            buf = (const unsigned char *) r_string(8, p);
             if (buf == NULL)
                 break;
             c.imag = _PyFloat_Unpack8(buf, 1);
@@ -1074,7 +1076,7 @@ r_object(RFILE *p)
 
     case TYPE_STRING:
         {
-            char *ptr;
+            const char *ptr;
             n = r_long(p);
             if (PyErr_Occurred())
                 break;
@@ -1119,7 +1121,7 @@ r_object(RFILE *p)
         }
     _read_ascii:
         {
-            char *ptr;
+            const char *ptr;
             ptr = r_string(n, p);
             if (ptr == NULL)
                 break;
@@ -1137,7 +1139,7 @@ r_object(RFILE *p)
         is_interned = 1;
     case TYPE_UNICODE:
         {
-        char *buffer;
+        const char *buffer;
 
         n = r_long(p);
         if (PyErr_Occurred())

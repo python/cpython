@@ -301,7 +301,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
         case 'U':   /* XXX deprecated alias */
         {
             PyObject *v;
-            char *str = va_arg(*p_va, char *);
+            const char *str = va_arg(*p_va, const char *);
             Py_ssize_t n;
             if (**p_format == '#') {
                 ++*p_format;
@@ -334,7 +334,7 @@ do_mkvalue(const char **p_format, va_list *p_va, int flags)
         case 'y':
         {
             PyObject *v;
-            char *str = va_arg(*p_va, char *);
+            const char *str = va_arg(*p_va, const char *);
             Py_ssize_t n;
             if (**p_format == '#') {
                 ++*p_format;

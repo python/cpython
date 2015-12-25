@@ -578,13 +578,13 @@ parser_issuite(PyST_Object *self, PyObject *args, PyObject *kw)
 }
 
 
-/*  err_string(char* message)
+/*  err_string(const char* message)
  *
  *  Sets the error string for an exception of type ParserError.
  *
  */
 static void
-err_string(char *message)
+err_string(const char *message)
 {
     PyErr_SetString(parser_error, message);
 }
@@ -597,7 +597,7 @@ err_string(char *message)
  *
  */
 static PyObject*
-parser_do_parse(PyObject *args, PyObject *kw, char *argspec, int type)
+parser_do_parse(PyObject *args, PyObject *kw, const char *argspec, int type)
 {
     char*     string = 0;
     PyObject* res    = 0;
@@ -984,7 +984,7 @@ build_node_tree(PyObject *tuple)
 /*
  *  Validation routines used within the validation section:
  */
-static int validate_terminal(node *terminal, int type, char *string);
+static int validate_terminal(node *terminal, int type, const char *string);
 
 #define validate_ampersand(ch)  validate_terminal(ch,      AMPER, "&")
 #define validate_circumflex(ch) validate_terminal(ch, CIRCUMFLEX, "^")
@@ -1082,7 +1082,7 @@ validate_numnodes(node *n, int num, const char *const name)
 
 
 static int
-validate_terminal(node *terminal, int type, char *string)
+validate_terminal(node *terminal, int type, const char *string)
 {
     int res = (validate_ntype(terminal, type)
                && ((string == 0) || (strcmp(string, STR(terminal)) == 0)));

@@ -928,7 +928,7 @@ static PyObject *GetResult(PyObject *restype, void *result, PyObject *checker)
  * Raise a new exception 'exc_class', adding additional text to the original
  * exception string.
  */
-void _ctypes_extend_error(PyObject *exc_class, char *fmt, ...)
+void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...)
 {
     va_list vargs;
     PyObject *tp, *v, *tb, *s, *cls_str, *msg_str;

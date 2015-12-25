@@ -27,7 +27,7 @@ int Py_VerboseFlag;
 int Py_IgnoreEnvironmentFlag;
 
 /* Forward */
-grammar *getgrammar(char *filename);
+grammar *getgrammar(const char *filename);
 
 void Py_Exit(int) _Py_NO_RETURN;
 
@@ -76,7 +76,7 @@ main(int argc, char **argv)
 }
 
 grammar *
-getgrammar(char *filename)
+getgrammar(const char *filename)
 {
     FILE *fp;
     node *n;

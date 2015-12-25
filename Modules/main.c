@@ -103,7 +103,7 @@ PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n\
 ";
 
 static int
-usage(int exitcode, wchar_t* program)
+usage(int exitcode, const wchar_t* program)
 {
     FILE *f = exitcode ? stderr : stdout;
 

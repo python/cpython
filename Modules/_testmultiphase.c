@@ -61,7 +61,7 @@ Example_getattro(ExampleObject *self, PyObject *name)
 }
 
 static int
-Example_setattr(ExampleObject *self, char *name, PyObject *v)
+Example_setattr(ExampleObject *self, const char *name, PyObject *v)
 {
     if (self->x_attr == NULL) {
         self->x_attr = PyDict_New();

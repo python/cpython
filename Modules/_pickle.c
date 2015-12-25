@@ -2187,7 +2187,7 @@ error:
 }
 
 static int
-write_utf8(PicklerObject *self, char *data, Py_ssize_t size)
+write_utf8(PicklerObject *self, const char *data, Py_ssize_t size)
 {
     char header[9];
     Py_ssize_t len;

@@ -311,7 +311,7 @@ tmtotuple(struct tm *p)
    Returns non-zero on success (parallels PyArg_ParseTuple).
 */
 static int
-parse_time_t_args(PyObject *args, char *format, time_t *pwhen)
+parse_time_t_args(PyObject *args, const char *format, time_t *pwhen)
 {
     PyObject *ot = NULL;
     time_t whent;

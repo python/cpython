@@ -6986,7 +6986,7 @@ PyUnicode_AsASCIIString(PyObject *unicode)
 #  define WC_ERR_INVALID_CHARS 0x0080
 #endif
 
-static char*
+static const char*
 code_page_name(UINT code_page, PyObject **obj)
 {
     *obj = NULL;
@@ -7094,7 +7094,7 @@ decode_code_page_errors(UINT code_page,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     PyObject *encoding_obj = NULL;
-    char *encoding;
+    const char *encoding;
     DWORD err;
     int ret = -1;
 
@@ -7438,7 +7438,7 @@ encode_code_page_errors(UINT code_page, PyObject **outbytes,
     PyObject *errorHandler = NULL;
     PyObject *exc = NULL;
     PyObject *encoding_obj = NULL;
-    char *encoding;
+    const char *encoding;
     Py_ssize_t newpos, newoutsize;
     PyObject *rep;
     int ret = -1;

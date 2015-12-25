@@ -675,7 +675,7 @@ _winapi_CreatePipe_impl(PyModuleDef *module, PyObject *pipe_attrs,
 /* helpers for createprocess */
 
 static unsigned long
-getulong(PyObject* obj, char* name)
+getulong(PyObject* obj, const char* name)
 {
     PyObject* value;
     unsigned long ret;
@@ -691,7 +691,7 @@ getulong(PyObject* obj, char* name)
 }
 
 static HANDLE
-gethandle(PyObject* obj, char* name)
+gethandle(PyObject* obj, const char* name)
 {
     PyObject* value;
     HANDLE ret;

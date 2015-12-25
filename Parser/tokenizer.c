@@ -202,8 +202,8 @@ error_ret(struct tok_state *tok) /* XXX */
 }
 
 
-static char *
-get_normal_name(char *s)        /* for utf-8 and latin-1 */
+static const char *
+get_normal_name(const char *s)  /* for utf-8 and latin-1 */
 {
     char buf[13];
     int i;
@@ -264,7 +264,7 @@ get_coding_spec(const char *s, char **spec, Py_ssize_t size, struct tok_state *t
 
             if (begin < t) {
                 char* r = new_string(begin, t - begin, tok);
-                char* q;
+                const char* q;
                 if (!r)
                     return 0;
                 q = get_normal_name(r);
