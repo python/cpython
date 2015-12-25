@@ -125,7 +125,7 @@ static PyObject * load_args(PyObject ***, int);
 
 #ifdef LLTRACE
 static int lltrace;
-static int prtrace(PyObject *, char *);
+static int prtrace(PyObject *, const char *);
 #endif
 static int call_trace(Py_tracefunc, PyObject *,
                       PyThreadState *, PyFrameObject *,
@@ -4308,7 +4308,7 @@ Error:
 
 #ifdef LLTRACE
 static int
-prtrace(PyObject *v, char *str)
+prtrace(PyObject *v, const char *str)
 {
     printf("%s ", str);
     if (PyObject_Print(v, stdout, 0) != 0)

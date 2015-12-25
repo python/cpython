@@ -949,7 +949,8 @@ path_converter(PyObject *o, void *p) {
 }
 
 static void
-argument_unavailable_error(char *function_name, char *argument_name) {
+argument_unavailable_error(const char *function_name, const char *argument_name)
+{
     PyErr_Format(PyExc_NotImplementedError,
         "%s%s%s unavailable on this platform",
         (function_name != NULL) ? function_name : "",
@@ -972,7 +973,8 @@ dir_fd_unavailable(PyObject *o, void *p)
 }
 
 static int
-fd_specified(char *function_name, int fd) {
+fd_specified(const char *function_name, int fd)
+{
     if (fd == -1)
         return 0;
 
@@ -981,7 +983,8 @@ fd_specified(char *function_name, int fd) {
 }
 
 static int
-follow_symlinks_specified(char *function_name, int follow_symlinks) {
+follow_symlinks_specified(const char *function_name, int follow_symlinks)
+{
     if (follow_symlinks)
         return 0;
 
@@ -990,7 +993,8 @@ follow_symlinks_specified(char *function_name, int follow_symlinks) {
 }
 
 static int
-path_and_dir_fd_invalid(char *function_name, path_t *path, int dir_fd) {
+path_and_dir_fd_invalid(const char *function_name, path_t *path, int dir_fd)
+{
     if (!path->narrow && !path->wide && (dir_fd != DEFAULT_DIR_FD)) {
         PyErr_Format(PyExc_ValueError,
                      "%s: can't specify dir_fd without matching path",
@@ -1001,7 +1005,8 @@ path_and_dir_fd_invalid(char *function_name, path_t *path, int dir_fd) {
 }
 
 static int
-dir_fd_and_fd_invalid(char *function_name, int dir_fd, int fd) {
+dir_fd_and_fd_invalid(const char *function_name, int dir_fd, int fd)
+{
     if ((dir_fd != DEFAULT_DIR_FD) && (fd != -1)) {
         PyErr_Format(PyExc_ValueError,
                      "%s: can't specify both dir_fd and fd",
@@ -1012,8 +1017,9 @@ dir_fd_and_fd_invalid(char *function_name, int dir_fd, int fd) {
 }
 
 static int
-fd_and_follow_symlinks_invalid(char *function_name, int fd,
-                               int follow_symlinks) {
+fd_and_follow_symlinks_invalid(const char *function_name, int fd,
+                               int follow_symlinks)
+{
     if ((fd > 0) && (!follow_symlinks)) {
         PyErr_Format(PyExc_ValueError,
                      "%s: cannot use fd and follow_symlinks together",
@@ -1024,8 +1030,9 @@ fd_and_follow_symlinks_invalid(char *function_name, int fd,
 }
 
 static int
-dir_fd_and_follow_symlinks_invalid(char *function_name, int dir_fd,
-                                   int follow_symlinks) {
+dir_fd_and_follow_symlinks_invalid(const char *function_name, int dir_fd,
+                                   int follow_symlinks)
+{
     if ((dir_fd != DEFAULT_DIR_FD) && (!follow_symlinks)) {
         PyErr_Format(PyExc_ValueError,
                      "%s: cannot use dir_fd and follow_symlinks together",
@@ -1220,7 +1227,7 @@ posix_error(void)
 
 #ifdef MS_WINDOWS
 static PyObject *
-win32_error(char* function, const char* filename)
+win32_error(const char* function, const char* filename)
 {
     /* XXX We should pass the function name along in the future.
        (winreg.c also wants to pass the function name.)
@@ -1235,7 +1242,7 @@ win32_error(char* function, const char* filename)
 }
 
 static PyObject *
-win32_error_object(char* function, PyObject* filename)
+win32_error_object(const char* function, PyObject* filename)
 {
     /* XXX - see win32_error for comments on 'function' */
     errno = GetLastError();
@@ -2100,7 +2107,7 @@ _pystat_fromstructstat(STRUCT_STAT *st)
 
 
 static PyObject *
-posix_do_stat(char *function_name, path_t *path,
+posix_do_stat(const char *function_name, path_t *path,
               int dir_fd, int follow_symlinks)
 {
     STRUCT_STAT st;
@@ -4561,7 +4568,7 @@ typedef struct {
 #if defined(HAVE_FUTIMESAT) || defined(HAVE_UTIMENSAT)
 
 static int
-utime_dir_fd(utime_t *ut, int dir_fd, char *path, int follow_symlinks)
+utime_dir_fd(utime_t *ut, int dir_fd, const char *path, int follow_symlinks)
 {
 #ifdef HAVE_UTIMENSAT
     int flags = follow_symlinks ? 0 : AT_SYMLINK_NOFOLLOW;
@@ -4610,7 +4617,7 @@ utime_fd(utime_t *ut, int fd)
 #ifdef UTIME_HAVE_NOFOLLOW_SYMLINKS
 
 static int
-utime_nofollow_symlinks(utime_t *ut, char *path)
+utime_nofollow_symlinks(utime_t *ut, const char *path)
 {
 #ifdef HAVE_UTIMENSAT
     UTIME_TO_TIMESPEC;
@@ -4626,7 +4633,7 @@ utime_nofollow_symlinks(utime_t *ut, char *path)
 #ifndef MS_WINDOWS
 
 static int
-utime_default(utime_t *ut, char *path)
+utime_default(utime_t *ut, const char *path)
 {
 #ifdef HAVE_UTIMENSAT
     UTIME_TO_TIMESPEC;
@@ -7323,7 +7330,7 @@ _check_dirW(WCHAR *src, WCHAR *dest)
 
 /* Return True if the path at src relative to dest is a directory */
 static int
-_check_dirA(char *src, char *dest)
+_check_dirA(const char *src, char *dest)
 {
     WIN32_FILE_ATTRIBUTE_DATA src_info;
     char dest_parent[MAX_PATH];
@@ -11835,7 +11842,7 @@ error:
 #else /* POSIX */
 
 static char *
-join_path_filename(char *path_narrow, char* filename, Py_ssize_t filename_len)
+join_path_filename(const char *path_narrow, const char* filename, Py_ssize_t filename_len)
 {
     Py_ssize_t path_len;
     Py_ssize_t size;
@@ -11867,7 +11874,7 @@ join_path_filename(char *path_narrow, char* filename, Py_ssize_t filename_len)
 }
 
 static PyObject *
-DirEntry_from_posix_info(path_t *path, char *name, Py_ssize_t name_len,
+DirEntry_from_posix_info(path_t *path, const char *name, Py_ssize_t name_len,
                          ino_t d_ino
 #ifdef HAVE_DIRENT_D_TYPE
                          , unsigned char d_type

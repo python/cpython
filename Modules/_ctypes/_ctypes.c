@@ -3195,7 +3195,7 @@ _validate_paramflags(PyTypeObject *type, PyObject *paramflags)
 }
 
 static int
-_get_name(PyObject *obj, char **pname)
+_get_name(PyObject *obj, const char **pname)
 {
 #ifdef MS_WIN32
     if (PyLong_Check(obj)) {
@@ -3223,7 +3223,7 @@ _get_name(PyObject *obj, char **pname)
 static PyObject *
 PyCFuncPtr_FromDll(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    char *name;
+    const char *name;
     int (* address)(void);
     PyObject *ftuple;
     PyObject *dll;

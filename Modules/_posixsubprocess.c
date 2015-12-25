@@ -72,7 +72,7 @@ _enable_gc(int need_to_reenable_gc, PyObject *gc_module)
 
 /* Convert ASCII to a positive int, no libc call. no overflow. -1 on error. */
 static int
-_pos_int_from_ascii(char *name)
+_pos_int_from_ascii(const char *name)
 {
     int num = 0;
     while (*name >= '0' && *name <= '9') {

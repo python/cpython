@@ -873,7 +873,7 @@ get_tzinfo_member(PyObject *self)
  * this returns NULL.  Else result is returned.
  */
 static PyObject *
-call_tzinfo_method(PyObject *tzinfo, char *name, PyObject *tzinfoarg)
+call_tzinfo_method(PyObject *tzinfo, const char *name, PyObject *tzinfoarg)
 {
     PyObject *offset;
 

@@ -77,7 +77,7 @@ PyTypeObject PyCThunk_Type = {
 /**************************************************************/
 
 static void
-PrintError(char *msg, ...)
+PrintError(const char *msg, ...)
 {
     char buf[512];
     PyObject *f = PySys_GetObject("stderr");

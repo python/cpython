@@ -540,7 +540,7 @@ err_closed(void)
 }
 
 static PyObject *
-err_mode(char *action)
+err_mode(const char *action)
 {
     _PyIO_State *state = IO_STATE();
     if (state != NULL)
@@ -1043,7 +1043,7 @@ _io_FileIO_truncate_impl(fileio *self, PyObject *posobj)
 }
 #endif /* HAVE_FTRUNCATE */
 
-static char *
+static const char *
 mode_string(fileio *self)
 {
     if (self->created) {

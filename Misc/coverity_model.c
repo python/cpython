@@ -94,7 +94,7 @@ wchar_t *Py_DecodeLocale(const char* arg, size_t *size)
 }
 
 /* Parser/pgenmain.c */
-grammar *getgrammar(char *filename)
+grammar *getgrammar(const char *filename)
 {
     grammar *g;
     __coverity_tainted_data_sink__(filename);

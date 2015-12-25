@@ -60,7 +60,7 @@ extern PyObject *_PyIncrementalNewlineDecoder_decode(
    * Otherwise, the line ending is specified by readnl, a str object */
 extern Py_ssize_t _PyIO_find_line_ending(
     int translated, int universal, PyObject *readnl,
-    int kind, char *start, char *end, Py_ssize_t *consumed);
+    int kind, const char *start, const char *end, Py_ssize_t *consumed);
 
 /* Return 1 if an EnvironmentError with errno == EINTR is set (and then
    clears the error indicator), 0 otherwise.

@@ -160,7 +160,7 @@ PyTypeObject PySTEntry_Type = {
 };
 
 static int symtable_analyze(struct symtable *st);
-static int symtable_warn(struct symtable *st, char *msg, int lineno);
+static int symtable_warn(struct symtable *st, const char *msg, int lineno);
 static int symtable_enter_block(struct symtable *st, identifier name,
                                 _Py_block_ty block, void *ast, int lineno,
                                 int col_offset);
@@ -903,7 +903,7 @@ symtable_analyze(struct symtable *st)
 
 
 static int
-symtable_warn(struct symtable *st, char *msg, int lineno)
+symtable_warn(struct symtable *st, const char *msg, int lineno)
 {
     PyObject *message = PyUnicode_FromString(msg);
     if (message == NULL)
