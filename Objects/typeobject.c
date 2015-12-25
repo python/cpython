@@ -3839,7 +3839,7 @@ _PyType_GetSlotNames(PyTypeObject *cls)
 }
 
 Py_LOCAL(PyObject *)
-_PyObject_GetState(PyObject *obj)
+_PyObject_GetState(PyObject *obj, int required)
 {
     PyObject *state;
     PyObject *getstate;
@@ -3853,6 +3853,13 @@ _PyObject_GetState(PyObject *obj)
             return NULL;
         }
         PyErr_Clear();
+
+        if (required && obj->ob_type->tp_itemsize) {
+            PyErr_Format(PyExc_TypeError,
+                         "can't pickle %.200s objects",
+                         Py_TYPE(obj)->tp_name);
+            return NULL;
+        }
 
         {
             PyObject **dict;
@@ -3878,6 +3885,24 @@ _PyObject_GetState(PyObject *obj)
         }
 
         assert(slotnames == Py_None || PyList_Check(slotnames));
+        if (required) {
+            Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
+            if (obj->ob_type->tp_dictoffset)
+                basicsize += sizeof(PyObject *);
+            if (obj->ob_type->tp_weaklistoffset)
+                basicsize += sizeof(PyObject *);
+            if (slotnames != Py_None)
+                basicsize += sizeof(PyObject *) * Py_SIZE(slotnames);
+            if (obj->ob_type->tp_basicsize > basicsize) {
+                Py_DECREF(slotnames);
+                Py_DECREF(state);
+                PyErr_Format(PyExc_TypeError,
+                             "can't pickle %.200s objects",
+                             Py_TYPE(obj)->tp_name);
+                return NULL;
+            }
+        }
+
         if (slotnames != Py_None && Py_SIZE(slotnames) > 0) {
             PyObject *slots;
             Py_ssize_t slotnames_size, i;
@@ -4107,29 +4132,24 @@ reduce_newobj(PyObject *obj)
     PyObject *copyreg;
     PyObject *newobj, *newargs, *state, *listitems, *dictitems;
     PyObject *result;
+    int hasargs;
 
     if (Py_TYPE(obj)->tp_new == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "can't pickle %s objects",
+                     "can't pickle %.200s objects",
                      Py_TYPE(obj)->tp_name);
         return NULL;
     }
     if (_PyObject_GetNewArguments(obj, &args, &kwargs) < 0)
         return NULL;
 
-    if (args == NULL) {
-        args = PyTuple_New(0);
-        if (args == NULL) {
-            Py_XDECREF(kwargs);
-            return NULL;
-        }
-    }
     copyreg = import_copyreg();
     if (copyreg == NULL) {
-        Py_DECREF(args);
+        Py_XDECREF(args);
         Py_XDECREF(kwargs);
         return NULL;
     }
+    hasargs = (args != NULL);
     if (kwargs == NULL || PyDict_Size(kwargs) == 0) {
         _Py_IDENTIFIER(__newobj__);
         PyObject *cls;
@@ -4139,13 +4159,13 @@ reduce_newobj(PyObject *obj)
         newobj = _PyObject_GetAttrId(copyreg, &PyId___newobj__);
         Py_DECREF(copyreg);
         if (newobj == NULL) {
-            Py_DECREF(args);
+            Py_XDECREF(args);
             return NULL;
         }
-        n = PyTuple_GET_SIZE(args);
+        n = args ? PyTuple_GET_SIZE(args) : 0;
         newargs = PyTuple_New(n+1);
         if (newargs == NULL) {
-            Py_DECREF(args);
+            Py_XDECREF(args);
             Py_DECREF(newobj);
             return NULL;
         }
@@ -4157,7 +4177,7 @@ reduce_newobj(PyObject *obj)
             Py_INCREF(v);
             PyTuple_SET_ITEM(newargs, i+1, v);
         }
-        Py_DECREF(args);
+        Py_XDECREF(args);
     }
     else {
         _Py_IDENTIFIER(__newobj_ex__);
@@ -4178,7 +4198,8 @@ reduce_newobj(PyObject *obj)
         }
     }
 
-    state = _PyObject_GetState(obj);
+    state = _PyObject_GetState(obj,
+                !hasargs && !PyList_Check(obj) && !PyDict_Check(obj));
     if (state == NULL) {
         Py_DECREF(newobj);
         Py_DECREF(newargs);
