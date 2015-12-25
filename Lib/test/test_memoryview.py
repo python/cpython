@@ -11,6 +11,8 @@ import gc
 import weakref
 import array
 import io
+import copy
+import pickle
 
 
 class AbstractMemoryTests:
@@ -518,6 +520,17 @@ class OtherTest(unittest.TestCase):
         m1 = memoryview(x)
         m2 = m1[::-1]
         self.assertEqual(m2.hex(), '30' * 200000)
+
+    def test_copy(self):
+        m = memoryview(b'abc')
+        with self.assertRaises(TypeError):
+            copy.copy(m)
+
+    def test_pickle(self):
+        m = memoryview(b'abc')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises(TypeError):
+                pickle.dumps(m, proto)
 
 
 if __name__ == "__main__":
