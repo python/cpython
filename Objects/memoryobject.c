@@ -1133,7 +1133,7 @@ get_native_fmtchar(char *result, const char *fmt)
     return -1;
 }
 
-Py_LOCAL_INLINE(char *)
+Py_LOCAL_INLINE(const char *)
 get_native_fmtstr(const char *fmt)
 {
     int at = 0;
@@ -1221,7 +1221,7 @@ cast_to_1D(PyMemoryViewObject *mv, PyObject *format)
         goto out;
     }
 
-    view->format = get_native_fmtstr(PyBytes_AS_STRING(asciifmt));
+    view->format = (char *)get_native_fmtstr(PyBytes_AS_STRING(asciifmt));
     if (view->format == NULL) {
         /* NOT_REACHED: get_native_fmtchar() already validates the format. */
         PyErr_SetString(PyExc_RuntimeError,

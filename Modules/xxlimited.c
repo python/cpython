@@ -89,7 +89,7 @@ Xxo_getattro(XxoObject *self, PyObject *name)
 }
 
 static int
-Xxo_setattr(XxoObject *self, char *name, PyObject *v)
+Xxo_setattr(XxoObject *self, const char *name, PyObject *v)
 {
     if (self->x_attr == NULL) {
         self->x_attr = PyDict_New();

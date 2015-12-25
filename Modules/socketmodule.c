@@ -904,7 +904,7 @@ static PyThread_type_lock netdb_lock;
    an error occurred; then an exception is raised. */
 
 static int
-setipaddr(char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
+setipaddr(const char *name, struct sockaddr *addr_ret, size_t addr_ret_size, int af)
 {
     struct addrinfo hints, *res;
     int error;
@@ -1085,7 +1085,7 @@ makeipaddr(struct sockaddr *addr, int addrlen)
    an error occurred. */
 
 static int
-setbdaddr(char *name, bdaddr_t *bdaddr)
+setbdaddr(const char *name, bdaddr_t *bdaddr)
 {
     unsigned int b0, b1, b2, b3, b4, b5;
     char ch;

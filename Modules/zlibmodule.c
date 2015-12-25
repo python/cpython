@@ -53,7 +53,7 @@ typedef struct
 } compobject;
 
 static void
-zlib_error(z_stream zst, int err, char *msg)
+zlib_error(z_stream zst, int err, const char *msg)
 {
     const char *zmsg = Z_NULL;
     /* In case of a version mismatch, zst.msg won't be initialized.

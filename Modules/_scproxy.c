@@ -130,7 +130,7 @@ error:
 }
 
 static int
-set_proxy(PyObject* proxies, char* proto, CFDictionaryRef proxyDict,
+set_proxy(PyObject* proxies, const char* proto, CFDictionaryRef proxyDict,
                 CFStringRef enabledKey,
                 CFStringRef hostKey, CFStringRef portKey)
 {

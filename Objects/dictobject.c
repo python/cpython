@@ -1925,7 +1925,7 @@ dict_fromkeys_impl(PyTypeObject *type, PyObject *iterable, PyObject *value)
 }
 
 static int
-dict_update_common(PyObject *self, PyObject *args, PyObject *kwds, char *methname)
+dict_update_common(PyObject *self, PyObject *args, PyObject *kwds, const char *methname)
 {
     PyObject *arg = NULL;
     int result = 0;

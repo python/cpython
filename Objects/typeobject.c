@@ -564,7 +564,7 @@ type_get_bases(PyTypeObject *type, void *context)
 static PyTypeObject *best_base(PyObject *);
 static int mro_internal(PyTypeObject *, PyObject **);
 Py_LOCAL_INLINE(int) type_is_subtype_base_chain(PyTypeObject *, PyTypeObject *);
-static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, char *);
+static int compatible_for_assignment(PyTypeObject *, PyTypeObject *, const char *);
 static int add_subclass(PyTypeObject*, PyTypeObject*);
 static int add_all_subclasses(PyTypeObject *type, PyObject *bases);
 static void remove_subclass(PyTypeObject *, PyTypeObject *);
@@ -1435,7 +1435,7 @@ _PyObject_LookupSpecial(PyObject *self, _Py_Identifier *attrid)
    as lookup_method to cache the interned name string object. */
 
 static PyObject *
-call_method(PyObject *o, _Py_Identifier *nameid, char *format, ...)
+call_method(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
 {
     va_list va;
     PyObject *args, *func = 0, *retval;
@@ -1471,7 +1471,7 @@ call_method(PyObject *o, _Py_Identifier *nameid, char *format, ...)
 /* Clone of call_method() that returns NotImplemented when the lookup fails. */
 
 static PyObject *
-call_maybe(PyObject *o, _Py_Identifier *nameid, char *format, ...)
+call_maybe(PyObject *o, _Py_Identifier *nameid, const char *format, ...)
 {
     va_list va;
     PyObject *args, *func = 0, *retval;
@@ -3609,7 +3609,7 @@ same_slots_added(PyTypeObject *a, PyTypeObject *b)
 }
 
 static int
-compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, char* attr)
+compatible_for_assignment(PyTypeObject* oldto, PyTypeObject* newto, const char* attr)
 {
     PyTypeObject *newbase, *oldbase;
 
@@ -5348,7 +5348,7 @@ wrap_delitem(PyObject *self, PyObject *args, void *wrapped)
 /* Helper to check for object.__setattr__ or __delattr__ applied to a type.
    This is called the Carlo Verre hack after its discoverer. */
 static int
-hackcheck(PyObject *self, setattrofunc func, char *what)
+hackcheck(PyObject *self, setattrofunc func, const char *what)
 {
     PyTypeObject *type = Py_TYPE(self);
     while (type && type->tp_flags & Py_TPFLAGS_HEAPTYPE)

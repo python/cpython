@@ -2315,7 +2315,7 @@ rv_alloc(int i)
 }
 
 static char *
-nrv_alloc(char *s, char **rve, int n)
+nrv_alloc(const char *s, char **rve, int n)
 {
     char *rv, *t;
 

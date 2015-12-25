@@ -22,7 +22,7 @@ descr_name(PyDescrObject *descr)
 }
 
 static PyObject *
-descr_repr(PyDescrObject *descr, char *format)
+descr_repr(PyDescrObject *descr, const char *format)
 {
     PyObject *name = NULL;
     if (descr->d_name != NULL && PyUnicode_Check(descr->d_name))

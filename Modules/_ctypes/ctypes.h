@@ -327,7 +327,7 @@ extern int
 PyCData_set(PyObject *dst, PyObject *type, SETFUNC setfunc, PyObject *value,
           Py_ssize_t index, Py_ssize_t size, char *ptr);
 
-extern void _ctypes_extend_error(PyObject *exc_class, char *fmt, ...);
+extern void _ctypes_extend_error(PyObject *exc_class, const char *fmt, ...);
 
 struct basespec {
     CDataObject *base;

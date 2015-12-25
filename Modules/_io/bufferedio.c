@@ -659,7 +659,7 @@ _bufferedreader_raw_read(buffered *self, char *start, Py_ssize_t len);
 
 /* Sets the current error to BlockingIOError */
 static void
-_set_BlockingIOError(char *msg, Py_ssize_t written)
+_set_BlockingIOError(const char *msg, Py_ssize_t written)
 {
     PyObject *err;
     PyErr_Clear();

@@ -17,9 +17,9 @@ extern PyObject* _Py_bytes_istitle(const char *cptr, Py_ssize_t len);
 /* These store their len sized answer in the given preallocated *result arg. */
 extern void _Py_bytes_lower(char *result, const char *cptr, Py_ssize_t len);
 extern void _Py_bytes_upper(char *result, const char *cptr, Py_ssize_t len);
-extern void _Py_bytes_title(char *result, char *s, Py_ssize_t len);
-extern void _Py_bytes_capitalize(char *result, char *s, Py_ssize_t len);
-extern void _Py_bytes_swapcase(char *result, char *s, Py_ssize_t len);
+extern void _Py_bytes_title(char *result, const char *s, Py_ssize_t len);
+extern void _Py_bytes_capitalize(char *result, const char *s, Py_ssize_t len);
+extern void _Py_bytes_swapcase(char *result, const char *s, Py_ssize_t len);
 
 /* The maketrans() static method. */
 extern PyObject* _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to);

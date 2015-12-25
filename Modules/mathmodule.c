@@ -876,7 +876,7 @@ math_1_to_int(PyObject *arg, double (*func) (double), int can_overflow)
 }
 
 static PyObject *
-math_2(PyObject *args, double (*func) (double, double), char *funcname)
+math_2(PyObject *args, double (*func) (double, double), const char *funcname)
 {
     PyObject *ox, *oy;
     double x, y, r;
@@ -1673,7 +1673,7 @@ PyDoc_STRVAR(math_modf_doc,
    in that int is larger than PY_SSIZE_T_MAX. */
 
 static PyObject*
-loghelper(PyObject* arg, double (*func)(double), char *funcname)
+loghelper(PyObject* arg, double (*func)(double), const char *funcname)
 {
     /* If it is int, do it ourselves. */
     if (PyLong_Check(arg)) {

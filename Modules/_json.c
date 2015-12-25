@@ -112,7 +112,7 @@ encoder_listencode_dict(PyEncoderObject *s, _PyAccu *acc, PyObject *dct, Py_ssiz
 static PyObject *
 _encoded_const(PyObject *obj);
 static void
-raise_errmsg(char *msg, PyObject *s, Py_ssize_t end);
+raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end);
 static PyObject *
 encoder_encode_string(PyEncoderObject *s, PyObject *obj);
 static PyObject *
@@ -323,7 +323,7 @@ escape_unicode(PyObject *pystr)
 }
 
 static void
-raise_errmsg(char *msg, PyObject *s, Py_ssize_t end)
+raise_errmsg(const char *msg, PyObject *s, Py_ssize_t end)
 {
     /* Use JSONDecodeError exception to raise a nice looking ValueError subclass */
     static PyObject *JSONDecodeError = NULL;

@@ -91,7 +91,7 @@ static struct HandlerInfo handler_info[64];
  * false on an exception.
  */
 static int
-set_error_attr(PyObject *err, char *name, int value)
+set_error_attr(PyObject *err, const char *name, int value)
 {
     PyObject *v = PyLong_FromLong(value);
 
@@ -218,7 +218,7 @@ flag_error(xmlparseobject *self)
 }
 
 static PyObject*
-call_with_frame(char *funcname, int lineno, PyObject* func, PyObject* args,
+call_with_frame(const char *funcname, int lineno, PyObject* func, PyObject* args,
                 xmlparseobject *self)
 {
     PyObject *res;
@@ -766,7 +766,7 @@ readinst(char *buf, int buf_size, PyObject *meth)
 {
     PyObject *str;
     Py_ssize_t len;
-    char *ptr;
+    const char *ptr;
 
     str = PyObject_CallFunction(meth, "n", buf_size);
     if (str == NULL)

@@ -841,7 +841,7 @@ PyTclObject_dealloc(PyTclObject *self)
     Py_DECREF(tp);
 }
 
-static char*
+static const char *
 PyTclObject_TclString(PyObject *self)
 {
     return Tcl_GetString(((PyTclObject*)self)->value);
@@ -1726,7 +1726,7 @@ static int
 varname_converter(PyObject *in, void *_out)
 {
     char *s;
-    char **out = (char**)_out;
+    const char **out = (const char**)_out;
     if (PyBytes_Check(in)) {
         if (PyBytes_Size(in) > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "bytes object is too long");
@@ -1846,7 +1846,7 @@ var_invoke(EventFunc func, PyObject *selfptr, PyObject *args, int flags)
 static PyObject *
 SetVar(PyObject *self, PyObject *args, int flags)
 {
-    char *name1, *name2;
+    const char *name1, *name2;
     PyObject *newValue;
     PyObject *res = NULL;
     Tcl_Obj *newval, *ok;
@@ -1915,7 +1915,7 @@ Tkapp_GlobalSetVar(PyObject *self, PyObject *args)
 static PyObject *
 GetVar(PyObject *self, PyObject *args, int flags)
 {
-    char *name1, *name2=NULL;
+    const char *name1, *name2=NULL;
     PyObject *res = NULL;
     Tcl_Obj *tres;
 

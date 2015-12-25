@@ -738,7 +738,7 @@ handle_weakrefs(PyGC_Head *unreachable, PyGC_Head *old)
 }
 
 static void
-debug_cycle(char *msg, PyObject *op)
+debug_cycle(const char *msg, PyObject *op)
 {
     PySys_FormatStderr("gc: %s <%s %p>\n",
                        msg, Py_TYPE(op)->tp_name, op);

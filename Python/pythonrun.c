@@ -1138,8 +1138,8 @@ PyParser_ASTFromString(const char *s, const char *filename_str, int start,
 
 mod_ty
 PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
-                           int start, char *ps1,
-                           char *ps2, PyCompilerFlags *flags, int *errcode,
+                           int start, const char *ps1,
+                           const char *ps2, PyCompilerFlags *flags, int *errcode,
                            PyArena *arena)
 {
     mod_ty mod;
@@ -1171,8 +1171,8 @@ PyParser_ASTFromFileObject(FILE *fp, PyObject *filename, const char* enc,
 
 mod_ty
 PyParser_ASTFromFile(FILE *fp, const char *filename_str, const char* enc,
-                     int start, char *ps1,
-                     char *ps2, PyCompilerFlags *flags, int *errcode,
+                     int start, const char *ps1,
+                     const char *ps2, PyCompilerFlags *flags, int *errcode,
                      PyArena *arena)
 {
     mod_ty mod;

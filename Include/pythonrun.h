@@ -66,8 +66,8 @@ PyAPI_FUNC(struct _mod *) PyParser_ASTFromFile(
     const char *filename,       /* decoded from the filesystem encoding */
     const char* enc,
     int start,
-    char *ps1,
-    char *ps2,
+    const char *ps1,
+    const char *ps2,
     PyCompilerFlags *flags,
     int *errcode,
     PyArena *arena);
@@ -76,8 +76,8 @@ PyAPI_FUNC(struct _mod *) PyParser_ASTFromFileObject(
     PyObject *filename,
     const char* enc,
     int start,
-    char *ps1,
-    char *ps2,
+    const char *ps1,
+    const char *ps2,
     PyCompilerFlags *flags,
     int *errcode,
     PyArena *arena);
