@@ -98,7 +98,7 @@ error(int rc, wchar_t * format, ... )
     MessageBox(NULL, message, TEXT("Python Launcher is sorry to say ..."),
                MB_OK);
 #endif
-    ExitProcess(rc);
+    exit(rc);
 }
 
 /*
@@ -652,7 +652,7 @@ run_child(wchar_t * cmdline)
     if (!ok)
         error(RC_CREATE_PROCESS, L"Failed to get exit code of process");
     debug(L"child process exit code: %d\n", rc);
-    ExitProcess(rc);
+    exit(rc);
 }
 
 static void
@@ -1357,6 +1357,7 @@ process(int argc, wchar_t ** argv)
     wchar_t * av[2];
 #endif
 
+    setvbuf(stderr, (char *)NULL, _IONBF, 0);
     wp = get_env(L"PYLAUNCH_DEBUG");
     if ((wp != NULL) && (*wp != L'\0'))
         log_fp = stderr;
