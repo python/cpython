@@ -597,6 +597,8 @@ class SocketHandler(logging.Handler):
         d['msg'] = record.getMessage()
         d['args'] = None
         d['exc_info'] = None
+        # Issue #25685: delete 'message' if present: redundant with 'msg'
+        d.pop('message', None)
         s = pickle.dumps(d, 1)
         slen = struct.pack(">L", len(s))
         return slen + s
