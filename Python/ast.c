@@ -4496,8 +4496,7 @@ fstring_find_literal_and_expr(PyObject *str, Py_ssize_t *ofs, int recurse_lvl,
     return 0;
 
 error:
-    Py_XDECREF(*literal);
-    *literal = NULL;
+    Py_CLEAR(*literal);
     return -1;
 }
 
@@ -4692,11 +4691,8 @@ FstringParser_ConcatAndDel(FstringParser *state, PyObject *str)
         state->last_str = str;
     } else {
         /* Concatenate this with the previous string. */
-        PyObject *temp = PyUnicode_Concat(state->last_str, str);
-        Py_DECREF(state->last_str);
-        Py_DECREF(str);
-        state->last_str = temp;
-        if (!temp)
+        PyUnicode_AppendAndDel(&state->last_str, str);
+        if (!state->last_str)
             return -1;
     }
     FstringParser_check_invariants(state);

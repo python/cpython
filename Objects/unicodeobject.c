@@ -14443,8 +14443,8 @@ unicode_format_arg_parse(struct unicode_formatter_t *ctx,
         if (key == NULL)
             return -1;
         if (ctx->args_owned) {
-            Py_DECREF(ctx->args);
             ctx->args_owned = 0;
+            Py_DECREF(ctx->args);
         }
         ctx->args = PyObject_GetItem(ctx->dict, key);
         Py_DECREF(key);
