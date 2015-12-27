@@ -793,8 +793,7 @@ encoder_encode_stateful(MultibyteStatefulEncoderContext *ctx,
                               ctx->errors, final ? MBENC_FLUSH | MBENC_RESET : 0);
     if (r == NULL) {
         /* recover the original pending buffer */
-        Py_CLEAR(ctx->pending);
-        ctx->pending = origpending;
+        Py_SETREF(ctx->pending, origpending);
         origpending = NULL;
         goto errorexit;
     }
