@@ -103,7 +103,8 @@ Public functions
 .. function:: compile_dir(dir, maxlevels=10, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1, workers=1)
 
    Recursively descend the directory tree named by *dir*, compiling all :file:`.py`
-   files along the way.
+   files along the way. Return a true value if all the files compiled successfully,
+   and a false value otherwise.
 
    The *maxlevels* parameter is used to limit the depth of the recursion; it
    defaults to ``10``.
@@ -155,7 +156,8 @@ Public functions
 
 .. function:: compile_file(fullname, ddir=None, force=False, rx=None, quiet=0, legacy=False, optimize=-1)
 
-   Compile the file with path *fullname*.
+   Compile the file with path *fullname*. Return a true value if the file
+   compiled successfully, and a false value otherwise.
 
    If *ddir* is given, it is prepended to the path to the file being compiled
    for use in compilation time tracebacks, and is also compiled in to the
@@ -191,8 +193,10 @@ Public functions
 
 .. function:: compile_path(skip_curdir=True, maxlevels=0, force=False, quiet=0, legacy=False, optimize=-1)
 
-   Byte-compile all the :file:`.py` files found along ``sys.path``. If
-   *skip_curdir* is true (the default), the current directory is not included
+   Byte-compile all the :file:`.py` files found along ``sys.path``. Return a
+   true value if all the files compiled successfully, and a false value otherwise.
+
+   If *skip_curdir* is true (the default), the current directory is not included
    in the search.  All other parameters are passed to the :func:`compile_dir`
    function.  Note that unlike the other compile functions, ``maxlevels``
    defaults to ``0``.
