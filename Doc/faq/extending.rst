@@ -247,20 +247,6 @@ For Red Hat, install the python-devel RPM to get the necessary files.
 For Debian, run ``apt-get install python-dev``.
 
 
-What does "SystemError: _PyImport_FixupExtension: module yourmodule not loaded" mean?
--------------------------------------------------------------------------------------
-
-This means that you have created an extension module named "yourmodule", but
-your module init function does not initialize with that name.
-
-Every module init function will have a line similar to::
-
-   module = Py_InitModule("yourmodule", yourmodule_functions);
-
-If the string passed to this function is not the same name as your extension
-module, the :exc:`SystemError` exception will be raised.
-
-
 How do I tell "incomplete input" from "invalid input"?
 ------------------------------------------------------
 
