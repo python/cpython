@@ -561,12 +561,14 @@ SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
 
     if (size == 0)
         return 0;
-    Py_CLEAR(self->code);
-    if (size == 1)
-        self->code = PyTuple_GET_ITEM(args, 0);
-    else /* size > 1 */
-        self->code = args;
-    Py_INCREF(self->code);
+    if (size == 1) {
+        Py_INCREF(PyTuple_GET_ITEM(args, 0));
+        Py_SETREF(self->code, PyTuple_GET_ITEM(args, 0));
+    }
+    else { /* size > 1 */
+        Py_INCREF(args);
+        Py_SETREF(self->code, args);
+    }
     return 0;
 }
 
@@ -625,9 +627,8 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
 #define GET_KWD(kwd) { \
     kwd = PyDict_GetItemString(kwds, #kwd); \
     if (kwd) { \
-        Py_CLEAR(self->kwd); \
-        self->kwd = kwd;   \
-        Py_INCREF(self->kwd);\
+        Py_INCREF(kwd); \
+        Py_SETREF(self->kwd, kwd); \
         if (PyDict_DelItemString(kwds, #kwd)) \
             return -1; \
     } \

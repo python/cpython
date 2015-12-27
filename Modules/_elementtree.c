@@ -935,9 +935,8 @@ element_setstate_from_attributes(ElementObject *self,
         return NULL;
     }
 
-    Py_CLEAR(self->tag);
-    self->tag = tag;
-    Py_INCREF(self->tag);
+    Py_INCREF(tag);
+    Py_SETREF(self->tag, tag);
 
     _clear_joined_ptr(&self->text);
     self->text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
@@ -980,9 +979,8 @@ element_setstate_from_attributes(ElementObject *self,
 
     /* Stash attrib. */
     if (attrib) {
-        Py_CLEAR(self->extra->attrib);
-        self->extra->attrib = attrib;
         Py_INCREF(attrib);
+        Py_SETREF(self->extra->attrib, attrib);
     }
 
     Py_RETURN_NONE;
@@ -1944,9 +1942,8 @@ element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
         return -1;
 
     if (strcmp(name, "tag") == 0) {
-        Py_DECREF(self->tag);
-        self->tag = value;
-        Py_INCREF(self->tag);
+        Py_INCREF(value);
+        Py_SETREF(self->tag, value);
     } else if (strcmp(name, "text") == 0) {
         Py_DECREF(JOIN_OBJ(self->text));
         self->text = value;
@@ -1960,9 +1957,8 @@ element_setattro(ElementObject* self, PyObject* nameobj, PyObject* value)
             if (create_extra(self, NULL) < 0)
                 return -1;
         }
-        Py_DECREF(self->extra->attrib);
-        self->extra->attrib = value;
-        Py_INCREF(self->extra->attrib);
+        Py_INCREF(value);
+        Py_SETREF(self->extra->attrib, value);
     } else {
         PyErr_SetString(PyExc_AttributeError,
             "Can't set arbitrary attributes on Element");
@@ -2554,13 +2550,10 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     }
     self->index++;
 
-    Py_DECREF(this);
     Py_INCREF(node);
-    self->this = node;
-
-    Py_DECREF(self->last);
+    Py_SETREF(self->this, node);
     Py_INCREF(node);
-    self->last = node;
+    Py_SETREF(self->last, node);
 
     if (treebuilder_append_event(self, self->start_event_obj, node) < 0)
         goto error;
@@ -2633,15 +2626,12 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
         return NULL;
     }
 
-    self->index--;
-
-    item = PyList_GET_ITEM(self->stack, self->index);
-    Py_INCREF(item);
-
-    Py_DECREF(self->last);
-
+    item = self->last;
     self->last = self->this;
-    self->this = item;
+    self->index--;
+    self->this = PyList_GET_ITEM(self->stack, self->index);
+    Py_INCREF(self->this);
+    Py_DECREF(item);
 
     if (treebuilder_append_event(self, self->end_event_obj, self->last) < 0)
         return NULL;
