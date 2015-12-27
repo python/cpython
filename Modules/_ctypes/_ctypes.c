@@ -3081,10 +3081,9 @@ PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob)
                         "restype must be a type, a callable, or None");
         return -1;
     }
-    Py_XDECREF(self->checker);
     Py_INCREF(ob);
     Py_SETREF(self->restype, ob);
-    self->checker = PyObject_GetAttrString(ob, "_check_retval_");
+    Py_SETREF(self->checker, PyObject_GetAttrString(ob, "_check_retval_"));
     if (self->checker == NULL)
         PyErr_Clear();
     return 0;

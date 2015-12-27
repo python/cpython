@@ -1573,9 +1573,8 @@ element_setattr(ElementObject* self, const char* name, PyObject* value)
     }
 
     if (strcmp(name, "tag") == 0) {
-        Py_DECREF(self->tag);
-        self->tag = value;
-        Py_INCREF(self->tag);
+        Py_INCREF(value);
+        Py_SETREF(self->tag, value);
     } else if (strcmp(name, "text") == 0) {
         Py_DECREF(JOIN_OBJ(self->text));
         self->text = value;
@@ -1587,9 +1586,8 @@ element_setattr(ElementObject* self, const char* name, PyObject* value)
     } else if (strcmp(name, "attrib") == 0) {
         if (!self->extra)
             element_new_extra(self, NULL);
-        Py_DECREF(self->extra->attrib);
-        self->extra->attrib = value;
-        Py_INCREF(self->extra->attrib);
+        Py_INCREF(value);
+        Py_SETREF(self->extra->attrib, value);
     } else {
         PyErr_SetString(PyExc_AttributeError, name);
         return -1;
@@ -1800,13 +1798,11 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     }
     self->index++;
 
-    Py_DECREF(this);
     Py_INCREF(node);
-    self->this = (ElementObject*) node;
+    Py_SETREF(self->this, (ElementObject*) node);
 
-    Py_DECREF(self->last);
     Py_INCREF(node);
-    self->last = (ElementObject*) node;
+    Py_SETREF(self->last, (ElementObject*) node);
 
     if (treebuilder_append_event(self, self->start_event_obj, node) < 0)
         goto error;
@@ -1857,7 +1853,7 @@ treebuilder_handle_data(TreeBuilderObject* self, PyObject* data)
 LOCAL(PyObject*)
 treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
 {
-    PyObject* item;
+    ElementObject *item;
 
     if (self->data) {
         if (self->this == self->last) {
@@ -1882,15 +1878,12 @@ treebuilder_handle_end(TreeBuilderObject* self, PyObject* tag)
         return NULL;
     }
 
+    item = self->last;
+    self->last = self->this;
     self->index--;
-
-    item = PyList_GET_ITEM(self->stack, self->index);
-    Py_INCREF(item);
-
-    Py_DECREF(self->last);
-
-    self->last = (ElementObject*) self->this;
-    self->this = (ElementObject*) item;
+    self->this = (ElementObject *) PyList_GET_ITEM(self->stack, self->index);
+    Py_INCREF(self->this);
+    Py_DECREF(item);
 
     if (treebuilder_append_event(self, self->end_event_obj, (PyObject*)self->last) < 0)
         return NULL;
