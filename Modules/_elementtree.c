@@ -2338,13 +2338,9 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
                                        PyObject *element_factory)
 /*[clinic end generated code: output=91cfa7558970ee96 input=1b424eeefc35249c]*/
 {
-    PyObject *tmp;
-
     if (element_factory) {
         Py_INCREF(element_factory);
-        tmp = self->element_factory;
-        self->element_factory = element_factory;
-        Py_XDECREF(tmp);
+        Py_SETREF(self->element_factory, element_factory);
     }
 
     return 0;

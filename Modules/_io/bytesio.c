@@ -87,7 +87,7 @@ scan_eol(bytesio *self, Py_ssize_t len)
 static int
 unshare_buffer(bytesio *self, size_t size)
 {
-    PyObject *new_buf, *old_buf;
+    PyObject *new_buf;
     assert(SHARED_BUF(self));
     assert(self->exports == 0);
     assert(size >= (size_t)self->string_size);
@@ -96,9 +96,7 @@ unshare_buffer(bytesio *self, size_t size)
         return -1;
     memcpy(PyBytes_AS_STRING(new_buf), PyBytes_AS_STRING(self->buf),
            self->string_size);
-    old_buf = self->buf;
-    self->buf = new_buf;
-    Py_DECREF(old_buf);
+    Py_SETREF(self->buf, new_buf);
     return 0;
 }
 
