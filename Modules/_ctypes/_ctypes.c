@@ -5123,23 +5123,22 @@ int
 comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *hresult, *text, *details;
-    PyBaseExceptionObject *bself;
     PyObject *a;
     int status;
 
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
-    return -1;
+        return -1;
 
     if (!PyArg_ParseTuple(args, "OOO:COMError", &hresult, &text, &details))
         return -1;
 
     a = PySequence_GetSlice(args, 1, PySequence_Size(args));
     if (!a)
-    return -1;
+        return -1;
     status = PyObject_SetAttrString(self, "args", a);
     Py_DECREF(a);
     if (status < 0)
-    return -1;
+        return -1;
 
     if (PyObject_SetAttrString(self, "hresult", hresult) < 0)
         return -1;
@@ -5150,9 +5149,8 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
     if (PyObject_SetAttrString(self, "details", details) < 0)
         return -1;
 
-    bself = (PyBaseExceptionObject *)self;
     Py_INCREF(args);
-    Py_SETREF(bself->args, args);
+    Py_SETREF((PyBaseExceptionObject *)self->args, args);
 
     return 0;
 }

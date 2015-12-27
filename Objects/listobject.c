@@ -216,7 +216,6 @@ int
 PyList_SetItem(PyObject *op, Py_ssize_t i,
                PyObject *newitem)
 {
-    PyObject *olditem;
     PyObject **p;
     if (!PyList_Check(op)) {
         Py_XDECREF(newitem);
@@ -230,9 +229,7 @@ PyList_SetItem(PyObject *op, Py_ssize_t i,
         return -1;
     }
     p = ((PyListObject *)op) -> ob_item + i;
-    olditem = *p;
-    *p = newitem;
-    Py_XDECREF(olditem);
+    Py_SETREF(*p, newitem);
     return 0;
 }
 
@@ -730,7 +727,6 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
 static int
 list_ass_item(PyListObject *a, Py_ssize_t i, PyObject *v)
 {
-    PyObject *old_value;
     if (i < 0 || i >= Py_SIZE(a)) {
         PyErr_SetString(PyExc_IndexError,
                         "list assignment index out of range");
@@ -739,9 +735,7 @@ list_ass_item(PyListObject *a, Py_ssize_t i, PyObject *v)
     if (v == NULL)
         return list_ass_slice(a, i, i+1, v);
     Py_INCREF(v);
-    old_value = a->ob_item[i];
-    a->ob_item[i] = v;
-    Py_DECREF(old_value);
+    Py_SETREF(a->ob_item[i], v);
     return 0;
 }
 
