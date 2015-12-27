@@ -230,6 +230,11 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
+* The functions in the :mod:`compileall` module now return booleans instead
+  of ``1`` or ``0`` to represent success or failure, respectively. Thanks to
+  booleans being a subclass of integers, this should only be an issue if you
+  were doing identity checks for ``1`` or ``0``. See :issue:`25768`.
+
 * Reading the :attr:`~urllib.parse.SplitResult.port` attribute of
   :func:`urllib.parse.urlsplit` and :func:`~urllib.parse.urlparse` results
   now raises :exc:`ValueError` for out-of-range values, rather than
