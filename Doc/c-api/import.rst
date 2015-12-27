@@ -236,11 +236,6 @@ Importing Modules
    For internal use only.
 
 
-.. c:function:: PyObject* _PyImport_FixupExtension(char *, char *)
-
-   For internal use only.
-
-
 .. c:function:: int PyImport_ImportFrozenModuleObject(PyObject *name)
 
    Load a frozen module named *name*.  Return ``1`` for success, ``0`` if the
