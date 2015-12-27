@@ -24,6 +24,14 @@ core interpreter and library being used by a single user. The installer is also
 able to install for all users of a single machine, and a separate ZIP file is
 available for application-local distributions.
 
+Supported Versions
+------------------
+
+As specified in :pep:`11`, a Python release only supports a Windows platform
+while Microsoft considers the platform under extended support. This means that
+Python 3.5 supports Windows Vista and newer. If you require Windows XP support
+then please install Python 3.4.
+
 Installation Steps
 ------------------
 
