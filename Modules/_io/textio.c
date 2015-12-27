@@ -966,8 +966,7 @@ textiowrapper_init(textio *self, PyObject *args, PyObject *kwds)
                 "Oi", self->decoder, (int)self->readtranslate);
             if (incrementalDecoder == NULL)
                 goto error;
-            Py_CLEAR(self->decoder);
-            self->decoder = incrementalDecoder;
+            Py_SETREF(self->decoder, incrementalDecoder);
         }
     }
 
@@ -1347,8 +1346,7 @@ textiowrapper_write(textio *self, PyObject *args)
 static void
 textiowrapper_set_decoded_chars(textio *self, PyObject *chars)
 {
-    Py_CLEAR(self->decoded_chars);
-    self->decoded_chars = chars;
+    Py_SETREF(self->decoded_chars, chars);
     self->decoded_chars_used = 0;
 }
 
@@ -1477,8 +1475,7 @@ textiowrapper_read_chunk(textio *self)
             goto fail;
         }
         Py_DECREF(dec_buffer);
-        Py_CLEAR(self->snapshot);
-        self->snapshot = Py_BuildValue("NN", dec_flags, next_input);
+        Py_SETREF(self->snapshot, Py_BuildValue("NN", dec_flags, next_input));
     }
     Py_DECREF(input_chunk);
 
@@ -1578,8 +1575,7 @@ textiowrapper_read(textio *self, PyObject *args)
         if (chunks != NULL) {
             if (result != NULL && PyList_Append(chunks, result) < 0)
                 goto fail;
-            Py_CLEAR(result);
-            result = PyUnicode_Join(_PyIO_empty_str, chunks);
+            Py_SETREF(result, PyUnicode_Join(_PyIO_empty_str, chunks));
             if (result == NULL)
                 goto fail;
             Py_CLEAR(chunks);
@@ -1836,8 +1832,7 @@ _textiowrapper_readline(textio *self, Py_ssize_t limit)
     if (chunks != NULL) {
         if (line != NULL && PyList_Append(chunks, line) < 0)
             goto error;
-        Py_CLEAR(line);
-        line = PyUnicode_Join(_PyIO_empty_str, chunks);
+        Py_SETREF(line, PyUnicode_Join(_PyIO_empty_str, chunks));
         if (line == NULL)
             goto error;
         Py_DECREF(chunks);
