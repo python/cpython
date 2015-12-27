@@ -1,6 +1,7 @@
 import sys
 import compileall
 import importlib.util
+import test.test_importlib.util
 import os
 import pathlib
 import py_compile
@@ -40,6 +41,11 @@ class CompileallTests(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.directory)
 
+    def add_bad_source_file(self):
+        self.bad_source_path = os.path.join(self.directory, '_test_bad.py')
+        with open(self.bad_source_path, 'w') as file:
+            file.write('x (\n')
+
     def data(self):
         with open(self.bc_path, 'rb') as file:
             data = file.read(8)
@@ -78,15 +84,31 @@ class CompileallTests(unittest.TestCase):
                 os.unlink(fn)
             except:
                 pass
-        compileall.compile_file(self.source_path, force=False, quiet=True)
+        self.assertTrue(compileall.compile_file(self.source_path,
+                                                force=False, quiet=True))
         self.assertTrue(os.path.isfile(self.bc_path) and
                         not os.path.isfile(self.bc_path2))
         os.unlink(self.bc_path)
-        compileall.compile_dir(self.directory, force=False, quiet=True)
+        self.assertTrue(compileall.compile_dir(self.directory, force=False,
+                                               quiet=True))
         self.assertTrue(os.path.isfile(self.bc_path) and
                         os.path.isfile(self.bc_path2))
         os.unlink(self.bc_path)
         os.unlink(self.bc_path2)
+        # Test against bad files
+        self.add_bad_source_file()
+        self.assertFalse(compileall.compile_file(self.bad_source_path,
+                                                 force=False, quiet=2))
+        self.assertFalse(compileall.compile_dir(self.directory,
+                                                force=False, quiet=2))
+
+    def test_compile_path(self):
+        self.assertTrue(compileall.compile_path(quiet=2))
+
+        with test.test_importlib.util.import_state(path=[self.directory]):
+            self.add_bad_source_file()
+            self.assertFalse(compileall.compile_path(skip_curdir=False,
+                                                     force=True, quiet=2))
 
     def test_no_pycache_in_non_package(self):
         # Bug 8563 reported that __pycache__ directories got created by
