@@ -206,8 +206,7 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
     seq = PySequence_Tuple(val);
     if (!seq)
         return -1;
-    Py_CLEAR(self->args);
-    self->args = seq;
+    Py_SETREF(self->args, seq);
     return 0;
 }
 
@@ -646,9 +645,8 @@ ImportError_init(PyImportErrorObject *self, PyObject *args, PyObject *kwds)
     if (!PyArg_UnpackTuple(args, "ImportError", 1, 1, &msg))
         return -1;
 
-    Py_CLEAR(self->msg);          /* replacing */
-    self->msg = msg;
-    Py_INCREF(self->msg);
+    Py_INCREF(msg);
+    Py_SETREF(self->msg, msg);
 
     return 0;
 }
@@ -858,8 +856,7 @@ oserror_init(PyOSErrorObject *self, PyObject **p_args,
 #endif
 
     /* Steals the reference to args */
-    Py_CLEAR(self->args);
-    self->args = args;
+    Py_SETREF(self->args, args);
     *p_args = args = NULL;
 
     return 0;
@@ -1278,9 +1275,8 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     if (lenargs >= 1) {
-        Py_CLEAR(self->msg);
-        self->msg = PyTuple_GET_ITEM(args, 0);
-        Py_INCREF(self->msg);
+        Py_INCREF(PyTuple_GET_ITEM(args, 0));
+        Py_SETREF(self->msg, PyTuple_GET_ITEM(args, 0));
     }
     if (lenargs == 2) {
         info = PyTuple_GET_ITEM(args, 1);
@@ -1295,21 +1291,17 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
             return -1;
         }
 
-        Py_CLEAR(self->filename);
-        self->filename = PyTuple_GET_ITEM(info, 0);
-        Py_INCREF(self->filename);
+        Py_INCREF(PyTuple_GET_ITEM(info, 0));
+        Py_SETREF(self->filename, PyTuple_GET_ITEM(info, 0));
 
-        Py_CLEAR(self->lineno);
-        self->lineno = PyTuple_GET_ITEM(info, 1);
-        Py_INCREF(self->lineno);
+        Py_INCREF(PyTuple_GET_ITEM(info, 1));
+        Py_SETREF(self->lineno, PyTuple_GET_ITEM(info, 1));
 
-        Py_CLEAR(self->offset);
-        self->offset = PyTuple_GET_ITEM(info, 2);
-        Py_INCREF(self->offset);
+        Py_INCREF(PyTuple_GET_ITEM(info, 2));
+        Py_SETREF(self->offset, PyTuple_GET_ITEM(info, 2));
 
-        Py_CLEAR(self->text);
-        self->text = PyTuple_GET_ITEM(info, 3);
-        Py_INCREF(self->text);
+        Py_INCREF(PyTuple_GET_ITEM(info, 3));
+        Py_SETREF(self->text, PyTuple_GET_ITEM(info, 3));
 
         Py_DECREF(info);
 
@@ -1554,8 +1546,7 @@ set_unicodefromstring(PyObject **attr, const char *value)
     PyObject *obj = PyUnicode_FromString(value);
     if (!obj)
         return -1;
-    Py_CLEAR(*attr);
-    *attr = obj;
+    Py_SETREF(*attr, obj);
     return 0;
 }
 
@@ -1961,8 +1952,7 @@ UnicodeDecodeError_init(PyObject *self, PyObject *args, PyObject *kwds)
         Py_buffer view;
         if (PyObject_GetBuffer(ude->object, &view, PyBUF_SIMPLE) != 0)
             goto error;
-        Py_CLEAR(ude->object);
-        ude->object = PyBytes_FromStringAndSize(view.buf, view.len);
+        Py_SETREF(ude->object, PyBytes_FromStringAndSize(view.buf, view.len));
         PyBuffer_Release(&view);
         if (!ude->object)
             goto error;
@@ -2871,9 +2861,8 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
     if (PyUnicode_Tailmatch(self->text, print_prefix,
                             start, text_len, -1)) {
-        Py_CLEAR(self->msg);
-        self->msg = PyUnicode_FromString(
-                   "Missing parentheses in call to 'print'");
+        Py_SETREF(self->msg,
+                  PyUnicode_FromString("Missing parentheses in call to 'print'"));
         return 1;
     }
 
@@ -2886,9 +2875,8 @@ _check_for_legacy_statements(PySyntaxErrorObject *self, Py_ssize_t start)
     }
     if (PyUnicode_Tailmatch(self->text, exec_prefix,
                             start, text_len, -1)) {
-        Py_CLEAR(self->msg);
-        self->msg = PyUnicode_FromString(
-                    "Missing parentheses in call to 'exec'");
+        Py_SETREF(self->msg,
+                  PyUnicode_FromString("Missing parentheses in call to 'exec'"));
         return 1;
     }
     /* Fall back to the default error message */
