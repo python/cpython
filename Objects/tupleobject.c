@@ -149,7 +149,6 @@ PyTuple_GetItem(PyObject *op, Py_ssize_t i)
 int
 PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
 {
-    PyObject *olditem;
     PyObject **p;
     if (!PyTuple_Check(op) || op->ob_refcnt != 1) {
         Py_XDECREF(newitem);
@@ -163,9 +162,7 @@ PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
         return -1;
     }
     p = ((PyTupleObject *)op) -> ob_item + i;
-    olditem = *p;
-    *p = newitem;
-    Py_XDECREF(olditem);
+    Py_SETREF(*p, newitem);
     return 0;
 }
 

@@ -1226,12 +1226,8 @@ xmlparse_dealloc(xmlparseobject *self)
     self->itself = NULL;
 
     if (self->handlers != NULL) {
-        PyObject *temp;
-        for (i = 0; handler_info[i].name != NULL; i++) {
-            temp = self->handlers[i];
-            self->handlers[i] = NULL;
-            Py_XDECREF(temp);
-        }
+        for (i = 0; handler_info[i].name != NULL; i++)
+            Py_CLEAR(self->handlers[i]);
         PyMem_Free(self->handlers);
         self->handlers = NULL;
     }
@@ -1345,7 +1341,6 @@ sethandler(xmlparseobject *self, PyObject *name, PyObject* v)
     int handlernum = handlername2int(name);
     if (handlernum >= 0) {
         xmlhandler c_handler = NULL;
-        PyObject *temp = self->handlers[handlernum];
 
         if (v == Py_None) {
             /* If this is the character data handler, and a character
@@ -1367,8 +1362,7 @@ sethandler(xmlparseobject *self, PyObject *name, PyObject* v)
             Py_INCREF(v);
             c_handler = handler_info[handlernum].handler;
         }
-        self->handlers[handlernum] = v;
-        Py_XDECREF(temp);
+        Py_SETREF(self->handlers[handlernum], v);
         handler_info[handlernum].setter(self->itself, c_handler);
         return 1;
     }
@@ -1898,15 +1892,12 @@ static void
 clear_handlers(xmlparseobject *self, int initial)
 {
     int i = 0;
-    PyObject *temp;
 
     for (; handler_info[i].name != NULL; i++) {
         if (initial)
             self->handlers[i] = NULL;
         else {
-            temp = self->handlers[i];
-            self->handlers[i] = NULL;
-            Py_XDECREF(temp);
+            Py_CLEAR(self->handlers[i]);
             handler_info[i].setter(self->itself, NULL);
         }
     }

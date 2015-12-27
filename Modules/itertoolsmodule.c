@@ -77,7 +77,7 @@ groupby_traverse(groupbyobject *gbo, visitproc visit, void *arg)
 static PyObject *
 groupby_next(groupbyobject *gbo)
 {
-    PyObject *newvalue, *newkey, *r, *grouper, *tmp;
+    PyObject *newvalue, *newkey, *r, *grouper;
 
     /* skip to next iteration group */
     for (;;) {
@@ -110,19 +110,12 @@ groupby_next(groupbyobject *gbo)
             }
         }
 
-        tmp = gbo->currkey;
-        gbo->currkey = newkey;
-        Py_XDECREF(tmp);
-
-        tmp = gbo->currvalue;
-        gbo->currvalue = newvalue;
-        Py_XDECREF(tmp);
+        Py_SETREF(gbo->currkey, newkey);
+        Py_SETREF(gbo->currvalue, newvalue);
     }
 
     Py_INCREF(gbo->currkey);
-    tmp = gbo->tgtkey;
-    gbo->tgtkey = gbo->currkey;
-    Py_XDECREF(tmp);
+    Py_SETREF(gbo->tgtkey, gbo->currkey);
 
     grouper = _grouper_create(gbo, gbo->tgtkey);
     if (grouper == NULL)
@@ -3445,7 +3438,7 @@ accumulate_traverse(accumulateobject *lz, visitproc visit, void *arg)
 static PyObject *
 accumulate_next(accumulateobject *lz)
 {
-    PyObject *val, *oldtotal, *newtotal;
+    PyObject *val, *newtotal;
 
     val = (*Py_TYPE(lz->it)->tp_iternext)(lz->it);
     if (val == NULL)
@@ -3465,11 +3458,8 @@ accumulate_next(accumulateobject *lz)
     if (newtotal == NULL)
         return NULL;
 
-    oldtotal = lz->total;
-    lz->total = newtotal;
-    Py_DECREF(oldtotal);
-
     Py_INCREF(newtotal);
+    Py_SETREF(lz->total, newtotal);
     return newtotal;
 }
 

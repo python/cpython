@@ -401,7 +401,6 @@ type_qualname(PyTypeObject *type, void *context)
 static int
 type_set_name(PyTypeObject *type, PyObject *value, void *context)
 {
-    PyHeapTypeObject* et;
     char *tp_name;
     PyObject *tmp;
 
@@ -430,17 +429,9 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
     if (tp_name == NULL)
         return -1;
 
-    et = (PyHeapTypeObject*)type;
-
-    Py_INCREF(value);
-
-    /* Wait until et is a sane state before Py_DECREF'ing the old et->ht_name
-       value.  (Bug #16447.)  */
-    tmp = et->ht_name;
-    et->ht_name = value;
-
     type->tp_name = tp_name;
-    Py_DECREF(tmp);
+    Py_INCREF(value);
+    Py_SETREF(((PyHeapTypeObject*)type)->ht_name, value);
 
     return 0;
 }
