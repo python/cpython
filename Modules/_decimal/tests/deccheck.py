@@ -50,8 +50,8 @@ Functions = {
         '__abs__', '__bool__', '__ceil__', '__complex__', '__copy__',
         '__floor__', '__float__', '__hash__', '__int__', '__neg__',
         '__pos__', '__reduce__', '__repr__', '__str__', '__trunc__',
-        'adjusted', 'as_tuple', 'canonical', 'conjugate', 'copy_abs',
-        'copy_negate', 'is_canonical', 'is_finite', 'is_infinite',
+        'adjusted', 'as_integer_ratio', 'as_tuple', 'canonical', 'conjugate',
+        'copy_abs', 'copy_negate', 'is_canonical', 'is_finite', 'is_infinite',
         'is_nan', 'is_qnan', 'is_signed', 'is_snan', 'is_zero', 'radix'
     ),
     # Unary with optional context:
@@ -128,7 +128,7 @@ ContextFunctions = {
 # Functions that require a restricted exponent range for reasonable runtimes.
 UnaryRestricted = [
   '__ceil__', '__floor__', '__int__', '__trunc__',
-  'to_integral', 'to_integral_value'
+  'as_integer_ratio', 'to_integral', 'to_integral_value'
 ]
 
 BinaryRestricted = ['__round__']

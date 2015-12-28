@@ -448,6 +448,19 @@ Decimal objects
       ``Decimal('321e+5').adjusted()`` returns seven.  Used for determining the
       position of the most significant digit with respect to the decimal point.
 
+   .. method:: as_integer_ratio()
+
+      Return a pair ``(n, d)`` of integers that represent the given
+      :class:`Decimal` instance as a fraction, in lowest terms and
+      with a positive denominator::
+
+          >>> Decimal('-3.14').as_integer_ratio()
+          (-157, 50)
+
+      The conversion is exact.  Raise OverflowError on infinities and ValueError
+      on NaNs.
+
+   .. versionadded:: 3.6
 
    .. method:: as_tuple()
 
