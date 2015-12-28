@@ -2047,6 +2047,39 @@ class UsabilityTest(unittest.TestCase):
         d = Decimal( (1, (0, 2, 7, 1), 'F') )
         self.assertEqual(d.as_tuple(), (1, (0,), 'F'))
 
+    def test_as_integer_ratio(self):
+        Decimal = self.decimal.Decimal
+
+        # exceptional cases
+        self.assertRaises(OverflowError,
+                          Decimal.as_integer_ratio, Decimal('inf'))
+        self.assertRaises(OverflowError,
+                          Decimal.as_integer_ratio, Decimal('-inf'))
+        self.assertRaises(ValueError,
+                          Decimal.as_integer_ratio, Decimal('-nan'))
+        self.assertRaises(ValueError,
+                          Decimal.as_integer_ratio, Decimal('snan123'))
+
+        for exp in range(-4, 2):
+            for coeff in range(1000):
+                for sign in '+', '-':
+                    d = Decimal('%s%dE%d' % (sign, coeff, exp))
+                    pq = d.as_integer_ratio()
+                    p, q = pq
+
+                    # check return type
+                    self.assertIsInstance(pq, tuple)
+                    self.assertIsInstance(p, int)
+                    self.assertIsInstance(q, int)
+
+                    # check normalization:  q should be positive;
+                    # p should be relatively prime to q.
+                    self.assertGreater(q, 0)
+                    self.assertEqual(math.gcd(p, q), 1)
+
+                    # check that p/q actually gives the correct value
+                    self.assertEqual(Decimal(p) / Decimal(q), d)
+
     def test_subclassing(self):
         # Different behaviours when subclassing Decimal
         Decimal = self.decimal.Decimal
