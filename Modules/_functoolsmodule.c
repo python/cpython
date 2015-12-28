@@ -1053,6 +1053,20 @@ lru_cache_reduce(PyObject *self, PyObject *unused)
     return PyObject_GetAttrString(self, "__qualname__");
 }
 
+static PyObject *
+lru_cache_copy(PyObject *self, PyObject *unused)
+{
+    Py_INCREF(self);
+    return self;
+}
+
+static PyObject *
+lru_cache_deepcopy(PyObject *self, PyObject *unused)
+{
+    Py_INCREF(self);
+    return self;
+}
+
 static int
 lru_cache_tp_traverse(lru_cache_object *self, visitproc visit, void *arg)
 {
@@ -1104,6 +1118,8 @@ static PyMethodDef lru_cache_methods[] = {
     {"cache_info", (PyCFunction)lru_cache_cache_info, METH_NOARGS},
     {"cache_clear", (PyCFunction)lru_cache_cache_clear, METH_NOARGS},
     {"__reduce__", (PyCFunction)lru_cache_reduce, METH_NOARGS},
+    {"__copy__", (PyCFunction)lru_cache_copy, METH_VARARGS},
+    {"__deepcopy__", (PyCFunction)lru_cache_deepcopy, METH_VARARGS},
     {NULL}
 };
 
