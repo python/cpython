@@ -699,6 +699,7 @@ class ExactRatioTest(unittest.TestCase):
             num, den = statistics._exact_ratio(x)
             self.assertEqual(x, num/den)
 
+    @unittest.skipIf(True, "temporarily disabled: see #25928")
     def test_decimal(self):
         D = Decimal
         _exact_ratio = statistics._exact_ratio
@@ -730,6 +731,7 @@ class ExactRatioTest(unittest.TestCase):
             self.assertIs(ratio[1], None)
             self.assertEqual(type(ratio[0]), type(nan))
 
+    @unittest.skipIf(True, "temporarily disabled: see #25928")
     def test_decimal_nan(self):
         NAN = Decimal("NAN")
         sNAN = Decimal("sNAN")
@@ -1258,6 +1260,7 @@ class SumSpecialValues(NumericTestCase):
         with decimal.localcontext(decimal.BasicContext):
             self.assertRaises(decimal.InvalidOperation, statistics._sum, data)
 
+    @unittest.skipIf(True, "temporarily disabled: see #25928")
     def test_decimal_snan_raises(self):
         # Adding sNAN should raise InvalidOperation.
         sNAN = Decimal('sNAN')
