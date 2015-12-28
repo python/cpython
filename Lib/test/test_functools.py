@@ -1262,14 +1262,24 @@ class TestLRU:
 
     def test_copy(self):
         cls = self.__class__
-        for f in cls.cached_func[0], cls.cached_meth, cls.cached_staticmeth:
+        def orig(x, y):
+            return 3 * x + y
+        part = self.module.partial(orig, 2)
+        funcs = (cls.cached_func[0], cls.cached_meth, cls.cached_staticmeth,
+                 self.module.lru_cache(2)(part))
+        for f in funcs:
             with self.subTest(func=f):
                 f_copy = copy.copy(f)
                 self.assertIs(f_copy, f)
 
     def test_deepcopy(self):
         cls = self.__class__
-        for f in cls.cached_func[0], cls.cached_meth, cls.cached_staticmeth:
+        def orig(x, y):
+            return 3 * x + y
+        part = self.module.partial(orig, 2)
+        funcs = (cls.cached_func[0], cls.cached_meth, cls.cached_staticmeth,
+                 self.module.lru_cache(2)(part))
+        for f in funcs:
             with self.subTest(func=f):
                 f_copy = copy.deepcopy(f)
                 self.assertIs(f_copy, f)
