@@ -70,6 +70,15 @@ PyDoc_STRVAR(doc_as_tuple,
 Return a tuple representation of the number.\n\
 \n");
 
+PyDoc_STRVAR(doc_as_integer_ratio,
+"as_integer_ratio($self, /)\n--\n\n\
+Decimal.as_integer_ratio() -> (int, int)\n\
+\n\
+Return a pair of integers, whose ratio is exactly equal to the original\n\
+Decimal and with a positive denominator. The ratio is in lowest terms.\n\
+Raise OverflowError on infinities and a ValueError on NaNs.\n\
+\n");
+
 PyDoc_STRVAR(doc_canonical,
 "canonical($self, /)\n--\n\n\
 Return the canonical encoding of the argument.  Currently, the encoding\n\
