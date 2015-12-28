@@ -1437,13 +1437,13 @@ class _BasePathTest(object):
         self.assertEqual(set(p.glob("dirA/../file*")), { P(BASE, "dirA/../fileA") })
         self.assertEqual(set(p.glob("../xyzzy")), set())
 
-    def _check_resolve_relative(self, p, expected):
+
+    def _check_resolve(self, p, expected):
         q = p.resolve()
         self.assertEqual(q, expected)
 
-    def _check_resolve_absolute(self, p, expected):
-        q = p.resolve()
-        self.assertEqual(q, expected)
+    # this can be used to check both relative and absolute resolutions
+    _check_resolve_relative = _check_resolve_absolute = _check_resolve
 
     @with_symlinks
     def test_resolve_common(self):
