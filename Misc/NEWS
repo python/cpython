@@ -126,7 +126,7 @@ Library
 - Issue #25928: Add Decimal.as_integer_ratio().
 
 - Issue #25447: Copying the lru_cache() wrapper object now always works,
-  independedly from the type of the wrapped object (by returning the original
+  independently from the type of the wrapped object (by returning the original
   object unchanged).
 
 - Issue #25768: Have the functions in compileall return booleans instead of
