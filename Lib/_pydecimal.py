@@ -1026,11 +1026,9 @@ class Decimal(object):
         """
         if self._is_special:
             if self.is_nan():
-                raise ValueError("Cannot pass NaN "
-                                 "to decimal.as_integer_ratio.")
+                raise ValueError("cannot convert NaN to integer ratio")
             else:
-                raise OverflowError("Cannot pass infinity "
-                                    "to decimal.as_integer_ratio.")
+                raise OverflowError("cannot convert Infinity to integer ratio")
 
         if not self:
             return 0, 1

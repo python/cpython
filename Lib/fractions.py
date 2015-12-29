@@ -125,17 +125,9 @@ class Fraction(numbers.Rational):
                 self._denominator = numerator.denominator
                 return self
 
-            elif isinstance(numerator, float):
-                # Exact conversion from float
-                value = Fraction.from_float(numerator)
-                self._numerator = value._numerator
-                self._denominator = value._denominator
-                return self
-
-            elif isinstance(numerator, Decimal):
-                value = Fraction.from_decimal(numerator)
-                self._numerator = value._numerator
-                self._denominator = value._denominator
+            elif isinstance(numerator, (float, Decimal)):
+                # Exact conversion
+                self._numerator, self._denominator = numerator.as_integer_ratio()
                 return self
 
             elif isinstance(numerator, str):
@@ -210,10 +202,6 @@ class Fraction(numbers.Rational):
         elif not isinstance(f, float):
             raise TypeError("%s.from_float() only takes floats, not %r (%s)" %
                             (cls.__name__, f, type(f).__name__))
-        if math.isnan(f):
-            raise ValueError("Cannot convert %r to %s." % (f, cls.__name__))
-        if math.isinf(f):
-            raise OverflowError("Cannot convert %r to %s." % (f, cls.__name__))
         return cls(*f.as_integer_ratio())
 
     @classmethod
@@ -226,19 +214,7 @@ class Fraction(numbers.Rational):
             raise TypeError(
                 "%s.from_decimal() only takes Decimals, not %r (%s)" %
                 (cls.__name__, dec, type(dec).__name__))
-        if dec.is_infinite():
-            raise OverflowError(
-                "Cannot convert %s to %s." % (dec, cls.__name__))
-        if dec.is_nan():
-            raise ValueError("Cannot convert %s to %s." % (dec, cls.__name__))
-        sign, digits, exp = dec.as_tuple()
-        digits = int(''.join(map(str, digits)))
-        if sign:
-            digits = -digits
-        if exp >= 0:
-            return cls(digits * 10 ** exp)
-        else:
-            return cls(digits, 10 ** -exp)
+        return cls(*dec.as_integer_ratio())
 
     def limit_denominator(self, max_denominator=1000000):
         """Closest Fraction to self with denominator at most max_denominator.
