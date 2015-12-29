@@ -5150,7 +5150,7 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     Py_INCREF(args);
-    Py_SETREF((PyBaseExceptionObject *)self->args, args);
+    Py_SETREF(((PyBaseExceptionObject *)self)->args, args);
 
     return 0;
 }
