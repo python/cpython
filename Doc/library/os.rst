@@ -1789,7 +1789,7 @@ features:
    be raised; on Unix, the directory entry is removed but the storage allocated
    to the file is not made available until the original file is no longer in use.
 
-   This function is identical to :func:`unlink`.
+   This function is semantically identical to :func:`unlink`.
 
    .. versionadded:: 3.3
       The *dir_fd* argument.
@@ -2452,10 +2452,10 @@ features:
 
 .. function:: unlink(path, *, dir_fd=None)
 
-   Remove (delete) the file *path*.  This function is identical to
-   :func:`remove`; the ``unlink`` name is its traditional Unix
-   name.  Please see the documentation for :func:`remove` for
-   further information.
+   Remove (delete) the file *path*.  This function is semantically
+   identical to :func:`remove`; the ``unlink`` name is its
+   traditional Unix name.  Please see the documentation for
+   :func:`remove` for further information.
 
    .. versionadded:: 3.3
       The *dir_fd* parameter.
