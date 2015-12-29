@@ -123,6 +123,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25802: Document as deprecated the remaining implementations of
+  importlib.abc.Loader.load_module().
+
 - Issue #25928: Add Decimal.as_integer_ratio().
 
 - Issue #25447: Copying the lru_cache() wrapper object now always works,

@@ -921,6 +921,10 @@ find and load modules.
       Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
       specifying the name of the module to load is optional.
 
+      .. deprecated:: 3.6
+
+         Use :meth:`importlib.abc.Loader.exec_module` instead.
+
 
 .. class:: SourcelessFileLoader(fullname, path)
 
@@ -959,6 +963,10 @@ find and load modules.
 
    Concrete implementation of :meth:`importlib.abc.Loader.load_module` where
    specifying the name of the module to load is optional.
+
+   .. deprecated:: 3.6
+
+      Use :meth:`importlib.abc.Loader.exec_module` instead.
 
 
 .. class:: ExtensionFileLoader(fullname, path)
