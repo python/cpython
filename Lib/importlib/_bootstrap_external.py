@@ -655,6 +655,7 @@ class _LoaderBasics:
         _bootstrap._call_with_frames_removed(exec, code, module.__dict__)
 
     def load_module(self, fullname):
+        """This module is deprecated."""
         return _bootstrap._load_module_shim(self, fullname)
 
 

@@ -189,7 +189,12 @@ become proper keywords in Python 3.7.
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
-* None yet.
+* :meth:`importlib.machinery.SourceFileLoader` and
+  :meth:`importlib.machinery.SourcelessFileLoader` are now deprecated. They
+  were the only remaining implementations of
+  :meth:`importlib.abc.Loader.load_module` in :mod:`importlib` that had not
+  been deprecated in previous versions of Python in favour of
+  :meth:`importlib.abc.Loader.exec_module`.
 
 
 Deprecated functions and types of the C API
