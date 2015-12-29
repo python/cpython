@@ -1451,17 +1451,11 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
     int exponent;
     int i;
 
-    PyObject *prev;
     PyObject *py_exponent = NULL;
     PyObject *numerator = NULL;
     PyObject *denominator = NULL;
     PyObject *result_pair = NULL;
     PyNumberMethods *long_methods = PyLong_Type.tp_as_number;
-
-#define INPLACE_UPDATE(obj, call) \
-    prev = obj; \
-    obj = call; \
-    Py_DECREF(prev); \
 
     CONVERT_TO_DOUBLE(v, self);
 
@@ -1489,29 +1483,31 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
        to be truncated by PyLong_FromDouble(). */
 
     numerator = PyLong_FromDouble(float_part);
-    if (numerator == NULL) goto error;
+    if (numerator == NULL)
+        goto error;
+    denominator = PyLong_FromLong(1);
+    if (denominator == NULL)
+        goto error;
+    py_exponent = PyLong_FromLong(Py_ABS(exponent));
+    if (py_exponent == NULL)
+        goto error;
 
     /* fold in 2**exponent */
-    denominator = PyLong_FromLong(1);
-    py_exponent = PyLong_FromLong(labs((long)exponent));
-    if (py_exponent == NULL) goto error;
-    INPLACE_UPDATE(py_exponent,
-                   long_methods->nb_lshift(denominator, py_exponent));
-    if (py_exponent == NULL) goto error;
     if (exponent > 0) {
-        INPLACE_UPDATE(numerator,
-                       long_methods->nb_multiply(numerator, py_exponent));
-        if (numerator == NULL) goto error;
+        Py_SETREF(numerator,
+                  long_methods->nb_lshift(numerator, py_exponent));
+        if (numerator == NULL)
+            goto error;
     }
     else {
-        Py_DECREF(denominator);
-        denominator = py_exponent;
-        py_exponent = NULL;
+        Py_SETREF(denominator,
+                  long_methods->nb_lshift(denominator, py_exponent));
+        if (denominator == NULL)
+            goto error;
     }
 
     result_pair = PyTuple_Pack(2, numerator, denominator);
 
-#undef INPLACE_UPDATE
 error:
     Py_XDECREF(py_exponent);
     Py_XDECREF(denominator);
