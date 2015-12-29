@@ -1466,14 +1466,14 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
     CONVERT_TO_DOUBLE(v, self);
 
     if (Py_IS_INFINITY(self)) {
-      PyErr_SetString(PyExc_OverflowError,
-                      "Cannot pass infinity to float.as_integer_ratio.");
-      return NULL;
+        PyErr_SetString(PyExc_OverflowError,
+                        "cannot convert Infinity to integer ratio");
+        return NULL;
     }
     if (Py_IS_NAN(self)) {
-      PyErr_SetString(PyExc_ValueError,
-                      "Cannot pass NaN to float.as_integer_ratio.");
-      return NULL;
+        PyErr_SetString(PyExc_ValueError,
+                        "cannot convert NaN to integer ratio");
+        return NULL;
     }
 
     PyFPE_START_PROTECT("as_integer_ratio", goto error);

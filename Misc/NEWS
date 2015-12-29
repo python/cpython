@@ -126,6 +126,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25971: Optimized creating Fractions from floats by 2 times and from
+  Decimals by 3 times.
+
 - Issue #25802: Document as deprecated the remaining implementations of
   importlib.abc.Loader.load_module().
 

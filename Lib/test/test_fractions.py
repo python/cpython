@@ -263,13 +263,13 @@ class FractionTest(unittest.TestCase):
         nan = inf - inf
         # bug 16469: error types should be consistent with float -> int
         self.assertRaisesMessage(
-            OverflowError, "Cannot convert inf to Fraction.",
+            OverflowError, "cannot convert Infinity to integer ratio",
             F.from_float, inf)
         self.assertRaisesMessage(
-            OverflowError, "Cannot convert -inf to Fraction.",
+            OverflowError, "cannot convert Infinity to integer ratio",
             F.from_float, -inf)
         self.assertRaisesMessage(
-            ValueError, "Cannot convert nan to Fraction.",
+            ValueError, "cannot convert NaN to integer ratio",
             F.from_float, nan)
 
     def testFromDecimal(self):
@@ -284,16 +284,16 @@ class FractionTest(unittest.TestCase):
 
         # bug 16469: error types should be consistent with decimal -> int
         self.assertRaisesMessage(
-            OverflowError, "Cannot convert Infinity to Fraction.",
+            OverflowError, "cannot convert Infinity to integer ratio",
             F.from_decimal, Decimal("inf"))
         self.assertRaisesMessage(
-            OverflowError, "Cannot convert -Infinity to Fraction.",
+            OverflowError, "cannot convert Infinity to integer ratio",
             F.from_decimal, Decimal("-inf"))
         self.assertRaisesMessage(
-            ValueError, "Cannot convert NaN to Fraction.",
+            ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("nan"))
         self.assertRaisesMessage(
-            ValueError, "Cannot convert sNaN to Fraction.",
+            ValueError, "cannot convert NaN to integer ratio",
             F.from_decimal, Decimal("snan"))
 
     def testLimitDenominator(self):
