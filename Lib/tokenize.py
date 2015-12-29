@@ -325,8 +325,8 @@ def untokenize(iterable):
     Round-trip invariant for full input:
         Untokenized source will match input source exactly
 
-    Round-trip invariant for limited intput:
-        # Output bytes will tokenize the back to the input
+    Round-trip invariant for limited input:
+        # Output bytes will tokenize back to the input
         t1 = [tok[:2] for tok in tokenize(f.readline)]
         newcode = untokenize(t1)
         readline = BytesIO(newcode).readline
@@ -462,10 +462,10 @@ def open(filename):
 
 def tokenize(readline):
     """
-    The tokenize() generator requires one argment, readline, which
+    The tokenize() generator requires one argument, readline, which
     must be a callable object which provides the same interface as the
     readline() method of built-in file objects.  Each call to the function
-    should return one line of input as bytes.  Alternately, readline
+    should return one line of input as bytes.  Alternatively, readline
     can be a callable function terminating with StopIteration:
         readline = open(myfile, 'rb').__next__  # Example of alternate readline
 
@@ -645,7 +645,7 @@ def _tokenize(readline, encoding):
                 #  we switch to longer prefixes, this needs to be
                 #  adjusted.
                 # Note that initial == token[:1].
-                # Also note that single quote checking must come afer
+                # Also note that single quote checking must come after
                 #  triple quote checking (above).
                 elif (initial in single_quoted or
                       token[:2] in single_quoted or
