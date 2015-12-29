@@ -416,6 +416,14 @@ TODO(jhylton): Figure out how to test SyntaxWarning with doctest.
 ##     ...
 ##   SyntaxWarning: name 'x' is assigned to before nonlocal declaration
 
+ From https://bugs.python.org/issue25973
+   >>> class A:
+   ...     def f(self):
+   ...         nonlocal __x
+   Traceback (most recent call last):
+     ...
+   SyntaxError: no binding for nonlocal '_A__x' found
+
 
 This tests assignment-context; there was a bug in Python 2.5 where compiling
 a complex 'if' (one with 'elif') would fail to notice an invalid suite,
