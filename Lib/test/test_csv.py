@@ -2,6 +2,7 @@
 # Copyright (C) 2001,2002 Python Software Foundation
 # csv package unit tests
 
+import copy
 import sys
 import os
 import unittest
@@ -10,6 +11,7 @@ import tempfile
 import csv
 import gc
 import io
+import pickle
 from test import test_support
 
 class Test_Csv(unittest.TestCase):
@@ -465,6 +467,17 @@ class TestDialectRegistry(unittest.TestCase):
         self.assertRaises(TypeError, csv.reader, [], delimiter = None)
         self.assertRaises(TypeError, csv.reader, [], quoting = -1)
         self.assertRaises(TypeError, csv.reader, [], quoting = 100)
+
+    def test_copy(self):
+        for name in csv.list_dialects():
+            dialect = csv.get_dialect(name)
+            self.assertRaises(TypeError, copy.copy, dialect)
+
+    def test_pickle(self):
+        for name in csv.list_dialects():
+            dialect = csv.get_dialect(name)
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                self.assertRaises(TypeError, pickle.dumps, dialect, proto)
 
 class TestCsvBase(unittest.TestCase):
     def readerAssertEqual(self, input, expected_result):

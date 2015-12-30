@@ -3207,6 +3207,7 @@ reduce_2(PyObject *obj)
     PyObject *slots = NULL, *listitems = NULL, *dictitems = NULL;
     PyObject *copyreg = NULL, *newobj = NULL, *res = NULL;
     Py_ssize_t i, n;
+    int required_state = 0;
 
     cls = PyObject_GetAttrString(obj, "__class__");
     if (cls == NULL)
@@ -3214,7 +3215,7 @@ reduce_2(PyObject *obj)
 
     if (PyType_Check(cls) && ((PyTypeObject *)cls)->tp_new == NULL) {
         PyErr_Format(PyExc_TypeError,
-                     "can't pickle %s objects",
+                     "can't pickle %.200s objects",
                      ((PyTypeObject *)cls)->tp_name);
         return NULL;
     }
@@ -3223,7 +3224,9 @@ reduce_2(PyObject *obj)
     if (getnewargs != NULL) {
         args = PyObject_CallObject(getnewargs, NULL);
         Py_DECREF(getnewargs);
-        if (args != NULL && !PyTuple_Check(args)) {
+        if (args == NULL)
+            goto end;
+        if (!PyTuple_Check(args)) {
             PyErr_Format(PyExc_TypeError,
                 "__getnewargs__ should return a tuple, "
                 "not '%.200s'", Py_TYPE(args)->tp_name);
@@ -3232,10 +3235,8 @@ reduce_2(PyObject *obj)
     }
     else {
         PyErr_Clear();
-        args = PyTuple_New(0);
+        required_state = !PyList_Check(obj) && !PyDict_Check(obj);
     }
-    if (args == NULL)
-        goto end;
 
     getstate = PyObject_GetAttrString(obj, "__getstate__");
     if (getstate != NULL) {
@@ -3246,6 +3247,14 @@ reduce_2(PyObject *obj)
     }
     else {
         PyErr_Clear();
+
+        if (required_state && obj->ob_type->tp_itemsize) {
+            PyErr_Format(PyExc_TypeError,
+                         "can't pickle %.200s objects",
+                         Py_TYPE(obj)->tp_name);
+            goto end;
+        }
+
         state = PyObject_GetAttrString(obj, "__dict__");
         if (state == NULL) {
             PyErr_Clear();
@@ -3255,8 +3264,24 @@ reduce_2(PyObject *obj)
         names = slotnames(cls);
         if (names == NULL)
             goto end;
+        assert(names == Py_None || PyList_Check(names));
+        if (required_state) {
+            Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
+            if (obj->ob_type->tp_dictoffset)
+                basicsize += sizeof(PyObject *);
+            if (obj->ob_type->tp_weaklistoffset)
+                basicsize += sizeof(PyObject *);
+            if (names != Py_None)
+                basicsize += sizeof(PyObject *) * Py_SIZE(names);
+            if (obj->ob_type->tp_basicsize > basicsize) {
+                PyErr_Format(PyExc_TypeError,
+                             "can't pickle %.200s objects",
+                             Py_TYPE(obj)->tp_name);
+                goto end;
+            }
+        }
+
         if (names != Py_None) {
-            assert(PyList_Check(names));
             slots = PyDict_New();
             if (slots == NULL)
                 goto end;
@@ -3318,7 +3343,7 @@ reduce_2(PyObject *obj)
     if (newobj == NULL)
         goto end;
 
-    n = PyTuple_GET_SIZE(args);
+    n = args ? PyTuple_GET_SIZE(args) : 0;
     args2 = PyTuple_New(n+1);
     if (args2 == NULL)
         goto end;
