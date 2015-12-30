@@ -244,8 +244,8 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
     }
     if (strlen(PyString_AS_STRING(value))
         != (size_t)PyString_GET_SIZE(value)) {
-        PyErr_Format(PyExc_ValueError,
-                     "__name__ must not contain null bytes");
+        PyErr_SetString(PyExc_ValueError,
+                        "type name must not contain null characters");
         return -1;
     }
 
@@ -2071,8 +2071,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     PyTypeObject *type, *base, *tmptype, *winner;
     PyHeapTypeObject *et;
     PyMemberDef *mp;
-    Py_ssize_t i, nbases, nslots, slotoffset, add_dict, add_weak;
-    int j, may_add_dict, may_add_weak;
+    Py_ssize_t i, nbases, nslots, slotoffset;
+    int j, may_add_dict, may_add_weak, add_dict, add_weak;
 
     assert(args != NULL && PyTuple_Check(args));
     assert(kwds == NULL || PyDict_Check(kwds));
@@ -2342,6 +2342,13 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     type->tp_as_mapping = &et->as_mapping;
     type->tp_as_buffer = &et->as_buffer;
     type->tp_name = PyString_AS_STRING(name);
+    if (!type->tp_name)
+        goto error;
+    if (strlen(type->tp_name) != (size_t)PyString_GET_SIZE(name)) {
+        PyErr_SetString(PyExc_ValueError,
+                        "type name must not contain null characters");
+        goto error;
+    }
 
     /* Set tp_base and tp_bases */
     type->tp_bases = bases;
