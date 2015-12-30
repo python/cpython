@@ -10,6 +10,8 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #25961: Disallowed null characters in the type name.
+
 - Issue #25973: Fix segfault when an invalid nonlocal statement binds a name
   starting with two underscores.
 
