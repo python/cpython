@@ -85,11 +85,11 @@ file   : program read from script file\n\
 arg ...: arguments passed to program in sys.argv[1:]\n\n\
 Other environment variables:\n\
 PYTHONSTARTUP: file executed on interactive startup (no default)\n\
-PYTHONPATH   : '%c'-separated list of directories prefixed to the\n\
+PYTHONPATH   : '%lc'-separated list of directories prefixed to the\n\
                default module search path.  The result is sys.path.\n\
 ";
 static char *usage_5 =
-"PYTHONHOME   : alternate <prefix> directory (or <prefix>%c<exec_prefix>).\n"
+"PYTHONHOME   : alternate <prefix> directory (or <prefix>%lc<exec_prefix>).\n"
 "               The default module search path uses %s.\n"
 "PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
@@ -114,8 +114,8 @@ usage(int exitcode, wchar_t* program)
         fputs(usage_1, f);
         fputs(usage_2, f);
         fputs(usage_3, f);
-        fprintf(f, usage_4, DELIM);
-        fprintf(f, usage_5, DELIM, PYTHONHOMEHELP);
+        fprintf(f, usage_4, (wint_t)DELIM);
+        fprintf(f, usage_5, (wint_t)DELIM, PYTHONHOMEHELP);
         fputs(usage_6, f);
     }
     return exitcode;
