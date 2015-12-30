@@ -401,9 +401,8 @@ type_qualname(PyTypeObject *type, void *context)
 static int
 type_set_name(PyTypeObject *type, PyObject *value, void *context)
 {
-    PyHeapTypeObject* et;
-    char *tp_name;
-    PyObject *tmp;
+    const char *tp_name;
+    Py_ssize_t name_size;
 
     if (!check_set_special_type_attr(type, value, "__name__"))
         return -1;
@@ -414,33 +413,18 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
         return -1;
     }
 
-    /* Check absence of null characters */
-    tmp = PyUnicode_FromStringAndSize("\0", 1);
-    if (tmp == NULL)
-        return -1;
-    if (PyUnicode_Contains(value, tmp) != 0) {
-        Py_DECREF(tmp);
-        PyErr_Format(PyExc_ValueError,
-                     "__name__ must not contain null bytes");
-        return -1;
-    }
-    Py_DECREF(tmp);
-
-    tp_name = _PyUnicode_AsString(value);
+    tp_name = PyUnicode_AsUTF8AndSize(value, &name_size);
     if (tp_name == NULL)
         return -1;
-
-    et = (PyHeapTypeObject*)type;
-
-    Py_INCREF(value);
-
-    /* Wait until et is a sane state before Py_DECREF'ing the old et->ht_name
-       value.  (Bug #16447.)  */
-    tmp = et->ht_name;
-    et->ht_name = value;
+    if (strlen(tp_name) != (size_t)name_size) {
+        PyErr_SetString(PyExc_ValueError,
+                        "type name must not contain null characters");
+        return -1;
+    }
 
     type->tp_name = tp_name;
-    Py_DECREF(tmp);
+    Py_INCREF(value);
+    Py_SETREF(((PyHeapTypeObject*)type)->ht_name, value);
 
     return 0;
 }
@@ -2285,8 +2269,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     PyTypeObject *type = NULL, *base, *tmptype, *winner;
     PyHeapTypeObject *et;
     PyMemberDef *mp;
-    Py_ssize_t i, nbases, nslots, slotoffset, add_dict, add_weak;
-    int j, may_add_dict, may_add_weak;
+    Py_ssize_t i, nbases, nslots, slotoffset, name_size;
+    int j, may_add_dict, may_add_weak, add_dict, add_weak;
     _Py_IDENTIFIER(__qualname__);
     _Py_IDENTIFIER(__slots__);
 
@@ -2509,9 +2493,14 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     type->tp_as_sequence = &et->as_sequence;
     type->tp_as_mapping = &et->as_mapping;
     type->tp_as_buffer = &et->as_buffer;
-    type->tp_name = _PyUnicode_AsString(name);
+    type->tp_name = PyUnicode_AsUTF8AndSize(name, &name_size);
     if (!type->tp_name)
         goto error;
+    if (strlen(type->tp_name) != (size_t)name_size) {
+        PyErr_SetString(PyExc_ValueError,
+                        "type name must not contain null characters");
+        goto error;
+    }
 
     /* Set tp_base and tp_bases */
     type->tp_bases = bases;
