@@ -1373,15 +1373,16 @@ class AbstractPickleTests(unittest.TestCase):
                 # 5th item is not an iterator
                 return dict, (), None, None, []
 
-        # Protocol 0 is less strict and also accept iterables.
+        # Protocol 0 in Python implementation is less strict and also accepts
+        # iterables.
         for proto in protocols:
             try:
                 self.dumps(C(), proto)
-            except (AttributeError, pickle.PickleError, cPickle.PickleError):
+            except (AttributeError, pickle.PicklingError, cPickle.PicklingError):
                 pass
             try:
                 self.dumps(D(), proto)
-            except (AttributeError, pickle.PickleError, cPickle.PickleError):
+            except (AttributeError, pickle.PicklingError, cPickle.PicklingError):
                 pass
 
     def test_many_puts_and_gets(self):
