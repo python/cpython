@@ -2342,12 +2342,17 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     type->tp_as_mapping = &et->as_mapping;
     type->tp_as_buffer = &et->as_buffer;
     type->tp_name = PyString_AS_STRING(name);
-    if (!type->tp_name)
-        goto error;
+    if (!type->tp_name) {
+        Py_DECREF(bases);
+        Py_DECREF(type);
+        return NULL;
+    }
     if (strlen(type->tp_name) != (size_t)PyString_GET_SIZE(name)) {
         PyErr_SetString(PyExc_ValueError,
                         "type name must not contain null characters");
-        goto error;
+        Py_DECREF(bases);
+        Py_DECREF(type);
+        return NULL;
     }
 
     /* Set tp_base and tp_bases */
@@ -2369,8 +2374,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             tmp = PyDict_GetItemString(tmp, "__name__");
             if (tmp != NULL) {
                 if (PyDict_SetItemString(dict, "__module__",
-                                         tmp) < 0)
+                                         tmp) < 0) {
+                    Py_DECREF(type);
                     return NULL;
+                }
             }
         }
     }
