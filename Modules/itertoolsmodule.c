@@ -4,8 +4,6 @@
 
 /* Itertools module written and maintained
    by Raymond D. Hettinger <python@rcn.com>
-   Copyright (c) 2003 Python Software Foundation.
-   All rights reserved.
 */
 
 

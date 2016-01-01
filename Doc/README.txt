@@ -119,27 +119,3 @@ and we will process your request as soon as possible.
 
 If you want to help the Documentation Team, you are always welcome.  Just send
 a mail to docs@python.org.
-
-
-Copyright notice
-================
-
-The Python source is copyrighted, but you can freely use and copy it
-as long as you don't change or remove the copyright notice:
-
-----------------------------------------------------------------------
-Copyright (c) 2000-2014 Python Software Foundation.
-All rights reserved.
-
-Copyright (c) 2000 BeOpen.com.
-All rights reserved.
-
-Copyright (c) 1995-2000 Corporation for National Research Initiatives.
-All rights reserved.
-
-Copyright (c) 1991-1995 Stichting Mathematisch Centrum.
-All rights reserved.
-
-See the file "license.rst" for information on usage and redistribution
-of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-----------------------------------------------------------------------
