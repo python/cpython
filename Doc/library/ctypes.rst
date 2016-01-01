@@ -1348,7 +1348,7 @@ module instead of using :func:`find_library` to locate the library at runtime.
 Loading shared libraries
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-There are several ways to loaded shared libraries into the Python process.  One
+There are several ways to load shared libraries into the Python process.  One
 way is to instantiate one of the following classes:
 
 
