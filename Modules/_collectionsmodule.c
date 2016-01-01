@@ -9,8 +9,6 @@
 
 /* collections module implementation of a deque() datatype
    Written and maintained by Raymond D. Hettinger <python@rcn.com>
-   Copyright (c) 2004-2015 Python Software Foundation.
-   All rights reserved.
 */
 
 /* The block length may be set to any number over 1.  Larger numbers
