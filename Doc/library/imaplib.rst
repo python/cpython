@@ -500,6 +500,17 @@ An :class:`IMAP4` instance has the following methods:
          M.store(num, '+FLAGS', '\\Deleted')
       M.expunge()
 
+   .. note::
+
+      Creating flags containing ']' (for example: "[test]") violates
+      :rfc:`3501` (the IMAP protocol).  However, imaplib has historically
+      allowed creation of such tags, and popular IMAP servers, such as Gmail,
+      accept and produce such flags.  There are non-Python programs which also
+      create such tags.  Although it is an RFC violation and IMAP clients and
+      servers are supposed to be strict, imaplib nontheless continues to allow
+      such tags to be created for backward compatibility reasons, and as of
+      python 3.5.2/3.6.0, handles them if they are sent from the server, since
+      this improves real-world compatibility.
 
 .. method:: IMAP4.subscribe(mailbox)
 
