@@ -128,6 +128,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25447: fileinput now uses sys.stdin as-is if it does not have a
+  buffer attribute (restores backward compatibility).
+
 - Issue #25971: Optimized creating Fractions from floats by 2 times and from
   Decimals by 3 times.
 
