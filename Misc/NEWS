@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25447: fileinput now uses sys.stdin as-is if it does not have a
+  buffer attribute (restores backward compatibility).
+
 - Issue #25447: Copying the lru_cache() wrapper object now always works,
   independedly from the type of the wrapped object (by returning the original
   object unchanged).

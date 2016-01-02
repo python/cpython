@@ -240,6 +240,17 @@ class FileInputTests(unittest.TestCase):
             lines = list(fi)
             self.assertEqual(lines, [b'spam, bacon, sausage, and spam'])
 
+    def test_detached_stdin_binary_mode(self):
+        orig_stdin = sys.stdin
+        try:
+            sys.stdin = BytesIO(b'spam, bacon, sausage, and spam')
+            self.assertFalse(hasattr(sys.stdin, 'buffer'))
+            fi = FileInput(files=['-'], mode='rb')
+            lines = list(fi)
+            self.assertEqual(lines, [b'spam, bacon, sausage, and spam'])
+        finally:
+            sys.stdin = orig_stdin
+
     def test_file_opening_hook(self):
         try:
             # cannot use openhook and inplace mode
