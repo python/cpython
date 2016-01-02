@@ -111,7 +111,15 @@ InternalDate = re.compile(br'.*INTERNALDATE "'
 # Literal is no longer used; kept for backward compatibility.
 Literal = re.compile(br'.*{(?P<size>\d+)}$', re.ASCII)
 MapCRLF = re.compile(br'\r\n|\r|\n')
-Response_code = re.compile(br'\[(?P<type>[A-Z-]+)( (?P<data>[^\]]*))?\]')
+# We no longer exclude the ']' character from the data portion of the response
+# code, even though it violates the RFC.  Popular IMAP servers such as Gmail
+# allow flags with ']', and there are programs (including imaplib!) that can
+# produce them.  The problem with this is if the 'text' portion of the response
+# includes a ']' we'll parse the response wrong (which is the point of the RFC
+# restriction).  However, that seems less likely to be a problem in practice
+# than being unable to correctly parse flags that include ']' chars, which
+# was reported as a real-world problem in issue #21815.
+Response_code = re.compile(br'\[(?P<type>[A-Z-]+)( (?P<data>.*))?\]')
 Untagged_response = re.compile(br'\* (?P<type>[A-Z-]+)( (?P<data>.*))?')
 # Untagged_status is no longer used; kept for backward compatibility
 Untagged_status = re.compile(
