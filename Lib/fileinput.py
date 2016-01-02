@@ -328,7 +328,7 @@ class FileInput:
             if self._filename == '-':
                 self._filename = '<stdin>'
                 if 'b' in self._mode:
-                    self._file = sys.stdin.buffer
+                    self._file = getattr(sys.stdin, 'buffer', sys.stdin)
                 else:
                     self._file = sys.stdin
                 self._isstdin = True
