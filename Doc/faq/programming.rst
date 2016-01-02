@@ -1010,8 +1010,7 @@ performance levels:
   may come up with.  This is doubly true for primitives written in C, such
   as builtins and some extension types.  For example, be sure to use
   either the :meth:`list.sort` built-in method or the related :func:`sorted`
-  function to do sorting (and see the
-  `sorting mini-HOWTO <https://wiki.python.org/moin/HowTo/Sorting>`_ for examples
+  function to do sorting (and see the :ref:`sortinghowto` for examples
   of moderately advanced usage).
 
 * Abstractions tend to create indirections and force the interpreter to work
