@@ -427,9 +427,12 @@ The module defines the following functions and data items:
 
    Note that unlike the C structure, the month value is a range of [1, 12], not
    [0, 11].  A year value will be handled as described under :ref:`Year 2000
-   (Y2K) issues <time-y2kissues>` above.  A ``-1`` argument as the daylight
-   savings flag, passed to :func:`mktime` will usually result in the correct
-   daylight savings state to be filled in.
+   (Y2K) issues <time-y2kissues>` above.
+
+   In calls to :func:`mktime`, :attr:`tm_isdst` may be set to 1 when daylight
+   savings time is in effect, and 0 when it is not.  A value of -1 indicates
+   that this is not known, and will usually result in the correct state being
+   filled in.
 
    When a tuple with an incorrect length is passed to a function expecting a
    :class:`struct_time`, or having elements of the wrong type, a
