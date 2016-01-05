@@ -1203,7 +1203,7 @@ PyObject_GenericSetAttr(PyObject *obj, PyObject *name, PyObject *value)
 int
 PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
 {
-    PyObject *dict, **dictptr = _PyObject_GetDictPtr(obj);
+    PyObject **dictptr = _PyObject_GetDictPtr(obj);
     if (dictptr == NULL) {
         PyErr_SetString(PyExc_AttributeError,
                         "This object has no __dict__");
@@ -1219,10 +1219,8 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
-    dict = *dictptr;
-    Py_XINCREF(value);
-    *dictptr = value;
-    Py_XDECREF(dict);
+    Py_INCREF(value);
+    Py_SETREF(*dictptr, value);
     return 0;
 }
 

@@ -59,15 +59,11 @@ BaseException_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 static int
 BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
 {
-    PyObject *tmp;
-
     if (!_PyArg_NoKeywords(Py_TYPE(self)->tp_name, kwds))
         return -1;
 
-    tmp = self->args;
-    self->args = args;
-    Py_INCREF(self->args);
-    Py_XDECREF(tmp);
+    Py_INCREF(args);
+    Py_SETREF(self->args, args);
 
     return 0;
 }
@@ -328,11 +324,10 @@ PyException_GetCause(PyObject *self) {
 
 /* Steals a reference to cause */
 void
-PyException_SetCause(PyObject *self, PyObject *cause) {
-    PyObject *old_cause = ((PyBaseExceptionObject *)self)->cause;
-    ((PyBaseExceptionObject *)self)->cause = cause;
+PyException_SetCause(PyObject *self, PyObject *cause)
+{
     ((PyBaseExceptionObject *)self)->suppress_context = 1;
-    Py_XDECREF(old_cause);
+    Py_SETREF(((PyBaseExceptionObject *)self)->cause, cause);
 }
 
 PyObject *
@@ -344,10 +339,9 @@ PyException_GetContext(PyObject *self) {
 
 /* Steals a reference to context */
 void
-PyException_SetContext(PyObject *self, PyObject *context) {
-    PyObject *old_context = ((PyBaseExceptionObject *)self)->context;
-    ((PyBaseExceptionObject *)self)->context = context;
-    Py_XDECREF(old_context);
+PyException_SetContext(PyObject *self, PyObject *context)
+{
+    Py_SETREF(((PyBaseExceptionObject *)self)->context, context);
 }
 
 

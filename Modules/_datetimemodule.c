@@ -1057,10 +1057,8 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     }
     /* Offset is normalized, so it is negative if days < 0 */
     if (GET_TD_DAYS(offset) < 0) {
-        PyObject *temp = offset;
         sign = '-';
-        offset = delta_negative((PyDateTime_Delta *)offset);
-        Py_DECREF(temp);
+        Py_SETREF(offset, delta_negative((PyDateTime_Delta *)offset));
         if (offset == NULL)
             return -1;
     }
@@ -3047,10 +3045,8 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
     if (dst == Py_None)
         goto Inconsistent;
     if (delta_bool((PyDateTime_Delta *)dst) != 0) {
-        PyObject *temp = result;
-        result = add_datetime_timedelta((PyDateTime_DateTime *)result,
-                                        (PyDateTime_Delta *)dst, 1);
-        Py_DECREF(temp);
+        Py_SETREF(result, add_datetime_timedelta((PyDateTime_DateTime *)result,
+                                                 (PyDateTime_Delta *)dst, 1));
         if (result == NULL)
             goto Fail;
     }
@@ -4157,10 +4153,7 @@ datetime_datetime_now_impl(PyTypeObject *type, PyObject *tz)
                                   tz);
     if (self != NULL && tz != Py_None) {
         /* Convert UTC to tzinfo's zone. */
-        PyObject *temp = self;
-
-        self = _PyObject_CallMethodId(tz, &PyId_fromutc, "O", self);
-        Py_DECREF(temp);
+        self = _PyObject_CallMethodId(tz, &PyId_fromutc, "N", self);
     }
     return self;
 }
@@ -4195,10 +4188,7 @@ datetime_fromtimestamp(PyObject *cls, PyObject *args, PyObject *kw)
                                    tzinfo);
     if (self != NULL && tzinfo != Py_None) {
         /* Convert UTC to tzinfo's zone. */
-        PyObject *temp = self;
-
-        self = _PyObject_CallMethodId(tzinfo, &PyId_fromutc, "O", self);
-        Py_DECREF(temp);
+        self = _PyObject_CallMethodId(tzinfo, &PyId_fromutc, "N", self);
     }
     return self;
 }
@@ -4421,9 +4411,7 @@ datetime_subtract(PyObject *left, PyObject *right)
                 return NULL;
 
             if (offdiff != NULL) {
-                PyObject *temp = result;
-                result = delta_subtract(result, offdiff);
-                Py_DECREF(temp);
+                Py_SETREF(result, delta_subtract(result, offdiff));
                 Py_DECREF(offdiff);
             }
         }

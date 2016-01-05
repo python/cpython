@@ -321,10 +321,8 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *args)
         Py_CLEAR(*hook_var);
     }
     else if (PyCallable_Check(function)) {
-        PyObject *tmp = *hook_var;
         Py_INCREF(function);
-        *hook_var = function;
-        Py_XDECREF(tmp);
+        Py_SETREF(*hook_var, function);
     }
     else {
         PyErr_Format(PyExc_TypeError,
