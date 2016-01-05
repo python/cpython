@@ -879,10 +879,8 @@ update_code_filenames(PyCodeObject *co, PyObject *oldname, PyObject *newname)
     if (PyUnicode_Compare(co->co_filename, oldname))
         return;
 
-    tmp = co->co_filename;
-    co->co_filename = newname;
-    Py_INCREF(co->co_filename);
-    Py_DECREF(tmp);
+    Py_INCREF(newname);
+    Py_SETREF(co->co_filename, newname);
 
     constants = co->co_consts;
     n = PyTuple_GET_SIZE(constants);
@@ -1327,10 +1325,8 @@ remove_importlib_frames(void)
             (always_trim ||
              PyUnicode_CompareWithASCIIString(code->co_name,
                                               remove_frames) == 0)) {
-            PyObject *tmp = *outer_link;
-            *outer_link = next;
             Py_XINCREF(next);
-            Py_DECREF(tmp);
+            Py_SETREF(*outer_link, next);
             prev_link = outer_link;
         }
         else {

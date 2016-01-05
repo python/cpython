@@ -396,10 +396,8 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
     Py_XDECREF(attrib);
 
     /* Replace the objects already pointed to by tag, text and tail. */
-    tmp = self_elem->tag;
     Py_INCREF(tag);
-    self_elem->tag = tag;
-    Py_DECREF(tmp);
+    Py_SETREF(self_elem->tag, tag);
 
     tmp = self_elem->text;
     Py_INCREF(Py_None);

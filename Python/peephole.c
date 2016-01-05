@@ -118,9 +118,7 @@ tuple_of_constants(unsigned char *codestr, Py_ssize_t n,
     /* If it's a BUILD_SET, use the PyTuple we just built to create a
       PyFrozenSet, and use that as the constant instead: */
     if (codestr[0] == BUILD_SET) {
-        PyObject *tuple = newconst;
-        newconst = PyFrozenSet_New(tuple);
-        Py_DECREF(tuple);
+        Py_SETREF(newconst, PyFrozenSet_New(newconst));
         if (newconst == NULL)
             return 0;
     }
