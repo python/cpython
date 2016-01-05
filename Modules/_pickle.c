@@ -4494,8 +4494,6 @@ Pickler_get_persid(PicklerObject *self)
 static int
 Pickler_set_persid(PicklerObject *self, PyObject *value)
 {
-    PyObject *tmp;
-
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "attribute deletion is not supported");
@@ -4507,10 +4505,8 @@ Pickler_set_persid(PicklerObject *self, PyObject *value)
         return -1;
     }
 
-    tmp = self->pers_func;
     Py_INCREF(value);
-    self->pers_func = value;
-    Py_XDECREF(tmp);      /* self->pers_func can be NULL, so be careful. */
+    Py_SETREF(self->pers_func, value);
 
     return 0;
 }
@@ -6946,8 +6942,6 @@ Unpickler_get_persload(UnpicklerObject *self)
 static int
 Unpickler_set_persload(UnpicklerObject *self, PyObject *value)
 {
-    PyObject *tmp;
-
     if (value == NULL) {
         PyErr_SetString(PyExc_TypeError,
                         "attribute deletion is not supported");
@@ -6960,10 +6954,8 @@ Unpickler_set_persload(UnpicklerObject *self, PyObject *value)
         return -1;
     }
 
-    tmp = self->pers_func;
     Py_INCREF(value);
-    self->pers_func = value;
-    Py_XDECREF(tmp);      /* self->pers_func can be NULL, so be careful. */
+    Py_SETREF(self->pers_func, value);
 
     return 0;
 }

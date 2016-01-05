@@ -762,7 +762,6 @@ profiler_dealloc(ProfilerObject *op)
 static int
 profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
 {
-    PyObject *o;
     PyObject *timer = NULL;
     double timeunit = 0.0;
     int subcalls = 1;
@@ -777,11 +776,9 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
 
     if (setSubcalls(pObj, subcalls) < 0 || setBuiltins(pObj, builtins) < 0)
         return -1;
-    o = pObj->externalTimer;
-    pObj->externalTimer = timer;
-    Py_XINCREF(timer);
-    Py_XDECREF(o);
     pObj->externalTimerUnit = timeunit;
+    Py_XINCREF(timer);
+    Py_SETREF(pObj->externalTimer, timer);
     return 0;
 }
 

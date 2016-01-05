@@ -249,7 +249,6 @@ func_get_code(PyFunctionObject *op)
 static int
 func_set_code(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
     Py_ssize_t nfree, nclosure;
 
     /* Not legal to del f.func_code or to set it to anything
@@ -270,10 +269,8 @@ func_set_code(PyFunctionObject *op, PyObject *value)
                      nclosure, nfree);
         return -1;
     }
-    tmp = op->func_code;
     Py_INCREF(value);
-    op->func_code = value;
-    Py_DECREF(tmp);
+    Py_SETREF(op->func_code, value);
     return 0;
 }
 
@@ -287,8 +284,6 @@ func_get_name(PyFunctionObject *op)
 static int
 func_set_name(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     /* Not legal to del f.func_name or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -296,10 +291,8 @@ func_set_name(PyFunctionObject *op, PyObject *value)
                         "__name__ must be set to a string object");
         return -1;
     }
-    tmp = op->func_name;
     Py_INCREF(value);
-    op->func_name = value;
-    Py_DECREF(tmp);
+    Py_SETREF(op->func_name, value);
     return 0;
 }
 
@@ -313,8 +306,6 @@ func_get_qualname(PyFunctionObject *op)
 static int
 func_set_qualname(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     /* Not legal to del f.__qualname__ or to set it to anything
      * other than a string object. */
     if (value == NULL || !PyUnicode_Check(value)) {
@@ -322,10 +313,8 @@ func_set_qualname(PyFunctionObject *op, PyObject *value)
                         "__qualname__ must be set to a string object");
         return -1;
     }
-    tmp = op->func_qualname;
     Py_INCREF(value);
-    op->func_qualname = value;
-    Py_DECREF(tmp);
+    Py_SETREF(op->func_qualname, value);
     return 0;
 }
 
@@ -343,8 +332,6 @@ func_get_defaults(PyFunctionObject *op)
 static int
 func_set_defaults(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     /* Legal to del f.func_defaults.
      * Can only set func_defaults to NULL or a tuple. */
     if (value == Py_None)
@@ -354,10 +341,8 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
                         "__defaults__ must be set to a tuple object");
         return -1;
     }
-    tmp = op->func_defaults;
     Py_XINCREF(value);
-    op->func_defaults = value;
-    Py_XDECREF(tmp);
+    Py_SETREF(op->func_defaults, value);
     return 0;
 }
 
@@ -375,8 +360,6 @@ func_get_kwdefaults(PyFunctionObject *op)
 static int
 func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     if (value == Py_None)
         value = NULL;
     /* Legal to del f.func_kwdefaults.
@@ -386,10 +369,8 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
             "__kwdefaults__ must be set to a dict object");
         return -1;
     }
-    tmp = op->func_kwdefaults;
     Py_XINCREF(value);
-    op->func_kwdefaults = value;
-    Py_XDECREF(tmp);
+    Py_SETREF(op->func_kwdefaults, value);
     return 0;
 }
 
@@ -408,8 +389,6 @@ func_get_annotations(PyFunctionObject *op)
 static int
 func_set_annotations(PyFunctionObject *op, PyObject *value)
 {
-    PyObject *tmp;
-
     if (value == Py_None)
         value = NULL;
     /* Legal to del f.func_annotations.
@@ -420,10 +399,8 @@ func_set_annotations(PyFunctionObject *op, PyObject *value)
             "__annotations__ must be set to a dict object");
         return -1;
     }
-    tmp = op->func_annotations;
     Py_XINCREF(value);
-    op->func_annotations = value;
-    Py_XDECREF(tmp);
+    Py_SETREF(op->func_annotations, value);
     return 0;
 }
 

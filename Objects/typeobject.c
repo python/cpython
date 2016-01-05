@@ -2092,7 +2092,7 @@ subtype_dict(PyObject *obj, void *context)
 static int
 subtype_setdict(PyObject *obj, PyObject *value, void *context)
 {
-    PyObject *dict, **dictptr;
+    PyObject **dictptr;
     PyTypeObject *base;
 
     base = get_builtin_base_with_dict(Py_TYPE(obj));
@@ -2123,10 +2123,8 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
                      "not a '%.200s'", Py_TYPE(value)->tp_name);
         return -1;
     }
-    dict = *dictptr;
     Py_XINCREF(value);
-    *dictptr = value;
-    Py_XDECREF(dict);
+    Py_SETREF(*dictptr, value);
     return 0;
 }
 
