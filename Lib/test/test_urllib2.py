@@ -1302,6 +1302,13 @@ class RequestTests(unittest.TestCase):
         self.assertEqual("POST", self.post.get_method())
         self.assertEqual("GET", self.get.get_method())
 
+    def test___getattr__(self):
+        self.assertEqual("GET", self.get._Request__r_method)
+        self.assertEqual("http://www.python.org/~jeremy/",
+                         self.get._Request__r_full_url)
+        with self.assertRaises(AttributeError):
+            self.get._Request__r_invalid_attr
+
     def test_add_data(self):
         self.assertTrue(not self.get.has_data())
         self.assertEqual("GET", self.get.get_method())
