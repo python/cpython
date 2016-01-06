@@ -496,7 +496,7 @@ class _RecursiveWildcardSelector(_Selector):
         yield parent_path
         for name in listdir(parent_path):
             path = parent_path._make_child_relpath(name)
-            if is_dir(path):
+            if is_dir(path) and not path.is_symlink():
                 for p in self._iterate_directories(path, is_dir, listdir):
                     yield p
 
