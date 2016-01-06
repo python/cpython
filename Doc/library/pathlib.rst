@@ -365,6 +365,23 @@ Pure paths provide the following methods and properties:
       ''
 
 
+.. data:: PurePath.path
+
+   A string representing the full path::
+
+      >>> PurePosixPath('my/library/setup.py').path
+      'my/library/setup.py'
+
+   This always returns the same value as ``str(p)``; it is included to
+   serve as a one-off protocol.  Code that wants to support both
+   strings and ``pathlib.Path`` objects as filenames can write
+   ``arg = getattr(arg, 'path', arg)`` to get the path as a string.
+   This can then be passed to various system calls or library
+   functions that expect a string.  Unlike the alternative
+   ``arg = str(arg)``, this will still raise an exception if an object
+   of some other type is given by accident.
+
+
 .. data:: PurePath.suffix
 
    The file extension of the final component, if any::
