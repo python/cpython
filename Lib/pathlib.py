@@ -645,6 +645,13 @@ class PurePath(object):
                                                   self._parts) or '.'
             return self._str
 
+    @property
+    def path(self):
+        try:
+            return self._str
+        except AttributeError:
+            return str(self)
+
     def as_posix(self):
         """Return the string representation of the path with forward (/)
         slashes."""
