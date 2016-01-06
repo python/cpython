@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24120: Ignore PermissionError when traversing a tree with
+  pathlib.Path.[r]glob().  Patch by Ulrich Petri.
+
 - Issue #25447: fileinput now uses sys.stdin as-is if it does not have a
   buffer attribute (restores backward compatibility).
 
