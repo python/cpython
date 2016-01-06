@@ -381,7 +381,11 @@ Pure paths provide the following methods and properties:
    ``arg = str(arg)``, this will still raise an exception if an object
    of some other type is given by accident.
 
+   A nice advantage is that this protocol is also supported by
+   :class:`os.DirEntry` objects returned by :func:`os.scandir`.
+
    .. versionadded:: 3.4.5
+   .. versionadded:: 3.5.2
 
 .. data:: PurePath.suffix
 
