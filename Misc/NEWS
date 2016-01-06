@@ -36,9 +36,6 @@ Core and Builtins
 Library
 -------
 
-- Issue #6500: Fix "maximum recursion depth exceeded" error caused
-  by urllib2.Request.__getattr__().
-
 - Issue #24103: Fixed possible use after free in ElementTree.iterparse().
 
 - Issue #20954: _args_from_interpreter_flags used by multiprocessing and some

@@ -251,7 +251,8 @@ class Request:
         if attr[:12] == '_Request__r_':
             name = attr[12:]
             if hasattr(Request, 'get_' + name):
-                return getattr(self, 'get_' + name)()
+                getattr(self, 'get_' + name)()
+                return getattr(self, attr)
         raise AttributeError, attr
 
     def get_method(self):
