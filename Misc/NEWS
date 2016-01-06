@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26012: Don't traverse into symlinks for ** pattern in
+  pathlib.Path.[r]glob().
+
 - Issue #24120: Ignore PermissionError when traversing a tree with
   pathlib.Path.[r]glob().  Patch by Ulrich Petri.
 
