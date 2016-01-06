@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24120: Ignore PermissionError when traversing a tree with
+  pathlib.Path.[r]glob().  Patch by Ulrich Petri.
+
 
 What's New in Python 3.4.4?
 ===========================
