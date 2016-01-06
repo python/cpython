@@ -381,6 +381,7 @@ Pure paths provide the following methods and properties:
    ``arg = str(arg)``, this will still raise an exception if an object
    of some other type is given by accident.
 
+   .. versionadded:: 3.4.5
 
 .. data:: PurePath.suffix
 
