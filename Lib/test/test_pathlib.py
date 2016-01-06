@@ -1199,26 +1199,33 @@ class _BasePathTest(object):
 
     # (BASE)
     #  |
-    #  |-- dirA/
-    #       |-- linkC -> "../dirB"
-    #  |-- dirB/
-    #  |    |-- fileB
-    #       |-- linkD -> "../dirB"
-    #  |-- dirC/
-    #  |    |-- fileC
-    #  |    |-- fileD
+    #  |-- brokenLink -> non-existing
+    #  |-- dirA
+    #  |   `-- linkC -> ../dirB
+    #  |-- dirB
+    #  |   |-- fileB
+    #  |   `-- linkD -> ../dirB
+    #  |-- dirC
+    #  |   |-- dirD
+    #  |   |   `-- fileD
+    #  |   `-- fileC
+    #  |-- dirE
     #  |-- fileA
-    #  |-- linkA -> "fileA"
-    #  |-- linkB -> "dirB"
+    #  |-- linkA -> fileA
+    #  `-- linkB -> dirB
     #
 
     def setUp(self):
+        def cleanup():
+            os.chmod(join('dirE'), 0o777)
+            support.rmtree(BASE)
+        self.addCleanup(cleanup)
         os.mkdir(BASE)
-        self.addCleanup(support.rmtree, BASE)
         os.mkdir(join('dirA'))
         os.mkdir(join('dirB'))
         os.mkdir(join('dirC'))
         os.mkdir(join('dirC', 'dirD'))
+        os.mkdir(join('dirE'))
         with open(join('fileA'), 'wb') as f:
             f.write(b"this is file A\n")
         with open(join('dirB', 'fileB'), 'wb') as f:
@@ -1227,6 +1234,7 @@ class _BasePathTest(object):
             f.write(b"this is file C\n")
         with open(join('dirC', 'dirD', 'fileD'), 'wb') as f:
             f.write(b"this is file D\n")
+        os.chmod(join('dirE'), 0)
         if not symlink_skip_reason:
             # Relative symlinks
             os.symlink('fileA', join('linkA'))
@@ -1363,7 +1371,7 @@ class _BasePathTest(object):
         p = P(BASE)
         it = p.iterdir()
         paths = set(it)
-        expected = ['dirA', 'dirB', 'dirC', 'fileA']
+        expected = ['dirA', 'dirB', 'dirC', 'dirE', 'fileA']
         if not symlink_skip_reason:
             expected += ['linkA', 'linkB', 'brokenLink']
         self.assertEqual(paths, { P(BASE, q) for q in expected })
