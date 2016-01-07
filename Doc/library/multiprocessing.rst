@@ -751,8 +751,10 @@ Miscellaneous
    If the ``freeze_support()`` line is omitted then trying to run the frozen
    executable will raise :exc:`RuntimeError`.
 
-   If the module is being run normally by the Python interpreter then
-   :func:`freeze_support` has no effect.
+   Calling ``freeze_support()`` has no effect when invoked on any operating
+   system other than Windows.  In addition, if the module is being run
+   normally by the Python interpreter on Windows (the program has not been
+   frozen), then ``freeze_support()`` has no effect.
 
 .. function:: set_executable()
 
