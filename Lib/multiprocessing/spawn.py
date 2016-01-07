@@ -91,7 +91,7 @@ def get_command_line(**kwds):
 
 def spawn_main(pipe_handle, parent_pid=None, tracker_fd=None):
     '''
-    Run code specifed by data received over pipe
+    Run code specified by data received over pipe
     '''
     assert is_forking(sys.argv)
     if sys.platform == 'win32':
