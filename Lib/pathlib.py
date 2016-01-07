@@ -494,11 +494,14 @@ class _RecursiveWildcardSelector(_Selector):
 
     def _iterate_directories(self, parent_path, is_dir, listdir):
         yield parent_path
-        for name in listdir(parent_path):
-            path = parent_path._make_child_relpath(name)
-            if is_dir(path) and not path.is_symlink():
-                for p in self._iterate_directories(path, is_dir, listdir):
-                    yield p
+        try:
+            for name in listdir(parent_path):
+                path = parent_path._make_child_relpath(name)
+                if is_dir(path) and not path.is_symlink():
+                    for p in self._iterate_directories(path, is_dir, listdir):
+                        yield p
+        except PermissionError:
+            return
 
     def _select_from(self, parent_path, is_dir, exists, listdir):
         try:
