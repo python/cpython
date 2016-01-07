@@ -1399,8 +1399,11 @@ class _BasePathTest(object):
         _check(it, ["fileA"])
         _check(p.rglob("fileB"), ["dirB/fileB"])
         _check(p.rglob("*/fileA"), [])
-        _check(p.rglob("*/fileB"), ["dirB/fileB", "dirB/linkD/fileB",
-                                    "linkB/fileB", "dirA/linkC/fileB"])
+        if symlink_skip_reason:
+            _check(p.rglob("*/fileB"), ["dirB/fileB"])
+        else:
+            _check(p.rglob("*/fileB"), ["dirB/fileB", "dirB/linkD/fileB",
+                                        "linkB/fileB", "dirA/linkC/fileB"])
         _check(p.rglob("file*"), ["fileA", "dirB/fileB",
                                   "dirC/fileC", "dirC/dirD/fileD"])
         p = P(BASE, "dirC")
