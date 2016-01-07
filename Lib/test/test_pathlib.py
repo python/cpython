@@ -1236,7 +1236,7 @@ class _BasePathTest(object):
     #  |   |-- dirD
     #  |   |   `-- fileD
     #  |   `-- fileC
-    #  |-- dirE
+    #  |-- dirE  # No permissions
     #  |-- fileA
     #  |-- linkA -> fileA
     #  `-- linkB -> dirB
@@ -1453,13 +1453,13 @@ class _BasePathTest(object):
         p = P(BASE)
         it = p.rglob("fileA")
         self.assertIsInstance(it, collections.Iterator)
-        # XXX cannot test because of symlink loops in the test setup
-        #_check(it, ["fileA"])
-        #_check(p.rglob("fileB"), ["dirB/fileB"])
-        #_check(p.rglob("*/fileA"), [""])
-        #_check(p.rglob("*/fileB"), ["dirB/fileB"])
-        #_check(p.rglob("file*"), ["fileA", "dirB/fileB"])
-        # No symlink loops here
+        _check(it, ["fileA"])
+        _check(p.rglob("fileB"), ["dirB/fileB"])
+        _check(p.rglob("*/fileA"), [])
+        _check(p.rglob("*/fileB"), ["dirB/fileB", "dirB/linkD/fileB",
+                                    "linkB/fileB", "dirA/linkC/fileB"])
+        _check(p.rglob("file*"), ["fileA", "dirB/fileB",
+                                  "dirC/fileC", "dirC/dirD/fileD"])
         p = P(BASE, "dirC")
         _check(p.rglob("file*"), ["dirC/fileC", "dirC/dirD/fileD"])
         _check(p.rglob("*/*"), ["dirC/dirD/fileD"])
