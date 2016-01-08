@@ -147,7 +147,7 @@ and produce a report.
 
 The :meth:`~TestCase.setUp` and :meth:`~TestCase.tearDown` methods allow you
 to define instructions that will be executed before and after each test method.
-They are covered in more details in the section :ref:`organizing-tests`.
+They are covered in more detail in the section :ref:`organizing-tests`.
 
 The final block shows a simple way to run the tests. :func:`unittest.main`
 provides a command-line interface to the test script.  When run from the command
