@@ -135,6 +135,14 @@ latex_appendices = ['glossary', 'about', 'license', 'copyright']
 # Get LaTeX to handle Unicode correctly
 latex_elements = {'inputenc': r'\usepackage[utf8x]{inputenc}', 'utf8extra': ''}
 
+
+# Options for Epub output
+# -----------------------
+
+epub_author = 'Python Documentation Authors'
+epub_publisher = 'Python Software Foundation'
+
+
 # Options for the coverage checker
 # --------------------------------
 
