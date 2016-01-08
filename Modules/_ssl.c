@@ -2219,6 +2219,7 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     PySSLContext *self;
     long options;
     SSL_CTX *ctx = NULL;
+    unsigned long libver;
 
     PySSL_BEGIN_ALLOW_THREADS
     if (proto_version == PY_SSL_VERSION_TLS1)
@@ -2280,6 +2281,22 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     if (proto_version != PY_SSL_VERSION_SSL3)
         options |= SSL_OP_NO_SSLv3;
     SSL_CTX_set_options(self->ctx, options);
+
+#if defined(SSL_MODE_RELEASE_BUFFERS)
+    /* Set SSL_MODE_RELEASE_BUFFERS. This potentially greatly reduces memory
+       usage for no cost at all. However, don't do this for OpenSSL versions
+       between 1.0.1 and 1.0.1h or 1.0.0 and 1.0.0m, which are affected by CVE
+       2014-0198. I can't find exactly which beta fixed this CVE, so be
+       conservative and assume it wasn't fixed until release. We do this check
+       at runtime to avoid problems from the dynamic linker.
+       See #25672 for more on this. */
+    libver = SSLeay();
+    if (!(libver >= 0x10001000UL && libver < 0x1000108fUL) &&
+        !(libver >= 0x10000000UL && libver < 0x100000dfUL)) {
+        SSL_CTX_set_mode(self->ctx, SSL_MODE_RELEASE_BUFFERS);
+    }
+#endif
+
 
 #ifndef OPENSSL_NO_ECDH
     /* Allow automatic ECDH curve selection (on OpenSSL 1.0.2+), or use

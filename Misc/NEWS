@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25672: In the ssl module, enable the SSL_MODE_RELEASE_BUFFERS mode
+  option if it is safe to do so.
+
 - Issue #22570: Add 'path' attribute to pathlib.Path objects,
   returning the same as str(), to make it more similar to DirEntry.
   Library code can now write getattr(p, 'path', p) to get the path as
