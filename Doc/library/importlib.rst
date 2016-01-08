@@ -256,7 +256,7 @@ ABC hierarchy::
       module and *path* will be the value of :attr:`__path__` from the
       parent package. If a spec cannot be found, ``None`` is returned.
       When passed in, ``target`` is a module object that the finder may
-      use to make a more educated about what spec to return.
+      use to make a more educated guess about what spec to return.
 
       .. versionadded:: 3.4
 
@@ -306,7 +306,7 @@ ABC hierarchy::
       within the :term:`path entry` to which it is assigned.  If a spec
       cannot be found, ``None`` is returned.  When passed in, ``target``
       is a module object that the finder may use to make a more educated
-      about what spec to return.
+      guess about what spec to return.
 
       .. versionadded:: 3.4
 
@@ -1307,3 +1307,90 @@ an :term:`importer`.
         loader = importlib.machinery.SourceFileLoader
         lazy_loader = importlib.util.LazyLoader.factory(loader)
         finder = importlib.machinery.FileFinder(path, [(lazy_loader, suffixes)])
+
+.. _importlib-examples:
+
+Examples
+--------
+
+To programmatically import a module, use :func:`importlib.import_module`.
+::
+
+  import importlib
+
+  itertools = importlib.import_module('itertools')
+
+If you need to find out if a module can be imported without actually doing the
+import, then you should use :func:`importlib.util.find_spec`.
+::
+
+  import importlib.util
+  import sys
+
+  # For illustrative purposes.
+  name = 'itertools'
+
+  spec = importlib.util.find_spec(name)
+  if spec is None:
+      print("can't find the itertools module")
+  else:
+      # If you chose to perform the actual import.
+      module = importlib.util.module_from_spec(spec)
+      spec.loader.exec_module(module)
+      # Adding the module to sys.modules is optional.
+      sys.modules[name] = module
+
+To import a Python source file directly, use the following recipe
+(Python 3.4 and newer only)::
+
+  import importlib.util
+  import sys
+
+  # For illustrative purposes.
+  import tokenize
+  file_path = tokenize.__file__
+  module_name = tokenize.__name__
+
+  spec = importlib.util.spec_from_file_location(module_name, file_path)
+  module = importlib.util.module_from_spec(spec)
+  spec.loader.exec_module(module)
+  # Optional; only necessary if you want to be able to import the module
+  # by name later.
+  sys.modules[module_name] = module
+
+Import itself is implemented in Python code, making it possible to
+expose most of the import machinery through importlib. The following
+helps illustrate the various APIs that importlib exposes by providing an
+approximate implementation of
+:func:`importlib.import_module` (Python 3.4 and newer for importlib usage,
+Python 3.6 and newer for other parts of the code).
+::
+
+  import importlib.util
+  import sys
+
+  def import_module(name, package=None):
+      """An approximate implementation of import."""
+      absolute_name = importlib.util.resolve_name(name, package)
+      try:
+          return sys.modules[absolute_name]
+      except KeyError:
+          pass
+
+      path = None
+      if '.' in absolute_name:
+          parent_name, _, child_name = absolute_name.rpartition('.')
+          parent_module = import_module(parent_name)
+          path = parent_module.spec.submodule_search_locations
+      for finder in sys.meta_path:
+          spec = finder.find_spec(absolute_name, path)
+          if spec is not None:
+              break
+      else:
+          raise ImportError(f'No module named {absolute_name!r}')
+      module = spec.loader.create_module(spec)
+      spec.loader.exec_module(module)
+      sys.modules[absolute_name] = module
+      if path is not None:
+          setattr(parent_module, child_name, module)
+      return module

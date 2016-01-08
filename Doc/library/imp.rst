@@ -81,7 +81,9 @@ This module provides an interface to the mechanisms used to implement the
    .. deprecated:: 3.3
       Use :func:`importlib.util.find_spec` instead unless Python 3.3
       compatibility is required, in which case use
-      :func:`importlib.find_loader`.
+      :func:`importlib.find_loader`. For example usage of the former case,
+      see the :ref:`importlib-examples` section of the :mod:`importlib`
+      documentation.
 
 
 .. function:: load_module(name, file, pathname, description)
@@ -108,9 +110,12 @@ This module provides an interface to the mechanisms used to implement the
       If previously used in conjunction with :func:`imp.find_module` then
       consider using :func:`importlib.import_module`, otherwise use the loader
       returned by the replacement you chose for :func:`imp.find_module`. If you
-      called :func:`imp.load_module` and related functions directly then use the
-      classes in :mod:`importlib.machinery`, e.g.
-      ``importlib.machinery.SourceFileLoader(name, path).load_module()``.
+      called :func:`imp.load_module` and related functions directly with file
+      path arguments then use a combination of
+      :func:`importlib.util.spec_from_file_location` and
+      :func:`importlib.util.module_from_spec`. See the :ref:`importlib-examples`
+      section of the :mod:`importlib` documentation for details of the various
+      approaches.
 
 
 .. function:: new_module(name)
@@ -119,7 +124,7 @@ This module provides an interface to the mechanisms used to implement the
    in ``sys.modules``.
 
    .. deprecated:: 3.4
-      Use :class:`types.ModuleType` instead.
+      Use :func:`importlib.util.module_from_spec` instead.
 
 
 .. function:: reload(module)
