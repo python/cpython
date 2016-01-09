@@ -1332,7 +1332,10 @@ class _patch(object):
             setattr(self.target, self.attribute, self.temp_original)
         else:
             delattr(self.target, self.attribute)
-            if not self.create and not hasattr(self.target, self.attribute):
+            if not self.create and (not hasattr(self.target, self.attribute) or
+                        self.attribute in ('__doc__', '__module__',
+                                           '__defaults__', '__annotations__',
+                                           '__kwdefaults__')):
                 # needed for proxy objects like django settings
                 setattr(self.target, self.attribute, self.temp_original)
 
