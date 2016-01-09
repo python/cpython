@@ -47,7 +47,7 @@ from _ctypes import FUNCFLAG_CDECL as _FUNCFLAG_CDECL, \
 def create_string_buffer(init, size=None):
     """create_string_buffer(aBytes) -> character array
     create_string_buffer(anInteger) -> character array
-    create_string_buffer(aString, anInteger) -> character array
+    create_string_buffer(aBytes, anInteger) -> character array
     """
     if isinstance(init, bytes):
         if size is None:
