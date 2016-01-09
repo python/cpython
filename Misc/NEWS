@@ -41,6 +41,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22138: Fix mock.patch behavior when patching descriptors. Restore
+  original values after patching. Patch contributed by Sean McCully.
+
 - Issue #25672: In the ssl module, enable the SSL_MODE_RELEASE_BUFFERS mode
   option if it is safe to do so.
 
