@@ -209,6 +209,8 @@ from the user's :envvar:`PYTHONSTARTUP` file. ::
    histfile = os.path.join(os.path.expanduser("~"), ".python_history")
    try:
        readline.read_history_file(histfile)
+       # default history len is -1 (infinite), which may grow unruly
+       readline.set_history_length(1000)
    except FileNotFoundError:
        pass
 
@@ -234,6 +236,7 @@ sessions, by only appending the new history. ::
 
    def save(prev_h_len, histfile):
        new_h_len = readline.get_history_length()
+       readline.set_history_length(1000)
        readline.append_history_file(new_h_len - prev_h_len, histfile)
    atexit.register(save, h_len, histfile)
 
@@ -261,4 +264,5 @@ support history save/restore. ::
                atexit.register(self.save_history, histfile)
 
        def save_history(self, histfile):
+           readline.set_history_length(1000)
            readline.write_history_file(histfile)
