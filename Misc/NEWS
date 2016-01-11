@@ -131,6 +131,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24705: Fix sysconfig._parse_makefile not expanding ${} vars
+  appearing before $() vars.
+
 - Issue #26069: Remove the deprecated apis in the trace module.
 
 - Issue #22138: Fix mock.patch behavior when patching descriptors. Restore
