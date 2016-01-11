@@ -468,16 +468,17 @@ class TestDialectRegistry(unittest.TestCase):
         self.assertRaises(TypeError, csv.reader, [], quoting = -1)
         self.assertRaises(TypeError, csv.reader, [], quoting = 100)
 
-    def test_copy(self):
-        for name in csv.list_dialects():
-            dialect = csv.get_dialect(name)
-            self.assertRaises(TypeError, copy.copy, dialect)
+    # See issue #22995
+    ## def test_copy(self):
+    ##     for name in csv.list_dialects():
+    ##         dialect = csv.get_dialect(name)
+    ##         self.assertRaises(TypeError, copy.copy, dialect)
 
-    def test_pickle(self):
-        for name in csv.list_dialects():
-            dialect = csv.get_dialect(name)
-            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-                self.assertRaises(TypeError, pickle.dumps, dialect, proto)
+    ## def test_pickle(self):
+    ##     for name in csv.list_dialects():
+    ##         dialect = csv.get_dialect(name)
+    ##         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+    ##             self.assertRaises(TypeError, pickle.dumps, dialect, proto)
 
 class TestCsvBase(unittest.TestCase):
     def readerAssertEqual(self, input, expected_result):
