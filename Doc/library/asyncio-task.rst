@@ -383,9 +383,10 @@ Task
    running in different threads. While a task waits for the completion of a
    future, the event loop executes a new task.
 
-   The cancellation of a task is different from the cancelation of a future. Calling
-   :meth:`cancel` will throw a :exc:`~concurrent.futures.CancelledError` to the
-   wrapped coroutine. :meth:`~Future.cancelled` only returns ``True`` if the
+   The cancellation of a task is different from the cancelation of a
+   future. Calling :meth:`cancel` will throw a
+   :exc:`~concurrent.futures.CancelledError` to the wrapped
+   coroutine. :meth:`~Future.cancelled` only returns ``True`` if the
    wrapped coroutine did not catch the
    :exc:`~concurrent.futures.CancelledError` exception, or raised a
    :exc:`~concurrent.futures.CancelledError` exception.
@@ -437,10 +438,11 @@ Task
 
       Return the list of stack frames for this task's coroutine.
 
-      If the coroutine is not done, this returns the stack where it is suspended.
-      If the coroutine has completed successfully or was cancelled, this
-      returns an empty list.  If the coroutine was terminated by an exception,
-      this returns the list of traceback frames.
+      If the coroutine is not done, this returns the stack where it is
+      suspended.  If the coroutine has completed successfully or was
+      cancelled, this returns an empty list.  If the coroutine was
+      terminated by an exception, this returns the list of traceback
+      frames.
 
       The frames are always ordered from oldest to newest.
 
@@ -582,6 +584,46 @@ Task functions
    <coroutine>`, which may be a decorated generator function or an
    :keyword:`async def` function.
 
+.. function:: run_coroutine_threadsafe(coro, loop)
+
+   Submit a :ref:`coroutine object <coroutine>` to a given event loop.
+
+   Return a :class:`concurrent.futures.Future` to access the result.
+
+   This function is meant to be called from a different thread than the one
+   where the event loop is running. Usage::
+
+     # Create a coroutine
+     coro = asyncio.sleep(1, result=3)
+     # Submit the coroutine to a given loop
+     future = asyncio.run_coroutine_threadsafe(coro, loop)
+     # Wait for the result with an optional timeout argument
+     assert future.result(timeout) == 3
+
+   If an exception is raised in the coroutine, the returned future will be
+   notified. It can also be used to cancel the task in the event loop::
+
+     try:
+         result = future.result(timeout)
+     except asyncio.TimeoutError:
+         print('The coroutine took too long, cancelling the task...')
+         future.cancel()
+     except Exception as exc:
+         print('The coroutine raised an exception: {!r}'.format(exc))
+     else:
+         print('The coroutine returned: {!r}'.format(result))
+
+   See the :ref:`concurrency and multithreading <asyncio-multithreading>`
+   section of the documentation.
+
+   .. note::
+
+      Unlike other functions from the module,
+      :func:`run_coroutine_threadsafe` requires the *loop* argument to
+      be passed explicitely.
+
+   .. versionadded:: 3.4.4, 3.5.1
+
 .. coroutinefunction:: sleep(delay, result=None, \*, loop=None)
 
    Create a :ref:`coroutine <coroutine>` that completes after a given
@@ -620,7 +662,21 @@ Task functions
        except CancelledError:
            res = None
 
-.. coroutinefunction:: wait(futures, \*, loop=None, timeout=None, return_when=ALL_COMPLETED)
+.. function:: timeout(timeout, \*, loop=None)
+
+   Return a context manager that cancels a block on *timeout* expiring::
+
+       with timeout(1.5):
+           yield from inner()
+
+   1. If ``inner()`` is executed faster than in ``1.5`` seconds
+      nothing happens.
+   2. Otherwise ``inner()`` is cancelled internally but
+      :exc:`asyncio.TimeoutError` is raised outside of
+      context manager scope.
+
+.. coroutinefunction:: wait(futures, \*, loop=None, timeout=None,\
+                            return_when=ALL_COMPLETED)
 
    Wait for the Futures and coroutine objects given by the sequence *futures*
    to complete.  Coroutines will be wrapped in Tasks. Returns two sets of
@@ -685,43 +741,3 @@ Task functions
 
    .. versionchanged:: 3.4.3
       If the wait is cancelled, the future *fut* is now also cancelled.
-
-
-.. function:: run_coroutine_threadsafe(coro, loop)
-
-   Submit a :ref:`coroutine object <coroutine>` to a given event loop.
-
-   Return a :class:`concurrent.futures.Future` to access the result.
-
-   This function is meant to be called from a different thread than the one
-   where the event loop is running. Usage::
-
-     # Create a coroutine
-     coro = asyncio.sleep(1, result=3)
-     # Submit the coroutine to a given loop
-     future = asyncio.run_coroutine_threadsafe(coro, loop)
-     # Wait for the result with an optional timeout argument
-     assert future.result(timeout) == 3
-
-   If an exception is raised in the coroutine, the returned future will be
-   notified. It can also be used to cancel the task in the event loop::
-
-     try:
-         result = future.result(timeout)
-     except asyncio.TimeoutError:
-         print('The coroutine took too long, cancelling the task...')
-         future.cancel()
-     except Exception as exc:
-         print('The coroutine raised an exception: {!r}'.format(exc))
-     else:
-         print('The coroutine returned: {!r}'.format(result))
-
-   See the :ref:`concurrency and multithreading <asyncio-multithreading>`
-   section of the documentation.
-
-   .. note::
-
-      Unlike the functions above, :func:`run_coroutine_threadsafe` requires the
-      *loop* argument to be passed explicitely.
-
-   .. versionadded:: 3.5.1
