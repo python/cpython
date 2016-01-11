@@ -25,6 +25,11 @@ Library
 - Issue #24120: Ignore PermissionError when traversing a tree with
   pathlib.Path.[r]glob().  Patch by Ulrich Petri.
 
+- Skip getaddrinfo if host is already resolved.
+  Patch by A. Jesse Jiryu Davis.
+
+- Add asyncio.timeout() context manager.
+
 
 What's New in Python 3.4.4?
 ===========================
