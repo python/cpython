@@ -3866,6 +3866,14 @@ _PyObject_GetState(PyObject *obj, int required)
         }
 
         assert(slotnames == Py_None || PyList_Check(slotnames));
+#if 0
+        /* 2016-01-11 barry - This clause breaks at least three packages which
+           rely on Cython: kivy, pysam, and s3ql.  Cython may be doing
+           something funny under the hood, but as this is clearly a regression
+           and the rationale for this prohibition is suspect, I am commenting
+           this out.  Perhaps it should just be removed.  See issue #22995 for
+           details.
+        */
         if (required) {
             Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
             if (obj->ob_type->tp_dictoffset)
@@ -3883,6 +3891,7 @@ _PyObject_GetState(PyObject *obj, int required)
                 return NULL;
             }
         }
+#endif
 
         if (slotnames != Py_None && Py_SIZE(slotnames) > 0) {
             PyObject *slots;
