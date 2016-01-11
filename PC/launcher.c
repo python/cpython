@@ -171,6 +171,9 @@ static wchar_t * location_checks[] = {
     L"\\",
     L"\\PCBuild\\win32\\",
     L"\\PCBuild\\amd64\\",
+    // To support early 32bit versions of Python that stuck the build binaries
+    // directly in PCBuild...
+    L"\\PCBuild\\",
     NULL
 };
 
