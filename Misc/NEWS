@@ -429,8 +429,7 @@ Library
 - Issue #23661: unittest.mock side_effects can now be exceptions again. This
   was a regression vs Python 3.4. Patch from Ignacio Rossi
 
-- Issue #13248: Remove deprecated inspect.getargspec and inspect.getmoduleinfo
-  functions.
+- Issue #13248: Remove deprecated inspect.getmoduleinfo function.
 
 - Issue #25578: Fix (another) memory leak in SSLSocket.getpeercer().
 
