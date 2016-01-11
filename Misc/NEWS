@@ -10,6 +10,9 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #22995: [UPDATE] Comment out the one of the pickleability tests in
+  _PyObject_GetState() due to regressions observed in Cython-based projects.
+
 - Issue #25961: Disallowed null characters in the type name.
 
 - Issue #22995: Instances of extension types with a state that aren't
