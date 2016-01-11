@@ -744,7 +744,7 @@ def timeout(timeout, *, loop=None):
     For example:
 
     >>> with asyncio.timeout(0.001):
-    >>>     yield from coro()
+    ...     yield from coro()
 
 
     timeout: timeout value in seconds
