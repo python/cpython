@@ -440,6 +440,11 @@ Library
 - Issue #25319: When threading.Event is reinitialized, the underlying condition
   should use a regular lock rather than a recursive lock.
 
+- Skip getaddrinfo if host is already resolved.
+  Patch by A. Jesse Jiryu Davis.
+
+- Add asyncio.timeout() context manager.
+
 IDLE
 ----
 
