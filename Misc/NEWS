@@ -30,6 +30,9 @@ Library
 
 - Add asyncio.timeout() context manager.
 
+- Issue #26050: Add asyncio.StreamReader.readuntil() method.
+  Patch by Марк Коренберг.
+
 
 What's New in Python 3.4.4?
 ===========================
