@@ -214,6 +214,8 @@ normally be executed automatically during interactive sessions from the user's
    histfile = os.path.join(os.path.expanduser("~"), ".pyhist")
    try:
        readline.read_history_file(histfile)
+       # default history len is -1 (infinite), which may grow unruly
+       readline.set_history_length(1000)
    except IOError:
        pass
    import atexit
@@ -244,5 +246,6 @@ support history save/restore. ::
                atexit.register(self.save_history, histfile)
 
        def save_history(self, histfile):
+           readline.set_history_length(1000)
            readline.write_history_file(histfile)
 
