@@ -122,6 +122,11 @@ Library
 - Issue #25624: ZipFile now always writes a ZIP_STORED header for directory
   entries.  Patch by Dingyuan Wang.
 
+- Skip getaddrinfo if host is already resolved.
+  Patch by A. Jesse Jiryu Davis.
+
+- Add asyncio.timeout() context manager.
+
 Documentation
 -------------
 
