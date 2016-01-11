@@ -1015,17 +1015,18 @@ confusing.
 
 A negative lookahead cuts through all this confusion:
 
-``.*[.](?!bat$).*$``  The negative lookahead means: if the expression ``bat``
+``.*[.](?!bat$)[^.]*$``  The negative lookahead means: if the expression ``bat``
 doesn't match at this point, try the rest of the pattern; if ``bat$`` does
 match, the whole pattern will fail.  The trailing ``$`` is required to ensure
 that something like ``sample.batch``, where the extension only starts with
-``bat``, will be allowed.
+``bat``, will be allowed.  The ``[^.]*`` makes sure that the pattern works
+when there are multiple dots in the filename.
 
 Excluding another filename extension is now easy; simply add it as an
 alternative inside the assertion.  The following pattern excludes filenames that
 end in either ``bat`` or ``exe``:
 
-``.*[.](?!bat$|exe$).*$``
+``.*[.](?!bat$|exe$)[^.]*$``
 
 
 Modifying Strings
