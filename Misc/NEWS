@@ -39,6 +39,12 @@ Core and Builtins
 Library
 -------
 
+- Issue #26083: Workaround a subprocess bug that raises an incorrect
+  "ValueError: insecure string pickle" exception instead of the actual
+  exception on some platforms such as Mac OS X when an exception raised
+  in the forked child process prior to the exec() was large enough that
+  it overflowed the internal errpipe_read pipe buffer.
+
 - Issue #24103: Fixed possible use after free in ElementTree.iterparse().
 
 - Issue #20954: _args_from_interpreter_flags used by multiprocessing and some

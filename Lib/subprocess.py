@@ -1313,8 +1313,12 @@ class Popen(object):
                     os.close(errpipe_write)
 
                 # Wait for exec to fail or succeed; possibly raising exception
-                # Exception limited to 1M
                 data = _eintr_retry_call(os.read, errpipe_read, 1048576)
+                pickle_bits = [data]
+                while data:
+                    pickle_bits.append(data)
+                    data = _eintr_retry_call(os.read, errpipe_read, 1048576)
+                data = "".join(pickle_bits)
             finally:
                 if p2cread is not None and p2cwrite is not None:
                     _close_in_parent(p2cread)
