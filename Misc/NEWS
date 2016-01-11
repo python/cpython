@@ -128,6 +128,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26069: Remove the deprecated apis in the trace module.
+
 - Issue #22138: Fix mock.patch behavior when patching descriptors. Restore
   original values after patching. Patch contributed by Sean McCully.
 

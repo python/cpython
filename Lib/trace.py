@@ -58,7 +58,6 @@ import inspect
 import gc
 import dis
 import pickle
-from warnings import warn as _warn
 from time import monotonic as _time
 
 try:
@@ -809,48 +808,6 @@ def main(argv=None):
 
         if not no_report:
             results.write_results(missing, summary=summary, coverdir=coverdir)
-
-#  Deprecated API
-def usage(outfile):
-    _warn("The trace.usage() function is deprecated",
-         DeprecationWarning, 2)
-    _usage(outfile)
-
-class Ignore(_Ignore):
-    def __init__(self, modules=None, dirs=None):
-        _warn("The class trace.Ignore is deprecated",
-             DeprecationWarning, 2)
-        _Ignore.__init__(self, modules, dirs)
-
-def modname(path):
-    _warn("The trace.modname() function is deprecated",
-         DeprecationWarning, 2)
-    return _modname(path)
-
-def fullmodname(path):
-    _warn("The trace.fullmodname() function is deprecated",
-         DeprecationWarning, 2)
-    return _fullmodname(path)
-
-def find_lines_from_code(code, strs):
-    _warn("The trace.find_lines_from_code() function is deprecated",
-         DeprecationWarning, 2)
-    return _find_lines_from_code(code, strs)
-
-def find_lines(code, strs):
-    _warn("The trace.find_lines() function is deprecated",
-         DeprecationWarning, 2)
-    return _find_lines(code, strs)
-
-def find_strings(filename, encoding=None):
-    _warn("The trace.find_strings() function is deprecated",
-         DeprecationWarning, 2)
-    return _find_strings(filename, encoding=None)
-
-def find_executable_linenos(filename):
-    _warn("The trace.find_executable_linenos() function is deprecated",
-         DeprecationWarning, 2)
-    return _find_executable_linenos(filename)
 
 if __name__=='__main__':
     main()
