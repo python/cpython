@@ -796,6 +796,24 @@ Classes and functions
    classes using multiple inheritance and their descendants will appear multiple
    times.
 
+
+.. function:: getargspec(func)
+
+   Get the names and default values of a Python function's arguments. A
+   :term:`named tuple` ``ArgSpec(args, varargs, keywords, defaults)`` is
+   returned. *args* is a list of the argument names. *varargs* and *keywords*
+   are the names of the ``*`` and ``**`` arguments or ``None``. *defaults* is a
+   tuple of default argument values or ``None`` if there are no default
+   arguments; if this tuple has *n* elements, they correspond to the last
+   *n* elements listed in *args*.
+
+   .. deprecated:: 3.0
+      Use :func:`signature` and
+      :ref:`Signature Object <inspect-signature-object>`, which provide a
+      better introspecting API for callables.  This function will be removed
+      in Python 3.6.
+
+
 .. function:: getfullargspec(func)
 
    Get the names and default values of a Python function's arguments.  A

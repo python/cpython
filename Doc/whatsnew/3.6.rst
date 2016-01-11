@@ -218,9 +218,6 @@ Removed
 API and Feature Removals
 ------------------------
 
-* ``inspect.getargspec()`` was removed (was deprecated since CPython 3.0).
-  :func:`inspect.getfullargspec` is an almost drop in replacement.
-
 * ``inspect.getmoduleinfo()`` was removed (was deprecated since CPython 3.3).
   :func:`inspect.getmodulename` should be used for obtaining the module
   name for a given path.
