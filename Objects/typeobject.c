@@ -3279,30 +3279,6 @@ reduce_2(PyObject *obj)
         if (names == NULL)
             goto end;
         assert(names == Py_None || PyList_Check(names));
-#if 0
-        /* 2016-01-11 barry - This clause breaks at least three packages which
-           rely on Cython: kivy, pysam, and s3ql.  Cython may be doing
-           something funny under the hood, but as this is clearly a regression
-           and the rationale for this prohibition is suspect, I am commenting
-           this out.  Perhaps it should just be removed.  See issue #22995 for
-           details.
-        */
-        if (required_state) {
-            Py_ssize_t basicsize = PyBaseObject_Type.tp_basicsize;
-            if (obj->ob_type->tp_dictoffset)
-                basicsize += sizeof(PyObject *);
-            if (obj->ob_type->tp_weaklistoffset)
-                basicsize += sizeof(PyObject *);
-            if (names != Py_None)
-                basicsize += sizeof(PyObject *) * Py_SIZE(names);
-            if (obj->ob_type->tp_basicsize > basicsize) {
-                PyErr_Format(PyExc_TypeError,
-                             "can't pickle %.200s objects",
-                             Py_TYPE(obj)->tp_name);
-                goto end;
-            }
-        }
-#endif
 
         if (names != Py_None) {
             slots = PyDict_New();

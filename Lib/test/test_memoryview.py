@@ -362,11 +362,12 @@ class OtherTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             copy.copy(m)
 
-    def test_pickle(self):
-        m = memoryview(b'abc')
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.assertRaises(TypeError):
-                pickle.dumps(m, proto)
+    # See issue #22995
+    ## def test_pickle(self):
+    ##     m = memoryview(b'abc')
+    ##     for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+    ##         with self.assertRaises(TypeError):
+    ##             pickle.dumps(m, proto)
 
 
 def test_main():
