@@ -85,6 +85,11 @@ Tests
 Build
 -----
 
+- Issue #25348: Added ``--pgo`` and ``--pgo-job`` arguments to
+  ``PCbuild\build.bat`` for building with Profile-Guided Optimization.  The
+  old ``PCbuild\build_pgo.bat`` script is now deprecated, and simply calls
+  ``PCbuild\build.bat --pgo %*``.
+
 - Issue #25827: Add support for building with ICC to ``configure``, including
   a new ``--with-icc`` flag.
 
