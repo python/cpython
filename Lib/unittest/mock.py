@@ -820,7 +820,7 @@ class NonCallableMock(Base):
             if expected not in all_calls:
                 raise AssertionError(
                     'Calls not found.\nExpected: %r\n'
-                    'Actual: %r' % (calls, self.mock_calls)
+                    'Actual: %r' % (_CallList(calls), self.mock_calls)
                 ) from cause
             return
 
