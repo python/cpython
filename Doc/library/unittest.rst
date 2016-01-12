@@ -783,8 +783,9 @@ Test cases
 
    .. _assert-methods:
 
-   The :class:`TestCase` class provides a number of methods to check for and
-   report failures, such as:
+   The :class:`TestCase` class provides several assert methods to check for and
+   report failures.  The following table lists the most commonly used methods
+   (see the tables below for more assert methods):
 
    +-----------------------------------------+-----------------------------+---------------+
    | Method                                  | Checks that                 | New in        |
