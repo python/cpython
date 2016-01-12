@@ -25,6 +25,9 @@ echo.  -M  Disable parallel build
 echo.  -v  Increased output messages
 echo.  -k  Attempt to kill any running Pythons before building (usually done
 echo.      automatically by the pythoncore project)
+echo.  --pgo          Build with Profile-Guided Optimization.  This flag
+echo.                 overrides -c and -d
+echo.  --test-marker  Enable the test marker within the build.
 echo.
 echo.Available flags to avoid building certain modules.
 echo.These flags have no effect if '-e' is not given:
@@ -38,7 +41,8 @@ echo.  -p x64 ^| Win32
 echo.     Set the platform (default: Win32)
 echo.  -t Build ^| Rebuild ^| Clean ^| CleanAll
 echo.     Set the target manually
-echo.  --test-marker  Enable the test marker within the build.
+echo.  --pgo-job  The job to use for PGO training; implies --pgo
+echo.             (default: "-m test --pgo")
 exit /b 127
 
 :Run
@@ -51,6 +55,12 @@ set dir=%~dp0
 set parallel=/m
 set verbose=/nologo /v:m
 set kill=
+set do_pgo=
+set pgo_job=-m test --pgo
+set on_64_bit=true
+
+rem This may not be 100% accurate, but close enough.
+if "%ProgramFiles(x86)%"=="" (set on_64_bit=false)
 
 :CheckOpts
 if "%~1"=="-h" goto Usage
@@ -63,6 +73,8 @@ if "%~1"=="-m" (set parallel=/m) & shift & goto CheckOpts
 if "%~1"=="-M" (set parallel=) & shift & goto CheckOpts
 if "%~1"=="-v" (set verbose=/v:n) & shift & goto CheckOpts
 if "%~1"=="-k" (set kill=true) & shift & goto CheckOpts
+if "%~1"=="--pgo" (set do_pgo=true) & shift & goto CheckOpts
+if "%~1"=="--pgo-job" (set do_pgo=true) & (set pgo_job=%~2) & shift & shift & goto CheckOpts
 if "%~1"=="--test-marker" (set UseTestMarker=true) & shift & goto CheckOpts
 if "%~1"=="-V" shift & goto Version
 rem These use the actual property names used by MSBuild.  We could just let
@@ -78,15 +90,49 @@ if "%IncludeTkinter%"=="" set IncludeTkinter=true
 
 if "%IncludeExternals%"=="true" call "%dir%get_externals.bat"
 
-if "%platf%"=="x64" (set vs_platf=x86_amd64)
+if "%platf%"=="x64" (
+    if "%on_64_bit%"=="true" (
+        rem This ought to always be correct these days...
+        set vs_platf=amd64
+    ) else (
+        if "%do_pgo%"=="true" (
+            echo.ERROR: Cannot cross-compile with PGO
+            echo.    32bit operating system detected, if this is incorrect,
+            echo.    make sure the ProgramFiles(x86^) environment variable is set
+            exit /b 1
+        )
+        set vs_platf=x86_amd64
+    )
+)
 
 rem Setup the environment
 call "%dir%env.bat" %vs_platf% >nul
 
-if "%kill%"=="true" (
-    msbuild /v:m /nologo /target:KillPython "%dir%\pythoncore.vcxproj" /p:Configuration=%conf% /p:Platform=%platf% /p:KillPython=true
-)
+if "%kill%"=="true" call :Kill
 
+if "%do_pgo%"=="true" (
+    set conf=PGInstrument
+    call :Build
+    del /s "%dir%\*.pgc"
+    del /s "%dir%\..\Lib\*.pyc"
+    echo on
+    call "%dir%\..\python.bat" %pgo_job%
+    @echo off
+    call :Kill
+    set conf=PGUpdate
+)
+goto Build
+
+:Kill
+echo on
+msbuild "%dir%\pythoncore.vcxproj" /t:KillPython %verbose%^
+ /p:Configuration=%conf% /p:Platform=%platf%^
+ /p:KillPython=true
+
+@echo off
+goto :eof
+
+:Build
 rem Call on MSBuild to do the work, echo the command.
 rem Passing %1-9 is not the preferred option, but argument parsing in
 rem batch is, shall we say, "lackluster"
@@ -98,7 +144,8 @@ msbuild "%dir%pcbuild.proj" /t:%target% %parallel% %verbose%^
  /p:UseTestMarker=%UseTestMarker%^
  %1 %2 %3 %4 %5 %6 %7 %8 %9
 
-@goto :eof
+@echo off
+goto :eof
 
 :Version
 rem Display the current build version information
