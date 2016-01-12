@@ -829,8 +829,7 @@ Classes and functions
    .. deprecated:: 3.0
       Use :func:`signature` and
       :ref:`Signature Object <inspect-signature-object>`, which provide a
-      better introspecting API for callables.  This function will be removed
-      in Python 3.6.
+      better introspecting API for callables.
 
 
 .. function:: getfullargspec(func)
