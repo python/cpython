@@ -346,8 +346,8 @@ Glossary
       All of Python's immutable built-in objects are hashable, while no mutable
       containers (such as lists or dictionaries) are.  Objects which are
       instances of user-defined classes are hashable by default; they all
-      compare unequal (except with themselves), and their hash value is their
-      :func:`id`.
+      compare unequal (except with themselves), and their hash value is derived
+      from their :func:`id`.
 
    IDLE
       An Integrated Development Environment for Python.  IDLE is a basic editor
