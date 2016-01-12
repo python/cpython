@@ -271,10 +271,11 @@ The rest of the examples in this section will assume that a file object called
 ``f`` has already been created.
 
 To read a file's contents, call ``f.read(size)``, which reads some quantity of
-data and returns it as a string or bytes object.  *size* is an optional numeric
-argument.  When *size* is omitted or negative, the entire contents of the file
-will be read and returned; it's your problem if the file is twice as large as
-your machine's memory. Otherwise, at most *size* bytes are read and returned.
+data and returns it as a string (in text mode) or bytes object (in binary mode).
+*size* is an optional numeric argument.  When *size* is omitted or negative, the
+entire contents of the file will be read and returned; it's your problem if the
+file is twice as large as your machine's memory. Otherwise, at most *size* bytes
+are read and returned.
 If the end of the file has been reached, ``f.read()`` will return an empty
 string (``''``).  ::
 
@@ -315,11 +316,11 @@ the number of characters written. ::
    >>> f.write('This is a test\n')
    15
 
-To write something other than a string, it needs to be converted to a string
-first::
+Other types of objects need to be converted -- either to a string (in text mode)
+or a bytes object (in binary mode) -- before writing them::
 
    >>> value = ('the answer', 42)
-   >>> s = str(value)
+   >>> s = str(value)  # convert the tuple to string
    >>> f.write(s)
    18
 
