@@ -1,6 +1,7 @@
 import os
 import sys
 from test.support import TESTFN, rmtree, unlink, captured_stdout
+from test.support.script_helper import assert_python_ok, assert_python_failure
 import unittest
 
 import trace
@@ -364,6 +365,27 @@ class Test_Ignore(unittest.TestCase):
         # Matched before.
         self.assertTrue(ignore.names(jn('bar', 'baz.py'), 'baz'))
 
+class TestCommandLine(unittest.TestCase):
+
+    def test_failures(self):
+        _errors = (
+            (b'filename is missing: required with the main options', '-l', '-T'),
+            (b'cannot specify both --listfuncs and (--trace or --count)', '-lc'),
+            (b'argument -R/--no-report: not allowed with argument -r/--report', '-rR'),
+            (b'must specify one of --trace, --count, --report, --listfuncs, or --trackcalls', '-g'),
+            (b'-r/--report requires -f/--file', '-r'),
+            (b'--summary can only be used with --count or --report', '-sT'),
+            (b'unrecognized arguments: -y', '-y'))
+        for message, *args in _errors:
+            *_, stderr = assert_python_failure('-m', 'trace', *args)
+            self.assertIn(message, stderr)
+
+    def test_listfuncs_flag_success(self):
+        with open(TESTFN, 'w') as fd:
+            self.addCleanup(unlink, TESTFN)
+            fd.write("a = 1\n")
+            status, stdout, stderr = assert_python_ok('-m', 'trace', '-l', TESTFN)
+            self.assertIn(b'functions called:', stdout)
 
 if __name__ == '__main__':
     unittest.main()
