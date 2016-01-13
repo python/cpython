@@ -128,6 +128,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22642: Convert trace module option parsing mechanism to argparse.
+  Patch contributed by SilentGhost.
+
 - Issue #24705: Fix sysconfig._parse_makefile not expanding ${} vars
   appearing before $() vars.
 
