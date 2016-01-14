@@ -33,6 +33,12 @@ Library
 - Issue #26050: Add asyncio.StreamReader.readuntil() method.
   Patch by Марк Коренберг.
 
+Tests
+-----
+
+- Issue #25940: Changed test_ssl to use self-signed.pythontest.net.  This
+  avoids relying on svn.python.org, which recently changed root certificate.
+
 
 What's New in Python 3.4.4?
 ===========================
