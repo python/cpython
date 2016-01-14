@@ -2579,7 +2579,7 @@ _PyDict_KeysSize(PyDictKeysObject *keys)
     return sizeof(PyDictKeysObject) + (DK_SIZE(keys)-1) * sizeof(PyDictKeyEntry);
 }
 
-PyObject *
+static PyObject *
 dict_sizeof(PyDictObject *mp)
 {
     return PyLong_FromSsize_t(_PyDict_SizeOf(mp));
