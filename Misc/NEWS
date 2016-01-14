@@ -52,6 +52,13 @@ C API
 
 - Issue #23998: PyImport_ReInitLock() now checks for lock allocation error
 
+Tests
+-----
+
+- Issue #25940: Changed test_ssl and test_httplib to use
+  self-signed.pythontest.net.  This avoids relying on svn.python.org, which
+  recently changed root certificate.
+
 
 What's New in Python 3.3.6?
 ===========================
