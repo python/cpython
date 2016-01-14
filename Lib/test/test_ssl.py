@@ -55,7 +55,8 @@ SIGNED_CERTFILE = data_file("keycert3.pem")
 SIGNED_CERTFILE2 = data_file("keycert4.pem")
 SIGNING_CA = data_file("pycacert.pem")
 
-SVN_PYTHON_ORG_ROOT_CERT = data_file("https_svn_python_org_root.pem")
+REMOTE_HOST = "self-signed.pythontest.net"
+REMOTE_ROOT_CERT = data_file("selfsigned_pythontestdotnet.pem")
 
 EMPTYCERT = data_file("nullcert.pem")
 BADCERT = data_file("badcert.pem")
@@ -276,7 +277,7 @@ class BasicSocketTests(unittest.TestCase):
         self.assertEqual(p['subjectAltName'], san)
 
     def test_DER_to_PEM(self):
-        with open(SVN_PYTHON_ORG_ROOT_CERT, 'r') as f:
+        with open(CAFILE_CACERT, 'r') as f:
             pem = f.read()
         d1 = ssl.PEM_cert_to_DER_cert(pem)
         p2 = ssl.DER_cert_to_PEM_cert(d1)
@@ -862,7 +863,7 @@ class ContextTests(unittest.TestCase):
         # Mismatching key and cert
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
         with self.assertRaisesRegex(ssl.SSLError, "key values mismatch"):
-            ctx.load_cert_chain(SVN_PYTHON_ORG_ROOT_CERT, ONLYKEY)
+            ctx.load_cert_chain(CAFILE_CACERT, ONLYKEY)
         # Password protected key and cert
         ctx.load_cert_chain(CERTFILE_PROTECTED, password=KEY_PASSWORD)
         ctx.load_cert_chain(CERTFILE_PROTECTED, password=KEY_PASSWORD.encode())
@@ -1080,7 +1081,7 @@ class ContextTests(unittest.TestCase):
         ctx.load_verify_locations(CERTFILE)
         self.assertEqual(ctx.cert_store_stats(),
             {'x509_ca': 0, 'crl': 0, 'x509': 1})
-        ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+        ctx.load_verify_locations(CAFILE_CACERT)
         self.assertEqual(ctx.cert_store_stats(),
             {'x509_ca': 1, 'crl': 0, 'x509': 2})
 
@@ -1090,8 +1091,8 @@ class ContextTests(unittest.TestCase):
         # CERTFILE is not flagged as X509v3 Basic Constraints: CA:TRUE
         ctx.load_verify_locations(CERTFILE)
         self.assertEqual(ctx.get_ca_certs(), [])
-        # but SVN_PYTHON_ORG_ROOT_CERT is a CA cert
-        ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+        # but CAFILE_CACERT is a CA cert
+        ctx.load_verify_locations(CAFILE_CACERT)
         self.assertEqual(ctx.get_ca_certs(),
             [{'issuer': ((('organizationName', 'Root CA'),),
                          (('organizationalUnitName', 'http://www.cacert.org'),),
@@ -1107,7 +1108,7 @@ class ContextTests(unittest.TestCase):
                           (('emailAddress', 'support@cacert.org'),)),
               'version': 3}])
 
-        with open(SVN_PYTHON_ORG_ROOT_CERT) as f:
+        with open(CAFILE_CACERT) as f:
             pem = f.read()
         der = ssl.PEM_cert_to_DER_cert(pem)
         self.assertEqual(ctx.get_ca_certs(True), [der])
@@ -1346,11 +1347,11 @@ class MemoryBIOTests(unittest.TestCase):
 class NetworkedTests(unittest.TestCase):
 
     def test_connect(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_NONE)
             try:
-                s.connect(("svn.python.org", 443))
+                s.connect((REMOTE_HOST, 443))
                 self.assertEqual({}, s.getpeercert())
             finally:
                 s.close()
@@ -1359,27 +1360,27 @@ class NetworkedTests(unittest.TestCase):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_REQUIRED)
             self.assertRaisesRegex(ssl.SSLError, "certificate verify failed",
-                                   s.connect, ("svn.python.org", 443))
+                                   s.connect, (REMOTE_HOST, 443))
             s.close()
 
             # this should succeed because we specify the root cert
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_REQUIRED,
-                                ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
+                                ca_certs=REMOTE_ROOT_CERT)
             try:
-                s.connect(("svn.python.org", 443))
+                s.connect((REMOTE_HOST, 443))
                 self.assertTrue(s.getpeercert())
             finally:
                 s.close()
 
     def test_connect_ex(self):
         # Issue #11326: check connect_ex() implementation
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_REQUIRED,
-                                ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
+                                ca_certs=REMOTE_ROOT_CERT)
             try:
-                self.assertEqual(0, s.connect_ex(("svn.python.org", 443)))
+                self.assertEqual(0, s.connect_ex((REMOTE_HOST, 443)))
                 self.assertTrue(s.getpeercert())
             finally:
                 s.close()
@@ -1387,14 +1388,14 @@ class NetworkedTests(unittest.TestCase):
     def test_non_blocking_connect_ex(self):
         # Issue #11326: non-blocking connect_ex() should allow handshake
         # to proceed after the socket gets ready.
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_REQUIRED,
-                                ca_certs=SVN_PYTHON_ORG_ROOT_CERT,
+                                ca_certs=REMOTE_ROOT_CERT,
                                 do_handshake_on_connect=False)
             try:
                 s.setblocking(False)
-                rc = s.connect_ex(('svn.python.org', 443))
+                rc = s.connect_ex((REMOTE_HOST, 443))
                 # EWOULDBLOCK under Windows, EINPROGRESS elsewhere
                 self.assertIn(rc, (0, errno.EINPROGRESS, errno.EWOULDBLOCK))
                 # Wait for connect to finish
@@ -1416,58 +1417,62 @@ class NetworkedTests(unittest.TestCase):
     def test_timeout_connect_ex(self):
         # Issue #12065: on a timeout, connect_ex() should return the original
         # errno (mimicking the behaviour of non-SSL sockets).
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_REQUIRED,
-                                ca_certs=SVN_PYTHON_ORG_ROOT_CERT,
+                                ca_certs=REMOTE_ROOT_CERT,
                                 do_handshake_on_connect=False)
             try:
                 s.settimeout(0.0000001)
-                rc = s.connect_ex(('svn.python.org', 443))
+                rc = s.connect_ex((REMOTE_HOST, 443))
                 if rc == 0:
-                    self.skipTest("svn.python.org responded too quickly")
+                    self.skipTest("REMOTE_HOST responded too quickly")
                 self.assertIn(rc, (errno.EAGAIN, errno.EWOULDBLOCK))
             finally:
                 s.close()
 
     def test_connect_ex_error(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             s = ssl.wrap_socket(socket.socket(socket.AF_INET),
                                 cert_reqs=ssl.CERT_REQUIRED,
-                                ca_certs=SVN_PYTHON_ORG_ROOT_CERT)
+                                ca_certs=REMOTE_ROOT_CERT)
             try:
-                rc = s.connect_ex(("svn.python.org", 444))
+                rc = s.connect_ex((REMOTE_HOST, 444))
                 # Issue #19919: Windows machines or VMs hosted on Windows
                 # machines sometimes return EWOULDBLOCK.
-                self.assertIn(rc, (errno.ECONNREFUSED, errno.EWOULDBLOCK))
+                errors = (
+                    errno.ECONNREFUSED, errno.EHOSTUNREACH,
+                    errno.EWOULDBLOCK,
+                )
+                self.assertIn(rc, errors)
             finally:
                 s.close()
 
     def test_connect_with_context(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             # Same as test_connect, but with a separately created context
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-            s.connect(("svn.python.org", 443))
+            s.connect((REMOTE_HOST, 443))
             try:
                 self.assertEqual({}, s.getpeercert())
             finally:
                 s.close()
             # Same with a server hostname
             s = ctx.wrap_socket(socket.socket(socket.AF_INET),
-                                server_hostname="svn.python.org")
-            s.connect(("svn.python.org", 443))
+                                server_hostname=REMOTE_HOST)
+            s.connect((REMOTE_HOST, 443))
             s.close()
             # This should fail because we have no verification certs
             ctx.verify_mode = ssl.CERT_REQUIRED
             s = ctx.wrap_socket(socket.socket(socket.AF_INET))
             self.assertRaisesRegex(ssl.SSLError, "certificate verify failed",
-                                    s.connect, ("svn.python.org", 443))
+                                    s.connect, (REMOTE_HOST, 443))
             s.close()
             # This should succeed because we specify the root cert
-            ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+            ctx.load_verify_locations(REMOTE_ROOT_CERT)
             s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-            s.connect(("svn.python.org", 443))
+            s.connect((REMOTE_HOST, 443))
             try:
                 cert = s.getpeercert()
                 self.assertTrue(cert)
@@ -1480,12 +1485,12 @@ class NetworkedTests(unittest.TestCase):
         # OpenSSL 0.9.8n and 1.0.0, as a result the capath directory must
         # contain both versions of each certificate (same content, different
         # filename) for this test to be portable across OpenSSL releases.
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ctx.verify_mode = ssl.CERT_REQUIRED
             ctx.load_verify_locations(capath=CAPATH)
             s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-            s.connect(("svn.python.org", 443))
+            s.connect((REMOTE_HOST, 443))
             try:
                 cert = s.getpeercert()
                 self.assertTrue(cert)
@@ -1496,7 +1501,7 @@ class NetworkedTests(unittest.TestCase):
             ctx.verify_mode = ssl.CERT_REQUIRED
             ctx.load_verify_locations(capath=BYTES_CAPATH)
             s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-            s.connect(("svn.python.org", 443))
+            s.connect((REMOTE_HOST, 443))
             try:
                 cert = s.getpeercert()
                 self.assertTrue(cert)
@@ -1504,15 +1509,15 @@ class NetworkedTests(unittest.TestCase):
                 s.close()
 
     def test_connect_cadata(self):
-        with open(CAFILE_CACERT) as f:
+        with open(REMOTE_ROOT_CERT) as f:
             pem = f.read()
         der = ssl.PEM_cert_to_DER_cert(pem)
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ctx.verify_mode = ssl.CERT_REQUIRED
             ctx.load_verify_locations(cadata=pem)
             with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
-                s.connect(("svn.python.org", 443))
+                s.connect((REMOTE_HOST, 443))
                 cert = s.getpeercert()
                 self.assertTrue(cert)
 
@@ -1521,7 +1526,7 @@ class NetworkedTests(unittest.TestCase):
             ctx.verify_mode = ssl.CERT_REQUIRED
             ctx.load_verify_locations(cadata=der)
             with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
-                s.connect(("svn.python.org", 443))
+                s.connect((REMOTE_HOST, 443))
                 cert = s.getpeercert()
                 self.assertTrue(cert)
 
@@ -1530,9 +1535,9 @@ class NetworkedTests(unittest.TestCase):
         # Issue #5238: creating a file-like object with makefile() shouldn't
         # delay closing the underlying "real socket" (here tested with its
         # file descriptor, hence skipping the test under Windows).
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             ss = ssl.wrap_socket(socket.socket(socket.AF_INET))
-            ss.connect(("svn.python.org", 443))
+            ss.connect((REMOTE_HOST, 443))
             fd = ss.fileno()
             f = ss.makefile()
             f.close()
@@ -1546,9 +1551,9 @@ class NetworkedTests(unittest.TestCase):
             self.assertEqual(e.exception.errno, errno.EBADF)
 
     def test_non_blocking_handshake(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             s = socket.socket(socket.AF_INET)
-            s.connect(("svn.python.org", 443))
+            s.connect((REMOTE_HOST, 443))
             s.setblocking(False)
             s = ssl.wrap_socket(s,
                                 cert_reqs=ssl.CERT_NONE,
@@ -1591,12 +1596,12 @@ class NetworkedTests(unittest.TestCase):
                 if support.verbose:
                     sys.stdout.write("\nVerified certificate for %s:%s is\n%s\n" % (host, port ,pem))
 
-        _test_get_server_certificate('svn.python.org', 443, SVN_PYTHON_ORG_ROOT_CERT)
+        _test_get_server_certificate(REMOTE_HOST, 443, REMOTE_ROOT_CERT)
         if support.IPV6_ENABLED:
             _test_get_server_certificate('ipv6.google.com', 443)
 
     def test_ciphers(self):
-        remote = ("svn.python.org", 443)
+        remote = (REMOTE_HOST, 443)
         with support.transient_internet(remote[0]):
             with ssl.wrap_socket(socket.socket(socket.AF_INET),
                                  cert_reqs=ssl.CERT_NONE, ciphers="ALL") as s:
@@ -1641,13 +1646,13 @@ class NetworkedTests(unittest.TestCase):
 
     def test_get_ca_certs_capath(self):
         # capath certs are loaded on request
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ctx.verify_mode = ssl.CERT_REQUIRED
             ctx.load_verify_locations(capath=CAPATH)
             self.assertEqual(ctx.get_ca_certs(), [])
             s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-            s.connect(("svn.python.org", 443))
+            s.connect((REMOTE_HOST, 443))
             try:
                 cert = s.getpeercert()
                 self.assertTrue(cert)
@@ -1658,12 +1663,12 @@ class NetworkedTests(unittest.TestCase):
     @needs_sni
     def test_context_setget(self):
         # Check that the context of a connected socket can be replaced.
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             ctx1 = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             ctx2 = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             s = socket.socket(socket.AF_INET)
             with ctx1.wrap_socket(s) as ss:
-                ss.connect(("svn.python.org", 443))
+                ss.connect((REMOTE_HOST, 443))
                 self.assertIs(ss.context, ctx1)
                 self.assertIs(ss._sslobj.context, ctx1)
                 ss.context = ctx2
@@ -1684,13 +1689,8 @@ class NetworkedBIOTests(unittest.TestCase):
             try:
                 ret = func(*args)
             except ssl.SSLError as e:
-                # Note that we get a spurious -1/SSL_ERROR_SYSCALL for
-                # non-blocking IO. The SSL_shutdown manpage hints at this.
-                # It *should* be safe to just ignore SYS_ERROR_SYSCALL because
-                # with a Memory BIO there's no syscalls (for IO at least).
                 if e.errno not in (ssl.SSL_ERROR_WANT_READ,
-                                   ssl.SSL_ERROR_WANT_WRITE,
-                                   ssl.SSL_ERROR_SYSCALL):
+                                   ssl.SSL_ERROR_WANT_WRITE):
                     raise
                 errno = e.errno
             # Get any data from the outgoing BIO irrespective of any error, and
@@ -1714,16 +1714,16 @@ class NetworkedBIOTests(unittest.TestCase):
 
     @unittest.skipIf(True, "temporarily disabled: see #25940")
     def test_handshake(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             sock = socket.socket(socket.AF_INET)
-            sock.connect(("svn.python.org", 443))
+            sock.connect((REMOTE_HOST, 443))
             incoming = ssl.MemoryBIO()
             outgoing = ssl.MemoryBIO()
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ctx.verify_mode = ssl.CERT_REQUIRED
-            ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+            ctx.load_verify_locations(REMOTE_ROOT_CERT)
             ctx.check_hostname = True
-            sslobj = ctx.wrap_bio(incoming, outgoing, False, 'svn.python.org')
+            sslobj = ctx.wrap_bio(incoming, outgoing, False, REMOTE_HOST)
             self.assertIs(sslobj._sslobj.owner, sslobj)
             self.assertIsNone(sslobj.cipher())
             self.assertIsNone(sslobj.shared_ciphers())
@@ -1736,14 +1736,20 @@ class NetworkedBIOTests(unittest.TestCase):
             self.assertTrue(sslobj.getpeercert())
             if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
                 self.assertTrue(sslobj.get_channel_binding('tls-unique'))
-            self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
+            try:
+                self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
+            except ssl.SSLSyscallError:
+                # self-signed.pythontest.net probably shuts down the TCP
+                # connection without sending a secure shutdown message, and
+                # this is reported as SSL_ERROR_SYSCALL
+                pass
             self.assertRaises(ssl.SSLError, sslobj.write, b'foo')
             sock.close()
 
     def test_read_write_data(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             sock = socket.socket(socket.AF_INET)
-            sock.connect(("svn.python.org", 443))
+            sock.connect((REMOTE_HOST, 443))
             incoming = ssl.MemoryBIO()
             outgoing = ssl.MemoryBIO()
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
@@ -3327,7 +3333,7 @@ def test_main(verbose=False):
             pass
 
     for filename in [
-        CERTFILE, SVN_PYTHON_ORG_ROOT_CERT, BYTES_CERTFILE,
+        CERTFILE, REMOTE_ROOT_CERT, BYTES_CERTFILE,
         ONLYCERT, ONLYKEY, BYTES_ONLYCERT, BYTES_ONLYKEY,
         SIGNED_CERTFILE, SIGNED_CERTFILE2, SIGNING_CA,
         BADCERT, BADKEY, EMPTYCERT]:
