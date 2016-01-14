@@ -1343,7 +1343,6 @@ class MemoryBIOTests(unittest.TestCase):
         self.assertRaises(TypeError, bio.write, 1)
 
 
-@unittest.skipIf(True, "temporarily disabled: see #25940")
 class NetworkedTests(unittest.TestCase):
 
     def test_connect(self):
@@ -1712,7 +1711,6 @@ class NetworkedBIOTests(unittest.TestCase):
                              % (count, func.__name__))
         return ret
 
-    @unittest.skipIf(True, "temporarily disabled: see #25940")
     def test_handshake(self):
         with support.transient_internet(REMOTE_HOST):
             sock = socket.socket(socket.AF_INET)
