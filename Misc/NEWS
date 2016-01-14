@@ -128,6 +128,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25822: Add docstrings to the fields of urllib.parse results.
+  Patch contributed by Swati Jaiswal.
+
 - Issue #22642: Convert trace module option parsing mechanism to argparse.
   Patch contributed by SilentGhost.
 
