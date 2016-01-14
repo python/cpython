@@ -971,7 +971,7 @@ class ContextTests(unittest.TestCase):
         ctx.load_verify_locations(CERTFILE)
         self.assertEqual(ctx.cert_store_stats(),
             {'x509_ca': 0, 'crl': 0, 'x509': 1})
-        ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+        ctx.load_verify_locations(CAFILE_CACERT)
         self.assertEqual(ctx.cert_store_stats(),
             {'x509_ca': 1, 'crl': 0, 'x509': 2})
 
@@ -981,8 +981,8 @@ class ContextTests(unittest.TestCase):
         # CERTFILE is not flagged as X509v3 Basic Constraints: CA:TRUE
         ctx.load_verify_locations(CERTFILE)
         self.assertEqual(ctx.get_ca_certs(), [])
-        # but SVN_PYTHON_ORG_ROOT_CERT is a CA cert
-        ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+        # but CAFILE_CACERT is a CA cert
+        ctx.load_verify_locations(CAFILE_CACERT)
         self.assertEqual(ctx.get_ca_certs(),
             [{'issuer': ((('organizationName', 'Root CA'),),
                          (('organizationalUnitName', 'http://www.cacert.org'),),
@@ -998,7 +998,7 @@ class ContextTests(unittest.TestCase):
                           (('emailAddress', 'support@cacert.org'),)),
               'version': 3}])
 
-        with open(SVN_PYTHON_ORG_ROOT_CERT) as f:
+        with open(CAFILE_CACERT) as f:
             pem = f.read()
         der = ssl.PEM_cert_to_DER_cert(pem)
         self.assertEqual(ctx.get_ca_certs(True), [der])
@@ -1335,15 +1335,15 @@ class NetworkedTests(unittest.TestCase):
                 s.close()
 
     def test_connect_cadata(self):
-        with open(CAFILE_CACERT) as f:
+        with open(REMOTE_ROOT_CERT) as f:
             pem = f.read()
         der = ssl.PEM_cert_to_DER_cert(pem)
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ctx.verify_mode = ssl.CERT_REQUIRED
             ctx.load_verify_locations(cadata=pem)
             with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
-                s.connect(("svn.python.org", 443))
+                s.connect((REMOTE_HOST, 443))
                 cert = s.getpeercert()
                 self.assertTrue(cert)
 
@@ -1352,7 +1352,7 @@ class NetworkedTests(unittest.TestCase):
             ctx.verify_mode = ssl.CERT_REQUIRED
             ctx.load_verify_locations(cadata=der)
             with ctx.wrap_socket(socket.socket(socket.AF_INET)) as s:
-                s.connect(("svn.python.org", 443))
+                s.connect((REMOTE_HOST, 443))
                 cert = s.getpeercert()
                 self.assertTrue(cert)
 
@@ -1475,13 +1475,13 @@ class NetworkedTests(unittest.TestCase):
 
     def test_get_ca_certs_capath(self):
         # capath certs are loaded on request
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ctx.verify_mode = ssl.CERT_REQUIRED
             ctx.load_verify_locations(capath=CAPATH)
             self.assertEqual(ctx.get_ca_certs(), [])
             s = ctx.wrap_socket(socket.socket(socket.AF_INET))
-            s.connect(("svn.python.org", 443))
+            s.connect((REMOTE_HOST, 443))
             try:
                 cert = s.getpeercert()
                 self.assertTrue(cert)
@@ -1492,12 +1492,12 @@ class NetworkedTests(unittest.TestCase):
     @needs_sni
     def test_context_setget(self):
         # Check that the context of a connected socket can be replaced.
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             ctx1 = ssl.SSLContext(ssl.PROTOCOL_TLSv1)
             ctx2 = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             s = socket.socket(socket.AF_INET)
             with ctx1.wrap_socket(s) as ss:
-                ss.connect(("svn.python.org", 443))
+                ss.connect((REMOTE_HOST, 443))
                 self.assertIs(ss.context, ctx1)
                 self.assertIs(ss._sslobj.context, ctx1)
                 ss.context = ctx2
