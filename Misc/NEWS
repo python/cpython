@@ -21,6 +21,13 @@ Library
 
 - Issue #22931: Allow '[' and ']' in cookie values.
 
+Tests
+-----
+
+- Issue #25940: Changed test_ssl and test_httplib to use
+  self-signed.pythontest.net.  This avoids relying on svn.python.org, which
+  recently changed root certificate.
+
 
 What's New in Python 3.2.6?
 ===========================
