@@ -1688,13 +1688,8 @@ class NetworkedBIOTests(unittest.TestCase):
             try:
                 ret = func(*args)
             except ssl.SSLError as e:
-                # Note that we get a spurious -1/SSL_ERROR_SYSCALL for
-                # non-blocking IO. The SSL_shutdown manpage hints at this.
-                # It *should* be safe to just ignore SYS_ERROR_SYSCALL because
-                # with a Memory BIO there's no syscalls (for IO at least).
                 if e.errno not in (ssl.SSL_ERROR_WANT_READ,
-                                   ssl.SSL_ERROR_WANT_WRITE,
-                                   ssl.SSL_ERROR_SYSCALL):
+                                   ssl.SSL_ERROR_WANT_WRITE):
                     raise
                 errno = e.errno
             # Get any data from the outgoing BIO irrespective of any error, and
@@ -1717,16 +1712,16 @@ class NetworkedBIOTests(unittest.TestCase):
         return ret
 
     def test_handshake(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             sock = socket.socket(socket.AF_INET)
-            sock.connect(("svn.python.org", 443))
+            sock.connect((REMOTE_HOST, 443))
             incoming = ssl.MemoryBIO()
             outgoing = ssl.MemoryBIO()
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
             ctx.verify_mode = ssl.CERT_REQUIRED
-            ctx.load_verify_locations(SVN_PYTHON_ORG_ROOT_CERT)
+            ctx.load_verify_locations(REMOTE_ROOT_CERT)
             ctx.check_hostname = True
-            sslobj = ctx.wrap_bio(incoming, outgoing, False, 'svn.python.org')
+            sslobj = ctx.wrap_bio(incoming, outgoing, False, REMOTE_HOST)
             self.assertIs(sslobj._sslobj.owner, sslobj)
             self.assertIsNone(sslobj.cipher())
             self.assertIsNone(sslobj.shared_ciphers())
@@ -1739,14 +1734,20 @@ class NetworkedBIOTests(unittest.TestCase):
             self.assertTrue(sslobj.getpeercert())
             if 'tls-unique' in ssl.CHANNEL_BINDING_TYPES:
                 self.assertTrue(sslobj.get_channel_binding('tls-unique'))
-            self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
+            try:
+                self.ssl_io_loop(sock, incoming, outgoing, sslobj.unwrap)
+            except ssl.SSLSyscallError:
+                # self-signed.pythontest.net probably shuts down the TCP
+                # connection without sending a secure shutdown message, and
+                # this is reported as SSL_ERROR_SYSCALL
+                pass
             self.assertRaises(ssl.SSLError, sslobj.write, b'foo')
             sock.close()
 
     def test_read_write_data(self):
-        with support.transient_internet("svn.python.org"):
+        with support.transient_internet(REMOTE_HOST):
             sock = socket.socket(socket.AF_INET)
-            sock.connect(("svn.python.org", 443))
+            sock.connect((REMOTE_HOST, 443))
             incoming = ssl.MemoryBIO()
             outgoing = ssl.MemoryBIO()
             ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
