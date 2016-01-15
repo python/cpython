@@ -608,7 +608,9 @@ class NetworkedTests(unittest.TestCase):
                                 ca_certs=REMOTE_ROOT_CERT)
             try:
                 rc = s.connect_ex((REMOTE_HOST, 444))
-                self.assertIn(rc, (errno.ECONNREFUSED, errno.EHOSTUNREACH))
+                errors = (
+                    errno.ECONNREFUSED, errno.EHOSTUNREACH, errno.ETIMEDOUT)
+                self.assertIn(rc, errors)
             finally:
                 s.close()
 
