@@ -257,7 +257,7 @@ members are not integers (but see `IntEnum`_ below)::
     >>> Color.red < Color.blue
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: '<' not supported between instances of 'Color' and 'Color'
+    TypeError: unorderable types: Color() < Color()
 
 Equality comparisons are defined though::
 
@@ -746,6 +746,15 @@ besides the :class:`Enum` member you looking for::
     2
 
 .. versionchanged:: 3.5
+
+Boolean evaluation: Enum classes that are mixed with non-Enum types (such as
+:class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
+type's rules; otherwise, all members evaluate as ``True``.  To make your own
+Enum's boolean evaluation depend on the member's value add the following to
+your class::
+
+    def __bool__(self):
+        return bool(self._value_)
 
 The :attr:`__members__` attribute is only available on the class.
 
