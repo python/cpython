@@ -5,6 +5,8 @@
     Original source: LaserJet IIP Printer User's Manual HP part no
     33471-90901, Hewlet-Packard, June 1989.
 
+    (Used with permission)
+
 """#"
 
 import codecs
