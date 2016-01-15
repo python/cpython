@@ -79,6 +79,9 @@ Library
 Tests
 -----
 
+- Issue #25940: Changed test_ssl to use self-signed.pythontest.net.  This
+  avoids relying on svn.python.org, which recently changed root certificate.
+
 - Issue #25616: Tests for OrderedDict are extracted from test_collections
   into separate file test_ordered_dict.
 
