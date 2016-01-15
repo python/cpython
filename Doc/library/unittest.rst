@@ -1764,9 +1764,10 @@ Loading and running tests
    instead of repeatedly creating new instances.
 
 
-.. class:: TextTestRunner(stream=sys.stderr, descriptions=True, verbosity=1)
+.. class:: TextTestRunner(stream=sys.stderr, descriptions=True, verbosity=1, \
+                          failfast=False, buffer=False, resultclass=None)
 
-   A basic test runner implementation which prints results on standard error.  It
+   A basic test runner implementation which prints results on standard error. It
    has a few configurable parameters, but is essentially very simple.  Graphical
    applications which run test suites should provide alternate implementations.
 
