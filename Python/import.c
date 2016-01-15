@@ -1359,6 +1359,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     PyObject *final_mod = NULL;
     PyObject *mod = NULL;
     PyObject *package = NULL;
+    PyObject *spec = NULL;
     PyObject *globals = NULL;
     PyObject *fromlist = NULL;
     PyInterpreterState *interp = PyThreadState_GET()->interp;
@@ -1414,39 +1415,60 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
         goto error;
     }
     else if (level > 0) {
-        package = _PyDict_GetItemId(globals, &PyId___package__);
+        spec = _PyDict_GetItemId(globals, &PyId___spec__);
+        if (spec != NULL) {
+            package = PyObject_GetAttrString(spec, "parent");
+        }
         if (package != NULL && package != Py_None) {
-            Py_INCREF(package);
             if (!PyUnicode_Check(package)) {
-                PyErr_SetString(PyExc_TypeError, "package must be a string");
+                PyErr_SetString(PyExc_TypeError,
+                        "__spec__.parent must be a string");
                 goto error;
             }
         }
         else {
-            package = _PyDict_GetItemId(globals, &PyId___name__);
-            if (package == NULL) {
-                PyErr_SetString(PyExc_KeyError, "'__name__' not in globals");
-                goto error;
-            }
-            else if (!PyUnicode_Check(package)) {
-                PyErr_SetString(PyExc_TypeError, "__name__ must be a string");
-            }
-            Py_INCREF(package);
-
-            if (_PyDict_GetItemId(globals, &PyId___path__) == NULL) {
-                PyObject *partition = NULL;
-                PyObject *borrowed_dot = _PyUnicode_FromId(&single_dot);
-                if (borrowed_dot == NULL) {
-                    goto error;
-                }
-                partition = PyUnicode_RPartition(package, borrowed_dot);
-                Py_DECREF(package);
-                if (partition == NULL) {
-                    goto error;
-                }
-                package = PyTuple_GET_ITEM(partition, 0);
+            package = _PyDict_GetItemId(globals, &PyId___package__);
+            if (package != NULL && package != Py_None) {
                 Py_INCREF(package);
-                Py_DECREF(partition);
+                if (!PyUnicode_Check(package)) {
+                    PyErr_SetString(PyExc_TypeError, "package must be a string");
+                    goto error;
+                }
+            }
+            else {
+                if (PyErr_WarnEx(PyExc_ImportWarning,
+                            "can't resolve package from __spec__ or __package__, "
+                            "falling back on __name__ and __path__", 1) < 0) {
+                    goto error;
+                }
+
+                package = _PyDict_GetItemId(globals, &PyId___name__);
+                if (package == NULL) {
+                    PyErr_SetString(PyExc_KeyError, "'__name__' not in globals");
+                    goto error;
+                }
+
+                Py_INCREF(package);
+                if (!PyUnicode_Check(package)) {
+                    PyErr_SetString(PyExc_TypeError, "__name__ must be a string");
+                    goto error;
+                }
+
+                if (_PyDict_GetItemId(globals, &PyId___path__) == NULL) {
+                    PyObject *partition = NULL;
+                    PyObject *borrowed_dot = _PyUnicode_FromId(&single_dot);
+                    if (borrowed_dot == NULL) {
+                        goto error;
+                    }
+                    partition = PyUnicode_RPartition(package, borrowed_dot);
+                    Py_DECREF(package);
+                    if (partition == NULL) {
+                        goto error;
+                    }
+                    package = PyTuple_GET_ITEM(partition, 0);
+                    Py_INCREF(package);
+                    Py_DECREF(partition);
+                }
             }
         }
 

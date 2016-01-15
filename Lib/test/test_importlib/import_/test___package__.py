@@ -33,31 +33,39 @@ class Using__package__:
 
     """
 
-    def test_using___package__(self):
-        # [__package__]
+    def import_module(self, globals_):
         with self.mock_modules('pkg.__init__', 'pkg.fake') as importer:
             with util.import_state(meta_path=[importer]):
                 self.__import__('pkg.fake')
                 module = self.__import__('',
-                                            globals={'__package__': 'pkg.fake'},
+                                            globals=globals_,
                                             fromlist=['attr'], level=2)
+        return module
+
+    def test_using___package__(self):
+        # [__package__]
+        module = self.import_module({'__package__': 'pkg.fake'})
         self.assertEqual(module.__name__, 'pkg')
 
-    def test_using___name__(self, package_as_None=False):
+    def test_using___name__(self):
         # [__name__]
-        globals_ = {'__name__': 'pkg.fake', '__path__': []}
-        if package_as_None:
-            globals_['__package__'] = None
-        with self.mock_modules('pkg.__init__', 'pkg.fake') as importer:
-            with util.import_state(meta_path=[importer]):
-                self.__import__('pkg.fake')
-                module = self.__import__('', globals= globals_,
-                                                fromlist=['attr'], level=2)
-            self.assertEqual(module.__name__, 'pkg')
+        module = self.import_module({'__name__': 'pkg.fake', '__path__': []})
+        self.assertEqual(module.__name__, 'pkg')
+
+    def test_warn_when_using___name__(self):
+        with self.assertWarns(ImportWarning):
+            self.import_module({'__name__': 'pkg.fake', '__path__': []})
 
     def test_None_as___package__(self):
         # [None]
-        self.test_using___name__(package_as_None=True)
+        module = self.import_module({
+            '__name__': 'pkg.fake', '__path__': [], '__package__': None })
+        self.assertEqual(module.__name__, 'pkg')
+
+    def test_prefers___spec__(self):
+        globals = {'__spec__': FakeSpec()}
+        with self.assertRaises(SystemError):
+            self.__import__('', globals, {}, ['relimport'], 1)
 
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
@@ -68,6 +76,10 @@ class Using__package__:
         globals = {'__package__': 42}
         with self.assertRaises(TypeError):
             self.__import__('', globals, {}, ['relimport'], 1)
+
+
+class FakeSpec:
+    parent = '<fake>'
 
 
 class Using__package__PEP302(Using__package__):
