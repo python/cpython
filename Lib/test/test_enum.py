@@ -272,11 +272,26 @@ class TestEnum(unittest.TestCase):
                 _any_name_ = 9
 
     def test_bool(self):
+        # plain Enum members are always True
         class Logic(Enum):
             true = True
             false = False
         self.assertTrue(Logic.true)
-        self.assertFalse(Logic.false)
+        self.assertTrue(Logic.false)
+        # unless overridden
+        class RealLogic(Enum):
+            true = True
+            false = False
+            def __bool__(self):
+                return bool(self._value_)
+        self.assertTrue(RealLogic.true)
+        self.assertFalse(RealLogic.false)
+        # mixed Enums depend on mixed-in type
+        class IntLogic(int, Enum):
+            true = 1
+            false = 0
+        self.assertTrue(IntLogic.true)
+        self.assertFalse(IntLogic.false)
 
     def test_contains(self):
         Season = self.Season
