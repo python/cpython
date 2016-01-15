@@ -1267,7 +1267,7 @@ class NetworkedTests(unittest.TestCase):
                 # Issue #19919: Windows machines or VMs hosted on Windows
                 # machines sometimes return EWOULDBLOCK.
                 errors = (
-                    errno.ECONNREFUSED, errno.EHOSTUNREACH,
+                    errno.ECONNREFUSED, errno.EHOSTUNREACH, errno.ETIMEDOUT,
                     errno.EWOULDBLOCK,
                 )
                 self.assertIn(rc, errors)
