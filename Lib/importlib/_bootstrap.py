@@ -1032,8 +1032,14 @@ def _calc___package__(globals):
     to represent that its proper value is unknown.
 
     """
+    spec = globals.get('__spec__')
+    if spec is not None:
+        return spec.parent
     package = globals.get('__package__')
     if package is None:
+        _warnings.warn("can't resolve package from __spec__ or __package__, "
+                       "falling back on __name__ and __path__",
+                       ImportWarning, stacklevel=3)
         package = globals['__name__']
         if '__path__' not in globals:
             package = package.rpartition('.')[0]

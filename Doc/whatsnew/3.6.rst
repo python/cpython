@@ -209,7 +209,12 @@ Deprecated features
 * The ``pyvenv`` script has been deprecated in favour of ``python3 -m venv``.
   This prevents confusion as to what Python interpreter ``pyvenv`` is
   connected to and thus what Python interpreter will be used by the virtual
-  environment. See :issue:`25154`.
+  environment. (Contributed by Brett Cannon in :issue:`25154`.)
+
+* When performing a relative import, falling back on ``__name__`` and
+  ``__path__`` from the calling module when ``__spec__`` or
+  ``__package__`` are not defined now raises an :exc:`ImportWarning`.
+  (Contributed by Rose Ames in :issue:`25791`.)
 
 
 Removed
@@ -250,6 +255,10 @@ Changes in the Python API
   :mod:`ftplib`, :mod:`logging`, :mod:`optparse`, :mod:`threading` and
   :mod:`wave`.  This means they will export new symbols when ``import *``
   is used.  See :issue:`23883`.
+
+* When performing a relative import, ``__spec__.parent`` is used
+  is ``__spec__`` is defined instead of ``__package__``.
+  (Contributed by Rose Ames in :issue:`25791`.)
 
 
 Changes in the C API
