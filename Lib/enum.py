@@ -482,9 +482,6 @@ class Enum(metaclass=EnumMeta):
     def __str__(self):
         return "%s.%s" % (self.__class__.__name__, self._name_)
 
-    def __bool__(self):
-        return bool(self._value_)
-
     def __dir__(self):
         added_behavior = [
                 m
