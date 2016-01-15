@@ -896,6 +896,7 @@ class date:
 
         ISO calendar algorithm taken from
         http://www.phys.uu.nl/~vgent/calendar/isocalendar.htm
+        (used with permission)
         """
         year = self._year
         week1monday = _isoweek1monday(year)
