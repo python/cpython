@@ -1,6 +1,6 @@
 """
 Python unit testing framework, based on Erich Gamma's JUnit and Kent Beck's
-Smalltalk testing framework.
+Smalltalk testing framework (used with permission).
 
 This module contains the core framework classes that form the basis of
 specific test cases and suites (TestCase, TestSuite etc.), and also a
