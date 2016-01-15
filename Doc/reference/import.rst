@@ -554,7 +554,8 @@ the module.
    details.
 
    This attribute is used instead of ``__name__`` to calculate explicit
-   relative imports for main modules, as defined in :pep:`366`.
+   relative imports for main modules -- as defined in :pep:`366` --
+   when ``__spec__`` is not defined.
 
 .. attribute:: __spec__
 
