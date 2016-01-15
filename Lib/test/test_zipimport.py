@@ -1,6 +1,7 @@
 import sys
 import os
 import marshal
+import importlib
 import importlib.util
 import struct
 import time
@@ -48,6 +49,7 @@ test_pyc = make_pyc(test_co, NOW, len(test_src))
 TESTMOD = "ziptestmodule"
 TESTPACK = "ziptestpackage"
 TESTPACK2 = "ziptestpackage2"
+TEMP_DIR = os.path.abspath("junk95142")
 TEMP_ZIP = os.path.abspath("junk95142.zip")
 
 pyc_file = importlib.util.cache_from_source(TESTMOD + '.py')
@@ -77,45 +79,64 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
     def setUp(self):
         # We're reusing the zip archive path, so we must clear the
-        # cached directory info and linecache
+        # cached directory info and linecache.
         linecache.clearcache()
         zipimport._zip_directory_cache.clear()
         ImportHooksBaseTestCase.setUp(self)
 
-    def doTest(self, expected_ext, files, *modules, **kw):
-        z = ZipFile(TEMP_ZIP, "w")
-        try:
+    def makeTree(self, files, dirName=TEMP_DIR):
+        # Create a filesystem based set of modules/packages
+        # defined by files under the directory dirName.
+        self.addCleanup(support.rmtree, dirName)
+
+        for name, (mtime, data) in files.items():
+            path = os.path.join(dirName, name)
+            if path[-1] == os.sep:
+                if not os.path.isdir(path):
+                    os.makedirs(path)
+            else:
+                dname = os.path.dirname(path)
+                if not os.path.isdir(dname):
+                    os.makedirs(dname)
+                with open(path, 'wb') as fp:
+                    fp.write(data)
+
+    def makeZip(self, files, zipName=TEMP_ZIP, **kw):
+        # Create a zip archive based set of modules/packages
+        # defined by files in the zip file zipName.  If the
+        # key 'stuff' exists in kw it is prepended to the archive.
+        self.addCleanup(support.unlink, zipName)
+
+        with ZipFile(zipName, "w") as z:
             for name, (mtime, data) in files.items():
                 zinfo = ZipInfo(name, time.localtime(mtime))
                 zinfo.compress_type = self.compression
                 z.writestr(zinfo, data)
-            z.close()
 
-            stuff = kw.get("stuff", None)
-            if stuff is not None:
-                # Prepend 'stuff' to the start of the zipfile
-                with open(TEMP_ZIP, "rb") as f:
-                    data = f.read()
-                with open(TEMP_ZIP, "wb") as f:
-                    f.write(stuff)
-                    f.write(data)
+        stuff = kw.get("stuff", None)
+        if stuff is not None:
+            # Prepend 'stuff' to the start of the zipfile
+            with open(zipName, "rb") as f:
+                data = f.read()
+            with open(zipName, "wb") as f:
+                f.write(stuff)
+                f.write(data)
 
-            sys.path.insert(0, TEMP_ZIP)
+    def doTest(self, expected_ext, files, *modules, **kw):
+        self.makeZip(files, **kw)
 
-            mod = __import__(".".join(modules), globals(), locals(),
-                             ["__dummy__"])
+        sys.path.insert(0, TEMP_ZIP)
 
-            call = kw.get('call')
-            if call is not None:
-                call(mod)
+        mod = importlib.import_module(".".join(modules))
 
-            if expected_ext:
-                file = mod.get_file()
-                self.assertEqual(file, os.path.join(TEMP_ZIP,
+        call = kw.get('call')
+        if call is not None:
+            call(mod)
+
+        if expected_ext:
+            file = mod.get_file()
+            self.assertEqual(file, os.path.join(TEMP_ZIP,
                                  *modules) + expected_ext)
-        finally:
-            z.close()
-            os.remove(TEMP_ZIP)
 
     def testAFakeZlib(self):
         #
@@ -201,13 +222,176 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
                  packdir + TESTMOD + pyc_ext: (NOW, test_pyc)}
         self.doTest(pyc_ext, files, TESTPACK, TESTMOD)
 
-    def testDeepPackage(self):
+    def testSubPackage(self):
+        # Test that subpackages function when loaded from zip
+        # archives.
         packdir = TESTPACK + os.sep
         packdir2 = packdir + TESTPACK2 + os.sep
         files = {packdir + "__init__" + pyc_ext: (NOW, test_pyc),
                  packdir2 + "__init__" + pyc_ext: (NOW, test_pyc),
                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
         self.doTest(pyc_ext, files, TESTPACK, TESTPACK2, TESTMOD)
+
+    def testSubNamespacePackage(self):
+        # Test that implicit namespace subpackages function
+        # when loaded from zip archives.
+        packdir = TESTPACK + os.sep
+        packdir2 = packdir + TESTPACK2 + os.sep
+        # The first two files are just directory entries (so have no data).
+        files = {packdir: (NOW, ""),
+                 packdir2: (NOW, ""),
+                 packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
+        self.doTest(pyc_ext, files, TESTPACK, TESTPACK2, TESTMOD)
+
+    def testMixedNamespacePackage(self):
+        # Test implicit namespace packages spread between a
+        # real filesystem and a zip archive.
+        packdir = TESTPACK + os.sep
+        packdir2 = packdir + TESTPACK2 + os.sep
+        packdir3 = packdir2 + TESTPACK + '3' + os.sep
+        files1 = {packdir: (NOW, ""),
+                  packdir + TESTMOD + pyc_ext: (NOW, test_pyc),
+                  packdir2: (NOW, ""),
+                  packdir3: (NOW, ""),
+                  packdir3 + TESTMOD + pyc_ext: (NOW, test_pyc),
+                  packdir2 + TESTMOD + '3' + pyc_ext: (NOW, test_pyc),
+                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
+        files2 = {packdir: (NOW, ""),
+                  packdir + TESTMOD + '2' + pyc_ext: (NOW, test_pyc),
+                  packdir2: (NOW, ""),
+                  packdir2 + TESTMOD + '2' + pyc_ext: (NOW, test_pyc),
+                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
+
+        zip1 = os.path.abspath("path1.zip")
+        self.makeZip(files1, zip1)
+
+        zip2 = TEMP_DIR
+        self.makeTree(files2, zip2)
+
+        # zip2 should override zip1.
+        sys.path.insert(0, zip1)
+        sys.path.insert(0, zip2)
+
+        mod = importlib.import_module(TESTPACK)
+
+        # if TESTPACK is functioning as a namespace pkg then
+        # there should be two entries in the __path__.
+        # First should be path2 and second path1.
+        self.assertEqual(2, len(mod.__path__))
+        p1, p2 = mod.__path__
+        self.assertEqual(os.path.basename(TEMP_DIR), p1.split(os.sep)[-2])
+        self.assertEqual("path1.zip", p2.split(os.sep)[-2])
+
+        # packdir3 should import as a namespace package.
+        # Its __path__ is an iterable of 1 element from zip1.
+        mod = importlib.import_module(packdir3.replace(os.sep, '.')[:-1])
+        self.assertEqual(1, len(mod.__path__))
+        mpath = list(mod.__path__)[0].split('path1.zip' + os.sep)[1]
+        self.assertEqual(packdir3[:-1], mpath)
+
+        # TESTPACK/TESTMOD only exists in path1.
+        mod = importlib.import_module('.'.join((TESTPACK, TESTMOD)))
+        self.assertEqual("path1.zip", mod.__file__.split(os.sep)[-3])
+
+        # And TESTPACK/(TESTMOD + '2') only exists in path2.
+        mod = importlib.import_module('.'.join((TESTPACK, TESTMOD + '2')))
+        self.assertEqual(os.path.basename(TEMP_DIR),
+                         mod.__file__.split(os.sep)[-3])
+
+        # One level deeper...
+        subpkg = '.'.join((TESTPACK, TESTPACK2))
+        mod = importlib.import_module(subpkg)
+        self.assertEqual(2, len(mod.__path__))
+        p1, p2 = mod.__path__
+        self.assertEqual(os.path.basename(TEMP_DIR), p1.split(os.sep)[-3])
+        self.assertEqual("path1.zip", p2.split(os.sep)[-3])
+
+        # subpkg.TESTMOD exists in both zips should load from zip2.
+        mod = importlib.import_module('.'.join((subpkg, TESTMOD)))
+        self.assertEqual(os.path.basename(TEMP_DIR),
+                         mod.__file__.split(os.sep)[-4])
+
+        # subpkg.TESTMOD + '2' only exists in zip2.
+        mod = importlib.import_module('.'.join((subpkg, TESTMOD + '2')))
+        self.assertEqual(os.path.basename(TEMP_DIR),
+                         mod.__file__.split(os.sep)[-4])
+
+        # Finally subpkg.TESTMOD + '3' only exists in zip1.
+        mod = importlib.import_module('.'.join((subpkg, TESTMOD + '3')))
+        self.assertEqual('path1.zip', mod.__file__.split(os.sep)[-4])
+
+    def testNamespacePackage(self):
+        # Test implicit namespace packages spread between multiple zip
+        # archives.
+        packdir = TESTPACK + os.sep
+        packdir2 = packdir + TESTPACK2 + os.sep
+        packdir3 = packdir2 + TESTPACK + '3' + os.sep
+        files1 = {packdir: (NOW, ""),
+                  packdir + TESTMOD + pyc_ext: (NOW, test_pyc),
+                  packdir2: (NOW, ""),
+                  packdir3: (NOW, ""),
+                  packdir3 + TESTMOD + pyc_ext: (NOW, test_pyc),
+                  packdir2 + TESTMOD + '3' + pyc_ext: (NOW, test_pyc),
+                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
+        zip1 = os.path.abspath("path1.zip")
+        self.makeZip(files1, zip1)
+
+        files2 = {packdir: (NOW, ""),
+                  packdir + TESTMOD + '2' + pyc_ext: (NOW, test_pyc),
+                  packdir2: (NOW, ""),
+                  packdir2 + TESTMOD + '2' + pyc_ext: (NOW, test_pyc),
+                  packdir2 + TESTMOD + pyc_ext: (NOW, test_pyc)}
+        zip2 = os.path.abspath("path2.zip")
+        self.makeZip(files2, zip2)
+
+        # zip2 should override zip1.
+        sys.path.insert(0, zip1)
+        sys.path.insert(0, zip2)
+
+        mod = importlib.import_module(TESTPACK)
+
+        # if TESTPACK is functioning as a namespace pkg then
+        # there should be two entries in the __path__.
+        # First should be path2 and second path1.
+        self.assertEqual(2, len(mod.__path__))
+        p1, p2 = mod.__path__
+        self.assertEqual("path2.zip", p1.split(os.sep)[-2])
+        self.assertEqual("path1.zip", p2.split(os.sep)[-2])
+
+        # packdir3 should import as a namespace package.
+        # Tts __path__ is an iterable of 1 element from zip1.
+        mod = importlib.import_module(packdir3.replace(os.sep, '.')[:-1])
+        self.assertEqual(1, len(mod.__path__))
+        mpath = list(mod.__path__)[0].split('path1.zip' + os.sep)[1]
+        self.assertEqual(packdir3[:-1], mpath)
+
+        # TESTPACK/TESTMOD only exists in path1.
+        mod = importlib.import_module('.'.join((TESTPACK, TESTMOD)))
+        self.assertEqual("path1.zip", mod.__file__.split(os.sep)[-3])
+
+        # And TESTPACK/(TESTMOD + '2') only exists in path2.
+        mod = importlib.import_module('.'.join((TESTPACK, TESTMOD + '2')))
+        self.assertEqual("path2.zip", mod.__file__.split(os.sep)[-3])
+
+        # One level deeper...
+        subpkg = '.'.join((TESTPACK, TESTPACK2))
+        mod = importlib.import_module(subpkg)
+        self.assertEqual(2, len(mod.__path__))
+        p1, p2 = mod.__path__
+        self.assertEqual("path2.zip", p1.split(os.sep)[-3])
+        self.assertEqual("path1.zip", p2.split(os.sep)[-3])
+
+        # subpkg.TESTMOD exists in both zips should load from zip2.
+        mod = importlib.import_module('.'.join((subpkg, TESTMOD)))
+        self.assertEqual('path2.zip', mod.__file__.split(os.sep)[-4])
+
+        # subpkg.TESTMOD + '2' only exists in zip2.
+        mod = importlib.import_module('.'.join((subpkg, TESTMOD + '2')))
+        self.assertEqual('path2.zip', mod.__file__.split(os.sep)[-4])
+
+        # Finally subpkg.TESTMOD + '3' only exists in zip1.
+        mod = importlib.import_module('.'.join((subpkg, TESTMOD + '3')))
+        self.assertEqual('path1.zip', mod.__file__.split(os.sep)[-4])
 
     def testZipImporterMethods(self):
         packdir = TESTPACK + os.sep
@@ -231,7 +415,7 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
             mod = zi.load_module(TESTPACK)
             self.assertEqual(zi.get_filename(TESTPACK), mod.__file__)
 
-            existing_pack_path = __import__(TESTPACK).__path__[0]
+            existing_pack_path = importlib.import_module(TESTPACK).__path__[0]
             expected_path_path = os.path.join(TEMP_ZIP, TESTPACK)
             self.assertEqual(existing_pack_path, expected_path_path)
 
@@ -241,8 +425,8 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             mod_path = packdir2 + TESTMOD
             mod_name = module_path_to_dotted_name(mod_path)
-            __import__(mod_name)
-            mod = sys.modules[mod_name]
+            mod = importlib.import_module(mod_name)
+            self.assertTrue(mod_name in sys.modules)
             self.assertEqual(zi.get_source(TESTPACK), None)
             self.assertEqual(zi.get_source(mod_path), None)
             self.assertEqual(zi.get_filename(mod_path), mod.__file__)
@@ -289,13 +473,13 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
             mod_path = TESTPACK2 + os.sep + TESTMOD
             mod_name = module_path_to_dotted_name(mod_path)
-            __import__(mod_name)
-            mod = sys.modules[mod_name]
+            mod = importlib.import_module(mod_name)
+            self.assertTrue(mod_name in sys.modules)
             self.assertEqual(zi.get_source(TESTPACK2), None)
             self.assertEqual(zi.get_source(mod_path), None)
             self.assertEqual(zi.get_filename(mod_path), mod.__file__)
             # To pass in the module name instead of the path, we must use the
-            # right importer
+            # right importer.
             loader = mod.__loader__
             self.assertEqual(loader.get_source(mod_name), None)
             self.assertEqual(loader.get_filename(mod_name), mod.__file__)
