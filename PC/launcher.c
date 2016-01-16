@@ -1079,7 +1079,10 @@ static PYC_MAGIC magic_values[] = {
     { 0x0bb8, 0x0c3b, L"3.0" },
     { 0x0c45, 0x0c4f, L"3.1" },
     { 0x0c58, 0x0c6c, L"3.2" },
-    { 0x0c76, 0x0c76, L"3.3" },
+    { 0x0c76, 0x0c9e, L"3.3" },
+    { 0x0cb2, 0x0cee, L"3.4" },
+    { 0x0cf8, 0x0d16, L"3.5" },
+    { 0x0d20, 0x0d20, L"3.6" },
     { 0 }
 };
 
