@@ -613,6 +613,9 @@ Build
 Windows
 -------
 
+- Issue #26065: Excludes venv from library when generating embeddable
+  distro.
+
 - Issue #25022: Removed very outdated PC/example_nt/ directory.
 
 Tools/Demos
