@@ -69,7 +69,8 @@
       <ExceptionHandling></ExceptionHandling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <FunctionLevelLinking>true</FunctionLevelLinking>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
+      <DisableSpecificWarnings>4232;4706;4152;4204;4131;4115;4127;4054;4100;%(DisableSpecificWarnings)</DisableSpecificWarnings>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <CompileAs>Default</CompileAs>
       <SuppressStartupBanner>true</SuppressStartupBanner>
