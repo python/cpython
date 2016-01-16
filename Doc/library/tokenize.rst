@@ -28,7 +28,7 @@ The primary entry point is a :term:`generator`:
 
    The :func:`generate_tokens` generator requires one argument, *readline*,
    which must be a callable object which provides the same interface as the
-   :meth:`readline` method of built-in file objects (see section
+   :meth:`~file.readline` method of built-in file objects (see section
    :ref:`bltin-file-objects`).  Each call to the function should return one line
    of input as a string. Alternately, *readline* may be a callable object that
    signals completion by raising :exc:`StopIteration`.
@@ -47,11 +47,11 @@ An older entry point is retained for backward compatibility:
 
 .. function:: tokenize(readline[, tokeneater])
 
-   The :func:`tokenize` function accepts two parameters: one representing the input
-   stream, and one providing an output mechanism for :func:`tokenize`.
+   The :func:`.tokenize` function accepts two parameters: one representing the input
+   stream, and one providing an output mechanism for :func:`.tokenize`.
 
    The first parameter, *readline*, must be a callable object which provides the
-   same interface as the :meth:`readline` method of built-in file objects (see
+   same interface as the :meth:`~file.readline` method of built-in file objects (see
    section :ref:`bltin-file-objects`).  Each call to the function should return one
    line of input as a string. Alternately, *readline* may be a callable object that
    signals completion by raising :exc:`StopIteration`.
@@ -65,7 +65,7 @@ An older entry point is retained for backward compatibility:
 
 All constants from the :mod:`token` module are also exported from
 :mod:`tokenize`, as are two additional token type values that might be passed to
-the *tokeneater* function by :func:`tokenize`:
+the *tokeneater* function by :func:`.tokenize`:
 
 
 .. data:: COMMENT
