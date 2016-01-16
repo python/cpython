@@ -817,7 +817,7 @@ class CommandLineTestCase(unittest.TestCase):
 
 class MiscTestCase(unittest.TestCase):
     def test__all__(self):
-        blacklist = {'error', 'mdays', 'January', 'February', 'EPOCH',
+        blacklist = {'mdays', 'January', 'February', 'EPOCH',
                      'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY',
                      'SATURDAY', 'SUNDAY', 'different_locale', 'c',
                      'prweek', 'week', 'format', 'formatstring', 'main'}
