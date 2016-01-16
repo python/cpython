@@ -20,29 +20,29 @@ the :data:`sys.last_traceback` variable and returned as the third item from
 The module defines the following functions:
 
 
-.. function:: print_tb(traceback, limit=None, file=None)
+.. function:: print_tb(tb, limit=None, file=None)
 
-   Print up to *limit* stack trace entries from *traceback* (starting from
-   the caller's frame) if *limit* is positive.  Otherwise, print the last
-   ``abs(limit)`` entries.  If *limit* is omitted or ``None``, all entries
-   are printed.  If *file* is omitted or ``None``, the output goes to
-   ``sys.stderr``; otherwise it should be an open file or file-like object
-   to receive the output.
+   Print up to *limit* stack trace entries from traceback object *tb* (starting
+   from the caller's frame) if *limit* is positive.  Otherwise, print the last
+   ``abs(limit)`` entries.  If *limit* is omitted or ``None``, all entries are
+   printed.  If *file* is omitted or ``None``, the output goes to
+   ``sys.stderr``; otherwise it should be an open file or file-like object to
+   receive the output.
 
    .. versionchanged:: 3.5
        Added negative *limit* support.
 
 
-.. function:: print_exception(type, value, traceback, limit=None, file=None, chain=True)
+.. function:: print_exception(etype, value, tb, limit=None, file=None, chain=True)
 
-   Print exception information and stack trace entries from
-   *traceback* to *file*. This differs from :func:`print_tb` in the following
+   Print exception information and stack trace entries from traceback object
+   *tb* to *file*. This differs from :func:`print_tb` in the following
    ways:
 
-   * if *traceback* is not ``None``, it prints a header ``Traceback (most recent
+   * if *tb* is not ``None``, it prints a header ``Traceback (most recent
      call last):``
-   * it prints the exception *type* and *value* after the stack trace
-   * if *type* is :exc:`SyntaxError` and *value* has the appropriate format, it
+   * it prints the exception *etype* and *value* after the stack trace
+   * if *etype* is :exc:`SyntaxError` and *value* has the appropriate format, it
      prints the line where the syntax error occurred with a caret indicating the
      approximate position of the error.
 
@@ -80,10 +80,10 @@ The module defines the following functions:
           Added negative *limit* support.
 
 
-.. function:: extract_tb(traceback, limit=None)
+.. function:: extract_tb(tb, limit=None)
 
    Return a list of "pre-processed" stack trace entries extracted from the
-   traceback object *traceback*.  It is useful for alternate formatting of
+   traceback object *tb*.  It is useful for alternate formatting of
    stack traces.  The optional *limit* argument has the same meaning as for
    :func:`print_tb`.  A "pre-processed" stack trace entry is a 4-tuple
    (*filename*, *line number*, *function name*, *text*) representing the
@@ -99,39 +99,40 @@ The module defines the following functions:
    arguments have the same meaning as for :func:`print_stack`.
 
 
-.. function:: format_list(list)
+.. function:: format_list(extracted_list)
 
    Given a list of tuples as returned by :func:`extract_tb` or
-   :func:`extract_stack`, return a list of strings ready for printing.  Each string
-   in the resulting list corresponds to the item with the same index in the
-   argument list.  Each string ends in a newline; the strings may contain internal
-   newlines as well, for those items whose source text line is not ``None``.
+   :func:`extract_stack`, return a list of strings ready for printing. Each
+   string in the resulting list corresponds to the item with the same index in
+   the argument list.  Each string ends in a newline; the strings may contain
+   internal newlines as well, for those items whose source text line is not
+   ``None``.
 
 
-.. function:: format_exception_only(type, value)
+.. function:: format_exception_only(etype, value)
 
-   Format the exception part of a traceback.  The arguments are the exception type
-   and value such as given by ``sys.last_type`` and ``sys.last_value``.  The return
-   value is a list of strings, each ending in a newline.  Normally, the list
-   contains a single string; however, for :exc:`SyntaxError` exceptions, it
-   contains several lines that (when printed) display detailed information about
-   where the syntax error occurred.  The message indicating which exception
-   occurred is the always last string in the list.
+   Format the exception part of a traceback.  The arguments are the exception
+   type and value such as given by ``sys.last_type`` and ``sys.last_value``.
+   The return value is a list of strings, each ending in a newline.  Normally,
+   the list contains a single string; however, for :exc:`SyntaxError`
+   exceptions, it contains several lines that (when printed) display detailed
+   information about where the syntax error occurred.  The message indicating
+   which exception occurred is the always last string in the list.
 
 
-.. function:: format_exception(type, value, tb, limit=None, chain=True)
+.. function:: format_exception(etype, value, tb, limit=None, chain=True)
 
    Format a stack trace and the exception information.  The arguments  have the
    same meaning as the corresponding arguments to :func:`print_exception`.  The
-   return value is a list of strings, each ending in a newline and some containing
-   internal newlines.  When these lines are concatenated and printed, exactly the
-   same text is printed as does :func:`print_exception`.
+   return value is a list of strings, each ending in a newline and some
+   containing internal newlines.  When these lines are concatenated and printed,
+   exactly the same text is printed as does :func:`print_exception`.
 
 
 .. function:: format_exc(limit=None, chain=True)
 
-   This is like ``print_exc(limit)`` but returns a string instead of printing to a
-   file.
+   This is like ``print_exc(limit)`` but returns a string instead of printing to
+   a file.
 
 
 .. function:: format_tb(tb, limit=None)
