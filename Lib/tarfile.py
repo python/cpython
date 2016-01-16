@@ -64,7 +64,10 @@ except NameError:
     pass
 
 # from tarfile import *
-__all__ = ["TarFile", "TarInfo", "is_tarfile", "TarError"]
+__all__ = ["TarFile", "TarInfo", "is_tarfile", "TarError", "ReadError",
+           "CompressionError", "StreamError", "ExtractError", "HeaderError",
+           "ENCODING", "USTAR_FORMAT", "GNU_FORMAT", "PAX_FORMAT",
+           "DEFAULT_FORMAT", "open"]
 
 #---------------------------------------------------------
 # tar constants
