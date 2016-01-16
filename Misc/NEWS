@@ -173,6 +173,8 @@ Build
 Windows
 -------
 
+- Issue #26073: Update the list of magic numbers in launcher
+
 - Issue #26065: Excludes venv from library when generating embeddable
   distro.
 
