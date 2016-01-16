@@ -815,5 +815,14 @@ class CommandLineTestCase(unittest.TestCase):
                       b'href="custom.css" />', stdout)
 
 
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        blacklist = {'error', 'mdays', 'January', 'February', 'EPOCH',
+                     'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY',
+                     'SATURDAY', 'SUNDAY', 'different_locale', 'c',
+                     'prweek', 'week', 'format', 'formatstring', 'main'}
+        support.check__all__(self, calendar, blacklist=blacklist)
+
+
 if __name__ == "__main__":
     unittest.main()
