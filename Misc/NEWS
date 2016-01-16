@@ -170,6 +170,11 @@ Build
 
 - Issue #25798: Update OS X 10.5 installer to use OpenSSL 1.0.2e.
 
+Windows
+-------
+
+- Issue #26065: Excludes venv from library when generating embeddable
+  distro.
 
 What's New in Python 3.5.1 final?
 =================================
