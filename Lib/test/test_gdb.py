@@ -75,6 +75,9 @@ def run_gdb(*args, **env_vars):
     if (gdb_major_version, gdb_minor_version) >= (7, 4):
         base_cmd += ('-iex', 'add-auto-load-safe-path ' + checkout_hook_path)
     proc = subprocess.Popen(base_cmd + args,
+                            # Redirect stdin to prevent GDB from messing with
+                            # the terminal settings
+                            stdin=subprocess.PIPE,
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             env=env)
