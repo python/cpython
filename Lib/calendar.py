@@ -12,7 +12,9 @@ import locale as _locale
 __all__ = ["IllegalMonthError", "IllegalWeekdayError", "setfirstweekday",
            "firstweekday", "isleap", "leapdays", "weekday", "monthrange",
            "monthcalendar", "prmonth", "month", "prcal", "calendar",
-           "timegm", "month_name", "month_abbr", "day_name", "day_abbr"]
+           "timegm", "month_name", "month_abbr", "day_name", "day_abbr",
+           "Calendar", "TextCalendar", "HTMLCalendar", "LocaleTextCalendar",
+           "LocaleHTMLCalendar", "weekheader"]
 
 # Exception raised for bad input (with string parameter for details)
 error = ValueError
