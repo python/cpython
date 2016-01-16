@@ -754,7 +754,7 @@ Enum's boolean evaluation depend on the member's value add the following to
 your class::
 
     def __bool__(self):
-        return bool(self._value_)
+        return bool(self.value)
 
 The :attr:`__members__` attribute is only available on the class.
 
