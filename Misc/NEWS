@@ -88,6 +88,8 @@ Tests
 Build
 -----
 
+- Issue #25824: Fixes sys.winver to not include any architecture suffix.
+
 - Issue #25348: Added ``--pgo`` and ``--pgo-job`` arguments to
   ``PCbuild\build.bat`` for building with Profile-Guided Optimization.  The
   old ``PCbuild\build_pgo.bat`` script is now deprecated, and simply calls

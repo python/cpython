@@ -102,7 +102,6 @@
 
     <!-- The version number for sys.winver -->
     <SysWinVer>$(MajorVersionNumber).$(MinorVersionNumber)</SysWinVer>
-    <SysWinVer Condition="$(Platform) == 'Win32' or $(Platform) == 'x86'">$(SysWinVer)-32</SysWinVer>
   </PropertyGroup>
 
   <!-- Displays the calculated version info -->
