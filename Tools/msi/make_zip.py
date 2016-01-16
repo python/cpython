@@ -23,6 +23,7 @@ EXCLUDE_FROM_LIBRARY = {
     'site-packages',
     'tkinter',
     'turtledemo',
+    'venv',
 }
 
 EXCLUDE_FILE_FROM_LIBRARY = {
