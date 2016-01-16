@@ -125,11 +125,11 @@ def _find_exe(exe, paths=None):
     return exe
 
 # A map keyed by get_platform() return values to values accepted by
-# 'vcvarsall.bat'.  Note a cross-compile may combine these (eg, 'x86_amd64' is
-# the param to cross-compile on x86 targetting amd64.)
+# 'vcvarsall.bat'. Always cross-compile from x86 to work with the
+# lighter-weight MSVC installs that do not include native 64-bit tools.
 PLAT_TO_VCVARS = {
     'win32' : 'x86',
-    'win-amd64' : 'amd64',
+    'win-amd64' : 'x86_amd64',
 }
 
 # A map keyed by get_platform() return values to the file under
@@ -193,19 +193,8 @@ class MSVCCompiler(CCompiler) :
             raise DistutilsPlatformError("--plat-name must be one of {}"
                                          .format(tuple(PLAT_TO_VCVARS)))
 
-        # On x86, 'vcvarsall.bat amd64' creates an env that doesn't work;
-        # to cross compile, you use 'x86_amd64'.
-        # On AMD64, 'vcvarsall.bat amd64' is a native build env; to cross
-        # compile use 'x86' (ie, it runs the x86 compiler directly)
-        if plat_name == get_platform() or plat_name == 'win32':
-            # native build or cross-compile to win32
-            plat_spec = PLAT_TO_VCVARS[plat_name]
-        else:
-            # cross compile from win32 -> some 64bit
-            plat_spec = '{}_{}'.format(
-                PLAT_TO_VCVARS[get_platform()],
-                PLAT_TO_VCVARS[plat_name]
-            )
+        # Get the vcvarsall.bat spec for the requested platform.
+        plat_spec = PLAT_TO_VCVARS[plat_name]
 
         vc_env = _get_vc_env(plat_spec)
         if not vc_env:
