@@ -82,7 +82,8 @@ XXX Possible additions:
 import sys, os
 
 __all__ = ["input", "close", "nextfile", "filename", "lineno", "filelineno",
-           "isfirstline", "isstdin", "FileInput"]
+           "fileno", "isfirstline", "isstdin", "FileInput", "hook_compressed",
+           "hook_encoded"]
 
 _state = None
 
