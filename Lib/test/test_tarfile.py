@@ -1998,7 +1998,7 @@ class MiscTest(unittest.TestCase):
             tarfile.itn(0x10000000000, 6, tarfile.GNU_FORMAT)
 
     def test__all__(self):
-        blacklist = {'version', 'bltn_open', 'symlink_exception',
+        blacklist = {'version', 'symlink_exception',
                      'NUL', 'BLOCKSIZE', 'RECORDSIZE', 'GNU_MAGIC',
                      'POSIX_MAGIC', 'LENGTH_NAME', 'LENGTH_LINK',
                      'LENGTH_PREFIX', 'REGTYPE', 'AREGTYPE', 'LNKTYPE',
@@ -2011,7 +2011,7 @@ class MiscTest(unittest.TestCase):
                      'filemode',
                      'EmptyHeaderError', 'TruncatedHeaderError',
                      'EOFHeaderError', 'InvalidHeaderError',
-                     'SubsequentHeaderError', 'ExFileObject', 'TarIter',
+                     'SubsequentHeaderError', 'ExFileObject',
                      'main'}
         support.check__all__(self, tarfile, blacklist=blacklist)
 
