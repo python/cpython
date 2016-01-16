@@ -1998,7 +1998,7 @@ class MiscTest(unittest.TestCase):
             tarfile.itn(0x10000000000, 6, tarfile.GNU_FORMAT)
 
     def test__all__(self):
-        blacklist = {'version', 'symlink_exception',
+        blacklist = {'version', 'grp', 'pwd', 'symlink_exception',
                      'NUL', 'BLOCKSIZE', 'RECORDSIZE', 'GNU_MAGIC',
                      'POSIX_MAGIC', 'LENGTH_NAME', 'LENGTH_LINK',
                      'LENGTH_PREFIX', 'REGTYPE', 'AREGTYPE', 'LNKTYPE',
