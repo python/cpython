@@ -24,6 +24,7 @@ from fileinput import FileInput, hook_encoded
 
 from test.support import verbose, TESTFN, run_unittest, check_warnings
 from test.support import unlink as safe_unlink
+from test import support
 from unittest import mock
 
 
@@ -911,6 +912,13 @@ class Test_hook_encoded(unittest.TestCase):
             check('U', ['A\n', 'B\n', 'C\n', 'D\u20ac'])
         with self.assertRaises(ValueError):
             check('rb', ['A\n', 'B\r\n', 'C\r', 'D\u20ac'])
+
+
+class MiscTest(unittest.TestCase):
+
+    def test_all(self):
+        blacklist = {'DEFAULT_BUFSIZE'}
+        support.check__all__(self, fileinput, blacklist=blacklist)
 
 
 if __name__ == "__main__":
