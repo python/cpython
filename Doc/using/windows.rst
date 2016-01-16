@@ -219,6 +219,23 @@ avoid collisions between files with the same name.
 
 You may also specify the ``/quiet`` option to hide the progress display.
 
+Modifying an install
+--------------------
+
+Once Python has been installed, you can add or remove features through the
+Programs and Features tool that is part of Windows. Select the Python entry and
+choose "Uninstall/Change" to open the installer in maintenance mode.
+
+"Modify" allows you to add or remove features by modifying the checkboxes -
+unchanged checkboxes will not install or remove anything. Some options cannot be
+changed in this mode, such as the install directory; to modify these, you will
+need to remove and then reinstall Python completely.
+
+"Repair" will verify all the files that should be installed using the current
+settings and replace any that have been removed or modified.
+
+"Uninstall" will remove Python entirely, with the exception of the
+:ref:`launcher`, which has its own entry in Programs and Features.
 
 Other Platforms
 ---------------
