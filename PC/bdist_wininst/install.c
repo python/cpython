@@ -153,6 +153,13 @@ char *failure_reason = NULL;
 HANDLE hBitmap;
 char *bitmap_bytes;
 
+static const char *REGISTRY_SUFFIX_6432 =
+#ifdef MS_WIN64
+                                          "";
+#else
+                                          "-32";
+#endif
+
 
 #define WM_NUMFILES WM_USER+1
 /* wParam: 0, lParam: total number of files */
@@ -657,8 +664,8 @@ static HINSTANCE LoadPythonDll(char *fname)
     if (h)
         return h;
     wsprintf(subkey_name,
-             "SOFTWARE\\Python\\PythonCore\\%d.%d\\InstallPath",
-             py_major, py_minor);
+             "SOFTWARE\\Python\\PythonCore\\%d.%d%s\\InstallPath",
+             py_major, py_minor, REGISTRY_SUFFIX_6432);
     if (ERROR_SUCCESS != RegQueryValue(HKEY_CURRENT_USER, subkey_name,
                                        fullpath, &size) &&
         ERROR_SUCCESS != RegQueryValue(HKEY_LOCAL_MACHINE, subkey_name,
@@ -666,7 +673,9 @@ static HINSTANCE LoadPythonDll(char *fname)
         return NULL;
     strcat(fullpath, "\\");
     strcat(fullpath, fname);
-    return LoadLibrary(fullpath);
+    // We use LOAD_WITH_ALTERED_SEARCH_PATH to ensure any dependent DLLs
+    // next to the Python DLL (eg, the CRT DLL) are also loaded.
+    return LoadLibraryEx(fullpath, NULL, LOAD_WITH_ALTERED_SEARCH_PATH);
 }
 
 static int prepare_script_environment(HINSTANCE hPython)
@@ -2249,6 +2258,8 @@ int DoInstall(void)
 
     GetPrivateProfileString("Setup", "user_access_control", "",
                              user_access_control, sizeof(user_access_control), ini_file);
+
+    strcat(target_version, REGISTRY_SUFFIX_6432);
 
     // See if we need to do the Vista UAC magic.
     if (strcmp(user_access_control, "force")==0) {
