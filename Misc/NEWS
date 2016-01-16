@@ -44,6 +44,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25850: Use cross-compilation by default for 64-bit Windows.
+
 - Issue #17633: Improve zipimport's support for namespace packages.
 
 - Issue #24705: Fix sysconfig._parse_makefile not expanding ${} vars
