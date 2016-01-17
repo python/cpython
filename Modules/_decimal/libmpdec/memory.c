@@ -33,6 +33,11 @@
 #include "memory.h"
 
 
+#if defined(_MSC_VER)
+  #pragma warning(disable : 4232)
+#endif
+
+
 /* Guaranteed minimum allocation for a coefficient. May be changed once
    at program start using mpd_setminalloc(). */
 mpd_ssize_t MPD_MINALLOC = MPD_MINALLOC_MIN;
