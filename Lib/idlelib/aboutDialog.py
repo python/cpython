@@ -110,6 +110,7 @@ class AboutDialog(Toplevel):
                                 command=self.ShowIDLECredits)
         idle_credits_b.pack(side=LEFT, padx=10, pady=10)
 
+    # License, et all, are of type _sitebuiltins._Printer
     def ShowLicense(self):
         self.display_printer_text('About - License', license)
 
@@ -119,14 +120,16 @@ class AboutDialog(Toplevel):
     def ShowPythonCredits(self):
         self.display_printer_text('About - Python Credits', credits)
 
+    # Encode CREDITS.txt to utf-8 for proper version of Loewis.
+    # Specify others as ascii until need utf-8, so catch errors.
     def ShowIDLECredits(self):
-        self.display_file_text('About - Credits', 'CREDITS.txt', 'iso-8859-1')
+        self.display_file_text('About - Credits', 'CREDITS.txt', 'utf-8')
 
     def ShowIDLEAbout(self):
-        self.display_file_text('About - Readme', 'README.txt')
+        self.display_file_text('About - Readme', 'README.txt', 'ascii')
 
     def ShowIDLENEWS(self):
-        self.display_file_text('About - NEWS', 'NEWS.txt')
+        self.display_file_text('About - NEWS', 'NEWS.txt', 'ascii')
 
     def display_printer_text(self, title, printer):
         printer._Printer__setup()
