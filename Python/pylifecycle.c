@@ -796,7 +796,7 @@ Py_NewInterpreter(void)
 
         if (initstdio() < 0)
             Py_FatalError(
-            "Py_Initialize: can't initialize sys standard streams");
+                "Py_Initialize: can't initialize sys standard streams");
         initmain(interp);
         if (!Py_NoSiteFlag)
             initsite();
