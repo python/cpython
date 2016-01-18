@@ -244,6 +244,8 @@ if has_c_implementation:
 ALT_IMPORT_MAPPING = {
     ('_elementtree', 'xml.etree.ElementTree'),
     ('cPickle', 'pickle'),
+    ('StringIO', 'io'),
+    ('cStringIO', 'io'),
 }
 
 ALT_NAME_MAPPING = {
