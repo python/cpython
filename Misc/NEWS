@@ -131,6 +131,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26013: Added compatibility with broken protocol 2 pickles created
+  in old Python 3 versions (3.4.3 and lower).
+
 - Issue #26129: Deprecated accepting non-integers in grp.getgrgid().
 
 - Issue #25850: Use cross-compilation by default for 64-bit Windows.
