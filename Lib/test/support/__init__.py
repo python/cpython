@@ -2053,6 +2053,11 @@ def args_from_interpreter_flags():
     settings in sys.flags and sys.warnoptions."""
     return subprocess._args_from_interpreter_flags()
 
+def optim_args_from_interpreter_flags():
+    """Return a list of command-line arguments reproducing the current
+    optimization settings in sys.flags."""
+    return subprocess._optim_args_from_interpreter_flags()
+
 #============================================================
 # Support for assertions about logging.
 #============================================================

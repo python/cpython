@@ -30,6 +30,7 @@ from test.support import MISSING_C_DOCSTRINGS, cpython_only
 from test.support.script_helper import assert_python_ok, assert_python_failure
 from test import inspect_fodder as mod
 from test import inspect_fodder2 as mod2
+from test import support
 
 from test.test_import import _ready_to_import
 
@@ -3536,14 +3537,14 @@ class TestMain(unittest.TestCase):
 
     def test_details(self):
         module = importlib.import_module('unittest')
-        rc, out, err = assert_python_ok('-m', 'inspect',
+        args = support.optim_args_from_interpreter_flags()
+        rc, out, err = assert_python_ok(*args, '-m', 'inspect',
                                         'unittest', '--details')
         output = out.decode()
         # Just a quick sanity check on the output
         self.assertIn(module.__name__, output)
         self.assertIn(module.__file__, output)
-        if not sys.flags.optimize:
-            self.assertIn(module.__cached__, output)
+        self.assertIn(module.__cached__, output)
         self.assertEqual(err, b'')
 
 

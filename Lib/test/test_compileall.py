@@ -231,10 +231,9 @@ class CommandLineTests(unittest.TestCase):
             raise unittest.SkipTest('not all entries on sys.path are writable')
 
     def _get_run_args(self, args):
-        interp_args = ['-S']
-        if sys.flags.optimize:
-            interp_args.append({1 : '-O', 2 : '-OO'}[sys.flags.optimize])
-        return interp_args + ['-m', 'compileall'] + list(args)
+        return [*support.optim_args_from_interpreter_flags(),
+                '-S', '-m', 'compileall',
+                *args]
 
     def assertRunOK(self, *args, **env_vars):
         rc, out, err = script_helper.assert_python_ok(
