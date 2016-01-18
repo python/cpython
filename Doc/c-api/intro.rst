@@ -258,7 +258,7 @@ sets all items of a list (actually, any mutable sequence) to a given item::
            if (PyObject_SetItem(target, index, item) < 0) {
                Py_DECREF(index);
                return -1;
-       }
+           }
            Py_DECREF(index);
        }
        return 0;
