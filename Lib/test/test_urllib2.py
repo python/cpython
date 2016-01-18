@@ -1350,6 +1350,11 @@ class RequestTests(unittest.TestCase):
         req = Request(url)
         self.assertEqual(req.get_full_url(), url)
 
+    def test_private_attributes(self):
+        self.assertFalse(hasattr(self.get, '_Request__r_xxx'))
+        # Issue #6500: infinite recursion
+        self.assertFalse(hasattr(self.get, '_Request__r_method'))
+
     def test_HTTPError_interface(self):
         """
         Issue 13211 reveals that HTTPError didn't implement the URLError

@@ -39,6 +39,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #6500: Fixed infinite recursion in urllib2.Request.__getattr__().
+
 - Issue #26083: Workaround a subprocess bug that raises an incorrect
   "ValueError: insecure string pickle" exception instead of the actual
   exception on some platforms such as Mac OS X when an exception raised
