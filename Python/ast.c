@@ -3214,14 +3214,14 @@ ast_for_import_stmt(struct compiling *c, const node *n)
             alias_ty import_alias = alias_for_import_name(c, n, 1);
             if (!import_alias)
                 return NULL;
-                asdl_seq_SET(aliases, 0, import_alias);
+            asdl_seq_SET(aliases, 0, import_alias);
         }
         else {
             for (i = 0; i < NCH(n); i += 2) {
                 alias_ty import_alias = alias_for_import_name(c, CHILD(n, i), 1);
                 if (!import_alias)
                     return NULL;
-                    asdl_seq_SET(aliases, i / 2, import_alias);
+                asdl_seq_SET(aliases, i / 2, import_alias);
             }
         }
         if (mod != NULL)
