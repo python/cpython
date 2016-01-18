@@ -183,6 +183,20 @@ class XMLRPCTestCase(unittest.TestCase):
                           xmlrpclib.loads(strg)[0][0])
         self.assertRaises(TypeError, xmlrpclib.dumps, (arg1,))
 
+    def test_dump_encoding(self):
+        value = '\u20ac'
+        strg = xmlrpclib.dumps((value,), encoding='iso-8859-15')
+        strg = "<?xml version='1.0' encoding='iso-8859-15'?>" + strg
+        self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
+        strg = strg.encode('iso-8859-15')
+        self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
+
+        strg = xmlrpclib.dumps((value,), encoding='iso-8859-15',
+                               methodresponse=True)
+        self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
+        strg = strg.encode('iso-8859-15')
+        self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
+
     def test_dump_bytes(self):
         sample = b"my dog has fleas"
         self.assertEqual(sample, xmlrpclib.Binary(sample))
@@ -371,7 +385,7 @@ ADDR = PORT = URL = None
 # The evt is set twice.  First when the server is ready to serve.
 # Second when the server has been shutdown.  The user must clear
 # the event after it has been set the first time to catch the second set.
-def http_server(evt, numrequests, requestHandler=None):
+def http_server(evt, numrequests, requestHandler=None, encoding=None):
     class TestInstanceClass:
         def div(self, x, y):
             return x // y
@@ -400,6 +414,7 @@ def http_server(evt, numrequests, requestHandler=None):
     if not requestHandler:
         requestHandler = xmlrpc.server.SimpleXMLRPCRequestHandler
     serv = MyXMLRPCServer(("localhost", 0), requestHandler,
+                          encoding=encoding,
                           logRequests=False, bind_and_activate=False)
     try:
         serv.server_bind()
@@ -582,6 +597,20 @@ class SimpleServerTestCase(BaseServerTestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
+    def test_client_encoding(self):
+        start_string = '\u20ac'
+        end_string = '\xa3'
+
+        try:
+            p = xmlrpclib.ServerProxy(URL, encoding='iso-8859-15')
+            self.assertEqual(p.add(start_string, end_string),
+                             start_string + end_string)
+        except (xmlrpclib.ProtocolError, socket.error) as e:
+            # ignore failures due to non-blocking socket unavailable errors.
+            if not is_unavailable_exception(e):
+                # protocol error; provide additional information in test output
+                self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
+
     # [ch] The test 404 is causing lots of false alarms.
     def XXXtest_404(self):
         # send POST with http.client, it should return 404 header and
@@ -729,6 +758,26 @@ class SimpleServerTestCase(BaseServerTestCase):
             pass
         self.assertEqual(server('transport')._connection,
                          (None, None))
+
+
+class SimpleServerEncodingTestCase(BaseServerTestCase):
+    @staticmethod
+    def threadFunc(evt, numrequests, requestHandler=None, encoding=None):
+        http_server(evt, numrequests, requestHandler, 'iso-8859-15')
+
+    def test_server_encoding(self):
+        start_string = '\u20ac'
+        end_string = '\xa3'
+
+        try:
+            p = xmlrpclib.ServerProxy(URL)
+            self.assertEqual(p.add(start_string, end_string),
+                             start_string + end_string)
+        except (xmlrpclib.ProtocolError, socket.error) as e:
+            # ignore failures due to non-blocking socket unavailable errors.
+            if not is_unavailable_exception(e):
+                # protocol error; provide additional information in test output
+                self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
 
 class MultiPathServerTestCase(BaseServerTestCase):
@@ -1143,8 +1192,9 @@ class UseBuiltinTypesTestCase(unittest.TestCase):
 def test_main():
     support.run_unittest(XMLRPCTestCase, HelperTestCase, DateTimeTestCase,
             BinaryTestCase, FaultTestCase, UseBuiltinTypesTestCase,
-            SimpleServerTestCase, KeepaliveServerTestCase1,
-            KeepaliveServerTestCase2, GzipServerTestCase, GzipUtilTestCase,
+            SimpleServerTestCase, SimpleServerEncodingTestCase,
+            KeepaliveServerTestCase1, KeepaliveServerTestCase2,
+            GzipServerTestCase, GzipUtilTestCase,
             MultiPathServerTestCase, ServerProxyTestCase, FailingServerTestCase,
             CGIHandlerTestCase)
 
