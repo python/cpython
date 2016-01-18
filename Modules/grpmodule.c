@@ -100,14 +100,25 @@ grp_getgrgid_impl(PyModuleDef *module, PyObject *id)
     gid_t gid;
     struct group *p;
 
-    py_int_id = PyNumber_Long(id);
-    if (!py_int_id)
+    if (!_Py_Gid_Converter(id, &gid)) {
+        if (!PyErr_ExceptionMatches(PyExc_TypeError)) {
             return NULL;
-    if (!_Py_Gid_Converter(py_int_id, &gid)) {
+        }
+        PyErr_Clear();
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                             "group id must be int, not %.200",
+                             id->ob_type->tp_name) < 0) {
+            return NULL;
+        }
+        py_int_id = PyNumber_Long(id);
+        if (!py_int_id)
+            return NULL;
+        if (!_Py_Gid_Converter(py_int_id, &gid)) {
+            Py_DECREF(py_int_id);
+            return NULL;
+        }
         Py_DECREF(py_int_id);
-        return NULL;
     }
-    Py_DECREF(py_int_id);
 
     if ((p = getgrgid(gid)) == NULL) {
         PyObject *gid_obj = _PyLong_FromGid(gid);

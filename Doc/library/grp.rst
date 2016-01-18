@@ -42,6 +42,9 @@ It defines the following items:
    Return the group database entry for the given numeric group ID. :exc:`KeyError`
    is raised if the entry asked for cannot be found.
 
+   .. deprecated:: 3.6
+      Since Python 3.6 the support of non-integer arguments like floats or
+      strings in :func:`getgrgid` is deprecated.
 
 .. function:: getgrnam(name)
 
