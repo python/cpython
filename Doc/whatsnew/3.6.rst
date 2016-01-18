@@ -227,6 +227,13 @@ API and Feature Removals
   :func:`inspect.getmodulename` should be used for obtaining the module
   name for a given path.
 
+* ``traceback.Ignore`` class and ``traceback.usage``, ``traceback.modname``,
+  ``traceback.fullmodname``, ``traceback.find_lines_from_code``,
+  ``traceback.find_lines``, ``traceback.find_strings``,
+  ``traceback.find_executable_lines`` methods were removed from the
+  :mod:`traceback` module. They were undocumented methods deprecated since
+  Python 3.2 and equivalent functionality is available from private methods.
+
 
 Porting to Python 3.6
 =====================
