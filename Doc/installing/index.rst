@@ -82,10 +82,12 @@ dependencies from the Python Packaging Index::
    Python.
 
 It's also possible to specify an exact or minimum version directly on the
-command line::
+command line. When using comparator operators such as ``>``, ``<`` or some other
+special character which get interpreted by shell, the package name and the
+version should be enclosed within double quotes::
 
     python -m pip install SomePackage==1.0.4    # specific version
-    python -m pip install 'SomePackage>=1.0.4'  # minimum version
+    python -m pip install "SomePackage>=1.0.4"  # minimum version
 
 Normally, if a suitable module is already installed, attempting to install
 it again will have no effect. Upgrading existing modules must be requested
