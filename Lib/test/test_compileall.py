@@ -103,6 +103,18 @@ class CompileallTests(unittest.TestCase):
                                                 force=False, quiet=2))
 
     def test_compile_path(self):
+        # Exclude Lib/test/ which contains invalid Python files like
+        # Lib/test/badsyntax_pep3120.py
+        testdir = os.path.realpath(os.path.dirname(__file__))
+        if testdir in sys.path:
+            self.addCleanup(setattr, sys, 'path', sys.path)
+
+            sys.path = list(sys.path)
+            try:
+                sys.path.remove(testdir)
+            except ValueError:
+                pass
+
         self.assertTrue(compileall.compile_path(quiet=2))
 
         with test.test_importlib.util.import_state(path=[self.directory]):
