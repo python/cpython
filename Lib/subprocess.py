@@ -520,6 +520,16 @@ DEVNULL = -3
 # but it's here so that it can be imported when Python is compiled without
 # threads.
 
+def _optim_args_from_interpreter_flags():
+    """Return a list of command-line arguments reproducing the current
+    optimization settings in sys.flags."""
+    args = []
+    value = sys.flags.optimize
+    if value > 0:
+        args.append('-' + 'O' * value)
+    return args
+
+
 def _args_from_interpreter_flags():
     """Return a list of command-line arguments reproducing the current
     settings in sys.flags and sys.warnoptions."""
@@ -527,7 +537,6 @@ def _args_from_interpreter_flags():
         'debug': 'd',
         # 'inspect': 'i',
         # 'interactive': 'i',
-        'optimize': 'O',
         'dont_write_bytecode': 'B',
         'no_user_site': 's',
         'no_site': 'S',
@@ -535,8 +544,9 @@ def _args_from_interpreter_flags():
         'verbose': 'v',
         'bytes_warning': 'b',
         'quiet': 'q',
+        # -O is handled in _optim_args_from_interpreter_flags()
     }
-    args = []
+    args = _optim_args_from_interpreter_flags()
     for flag, opt in flag_opt_map.items():
         v = getattr(sys.flags, flag)
         if v > 0:
