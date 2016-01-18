@@ -393,7 +393,7 @@ class DateTime:
         elif datetime and isinstance(other, datetime.datetime):
             s = self.value
             o = other.strftime("%Y%m%dT%H:%M:%S")
-        elif isinstance(other, (str, unicode)):
+        elif isinstance(other, basestring):
             s = self.value
             o = other
         elif hasattr(other, "timetuple"):
@@ -1560,7 +1560,7 @@ class ServerProxy:
                  allow_none=0, use_datetime=0, context=None):
         # establish a "logical" server connection
 
-        if isinstance(uri, unicode):
+        if unicode and isinstance(uri, unicode):
             uri = uri.encode('ISO-8859-1')
 
         # get the url

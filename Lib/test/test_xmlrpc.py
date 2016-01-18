@@ -23,13 +23,6 @@ try:
 except ImportError:
     gzip = None
 
-try:
-    unicode
-except NameError:
-    have_unicode = False
-else:
-    have_unicode = True
-
 alist = [{'astring': 'foo@bar.baz.spam',
           'afloat': 7283.43,
           'anint': 2**20,
@@ -37,14 +30,18 @@ alist = [{'astring': 'foo@bar.baz.spam',
           'anotherlist': ['.zyx.41'],
           'abase64': xmlrpclib.Binary("my dog has fleas"),
           'boolean': xmlrpclib.False,
-          'unicode': u'\u4000\u6000\u8000',
-          u'ukey\u4000': 'regular value',
           'datetime1': xmlrpclib.DateTime('20050210T11:41:23'),
           'datetime2': xmlrpclib.DateTime(
                         (2005, 02, 10, 11, 41, 23, 0, 1, -1)),
           'datetime3': xmlrpclib.DateTime(
                         datetime.datetime(2005, 02, 10, 11, 41, 23)),
           }]
+
+if test_support.have_unicode:
+    alist[0].update({
+          'unicode': test_support.u(r'\u4000\u6000\u8000'),
+          test_support.u(r'ukey\u4000'): 'regular value',
+    })
 
 class XMLRPCTestCase(unittest.TestCase):
 
@@ -150,6 +147,7 @@ class XMLRPCTestCase(unittest.TestCase):
                          xmlrpclib.loads(strg)[0][0])
         self.assertRaises(TypeError, xmlrpclib.dumps, (arg1,))
 
+    @test_support.requires_unicode
     def test_default_encoding_issues(self):
         # SF bug #1115989: wrong decoding in '_stringify'
         utf8 = """<?xml version='1.0' encoding='iso-8859-1'?>
@@ -182,7 +180,7 @@ class XMLRPCTestCase(unittest.TestCase):
                 temp_sys.setdefaultencoding(old_encoding)
 
         items = d.items()
-        if have_unicode:
+        if test_support.have_unicode:
             self.assertEqual(s, u"abc \x95")
             self.assertIsInstance(s, unicode)
             self.assertEqual(items, [(u"def \x96", u"ghi \x97")])
@@ -477,6 +475,7 @@ class SimpleServerTestCase(BaseServerTestCase):
                 # protocol error; provide additional information in test output
                 self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
 
+    @test_support.requires_unicode
     def test_unicode_host(self):
         server = xmlrpclib.ServerProxy(u"http://%s:%d/RPC2"%(ADDR, PORT))
         self.assertEqual(server.add("a", u"\xe9"), u"a\xe9")

@@ -39,6 +39,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #21847: Fixed xmlrpclib on Unicode-disabled builds.
+
 - Issue #6500: Fixed infinite recursion in urllib2.Request.__getattr__().
 
 - Issue #26083: Workaround a subprocess bug that raises an incorrect
