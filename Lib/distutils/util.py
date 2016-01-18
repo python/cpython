@@ -7,8 +7,8 @@ one of the other *util.py modules.
 import os
 import re
 import importlib.util
-import sys
 import string
+import sys
 from distutils.errors import DistutilsPlatformError
 from distutils.dep_util import newer
 from distutils.spawn import spawn
@@ -350,6 +350,11 @@ def byte_compile (py_files,
     generated in indirect mode; unless you know what you're doing, leave
     it set to None.
     """
+
+    # Late import to fix a bootstrap issue: _posixsubprocess is built by
+    # setup.py, but setup.py uses distutils.
+    import subprocess
+
     # nothing is done if sys.dont_write_bytecode is True
     if sys.dont_write_bytecode:
         raise DistutilsByteCompileError('byte-compiling is disabled.')
@@ -412,11 +417,9 @@ byte_compile(files, optimize=%r, force=%r,
 
             script.close()
 
-        cmd = [sys.executable, script_name]
-        if optimize == 1:
-            cmd.insert(1, "-O")
-        elif optimize == 2:
-            cmd.insert(1, "-OO")
+        cmd = [sys.executable]
+        cmd.extend(subprocess._optim_args_from_interpreter_flags())
+        cmd.append(script_name)
         spawn(cmd, dry_run=dry_run)
         execute(os.remove, (script_name,), "removing %s" % script_name,
                 dry_run=dry_run)
