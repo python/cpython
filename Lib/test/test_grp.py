@@ -92,5 +92,15 @@ class GroupDatabaseTestCase(unittest.TestCase):
 
         self.assertRaises(KeyError, grp.getgrgid, fakegid)
 
+    def test_noninteger_gid(self):
+        entries = grp.getgrall()
+        if not entries:
+            self.skipTest('no groups')
+        # Choose an existent gid.
+        gid = entries[0][2]
+        self.assertWarns(DeprecationWarning, grp.getgrgid, float(gid))
+        self.assertWarns(DeprecationWarning, grp.getgrgid, str(gid))
+
+
 if __name__ == "__main__":
     unittest.main()
