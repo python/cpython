@@ -1047,7 +1047,7 @@ test_k_code(PyObject *self)
     value = PyLong_AsUnsignedLongMask(num);
     if (value != ULONG_MAX)
         return raiseTestError("test_k_code",
-        "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
+            "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
 
     PyTuple_SET_ITEM(tuple, 0, num);
 
@@ -1066,7 +1066,7 @@ test_k_code(PyObject *self)
     value = PyLong_AsUnsignedLongMask(num);
     if (value != (unsigned long)-0x42)
         return raiseTestError("test_k_code",
-        "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
+            "PyLong_AsUnsignedLongMask() returned wrong value for long 0xFFF...FFF");
 
     PyTuple_SET_ITEM(tuple, 0, num);
 
