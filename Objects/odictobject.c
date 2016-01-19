@@ -772,19 +772,17 @@ _odict_clear_nodes(PyODictObject *od)
 {
     _ODictNode *node, *next;
 
-    if (!_odict_EMPTY(od)) {
-        node = _odict_FIRST(od);
-        while (node != NULL) {
-            next = _odictnode_NEXT(node);
-            _odictnode_DEALLOC(node);
-            node = next;
-        }
-        _odict_FIRST(od) = NULL;
-        _odict_LAST(od) = NULL;
-    }
-
     _odict_free_fast_nodes(od);
     od->od_fast_nodes = NULL;
+
+    node = _odict_FIRST(od);
+    _odict_FIRST(od) = NULL;
+    _odict_LAST(od) = NULL;
+    while (node != NULL) {
+        next = _odictnode_NEXT(node);
+        _odictnode_DEALLOC(node);
+        node = next;
+    }
 }
 
 /* There isn't any memory management of nodes past this point. */
@@ -1233,8 +1231,6 @@ odict_clear(register PyODictObject *od)
 {
     PyDict_Clear((PyObject *)od);
     _odict_clear_nodes(od);
-    _odict_FIRST(od) = NULL;
-    _odict_LAST(od) = NULL;
     if (_odict_resize(od) < 0)
         return NULL;
     Py_RETURN_NONE;
@@ -1556,8 +1552,13 @@ PyDoc_STRVAR(odict_doc,
 static int
 odict_traverse(PyODictObject *od, visitproc visit, void *arg)
 {
+    _ODictNode *node;
+
     Py_VISIT(od->od_inst_dict);
     Py_VISIT(od->od_weakreflist);
+    _odict_FOREACH(od, node) {
+        Py_VISIT(_odictnode_KEY(node));
+    }
     return PyDict_Type.tp_traverse((PyObject *)od, visit, arg);
 }
 
