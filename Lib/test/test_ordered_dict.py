@@ -1,10 +1,12 @@
 import contextlib
 import copy
+import gc
 import pickle
 from random import randrange, shuffle
 import struct
 import sys
 import unittest
+import weakref
 from collections.abc import MutableMapping
 from test import mapping_tests, support
 
@@ -592,6 +594,17 @@ class OrderedDictTests:
         od = OrderedDict()
         dict.update(od, [('spam', 1)])
         self.assertNotIn('NULL', repr(od))
+
+    def test_reference_loop(self):
+        # Issue 25935
+        OrderedDict = self.OrderedDict
+        class A:
+            od = OrderedDict()
+        A.od[A] = None
+        r = weakref.ref(A)
+        del A
+        gc.collect()
+        self.assertIsNone(r())
 
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
