@@ -5,6 +5,7 @@ import textwrap
 import unittest
 import functools
 import contextlib
+import os.path
 from test import support
 from nntplib import NNTP, GroupInfo
 import nntplib
@@ -13,8 +14,13 @@ try:
     import ssl
 except ImportError:
     ssl = None
+try:
+    import threading
+except ImportError:
+    threading = None
 
 TIMEOUT = 30
+certfile = os.path.join(os.path.dirname(__file__), 'keycert3.pem')
 
 # TODO:
 # - test the `file` arg to more commands
@@ -201,24 +207,6 @@ class NetworkedNNTPTestsMixin:
         # This re-emits the command
         resp, caps = self.server.capabilities()
         _check_caps(caps)
-
-    @unittest.skipUnless(ssl, 'requires SSL support')
-    def test_starttls(self):
-        file = self.server.file
-        sock = self.server.sock
-        try:
-            self.server.starttls()
-        except nntplib.NNTPPermanentError:
-            self.skipTest("STARTTLS not supported by server.")
-        else:
-            # Check that the socket and internal pseudo-file really were
-            # changed.
-            self.assertNotEqual(file, self.server.file)
-            self.assertNotEqual(sock, self.server.sock)
-            # Check that the new socket really is an SSL one
-            self.assertIsInstance(self.server.sock, ssl.SSLSocket)
-            # Check that trying starttls when it's already active fails.
-            self.assertRaises(ValueError, self.server.starttls)
 
     def test_zlogin(self):
         # This test must be the penultimate because further commands will be
@@ -1519,6 +1507,64 @@ class MockSslTests(MockSocketTests):
     @staticmethod
     def nntp_class(*pos, **kw):
         return nntplib.NNTP_SSL(*pos, ssl_context=bypass_context, **kw)
+
+@unittest.skipUnless(threading, 'requires multithreading')
+class LocalServerTests(unittest.TestCase):
+    def setUp(self):
+        sock = socket.socket()
+        port = support.bind_port(sock)
+        sock.listen()
+        self.background = threading.Thread(
+            target=self.run_server, args=(sock,))
+        self.background.start()
+        self.addCleanup(self.background.join)
+
+        self.nntp = NNTP(support.HOST, port, usenetrc=False).__enter__()
+        self.addCleanup(self.nntp.__exit__, None, None, None)
+
+    def run_server(self, sock):
+        # Could be generalized to handle more commands in separate methods
+        with sock:
+            [client, _] = sock.accept()
+        with contextlib.ExitStack() as cleanup:
+            cleanup.enter_context(client)
+            reader = cleanup.enter_context(client.makefile('rb'))
+            client.sendall(b'200 Server ready\r\n')
+            while True:
+                cmd = reader.readline()
+                if cmd == b'CAPABILITIES\r\n':
+                    client.sendall(
+                        b'101 Capability list:\r\n'
+                        b'VERSION 2\r\n'
+                        b'STARTTLS\r\n'
+                        b'.\r\n'
+                    )
+                elif cmd == b'STARTTLS\r\n':
+                    reader.close()
+                    client.sendall(b'382 Begin TLS negotiation now\r\n')
+                    client = ssl.wrap_socket(
+                        client, server_side=True, certfile=certfile)
+                    cleanup.enter_context(client)
+                    reader = cleanup.enter_context(client.makefile('rb'))
+                elif cmd == b'QUIT\r\n':
+                    client.sendall(b'205 Bye!\r\n')
+                    break
+                else:
+                    raise ValueError('Unexpected command {!r}'.format(cmd))
+
+    @unittest.skipUnless(ssl, 'requires SSL support')
+    def test_starttls(self):
+        file = self.nntp.file
+        sock = self.nntp.sock
+        self.nntp.starttls()
+        # Check that the socket and internal pseudo-file really were
+        # changed.
+        self.assertNotEqual(file, self.nntp.file)
+        self.assertNotEqual(sock, self.nntp.sock)
+        # Check that the new socket really is an SSL one
+        self.assertIsInstance(self.nntp.sock, ssl.SSLSocket)
+        # Check that trying starttls when it's already active fails.
+        self.assertRaises(ValueError, self.nntp.starttls)
 
 
 if __name__ == "__main__":
