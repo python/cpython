@@ -1,7 +1,7 @@
 # Copyright (C) 2005 Martin v. Löwis
 # Licensed to PSF under a Contributor Agreement.
 from _msi import *
-import glob
+import fnmatch
 import os
 import re
 import string
@@ -379,7 +379,13 @@ class Directory:
     def glob(self, pattern, exclude = None):
         """Add a list of files to the current component as specified in the
         glob pattern. Individual files can be excluded in the exclude list."""
-        files = glob.glob1(self.absolute, pattern)
+        try:
+            files = os.listdir(self.absolute)
+        except OSError:
+            return []
+        if pattern[:1] != '.':
+            files = (f for f in files if f[0] != '.')
+        files = fnmatch.filter(files, pattern)
         for f in files:
             if exclude and f in exclude: continue
             self.add_file(f)
