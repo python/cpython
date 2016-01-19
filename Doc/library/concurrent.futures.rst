@@ -42,7 +42,7 @@ Executor Objects
 
        Equivalent to :func:`map(func, *iterables) <map>` except *func* is executed
        asynchronously and several calls to *func* may be made concurrently.  The
-       returned iterator raises a :exc:`TimeoutError` if
+       returned iterator raises a :exc:`concurrent.futures.TimeoutError` if
        :meth:`~iterator.__next__` is called and the result isn't available
        after *timeout* seconds from the original call to :meth:`Executor.map`.
        *timeout* can be an int or a float.  If *timeout* is not specified or
@@ -274,11 +274,12 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
 
        Return the value returned by the call. If the call hasn't yet completed
        then this method will wait up to *timeout* seconds.  If the call hasn't
-       completed in *timeout* seconds, then a :exc:`TimeoutError` will be
-       raised. *timeout* can be an int or float.  If *timeout* is not specified
-       or ``None``, there is no limit to the wait time.
+       completed in *timeout* seconds, then a
+       :exc:`concurrent.futures.TimeoutError` will be raised. *timeout* can be
+       an int or float.  If *timeout* is not specified or ``None``, there is no
+       limit to the wait time.
 
-       If the future is cancelled before completing then :exc:`CancelledError`
+       If the future is cancelled before completing then :exc:`.CancelledError`
        will be raised.
 
        If the call raised, this method will raise the same exception.
@@ -287,11 +288,12 @@ The :class:`Future` class encapsulates the asynchronous execution of a callable.
 
        Return the exception raised by the call.  If the call hasn't yet
        completed then this method will wait up to *timeout* seconds.  If the
-       call hasn't completed in *timeout* seconds, then a :exc:`TimeoutError`
-       will be raised.  *timeout* can be an int or float.  If *timeout* is not
-       specified or ``None``, there is no limit to the wait time.
+       call hasn't completed in *timeout* seconds, then a
+       :exc:`concurrent.futures.TimeoutError` will be raised.  *timeout* can be
+       an int or float.  If *timeout* is not specified or ``None``, there is no
+       limit to the wait time.
 
-       If the future is cancelled before completing then :exc:`CancelledError`
+       If the future is cancelled before completing then :exc:`.CancelledError`
        will be raised.
 
        If the call completed without raising, ``None`` is returned.
@@ -391,13 +393,12 @@ Module Functions
    Returns an iterator over the :class:`Future` instances (possibly created by
    different :class:`Executor` instances) given by *fs* that yields futures as
    they complete (finished or were cancelled). Any futures given by *fs* that
-   are duplicated will be returned once. Any futures that completed
-   before :func:`as_completed` is called will be yielded first.  The returned
-   iterator raises a :exc:`TimeoutError` if :meth:`~iterator.__next__` is
-   called and the result isn't available after *timeout* seconds from the
-   original call to :func:`as_completed`.  *timeout* can be an int or float.
-   If *timeout* is not specified or ``None``, there is no limit to the wait
-   time.
+   are duplicated will be returned once. Any futures that completed before
+   :func:`as_completed` is called will be yielded first.  The returned iterator
+   raises a :exc:`concurrent.futures.TimeoutError` if :meth:`~iterator.__next__`
+   is called and the result isn't available after *timeout* seconds from the
+   original call to :func:`as_completed`.  *timeout* can be an int or float. If
+   *timeout* is not specified or ``None``, there is no limit to the wait time.
 
 
 .. seealso::
@@ -409,6 +410,16 @@ Module Functions
 
 Exception classes
 -----------------
+
+.. currentmodule:: concurrent.futures
+
+.. exception:: CancelledError
+
+   Raised when a future is cancelled.
+
+.. exception:: TimeoutError
+
+   Raised when a future operation exceeds the given timeout.
 
 .. currentmodule:: concurrent.futures.process
 
