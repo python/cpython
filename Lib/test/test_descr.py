@@ -4699,6 +4699,7 @@ order (MRO) for bases """
         for o in gc.get_objects():
             self.assertIsNot(type(o), X)
 
+
 class DictProxyTests(unittest.TestCase):
     def setUp(self):
         class C(object):
