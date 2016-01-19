@@ -25,6 +25,11 @@ try:
 except ImportError:
     ssl = None
 
+try:
+    import threading
+except ImportError:
+    threading = None
+
 skipInVenv = unittest.skipIf(sys.prefix != sys.base_prefix,
                              'Test not appropriate in a venv')
 
@@ -319,6 +324,8 @@ class EnsurePipTest(BaseTest):
 
     # Requesting pip fails without SSL (http://bugs.python.org/issue19744)
     @unittest.skipIf(ssl is None, ensurepip._MISSING_SSL_MESSAGE)
+    @unittest.skipUnless(threading, 'some dependencies of pip import threading'
+                                    ' module unconditionally')
     def test_with_pip(self):
         rmtree(self.env_dir)
         with EnvironmentVarGuard() as envvars:
