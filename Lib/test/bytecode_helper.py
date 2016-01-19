@@ -32,8 +32,8 @@ class BytecodeTestCase(unittest.TestCase):
         """Throws AssertionError if op is found"""
         for instr in dis.get_instructions(x):
             if instr.opname == opname:
-                disassembly = self.get_disassembly_as_string(co)
-                if opargval is _UNSPECIFIED:
+                disassembly = self.get_disassembly_as_string(x)
+                if argval is _UNSPECIFIED:
                     msg = '%s occurs in bytecode:\n%s' % (opname, disassembly)
                 elif instr.argval == argval:
                     msg = '(%s,%r) occurs in bytecode:\n%s'
