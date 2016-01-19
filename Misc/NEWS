@@ -13,6 +13,8 @@ Core and Builtins
 - Issue #25791: Trying to resolve a relative import without __spec__ or
   __package__ defined now raises an ImportWarning
 
+- Issue #25731: Fix set and deleting __new__ on a class.
+
 - Issue #25961: Disallowed null characters in the type name.
 
 - Issue #25973: Fix segfault when an invalid nonlocal statement binds a name
