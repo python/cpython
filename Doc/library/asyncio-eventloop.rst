@@ -739,11 +739,11 @@ Server
       Stop serving: close listening sockets and set the :attr:`sockets`
       attribute to ``None``.
 
-      The sockets that represent existing incoming client connections are
-      leaved open.
+      The sockets that represent existing incoming client connections are left
+      open.
 
-      The server is closed asynchonously, use the :meth:`wait_closed` coroutine
-      to wait until the server is closed.
+      The server is closed asynchronously, use the :meth:`wait_closed`
+      coroutine to wait until the server is closed.
 
    .. coroutinemethod:: wait_closed()
 
