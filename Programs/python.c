@@ -4,7 +4,7 @@
 #include <locale.h>
 
 #ifdef __FreeBSD__
-#include <floatingpoint.h>
+#include <fenv.h>
 #endif
 
 #ifdef MS_WINDOWS
@@ -23,9 +23,6 @@ main(int argc, char **argv)
     wchar_t **argv_copy2;
     int i, res;
     char *oldloc;
-#ifdef __FreeBSD__
-    fp_except_t m;
-#endif
 
     argv_copy = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     argv_copy2 = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
@@ -40,8 +37,7 @@ main(int argc, char **argv)
      * exceptions by default.  Here we disable them.
      */
 #ifdef __FreeBSD__
-    m = fpgetmask();
-    fpsetmask(m & ~FP_X_OFL);
+    fedisableexcept(FE_OVERFLOW);
 #endif
 
     oldloc = _PyMem_RawStrdup(setlocale(LC_ALL, NULL));
