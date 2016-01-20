@@ -211,6 +211,11 @@ TCLTK_LIBS=	@TCLTK_LIBS@
 # The task to run while instrument when building the profile-opt target
 PROFILE_TASK=-m test.regrtest --pgo
 
+# report files for gcov / lcov coverage report
+COVERAGE_INFO=	$(abs_builddir)/coverage.info
+COVERAGE_REPORT=$(abs_builddir)/lcov-report
+COVERAGE_REPORT_OPTIONS=--no-branch-coverage --title "CPython lcov report"
+
 # === Definitions added by makesetup ===
 
 
@@ -457,10 +462,45 @@ build_all_merge_profile:
 build_all_use_profile:
 	$(MAKE) all CFLAGS="$(CFLAGS) $(PGO_PROF_USE_FLAG)"
 
+# Compile and run with gcov
+.PHONY=coverage coverage-lcov coverage-report
 coverage:
 	@echo "Building with support for coverage checking:"
-	$(MAKE) clean
+	$(MAKE) clean profile-removal
 	$(MAKE) all CFLAGS="$(CFLAGS) -O0 -pg -fprofile-arcs -ftest-coverage" LIBS="$(LIBS) -lgcov"
+
+coverage-lcov:
+	@echo "Creating Coverage HTML report with LCOV:"
+	@rm -f $(COVERAGE_INFO)
+	@rm -rf $(COVERAGE_REPORT)
+	@lcov --capture --directory $(abs_builddir) \
+	    --base-directory $(realpath $(abs_builddir)) \
+	    --path $(realpath $(abs_srcdir)) \
+	    --output-file $(COVERAGE_INFO)
+	: # remove 3rd party modules and system headers
+	@lcov --remove $(COVERAGE_INFO) \
+	    '*/Modules/_ctypes/libffi*/*' \
+	    '*/Modules/expat/*' \
+	    '*/Modules/zlib/*' \
+	    '*/Include/*' \
+	    '/usr/include/*' \
+	    '/usr/local/include/*' \
+	    --output-file $(COVERAGE_INFO)
+	@genhtml $(COVERAGE_INFO) --output-directory $(COVERAGE_REPORT) \
+	    $(COVERAGE_REPORT_OPTIONS)
+	@echo
+	@echo "lcov report at $(COVERAGE_REPORT)/index.html"
+	@echo
+
+coverage-report:
+	: # force rebuilding of parser
+	@touch $(GRAMMAR_INPUT)
+	: # build with coverage info
+	$(MAKE) coverage
+	: # run tests, ignore failures
+	$(TESTPYTHON) $(TESTPROG) $(TESTOPTS) || true
+	: # build lcov report
+	$(MAKE) coverage-lcov
 
 
 # Build the interpreter

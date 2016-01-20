@@ -30,6 +30,7 @@ Modules/config.c
 Modules/ld_so_aix$
 Parser/pgen$
 Parser/pgen.stamp$
+^lcov-report/
 ^core
 ^python-gdb.py
 ^pybuilddir.txt
@@ -81,6 +82,10 @@ PCbuild/*.lib
 PCbuild/*.pdb
 PCbuild/amd64
 PCbuild/obj
+*.gcda
+*.gcno
+*.gcov
+coverage.info
 .coverage
 coverage/
 externals/
