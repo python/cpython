@@ -1397,7 +1397,7 @@ error:
     Py_XDECREF(name);
     Py_XDECREF(value);
     /* No return value, therefore clear error state if possible */
-    if (_Py_atomic_load_relaxed(&_PyThreadState_Current))
+    if (_PyThreadState_UncheckedGet())
         PyErr_Clear();
 }
 

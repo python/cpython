@@ -3,6 +3,12 @@
 
 #include "Python.h"
 
+#ifndef Py_BUILD_CORE
+/* ensure that PyThreadState_GET() is a macro, not an alias to
+ * PyThreadState_Get() */
+#  error "pystate.c must be compiled with Py_BUILD_CORE defined"
+#endif
+
 /* --------------------------------------------------------------------------
 CAUTION
 
@@ -423,7 +429,7 @@ tstate_delete_common(PyThreadState *tstate)
 void
 PyThreadState_Delete(PyThreadState *tstate)
 {
-    if (tstate == (PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current))
+    if (tstate == PyThreadState_GET())
         Py_FatalError("PyThreadState_Delete: tstate is still current");
 #ifdef WITH_THREAD
     if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
@@ -437,8 +443,7 @@ PyThreadState_Delete(PyThreadState *tstate)
 void
 PyThreadState_DeleteCurrent()
 {
-    PyThreadState *tstate = (PyThreadState*)_Py_atomic_load_relaxed(
-        &_PyThreadState_Current);
+    PyThreadState *tstate = PyThreadState_GET();
     if (tstate == NULL)
         Py_FatalError(
             "PyThreadState_DeleteCurrent: no current tstate");
@@ -489,10 +494,16 @@ _PyThreadState_DeleteExcept(PyThreadState *tstate)
 
 
 PyThreadState *
+_PyThreadState_UncheckedGet(void)
+{
+    return PyThreadState_GET();
+}
+
+
+PyThreadState *
 PyThreadState_Get(void)
 {
-    PyThreadState *tstate = (PyThreadState*)_Py_atomic_load_relaxed(
-        &_PyThreadState_Current);
+    PyThreadState *tstate = PyThreadState_GET();
     if (tstate == NULL)
         Py_FatalError("PyThreadState_Get: no current thread");
 
@@ -503,8 +514,7 @@ PyThreadState_Get(void)
 PyThreadState *
 PyThreadState_Swap(PyThreadState *newts)
 {
-    PyThreadState *oldts = (PyThreadState*)_Py_atomic_load_relaxed(
-        &_PyThreadState_Current);
+    PyThreadState *oldts = PyThreadState_GET();
 
     _Py_atomic_store_relaxed(&_PyThreadState_Current, newts);
     /* It should not be possible for more than one thread state
@@ -535,8 +545,7 @@ PyThreadState_Swap(PyThreadState *newts)
 PyObject *
 PyThreadState_GetDict(void)
 {
-    PyThreadState *tstate = (PyThreadState*)_Py_atomic_load_relaxed(
-        &_PyThreadState_Current);
+    PyThreadState *tstate = PyThreadState_GET();
     if (tstate == NULL)
         return NULL;
 
@@ -682,7 +691,7 @@ PyThreadState_IsCurrent(PyThreadState *tstate)
 {
     /* Must be the tstate for this thread */
     assert(PyGILState_GetThisThreadState()==tstate);
-    return tstate == (PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current);
+    return tstate == PyThreadState_GET();
 }
 
 /* Internal initialization/finalization functions called by
@@ -774,9 +783,7 @@ PyGILState_GetThisThreadState(void)
 int
 PyGILState_Check(void)
 {
-    /* can't use PyThreadState_Get() since it will assert that it has the GIL */
-    PyThreadState *tstate = (PyThreadState*)_Py_atomic_load_relaxed(
-        &_PyThreadState_Current);
+    PyThreadState *tstate = PyThreadState_GET();
     return tstate && (tstate == PyGILState_GetThisThreadState());
 }
 
