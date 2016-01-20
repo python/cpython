@@ -149,7 +149,8 @@ class XMLRPCTestCase(unittest.TestCase):
 
     @test_support.requires_unicode
     def test_dump_encoding(self):
-        value = unichr(0x20ac)
+        value = {test_support.u(r'key\u20ac\xa4'):
+                 test_support.u(r'value\u20ac\xa4')}
         strg = xmlrpclib.dumps((value,), encoding='iso-8859-15')
         strg = "<?xml version='1.0' encoding='iso-8859-15'?>" + strg
         self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
@@ -157,6 +158,12 @@ class XMLRPCTestCase(unittest.TestCase):
         strg = xmlrpclib.dumps((value,), encoding='iso-8859-15',
                                methodresponse=True)
         self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
+
+        methodname = test_support.u(r'method\u20ac\xa4')
+        strg = xmlrpclib.dumps((value,), encoding='iso-8859-15',
+                               methodname=methodname)
+        self.assertEqual(xmlrpclib.loads(strg)[0][0], value)
+        self.assertEqual(xmlrpclib.loads(strg)[1], methodname)
 
     @test_support.requires_unicode
     def test_default_encoding_issues(self):
@@ -332,6 +339,7 @@ def http_server(evt, numrequests, requestHandler=None, encoding=None):
         serv.register_multicall_functions()
         serv.register_function(pow)
         serv.register_function(lambda x,y: x+y, 'add')
+        serv.register_function(lambda x: x, test_support.u(r't\xea\u0161t'))
         serv.register_function(my_function)
         serv.register_instance(TestInstanceClass())
         evt.set()
@@ -496,12 +504,24 @@ class SimpleServerTestCase(BaseServerTestCase):
     @test_support.requires_unicode
     def test_client_encoding(self):
         start_string = unichr(0x20ac)
-        end_string = unichr(0xa3)
+        end_string = unichr(0xa4)
 
         try:
             p = xmlrpclib.ServerProxy(URL, encoding='iso-8859-15')
             self.assertEqual(p.add(start_string, end_string),
                              start_string + end_string)
+        except (xmlrpclib.ProtocolError, socket.error) as e:
+            # ignore failures due to non-blocking socket unavailable errors.
+            if not is_unavailable_exception(e):
+                # protocol error; provide additional information in test output
+                self.fail("%s\n%s" % (e, getattr(e, "headers", "")))
+
+    @test_support.requires_unicode
+    def test_nonascii_methodname(self):
+        try:
+            p = xmlrpclib.ServerProxy(URL, encoding='iso-8859-15')
+            m = getattr(p, 't\xea\xa8t')
+            self.assertEqual(m(42), 42)
         except (xmlrpclib.ProtocolError, socket.error) as e:
             # ignore failures due to non-blocking socket unavailable errors.
             if not is_unavailable_exception(e):
@@ -525,6 +545,7 @@ class SimpleServerTestCase(BaseServerTestCase):
             p = xmlrpclib.ServerProxy(URL)
             meth = p.system.listMethods()
             expected_methods = set(['pow', 'div', 'my_function', 'add',
+                                    test_support.u(r't\xea\u0161t'),
                                     'system.listMethods', 'system.methodHelp',
                                     'system.methodSignature', 'system.multicall'])
             self.assertEqual(set(meth), expected_methods)
@@ -635,7 +656,7 @@ class SimpleServerEncodingTestCase(BaseServerTestCase):
     @test_support.requires_unicode
     def test_server_encoding(self):
         start_string = unichr(0x20ac)
-        end_string = unichr(0xa3)
+        end_string = unichr(0xa4)
 
         try:
             p = xmlrpclib.ServerProxy(URL)

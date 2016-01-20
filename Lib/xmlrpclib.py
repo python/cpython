@@ -703,9 +703,8 @@ class Marshaller:
 
     if unicode:
         def dump_unicode(self, value, write, escape=escape):
-            value = value.encode(self.encoding)
             write("<value><string>")
-            write(escape(value))
+            write(escape(value).encode(self.encoding, 'xmlcharrefreplace'))
             write("</string></value>\n")
         dispatch[UnicodeType] = dump_unicode
 
@@ -732,12 +731,13 @@ class Marshaller:
         write("<value><struct>\n")
         for k, v in value.items():
             write("<member>\n")
-            if type(k) is not StringType:
-                if unicode and type(k) is UnicodeType:
-                    k = k.encode(self.encoding)
-                else:
-                    raise TypeError, "dictionary key must be string"
-            write("<name>%s</name>\n" % escape(k))
+            if type(k) is StringType:
+                k = escape(k)
+            elif unicode and type(k) is UnicodeType:
+                k = escape(k).encode(self.encoding, 'xmlcharrefreplace')
+            else:
+                raise TypeError, "dictionary key must be string"
+            write("<name>%s</name>\n" % k)
             dump(v, write)
             write("</member>\n")
         write("</struct></value>\n")
@@ -1099,7 +1099,7 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
     if methodname:
         # a method call
         if not isinstance(methodname, StringType):
-            methodname = methodname.encode(encoding)
+            methodname = methodname.encode(encoding, 'xmlcharrefreplace')
         data = (
             xmlheader,
             "<methodCall>\n"

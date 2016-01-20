@@ -39,6 +39,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26147: xmlrpclib now works with unicode not encodable with used
+  non-UTF-8 encoding.
+
 - Issue #16620: Fixed AttributeError in msilib.Directory.glob().
 
 - Issue #21847: Fixed xmlrpclib on Unicode-disabled builds.
