@@ -955,8 +955,6 @@ def dumps(params, methodname=None, methodresponse=None, encoding=None,
     # standard XML-RPC wrappings
     if methodname:
         # a method call
-        if not isinstance(methodname, str):
-            methodname = methodname.encode(encoding)
         data = (
             xmlheader,
             "<methodCall>\n"
@@ -1422,7 +1420,7 @@ class ServerProxy:
         # call a method on the remote server
 
         request = dumps(params, methodname, encoding=self.__encoding,
-                        allow_none=self.__allow_none).encode(self.__encoding)
+                        allow_none=self.__allow_none).encode(self.__encoding, 'xmlcharrefreplace')
 
         response = self.__transport.request(
             self.__host,
