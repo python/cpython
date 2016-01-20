@@ -152,13 +152,7 @@ PyErr_SetString(PyObject *exception, const char *string)
 PyObject *
 PyErr_Occurred(void)
 {
-    /* If there is no thread state, PyThreadState_GET calls
-       Py_FatalError, which calls PyErr_Occurred.  To avoid the
-       resulting infinite loop, we inline PyThreadState_GET here and
-       treat no thread as no error. */
-    PyThreadState *tstate =
-        ((PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current));
-
+    PyThreadState *tstate = _PyThreadState_UncheckedGet();
     return tstate == NULL ? NULL : tstate->curexc_type;
 }
 
