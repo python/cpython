@@ -137,7 +137,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         new_lasti = -1;
         for (offset = 0; offset < lnotab_len; offset += 2) {
             addr += lnotab[offset];
-            line += lnotab[offset+1];
+            line += (signed char)lnotab[offset+1];
             if (line >= new_lineno) {
                 new_lasti = addr;
                 new_lineno = line;

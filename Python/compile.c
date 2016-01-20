@@ -4452,7 +4452,6 @@ assemble_lnotab(struct assembler *a, struct instr *i)
     d_lineno = i->i_lineno - a->a_lineno;
 
     assert(d_bytecode >= 0);
-    assert(d_lineno >= 0);
 
     if(d_bytecode == 0 && d_lineno == 0)
         return 1;
@@ -4482,9 +4481,21 @@ assemble_lnotab(struct assembler *a, struct instr *i)
         d_bytecode -= ncodes * 255;
         a->a_lnotab_off += ncodes * 2;
     }
-    assert(d_bytecode <= 255);
-    if (d_lineno > 255) {
-        int j, nbytes, ncodes = d_lineno / 255;
+    assert(0 <= d_bytecode && d_bytecode <= 255);
+
+    if (d_lineno < -128 || 127 < d_lineno) {
+        int j, nbytes, ncodes, k;
+        if (d_lineno < 0) {
+            k = -128;
+            /* use division on positive numbers */
+            ncodes = (-d_lineno) / 128;
+        }
+        else {
+            k = 127;
+            ncodes = d_lineno / 127;
+        }
+        d_lineno -= ncodes * k;
+        assert(ncodes >= 1);
         nbytes = a->a_lnotab_off + 2 * ncodes;
         len = PyBytes_GET_SIZE(a->a_lnotab);
         if (nbytes >= len) {
@@ -4502,15 +4513,15 @@ assemble_lnotab(struct assembler *a, struct instr *i)
         lnotab = (unsigned char *)
                    PyBytes_AS_STRING(a->a_lnotab) + a->a_lnotab_off;
         *lnotab++ = d_bytecode;
-        *lnotab++ = 255;
+        *lnotab++ = k;
         d_bytecode = 0;
         for (j = 1; j < ncodes; j++) {
             *lnotab++ = 0;
-            *lnotab++ = 255;
+            *lnotab++ = k;
         }
-        d_lineno -= ncodes * 255;
         a->a_lnotab_off += ncodes * 2;
     }
+    assert(-128 <= d_lineno && d_lineno <= 127);
 
     len = PyBytes_GET_SIZE(a->a_lnotab);
     if (a->a_lnotab_off + 2 >= len) {

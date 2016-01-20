@@ -346,19 +346,19 @@ markblocks(unsigned char *code, Py_ssize_t len)
    single basic block.  All transformations keep the code size the same or
    smaller.  For those that reduce size, the gaps are initially filled with
    NOPs.  Later those NOPs are removed and the jump addresses retargeted in
-   a single pass.  Line numbering is adjusted accordingly. */
+   a single pass.  Code offset is adjusted accordingly. */
 
 PyObject *
 PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
-                PyObject *lineno_obj)
+                PyObject *lnotab_obj)
 {
     Py_ssize_t i, j, codelen;
     int nops, h, adj;
     int tgt, tgttgt, opcode;
     unsigned char *codestr = NULL;
-    unsigned char *lineno;
+    unsigned char *lnotab;
     int *addrmap = NULL;
-    int new_line, cum_orig_line, last_line;
+    int cum_orig_offset, last_offset;
     Py_ssize_t tabsiz;
     PyObject **const_stack = NULL;
     Py_ssize_t *load_const_stack = NULL;
@@ -371,12 +371,17 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
     if (PyErr_Occurred())
         goto exitError;
 
-    /* Bypass optimization when the lineno table is too complex */
-    assert(PyBytes_Check(lineno_obj));
-    lineno = (unsigned char*)PyBytes_AS_STRING(lineno_obj);
-    tabsiz = PyBytes_GET_SIZE(lineno_obj);
-    if (memchr(lineno, 255, tabsiz) != NULL)
+    /* Bypass optimization when the lnotab table is too complex */
+    assert(PyBytes_Check(lnotab_obj));
+    lnotab = (unsigned char*)PyBytes_AS_STRING(lnotab_obj);
+    tabsiz = PyBytes_GET_SIZE(lnotab_obj);
+    assert(tabsiz == 0 || Py_REFCNT(lnotab_obj) == 1);
+    if (memchr(lnotab, 255, tabsiz) != NULL) {
+        /* 255 value are used for multibyte bytecode instructions */
         goto exitUnchanged;
+    }
+    /* Note: -128 and 127 special values for line number delta are ok,
+       the peephole optimizer doesn't modify line numbers. */
 
     /* Avoid situations where jump retargeting could overflow */
     assert(PyBytes_Check(code));
@@ -663,21 +668,24 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
         }
     }
 
-    /* Fixup linenotab */
+    /* Fixup lnotab */
     for (i=0, nops=0 ; i<codelen ; i += CODESIZE(codestr[i])) {
         assert(i - nops <= INT_MAX);
+        /* original code offset => new code offset */
         addrmap[i] = (int)(i - nops);
         if (codestr[i] == NOP)
             nops++;
     }
-    cum_orig_line = 0;
-    last_line = 0;
+    cum_orig_offset = 0;
+    last_offset = 0;
     for (i=0 ; i < tabsiz ; i+=2) {
-        cum_orig_line += lineno[i];
-        new_line = addrmap[cum_orig_line];
-        assert (new_line - last_line < 255);
-        lineno[i] =((unsigned char)(new_line - last_line));
-        last_line = new_line;
+        int offset_delta, new_offset;
+        cum_orig_offset += lnotab[i];
+        new_offset = addrmap[cum_orig_offset];
+        offset_delta = new_offset - last_offset;
+        assert(0 <= offset_delta && offset_delta <= 255);
+        lnotab[i] = (unsigned char)offset_delta;
+        last_offset = new_offset;
     }
 
     /* Remove NOPs and fixup jump targets */
@@ -727,12 +735,9 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
  exitUnchanged:
     CONST_STACK_DELETE();
-    if (blocks != NULL)
-        PyMem_Free(blocks);
-    if (addrmap != NULL)
-        PyMem_Free(addrmap);
-    if (codestr != NULL)
-        PyMem_Free(codestr);
+    PyMem_Free(blocks);
+    PyMem_Free(addrmap);
+    PyMem_Free(codestr);
     Py_XINCREF(code);
     return code;
 }
