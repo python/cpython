@@ -490,7 +490,7 @@ faulthandler_thread(void *unused)
         assert(st == PY_LOCK_FAILURE);
 
         /* get the thread holding the GIL, NULL if no thread hold the GIL */
-        current = (PyThreadState*)_Py_atomic_load_relaxed(&_PyThreadState_Current);
+        current = _PyThreadState_UncheckedGet();
 
         _Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
 

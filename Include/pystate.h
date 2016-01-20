@@ -168,7 +168,17 @@ PyAPI_FUNC(void) PyThreadState_DeleteCurrent(void);
 PyAPI_FUNC(void) _PyGILState_Reinit(void);
 #endif
 
+/* Return the current thread state. The global interpreter lock must be held.
+ * When the current thread state is NULL, this issues a fatal error (so that
+ * the caller needn't check for NULL). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
+
+#ifdef WITH_THREAD
+/* Similar to PyThreadState_Get(), but don't issue a fatal error
+ * if it is NULL. */
+PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
+#endif
+
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
 PyAPI_FUNC(int) PyThreadState_SetAsyncExc(long, PyObject *);
