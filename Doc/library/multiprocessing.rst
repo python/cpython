@@ -215,7 +215,7 @@ However, if you really do need to use some shared data then
    proxies.
 
    A manager returned by :func:`Manager` will support types :class:`list`,
-   :class:`dict`, :class:`Namespace`, :class:`Lock`, :class:`RLock`,
+   :class:`dict`, :class:`~managers.Namespace`, :class:`Lock`, :class:`RLock`,
    :class:`Semaphore`, :class:`BoundedSemaphore`, :class:`Condition`,
    :class:`Event`, :class:`~multiprocessing.Queue`, :class:`Value` and :class:`Array`.  For
    example, ::
@@ -1512,24 +1512,25 @@ their parent process exits.  The manager classes are defined in the
          lproxy[0] = d
 
 
-Namespace objects
->>>>>>>>>>>>>>>>>
+.. class:: Namespace
 
-A namespace object has no public methods, but does have writable attributes.
-Its representation shows the values of its attributes.
+    A type that can register with :class:`SyncManager`.
 
-However, when using a proxy for a namespace object, an attribute beginning with
-``'_'`` will be an attribute of the proxy and not an attribute of the referent:
+    A namespace object has no public methods, but does have writable attributes.
+    Its representation shows the values of its attributes.
 
-.. doctest::
+    However, when using a proxy for a namespace object, an attribute beginning with
+    ``'_'`` will be an attribute of the proxy and not an attribute of the referent:
 
-   >>> manager = multiprocessing.Manager()
-   >>> Global = manager.Namespace()
-   >>> Global.x = 10
-   >>> Global.y = 'hello'
-   >>> Global._z = 12.3    # this is an attribute of the proxy
-   >>> print Global
-   Namespace(x=10, y='hello')
+    .. doctest::
+
+       >>> manager = multiprocessing.Manager()
+       >>> Global = manager.Namespace()
+       >>> Global.x = 10
+       >>> Global.y = 'hello'
+       >>> Global._z = 12.3    # this is an attribute of the proxy
+       >>> print Global
+       Namespace(x=10, y='hello')
 
 
 Customized managers
