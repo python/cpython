@@ -12,9 +12,9 @@ import tempfile
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "18.2"
+_SETUPTOOLS_VERSION = "19.4"
 
-_PIP_VERSION = "7.1.2"
+_PIP_VERSION = "8.0.0"
 
 # pip currently requires ssl support, so we try to provide a nicer
 # error message when that is missing (http://bugs.python.org/issue19744)
