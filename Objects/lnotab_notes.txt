@@ -12,42 +12,47 @@ pairs.  The details are important and delicate, best illustrated by example:
         0		    1
         6		    2
        50		    7
-      350                 307
-      361                 308
+      350                 207
+      361                 208
 
 Instead of storing these numbers literally, we compress the list by storing only
-the increments from one row to the next.  Conceptually, the stored list might
+the difference from one row to the next.  Conceptually, the stored list might
 look like:
 
-    0, 1,  6, 1,  44, 5,  300, 300,  11, 1
+    0, 1,  6, 1,  44, 5,  300, 200,  11, 1
 
-The above doesn't really work, but it's a start. Note that an unsigned byte
-can't hold negative values, or values larger than 255, and the above example
-contains two such values. So we make two tweaks:
+The above doesn't really work, but it's a start. An unsigned byte (byte code
+offset)) can't hold negative values, or values larger than 255, a signed byte
+(line number) can't hold values larger than 127 or less than -128, and the
+above example contains two such values. So we make two tweaks:
 
- (a) there's a deep assumption that byte code offsets and their corresponding
- line #s both increase monotonically, and
- (b) if at least one column jumps by more than 255 from one row to the next,
- more than one pair is written to the table. In case #b, there's no way to know
- from looking at the table later how many were written.  That's the delicate
- part.  A user of co_lnotab desiring to find the source line number
- corresponding to a bytecode address A should do something like this
+ (a) there's a deep assumption that byte code offsets increase monotonically,
+ and
+ (b) if byte code offset jumps by more than 255 from one row to the next, or if
+ source code line number jumps by more than 127 or less than -128 from one row
+ to the next, more than one pair is written to the table. In case #b,
+ there's no way to know from looking at the table later how many were written.
+ That's the delicate part.  A user of co_lnotab desiring to find the source
+ line number corresponding to a bytecode address A should do something like
+ this:
 
     lineno = addr = 0
     for addr_incr, line_incr in co_lnotab:
         addr += addr_incr
         if addr > A:
             return lineno
+        if line_incr >= 0x80:
+            line_incr -= 0x100
         lineno += line_incr
 
 (In C, this is implemented by PyCode_Addr2Line().)  In order for this to work,
 when the addr field increments by more than 255, the line # increment in each
 pair generated must be 0 until the remaining addr increment is < 256.  So, in
 the example above, assemble_lnotab in compile.c should not (as was actually done
-until 2.2) expand 300, 300 to
+until 2.2) expand 300, 200 to
     255, 255, 45, 45,
 but to
-    255, 0, 45, 255, 0, 45.
+    255, 0, 45, 128, 0, 72.
 
 The above is sufficient to reconstruct line numbers for tracebacks, but not for
 line tracing.  Tracing is handled by PyCode_CheckLineNumber() in codeobject.c

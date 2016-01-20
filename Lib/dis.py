@@ -397,8 +397,8 @@ def findlinestarts(code):
     Generate pairs (offset, lineno) as described in Python/compile.c.
 
     """
-    byte_increments = list(code.co_lnotab[0::2])
-    line_increments = list(code.co_lnotab[1::2])
+    byte_increments = code.co_lnotab[0::2]
+    line_increments = code.co_lnotab[1::2]
 
     lastlineno = None
     lineno = code.co_firstlineno
@@ -409,6 +409,9 @@ def findlinestarts(code):
                 yield (addr, lineno)
                 lastlineno = lineno
             addr += byte_incr
+        if line_incr >= 0x80:
+            # line_increments is an array of 8-bit signed integers
+            line_incr -= 0x100
         lineno += line_incr
     if lineno != lastlineno:
         yield (addr, lineno)

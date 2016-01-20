@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #26107: The format of the ``co_lnotab`` attribute of code objects
+  changes to support negative line number delta.
+
 - Issue #26154: Add a new private _PyThreadState_UncheckedGet() function to get
   the current Python thread state, but don't issue a fatal error if it is NULL.
   This new function must be used instead of accessing directly the

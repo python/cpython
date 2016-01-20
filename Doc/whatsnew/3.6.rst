@@ -244,6 +244,16 @@ that may require changes to your code.
 Changes in the Python API
 -------------------------
 
+* The format of the ``co_lnotab`` attribute of code objects changed to support
+  negative line number delta. By default, Python does not emit bytecode with
+  negative line number delta. Functions using ``frame.f_lineno``,
+  ``PyFrame_GetLineNumber()`` or ``PyCode_Addr2Line()`` are not affected.
+  Functions decoding directly ``co_lnotab`` should be updated to use a signed
+  8-bit integer type for the line number delta, but it's only required to
+  support applications using negative line number delta. See
+  ``Objects/lnotab_notes.txt`` for the ``co_lnotab`` format and how to decode
+  it, and see the :pep:`511` for the rationale.
+
 * The functions in the :mod:`compileall` module now return booleans instead
   of ``1`` or ``0`` to represent success or failure, respectively. Thanks to
   booleans being a subclass of integers, this should only be an issue if you

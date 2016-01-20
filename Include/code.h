@@ -117,7 +117,7 @@ PyAPI_FUNC(int) _PyCode_CheckLineNumber(PyCodeObject* co,
 #endif
 
 PyAPI_FUNC(PyObject*) PyCode_Optimize(PyObject *code, PyObject* consts,
-                                      PyObject *names, PyObject *lineno_obj);
+                                      PyObject *names, PyObject *lnotab);
 
 #ifdef __cplusplus
 }
