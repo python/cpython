@@ -557,7 +557,8 @@ PyCode_Addr2Line(PyCodeObject *co, int addrq)
         addr += *p++;
         if (addr > addrq)
             break;
-        line += *p++;
+        line += (signed char)*p;
+        p++;
     }
     return line;
 }
@@ -592,17 +593,19 @@ _PyCode_CheckLineNumber(PyCodeObject* co, int lasti, PyAddrPair *bounds)
         if (addr + *p > lasti)
             break;
         addr += *p++;
-        if (*p)
+        if ((signed char)*p)
             bounds->ap_lower = addr;
-        line += *p++;
+        line += (signed char)*p;
+        p++;
         --size;
     }
 
     if (size > 0) {
         while (--size >= 0) {
             addr += *p++;
-            if (*p++)
+            if ((signed char)*p)
                 break;
+            p++;
         }
         bounds->ap_upper = addr;
     }
