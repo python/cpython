@@ -50,21 +50,21 @@ Mapping Protocol
 
 .. c:function:: PyObject* PyMapping_Keys(PyObject *o)
 
-   On success, return a list of the keys in object *o*.  On failure, return *NULL*.
-   This is equivalent to the Python expression ``list(o.keys())``.
+   On success, return a list, a tuple or a dictionary view in case of a dict,
+   of the keys in object *o*. On failure, return *NULL*.
 
 
 .. c:function:: PyObject* PyMapping_Values(PyObject *o)
 
-   On success, return a list of the values in object *o*.  On failure, return
-   *NULL*. This is equivalent to the Python expression ``list(o.values())``.
+   On success, return a list, a tuple or a dictionary view in case of a dict, of
+   the values in object *o*. On failure, return *NULL*.
 
 
 .. c:function:: PyObject* PyMapping_Items(PyObject *o)
 
-   On success, return a list of the items in object *o*, where each item is a tuple
-   containing a key-value pair.  On failure, return *NULL*. This is equivalent to
-   the Python expression ``list(o.items())``.
+   On success, return a list, a tuple or a dictionary view in case of a dict, of
+   the items in object *o*, where each item is a tuple containing a key-value
+   pair.  On failure, return *NULL*.
 
 
 .. c:function:: PyObject* PyMapping_GetItemString(PyObject *o, const char *key)
