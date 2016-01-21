@@ -18,7 +18,7 @@
     <link rel="shortcut icon" type="image/png" href="{{ pathto('_static/py.png', 1) }}" />
     {% if not embedded %}<script type="text/javascript" src="{{ pathto('_static/copybutton.js', 1) }}"></script>{% endif %}
     {% if versionswitcher is defined and not embedded %}<script type="text/javascript" src="{{ pathto('_static/version_switch.js', 1) }}"></script>{% endif %}
-    {% if pagename == 'whatsnew/changelog' %}
+    {% if pagename == 'whatsnew/changelog' and not embedded %}
     <script type="text/javascript">
       $(document).ready(function() {
           // add the search form and bind the events
