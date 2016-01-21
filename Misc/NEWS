@@ -50,6 +50,9 @@ Core and Builtins
   __bytes__, __trunc__, and __float__ returning instances of subclasses of
   bytes, int, and float to subclasses of bytes, int, and float correspondingly.
 
+- Issue #26171: Fix possible integer overflow and heap corruption in
+  zipimporter.get_data().
+
 Library
 -------
 
