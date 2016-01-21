@@ -261,16 +261,41 @@ processes in a few different ways.
 
 For example::
 
-   from multiprocessing import Pool
+   from multiprocessing import Pool, TimeoutError
+   import time
+   import os
 
    def f(x):
        return x*x
 
    if __name__ == '__main__':
        pool = Pool(processes=4)              # start 4 worker processes
-       result = pool.apply_async(f, [10])    # evaluate "f(10)" asynchronously
-       print result.get(timeout=1)           # prints "100" unless your computer is *very* slow
-       print pool.map(f, range(10))          # prints "[0, 1, 4,..., 81]"
+
+       # print "[0, 1, 4,..., 81]"
+       print pool.map(f, range(10))
+
+       # print same numbers in arbitrary order
+       for i in pool.imap_unordered(f, range(10)):
+           print i
+
+       # evaluate "f(20)" asynchronously
+       res = pool.apply_async(f, (20,))      # runs in *only* one process
+       print res.get(timeout=1)              # prints "400"
+
+       # evaluate "os.getpid()" asynchronously
+       res = pool.apply_async(os.getpid, ()) # runs in *only* one process
+       print res.get(timeout=1)              # prints the PID of that process
+
+       # launching multiple evaluations asynchronously *may* use more processes
+       multiple_results = [pool.apply_async(os.getpid, ()) for i in range(4)]
+       print [res.get(timeout=1) for res in multiple_results]
+
+       # make a single worker sleep for 10 secs
+       res = pool.apply_async(time.sleep, (10,))
+       try:
+           print res.get(timeout=1)
+       except TimeoutError:
+           print "We lacked patience and got a multiprocessing.TimeoutError"
 
 Note that the methods of a pool should only ever be used by the
 process which created it.
@@ -1887,6 +1912,7 @@ with the :class:`Pool` class.
 The following example demonstrates the use of a pool::
 
    from multiprocessing import Pool
+   import time
 
    def f(x):
        return x*x
@@ -1894,7 +1920,7 @@ The following example demonstrates the use of a pool::
    if __name__ == '__main__':
        pool = Pool(processes=4)              # start 4 worker processes
 
-       result = pool.apply_async(f, (10,))    # evaluate "f(10)" asynchronously
+       result = pool.apply_async(f, (10,))   # evaluate "f(10)" asynchronously in a single process
        print result.get(timeout=1)           # prints "100" unless your computer is *very* slow
 
        print pool.map(f, range(10))          # prints "[0, 1, 4,..., 81]"
@@ -1904,9 +1930,8 @@ The following example demonstrates the use of a pool::
        print it.next()                       # prints "1"
        print it.next(timeout=1)              # prints "4" unless your computer is *very* slow
 
-       import time
        result = pool.apply_async(time.sleep, (10,))
-       print result.get(timeout=1)           # raises TimeoutError
+       print result.get(timeout=1)           # raises multiprocessing.TimeoutError
 
 
 .. _multiprocessing-listeners-clients:
