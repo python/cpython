@@ -1143,6 +1143,7 @@ get_data(PyObject *archive, PyObject *toc_entry)
         bytes_read = fread(buf, 1, data_size, fp);
     } else {
         fclose(fp);
+        Py_DECREF(raw_data);
         PyErr_Format(ZipImportError, "can't read Zip file: %R", archive);
         return NULL;
     }
