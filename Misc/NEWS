@@ -36,6 +36,9 @@ Core and Builtins
   __str__, __trunc__, and __float__ returning instances of subclasses of
   str, long, and float to subclasses of str, long, and float correspondingly.
 
+- Issue #26171: Fix possible integer overflow and heap corruption in
+  zipimporter.get_data().
+
 Library
 -------
 
