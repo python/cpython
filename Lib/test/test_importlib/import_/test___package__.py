@@ -76,8 +76,8 @@ class Using__package__:
     def test_warn_when_package_and_spec_disagree(self):
         # Raise an ImportWarning if __package__ != __spec__.parent.
         with self.assertWarns(ImportWarning):
-                self.import_module({'__package__': 'pkg.fake',
-                                    '__spec__': FakeSpec('pkg.fakefake')})
+            self.import_module({'__package__': 'pkg.fake',
+                                '__spec__': FakeSpec('pkg.fakefake')})
 
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
