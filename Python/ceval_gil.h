@@ -111,7 +111,7 @@ static _Py_atomic_int gil_locked = {-1};
 static unsigned long gil_switch_number = 0;
 /* Last PyThreadState holding / having held the GIL. This helps us know
    whether anyone else was scheduled after we dropped the GIL. */
-static _Py_atomic_address gil_last_holder = {NULL};
+static _Py_atomic_address gil_last_holder = {0};
 
 /* This condition variable allows one or several threads to wait until
    the GIL is released. In addition, the mutex also protects the above
@@ -142,7 +142,7 @@ static void create_gil(void)
 #ifdef FORCE_SWITCHING
     COND_INIT(switch_cond);
 #endif
-    _Py_atomic_store_relaxed(&gil_last_holder, NULL);
+    _Py_atomic_store_relaxed(&gil_last_holder, 0);
     _Py_ANNOTATE_RWLOCK_CREATE(&gil_locked);
     _Py_atomic_store_explicit(&gil_locked, 0, _Py_memory_order_release);
 }
@@ -178,7 +178,7 @@ static void drop_gil(PyThreadState *tstate)
         /* Sub-interpreter support: threads might have been switched
            under our feet using PyThreadState_Swap(). Fix the GIL last
            holder variable so that our heuristics work. */
-        _Py_atomic_store_relaxed(&gil_last_holder, tstate);
+        _Py_atomic_store_relaxed(&gil_last_holder, (Py_uintptr_t)tstate);
     }
 
     MUTEX_LOCK(gil_mutex);
@@ -240,7 +240,7 @@ _ready:
     _Py_ANNOTATE_RWLOCK_ACQUIRED(&gil_locked, /*is_write=*/1);
 
     if (tstate != (PyThreadState*)_Py_atomic_load_relaxed(&gil_last_holder)) {
-        _Py_atomic_store_relaxed(&gil_last_holder, tstate);
+        _Py_atomic_store_relaxed(&gil_last_holder, (Py_uintptr_t)tstate);
         ++gil_switch_number;
     }
 
