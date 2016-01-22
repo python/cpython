@@ -146,6 +146,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26099: The site module now writes an error into stderr if
+  sitecustomize module can be imported but executing the module raise an
+  ImportError. Same change for usercustomize.
+
 - Issue #26147: xmlrpc now works with strings not encodable with used
   non-UTF-8 encoding.
 
