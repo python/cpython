@@ -504,9 +504,13 @@ def venv(known_paths):
 def execsitecustomize():
     """Run custom site specific code, if available."""
     try:
-        import sitecustomize
-    except ImportError:
-        pass
+        try:
+            import sitecustomize
+        except ImportError as exc:
+            if exc.name == 'sitecustomize':
+                pass
+            else:
+                raise
     except Exception as err:
         if os.environ.get("PYTHONVERBOSE"):
             sys.excepthook(*sys.exc_info())
@@ -520,9 +524,13 @@ def execsitecustomize():
 def execusercustomize():
     """Run custom user specific code, if available."""
     try:
-        import usercustomize
-    except ImportError:
-        pass
+        try:
+            import usercustomize
+        except ImportError as exc:
+            if exc.name == 'usercustomize':
+                pass
+            else:
+                raise
     except Exception as err:
         if os.environ.get("PYTHONVERBOSE"):
             sys.excepthook(*sys.exc_info())
