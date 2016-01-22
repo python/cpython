@@ -1071,6 +1071,10 @@ get_data(PyObject *archive, PyObject *toc_entry)
                           &date, &crc)) {
         return NULL;
     }
+    if (data_size < 0) {
+        PyErr_Format(ZipImportError, "negative data size");
+        return NULL;
+    }
 
     fp = _Py_fopen_obj(archive, "rb");
     if (!fp) {
