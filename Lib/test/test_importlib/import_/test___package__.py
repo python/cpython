@@ -5,6 +5,7 @@ of using the typical __path__/__name__ test).
 
 """
 import unittest
+import warnings
 from .. import util
 
 
@@ -38,8 +39,8 @@ class Using__package__:
             with util.import_state(meta_path=[importer]):
                 self.__import__('pkg.fake')
                 module = self.__import__('',
-                                            globals=globals_,
-                                            fromlist=['attr'], level=2)
+                                         globals=globals_,
+                                         fromlist=['attr'], level=2)
         return module
 
     def test_using___package__(self):
@@ -49,7 +50,10 @@ class Using__package__:
 
     def test_using___name__(self):
         # [__name__]
-        module = self.import_module({'__name__': 'pkg.fake', '__path__': []})
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            module = self.import_module({'__name__': 'pkg.fake',
+                                         '__path__': []})
         self.assertEqual(module.__name__, 'pkg')
 
     def test_warn_when_using___name__(self):
@@ -58,14 +62,22 @@ class Using__package__:
 
     def test_None_as___package__(self):
         # [None]
-        module = self.import_module({
-            '__name__': 'pkg.fake', '__path__': [], '__package__': None })
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            module = self.import_module({
+                '__name__': 'pkg.fake', '__path__': [], '__package__': None })
         self.assertEqual(module.__name__, 'pkg')
 
-    def test_prefers___spec__(self):
-        globals = {'__spec__': FakeSpec()}
-        with self.assertRaises(SystemError):
-            self.__import__('', globals, {}, ['relimport'], 1)
+    def test_spec_fallback(self):
+        # If __package__ isn't defined, fall back on __spec__.parent.
+        module = self.import_module({'__spec__': FakeSpec('pkg.fake')})
+        self.assertEqual(module.__name__, 'pkg')
+
+    def test_warn_when_package_and_spec_disagree(self):
+        # Raise an ImportWarning if __package__ != __spec__.parent.
+        with self.assertWarns(ImportWarning):
+                self.import_module({'__package__': 'pkg.fake',
+                                    '__spec__': FakeSpec('pkg.fakefake')})
 
     def test_bad__package__(self):
         globals = {'__package__': '<not real>'}
@@ -79,7 +91,8 @@ class Using__package__:
 
 
 class FakeSpec:
-    parent = '<fake>'
+    def __init__(self, parent):
+        self.parent = parent
 
 
 class Using__package__PEP302(Using__package__):
