@@ -367,9 +367,12 @@ class PrettyPrintTests(DebuggerTests):
         'Verify the pretty-printing of sets'
         if (gdb_major_version, gdb_minor_version) < (7, 3):
             self.skipTest("pretty-printing of sets needs gdb 7.3 or later")
-        self.assertGdbRepr(set(), 'set()')
-        self.assertGdbRepr(set(['a', 'b']), "{'a', 'b'}")
-        self.assertGdbRepr(set([4, 5, 6]), "{4, 5, 6}")
+        self.assertGdbRepr(set(), "set()")
+        self.assertGdbRepr(set(['a']), "{'a'}")
+        # PYTHONHASHSEED is need to get the exact frozenset item order
+        if not sys.flags.ignore_environment:
+            self.assertGdbRepr(set(['a', 'b']), "{'a', 'b'}")
+            self.assertGdbRepr(set([4, 5, 6]), "{4, 5, 6}")
 
         # Ensure that we handle sets containing the "dummy" key value,
         # which happens on deletion:
