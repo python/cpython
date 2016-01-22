@@ -134,8 +134,8 @@ ZipFile Objects
 
    Open a ZIP file, where *file* can be either a path to a file (a string) or a
    file-like object.  The *mode* parameter should be ``'r'`` to read an existing
-   file, ``'w'`` to truncate and write a new file, ``'x'`` to exclusive create
-   and write a new file, or ``'a'`` to append to an existing file.
+   file, ``'w'`` to truncate and write a new file, ``'a'`` to append to an
+   existing file, or ``'x'`` to exclusively create and write a new file.
    If *mode* is ``'x'`` and *file* refers to an existing file,
    a :exc:`FileExistsError` will be raised.
    If *mode* is ``'a'`` and *file* refers to an existing ZIP
