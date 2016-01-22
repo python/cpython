@@ -554,19 +554,29 @@ the module.
    details.
 
    This attribute is used instead of ``__name__`` to calculate explicit
-   relative imports for main modules -- as defined in :pep:`366` --
-   when ``__spec__`` is not defined.
+   relative imports for main modules, as defined in :pep:`366`. It is
+   expected to have the same value as ``__spec__.parent``.
+
+   .. versionchanged:: 3.6
+      The value of ``__package__`` is expected to be the same as
+      ``__spec__.parent``.
 
 .. attribute:: __spec__
 
    The ``__spec__`` attribute must be set to the module spec that was
-   used when importing the module.  This is used primarily for
-   introspection and during reloading.  Setting ``__spec__``
+   used when importing the module. Setting ``__spec__``
    appropriately applies equally to :ref:`modules initialized during
    interpreter startup <programs>`.  The one exception is ``__main__``,
    where ``__spec__`` is :ref:`set to None in some cases <main_spec>`.
 
+   When ``__package__`` is not defined, ``__spec__.parent`` is used as
+   a fallback.
+
    .. versionadded:: 3.4
+
+   .. versionchanged:: 3.6
+      ``__spec__.parent`` is used as a fallback when ``__package__`` is
+      not defined.
 
 .. attribute:: __path__
 

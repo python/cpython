@@ -26,8 +26,8 @@ Core and Builtins
   Python 3.5.1 to hide the exact implementation of atomic C types, to avoid
   compiler issues.
 
-- Issue #25791: Trying to resolve a relative import without __spec__ or
-  __package__ defined now raises an ImportWarning
+- Issue #25791: If __package__ != __spec__.parent or if neither __package__ or
+  __spec__ are defined then ImportWarning is raised.
 
 - Issue #25731: Fix set and deleting __new__ on a class.
 

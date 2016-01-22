@@ -274,9 +274,9 @@ Changes in the Python API
   :mod:`wave`.  This means they will export new symbols when ``import *``
   is used.  See :issue:`23883`.
 
-* When performing a relative import, ``__spec__.parent`` is used
-  is ``__spec__`` is defined instead of ``__package__``.
-  (Contributed by Rose Ames in :issue:`25791`.)
+* When performing a relative import, if ``__package__`` does not compare equal
+  to ``__spec__.parent`` then :exc:`ImportWarning` is raised.
+  (Contributed by Brett Cannon in :issue:`25791`.)
 
 
 Changes in the C API
