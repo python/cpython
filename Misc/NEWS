@@ -10,6 +10,12 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #25843: When compiling code, don't merge constants if they are equal
+  but have a different types. For example, ``f1, f2 = lambda: 1, lambda: 1.0``
+  is now correctly compiled to two different functions: ``f1()`` returns ``1``
+  (``int``) and ``f2()`` returns ``1.0`` (``int``), even if ``1`` and ``1.0``
+  are equal.
+
 - Issue #22995: [UPDATE] Remove the one of the pickleability tests in
   _PyObject_GetState() due to regressions observed in Cython-based projects.
 

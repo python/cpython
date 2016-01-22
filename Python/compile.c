@@ -338,7 +338,7 @@ list2dict(PyObject *list)
             return NULL;
         }
         k = PyList_GET_ITEM(list, i);
-        k = PyTuple_Pack(2, k, k->ob_type);
+        k = _PyCode_ConstantKey(k);
         if (k == NULL || PyDict_SetItem(dict, k, v) < 0) {
             Py_XDECREF(k);
             Py_DECREF(v);
@@ -399,7 +399,7 @@ dictbytype(PyObject *src, int scope_type, int flag, int offset)
                 return NULL;
             }
             i++;
-            tuple = PyTuple_Pack(2, k, k->ob_type);
+            tuple = _PyCode_ConstantKey(k);
             if (!tuple || PyDict_SetItem(dest, tuple, item) < 0) {
                 Py_DECREF(sorted_keys);
                 Py_DECREF(item);
@@ -944,49 +944,8 @@ compiler_add_o(struct compiler *c, PyObject *dict, PyObject *o)
 {
     PyObject *t, *v;
     Py_ssize_t arg;
-    double d;
 
-    /* necessary to make sure types aren't coerced (e.g., int and long) */
-    /* _and_ to distinguish 0.0 from -0.0 e.g. on IEEE platforms */
-    if (PyFloat_Check(o)) {
-        d = PyFloat_AS_DOUBLE(o);
-        /* all we need is to make the tuple different in either the 0.0
-         * or -0.0 case from all others, just to avoid the "coercion".
-         */
-        if (d == 0.0 && copysign(1.0, d) < 0.0)
-            t = PyTuple_Pack(3, o, o->ob_type, Py_None);
-        else
-            t = PyTuple_Pack(2, o, o->ob_type);
-    }
-#ifndef WITHOUT_COMPLEX
-    else if (PyComplex_Check(o)) {
-        Py_complex z;
-        int real_negzero, imag_negzero;
-        /* For the complex case we must make complex(x, 0.)
-           different from complex(x, -0.) and complex(0., y)
-           different from complex(-0., y), for any x and y.
-           All four complex zeros must be distinguished.*/
-        z = PyComplex_AsCComplex(o);
-        real_negzero = z.real == 0.0 && copysign(1.0, z.real) < 0.0;
-        imag_negzero = z.imag == 0.0 && copysign(1.0, z.imag) < 0.0;
-        if (real_negzero && imag_negzero) {
-            t = PyTuple_Pack(5, o, o->ob_type,
-                             Py_None, Py_None, Py_None);
-        }
-        else if (imag_negzero) {
-            t = PyTuple_Pack(4, o, o->ob_type, Py_None, Py_None);
-        }
-        else if (real_negzero) {
-            t = PyTuple_Pack(3, o, o->ob_type, Py_None);
-        }
-        else {
-            t = PyTuple_Pack(2, o, o->ob_type);
-        }
-    }
-#endif /* WITHOUT_COMPLEX */
-    else {
-        t = PyTuple_Pack(2, o, o->ob_type);
-    }
+    t = _PyCode_ConstantKey(o);
     if (t == NULL)
         return -1;
 
@@ -1287,7 +1246,7 @@ static int
 compiler_lookup_arg(PyObject *dict, PyObject *name)
 {
     PyObject *k, *v;
-    k = PyTuple_Pack(2, name, name->ob_type);
+    k = _PyCode_ConstantKey(name);
     if (k == NULL)
         return -1;
     v = PyDict_GetItem(dict, k);
@@ -3794,7 +3753,7 @@ dict_keys_inorder(PyObject *dict, int offset)
         i = PyInt_AS_LONG(v);
         /* The keys of the dictionary are tuples. (see compiler_add_o)
            The object we want is always first, though. */
-        k = PyTuple_GET_ITEM(k, 0);
+        k = PyTuple_GET_ITEM(k, 1);
         Py_INCREF(k);
         assert((i - offset) < size);
         assert((i - offset) >= 0);
