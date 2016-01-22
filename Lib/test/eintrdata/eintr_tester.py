@@ -341,6 +341,7 @@ class SocketEINTRTest(EINTRBaseTest):
         self._test_open("fp = open(path, 'r')\nfp.close()",
                         self.python_open)
 
+    @unittest.skipIf(sys.platform == 'darwin', "hangs under OS X; see issue #25234")
     def os_open(self, path):
         fd = os.open(path, os.O_WRONLY)
         os.close(fd)
