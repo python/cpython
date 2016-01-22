@@ -1298,4 +1298,4 @@ an :term:`importer`.
         suffixes = importlib.machinery.SOURCE_SUFFIXES
         loader = importlib.machinery.SourceFileLoader
         lazy_loader = importlib.util.LazyLoader.factory(loader)
-        finder = importlib.machinery.FileFinder(path, [(lazy_loader, suffixes)])
+        finder = importlib.machinery.FileFinder(path, (lazy_loader, suffixes))
