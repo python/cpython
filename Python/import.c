@@ -1424,7 +1424,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 PyErr_SetString(PyExc_TypeError, "package must be a string");
                 goto error;
             }
-            else if (spec != NULL) {
+            else if (spec != NULL && spec != Py_None) {
                 int equal;
                 PyObject *parent = PyObject_GetAttrString(spec, "parent");
                 if (parent == NULL) {
@@ -1444,7 +1444,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
                 }
             }
         }
-        else if (spec != NULL) {
+        else if (spec != NULL && spec != Py_None) {
             package = PyObject_GetAttrString(spec, "parent");
             if (package == NULL) {
                 goto error;
@@ -1491,7 +1491,12 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
             }
         }
 
-        if (PyDict_GetItem(interp->modules, package) == NULL) {
+        if (PyUnicode_CompareWithASCIIString(package, "") == 0) {
+            PyErr_SetString(PyExc_ImportError,
+                    "attempted relative import with no known parent package");
+            goto error;
+        }
+        else if (PyDict_GetItem(interp->modules, package) == NULL) {
             PyErr_Format(PyExc_SystemError,
                     "Parent module %R not loaded, cannot perform relative "
                     "import", package);
