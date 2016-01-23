@@ -7,55 +7,96 @@
 {% endif %}
 
 {% block body %}
-<h1>Download Python {{ release }} Documentation</h1>
+<h1>{% trans %}Download Python {{ release }} Documentation{% endtrans %}</h1>
 
-{% if last_updated %}<p><b>Last updated on: {{ last_updated }}.</b></p>{% endif %}
+{% if last_updated %}
+  <p><b>{% trans %}Last updated on: {{ last_updated }}.{% endtrans %}</b></p>
+{% endif %}
 
-<p>To download an archive containing all the documents for this version of
-Python in one of various formats, follow one of links in this table. The numbers
-in the table are the size of the download files in megabytes.</p>
+<p>{% trans %}To download an archive containing all the documents for
+this version of Python in one of various formats, follow one of links
+in this table. The numbers in the table are the size of the download
+files in megabytes.{% endtrans %}</p>
 
 <table class="docutils">
-  <tr><th>Format</th><th>Packed as .zip</th><th>Packed as .tar.bz2</th></tr>
-  <tr><td>PDF (US-Letter paper size)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-pdf-letter.zip">Download</a> (ca. 8 MB)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-pdf-letter.tar.bz2">Download</a> (ca. 8 MB)</td>
+  <tr><th>{% trans %}Format{% endtrans %}</th>
+    <th>{% trans %}Packed as .zip{% endtrans %}</th>
+    <th>{% trans %}Packed as .tar.bz2{% endtrans %}</th>
   </tr>
-  <tr><td>PDF (A4 paper size)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.zip">Download</a> (ca. 8 MB)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.tar.bz2">Download</a> (ca. 8 MB)</td>
+  <tr><td>{% trans %}PDF (US-Letter paper size){% endtrans %}</td>
+    <td>
+      <a href="{{ dlbase }}/python-{{ release }}-docs-pdf-letter.zip">
+        {% trans %}Download{% endtrans %}
+      </a> {% trans %}(ca. 8 MB){% endtrans %}
+    </td>
+    <td>
+      <a href="{{ dlbase }}/python-{{ release }}-docs-pdf-letter.tar.bz2">
+        {% trans %}Download{% endtrans %}
+      </a> {% trans %}(ca. 8 MB){% endtrans %}
+    </td>
   </tr>
-  <tr><td>HTML</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-html.zip">Download</a> (ca. 6 MB)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-html.tar.bz2">Download</a> (ca. 4 MB)</td>
+  <tr><td>{% trans %}PDF (A4 paper size){% endtrans %}</td>
+    <td>
+      <a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.zip">
+        {% trans %}Download{% endtrans %}
+      </a> {% trans %}(ca. 8 MB){% endtrans %}</td>
+    <td>
+      <a href="{{ dlbase }}/python-{{ release }}-docs-pdf-a4.tar.bz2">
+        {% trans %}Download{% endtrans %}
+      </a> {% trans %}(ca. 8 MB){% endtrans %}</td>
   </tr>
-  <tr><td>Plain Text</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-text.zip">Download</a> (ca. 2 MB)</td>
-    <td><a href="{{ dlbase }}/python-{{ release }}-docs-text.tar.bz2">Download</a> (ca. 1.5 MB)</td>
+  <tr><td>{% trans %}HTML{% endtrans %}</td>
+    <td>
+      <a href="{{ dlbase }}/python-{{ release }}-docs-html.zip">
+        {% trans %}Download{% endtrans %}
+      </a> {% trans %}(ca. 6 MB){% endtrans %}
+    </td>
+    <td>
+      <a href="{{ dlbase }}/python-{{ release }}-docs-html.tar.bz2">
+        {% trans %}Download{% endtrans %}
+      </a> {% trans %}(ca. 4 MB){% endtrans %}
+    </td>
+  </tr>
+  <tr>
+    <td>{% trans %}Plain Text{% endtrans %}</td>
+    <td>
+      <a href="{{ dlbase }}/python-{{ release }}-docs-text.zip">
+        {% trans %}Download{% endtrans %}
+      </a> {% trans %}(ca. 2 MB){% endtrans %}
+    </td>
+    <td>
+      <a href="{{ dlbase }}/python-{{ release }}-docs-text.tar.bz2">
+        {% trans %}Download{% endtrans %}
+      </a> {% trans %}(ca. 1.5 MB){% endtrans %}
+    </td>
   </tr>
 </table>
 
-<p>These archives contain all the content in the documentation.</p>
+<p>{% trans %}These archives contain all the content in the
+documentation.{% endtrans %}</p>
 
-<p>HTML Help (<tt>.chm</tt>) files are made available in the "Windows" section
-on the <a href="https://www.python.org/download/releases/{{ release[:5] }}/">Python
-download page</a>.</p>
-
-
-<h2>Unpacking</h2>
-
-<p>Unix users should download the .tar.bz2 archives; these are bzipped tar
-archives and can be handled in the usual way using tar and the bzip2
-program. The <a href="http://www.info-zip.org">InfoZIP</a> unzip program can be
-used to handle the ZIP archives if desired. The .tar.bz2 archives provide the
-best compression and fastest download times.</p>
-
-<p>Windows users can use the ZIP archives since those are customary on that
-platform. These are created on Unix using the InfoZIP zip program.</p>
+<p>{% trans download_page="https://www.python.org/download/releases/{{ release[:5] }}/" %}HTML Help
+(<tt>.chm</tt>) files are made available in the "Windows" section
+on the <a href={{ download_page }}>Python download page</a>.{% endtrans %}</p>
 
 
-<h2>Problems</h2>
+<h2>{% trans %}Unpacking{% endtrans %}</h2>
 
-<p>If you have comments or suggestions for the Python documentation, please send
-email to <a href="mailto:docs@python.org">docs@python.org</a>.</p>
+<p>{% trans %}Unix users should download the .tar.bz2 archives; these
+are bzipped tar archives and can be handled in the usual way using tar
+and the bzip2 program. The <a href="http://www.info-zip.org">InfoZIP</a> unzip
+program can be used to handle the ZIP archives if desired. The
+.tar.bz2 archives provide the best compression and fastest download
+times.{% endtrans %}</p>
+
+<p>{% trans %}Windows users can use the ZIP archives since those are
+customary on that platform. These are created on Unix using the
+InfoZIP zip program.{% endtrans %}</p>
+
+
+<h2>{% trans %}Problems{% endtrans %}</h2>
+
+<p>{% trans %}If you have comments or suggestions for the Python
+documentation, please send email to
+<a href="mailto:docs@python.org">docs@python.org</a>.{% endtrans %}</p>
 {% endblock %}

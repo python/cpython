@@ -6,7 +6,7 @@
         <li>
           {%- if versionswitcher is defined %}
           <span class="version_switcher_placeholder">{{ release }}</span>
-          <a href="{{ pathto('index') }}">Documentation</a>{{ reldelim1 }}
+          <a href="{{ pathto('index') }}">{% trans %}Documentation{% endtrans %}</a>{{ reldelim1 }}
           {%- else %}
           <a href="{{ pathto('index') }}">{{ shorttitle }}</a>{{ reldelim1 }}
           {%- endif %}
@@ -28,24 +28,24 @@
 {% endblock %}
 {% block footer %}
     <div class="footer">
-    &copy; <a href="{{ pathto('copyright') }}">Copyright</a> {{ copyright|e }}.
+    &copy; <a href="{{ pathto('copyright') }}">{% trans %}Copyright{% endtrans %}</a> {{ copyright|e }}.
     <br />
-    The Python Software Foundation is a non-profit corporation.
-    <a href="https://www.python.org/psf/donations/">Please donate.</a>
+    {% trans %}The Python Software Foundation is a non-profit corporation.{% endtrans %}
+    <a href="https://www.python.org/psf/donations/">{% trans %}Please donate.{% endtrans %}</a>
     <br />
-    Last updated on {{ last_updated|e }}.
-    <a href="{{ pathto('bugs') }}">Found a bug</a>?
+    {% trans last_update=last_updated|e %}Last updated on {{ last_update }}.{% endtrans %}
+    {% trans pathto_bugs=pathto('bugs') %}<a href="{{ pathto_bugs }}">Found a bug</a>?{% endtrans %}
     <br />
-    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> {{ sphinx_version|e }}.
+    {% trans sphinx_version=sphinx_version|e %}Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> {{ sphinx_version }}.{% endtrans %}
     </div>
 {% endblock %}
 {% block sidebarsourcelink %}
 {%- if show_source and has_source and sourcename %}
 <h3>{{ _('This Page') }}</h3>
 <ul class="this-page-menu">
-  <li><a href="{{ pathto('bugs') }}">Report a Bug</a></li>
+  <li><a href="{{ pathto('bugs') }}">{% trans %}Report a Bug{% endtrans %}</a></li>
   <li><a href="{{ pathto('_sources/' + sourcename, true)|e }}"
-         rel="nofollow">Show Source</a></li>
+         rel="nofollow">{% trans %}Show Source{% endtrans %}</a></li>
 </ul>
 {%- endif %}
 {% endblock %}
