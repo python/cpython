@@ -1,10 +1,12 @@
-import unittest
-from test import support
-
-import collections, random, string
+import collections
 import collections.abc
-import gc, weakref
+import gc
 import pickle
+import random
+import string
+import unittest
+import weakref
+from test import support
 
 
 class DictTest(unittest.TestCase):
@@ -962,6 +964,7 @@ class Dict(dict):
 
 class SubclassMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = Dict
+
 
 if __name__ == "__main__":
     unittest.main()
