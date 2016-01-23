@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #18018: Import raises ImportError instead of SystemError if a relative
+  import is attempted without a known parent package.
+
 - Issue #25843: When compiling code, don't merge constants if they are equal
   but have a different types. For example, ``f1, f2 = lambda: 1, lambda: 1.0``
   is now correctly compiled to two different functions: ``f1()`` returns ``1``

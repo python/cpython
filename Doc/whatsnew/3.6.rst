@@ -278,6 +278,10 @@ Changes in the Python API
   to ``__spec__.parent`` then :exc:`ImportWarning` is raised.
   (Contributed by Brett Cannon in :issue:`25791`.)
 
+* When a relative import is performed and no parent package is known, then
+  :exc:`ImportError` will be raised. Previously, :exc:`SystemError` could be
+  raised. (Contribute by Brett Cannon in :issue:`18018`.)
+
 
 Changes in the C API
 --------------------

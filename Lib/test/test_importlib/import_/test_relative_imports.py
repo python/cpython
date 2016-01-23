@@ -213,6 +213,11 @@ class RelativeImports:
             with self.assertRaises(KeyError):
                 self.__import__('sys', level=1)
 
+    def test_relative_import_no_package(self):
+        with self.assertRaises(ImportError):
+            self.__import__('a', {'__package__': '', '__spec__': None},
+                            level=1)
+
 
 (Frozen_RelativeImports,
  Source_RelativeImports
