@@ -937,7 +937,8 @@ deque_count(dequeobject *deque, PyObject *v)
     PyObject *item;
     int cmp;
 
-    while (n--) {
+    n++;
+    while (--n) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
@@ -974,7 +975,8 @@ deque_contains(dequeobject *deque, PyObject *v)
     PyObject *item;
     int cmp;
 
-    while (n--) {
+    n++;
+    while (--n) {
         CHECK_NOT_END(b);
         item = b->data[index];
         cmp = PyObject_RichCompareBool(item, v, Py_EQ);
