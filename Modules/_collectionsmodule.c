@@ -895,7 +895,8 @@ deque_reverse(dequeobject *deque, PyObject *unused)
     Py_ssize_t n = Py_SIZE(deque) >> 1;
     PyObject *tmp;
 
-    while (n-- > 0) {
+    n++;
+    while (--n) {
         /* Validate that pointers haven't met in the middle */
         assert(leftblock != rightblock || leftindex < rightindex);
         CHECK_NOT_END(leftblock);
