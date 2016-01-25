@@ -248,7 +248,7 @@ ins1(PyListObject *self, Py_ssize_t where, PyObject *v)
         return -1;
     }
 
-    if (list_resize(self, n+1) == -1)
+    if (list_resize(self, n+1) < 0)
         return -1;
 
     if (where < 0) {
@@ -288,7 +288,7 @@ app1(PyListObject *self, PyObject *v)
         return -1;
     }
 
-    if (list_resize(self, n+1) == -1)
+    if (list_resize(self, n+1) < 0)
         return -1;
 
     Py_INCREF(v);
@@ -708,7 +708,7 @@ list_inplace_repeat(PyListObject *self, Py_ssize_t n)
         return PyErr_NoMemory();
     }
 
-    if (list_resize(self, size*n) == -1)
+    if (list_resize(self, size*n) < 0)
         return NULL;
 
     p = size;
@@ -798,7 +798,7 @@ listextend(PyListObject *self, PyObject *b)
             Py_RETURN_NONE;
         }
         m = Py_SIZE(self);
-        if (list_resize(self, m + n) == -1) {
+        if (list_resize(self, m + n) < 0) {
             Py_DECREF(b);
             return NULL;
         }
@@ -826,7 +826,7 @@ listextend(PyListObject *self, PyObject *b)
 
     /* Guess a result list size. */
     n = PyObject_LengthHint(b, 8);
-    if (n == -1) {
+    if (n < 0) {
         Py_DECREF(it);
         return NULL;
     }
@@ -834,7 +834,7 @@ listextend(PyListObject *self, PyObject *b)
     mn = m + n;
     if (mn >= m) {
         /* Make room. */
-        if (list_resize(self, mn) == -1)
+        if (list_resize(self, mn) < 0)
             goto error;
         /* Make the list sane again. */
         Py_SIZE(self) = m;
