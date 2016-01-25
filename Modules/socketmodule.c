@@ -5411,10 +5411,6 @@ socket_inet_ntop(PyObject *self, PyObject *args)
     } else {
         return PyUnicode_FromString(retval);
     }
-
-    /* NOTREACHED */
-    PyErr_SetString(PyExc_RuntimeError, "invalid handling of inet_ntop");
-    return NULL;
 }
 
 #elif defined(MS_WINDOWS)
