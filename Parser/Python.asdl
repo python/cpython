@@ -1,4 +1,8 @@
--- ASDL's six builtin types are identifier, int, string, bytes, object, singleton
+-- ASDL's 7 builtin types are:
+-- identifier, int, string, bytes, object, singleton, constant
+--
+-- singleton: None, True or False
+-- constant can be None, whereas None means "no value" for object.
 
 module Python
 {
@@ -76,6 +80,7 @@ module Python
          | Bytes(bytes s)
          | NameConstant(singleton value)
          | Ellipsis
+         | Constant(constant value)
 
          -- the following expression can appear in assignment context
          | Attribute(expr value, identifier attr, expr_context ctx)

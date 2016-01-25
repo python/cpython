@@ -1314,7 +1314,11 @@ compiler_isdocstring(stmt_ty s)
 {
     if (s->kind != Expr_kind)
         return 0;
-    return s->v.Expr.value->kind == Str_kind;
+    if (s->v.Expr.value->kind == Str_kind)
+        return 1;
+    if (s->v.Expr.value->kind == Constant_kind)
+        return PyUnicode_CheckExact(s->v.Expr.value->v.Constant.value);
+    return 0;
 }
 
 /* Compile a sequence of statements, checking for a docstring. */
@@ -1688,8 +1692,12 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     st = (stmt_ty)asdl_seq_GET(body, 0);
     docstring = compiler_isdocstring(st);
-    if (docstring && c->c_optimize < 2)
-        first_const = st->v.Expr.value->v.Str.s;
+    if (docstring && c->c_optimize < 2) {
+        if (st->v.Expr.value->kind == Constant_kind)
+            first_const = st->v.Expr.value->v.Constant.value;
+        else
+            first_const = st->v.Expr.value->v.Str.s;
+    }
     if (compiler_add_o(c, c->u->u_consts, first_const) < 0)      {
         compiler_exit_scope(c);
         return 0;
@@ -2600,6 +2608,36 @@ compiler_assert(struct compiler *c, stmt_ty s)
 }
 
 static int
+compiler_visit_stmt_expr(struct compiler *c, expr_ty value)
+{
+    if (c->c_interactive && c->c_nestlevel <= 1) {
+        VISIT(c, expr, value);
+        ADDOP(c, PRINT_EXPR);
+        return 1;
+    }
+
+    if (value->kind == Str_kind || value->kind == Num_kind) {
+        /* ignore strings and numbers */
+        return 1;
+    }
+
+    if (value->kind == Constant_kind) {
+        PyObject *cst = value->v.Constant.value;
+        if (PyUnicode_CheckExact(cst)
+            || PyLong_CheckExact(cst)
+            || PyFloat_CheckExact(cst)
+            || PyComplex_CheckExact(cst)) {
+            /* ignore strings and numbers */
+            return 1;
+        }
+    }
+
+    VISIT(c, expr, value);
+    ADDOP(c, POP_TOP);
+    return 1;
+}
+
+static int
 compiler_visit_stmt(struct compiler *c, stmt_ty s)
 {
     Py_ssize_t i, n;
@@ -2669,16 +2707,7 @@ compiler_visit_stmt(struct compiler *c, stmt_ty s)
     case Nonlocal_kind:
         break;
     case Expr_kind:
-        if (c->c_interactive && c->c_nestlevel <= 1) {
-            VISIT(c, expr, s->v.Expr.value);
-            ADDOP(c, PRINT_EXPR);
-        }
-        else if (s->v.Expr.value->kind != Str_kind &&
-                 s->v.Expr.value->kind != Num_kind) {
-            VISIT(c, expr, s->v.Expr.value);
-            ADDOP(c, POP_TOP);
-        }
-        break;
+        return compiler_visit_stmt_expr(c, s->v.Expr.value);
     case Pass_kind:
         break;
     case Break_kind:
@@ -3625,6 +3654,8 @@ expr_constant(struct compiler *c, expr_ty e)
     switch (e->kind) {
     case Ellipsis_kind:
         return 1;
+    case Constant_kind:
+        return PyObject_IsTrue(e->v.Constant.value);
     case Num_kind:
         return PyObject_IsTrue(e->v.Num.n);
     case Str_kind:
@@ -3912,6 +3943,9 @@ compiler_visit_expr(struct compiler *c, expr_ty e)
         return compiler_compare(c, e);
     case Call_kind:
         return compiler_call(c, e);
+    case Constant_kind:
+        ADDOP_O(c, LOAD_CONST, e->v.Constant.value, consts);
+        break;
     case Num_kind:
         ADDOP_O(c, LOAD_CONST, e->v.Num.n, consts);
         break;

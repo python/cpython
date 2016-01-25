@@ -79,7 +79,10 @@ future_parse(PyFutureFeatures *ff, mod_ty mod, PyObject *filename)
 
     i = 0;
     first = (stmt_ty)asdl_seq_GET(mod->v.Module.body, i);
-    if (first->kind == Expr_kind && first->v.Expr.value->kind == Str_kind)
+    if (first->kind == Expr_kind
+        && (first->v.Expr.value->kind == Str_kind
+            || (first->v.Expr.value->kind == Constant_kind
+                && PyUnicode_CheckExact(first->v.Expr.value->v.Constant.value))))
         i++;
 
 
