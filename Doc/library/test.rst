@@ -418,7 +418,7 @@ The :mod:`test.test_support` module defines the following functions:
    Module and package deprecation messages are suppressed during this import
    if *deprecated* is :const:`True`.
 
-   This function will raise :exc:`unittest.SkipTest` is the named module
+   This function will raise :exc:`unittest.SkipTest` if the named module
    cannot be imported.
 
    Example use::
