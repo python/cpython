@@ -35,6 +35,8 @@ def parse(source, filename='<unknown>', mode='exec'):
     return compile(source, filename, mode, PyCF_ONLY_AST)
 
 
+_NUM_TYPES = (int, float, complex)
+
 def literal_eval(node_or_string):
     """
     Safely evaluate an expression node or a string containing a Python
@@ -47,7 +49,9 @@ def literal_eval(node_or_string):
     if isinstance(node_or_string, Expression):
         node_or_string = node_or_string.body
     def _convert(node):
-        if isinstance(node, (Str, Bytes)):
+        if isinstance(node, Constant):
+            return node.value
+        elif isinstance(node, (Str, Bytes)):
             return node.s
         elif isinstance(node, Num):
             return node.n
@@ -62,24 +66,21 @@ def literal_eval(node_or_string):
                         in zip(node.keys, node.values))
         elif isinstance(node, NameConstant):
             return node.value
-        elif isinstance(node, UnaryOp) and \
-             isinstance(node.op, (UAdd, USub)) and \
-             isinstance(node.operand, (Num, UnaryOp, BinOp)):
+        elif isinstance(node, UnaryOp) and isinstance(node.op, (UAdd, USub)):
             operand = _convert(node.operand)
-            if isinstance(node.op, UAdd):
-                return + operand
-            else:
-                return - operand
-        elif isinstance(node, BinOp) and \
-             isinstance(node.op, (Add, Sub)) and \
-             isinstance(node.right, (Num, UnaryOp, BinOp)) and \
-             isinstance(node.left, (Num, UnaryOp, BinOp)):
+            if isinstance(operand, _NUM_TYPES):
+                if isinstance(node.op, UAdd):
+                    return + operand
+                else:
+                    return - operand
+        elif isinstance(node, BinOp) and isinstance(node.op, (Add, Sub)):
             left = _convert(node.left)
             right = _convert(node.right)
-            if isinstance(node.op, Add):
-                return left + right
-            else:
-                return left - right
+            if isinstance(left, _NUM_TYPES) and isinstance(right, _NUM_TYPES):
+                if isinstance(node.op, Add):
+                    return left + right
+                else:
+                    return left - right
         raise ValueError('malformed node or string: ' + repr(node))
     return _convert(node_or_string)
 
@@ -196,12 +197,19 @@ def get_docstring(node, clean=True):
     """
     if not isinstance(node, (AsyncFunctionDef, FunctionDef, ClassDef, Module)):
         raise TypeError("%r can't have docstrings" % node.__class__.__name__)
-    if node.body and isinstance(node.body[0], Expr) and \
-       isinstance(node.body[0].value, Str):
-        if clean:
-            import inspect
-            return inspect.cleandoc(node.body[0].value.s)
-        return node.body[0].value.s
+    if not(node.body and isinstance(node.body[0], Expr)):
+        return
+    node = node.body[0].value
+    if isinstance(node, Str):
+        text = node.s
+    elif isinstance(node, Constant) and isinstance(node.value, str):
+        text = node.value
+    else:
+        return
+    if clean:
+        import inspect
+        text = inspect.cleandoc(text)
+    return text
 
 
 def walk(node):

@@ -1455,6 +1455,7 @@ symtable_visit_expr(struct symtable *st, expr_ty e)
     case JoinedStr_kind:
         VISIT_SEQ(st, expr, e->v.JoinedStr.values);
         break;
+    case Constant_kind:
     case Num_kind:
     case Str_kind:
     case Bytes_kind:
