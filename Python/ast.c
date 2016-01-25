@@ -132,6 +132,50 @@ validate_arguments(arguments_ty args)
 }
 
 static int
+validate_constant(PyObject *value)
+{
+    if (value == Py_None || value == Py_Ellipsis)
+        return 1;
+
+    if (PyLong_CheckExact(value)
+            || PyFloat_CheckExact(value)
+            || PyComplex_CheckExact(value)
+            || PyBool_Check(value)
+            || PyUnicode_CheckExact(value)
+            || PyBytes_CheckExact(value))
+        return 1;
+
+    if (PyTuple_CheckExact(value) || PyFrozenSet_CheckExact(value)) {
+        PyObject *it;
+
+        it = PyObject_GetIter(value);
+        if (it == NULL)
+            return 0;
+
+        while (1) {
+            PyObject *item = PyIter_Next(it);
+            if (item == NULL) {
+                if (PyErr_Occurred()) {
+                    Py_DECREF(it);
+                    return 0;
+                }
+                break;
+            }
+
+            if (!validate_constant(item)) {
+                Py_DECREF(it);
+                return 0;
+            }
+        }
+
+        Py_DECREF(it);
+        return 1;
+    }
+
+    return 0;
+}
+
+static int
 validate_expr(expr_ty exp, expr_context_ty ctx)
 {
     int check_ctx = 1;
@@ -240,6 +284,12 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
         return validate_expr(exp->v.Call.func, Load) &&
             validate_exprs(exp->v.Call.args, Load, 0) &&
             validate_keywords(exp->v.Call.keywords);
+    case Constant_kind:
+        if (!validate_constant(exp->v.Constant.value)) {
+            PyErr_SetString(PyExc_TypeError, "invalid type in Constant");
+            return 0;
+        }
+        return 1;
     case Num_kind: {
         PyObject *n = exp->v.Num.n;
         if (!PyLong_CheckExact(n) && !PyFloat_CheckExact(n) &&

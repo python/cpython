@@ -306,6 +306,10 @@ static char *NameConstant_fields[]={
     "value",
 };
 static PyTypeObject *Ellipsis_type;
+static PyTypeObject *Constant_type;
+static char *Constant_fields[]={
+    "value",
+};
 static PyTypeObject *Attribute_type;
 _Py_IDENTIFIER(attr);
 _Py_IDENTIFIER(ctx);
@@ -709,6 +713,7 @@ static PyObject* ast2obj_object(void *o)
     return (PyObject*)o;
 }
 #define ast2obj_singleton ast2obj_object
+#define ast2obj_constant ast2obj_object
 #define ast2obj_identifier ast2obj_object
 #define ast2obj_string ast2obj_object
 #define ast2obj_bytes ast2obj_object
@@ -735,6 +740,26 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 {
     if (obj == Py_None)
         obj = NULL;
+    if (obj) {
+        if (PyArena_AddPyObject(arena, obj) < 0) {
+            *out = NULL;
+            return -1;
+        }
+        Py_INCREF(obj);
+    }
+    *out = obj;
+    return 0;
+}
+
+static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
+{
+    if (obj == Py_None || obj == Py_True || obj == Py_False) {
+        /* don't increment the reference counter, Constant uses a borrowed
+         * reference, not a strong reference */
+        *out = obj;
+        return 0;
+    }
+
     if (obj) {
         if (PyArena_AddPyObject(arena, obj) < 0) {
             *out = NULL;
@@ -941,6 +966,8 @@ static int init_types(void)
     if (!NameConstant_type) return 0;
     Ellipsis_type = make_type("Ellipsis", expr_type, NULL, 0);
     if (!Ellipsis_type) return 0;
+    Constant_type = make_type("Constant", expr_type, Constant_fields, 1);
+    if (!Constant_type) return 0;
     Attribute_type = make_type("Attribute", expr_type, Attribute_fields, 3);
     if (!Attribute_type) return 0;
     Subscript_type = make_type("Subscript", expr_type, Subscript_fields, 3);
@@ -2167,6 +2194,25 @@ Ellipsis(int lineno, int col_offset, PyArena *arena)
 }
 
 expr_ty
+Constant(constant value, int lineno, int col_offset, PyArena *arena)
+{
+    expr_ty p;
+    if (!value) {
+        PyErr_SetString(PyExc_ValueError,
+                        "field value is required for Constant");
+        return NULL;
+    }
+    p = (expr_ty)PyArena_Malloc(arena, sizeof(*p));
+    if (!p)
+        return NULL;
+    p->kind = Constant_kind;
+    p->v.Constant.value = value;
+    p->lineno = lineno;
+    p->col_offset = col_offset;
+    return p;
+}
+
+expr_ty
 Attribute(expr_ty value, identifier attr, expr_context_ty ctx, int lineno, int
           col_offset, PyArena *arena)
 {
@@ -3266,6 +3312,15 @@ ast2obj_expr(void* _o)
     case Ellipsis_kind:
         result = PyType_GenericNew(Ellipsis_type, NULL, NULL);
         if (!result) goto failed;
+        break;
+    case Constant_kind:
+        result = PyType_GenericNew(Constant_type, NULL, NULL);
+        if (!result) goto failed;
+        value = ast2obj_constant(o->v.Constant.value);
+        if (!value) goto failed;
+        if (_PyObject_SetAttrId(result, &PyId_value, value) == -1)
+            goto failed;
+        Py_DECREF(value);
         break;
     case Attribute_kind:
         result = PyType_GenericNew(Attribute_type, NULL, NULL);
@@ -6240,6 +6295,28 @@ obj2ast_expr(PyObject* obj, expr_ty* out, PyArena* arena)
         if (*out == NULL) goto failed;
         return 0;
     }
+    isinstance = PyObject_IsInstance(obj, (PyObject*)Constant_type);
+    if (isinstance == -1) {
+        return 1;
+    }
+    if (isinstance) {
+        constant value;
+
+        if (_PyObject_HasAttrId(obj, &PyId_value)) {
+            int res;
+            tmp = _PyObject_GetAttrId(obj, &PyId_value);
+            if (tmp == NULL) goto failed;
+            res = obj2ast_constant(tmp, &value, arena);
+            if (res != 0) goto failed;
+            Py_CLEAR(tmp);
+        } else {
+            PyErr_SetString(PyExc_TypeError, "required field \"value\" missing from Constant");
+            return 1;
+        }
+        *out = Constant(value, lineno, col_offset, arena);
+        if (*out == NULL) goto failed;
+        return 0;
+    }
     isinstance = PyObject_IsInstance(obj, (PyObject*)Attribute_type);
     if (isinstance == -1) {
         return 1;
@@ -7516,6 +7593,8 @@ PyInit__ast(void)
     if (PyDict_SetItemString(d, "NameConstant", (PyObject*)NameConstant_type) <
         0) return NULL;
     if (PyDict_SetItemString(d, "Ellipsis", (PyObject*)Ellipsis_type) < 0)
+        return NULL;
+    if (PyDict_SetItemString(d, "Constant", (PyObject*)Constant_type) < 0)
         return NULL;
     if (PyDict_SetItemString(d, "Attribute", (PyObject*)Attribute_type) < 0)
         return NULL;
