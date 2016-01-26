@@ -288,7 +288,9 @@ validate_expr(expr_ty exp, expr_context_ty ctx)
             validate_keywords(exp->v.Call.keywords);
     case Constant_kind:
         if (!validate_constant(exp->v.Constant.value)) {
-            PyErr_SetString(PyExc_TypeError, "invalid type in Constant");
+            PyErr_Format(PyExc_TypeError,
+                         "got an invalid type in Constant: %s",
+                         Py_TYPE(exp->v.Constant.value)->tp_name);
             return 0;
         }
         return 1;
