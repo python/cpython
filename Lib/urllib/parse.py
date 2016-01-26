@@ -830,21 +830,6 @@ def urlencode(query, doseq=False, safe='', encoding=None, errors=None,
                         l.append(k + '=' + elt)
     return '&'.join(l)
 
-# Utilities to parse URLs (most of these return None for missing parts):
-# unwrap('<URL:type://host/path>') --> 'type://host/path'
-# splittype('type:opaquestring') --> 'type', 'opaquestring'
-# splithost('//host[:port]/path') --> 'host[:port]', '/path'
-# splituser('user[:passwd]@host[:port]') --> 'user[:passwd]', 'host[:port]'
-# splitpasswd('user:passwd') -> 'user', 'passwd'
-# splitport('host:port') --> 'host', 'port'
-# splitquery('/path?query') --> '/path', 'query'
-# splittag('/path#tag') --> '/path', 'tag'
-# splitattr('/path;attr1=value1;attr2=value2;...') ->
-#   '/path', ['attr1=value1', 'attr2=value2', ...]
-# splitvalue('attr=value') --> 'attr', 'value'
-# urllib.parse.unquote('abc%20def') -> 'abc def'
-# quote('abc def') -> 'abc%20def')
-
 def to_bytes(url):
     """to_bytes(u"URL") --> 'URL'."""
     # Most URL schemes require ASCII. If that changes, the conversion
