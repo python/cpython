@@ -951,6 +951,12 @@ class ConstantTests(unittest.TestCase):
         exec(code, ns)
         return ns['x']
 
+    def test_validation(self):
+        with self.assertRaises(TypeError) as cm:
+            self.compile_constant([1, 2, 3])
+        self.assertEqual(str(cm.exception),
+                         "got an invalid type in Constant: list")
+
     def test_singletons(self):
         for const in (None, False, True, Ellipsis, b'', frozenset()):
             with self.subTest(const=const):
