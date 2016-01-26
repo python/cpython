@@ -289,7 +289,7 @@ class TestBasic(unittest.TestCase):
                     else:
                         self.assertEqual(d.index(element, start, stop), target)
 
-    def test_insert_bug_24913(self):
+    def test_index_bug_24913(self):
         d = deque('A' * 3)
         with self.assertRaises(ValueError):
             i = d.index("Hello world", 0, 4)
