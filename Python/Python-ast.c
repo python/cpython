@@ -753,13 +753,6 @@ static int obj2ast_object(PyObject* obj, PyObject** out, PyArena* arena)
 
 static int obj2ast_constant(PyObject* obj, PyObject** out, PyArena* arena)
 {
-    if (obj == Py_None || obj == Py_True || obj == Py_False) {
-        /* don't increment the reference counter, Constant uses a borrowed
-         * reference, not a strong reference */
-        *out = obj;
-        return 0;
-    }
-
     if (obj) {
         if (PyArena_AddPyObject(arena, obj) < 0) {
             *out = NULL;
