@@ -164,8 +164,10 @@ validate_constant(PyObject *value)
 
             if (!validate_constant(item)) {
                 Py_DECREF(it);
+                Py_DECREF(item);
                 return 0;
             }
+            Py_DECREF(item);
         }
 
         Py_DECREF(it);
