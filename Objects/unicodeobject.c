@@ -748,6 +748,8 @@ resize_compact(PyObject *unicode, Py_ssize_t length)
     else if (_PyUnicode_HAS_WSTR_MEMORY(unicode)) {
         PyObject_DEL(_PyUnicode_WSTR(unicode));
         _PyUnicode_WSTR(unicode) = NULL;
+        if (!PyUnicode_IS_ASCII(unicode))
+            _PyUnicode_WSTR_LENGTH(unicode) = 0;
     }
 #ifdef Py_DEBUG
     unicode_fill_invalid(unicode, old_length);
