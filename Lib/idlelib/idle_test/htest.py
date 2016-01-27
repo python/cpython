@@ -192,7 +192,10 @@ _io_binding_spec = {
     'msg': "Test the following bindings.\n"
            "<Control-o> to open file from dialog.\n"
            "Edit the file.\n"
+           "<Control-p> to print the file.\n"
            "<Control-s> to save the file.\n"
+           "<Alt-s> to save-as another file.\n"
+           "<Control-c> to save-copy-as another file.\n"
            "Check that changes were saved by opening the file elsewhere."
     }
 
