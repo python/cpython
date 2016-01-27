@@ -304,6 +304,20 @@ class TestBasic(unittest.TestCase):
             s.insert(i, 'Z')
             self.assertEqual(list(d), s)
 
+    def test_index_bug_26194(self):
+        data = 'ABC'
+        for i in range(len(data) + 1):
+            d = deque(data, len(data))
+            d.insert(i, None)
+            s = list(data)
+            s.insert(i, None)
+            s.pop()
+            self.assertEqual(list(d), s)
+            if i < len(data):
+                self.assertIsNone(d[i])
+            else:
+                self.assertTrue(None not in d)
+
     def test_imul(self):
         for n in (-10, -1, 0, 1, 2, 10, 1000):
             d = deque()
