@@ -17,6 +17,10 @@ Core and Builtins
   Python 3.5.1 to hide the exact implementation of atomic C types, to avoid
   compiler issues.
 
+- Issue #26194:  Deque.insert() gave odd results for bounded deques that had
+  reached their maximum size.  Now, the insert will happen normally and then
+  any overflowing element will be truncated from the right side.
+
 - Issue #25843: When compiling code, don't merge constants if they are equal
   but have a different types. For example, ``f1, f2 = lambda: 1, lambda: 1.0``
   is now correctly compiled to two different functions: ``f1()`` returns ``1``
