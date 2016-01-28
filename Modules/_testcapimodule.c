@@ -1115,6 +1115,267 @@ test_k_code(PyObject *self)
     return Py_None;
 }
 
+static PyObject *
+getargs_c(PyObject *self, PyObject *args)
+{
+    char c;
+    if (!PyArg_ParseTuple(args, "c", &c))
+        return NULL;
+    return PyInt_FromLong((unsigned char)c);
+}
+
+static PyObject *
+getargs_s(PyObject *self, PyObject *args)
+{
+    const char *str;
+    if (!PyArg_ParseTuple(args, "s", &str))
+        return NULL;
+    return PyBytes_FromString(str);
+}
+
+static PyObject *
+getargs_s_star(PyObject *self, PyObject *args)
+{
+    Py_buffer buffer;
+    PyObject *bytes;
+    if (!PyArg_ParseTuple(args, "s*", &buffer))
+        return NULL;
+    bytes = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    PyBuffer_Release(&buffer);
+    return bytes;
+}
+
+static PyObject *
+getargs_s_hash(PyObject *self, PyObject *args)
+{
+    const char *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "s#", &str, &size))
+        return NULL;
+    return PyBytes_FromStringAndSize(str, size);
+}
+
+static PyObject *
+getargs_t_hash(PyObject *self, PyObject *args)
+{
+    const char *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "t#", &str, &size))
+        return NULL;
+    return PyBytes_FromStringAndSize(str, size);
+}
+
+static PyObject *
+getargs_z(PyObject *self, PyObject *args)
+{
+    const char *str;
+    if (!PyArg_ParseTuple(args, "z", &str))
+        return NULL;
+    if (str != NULL)
+        return PyBytes_FromString(str);
+    else
+        Py_RETURN_NONE;
+}
+
+static PyObject *
+getargs_z_star(PyObject *self, PyObject *args)
+{
+    Py_buffer buffer;
+    PyObject *bytes;
+    if (!PyArg_ParseTuple(args, "z*", &buffer))
+        return NULL;
+    if (buffer.buf != NULL)
+        bytes = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    else {
+        Py_INCREF(Py_None);
+        bytes = Py_None;
+    }
+    PyBuffer_Release(&buffer);
+    return bytes;
+}
+
+static PyObject *
+getargs_z_hash(PyObject *self, PyObject *args)
+{
+    const char *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "z#", &str, &size))
+        return NULL;
+    if (str != NULL)
+        return PyBytes_FromStringAndSize(str, size);
+    else
+        Py_RETURN_NONE;
+}
+
+static PyObject *
+getargs_w(PyObject *self, PyObject *args)
+{
+    char *str;
+    Py_ssize_t size;
+
+    if (!PyArg_ParseTuple(args, "wn", &str, &size))
+        return NULL;
+
+    if (2 <= size) {
+        str[0] = '[';
+        str[size-1] = ']';
+    }
+
+    return PyBytes_FromStringAndSize(str, size);
+}
+
+static PyObject *
+getargs_w_hash(PyObject *self, PyObject *args)
+{
+    char *str;
+    Py_ssize_t size;
+
+    if (!PyArg_ParseTuple(args, "w#", &str, &size))
+        return NULL;
+
+    if (2 <= size) {
+        str[0] = '[';
+        str[size-1] = ']';
+    }
+
+    return PyBytes_FromStringAndSize(str, size);
+}
+
+static PyObject *
+getargs_w_star(PyObject *self, PyObject *args)
+{
+    Py_buffer buffer;
+    PyObject *result;
+    char *str;
+
+    if (!PyArg_ParseTuple(args, "w*", &buffer))
+        return NULL;
+
+    if (2 <= buffer.len) {
+        str = buffer.buf;
+        str[0] = '[';
+        str[buffer.len-1] = ']';
+    }
+
+    result = PyBytes_FromStringAndSize(buffer.buf, buffer.len);
+    PyBuffer_Release(&buffer);
+    return result;
+}
+
+#ifdef Py_USING_UNICODE
+
+static int
+_ustrlen(const Py_UNICODE *u)
+{
+    int i = 0;
+    const Py_UNICODE *v = u;
+    while (*v != 0) { i++; v++; }
+    return i;
+}
+
+static PyObject *
+getargs_u(PyObject *self, PyObject *args)
+{
+    const Py_UNICODE *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "u", &str))
+        return NULL;
+    size = _ustrlen(str);
+    return PyUnicode_FromUnicode(str, size);
+}
+
+static PyObject *
+getargs_u_hash(PyObject *self, PyObject *args)
+{
+    const Py_UNICODE *str;
+    Py_ssize_t size;
+    if (!PyArg_ParseTuple(args, "u#", &str, &size))
+        return NULL;
+    return PyUnicode_FromUnicode(str, size);
+}
+
+#endif
+
+static PyObject *
+getargs_es(PyObject *self, PyObject *args)
+{
+    PyObject *arg, *result;
+    const char *encoding = NULL;
+    char *str;
+
+    if (!PyArg_ParseTuple(args, "O|s", &arg, &encoding))
+        return NULL;
+    if (!PyArg_Parse(arg, "es", encoding, &str))
+        return NULL;
+    result = PyBytes_FromString(str);
+    PyMem_Free(str);
+    return result;
+}
+
+static PyObject *
+getargs_et(PyObject *self, PyObject *args)
+{
+    PyObject *arg, *result;
+    const char *encoding = NULL;
+    char *str;
+
+    if (!PyArg_ParseTuple(args, "O|s", &arg, &encoding))
+        return NULL;
+    if (!PyArg_Parse(arg, "et", encoding, &str))
+        return NULL;
+    result = PyBytes_FromString(str);
+    PyMem_Free(str);
+    return result;
+}
+
+static PyObject *
+getargs_es_hash(PyObject *self, PyObject *args)
+{
+    PyObject *arg, *result;
+    const char *encoding = NULL;
+    PyByteArrayObject *buffer = NULL;
+    char *str = NULL;
+    Py_ssize_t size;
+
+    if (!PyArg_ParseTuple(args, "O|sO!",
+                          &arg, &encoding, &PyByteArray_Type, &buffer))
+        return NULL;
+    if (buffer != NULL) {
+        str = PyByteArray_AS_STRING(buffer);
+        size = PyByteArray_GET_SIZE(buffer);
+    }
+    if (!PyArg_Parse(arg, "es#", encoding, &str, &size))
+        return NULL;
+    result = PyBytes_FromStringAndSize(str, size);
+    if (buffer == NULL)
+        PyMem_Free(str);
+    return result;
+}
+
+static PyObject *
+getargs_et_hash(PyObject *self, PyObject *args)
+{
+    PyObject *arg, *result;
+    const char *encoding = NULL;
+    PyByteArrayObject *buffer = NULL;
+    char *str = NULL;
+    Py_ssize_t size;
+
+    if (!PyArg_ParseTuple(args, "O|sO!",
+                          &arg, &encoding, &PyByteArray_Type, &buffer))
+        return NULL;
+    if (buffer != NULL) {
+        str = PyByteArray_AS_STRING(buffer);
+        size = PyByteArray_GET_SIZE(buffer);
+    }
+    if (!PyArg_Parse(arg, "et#", encoding, &str, &size))
+        return NULL;
+    result = PyBytes_FromStringAndSize(str, size);
+    if (buffer == NULL)
+        PyMem_Free(str);
+    return result;
+}
+
 #ifdef Py_USING_UNICODE
 
 static volatile int x;
@@ -1335,7 +1596,12 @@ test_long_numbits(PyObject *self)
 static PyObject *
 test_null_strings(PyObject *self)
 {
-    PyObject *o1 = PyObject_Str(NULL), *o2 = PyObject_Unicode(NULL);
+    PyObject *o1 = PyObject_Str(NULL);
+#ifdef Py_USING_UNICODE
+    PyObject *o2 = PyObject_Unicode(NULL);
+#else
+    PyObject *o2 = PyObject_Str(NULL);
+#endif
     PyObject *tuple = PyTuple_Pack(2, o1, o2);
     Py_XDECREF(o1);
     Py_XDECREF(o2);
@@ -1385,6 +1651,7 @@ set_errno(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+#ifdef Py_USING_UNICODE
 static int test_run_counter = 0;
 
 static PyObject *
@@ -1407,6 +1674,7 @@ test_datetime_capi(PyObject *self, PyObject *args) {
     else
         return NULL;
 }
+#endif
 
 
 #ifdef WITH_THREAD
@@ -2045,7 +2313,9 @@ static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
     {"set_errno",               set_errno,                       METH_VARARGS},
     {"test_config",             (PyCFunction)test_config,        METH_NOARGS},
+#ifdef Py_USING_UNICODE
     {"test_datetime_capi",  test_datetime_capi,              METH_NOARGS},
+#endif
     {"test_list_api",           (PyCFunction)test_list_api,      METH_NOARGS},
     {"test_dict_iteration",     (PyCFunction)test_dict_iteration,METH_NOARGS},
     {"test_lazy_hash_inheritance",      (PyCFunction)test_lazy_hash_inheritance,METH_NOARGS},
@@ -2057,7 +2327,9 @@ static PyMethodDef TestMethods[] = {
      METH_NOARGS},
     {"test_long_numbits",       (PyCFunction)test_long_numbits,  METH_NOARGS},
     {"test_k_code",             (PyCFunction)test_k_code,        METH_NOARGS},
+#ifdef Py_USING_UNICODE
     {"test_empty_argparse", (PyCFunction)test_empty_argparse,METH_NOARGS},
+#endif
     {"test_null_strings",       (PyCFunction)test_null_strings,  METH_NOARGS},
     {"test_string_from_format", (PyCFunction)test_string_from_format, METH_NOARGS},
     {"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,
@@ -2082,12 +2354,31 @@ static PyMethodDef TestMethods[] = {
     {"test_long_long_and_overflow",
         (PyCFunction)test_long_long_and_overflow, METH_NOARGS},
     {"test_L_code",             (PyCFunction)test_L_code,        METH_NOARGS},
+#endif
+    {"getargs_c",               getargs_c,                       METH_VARARGS},
+    {"getargs_s",               getargs_s,                       METH_VARARGS},
+    {"getargs_s_star",          getargs_s_star,                  METH_VARARGS},
+    {"getargs_s_hash",          getargs_s_hash,                  METH_VARARGS},
+    {"getargs_t_hash",          getargs_t_hash,                  METH_VARARGS},
+    {"getargs_z",               getargs_z,                       METH_VARARGS},
+    {"getargs_z_star",          getargs_z_star,                  METH_VARARGS},
+    {"getargs_z_hash",          getargs_z_hash,                  METH_VARARGS},
+    {"getargs_w",               getargs_w,                       METH_VARARGS},
+    {"getargs_w_star",          getargs_w_star,                  METH_VARARGS},
+    {"getargs_w_hash",          getargs_w_hash,                  METH_VARARGS},
+#ifdef Py_USING_UNICODE
+    {"getargs_u",               getargs_u,                       METH_VARARGS},
+    {"getargs_u_hash",          getargs_u_hash,                  METH_VARARGS},
+#endif
+    {"getargs_es",              getargs_es,                      METH_VARARGS},
+    {"getargs_et",              getargs_et,                      METH_VARARGS},
+    {"getargs_es_hash",         getargs_es_hash,                 METH_VARARGS},
+    {"getargs_et_hash",         getargs_et_hash,                 METH_VARARGS},
+#ifdef Py_USING_UNICODE
     {"codec_incrementalencoder",
      (PyCFunction)codec_incrementalencoder,      METH_VARARGS},
     {"codec_incrementaldecoder",
      (PyCFunction)codec_incrementaldecoder,      METH_VARARGS},
-#endif
-#ifdef Py_USING_UNICODE
     {"test_u_code",             (PyCFunction)test_u_code,        METH_NOARGS},
     {"test_widechar",           (PyCFunction)test_widechar,      METH_NOARGS},
     {"unicode_encodedecimal",   unicode_encodedecimal,           METH_VARARGS},

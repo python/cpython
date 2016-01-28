@@ -331,9 +331,293 @@ class Keywords_TestCase(unittest.TestCase):
         else:
             self.fail('TypeError should have been raised')
 
+
+class Bytes_TestCase(unittest.TestCase):
+    def test_c(self):
+        from _testcapi import getargs_c
+        self.assertRaises(TypeError, getargs_c, 'abc')  # len > 1
+        self.assertEqual(getargs_c('a'), 97)
+        if test_support.have_unicode:
+            self.assertRaises(TypeError, getargs_c, u's')
+        self.assertRaises(TypeError, getargs_c, bytearray('a'))
+        self.assertRaises(TypeError, getargs_c, memoryview('a'))
+        with test_support.check_py3k_warnings():
+            self.assertRaises(TypeError, getargs_c, buffer('a'))
+        self.assertRaises(TypeError, getargs_c, 97)
+        self.assertRaises(TypeError, getargs_c, None)
+
+    def test_w(self):
+        from _testcapi import getargs_w
+        self.assertRaises(TypeError, getargs_w, 'abc', 3)
+        self.assertRaises(TypeError, getargs_w, u'abc', 3)
+        self.assertRaises(TypeError, getargs_w, bytearray('bytes'), 3)
+        self.assertRaises(TypeError, getargs_w, memoryview('bytes'), 3)
+        self.assertRaises(TypeError, getargs_w,
+                          memoryview(bytearray('bytes')), 3)
+        with test_support.check_py3k_warnings():
+            self.assertRaises(TypeError, getargs_w, buffer('bytes'), 3)
+            self.assertRaises(TypeError, getargs_w,
+                              buffer(bytearray('bytes')), 3)
+        self.assertRaises(TypeError, getargs_w, None, 0)
+
+    def test_w_hash(self):
+        from _testcapi import getargs_w_hash
+        self.assertRaises(TypeError, getargs_w_hash, 'abc')
+        self.assertRaises(TypeError, getargs_w_hash, u'abc')
+        self.assertRaises(TypeError, getargs_w_hash, bytearray('bytes'))
+        self.assertRaises(TypeError, getargs_w_hash, memoryview('bytes'))
+        self.assertRaises(TypeError, getargs_w_hash,
+                          memoryview(bytearray('bytes')))
+        with test_support.check_py3k_warnings():
+            self.assertRaises(TypeError, getargs_w_hash, buffer('bytes'))
+            self.assertRaises(TypeError, getargs_w_hash,
+                              buffer(bytearray('bytes')))
+        self.assertRaises(TypeError, getargs_w_hash, None)
+
+    def test_w_star(self):
+        # getargs_w_star() modifies first and last byte
+        from _testcapi import getargs_w_star
+        self.assertRaises(TypeError, getargs_w_star, 'abc')
+        self.assertRaises(TypeError, getargs_w_star, u'abc')
+        self.assertRaises(TypeError, getargs_w_star, memoryview('bytes'))
+        buf = bytearray('bytearray')
+        self.assertEqual(getargs_w_star(buf), '[ytearra]')
+        self.assertEqual(buf, bytearray('[ytearra]'))
+        buf = bytearray(b'memoryview')
+        self.assertEqual(getargs_w_star(memoryview(buf)), '[emoryvie]')
+        self.assertEqual(buf, bytearray('[emoryvie]'))
+        with test_support.check_py3k_warnings():
+            self.assertRaises(TypeError, getargs_w_star, buffer('buffer'))
+            self.assertRaises(TypeError, getargs_w_star,
+                              buffer(bytearray('buffer')))
+        self.assertRaises(TypeError, getargs_w_star, None)
+
+
+class String_TestCase(unittest.TestCase):
+    def test_s(self):
+        from _testcapi import getargs_s
+        self.assertEqual(getargs_s('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_s(u'abc'), 'abc')
+        self.assertRaises(TypeError, getargs_s, 'nul:\0')
+        self.assertRaises(TypeError, getargs_s, u'nul:\0')
+        self.assertRaises(TypeError, getargs_s, bytearray('bytearray'))
+        self.assertRaises(TypeError, getargs_s, memoryview('memoryview'))
+        with test_support.check_py3k_warnings():
+            self.assertRaises(TypeError, getargs_s, buffer('buffer'))
+        self.assertRaises(TypeError, getargs_s, None)
+
+    def test_s_star(self):
+        from _testcapi import getargs_s_star
+        self.assertEqual(getargs_s_star('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_s_star(u'abc'), 'abc')
+        self.assertEqual(getargs_s_star('nul:\0'), 'nul:\0')
+        self.assertEqual(getargs_s_star(u'nul:\0'), 'nul:\0')
+        self.assertEqual(getargs_s_star(bytearray('abc\xe9')), 'abc\xe9')
+        self.assertEqual(getargs_s_star(memoryview('abc\xe9')), 'abc\xe9')
+        with test_support.check_py3k_warnings():
+            self.assertEqual(getargs_s_star(buffer('abc\xe9')), 'abc\xe9')
+            self.assertEqual(getargs_s_star(buffer(u'abc\xe9')),
+                             str(buffer(u'abc\xe9')))
+        self.assertRaises(TypeError, getargs_s_star, None)
+
+    def test_s_hash(self):
+        from _testcapi import getargs_s_hash
+        self.assertEqual(getargs_s_hash('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_s_hash(u'abc'), 'abc')
+        self.assertEqual(getargs_s_hash('nul:\0'), 'nul:\0')
+        self.assertEqual(getargs_s_hash(u'nul:\0'), 'nul:\0')
+        self.assertRaises(TypeError, getargs_s_hash, bytearray('bytearray'))
+        self.assertRaises(TypeError, getargs_s_hash, memoryview('memoryview'))
+        with test_support.check_py3k_warnings():
+            self.assertEqual(getargs_s_hash(buffer('abc\xe9')), 'abc\xe9')
+            self.assertEqual(getargs_s_hash(buffer(u'abc\xe9')),
+                             str(buffer(u'abc\xe9')))
+        self.assertRaises(TypeError, getargs_s_hash, None)
+
+    def test_t_hash(self):
+        from _testcapi import getargs_t_hash
+        self.assertEqual(getargs_t_hash('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_t_hash(u'abc'), 'abc')
+        self.assertEqual(getargs_t_hash('nul:\0'), 'nul:\0')
+        self.assertEqual(getargs_t_hash(u'nul:\0'), 'nul:\0')
+        self.assertRaises(TypeError, getargs_t_hash, bytearray('bytearray'))
+        self.assertRaises(TypeError, getargs_t_hash, memoryview('memoryview'))
+        with test_support.check_py3k_warnings():
+            self.assertEqual(getargs_t_hash(buffer('abc\xe9')), 'abc\xe9')
+            self.assertEqual(getargs_t_hash(buffer(u'abc')), 'abc')
+        self.assertRaises(TypeError, getargs_t_hash, None)
+
+    def test_z(self):
+        from _testcapi import getargs_z
+        self.assertEqual(getargs_z('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_z(u'abc'), 'abc')
+        self.assertRaises(TypeError, getargs_z, 'nul:\0')
+        self.assertRaises(TypeError, getargs_z, u'nul:\0')
+        self.assertRaises(TypeError, getargs_z, bytearray('bytearray'))
+        self.assertRaises(TypeError, getargs_z, memoryview('memoryview'))
+        with test_support.check_py3k_warnings():
+            self.assertRaises(TypeError, getargs_z, buffer('buffer'))
+        self.assertIsNone(getargs_z(None))
+
+    def test_z_star(self):
+        from _testcapi import getargs_z_star
+        self.assertEqual(getargs_z_star('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_z_star(u'abc'), 'abc')
+        self.assertEqual(getargs_z_star('nul:\0'), 'nul:\0')
+        self.assertEqual(getargs_z_star(u'nul:\0'), 'nul:\0')
+        self.assertEqual(getargs_z_star(bytearray('abc\xe9')), 'abc\xe9')
+        self.assertEqual(getargs_z_star(memoryview('abc\xe9')), 'abc\xe9')
+        with test_support.check_py3k_warnings():
+            self.assertEqual(getargs_z_star(buffer('abc\xe9')), 'abc\xe9')
+            self.assertEqual(getargs_z_star(buffer(u'abc\xe9')),
+                             str(buffer(u'abc\xe9')))
+        self.assertIsNone(getargs_z_star(None))
+
+    def test_z_hash(self):
+        from _testcapi import getargs_z_hash
+        self.assertEqual(getargs_z_hash('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_z_hash(u'abc'), 'abc')
+        self.assertEqual(getargs_z_hash('nul:\0'), 'nul:\0')
+        self.assertEqual(getargs_z_hash(u'nul:\0'), 'nul:\0')
+        self.assertRaises(TypeError, getargs_z_hash, bytearray('bytearray'))
+        self.assertRaises(TypeError, getargs_z_hash, memoryview('memoryview'))
+        with test_support.check_py3k_warnings():
+            self.assertEqual(getargs_z_hash(buffer('abc\xe9')), 'abc\xe9')
+            self.assertEqual(getargs_z_hash(buffer(u'abc\xe9')),
+                             str(buffer(u'abc\xe9')))
+        self.assertIsNone(getargs_z_hash(None))
+
+
+@test_support.requires_unicode
+class Unicode_TestCase(unittest.TestCase):
+    def test_es(self):
+        from _testcapi import getargs_es
+        self.assertEqual(getargs_es('abc'), 'abc')
+        self.assertEqual(getargs_es(u'abc'), 'abc')
+        self.assertEqual(getargs_es('abc', 'ascii'), 'abc')
+        self.assertEqual(getargs_es(u'abc\xe9', 'latin1'), 'abc\xe9')
+        self.assertRaises(UnicodeEncodeError, getargs_es, u'abc\xe9', 'ascii')
+        self.assertRaises(LookupError, getargs_es, u'abc', 'spam')
+        self.assertRaises(TypeError, getargs_es,
+                          bytearray('bytearray'), 'latin1')
+        self.assertRaises(TypeError, getargs_es,
+                          memoryview('memoryview'), 'latin1')
+        with test_support.check_py3k_warnings():
+            self.assertEqual(getargs_es(buffer('abc'), 'ascii'), 'abc')
+            self.assertEqual(getargs_es(buffer(u'abc'), 'ascii'), 'abc')
+        self.assertRaises(TypeError, getargs_es, None, 'latin1')
+        self.assertRaises(TypeError, getargs_es, 'nul:\0', 'latin1')
+        self.assertRaises(TypeError, getargs_es, u'nul:\0', 'latin1')
+
+    def test_et(self):
+        from _testcapi import getargs_et
+        self.assertEqual(getargs_et('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_et(u'abc'), 'abc')
+        self.assertEqual(getargs_et('abc', 'ascii'), 'abc')
+        self.assertEqual(getargs_et('abc\xe9', 'ascii'), 'abc\xe9')
+        self.assertEqual(getargs_et(u'abc\xe9', 'latin1'), 'abc\xe9')
+        self.assertRaises(UnicodeEncodeError, getargs_et, u'abc\xe9', 'ascii')
+        self.assertRaises(LookupError, getargs_et, u'abc', 'spam')
+        self.assertRaises(TypeError, getargs_et,
+                          bytearray('bytearray'), 'latin1')
+        self.assertRaises(TypeError, getargs_et,
+                          memoryview('memoryview'), 'latin1')
+        with test_support.check_py3k_warnings():
+            self.assertEqual(getargs_et(buffer('abc'), 'ascii'), 'abc')
+            self.assertEqual(getargs_et(buffer(u'abc'), 'ascii'), 'abc')
+        self.assertRaises(TypeError, getargs_et, None, 'latin1')
+        self.assertRaises(TypeError, getargs_et, 'nul:\0', 'latin1')
+        self.assertRaises(TypeError, getargs_et, u'nul:\0', 'latin1')
+
+    def test_es_hash(self):
+        from _testcapi import getargs_es_hash
+        self.assertEqual(getargs_es_hash('abc'), 'abc')
+        self.assertEqual(getargs_es_hash(u'abc'), 'abc')
+        self.assertEqual(getargs_es_hash(u'abc\xe9', 'latin1'), 'abc\xe9')
+        self.assertRaises(UnicodeEncodeError, getargs_es_hash, u'abc\xe9', 'ascii')
+        self.assertRaises(LookupError, getargs_es_hash, u'abc', 'spam')
+        self.assertRaises(TypeError, getargs_es_hash,
+                          bytearray('bytearray'), 'latin1')
+        self.assertRaises(TypeError, getargs_es_hash,
+                          memoryview('memoryview'), 'latin1')
+        with test_support.check_py3k_warnings():
+            self.assertEqual(getargs_es_hash(buffer('abc'), 'ascii'), 'abc')
+            self.assertEqual(getargs_es_hash(buffer(u'abc'), 'ascii'), 'abc')
+        self.assertRaises(TypeError, getargs_es_hash, None, 'latin1')
+        self.assertEqual(getargs_es_hash('nul:\0', 'latin1'), 'nul:\0')
+        self.assertEqual(getargs_es_hash(u'nul:\0', 'latin1'), 'nul:\0')
+
+        buf = bytearray('x'*8)
+        self.assertEqual(getargs_es_hash(u'abc\xe9', 'latin1', buf), 'abc\xe9')
+        self.assertEqual(buf, bytearray('abc\xe9\x00xxx'))
+        buf = bytearray('x'*5)
+        self.assertEqual(getargs_es_hash(u'abc\xe9', 'latin1', buf), 'abc\xe9')
+        self.assertEqual(buf, bytearray('abc\xe9\x00'))
+        buf = bytearray('x'*4)
+        self.assertRaises(TypeError, getargs_es_hash, u'abc\xe9', 'latin1', buf)
+        self.assertEqual(buf, bytearray('x'*4))
+        buf = bytearray()
+        self.assertRaises(TypeError, getargs_es_hash, u'abc\xe9', 'latin1', buf)
+
+    def test_et_hash(self):
+        from _testcapi import getargs_et_hash
+        self.assertEqual(getargs_et_hash('abc\xe9'), 'abc\xe9')
+        self.assertEqual(getargs_et_hash(u'abc'), 'abc')
+        self.assertEqual(getargs_et_hash('abc\xe9', 'ascii'), 'abc\xe9')
+        self.assertEqual(getargs_et_hash(u'abc\xe9', 'latin1'), 'abc\xe9')
+        self.assertRaises(UnicodeEncodeError, getargs_et_hash,
+                          u'abc\xe9', 'ascii')
+        self.assertRaises(LookupError, getargs_et_hash, u'abc', 'spam')
+        self.assertRaises(TypeError, getargs_et_hash,
+                          bytearray('bytearray'), 'latin1')
+        self.assertRaises(TypeError, getargs_et_hash,
+                          memoryview('memoryview'), 'latin1')
+        with test_support.check_py3k_warnings():
+            self.assertEqual(getargs_et_hash(buffer('abc'), 'ascii'), 'abc')
+            self.assertEqual(getargs_et_hash(buffer(u'abc'), 'ascii'), 'abc')
+        self.assertRaises(TypeError, getargs_et_hash, None, 'latin1')
+        self.assertEqual(getargs_et_hash('nul:\0', 'latin1'), 'nul:\0')
+        self.assertEqual(getargs_et_hash(u'nul:\0', 'latin1'), 'nul:\0')
+
+        buf = bytearray('x'*8)
+        self.assertEqual(getargs_et_hash(u'abc\xe9', 'latin1', buf), 'abc\xe9')
+        self.assertEqual(buf, bytearray('abc\xe9\x00xxx'))
+        buf = bytearray('x'*5)
+        self.assertEqual(getargs_et_hash(u'abc\xe9', 'latin1', buf), 'abc\xe9')
+        self.assertEqual(buf, bytearray('abc\xe9\x00'))
+        buf = bytearray('x'*4)
+        self.assertRaises(TypeError, getargs_et_hash, u'abc\xe9', 'latin1', buf)
+        self.assertEqual(buf, bytearray('x'*4))
+        buf = bytearray()
+        self.assertRaises(TypeError, getargs_et_hash, u'abc\xe9', 'latin1', buf)
+
+    def test_u(self):
+        from _testcapi import getargs_u
+        self.assertEqual(getargs_u(u'abc\xe9'), u'abc\xe9')
+        self.assertEqual(getargs_u(u'nul:\0'), u'nul:')
+        self.assertRaises(TypeError, getargs_u, 'bytes')
+        self.assertRaises(TypeError, getargs_u, bytearray('bytearray'))
+        self.assertRaises(TypeError, getargs_u, memoryview('memoryview'))
+        with test_support.check_py3k_warnings():
+            self.assertRaises(TypeError, getargs_u, buffer('buffer'))
+        self.assertRaises(TypeError, getargs_u, None)
+
+    def test_u_hash(self):
+        from _testcapi import getargs_u_hash
+        self.assertEqual(getargs_u_hash(u'abc\xe9'), u'abc\xe9')
+        self.assertEqual(getargs_u_hash(u'nul:\0'), u'nul:\0')
+        self.assertRaises(TypeError, getargs_u_hash, 'bytes')
+        self.assertRaises(TypeError, getargs_u_hash, bytearray('bytearray'))
+        self.assertRaises(TypeError, getargs_u_hash, memoryview('memoryview'))
+        with test_support.check_py3k_warnings():
+            self.assertRaises(TypeError, getargs_u_hash, buffer('buffer'))
+        self.assertRaises(TypeError, getargs_u_hash, None)
+
+
 def test_main():
     tests = [Signed_TestCase, Unsigned_TestCase, LongLong_TestCase,
-             Tuple_TestCase, Keywords_TestCase]
+             Tuple_TestCase, Keywords_TestCase,
+             Bytes_TestCase, String_TestCase, Unicode_TestCase]
     test_support.run_unittest(*tests)
 
 if __name__ == "__main__":
