@@ -1149,7 +1149,7 @@ static PyObject *
 getargs_s_hash(PyObject *self, PyObject *args)
 {
     const char *str;
-    Py_ssize_t size;
+    int size;
     if (!PyArg_ParseTuple(args, "s#", &str, &size))
         return NULL;
     return PyBytes_FromStringAndSize(str, size);
@@ -1159,7 +1159,7 @@ static PyObject *
 getargs_t_hash(PyObject *self, PyObject *args)
 {
     const char *str;
-    Py_ssize_t size;
+    int size;
     if (!PyArg_ParseTuple(args, "t#", &str, &size))
         return NULL;
     return PyBytes_FromStringAndSize(str, size);
@@ -1198,7 +1198,7 @@ static PyObject *
 getargs_z_hash(PyObject *self, PyObject *args)
 {
     const char *str;
-    Py_ssize_t size;
+    int size;
     if (!PyArg_ParseTuple(args, "z#", &str, &size))
         return NULL;
     if (str != NULL)
@@ -1228,7 +1228,7 @@ static PyObject *
 getargs_w_hash(PyObject *self, PyObject *args)
 {
     char *str;
-    Py_ssize_t size;
+    int size;
 
     if (!PyArg_ParseTuple(args, "w#", &str, &size))
         return NULL;
@@ -1277,7 +1277,7 @@ static PyObject *
 getargs_u(PyObject *self, PyObject *args)
 {
     const Py_UNICODE *str;
-    Py_ssize_t size;
+    int size;
     if (!PyArg_ParseTuple(args, "u", &str))
         return NULL;
     size = _ustrlen(str);
@@ -1288,7 +1288,7 @@ static PyObject *
 getargs_u_hash(PyObject *self, PyObject *args)
 {
     const Py_UNICODE *str;
-    Py_ssize_t size;
+    int size;
     if (!PyArg_ParseTuple(args, "u#", &str, &size))
         return NULL;
     return PyUnicode_FromUnicode(str, size);
@@ -1335,7 +1335,7 @@ getargs_es_hash(PyObject *self, PyObject *args)
     const char *encoding = NULL;
     PyByteArrayObject *buffer = NULL;
     char *str = NULL;
-    Py_ssize_t size;
+    int size;
 
     if (!PyArg_ParseTuple(args, "O|sO!",
                           &arg, &encoding, &PyByteArray_Type, &buffer))
@@ -1359,7 +1359,7 @@ getargs_et_hash(PyObject *self, PyObject *args)
     const char *encoding = NULL;
     PyByteArrayObject *buffer = NULL;
     char *str = NULL;
-    Py_ssize_t size;
+    int size;
 
     if (!PyArg_ParseTuple(args, "O|sO!",
                           &arg, &encoding, &PyByteArray_Type, &buffer))
