@@ -51,8 +51,8 @@ class EnvBuilder:
 
     :param system_site_packages: If True, the system (global) site-packages
                                  dir is available to created environments.
-    :param clear: Delete the contents of the environment directory if it
-                  already exists, before environment creation.
+    :param clear: If True, delete the contents of the environment directory if
+                  it already exists, before environment creation.
     :param symlinks: If True, attempt to symlink rather than copy files into
                      virtual environment.
     :param upgrade: If True, upgrade an existing virtual environment.
@@ -359,8 +359,8 @@ def create(env_dir, system_site_packages=False, clear=False,
     :param env_dir: The target directory to create an environment in.
     :param system_site_packages: If True, the system (global) site-packages
                                  dir is available to the environment.
-    :param clear: Delete the contents of the environment directory if it
-                  already exists, before environment creation.
+    :param clear: If True, delete the contents of the environment directory if
+                  it already exists, before environment creation.
     :param symlinks: If True, attempt to symlink rather than copy files into
                      virtual environment.
     :param with_pip: If True, ensure pip is installed in the virtual
