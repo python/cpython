@@ -45,9 +45,8 @@ The command, if run with ``-h``, will show the available options::
                              are not the default for the platform.
       --copies               Try to use copies rather than symlinks, even when
                              symlinks are the default for the platform.
-      --clear                Delete the environment directory if it already exists.
-                             If not specified and the directory exists, an error is
-                             raised.
+      --clear                Delete the contents of the environment directory if it
+                             already exists, before environment creation.
       --upgrade              Upgrade the environment directory to use this version
                              of Python, assuming Python has been upgraded in-place.
       --without-pip          Skips installing or upgrading pip in the virtual
