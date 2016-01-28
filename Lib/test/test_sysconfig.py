@@ -421,6 +421,8 @@ class MakefileTests(unittest.TestCase):
             print("var3=42", file=makefile)
             print("var4=$/invalid", file=makefile)
             print("var5=dollar$$5", file=makefile)
+            print("var6=${var3}/lib/python3.5/config-$(VAR2)$(var5)"
+                  "-x86_64-linux-gnu", file=makefile)
         vars = sysconfig._parse_makefile(TESTFN)
         self.assertEqual(vars, {
             'var1': 'ab42',
@@ -428,6 +430,7 @@ class MakefileTests(unittest.TestCase):
             'var3': 42,
             'var4': '$/invalid',
             'var5': 'dollar$5',
+            'var6': '42/lib/python3.5/config-b42dollar$5-x86_64-linux-gnu',
         })
 
 
