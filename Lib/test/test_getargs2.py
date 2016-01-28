@@ -469,15 +469,73 @@ class KeywordOnly_TestCase(unittest.TestCase):
             "'\udc80' is an invalid keyword argument for this function"):
             getargs_keyword_only(1, 2, **{'\uDC80': 10})
 
+
 class Bytes_TestCase(unittest.TestCase):
     def test_c(self):
         from _testcapi import getargs_c
         self.assertRaises(TypeError, getargs_c, b'abc')  # len > 1
-        self.assertEqual(getargs_c(b'a'), b'a')
-        self.assertEqual(getargs_c(bytearray(b'a')), b'a')
+        self.assertEqual(getargs_c(b'a'), 97)
+        self.assertEqual(getargs_c(bytearray(b'a')), 97)
         self.assertRaises(TypeError, getargs_c, memoryview(b'a'))
         self.assertRaises(TypeError, getargs_c, 's')
+        self.assertRaises(TypeError, getargs_c, 97)
         self.assertRaises(TypeError, getargs_c, None)
+
+    def test_y(self):
+        from _testcapi import getargs_y
+        self.assertRaises(TypeError, getargs_y, 'abc\xe9')
+        self.assertEqual(getargs_y(b'bytes'), b'bytes')
+        self.assertRaises(ValueError, getargs_y, b'nul:\0')
+        self.assertRaises(TypeError, getargs_y, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_y, memoryview(b'memoryview'))
+        self.assertRaises(TypeError, getargs_y, None)
+
+    def test_y_star(self):
+        from _testcapi import getargs_y_star
+        self.assertRaises(TypeError, getargs_y_star, 'abc\xe9')
+        self.assertEqual(getargs_y_star(b'bytes'), b'bytes')
+        self.assertEqual(getargs_y_star(b'nul:\0'), b'nul:\0')
+        self.assertEqual(getargs_y_star(bytearray(b'bytearray')), b'bytearray')
+        self.assertEqual(getargs_y_star(memoryview(b'memoryview')), b'memoryview')
+        self.assertRaises(TypeError, getargs_y_star, None)
+
+    def test_y_hash(self):
+        from _testcapi import getargs_y_hash
+        self.assertRaises(TypeError, getargs_y_hash, 'abc\xe9')
+        self.assertEqual(getargs_y_hash(b'bytes'), b'bytes')
+        self.assertEqual(getargs_y_hash(b'nul:\0'), b'nul:\0')
+        self.assertRaises(TypeError, getargs_y_hash, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_y_hash, memoryview(b'memoryview'))
+        self.assertRaises(TypeError, getargs_y_hash, None)
+
+    def test_w_star(self):
+        # getargs_w_star() modifies first and last byte
+        from _testcapi import getargs_w_star
+        self.assertRaises(TypeError, getargs_w_star, 'abc\xe9')
+        self.assertRaises(TypeError, getargs_w_star, b'bytes')
+        self.assertRaises(TypeError, getargs_w_star, b'nul:\0')
+        self.assertRaises(TypeError, getargs_w_star, memoryview(b'bytes'))
+        buf = bytearray(b'bytearray')
+        self.assertEqual(getargs_w_star(buf), b'[ytearra]')
+        self.assertEqual(buf, bytearray(b'[ytearra]'))
+        buf = bytearray(b'memoryview')
+        self.assertEqual(getargs_w_star(memoryview(buf)), b'[emoryvie]')
+        self.assertEqual(buf, bytearray(b'[emoryvie]'))
+        self.assertRaises(TypeError, getargs_w_star, None)
+
+
+class String_TestCase(unittest.TestCase):
+    def test_C(self):
+        from _testcapi import getargs_C
+        self.assertRaises(TypeError, getargs_C, 'abc')  # len > 1
+        self.assertEqual(getargs_C('a'), 97)
+        self.assertEqual(getargs_C('\u20ac'), 0x20ac)
+        self.assertEqual(getargs_C('\U0001f40d'), 0x1f40d)
+        self.assertRaises(TypeError, getargs_C, b'a')
+        self.assertRaises(TypeError, getargs_C, bytearray(b'a'))
+        self.assertRaises(TypeError, getargs_C, memoryview(b'a'))
+        self.assertRaises(TypeError, getargs_C, 97)
+        self.assertRaises(TypeError, getargs_C, None)
 
     def test_s(self):
         from _testcapi import getargs_s
@@ -533,47 +591,82 @@ class Bytes_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_z_hash, memoryview(b'memoryview'))
         self.assertIsNone(getargs_z_hash(None))
 
-    def test_y(self):
-        from _testcapi import getargs_y
-        self.assertRaises(TypeError, getargs_y, 'abc\xe9')
-        self.assertEqual(getargs_y(b'bytes'), b'bytes')
-        self.assertRaises(ValueError, getargs_y, b'nul:\0')
-        self.assertRaises(TypeError, getargs_y, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_y, memoryview(b'memoryview'))
-        self.assertRaises(TypeError, getargs_y, None)
+    def test_es(self):
+        from _testcapi import getargs_es
+        self.assertEqual(getargs_es('abc\xe9'), b'abc\xc3\xa9')
+        self.assertEqual(getargs_es('abc\xe9', 'latin1'), b'abc\xe9')
+        self.assertRaises(UnicodeEncodeError, getargs_es, 'abc\xe9', 'ascii')
+        self.assertRaises(LookupError, getargs_es, 'abc\xe9', 'spam')
+        self.assertRaises(TypeError, getargs_es, b'bytes', 'latin1')
+        self.assertRaises(TypeError, getargs_es, bytearray(b'bytearray'), 'latin1')
+        self.assertRaises(TypeError, getargs_es, memoryview(b'memoryview'), 'latin1')
+        self.assertRaises(TypeError, getargs_es, None, 'latin1')
+        self.assertRaises(TypeError, getargs_es, 'nul:\0', 'latin1')
 
-    def test_y_star(self):
-        from _testcapi import getargs_y_star
-        self.assertRaises(TypeError, getargs_y_star, 'abc\xe9')
-        self.assertEqual(getargs_y_star(b'bytes'), b'bytes')
-        self.assertEqual(getargs_y_star(b'nul:\0'), b'nul:\0')
-        self.assertEqual(getargs_y_star(bytearray(b'bytearray')), b'bytearray')
-        self.assertEqual(getargs_y_star(memoryview(b'memoryview')), b'memoryview')
-        self.assertRaises(TypeError, getargs_y_star, None)
+    def test_et(self):
+        from _testcapi import getargs_et
+        self.assertEqual(getargs_et('abc\xe9'), b'abc\xc3\xa9')
+        self.assertEqual(getargs_et('abc\xe9', 'latin1'), b'abc\xe9')
+        self.assertRaises(UnicodeEncodeError, getargs_et, 'abc\xe9', 'ascii')
+        self.assertRaises(LookupError, getargs_et, 'abc\xe9', 'spam')
+        self.assertEqual(getargs_et(b'bytes', 'latin1'), b'bytes')
+        self.assertEqual(getargs_et(bytearray(b'bytearray'), 'latin1'), b'bytearray')
+        self.assertRaises(TypeError, getargs_et, memoryview(b'memoryview'), 'latin1')
+        self.assertRaises(TypeError, getargs_et, None, 'latin1')
+        self.assertRaises(TypeError, getargs_et, 'nul:\0', 'latin1')
+        self.assertRaises(TypeError, getargs_et, b'nul:\0', 'latin1')
+        self.assertRaises(TypeError, getargs_et, bytearray(b'nul:\0'), 'latin1')
 
-    def test_y_hash(self):
-        from _testcapi import getargs_y_hash
-        self.assertRaises(TypeError, getargs_y_hash, 'abc\xe9')
-        self.assertEqual(getargs_y_hash(b'bytes'), b'bytes')
-        self.assertEqual(getargs_y_hash(b'nul:\0'), b'nul:\0')
-        self.assertRaises(TypeError, getargs_y_hash, bytearray(b'bytearray'))
-        self.assertRaises(TypeError, getargs_y_hash, memoryview(b'memoryview'))
-        self.assertRaises(TypeError, getargs_y_hash, None)
+    def test_es_hash(self):
+        from _testcapi import getargs_es_hash
+        self.assertEqual(getargs_es_hash('abc\xe9'), b'abc\xc3\xa9')
+        self.assertEqual(getargs_es_hash('abc\xe9', 'latin1'), b'abc\xe9')
+        self.assertRaises(UnicodeEncodeError, getargs_es_hash, 'abc\xe9', 'ascii')
+        self.assertRaises(LookupError, getargs_es_hash, 'abc\xe9', 'spam')
+        self.assertRaises(TypeError, getargs_es_hash, b'bytes', 'latin1')
+        self.assertRaises(TypeError, getargs_es_hash, bytearray(b'bytearray'), 'latin1')
+        self.assertRaises(TypeError, getargs_es_hash, memoryview(b'memoryview'), 'latin1')
+        self.assertRaises(TypeError, getargs_es_hash, None, 'latin1')
+        self.assertEqual(getargs_es_hash('nul:\0', 'latin1'), b'nul:\0')
 
-    def test_w_star(self):
-        # getargs_w_star() modifies first and last byte
-        from _testcapi import getargs_w_star
-        self.assertRaises(TypeError, getargs_w_star, 'abc\xe9')
-        self.assertRaises(TypeError, getargs_w_star, b'bytes')
-        self.assertRaises(TypeError, getargs_w_star, b'nul:\0')
-        self.assertRaises(TypeError, getargs_w_star, memoryview(b'bytes'))
-        self.assertEqual(getargs_w_star(bytearray(b'bytearray')), b'[ytearra]')
-        self.assertEqual(getargs_w_star(memoryview(bytearray(b'memoryview'))),
-                         b'[emoryvie]')
-        self.assertRaises(TypeError, getargs_w_star, None)
+        buf = bytearray(b'x'*8)
+        self.assertEqual(getargs_es_hash('abc\xe9', 'latin1', buf), b'abc\xe9')
+        self.assertEqual(buf, bytearray(b'abc\xe9\x00xxx'))
+        buf = bytearray(b'x'*5)
+        self.assertEqual(getargs_es_hash('abc\xe9', 'latin1', buf), b'abc\xe9')
+        self.assertEqual(buf, bytearray(b'abc\xe9\x00'))
+        buf = bytearray(b'x'*4)
+        self.assertRaises(TypeError, getargs_es_hash, 'abc\xe9', 'latin1', buf)
+        self.assertEqual(buf, bytearray(b'x'*4))
+        buf = bytearray()
+        self.assertRaises(TypeError, getargs_es_hash, 'abc\xe9', 'latin1', buf)
 
+    def test_et_hash(self):
+        from _testcapi import getargs_et_hash
+        self.assertEqual(getargs_et_hash('abc\xe9'), b'abc\xc3\xa9')
+        self.assertEqual(getargs_et_hash('abc\xe9', 'latin1'), b'abc\xe9')
+        self.assertRaises(UnicodeEncodeError, getargs_et_hash, 'abc\xe9', 'ascii')
+        self.assertRaises(LookupError, getargs_et_hash, 'abc\xe9', 'spam')
+        self.assertEqual(getargs_et_hash(b'bytes', 'latin1'), b'bytes')
+        self.assertEqual(getargs_et_hash(bytearray(b'bytearray'), 'latin1'), b'bytearray')
+        self.assertRaises(TypeError, getargs_et_hash, memoryview(b'memoryview'), 'latin1')
+        self.assertRaises(TypeError, getargs_et_hash, None, 'latin1')
+        self.assertEqual(getargs_et_hash('nul:\0', 'latin1'), b'nul:\0')
+        self.assertEqual(getargs_et_hash(b'nul:\0', 'latin1'), b'nul:\0')
+        self.assertEqual(getargs_et_hash(bytearray(b'nul:\0'), 'latin1'), b'nul:\0')
 
-class Unicode_TestCase(unittest.TestCase):
+        buf = bytearray(b'x'*8)
+        self.assertEqual(getargs_et_hash('abc\xe9', 'latin1', buf), b'abc\xe9')
+        self.assertEqual(buf, bytearray(b'abc\xe9\x00xxx'))
+        buf = bytearray(b'x'*5)
+        self.assertEqual(getargs_et_hash('abc\xe9', 'latin1', buf), b'abc\xe9')
+        self.assertEqual(buf, bytearray(b'abc\xe9\x00'))
+        buf = bytearray(b'x'*4)
+        self.assertRaises(TypeError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
+        self.assertEqual(buf, bytearray(b'x'*4))
+        buf = bytearray()
+        self.assertRaises(TypeError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
+
     def test_u(self):
         from _testcapi import getargs_u
         self.assertEqual(getargs_u('abc\xe9'), 'abc\xe9')
