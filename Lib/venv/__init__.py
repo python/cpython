@@ -19,9 +19,8 @@ optional arguments:
                         Give the virtual environment access to the system
                         site-packages dir.
   --symlinks            Attempt to symlink rather than copy.
-  --clear               Delete the environment directory if it already exists.
-                        If not specified and the directory exists, an error is
-                        raised.
+  --clear               Delete the contents of the environment directory if it
+                        already exists, before environment creation.
   --upgrade             Upgrade the environment directory to use this version
                         of Python, assuming Python has been upgraded in-place.
   --without-pip         Skips installing or upgrading pip in the virtual
@@ -52,9 +51,8 @@ class EnvBuilder:
 
     :param system_site_packages: If True, the system (global) site-packages
                                  dir is available to created environments.
-    :param clear: If True and the target directory exists, it is deleted.
-                  Otherwise, if the target directory exists, an error is
-                  raised.
+    :param clear: Delete the contents of the environment directory if it
+                  already exists, before environment creation.
     :param symlinks: If True, attempt to symlink rather than copy files into
                      virtual environment.
     :param upgrade: If True, upgrade an existing virtual environment.
@@ -361,9 +359,8 @@ def create(env_dir, system_site_packages=False, clear=False,
     :param env_dir: The target directory to create an environment in.
     :param system_site_packages: If True, the system (global) site-packages
                                  dir is available to the environment.
-    :param clear: If True and the target directory exists, it is deleted.
-                  Otherwise, if the target directory exists, an error is
-                  raised.
+    :param clear: Delete the contents of the environment directory if it
+                  already exists, before environment creation.
     :param symlinks: If True, attempt to symlink rather than copy files into
                      virtual environment.
     :param with_pip: If True, ensure pip is installed in the virtual
