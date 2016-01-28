@@ -776,14 +776,14 @@ read_directory(const char *archive)
 
     /* Start of Central Directory */
     count = 0;
+    if (fseek(fp, (long)header_position, 0) == -1) {
+        goto file_error;
+    }
     for (;;) {
         PyObject *t;
         size_t n;
         int err;
 
-        if (fseek(fp, (long)header_position, 0) == -1) {
-            goto file_error;
-        }
         n = fread(buffer, 1, 46, fp);
         if (n < 4) {
             goto eof_error;
@@ -837,7 +837,6 @@ read_directory(const char *archive)
                 goto file_error;
             }
         }
-        header_offset += header_size;
 
         strncpy(path + length + 1, name, MAXPATHLEN - length - 1);
 
