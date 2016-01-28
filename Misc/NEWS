@@ -159,6 +159,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26227: On Windows, getnameinfo(), gethostbyaddr() and
+  gethostbyname_ex() functions of the socket module now decode the hostname
+  from the ANSI code page rather than UTF-8.
+
 - Issue #26099: The site module now writes an error into stderr if
   sitecustomize module can be imported but executing the module raise an
   ImportError. Same change for usercustomize.
