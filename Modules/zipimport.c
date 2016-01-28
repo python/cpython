@@ -44,8 +44,8 @@ static PyObject *ZipImportError;
 static PyObject *zip_directory_cache = NULL;
 
 /* forward decls */
-static PyObject *read_directory(char *archive);
-static PyObject *get_data(char *archive, PyObject *toc_entry);
+static PyObject *read_directory(const char *archive);
+static PyObject *get_data(const char *archive, PyObject *toc_entry);
 static PyObject *get_module_code(ZipImporter *self, char *fullname,
                                  int *p_ispackage, char **p_modpath);
 
@@ -644,21 +644,41 @@ static PyTypeObject ZipImporter_Type = {
 
 /* implementation */
 
-/* Given a buffer, return the long that is represented by the first
+/* Given a buffer, return the unsigned int that is represented by the first
    4 bytes, encoded as little endian. This partially reimplements
    marshal.c:r_long() */
-static long
-get_long(unsigned char *buf) {
-    long x;
+static unsigned int
+get_uint32(const unsigned char *buf)
+{
+    unsigned int x;
     x =  buf[0];
-    x |= (long)buf[1] <<  8;
-    x |= (long)buf[2] << 16;
-    x |= (long)buf[3] << 24;
-#if SIZEOF_LONG > 4
-    /* Sign extension for 64-bit machines */
-    x |= -(x & 0x80000000L);
-#endif
+    x |= (unsigned int)buf[1] <<  8;
+    x |= (unsigned int)buf[2] << 16;
+    x |= (unsigned int)buf[3] << 24;
     return x;
+}
+
+/* Given a buffer, return the unsigned int that is represented by the first
+   2 bytes, encoded as little endian. This partially reimplements
+   marshal.c:r_short() */
+static unsigned short
+get_uint16(const unsigned char *buf)
+{
+    unsigned short x;
+    x =  buf[0];
+    x |= (unsigned short)buf[1] <<  8;
+    return x;
+}
+
+static void
+set_file_error(const char *archive, int eof)
+{
+    if (eof) {
+        PyErr_SetString(PyExc_EOFError, "EOF read where not expected");
+    }
+    else {
+        PyErr_SetFromErrnoWithFilename(PyExc_IOError, archive);
+    }
 }
 
 /*
@@ -683,18 +703,20 @@ get_long(unsigned char *buf) {
    data_size and file_offset are 0.
 */
 static PyObject *
-read_directory(char *archive)
+read_directory(const char *archive)
 {
     PyObject *files = NULL;
     FILE *fp;
-    long compress, crc, data_size, file_size, file_offset, date, time;
-    long header_offset, name_size, header_size, header_position;
-    long i, l, count;
+    unsigned short compress, time, date, name_size;
+    unsigned int crc, data_size, file_size, header_size, header_offset;
+    unsigned long file_offset, header_position;
+    unsigned long arc_offset;  /* Absolute offset to start of the zip-archive. */
+    unsigned int count, i;
+    unsigned char buffer[46];
     size_t length;
     char path[MAXPATHLEN + 5];
     char name[MAXPATHLEN + 5];
-    char *p, endof_central_dir[22];
-    long arc_offset; /* offset from beginning of file to start of zip-archive */
+    const char *errmsg = NULL;
 
     if (strlen(archive) > MAXPATHLEN) {
         PyErr_SetString(PyExc_OverflowError,
@@ -711,33 +733,43 @@ read_directory(char *archive)
     }
 
     if (fseek(fp, -22, SEEK_END) == -1) {
-        fclose(fp);
-        PyErr_Format(ZipImportError, "can't read Zip file: %s", archive);
-        return NULL;
+        goto file_error;
     }
-    header_position = ftell(fp);
-    if (fread(endof_central_dir, 1, 22, fp) != 22) {
-        fclose(fp);
-        PyErr_Format(ZipImportError, "can't read Zip file: "
-                     "'%.200s'", archive);
-        return NULL;
+    header_position = (unsigned long)ftell(fp);
+    if (header_position == (unsigned long)-1) {
+        goto file_error;
     }
-    if (get_long((unsigned char *)endof_central_dir) != 0x06054B50) {
+    assert(header_position <= (unsigned long)LONG_MAX);
+    if (fread(buffer, 1, 22, fp) != 22) {
+        goto file_error;
+    }
+    if (get_uint32(buffer) != 0x06054B50u) {
         /* Bad: End of Central Dir signature */
-        fclose(fp);
-        PyErr_Format(ZipImportError, "not a Zip file: "
-                     "'%.200s'", archive);
-        return NULL;
+        errmsg = "not a Zip file";
+        goto invalid_header;
     }
 
-    header_size = get_long((unsigned char *)endof_central_dir + 12);
-    header_offset = get_long((unsigned char *)endof_central_dir + 16);
-    arc_offset = header_position - header_offset - header_size;
-    header_offset += arc_offset;
+    header_size = get_uint32(buffer + 12);
+    header_offset = get_uint32(buffer + 16);
+    if (header_position < header_size) {
+        errmsg = "bad central directory size";
+        goto invalid_header;
+    }
+    if (header_position < header_offset) {
+        errmsg = "bad central directory offset";
+        goto invalid_header;
+    }
+    if (header_position - header_size < header_offset) {
+        errmsg = "bad central directory size or offset";
+        goto invalid_header;
+    }
+    header_position -= header_size;
+    arc_offset = header_position - header_offset;
 
     files = PyDict_New();
-    if (files == NULL)
+    if (files == NULL) {
         goto error;
+    }
 
     length = (long)strlen(path);
     path[length] = SEP;
@@ -746,63 +778,101 @@ read_directory(char *archive)
     count = 0;
     for (;;) {
         PyObject *t;
+        size_t n;
         int err;
 
-        if (fseek(fp, header_offset, 0) == -1)  /* Start of file header */
-            goto fseek_error;
-        l = PyMarshal_ReadLongFromFile(fp);
-        if (l != 0x02014B50)
-            break;              /* Bad: Central Dir File Header */
-        if (fseek(fp, header_offset + 10, 0) == -1)
-            goto fseek_error;
-        compress = PyMarshal_ReadShortFromFile(fp);
-        time = PyMarshal_ReadShortFromFile(fp);
-        date = PyMarshal_ReadShortFromFile(fp);
-        crc = PyMarshal_ReadLongFromFile(fp);
-        data_size = PyMarshal_ReadLongFromFile(fp);
-        file_size = PyMarshal_ReadLongFromFile(fp);
-        name_size = PyMarshal_ReadShortFromFile(fp);
-        header_size = 46 + name_size +
-           PyMarshal_ReadShortFromFile(fp) +
-           PyMarshal_ReadShortFromFile(fp);
-        if (fseek(fp, header_offset + 42, 0) == -1)
-            goto fseek_error;
-        file_offset = PyMarshal_ReadLongFromFile(fp) + arc_offset;
-        if (name_size > MAXPATHLEN)
-            name_size = MAXPATHLEN;
-
-        p = name;
-        for (i = 0; i < name_size; i++) {
-            *p = (char)getc(fp);
-            if (*p == '/')
-                *p = SEP;
-            p++;
+        if (fseek(fp, (long)header_position, 0) == -1) {
+            goto file_error;
         }
-        *p = 0;         /* Add terminating null byte */
+        n = fread(buffer, 1, 46, fp);
+        if (n < 4) {
+            goto eof_error;
+        }
+        /* Start of file header */
+        if (get_uint32(buffer) != 0x02014B50u) {
+            break;              /* Bad: Central Dir File Header */
+        }
+        if (n != 46) {
+            goto eof_error;
+        }
+        compress = get_uint16(buffer + 10);
+        time = get_uint16(buffer + 12);
+        date = get_uint16(buffer + 14);
+        crc = get_uint32(buffer + 16);
+        data_size = get_uint32(buffer + 20);
+        file_size = get_uint32(buffer + 24);
+        name_size = get_uint16(buffer + 28);
+        header_size = (unsigned int)name_size +
+           get_uint16(buffer + 30) /* extra field */ +
+           get_uint16(buffer + 32) /* comment */;
+
+        file_offset = get_uint32(buffer + 42);
+        if (file_offset > header_offset) {
+            errmsg = "bad local header offset";
+            goto invalid_header;
+        }
+        file_offset += arc_offset;
+
+        if (name_size > MAXPATHLEN) {
+            name_size = MAXPATHLEN;
+        }
+        if (fread(name, 1, name_size, fp) != name_size) {
+            goto file_error;
+        }
+        name[name_size] = '\0';  /* Add terminating null byte */
+        if (SEP != '/') {
+            for (i = 0; i < name_size; i++) {
+                if (name[i] == '/') {
+                    name[i] = SEP;
+                }
+            }
+        }
+        /* Skip the rest of the header.
+         * On Windows, calling fseek to skip over the fields we don't use is
+         * slower than reading the data because fseek flushes stdio's
+         * internal buffers.  See issue #8745. */
+        assert(header_size <= 3*0xFFFFu);
+        for (i = name_size; i < header_size; i++) {
+            if (getc(fp) == EOF) {
+                goto file_error;
+            }
+        }
         header_offset += header_size;
 
         strncpy(path + length + 1, name, MAXPATHLEN - length - 1);
 
-        t = Py_BuildValue("siiiiiii", path, compress, data_size,
+        t = Py_BuildValue("sHIIkHHI", path, compress, data_size,
                           file_size, file_offset, time, date, crc);
-        if (t == NULL)
+        if (t == NULL) {
             goto error;
+        }
         err = PyDict_SetItemString(files, name, t);
         Py_DECREF(t);
-        if (err != 0)
+        if (err != 0) {
             goto error;
+        }
         count++;
     }
     fclose(fp);
-    if (Py_VerboseFlag)
-        PySys_WriteStderr("# zipimport: found %ld names in %s\n",
-            count, archive);
+    if (Py_VerboseFlag) {
+        PySys_WriteStderr("# zipimport: found %u names in %.200s\n",
+                           count, archive);
+    }
     return files;
-fseek_error:
-    fclose(fp);
-    Py_XDECREF(files);
-    PyErr_Format(ZipImportError, "can't read Zip file: %s", archive);
-    return NULL;
+
+eof_error:
+    set_file_error(archive, !ferror(fp));
+    goto error;
+
+file_error:
+    PyErr_Format(ZipImportError, "can't read Zip file: %.200s", archive);
+    goto error;
+
+invalid_header:
+    assert(errmsg != NULL);
+    PyErr_Format(ZipImportError, "%s: %.200s", errmsg, archive);
+    goto error;
+
 error:
     fclose(fp);
     Py_XDECREF(files);
@@ -844,19 +914,20 @@ get_decompress_func(void)
 /* Given a path to a Zip file and a toc_entry, return the (uncompressed)
    data as a new reference. */
 static PyObject *
-get_data(char *archive, PyObject *toc_entry)
+get_data(const char *archive, PyObject *toc_entry)
 {
-    PyObject *raw_data, *data = NULL, *decompress;
+    PyObject *raw_data = NULL, *data, *decompress;
     char *buf;
     FILE *fp;
-    int err;
-    Py_ssize_t bytes_read = 0;
-    long l;
-    char *datapath;
-    long compress, data_size, file_size, file_offset;
-    long time, date, crc;
+    const char *datapath;
+    unsigned short compress, time, date;
+    unsigned int crc;
+    Py_ssize_t data_size, file_size;
+    long file_offset, header_size;
+    unsigned char buffer[30];
+    const char *errmsg = NULL;
 
-    if (!PyArg_ParseTuple(toc_entry, "slllllll", &datapath, &compress,
+    if (!PyArg_ParseTuple(toc_entry, "sHnnlHHI", &datapath, &compress,
                           &data_size, &file_size, &file_offset, &time,
                           &date, &crc)) {
         return NULL;
@@ -875,29 +946,25 @@ get_data(char *archive, PyObject *toc_entry)
 
     /* Check to make sure the local file header is correct */
     if (fseek(fp, file_offset, 0) == -1) {
-        fclose(fp);
-        PyErr_Format(ZipImportError, "can't read Zip file: %s", archive);
-        return NULL;
+        goto file_error;
     }
-
-    l = PyMarshal_ReadLongFromFile(fp);
-    if (l != 0x04034B50) {
+    if (fread(buffer, 1, 30, fp) != 30) {
+        goto eof_error;
+    }
+    if (get_uint32(buffer) != 0x04034B50u) {
         /* Bad: Local File Header */
-        PyErr_Format(ZipImportError,
-                     "bad local file header in %s",
-                     archive);
-        fclose(fp);
-        return NULL;
-    }
-    if (fseek(fp, file_offset + 26, 0) == -1) {
-        fclose(fp);
-        PyErr_Format(ZipImportError, "can't read Zip file: %s", archive);
-        return NULL;
+        errmsg = "bad local file header";
+        goto invalid_header;
     }
 
-    l = 30 + PyMarshal_ReadShortFromFile(fp) +
-        PyMarshal_ReadShortFromFile(fp);        /* local header size */
-    file_offset += l;           /* Start of file data */
+    header_size = (unsigned int)30 +
+        get_uint16(buffer + 26) /* file name */ +
+        get_uint16(buffer + 28) /* extra field */;
+    if (file_offset > LONG_MAX - header_size) {
+        errmsg = "bad local file header size";
+        goto invalid_header;
+    }
+    file_offset += header_size;  /* Start of file data */
 
     if (data_size > LONG_MAX - 1) {
         fclose(fp);
@@ -906,28 +973,23 @@ get_data(char *archive, PyObject *toc_entry)
     }
     raw_data = PyString_FromStringAndSize((char *)NULL, compress == 0 ?
                                           data_size : data_size + 1);
+
     if (raw_data == NULL) {
-        fclose(fp);
-        return NULL;
+        goto error;
     }
     buf = PyString_AsString(raw_data);
 
-    err = fseek(fp, file_offset, 0);
-    if (err == 0) {
-        bytes_read = fread(buf, 1, data_size, fp);
-    } else {
-        fclose(fp);
-        Py_DECREF(raw_data);
-        PyErr_Format(ZipImportError, "can't read Zip file: %s", archive);
-        return NULL;
+    if (fseek(fp, file_offset, 0) == -1) {
+        goto file_error;
     }
-    fclose(fp);
-    if (err || bytes_read != data_size) {
+    if (fread(buf, 1, data_size, fp) != (size_t)data_size) {
         PyErr_SetString(PyExc_IOError,
                         "zipimport: can't read data");
-        Py_DECREF(raw_data);
-        return NULL;
+        goto error;
     }
+
+    fclose(fp);
+    fp = NULL;
 
     if (compress != 0) {
         buf[data_size] = 'Z';  /* saw this in zipfile.py */
@@ -948,9 +1010,28 @@ get_data(char *archive, PyObject *toc_entry)
     }
     data = PyObject_CallFunction(decompress, "Oi", raw_data, -15);
     Py_DECREF(decompress);
-error:
     Py_DECREF(raw_data);
     return data;
+
+eof_error:
+    set_file_error(archive, !ferror(fp));
+    goto error;
+
+file_error:
+    PyErr_Format(ZipImportError, "can't read Zip file: %.200s", archive);
+    goto error;
+
+invalid_header:
+    assert(errmsg != NULL);
+    PyErr_Format(ZipImportError, "%s: %.200s", errmsg, archive);
+    goto error;
+
+error:
+    if (fp != NULL) {
+        fclose(fp);
+    }
+    Py_XDECREF(raw_data);
+    return NULL;
 }
 
 /* Lenient date/time comparison function. The precision of the mtime
@@ -972,38 +1053,40 @@ eq_mtime(time_t t1, time_t t2)
    to .py if available and we don't want to mask other errors).
    Returns a new reference. */
 static PyObject *
-unmarshal_code(char *pathname, PyObject *data, time_t mtime)
+unmarshal_code(const char *pathname, PyObject *data, time_t mtime)
 {
     PyObject *code;
-    char *buf = PyString_AsString(data);
+    unsigned char *buf = (unsigned char *)PyString_AsString(data);
     Py_ssize_t size = PyString_Size(data);
 
-    if (size <= 9) {
+    if (size < 8) {
         PyErr_SetString(ZipImportError,
                         "bad pyc data");
         return NULL;
     }
 
-    if (get_long((unsigned char *)buf) != PyImport_GetMagicNumber()) {
-        if (Py_VerboseFlag)
+    if (get_uint32(buf) != (unsigned int)PyImport_GetMagicNumber()) {
+        if (Py_VerboseFlag) {
             PySys_WriteStderr("# %s has bad magic\n",
                               pathname);
+        }
         Py_INCREF(Py_None);
         return Py_None;  /* signal caller to try alternative */
     }
 
-    if (mtime != 0 && !eq_mtime(get_long((unsigned char *)buf + 4),
-                                mtime)) {
-        if (Py_VerboseFlag)
+    if (mtime != 0 && !eq_mtime(get_uint32(buf + 4), mtime)) {
+        if (Py_VerboseFlag) {
             PySys_WriteStderr("# %s has bad mtime\n",
                               pathname);
+        }
         Py_INCREF(Py_None);
         return Py_None;  /* signal caller to try alternative */
     }
 
-    code = PyMarshal_ReadObjectFromString(buf + 8, size - 8);
-    if (code == NULL)
+    code = PyMarshal_ReadObjectFromString((char *)buf + 8, size - 8);
+    if (code == NULL) {
         return NULL;
+    }
     if (!PyCode_Check(code)) {
         Py_DECREF(code);
         PyErr_Format(PyExc_TypeError,

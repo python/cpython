@@ -48,6 +48,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19883: Fixed possible integer overflows in zipimport.
+
 - Issue #26147: xmlrpclib now works with unicode not encodable with used
   non-UTF-8 encoding.
 
