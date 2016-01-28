@@ -207,7 +207,6 @@ try:
 except AttributeError:
     pass
 d[type] = _deepcopy_atomic
-d[range] = _deepcopy_atomic
 d[types.BuiltinFunctionType] = _deepcopy_atomic
 d[types.FunctionType] = _deepcopy_atomic
 d[weakref.ref] = _deepcopy_atomic

@@ -159,6 +159,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26202: copy.deepcopy() now correctly copies range() objects with
+  non-atomic attributes.
+
 - Issue #19883: Fixed possible integer overflows in zipimport.
 
 - Issue #26227: On Windows, getnameinfo(), gethostbyaddr() and
