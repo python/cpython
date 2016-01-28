@@ -4519,6 +4519,19 @@ PyDoc_STRVAR(gethostbyname_doc,
 Return the IP address (a string of the form '255.255.255.255') for a host.");
 
 
+static PyObject*
+sock_decode_hostname(const char *name)
+{
+#ifdef MS_WINDOWS
+    /* Issue #26227: gethostbyaddr() returns a string encoded
+     * to the ANSI code page */
+    return PyUnicode_DecodeFSDefault(name);
+#else
+    /* Decode from UTF-8 */
+    return PyUnicode_FromString(name);
+#endif
+}
+
 /* Convenience function common to gethostbyname_ex and gethostbyaddr */
 
 static PyObject *
@@ -4529,6 +4542,7 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
     PyObject *name_list = (PyObject *)NULL;
     PyObject *addr_list = (PyObject *)NULL;
     PyObject *tmp;
+    PyObject *name;
 
     if (h == NULL) {
         /* Let's get real error message to return */
@@ -4637,7 +4651,10 @@ gethost_common(struct hostent *h, struct sockaddr *addr, size_t alen, int af)
             goto err;
     }
 
-    rtn_tuple = Py_BuildValue("sOO", h->h_name, name_list, addr_list);
+    name = sock_decode_hostname(h->h_name);
+    if (name == NULL)
+        goto err;
+    rtn_tuple = Py_BuildValue("NOO", name, name_list, addr_list);
 
  err:
     Py_XDECREF(name_list);
@@ -5623,6 +5640,7 @@ socket_getnameinfo(PyObject *self, PyObject *args)
     struct addrinfo hints, *res = NULL;
     int error;
     PyObject *ret = (PyObject *)NULL;
+    PyObject *name;
 
     flags = flowinfo = scope_id = 0;
     if (!PyArg_ParseTuple(args, "Oi:getnameinfo", &sa, &flags))
@@ -5686,7 +5704,11 @@ socket_getnameinfo(PyObject *self, PyObject *args)
         set_gaierror(error);
         goto fail;
     }
-    ret = Py_BuildValue("ss", hbuf, pbuf);
+
+    name = sock_decode_hostname(hbuf);
+    if (name == NULL)
+        goto fail;
+    ret = Py_BuildValue("Ns", name, pbuf);
 
 fail:
     if (res)
