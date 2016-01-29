@@ -297,9 +297,6 @@ The following examples show the differences::
     >>> b'\x80abc'.decode("utf-8", "ignore")
     'abc'
 
-(In this code example, the Unicode replacement character has been replaced by
-a question mark because it may not be displayed on some systems.)
-
 Encodings are specified as strings containing the encoding's name.  Python 3.2
 comes with roughly 100 different encodings; see the Python Library Reference at
 :ref:`standard-encodings` for a list.  Some encodings have multiple names; for
