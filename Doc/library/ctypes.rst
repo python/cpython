@@ -708,8 +708,8 @@ Pointer instances are created by calling the :func:`pointer` function on a
    >>> pi = pointer(i)
    >>>
 
-Pointer instances have a :attr:`contents` attribute which returns the object to
-which the pointer points, the ``i`` object above::
+Pointer instances have a :attr:`~_Pointer.contents` attribute which
+returns the object to which the pointer points, the ``i`` object above::
 
    >>> pi.contents
    c_long(42)
@@ -2512,6 +2512,56 @@ other data types containing pointer type fields.
 Arrays and pointers
 ^^^^^^^^^^^^^^^^^^^
 
-Not yet written - please see the sections :ref:`ctypes-pointers` and section
-:ref:`ctypes-arrays` in the tutorial.
+.. class:: Array(\*args)
+
+   Abstract base class for arrays.
+
+   The recommended way to create concrete array types is by multiplying any
+   :mod:`ctypes` data type with a positive integer.  Alternatively, you can subclass
+   this type and define :attr:`_length_` and :attr:`_type_` class variables.
+   Array elements can be read and written using standard
+   subscript and slice accesses; for slice reads, the resulting object is
+   *not* itself an :class:`Array`.
+
+
+   .. attribute:: _length_
+
+        A positive integer specifying the number of elements in the array.
+        Out-of-range subscripts result in an :exc:`IndexError`. Will be
+        returned by :func:`len`.
+
+
+   .. attribute:: _type_
+
+        Specifies the type of each element in the array.
+
+
+   Array subclass constructors accept positional arguments, used to
+   initialize the elements in order.
+
+
+.. class:: _Pointer
+
+   Private, abstract base class for pointers.
+
+   Concrete pointer types are created by calling :func:`POINTER` with the
+   type that will be pointed to; this is done automatically by
+   :func:`pointer`.
+
+   If a pointer points to an array, its elements can be read and
+   written using standard subscript and slice accesses.  Pointer objects
+   have no size, so :func:`len` will raise :exc:`TypeError`.  Negative
+   subscripts will read from the memory *before* the pointer (as in C), and
+   out-of-range subscripts will probably crash with an access violation (if
+   you're lucky).
+
+
+   .. attribute:: _type_
+
+        Specifies the type pointed to.
+
+   .. attribute:: contents
+
+        Returns the object to which to pointer points.  Assigning to this
+        attribute changes the pointer to point to the assigned object.
 
