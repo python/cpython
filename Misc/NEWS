@@ -166,6 +166,9 @@ Library
 - Issue #26202: copy.deepcopy() now correctly copies range() objects with
   non-atomic attributes.
 
+- Issue #23076: Path.glob() now raises a ValueError if it's called with an
+  invalid pattern.  Patch by Thomas Nyberg.
+
 - Issue #19883: Fixed possible integer overflows in zipimport.
 
 - Issue #26227: On Windows, getnameinfo(), gethostbyaddr() and
