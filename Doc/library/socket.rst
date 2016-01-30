@@ -57,7 +57,7 @@ created.  Socket addresses are represented as follows:
       Previously, :const:`AF_UNIX` socket paths were assumed to use UTF-8
       encoding.
 
-   .. versionchanged: 3.5
+   .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
 
 - A pair ``(host, port)`` is used for the :const:`AF_INET` address family,
