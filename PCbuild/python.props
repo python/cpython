@@ -7,12 +7,18 @@
     Use the latest available version of Visual Studio to build. To override
     this and build with an earlier version, pass "/p:PlatformToolset=v100"
     (for example) when building.
+
+    We set BasePlatformToolset for ICC's benefit, it's otherwise ignored.
     -->
-    <PlatformToolset Condition="'$(PlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</PlatformToolset>
-    <PlatformToolset Condition="'$(PlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</PlatformToolset>
-    <PlatformToolset Condition="'$(PlatformToolset)' == '' and '$(VCTargetsPath11)' != ''">v110</PlatformToolset>
-    <PlatformToolset Condition="'$(PlatformToolset)' == '' and '$(VCTargetsPath10)' != ''">v100</PlatformToolset>
-    
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath14)' != ''">v140</BasePlatformToolset>
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath12)' != ''">v120</BasePlatformToolset>
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath11)' != ''">v110</BasePlatformToolset>
+    <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(VCTargetsPath10)' != ''">v100</BasePlatformToolset>
+
+    <PlatformToolset Condition="'$(PlatformToolset)' == ''">$(BasePlatformToolset)</PlatformToolset>
+    <ICCBuild>false</ICCBuild>
+    <ICCBuild Condition="$(PlatformToolset.StartsWith(`Intel C++ Compiler`))">true</ICCBuild>
+
     <!--
     Convincing MSVC/MSBuild to prefer our platform names is too difficult,
     so we define our own constant ArchName and use wherever we need it.
