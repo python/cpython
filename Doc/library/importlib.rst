@@ -1113,7 +1113,7 @@ an :term:`importer`.
 
    .. versionadded:: 3.4
 
-   .. versionchanged ::3.5
+   .. versionchanged:: 3.5
       The *optimization* parameter was added and the *debug_override* parameter
       was deprecated.
 
