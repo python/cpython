@@ -11,6 +11,8 @@
     Give a default for BasePlatformToolset as well, it's used by ICC and ignored otherwise
     -->
     <BasePlatformToolset Condition="'$(BasePlatformToolset)' == '' and '$(PlatformToolset)' != 'v90'">v90</BasePlatformToolset>
+    <ICCBuild>false</ICCBuild>
+    <ICCBuild Condition="$(PlatformToolset.StartsWith('Intel C++ Compiler'))">true</ICCBuild>
     <!--
     Convincing MSVC/MSBuild to prefer our platform names is too difficult,
     so we define our own constant ArchName and use wherever we need it.
