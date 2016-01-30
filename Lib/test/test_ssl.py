@@ -60,7 +60,7 @@ REMOTE_ROOT_CERT = data_file("selfsigned_pythontestdotnet.pem")
 
 EMPTYCERT = data_file("nullcert.pem")
 BADCERT = data_file("badcert.pem")
-WRONGCERT = data_file("XXXnonexisting.pem")
+NONEXISTINGCERT = data_file("XXXnonexisting.pem")
 BADKEY = data_file("badkey.pem")
 NOKIACERT = data_file("nokia.pem")
 NULLBYTECERT = data_file("nullbytecert.pem")
@@ -367,15 +367,17 @@ class BasicSocketTests(unittest.TestCase):
                                     s.connect, (HOST, 8080))
         with self.assertRaises(OSError) as cm:
             with socket.socket() as sock:
-                ssl.wrap_socket(sock, certfile=WRONGCERT)
+                ssl.wrap_socket(sock, certfile=NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaises(OSError) as cm:
             with socket.socket() as sock:
-                ssl.wrap_socket(sock, certfile=CERTFILE, keyfile=WRONGCERT)
+                ssl.wrap_socket(sock,
+                    certfile=CERTFILE, keyfile=NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaises(OSError) as cm:
             with socket.socket() as sock:
-                ssl.wrap_socket(sock, certfile=WRONGCERT, keyfile=WRONGCERT)
+                ssl.wrap_socket(sock,
+                    certfile=NONEXISTINGCERT, keyfile=NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
 
     def test_match_hostname(self):
@@ -843,7 +845,7 @@ class ContextTests(unittest.TestCase):
         ctx.load_cert_chain(CERTFILE, keyfile=CERTFILE)
         self.assertRaises(TypeError, ctx.load_cert_chain, keyfile=CERTFILE)
         with self.assertRaises(OSError) as cm:
-            ctx.load_cert_chain(WRONGCERT)
+            ctx.load_cert_chain(NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
             ctx.load_cert_chain(BADCERT)
@@ -928,7 +930,7 @@ class ContextTests(unittest.TestCase):
         self.assertRaises(TypeError, ctx.load_verify_locations)
         self.assertRaises(TypeError, ctx.load_verify_locations, None, None, None)
         with self.assertRaises(OSError) as cm:
-            ctx.load_verify_locations(WRONGCERT)
+            ctx.load_verify_locations(NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaisesRegex(ssl.SSLError, "PEM lib"):
             ctx.load_verify_locations(BADCERT)
@@ -1004,7 +1006,7 @@ class ContextTests(unittest.TestCase):
         self.assertRaises(TypeError, ctx.load_dh_params)
         self.assertRaises(TypeError, ctx.load_dh_params, None)
         with self.assertRaises(FileNotFoundError) as cm:
-            ctx.load_dh_params(WRONGCERT)
+            ctx.load_dh_params(NONEXISTINGCERT)
         self.assertEqual(cm.exception.errno, errno.ENOENT)
         with self.assertRaises(ssl.SSLError) as cm:
             ctx.load_dh_params(CERTFILE)
@@ -2112,11 +2114,6 @@ else:
             except OSError as x:
                 if support.verbose:
                     sys.stdout.write("\nOSError is %s\n" % x.args[1])
-            except OSError as x:
-                if x.errno != errno.ENOENT:
-                    raise
-                if support.verbose:
-                    sys.stdout.write("\OSError is %s\n" % str(x))
             else:
                 raise AssertionError("Use of invalid cert should have failed!")
 
@@ -2368,8 +2365,8 @@ else:
             """Connecting with a badly formatted certificate (syntax error)"""
             bad_cert_test(os.path.join(os.path.dirname(__file__) or os.curdir,
                                        "badcert.pem"))
-        def test_nonexisting_cert(self):
-            """Connecting with a non-existing cert file"""
+        def test_wrong_cert(self):
+            """Connecting with a cert file not matching the server"""
             bad_cert_test(os.path.join(os.path.dirname(__file__) or os.curdir,
                                        "wrongcert.pem"))
         def test_malformed_key(self):
