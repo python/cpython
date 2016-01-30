@@ -3,28 +3,6 @@ Virtual environment (venv) package for Python. Based on PEP 405.
 
 Copyright (C) 2011-2014 Vinay Sajip.
 Licensed to the PSF under a contributor agreement.
-
-usage: python -m venv [-h] [--system-site-packages] [--symlinks] [--clear]
-            [--upgrade]
-            ENV_DIR [ENV_DIR ...]
-
-Creates virtual Python environments in one or more target directories.
-
-positional arguments:
-  ENV_DIR               A directory to create the environment in.
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --system-site-packages
-                        Give the virtual environment access to the system
-                        site-packages dir.
-  --symlinks            Attempt to symlink rather than copy.
-  --clear               Delete the contents of the environment directory if it
-                        already exists, before environment creation.
-  --upgrade             Upgrade the environment directory to use this version
-                        of Python, assuming Python has been upgraded in-place.
-  --without-pip         Skips installing or upgrading pip in the virtual
-                        environment (pip is bootstrapped by default)
 """
 import logging
 import os
@@ -349,23 +327,7 @@ class EnvBuilder:
 
 def create(env_dir, system_site_packages=False, clear=False,
                     symlinks=False, with_pip=False):
-    """
-    Create a virtual environment in a directory.
-
-    By default, makes the system (global) site-packages dir *un*available to
-    the created environment, and uses copying rather than symlinking for files
-    obtained from the source Python installation.
-
-    :param env_dir: The target directory to create an environment in.
-    :param system_site_packages: If True, the system (global) site-packages
-                                 dir is available to the environment.
-    :param clear: If True, delete the contents of the environment directory if
-                  it already exists, before environment creation.
-    :param symlinks: If True, attempt to symlink rather than copy files into
-                     virtual environment.
-    :param with_pip: If True, ensure pip is installed in the virtual
-                     environment
-    """
+    """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
                          clear=clear, symlinks=symlinks, with_pip=with_pip)
     builder.create(env_dir)
