@@ -10,6 +10,10 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #4806: Avoid masking the original TypeError exception when using star
+  (*) unpacking in function calls.  Based on patch by Hagen Fürstenau and
+  Daniel Urban.
+
 - Issue #26146: Add a new kind of AST node: ``ast.Constant``. It can be used
   by external AST optimizers, but the compiler does not emit directly such
   node.

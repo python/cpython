@@ -4999,16 +4999,18 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
         stararg = EXT_POP(*pp_stack);
         if (!PyTuple_Check(stararg)) {
             PyObject *t = NULL;
+            if (Py_TYPE(stararg)->tp_iter == NULL &&
+                    !PySequence_Check(stararg)) {
+                PyErr_Format(PyExc_TypeError,
+                             "%.200s%.200s argument after * "
+                             "must be an iterable, not %.200s",
+                             PyEval_GetFuncName(func),
+                             PyEval_GetFuncDesc(func),
+                             stararg->ob_type->tp_name);
+                goto ext_call_fail;
+            }
             t = PySequence_Tuple(stararg);
             if (t == NULL) {
-                if (PyErr_ExceptionMatches(PyExc_TypeError)) {
-                    PyErr_Format(PyExc_TypeError,
-                                 "%.200s%.200s argument after * "
-                                 "must be a sequence, not %.200s",
-                                 PyEval_GetFuncName(func),
-                                 PyEval_GetFuncDesc(func),
-                                 stararg->ob_type->tp_name);
-                }
                 goto ext_call_fail;
             }
             Py_DECREF(stararg);
