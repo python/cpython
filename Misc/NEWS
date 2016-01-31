@@ -18,6 +18,9 @@ Core and Builtins
   by external AST optimizers, but the compiler does not emit directly such
   node.
 
+- Issue #23601:  Sped-up allocation of dict key objects by using Python's
+  small object allocator.  (Contributed by Julian Taylor.)
+
 - Issue #18018: Import raises ImportError instead of SystemError if a relative
   import is attempted without a known parent package.
 
