@@ -324,7 +324,7 @@ static PyDictKeysObject *new_keys_object(Py_ssize_t size)
 
     assert(size >= PyDict_MINSIZE_SPLIT);
     assert(IS_POWER_OF_2(size));
-    dk = PyMem_MALLOC(sizeof(PyDictKeysObject) +
+    dk = PyObject_MALLOC(sizeof(PyDictKeysObject) +
                       sizeof(PyDictKeyEntry) * (size-1));
     if (dk == NULL) {
         PyErr_NoMemory();
@@ -353,7 +353,7 @@ free_keys_object(PyDictKeysObject *keys)
         Py_XDECREF(entries[i].me_key);
         Py_XDECREF(entries[i].me_value);
     }
-    PyMem_FREE(keys);
+    PyObject_FREE(keys);
 }
 
 #define new_values(size) PyMem_NEW(PyObject *, size)
@@ -964,7 +964,7 @@ dictresize(PyDictObject *mp, Py_ssize_t minused)
             }
         }
         assert(oldkeys->dk_refcnt == 1);
-        DK_DEBUG_DECREF PyMem_FREE(oldkeys);
+        DK_DEBUG_DECREF PyObject_FREE(oldkeys);
     }
     return 0;
 }
