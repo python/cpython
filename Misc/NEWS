@@ -10,6 +10,10 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #4806: Avoid masking the original TypeError exception when using star
+  (*) unpacking in function calls.  Based on patch by Hagen Fürstenau and
+  Daniel Urban.
+
 - Issue #26154: Add a new private _PyThreadState_UncheckedGet() function to get
   the current Python thread state, but don't issue a fatal error if it is NULL.
   This new function must be used instead of accessing directly the
