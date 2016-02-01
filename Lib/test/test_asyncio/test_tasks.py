@@ -2352,7 +2352,8 @@ class TimeoutTests(test_utils.TestCase):
                         foo_running = False
 
             dt = self.loop.time() - start
-            self.assertTrue(0.09 < dt < 0.11, dt)
+            # tolerate a small delta for slow delta or unstable clocks
+            self.assertTrue(0.09 < dt < 0.12, dt)
             self.assertFalse(foo_running)
 
         self.loop.run_until_complete(go())
