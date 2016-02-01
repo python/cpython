@@ -682,8 +682,8 @@ class _SelectorSocketTransport(_SelectorTransport):
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be byte-ish (%r)',
-                            type(data))
+            raise TypeError('data argument must be a bytes-like object, '
+                            'not %r' % type(data).__name__)
         if self._eof:
             raise RuntimeError('Cannot call write() after write_eof()')
         if not data:
@@ -954,8 +954,8 @@ class _SelectorSslTransport(_SelectorTransport):
 
     def write(self, data):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be byte-ish (%r)',
-                            type(data))
+            raise TypeError('data argument must be a bytes-like object, '
+                            'not %r' % type(data).__name__)
         if not data:
             return
 
@@ -1010,8 +1010,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
 
     def sendto(self, data, addr=None):
         if not isinstance(data, (bytes, bytearray, memoryview)):
-            raise TypeError('data argument must be byte-ish (%r)',
-                            type(data))
+            raise TypeError('data argument must be a bytes-like object, '
+                            'not %r' % type(data).__name__)
         if not data:
             return
 
