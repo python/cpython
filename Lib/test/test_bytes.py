@@ -1467,23 +1467,10 @@ class BytearrayPEP3137Test(unittest.TestCase,
 
 
 class FixedStringTest(test.string_tests.BaseTest):
-
     def fixtype(self, obj):
         if isinstance(obj, str):
             return obj.encode("utf-8")
         return super().fixtype(obj)
-
-    # Currently the bytes containment testing uses a single integer
-    # value. This may not be the final design, but until then the
-    # bytes section with in a bytes containment not valid
-    def test_contains(self):
-        pass
-    def test_expandtabs(self):
-        pass
-    def test_upper(self):
-        pass
-    def test_lower(self):
-        pass
 
 class ByteArrayAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytearray
