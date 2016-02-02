@@ -1,11 +1,8 @@
-# Tests that work for both bytes and buffer objects.
+# Tests that work for bytearray objects.  Could be merged into string_tests.
 # See PEP 3137.
 
-import struct
-import sys
-
 class MixinBytesBufferCommonTests(object):
-    """Tests that work for both bytes and buffer objects.
+    """Tests that work for bytearray objects.
     See PEP 3137.
     """
 
@@ -88,16 +85,6 @@ class MixinBytesBufferCommonTests(object):
 
         self.assertRaises(TypeError, self.marshal(b'abc').isdigit, 42)
 
-    def test_lower(self):
-        self.assertEqual(b'hello', self.marshal(b'HeLLo').lower())
-        self.assertEqual(b'hello', self.marshal(b'hello').lower())
-        self.assertRaises(TypeError, self.marshal(b'hello').lower, 42)
-
-    def test_upper(self):
-        self.assertEqual(b'HELLO', self.marshal(b'HeLLo').upper())
-        self.assertEqual(b'HELLO', self.marshal(b'HELLO').upper())
-        self.assertRaises(TypeError, self.marshal(b'hello').upper, 42)
-
     def test_capitalize(self):
         self.assertEqual(b' hello ', self.marshal(b' hello ').capitalize())
         self.assertEqual(b'Hello ', self.marshal(b'Hello ').capitalize())
@@ -152,35 +139,6 @@ class MixinBytesBufferCommonTests(object):
         self.assertEqual(b'0034', self.marshal(b'34').zfill(4))
 
         self.assertRaises(TypeError, self.marshal(b'123').zfill)
-
-    def test_expandtabs(self):
-        self.assertEqual(b'abc\rab      def\ng       hi',
-                         self.marshal(b'abc\rab\tdef\ng\thi').expandtabs())
-        self.assertEqual(b'abc\rab      def\ng       hi',
-                         self.marshal(b'abc\rab\tdef\ng\thi').expandtabs(8))
-        self.assertEqual(b'abc\rab  def\ng   hi',
-                         self.marshal(b'abc\rab\tdef\ng\thi').expandtabs(4))
-        self.assertEqual(b'abc\r\nab      def\ng       hi',
-                         self.marshal(b'abc\r\nab\tdef\ng\thi').expandtabs())
-        self.assertEqual(b'abc\r\nab      def\ng       hi',
-                         self.marshal(b'abc\r\nab\tdef\ng\thi').expandtabs(8))
-        self.assertEqual(b'abc\r\nab  def\ng   hi',
-                         self.marshal(b'abc\r\nab\tdef\ng\thi').expandtabs(4))
-        self.assertEqual(b'abc\r\nab\r\ndef\ng\r\nhi',
-                         self.marshal(b'abc\r\nab\r\ndef\ng\r\nhi').expandtabs(4))
-        # check keyword args
-        self.assertEqual(b'abc\rab      def\ng       hi',
-                         self.marshal(b'abc\rab\tdef\ng\thi').expandtabs(tabsize=8))
-        self.assertEqual(b'abc\rab  def\ng   hi',
-                         self.marshal(b'abc\rab\tdef\ng\thi').expandtabs(tabsize=4))
-
-        self.assertEqual(b'  a\n b', self.marshal(b' \ta\n\tb').expandtabs(1))
-
-        self.assertRaises(TypeError, self.marshal(b'hello').expandtabs, 42, 42)
-        # This test is only valid when sizeof(int) == sizeof(void*) == 4.
-        if sys.maxsize < (1 << 32) and struct.calcsize('P') == 4:
-            self.assertRaises(OverflowError,
-                              self.marshal(b'\ta\n\tb').expandtabs, sys.maxsize)
 
     def test_title(self):
         self.assertEqual(b' Hello ', self.marshal(b' hello ').title())
