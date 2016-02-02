@@ -128,7 +128,6 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     Py_INCREF(func);
     pto->args = PyTuple_GetSlice(args, 1, PY_SSIZE_T_MAX);
     if (pto->args == NULL) {
-        pto->kw = NULL;
         Py_DECREF(pto);
         return NULL;
     }
@@ -137,10 +136,6 @@ partial_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         Py_DECREF(pto);
         return NULL;
     }
-
-
-    pto->weakreflist = NULL;
-    pto->dict = NULL;
 
     return (PyObject *)pto;
 }
@@ -162,11 +157,11 @@ static PyObject *
 partial_call(partialobject *pto, PyObject *args, PyObject *kw)
 {
     PyObject *ret;
-    PyObject *argappl = NULL, *kwappl = NULL;
+    PyObject *argappl, *kwappl;
 
     assert (PyCallable_Check(pto->fn));
     assert (PyTuple_Check(pto->args));
-    assert (pto->kw == Py_None  ||  PyDict_Check(pto->kw));
+    assert (PyDict_Check(pto->kw));
 
     if (PyTuple_GET_SIZE(pto->args) == 0) {
         argappl = args;
@@ -178,11 +173,12 @@ partial_call(partialobject *pto, PyObject *args, PyObject *kw)
         argappl = PySequence_Concat(pto->args, args);
         if (argappl == NULL)
             return NULL;
+        assert(PyTuple_Check(argappl));
     }
 
-    if (pto->kw == Py_None) {
+    if (PyDict_Size(pto->kw) == 0) {
         kwappl = kw;
-        Py_XINCREF(kw);
+        Py_XINCREF(kwappl);
     } else {
         kwappl = PyDict_Copy(pto->kw);
         if (kwappl == NULL) {
@@ -289,25 +285,45 @@ PyObject *
 partial_setstate(partialobject *pto, PyObject *state)
 {
     PyObject *fn, *fnargs, *kw, *dict;
-    if (!PyArg_ParseTuple(state, "OOOO",
-                          &fn, &fnargs, &kw, &dict))
+
+    if (!PyTuple_Check(state) ||
+        !PyArg_ParseTuple(state, "OOOO", &fn, &fnargs, &kw, &dict) ||
+        !PyCallable_Check(fn) ||
+        !PyTuple_Check(fnargs) ||
+        (kw != Py_None && !PyDict_Check(kw)))
+    {
+        PyErr_SetString(PyExc_TypeError, "invalid partial state");
         return NULL;
-    Py_XDECREF(pto->fn);
-    Py_XDECREF(pto->args);
-    Py_XDECREF(pto->kw);
-    Py_XDECREF(pto->dict);
-    pto->fn = fn;
-    pto->args = fnargs;
-    pto->kw = kw;
-    if (dict != Py_None) {
-      pto->dict = dict;
-      Py_INCREF(dict);
-    } else {
-      pto->dict = NULL;
     }
+
+    if(!PyTuple_CheckExact(fnargs))
+        fnargs = PySequence_Tuple(fnargs);
+    else
+        Py_INCREF(fnargs);
+    if (fnargs == NULL)
+        return NULL;
+
+    if (kw == Py_None)
+        kw = PyDict_New();
+    else if(!PyDict_CheckExact(kw))
+        kw = PyDict_Copy(kw);
+    else
+        Py_INCREF(kw);
+    if (kw == NULL) {
+        Py_DECREF(fnargs);
+        return NULL;
+    }
+
     Py_INCREF(fn);
-    Py_INCREF(fnargs);
-    Py_INCREF(kw);
+    if (dict == Py_None)
+        dict = NULL;
+    else
+        Py_INCREF(dict);
+
+    Py_SETREF(pto->fn, fn);
+    Py_SETREF(pto->args, fnargs);
+    Py_SETREF(pto->kw, kw);
+    Py_SETREF(pto->dict, dict);
     Py_RETURN_NONE;
 }
 

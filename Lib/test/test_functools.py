@@ -1,3 +1,4 @@
+import copy
 import functools
 import sys
 import unittest
@@ -24,6 +25,16 @@ def capture(*args, **kw):
 def signature(part):
     """ return the signature of a partial object """
     return (part.func, part.args, part.keywords, part.__dict__)
+
+class MyTuple(tuple):
+    pass
+
+class BadTuple(tuple):
+    def __add__(self, other):
+        return list(self) + list(other)
+
+class MyDict(dict):
+    pass
 
 class TestPartial(unittest.TestCase):
 
@@ -146,11 +157,84 @@ class TestPartial(unittest.TestCase):
         self.assertEqual(join(data), '0123456789')
 
     def test_pickle(self):
-        f = self.thetype(signature, 'asdf', bar=True)
-        f.add_something_to__dict__ = True
+        f = self.thetype(signature, ['asdf'], bar=[True])
+        f.attr = []
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             f_copy = pickle.loads(pickle.dumps(f, proto))
-            self.assertEqual(signature(f), signature(f_copy))
+            self.assertEqual(signature(f_copy), signature(f))
+
+    def test_copy(self):
+        f = self.thetype(signature, ['asdf'], bar=[True])
+        f.attr = []
+        f_copy = copy.copy(f)
+        self.assertEqual(signature(f_copy), signature(f))
+        self.assertIs(f_copy.attr, f.attr)
+        self.assertIs(f_copy.args, f.args)
+        self.assertIs(f_copy.keywords, f.keywords)
+
+    def test_deepcopy(self):
+        f = self.thetype(signature, ['asdf'], bar=[True])
+        f.attr = []
+        f_copy = copy.deepcopy(f)
+        self.assertEqual(signature(f_copy), signature(f))
+        self.assertIsNot(f_copy.attr, f.attr)
+        self.assertIsNot(f_copy.args, f.args)
+        self.assertIsNot(f_copy.args[0], f.args[0])
+        self.assertIsNot(f_copy.keywords, f.keywords)
+        self.assertIsNot(f_copy.keywords['bar'], f.keywords['bar'])
+
+    def test_setstate(self):
+        f = self.thetype(signature)
+        f.__setstate__((capture, (1,), dict(a=10), dict(attr=[])))
+        self.assertEqual(signature(f),
+                         (capture, (1,), dict(a=10), dict(attr=[])))
+        self.assertEqual(f(2, b=20), ((1, 2), {'a': 10, 'b': 20}))
+
+        f.__setstate__((capture, (1,), dict(a=10), None))
+        self.assertEqual(signature(f), (capture, (1,), dict(a=10), {}))
+        self.assertEqual(f(2, b=20), ((1, 2), {'a': 10, 'b': 20}))
+
+        f.__setstate__((capture, (1,), None, None))
+        #self.assertEqual(signature(f), (capture, (1,), {}, {}))
+        self.assertEqual(f(2, b=20), ((1, 2), {'b': 20}))
+        self.assertEqual(f(2), ((1, 2), {}))
+        self.assertEqual(f(), ((1,), {}))
+
+        f.__setstate__((capture, (), {}, None))
+        self.assertEqual(signature(f), (capture, (), {}, {}))
+        self.assertEqual(f(2, b=20), ((2,), {'b': 20}))
+        self.assertEqual(f(2), ((2,), {}))
+        self.assertEqual(f(), ((), {}))
+
+    def test_setstate_errors(self):
+        f = self.thetype(signature)
+        self.assertRaises(TypeError, f.__setstate__, (capture, (), {}))
+        self.assertRaises(TypeError, f.__setstate__, (capture, (), {}, {}, None))
+        self.assertRaises(TypeError, f.__setstate__, [capture, (), {}, None])
+        self.assertRaises(TypeError, f.__setstate__, (None, (), {}, None))
+        self.assertRaises(TypeError, f.__setstate__, (capture, None, {}, None))
+        self.assertRaises(TypeError, f.__setstate__, (capture, [], {}, None))
+        self.assertRaises(TypeError, f.__setstate__, (capture, (), [], None))
+
+    def test_setstate_subclasses(self):
+        f = self.thetype(signature)
+        f.__setstate__((capture, MyTuple((1,)), MyDict(a=10), None))
+        s = signature(f)
+        self.assertEqual(s, (capture, (1,), dict(a=10), {}))
+        self.assertIs(type(s[1]), tuple)
+        self.assertIs(type(s[2]), dict)
+        r = f()
+        self.assertEqual(r, ((1,), {'a': 10}))
+        self.assertIs(type(r[0]), tuple)
+        self.assertIs(type(r[1]), dict)
+
+        f.__setstate__((capture, BadTuple((1,)), {}, None))
+        s = signature(f)
+        self.assertEqual(s, (capture, (1,), {}, {}))
+        self.assertIs(type(s[1]), tuple)
+        r = f(2)
+        self.assertEqual(r, ((1, 2), {}))
+        self.assertIs(type(r[0]), tuple)
 
     # Issue 6083: Reference counting bug
     def test_setstate_refcount(self):
@@ -167,7 +251,7 @@ class TestPartial(unittest.TestCase):
                 raise IndexError
 
         f = self.thetype(object)
-        self.assertRaises(SystemError, f.__setstate__, BadSequence())
+        self.assertRaises(TypeError, f.__setstate__, BadSequence())
 
 class PartialSubclass(functools.partial):
     pass
@@ -181,7 +265,14 @@ class TestPythonPartial(TestPartial):
     thetype = PythonPartial
 
     # the python version isn't picklable
-    test_pickle = test_setstate_refcount = None
+    test_pickle = None
+    test_setstate = None
+    test_setstate_errors = None
+    test_setstate_subclasses = None
+    test_setstate_refcount = None
+
+    # the python version isn't deepcopyable
+    test_deepcopy = None
 
     # the python version isn't a type
     test_attributes = None

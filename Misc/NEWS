@@ -48,6 +48,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #25945: Fixed a crash when unpickle the functools.partial object with
+  wrong state.  Fixed a leak in failed functools.partial constructor.
+  "args" and "keywords" attributes of functools.partial have now always types
+  tuple and dict correspondingly.
+
 - Issue #19883: Fixed possible integer overflows in zipimport.
 
 - Issue #26147: xmlrpclib now works with unicode not encodable with used
