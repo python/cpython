@@ -1,5 +1,5 @@
 """
-Common tests shared by test_unicode, test_userstring and test_string.
+Common tests shared by test_unicode, test_userstring and test_bytes.
 """
 
 import unittest, string, sys, struct
@@ -686,8 +686,7 @@ class BaseTest:
 
 class CommonTest(BaseTest):
     # This testcase contains tests that can be used in all
-    # stringlike classes. Currently this is str, unicode
-    # UserString and the string module.
+    # stringlike classes. Currently this is str and UserString.
 
     def test_hash(self):
         # SF bug 1054139:  += optimization was not invalidating cached hash value
@@ -857,8 +856,7 @@ class CommonTest(BaseTest):
 
 class MixinStrUnicodeUserStringTest:
     # additional tests that only work for
-    # stringlike objects, i.e. str, unicode, UserString
-    # (but not the string module)
+    # stringlike objects, i.e. str, UserString
 
     def test_islower(self):
         self.checkequal(False, '', 'islower')
@@ -1343,7 +1341,7 @@ class MixinStrUnicodeUserStringTest:
 
 
 class MixinStrUnicodeTest:
-    # Additional tests that only work with str and unicode.
+    # Additional tests that only work with str.
 
     def test_bug1001011(self):
         # Make sure join returns a NEW object for single item sequences
