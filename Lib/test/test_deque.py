@@ -304,19 +304,20 @@ class TestBasic(unittest.TestCase):
             s.insert(i, 'Z')
             self.assertEqual(list(d), s)
 
-    def test_index_bug_26194(self):
+    def test_insert_bug_26194(self):
         data = 'ABC'
-        for i in range(len(data) + 1):
-            d = deque(data, len(data))
-            d.insert(i, None)
-            s = list(data)
-            s.insert(i, None)
-            s.pop()
-            self.assertEqual(list(d), s)
-            if i < len(data):
-                self.assertIsNone(d[i])
+        d = deque(data, maxlen=len(data))
+        with self.assertRaises(IndexError):
+            d.insert(2, None)
+
+        elements = 'ABCDEFGHI'
+        for i in range(-len(elements), len(elements)):
+            d = deque(elements, maxlen=len(elements)+1)
+            d.insert(i, 'Z')
+            if i >= 0:
+                self.assertEqual(d[i], 'Z')
             else:
-                self.assertTrue(None not in d)
+                self.assertEqual(d[i-1], 'Z')
 
     def test_imul(self):
         for n in (-10, -1, 0, 1, 2, 10, 1000):
