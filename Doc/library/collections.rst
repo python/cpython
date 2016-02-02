@@ -477,8 +477,8 @@ or subtracting from an empty counter.
 
         Insert *x* into the deque at position *i*.
 
-        If the insertion causes a bounded deque to grow beyond *maxlen*, the
-        rightmost element is then removed to restore the size limit.
+        If the insertion would cause a bounded deque to grow beyond *maxlen*,
+        an :exc:`IndexError` is raised.
 
         .. versionadded:: 3.5
 
