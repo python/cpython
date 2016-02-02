@@ -1085,16 +1085,13 @@ deque_insert(dequeobject *deque, PyObject *args)
     Py_ssize_t index;
     Py_ssize_t n = Py_SIZE(deque);
     PyObject *value;
-    PyObject *oldvalue;
     PyObject *rv;
 
     if (!PyArg_ParseTuple(args, "nO:insert", &index, &value))
         return NULL;
     if (deque->maxlen == Py_SIZE(deque)) {
-        if (index >= deque->maxlen || Py_SIZE(deque) == 0)
-            Py_RETURN_NONE;
-        oldvalue = deque_pop(deque, NULL);
-        Py_DECREF(oldvalue);
+        PyErr_SetString(PyExc_IndexError, "deque already at its maximum size");
+        return NULL;
     }
     if (index >= n)
         return deque_append(deque, value);
