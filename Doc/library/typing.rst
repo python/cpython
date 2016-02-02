@@ -20,7 +20,7 @@ The function below takes and returns a string and is annotated as follows::
    def greeting(name: str) -> str:
        return 'Hello ' + name
 
-In the function ``greeting``, the argument ``name`` is expected to by of type
+In the function ``greeting``, the argument ``name`` is expected to be of type
 :class:`str` and the return type :class:`str`. Subtypes are accepted as
 arguments.
 
