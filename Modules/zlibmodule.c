@@ -390,8 +390,9 @@ zlib_decompress_impl(PyModuleDef *module, Py_buffer *data, int wbits,
 zlib.compressobj
 
     level: int(c_default="Z_DEFAULT_COMPRESSION") = Z_DEFAULT_COMPRESSION
-        The compression level (an integer in the range 0-9; default is 6).
-        Higher compression levels are slower, but produce smaller results.
+        The compression level (an integer in the range 0-9 or -1; default is
+        currently equivalent to 6).  Higher compression levels are slower,
+        but produce smaller results.
     method: int(c_default="DEFLATED") = DEFLATED
         The compression algorithm.  If given, this must be DEFLATED.
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
@@ -413,7 +414,7 @@ Return a compressor object.
 static PyObject *
 zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits,
                       int memLevel, int strategy, Py_buffer *zdict)
-/*[clinic end generated code: output=2949bbb9a5723ccd input=b034847f8821f6af]*/
+/*[clinic end generated code: output=2949bbb9a5723ccd input=de2ffab6e910cd8b]*/
 {
     compobject *self = NULL;
     int err;
