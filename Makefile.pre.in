@@ -528,11 +528,15 @@ pybuilddir.txt: $(BUILDPYTHON)
 		exit 1 ; \
 	fi
 
+# This is shared by the math and cmath modules
+Modules/_math.o: Modules/_math.c Modules/_math.h
+	$(CC) -c $(CCSHARED) $(PY_CFLAGS) -o $@ $<
+
 # Build the shared modules
 # Under GNU make, MAKEFLAGS are sorted and normalized; the 's' for
 # -s, --silent or --quiet is always the first char.
 # Under BSD make, MAKEFLAGS might be " -s -v x=y".
-sharedmods: $(BUILDPYTHON) pybuilddir.txt
+sharedmods: $(BUILDPYTHON) pybuilddir.txt Modules/_math.o
 	@case "$$MAKEFLAGS" in \
 	    *\ -s*|s*) quiet="-q";; \
 	    *) quiet="";; \

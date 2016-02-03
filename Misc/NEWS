@@ -143,6 +143,10 @@ Tests
 Build
 -----
 
+- Issue #24421: Compile Modules/_math.c once, before building extensions.
+  Previously it could fail to compile properly if the math and cmath builds
+  were concurrent.
+
 - Issue #25824: Fixes sys.winver to not include any architecture suffix.
 
 - Issue #25348: Added ``--pgo`` and ``--pgo-job`` arguments to
