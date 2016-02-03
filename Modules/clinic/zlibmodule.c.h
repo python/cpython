@@ -89,8 +89,9 @@ PyDoc_STRVAR(zlib_compressobj__doc__,
 "Return a compressor object.\n"
 "\n"
 "  level\n"
-"    The compression level (an integer in the range 0-9; default is 6).\n"
-"    Higher compression levels are slower, but produce smaller results.\n"
+"    The compression level (an integer in the range 0-9 or -1; default is\n"
+"    currently equivalent to 6).  Higher compression levels are slower,\n"
+"    but produce smaller results.\n"
 "  method\n"
 "    The compression algorithm.  If given, this must be DEFLATED.\n"
 "  wbits\n"
@@ -438,4 +439,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=7734aec079550bc8 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=cf81e1deae3af0ce input=a9049054013a1b77]*/
