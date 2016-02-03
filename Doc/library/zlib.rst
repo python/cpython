@@ -71,10 +71,12 @@ The available exception and functions in this module are:
 .. function:: compressobj([level[, method[, wbits[, memlevel[, strategy]]]]])
 
    Returns a compression object, to be used for compressing data streams that won't
-   fit into memory at once.  *level* is an integer from ``0`` to ``9`` controlling
+   fit into memory at once.  *level* is an integer from
+   ``0`` to ``9`` or ``-1``, controlling
    the level of compression; ``1`` is fastest and produces the least compression,
    ``9`` is slowest and produces the most.  ``0`` is no compression.  The default
-   value is ``6``.
+   value is ``-1`` (Z_DEFAULT_COMPRESSION). Z_DEFAULT_COMPRESSION represents a default
+   compromise between speed and compression (currently equivalent to level 6).
 
    *method* is the compression algorithm. Currently, the only supported value is
    ``DEFLATED``.

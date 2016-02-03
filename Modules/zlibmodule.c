@@ -101,7 +101,7 @@ zlib_error(z_stream zst, int err, char *msg)
 PyDoc_STRVAR(compressobj__doc__,
 "compressobj([level]) -- Return a compressor object.\n"
 "\n"
-"Optional arg level is the compression level, in 0-9.");
+"Optional arg level is the compression level, in 0-9 or -1.");
 
 PyDoc_STRVAR(decompressobj__doc__,
 "decompressobj([wbits]) -- Return a decompressor object.\n"
