@@ -60,10 +60,11 @@ The available exception and functions in this module are:
    Returns a compression object, to be used for compressing data streams that won't
    fit into memory at once.
 
-   *level* is the compression level -- an integer from ``0`` to ``9``. A value
-   of ``1`` is fastest and produces the least compression, while a value of
+   *level* is the compression level -- an integer from ``0`` to ``9`` or ``-1``.
+   A value of ``1`` is fastest and produces the least compression, while a value of
    ``9`` is slowest and produces the most. ``0`` is no compression. The default
-   value is ``6``.
+   value is ``-1`` (Z_DEFAULT_COMPRESSION). Z_DEFAULT_COMPRESSION represents a default
+   compromise between speed and compression (currently equivalent to level 6).
 
    *method* is the compression algorithm. Currently, the only supported value is
    ``DEFLATED``.
