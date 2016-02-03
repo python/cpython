@@ -261,6 +261,10 @@ Tests
 Build
 -----
 
+- Issue #24421: Compile Modules/_math.c once, before building extensions.
+  Previously it could fail to compile properly if the math and cmath builds
+  were concurrent.
+
 - Issue #25348: Added ``--pgo`` and ``--pgo-job`` arguments to
   ``PCbuild\build.bat`` for building with Profile-Guided Optimization.  The
   old ``PCbuild\build_pgo.bat`` script is now deprecated, and simply calls
