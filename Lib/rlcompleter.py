@@ -75,7 +75,9 @@ class Completer:
 
         if not text.strip():
             if state == 0:
-                return '\t'
+                readline.insert_text('\t')
+                readline.redisplay()
+                return ''
             else:
                 return None
 

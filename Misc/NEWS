@@ -67,6 +67,9 @@ Core and Builtins
 - Issue #26171: Fix possible integer overflow and heap corruption in
   zipimporter.get_data().
 
+- Issue #25660: Fix TAB key behaviour in REPL with readline.
+
+
 Library
 -------
 
