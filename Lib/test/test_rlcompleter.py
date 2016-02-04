@@ -1,4 +1,5 @@
 import unittest
+import unittest.mock
 import builtins
 import rlcompleter
 
@@ -77,6 +78,7 @@ class TestRlcompleter(unittest.TestCase):
         self.assertEqual(completer.complete('f.b', 0), 'f.bar')
         self.assertEqual(f.calls, 1)
 
+    @unittest.mock.patch('rlcompleter._readline_available', False)
     def test_complete(self):
         completer = rlcompleter.Completer()
         self.assertEqual(completer.complete('', 0), '\t')
