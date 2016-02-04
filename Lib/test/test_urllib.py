@@ -209,9 +209,25 @@ Connection: close
 Content-Type: text/html; charset=iso-8859-1
 """)
         try:
-            self.assertRaises(IOError, urllib.urlopen, "http://python.org/")
+            msg = "Redirection to url 'file:"
+            with self.assertRaisesRegexp(IOError, msg):
+                urllib.urlopen("http://python.org/")
         finally:
             self.unfakehttp()
+
+    def test_redirect_limit_independent(self):
+        # Ticket #12923: make sure independent requests each use their
+        # own retry limit.
+        for i in range(urllib.FancyURLopener().maxtries):
+            self.fakehttp(b'''HTTP/1.1 302 Found
+Location: file://guidocomputer.athome.com:/python/license
+Connection: close
+''')
+            try:
+                self.assertRaises(IOError, urllib.urlopen,
+                    "http://something")
+            finally:
+                self.unfakehttp()
 
     def test_empty_socket(self):
         # urlopen() raises IOError if the underlying socket does not send any

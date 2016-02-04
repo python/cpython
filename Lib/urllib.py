@@ -629,18 +629,20 @@ class FancyURLopener(URLopener):
     def http_error_302(self, url, fp, errcode, errmsg, headers, data=None):
         """Error 302 -- relocated (temporarily)."""
         self.tries += 1
-        if self.maxtries and self.tries >= self.maxtries:
-            if hasattr(self, "http_error_500"):
-                meth = self.http_error_500
-            else:
-                meth = self.http_error_default
+        try:
+            if self.maxtries and self.tries >= self.maxtries:
+                if hasattr(self, "http_error_500"):
+                    meth = self.http_error_500
+                else:
+                    meth = self.http_error_default
+                return meth(url, fp, 500,
+                            "Internal Server Error: Redirect Recursion",
+                            headers)
+            result = self.redirect_internal(url, fp, errcode, errmsg,
+                                            headers, data)
+            return result
+        finally:
             self.tries = 0
-            return meth(url, fp, 500,
-                        "Internal Server Error: Redirect Recursion", headers)
-        result = self.redirect_internal(url, fp, errcode, errmsg, headers,
-                                        data)
-        self.tries = 0
-        return result
 
     def redirect_internal(self, url, fp, errcode, errmsg, headers, data):
         if 'location' in headers:
