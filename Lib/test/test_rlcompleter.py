@@ -101,6 +101,7 @@ class TestRlcompleter(unittest.TestCase):
         completer = rlcompleter.Completer(dict(f=Foo()))
         self.assertEqual(completer.complete('f.', 0), 'f.bar')
 
+    @unittest.mock.patch('rlcompleter._readline_available', False)
     def test_complete(self):
         completer = rlcompleter.Completer()
         self.assertEqual(completer.complete('', 0), '\t')
