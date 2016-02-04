@@ -59,7 +59,7 @@ Python for .NET
    This implementation actually uses the CPython implementation, but is a managed
    .NET application and makes .NET libraries available.  It was created by Brian
    Lloyd.  For more information, see the `Python for .NET home page
-   <http://pythonnet.sourceforge.net>`_.
+   <https://pythonnet.github.io/>`_.
 
 IronPython
    An alternate Python for .NET.  Unlike Python.NET, this is a complete Python
