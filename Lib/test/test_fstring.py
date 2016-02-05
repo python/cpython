@@ -692,6 +692,17 @@ f'{a * x()}'"""
                              r"f'{a(4]}'",
                             ])
 
+    def test_errors(self):
+        # see issue 26287
+        self.assertAllRaise(TypeError, 'non-empty',
+                            [r"f'{(lambda: 0):x}'",
+                             r"f'{(0,):x}'",
+                             ])
+        self.assertAllRaise(ValueError, 'Unknown format code',
+                            [r"f'{1000:j}'",
+                             r"f'{1000:j}'",
+                            ])
+
     def test_loop(self):
         for i in range(1000):
             self.assertEqual(f'i:{i}', 'i:' + str(i))
