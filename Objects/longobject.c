@@ -2770,9 +2770,9 @@ PyLong_AsDouble(PyObject *v)
         return -1.0;
     }
     if (Py_ABS(Py_SIZE(v)) <= 1) {
-        /* Fast path; single digit will always fit decimal.
-           This improves performance of FP/long operations by at
-           least 20%. This is even visible on macro-benchmarks.
+        /* Fast path; single digit long (31 bits) will cast safely
+	   to double.  This improves performance of FP/long operations
+	   by 20%.
         */
         return (double)MEDIUM_VALUE((PyLongObject *)v);
     }
