@@ -39,10 +39,7 @@ def urlopen(url, data=None, proxies=None):
     if proxies is not None:
         opener = urllib.request.FancyURLopener(proxies=proxies)
     elif not _urlopener:
-        with support.check_warnings(
-                ('FancyURLopener style of invoking requests is deprecated.',
-                DeprecationWarning)):
-            opener = urllib.request.FancyURLopener()
+        opener = FancyURLopener()
         _urlopener = opener
     else:
         opener = _urlopener
@@ -50,6 +47,13 @@ def urlopen(url, data=None, proxies=None):
         return opener.open(url)
     else:
         return opener.open(url, data)
+
+
+def FancyURLopener():
+    with support.check_warnings(
+            ('FancyURLopener style of invoking requests is deprecated.',
+            DeprecationWarning)):
+        return urllib.request.FancyURLopener()
 
 
 def fakehttp(fakedata):
@@ -291,10 +295,25 @@ Connection: close
 Content-Type: text/html; charset=iso-8859-1
 ''')
         try:
-            self.assertRaises(urllib.error.HTTPError, urlopen,
-                              "http://python.org/")
+            msg = "Redirection to url 'file:"
+            with self.assertRaisesRegex(urllib.error.HTTPError, msg):
+                urlopen("http://python.org/")
         finally:
             self.unfakehttp()
+
+    def test_redirect_limit_independent(self):
+        # Ticket #12923: make sure independent requests each use their
+        # own retry limit.
+        for i in range(FancyURLopener().maxtries):
+            self.fakehttp(b'''HTTP/1.1 302 Found
+Location: file://guidocomputer.athome.com:/python/license
+Connection: close
+''')
+            try:
+                self.assertRaises(urllib.error.HTTPError, urlopen,
+                    "http://something")
+            finally:
+                self.unfakehttp()
 
     def test_empty_socket(self):
         # urlopen() raises OSError if the underlying socket does not send any
