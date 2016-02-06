@@ -499,7 +499,7 @@ component and the hostname and optionally the port number)
 e.g. "http://example.com/" *or* an "authority" (i.e. the hostname,
 optionally including the port number) e.g. "example.com" or "example.com:8080"
 (the latter example includes a port number).  The authority, if present, must
-NOT contain the "userinfo" component - for example "joe@password:example.com" is
+NOT contain the "userinfo" component - for example "joe:password@example.com" is
 not correct.
 
 
