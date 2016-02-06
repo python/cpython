@@ -2769,6 +2769,13 @@ PyLong_AsDouble(PyObject *v)
         PyErr_SetString(PyExc_TypeError, "an integer is required");
         return -1.0;
     }
+    if (Py_ABS(Py_SIZE(v)) <= 1) {
+        /* Fast path; single digit will always fit decimal.
+           This improves performance of FP/long operations by at
+           least 20%. This is even visible on macro-benchmarks.
+        */
+        return (double)MEDIUM_VALUE((PyLongObject *)v);
+    }
     x = _PyLong_Frexp((PyLongObject *)v, &exponent);
     if ((x == -1.0 && PyErr_Occurred()) || exponent > DBL_MAX_EXP) {
         PyErr_SetString(PyExc_OverflowError,
