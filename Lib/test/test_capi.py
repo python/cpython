@@ -488,10 +488,10 @@ class SkipitemTest(unittest.TestCase):
                 _testcapi.parse_tuple_and_keywords(tuple_1, dict_b,
                     format.encode("ascii"), keywords)
                 when_not_skipped = False
-            except TypeError as e:
+            except SystemError as e:
                 s = "argument 1 (impossible<bad format char>)"
                 when_not_skipped = (str(e) == s)
-            except RuntimeError as e:
+            except (TypeError, RuntimeError):
                 when_not_skipped = False
 
             # test the format unit when skipped
