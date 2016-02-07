@@ -2565,7 +2565,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         method_cache[h].version = type->tp_version_tag;
         method_cache[h].value = res;  /* borrowed */
         Py_INCREF(name);
-        assert(((PyStringObject *)(name))->hash != -1);
+        assert(((PyStringObject *)(name))->ob_shash != -1);
 #if MCACHE_STATS
         if (method_cache[h].name != Py_None && method_cache[h].name != name)
             method_cache_collisions++;
