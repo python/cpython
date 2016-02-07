@@ -136,7 +136,8 @@ area.  Also, you won't have to release any memory yourself, except with the
    :c:func:`PyArg_ParseTuple` will use this location as the buffer and
    interpret the initial value of *\*buffer_length* as the buffer size.  It
    will then copy the encoded data into the buffer and NUL-terminate it.  If
-   the buffer is not large enough, a :exc:`ValueError` will be set.
+   the buffer is not large enough, a :exc:`TypeError` will be set.
+   Note: starting from Python 3.6 a :exc:`ValueError` will be set.
 
    In both cases, *\*buffer_length* is set to the length of the encoded data
    without the trailing NUL byte.
