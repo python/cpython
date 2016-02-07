@@ -371,7 +371,7 @@ class ZipInfo (object):
             result.append(' filemode=%r' % stat.filemode(hi))
         if lo:
             result.append(' external_attr=%#x' % lo)
-        isdir = self.filename[-1:] == '/'
+        isdir = self.is_dir()
         if not isdir or self.file_size:
             result.append(' file_size=%r' % self.file_size)
         if ((not isdir or self.compress_size) and
@@ -468,6 +468,41 @@ class ZipInfo (object):
                     idx+=1
 
             extra = extra[ln+4:]
+
+    @classmethod
+    def from_file(cls, filename, arcname=None):
+        """Construct an appropriate ZipInfo for a file on the filesystem.
+
+        filename should be the path to a file or directory on the filesystem.
+
+        arcname is the name which it will have within the archive (by default,
+        this will be the same as filename, but without a drive letter and with
+        leading path separators removed).
+        """
+        st = os.stat(filename)
+        isdir = stat.S_ISDIR(st.st_mode)
+        mtime = time.localtime(st.st_mtime)
+        date_time = mtime[0:6]
+        # Create ZipInfo instance to store file information
+        if arcname is None:
+            arcname = filename
+        arcname = os.path.normpath(os.path.splitdrive(arcname)[1])
+        while arcname[0] in (os.sep, os.altsep):
+            arcname = arcname[1:]
+        if isdir:
+            arcname += '/'
+        zinfo = cls(arcname, date_time)
+        zinfo.external_attr = (st.st_mode & 0xFFFF) << 16  # Unix attributes
+        if isdir:
+            zinfo.file_size = 0
+            zinfo.external_attr |= 0x10  # MS-DOS directory flag
+        else:
+            zinfo.file_size = st.st_size
+
+        return zinfo
+
+    def is_dir(self):
+        return self.filename[-1] == '/'
 
 
 class _ZipDecrypter:
@@ -1389,7 +1424,7 @@ class ZipFile:
         if upperdirs and not os.path.exists(upperdirs):
             os.makedirs(upperdirs)
 
-        if member.filename[-1] == '/':
+        if member.is_dir():
             if not os.path.isdir(targetpath):
                 os.mkdir(targetpath)
             return targetpath
@@ -1430,29 +1465,17 @@ class ZipFile:
             raise RuntimeError(
                 "Attempt to write to ZIP archive that was already closed")
 
-        st = os.stat(filename)
-        isdir = stat.S_ISDIR(st.st_mode)
-        mtime = time.localtime(st.st_mtime)
-        date_time = mtime[0:6]
-        # Create ZipInfo instance to store file information
-        if arcname is None:
-            arcname = filename
-        arcname = os.path.normpath(os.path.splitdrive(arcname)[1])
-        while arcname[0] in (os.sep, os.altsep):
-            arcname = arcname[1:]
-        if isdir:
-            arcname += '/'
-        zinfo = ZipInfo(arcname, date_time)
-        zinfo.external_attr = (st[0] & 0xFFFF) << 16      # Unix attributes
-        if isdir:
-            zinfo.compress_type = ZIP_STORED
-        elif compress_type is None:
-            zinfo.compress_type = self.compression
-        else:
-            zinfo.compress_type = compress_type
+        zinfo = ZipInfo.from_file(filename, arcname)
 
-        zinfo.file_size = st.st_size
-        zinfo.flag_bits = 0x00
+        if zinfo.is_dir():
+            zinfo.compress_size = 0
+            zinfo.CRC = 0
+        else:
+            if compress_type is not None:
+                zinfo.compress_type = compress_type
+            else:
+                zinfo.compress_type = self.compression
+
         with self._lock:
             if self._seekable:
                 self.fp.seek(self.start_dir)
@@ -1464,11 +1487,7 @@ class ZipFile:
             self._writecheck(zinfo)
             self._didModify = True
 
-            if isdir:
-                zinfo.file_size = 0
-                zinfo.compress_size = 0
-                zinfo.CRC = 0
-                zinfo.external_attr |= 0x10  # MS-DOS directory flag
+            if zinfo.is_dir():
                 self.filelist.append(zinfo)
                 self.NameToInfo[zinfo.filename] = zinfo
                 self.fp.write(zinfo.FileHeader(False))

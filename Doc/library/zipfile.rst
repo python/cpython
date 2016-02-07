@@ -465,6 +465,22 @@ Instances of the :class:`ZipInfo` class are returned by the :meth:`.getinfo` and
 :meth:`.infolist` methods of :class:`ZipFile` objects.  Each object stores
 information about a single member of the ZIP archive.
 
+There is one classmethod to make a :class:`ZipInfo` instance for a filesystem
+file:
+
+.. classmethod:: ZipInfo.from_file(filename, arcname=None)
+
+   Construct a :class:`ZipInfo` instance for a file on the filesystem, in
+   preparation for adding it to a zip file.
+
+   *filename* should be the path to a file or directory on the filesystem.
+
+   If *arcname* is specified, it is used as the name within the archive.
+   If *arcname* is not specified, the name will be the same as *filename*, but
+   with any drive letter and leading path separators removed.
+
+   .. versionadded:: 3.6
+
 Instances have the following attributes:
 
 
@@ -574,3 +590,11 @@ Instances have the following attributes:
 .. attribute:: ZipInfo.file_size
 
    Size of the uncompressed file.
+
+There is one method:
+
+.. method:: ZipInfo.is_dir()
+
+   Return ``True`` if the ZipInfo represents a directory.
+
+   .. versionadded:: 3.6

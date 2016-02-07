@@ -3,6 +3,7 @@ import io
 import os
 import sys
 import importlib.util
+import posixpath
 import time
 import struct
 import zipfile
@@ -2070,6 +2071,20 @@ class Bzip2UniversalNewlineTests(AbstractUniversalNewlineTests,
 class LzmaUniversalNewlineTests(AbstractUniversalNewlineTests,
                                 unittest.TestCase):
     compression = zipfile.ZIP_LZMA
+
+class ZipInfoTests(unittest.TestCase):
+    def test_from_file(self):
+        zi = zipfile.ZipInfo.from_file(__file__)
+        self.assertEqual(posixpath.basename(zi.filename), 'test_zipfile.py')
+        self.assertFalse(zi.is_dir())
+
+    def test_from_dir(self):
+        dirpath = os.path.dirname(os.path.abspath(__file__))
+        zi = zipfile.ZipInfo.from_file(dirpath, 'stdlib_tests')
+        self.assertEqual(zi.filename, 'stdlib_tests/')
+        self.assertTrue(zi.is_dir())
+        self.assertEqual(zi.compress_type, zipfile.ZIP_STORED)
+        self.assertEqual(zi.file_size, 0)
 
 if __name__ == "__main__":
     unittest.main()
