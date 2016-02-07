@@ -394,7 +394,12 @@ seterror(Py_ssize_t iarg, const char *msg, int *levels, const char *fname,
         PyOS_snprintf(p, sizeof(buf) - (p - buf), " %.256s", msg);
         message = buf;
     }
-    PyErr_SetString(PyExc_TypeError, message);
+    if (msg[0] == '(') {
+        PyErr_SetString(PyExc_SystemError, message);
+    }
+    else {
+        PyErr_SetString(PyExc_TypeError, message);
+    }
 }
 
 
@@ -1129,7 +1134,7 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             } else {
                 if (size + 1 > BUFFER_LEN) {
                     Py_DECREF(s);
-                    PyErr_Format(PyExc_TypeError,
+                    PyErr_Format(PyExc_ValueError,
                                  "encoded string too long "
                                  "(%zd, maximum length %zd)",
                                  (Py_ssize_t)size, (Py_ssize_t)(BUFFER_LEN-1));
