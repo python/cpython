@@ -489,7 +489,7 @@ class SkipitemTest(unittest.TestCase):
                     format.encode("ascii"), keywords)
                 when_not_skipped = False
             except TypeError as e:
-                s = "argument 1 must be impossible<bad format char>, not int"
+                s = "argument 1 (impossible<bad format char>)"
                 when_not_skipped = (str(e) == s)
             except RuntimeError as e:
                 when_not_skipped = False
