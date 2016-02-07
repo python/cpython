@@ -636,10 +636,10 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_es_hash('abc\xe9', 'latin1', buf), b'abc\xe9')
         self.assertEqual(buf, bytearray(b'abc\xe9\x00'))
         buf = bytearray(b'x'*4)
-        self.assertRaises(TypeError, getargs_es_hash, 'abc\xe9', 'latin1', buf)
+        self.assertRaises(ValueError, getargs_es_hash, 'abc\xe9', 'latin1', buf)
         self.assertEqual(buf, bytearray(b'x'*4))
         buf = bytearray()
-        self.assertRaises(TypeError, getargs_es_hash, 'abc\xe9', 'latin1', buf)
+        self.assertRaises(ValueError, getargs_es_hash, 'abc\xe9', 'latin1', buf)
 
     def test_et_hash(self):
         from _testcapi import getargs_et_hash
@@ -662,10 +662,10 @@ class String_TestCase(unittest.TestCase):
         self.assertEqual(getargs_et_hash('abc\xe9', 'latin1', buf), b'abc\xe9')
         self.assertEqual(buf, bytearray(b'abc\xe9\x00'))
         buf = bytearray(b'x'*4)
-        self.assertRaises(TypeError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
+        self.assertRaises(ValueError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
         self.assertEqual(buf, bytearray(b'x'*4))
         buf = bytearray()
-        self.assertRaises(TypeError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
+        self.assertRaises(ValueError, getargs_et_hash, 'abc\xe9', 'latin1', buf)
 
     def test_u(self):
         from _testcapi import getargs_u
