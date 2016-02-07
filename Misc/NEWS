@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #26302: Correct behavior to reject comma as a legal character for
+  cookie names.
+
 - Issue #4806: Avoid masking the original TypeError exception when using star
   (*) unpacking in function calls.  Based on patch by Hagen Fürstenau and
   Daniel Urban.
