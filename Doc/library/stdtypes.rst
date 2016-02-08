@@ -1450,7 +1450,7 @@ multiple fragments.
 
    For more information on the ``str`` class and its methods, see
    :ref:`textseq` and the :ref:`string-methods` section below.  To output
-   formatted strings, see the :ref:`string-formatting` section.  In addition,
+   formatted strings, see the :ref:`formatstrings` section.  In addition,
    see the :ref:`stringservices` section.
 
 
