@@ -230,7 +230,8 @@ class TestSupport(unittest.TestCase):
 
     def test_check_syntax_error(self):
         support.check_syntax_error(self, "def class")
-        self.assertRaises(AssertionError, support.check_syntax_error, self, "1")
+        with self.assertRaises(AssertionError):
+            support.check_syntax_error(self, "x=1")
 
     def test_CleanImport(self):
         import importlib
