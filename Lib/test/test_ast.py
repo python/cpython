@@ -3,7 +3,6 @@ import dis
 import os
 import sys
 import unittest
-import warnings
 import weakref
 
 from test import support
@@ -240,10 +239,8 @@ class AST_Tests(unittest.TestCase):
                     ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
                     self.assertEqual(to_tuple(ast_tree), o)
                     self._assertTrueorder(ast_tree, (0, 0))
-                with warnings.catch_warnings():
-                    warnings.filterwarnings('ignore', category=SyntaxWarning)
-                    with self.subTest(action="compiling", input=i, kind=kind):
-                        compile(ast_tree, "?", kind)
+                with self.subTest(action="compiling", input=i, kind=kind):
+                    compile(ast_tree, "?", kind)
 
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice

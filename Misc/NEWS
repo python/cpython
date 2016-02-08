@@ -10,9 +10,10 @@ Release date: tba
 Core and Builtins
 -----------------
 
-- Issue #26204: The compiler now ignores constant statements (ex: "def f(): 1")
-  and emit a SyntaxWarning warning. The warning is not emitted for string and
-  ellipsis (...) statements.
+- Issue #26204: The compiler now ignores all constant statements: bytes, str,
+  int, float, complex, name constants (None, False, True), Ellipsis
+  and ast.Constant; not only str and int. For example, ``1.0`` is now ignored
+  in ``def f(): 1.0``.
 
 - Issue #4806: Avoid masking the original TypeError exception when using star
   (*) unpacking in function calls.  Based on patch by Hagen Fürstenau and
