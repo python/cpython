@@ -129,12 +129,12 @@ class SyntaxTracebackCases(unittest.TestCase):
         def do_test(firstlines, message, charset, lineno):
             # Raise the message in a subprocess, and catch the output
             try:
-                output = open(TESTFN, "w", encoding=charset)
-                output.write("""{0}if 1:
-                    import traceback;
-                    raise RuntimeError('{1}')
-                    """.format(firstlines, message))
-                output.close()
+                with open(TESTFN, "w", encoding=charset) as output:
+                    output.write("""{0}if 1:
+                        import traceback;
+                        raise RuntimeError('{1}')
+                        """.format(firstlines, message))
+
                 process = subprocess.Popen([sys.executable, TESTFN],
                     stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
                 stdout, stderr = process.communicate()
@@ -176,7 +176,7 @@ class SyntaxTracebackCases(unittest.TestCase):
             do_test(" \t\f\n# coding: {0}\n".format(charset),
                     text, charset, 5)
         # Issue #18960: coding spec should has no effect
-        do_test("0\n# coding: GBK\n", "h\xe9 ho", 'utf-8', 5)
+        do_test("x=0\n# coding: GBK\n", "h\xe9 ho", 'utf-8', 5)
 
     def test_print_traceback_at_exit(self):
         # Issue #22599: Ensure that it is possible to use the traceback module
