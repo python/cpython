@@ -1240,7 +1240,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         dt = self.theclass(2007, 9, 10)
         self.assertEqual(dt.__format__(''), str(dt))
 
-        with self.assertRaisesRegex(TypeError, '^must be str, not int$'):
+        with self.assertRaisesRegex(TypeError, 'must be str, not int'):
             dt.__format__(123)
 
         # check that a derived class's __str__() gets called
@@ -1575,7 +1575,7 @@ class TestDateTime(TestDate):
         dt = self.theclass(2007, 9, 10, 4, 5, 1, 123)
         self.assertEqual(dt.__format__(''), str(dt))
 
-        with self.assertRaisesRegex(TypeError, '^must be str, not int$'):
+        with self.assertRaisesRegex(TypeError, 'must be str, not int'):
             dt.__format__(123)
 
         # check that a derived class's __str__() gets called
@@ -2337,7 +2337,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         t = self.theclass(1, 2, 3, 4)
         self.assertEqual(t.__format__(''), str(t))
 
-        with self.assertRaisesRegex(TypeError, '^must be str, not int$'):
+        with self.assertRaisesRegex(TypeError, 'must be str, not int'):
             t.__format__(123)
 
         # check that a derived class's __str__() gets called
