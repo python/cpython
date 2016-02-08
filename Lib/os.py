@@ -363,9 +363,12 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     # minor reason when (say) a thousand readable directories are still
     # left to visit.  That logic is copied here.
     try:
-        # Note that scandir is global in this module due
-        # to earlier import-*.
-        scandir_it = scandir(top)
+        if name == 'nt' and isinstance(top, bytes):
+            scandir_it = _dummy_scandir(top)
+        else:
+            # Note that scandir is global in this module due
+            # to earlier import-*.
+            scandir_it = scandir(top)
     except OSError as error:
         if onerror is not None:
             onerror(error)
@@ -418,8 +421,8 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
         # Recurse into sub-directories
         islink, join = path.islink, path.join
-        for name in dirs:
-            new_path = join(top, name)
+        for dirname in dirs:
+            new_path = join(top, dirname)
             # Issue #23605: os.path.islink() is used instead of caching
             # entry.is_symlink() result during the loop on os.scandir() because
             # the caller can replace the directory entry during the "yield"
@@ -429,6 +432,20 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
     else:
         # Yield after recursion if going bottom up
         yield top, dirs, nondirs
+
+class _DummyDirEntry:
+    def __init__(self, dir, name):
+        self.name = name
+        self.path = path.join(dir, name)
+    def is_dir(self):
+        return path.isdir(self.path)
+    def is_symlink(self):
+        return path.islink(self.path)
+
+def _dummy_scandir(dir):
+    # listdir-based implementation for bytes patches on Windows
+    for name in listdir(dir):
+        yield _DummyDirEntry(dir, name)
 
 __all__.append("walk")
 
