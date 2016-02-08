@@ -357,9 +357,8 @@ The built-in function :func:`len` returns the length of a string::
       Both strings and Unicode strings support a large number of methods for
       basic transformations and searching.
 
-   :ref:`new-string-formatting`
-      Information about string formatting with :meth:`str.format` is described
-      here.
+   :ref:`formatstrings`
+      Information about string formatting with :meth:`str.format`.
 
    :ref:`string-formatting`
       The old formatting operations invoked when strings and Unicode strings are

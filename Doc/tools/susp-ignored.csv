@@ -46,7 +46,7 @@ howto/pyporting,,::,Programming Language :: Python :: 2
 howto/pyporting,,::,Programming Language :: Python :: 3
 howto/regex,,::,
 howto/regex,,:foo,(?:foo)
-howto/urllib2,,:example,"for example ""joe@password:example.com"""
+howto/urllib2,,:password,"for example ""joe:password@example.com"""
 library/audioop,,:ipos,"# factor = audioop.findfactor(in_test[ipos*2:ipos*2+len(out_test)],"
 library/bisect,,:hi,all(val >= x for val in a[i:hi])
 library/bisect,,:hi,all(val > x for val in a[i:hi])

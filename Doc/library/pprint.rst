@@ -190,7 +190,7 @@ are converted to strings.  The default implementation uses the internals of the
    the current presentation context (direct and indirect containers for *object*
    that are affecting the presentation) as the keys; if an object needs to be
    presented which is already represented in *context*, the third return value
-   should be ``True``.  Recursive calls to the :meth:`format` method should add
+   should be ``True``.  Recursive calls to the :meth:`.format` method should add
    additional entries for containers to this dictionary.  The third argument,
    *maxlevels*, gives the requested limit to recursion; this will be ``0`` if there
    is no requested limit.  This argument should be passed unmodified to recursive
