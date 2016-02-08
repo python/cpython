@@ -1436,6 +1436,7 @@ merge(msiname, "SharedCRT", "TARGETDIR", modules)
 if certname:
     os.system('signtool sign /n "%s" '
       '/t http://timestamp.verisign.com/scripts/timestamp.dll '
+      '/fd SHA256 '
       '/d "Python %s" '
       '%s' % (certname, full_current_version, msiname))
 
