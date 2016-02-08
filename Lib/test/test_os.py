@@ -791,10 +791,10 @@ class WalkTests(unittest.TestCase):
 
     # Wrapper to hide minor differences between os.walk and os.fwalk
     # to tests both functions with the same code base
-    def walk(self, directory, **kwargs):
+    def walk(self, top, **kwargs):
         if 'follow_symlinks' in kwargs:
             kwargs['followlinks'] = kwargs.pop('follow_symlinks')
-        return os.walk(directory, **kwargs)
+        return os.walk(top, **kwargs)
 
     def setUp(self):
         join = os.path.join
@@ -945,10 +945,9 @@ class WalkTests(unittest.TestCase):
 class FwalkTests(WalkTests):
     """Tests for os.fwalk()."""
 
-    def walk(self, directory, **kwargs):
-        for root, dirs, files, root_fd in os.fwalk(directory, **kwargs):
+    def walk(self, top, **kwargs):
+        for root, dirs, files, root_fd in os.fwalk(top, **kwargs):
             yield (root, dirs, files)
-
 
     def _compare_to_walk(self, walk_kwargs, fwalk_kwargs):
         """
@@ -1019,6 +1018,19 @@ class FwalkTests(WalkTests):
                 else:
                     os.unlink(name, dir_fd=rootfd)
         os.rmdir(support.TESTFN)
+
+class BytesWalkTests(WalkTests):
+    """Tests for os.walk() with bytes."""
+    def walk(self, top, **kwargs):
+        if 'follow_symlinks' in kwargs:
+            kwargs['followlinks'] = kwargs.pop('follow_symlinks')
+        for broot, bdirs, bfiles in os.walk(os.fsencode(top), **kwargs):
+            root = os.fsdecode(broot)
+            dirs = list(map(os.fsdecode, bdirs))
+            files = list(map(os.fsdecode, bfiles))
+            yield (root, dirs, files)
+            bdirs[:] = list(map(os.fsencode, dirs))
+            bfiles[:] = list(map(os.fsencode, files))
 
 
 class MakedirTests(unittest.TestCase):
