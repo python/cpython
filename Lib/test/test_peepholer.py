@@ -1,9 +1,8 @@
 import dis
 import re
 import sys
-from io import StringIO
+import textwrap
 import unittest
-from math import copysign
 
 from test.bytecode_helper import BytecodeTestCase
 
@@ -30,22 +29,25 @@ class TestTranforms(BytecodeTestCase):
 
     def test_global_as_constant(self):
         # LOAD_GLOBAL None/True/False  -->  LOAD_CONST None/True/False
-        def f(x):
-            None
-            None
+        def f():
+            x = None
+            x = None
             return x
-        def g(x):
-            True
+        def g():
+            x = True
             return x
-        def h(x):
-            False
+        def h():
+            x = False
             return x
+
         for func, elem in ((f, None), (g, True), (h, False)):
             self.assertNotInBytecode(func, 'LOAD_GLOBAL')
             self.assertInBytecode(func, 'LOAD_CONST', elem)
+
         def f():
             'Adding a docstring made this test fail in Py2.5.0'
             return None
+
         self.assertNotInBytecode(f, 'LOAD_GLOBAL')
         self.assertInBytecode(f, 'LOAD_CONST', None)
 
