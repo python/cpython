@@ -73,6 +73,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26117: The os.scandir() iterator now closes file descriptor not only
+  when the iteration is finished, but when it was failed with error.
+
 - Issue #25911: Restored support of bytes paths in os.walk() on Windows.
 
 - Issue #26045: Add UTF-8 suggestion to error message when posting a
