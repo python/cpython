@@ -298,9 +298,11 @@ class OrderedDictTests:
         # do not save instance dictionary if not needed
         pairs = [('c', 1), ('b', 2), ('a', 3), ('d', 4), ('e', 5), ('f', 6)]
         od = OrderedDict(pairs)
+        self.assertIsInstance(od.__dict__, dict)
         self.assertIsNone(od.__reduce__()[2])
         od.x = 10
-        self.assertIsNotNone(od.__reduce__()[2])
+        self.assertEqual(od.__dict__['x'], 10)
+        self.assertEqual(od.__reduce__()[2], {'x': 10})
 
     def test_pickle_recursive(self):
         OrderedDict = self.OrderedDict

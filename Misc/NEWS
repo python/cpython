@@ -170,6 +170,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25949: __dict__ for an OrderedDict instance is now created only when
+  needed.
+
 - Issue #25911: Restored support of bytes paths in os.walk() on Windows.
 
 - Issue #26045: Add UTF-8 suggestion to error message when posting a

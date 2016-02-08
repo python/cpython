@@ -1424,13 +1424,12 @@ static PyMethodDef odict_methods[] = {
  * OrderedDict members
  */
 
-/* tp_members */
+/* tp_getset */
 
-static PyMemberDef odict_members[] = {
-    {"__dict__", T_OBJECT, offsetof(PyODictObject, od_inst_dict), READONLY},
-    {0}
+static PyGetSetDef odict_getset[] = {
+    {"__dict__", PyObject_GenericGetDict, PyObject_GenericSetDict},
+    {NULL}
 };
-
 
 /* ----------------------------------------------
  * OrderedDict type slot methods
@@ -1653,20 +1652,12 @@ odict_init(PyObject *self, PyObject *args, PyObject *kwds)
 static PyObject *
 odict_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    PyObject *dict;
     PyODictObject *od;
 
-    dict = PyDict_New();
-    if (dict == NULL)
-        return NULL;
-
     od = (PyODictObject *)PyDict_Type.tp_new(type, args, kwds);
-    if (od == NULL) {
-        Py_DECREF(dict);
+    if (od == NULL)
         return NULL;
-    }
 
-    od->od_inst_dict = dict;
     /* type constructor fills the memory with zeros (see
        PyType_GenericAlloc()), there is no need to set them to zero again */
     if (_odict_resize(od) < 0) {
@@ -1708,8 +1699,8 @@ PyTypeObject PyODict_Type = {
     (getiterfunc)odict_iter,                    /* tp_iter */
     0,                                          /* tp_iternext */
     odict_methods,                              /* tp_methods */
-    odict_members,                              /* tp_members */
-    0,                                          /* tp_getset */
+    0,                                          /* tp_members */
+    odict_getset,                               /* tp_getset */
     &PyDict_Type,                               /* tp_base */
     0,                                          /* tp_dict */
     0,                                          /* tp_descr_get */
