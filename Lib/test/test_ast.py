@@ -3,6 +3,7 @@ import dis
 import os
 import sys
 import unittest
+import warnings
 import weakref
 
 from test import support
@@ -239,8 +240,10 @@ class AST_Tests(unittest.TestCase):
                     ast_tree = compile(i, "?", kind, ast.PyCF_ONLY_AST)
                     self.assertEqual(to_tuple(ast_tree), o)
                     self._assertTrueorder(ast_tree, (0, 0))
-                with self.subTest(action="compiling", input=i):
-                    compile(ast_tree, "?", kind)
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', category=SyntaxWarning)
+                    with self.subTest(action="compiling", input=i, kind=kind):
+                        compile(ast_tree, "?", kind)
 
     def test_slice(self):
         slc = ast.parse("x[::]").body[0].value.slice
@@ -1020,27 +1023,23 @@ class ConstantTests(unittest.TestCase):
                   b'bytes',
                   (1, 2, 3)]
 
-        code = '\n'.join(map(repr, consts))
-        code += '\n...'
-
-        code_consts = [const for const in consts
-                       if (not isinstance(const, (str, int, float, complex))
-                           or isinstance(const, bool))]
-        code_consts.append(Ellipsis)
-        # the compiler adds a final "LOAD_CONST None"
-        code_consts.append(None)
+        code = '\n'.join(['x={!r}'.format(const) for const in consts])
+        code += '\nx = ...'
+        consts.extend((Ellipsis, None))
 
         tree = ast.parse(code)
-        self.assertEqual(self.get_load_const(tree), code_consts)
+        self.assertEqual(self.get_load_const(tree),
+                         consts)
 
         # Replace expression nodes with constants
-        for expr_node, const in zip(tree.body, consts):
-            assert isinstance(expr_node, ast.Expr)
+        for assign, const in zip(tree.body, consts):
+            assert isinstance(assign, ast.Assign), ast.dump(assign)
             new_node = ast.Constant(value=const)
-            ast.copy_location(new_node, expr_node.value)
-            expr_node.value = new_node
+            ast.copy_location(new_node, assign.value)
+            assign.value = new_node
 
-        self.assertEqual(self.get_load_const(tree), code_consts)
+        self.assertEqual(self.get_load_const(tree),
+                         consts)
 
     def test_literal_eval(self):
         tree = ast.parse("1 + 2")
