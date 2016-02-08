@@ -2619,33 +2619,13 @@ compiler_visit_stmt_expr(struct compiler *c, expr_ty value)
     switch (value->kind)
     {
     case Str_kind:
-    case Ellipsis_kind:
-        /* Issue #26204: ignore string statement, but don't emit a
-         * SyntaxWarning. Triple quoted strings is a common syntax for
-         * multiline comments.
-         *
-         * Don't emit warning on "def f(): ..." neither. It's a legit syntax
-         * for abstract function. */
-        return 1;
-
-    case Bytes_kind:
     case Num_kind:
+    case Ellipsis_kind:
+    case Bytes_kind:
     case NameConstant_kind:
     case Constant_kind:
-    {
-        PyObject *msg = PyUnicode_FromString("ignore constant statement");
-        if (msg == NULL)
-            return 0;
-        if (PyErr_WarnExplicitObject(PyExc_SyntaxWarning,
-                                     msg,
-                                     c->c_filename, c->u->u_lineno,
-                                     NULL, NULL) == -1) {
-            Py_DECREF(msg);
-            return 0;
-        }
-        Py_DECREF(msg);
+        /* ignore constant statement */
         return 1;
-    }
 
     default:
         break;
