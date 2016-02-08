@@ -66,24 +66,6 @@ nlocals: 1
 flags: 67
 consts: ('None',)
 
->>> def optimize_away():
-...     'doc string'
-...     'not a docstring'
-...     53
-...     0x53
-
->>> dump(optimize_away.__code__)
-name: optimize_away
-argcount: 0
-kwonlyargcount: 0
-names: ()
-varnames: ()
-cellvars: ()
-freevars: ()
-nlocals: 0
-flags: 67
-consts: ("'doc string'", 'None')
-
 >>> def keywordonly_args(a,b,*,k1):
 ...     return a,b,k1
 ...
@@ -102,8 +84,10 @@ consts: ('None',)
 
 """
 
+import textwrap
 import unittest
 import weakref
+import warnings
 from test.support import run_doctest, run_unittest, cpython_only
 
 
@@ -133,6 +117,44 @@ class CodeTest(unittest.TestCase):
         self.assertEqual(co.co_filename, "filename")
         self.assertEqual(co.co_name, "funcname")
         self.assertEqual(co.co_firstlineno, 15)
+
+    def dump(self, co):
+        dump = {}
+        for attr in ["name", "argcount", "kwonlyargcount", "names", "varnames",
+                     "cellvars", "freevars", "nlocals", "flags"]:
+            dump[attr] = getattr(co, "co_" + attr)
+        dump['consts'] = tuple(consts(co.co_consts))
+        return dump
+
+    def test_optimize_away(self):
+        ns = {}
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', category=SyntaxWarning)
+            exec(textwrap.dedent('''
+                def optimize_away():
+                    'doc string'
+                    'not a docstring'
+                    53
+                    0x53
+                    b'bytes'
+                    1.0
+                    True
+                    False
+                    None
+                    ...
+            '''), ns)
+
+        self.assertEqual(self.dump(ns['optimize_away'].__code__),
+                        {'name': 'optimize_away',
+                         'argcount': 0,
+                         'kwonlyargcount': 0,
+                         'names': (),
+                         'varnames': (),
+                         'cellvars': (),
+                         'freevars': (),
+                         'nlocals': 0,
+                         'flags': 67,
+                         'consts': ("'doc string'", 'None')})
 
 
 class CodeWeakRefTest(unittest.TestCase):
