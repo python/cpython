@@ -1064,8 +1064,9 @@ def main():
         for statements, kind in ((exec_tests, "exec"), (single_tests, "single"),
                                  (eval_tests, "eval")):
             print(kind+"_results = [")
-            for s in statements:
-                print(repr(to_tuple(compile(s, "?", kind, 0x400)))+",")
+            for statement in statements:
+                tree = ast.parse(statement, "?", kind)
+                print("%r," % (to_tuple(tree),))
             print("]")
         print("main()")
         raise SystemExit
