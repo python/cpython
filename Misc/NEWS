@@ -170,6 +170,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26117: The os.scandir() iterator now closes file descriptor not only
+  when the iteration is finished, but when it was failed with error.
+
 - Issue #25949: __dict__ for an OrderedDict instance is now created only when
   needed.
 

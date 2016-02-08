@@ -11954,12 +11954,11 @@ ScandirIterator_iternext(ScandirIterator *iterator)
 {
     WIN32_FIND_DATAW *file_data = &iterator->file_data;
     BOOL success;
+    PyObject *entry;
 
     /* Happens if the iterator is iterated twice */
-    if (iterator->handle == INVALID_HANDLE_VALUE) {
-        PyErr_SetNone(PyExc_StopIteration);
+    if (iterator->handle == INVALID_HANDLE_VALUE)
         return NULL;
-    }
 
     while (1) {
         if (!iterator->first_time) {
@@ -11967,9 +11966,9 @@ ScandirIterator_iternext(ScandirIterator *iterator)
             success = FindNextFileW(iterator->handle, file_data);
             Py_END_ALLOW_THREADS
             if (!success) {
+                /* Error or no more files */
                 if (GetLastError() != ERROR_NO_MORE_FILES)
-                    return path_error(&iterator->path);
-                /* No more files found in directory, stop iterating */
+                    path_error(&iterator->path);
                 break;
             }
         }
@@ -11977,15 +11976,18 @@ ScandirIterator_iternext(ScandirIterator *iterator)
 
         /* Skip over . and .. */
         if (wcscmp(file_data->cFileName, L".") != 0 &&
-                wcscmp(file_data->cFileName, L"..") != 0)
-            return DirEntry_from_find_data(&iterator->path, file_data);
+            wcscmp(file_data->cFileName, L"..") != 0) {
+            entry = DirEntry_from_find_data(&iterator->path, file_data);
+            if (!entry)
+                break;
+            return entry;
+        }
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
 
+    /* Error or no more files */
     ScandirIterator_close(iterator);
-
-    PyErr_SetNone(PyExc_StopIteration);
     return NULL;
 }
 
@@ -12010,12 +12012,11 @@ ScandirIterator_iternext(ScandirIterator *iterator)
     struct dirent *direntp;
     Py_ssize_t name_len;
     int is_dot;
+    PyObject *entry;
 
     /* Happens if the iterator is iterated twice */
-    if (!iterator->dirp) {
-        PyErr_SetNone(PyExc_StopIteration);
+    if (!iterator->dirp)
         return NULL;
-    }
 
     while (1) {
         errno = 0;
@@ -12024,9 +12025,9 @@ ScandirIterator_iternext(ScandirIterator *iterator)
         Py_END_ALLOW_THREADS
 
         if (!direntp) {
+            /* Error or no more files */
             if (errno != 0)
-                return path_error(&iterator->path);
-            /* No more files found in directory, stop iterating */
+                path_error(&iterator->path);
             break;
         }
 
@@ -12035,20 +12036,22 @@ ScandirIterator_iternext(ScandirIterator *iterator)
         is_dot = direntp->d_name[0] == '.' &&
                  (name_len == 1 || (direntp->d_name[1] == '.' && name_len == 2));
         if (!is_dot) {
-            return DirEntry_from_posix_info(&iterator->path, direntp->d_name,
+            entry = DirEntry_from_posix_info(&iterator->path, direntp->d_name,
                                             name_len, direntp->d_ino
 #ifdef HAVE_DIRENT_D_TYPE
                                             , direntp->d_type
 #endif
                                             );
+            if (!entry)
+                break;
+            return entry;
         }
 
         /* Loop till we get a non-dot directory or finish iterating */
     }
 
+    /* Error or no more files */
     ScandirIterator_close(iterator);
-
-    PyErr_SetNone(PyExc_StopIteration);
     return NULL;
 }
 
