@@ -839,7 +839,7 @@ How do I convert a number to a string?
 To convert, e.g., the number 144 to the string '144', use the built-in type
 constructor :func:`str`.  If you want a hexadecimal or octal representation, use
 the built-in functions :func:`hex` or :func:`oct`.  For fancy formatting, see
-the :ref:`string-formatting` section, e.g. ``"{:04d}".format(144)`` yields
+the :ref:`formatstrings` section, e.g. ``"{:04d}".format(144)`` yields
 ``'0144'`` and ``"{:.3f}".format(1.0/3.0)`` yields ``'0.333'``.
 
 

@@ -555,12 +555,12 @@ Some rules:
 3. When another data type is mixed in, the :attr:`value` attribute is *not the
    same* as the enum member itself, although it is equivalent and will compare
    equal.
-4. %-style formatting:  `%s` and `%r` call :class:`Enum`'s :meth:`__str__` and
-   :meth:`__repr__` respectively; other codes (such as `%i` or `%h` for
-   IntEnum) treat the enum member as its mixed-in type.
-5. :meth:`str.__format__` (or :func:`format`) will use the mixed-in
-   type's :meth:`__format__`.  If the :class:`Enum`'s :func:`str` or
-   :func:`repr` is desired use the `!s` or `!r` :class:`str` format codes.
+4. %-style formatting:  `%s` and `%r` call the :class:`Enum` class's
+   :meth:`__str__` and :meth:`__repr__` respectively; other codes (such as
+   `%i` or `%h` for IntEnum) treat the enum member as its mixed-in type.
+5. :meth:`str.format` (or :func:`format`) will use the mixed-in
+   type's :meth:`__format__`.  If the :class:`Enum` class's :func:`str` or
+   :func:`repr` is desired, use the `!s` or `!r` format codes.
 
 
 Interesting examples
