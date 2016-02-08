@@ -1682,6 +1682,134 @@ class TestSorted(unittest.TestCase):
         data = 'The quick Brown fox Jumped over The lazy Dog'.split()
         self.assertRaises(TypeError, sorted, data, None, lambda x,y: 0)
 
+
+class TestType(unittest.TestCase):
+    def test_new_type(self):
+        A = type('A', (), {})
+        self.assertEqual(A.__name__, 'A')
+        self.assertEqual(A.__module__, __name__)
+        self.assertEqual(A.__bases__, (object,))
+        self.assertIs(A.__base__, object)
+        x = A()
+        self.assertIs(type(x), A)
+        self.assertIs(x.__class__, A)
+
+        class B:
+            def ham(self):
+                return 'ham%d' % self
+        C = type('C', (B, int), {'spam': lambda self: 'spam%s' % self})
+        self.assertEqual(C.__name__, 'C')
+        self.assertEqual(C.__module__, __name__)
+        self.assertEqual(C.__bases__, (B, int))
+        self.assertIs(C.__base__, int)
+        self.assertIn('spam', C.__dict__)
+        self.assertNotIn('ham', C.__dict__)
+        x = C(42)
+        self.assertEqual(x, 42)
+        self.assertIs(type(x), C)
+        self.assertIs(x.__class__, C)
+        self.assertEqual(x.ham(), 'ham42')
+        self.assertEqual(x.spam(), 'spam42')
+        self.assertEqual(x.bit_length(), 6)
+
+    def test_type_new_keywords(self):
+        class B:
+            def ham(self):
+                return 'ham%d' % self
+        C = type.__new__(type,
+                         name='C',
+                         bases=(B, int),
+                         dict={'spam': lambda self: 'spam%s' % self})
+        self.assertEqual(C.__name__, 'C')
+        self.assertEqual(C.__module__, __name__)
+        self.assertEqual(C.__bases__, (B, int))
+        self.assertIs(C.__base__, int)
+        self.assertIn('spam', C.__dict__)
+        self.assertNotIn('ham', C.__dict__)
+
+    def test_type_name(self):
+        for name in 'A', '\xc4', 'B.A', '42', '':
+            A = type(name, (), {})
+            self.assertEqual(A.__name__, name)
+            self.assertEqual(A.__module__, __name__)
+        with self.assertRaises(ValueError):
+            type('A\x00B', (), {})
+        with self.assertRaises(TypeError):
+            type(u'A', (), {})
+
+        C = type('C', (), {})
+        for name in 'A', '\xc4', 'B.A', '42', '':
+            C.__name__ = name
+            self.assertEqual(C.__name__, name)
+            self.assertEqual(C.__module__, __name__)
+
+        A = type('C', (), {})
+        with self.assertRaises(ValueError):
+            A.__name__ = 'A\x00B'
+        self.assertEqual(A.__name__, 'C')
+        with self.assertRaises(TypeError):
+            A.__name__ = u'A'
+        self.assertEqual(A.__name__, 'C')
+
+    def test_type_doc(self):
+        tests = ('x', '\xc4', 'x\x00y', 42, None)
+        if have_unicode:
+            tests += (u'\xc4', u'x\x00y')
+        for doc in tests:
+            A = type('A', (), {'__doc__': doc})
+            self.assertEqual(A.__doc__, doc)
+
+        A = type('A', (), {})
+        self.assertEqual(A.__doc__, None)
+        with self.assertRaises(AttributeError):
+            A.__doc__ = 'x'
+
+    def test_bad_args(self):
+        with self.assertRaises(TypeError):
+            type()
+        with self.assertRaises(TypeError):
+            type('A', ())
+        with self.assertRaises(TypeError):
+            type('A', (), {}, ())
+        with self.assertRaises(TypeError):
+            type('A', (), dict={})
+        with self.assertRaises(TypeError):
+            type('A', [], {})
+        with self.assertRaises(TypeError):
+            type('A', (), UserDict.UserDict())
+        with self.assertRaises(TypeError):
+            type('A', (None,), {})
+        with self.assertRaises(TypeError):
+            type('A', (bool,), {})
+        with self.assertRaises(TypeError):
+            type('A', (int, str), {})
+        class B:
+            pass
+        with self.assertRaises(TypeError):
+            type('A', (B,), {})
+
+    def test_bad_slots(self):
+        with self.assertRaises(TypeError):
+            type('A', (long,), {'__slots__': 'x'})
+        with self.assertRaises(TypeError):
+            type('A', (), {'__slots__': ''})
+        with self.assertRaises(TypeError):
+            type('A', (), {'__slots__': '42'})
+        with self.assertRaises(TypeError):
+            type('A', (), {'__slots__': 'x\x00y'})
+        with self.assertRaises(TypeError):
+            type('A', (), {'__slots__': ('__dict__', '__dict__')})
+        with self.assertRaises(TypeError):
+            type('A', (), {'__slots__': ('__weakref__', '__weakref__')})
+
+        class B(object):
+            pass
+        with self.assertRaises(TypeError):
+            type('A', (B,), {'__slots__': '__dict__'})
+        with self.assertRaises(TypeError):
+            type('A', (B,), {'__slots__': '__weakref__'})
+
+
 def _run_unittest(*args):
     with check_py3k_warnings(
             (".+ not supported in 3.x", DeprecationWarning),
@@ -1696,7 +1824,7 @@ def test_main(verbose=None):
                 (".+ not supported in 3.x", DeprecationWarning)):
             run_unittest(TestExecFile)
     numruns += 1
-    test_classes = (BuiltinTest, TestSorted)
+    test_classes = (BuiltinTest, TestSorted, TestType)
 
     _run_unittest(*test_classes)
 
