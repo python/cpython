@@ -7,6 +7,7 @@ import unittest
 import sys
 # testing import *
 from sys import *
+from test import support
 
 
 class TokenTests(unittest.TestCase):
@@ -424,8 +425,11 @@ class GrammarTests(unittest.TestCase):
     # Tested below
 
     def test_expr_stmt(self):
+        msg = 'ignore constant statement'
+        with support.check_warnings((msg, SyntaxWarning)):
+            exec("1")
+
         # (exprlist '=')* exprlist
-        1
         1, 2, 3
         x = 1
         x = 1, 2, 3
