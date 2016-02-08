@@ -154,7 +154,7 @@ foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses
     <SignToolPath Condition="'$(SignToolPath)' == '' or !Exists($(SignToolPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot81)\bin\x86\signtool.exe</SignToolPath>
     <SignToolPath Condition="!Exists($(SignToolPath))">$(registry:HKEY_LOCAL_MACHINE\Software\Microsoft\Windows Kits\Installed Roots@KitsRoot)\bin\x86\signtool.exe</SignToolPath>
     <SignToolPath Condition="!Exists($(SignToolPath))">$(registry:HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SDKs\Windows\v7.1A@InstallationFolder)\Bin\signtool.exe</SignToolPath>
-    <_SignCommand Condition="Exists($(SignToolPath))">"$(SignToolPath)" sign /q /n "$(SigningCertificate)" /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
+    <_SignCommand Condition="Exists($(SignToolPath))">"$(SignToolPath)" sign /q /n "$(SigningCertificate)" /fd sha256 /t http://timestamp.verisign.com/scripts/timestamp.dll /d "Python $(PythonVersion)"</_SignCommand>
   </PropertyGroup>
   
   <Target Name="_SignBuild" AfterTargets="AfterBuild" Condition="'$(SigningCertificate)' != '' and $(SupportSigning)">
