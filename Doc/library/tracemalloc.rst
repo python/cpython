@@ -620,7 +620,7 @@ Traceback
       *limit* is set, only format the *limit* most recent frames.
 
       Similar to the :func:`traceback.format_tb` function, except that
-      :meth:`format` does not include newlines.
+      :meth:`.format` does not include newlines.
 
       Example::
 
