@@ -604,7 +604,7 @@ Instance methods:
 
 .. method:: date.__format__(format)
 
-   Same as :meth:`.date.strftime`. This makes it possible to specify format
+   Same as :meth:`.date.strftime`. This makes it possible to specify a format
    string for a :class:`.date` object when using :meth:`str.format`. For a
    complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
@@ -1179,7 +1179,7 @@ Instance methods:
 
 .. method:: datetime.__format__(format)
 
-   Same as :meth:`.datetime.strftime`.  This makes it possible to specify format
+   Same as :meth:`.datetime.strftime`.  This makes it possible to specify a format
    string for a :class:`.datetime` object when using :meth:`str.format`.  For a
    complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
@@ -1424,7 +1424,7 @@ Instance methods:
 
 .. method:: time.__format__(format)
 
-   Same as :meth:`.time.strftime`. This makes it possible to specify format string
+   Same as :meth:`.time.strftime`. This makes it possible to specify a format string
    for a :class:`.time` object when using :meth:`str.format`.  For a
    complete list of formatting directives, see
    :ref:`strftime-strptime-behavior`.
