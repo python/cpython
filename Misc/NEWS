@@ -73,6 +73,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26045: Add UTF-8 suggestion to error message when posting a
+  non-Latin-1 string with http.client.
+
 - Issue #12923: Reset FancyURLopener's redirect counter even if there is an
   exception.  Based on patches by Brian Brazil and Daniel Rocco.
 
