@@ -1042,7 +1042,7 @@ class OfflineTest(TestCase):
         # intentionally omitted for simplicity
         blacklist = {"HTTPMessage", "parse_headers"}
         for name in dir(client):
-            if name in blacklist:
+            if name.startswith("_") or name in blacklist:
                 continue
             module_object = getattr(client, name)
             if getattr(module_object, "__module__", None) == "http.client":

@@ -146,6 +146,21 @@ _is_illegal_header_value = re.compile(rb'\n(?![ \t])|\r(?![ \t\n])').search
 _METHODS_EXPECTING_BODY = {'PATCH', 'POST', 'PUT'}
 
 
+def _encode(data, name='data'):
+    """Call data.encode("latin-1") but show a better error message."""
+    try:
+        return data.encode("latin-1")
+    except UnicodeEncodeError as err:
+        raise UnicodeEncodeError(
+            err.encoding,
+            err.object,
+            err.start,
+            err.end,
+            "%s (%.20r) is not valid Latin-1. Use %s.encode('utf-8') "
+            "if you want to send it encoded in UTF-8." %
+            (name.title(), data[err.start:err.end], name)) from None
+
+
 class HTTPMessage(email.message.Message):
     # XXX The only usage of this method is in
     # http.server.CGIHTTPRequestHandler.  Maybe move the code there so
@@ -1124,7 +1139,7 @@ class HTTPConnection:
         if isinstance(body, str):
             # RFC 2616 Section 3.7.1 says that text default has a
             # default charset of iso-8859-1.
-            body = body.encode('iso-8859-1')
+            body = _encode(body, 'body')
         self.endheaders(body)
 
     def getresponse(self):
