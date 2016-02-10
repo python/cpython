@@ -147,7 +147,7 @@ Returns a bytes object containing compressed data.
 
 static PyObject *
 zlib_compress_impl(PyModuleDef *module, Py_buffer *data, int level)
-/*[clinic end generated code: output=1b97589132b203b4 input=671c615a4b2267da]*/
+/*[clinic end generated code: output=1b97589132b203b4 input=abed30f4fa14e213]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;
