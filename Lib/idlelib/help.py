@@ -11,7 +11,7 @@ Help => IDLE Help: Display help.html with proper formatting.
 Doc/library/idle.rst (Sphinx)=> Doc/build/html/library/idle.html
 (help.copy_strip)=> Lib/idlelib/help.html
 
-HelpParser - Parse help.html and and render to tk Text.
+HelpParser - Parse help.html and render to tk Text.
 
 HelpText - Display formatted help.html.
 

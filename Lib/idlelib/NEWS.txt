@@ -162,7 +162,7 @@ What's New in IDLE 2.7.9?
   move version to end.
 
 - Issue #14105: Idle debugger breakpoints no longer disappear
-  when inseting or deleting lines.
+  when inserting or deleting lines.
 
 
 What's New in IDLE 2.7.8?

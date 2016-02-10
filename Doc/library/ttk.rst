@@ -293,7 +293,7 @@ Besides the methods inherited from :class:`Widget` (:meth:`Widget.cget`,
 :meth:`Widget.configure`, :meth:`Widget.identify`, :meth:`Widget.instate`
 and :meth:`Widget.state`) and those inherited from :class:`Entry`
 (:meth:`Entry.bbox`, :meth:`Entry.delete`, :meth:`Entry.icursor`,
-:meth:`Entry.index`, :meth:`Entry.inset`, :meth:`Entry.selection`,
+:meth:`Entry.index`, :meth:`Entry.insert`, :meth:`Entry.selection`,
 :meth:`Entry.xview`), this class has some other methods, described at
 :class:`ttk.Combobox`.
 

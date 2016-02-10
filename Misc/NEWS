@@ -1159,7 +1159,7 @@ IDLE
   move version to end.
 
 - Issue #14105: Idle debugger breakpoints no longer disappear
-  when inseting or deleting lines.
+  when inserting or deleting lines.
 
 Extension Modules
 -----------------

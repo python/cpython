@@ -642,7 +642,7 @@ class BaseRequestHandler:
     client address as self.client_address, and the server (in case it
     needs access to per-server information) as self.server.  Since a
     separate instance is created for each request, the handle() method
-    can define arbitrary other instance variariables.
+    can define other arbitrary instance variables.
 
     """
 
