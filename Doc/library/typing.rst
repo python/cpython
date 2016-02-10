@@ -286,6 +286,13 @@ The module defines the following classes, functions and decorators:
 
    ``Optional[X]`` is equivalent to ``Union[X, type(None)]``.
 
+   Note that this is not the same concept as an optional argument,
+   which is one that has a default.  An optional argument with a
+   default needn't use the ``Optional`` qualifier on its type
+   annotation (although it is inferred if the default is ``None``).
+   A mandatory argument may still have an ``Optional`` type if an
+   explicit value of ``None`` is allowed.
+
 .. class:: Tuple
 
   Tuple type; ``Tuple[X, Y]`` is the is the type of a tuple of two items
