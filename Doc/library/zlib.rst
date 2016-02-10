@@ -46,13 +46,18 @@ The available exception and functions in this module are:
       platforms, use ``adler32(data) & 0xffffffff``.
 
 
-.. function:: compress(data[, level])
+.. function:: compress(data, level=-1)
 
    Compresses the bytes in *data*, returning a bytes object containing compressed data.
-   *level* is an integer from ``0`` to ``9`` controlling the level of compression;
+   *level* is an integer from ``0`` to ``9`` or ``-1`` controlling the level of compression;
    ``1`` is fastest and produces the least compression, ``9`` is slowest and
-   produces the most.  ``0`` is no compression.  The default value is ``6``.
+   produces the most.  ``0`` is no compression.  The default value is ``-1``
+   (Z_DEFAULT_COMPRESSION).  Z_DEFAULT_COMPRESSION represents a default
+   compromise between speed and compression (currently equivalent to level 6).
    Raises the :exc:`error` exception if any error occurs.
+
+   .. versionchanged:: 3.6
+      Keyword arguments are now supported.
 
 
 .. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memLevel=8, strategy=Z_DEFAULT_STRATEGY[, zdict])

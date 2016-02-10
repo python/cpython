@@ -137,18 +137,17 @@ PyZlib_Free(voidpf ctx, void *ptr)
 /*[clinic input]
 zlib.compress
 
-    bytes: Py_buffer
+    data: Py_buffer
         Binary data to be compressed.
     level: int(c_default="Z_DEFAULT_COMPRESSION") = Z_DEFAULT_COMPRESSION
-        Compression level, in 0-9.
-    /
+        Compression level, in 0-9 or -1.
 
 Returns a bytes object containing compressed data.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int level)
-/*[clinic end generated code: output=5d7dd4588788efd3 input=be3abe9934bda4b3]*/
+zlib_compress_impl(PyModuleDef *module, Py_buffer *data, int level)
+/*[clinic end generated code: output=1b97589132b203b4 input=671c615a4b2267da]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;
@@ -156,13 +155,13 @@ zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int level)
     int err;
     z_stream zst;
 
-    if ((size_t)bytes->len > UINT_MAX) {
+    if ((size_t)data->len > UINT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "Size does not fit in an unsigned int");
         goto error;
     }
-    input = bytes->buf;
-    length = (unsigned int)bytes->len;
+    input = data->buf;
+    length = (unsigned int)data->len;
 
     zst.avail_out = length + length/1000 + 12 + 1;
 
@@ -1323,7 +1322,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "zlib library, which is based on GNU zip.\n"
 "\n"
 "adler32(string[, start]) -- Compute an Adler-32 checksum.\n"
-"compress(string[, level]) -- Compress string, with compression level in 0-9.\n"
+"compress(data[, level]) -- Compress data, with compression level 0-9 or -1.\n"
 "compressobj([level[, ...]]) -- Return a compressor object.\n"
 "crc32(string[, start]) -- Compute a CRC-32 checksum.\n"
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
