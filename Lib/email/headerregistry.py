@@ -16,7 +16,7 @@ from email import _header_value_parser as parser
 class Address:
 
     def __init__(self, display_name='', username='', domain='', addr_spec=None):
-        """Create an object represeting a full email address.
+        """Create an object representing a full email address.
 
         An address can have a 'display_name', a 'username', and a 'domain'.  In
         addition to specifying the username and domain separately, they may be

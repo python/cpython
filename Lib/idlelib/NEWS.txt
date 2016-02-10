@@ -149,7 +149,7 @@ What's New in IDLE 3.5.0?
   move version to end.
 
 - Issue #14105: Idle debugger breakpoints no longer disappear
-  when inseting or deleting lines.
+  when inserting or deleting lines.
 
 - Issue #17172: Turtledemo can now be run from Idle.
   Currently, the entry is on the Help menu, but it may move to Run.
