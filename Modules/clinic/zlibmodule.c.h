@@ -11,7 +11,7 @@ PyDoc_STRVAR(zlib_compress__doc__,
 "  data\n"
 "    Binary data to be compressed.\n"
 "  level\n"
-"    Compression level, in 0-9.");
+"    Compression level, in 0-9 or -1.");
 
 #define ZLIB_COMPRESS_METHODDEF    \
     {"compress", (PyCFunction)zlib_compress, METH_VARARGS|METH_KEYWORDS, zlib_compress__doc__},
@@ -440,4 +440,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=3c96b58b923c1273 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e6f3b79e051ecc35 input=a9049054013a1b77]*/
