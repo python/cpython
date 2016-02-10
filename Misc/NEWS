@@ -179,6 +179,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23992: multiprocessing: make MapResult not fail-fast upon exception.
+
 - Issue #26243: Support keyword arguments to zlib.compress().  Patch by Aviv
   Palivoda.
 
