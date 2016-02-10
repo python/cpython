@@ -454,7 +454,7 @@ class ExceptionalTestCase(ContextmanagerAssertionMixin, unittest.TestCase):
             with cm():
                 raise StopIteration("from with")
 
-        with self.assertWarnsRegex(PendingDeprecationWarning, "StopIteration"):
+        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
             self.assertRaises(StopIteration, shouldThrow)
 
     def testRaisedStopIteration2(self):
@@ -482,7 +482,7 @@ class ExceptionalTestCase(ContextmanagerAssertionMixin, unittest.TestCase):
             with cm():
                 raise next(iter([]))
 
-        with self.assertWarnsRegex(PendingDeprecationWarning, "StopIteration"):
+        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
             self.assertRaises(StopIteration, shouldThrow)
 
     def testRaisedGeneratorExit1(self):

@@ -245,11 +245,11 @@ class ExceptionTest(unittest.TestCase):
             yield
 
         with self.assertRaises(StopIteration), \
-             self.assertWarnsRegex(PendingDeprecationWarning, "StopIteration"):
+             self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
 
             next(gen())
 
-        with self.assertRaisesRegex(PendingDeprecationWarning,
+        with self.assertRaisesRegex(DeprecationWarning,
                                     "generator .* raised StopIteration"), \
              warnings.catch_warnings():
 
@@ -268,7 +268,7 @@ class ExceptionTest(unittest.TestCase):
         g = f()
         self.assertEqual(next(g), 1)
 
-        with self.assertWarnsRegex(PendingDeprecationWarning, "StopIteration"):
+        with self.assertWarnsRegex(DeprecationWarning, "StopIteration"):
             with self.assertRaises(StopIteration):
                 next(g)
 

@@ -178,7 +178,7 @@ gen_send_ex(PyGenObject *gen, PyObject *arg, int exc)
             /* Pop the exception before issuing a warning. */
             PyErr_Fetch(&exc, &val, &tb);
 
-            if (PyErr_WarnFormat(PyExc_PendingDeprecationWarning, 1,
+            if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
                                  "generator '%.50S' raised StopIteration",
                                  gen->gi_qualname)) {
                 /* Warning was converted to an error. */
