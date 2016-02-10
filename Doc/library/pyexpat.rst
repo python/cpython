@@ -570,9 +570,9 @@ Content Model Descriptions
 
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
-Content modules are described using nested tuples.  Each tuple contains four
+Content models are described using nested tuples.  Each tuple contains four
 values: the type, the quantifier, the name, and a tuple of children.  Children
-are simply additional content module descriptions.
+are simply additional content model descriptions.
 
 The values of the first two fields are constants defined in the
 :mod:`xml.parsers.expat.model` module.  These constants can be collected in two

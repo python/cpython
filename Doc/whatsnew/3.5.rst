@@ -914,7 +914,7 @@ compileall
 ----------
 
 A new :mod:`compileall` option, :samp:`-j {N}`, allows to run *N* workers
-sumultaneously to perform parallel bytecode compilation.
+simultaneously to perform parallel bytecode compilation.
 The :func:`~compileall.compile_dir` function has a corresponding ``workers``
 parameter.  (Contributed by Claudiu Popa in :issue:`16104`.)
 
