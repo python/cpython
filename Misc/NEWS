@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25698: Importing module if the stack is too deep no longer replaces
+  imported module with the empty one.
+
 - Issue #12923: Reset FancyURLopener's redirect counter even if there is an
   exception.  Based on patches by Brian Brazil and Daniel Rocco.
 

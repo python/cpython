@@ -749,6 +749,36 @@ PyDict_GetItem(PyObject *op, PyObject *key)
     return ep->me_value;
 }
 
+/* Variant of PyDict_GetItem() that doesn't suppress exceptions.
+   This returns NULL *with* an exception set if an exception occurred.
+   It returns NULL *without* an exception set if the key wasn't present.
+*/
+PyObject *
+_PyDict_GetItemWithError(PyObject *op, PyObject *key)
+{
+    long hash;
+    PyDictObject *mp = (PyDictObject *)op;
+    PyDictEntry *ep;
+    if (!PyDict_Check(op)) {
+        PyErr_BadInternalCall();
+        return NULL;
+    }
+    if (!PyString_CheckExact(key) ||
+        (hash = ((PyStringObject *) key)->ob_shash) == -1)
+    {
+        hash = PyObject_Hash(key);
+        if (hash == -1) {
+            return NULL;
+        }
+    }
+
+    ep = (mp->ma_lookup)(mp, key, hash);
+    if (ep == NULL) {
+        return NULL;
+    }
+    return ep->me_value;
+}
+
 static int
 dict_set_item_by_hash_or_entry(register PyObject *op, PyObject *key,
                                long hash, PyDictEntry *ep, PyObject *value)
