@@ -144,7 +144,7 @@ zipfile
 -------
 
 A new :meth:`ZipInfo.from_file() <zipfile.ZipInfo.from_file>` class method
-allow to make :class:`~zipfile.ZipInfo` instance from a filesystem file.
+allows making a :class:`~zipfile.ZipInfo` instance from a filesystem file.
 A new :meth:`ZipInfo.is_dir() <zipfile.ZipInfo.is_dir>` method can be used
 to check if the :class:`~zipfile.ZipInfo` instance represents a directory.
 (Contributed by Thomas Kluyver in :issue:`26039`.)
