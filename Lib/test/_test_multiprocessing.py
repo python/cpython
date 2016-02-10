@@ -1660,6 +1660,10 @@ def sqr(x, wait=0.0):
 def mul(x, y):
     return x*y
 
+def raise_large_valuerror(wait):
+    time.sleep(wait)
+    raise ValueError("x" * 1024**2)
+
 class SayWhenError(ValueError): pass
 
 def exception_throwing_generator(total, when):
@@ -1894,6 +1898,26 @@ class _TestPool(BaseTestCase):
         with self.Pool(1) as p:
             with self.assertRaises(RuntimeError):
                 p.apply(self._test_wrapped_exception)
+
+    def test_map_no_failfast(self):
+        # Issue #23992: the fail-fast behaviour when an exception is raised
+        # during map() would make Pool.join() deadlock, because a worker
+        # process would fill the result queue (after the result handler thread
+        # terminated, hence not draining it anymore).
+
+        t_start = time.time()
+
+        with self.assertRaises(ValueError):
+            with self.Pool(2) as p:
+                try:
+                    p.map(raise_large_valuerror, [0, 1])
+                finally:
+                    time.sleep(0.5)
+                    p.close()
+                    p.join()
+
+        # check that we indeed waited for all jobs
+        self.assertGreater(time.time() - t_start, 0.9)
 
 
 def raising():
