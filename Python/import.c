@@ -671,9 +671,13 @@ PyImport_AddModuleObject(PyObject *name)
     PyObject *modules = PyImport_GetModuleDict();
     PyObject *m;
 
-    if ((m = PyDict_GetItem(modules, name)) != NULL &&
-        PyModule_Check(m))
+    if ((m = PyDict_GetItemWithError(modules, name)) != NULL &&
+        PyModule_Check(m)) {
         return m;
+    }
+    if (PyErr_Occurred()) {
+        return NULL;
+    }
     m = PyModule_NewObject(name);
     if (m == NULL)
         return NULL;
