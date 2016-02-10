@@ -3,38 +3,39 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_compress__doc__,
-"compress($module, bytes, level=Z_DEFAULT_COMPRESSION, /)\n"
+"compress($module, /, data, level=Z_DEFAULT_COMPRESSION)\n"
 "--\n"
 "\n"
 "Returns a bytes object containing compressed data.\n"
 "\n"
-"  bytes\n"
+"  data\n"
 "    Binary data to be compressed.\n"
 "  level\n"
 "    Compression level, in 0-9.");
 
 #define ZLIB_COMPRESS_METHODDEF    \
-    {"compress", (PyCFunction)zlib_compress, METH_VARARGS, zlib_compress__doc__},
+    {"compress", (PyCFunction)zlib_compress, METH_VARARGS|METH_KEYWORDS, zlib_compress__doc__},
 
 static PyObject *
-zlib_compress_impl(PyModuleDef *module, Py_buffer *bytes, int level);
+zlib_compress_impl(PyModuleDef *module, Py_buffer *data, int level);
 
 static PyObject *
-zlib_compress(PyModuleDef *module, PyObject *args)
+zlib_compress(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    Py_buffer bytes = {NULL, NULL};
+    static char *_keywords[] = {"data", "level", NULL};
+    Py_buffer data = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
 
-    if (!PyArg_ParseTuple(args, "y*|i:compress",
-        &bytes, &level))
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|i:compress", _keywords,
+        &data, &level))
         goto exit;
-    return_value = zlib_compress_impl(module, &bytes, level);
+    return_value = zlib_compress_impl(module, &data, level);
 
 exit:
-    /* Cleanup for bytes */
-    if (bytes.obj)
-       PyBuffer_Release(&bytes);
+    /* Cleanup for data */
+    if (data.obj)
+       PyBuffer_Release(&data);
 
     return return_value;
 }
@@ -439,4 +440,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=cf81e1deae3af0ce input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3c96b58b923c1273 input=a9049054013a1b77]*/
