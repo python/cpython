@@ -234,6 +234,14 @@ Deprecated features
   (Contributed by Rose Ames in :issue:`25791`.)
 
 
+Deprecated Python behavior
+--------------------------
+
+* Raising the :exc:`StopIteration` exception inside a generator will now generate a
+  :exc:`DeprecationWarning`, and will trigger a :exc:`RuntimeError` in Python 3.7.
+  See :ref:`whatsnew-pep-479` for details.
+
+
 Removed
 =======
 
