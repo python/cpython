@@ -510,7 +510,7 @@ Task functions
 
 .. note::
 
-   In the functions below, the optional *loop* argument allows to explicitly set
+   In the functions below, the optional *loop* argument allows explicitly setting
    the event loop object used by the underlying task or coroutine.  If it's
    not provided, the default event loop is used.
 

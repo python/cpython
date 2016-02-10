@@ -2775,7 +2775,7 @@ Now we'll write a couple files, one with three tests, the other a python module
 with two tests, both of the files having "errors" in the tests that can be made
 non-errors by applying the appropriate doctest options to the run (ELLIPSIS in
 the first file, NORMALIZE_WHITESPACE in the second).  This combination will
-allow to thoroughly test the -f and -o flags, as well as the doctest command's
+allow thoroughly testing the -f and -o flags, as well as the doctest command's
 ability to process more than one file on the command line and, since the second
 file ends in '.py', its handling of python module files (as opposed to straight
 text files).
