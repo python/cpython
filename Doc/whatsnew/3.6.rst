@@ -150,6 +150,13 @@ to check if the :class:`~zipfile.ZipInfo` instance represents a directory.
 (Contributed by Thomas Kluyver in :issue:`26039`.)
 
 
+zlib
+----
+
+The :func:`~zlib.compress` function now accepts keyword arguments.
+(Contributed by Aviv Palivoda in :issue:`26243`.)
+
+
 Optimizations
 =============
 
