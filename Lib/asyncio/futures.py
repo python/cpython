@@ -142,7 +142,7 @@ class Future:
     def __init__(self, *, loop=None):
         """Initialize the future.
 
-        The optional event_loop argument allows to explicitly set the event
+        The optional event_loop argument allows explicitly setting the event
         loop object used by the future. If it's not provided, the future uses
         the default event loop.
         """

@@ -190,7 +190,7 @@ class TimeRETests(unittest.TestCase):
 
     def test_whitespace_substitution(self):
         # When pattern contains whitespace, make sure it is taken into account
-        # so as to not allow to subpatterns to end up next to each other and
+        # so as to not allow subpatterns to end up next to each other and
         # "steal" characters from each other.
         pattern = self.time_re.pattern('%j %H')
         self.assertFalse(re.match(pattern, "180"))
