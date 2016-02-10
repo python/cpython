@@ -748,7 +748,7 @@ Improved Modules
 argparse
 --------
 
-The :class:`~argparse.ArgumentParser` class now allows to disable
+The :class:`~argparse.ArgumentParser` class now allows disabling
 :ref:`abbreviated usage <prefix-matching>` of long options by setting
 :ref:`allow_abbrev` to ``False``.  (Contributed by Jonathan Paugh,
 Steven Bethard, paul j3 and Daniel Eriksson in :issue:`14910`.)
@@ -913,12 +913,12 @@ external `PyPI package <https://pypi.python.org/pypi/backports_abc>`_.
 compileall
 ----------
 
-A new :mod:`compileall` option, :samp:`-j {N}`, allows to run *N* workers
+A new :mod:`compileall` option, :samp:`-j {N}`, allows running *N* workers
 simultaneously to perform parallel bytecode compilation.
 The :func:`~compileall.compile_dir` function has a corresponding ``workers``
 parameter.  (Contributed by Claudiu Popa in :issue:`16104`.)
 
-Another new option, ``-r``, allows to control the maximum recursion
+Another new option, ``-r``, allows controlling the maximum recursion
 level for subdirectories.  (Contributed by Claudiu Popa in :issue:`19628`.)
 
 The ``-q`` command line option can now be specified more than once, in
@@ -1453,8 +1453,8 @@ or newer, and ``getentropy()`` on OpenBSD 5.6 and newer, removing the need to
 use ``/dev/urandom`` and avoiding failures due to potential file descriptor
 exhaustion.  (Contributed by Victor Stinner in :issue:`22181`.)
 
-New :func:`~os.get_blocking` and :func:`~os.set_blocking` functions allow to
-get and set a file descriptor's blocking mode (:data:`~os.O_NONBLOCK`.)
+New :func:`~os.get_blocking` and :func:`~os.set_blocking` functions allow
+getting and setting a file descriptor's blocking mode (:data:`~os.O_NONBLOCK`.)
 (Contributed by Victor Stinner in :issue:`22054`.)
 
 The :func:`~os.truncate` and :func:`~os.ftruncate` functions are now supported
@@ -1681,8 +1681,8 @@ socket
 Functions with timeouts now use a monotonic clock, instead of a system clock.
 (Contributed by Victor Stinner in :issue:`22043`.)
 
-A new :meth:`socket.sendfile() <socket.socket.sendfile>` method allows to
-send a file over a socket by using the high-performance :func:`os.sendfile`
+A new :meth:`socket.sendfile() <socket.socket.sendfile>` method allows
+sending a file over a socket by using the high-performance :func:`os.sendfile`
 function on UNIX, resulting in uploads being from 2 to 3 times faster than when
 using plain :meth:`socket.send() <socket.socket.send>`.
 (Contributed by Giampaolo Rodola' in :issue:`17552`.)

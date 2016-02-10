@@ -1095,7 +1095,7 @@ Library
   functions to support PEP 3115 compliant dynamic class creation. Patch by
   Daniel Urban and Nick Coghlan.
 
-- Issue #13152: Allow to specify a custom tabsize for expanding tabs in
+- Issue #13152: Allow specifying a custom tabsize for expanding tabs in
   textwrap. Patch by John Feuerstein.
 
 - Issue #14721: Send the correct 'Content-length: 0' header when the body is an
@@ -2234,7 +2234,7 @@ Library
   fixed.
 
 - Issue #14166: Pickler objects now have an optional ``dispatch_table``
-  attribute which allows to set custom per-pickler reduction functions.
+  attribute which allows setting custom per-pickler reduction functions.
   Patch by sbt.
 
 - Issue #14177: marshal.loads() now raises TypeError when given an unicode
@@ -3185,7 +3185,7 @@ Library
   binary mode, but ensure that the shebang is decodable from UTF-8 and from the
   encoding of the script.
 
-- Issue #8498: In socket.accept(), allow to specify 0 as a backlog value in
+- Issue #8498: In socket.accept(), allow specifying 0 as a backlog value in
   order to accept exactly one connection.  Patch by Daniel Evers.
 
 - Issue #12011: signal.signal() and signal.siginterrupt() raise an OSError,
@@ -3885,7 +3885,7 @@ Tests
 - Issue #12331: The test suite for lib2to3 can now run from an installed
   Python.
 
-- Issue #12626: In regrtest, allow to filter tests using a glob filter
+- Issue #12626: In regrtest, allow filtering tests using a glob filter
   with the ``-m`` (or ``--match``) option.  This works with all test cases
   using the unittest module.  This is useful with long test suites
   such as test_io or test_subprocess.
@@ -4221,7 +4221,7 @@ What's New in Python 3.2 Release Candidate 2?
 Core and Builtins
 -----------------
 
-- Issue #10451: memoryview objects could allow to mutate a readable buffer.
+- Issue #10451: memoryview objects could allow mutating a readable buffer.
   Initial patch by Ross Lagerwall.
 
 Library
@@ -4765,7 +4765,7 @@ Library
 
 - Add the "display" and "undisplay" pdb commands.
 
-- Issue #7245: Add a SIGINT handler in pdb that allows to break a program again
+- Issue #7245: Add a SIGINT handler in pdb that allows breaking a program again
   after a "continue" command.
 
 - Add the "interact" pdb command.
@@ -6916,7 +6916,7 @@ Library
   correct encoding.
 
 - Issue #4870: Add an `options` attribute to SSL contexts, as well as several
-  ``OP_*`` constants to the `ssl` module.  This allows to selectively disable
+  ``OP_*`` constants to the `ssl` module.  This allows selectively disabling
   protocol versions, when used in combination with `PROTOCOL_SSLv23`.
 
 - Issue #8759: Fixed user paths in sysconfig for posix and os2 schemes.
@@ -9497,8 +9497,8 @@ Extension Modules
 
 - Issue #4051: Prevent conflict of UNICODE macros in cPickle.
 
-- Issue #4738: Each zlib object now has a separate lock, allowing to compress
-  or decompress several streams at once on multi-CPU systems. Also, the GIL
+- Issue #4738: Each zlib object now has a separate lock, allowing several streams
+  to be compressed or decompressed at once on multi-CPU systems. Also, the GIL
   is now released when computing the CRC of a large buffer. Patch by ebfe.
 
 - Issue #4228: Pack negative values the same way as 2.4 in struct's L format.
@@ -9996,7 +9996,7 @@ Core and Builtins
   as bytes string, please use PyUnicode_AsUTF8String() instead.
 
 - Issue #3460: PyUnicode_Join() implementation is 10% to 80% faster thanks
-  to Python 3.0's stricter semantics which allow to avoid successive
+  to Python 3.0's stricter semantics which allow avoiding successive
   reallocations of the result string (this also affects str.join()).
 
 
@@ -12762,7 +12762,7 @@ Library
 
 - Patch #1110248: SYNC_FLUSH the zlib buffer for GZipFile.flush.
 
-- Patch #1107973: Allow to iterate over the lines of a tarfile.ExFileObject.
+- Patch #1107973: Allow iterating over the lines of a tarfile.ExFileObject.
 
 - Patch #1104111: Alter setup.py --help and --help-commands.
 
@@ -13739,7 +13739,7 @@ Library
   same as when the argument is omitted).
   [SF bug 658254, patch 663482]
 
-- nntplib does now allow to ignore a .netrc file.
+- nntplib does now allow ignoring a .netrc file.
 
 - urllib2 now recognizes Basic authentication even if other authentication
   schemes are offered.
@@ -14157,7 +14157,7 @@ Extension modules
 
 - fcntl.ioctl now warns if the mutate flag is not specified.
 
-- nt now properly allows to refer to UNC roots, e.g. in nt.stat().
+- nt now properly allows referring to UNC roots, e.g. in nt.stat().
 
 - the weakref module now supports additional objects:  array.array,
   sre.pattern_objects, file objects, and sockets.
@@ -16715,7 +16715,7 @@ C API
 - New functions PyErr_SetExcFromWindowsErr() and
   PyErr_SetExcFromWindowsErrWithFilename(). Similar to
   PyErr_SetFromWindowsErrWithFilename() and
-  PyErr_SetFromWindowsErr(), but they allow to specify
+  PyErr_SetFromWindowsErr(), but they allow specifying
   the exception type to raise. Available on Windows.
 
 - Py_FatalError() is now declared as taking a const char* argument.  It
@@ -17590,8 +17590,8 @@ Type/class unification and new-style classes
 - property() now takes 4 keyword arguments:  fget, fset, fdel and doc.
   These map to read-only attributes 'fget', 'fset', 'fdel', and '__doc__'
   in the constructed property object.  fget, fset and fdel weren't
-  discoverable from Python in 2.2a3.  __doc__ is new, and allows to
-  associate a docstring with a property.
+  discoverable from Python in 2.2a3.  __doc__ is new, and allows
+  associating a docstring with a property.
 
 - Comparison overloading is now more completely implemented.  For
   example, a str subclass instance can properly be compared to a str
@@ -18006,7 +18006,7 @@ Tests
 -----
 
 - regrtest.py now knows which tests are expected to be skipped on some
-  platforms, allowing to give clearer test result output.  regrtest
+  platforms, allowing clearer test result output to be given.  regrtest
   also has optional --use/-u switch to run normally disabled tests
   which require network access or consume significant disk resources.
 

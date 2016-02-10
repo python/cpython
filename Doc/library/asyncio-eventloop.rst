@@ -253,7 +253,7 @@ Creating connections
       a class.  For example, if you want to use a pre-created
       protocol instance, you can pass ``lambda: my_protocol``.
 
-   Options allowing to change how the connection is created:
+   Options that change how the connection is created:
 
    * *ssl*: if given and not false, a SSL/TLS transport is created
      (by default a plain TCP transport is created).  If *ssl* is
@@ -654,7 +654,7 @@ pool of processes). By default, an event loop uses a thread pool executor
 Error Handling API
 ------------------
 
-Allows to customize how exceptions are handled in the event loop.
+Allows customizing how exceptions are handled in the event loop.
 
 .. method:: BaseEventLoop.set_exception_handler(handler)
 

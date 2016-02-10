@@ -419,7 +419,7 @@ class CommonTest(GenericTest):
     def test_nonascii_abspath(self):
         if (support.TESTFN_UNDECODABLE
         # Mac OS X denies the creation of a directory with an invalid
-        # UTF-8 name. Windows allows to create a directory with an
+        # UTF-8 name. Windows allows creating a directory with an
         # arbitrary bytes name, but fails to enter this directory
         # (when the bytes name is used).
         and sys.platform not in ('win32', 'darwin')):
