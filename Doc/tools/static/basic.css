@@ -393,22 +393,22 @@ table.highlighttable td {
     padding: 0 0.5em 0 0.5em;
 }
 
-tt.descname {
+code.descname {
     background-color: transparent;
     font-weight: bold;
     font-size: 1.2em;
 }
 
-tt.descclassname {
+code.descclassname {
     background-color: transparent;
 }
 
-tt.xref, a tt {
+code.xref, a code {
     background-color: transparent;
     font-weight: bold;
 }
 
-h1 tt, h2 tt, h3 tt, h4 tt, h5 tt, h6 tt {
+h1 code, h2 code, h3 code, h4 code, h5 code, h6 code {
     background-color: transparent;
 }
 
