@@ -1729,8 +1729,8 @@ Library
   and ASCII letter now raise a deprecation warning and will be forbidden in
   Python 3.6.
 
-- Issue #23671: string.Template now allows to specify the "self" parameter as
-  keyword argument.  string.Formatter now allows to specify the "self" and
+- Issue #23671: string.Template now allows specifying the "self" parameter as
+  a keyword argument.  string.Formatter now allows specifying the "self" and
   the "format_string" parameters as keyword arguments.
 
 - Issue #23502: The pprint module now supports mapping proxies.
@@ -2859,7 +2859,7 @@ Library
 - Issue #22085: Dropped support of Tk 8.3 in Tkinter.
 
 - Issue #21580: Now Tkinter correctly handles bytes arguments passed to Tk.
-  In particular this allows to initialize images from binary data.
+  In particular this allows initializing images from binary data.
 
 - Issue #22003: When initialized from a bytes object, io.BytesIO() now
   defers making a copy until it is mutated, improving performance and
@@ -3004,7 +3004,7 @@ Library
 - Issue #21711: support for "site-python" directories has now been removed
   from the site module (it was deprecated in 3.4).
 
-- Issue #17552: new socket.sendfile() method allowing to send a file over a
+- Issue #17552: new socket.sendfile() method allowing a file to be sent over a
   socket by using high-performance os.sendfile() on UNIX.
   Patch by Giampaolo Rodola'.
 
@@ -6967,7 +6967,7 @@ Library
   symlinks on POSIX platforms.
 
 - Issue #13773: sqlite3.connect() gets a new `uri` parameter to pass the
-  filename as a URI, allowing to pass custom options.
+  filename as a URI, allowing custom options to be passed.
 
 - Issue #16564: Fixed regression relative to Python2 in the operation of
   email.encoders.encode_noop when used with binary data.
@@ -7228,7 +7228,7 @@ Library
 - Issue #7719: Make distutils ignore ``.nfs*`` files instead of choking later
   on.  Initial patch by SilentGhost and Jeff Ramnani.
 
-- Issue #13120: Allow to call pdb.set_trace() from thread.
+- Issue #13120: Allow calling pdb.set_trace() from thread.
   Patch by Ilya Sandler.
 
 - Issue #16585: Make CJK encoders support error handlers that return bytes per

@@ -1528,7 +1528,7 @@ by Petri Lehtinen in :issue:`12021`.)
 multiprocessing
 ---------------
 
-The new :func:`multiprocessing.connection.wait` function allows to poll
+The new :func:`multiprocessing.connection.wait` function allows polling
 multiple objects (such as connections, sockets and pipes) with a timeout.
 (Contributed by Richard Oudkerk in :issue:`12328`.)
 
@@ -1715,8 +1715,8 @@ pickle
 ------
 
 :class:`pickle.Pickler` objects now have an optional
-:attr:`~pickle.Pickler.dispatch_table` attribute allowing to set per-pickler
-reduction functions.
+:attr:`~pickle.Pickler.dispatch_table` attribute allowing per-pickler
+reduction functions to be set.
 
 (Contributed by Richard Oudkerk in :issue:`14166`.)
 

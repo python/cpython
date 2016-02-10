@@ -26,7 +26,7 @@ The :mod:`nis` module defines the following functions:
 
    Note that *mapname* is first checked if it is an alias to another name.
 
-   The *domain* argument allows to override the NIS domain used for the lookup. If
+   The *domain* argument allows overriding the NIS domain used for the lookup. If
    unspecified, lookup is in the default NIS domain.
 
 
@@ -38,7 +38,7 @@ The :mod:`nis` module defines the following functions:
 
    Note that *mapname* is first checked if it is an alias to another name.
 
-   The *domain* argument allows to override the NIS domain used for the lookup. If
+   The *domain* argument allows overriding the NIS domain used for the lookup. If
    unspecified, lookup is in the default NIS domain.
 
 
@@ -46,7 +46,7 @@ The :mod:`nis` module defines the following functions:
 
    Return a list of all valid maps.
 
-   The *domain* argument allows to override the NIS domain used for the lookup. If
+   The *domain* argument allows overriding the NIS domain used for the lookup. If
    unspecified, lookup is in the default NIS domain.
 
 
