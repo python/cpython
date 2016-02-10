@@ -398,7 +398,7 @@ Miscellaneous options
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
 
-   It also allows to pass arbitrary values and retrieve them through the
+   It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
 
    .. versionchanged:: 3.2

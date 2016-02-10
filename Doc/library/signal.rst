@@ -11,7 +11,7 @@ This module provides mechanisms to use signal handlers in Python.
 General rules
 -------------
 
-The :func:`signal.signal` function allows to define custom handlers to be
+The :func:`signal.signal` function allows defining custom handlers to be
 executed when a signal is received.  A small number of default handlers are
 installed: :const:`SIGPIPE` is ignored (so write errors on pipes and sockets
 can be reported as ordinary Python exceptions) and :const:`SIGINT` is
