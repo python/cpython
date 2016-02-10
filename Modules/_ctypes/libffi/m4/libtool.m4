@@ -1121,7 +1121,7 @@ m4_defun([_LT_DARWIN_LINKER_FEATURES],
 # If we don't find anything, use the default library path according
 # to the aix ld manual.
 # Store the results from the different compilers for each TAGNAME.
-# Allow to override them for all tags through lt_cv_aix_libpath.
+# Allow overriding them for all tags through lt_cv_aix_libpath.
 m4_defun([_LT_SYS_MODULE_PATH_AIX],
 [m4_require([_LT_DECL_SED])dnl
 if test set = "${lt_cv_aix_libpath+set}"; then

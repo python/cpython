@@ -30,7 +30,7 @@ variable(s) whose address should be passed.
 Strings and buffers
 -------------------
 
-These formats allow to access an object as a contiguous chunk of memory.
+These formats allow accessing an object as a contiguous chunk of memory.
 You don't have to provide raw storage for the returned unicode or bytes
 area.  Also, you won't have to release any memory yourself, except with the
 ``es``, ``es#``, ``et`` and ``et#`` formats.

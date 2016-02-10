@@ -33,7 +33,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    *timeout* parameter specifies a timeout in seconds for blocking operations
    like the connection attempt (if not specified, the global default timeout
    setting will be used).  If the timeout expires, :exc:`socket.timeout` is
-   raised.  The optional source_address parameter allows to bind
+   raised.  The optional source_address parameter allows binding
    to some specific source address in a machine with multiple network
    interfaces, and/or to some specific source TCP port. It takes a 2-tuple
    (host, port), for the socket to bind to as its source address before
@@ -76,7 +76,7 @@ Protocol) and :rfc:`1869` (SMTP Service Extensions).
    *port* is zero, the standard SMTP-over-SSL port (465) is used.  The optional
    arguments *local_hostname*, *timeout* and *source_address* have the same
    meaning as they do in the :class:`SMTP` class.  *context*, also optional,
-   can contain a :class:`~ssl.SSLContext` and allows to configure various
+   can contain a :class:`~ssl.SSLContext` and allows configuring various
    aspects of the secure connection.  Please read :ref:`ssl-security` for
    best practices.
 

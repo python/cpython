@@ -243,8 +243,8 @@ bothered to add the ``b`` mode when opening a binary file (e.g., ``rb`` for
 binary reading).  Under Python 3, binary files and text files are clearly
 distinct and mutually incompatible; see the :mod:`io` module for details.
 Therefore, you **must** make a decision of whether a file will be used for
-binary access (allowing to read and/or write binary data) or text access
-(allowing to read and/or write text data). You should also use :func:`io.open`
+binary access (allowing binary data to be read and/or written) or text access
+(allowing text data to be read and/or written). You should also use :func:`io.open`
 for opening files instead of the built-in :func:`open` function as the :mod:`io`
 module is consistent from Python 2 to 3 while the built-in :func:`open` function
 is not (in Python 3 it's actually :func:`io.open`).
