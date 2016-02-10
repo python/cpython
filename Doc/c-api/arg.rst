@@ -24,7 +24,7 @@ the format unit; the entry in (round) parentheses is the Python object type
 that matches the format unit; and the entry in [square] brackets is the type
 of the C variable(s) whose address should be passed.
 
-These formats allow to access an object as a contiguous chunk of memory.
+These formats allow accessing an object as a contiguous chunk of memory.
 You don't have to provide raw storage for the returned unicode or bytes
 area.  Also, you won't have to release any memory yourself, except with the
 ``es``, ``es#``, ``et`` and ``et#`` formats.

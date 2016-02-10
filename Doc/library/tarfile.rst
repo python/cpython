@@ -90,7 +90,7 @@ Some facts and figures:
    specifies the blocksize and defaults to ``20 * 512`` bytes. Use this variant
    in combination with e.g. ``sys.stdin``, a socket file object or a tape
    device. However, such a :class:`TarFile` object is limited in that it does
-   not allow to be accessed randomly, see :ref:`tar-examples`.  The currently
+   not allow random access, see :ref:`tar-examples`.  The currently
    possible modes:
 
    +-------------+--------------------------------------------+

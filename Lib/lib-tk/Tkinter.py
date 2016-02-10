@@ -2486,7 +2486,7 @@ class Checkbutton(Widget):
         self.tk.call(self._w, 'toggle')
 
 class Entry(Widget, XView):
-    """Entry widget which allows to display simple text."""
+    """Entry widget which allows displaying simple text."""
     def __init__(self, master=None, cnf={}, **kw):
         """Construct an entry widget with the parent MASTER.
 
@@ -2682,7 +2682,7 @@ class Listbox(Widget, XView, YView):
     itemconfig = itemconfigure
 
 class Menu(Widget):
-    """Menu widget which allows to display menu bars, pull-down menus and pop-up menus."""
+    """Menu widget which allows displaying menu bars, pull-down menus and pop-up menus."""
     def __init__(self, master=None, cnf={}, **kw):
         """Construct menu widget with the parent MASTER.
 

@@ -386,8 +386,8 @@ class CDLL(object):
         return func
 
 class PyDLL(CDLL):
-    """This class represents the Python library itself.  It allows to
-    access Python API functions.  The GIL is not released, and
+    """This class represents the Python library itself.  It allows
+    accessing Python API functions.  The GIL is not released, and
     Python exceptions are handled correctly.
     """
     _func_flags_ = _FUNCFLAG_CDECL | _FUNCFLAG_PYTHONAPI

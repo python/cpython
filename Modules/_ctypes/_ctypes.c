@@ -3497,7 +3497,7 @@ PyCFuncPtr_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    /* XXX XXX This would allow to pass additional options.  For COM
+    /* XXX XXX This would allow passing additional options.  For COM
        method *implementations*, we would probably want different
        behaviour than in 'normal' callback functions: return a HRESULT if
        an exception occurs in the callback, and print the traceback not

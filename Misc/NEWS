@@ -623,8 +623,8 @@ Library
 - Issue #21802: The reader in BufferedRWPair now is closed even when closing
   writer failed in BufferedRWPair.close().
 
-- Issue #23671: string.Template now allows to specify the "self" parameter as
-  keyword argument.  string.Formatter now allows to specify the "self" and
+- Issue #23671: string.Template now allows specifying the "self" parameter as
+  a keyword argument.  string.Formatter now allows specifying the "self" and
   the "format_string" parameters as keyword arguments.
 
 - Issue #21560: An attempt to write a data of wrong type no longer cause

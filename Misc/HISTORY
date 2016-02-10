@@ -1845,7 +1845,7 @@ Library
 
 - Patch #1110248: SYNC_FLUSH the zlib buffer for GZipFile.flush.
 
-- Patch #1107973: Allow to iterate over the lines of a tarfile.ExFileObject.
+- Patch #1107973: Allow iterating over the lines of a tarfile.ExFileObject.
 
 - Patch #1104111: Alter setup.py --help and --help-commands.
 
@@ -2822,7 +2822,7 @@ Library
   same as when the argument is omitted).
   [SF bug 658254, patch 663482]
 
-- nntplib does now allow to ignore a .netrc file.
+- nntplib does now allow ignoring a .netrc file.
 
 - urllib2 now recognizes Basic authentication even if other authentication
   schemes are offered.
@@ -3240,7 +3240,7 @@ Extension modules
 
 - fcntl.ioctl now warns if the mutate flag is not specified.
 
-- nt now properly allows to refer to UNC roots, e.g. in nt.stat().
+- nt now properly allows referring to UNC roots, e.g. in nt.stat().
 
 - the weakref module now supports additional objects:  array.array,
   sre.pattern_objects, file objects, and sockets.
@@ -5798,7 +5798,7 @@ C API
 - New functions PyErr_SetExcFromWindowsErr() and
   PyErr_SetExcFromWindowsErrWithFilename(). Similar to
   PyErr_SetFromWindowsErrWithFilename() and
-  PyErr_SetFromWindowsErr(), but they allow to specify
+  PyErr_SetFromWindowsErr(), but they allow specifying
   the exception type to raise. Available on Windows.
 
 - Py_FatalError() is now declared as taking a const char* argument.  It
@@ -6678,8 +6678,8 @@ Type/class unification and new-style classes
 - property() now takes 4 keyword arguments:  fget, fset, fdel and doc.
   These map to read-only attributes 'fget', 'fset', 'fdel', and '__doc__'
   in the constructed property object.  fget, fset and fdel weren't
-  discoverable from Python in 2.2a3.  __doc__ is new, and allows to
-  associate a docstring with a property.
+  discoverable from Python in 2.2a3.  __doc__ is new, and allows
+  associating a docstring with a property.
 
 - Comparison overloading is now more completely implemented.  For
   example, a str subclass instance can properly be compared to a str
@@ -7094,7 +7094,7 @@ Tests
 -----
 
 - regrtest.py now knows which tests are expected to be skipped on some
-  platforms, allowing to give clearer test result output.  regrtest
+  platforms, allowing clearer test result output to be given.  regrtest
   also has optional --use/-u switch to run normally disabled tests
   which require network access or consume significant disk resources.
 

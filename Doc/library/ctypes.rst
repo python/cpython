@@ -934,7 +934,7 @@ other, and finally follow the pointer chain a few times::
 Callback functions
 ^^^^^^^^^^^^^^^^^^
 
-:mod:`ctypes` allows to create C callable function pointers from Python callables.
+:mod:`ctypes` allows creating C callable function pointers from Python callables.
 These are sometimes called *callback functions*.
 
 First, you must create a class for the callback function, the class knows the
@@ -1404,7 +1404,7 @@ details, consult the :manpage:`dlopen(3)` manpage, on Windows, *mode* is
 ignored.
 
 The *use_errno* parameter, when set to True, enables a ctypes mechanism that
-allows to access the system :data:`errno` error number in a safe way.
+allows accessing the system :data:`errno` error number in a safe way.
 :mod:`ctypes` maintains a thread-local copy of the systems :data:`errno`
 variable; if you call foreign functions created with ``use_errno=True`` then the
 :data:`errno` value before the function call is swapped with the ctypes private
@@ -1478,7 +1478,7 @@ loader instance.
    Class which loads shared libraries.  *dlltype* should be one of the
    :class:`CDLL`, :class:`PyDLL`, :class:`WinDLL`, or :class:`OleDLL` types.
 
-   :meth:`__getattr__` has special behavior: It allows to load a shared library by
+   :meth:`__getattr__` has special behavior: It allows loading a shared library by
    accessing it as attribute of a library loader instance.  The result is cached,
    so repeated attribute accesses return the same library each time.
 
@@ -1557,7 +1557,7 @@ They are instances of a private class:
 
       It is possible to assign a callable Python object that is not a ctypes
       type, in this case the function is assumed to return a C :c:type:`int`, and
-      the callable will be called with this integer, allowing to do further
+      the callable will be called with this integer, allowing further
       processing or error checking.  Using this is deprecated, for more flexible
       post processing or error checking use a ctypes data type as
       :attr:`restype` and assign a callable to the :attr:`errcheck` attribute.
@@ -1573,7 +1573,7 @@ They are instances of a private class:
 
       When a foreign function is called, each actual argument is passed to the
       :meth:`from_param` class method of the items in the :attr:`argtypes`
-      tuple, this method allows to adapt the actual argument to an object that
+      tuple, this method allows adapting the actual argument to an object that
       the foreign function accepts.  For example, a :class:`c_char_p` item in
       the :attr:`argtypes` tuple will convert a unicode string passed as
       argument into an byte string using ctypes conversion rules.
@@ -1581,7 +1581,7 @@ They are instances of a private class:
       New: It is now possible to put items in argtypes which are not ctypes
       types, but each item must have a :meth:`from_param` method which returns a
       value usable as argument (integer, string, ctypes instance).  This allows
-      to define adapters that can adapt custom objects as function parameters.
+      defining adapters that can adapt custom objects as function parameters.
 
 
    .. attribute:: errcheck
@@ -1595,12 +1595,12 @@ They are instances of a private class:
          *result* is what the foreign function returns, as specified by the
          :attr:`restype` attribute.
 
-         *func* is the foreign function object itself, this allows to reuse the
+         *func* is the foreign function object itself, this allows reusing the
          same callable object to check or post process the results of several
          functions.
 
          *arguments* is a tuple containing the parameters originally passed to
-         the function call, this allows to specialize the behavior on the
+         the function call, this allows specializing the behavior on the
          arguments used.
 
       The object that this function returns will be returned from the
@@ -1853,7 +1853,7 @@ Utility functions
    If a string is specified as first argument, the buffer is made one item larger
    than the length of the string so that the last element in the array is a NUL
    termination character. An integer can be passed as second argument which allows
-   to specify the size of the array if the length of the string should not be used.
+   specifying the size of the array if the length of the string should not be used.
 
    If the first parameter is a unicode string, it is converted into an 8-bit string
    according to ctypes conversion rules.
@@ -1870,7 +1870,7 @@ Utility functions
    If a unicode string is specified as first argument, the buffer is made one item
    larger than the length of the string so that the last element in the array is a
    NUL termination character. An integer can be passed as second argument which
-   allows to specify the size of the array if the length of the string should not
+   allows specifying the size of the array if the length of the string should not
    be used.
 
    If the first parameter is a 8-bit string, it is converted into an unicode string
@@ -1879,14 +1879,14 @@ Utility functions
 
 .. function:: DllCanUnloadNow()
 
-   Windows only: This function is a hook which allows to implement in-process
+   Windows only: This function is a hook which allows implementing in-process
    COM servers with ctypes.  It is called from the DllCanUnloadNow function that
    the _ctypes extension dll exports.
 
 
 .. function:: DllGetClassObject()
 
-   Windows only: This function is a hook which allows to implement in-process
+   Windows only: This function is a hook which allows implementing in-process
    COM servers with ctypes.  It is called from the DllGetClassObject function
    that the ``_ctypes`` extension dll exports.
 
@@ -2432,7 +2432,7 @@ other data types containing pointer type fields.
       checked, only one field can be accessed when names are repeated.
 
       It is possible to define the :attr:`_fields_` class variable *after* the
-      class statement that defines the Structure subclass, this allows to create
+      class statement that defines the Structure subclass, this allows creating
       data types that directly or indirectly reference themselves::
 
          class List(Structure):
@@ -2453,7 +2453,7 @@ other data types containing pointer type fields.
 
    .. attribute:: _pack_
 
-      An optional small integer that allows to override the alignment of
+      An optional small integer that allows overriding the alignment of
       structure fields in the instance.  :attr:`_pack_` must already be defined
       when :attr:`_fields_` is assigned, otherwise it will have no effect.
 
@@ -2465,8 +2465,8 @@ other data types containing pointer type fields.
       assigned, otherwise it will have no effect.
 
       The fields listed in this variable must be structure or union type fields.
-      :mod:`ctypes` will create descriptors in the structure type that allows to
-      access the nested fields directly, without the need to create the
+      :mod:`ctypes` will create descriptors in the structure type that allow
+      accessing the nested fields directly, without the need to create the
       structure or union field.
 
       Here is an example type (Windows)::
