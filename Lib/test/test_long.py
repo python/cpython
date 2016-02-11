@@ -689,6 +689,20 @@ class LongTest(unittest.TestCase):
         self.assertRaises(OverflowError, int, float('-inf'))
         self.assertRaises(ValueError, int, float('nan'))
 
+    def test_mod_division(self):
+        with self.assertRaises(ZeroDivisionError):
+            _ = 1 % 0
+
+        self.assertEqual(13 % 10, 3)
+        self.assertEqual(-13 % 10, 7)
+        self.assertEqual(13 % -10, -7)
+        self.assertEqual(-13 % -10, -3)
+
+        self.assertEqual(12 % 4, 0)
+        self.assertEqual(-12 % 4, 0)
+        self.assertEqual(12 % -4, 0)
+        self.assertEqual(-12 % -4, 0)
+
     def test_true_division(self):
         huge = 1 << 40000
         mhuge = -huge
@@ -722,6 +736,25 @@ class LongTest(unittest.TestCase):
 
         for zero in ["huge / 0", "mhuge / 0"]:
             self.assertRaises(ZeroDivisionError, eval, zero, namespace)
+
+    def test_floordiv(self):
+        with self.assertRaises(ZeroDivisionError):
+            _ = 1 // 0
+
+        self.assertEqual(2 // 3, 0)
+        self.assertEqual(2 // -3, -1)
+        self.assertEqual(-2 // 3, -1)
+        self.assertEqual(-2 // -3, 0)
+
+        self.assertEqual(-11 // -3, 3)
+        self.assertEqual(-11 // 3, -4)
+        self.assertEqual(11 // -3, -4)
+        self.assertEqual(11 // 3, 3)
+
+        self.assertEqual(-12 // -3, 4)
+        self.assertEqual(-12 // 3, -4)
+        self.assertEqual(12 // -3, -4)
+        self.assertEqual(12 // 3, 4)
 
     def check_truediv(self, a, b, skip_small=True):
         """Verify that the result of a/b is correctly rounded, by
