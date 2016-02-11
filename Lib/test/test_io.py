@@ -681,18 +681,14 @@ class IOTest(unittest.TestCase):
             f2.readline()
 
     def test_nonbuffered_textio(self):
-        with warnings.catch_warnings(record=True) as recorded:
+        with support.check_no_resource_warning(self):
             with self.assertRaises(ValueError):
                 self.open(support.TESTFN, 'w', buffering=0)
-            support.gc_collect()
-        self.assertEqual(recorded, [])
 
     def test_invalid_newline(self):
-        with warnings.catch_warnings(record=True) as recorded:
+        with support.check_no_resource_warning(self):
             with self.assertRaises(ValueError):
                 self.open(support.TESTFN, 'w', newline='invalid')
-            support.gc_collect()
-        self.assertEqual(recorded, [])
 
 
 class CIOTest(IOTest):
@@ -3366,10 +3362,8 @@ class MiscIOTest(unittest.TestCase):
         # When using closefd=False, there's no warning
         r, w = os.pipe()
         fds += r, w
-        with warnings.catch_warnings(record=True) as recorded:
+        with support.check_no_resource_warning(self):
             open(r, *args, closefd=False, **kwargs)
-            support.gc_collect()
-        self.assertEqual(recorded, [])
 
     def test_warn_on_dealloc_fd(self):
         self._check_warn_on_dealloc_fd("rb", buffering=0)
