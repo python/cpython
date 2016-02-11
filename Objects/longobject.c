@@ -3502,6 +3502,52 @@ long_mul(PyLongObject *a, PyLongObject *b)
     return (PyObject *)z;
 }
 
+/* Fast modulo division for single-digit longs. */
+static PyObject *
+fast_mod(PyLongObject *a, PyLongObject *b)
+{
+    sdigit left = a->ob_digit[0];
+    sdigit right = b->ob_digit[0];
+    sdigit mod;
+
+    assert(Py_ABS(Py_SIZE(a)) == 1);
+    assert(Py_ABS(Py_SIZE(b)) == 1);
+
+    if (Py_SIZE(a) == Py_SIZE(b)) {
+        /* 'a' and 'b' have the same sign. */
+        mod = left % right;
+    }
+    else {
+        /* Either 'a' or 'b' is negative. */
+        mod = right - 1 - (left - 1) % right;
+    }
+
+    return PyLong_FromLong(mod * Py_SIZE(b));
+}
+
+/* Fast floor division for single-digit longs. */
+static PyObject *
+fast_floor_div(PyLongObject *a, PyLongObject *b)
+{
+    sdigit left = a->ob_digit[0];
+    sdigit right = b->ob_digit[0];
+    sdigit div;
+
+    assert(Py_ABS(Py_SIZE(a)) == 1);
+    assert(Py_ABS(Py_SIZE(b)) == 1);
+
+    if (Py_SIZE(a) == Py_SIZE(b)) {
+        /* 'a' and 'b' have the same sign. */
+        div = left / right;
+    }
+    else {
+        /* Either 'a' or 'b' is negative. */
+        div = -1 - (left - 1) / right;
+    }
+
+    return PyLong_FromLong(div);
+}
+
 /* The / and % operators are now defined in terms of divmod().
    The expression a mod b has the value a - b*floor(a/b).
    The long_divrem function gives the remainder after division of
@@ -3529,6 +3575,30 @@ l_divmod(PyLongObject *v, PyLongObject *w,
 {
     PyLongObject *div, *mod;
 
+    if (Py_ABS(Py_SIZE(v)) == 1 && Py_ABS(Py_SIZE(w)) == 1) {
+        /* Fast path for single-digit longs */
+        div = NULL;
+        if (pdiv != NULL) {
+            div = (PyLongObject *)fast_floor_div(v, w);
+            if (div == NULL) {
+                return -1;
+            }
+        }
+        if (pmod != NULL) {
+            mod = (PyLongObject *)fast_mod(v, w);
+            if (mod == NULL) {
+                Py_XDECREF(div);
+                return -1;
+            }
+            *pmod = mod;
+        }
+        if (pdiv != NULL) {
+            /* We only want to set `*pdiv` when `*pmod` is
+               set successfully. */
+            *pdiv = div;
+        }
+        return 0;
+    }
     if (long_divrem(v, w, &div, &mod) < 0)
         return -1;
     if ((Py_SIZE(mod) < 0 && Py_SIZE(w) > 0) ||
@@ -3573,6 +3643,11 @@ long_div(PyObject *a, PyObject *b)
     PyLongObject *div;
 
     CHECK_BINOP(a, b);
+
+    if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
+        return fast_floor_div((PyLongObject*)a, (PyLongObject*)b);
+    }
+
     if (l_divmod((PyLongObject*)a, (PyLongObject*)b, &div, NULL) < 0)
         div = NULL;
     return (PyObject *)div;
@@ -3847,6 +3922,10 @@ long_mod(PyObject *a, PyObject *b)
     PyLongObject *mod;
 
     CHECK_BINOP(a, b);
+
+    if (Py_ABS(Py_SIZE(a)) == 1 && Py_ABS(Py_SIZE(b)) == 1) {
+        return fast_mod((PyLongObject*)a, (PyLongObject*)b);
+    }
 
     if (l_divmod((PyLongObject*)a, (PyLongObject*)b, NULL, &mod) < 0)
         mod = NULL;
