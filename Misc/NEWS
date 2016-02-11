@@ -216,6 +216,9 @@ Documentation
 Tests
 -----
 
+- Issue #26325: Added test.support.check_no_resource_warning() to check that
+  no ResourceWarning is emitted.
+
 - Issue #25940: Changed test_ssl to use self-signed.pythontest.net.  This
   avoids relying on svn.python.org, which recently changed root certificate.
 
