@@ -40,7 +40,7 @@ def setup_module(machinery, name, path=None):
     else:
         root = machinery.WindowsRegistryFinder.REGISTRY_KEY
     key = root.format(fullname=name,
-                      sys_version=sys.version[:3])
+                      sys_version='%d.%d' % sys.version_info[:2])
     try:
         with temp_module(name, "a = 1") as location:
             subkey = CreateKey(HKEY_CURRENT_USER, key)

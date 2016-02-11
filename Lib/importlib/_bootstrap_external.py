@@ -593,7 +593,7 @@ class WindowsRegistryFinder:
         else:
             registry_key = cls.REGISTRY_KEY
         key = registry_key.format(fullname=fullname,
-                                  sys_version=sys.version[:3])
+                                  sys_version='%d.%d' % sys.version_info[:2])
         try:
             with cls._open_registry(key) as hkey:
                 filepath = _winreg.QueryValue(hkey, '')

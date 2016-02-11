@@ -151,7 +151,7 @@ def escape(s):
     return s.replace(">", "&gt;",)
 
 # used in User-Agent header sent
-__version__ = sys.version[:3]
+__version__ = '%d.%d' % sys.version_info[:2]
 
 # xmlrpc integer limits
 MAXINT =  2**31-1

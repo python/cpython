@@ -2226,7 +2226,7 @@ def main():
     setup(# PyPI Metadata (PEP 301)
           name = "Python",
           version = sys.version.split()[0],
-          url = "http://www.python.org/%s" % sys.version[:3],
+          url = "http://www.python.org/%d.%d" % sys.version_info[:2],
           maintainer = "Guido van Rossum and the Python community",
           maintainer_email = "python-dev@python.org",
           description = "A high-level object-oriented programming language",

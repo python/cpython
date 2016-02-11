@@ -51,7 +51,7 @@ class BaseTest(unittest.TestCase):
             self.include = 'Include'
         else:
             self.bindir = 'bin'
-            self.lib = ('lib', 'python%s' % sys.version[:3])
+            self.lib = ('lib', 'python%d.%d' % sys.version_info[:2])
             self.include = 'include'
         if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in os.environ:
             executable = os.environ['__PYVENV_LAUNCHER__']
