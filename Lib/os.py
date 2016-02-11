@@ -374,46 +374,47 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             onerror(error)
         return
 
-    while True:
-        try:
+    with scandir_it:
+        while True:
             try:
-                entry = next(scandir_it)
-            except StopIteration:
-                break
-        except OSError as error:
-            if onerror is not None:
-                onerror(error)
-            return
-
-        try:
-            is_dir = entry.is_dir()
-        except OSError:
-            # If is_dir() raises an OSError, consider that the entry is not
-            # a directory, same behaviour than os.path.isdir().
-            is_dir = False
-
-        if is_dir:
-            dirs.append(entry.name)
-        else:
-            nondirs.append(entry.name)
-
-        if not topdown and is_dir:
-            # Bottom-up: recurse into sub-directory, but exclude symlinks to
-            # directories if followlinks is False
-            if followlinks:
-                walk_into = True
-            else:
                 try:
-                    is_symlink = entry.is_symlink()
-                except OSError:
-                    # If is_symlink() raises an OSError, consider that the
-                    # entry is not a symbolic link, same behaviour than
-                    # os.path.islink().
-                    is_symlink = False
-                walk_into = not is_symlink
+                    entry = next(scandir_it)
+                except StopIteration:
+                    break
+            except OSError as error:
+                if onerror is not None:
+                    onerror(error)
+                return
 
-            if walk_into:
-                yield from walk(entry.path, topdown, onerror, followlinks)
+            try:
+                is_dir = entry.is_dir()
+            except OSError:
+                # If is_dir() raises an OSError, consider that the entry is not
+                # a directory, same behaviour than os.path.isdir().
+                is_dir = False
+
+            if is_dir:
+                dirs.append(entry.name)
+            else:
+                nondirs.append(entry.name)
+
+            if not topdown and is_dir:
+                # Bottom-up: recurse into sub-directory, but exclude symlinks to
+                # directories if followlinks is False
+                if followlinks:
+                    walk_into = True
+                else:
+                    try:
+                        is_symlink = entry.is_symlink()
+                    except OSError:
+                        # If is_symlink() raises an OSError, consider that the
+                        # entry is not a symbolic link, same behaviour than
+                        # os.path.islink().
+                        is_symlink = False
+                    walk_into = not is_symlink
+
+                if walk_into:
+                    yield from walk(entry.path, topdown, onerror, followlinks)
 
     # Yield before recursion if going top down
     if topdown:
@@ -437,15 +438,30 @@ class _DummyDirEntry:
     def __init__(self, dir, name):
         self.name = name
         self.path = path.join(dir, name)
+
     def is_dir(self):
         return path.isdir(self.path)
+
     def is_symlink(self):
         return path.islink(self.path)
 
-def _dummy_scandir(dir):
+class _dummy_scandir:
     # listdir-based implementation for bytes patches on Windows
-    for name in listdir(dir):
-        yield _DummyDirEntry(dir, name)
+    def __init__(self, dir):
+        self.dir = dir
+        self.it = iter(listdir(dir))
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return _DummyDirEntry(self.dir, next(self.it))
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.it = iter(())
 
 __all__.append("walk")
 

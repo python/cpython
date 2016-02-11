@@ -11937,8 +11937,14 @@ typedef struct {
 
 #ifdef MS_WINDOWS
 
+static int
+ScandirIterator_is_closed(ScandirIterator *iterator)
+{
+    return iterator->handle == INVALID_HANDLE_VALUE;
+}
+
 static void
-ScandirIterator_close(ScandirIterator *iterator)
+ScandirIterator_closedir(ScandirIterator *iterator)
 {
     if (iterator->handle == INVALID_HANDLE_VALUE)
         return;
@@ -11956,7 +11962,7 @@ ScandirIterator_iternext(ScandirIterator *iterator)
     BOOL success;
     PyObject *entry;
 
-    /* Happens if the iterator is iterated twice */
+    /* Happens if the iterator is iterated twice, or closed explicitly */
     if (iterator->handle == INVALID_HANDLE_VALUE)
         return NULL;
 
@@ -11987,14 +11993,20 @@ ScandirIterator_iternext(ScandirIterator *iterator)
     }
 
     /* Error or no more files */
-    ScandirIterator_close(iterator);
+    ScandirIterator_closedir(iterator);
     return NULL;
 }
 
 #else /* POSIX */
 
+static int
+ScandirIterator_is_closed(ScandirIterator *iterator)
+{
+    return !iterator->dirp;
+}
+
 static void
-ScandirIterator_close(ScandirIterator *iterator)
+ScandirIterator_closedir(ScandirIterator *iterator)
 {
     if (!iterator->dirp)
         return;
@@ -12014,7 +12026,7 @@ ScandirIterator_iternext(ScandirIterator *iterator)
     int is_dot;
     PyObject *entry;
 
-    /* Happens if the iterator is iterated twice */
+    /* Happens if the iterator is iterated twice, or closed explicitly */
     if (!iterator->dirp)
         return NULL;
 
@@ -12051,20 +12063,66 @@ ScandirIterator_iternext(ScandirIterator *iterator)
     }
 
     /* Error or no more files */
-    ScandirIterator_close(iterator);
+    ScandirIterator_closedir(iterator);
     return NULL;
 }
 
 #endif
 
+static PyObject *
+ScandirIterator_close(ScandirIterator *self, PyObject *args)
+{
+    ScandirIterator_closedir(self);
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+ScandirIterator_enter(PyObject *self, PyObject *args)
+{
+    Py_INCREF(self);
+    return self;
+}
+
+static PyObject *
+ScandirIterator_exit(ScandirIterator *self, PyObject *args)
+{
+    ScandirIterator_closedir(self);
+    Py_RETURN_NONE;
+}
+
 static void
 ScandirIterator_dealloc(ScandirIterator *iterator)
 {
-    ScandirIterator_close(iterator);
+    if (!ScandirIterator_is_closed(iterator)) {
+        PyObject *exc, *val, *tb;
+        Py_ssize_t old_refcount = Py_REFCNT(iterator);
+        /* Py_INCREF/Py_DECREF cannot be used, because the refcount is
+         * likely zero, Py_DECREF would call again the destructor.
+         */
+        ++Py_REFCNT(iterator);
+        PyErr_Fetch(&exc, &val, &tb);
+        if (PyErr_WarnFormat(PyExc_ResourceWarning, 1,
+                             "unclosed scandir iterator %R", iterator)) {
+            /* Spurious errors can appear at shutdown */
+            if (PyErr_ExceptionMatches(PyExc_Warning))
+                PyErr_WriteUnraisable((PyObject *) iterator);
+        }
+        PyErr_Restore(exc, val, tb);
+        Py_REFCNT(iterator) = old_refcount;
+
+        ScandirIterator_closedir(iterator);
+    }
     Py_XDECREF(iterator->path.object);
     path_cleanup(&iterator->path);
     Py_TYPE(iterator)->tp_free((PyObject *)iterator);
 }
+
+static PyMethodDef ScandirIterator_methods[] = {
+    {"__enter__", (PyCFunction)ScandirIterator_enter, METH_NOARGS},
+    {"__exit__", (PyCFunction)ScandirIterator_exit, METH_VARARGS},
+    {"close", (PyCFunction)ScandirIterator_close, METH_NOARGS},
+    {NULL}
+};
 
 static PyTypeObject ScandirIteratorType = {
     PyVarObject_HEAD_INIT(NULL, 0)
@@ -12095,6 +12153,7 @@ static PyTypeObject ScandirIteratorType = {
     0,                                      /* tp_weaklistoffset */
     PyObject_SelfIter,                      /* tp_iter */
     (iternextfunc)ScandirIterator_iternext, /* tp_iternext */
+    ScandirIterator_methods,                /* tp_methods */
 };
 
 static PyObject *

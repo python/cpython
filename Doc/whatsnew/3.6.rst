@@ -104,6 +104,17 @@ directives ``%G``, ``%u`` and ``%V``.
 (Contributed by Ashley Anderson in :issue:`12006`.)
 
 
+os
+--
+
+A new :meth:`~os.scandir.close` method allows explicitly closing a
+:func:`~os.scandir` iterator.  The :func:`~os.scandir` iterator now
+supports the :term:`context manager` protocol.  If a :func:`scandir`
+iterator is neither exhausted nor explicitly closed a :exc:`ResourceWarning`
+will be emitted in its destructor.
+(Contributed by Serhiy Storchaka in :issue:`25994`.)
+
+
 pickle
 ------
 
