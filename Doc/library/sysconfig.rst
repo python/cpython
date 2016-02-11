@@ -163,7 +163,7 @@ Other functions
 .. function:: get_python_version()
 
    Return the ``MAJOR.MINOR`` Python version number as a string.  Similar to
-   ``sys.version[:3]``.
+   ``'%d.%d' % sys.version_info[:2]``.
 
 
 .. function:: get_platform()

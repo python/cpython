@@ -204,7 +204,7 @@ Test cyclic gc(?)
 import os
 import sys
 from distutils.util import get_platform
-PLAT_SPEC = "%s-%s" % (get_platform(), sys.version[0:3])
+PLAT_SPEC = "%s-%d.%d" % (get_platform(), *sys.version_info[:2])
 src = os.path.join("build", "lib.%s" % PLAT_SPEC)
 sys.path.append(src)
 

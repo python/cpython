@@ -238,13 +238,14 @@ class HelperFunctionsTests(unittest.TestCase):
             self.assertEqual(len(dirs), 2)
             wanted = os.path.join('/Library',
                                   sysconfig.get_config_var("PYTHONFRAMEWORK"),
-                                  sys.version[:3],
+                                  '%d.%d' % sys.version_info[:2],
                                   'site-packages')
             self.assertEqual(dirs[1], wanted)
         elif os.sep == '/':
             # OS X non-framwework builds, Linux, FreeBSD, etc
             self.assertEqual(len(dirs), 1)
-            wanted = os.path.join('xoxo', 'lib', 'python' + sys.version[:3],
+            wanted = os.path.join('xoxo', 'lib',
+                                  'python%d.%d' % sys.version_info[:2],
                                   'site-packages')
             self.assertEqual(dirs[0], wanted)
         else:
