@@ -356,6 +356,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
 
     dirs = []
     nondirs = []
+    walk_dirs = []
 
     # We may not have read permission for top, in which case we can't
     # get a list of the files the directory contains.  os.walk
@@ -414,7 +415,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
                     walk_into = not is_symlink
 
                 if walk_into:
-                    yield from walk(entry.path, topdown, onerror, followlinks)
+                    walk_dirs.append(entry.path)
 
     # Yield before recursion if going top down
     if topdown:
@@ -431,6 +432,9 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             if followlinks or not islink(new_path):
                 yield from walk(new_path, topdown, onerror, followlinks)
     else:
+        # Recurse into sub-directories
+        for new_path in walk_dirs:
+            yield from walk(new_path, topdown, onerror, followlinks)
         # Yield after recursion if going bottom up
         yield top, dirs, nondirs
 
