@@ -427,10 +427,9 @@ class SubprocessMixin:
 
             create = asyncio.create_subprocess_exec(sys.executable, '-c',
                                                     'pass', loop=self.loop)
-            with warnings.catch_warnings(record=True) as warns:
+            with support.check_no_resource_warning(self):
                 with self.assertRaises(exc):
                     self.loop.run_until_complete(create)
-                self.assertEqual(warns, [])
 
 
 if sys.platform != 'win32':

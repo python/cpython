@@ -567,14 +567,11 @@ class ElementTreeTest(unittest.TestCase):
             self.assertFalse(f.closed)
         self.assertEqual(str(cm.exception), "unknown event 'bogus'")
 
-        with warnings.catch_warnings(record=True) as w:
-            warnings.filterwarnings("always", category=ResourceWarning)
+        with support.check_no_resource_warning(self):
             with self.assertRaises(ValueError) as cm:
                 iterparse(SIMPLE_XMLFILE, events)
             self.assertEqual(str(cm.exception), "unknown event 'bogus'")
             del cm
-            support.gc_collect()
-        self.assertEqual(w, [])
 
         source = io.BytesIO(
             b"<?xml version='1.0' encoding='iso-8859-1'?>\n"
@@ -601,15 +598,12 @@ class ElementTreeTest(unittest.TestCase):
         it = iterparse(TESTFN)
         action, elem = next(it)
         self.assertEqual((action, elem.tag), ('end', 'document'))
-        with warnings.catch_warnings(record=True) as w:
-            warnings.filterwarnings("always", category=ResourceWarning)
+        with support.check_no_resource_warning(self):
             with self.assertRaises(ET.ParseError) as cm:
                 next(it)
             self.assertEqual(str(cm.exception),
                     'junk after document element: line 1, column 12')
             del cm, it
-            support.gc_collect()
-        self.assertEqual(w, [])
 
     def test_writefile(self):
         elem = ET.Element("tag")
