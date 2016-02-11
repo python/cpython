@@ -86,8 +86,8 @@ _SCHEME_KEYS = ('stdlib', 'platstdlib', 'purelib', 'platlib', 'include',
  # FIXME don't rely on sys.version here, its format is an implementation detail
  # of CPython, use sys.version_info or sys.hexversion
 _PY_VERSION = sys.version.split()[0]
-_PY_VERSION_SHORT = sys.version[:3]
-_PY_VERSION_SHORT_NO_DOT = _PY_VERSION[0] + _PY_VERSION[2]
+_PY_VERSION_SHORT = '%d.%d' % sys.version_info[:2]
+_PY_VERSION_SHORT_NO_DOT = '%d%d' % sys.version_info[:2]
 _PREFIX = os.path.normpath(sys.prefix)
 _BASE_PREFIX = os.path.normpath(sys.base_prefix)
 _EXEC_PREFIX = os.path.normpath(sys.exec_prefix)
@@ -386,7 +386,7 @@ def _generate_posix_vars():
         module.build_time_vars = vars
         sys.modules[name] = module
 
-    pybuilddir = 'build/lib.%s-%s' % (get_platform(), sys.version[:3])
+    pybuilddir = 'build/lib.%s-%s' % (get_platform(), _PY_VERSION_SHORT)
     if hasattr(sys, "gettotalrefcount"):
         pybuilddir += '-pydebug'
     os.makedirs(pybuilddir, exist_ok=True)
@@ -518,7 +518,7 @@ def get_config_vars(*args):
         _CONFIG_VARS['exec_prefix'] = _EXEC_PREFIX
         _CONFIG_VARS['py_version'] = _PY_VERSION
         _CONFIG_VARS['py_version_short'] = _PY_VERSION_SHORT
-        _CONFIG_VARS['py_version_nodot'] = _PY_VERSION[0] + _PY_VERSION[2]
+        _CONFIG_VARS['py_version_nodot'] = _PY_VERSION_SHORT_NO_DOT
         _CONFIG_VARS['installed_base'] = _BASE_PREFIX
         _CONFIG_VARS['base'] = _PREFIX
         _CONFIG_VARS['installed_platbase'] = _BASE_EXEC_PREFIX

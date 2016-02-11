@@ -1911,10 +1911,10 @@ has the same effect as typing a particular string at the help> prompt.
 
     def intro(self):
         self.output.write('''
-Welcome to Python %s's help utility!
+Welcome to Python {0}'s help utility!
 
 If this is your first time using Python, you should definitely check out
-the tutorial on the Internet at http://docs.python.org/%s/tutorial/.
+the tutorial on the Internet at http://docs.python.org/{0}/tutorial/.
 
 Enter the name of any module, keyword, or topic to get help on writing
 Python programs and using Python modules.  To quit this help utility and
@@ -1924,7 +1924,7 @@ To get a list of available modules, keywords, symbols, or topics, type
 "modules", "keywords", "symbols", or "topics".  Each module also comes
 with a one-line summary of what it does; to list the modules whose name
 or summary contain a given string such as "spam", type "modules spam".
-''' % tuple([sys.version[:3]]*2))
+'''.format('%d.%d' % sys.version_info[:2]))
 
     def list(self, items, columns=4, width=80):
         items = list(sorted(items))

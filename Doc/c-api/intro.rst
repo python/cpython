@@ -64,9 +64,10 @@ The header files are typically installed with Python.  On Unix, these  are
 located in the directories :file:`{prefix}/include/pythonversion/` and
 :file:`{exec_prefix}/include/pythonversion/`, where :envvar:`prefix` and
 :envvar:`exec_prefix` are defined by the corresponding parameters to Python's
-:program:`configure` script and *version* is ``sys.version[:3]``.  On Windows,
-the headers are installed in :file:`{prefix}/include`, where :envvar:`prefix` is
-the installation directory specified to the installer.
+:program:`configure` script and *version* is
+``'%d.%d' % sys.version_info[:2]``.  On Windows, the headers are installed
+in :file:`{prefix}/include`, where :envvar:`prefix` is the installation
+directory specified to the installer.
 
 To include the headers, place both directories (if different) on your compiler's
 search path for includes.  Do *not* place the parent directories on the search
