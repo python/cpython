@@ -741,6 +741,10 @@ Tools/Demos
 C API
 -----
 
+- Issue #26312: SystemError is now raised in all programming bugs with using
+  PyArg_ParseTupleAndKeywords().  RuntimeError did raised before in some
+  programming bugs.
+
 - Issue #26198: ValueError is now raised instead of TypeError on buffer
   overflow in parsing "es#" and "et#" format units.  SystemError is now raised
   instead of TypeError on programmical error in parsing format string.
