@@ -1891,14 +1891,29 @@ features:
    :attr:`~DirEntry.path` attributes of each :class:`DirEntry` will be of
    the same type as *path*.
 
+   The :func:`scandir` iterator supports the :term:`context manager` protocol
+   and has the following method:
+
+   .. method:: scandir.close()
+
+      Close the iterator and free acquired resources.
+
+      This is called automatically when the iterator is exhausted or garbage
+      collected, or when an error happens during iterating.  However it
+      is advisable to call it explicitly or use the :keyword:`with`
+      statement.
+
+      .. versionadded:: 3.6
+
    The following example shows a simple use of :func:`scandir` to display all
    the files (excluding directories) in the given *path* that don't start with
    ``'.'``. The ``entry.is_file()`` call will generally not make an additional
    system call::
 
-      for entry in os.scandir(path):
-         if not entry.name.startswith('.') and entry.is_file():
-             print(entry.name)
+      with os.scandir(path) as it:
+          for entry in it:
+              if not entry.name.startswith('.') and entry.is_file():
+                  print(entry.name)
 
    .. note::
 
@@ -1913,6 +1928,12 @@ features:
       functions.
 
    .. versionadded:: 3.5
+
+   .. versionadded:: 3.6
+      Added support for the :term:`context manager` protocol and the
+      :func:`~scandir.close()` method.  If a :func:`scandir` iterator is neither
+      exhausted nor explicitly closed a :exc:`ResourceWarning` will be emitted
+      in its destructor.
 
 
 .. class:: DirEntry
