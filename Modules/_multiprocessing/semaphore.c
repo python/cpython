@@ -429,7 +429,7 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     int kind, maxvalue, value;
     PyObject *result;
     static char *kwlist[] = {"kind", "value", "maxvalue", NULL};
-    static int counter = 0;
+    int try = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwds, "iii", kwlist,
                                      &kind, &value, &maxvalue))
@@ -440,10 +440,18 @@ semlock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         return NULL;
     }
 
-    PyOS_snprintf(buffer, sizeof(buffer), "/mp%ld-%d", (long)getpid(), counter++);
+    /* Create a semaphore with a unique name. The bytes returned by
+     * _PyOS_URandom() are treated as unsigned long to ensure that the filename
+     * is valid (no special characters). */
+    do {
+        unsigned long suffix;
+        _PyOS_URandom((char *)&suffix, sizeof(suffix));
+        PyOS_snprintf(buffer, sizeof(buffer), "/mp%ld-%lu", (long)getpid(),
+                      suffix);
+        SEM_CLEAR_ERROR();
+        handle = SEM_CREATE(buffer, value, maxvalue);
+    } while ((handle == SEM_FAILED) && (errno == EEXIST) && (++try < 100));
 
-    SEM_CLEAR_ERROR();
-    handle = SEM_CREATE(buffer, value, maxvalue);
     /* On Windows we should fail if GetLastError()==ERROR_ALREADY_EXISTS */
     if (handle == SEM_FAILED || SEM_GET_LAST_ERROR() != 0)
         goto failure;

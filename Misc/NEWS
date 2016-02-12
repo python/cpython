@@ -50,6 +50,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24303: Fix random EEXIST upon multiprocessing semaphores creation with
+  Linux PID namespaces enabled.
+
 - Issue #25698: Importing module if the stack is too deep no longer replaces
   imported module with the empty one.
 
