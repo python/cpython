@@ -1,0 +1,2 @@
+Fix random EEXIST upon multiprocessing semaphore creation when using Linux
+PID namespaces.
