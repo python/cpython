@@ -55,8 +55,8 @@ if test -z "$VIRTUAL_ENV_DISABLE_PROMPT"
     # with the original prompt function renamed, we can override with our own.
     function fish_prompt
         # Prompt override?
-        if test -n "__VENV_PROMPT__"
-            printf "%s%s%s" "__VENV_PROMPT__" (set_color normal) (_old_fish_prompt)
+        if test -n "$__VENV_PROMPT__"
+            printf "%s%s%s" "$__VENV_PROMPT__" (set_color normal) (_old_fish_prompt)
             return
         end
         # ...Otherwise, prepend env
