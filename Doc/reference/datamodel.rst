@@ -1234,8 +1234,9 @@ Basic customization
 
 .. method:: object.__format__(self, format_spec)
 
-   Called by the :func:`format` built-in function (and by extension, the
-   :meth:`str.format` method of class :class:`str`) to produce a "formatted"
+   Called by the :func:`format` built-in function,
+   and by extension, evaluation of :ref:`formatted string literals
+   <f-strings>` and the :meth:`str.format` method, to produce a "formatted"
    string representation of an object. The ``format_spec`` argument is
    a string that contains a description of the formatting options desired.
    The interpretation of the ``format_spec`` argument is up to the type

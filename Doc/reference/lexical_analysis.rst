@@ -405,7 +405,8 @@ String literals are described by the following lexical definitions:
 
 .. productionlist::
    stringliteral: [`stringprefix`](`shortstring` | `longstring`)
-   stringprefix: "r" | "u" | "R" | "U"
+   stringprefix: "r" | "u" | "R" | "U" | "f" | "F"
+               : | "fr" | "Fr" | "fR" | "FR" | "rf" | "rF" | "Rf" | "RF"
    shortstring: "'" `shortstringitem`* "'" | '"' `shortstringitem`* '"'
    longstring: "'''" `longstringitem`* "'''" | '"""' `longstringitem`* '"""'
    shortstringitem: `shortstringchar` | `stringescapeseq`
@@ -463,6 +464,11 @@ is not supported.
    Support for the unicode legacy literal (``u'value'``) was reintroduced
    to simplify the maintenance of dual Python 2.x and 3.x codebases.
    See :pep:`414` for more information.
+
+A string literal with ``'f'`` or ``'F'`` in its prefix is a
+:dfn:`formatted string literal`; see :ref:`f-strings`.  The ``'f'`` may be
+combined with ``'r'``, but not with ``'b'`` or ``'u'``, therefore raw
+formatted strings are possible, but formatted bytes literals are not.
 
 In triple-quoted literals, unescaped newlines and quotes are allowed (and are
 retained), except that three unescaped quotes in a row terminate the literal.  (A
@@ -584,7 +590,105 @@ comments to parts of strings, for example::
 Note that this feature is defined at the syntactical level, but implemented at
 compile time.  The '+' operator must be used to concatenate string expressions
 at run time.  Also note that literal concatenation can use different quoting
-styles for each component (even mixing raw strings and triple quoted strings).
+styles for each component (even mixing raw strings and triple quoted strings),
+and formatted string literals may be concatenated with plain string literals.
+
+
+.. index::
+   single: formatted string literal
+   single: interpolated string literal
+   single: string; formatted literal
+   single: string; interpolated literal
+   single: f-string
+.. _f-strings:
+
+Formatted string literals
+-------------------------
+
+.. versionadded:: 3.6
+
+A :dfn:`formatted string literal` or :dfn:`f-string` is a string literal
+that is prefixed with ``'f'`` or ``'F'``.  These strings may contain
+replacement fields, which are expressions delimited by curly braces ``{}``.
+While other string literals always have a constant value, formatted strings
+are really expressions evaluated at run time.
+
+Escape sequences are decoded like in ordinary string literals (except when
+a literal is also marked as a raw string).  After decoding, the grammar
+for the contents of the string is:
+
+.. productionlist::
+   f_string: (`literal_char` | "{{" | "}}" | `replacement_field`)*
+   replacement_field: "{" `f_expression` ["!" `conversion`] [":" `format_spec`] "}"
+   f_expression: `conditional_expression` ("," `conditional_expression`)* [","]
+               : | `yield_expression`
+   conversion: "s" | "r" | "a"
+   format_spec: (`literal_char` | NULL | `replacement_field`)*
+   literal_char: <any code point except "{", "}" or NULL>
+
+The parts of the string outside curly braces are treated literally,
+except that any doubled curly braces ``'{{'`` or ``'}}'`` are replaced
+with the corresponding single curly brace.  A single opening curly
+bracket ``'{'`` marks a replacement field, which starts with a
+Python expression.  After the expression, there may be a conversion field,
+introduced by an exclamation point ``'!'``.  A format specifier may also
+be appended, introduced by a colon ``':'``.  A replacement field ends
+with a closing curly bracket ``'}'``.
+
+Expressions in formatted string literals are treated like regular
+Python expressions surrounded by parentheses, with a few exceptions.
+An empty expression is not allowed, and a :keyword:`lambda` expression
+must be surrounded by explicit parentheses.  Replacement expressions
+can contain line breaks (e.g. in triple-quoted strings), but they
+cannot contain comments.  Each expression is evaluated in the context
+where the formatted string literal appears, in order from left to right.
+
+If a conversion is specified, the result of evaluating the expression
+is converted before formatting.  Conversion ``'!s'`` calls :func:`str` on
+the result, ``'!r'`` calls :func:`repr`, and ``'!a'`` calls :func:`ascii`.
+
+The result is then formatted using the :func:`format` protocol.  The
+format specifier is passed to the :meth:`__format__` method of the
+expression or conversion result.  An empty string is passed when the
+format specifier is omitted.  The formatted result is then included in
+the final value of the whole string.
+
+Top-level format specifiers may include nested replacement fields.
+These nested fields may include their own conversion fields and
+format specifiers, but may not include more deeply-nested replacement fields.
+
+Formatted string literals may be concatenated, but replacement fields
+cannot be split across literals.
+
+Some examples of formatted string literals::
+
+   >>> name = "Fred"
+   >>> f"He said his name is {name!r}."
+   "He said his name is 'Fred'."
+   >>> f"He said his name is {repr(name)}."  # repr() is equivalent to !r
+   "He said his name is 'Fred'."
+   >>> width = 10
+   >>> precision = 4
+   >>> value = decimal.Decimal("12.34567")
+   >>> f"result: {value:{width}.{precision}}"  # nested fields
+   'result:      12.35'
+
+A consequence of sharing the same syntax as regular string literals is
+that characters in the replacement fields must not conflict with the
+quoting used in the outer formatted string literal.  Also, escape
+sequences normally apply to the outer formatted string literal,
+rather than inner string literals::
+
+   f"abc {a["x"]} def"    # error: outer string literal ended prematurely
+   f"abc {a[\"x\"]} def"  # workaround: escape the inner quotes
+   f"abc {a['x']} def"    # workaround: use different quoting
+
+   f"newline: {ord('\n')}"   # error: literal line break in inner string
+   f"newline: {ord('\\n')}"  # workaround: double escaping
+   fr"newline: {ord('\n')}"  # workaround: raw outer string
+
+See also :pep:`498` for the proposal that added formatted string literals,
+and :meth:`str.format`, which uses a related format string mechanism.
 
 
 .. _numbers:

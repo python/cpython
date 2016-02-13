@@ -62,7 +62,7 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.6.
    Brevity is key.
 
-* None yet.
+* PEP 498: :ref:`Formatted string literals <whatsnew-fstrings>`
 
 .. PEP-sized items next.
 
@@ -78,6 +78,24 @@ Summary -- Release highlights
 
     :pep:`4XX` - Python Virtual Environments
        PEP written by Carl Meyer
+
+
+.. _whatsnew-fstrings:
+
+PEP 498: Formatted string literals
+----------------------------------
+
+Formatted string literals are a new kind of string literal, prefixed
+with ``'f'``.  They are similar to the format strings accepted by
+:meth:`str.format`.  They contain replacement fields surrounded by
+curly braces.  The replacement fields are expressions, which are
+evaluated at run time, and then formatted using the :func:`format` protocol.
+
+    >>> name = "Fred"
+    >>> f"He said his name is {name}."
+    'He said his name is Fred.'
+
+See :pep:`498` and the main documentation at :ref:`f-strings`.
 
 
 Other Language Changes
