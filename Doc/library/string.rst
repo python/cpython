@@ -188,7 +188,9 @@ Format String Syntax
 
 The :meth:`str.format` method and the :class:`Formatter` class share the same
 syntax for format strings (although in the case of :class:`Formatter`,
-subclasses can define their own format string syntax).
+subclasses can define their own format string syntax).  The syntax is
+related to that of :ref:`formatted string literals <f-strings>`, but
+there are differences.
 
 Format strings contain "replacement fields" surrounded by curly braces ``{}``.
 Anything that is not contained in braces is considered literal text, which is
@@ -283,7 +285,8 @@ Format Specification Mini-Language
 
 "Format specifications" are used within replacement fields contained within a
 format string to define how individual values are presented (see
-:ref:`formatstrings`).  They can also be passed directly to the built-in
+:ref:`formatstrings` and :ref:`f-strings`).
+They can also be passed directly to the built-in
 :func:`format` function.  Each formattable type may define how the format
 specification is to be interpreted.
 
@@ -308,7 +311,8 @@ The general form of a *standard format specifier* is:
 If a valid *align* value is specified, it can be preceded by a *fill*
 character that can be any character and defaults to a space if omitted.
 It is not possible to use a literal curly brace ("``{``" or "``}``") as
-the *fill* character when using the :meth:`str.format`
+the *fill* character in a :ref:`formatted string literal
+<f-strings>` or when using the :meth:`str.format`
 method.  However, it is possible to insert a curly brace
 with a nested replacement field.  This limitation doesn't
 affect the :func:`format` function.
