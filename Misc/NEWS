@@ -69,6 +69,9 @@ Core and Builtins
 
 - Issue #25660: Fix TAB key behaviour in REPL with readline.
 
+- Issue #25887: Raise a RuntimeError when a coroutine object is awaited
+  more than once.
+
 
 Library
 -------
