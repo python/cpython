@@ -569,6 +569,147 @@ class CoroutineTest(unittest.TestCase):
                                     "coroutine ignored GeneratorExit"):
             c.close()
 
+    def test_func_15(self):
+        # See http://bugs.python.org/issue25887 for details
+
+        async def spammer():
+            return 'spam'
+        async def reader(coro):
+            return await coro
+
+        spammer_coro = spammer()
+
+        with self.assertRaisesRegex(StopIteration, 'spam'):
+            reader(spammer_coro).send(None)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'cannot reuse already awaited coroutine'):
+            reader(spammer_coro).send(None)
+
+    def test_func_16(self):
+        # See http://bugs.python.org/issue25887 for details
+
+        @types.coroutine
+        def nop():
+            yield
+        async def send():
+            await nop()
+            return 'spam'
+        async def read(coro):
+            await nop()
+            return await coro
+
+        spammer = send()
+
+        reader = read(spammer)
+        reader.send(None)
+        reader.send(None)
+        with self.assertRaisesRegex(Exception, 'ham'):
+            reader.throw(Exception('ham'))
+
+        reader = read(spammer)
+        reader.send(None)
+        with self.assertRaisesRegex(RuntimeError,
+                                    'cannot reuse already awaited coroutine'):
+            reader.send(None)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'cannot reuse already awaited coroutine'):
+            reader.throw(Exception('wat'))
+
+    def test_func_17(self):
+        # See http://bugs.python.org/issue25887 for details
+
+        async def coroutine():
+            return 'spam'
+
+        coro = coroutine()
+        with self.assertRaisesRegex(StopIteration, 'spam'):
+            coro.send(None)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'cannot reuse already awaited coroutine'):
+            coro.send(None)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'cannot reuse already awaited coroutine'):
+            coro.throw(Exception('wat'))
+
+        # Closing a coroutine shouldn't raise any exception even if it's
+        # already closed/exhausted (similar to generators)
+        coro.close()
+        coro.close()
+
+    def test_func_18(self):
+        # See http://bugs.python.org/issue25887 for details
+
+        async def coroutine():
+            return 'spam'
+
+        coro = coroutine()
+        await_iter = coro.__await__()
+        it = iter(await_iter)
+
+        with self.assertRaisesRegex(StopIteration, 'spam'):
+            it.send(None)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'cannot reuse already awaited coroutine'):
+            it.send(None)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'cannot reuse already awaited coroutine'):
+            # Although the iterator protocol requires iterators to
+            # raise another StopIteration here, we don't want to do
+            # that.  In this particular case, the iterator will raise
+            # a RuntimeError, so that 'yield from' and 'await'
+            # expressions will trigger the error, instead of silently
+            # ignoring the call.
+            next(it)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'cannot reuse already awaited coroutine'):
+            it.throw(Exception('wat'))
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    'cannot reuse already awaited coroutine'):
+            it.throw(Exception('wat'))
+
+        # Closing a coroutine shouldn't raise any exception even if it's
+        # already closed/exhausted (similar to generators)
+        it.close()
+        it.close()
+
+    def test_func_19(self):
+        CHK = 0
+
+        @types.coroutine
+        def foo():
+            nonlocal CHK
+            yield
+            try:
+                yield
+            except GeneratorExit:
+                CHK += 1
+
+        async def coroutine():
+            await foo()
+
+        coro = coroutine()
+
+        coro.send(None)
+        coro.send(None)
+
+        self.assertEqual(CHK, 0)
+        coro.close()
+        self.assertEqual(CHK, 1)
+
+        for _ in range(3):
+            # Closing a coroutine shouldn't raise any exception even if it's
+            # already closed/exhausted (similar to generators)
+            coro.close()
+            self.assertEqual(CHK, 1)
+
     def test_cr_await(self):
         @types.coroutine
         def a():
