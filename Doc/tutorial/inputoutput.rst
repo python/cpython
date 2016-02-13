@@ -25,7 +25,8 @@ first way is to do all the string handling yourself; using string slicing and
 concatenation operations you can create any layout you can imagine.  The
 string type has some methods that perform useful operations for padding
 strings to a given column width; these will be discussed shortly.  The second
-way is to use the :meth:`str.format` method.
+way is to use :ref:`formatted string literals <f-strings>`, or the
+:meth:`str.format` method.
 
 The :mod:`string` module contains a :class:`~string.Template` class which offers
 yet another way to substitute values into strings.

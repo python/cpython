@@ -1450,8 +1450,8 @@ multiple fragments.
 
    For more information on the ``str`` class and its methods, see
    :ref:`textseq` and the :ref:`string-methods` section below.  To output
-   formatted strings, see the :ref:`formatstrings` section.  In addition,
-   see the :ref:`stringservices` section.
+   formatted strings, see the :ref:`f-strings` and :ref:`formatstrings`
+   sections.  In addition, see the :ref:`stringservices` section.
 
 
 .. index::
@@ -2053,8 +2053,8 @@ expression support in the :mod:`re` module).
 .. index::
    single: formatting, string (%)
    single: interpolation, string (%)
-   single: string; formatting
-   single: string; interpolation
+   single: string; formatting, printf
+   single: string; interpolation, printf
    single: printf-style formatting
    single: sprintf-style formatting
    single: % formatting
@@ -2064,9 +2064,10 @@ expression support in the :mod:`re` module).
 
    The formatting operations described here exhibit a variety of quirks that
    lead to a number of common errors (such as failing to display tuples and
-   dictionaries correctly).  Using the newer :meth:`str.format` interface
-   helps avoid these errors, and also provides a generally more powerful,
-   flexible and extensible approach to formatting text.
+   dictionaries correctly).  Using the newer :ref:`formatted
+   string literals <f-strings>` or the :meth:`str.format` interface
+   helps avoid these errors.  These alternatives also provide more powerful,
+   flexible and extensible approaches to formatting text.
 
 String objects have one unique built-in operation: the ``%`` operator (modulo).
 This is also known as the string *formatting* or *interpolation* operator.
