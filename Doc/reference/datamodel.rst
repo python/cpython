@@ -2316,6 +2316,10 @@ Coroutines also have the methods listed below, which are analogous to
 those of generators (see :ref:`generator-methods`).  However, unlike
 generators, coroutines do not directly support iteration.
 
+.. versionchanged:: 3.5.2
+   It is a :exc:`RuntimeError` to await on a coroutine more than once.
+
+
 .. method:: coroutine.send(value)
 
    Starts or resumes execution of the coroutine.  If *value* is ``None``,
