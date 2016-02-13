@@ -180,6 +180,9 @@ Core and Builtins
   single-digit longs.  Microbenchmarks show 2-2.5x improvement.  Built-in
   'divmod' function is now also ~10% faster.
 
+- Issue #25887: Raise a RuntimeError when a coroutine object is awaited
+  more than once.
+
 Library
 -------
 
