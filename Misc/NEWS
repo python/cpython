@@ -256,6 +256,12 @@ Windows
 - Issue #26065: Excludes venv from library when generating embeddable
   distro.
 
+Tools/Demos
+-----------
+
+- Issue #26316: Fix variable name typo in Argument Clinic.
+
+
 What's New in Python 3.5.1 final?
 =================================
 
