@@ -199,7 +199,7 @@ def linear_format(s, **kwargs):
             add('\n')
             continue
 
-        name, curl, trailing = trailing.partition('}')
+        name, curly, trailing = trailing.partition('}')
         if not curly or name not in kwargs:
             add(line)
             add('\n')
