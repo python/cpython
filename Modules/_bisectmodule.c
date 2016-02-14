@@ -12,7 +12,8 @@ static Py_ssize_t
 internal_bisect_right(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
 {
     PyObject *litem;
-    Py_ssize_t mid, res;
+    Py_ssize_t mid;
+    int res;
 
     if (lo < 0) {
         PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
@@ -115,7 +116,8 @@ static Py_ssize_t
 internal_bisect_left(PyObject *list, PyObject *item, Py_ssize_t lo, Py_ssize_t hi)
 {
     PyObject *litem;
-    Py_ssize_t mid, res;
+    Py_ssize_t mid;
+    int res;
 
     if (lo < 0) {
         PyErr_SetString(PyExc_ValueError, "lo must be non-negative");
