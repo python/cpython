@@ -1,18 +1,17 @@
 # HG changeset patch
-# Parent  ff8a7557607cffd626997e57ed31c1012a3018aa
+# Parent  d377390f787c0739a3e89f669def72d7167e5108
 # openssl_sdk_makedepend.patch
 #
-# 	using openssl 1.0.2e
+# 	using openssl 1.0.2f
 #
 # - support building with an OS X SDK
-# - allow "make depend" to use compilers with names other than "gcc"
 
 diff Configure
 
 diff --git a/Configure b/Configure
 --- a/Configure
 +++ b/Configure
-@@ -635,12 +635,12 @@
+@@ -638,12 +638,12 @@
  
  ##### MacOS X (a.k.a. Rhapsody or Darwin) setup
  "rhapsody-ppc-cc","cc:-O3 -DB_ENDIAN::(unknown):MACOSX_RHAPSODY::BN_LLONG RC4_CHAR RC4_CHUNK DES_UNROLL BF_PTR:${no_asm}::",
@@ -31,7 +30,7 @@ diff --git a/Configure b/Configure
  "debug-darwin-ppc-cc","cc:-DBN_DEBUG -DREF_CHECK -DCONF_DEBUG -DCRYPTO_MDEBUG -DB_ENDIAN -g -Wall -O::-D_REENTRANT:MACOSX::BN_LLONG RC4_CHAR RC4_CHUNK DES_UNROLL BF_PTR:${ppc32_asm}:osx32:dlfcn:darwin-shared:-fPIC:-dynamiclib:.\$(SHLIB_MAJOR).\$(SHLIB_MINOR).dylib",
  # iPhoneOS/iOS
  "iphoneos-cross","llvm-gcc:-O3 -isysroot \$(CROSS_TOP)/SDKs/\$(CROSS_SDK) -fomit-frame-pointer -fno-common::-D_REENTRANT:iOS:-Wl,-search_paths_first%:BN_LLONG RC4_CHAR RC4_CHUNK DES_UNROLL BF_PTR:${no_asm}:dlfcn:darwin-shared:-fPIC -fno-common:-dynamiclib:.\$(SHLIB_MAJOR).\$(SHLIB_MINOR).dylib",
-@@ -1714,8 +1714,7 @@
+@@ -1717,8 +1717,7 @@
  		s/^CC=.*$/CC= $cc/;
  		s/^AR=\s*ar/AR= $ar/;
  		s/^RANLIB=.*/RANLIB= $ranlib/;
@@ -41,16 +40,3 @@ diff --git a/Configure b/Configure
  		}
  	s/^CFLAG=.*$/CFLAG= $cflags/;
  	s/^DEPFLAG=.*$/DEPFLAG=$depflags/;
-diff --git a/util/domd b/util/domd
---- a/util/domd
-+++ b/util/domd
-@@ -14,8 +14,7 @@
- cp Makefile Makefile.save
- # fake the presence of Kerberos
- touch $TOP/krb5.h
--if ${MAKEDEPEND} --version 2>&1 | grep -q "clang" ||
--   echo $MAKEDEPEND | grep -q "gcc"; then
-+if true ; then
-     args=""
-     while [ $# -gt 0 ]; do
- 	if [ "$1" != "--" ]; then args="$args $1"; fi
