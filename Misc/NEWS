@@ -730,7 +730,7 @@ Build
   Previously it could fail to compile properly if the math and cmath builds
   were concurrent.
 
-- Issue #25798: Update OS X 10.5 installer to use OpenSSL 1.0.2e.
+- Issue #26268: Update OS X 10.5 installer to use OpenSSL 1.0.2f.
 
 Windows
 -------
