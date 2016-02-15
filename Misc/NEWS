@@ -112,6 +112,9 @@ Library
 
 - Issue #23914: Fixed SystemError raised by CPickle unpickler on broken data.
 
+- Issue #25924: Avoid unnecessary serialization of getaddrinfo(3) calls on
+  OS X versions 10.5 or higher.  Original patch by A. Jesse Jiryu Davis..
+
 Tests
 -----
 

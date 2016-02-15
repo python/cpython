@@ -82,6 +82,11 @@ Local naming conventions:
 */
 
 #ifdef __APPLE__
+#include <AvailabilityMacros.h>
+/* for getaddrinfo thread safety test on old versions of OS X */
+#ifndef MAC_OS_X_VERSION_10_5
+#define MAC_OS_X_VERSION_10_5 1050
+#endif
   /*
    * inet_aton is not available on OSX 10.3, yet we want to use a binary
    * that was build on 10.4 or later to work on that release, weak linking
@@ -183,8 +188,19 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 #include <sys/param.h>
 #endif
 /* On systems on which getaddrinfo() is believed to not be thread-safe,
-   (this includes the getaddrinfo emulation) protect access with a lock. */
-#if defined(WITH_THREAD) && (defined(__APPLE__) || \
+   (this includes the getaddrinfo emulation) protect access with a lock.
+
+   getaddrinfo is thread-safe on Mac OS X 10.5 and later. Originally it was
+   a mix of code including an unsafe implementation from an old BSD's
+   libresolv. In 10.5 Apple reimplemented it as a safe IPC call to the
+   mDNSResponder process. 10.5 is the first be UNIX '03 certified, which
+   includes the requirement that getaddrinfo be thread-safe.
+
+   See issue #25924 for details.
+ */
+#if defined(WITH_THREAD) && ( \
+    (defined(__APPLE__) && \
+        MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5) || \
     (defined(__FreeBSD__) && __FreeBSD_version+0 < 503000) || \
     defined(__OpenBSD__) || defined(__NetBSD__) || \
     defined(__VMS) || !defined(HAVE_GETADDRINFO))
