@@ -78,6 +78,9 @@ slice notation makes this especially convenient::
    >>> words
    ['defenestrate', 'cat', 'window', 'defenestrate']
 
+With ``for w in words:``, the example would attempt to create an infinite list,
+inserting ``defenestrate`` over and over again.
+
 
 .. _tut-range:
 
