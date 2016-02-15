@@ -136,8 +136,8 @@ Build
 
 - Issue #25696: Fix installation of Python on UNIX with make -j9.
 
-- Issue #25798: Update OS X 10.5+ 32-bit-only installer to build
-  and link with OpenSSL 1.0.2e.
+- Issue #26268: Update OS X 10.5+ 32-bit-only installer to build
+  and link with OpenSSL 1.0.2f.
 
 
 What's New in Python 2.7.11?
