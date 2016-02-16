@@ -11,7 +11,7 @@ Stream functions
 
 .. note::
 
-   The top-level functions in this module are meant convenience wrappers
+   The top-level functions in this module are meant as convenience wrappers
    only; there's really nothing special there, and if they don't do
    exactly what you want, feel free to copy their code.
 
