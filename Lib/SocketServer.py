@@ -296,6 +296,8 @@ class BaseServer:
             except:
                 self.handle_error(request, client_address)
                 self.shutdown_request(request)
+        else:
+            self.shutdown_request(request)
 
     def handle_timeout(self):
         """Called if no new request arrives within self.timeout.

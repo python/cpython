@@ -326,6 +326,29 @@ class SocketServerTest(unittest.TestCase):
                 SocketServer.TCPServer((HOST, -1),
                                        SocketServer.StreamRequestHandler)
 
+    def test_shutdown_request_called_if_verify_request_false(self):
+        # Issue #26309: BaseServer should call shutdown_request even if
+        # verify_request is False
+        result = {"shutdown_called": False}
+
+        class MyServer(SocketServer.TCPServer):
+            def verify_request(self, request, client_address):
+                return False
+
+            def shutdown_request(self, request):
+                result["shutdown_called"] = True
+                SocketServer.TCPServer.shutdown_request(self, request)
+
+        def connect_to_server(proto, addr):
+            s = socket.socket(proto, socket.SOCK_STREAM)
+            s.connect(addr)
+            s.close()
+
+        self.run_server(MyServer,
+                        SocketServer.StreamRequestHandler,
+                        connect_to_server)
+        self.assertEqual(result["shutdown_called"], True)
+
 
 def test_main():
     if imp.lock_held():
