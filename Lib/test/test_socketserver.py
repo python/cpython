@@ -280,6 +280,30 @@ class SocketServerTest(unittest.TestCase):
                 socketserver.TCPServer((HOST, -1),
                                        socketserver.StreamRequestHandler)
 
+    def test_shutdown_request_called_if_verify_request_false(self):
+        # Issue #26309: BaseServer should call shutdown_request even if
+        # verify_request is False
+        shutdown_called = False
+
+        class MyServer(socketserver.TCPServer):
+            def verify_request(self, request, client_address):
+                return False
+
+            def shutdown_request(self, request):
+                nonlocal shutdown_called
+                shutdown_called = True
+                super().shutdown_request(request)
+
+        def connect_to_server(proto, addr):
+            s = socket.socket(proto, socket.SOCK_STREAM)
+            s.connect(addr)
+            s.close()
+
+        self.run_server(MyServer,
+                        socketserver.StreamRequestHandler,
+                        connect_to_server)
+        self.assertEqual(shutdown_called, True)
+
 
 class MiscTestCase(unittest.TestCase):
 
