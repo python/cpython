@@ -50,6 +50,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25939: On Windows open the cert store readonly in ssl.enum_certificates.
+
 - Issue #24303: Fix random EEXIST upon multiprocessing semaphores creation with
   Linux PID namespaces enabled.
 
