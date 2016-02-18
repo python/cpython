@@ -172,7 +172,7 @@ that limit.
 Repetitions such as ``*`` are :dfn:`greedy`; when repeating a RE, the matching
 engine will try to repeat it as many times as possible. If later portions of the
 pattern don't match, the matching engine will then back up and try again with
-few repetitions.
+fewer repetitions.
 
 A step-by-step example will make this more obvious.  Let's consider the
 expression ``a[bcd]*b``.  This matches the letter ``'a'``, zero or more letters
