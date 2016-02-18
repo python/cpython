@@ -76,6 +76,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26309: In the "socketserver" module, shut down the request (closing
+  the connected socket) when verify_request() returns false.  Patch by Aviv
+  Palivoda.
+
 - Issue #25939: On Windows open the cert store readonly in ssl.enum_certificates.
 
 - Issue #25995: os.walk() no longer uses FDs proportional to the tree depth.
