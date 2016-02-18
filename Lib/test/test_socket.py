@@ -1374,6 +1374,20 @@ class GeneralModuleTests(unittest.TestCase):
             self.assertRaises(ValueError, fp.writable)
             self.assertRaises(ValueError, fp.seekable)
 
+    def test_makefile_mode(self):
+        for mode in 'r', 'rb', 'rw', 'w', 'wb':
+            with self.subTest(mode=mode):
+                with socket.socket() as sock:
+                    with sock.makefile(mode) as fp:
+                        self.assertEqual(fp.mode, mode)
+
+    def test_makefile_invalid_mode(self):
+        for mode in 'rt', 'x', '+', 'a':
+            with self.subTest(mode=mode):
+                with socket.socket() as sock:
+                    with self.assertRaisesRegex(ValueError, 'invalid mode'):
+                        sock.makefile(mode)
+
     def test_pickle(self):
         sock = socket.socket()
         with sock:
