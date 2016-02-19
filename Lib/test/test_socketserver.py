@@ -280,30 +280,6 @@ class SocketServerTest(unittest.TestCase):
                 socketserver.TCPServer((HOST, -1),
                                        socketserver.StreamRequestHandler)
 
-    def test_shutdown_request_called_if_verify_request_false(self):
-        # Issue #26309: BaseServer should call shutdown_request even if
-        # verify_request is False
-        shutdown_called = False
-
-        class MyServer(socketserver.TCPServer):
-            def verify_request(self, request, client_address):
-                return False
-
-            def shutdown_request(self, request):
-                nonlocal shutdown_called
-                shutdown_called = True
-                super().shutdown_request(request)
-
-        def connect_to_server(proto, addr):
-            s = socket.socket(proto, socket.SOCK_STREAM)
-            s.connect(addr)
-            s.close()
-
-        self.run_server(MyServer,
-                        socketserver.StreamRequestHandler,
-                        connect_to_server)
-        self.assertEqual(shutdown_called, True)
-
 
 class MiscTestCase(unittest.TestCase):
 
@@ -316,6 +292,27 @@ class MiscTestCase(unittest.TestCase):
                 if getattr(mod_object, '__module__', None) == 'socketserver':
                     expected.append(name)
         self.assertCountEqual(socketserver.__all__, expected)
+
+    def test_shutdown_request_called_if_verify_request_false(self):
+        # Issue #26309: BaseServer should call shutdown_request even if
+        # verify_request is False
+
+        class MyServer(socketserver.TCPServer):
+            def verify_request(self, request, client_address):
+                return False
+
+            shutdown_called = 0
+            def shutdown_request(self, request):
+                self.shutdown_called += 1
+                socketserver.TCPServer.shutdown_request(self, request)
+
+        server = MyServer((HOST, 0), socketserver.StreamRequestHandler)
+        s = socket.socket(server.address_family, socket.SOCK_STREAM)
+        s.connect(server.server_address)
+        s.close()
+        server.handle_request()
+        self.assertEqual(server.shutdown_called, 1)
+        server.server_close()
 
 
 if __name__ == "__main__":
