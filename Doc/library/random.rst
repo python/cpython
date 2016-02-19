@@ -20,7 +20,7 @@ On the real line, there are functions to compute uniform, normal (Gaussian),
 lognormal, negative exponential, gamma, and beta distributions. For generating
 distributions of angles, the von Mises distribution is available.
 
-Almost all module functions depend on the basic function :func:`random`, which
+Almost all module functions depend on the basic function :func:`.random`, which
 generates a random float uniformly in the semi-open range [0.0, 1.0).  Python
 uses the Mersenne Twister as the core generator.  It produces 53-bit precision
 floats and has a period of 2\*\*19937-1.  The underlying implementation in C is
@@ -34,9 +34,9 @@ instance of the :class:`random.Random` class.  You can instantiate your own
 instances of :class:`Random` to get generators that don't share state.
 
 Class :class:`Random` can also be subclassed if you want to use a different
-basic generator of your own devising: in that case, override the :meth:`random`,
-:meth:`seed`, :meth:`getstate`, and :meth:`setstate` methods.
-Optionally, a new generator can supply a :meth:`getrandbits` method --- this
+basic generator of your own devising: in that case, override the :meth:`~Random.random`,
+:meth:`~Random.seed`, :meth:`~Random.getstate`, and :meth:`~Random.setstate` methods.
+Optionally, a new generator can supply a :meth:`~Random.getrandbits` method --- this
 allows :meth:`randrange` to produce selections over an arbitrarily large range.
 
 The :mod:`random` module also provides the :class:`SystemRandom` class which
@@ -125,7 +125,7 @@ Functions for sequences:
 
    Shuffle the sequence *x* in place. The optional argument *random* is a
    0-argument function returning a random float in [0.0, 1.0); by default, this is
-   the function :func:`random`.
+   the function :func:`.random`.
 
    Note that for even rather small ``len(x)``, the total number of permutations of
    *x* is larger than the period of most random number generators; this implies
@@ -285,7 +285,7 @@ change across Python versions, but two aspects are guaranteed not to change:
 * If a new seeding method is added, then a backward compatible seeder will be
   offered.
 
-* The generator's :meth:`random` method will continue to produce the same
+* The generator's :meth:`~Random.random` method will continue to produce the same
   sequence when the compatible seeder is given the same seed.
 
 .. _random-examples:
