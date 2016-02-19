@@ -438,20 +438,29 @@ be finalized; only the internally used file object will be closed. See the
 
    Add the :class:`TarInfo` object *tarinfo* to the archive. If *fileobj* is given,
    ``tarinfo.size`` bytes are read from it and added to the archive.  You can
-   create :class:`TarInfo` objects using :meth:`gettarinfo`.
+   create :class:`TarInfo` objects directly, or by using :meth:`gettarinfo`.
 
    .. note::
-
       On Windows platforms, *fileobj* should always be opened with mode ``'rb'`` to
       avoid irritation about the file size.
 
 
 .. method:: TarFile.gettarinfo(name=None, arcname=None, fileobj=None)
 
-   Create a :class:`TarInfo` object for either the file *name* or the file object
-   *fileobj* (using :func:`os.fstat` on its file descriptor).  You can modify some
-   of the :class:`TarInfo`'s attributes before you add it using :meth:`addfile`.
-   If given, *arcname* specifies an alternative name for the file in the archive.
+   Create a :class:`TarInfo` object from the result of :func:`os.stat` or
+   equivalent on an existing file.  The file is either named by *name*, or
+   specified as a file object *fileobj* with a file descriptor.  If
+   given, *arcname* specifies an alternative name for the file in the
+   archive, otherwise, the name is taken from *fileobj*’s
+   :attr:`~file.name` attribute, or the *name* argument.
+
+   You can modify some
+   of the :class:`TarInfo`’s attributes before you add it using :meth:`addfile`.
+   If the file object is not an ordinary file object positioned at the
+   beginning of the file, attributes such as :attr:`~TarInfo.size` may need
+   modifying.  This is the case for objects such as :class:`~gzip.GzipFile`.
+   The :attr:`~TarInfo.name` may also be modified, in which case *arcname*
+   could be a dummy string.
 
 
 .. method:: TarFile.close()

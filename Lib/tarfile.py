@@ -1844,11 +1844,12 @@ class TarFile(object):
         return [tarinfo.name for tarinfo in self.getmembers()]
 
     def gettarinfo(self, name=None, arcname=None, fileobj=None):
-        """Create a TarInfo object for either the file `name' or the file
-           object `fileobj' (using os.fstat on its file descriptor). You can
-           modify some of the TarInfo's attributes before you add it using
-           addfile(). If given, `arcname' specifies an alternative name for the
-           file in the archive.
+        """Create a TarInfo object from the result of os.stat or equivalent
+           on an existing file. The file is either named by `name', or
+           specified as a file object `fileobj' with a file descriptor. If
+           given, `arcname' specifies an alternative name for the file in the
+           archive, otherwise, the name is taken from the 'name' attribute of
+           'fileobj', or the 'name' argument.
         """
         self._check("aw")
 
@@ -1869,7 +1870,7 @@ class TarFile(object):
         # Now, fill the TarInfo object with
         # information specific for the file.
         tarinfo = self.tarinfo()
-        tarinfo.tarfile = self
+        tarinfo.tarfile = self  # Not needed
 
         # Use os.stat or os.lstat, depending on platform
         # and if symlinks shall be resolved.
@@ -2034,7 +2035,7 @@ class TarFile(object):
     def addfile(self, tarinfo, fileobj=None):
         """Add the TarInfo object `tarinfo' to the archive. If `fileobj' is
            given, tarinfo.size bytes are read from it and added to the archive.
-           You can create TarInfo objects using gettarinfo().
+           You can create TarInfo objects directly, or by using gettarinfo().
            On Windows platforms, `fileobj' should always be opened with mode
            'rb' to avoid irritation about the file size.
         """
