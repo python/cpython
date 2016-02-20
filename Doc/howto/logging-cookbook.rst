@@ -94,6 +94,61 @@ The output looks like this::
     2005-03-23 23:47:11,673 - spam_application - INFO -
        done with auxiliary_module.some_function()
 
+Logging from multiple threads
+-----------------------------
+
+Logging from multiple threads requires no special effort. The following example
+shows logging from the main (initIal) thread and another thread::
+
+    import logging
+    import threading
+    import time
+
+    def worker(arg):
+        while not arg['stop']:
+            logging.debug('Hi from myfunc')
+            time.sleep(0.5)
+
+    def main():
+        logging.basicConfig(level=logging.DEBUG, format='%(relativeCreated)6d %(threadName)s %(message)s')
+        info = {'stop': False}
+        thread = threading.Thread(target=worker, args=(info,))
+        thread.start()
+        while True:
+            try:
+                logging.debug('Hello from main')
+                time.sleep(0.75)
+            except KeyboardInterrupt:
+                info['stop'] = True
+                break
+        thread.join()
+
+    if __name__ == '__main__':
+        main()
+
+When run, the script should print something like the following::
+
+     0 Thread-1 Hi from myfunc
+     3 MainThread Hello from main
+   505 Thread-1 Hi from myfunc
+   755 MainThread Hello from main
+  1007 Thread-1 Hi from myfunc
+  1507 MainThread Hello from main
+  1508 Thread-1 Hi from myfunc
+  2010 Thread-1 Hi from myfunc
+  2258 MainThread Hello from main
+  2512 Thread-1 Hi from myfunc
+  3009 MainThread Hello from main
+  3013 Thread-1 Hi from myfunc
+  3515 Thread-1 Hi from myfunc
+  3761 MainThread Hello from main
+  4017 Thread-1 Hi from myfunc
+  4513 MainThread Hello from main
+  4518 Thread-1 Hi from myfunc
+
+This shows the logging output interspersed as one might expect. This approach
+works for more threads than shown here, of course.
+
 Multiple handlers and formatters
 --------------------------------
 
