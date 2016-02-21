@@ -196,6 +196,12 @@ Issue #26186: Remove an invalid type check in importlib.util.LazyLoader.
   the connected socket) when verify_request() returns false.  Patch by Aviv
   Palivoda.
 
+- Issue #23430: Change the socketserver module to only catch exceptions
+  raised from a request handler that are derived from Exception (instead of
+  BaseException).  Therefore SystemExit and KeyboardInterrupt no longer
+  trigger the handle_error() method, and will now to stop a single-threaded
+  server.
+
 - Issue #25939: On Windows open the cert store readonly in ssl.enum_certificates.
 
 - Issue #25995: os.walk() no longer uses FDs proportional to the tree depth.

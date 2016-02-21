@@ -132,6 +132,7 @@ import socket
 import selectors
 import os
 import errno
+import sys
 try:
     import threading
 except ImportError:
@@ -316,9 +317,12 @@ class BaseServer:
         if self.verify_request(request, client_address):
             try:
                 self.process_request(request, client_address)
-            except:
+            except Exception:
                 self.handle_error(request, client_address)
                 self.shutdown_request(request)
+            except:
+                self.shutdown_request(request)
+                raise
         else:
             self.shutdown_request(request)
 
@@ -372,12 +376,12 @@ class BaseServer:
         The default is to print a traceback and continue.
 
         """
-        print('-'*40)
-        print('Exception happened during processing of request from', end=' ')
-        print(client_address)
+        print('-'*40, file=sys.stderr)
+        print('Exception happened during processing of request from',
+            client_address, file=sys.stderr)
         import traceback
-        traceback.print_exc() # XXX But this goes to stderr!
-        print('-'*40)
+        traceback.print_exc()
+        print('-'*40, file=sys.stderr)
 
 
 class TCPServer(BaseServer):
@@ -601,16 +605,17 @@ class ForkingMixIn:
         else:
             # Child process.
             # This must never return, hence os._exit()!
+            status = 1
             try:
                 self.finish_request(request, client_address)
-                self.shutdown_request(request)
-                os._exit(0)
-            except:
+                status = 0
+            except Exception:
+                self.handle_error(request, client_address)
+            finally:
                 try:
-                    self.handle_error(request, client_address)
                     self.shutdown_request(request)
                 finally:
-                    os._exit(1)
+                    os._exit(status)
 
 
 class ThreadingMixIn:
@@ -628,9 +633,9 @@ class ThreadingMixIn:
         """
         try:
             self.finish_request(request, client_address)
-            self.shutdown_request(request)
-        except:
+        except Exception:
             self.handle_error(request, client_address)
+        finally:
             self.shutdown_request(request)
 
     def process_request(self, request, client_address):

@@ -304,7 +304,11 @@ Server Objects
       This function is called if the :meth:`~BaseRequestHandler.handle`
       method of a :attr:`RequestHandlerClass` instance raises
       an exception.  The default action is to print the traceback to
-      standard output and continue handling further requests.
+      standard error and continue handling further requests.
+
+      .. versionchanged:: 3.6
+         Now only called for exceptions derived from the :exc:`Exception`
+         class.
 
 
    .. method:: handle_timeout()
