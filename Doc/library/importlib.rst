@@ -1389,7 +1389,7 @@ Python 3.6 and newer for other parts of the code).
               break
       else:
           raise ImportError(f'No module named {absolute_name!r}')
-      module = spec.loader.create_module(spec)
+      module = util.module_from_spec(spec)
       spec.loader.exec_module(module)
       sys.modules[absolute_name] = module
       if path is not None:
