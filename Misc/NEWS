@@ -78,7 +78,7 @@ Library
 
 - Issue #26186: Remove an invalid type check in importlib.util.LazyLoader.
 
-- Issue #26367: importlib.__init__() raises RuntimeError like
+- Issue #26367: importlib.__import__() raises SystemError like
   builtins.__import__() when ``level`` is specified but without an accompanying
   package specified.
 
