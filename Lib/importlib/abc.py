@@ -4,7 +4,6 @@ from . import _bootstrap_external
 from . import machinery
 try:
     import _frozen_importlib
-#    import _frozen_importlib_external
 except ImportError as exc:
     if exc.name != '_frozen_importlib':
         raise
