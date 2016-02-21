@@ -334,7 +334,16 @@ Changes in the Python API
 
 * When a relative import is performed and no parent package is known, then
   :exc:`ImportError` will be raised. Previously, :exc:`SystemError` could be
-  raised. (Contribute by Brett Cannon in :issue:`18018`.)
+  raised. (Contributed by Brett Cannon in :issue:`18018`.)
+
+* Servers based on the :mod:`socketserver` module, including those
+  defined in :mod:`http.server`, :mod:`xmlrpc.server` and
+  :mod:`wsgiref.simple_server`, now only catch exceptions derived
+  from :exc:`Exception`. Therefore if a request handler raises
+  an exception like :exc:`SystemExit` or :exc:`KeyboardInterrupt`,
+  :meth:`~socketserver.BaseServer.handle_error` is no longer called, and
+  the exception will stop a single-threaded server. (Contributed by
+  Martin Panter in :issue:`23430`.)
 
 
 Changes in the C API
