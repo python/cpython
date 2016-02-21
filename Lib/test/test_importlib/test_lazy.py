@@ -54,6 +54,7 @@ class LazyLoaderTests(unittest.TestCase):
 
     def test_init(self):
         with self.assertRaises(TypeError):
+            # Classes that dono't define exec_module() trigger TypeError.
             util.LazyLoader(object)
 
     def new_module(self, source_code=None):
