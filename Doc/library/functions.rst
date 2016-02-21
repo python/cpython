@@ -230,7 +230,7 @@ are always available.  They are listed here in alphabetical order.
    or ``2`` (docstrings are removed too).
 
    This function raises :exc:`SyntaxError` if the compiled source is invalid,
-   and :exc:`TypeError` if the source contains null bytes.
+   and :exc:`ValueError` if the source contains null bytes.
 
    If you want to parse Python code into its AST representation, see
    :func:`ast.parse`.
@@ -245,6 +245,10 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.2
       Allowed use of Windows and Mac newlines.  Also input in ``'exec'`` mode
       does not have to end in a newline anymore.  Added the *optimize* parameter.
+
+   .. versionchanged:: 3.5
+      Previously, :exc:`TypeError` was raised when null bytes were encountered
+      in *source*.
 
 
 .. class:: complex([real[, imag]])
