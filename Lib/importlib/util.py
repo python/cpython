@@ -263,11 +263,6 @@ class LazyLoader(abc.Loader):
     def __check_eager_loader(loader):
         if not hasattr(loader, 'exec_module'):
             raise TypeError('loader must define exec_module()')
-        elif hasattr(loader.__class__, 'create_module'):
-            if abc.Loader.create_module != loader.__class__.create_module:
-                # Only care if create_module() is overridden in a subclass of
-                # importlib.abc.Loader.
-                raise TypeError('loader cannot define create_module()')
 
     @classmethod
     def factory(cls, loader):
