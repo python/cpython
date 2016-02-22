@@ -153,11 +153,11 @@ Positional and keyword arguments can be arbitrarily combined::
 ``'!a'`` (apply :func:`ascii`), ``'!s'`` (apply :func:`str`) and ``'!r'``
 (apply :func:`repr`) can be used to convert the value before it is formatted::
 
-   >>> import math
-   >>> print('The value of PI is approximately {}.'.format(math.pi))
-   The value of PI is approximately 3.14159265359.
-   >>> print('The value of PI is approximately {!r}.'.format(math.pi))
-   The value of PI is approximately 3.141592653589793.
+   >>> contents = 'eels'
+   >>> print('My hovercraft is full of {}.'.format(contents))
+   My hovercraft is full of eels.
+   >>> print('My hovercraft is full of {!r}.'.format(contents))
+   My hovercraft is full of 'eels'.
 
 An optional ``':'`` and format specifier can follow the field name. This allows
 greater control over how the value is formatted.  The following example
