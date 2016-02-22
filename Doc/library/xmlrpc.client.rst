@@ -541,7 +541,7 @@ Example of Client Usage
        except Error as v:
            print("ERROR", v)
 
-To access an XML-RPC server through a proxy, you need to define  a custom
+To access an XML-RPC server through a HTTP proxy, you need to define a custom
 transport.  The following example shows how:
 
 .. Example taken from http://lowlife.jp/nobonobo/wiki/xmlrpcwithproxy.html
@@ -555,16 +555,16 @@ transport.  The following example shows how:
            self.proxy = proxy
        def make_connection(self, host):
            self.realhost = host
-           h = http.client.HTTP(self.proxy)
+           h = http.client.HTTPConnection(self.proxy)
            return h
-       def send_request(self, connection, handler, request_body):
+       def send_request(self, connection, handler, request_body, debug):
            connection.putrequest("POST", 'http://%s%s' % (self.realhost, handler))
        def send_host(self, connection, host):
            connection.putheader('Host', self.realhost)
 
    p = ProxiedTransport()
    p.set_proxy('proxy-server:8080')
-   server = xmlrpc.client.Server('http://time.xmlrpc.com/RPC2', transport=p)
+   server = xmlrpc.client.ServerProxy('http://time.xmlrpc.com/RPC2', transport=p)
    print(server.currentTime.getCurrentTime())
 
 
