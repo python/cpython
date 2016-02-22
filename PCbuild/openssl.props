@@ -15,9 +15,8 @@
     <PreprocessorDefinitions Include="_CRT_SECURE_NO_WARNINGS" />
     <PreprocessorDefinitions Include="_CRT_SECURE_NO_DEPRECATE" />
     <PreprocessorDefinitions Include="OPENSSL_THREADS" />
-    <PreprocessorDefinitions Include="OPENSSL_SYSNAME_WIN32" />
+    <!-- <PreprocessorDefinitions Include="OPENSSL_SYSNAME_WIN32" /> -->
     <PreprocessorDefinitions Include="OPENSSL_IA32_SSE2" />
-    <PreprocessorDefinitions Include="OPENSSL_CPUID_OBJ" />
     <PreprocessorDefinitions Include="SHA1_ASM" />
     <PreprocessorDefinitions Include="SHA256_ASM" />
     <PreprocessorDefinitions Include="SHA512_ASM" />
@@ -51,7 +50,7 @@
     <ClCompile>
       <!-- Suppress 64-bit truncation warnings - they aren't ours to worry about -->
       <DisableSpecificWarnings>4244;4267</DisableSpecificWarnings>
-      <AdditionalIncludeDirectories>$(opensslDir);$(opensslDir)include;$(opensslDir)crypto;$(opensslDir)crypto\asn1;$(opensslDir)crypto\evp;$(opensslDir)crypto\modes</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(opensslDir);$(opensslIncludeDir);$(opensslDir)crypto;$(opensslDir)crypto\asn1;$(opensslDir)crypto\evp;$(opensslDir)crypto\modes</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>$(_PreprocessorDefinitionList);%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
   </ItemDefinitionGroup>

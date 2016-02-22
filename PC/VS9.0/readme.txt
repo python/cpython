@@ -132,7 +132,7 @@ _ssl
 
     Get the source code through
 
-    svn export http://svn.python.org/projects/external/openssl-1.0.2d
+    svn export http://svn.python.org/projects/external/openssl-1.0.2f
 
     ** NOTE: if you use the PCbuild\get_externals.bat approach for
     obtaining external sources then you don't need to manually get the source
@@ -145,11 +145,10 @@ _ssl
         http://www.nasm.us/
     and add NASM to your PATH.
 
-    You can also install ActivePerl from
+    You will also need ActivePerl from
         http://www.activestate.com/activeperl/
-    if you like to use the official sources instead of the files from
-    python's subversion repository. The svn version contains pre-build
-    makefiles and assembly files.
+    in order to create the necessary makefiles and .asm files for building
+    OpenSSL.
 
     The build process makes sure that no patented algorithms are included.
     For now RC5, MDC2 and IDEA are excluded from the build. You may have
