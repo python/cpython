@@ -533,8 +533,8 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
     The file is created as mkstemp() would do it.
 
     Returns an object with a file-like interface; the name of the file
-    is accessible as file.name.  The file will be automatically deleted
-    when it is closed unless the 'delete' argument is set to False.
+    is accessible as its 'name' attribute.  The file will be automatically
+    deleted when it is closed unless the 'delete' argument is set to False.
     """
 
     prefix, suffix, dir, output_type = _sanitize_params(prefix, suffix, dir)
