@@ -751,10 +751,16 @@ Build
   Previously it could fail to compile properly if the math and cmath builds
   were concurrent.
 
-- Issue #26268: Update OS X 10.5 installer to use OpenSSL 1.0.2f.
+- Issue #26268: Update OS X 10.5 installer and Windows builds to use
+  OpenSSL 1.0.2f.
+
 
 Windows
 -------
+
+- Issue #26268: Update the prepare_ssl.py script to handle OpenSSL releases
+  that don't include the contents of the include directory (that is, 1.0.2e
+  and later).
 
 - Issue #26071: bdist_wininst created binaries fail to start and find
   32bit Python
