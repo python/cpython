@@ -119,7 +119,10 @@ Library
 - Issue #23914: Fixed SystemError raised by CPickle unpickler on broken data.
 
 - Issue #25924: Avoid unnecessary serialization of getaddrinfo(3) calls on
-  OS X versions 10.5 or higher.  Original patch by A. Jesse Jiryu Davis..
+  OS X versions 10.5 or higher.  Original patch by A. Jesse Jiryu Davis.
+
+- Issue #26406: Avoid unnecessary serialization of getaddrinfo(3) calls on
+  current versions of OpenBSD and NetBSD.  Patch by A. Jesse Jiryu Davis.
 
 IDLE
 ----

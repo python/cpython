@@ -183,7 +183,7 @@ shutdown(how) -- shut down traffic in one or both directions\n\
 # define USE_GETHOSTBYNAME_LOCK
 #endif
 
-/* To use __FreeBSD_version */
+/* To use __FreeBSD_version, __OpenBSD__, and __NetBSD_Version__ */
 #ifdef HAVE_SYS_PARAM_H
 #include <sys/param.h>
 #endif
@@ -194,15 +194,21 @@ shutdown(how) -- shut down traffic in one or both directions\n\
    a mix of code including an unsafe implementation from an old BSD's
    libresolv. In 10.5 Apple reimplemented it as a safe IPC call to the
    mDNSResponder process. 10.5 is the first be UNIX '03 certified, which
-   includes the requirement that getaddrinfo be thread-safe.
+   includes the requirement that getaddrinfo be thread-safe. See issue #25924.
 
-   See issue #25924 for details.
- */
+   It's thread-safe in OpenBSD starting with 5.4, released Nov 2013:
+   http://www.openbsd.org/plus54.html
+
+   It's thread-safe in NetBSD starting with 4.0, released Dec 2007:
+
+http://cvsweb.netbsd.org/bsdweb.cgi/src/lib/libc/net/getaddrinfo.c.diff?r1=1.82&r2=1.83
+*/
 #if defined(WITH_THREAD) && ( \
     (defined(__APPLE__) && \
         MAC_OS_X_VERSION_MIN_REQUIRED < MAC_OS_X_VERSION_10_5) || \
     (defined(__FreeBSD__) && __FreeBSD_version+0 < 503000) || \
-    defined(__OpenBSD__) || defined(__NetBSD__) || \
+    (defined(__OpenBSD__) && OpenBSD+0 < 201311) || \
+    (defined(__NetBSD__) && __NetBSD_Version__+0 < 400000000) || \
     defined(__VMS) || !defined(HAVE_GETADDRINFO))
 #define USE_GETADDRINFO_LOCK
 #endif
