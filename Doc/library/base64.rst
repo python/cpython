@@ -16,8 +16,8 @@ email, used as parts of URLs, or included as part of an HTTP POST request.  The
 encoding algorithm is not the same as the :program:`uuencode` program.
 
 There are two interfaces provided by this module.  The modern interface supports
-encoding and decoding string objects using all three :rfc:`3548` defined
-alphabets (normal, URL-safe, and filesystem-safe).  The legacy
+encoding and decoding string objects using both base-64 alphabets defined
+in :rfc:`3548` (normal, and URL- and filesystem-safe).  The legacy
 interface provides for encoding and decoding to and from file-like objects as
 well as strings, but only using the Base64 standard alphabet.
 
@@ -26,7 +26,7 @@ The modern interface, which was introduced in Python 2.4, provides:
 
 .. function:: b64encode(s[, altchars])
 
-   Encode a string use Base64.
+   Encode a string using Base64.
 
    *s* is the string to encode.  Optional *altchars* must be a string of at least
    length 2 (additional characters are ignored) which specifies an alternative
@@ -46,7 +46,8 @@ The modern interface, which was introduced in Python 2.4, provides:
    alphabet used instead of the ``+`` and ``/`` characters.
 
    The decoded string is returned.  A :exc:`TypeError` is raised if *s* is
-   incorrectly padded.  Non-base64-alphabet characters are
+   incorrectly padded.  Characters that are neither
+   in the normal base-64 alphabet nor the alternative alphabet are
    discarded prior to the padding check.
 
 
@@ -62,14 +63,16 @@ The modern interface, which was introduced in Python 2.4, provides:
 
 .. function:: urlsafe_b64encode(s)
 
-   Encode string *s* using a URL-safe alphabet, which substitutes ``-`` instead of
+   Encode string *s* using the URL- and filesystem-safe
+   alphabet, which substitutes ``-`` instead of
    ``+`` and ``_`` instead of ``/`` in the standard Base64 alphabet.  The result
    can still contain ``=``.
 
 
 .. function:: urlsafe_b64decode(s)
 
-   Decode string *s* using a URL-safe alphabet, which substitutes ``-`` instead of
+   Decode string *s* using the URL- and filesystem-safe
+   alphabet, which substitutes ``-`` instead of
    ``+`` and ``_`` instead of ``/`` in the standard Base64 alphabet.
 
 
