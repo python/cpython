@@ -121,6 +121,13 @@ Library
 - Issue #25924: Avoid unnecessary serialization of getaddrinfo(3) calls on
   OS X versions 10.5 or higher.  Original patch by A. Jesse Jiryu Davis..
 
+IDLE
+----
+
+- Issue #26417: Prevent spurious errors and incorrect defaults when
+  installing IDLE 2.7 on OS X: default configuration settings are
+  no longer installed from OS X specific copies.
+
 Tests
 -----
 

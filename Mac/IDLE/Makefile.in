@@ -7,6 +7,7 @@ CFLAGS=$(BASECFLAGS) $(OPT)
 LDFLAGS=@LDFLAGS@
 srcdir=         @srcdir@
 VERSION=	@VERSION@
+LIBDEST=$(prefix)/lib/python$(VERSION)
 UNIVERSALSDK=@UNIVERSALSDK@
 builddir=	../..
 PYTHONFRAMEWORK=@PYTHONFRAMEWORK@
@@ -28,13 +29,28 @@ PYTHONAPPSDIR=@FRAMEWORKINSTALLAPPSPREFIX@/$(PYTHONFRAMEWORK) $(VERSION)
 
 all: IDLE.app
 
-install: IDLE.app $(srcdir)/config-main.def $(srcdir)/config-extensions.def
+install: IDLE.app
 	test -d "$(DESTDIR)$(PYTHONAPPSDIR)" || mkdir -p "$(DESTDIR)$(PYTHONAPPSDIR)"
 	-test -d "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app" && rm -r "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
 	/bin/cp -PR IDLE.app "$(DESTDIR)$(PYTHONAPPSDIR)"
 	touch "$(DESTDIR)$(PYTHONAPPSDIR)/IDLE.app"
-	/bin/cp $(srcdir)/config-main.def "$(DESTDIR)$(prefix)/lib/python$(VERSION)/idlelib/config-main.def"
-	/bin/cp $(srcdir)/config-extensions.def "$(DESTDIR)$(prefix)/lib/python$(VERSION)/idlelib/config-extensions.def"
+	if [ -f "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" ]; then \
+		/bin/cp -p "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" \
+			"$(DESTDIR)$(LIBDEST)/idlelib/config-main.def~" ; \
+		sed -e 's!name= IDLE Classic Windows!name= IDLE Classic OSX!g' \
+			< "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def~" \
+			> "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def" ; \
+		rm "$(DESTDIR)$(LIBDEST)/idlelib/config-main.def~" ; \
+	fi
+	if [ -f "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" ]; then \
+		/bin/cp -p "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" \
+			"$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" ; \
+		sed -e 's!zoom-height=<Alt-Key-2>!zoom-height=<Option-Key-0>!g' \
+			-e 's!<Alt-Key-!<Option-Key-!g' \
+			< "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" \
+			> "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def" ; \
+		rm "$(DESTDIR)$(LIBDEST)/idlelib/config-extensions.def~" ; \
+	fi
 
 clean:
 	rm -rf IDLE.app
