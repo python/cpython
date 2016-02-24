@@ -270,6 +270,8 @@ Build
 - Issue #26268: Update OS X 10.5 installer and Windows builds to use
   OpenSSL 1.0.2f.
 
+- Issue #25136: Support Apple Xcode 7's new textual SDK stub libraries.
+
 Windows
 -------
 
