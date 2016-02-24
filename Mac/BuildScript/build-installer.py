@@ -206,7 +206,7 @@ def library_recipes():
 
     LT_10_5 = bool(getDeptargetTuple() < (10, 5))
 
-    if getDeptargetTuple() < (10, 6):
+    if not (10, 5) < getDeptargetTuple() < (10, 10):
         # The OpenSSL libs shipped with OS X 10.5 and earlier are
         # hopelessly out-of-date and do not include Apple's tie-in to
         # the root certificates in the user and system keychains via TEA
@@ -226,7 +226,8 @@ def library_recipes():
         # now more obvious with cert checking enabled by default in the
         # standard library.
         #
-        # For builds with 10.6+ SDKs, continue to use the deprecated but
+        # For builds with 10.6 through 10.9 SDKs,
+        # continue to use the deprecated but
         # less out-of-date Apple 0.9.8 libs for now.  While they are less
         # secure than using an up-to-date 1.0.1 version, doing so
         # avoids the big problems of forcing users to have to manage
@@ -234,6 +235,10 @@ def library_recipes():
         # APIs for cert validation from keychains if validation using the
         # standard OpenSSL locations (/System/Library/OpenSSL, normally empty)
         # fails.
+        #
+        # Since Apple removed the header files for the deprecated system
+        # OpenSSL as of the Xcode 7 release (for OS X 10.10+), we do not
+        # have much choice but to build our own copy here, too.
 
         result.extend([
           dict(
