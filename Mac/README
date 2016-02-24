@@ -46,7 +46,10 @@ OS X specific arguments to configure
   The optional argument specifies which OS X SDK should be used to perform the
   build. This defaults to ``/Developer/SDKs/MacOSX.10.4u.sdk``.  When building
   on OS X 10.5 or later, you can specify ``/`` to use the installed system
-  headers rather than an SDK.
+  headers rather than an SDK.  As of OS X 10.9, you should install the optional
+  system headers from the Command Line Tools component using ``xcode-select``::
+
+     $ sudo xcode-select --install
 
   See the section _`Building and using a universal binary of Python on Mac OS X`
   for more information.
