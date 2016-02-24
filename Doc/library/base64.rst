@@ -24,8 +24,8 @@ POST request.  The encoding algorithm is not the same as the
 There are two interfaces provided by this module.  The modern interface
 supports encoding :term:`bytes-like objects <bytes-like object>` to ASCII
 :class:`bytes`, and decoding :term:`bytes-like objects <bytes-like object>` or
-strings containing ASCII to :class:`bytes`.  All three :rfc:`3548` defined
-alphabets (normal, URL-safe, and filesystem-safe) are supported.
+strings containing ASCII to :class:`bytes`.  Both base-64 alphabets
+defined in :rfc:`3548` (normal, and URL- and filesystem-safe) are supported.
 
 The legacy interface does not support decoding from strings, but it does
 provide functions for encoding and decoding to and from :term:`file objects
@@ -69,9 +69,10 @@ The modern interface provides:
    A :exc:`binascii.Error` exception is raised
    if *s* is incorrectly padded.
 
-   If *validate* is ``False`` (the default), non-base64-alphabet characters are
+   If *validate* is ``False`` (the default), characters that are neither
+   in the normal base-64 alphabet nor the alternative alphabet are
    discarded prior to the padding check.  If *validate* is ``True``,
-   non-base64-alphabet characters in the input result in a
+   these non-alphabet characters in the input result in a
    :exc:`binascii.Error`.
 
 
@@ -89,7 +90,8 @@ The modern interface provides:
 
 .. function:: urlsafe_b64encode(s)
 
-   Encode :term:`bytes-like object` *s* using a URL-safe alphabet, which
+   Encode :term:`bytes-like object` *s* using the
+   URL- and filesystem-safe alphabet, which
    substitutes ``-`` instead of ``+`` and ``_`` instead of ``/`` in the
    standard Base64 alphabet, and return the encoded :class:`bytes`.  The result
    can still contain ``=``.
@@ -97,7 +99,8 @@ The modern interface provides:
 
 .. function:: urlsafe_b64decode(s)
 
-   Decode :term:`bytes-like object` or ASCII string *s* using a URL-safe
+   Decode :term:`bytes-like object` or ASCII string *s*
+   using the URL- and filesystem-safe
    alphabet, which substitutes ``-`` instead of ``+`` and ``_`` instead of
    ``/`` in the standard Base64 alphabet, and return the decoded
    :class:`bytes`.
@@ -145,14 +148,14 @@ The modern interface provides:
    lowercase alphabet is acceptable as input.  For security purposes, the default
    is ``False``.
 
-   A :exc:`TypeError` is raised if *s* is
+   A :exc:`binascii.Error` is raised if *s* is
    incorrectly padded or if there are non-alphabet characters present in the
    input.
 
 
-.. function:: a85encode(s, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
+.. function:: a85encode(b, *, foldspaces=False, wrapcol=0, pad=False, adobe=False)
 
-   Encode the :term:`bytes-like object` *s* using Ascii85 and return the
+   Encode the :term:`bytes-like object` *b* using Ascii85 and return the
    encoded :class:`bytes`.
 
    *foldspaces* is an optional flag that uses the special short sequence 'y'
@@ -172,9 +175,9 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-.. function:: a85decode(s, *, foldspaces=False, adobe=False, ignorechars=b' \\t\\n\\r\\v')
+.. function:: a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \\t\\n\\r\\v')
 
-   Decode the Ascii85 encoded :term:`bytes-like object` or ASCII string *s* and
+   Decode the Ascii85 encoded :term:`bytes-like object` or ASCII string *b* and
    return the decoded :class:`bytes`.
 
    *foldspaces* is a flag that specifies whether the 'y' short sequence
@@ -192,9 +195,9 @@ The modern interface provides:
    .. versionadded:: 3.4
 
 
-.. function:: b85encode(s, pad=False)
+.. function:: b85encode(b, pad=False)
 
-   Encode the :term:`bytes-like object` *s* using base85 (as used in e.g.
+   Encode the :term:`bytes-like object` *b* using base85 (as used in e.g.
    git-style binary diffs) and return the encoded :class:`bytes`.
 
    If *pad* is true, the input is padded with ``b'\0'`` so its length is a
