@@ -243,13 +243,25 @@ class BaseXYTestCase(unittest.TestCase):
                  (b'@@', b''),
                  (b'!', b''),
                  (b'YWJj\nYWI=', b'abcab'))
+        funcs = (
+            base64.b64decode,
+            base64.standard_b64decode,
+            base64.urlsafe_b64decode,
+        )
         for bstr, res in tests:
-            self.assertEqual(base64.b64decode(bstr), res)
-            self.assertEqual(base64.b64decode(bstr.decode('ascii')), res)
+            for func in funcs:
+                with self.subTest(bstr=bstr, func=func):
+                    self.assertEqual(func(bstr), res)
+                    self.assertEqual(func(bstr.decode('ascii')), res)
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr, validate=True)
             with self.assertRaises(binascii.Error):
                 base64.b64decode(bstr.decode('ascii'), validate=True)
+
+        # Normal alphabet characters not discarded when alternative given
+        res = b'\xFB\xEF\xBE\xFF\xFF\xFF'
+        self.assertEqual(base64.b64decode(b'++[[//]]', b'[]'), res)
+        self.assertEqual(base64.urlsafe_b64decode(b'++--//__'), res)
 
     def test_b32encode(self):
         eq = self.assertEqual
@@ -360,6 +372,10 @@ class BaseXYTestCase(unittest.TestCase):
            b'\x01\x02\xab\xcd\xef')
         eq(base64.b16decode(array('B', b"0102abcdef"), True),
            b'\x01\x02\xab\xcd\xef')
+        # Non-alphabet characters
+        self.assertRaises(binascii.Error, base64.b16decode, '0102AG')
+        # Incorrect "padding"
+        self.assertRaises(binascii.Error, base64.b16decode, '010')
 
     def test_a85encode(self):
         eq = self.assertEqual
