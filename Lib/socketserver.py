@@ -120,11 +120,6 @@ BaseServer:
 
 # Author of the BaseServer patch: Luke Kenneth Casson Leighton
 
-# XXX Warning!
-# There is a test suite for this module, but it cannot be run by the
-# standard regression test.
-# To run it manually, run Lib/test/test_socketserver.py.
-
 __version__ = "0.4"
 
 
@@ -749,9 +744,6 @@ class StreamRequestHandler(BaseRequestHandler):
 
 
 class DatagramRequestHandler(BaseRequestHandler):
-
-    # XXX Regrettably, I cannot get this working on Linux;
-    # s.recvfrom() doesn't return a meaningful client address.
 
     """Define self.rfile and self.wfile for datagram sockets."""
 
