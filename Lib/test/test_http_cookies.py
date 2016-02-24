@@ -210,6 +210,12 @@ class CookieTests(unittest.TestCase):
                 C1 = pickle.loads(pickle.dumps(C, protocol=proto))
                 self.assertEqual(C1.output(), expected_output)
 
+    def test_illegal_chars(self):
+        rawdata = "a=b; c,d=e"
+        C = cookies.SimpleCookie()
+        with self.assertRaises(cookies.CookieError):
+            C.load(rawdata)
+
 
 class MorselTests(unittest.TestCase):
     """Tests for the Morsel object."""
