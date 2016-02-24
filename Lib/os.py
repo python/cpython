@@ -369,7 +369,7 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
             # Note that scandir is global in this module due
             # to earlier import-*.
             scandir_it = scandir(top)
-        entries = list(scandir(top))
+        entries = list(scandir_it)
     except OSError as error:
         if onerror is not None:
             onerror(error)
