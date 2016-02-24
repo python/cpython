@@ -186,7 +186,10 @@ Core and Builtins
 Library
 -------
 
-Issue #26186: Remove an invalid type check in importlib.util.LazyLoader.
+- Issue #25913: Leading ``<~`` is optional now in base64.a85decode() with
+  adobe=True.  Patch by Swati Jaiswal.
+
+- Issue #26186: Remove an invalid type check in importlib.util.LazyLoader.
 
 - Issue #26367: importlib.__import__() raises ImportError like
   builtins.__import__() when ``level`` is specified but without an accompanying

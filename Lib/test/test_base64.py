@@ -494,6 +494,7 @@ class BaseXYTestCase(unittest.TestCase):
             eq(base64.a85decode(data, adobe=False), res, data)
             eq(base64.a85decode(data.decode("ascii"), adobe=False), res, data)
             eq(base64.a85decode(b'<~' + data + b'~>', adobe=True), res, data)
+            eq(base64.a85decode(data + b'~>', adobe=True), res, data)
             eq(base64.a85decode('<~%s~>' % data.decode("ascii"), adobe=True),
                res, data)
 
@@ -584,8 +585,6 @@ class BaseXYTestCase(unittest.TestCase):
                                       b"malformed", adobe=True)
         self.assertRaises(ValueError, base64.a85decode,
                                       b"<~still malformed", adobe=True)
-        self.assertRaises(ValueError, base64.a85decode,
-                                      b"also malformed~>", adobe=True)
 
         # With adobe=False (the default), Adobe framing markers are disallowed
         self.assertRaises(ValueError, base64.a85decode,
