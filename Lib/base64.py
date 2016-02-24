@@ -366,10 +366,15 @@ def a85decode(b, *, foldspaces=False, adobe=False, ignorechars=b' \t\n\r\v'):
     """
     b = _bytes_from_decode_data(b)
     if adobe:
-        if not (b.startswith(_A85START) and b.endswith(_A85END)):
-            raise ValueError("Ascii85 encoded byte sequences must be bracketed "
-                             "by {!r} and {!r}".format(_A85START, _A85END))
-        b = b[2:-2] # Strip off start/end markers
+        if not b.endswith(_A85END):
+            raise ValueError(
+                "Ascii85 encoded byte sequences must end "
+                "with {!r}".format(_A85END)
+                )
+        if b.startswith(_A85START):
+            b = b[2:-2]  # Strip off start/end markers
+        else:
+            b = b[:-2]
     #
     # We have to go through this stepwise, so as to ignore spaces and handle
     # special short sequences
