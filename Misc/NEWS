@@ -160,6 +160,8 @@ Build
 
 - Issue #26268: Update Windows builds to use OpenSSL 1.0.2f.
 
+- Issue #25136: Support Apple Xcode 7's new textual SDK stub libraries.
+
 
 What's New in Python 2.7.11?
 ============================

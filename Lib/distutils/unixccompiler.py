@@ -79,7 +79,9 @@ class UnixCCompiler(CCompiler):
     static_lib_extension = ".a"
     shared_lib_extension = ".so"
     dylib_lib_extension = ".dylib"
+    xcode_stub_lib_extension = ".tbd"
     static_lib_format = shared_lib_format = dylib_lib_format = "lib%s%s"
+    xcode_stub_lib_format = dylib_lib_format
     if sys.platform == "cygwin":
         exe_extension = ".exe"
 
@@ -245,12 +247,28 @@ class UnixCCompiler(CCompiler):
     def find_library_file(self, dirs, lib, debug=0):
         shared_f = self.library_filename(lib, lib_type='shared')
         dylib_f = self.library_filename(lib, lib_type='dylib')
+        xcode_stub_f = self.library_filename(lib, lib_type='xcode_stub')
         static_f = self.library_filename(lib, lib_type='static')
 
         if sys.platform == 'darwin':
             # On OSX users can specify an alternate SDK using
             # '-isysroot', calculate the SDK root if it is specified
             # (and use it further on)
+            #
+            # Note that, as of Xcode 7, Apple SDKs may contain textual stub
+            # libraries with .tbd extensions rather than the normal .dylib
+            # shared libraries installed in /.  The Apple compiler tool
+            # chain handles this transparently but it can cause problems
+            # for programs that are being built with an SDK and searching
+            # for specific libraries.  Callers of find_library_file need to
+            # keep in mind that the base filename of the returned SDK library
+            # file might have a different extension from that of the library
+            # file installed on the running system, for example:
+            #   /Applications/Xcode.app/Contents/Developer/Platforms/
+            #       MacOSX.platform/Developer/SDKs/MacOSX10.11.sdk/
+            #       usr/lib/libedit.tbd
+            # vs
+            #   /usr/lib/libedit.dylib
             cflags = sysconfig.get_config_var('CFLAGS')
             m = re.search(r'-isysroot\s+(\S+)', cflags)
             if m is None:
@@ -264,6 +282,7 @@ class UnixCCompiler(CCompiler):
             shared = os.path.join(dir, shared_f)
             dylib = os.path.join(dir, dylib_f)
             static = os.path.join(dir, static_f)
+            xcode_stub = os.path.join(dir, xcode_stub_f)
 
             if sys.platform == 'darwin' and (
                 dir.startswith('/System/') or (
@@ -272,6 +291,7 @@ class UnixCCompiler(CCompiler):
                 shared = os.path.join(sysroot, dir[1:], shared_f)
                 dylib = os.path.join(sysroot, dir[1:], dylib_f)
                 static = os.path.join(sysroot, dir[1:], static_f)
+                xcode_stub = os.path.join(sysroot, dir[1:], xcode_stub_f)
 
             # We're second-guessing the linker here, with not much hard
             # data to go on: GCC seems to prefer the shared library, so I'm
@@ -279,6 +299,8 @@ class UnixCCompiler(CCompiler):
             # ignoring even GCC's "-static" option.  So sue me.
             if os.path.exists(dylib):
                 return dylib
+            elif os.path.exists(xcode_stub):
+                return xcode_stub
             elif os.path.exists(shared):
                 return shared
             elif os.path.exists(static):
