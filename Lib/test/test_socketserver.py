@@ -160,6 +160,8 @@ class SocketServerTest(unittest.TestCase):
 
     def dgram_examine(self, proto, addr):
         s = socket.socket(proto, socket.SOCK_DGRAM)
+        if HAVE_UNIX_SOCKETS and proto == socket.AF_UNIX:
+            s.bind(self.pickaddr(proto))
         s.sendto(TEST_STR, addr)
         buf = data = receive(s, 100)
         while data and b'\n' not in buf:
@@ -222,27 +224,24 @@ class SocketServerTest(unittest.TestCase):
                             socketserver.DatagramRequestHandler,
                             self.dgram_examine)
 
-    # Alas, on Linux (at least) recvfrom() doesn't return a meaningful
-    # client address so this cannot work:
+    @requires_unix_sockets
+    def test_UnixDatagramServer(self):
+        self.run_server(socketserver.UnixDatagramServer,
+                        socketserver.DatagramRequestHandler,
+                        self.dgram_examine)
 
-    # @requires_unix_sockets
-    # def test_UnixDatagramServer(self):
-    #     self.run_server(socketserver.UnixDatagramServer,
-    #                     socketserver.DatagramRequestHandler,
-    #                     self.dgram_examine)
-    #
-    # @requires_unix_sockets
-    # def test_ThreadingUnixDatagramServer(self):
-    #     self.run_server(socketserver.ThreadingUnixDatagramServer,
-    #                     socketserver.DatagramRequestHandler,
-    #                     self.dgram_examine)
-    #
-    # @requires_unix_sockets
-    # @requires_forking
-    # def test_ForkingUnixDatagramServer(self):
-    #     self.run_server(socketserver.ForkingUnixDatagramServer,
-    #                     socketserver.DatagramRequestHandler,
-    #                     self.dgram_examine)
+    @requires_unix_sockets
+    def test_ThreadingUnixDatagramServer(self):
+        self.run_server(socketserver.ThreadingUnixDatagramServer,
+                        socketserver.DatagramRequestHandler,
+                        self.dgram_examine)
+
+    @requires_unix_sockets
+    @requires_forking
+    def test_ForkingUnixDatagramServer(self):
+        self.run_server(ForkingUnixDatagramServer,
+                        socketserver.DatagramRequestHandler,
+                        self.dgram_examine)
 
     @reap_threads
     def test_shutdown(self):
