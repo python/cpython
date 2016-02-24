@@ -174,7 +174,7 @@ _Translator.update({
     ord('\\'): '\\\\',
 })
 
-_is_legal_key = re.compile('[%s]+' % _LegalChars).fullmatch
+_is_legal_key = re.compile('[%s]+' % re.escape(_LegalChars)).fullmatch
 
 def _quote(str):
     r"""Quote a string for use in a cookie header.
