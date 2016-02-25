@@ -174,7 +174,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       Optional arguments *start* and *end* are interpreted as in slice notation.
       Returns ``-1`` on failure.
 
-      .. versionchanged: 3.5
+      .. versionchanged:: 3.5
          Writable :term:`bytes-like object` is now accepted.
 
 
@@ -237,7 +237,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       Optional arguments *start* and *end* are interpreted as in slice notation.
       Returns ``-1`` on failure.
 
-      .. versionchanged: 3.5
+      .. versionchanged:: 3.5
          Writable :term:`bytes-like object` is now accepted.
 
 
@@ -267,7 +267,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
       were written. If the mmap was created with :const:`ACCESS_READ`, then
       writing to it will raise a :exc:`TypeError` exception.
 
-      .. versionchanged: 3.5
+      .. versionchanged:: 3.5
          Writable :term:`bytes-like object` is now accepted.
 
 
