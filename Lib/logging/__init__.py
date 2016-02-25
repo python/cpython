@@ -471,7 +471,7 @@ class Formatter(object):
         use one of %-formatting, :meth:`str.format` (``{}``) formatting or
         :class:`string.Template` formatting in your format string.
 
-        .. versionchanged: 3.2
+        .. versionchanged:: 3.2
            Added the ``style`` parameter.
         """
         if style not in _STYLES:
@@ -700,7 +700,7 @@ class Filterer(object):
         this and the record is then dropped. Returns a zero value if a record
         is to be dropped, else non-zero.
 
-        .. versionchanged: 3.2
+        .. versionchanged:: 3.2
 
            Allow filters to be just callables.
         """

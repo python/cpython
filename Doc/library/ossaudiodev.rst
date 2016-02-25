@@ -155,7 +155,7 @@ and (read-only) attributes:
    data may not be written
    ---see :meth:`writeall`.
 
-   .. versionchanged: 3.5
+   .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
 
 
@@ -169,7 +169,7 @@ and (read-only) attributes:
    no return value, since the amount of data written is always equal to the
    amount of data supplied.
 
-   .. versionchanged: 3.5
+   .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
 
 
