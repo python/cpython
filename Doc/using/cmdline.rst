@@ -194,7 +194,7 @@ Miscellaneous options
    :class:`str` or :class:`bytes` with :class:`int`.  Issue an error when the
    option is given twice (:option:`-bb`).
 
-   .. versionchanged: 3.5
+   .. versionchanged:: 3.5
       Affects comparisons of :class:`bytes` with :class:`int`.
 
 .. cmdoption:: -B

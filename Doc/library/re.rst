@@ -297,7 +297,7 @@ The special characters are:
       >>> m.group(0)
       'egg'
 
-   .. versionchanged: 3.5
+   .. versionchanged:: 3.5
       Added support for group references of fixed length.
 
 ``(?<!...)``
