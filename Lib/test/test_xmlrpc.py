@@ -7,6 +7,7 @@ from unittest import mock
 import xmlrpc.client as xmlrpclib
 import xmlrpc.server
 import http.client
+import http, http.server
 import socket
 import os
 import re
@@ -243,6 +244,42 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertFalse(has_ssl, "xmlrpc client's error with SSL support")
         except OSError:
             self.assertTrue(has_ssl)
+
+    @unittest.skipUnless(threading, "Threading required for this test.")
+    def test_keepalive_disconnect(self):
+        class RequestHandler(http.server.BaseHTTPRequestHandler):
+            protocol_version = "HTTP/1.1"
+            handled = False
+
+            def do_POST(self):
+                length = int(self.headers.get("Content-Length"))
+                self.rfile.read(length)
+                if self.handled:
+                    self.close_connection = True
+                    return
+                response = xmlrpclib.dumps((5,), methodresponse=True)
+                response = response.encode()
+                self.send_response(http.HTTPStatus.OK)
+                self.send_header("Content-Length", len(response))
+                self.end_headers()
+                self.wfile.write(response)
+                self.handled = True
+                self.close_connection = False
+
+        def run_server():
+            server.socket.settimeout(float(1))  # Don't hang if client fails
+            server.handle_request()  # First request and attempt at second
+            server.handle_request()  # Retried second request
+
+        server = http.server.HTTPServer((support.HOST, 0), RequestHandler)
+        self.addCleanup(server.server_close)
+        thread = threading.Thread(target=run_server)
+        thread.start()
+        self.addCleanup(thread.join)
+        url = "http://{}:{}/".format(*server.server_address)
+        with xmlrpclib.ServerProxy(url) as p:
+            self.assertEqual(p.method(), 5)
+            self.assertEqual(p.method(), 5)
 
 class HelperTestCase(unittest.TestCase):
     def test_escape(self):
