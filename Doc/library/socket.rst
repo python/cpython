@@ -675,7 +675,7 @@ The :mod:`socket` module also offers various network-related services:
    support IPv6, and :func:`inet_ntop` should be used instead for IPv4/v6 dual
    stack support.
 
-   .. versionchanged: 3.5
+   .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
 
 
@@ -717,7 +717,7 @@ The :mod:`socket` module also offers various network-related services:
    .. versionchanged:: 3.4
       Windows support added
 
-   .. versionchanged: 3.5
+   .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
 
 
@@ -1332,7 +1332,7 @@ to sockets.
    ensure that the bytestring contains the proper bits (see the optional built-in
    module :mod:`struct` for a way to encode C structures as bytestrings).
 
-   .. versionchanged: 3.5
+   .. versionchanged:: 3.5
       Writable :term:`bytes-like object` is now accepted.
 
 

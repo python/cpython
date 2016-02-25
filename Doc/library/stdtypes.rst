@@ -1298,16 +1298,16 @@ loops.
    only represent sequences that follow a strict pattern and repetition and
    concatenation will usually violate that pattern).
 
-   .. data: start
+   .. attribute:: start
 
       The value of the *start* parameter (or ``0`` if the parameter was
       not supplied)
 
-   .. data: stop
+   .. attribute:: stop
 
       The value of the *stop* parameter
 
-   .. data: step
+   .. attribute:: step
 
       The value of the *step* parameter (or ``1`` if the parameter was
       not supplied)
