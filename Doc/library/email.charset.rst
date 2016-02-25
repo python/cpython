@@ -101,9 +101,10 @@ Import this class from the :mod:`email.charset` module.
       returns the string ``base64`` if *body_encoding* is ``BASE64``, and
       returns the string ``7bit`` otherwise.
 
+
    .. XXX to_splittable and from_splittable are not there anymore!
 
-   .. method to_splittable(s)
+   .. to_splittable(s)
 
       Convert a possibly multibyte string to a safely splittable format. *s* is
       the string to split.
@@ -118,7 +119,7 @@ Import this class from the :mod:`email.charset` module.
       the Unicode replacement character ``'U+FFFD'``.
 
 
-   .. method from_splittable(ustr[, to_output])
+   .. from_splittable(ustr[, to_output])
 
       Convert a splittable string back into an encoded string.  *ustr* is a
       Unicode string to "unsplit".
