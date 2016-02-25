@@ -72,15 +72,19 @@ class TestsWithSourceFile(unittest.TestCase):
     def testStored(self):
         # Try the temp file first.  If we do TESTFN2 first, then it hogs
         # gigabytes of disk space for the duration of the test.
-        for f in TemporaryFile(), TESTFN2:
+        with TemporaryFile() as f:
             self.zipTest(f, zipfile.ZIP_STORED)
+            self.assertFalse(f.closed)
+        self.zipTest(TESTFN2, zipfile.ZIP_STORED)
 
     @requires_zlib
     def testDeflated(self):
         # Try the temp file first.  If we do TESTFN2 first, then it hogs
         # gigabytes of disk space for the duration of the test.
-        for f in TemporaryFile(), TESTFN2:
+        with TemporaryFile() as f:
             self.zipTest(f, zipfile.ZIP_DEFLATED)
+            self.assertFalse(f.closed)
+        self.zipTest(TESTFN2, zipfile.ZIP_DEFLATED)
 
     def tearDown(self):
         for fname in TESTFN, TESTFN2:
