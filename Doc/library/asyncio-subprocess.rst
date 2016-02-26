@@ -51,7 +51,7 @@ Create a subprocess: high-level API using Process
 
    It is the application's responsibility to ensure that all whitespace and
    metacharacters are quoted appropriately to avoid `shell injection
-   <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
+   <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
    vulnerabilities. The :func:`shlex.quote` function can be used to properly
    escape whitespace and shell metacharacters in strings that are going to be
    used to construct shell commands.
@@ -134,7 +134,7 @@ Run subprocesses asynchronously using the :mod:`subprocess` module.
 
    It is the application's responsibility to ensure that all whitespace and
    metacharacters are quoted appropriately to avoid `shell injection
-   <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
+   <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
    vulnerabilities. The :func:`shlex.quote` function can be used to properly
    escape whitespace and shell metacharacters in strings that are going to be
    used to construct shell commands.

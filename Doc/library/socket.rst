@@ -983,7 +983,7 @@ to sockets.
 
    The :meth:`ioctl` method is a limited interface to the WSAIoctl system
    interface.  Please refer to the `Win32 documentation
-   <http://msdn.microsoft.com/en-us/library/ms741621%28VS.85%29.aspx>`_ for more
+   <https://msdn.microsoft.com/en-us/library/ms741621%28VS.85%29.aspx>`_ for more
    information.
 
    On other platforms, the generic :func:`fcntl.fcntl` and :func:`fcntl.ioctl`
