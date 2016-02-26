@@ -370,7 +370,7 @@ Practical answer:
 
 `Cython <http://cython.org/>`_ and `Pyrex <http://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_
 compile a modified version of Python with optional annotations into C
-extensions.  `Weave <http://docs.scipy.org/doc/scipy-dev/reference/tutorial/weave.html>`_ makes it easy to
+extensions.  `Weave <https://scipy.github.io/devdocs/tutorial/weave.html>`_ makes it easy to
 intermingle Python and C code in various ways to increase performance.
 `Nuitka <http://www.nuitka.net/>`_ is an up-and-coming compiler of Python
 into C++ code, aiming to support the full Python language.

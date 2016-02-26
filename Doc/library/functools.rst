@@ -73,7 +73,7 @@ The :mod:`functools` module defines the following functions:
    bypassing the cache, or for rewrapping the function with a different cache.
 
    An `LRU (least recently used) cache
-   <http://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_ works
+   <https://en.wikipedia.org/wiki/Cache_algorithms#Examples>`_ works
    best when the most recent calls are the best predictors of upcoming calls (for
    example, the most popular articles on a news server tend to change each day).
    The cache's size limit assures that the cache does not grow without bound on
@@ -99,9 +99,9 @@ The :mod:`functools` module defines the following functions:
         CacheInfo(hits=3, misses=8, maxsize=32, currsize=8)
 
    Example of efficiently computing
-   `Fibonacci numbers <http://en.wikipedia.org/wiki/Fibonacci_number>`_
+   `Fibonacci numbers <https://en.wikipedia.org/wiki/Fibonacci_number>`_
    using a cache to implement a
-   `dynamic programming <http://en.wikipedia.org/wiki/Dynamic_programming>`_
+   `dynamic programming <https://en.wikipedia.org/wiki/Dynamic_programming>`_
    technique::
 
         @lru_cache(maxsize=None)

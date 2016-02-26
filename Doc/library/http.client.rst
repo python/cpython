@@ -21,7 +21,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 
 .. seealso::
 
-    The `Requests package <http://requests.readthedocs.org/>`_
+    The `Requests package <https://requests.readthedocs.org/>`_
     is recommended for a higher-level http client interface.
 
 .. note::

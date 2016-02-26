@@ -1080,9 +1080,9 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
   hierarchy.  Classic classes are unaffected by this change.  Python 2.2
   originally used a topological sort of a class's ancestors, but 2.3 now uses the
   C3 algorithm as described in the paper `"A Monotonic Superclass Linearization
-  for Dylan" <http://www.webcom.com/haahr/dylan/linearization-oopsla96.html>`_. To
+  for Dylan" <http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.19.3910>`_. To
   understand the motivation for this change,  read Michele Simionato's article
-  `"Python 2.3 Method Resolution Order" <https://www.python.org/2.3/mro.html>`_, or
+  `"Python 2.3 Method Resolution Order" <http://www.phyast.pitt.edu/~micheles/mro.html>`_, or
   read the thread on python-dev starting with the message at
   https://mail.python.org/pipermail/python-dev/2002-October/029035.html. Samuele
   Pedroni first pointed out the problem and also implemented the fix by coding the
@@ -1306,7 +1306,7 @@ complete list of changes, or look through the CVS logs for all the details.
   partially sorted order such that, for every index *k*, ``heap[k] <=
   heap[2*k+1]`` and ``heap[k] <= heap[2*k+2]``.  This makes it quick to remove the
   smallest item, and inserting a new item while maintaining the heap property is
-  O(lg n).  (See http://www.nist.gov/dads/HTML/priorityque.html for more
+  O(lg n).  (See https://xlinux.nist.gov/dads//HTML/priorityque.html for more
   information about the priority queue data structure.)
 
   The :mod:`heapq` module provides :func:`heappush` and :func:`heappop` functions
@@ -1949,7 +1949,7 @@ The RPM spec files, found in the :file:`Misc/RPM/` directory in the Python
 source distribution, were updated for 2.3.  (Contributed by Sean Reifschneider.)
 
 Other new platforms now supported by Python include AtheOS
-(http://www.atheos.cx/), GNU/Hurd, and OpenVMS.
+(http://atheos.cx/), GNU/Hurd, and OpenVMS.
 
 .. ======================================================================
 

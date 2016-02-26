@@ -27,7 +27,7 @@ your system setup; details are given in later chapters.
    avoid writing C extensions and preserve portability to other implementations.
    For example, if your use case is calling C library functions or system calls,
    you should consider using the :mod:`ctypes` module or the `cffi
-   <http://cffi.readthedocs.org>`_ library rather than writing custom C code.
+   <https://cffi.readthedocs.org>`_ library rather than writing custom C code.
    These modules let you write Python code to interface with C code and are more
    portable between implementations of Python than writing and compiling a C
    extension module.
