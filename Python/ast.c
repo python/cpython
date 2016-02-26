@@ -3995,7 +3995,7 @@ decode_utf8(struct compiling *c, const char **sPtr, const char *end)
 }
 
 static PyObject *
-decode_unicode(struct compiling *c, const char *s, size_t len, const char *encoding)
+decode_unicode_with_escapes(struct compiling *c, const char *s, size_t len)
 {
     PyObject *v, *u;
     char *buf;
@@ -4921,7 +4921,6 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
     const char *s = STR(n);
     int quote = Py_CHARMASK(*s);
     int rawmode = 0;
-    int need_encoding;
     if (Py_ISALPHA(quote)) {
         while (!*bytesmode || !rawmode) {
             if (quote == 'b' || quote == 'B') {
@@ -4977,11 +4976,10 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
             return NULL;
         }
     }
-    if (!*bytesmode && !rawmode) {
-        return decode_unicode(c, s, len, c->c_encoding);
-    }
+    /* Avoid invoking escape decoding routines if possible. */
+    rawmode = rawmode || strchr(s, '\\') == NULL;
     if (*bytesmode) {
-        /* Disallow non-ascii characters (but not escapes) */
+        /* Disallow non-ASCII characters. */
         const char *ch;
         for (ch = s; *ch; ch++) {
             if (Py_CHARMASK(*ch) >= 0x80) {
@@ -4990,26 +4988,16 @@ parsestr(struct compiling *c, const node *n, int *bytesmode, int *fmode)
                 return NULL;
             }
         }
-    }
-    need_encoding = !*bytesmode && strcmp(c->c_encoding, "utf-8") != 0;
-    if (rawmode || strchr(s, '\\') == NULL) {
-        if (need_encoding) {
-            PyObject *v, *u = PyUnicode_DecodeUTF8(s, len, NULL);
-            if (u == NULL || !*bytesmode)
-                return u;
-            v = PyUnicode_AsEncodedString(u, c->c_encoding, NULL);
-            Py_DECREF(u);
-            return v;
-        } else if (*bytesmode) {
+        if (rawmode)
             return PyBytes_FromStringAndSize(s, len);
-        } else if (strcmp(c->c_encoding, "utf-8") == 0) {
-            return PyUnicode_FromStringAndSize(s, len);
-        } else {
-            return PyUnicode_DecodeLatin1(s, len, NULL);
-        }
+        else
+            return PyBytes_DecodeEscape(s, len, NULL, /* ignored */ 0, NULL);
+    } else {
+        if (rawmode)
+            return PyUnicode_DecodeUTF8Stateful(s, len, NULL, NULL);
+        else
+            return decode_unicode_with_escapes(c, s, len);
     }
-    return PyBytes_DecodeEscape(s, len, NULL, 1,
-                                need_encoding ? c->c_encoding : NULL);
 }
 
 /* Accepts a STRING+ atom, and produces an expr_ty node. Run through
