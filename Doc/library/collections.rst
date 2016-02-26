@@ -200,12 +200,11 @@ counts, but the output will exclude results with counts of zero or less.
       adapted for Python 2.5 and an early `Bag recipe
       <http://code.activestate.com/recipes/259174/>`_ for Python 2.4.
 
-    * `Bag class <http://www.gnu.org/software/smalltalk/manual-base/html_node/Bag.html>`_
       in Smalltalk.
 
-    * Wikipedia entry for `Multisets <http://en.wikipedia.org/wiki/Multiset>`_.
+    * Wikipedia entry for `Multisets <https://en.wikipedia.org/wiki/Multiset>`_.
 
-    * `C++ multisets <http://www.demo2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
+    * `C++ multisets <http://www.java2s.com/Tutorial/Cpp/0380__set-multiset/Catalog0380__set-multiset.htm>`_
       tutorial with examples.
 
     * For mathematical operations on multisets and their use cases, see

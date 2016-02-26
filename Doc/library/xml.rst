@@ -62,7 +62,7 @@ kind                       sax       etree      minidom    pulldom   xmlrpc
 billion laughs             **Yes**   **Yes**    **Yes**    **Yes**   **Yes**
 quadratic blowup           **Yes**   **Yes**    **Yes**    **Yes**   **Yes**
 external entity expansion  **Yes**   No    (1)  No    (2)  **Yes**   No    (3)
-DTD retrieval              **Yes**   No         No         **Yes**   No
+`DTD`_ retrieval           **Yes**   No         No         **Yes**   No
 decompression bomb         No        No         No         No        **Yes**
 =========================  ========  =========  =========  ========  =========
 
@@ -94,7 +94,7 @@ external entity expansion
   parser retrieves the resource with e.g. HTTP or FTP requests and embeds the
   content into the XML document.
 
-DTD retrieval
+`DTD`_ retrieval
   Some XML libraries like Python's :mod:`xml.dom.pulldom` retrieve document type
   definitions from remote or local locations. The feature has similar
   implications as the external entity expansion issue.
@@ -131,6 +131,6 @@ well-defined XML features.
 
 .. _defusedxml: https://pypi.python.org/pypi/defusedxml/
 .. _defusedexpat: https://pypi.python.org/pypi/defusedexpat/
-.. _Billion Laughs: http://en.wikipedia.org/wiki/Billion_laughs
-.. _ZIP bomb: http://en.wikipedia.org/wiki/Zip_bomb
-.. _DTD: http://en.wikipedia.org/wiki/Document_Type_Definition
+.. _Billion Laughs: https://en.wikipedia.org/wiki/Billion_laughs
+.. _ZIP bomb: https://en.wikipedia.org/wiki/Zip_bomb
+.. _DTD: https://en.wikipedia.org/wiki/Document_type_definition

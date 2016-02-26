@@ -705,7 +705,7 @@ An example dictionary-based configuration
 -----------------------------------------
 
 Below is an example of a logging configuration dictionary - it's taken from
-the `documentation on the Django project <https://docs.djangoproject.com/en/1.3/topics/logging/#configuring-logging>`_.
+the `documentation on the Django project <https://docs.djangoproject.com/en/1.4/topics/logging/#configuring-logging>`_.
 This dictionary is passed to :func:`~config.dictConfig` to put the configuration into effect::
 
     LOGGING = {

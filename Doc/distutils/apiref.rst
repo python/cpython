@@ -1816,7 +1816,7 @@ Subclasses of :class:`Command` must define the following methods.
 
    Builds a `Windows Installer`_ (.msi) binary package.
 
-   .. _Windows Installer: http://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx
+   .. _Windows Installer: https://msdn.microsoft.com/en-us/library/cc185688(VS.85).aspx
 
    In most cases, the ``bdist_msi`` installer is a better choice than the
    ``bdist_wininst`` installer, because it provides better support for

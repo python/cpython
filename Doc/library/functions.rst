@@ -1447,7 +1447,7 @@ section.
 
    For practical suggestions on how to design cooperative classes using
    :func:`super`, see `guide to using super()
-   <http://rhettinger.wordpress.com/2011/05/26/super-considered-super/>`_.
+   <https://rhettinger.wordpress.com/2011/05/26/super-considered-super/>`_.
 
    .. versionadded:: 2.2
 

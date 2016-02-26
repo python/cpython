@@ -206,7 +206,7 @@ instead.
 
    The *ciphers* parameter sets the available ciphers for this SSL object.
    It should be a string in the `OpenSSL cipher list format
-   <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`_.
+   <http://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
 
    The parameter ``do_handshake_on_connect`` specifies whether to do the SSL
    handshake automatically after doing a :meth:`socket.connect`, or whether the
@@ -713,7 +713,7 @@ Constants
 
    Whether the OpenSSL library has built-in support for *Next Protocol
    Negotiation* as described in the `NPN draft specification
-   <http://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. When true,
+   <https://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. When true,
    you can use the :meth:`SSLContext.set_npn_protocols` method to advertise
    which protocols you want to support.
 
@@ -1091,7 +1091,7 @@ to speed up repeated connections from the same clients.
 
    Set the available ciphers for sockets created with this context.
    It should be a string in the `OpenSSL cipher list format
-   <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`_.
+   <http://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
@@ -1120,7 +1120,7 @@ to speed up repeated connections from the same clients.
    handshake. It should be a list of strings, like ``['http/1.1', 'spdy/2']``,
    ordered by preference. The selection of a protocol will happen during the
    handshake, and will play out according to the `NPN draft specification
-   <http://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. After a
+   <https://tools.ietf.org/html/draft-agl-tls-nextprotoneg>`_. After a
    successful handshake, the :meth:`SSLSocket.selected_npn_protocol` method will
    return the agreed-upon protocol.
 
@@ -1722,7 +1722,7 @@ enabled when negotiating a SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 2.7.9, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
-about the `cipher list format <http://www.openssl.org/docs/apps/ciphers.html#CIPHER_LIST_FORMAT>`_.
+about the `cipher list format <http://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
 If you want to check which ciphers are enabled by a given cipher list, use the
 ``openssl ciphers`` command on your system.
 
@@ -1743,25 +1743,25 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
    Class :class:`socket.socket`
        Documentation of underlying :mod:`socket` class
 
-   `SSL/TLS Strong Encryption: An Introduction <http://httpd.apache.org/docs/trunk/en/ssl/ssl_intro.html>`_
+   `SSL/TLS Strong Encryption: An Introduction <https://httpd.apache.org/docs/trunk/en/ssl/ssl_intro.html>`_
        Intro from the Apache webserver documentation
 
-   `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <http://www.ietf.org/rfc/rfc1422>`_
+   `RFC 1422: Privacy Enhancement for Internet Electronic Mail: Part II: Certificate-Based Key Management <https://www.ietf.org/rfc/rfc1422>`_
        Steve Kent
 
-   `RFC 1750: Randomness Recommendations for Security <http://www.ietf.org/rfc/rfc1750>`_
+   `RFC 1750: Randomness Recommendations for Security <https://www.ietf.org/rfc/rfc1750>`_
        D. Eastlake et. al.
 
-   `RFC 3280: Internet X.509 Public Key Infrastructure Certificate and CRL Profile <http://www.ietf.org/rfc/rfc3280>`_
+   `RFC 3280: Internet X.509 Public Key Infrastructure Certificate and CRL Profile <https://www.ietf.org/rfc/rfc3280>`_
        Housley et. al.
 
-   `RFC 4366: Transport Layer Security (TLS) Extensions <http://www.ietf.org/rfc/rfc4366>`_
+   `RFC 4366: Transport Layer Security (TLS) Extensions <https://www.ietf.org/rfc/rfc4366>`_
        Blake-Wilson et. al.
 
-   `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <http://tools.ietf.org/html/rfc5246>`_
+   `RFC 5246: The Transport Layer Security (TLS) Protocol Version 1.2 <https://tools.ietf.org/html/rfc5246>`_
        T. Dierks et. al.
 
-   `RFC 6066: Transport Layer Security (TLS) Extensions <http://tools.ietf.org/html/rfc6066>`_
+   `RFC 6066: Transport Layer Security (TLS) Extensions <https://tools.ietf.org/html/rfc6066>`_
        D. Eastlake
 
    `IANA TLS: Transport Layer Security (TLS) Parameters <http://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_

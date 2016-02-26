@@ -331,7 +331,7 @@ substring.
 
 List comprehensions and generator expressions (short form: "listcomps" and
 "genexps") are a concise notation for such operations, borrowed from the
-functional programming language Haskell (http://www.haskell.org/).  You can strip
+functional programming language Haskell (https://www.haskell.org/).  You can strip
 all the whitespace from a stream of strings with the following code::
 
     line_list = ['  line 1\n', 'line 2  \n', ...]
@@ -1144,7 +1144,7 @@ General
 
 **Structure and Interpretation of Computer Programs**, by Harold Abelson and
 Gerald Jay Sussman with Julie Sussman.  Full text at
-http://mitpress.mit.edu/sicp/.  In this classic textbook of computer science,
+https://mitpress.mit.edu/sicp/.  In this classic textbook of computer science,
 chapters 2 and 3 discuss the use of sequences and streams to organize the data
 flow inside a program.  The book uses Scheme for its examples, but many of the
 design approaches described in these chapters are applicable to functional-style
@@ -1153,12 +1153,12 @@ Python code.
 http://www.defmacro.org/ramblings/fp.html: A general introduction to functional
 programming that uses Java examples and has a lengthy historical introduction.
 
-http://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
+https://en.wikipedia.org/wiki/Functional_programming: General Wikipedia entry
 describing functional programming.
 
-http://en.wikipedia.org/wiki/Coroutine: Entry for coroutines.
+https://en.wikipedia.org/wiki/Coroutine: Entry for coroutines.
 
-http://en.wikipedia.org/wiki/Currying: Entry for the concept of currying.
+https://en.wikipedia.org/wiki/Currying: Entry for the concept of currying.
 
 Python-specific
 ---------------

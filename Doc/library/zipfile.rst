@@ -15,8 +15,7 @@
 The ZIP file format is a common archive and compression standard. This module
 provides tools to create, read, write, append, and list a ZIP file.  Any
 advanced use of this module will require an understanding of the format, as
-defined in `PKZIP Application Note
-<http://www.pkware.com/documents/casestudies/APPNOTE.TXT>`_.
+defined in `PKZIP Application Note`_.
 
 This module does not currently handle multi-disk ZIP files.
 It can handle ZIP files that use the ZIP64 extensions
@@ -83,7 +82,7 @@ The module defines the following items:
 
 .. seealso::
 
-   `PKZIP Application Note <http://www.pkware.com/documents/casestudies/APPNOTE.TXT>`_
+   `PKZIP Application Note`_
       Documentation on the ZIP file format by Phil Katz, the creator of the format and
       algorithms used.
 
@@ -435,8 +434,7 @@ Instances have the following attributes:
 
 .. attribute:: ZipInfo.extra
 
-   Expansion field data.  The `PKZIP Application Note
-   <http://www.pkware.com/documents/casestudies/APPNOTE.TXT>`_ contains
+   Expansion field data.  The `PKZIP Application Note`_ contains
    some comments on the internal structure of the data contained in this string.
 
 
@@ -499,3 +497,4 @@ Instances have the following attributes:
 
    Size of the uncompressed file.
 
+.. _PKZIP Application Note: https://pkware.cachefly.net/webdocs/casestudies/APPNOTE.TXT

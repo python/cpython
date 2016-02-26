@@ -267,7 +267,7 @@ Setting up FastCGI
 Each web server requires a specific module.
 
 * Apache has both `mod_fastcgi <http://www.fastcgi.com/drupal/>`_ and `mod_fcgid
-  <http://httpd.apache.org/mod_fcgid/>`_.  ``mod_fastcgi`` is the original one, but it
+  <https://httpd.apache.org/mod_fcgid/>`_.  ``mod_fastcgi`` is the original one, but it
   has some licensing issues, which is why it is sometimes considered non-free.
   ``mod_fcgid`` is a smaller, compatible alternative.  One of these modules needs
   to be loaded by Apache.
@@ -277,7 +277,7 @@ Each web server requires a specific module.
   `SCGI module <http://redmine.lighttpd.net/projects/lighttpd/wiki/Docs_ModSCGI>`_.
 
 * `nginx <http://nginx.org/>`_ also supports `FastCGI
-  <http://wiki.nginx.org/NginxSimplePythonFCGI>`_.
+  <https://www.nginx.com/resources/wiki/start/topics/examples/simplepythonfcgi/>`_.
 
 Once you have installed and configured the module, you can test it with the
 following WSGI-application::
@@ -306,8 +306,8 @@ FastCGI access.
 
 .. seealso::
 
-   There is some documentation on `setting up Django with FastCGI
-   <https://docs.djangoproject.com/en/dev/howto/deployment/fastcgi/>`_, most of
+   There is some documentation on `setting up Django with WSGI
+   <https://docs.djangoproject.com/en/dev/howto/deployment/wsgi/>`_, most of
    which can be reused for other WSGI-compliant frameworks and libraries.
    Only the ``manage.py`` part has to be changed, the example used here can be
    used instead.  Django does more or less the exact same thing.
@@ -357,7 +357,7 @@ testing.
 
 A really great WSGI feature is middleware.  Middleware is a layer around your
 program which can add various functionality to it.  There is quite a bit of
-`middleware <http://www.wsgi.org/en/latest/libraries.html>`_ already
+`middleware <https://wsgi.readthedocs.org/en/latest/libraries.html>`_ already
 available.  For example, instead of writing your own session management (HTTP
 is a stateless protocol, so to associate multiple HTTP requests with a single
 user your application must create and manage such state via a session), you can
@@ -378,7 +378,7 @@ WSGI Servers
 The code that is used to connect to various low level gateways like CGI or
 mod_python is called a *WSGI server*.  One of these servers is ``flup``, which
 supports FastCGI and SCGI, as well as `AJP
-<http://en.wikipedia.org/wiki/Apache_JServ_Protocol>`_.  Some of these servers
+<https://en.wikipedia.org/wiki/Apache_JServ_Protocol>`_.  Some of these servers
 are written in Python, as ``flup`` is, but there also exist others which are
 written in C and can be used as drop-in replacements.
 
@@ -389,8 +389,8 @@ compared with other web technologies.
 .. seealso::
 
    A good overview of WSGI-related code can be found in the `WSGI homepage
-   <http://www.wsgi.org/en/latest/index.html>`_, which contains an extensive list of `WSGI servers
-   <http://www.wsgi.org/en/latest/servers.html>`_ which can be used by *any* application
+   <https://wsgi.readthedocs.org/>`_, which contains an extensive list of `WSGI servers
+   <https://wsgi.readthedocs.org/en/latest/servers.html>`_ which can be used by *any* application
    supporting WSGI.
 
    You might be interested in some WSGI-supporting modules already contained in
@@ -407,7 +407,7 @@ an application that's been around for a while, which was written in
 Python without using WSGI.
 
 One of the most widely used wiki software packages is `MoinMoin
-<http://moinmo.in/>`_.  It was created in 2000, so it predates WSGI by about
+<https://moinmo.in/>`_.  It was created in 2000, so it predates WSGI by about
 three years.  Older versions needed separate code to run on CGI, mod_python,
 FastCGI and standalone.
 
@@ -459,7 +459,7 @@ maintainable web sites.
 .. seealso::
 
    The English Wikipedia has an article about the `Model-View-Controller pattern
-   <http://en.wikipedia.org/wiki/Model-view-controller>`_.  It includes a long
+   <https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93controller>`_.  It includes a long
    list of web frameworks for various programming languages.
 
 
@@ -547,10 +547,10 @@ module, and which uses only one file.  It has no other dependencies.  For
 smaller sites SQLite is just enough.
 
 Relational databases are *queried* using a language called `SQL
-<http://en.wikipedia.org/wiki/SQL>`_.  Python programmers in general do not
+<https://en.wikipedia.org/wiki/SQL>`_.  Python programmers in general do not
 like SQL too much, as they prefer to work with objects.  It is possible to save
 Python objects into a database using a technology called `ORM
-<http://en.wikipedia.org/wiki/Object-relational_mapping>`_ (Object Relational
+<https://en.wikipedia.org/wiki/Object-relational_mapping>`_ (Object Relational
 Mapping).  ORM translates all object-oriented access into SQL code under the
 hood, so the developer does not need to think about it.  Most `frameworks`_ use
 ORMs, and it works quite well.
@@ -583,13 +583,13 @@ alternate storage mechanism.
      helps with choosing a method for saving data
 
    * `SQLAlchemy <http://www.sqlalchemy.org/>`_, the most powerful OR-Mapper
-     for Python, and `Elixir <http://elixir.ematia.de/>`_, which makes
+     for Python, and `Elixir <https://pypi.python.org/pypi/Elixir>`_, which makes
      SQLAlchemy easier to use
 
    * `SQLObject <http://www.sqlobject.org/>`_, another popular OR-Mapper
 
    * `ZODB <https://launchpad.net/zodb>`_ and `Durus
-     <http://www.mems-exchange.org/software/durus/>`_, two object oriented
+     <https://www.mems-exchange.org/software/>`_, two object oriented
      databases
 
 
@@ -675,10 +675,10 @@ experience.  TurboGears gives the user flexibility in choosing components. For
 example the ORM and template engine can be changed to use packages different
 from those used by default.
 
-The documentation can be found in the `TurboGears wiki
-<http://docs.turbogears.org/>`_, where links to screencasts can be found.
+The documentation can be found in the `TurboGears documentation
+<https://turbogears.readthedocs.org/>`_, where links to screencasts can be found.
 TurboGears has also an active user community which can respond to most related
-questions.  There is also a `TurboGears book <http://turbogearsbook.com/>`_
+questions.  There is also a `TurboGears book <http://turbogears.org/1.0/docs/TGBooks.html>`_
 published, which is a good starting point.
 
 The newest version of TurboGears, version 2.0, moves even further in direction

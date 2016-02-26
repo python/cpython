@@ -562,7 +562,7 @@ You can start creating packages containing :file:`PKG-INFO` even if you're not
 using Python 2.1, since a new release of the Distutils will be made for users of
 earlier Python versions.  Version 1.0.2 of the Distutils includes the changes
 described in PEP 241, as well as various bugfixes and enhancements.  It will be
-available from  the Distutils SIG at https://www.python.org/sigs/distutils-sig/.
+available from the Distutils SIG at https://www.python.org/community/sigs/current/distutils-sig/.
 
 
 .. seealso::

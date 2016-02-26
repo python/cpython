@@ -137,7 +137,7 @@ Sort Stability and Complex Sorts
 ================================
 
 Starting with Python 2.2, sorts are guaranteed to be `stable
-<http://en.wikipedia.org/wiki/Sorting_algorithm#Stability>`_\. That means that
+<https://en.wikipedia.org/wiki/Sorting_algorithm#Stability>`_\. That means that
 when multiple records have the same key, their original order is preserved.
 
     >>> data = [('red', 1), ('blue', 1), ('red', 2), ('blue', 2)]
@@ -155,7 +155,7 @@ ascending *age*, do the *age* sort first and then sort again using *grade*:
     >>> sorted(s, key=attrgetter('grade'), reverse=True)       # now sort on primary key, descending
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
-The `Timsort <http://en.wikipedia.org/wiki/Timsort>`_ algorithm used in Python
+The `Timsort <https://en.wikipedia.org/wiki/Timsort>`_ algorithm used in Python
 does multiple sorts efficiently because it can take advantage of any ordering
 already present in a dataset.
 
@@ -194,7 +194,7 @@ decorated list, but including it gives two benefits:
   directly.
 
 Another name for this idiom is
-`Schwartzian transform <http://en.wikipedia.org/wiki/Schwartzian_transform>`_\,
+`Schwartzian transform <https://en.wikipedia.org/wiki/Schwartzian_transform>`_\,
 after Randal L. Schwartz, who popularized it among Perl programmers.
 
 For large lists and lists where the comparison information is expensive to

@@ -310,7 +310,7 @@ favourite beverage and carry on.
 If your logging needs are simple, then use the above examples to incorporate
 logging into your own scripts, and if you run into problems or don't
 understand something, please post a question on the comp.lang.python Usenet
-group (available at http://groups.google.com/group/comp.lang.python) and you
+group (available at https://groups.google.com/group/comp.lang.python) and you
 should receive help before too long.
 
 Still here? You can carry on reading the next few sections, which provide a

@@ -48,14 +48,14 @@ Qt
 ---
 
 There are bindings available for the Qt toolkit (using either `PyQt
-<http://www.riverbankcomputing.co.uk/software/pyqt/intro>`_ or `PySide
-<http://www.pyside.org/>`_) and for KDE (`PyKDE <https://techbase.kde.org/Development/Languages/Python>`__).
+<https://riverbankcomputing.com/software/pyqt/intro>`_ or `PySide
+<https://wiki.qt.io/PySide>`_) and for KDE (`PyKDE <https://techbase.kde.org/Development/Languages/Python>`__).
 PyQt is currently more mature than PySide, but you must buy a PyQt license from
-`Riverbank Computing <http://www.riverbankcomputing.co.uk/software/pyqt/license>`_
+`Riverbank Computing <https://www.riverbankcomputing.com/commercial/license-faq>`_
 if you want to write proprietary applications.  PySide is free for all applications.
 
 Qt 4.5 upwards is licensed under the LGPL license; also, commercial licenses
-are available from `The Qt Company <http://www.qt.io/licensing/>`_.
+are available from `The Qt Company <https://www.qt.io/licensing/>`_.
 
 Gtk+
 ----

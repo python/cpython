@@ -471,7 +471,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
    `mbox man page from tin <http://www.tin.org/bin/man.cgi?section=5&topic=mbox>`_
       Another specification of the format, with details on locking.
 
-   `Configuring Netscape Mail on Unix: Why The Content-Length Format is Bad <http://www.jwz.org/doc/content-length.html>`_
+   `Configuring Netscape Mail on Unix: Why The Content-Length Format is Bad <https://www.jwz.org/doc/content-length.html>`_
       An argument for using the original mbox format rather than a variation.
 
    `"mbox" is a family of several mutually incompatible mailbox formats <http://homepage.ntlworld.com/jonathan.deboynepollard/FGA/mail-mbox-formats.html>`_
@@ -731,7 +731,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
    `mmdf man page from tin <http://www.tin.org/bin/man.cgi?section=5&topic=mmdf>`_
       A specification of MMDF format from the documentation of tin, a newsreader.
 
-   `MMDF <http://en.wikipedia.org/wiki/MMDF>`_
+   `MMDF <https://en.wikipedia.org/wiki/MMDF>`_
       A Wikipedia article describing the Multichannel Memorandum Distribution
       Facility.
 

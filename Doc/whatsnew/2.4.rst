@@ -337,7 +337,7 @@ returned.
       wrote patches implementing function decorators, but the one that was actually
       checked in was patch #979728, written by Mark Russell.
 
-   https://www.python.org/moin/PythonDecoratorLibrary
+   https://wiki.python.org/moin/PythonDecoratorLibrary
       This Wiki page contains several examples of decorators.
 
 .. ======================================================================
@@ -687,7 +687,7 @@ includes a quick-start tutorial and a reference.
       The article uses Fortran code to illustrate many of the problems that floating-
       point inaccuracy can cause.
 
-   http://www2.hursley.ibm.com/decimal/
+   http://speleotrove.com/decimal/
       A description of a decimal-based representation.  This representation is being
       proposed as a standard, and underlies the new Python decimal type.  Much of this
       material was written by Mike Cowlishaw, designer of the Rexx language.
@@ -756,7 +756,7 @@ API that perform ASCII-only conversions, ignoring the locale setting:
   :c:type:`double` to an ASCII string.
 
 The code for these functions came from the GLib library
-(http://library.gnome.org/devel/glib/stable/), whose developers kindly
+(https://developer.gnome.org/glib/stable/), whose developers kindly
 relicensed the relevant functions and donated them to the Python Software
 Foundation.  The :mod:`locale` module  can now change the numeric locale,
 letting extensions such as GTK+  produce the correct results.

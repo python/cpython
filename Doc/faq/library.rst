@@ -597,7 +597,7 @@ For Win32, POSIX (Linux, BSD, etc.), Jython:
 
 For Unix, see a Usenet post by Mitch Chapman:
 
-   http://groups.google.com/groups?selm=34A04430.CF9@ohioee.com
+   https://groups.google.com/groups?selm=34A04430.CF9@ohioee.com
 
 
 Why doesn't closing sys.stdout (stdin, stderr) really close it?

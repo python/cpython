@@ -160,7 +160,7 @@ Mac OS X. Packages and documentation are available from http://www.wxpython.org.
 
 *PyQt* is another popular cross-platform GUI toolkit that runs natively on Mac
 OS X. More information can be found at
-http://www.riverbankcomputing.co.uk/software/pyqt/intro.
+https://riverbankcomputing.com/software/pyqt/intro.
 
 
 Distributing Python Applications on the Mac

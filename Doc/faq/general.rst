@@ -159,7 +159,7 @@ How do I obtain a copy of the Python source?
 --------------------------------------------
 
 The latest Python source distribution is always available from python.org, at
-https://www.python.org/download/.  The latest development sources can be obtained
+https://www.python.org/downloads/.  The latest development sources can be obtained
 via anonymous Mercurial access at https://hg.python.org/cpython.
 
 The source distribution is a gzipped tar file containing the complete C source,
@@ -218,7 +218,7 @@ can be found at https://www.python.org/community/lists/.
 How do I get a beta test version of Python?
 -------------------------------------------
 
-Alpha and beta releases are available from https://www.python.org/download/.  All
+Alpha and beta releases are available from https://www.python.org/downloads/.  All
 releases are announced on the comp.lang.python and comp.lang.python.announce
 newsgroups and on the Python home page at https://www.python.org/; an RSS feed of
 news is available.
@@ -273,7 +273,7 @@ The Python project's infrastructure is located all over the world.
 `www.python.org <https://www.python.org>`_ is graciously hosted by `Rackspace
 <http://www.rackspace.com>`_, with CDN caching provided by `Fastly
 <https://www.fastly.com>`_.  `Upfront Systems
-<http://www.upfrontsystems.co.za>`_ hosts `bugs.python.org
+<http://www.upfrontsystems.co.za/>`_ hosts `bugs.python.org
 <https://bugs.python.org>`_.  Many other Python services like `the Wiki
 <https://wiki.python.org>`_ are hosted by `Oregon State
 University Open Source Lab <https://osuosl.org>`_.
@@ -284,7 +284,7 @@ Why is it called Python?
 
 When he began implementing Python, Guido van Rossum was also reading the
 published scripts from `"Monty Python's Flying Circus"
-<http://en.wikipedia.org/wiki/Monty_Python>`__, a BBC comedy series from the 1970s.  Van Rossum
+<https://en.wikipedia.org/wiki/Monty_Python>`__, a BBC comedy series from the 1970s.  Van Rossum
 thought he needed a name that was short, unique, and slightly mysterious, so he
 decided to call the language Python.
 
@@ -313,7 +313,7 @@ guaranteed that interfaces will remain the same throughout a series of bugfix
 releases.
 
 The latest stable releases can always be found on the `Python download page
-<https://www.python.org/download/>`_.  There are two recommended production-ready
+<https://www.python.org/downloads/>`_.  There are two recommended production-ready
 versions at this point in time, because at the moment there are two branches of
 stable releases: 2.x and 3.x.  Python 3.x may be less useful than 2.x, since
 currently there is more third party software available for Python 2 than for
@@ -345,7 +345,7 @@ different companies and organizations.
 High-profile Python projects include `the Mailman mailing list manager
 <http://www.list.org>`_ and `the Zope application server
 <http://www.zope.org>`_.  Several Linux distributions, most notably `Red Hat
-<http://www.redhat.com>`_, have written part or all of their installer and
+<https://www.redhat.com>`_, have written part or all of their installer and
 system administration software in Python.  Companies that use Python internally
 include Google, Yahoo, and Lucasfilm Ltd.
 

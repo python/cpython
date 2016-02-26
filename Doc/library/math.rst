@@ -102,7 +102,7 @@ Number-theoretic and representation functions
 
    For further discussion and two alternative approaches, see the `ASPN cookbook
    recipes for accurate floating point summation
-   <http://code.activestate.com/recipes/393090/>`_\.
+   <https://code.activestate.com/recipes/393090/>`_\.
 
    .. versionadded:: 2.6
 

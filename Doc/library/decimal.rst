@@ -111,9 +111,6 @@ reset them before monitoring a calculation.
    * IBM's General Decimal Arithmetic Specification, `The General Decimal Arithmetic
      Specification <http://speleotrove.com/decimal/>`_.
 
-   * IEEE standard 854-1987, `Unofficial IEEE 854 Text
-     <http://754r.ucbtest.org/standards/854.pdf>`_.
-
 .. %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 

@@ -73,7 +73,7 @@ Two additional methods are supported:
 
 .. seealso::
 
-   `Persistent dictionary recipe <http://code.activestate.com/recipes/576642/>`_
+   `Persistent dictionary recipe <https://code.activestate.com/recipes/576642/>`_
    with widely supported storage formats and having the speed of native
    dictionaries.
 

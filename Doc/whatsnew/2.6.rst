@@ -151,8 +151,8 @@ The infrastructure committee of the Python Software Foundation
 therefore posted a call for issue trackers, asking volunteers to set
 up different products and import some of the bugs and patches from
 SourceForge.  Four different trackers were examined: `Jira
-<http://www.atlassian.com/software/jira/>`__,
-`Launchpad <http://www.launchpad.net>`__,
+<https://www.atlassian.com/software/jira/>`__,
+`Launchpad <https://www.launchpad.net>`__,
 `Roundup <http://roundup.sourceforge.net/>`__, and
 `Trac <http://trac.edgewall.org/>`__.
 The committee eventually settled on Jira
@@ -215,7 +215,7 @@ the time required to finish the job.
 During the 2.6 development cycle, Georg Brandl put a lot of effort
 into building a new toolchain for processing the documentation.  The
 resulting package is called Sphinx, and is available from
-http://sphinx.pocoo.org/.
+http://sphinx-doc.org/.
 
 Sphinx concentrates on HTML output, producing attractively styled and
 modern HTML; printed output is still supported through conversion to
@@ -1792,7 +1792,7 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`bsddb` module also has a new maintainer, Jesús Cea Avion, and the package
   is now available as a standalone package.  The web page for the package is
   `www.jcea.es/programacion/pybsddb.htm
-  <http://www.jcea.es/programacion/pybsddb.htm>`__.
+  <https://www.jcea.es/programacion/pybsddb.htm>`__.
   The plan is to remove the package from the standard library
   in Python 3.0, because its pace of releases is much more frequent than
   Python's.
@@ -1922,7 +1922,7 @@ changes, or look through the Subversion logs for all the details.
   the left to six places.  (Contributed by Skip Montanaro; :issue:`1158`.)
 
 * The :mod:`decimal` module was updated to version 1.66 of
-  `the General Decimal Specification <http://www2.hursley.ibm.com/decimal/decarith.html>`__.  New features
+  `the General Decimal Specification <http://speleotrove.com/decimal/decarith.html>`__.  New features
   include some methods for some basic mathematical functions such as
   :meth:`exp` and :meth:`log10`::
 
