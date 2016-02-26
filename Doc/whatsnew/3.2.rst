@@ -845,9 +845,9 @@ collections
 
 * The :class:`collections.Counter` class now has two forms of in-place
   subtraction, the existing *-=* operator for `saturating subtraction
-  <http://en.wikipedia.org/wiki/Saturation_arithmetic>`_ and the new
+  <https://en.wikipedia.org/wiki/Saturation_arithmetic>`_ and the new
   :meth:`~collections.Counter.subtract` method for regular subtraction.  The
-  former is suitable for `multisets <http://en.wikipedia.org/wiki/Multiset>`_
+  former is suitable for `multisets <https://en.wikipedia.org/wiki/Multiset>`_
   which only have positive counts, and the latter is more suitable for use cases
   that allow negative counts:
 
@@ -906,7 +906,7 @@ with multiple preconditions does not run until all of the predecessor tasks are
 complete.
 
 Barriers can work with an arbitrary number of threads.  This is a generalization
-of a `Rendezvous <http://en.wikipedia.org/wiki/Synchronous_rendezvous>`_ which
+of a `Rendezvous <https://en.wikipedia.org/wiki/Synchronous_rendezvous>`_ which
 is defined for only two threads.
 
 Implemented as a two-phase cyclic barrier, :class:`~threading.Barrier` objects
@@ -1043,7 +1043,7 @@ of nearly equal quantities:
 0.013765762467652909
 
 The :func:`~math.erf` function computes a probability integral or `Gaussian
-error function <http://en.wikipedia.org/wiki/Error_function>`_.  The
+error function <https://en.wikipedia.org/wiki/Error_function>`_.  The
 complementary error function, :func:`~math.erfc`, is ``1 - erf(x)``:
 
 >>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
@@ -1054,7 +1054,7 @@ complementary error function, :func:`~math.erfc`, is ``1 - erf(x)``:
 1.0
 
 The :func:`~math.gamma` function is a continuous extension of the factorial
-function.  See http://en.wikipedia.org/wiki/Gamma_function for details.  Because
+function.  See https://en.wikipedia.org/wiki/Gamma_function for details.  Because
 the function is related to factorials, it grows large even for small values of
 *x*, so there is also a :func:`~math.lgamma` function for computing the natural
 logarithm of the gamma function:
@@ -2180,7 +2180,7 @@ urllib.parse
 A number of usability improvements were made for the :mod:`urllib.parse` module.
 
 The :func:`~urllib.parse.urlparse` function now supports `IPv6
-<http://en.wikipedia.org/wiki/IPv6>`_ addresses as described in :rfc:`2732`:
+<https://en.wikipedia.org/wiki/IPv6>`_ addresses as described in :rfc:`2732`:
 
     >>> import urllib.parse
     >>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/')
@@ -2328,7 +2328,7 @@ A number of small performance enhancements have been added:
   (Contributed by Alexandre Vassalotti, Antoine Pitrou
   and the Unladen Swallow team in :issue:`9410` and :issue:`3873`.)
 
-* The `Timsort algorithm <http://en.wikipedia.org/wiki/Timsort>`_ used in
+* The `Timsort algorithm <https://en.wikipedia.org/wiki/Timsort>`_ used in
   :meth:`list.sort` and :func:`sorted` now runs faster and uses less memory
   when called with a :term:`key function`.  Previously, every element of
   a list was wrapped with a temporary object that remembered the key value
@@ -2380,7 +2380,7 @@ Unicode
 
 Python has been updated to `Unicode 6.0.0
 <http://unicode.org/versions/Unicode6.0.0/>`_.  The update to the standard adds
-over 2,000 new characters including `emoji <http://en.wikipedia.org/wiki/Emoji>`_
+over 2,000 new characters including `emoji <https://en.wikipedia.org/wiki/Emoji>`_
 symbols which are important for mobile phones.
 
 In addition, the updated standard has altered the character properties for two
@@ -2432,7 +2432,7 @@ The documentation continues to be improved.
     **Source code** :source:`Lib/functools.py`.
 
   (Contributed by Raymond Hettinger; see
-  `rationale <http://rhettinger.wordpress.com/2011/01/28/open-your-source-more/>`_.)
+  `rationale <https://rhettinger.wordpress.com/2011/01/28/open-your-source-more/>`_.)
 
 * The docs now contain more examples and recipes.  In particular, :mod:`re`
   module has an extensive section, :ref:`re-examples`.  Likewise, the
@@ -2468,7 +2468,7 @@ Code Repository
 ===============
 
 In addition to the existing Subversion code repository at http://svn.python.org
-there is now a `Mercurial <http://mercurial.selenic.com/>`_ repository at
+there is now a `Mercurial <https://www.mercurial-scm.org/>`_ repository at
 https://hg.python.org/\ .
 
 After the 3.2 release, there are plans to switch to Mercurial as the primary
@@ -2478,7 +2478,7 @@ members of the community to create and share external changesets.  See
 
 To learn to use the new version control system, see the `tutorial by Joel
 Spolsky <http://hginit.com>`_ or the `Guide to Mercurial Workflows
-<http://mercurial.selenic.com/guide>`_.
+<https://www.mercurial-scm.org/guide>`_.
 
 
 Build and C API Changes

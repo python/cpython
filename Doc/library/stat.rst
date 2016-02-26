@@ -403,7 +403,7 @@ See the \*BSD or Mac OS systems man page :manpage:`chflags(2)` for more informat
 On Windows, the following file attribute constants are available for use when
 testing bits in the ``st_file_attributes`` member returned by :func:`os.stat`.
 See the `Windows API documentation
-<http://msdn.microsoft.com/en-us/library/windows/desktop/gg258117.aspx>`_
+<https://msdn.microsoft.com/en-us/library/windows/desktop/gg258117.aspx>`_
 for more detail on the meaning of these constants.
 
 .. data:: FILE_ATTRIBUTE_ARCHIVE

@@ -41,7 +41,7 @@ asyncio currently provides two implementations of event loops:
 
    On Windows, only sockets are supported (ex: pipes are not supported):
    see the `MSDN documentation of select
-   <http://msdn.microsoft.com/en-us/library/windows/desktop/ms740141%28v=vs.85%29.aspx>`_.
+   <https://msdn.microsoft.com/en-us/library/windows/desktop/ms740141%28v=vs.85%29.aspx>`_.
 
 .. class:: ProactorEventLoop
 
@@ -53,7 +53,7 @@ asyncio currently provides two implementations of event loops:
    .. seealso::
 
       `MSDN documentation on I/O Completion Ports
-      <http://msdn.microsoft.com/en-us/library/windows/desktop/aa365198%28v=vs.85%29.aspx>`_.
+      <https://msdn.microsoft.com/en-us/library/windows/desktop/aa365198%28v=vs.85%29.aspx>`_.
 
 Example to use a :class:`ProactorEventLoop` on Windows::
 
@@ -107,7 +107,7 @@ Common limits of Windows event loops:
 The resolution of the monotonic clock on Windows is usually around 15.6 msec.
 The best resolution is 0.5 msec. The resolution depends on the hardware
 (availability of `HPET
-<http://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the Windows
+<https://en.wikipedia.org/wiki/High_Precision_Event_Timer>`_) and on the Windows
 configuration. See :ref:`asyncio delayed calls <asyncio-delayed-calls>`.
 
 .. versionchanged:: 3.5

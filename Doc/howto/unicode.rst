@@ -73,7 +73,7 @@ revision of Unicode.
 precise historical details aren't necessary for understanding how to
 use Unicode effectively, but if you're curious, consult the Unicode
 consortium site listed in the References or
-the `Wikipedia entry for Unicode <http://en.wikipedia.org/wiki/Unicode#History>`_
+the `Wikipedia entry for Unicode <https://en.wikipedia.org/wiki/Unicode#History>`_
 for more information.)
 
 
@@ -223,8 +223,8 @@ If this introduction didn't make things clear to you, you should try
 reading this alternate article before continuing.
 
 Wikipedia entries are often helpful; see the entries for "`character encoding
-<http://en.wikipedia.org/wiki/Character_encoding>`_" and `UTF-8
-<http://en.wikipedia.org/wiki/UTF-8>`_, for example.
+<https://en.wikipedia.org/wiki/Character_encoding>`_" and `UTF-8
+<https://en.wikipedia.org/wiki/UTF-8>`_, for example.
 
 
 Python's Unicode Support

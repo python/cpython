@@ -134,7 +134,7 @@ This module offers the following functions:
       The :func:`DeleteKeyEx` function is implemented with the RegDeleteKeyEx
       Windows API function, which is specific to 64-bit versions of Windows.
       See the `RegDeleteKeyEx documentation
-      <http://msdn.microsoft.com/en-us/library/ms724847%28VS.85%29.aspx>`__.
+      <https://msdn.microsoft.com/en-us/library/ms724847%28VS.85%29.aspx>`__.
 
    *key* is an already open key, or one of the predefined
    :ref:`HKEY_* constants <hkey-constants>`.
@@ -268,7 +268,7 @@ This module offers the following functions:
    A call to :func:`LoadKey` fails if the calling process does not have the
    :const:`SE_RESTORE_PRIVILEGE` privilege.  Note that privileges are different
    from permissions -- see the `RegLoadKey documentation
-   <http://msdn.microsoft.com/en-us/library/ms724889%28v=VS.85%29.aspx>`__ for
+   <https://msdn.microsoft.com/en-us/library/ms724889%28v=VS.85%29.aspx>`__ for
    more details.
 
    If *key* is a handle returned by :func:`ConnectRegistry`, then the path
@@ -383,7 +383,7 @@ This module offers the following functions:
    possess the :const:`SeBackupPrivilege` security privilege.  Note that
    privileges are different than permissions -- see the
    `Conflicts Between User Rights and Permissions documentation
-   <http://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__
+   <https://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__
    for more details.
 
    This function passes NULL for *security_attributes* to the API.
@@ -547,7 +547,7 @@ Access Rights
 +++++++++++++
 
 For more information, see `Registry Key Security and Access
-<http://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__.
+<https://msdn.microsoft.com/en-us/library/ms724878%28v=VS.85%29.aspx>`__.
 
 .. data:: KEY_ALL_ACCESS
 
@@ -602,7 +602,7 @@ For more information, see `Registry Key Security and Access
 ***************
 
 For more information, see `Accessing an Alternate Registry View
-<http://msdn.microsoft.com/en-us/library/aa384129(v=VS.85).aspx>`__.
+<https://msdn.microsoft.com/en-us/library/aa384129(v=VS.85).aspx>`__.
 
 .. data:: KEY_WOW64_64KEY
 
@@ -621,7 +621,7 @@ Value Types
 +++++++++++
 
 For more information, see `Registry Value Types
-<http://msdn.microsoft.com/en-us/library/ms724884%28v=VS.85%29.aspx>`__.
+<https://msdn.microsoft.com/en-us/library/ms724884%28v=VS.85%29.aspx>`__.
 
 .. data:: REG_BINARY
 

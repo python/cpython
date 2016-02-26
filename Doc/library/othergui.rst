@@ -8,33 +8,33 @@ available for Python:
 
 .. seealso::
 
-   `PyGObject <https://live.gnome.org/PyGObject>`_
+   `PyGObject <https://wiki.gnome.org/Projects/PyGObject>`_
       provides introspection bindings for C libraries using
       `GObject <https://developer.gnome.org/gobject/stable/>`_.  One of
       these libraries is the `GTK+ 3 <http://www.gtk.org/>`_ widget set.
       GTK+ comes with many more widgets than Tkinter provides.  An online
-      `Python GTK+ 3 Tutorial <http://python-gtk-3-tutorial.readthedocs.org/en/latest/>`_
+      `Python GTK+ 3 Tutorial <https://python-gtk-3-tutorial.readthedocs.org/en/latest/>`_
       is available.
 
       `PyGTK <http://www.pygtk.org/>`_ provides bindings for an older version
       of the library, GTK+ 2.  It provides an object oriented interface that
       is slightly higher level than the C one.  There are also bindings to
-      `GNOME <http://www.gnome.org>`_.  An online `tutorial
+      `GNOME <https://www.gnome.org/>`_.  An online `tutorial
       <http://www.pygtk.org/pygtk2tutorial/index.html>`_ is available.
 
-   `PyQt <http://www.riverbankcomputing.co.uk/software/pyqt/intro>`_
+   `PyQt <https://riverbankcomputing.com/software/pyqt/intro>`_
       PyQt is a :program:`sip`\ -wrapped binding to the Qt toolkit.  Qt is an
       extensive C++ GUI application development framework that is
       available for Unix, Windows and Mac OS X. :program:`sip` is a tool
       for generating bindings for C++ libraries as Python classes, and
       is specifically designed for Python. The *PyQt3* bindings have a
       book, `GUI Programming with Python: QT Edition
-      <http://www.commandprompt.com/community/pyqt/>`_ by Boudewijn
+      <https://www.commandprompt.com/community/pyqt/>`_ by Boudewijn
       Rempt. The *PyQt4* bindings also have a book, `Rapid GUI Programming
       with Python and Qt <http://www.qtrac.eu/pyqtbook.html>`_, by Mark
       Summerfield.
 
-   `PySide <http://qt-project.org/wiki/PySide>`_
+   `PySide <https://wiki.qt.io/PySide>`_
       is a newer binding to the Qt toolkit, provided by Nokia.
       Compared to PyQt, its licensing scheme is friendlier to non-open source
       applications.
@@ -50,7 +50,7 @@ available for Python:
       low-level device context drawing, drag and drop, system clipboard access,
       an XML-based resource format and more, including an ever growing library
       of user-contributed modules.  wxPython has a book, `wxPython in Action
-      <http://www.manning.com/rappin/>`_, by Noel Rappin and
+      <https://www.manning.com/books/wxpython-in-action>`_, by Noel Rappin and
       Robin Dunn.
 
 PyGTK, PyQt, and wxPython, all have a modern look and feel and more

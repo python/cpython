@@ -619,7 +619,7 @@ The :mod:`test.support` module defines the following classes:
    are expected to crash a subprocess.
 
    On Windows, it disables Windows Error Reporting dialogs using
-   `SetErrorMode <http://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx>`_.
+   `SetErrorMode <https://msdn.microsoft.com/en-us/library/windows/desktop/ms680621.aspx>`_.
 
    On UNIX, :func:`resource.setrlimit` is used to set
    :attr:`resource.RLIMIT_CORE`'s soft limit to 0 to prevent coredump file
