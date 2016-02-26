@@ -144,7 +144,7 @@ Security improvements:
   all of the parent's inheritable handles, only the necessary ones.
 * A new :func:`hashlib.pbkdf2_hmac` function provides
   the `PKCS#5 password-based key derivation function 2
-  <http://en.wikipedia.org/wiki/PBKDF2>`_.
+  <https://en.wikipedia.org/wiki/PBKDF2>`_.
 * :ref:`TLSv1.1 and TLSv1.2 support <whatsnew-tls-11-12>` for :mod:`ssl`.
 * :ref:`Retrieving certificates from the Windows system cert store support
   <whatsnew34-win-cert-store>` for :mod:`ssl`.
@@ -902,7 +902,7 @@ hashlib
 
 A new :func:`hashlib.pbkdf2_hmac` function provides
 the `PKCS#5 password-based key derivation function 2
-<http://en.wikipedia.org/wiki/PBKDF2>`_.  (Contributed by Christian
+<https://en.wikipedia.org/wiki/PBKDF2>`_.  (Contributed by Christian
 Heimes in :issue:`18582`.)
 
 The :attr:`~hashlib.hash.name` attribute of :mod:`hashlib` hash objects is now
@@ -1917,8 +1917,8 @@ Other Build and C API Changes
   :issue:`18596`.)
 
 * The Windows build now uses `Address Space Layout Randomization
-  <http://en.wikipedia.org/wiki/ASLR>`_ and `Data Execution Prevention
-  <http://en.wikipedia.org/wiki/Data_Execution_Prevention>`_.  (Contributed by
+  <https://en.wikipedia.org/wiki/Address_space_layout_randomization>`_ and `Data Execution Prevention
+  <https://en.wikipedia.org/wiki/Data_Execution_Prevention>`_.  (Contributed by
   Christian Heimes in :issue:`16632`.)
 
 * New function :c:func:`PyObject_LengthHint` is the C API equivalent

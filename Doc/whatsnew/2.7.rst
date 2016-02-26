@@ -1029,7 +1029,7 @@ changes, or look through the Subversion logs for all the details.
 
 * Updated module: the :mod:`bsddb` module has been updated from 4.7.2devel9
   to version 4.8.4 of
-  `the pybsddb package <http://www.jcea.es/programacion/pybsddb.htm>`__.
+  `the pybsddb package <https://www.jcea.es/programacion/pybsddb.htm>`__.
   The new version features better Python 3.x compatibility, various bug fixes,
   and adds several new BerkeleyDB flags and methods.
   (Updated by Jesús Cea Avión; :issue:`8156`.  The pybsddb
@@ -1513,7 +1513,7 @@ changes, or look through the Subversion logs for all the details.
   (Contributed by Kristján Valur Jónsson; :issue:`6192` and :issue:`6267`.)
 
 * Updated module: the :mod:`sqlite3` module has been updated to
-  version 2.6.0 of the `pysqlite package <http://code.google.com/p/pysqlite/>`__. Version 2.6.0 includes a number of bugfixes, and adds
+  version 2.6.0 of the `pysqlite package <https://github.com/ghaering/pysqlite>`__. Version 2.6.0 includes a number of bugfixes, and adds
   the ability to load SQLite extensions from shared libraries.
   Call the ``enable_load_extension(True)`` method to enable extensions,
   and then call :meth:`~sqlite3.Connection.load_extension` to load a particular shared library.

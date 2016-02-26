@@ -565,7 +565,7 @@ review:
   core standard library has proved over time to be a particular burden
   for the core developers due to testing instability and Berkeley DB's
   release schedule.  However, the package is alive and well,
-  externally maintained at http://www.jcea.es/programacion/pybsddb.htm.
+  externally maintained at https://www.jcea.es/programacion/pybsddb.htm.
 
 * Some modules were renamed because their old name disobeyed
   :pep:`0008`, or for various other reasons.  Here's the list:

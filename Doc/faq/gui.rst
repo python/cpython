@@ -29,7 +29,7 @@ Tkinter
 Standard builds of Python include an object-oriented interface to the Tcl/Tk
 widget set, called :ref:`tkinter <Tkinter>`.  This is probably the easiest to
 install (since it comes included with most
-`binary distributions <https://www.python.org/download/>`_ of Python) and use.
+`binary distributions <https://www.python.org/downloads/>`_ of Python) and use.
 For more info about Tk, including pointers to the source, see the
 `Tcl/Tk home page <http://www.tcl.tk>`_.  Tcl/Tk is fully portable to the
 Mac OS X, Windows, and Unix platforms.
@@ -58,19 +58,19 @@ Qt
 ---
 
 There are bindings available for the Qt toolkit (using either `PyQt
-<http://www.riverbankcomputing.co.uk/software/pyqt/intro>`_ or `PySide
-<http://www.pyside.org/>`_) and for KDE (`PyKDE <https://techbase.kde.org/Development/Languages/Python>`__).
+<https://riverbankcomputing.com/software/pyqt/intro>`_ or `PySide
+<https://wiki.qt.io/PySide>`_) and for KDE (`PyKDE <https://techbase.kde.org/Development/Languages/Python>`__).
 PyQt is currently more mature than PySide, but you must buy a PyQt license from
-`Riverbank Computing <http://www.riverbankcomputing.co.uk/software/pyqt/license>`_
+`Riverbank Computing <https://www.riverbankcomputing.com/commercial/license-faq>`_
 if you want to write proprietary applications.  PySide is free for all applications.
 
 Qt 4.5 upwards is licensed under the LGPL license; also, commercial licenses
-are available from `The Qt Company <http://www.qt.io/licensing/>`_.
+are available from `The Qt Company <https://www.qt.io/licensing/>`_.
 
 Gtk+
 ----
 
-The `GObject introspection bindings <https://live.gnome.org/PyGObject>`_
+The `GObject introspection bindings <https://wiki.gnome.org/Projects/PyGObject>`_
 for Python allow you to write GTK+ 3 applications.  There is also a
 `Python GTK+ 3 Tutorial <http://python-gtk-3-tutorial.readthedocs.org/en/latest/>`_.
 
