@@ -574,7 +574,6 @@ PyAST_Validate(mod_ty mod)
 
 /* Data structure used internally */
 struct compiling {
-    char *c_encoding; /* source encoding */
     PyArena *c_arena; /* Arena for allocating memory. */
     PyObject *c_filename; /* filename */
     PyObject *c_normalize; /* Normalization function from unicodedata. */
@@ -761,23 +760,11 @@ PyAST_FromNodeObject(const node *n, PyCompilerFlags *flags,
     c.c_arena = arena;
     /* borrowed reference */
     c.c_filename = filename;
-    c.c_normalize = c.c_normalize_args = NULL;
-    if (flags && flags->cf_flags & PyCF_SOURCE_IS_UTF8) {
-        c.c_encoding = "utf-8";
-        if (TYPE(n) == encoding_decl) {
-#if 0
-            ast_error(c, n, "encoding declaration in Unicode string");
-            goto out;
-#endif
-            n = CHILD(n, 0);
-        }
-    } else if (TYPE(n) == encoding_decl) {
-        c.c_encoding = STR(n);
+    c.c_normalize = NULL;
+    c.c_normalize_args = NULL;
+
+    if (TYPE(n) == encoding_decl)
         n = CHILD(n, 0);
-    } else {
-        /* PEP 3120 */
-        c.c_encoding = "utf-8";
-    }
 
     k = 0;
     switch (TYPE(n)) {
