@@ -25,7 +25,7 @@ there.
 
 What you get after installing is a number of things:
 
-* A :file:`MacPython 3.4` folder in your :file:`Applications` folder. In here
+* A :file:`MacPython 3.6` folder in your :file:`Applications` folder. In here
   you find IDLE, the development environment that is a standard part of official
   Python distributions; PythonLauncher, which handles double-clicking Python
   scripts from the Finder; and the "Build Applet" tool, which allows you to
@@ -93,7 +93,7 @@ aware of: programs that talk to the Aqua window manager (in other words,
 anything that has a GUI) need to be run in a special way. Use :program:`pythonw`
 instead of :program:`python` to start such scripts.
 
-With Python 3.4, you can use either :program:`python` or :program:`pythonw`.
+With Python 3.6, you can use either :program:`python` or :program:`pythonw`.
 
 
 Configuration
@@ -159,7 +159,7 @@ http://www.riverbankcomputing.co.uk/software/pyqt/intro.
 Distributing Python Applications on the Mac
 ===========================================
 
-The "Build Applet" tool that is placed in the MacPython 3.4 folder is fine for
+The "Build Applet" tool that is placed in the MacPython 3.6 folder is fine for
 packaging small Python scripts on your own machine to run as a standard Mac
 application. This tool, however, is not robust enough to distribute Python
 applications to other users.
