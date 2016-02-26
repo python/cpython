@@ -251,12 +251,12 @@ Check :pep:`11` for details on all unsupported platforms.
   release/python>`_, `Maintainer releases
   <http://www.tishler.net/jason/software/python/>`_)
 
-See `Python for Windows <https://www.python.org/download/windows/>`_
+See `Python for Windows <https://www.python.org/downloads/windows/>`_
 for detailed information about platforms with pre-compiled installers.
 
 .. seealso::
 
-   `Python on XP <http://www.richarddooling.com/index.php/2006/03/14/python-on-xp-7-minutes-to-hello-world/>`_
+   `Python on XP <http://dooling.com/index.php/2006/03/14/python-on-xp-7-minutes-to-hello-world/>`_
       "7 Minutes to "Hello World!""
       by Richard Dooling, 2006
 
@@ -279,10 +279,10 @@ Besides the standard CPython distribution, there are modified packages including
 additional functionality.  The following is a list of popular versions and their
 key features:
 
-`ActivePython <http://www.activestate.com/activepython/>`_
+`ActivePython <https://www.activestate.com/activepython/>`_
     Installer with multi-platform compatibility, documentation, PyWin32
 
-`Anaconda <http://www.continuum.io/downloads/>`_
+`Anaconda <https://www.continuum.io/downloads/>`_
     Popular scientific modules (such as numpy, scipy and pandas) and the
     ``conda`` package manager.
 
@@ -352,16 +352,16 @@ System variables, you need non-restricted access to your machine
 
 .. seealso::
 
-    http://support.microsoft.com/kb/100843
+    https://support.microsoft.com/kb/100843
       Environment variables in Windows NT
 
-    http://technet.microsoft.com/en-us/library/cc754250.aspx
+    https://technet.microsoft.com/en-us/library/cc754250.aspx
       The SET command, for temporarily modifying environment variables
 
-    http://technet.microsoft.com/en-us/library/cc755104.aspx
+    https://technet.microsoft.com/en-us/library/cc755104.aspx
       The SETX command, for permanently modifying environment variables
 
-    http://support.microsoft.com/kb/310519
+    https://support.microsoft.com/kb/310519
       How To Manage Environment Variables in Windows XP
 
     http://www.chem.gla.ac.uk/~louis/software/faq/q1.html
@@ -781,18 +781,18 @@ The Windows-specific standard modules are documented in
 PyWin32
 -------
 
-The `PyWin32 <http://python.net/crew/mhammond/win32/>`_ module by Mark Hammond
+The `PyWin32 <https://pypi.python.org/pypi/pywin32>`_ module by Mark Hammond
 is a collection of modules for advanced Windows-specific support.  This includes
 utilities for:
 
-* `Component Object Model <http://www.microsoft.com/com/>`_ (COM)
+* `Component Object Model <https://www.microsoft.com/com/>`_ (COM)
 * Win32 API calls
 * Registry
 * Event log
-* `Microsoft Foundation Classes <http://msdn.microsoft.com/en-us/library/fe1cf721%28VS.80%29.aspx>`_ (MFC)
+* `Microsoft Foundation Classes <https://msdn.microsoft.com/en-us/library/fe1cf721%28VS.80%29.aspx>`_ (MFC)
   user interfaces
 
-`PythonWin <http://web.archive.org/web/20060524042422/
+`PythonWin <https://web.archive.org/web/20060524042422/
 https://www.python.org/windows/pythonwin/>`_ is a sample MFC application
 shipped with PyWin32.  It is an embeddable IDE with a built-in debugger.
 
@@ -831,7 +831,7 @@ Compiling Python on Windows
 ===========================
 
 If you want to compile CPython yourself, first thing you should do is get the
-`source <https://www.python.org/download/source/>`_. You can download either the
+`source <https://www.python.org/downloads/source/>`_. You can download either the
 latest release's source or just grab a fresh `checkout
 <https://docs.python.org/devguide/setup.html#getting-the-source-code>`_.
 
@@ -874,7 +874,7 @@ dependants, such as Idle), pip and the Python documentation are not included.
 .. note::
 
     The embedded distribution does not include the `Microsoft C Runtime
-    <http://www.microsoft.com/en-us/download/details.aspx?id=48145>`_ and it is
+    <https://www.microsoft.com/en-us/download/details.aspx?id=48145>`_ and it is
     the responsibility of the application installer to provide this. The
     runtime may have already been installed on a user's system previously or
     automatically via Windows Update, and can be detected by finding

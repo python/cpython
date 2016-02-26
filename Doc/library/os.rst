@@ -894,7 +894,7 @@ The following constants are options for the *flags* parameter to the
 :func:`~os.open` function.  They can be combined using the bitwise OR operator
 ``|``.  Some of them are not available on all platforms.  For descriptions of
 their availability and use, consult the :manpage:`open(2)` manual page on Unix
-or `the MSDN <http://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windows.
+or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windows.
 
 
 .. data:: O_RDONLY
@@ -1907,9 +1907,9 @@ features:
       and
       `readdir() <http://pubs.opengroup.org/onlinepubs/009695399/functions/readdir_r.html>`_
       functions. On Windows, it uses the Win32
-      `FindFirstFileW <http://msdn.microsoft.com/en-us/library/windows/desktop/aa364418(v=vs.85).aspx>`_
+      `FindFirstFileW <https://msdn.microsoft.com/en-us/library/windows/desktop/aa364418(v=vs.85).aspx>`_
       and
-      `FindNextFileW <http://msdn.microsoft.com/en-us/library/windows/desktop/aa364428(v=vs.85).aspx>`_
+      `FindNextFileW <https://msdn.microsoft.com/en-us/library/windows/desktop/aa364428(v=vs.85).aspx>`_
       functions.
 
    .. versionadded:: 3.5

@@ -7411,7 +7411,7 @@ Library
 
 - Issue #16245: Fix the value of a few entities in html.entities.html5.
 
-- Issue #16301: Fix the localhost verification in urllib/request.py for file://
+- Issue #16301: Fix the localhost verification in urllib/request.py for ``file://``
   urls.
 
 - Issue #16250: Fix the invocations of URLError which had misplaced filename

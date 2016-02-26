@@ -475,7 +475,7 @@ functions.
       execute.  On Windows, in order to run a `side-by-side assembly`_ the
       specified *env* **must** include a valid :envvar:`SystemRoot`.
 
-   .. _side-by-side assembly: http://en.wikipedia.org/wiki/Side-by-Side_Assembly
+   .. _side-by-side assembly: https://en.wikipedia.org/wiki/Side-by-Side_Assembly
 
    If *universal_newlines* is ``True``, the file objects *stdin*, *stdout*
    and *stderr* are opened as text streams in universal newlines mode, as
@@ -536,7 +536,7 @@ including shell metacharacters, can safely be passed to child processes.
 If the shell is invoked explicitly, via ``shell=True``, it is the application's
 responsibility to ensure that all whitespace and metacharacters are
 quoted appropriately to avoid
-`shell injection <http://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
+`shell injection <https://en.wikipedia.org/wiki/Shell_injection#Shell_injection>`_
 vulnerabilities.
 
 When using ``shell=True``, the :func:`shlex.quote` function can be
@@ -721,7 +721,7 @@ on Windows.
 .. class:: STARTUPINFO()
 
    Partial support of the Windows
-   `STARTUPINFO <http://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
+   `STARTUPINFO <https://msdn.microsoft.com/en-us/library/ms686331(v=vs.85).aspx>`__
    structure is used for :class:`Popen` creation.
 
    .. attribute:: dwFlags
@@ -757,7 +757,7 @@ on Windows.
       If :attr:`dwFlags` specifies :data:`STARTF_USESHOWWINDOW`, this attribute
       can be any of the values that can be specified in the ``nCmdShow``
       parameter for the
-      `ShowWindow <http://msdn.microsoft.com/en-us/library/ms633548(v=vs.85).aspx>`__
+      `ShowWindow <https://msdn.microsoft.com/en-us/library/ms633548(v=vs.85).aspx>`__
       function, except for ``SW_SHOWDEFAULT``. Otherwise, this attribute is
       ignored.
 
