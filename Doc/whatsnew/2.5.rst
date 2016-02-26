@@ -330,7 +330,7 @@ statement, only the ``from ... import`` form.
    :pep:`328` - Imports: Multi-Line and Absolute/Relative
       PEP written by Aahz; implemented by Thomas Wouters.
 
-   http://codespeak.net/py/current/doc/index.html
+   https://pylib.readthedocs.org/
       The py library by Holger Krekel, which contains the :mod:`py.std` package.
 
 .. ======================================================================
@@ -547,7 +547,7 @@ exhausted.
       Earlier versions of these features were proposed in  :pep:`288` by Raymond
       Hettinger and :pep:`325` by Samuele Pedroni.
 
-   http://en.wikipedia.org/wiki/Coroutine
+   https://en.wikipedia.org/wiki/Coroutine
       The Wikipedia entry for  coroutines.
 
    http://www.sidhe.org/~dan/blog/archives/000178.html
@@ -2088,7 +2088,7 @@ Changes to Python's build process and to the C API include:
   provided the results of their examination of the Python source code.  The
   analysis found about 60 bugs that  were quickly fixed.  Many of the bugs were
   refcounting problems, often occurring in error-handling code.  See
-  http://scan.coverity.com for the statistics.
+  https://scan.coverity.com for the statistics.
 
 * The largest change to the C API came from :pep:`353`, which modifies the
   interpreter to use a :c:type:`Py_ssize_t` type definition instead of

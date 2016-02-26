@@ -97,7 +97,7 @@ Number-theoretic and representation functions
 
    For further discussion and two alternative approaches, see the `ASPN cookbook
    recipes for accurate floating point summation
-   <http://code.activestate.com/recipes/393090/>`_\.
+   <https://code.activestate.com/recipes/393090/>`_\.
 
 
 .. function:: gcd(a, b)
@@ -204,7 +204,7 @@ Power and logarithmic functions
 
    Return ``e**x - 1``.  For small floats *x*, the subtraction in ``exp(x) - 1``
    can result in a `significant loss of precision
-   <http://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
+   <https://en.wikipedia.org/wiki/Loss_of_significance>`_\; the :func:`expm1`
    function provides a way to compute this quantity to full precision::
 
       >>> from math import exp, expm1
@@ -332,7 +332,7 @@ Angular conversion
 Hyperbolic functions
 --------------------
 
-`Hyperbolic functions <http://en.wikipedia.org/wiki/Hyperbolic_function>`_
+`Hyperbolic functions <https://en.wikipedia.org/wiki/Hyperbolic_function>`_
 are analogs of trigonometric functions that are based on hyperbolas
 instead of circles.
 
@@ -371,12 +371,12 @@ Special functions
 
 .. function:: erf(x)
 
-   Return the `error function <http://en.wikipedia.org/wiki/Error_function>`_ at
+   Return the `error function <https://en.wikipedia.org/wiki/Error_function>`_ at
    *x*.
 
    The :func:`erf` function can be used to compute traditional statistical
    functions such as the `cumulative standard normal distribution
-   <http://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_function>`_::
+   <https://en.wikipedia.org/wiki/Normal_distribution#Cumulative_distribution_function>`_::
 
      def phi(x):
          'Cumulative distribution function for the standard normal distribution'
@@ -388,17 +388,17 @@ Special functions
 .. function:: erfc(x)
 
    Return the complementary error function at *x*.  The `complementary error
-   function <http://en.wikipedia.org/wiki/Error_function>`_ is defined as
+   function <https://en.wikipedia.org/wiki/Error_function>`_ is defined as
    ``1.0 - erf(x)``.  It is used for large values of *x* where a subtraction
    from one would cause a `loss of significance
-   <http://en.wikipedia.org/wiki/Loss_of_significance>`_\.
+   <https://en.wikipedia.org/wiki/Loss_of_significance>`_\.
 
    .. versionadded:: 3.2
 
 
 .. function:: gamma(x)
 
-   Return the `Gamma function <http://en.wikipedia.org/wiki/Gamma_function>`_ at
+   Return the `Gamma function <https://en.wikipedia.org/wiki/Gamma_function>`_ at
    *x*.
 
    .. versionadded:: 3.2

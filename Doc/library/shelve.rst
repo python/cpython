@@ -76,7 +76,7 @@ Two additional methods are supported:
 
 .. seealso::
 
-   `Persistent dictionary recipe <http://code.activestate.com/recipes/576642/>`_
+   `Persistent dictionary recipe <https://code.activestate.com/recipes/576642/>`_
    with widely supported storage formats and having the speed of native
    dictionaries.
 
@@ -137,7 +137,7 @@ Restrictions
    A subclass of :class:`Shelf` which exposes :meth:`first`, :meth:`!next`,
    :meth:`previous`, :meth:`last` and :meth:`set_location` which are available
    in the third-party :mod:`bsddb` module from `pybsddb
-   <http://www.jcea.es/programacion/pybsddb.htm>`_ but not in other database
+   <https://www.jcea.es/programacion/pybsddb.htm>`_ but not in other database
    modules.  The *dict* object passed to the constructor must support those
    methods.  This is generally accomplished by calling one of
    :func:`bsddb.hashopen`, :func:`bsddb.btopen` or :func:`bsddb.rnopen`.  The

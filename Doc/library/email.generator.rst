@@ -43,7 +43,7 @@ Here are the public methods of the :class:`Generator` class, imported from the
    followed by a space at the beginning of the line.  This is the only guaranteed
    portable way to avoid having such lines be mistaken for a Unix mailbox format
    envelope header separator (see `WHY THE CONTENT-LENGTH FORMAT IS BAD
-   <http://www.jwz.org/doc/content-length.html>`_ for details).  *mangle_from_*
+   <https://www.jwz.org/doc/content-length.html>`_ for details).  *mangle_from_*
    defaults to ``True``, but you might want to set this to ``False`` if you are not
    writing Unix mailbox format files.
 
@@ -123,7 +123,7 @@ formatted string representation of a message object.  For more detail, see
    i.e. ``From`` followed by a space at the beginning of the line.  This is the
    only guaranteed portable way to avoid having such lines be mistaken for a
    Unix mailbox format envelope header separator (see `WHY THE CONTENT-LENGTH
-   FORMAT IS BAD <http://www.jwz.org/doc/content-length.html>`_ for details).
+   FORMAT IS BAD <https://www.jwz.org/doc/content-length.html>`_ for details).
    *mangle_from_* defaults to ``True``, but you might want to set this to
    ``False`` if you are not writing Unix mailbox format files.
 

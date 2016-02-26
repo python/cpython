@@ -1884,13 +1884,13 @@ socket
   Heiko Wundram)
 
 * The :class:`~socket.socket` class now supports the PF_CAN protocol family
-  (http://en.wikipedia.org/wiki/Socketcan), on Linux
-  (http://lwn.net/Articles/253425).
+  (https://en.wikipedia.org/wiki/Socketcan), on Linux
+  (https://lwn.net/Articles/253425).
 
   (Contributed by Matthias Fuchs, updated by Tiago Gonçalves in :issue:`10141`.)
 
 * The :class:`~socket.socket` class now supports the PF_RDS protocol family
-  (http://en.wikipedia.org/wiki/Reliable_Datagram_Sockets and
+  (https://en.wikipedia.org/wiki/Reliable_Datagram_Sockets and
   https://oss.oracle.com/projects/rds/).
 
 * The :class:`~socket.socket` class now supports the ``PF_SYSTEM`` protocol

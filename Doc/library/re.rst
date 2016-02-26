@@ -1389,7 +1389,7 @@ functionally identical:
 Writing a Tokenizer
 ^^^^^^^^^^^^^^^^^^^
 
-A `tokenizer or scanner <http://en.wikipedia.org/wiki/Lexical_analysis>`_
+A `tokenizer or scanner <https://en.wikipedia.org/wiki/Lexical_analysis>`_
 analyzes a string to categorize groups of characters.  This is a useful first
 step in writing a compiler or interpreter.
 

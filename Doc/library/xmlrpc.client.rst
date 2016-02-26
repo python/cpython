@@ -142,7 +142,7 @@ between conformable Python objects and XML on the wire.
    `XML-RPC Introspection <http://xmlrpc-c.sourceforge.net/introspection.html>`_
       Describes the XML-RPC protocol extension for introspection.
 
-   `XML-RPC Specification <http://www.xmlrpc.com/spec>`_
+   `XML-RPC Specification <http://xmlrpc.scripting.com/spec.html>`_
       The official specification.
 
    `Unofficial XML-RPC Errata <http://effbot.org/zone/xmlrpc-errata.htm>`_
