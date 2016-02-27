@@ -37,20 +37,24 @@ $(document).ready(function() {
     });
 
     // define the behavior of the button when it's clicked
-    $('.copybutton').toggle(
-        function() {
-            var button = $(this);
+    $('.copybutton').click(function(e){
+        e.preventDefault();
+        var button = $(this);
+        if (button.data('hidden') === 'false') {
+            // hide the code output
             button.parent().find('.go, .gp, .gt').hide();
             button.next('pre').find('.gt').nextUntil('.gp, .go').css('visibility', 'hidden');
             button.css('text-decoration', 'line-through');
             button.attr('title', show_text);
-        },
-        function() {
-            var button = $(this);
+            button.data('hidden', 'true');
+        } else {
+            // show the code output
             button.parent().find('.go, .gp, .gt').show();
             button.next('pre').find('.gt').nextUntil('.gp, .go').css('visibility', 'visible');
             button.css('text-decoration', 'none');
             button.attr('title', hide_text);
-        });
+            button.data('hidden', 'false');
+        }
+    });
 });
 
