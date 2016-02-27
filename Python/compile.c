@@ -171,7 +171,6 @@ static int compiler_addop(struct compiler *, int);
 static int compiler_addop_o(struct compiler *, int, PyObject *, PyObject *);
 static int compiler_addop_i(struct compiler *, int, Py_ssize_t);
 static int compiler_addop_j(struct compiler *, int, basicblock *, int);
-static basicblock *compiler_use_new_block(struct compiler *);
 static int compiler_error(struct compiler *, const char *);
 static int compiler_nameop(struct compiler *, identifier, expr_context_ty);
 
@@ -523,6 +522,7 @@ compiler_enter_scope(struct compiler *c, identifier name,
                      int scope_type, void *key, int lineno)
 {
     struct compiler_unit *u;
+    basicblock *block;
 
     u = (struct compiler_unit *)PyObject_Malloc(sizeof(
                                             struct compiler_unit));
@@ -620,8 +620,11 @@ compiler_enter_scope(struct compiler *c, identifier name,
     c->u = u;
 
     c->c_nestlevel++;
-    if (compiler_use_new_block(c) == NULL)
+
+    block = compiler_new_block(c);
+    if (block == NULL)
         return 0;
+    c->u->u_curblock = block;
 
     if (u->u_scope_type != COMPILER_SCOPE_MODULE) {
         if (!compiler_set_qualname(c))
@@ -753,16 +756,6 @@ compiler_new_block(struct compiler *c)
     b->b_list = u->u_blocks;
     u->u_blocks = b;
     return b;
-}
-
-static basicblock *
-compiler_use_new_block(struct compiler *c)
-{
-    basicblock *block = compiler_new_block(c);
-    if (block == NULL)
-        return NULL;
-    c->u->u_curblock = block;
-    return block;
 }
 
 static basicblock *
@@ -1208,22 +1201,12 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
     return 1;
 }
 
-/* The distinction between NEW_BLOCK and NEXT_BLOCK is subtle.  (I'd
-   like to find better names.)  NEW_BLOCK() creates a new block and sets
-   it as the current block.  NEXT_BLOCK() also creates an implicit jump
-   from the current block to the new block.
+/* NEXT_BLOCK() creates an implicit jump from the current block
+   to the new block.
+
+   The returns inside this macro make it impossible to decref objects
+   created in the local function. Local objects should use the arena.
 */
-
-/* The returns inside these macros make it impossible to decref objects
-   created in the local function.  Local objects should use the arena.
-*/
-
-
-#define NEW_BLOCK(C) { \
-    if (compiler_use_new_block((C)) == NULL) \
-        return 0; \
-}
-
 #define NEXT_BLOCK(C) { \
     if (compiler_next_block((C)) == NULL) \
         return 0; \
