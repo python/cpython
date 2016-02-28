@@ -900,8 +900,12 @@ PyErr_WriteUnraisable(PyObject *obj)
     if (obj) {
         if (PyFile_WriteString("Exception ignored in: ", f) < 0)
             goto done;
-        if (PyFile_WriteObject(obj, f, 0) < 0)
-            goto done;
+        if (PyFile_WriteObject(obj, f, 0) < 0) {
+            PyErr_Clear();
+            if (PyFile_WriteString("<object repr() failed>", f) < 0) {
+                goto done;
+            }
+        }
         if (PyFile_WriteString("\n", f) < 0)
             goto done;
     }
@@ -946,8 +950,12 @@ PyErr_WriteUnraisable(PyObject *obj)
     if (v && v != Py_None) {
         if (PyFile_WriteString(": ", f) < 0)
             goto done;
-        if (PyFile_WriteObject(v, f, Py_PRINT_RAW) < 0)
-            goto done;
+        if (PyFile_WriteObject(v, f, Py_PRINT_RAW) < 0) {
+            PyErr_Clear();
+            if (PyFile_WriteString("<exception str() failed>", f) < 0) {
+                goto done;
+            }
+        }
     }
     if (PyFile_WriteString("\n", f) < 0)
         goto done;
