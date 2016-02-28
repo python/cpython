@@ -7,7 +7,7 @@ import pickle
 import weakref
 import errno
 
-from test.support import (TESTFN, captured_output, check_impl_detail,
+from test.support import (TESTFN, captured_stderr, check_impl_detail,
                           check_warnings, cpython_only, gc_collect, run_unittest,
                           no_tracing, unlink, import_module)
 
@@ -19,6 +19,10 @@ class SlottedNaiveException(Exception):
     __slots__ = ('x',)
     def __init__(self, x):
         self.x = x
+
+class BrokenStrException(Exception):
+    def __str__(self):
+        raise Exception("str() is broken")
 
 # XXX This is not really enough, each *operation* should be tested!
 
@@ -882,7 +886,7 @@ class ExceptionTests(unittest.TestCase):
         class MyException(Exception, metaclass=Meta):
             pass
 
-        with captured_output("stderr") as stderr:
+        with captured_stderr() as stderr:
             try:
                 raise KeyError()
             except MyException as e:
@@ -1010,6 +1014,66 @@ class ExceptionTests(unittest.TestCase):
         with self.assertRaises(OSError) as cm:
             os.listdir(__file__)
         self.assertEqual(cm.exception.errno, errno.ENOTDIR, cm.exception)
+
+    def test_unraisable(self):
+        # Issue #22836: PyErr_WriteUnraisable() should give sensible reports
+        class BrokenDel:
+            def __del__(self):
+                exc = ValueError("del is broken")
+                # The following line is included in the traceback report:
+                raise exc
+
+        class BrokenRepr(BrokenDel):
+            def __repr__(self):
+                raise AttributeError("repr() is broken")
+
+        class BrokenExceptionDel:
+            def __del__(self):
+                exc = BrokenStrException()
+                # The following line is included in the traceback report:
+                raise exc
+
+        for test_class in (BrokenDel, BrokenRepr, BrokenExceptionDel):
+            with self.subTest(test_class):
+                obj = test_class()
+                with captured_stderr() as stderr:
+                    del obj
+                report = stderr.getvalue()
+                self.assertIn("Exception ignored", report)
+                if test_class is BrokenRepr:
+                    self.assertIn("<object repr() failed>", report)
+                else:
+                    self.assertIn(test_class.__del__.__qualname__, report)
+                self.assertIn("test_exceptions.py", report)
+                self.assertIn("raise exc", report)
+                if test_class is BrokenExceptionDel:
+                    self.assertIn("BrokenStrException", report)
+                    self.assertIn("<exception str() failed>", report)
+                else:
+                    self.assertIn("ValueError", report)
+                    self.assertIn("del is broken", report)
+                self.assertTrue(report.endswith("\n"))
+
+    def test_unhandled(self):
+        # Check for sensible reporting of unhandled exceptions
+        for exc_type in (ValueError, BrokenStrException):
+            with self.subTest(exc_type):
+                try:
+                    exc = exc_type("test message")
+                    # The following line is included in the traceback report:
+                    raise exc
+                except exc_type:
+                    with captured_stderr() as stderr:
+                        sys.__excepthook__(*sys.exc_info())
+                report = stderr.getvalue()
+                self.assertIn("test_exceptions.py", report)
+                self.assertIn("raise exc", report)
+                self.assertIn(exc_type.__name__, report)
+                if exc_type is BrokenStrException:
+                    self.assertIn("<exception str() failed>", report)
+                else:
+                    self.assertIn("test message", report)
+                self.assertTrue(report.endswith("\n"))
 
 
 class ImportErrorTests(unittest.TestCase):
