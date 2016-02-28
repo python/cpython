@@ -74,8 +74,8 @@ Printing and clearing
    :meth:`__del__` method.
 
    The function is called with a single argument *obj* that identifies the context
-   in which the unraisable exception occurred. The repr of *obj* will be printed in
-   the warning message.
+   in which the unraisable exception occurred. If possible,
+   the repr of *obj* will be printed in the warning message.
 
 
 Raising exceptions
