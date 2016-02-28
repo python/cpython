@@ -513,7 +513,7 @@ to count the number of occurrences of a specific optional arguments:
 
 * Sadly, our help output isn't very informative on the new ability our script
   has acquired, but that can always be fixed by improving the documentation for
-  out script (e.g. via the ``help`` keyword argument).
+  our script (e.g. via the ``help`` keyword argument).
 
 * That last output exposes a bug in our program.
 
