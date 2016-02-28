@@ -696,12 +696,18 @@ PyErr_WriteUnraisable(PyObject *obj)
                 PyFile_WriteString(className, f);
             if (v && v != Py_None) {
                 PyFile_WriteString(": ", f);
-                PyFile_WriteObject(v, f, 0);
+                if (PyFile_WriteObject(v, f, 0) < 0) {
+                    PyErr_Clear();
+                    PyFile_WriteString("<exception repr() failed>", f);
+                }
             }
             Py_XDECREF(moduleName);
         }
         PyFile_WriteString(" in ", f);
-        PyFile_WriteObject(obj, f, 0);
+        if (PyFile_WriteObject(obj, f, 0) < 0) {
+            PyErr_Clear();
+            PyFile_WriteString("<object repr() failed>", f);
+        }
         PyFile_WriteString(" ignored\n", f);
         PyErr_Clear(); /* Just in case */
     }

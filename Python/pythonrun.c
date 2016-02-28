@@ -1299,8 +1299,11 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
             /* only print colon if the str() of the
                object is not the empty string
             */
-            if (s == NULL)
+            if (s == NULL) {
+                PyErr_Clear();
                 err = -1;
+                PyFile_WriteString(": <exception str() failed>", f);
+            }
             else if (!PyString_Check(s) ||
                      PyString_GET_SIZE(s) != 0)
                 err = PyFile_WriteString(": ", f);
@@ -1309,6 +1312,9 @@ PyErr_Display(PyObject *exception, PyObject *value, PyObject *tb)
             Py_XDECREF(s);
         }
         /* try to write a newline in any case */
+        if (err < 0) {
+            PyErr_Clear();
+        }
         err += PyFile_WriteString("\n", f);
     }
     Py_DECREF(value);

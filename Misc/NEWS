@@ -10,6 +10,11 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #22836: Ensure exception reports from PyErr_Display() and
+  PyErr_WriteUnraisable() are sensible even when formatting them produces
+  secondary errors.  This affects the reports produced by
+  sys.__excepthook__() and when __del__() raises an exception.
+
 - Issue #22847: Improve method cache efficiency.
 
 - Issue #25843: When compiling code, don't merge constants if they are equal
