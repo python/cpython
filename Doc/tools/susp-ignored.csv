@@ -173,7 +173,7 @@ using/cmdline,,:line,action:message:category:module:line
 using/cmdline,,:message,action:message:category:module:line
 using/cmdline,,:module,action:message:category:module:line
 using/cmdline,,:errorhandler,:errorhandler
-using/unix,,:Packaging,http://en.opensuse.org/Portal:Packaging
+using/unix,,:Packaging,https://en.opensuse.org/Portal:Packaging
 whatsnew/2.0,418,:len,
 whatsnew/2.3,,::,
 whatsnew/2.3,,:config,
