@@ -84,6 +84,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26385: Remove the file if the internal open() call in
+  NamedTemporaryFile() fails.  Patch by Silent Ghost.
+
 - Issue #26402: Fix XML-RPC client to retry when the server shuts down a
   persistent connection.  This was a regression related to the new
   http.client.RemoteDisconnected exception in 3.5.0a4.
