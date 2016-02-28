@@ -112,6 +112,7 @@ The :mod:`csv` module defines the following functions:
    value :const:`None` is written as the empty string.  While this isn't a
    reversible transformation, it makes it easier to dump SQL NULL data values to
    CSV files without preprocessing the data returned from a ``cursor.fetch*`` call.
+   Floats are stringified with :func:`repr` before being written.
    All other non-string data are stringified with :func:`str` before being written.
 
    A short usage example::
