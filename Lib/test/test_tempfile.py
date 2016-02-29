@@ -948,8 +948,16 @@ class TestNamedTemporaryFile(BaseTestCase):
                 self.assertRaises(ValueError, tempfile.NamedTemporaryFile)
                 self.assertEqual(len(closed), 1)
 
-    # How to test the mode and bufsize parameters?
+    def test_bad_mode(self):
+        dir = tempfile.mkdtemp()
+        self.addCleanup(support.rmtree, dir)
+        with self.assertRaises(ValueError):
+            tempfile.NamedTemporaryFile(mode='wr', dir=dir)
+        with self.assertRaises(TypeError):
+            tempfile.NamedTemporaryFile(mode=2, dir=dir)
+        self.assertEqual(os.listdir(dir), [])
 
+    # How to test the mode and bufsize parameters?
 
 class TestSpooledTemporaryFile(BaseTestCase):
     """Test SpooledTemporaryFile()."""
