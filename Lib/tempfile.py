@@ -552,7 +552,8 @@ def NamedTemporaryFile(mode='w+b', buffering=-1, encoding=None,
                         newline=newline, encoding=encoding)
 
         return _TemporaryFileWrapper(file, name, delete)
-    except Exception:
+    except BaseException:
+        _os.unlink(name)
         _os.close(fd)
         raise
 
