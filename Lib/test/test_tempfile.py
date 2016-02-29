@@ -827,6 +827,13 @@ class test_NamedTemporaryFile(TC):
             os.close = old_close
             os.fdopen = old_fdopen
 
+    def test_bad_mode(self):
+        dir = tempfile.mkdtemp()
+        self.addCleanup(support.rmtree, dir)
+        with self.assertRaises(TypeError):
+            tempfile.NamedTemporaryFile(mode=(), dir=dir)
+        self.assertEqual(os.listdir(dir), [])
+
     # How to test the mode and bufsize parameters?
 
 test_classes.append(test_NamedTemporaryFile)

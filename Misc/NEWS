@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26385: Remove the file if the internal fdopen() call in
+  NamedTemporaryFile() fails.  Based on patch by Silent Ghost.
+
 - Issue #26309: In the "socketserver" module, shut down the request (closing
   the connected socket) when verify_request() returns false.  Based on patch
   by Aviv Palivoda.
