@@ -1163,10 +1163,14 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     struct instr *i;
     int off;
 
-    /* Integer arguments are limit to 16-bit. There is an extension for 32-bit
-       integer arguments. */
-    assert((-2147483647-1) <= oparg);
-    assert(oparg <= 2147483647);
+    /* oparg value is unsigned, but a signed C int is usually used to store
+       it in the C code (like Python/ceval.c).
+
+       Limit to 32-bit signed C int (rather than INT_MAX) for portability.
+
+       The argument of a concrete bytecode instruction is limited to 16-bit.
+       EXTENDED_ARG is used for 32-bit arguments. */
+    assert(0 <= oparg && oparg <= 2147483647);
 
     off = compiler_next_instr(c, c->u->u_curblock);
     if (off < 0)
