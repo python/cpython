@@ -10,6 +10,10 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #26464: Fix str.translate() when string is ASCII and first replacements
+  removes character, but next replacement uses a non-ASCII character or a
+  string longer than 1 character. Regression introduced in Python 3.5.0.
+
 - Issue #22836: Ensure exception reports from PyErr_Display() and
   PyErr_WriteUnraisable() are sensible even when formatting them produces
   secondary errors.  This affects the reports produced by
