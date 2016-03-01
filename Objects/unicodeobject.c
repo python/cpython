@@ -8791,10 +8791,6 @@ unicode_fast_translate(PyObject *input, PyObject *mapping,
     Py_UCS1 *in, *end, *out;
     int res = 0;
 
-    if (PyUnicode_READY(input) == -1)
-        return -1;
-    if (!PyUnicode_IS_ASCII(input))
-        return 0;
     len = PyUnicode_GET_LENGTH(input);
 
     memset(ascii_table, 0xff, 128);
@@ -8877,13 +8873,20 @@ _PyUnicode_TranslateCharmap(PyObject *input,
 
     ignore = (errors != NULL && strcmp(errors, "ignore") == 0);
 
-    res = unicode_fast_translate(input, mapping, &writer, ignore, &i);
-    if (res < 0) {
-        _PyUnicodeWriter_Dealloc(&writer);
+    if (PyUnicode_READY(input) == -1)
         return NULL;
+    if (PyUnicode_IS_ASCII(input)) {
+        res = unicode_fast_translate(input, mapping, &writer, ignore, &i);
+        if (res < 0) {
+            _PyUnicodeWriter_Dealloc(&writer);
+            return NULL;
+        }
+        if (res == 1)
+            return _PyUnicodeWriter_Finish(&writer);
     }
-    if (res == 1)
-        return _PyUnicodeWriter_Finish(&writer);
+    else {
+        i = 0;
+    }
 
     while (i<size) {
         /* try to encode it */
