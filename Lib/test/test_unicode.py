@@ -347,6 +347,10 @@ class UnicodeTest(string_tests.CommonTest,
                          "[a]")
         self.assertEqual("[\xe9]".translate(str.maketrans({'\xe9': None})),
                          "[]")
+        self.assertEqual('axb'.translate(str.maketrans({'a': None, 'b': '123'})),
+                         "x123")
+        self.assertEqual('axb'.translate(str.maketrans({'a': None, 'b': '\xe9'})),
+                         "x\xe9")
 
         # invalid Unicode characters
         invalid_char = 0x10ffff+1
