@@ -8783,7 +8783,8 @@ unicode_fast_translate_lookup(PyObject *mapping, Py_UCS1 ch,
    translated into writer, raise an exception and return -1 on error. */
 static int
 unicode_fast_translate(PyObject *input, PyObject *mapping,
-                       _PyUnicodeWriter *writer, int ignore)
+                       _PyUnicodeWriter *writer, int ignore,
+                       Py_ssize_t *input_pos)
 {
     Py_UCS1 ascii_table[128], ch, ch2;
     Py_ssize_t len;
@@ -8830,6 +8831,7 @@ unicode_fast_translate(PyObject *input, PyObject *mapping,
 
 exit:
     writer->pos = out - PyUnicode_1BYTE_DATA(writer->buffer);
+    *input_pos = in - PyUnicode_1BYTE_DATA(input);
     return res;
 }
 
@@ -8875,7 +8877,7 @@ _PyUnicode_TranslateCharmap(PyObject *input,
 
     ignore = (errors != NULL && strcmp(errors, "ignore") == 0);
 
-    res = unicode_fast_translate(input, mapping, &writer, ignore);
+    res = unicode_fast_translate(input, mapping, &writer, ignore, &i);
     if (res < 0) {
         _PyUnicodeWriter_Dealloc(&writer);
         return NULL;
@@ -8883,7 +8885,6 @@ _PyUnicode_TranslateCharmap(PyObject *input,
     if (res == 1)
         return _PyUnicodeWriter_Finish(&writer);
 
-    i = writer.pos;
     while (i<size) {
         /* try to encode it */
         int translate;
