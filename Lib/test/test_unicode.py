@@ -341,16 +341,22 @@ class UnicodeTest(string_tests.CommonTest,
                          "[XXX]")
         self.assertEqual("[a]".translate(str.maketrans({'a': '\xe9'})),
                          "[\xe9]")
+        self.assertEqual('axb'.translate(str.maketrans({'a': None, 'b': '123'})),
+                         "x123")
+        self.assertEqual('axb'.translate(str.maketrans({'a': None, 'b': '\xe9'})),
+                         "x\xe9")
+
+        # test non-ASCII (don't take the fast-path)
         self.assertEqual("[a]".translate(str.maketrans({'a': '<\xe9>'})),
                          "[<\xe9>]")
         self.assertEqual("[\xe9]".translate(str.maketrans({'\xe9': 'a'})),
                          "[a]")
         self.assertEqual("[\xe9]".translate(str.maketrans({'\xe9': None})),
                          "[]")
-        self.assertEqual('axb'.translate(str.maketrans({'a': None, 'b': '123'})),
-                         "x123")
-        self.assertEqual('axb'.translate(str.maketrans({'a': None, 'b': '\xe9'})),
-                         "x\xe9")
+        self.assertEqual("[\xe9]".translate(str.maketrans({'\xe9': '123'})),
+                         "[123]")
+        self.assertEqual("[a\xe9]".translate(str.maketrans({'a': '<\u20ac>'})),
+                         "[<\u20ac>\xe9]")
 
         # invalid Unicode characters
         invalid_char = 0x10ffff+1
