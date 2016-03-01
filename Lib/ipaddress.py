@@ -740,21 +740,21 @@ class _BaseNetwork(_IPAddressBase):
 
             addr1 = ip_network('192.0.2.0/28')
             addr2 = ip_network('192.0.2.1/32')
-            addr1.address_exclude(addr2) =
+            list(addr1.address_exclude(addr2)) =
                 [IPv4Network('192.0.2.0/32'), IPv4Network('192.0.2.2/31'),
-                IPv4Network('192.0.2.4/30'), IPv4Network('192.0.2.8/29')]
+                 IPv4Network('192.0.2.4/30'), IPv4Network('192.0.2.8/29')]
 
         or IPv6:
 
             addr1 = ip_network('2001:db8::1/32')
             addr2 = ip_network('2001:db8::1/128')
-            addr1.address_exclude(addr2) =
+            list(addr1.address_exclude(addr2)) =
                 [ip_network('2001:db8::1/128'),
-                ip_network('2001:db8::2/127'),
-                ip_network('2001:db8::4/126'),
-                ip_network('2001:db8::8/125'),
-                ...
-                ip_network('2001:db8:8000::/33')]
+                 ip_network('2001:db8::2/127'),
+                 ip_network('2001:db8::4/126'),
+                 ip_network('2001:db8::8/125'),
+                 ...
+                 ip_network('2001:db8:8000::/33')]
 
         Args:
             other: An IPv4Network or IPv6Network object of the same type.
@@ -916,7 +916,7 @@ class _BaseNetwork(_IPAddressBase):
                     new_prefixlen, self))
 
         start = int(self.network_address)
-        end = int(self.broadcast_address)
+        end = int(self.broadcast_address) + 1
         step = (int(self.hostmask) + 1) >> prefixlen_diff
         for new_addr in range(start, end, step):
             current = self.__class__((new_addr, new_prefixlen))
