@@ -880,7 +880,10 @@ class BaseEventLoop(events.AbstractEventLoop):
         to host and port.
 
         The host parameter can also be a sequence of strings and in that case
-        the TCP server is bound to all hosts of the sequence.
+        the TCP server is bound to all hosts of the sequence. If a host
+        appears multiple times (possibly indirectly e.g. when hostnames
+        resolve to the same IP address), the server is only bound once to that
+        host.
 
         Return a Server object which can be used to stop the service.
 
@@ -909,7 +912,7 @@ class BaseEventLoop(events.AbstractEventLoop):
                                                   flags=flags)
                   for host in hosts]
             infos = yield from tasks.gather(*fs, loop=self)
-            infos = itertools.chain.from_iterable(infos)
+            infos = set(itertools.chain.from_iterable(infos))
 
             completed = False
             try:
