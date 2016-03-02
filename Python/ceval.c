@@ -2021,6 +2021,21 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
             Py_DECREF(iterable);
 
+            if (iter != NULL && PyCoro_CheckExact(iter)) {
+                PyObject *yf = _PyGen_yf((PyGenObject*)iter);
+                if (yf != NULL) {
+                    /* `iter` is a coroutine object that is being
+                       awaited, `yf` is a pointer to the current awaitable
+                       being awaited on. */
+                    Py_DECREF(yf);
+                    Py_CLEAR(iter);
+                    PyErr_SetString(
+                        PyExc_RuntimeError,
+                        "coroutine is being awaited already");
+                    /* The code below jumps to `error` if `iter` is NULL. */
+                }
+            }
+
             SET_TOP(iter); /* Even if it's NULL */
 
             if (iter == NULL) {
