@@ -749,34 +749,37 @@ class EventLoopTestsMixin:
         @asyncio.coroutine
         def getaddrinfo(host, port, *args, **kw):
             if family == socket.AF_INET:
-                return [[family, socket.SOCK_STREAM, 6, '', (host, port)]]
+                return [(family, socket.SOCK_STREAM, 6, '', (host, port))]
             else:
-                return [[family, socket.SOCK_STREAM, 6, '', (host, port, 0, 0)]]
+                return [(family, socket.SOCK_STREAM, 6, '', (host, port, 0, 0))]
 
         def getaddrinfo_task(*args, **kwds):
             return asyncio.Task(getaddrinfo(*args, **kwds), loop=self.loop)
 
+        unique_hosts = set(hosts)
+
         if family == socket.AF_INET:
-            mock_sock.socket().getsockbyname.side_effect = [(host, 80)
-                                                            for host in hosts]
+            mock_sock.socket().getsockbyname.side_effect = [
+                (host, 80) for host in unique_hosts]
         else:
-            mock_sock.socket().getsockbyname.side_effect = [(host, 80, 0, 0)
-                                                            for host in hosts]
+            mock_sock.socket().getsockbyname.side_effect = [
+                (host, 80, 0, 0) for host in unique_hosts]
         self.loop.getaddrinfo = getaddrinfo_task
         self.loop._start_serving = mock.Mock()
         self.loop._stop_serving = mock.Mock()
         f = self.loop.create_server(lambda: MyProto(self.loop), hosts, 80)
         server = self.loop.run_until_complete(f)
         self.addCleanup(server.close)
-        server_hosts = [sock.getsockbyname()[0] for sock in server.sockets]
-        self.assertEqual(server_hosts, hosts)
+        server_hosts = {sock.getsockbyname()[0] for sock in server.sockets}
+        self.assertEqual(server_hosts, unique_hosts)
 
     def test_create_server_multiple_hosts_ipv4(self):
         self.create_server_multiple_hosts(socket.AF_INET,
-                                          ['1.2.3.4', '5.6.7.8'])
+                                          ['1.2.3.4', '5.6.7.8', '1.2.3.4'])
 
     def test_create_server_multiple_hosts_ipv6(self):
-        self.create_server_multiple_hosts(socket.AF_INET6, ['::1', '::2'])
+        self.create_server_multiple_hosts(socket.AF_INET6,
+                                          ['::1', '::2', '::1'])
 
     def test_create_server(self):
         proto = MyProto(self.loop)
