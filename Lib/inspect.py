@@ -2591,8 +2591,6 @@ class BoundArguments:
         empty dict.
         """
         arguments = self.arguments
-        if not arguments:
-            return
         new_arguments = []
         for name, param in self._signature.parameters.items():
             try:
