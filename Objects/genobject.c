@@ -267,8 +267,8 @@ gen_close_iter(PyObject *yf)
     return 0;
 }
 
-static PyObject *
-gen_yf(PyGenObject *gen)
+PyObject *
+_PyGen_yf(PyGenObject *gen)
 {
     PyObject *yf = NULL;
     PyFrameObject *f = gen->gi_frame;
@@ -290,7 +290,7 @@ static PyObject *
 gen_close(PyGenObject *gen, PyObject *args)
 {
     PyObject *retval;
-    PyObject *yf = gen_yf(gen);
+    PyObject *yf = _PyGen_yf(gen);
     int err = 0;
 
     if (yf) {
@@ -330,7 +330,7 @@ gen_throw(PyGenObject *gen, PyObject *args)
     PyObject *typ;
     PyObject *tb = NULL;
     PyObject *val = NULL;
-    PyObject *yf = gen_yf(gen);
+    PyObject *yf = _PyGen_yf(gen);
     _Py_IDENTIFIER(throw);
 
     if (!PyArg_UnpackTuple(args, "throw", 1, 3, &typ, &val, &tb))
@@ -564,7 +564,7 @@ gen_set_qualname(PyGenObject *op, PyObject *value)
 static PyObject *
 gen_getyieldfrom(PyGenObject *gen)
 {
-    PyObject *yf = gen_yf(gen);
+    PyObject *yf = _PyGen_yf(gen);
     if (yf == NULL)
         Py_RETURN_NONE;
     return yf;
@@ -799,7 +799,7 @@ coro_await(PyCoroObject *coro)
 static PyObject *
 coro_get_cr_await(PyCoroObject *coro)
 {
-    PyObject *yf = gen_yf((PyGenObject *) coro);
+    PyObject *yf = _PyGen_yf((PyGenObject *) coro);
     if (yf == NULL)
         Py_RETURN_NONE;
     return yf;
