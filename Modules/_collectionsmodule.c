@@ -589,8 +589,8 @@ deque_clear(dequeobject *deque)
     /* Now the old size, leftblock, and leftindex are disconnected from
        the empty deque and we can use them to decref the pointers.
     */
-    itemptr = &leftblock->data[leftindex];
     m = (BLOCKLEN - leftindex > n) ? n : BLOCKLEN - leftindex;
+    itemptr = &leftblock->data[leftindex];
     limit = &leftblock->data[leftindex + m];
     n -= m;
     while (1) {
@@ -600,8 +600,8 @@ deque_clear(dequeobject *deque)
             CHECK_NOT_END(leftblock->rightlink);
             prevblock = leftblock;
             leftblock = leftblock->rightlink;
-            itemptr = leftblock->data;
             m = (n > BLOCKLEN) ? BLOCKLEN : n;
+            itemptr = leftblock->data;
             limit = &leftblock->data[m];
             n -= m;
             freeblock(prevblock);
