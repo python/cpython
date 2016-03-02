@@ -27,6 +27,7 @@ $(document).ready(function() {
             var button = $('<span class="copybutton">&gt;&gt;&gt;</span>');
             button.css(button_styles)
             button.attr('title', hide_text);
+            button.data('hidden', 'false');
             jthis.prepend(button);
         }
         // tracebacks (.gt) contain bare text elements that need to be
