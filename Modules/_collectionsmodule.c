@@ -572,9 +572,9 @@ deque_clear(dequeobject *deque)
     }
 
     /* Remember the old size, leftblock, and leftindex */
+    n = Py_SIZE(deque);
     leftblock = deque->leftblock;
     leftindex = deque->leftindex;
-    n = Py_SIZE(deque);
 
     /* Set the deque to be empty using the newly allocated block */
     MARK_END(b->leftlink);
@@ -591,7 +591,7 @@ deque_clear(dequeobject *deque)
     */
     m = (BLOCKLEN - leftindex > n) ? n : BLOCKLEN - leftindex;
     itemptr = &leftblock->data[leftindex];
-    limit = &leftblock->data[leftindex + m];
+    limit = itemptr + m;
     n -= m;
     while (1) {
         if (itemptr == limit) {
@@ -602,7 +602,7 @@ deque_clear(dequeobject *deque)
             leftblock = leftblock->rightlink;
             m = (n > BLOCKLEN) ? BLOCKLEN : n;
             itemptr = leftblock->data;
-            limit = &leftblock->data[m];
+            limit = itemptr + m;
             n -= m;
             freeblock(prevblock);
         }
