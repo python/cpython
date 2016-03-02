@@ -1794,6 +1794,30 @@ class TaskTests(test_utils.TestCase):
 
         self.assertRegex(message, re.compile(regex, re.DOTALL))
 
+    def test_return_coroutine_from_coroutine(self):
+        """Return of @asyncio.coroutine()-wrapped function generator object
+        from @asyncio.coroutine()-wrapped function should have same effect as
+        returning generator object or Future."""
+        def check():
+            @asyncio.coroutine
+            def outer_coro():
+                @asyncio.coroutine
+                def inner_coro():
+                    return 1
+
+                return inner_coro()
+
+            result = self.loop.run_until_complete(outer_coro())
+            self.assertEqual(result, 1)
+
+        # Test with debug flag cleared.
+        with set_coroutine_debug(False):
+            check()
+
+        # Test with debug flag set.
+        with set_coroutine_debug(True):
+            check()
+
     def test_task_source_traceback(self):
         self.loop.set_debug(True)
 
