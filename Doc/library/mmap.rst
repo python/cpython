@@ -263,12 +263,17 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
    .. method:: write(bytes)
 
       Write the bytes in *bytes* into memory at the current position of the
-      file pointer; the file position is updated to point after the bytes that
-      were written. If the mmap was created with :const:`ACCESS_READ`, then
+      file pointer and return the number of bytes written (never less than
+      ``len(bytes)``, since if the write fails, a :exc:`ValueError` will be
+      raised).  The file position is updated to point after the bytes that
+      were written.  If the mmap was created with :const:`ACCESS_READ`, then
       writing to it will raise a :exc:`TypeError` exception.
 
       .. versionchanged:: 3.5
          Writable :term:`bytes-like object` is now accepted.
+
+      .. versionchanged:: 3.6
+         The number of bytes written is now returned.
 
 
    .. method:: write_byte(byte)

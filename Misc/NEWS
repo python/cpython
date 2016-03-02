@@ -198,6 +198,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26335: Make mmap.write() return the number of bytes written like
+  other write methods.  Patch by Jakub Stasiak.
+
 - Issue #26457: Fixed the subnets() methods in IP network classes for the case
   when resulting prefix length is equal to maximal prefix length.
   Based on patch by Xiang Zhang.
