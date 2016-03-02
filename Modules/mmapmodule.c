@@ -389,6 +389,7 @@ mmap_write_method(mmap_object *self,
                   PyObject *args)
 {
     Py_buffer data;
+    PyObject *result;
 
     CHECK_VALID(NULL);
     if (!PyArg_ParseTuple(args, "y*:write", &data))
@@ -406,9 +407,9 @@ mmap_write_method(mmap_object *self,
     }
     memcpy(self->data + self->pos, data.buf, data.len);
     self->pos = self->pos + data.len;
+    result = PyLong_FromSsize_t(data.len);
     PyBuffer_Release(&data);
-    Py_INCREF(Py_None);
-    return Py_None;
+    return result;
 }
 
 static PyObject *
