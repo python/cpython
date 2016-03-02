@@ -942,6 +942,24 @@ class CoroutineTest(unittest.TestCase):
         with self.assertRaises(Marker):
             c.throw(ZeroDivisionError)
 
+    def test_await_15(self):
+        @types.coroutine
+        def nop():
+            yield
+
+        async def coroutine():
+            await nop()
+
+        async def waiter(coro):
+            await coro
+
+        coro = coroutine()
+        coro.send(None)
+
+        with self.assertRaisesRegex(RuntimeError,
+                                    "coroutine is being awaited already"):
+            waiter(coro).send(None)
+
     def test_with_1(self):
         class Manager:
             def __init__(self, name):
