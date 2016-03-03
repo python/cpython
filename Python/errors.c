@@ -532,7 +532,7 @@ PyObject *PyErr_SetFromWindowsErrWithUnicodeFilename(
 #endif /* MS_WINDOWS */
 
 void
-_PyErr_BadInternalCall(char *filename, int lineno)
+_PyErr_BadInternalCall(const char *filename, int lineno)
 {
     PyErr_Format(PyExc_SystemError,
                  "%s:%d: bad argument to internal function",
