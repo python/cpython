@@ -2448,7 +2448,7 @@ class REX_six(object):
     def __init__(self, items=None):
         self.items = items if items is not None else []
     def __eq__(self, other):
-        return type(self) is type(other) and self.items == self.items
+        return type(self) is type(other) and self.items == other.items
     def append(self, item):
         self.items.append(item)
     def __reduce__(self):
@@ -2461,7 +2461,7 @@ class REX_seven(object):
     def __init__(self, table=None):
         self.table = table if table is not None else {}
     def __eq__(self, other):
-        return type(self) is type(other) and self.table == self.table
+        return type(self) is type(other) and self.table == other.table
     def __setitem__(self, key, value):
         self.table[key] = value
     def __reduce__(self):
