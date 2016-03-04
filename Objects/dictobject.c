@@ -2998,7 +2998,8 @@ dictviews_sub(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = PyObject_CallMethod(result, "difference_update", "O", other);
+
+    tmp = PyObject_CallMethod(result, "difference_update", "(O)", other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -3016,7 +3017,7 @@ dictviews_and(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = PyObject_CallMethod(result, "intersection_update", "O", other);
+    tmp = PyObject_CallMethod(result, "intersection_update", "(O)", other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -3034,7 +3035,7 @@ dictviews_or(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = PyObject_CallMethod(result, "update", "O", other);
+    tmp = PyObject_CallMethod(result, "update", "(O)", other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
@@ -3052,8 +3053,7 @@ dictviews_xor(PyObject* self, PyObject *other)
     if (result == NULL)
         return NULL;
 
-    tmp = PyObject_CallMethod(result, "symmetric_difference_update", "O",
-                              other);
+    tmp = PyObject_CallMethod(result, "symmetric_difference_update", "(O)", other);
     if (tmp == NULL) {
         Py_DECREF(result);
         return NULL;
