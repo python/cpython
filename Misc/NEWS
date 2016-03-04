@@ -181,6 +181,9 @@ Core and Builtins
   converted to normal strings at run time. Given x=3, then
   f'value={x}' == 'value=3'. Patch by Eric V. Smith.
 
+- Issue #26478: Fix semantic bugs when using binary operators with dictionary
+  views and tuples.
+
 - Issue #26171: Fix possible integer overflow and heap corruption in
   zipimporter.get_data().
 
