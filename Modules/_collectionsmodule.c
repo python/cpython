@@ -386,6 +386,13 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         return result;
     }
 
+    it = PyObject_GetIter(iterable);
+    if (it == NULL)
+        return NULL;
+
+    if (maxlen == 0)
+        return consume_iterator(it);
+
     /* Space saving heuristic.  Start filling from the left */
     if (Py_SIZE(deque) == 0) {
         assert(deque->leftblock == deque->rightblock);
@@ -393,13 +400,6 @@ deque_extend(dequeobject *deque, PyObject *iterable)
         deque->leftindex = 1;
         deque->rightindex = 0;
     }
-
-    it = PyObject_GetIter(iterable);
-    if (it == NULL)
-        return NULL;
-
-    if (maxlen == 0)
-        return consume_iterator(it);
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
@@ -433,6 +433,13 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         return result;
     }
 
+    it = PyObject_GetIter(iterable);
+    if (it == NULL)
+        return NULL;
+
+    if (maxlen == 0)
+        return consume_iterator(it);
+
     /* Space saving heuristic.  Start filling from the right */
     if (Py_SIZE(deque) == 0) {
         assert(deque->leftblock == deque->rightblock);
@@ -440,13 +447,6 @@ deque_extendleft(dequeobject *deque, PyObject *iterable)
         deque->leftindex = BLOCKLEN - 1;
         deque->rightindex = BLOCKLEN - 2;
     }
-
-    it = PyObject_GetIter(iterable);
-    if (it == NULL)
-        return NULL;
-
-    if (maxlen == 0)
-        return consume_iterator(it);
 
     iternext = *Py_TYPE(it)->tp_iternext;
     while ((item = iternext(it)) != NULL) {
