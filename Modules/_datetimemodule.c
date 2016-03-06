@@ -3608,23 +3608,56 @@ time_str(PyDateTime_Time *self)
 }
 
 static PyObject *
-time_isoformat(PyDateTime_Time *self, PyObject *unused)
+time_isoformat(PyDateTime_Time *self, PyObject *args, PyObject *kw)
 {
     char buf[100];
+    char *timespec = NULL;
+    static char *keywords[] = {"timespec", NULL};
     PyObject *result;
     int us = TIME_GET_MICROSECOND(self);
+    static char *specs[][2] = {
+        {"hours", "%02d"},
+        {"minutes", "%02d:%02d"},
+        {"seconds", "%02d:%02d:%02d"},
+        {"milliseconds", "%02d:%02d:%02d.%03d"},
+        {"microseconds", "%02d:%02d:%02d.%06d"},
+    };
+    size_t given_spec;
 
-    if (us)
-        result = PyUnicode_FromFormat("%02d:%02d:%02d.%06d",
-                                      TIME_GET_HOUR(self),
-                                      TIME_GET_MINUTE(self),
-                                      TIME_GET_SECOND(self),
-                                      us);
-    else
-        result = PyUnicode_FromFormat("%02d:%02d:%02d",
-                                      TIME_GET_HOUR(self),
-                                      TIME_GET_MINUTE(self),
-                                      TIME_GET_SECOND(self));
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|s:isoformat", keywords, &timespec))
+        return NULL;
+
+    if (timespec == NULL || strcmp(timespec, "auto") == 0) {
+        if (us == 0) {
+            /* seconds */
+            given_spec = 2;
+        }
+        else {
+            /* microseconds */
+            given_spec = 4;
+        }
+    }
+    else {
+        for (given_spec = 0; given_spec < Py_ARRAY_LENGTH(specs); given_spec++) {
+            if (strcmp(timespec, specs[given_spec][0]) == 0) {
+                if (given_spec == 3) {
+                    /* milliseconds */
+                    us = us / 1000;
+                }
+                break;
+            }
+        }
+    }
+
+    if (given_spec == Py_ARRAY_LENGTH(specs)) {
+        PyErr_Format(PyExc_ValueError, "Unknown timespec value");
+        return NULL;
+    }
+    else {
+        result = PyUnicode_FromFormat(specs[given_spec][1],
+                                      TIME_GET_HOUR(self), TIME_GET_MINUTE(self),
+                                      TIME_GET_SECOND(self), us);
+    }
 
     if (result == NULL || !HASTZINFO(self) || self->tzinfo == Py_None)
         return result;
@@ -3845,9 +3878,10 @@ time_reduce(PyDateTime_Time *self, PyObject *arg)
 
 static PyMethodDef time_methods[] = {
 
-    {"isoformat",   (PyCFunction)time_isoformat,        METH_NOARGS,
-     PyDoc_STR("Return string in ISO 8601 format, HH:MM:SS[.mmmmmm]"
-               "[+HH:MM].")},
+    {"isoformat",   (PyCFunction)time_isoformat,        METH_VARARGS | METH_KEYWORDS,
+     PyDoc_STR("Return string in ISO 8601 format, [HH[:MM[:SS[.mmm[uuu]]]]]"
+               "[+HH:MM].\n\n"
+               "timespec specifies what components of the time to include.\n")},
 
     {"strftime",        (PyCFunction)time_strftime,     METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("format -> strftime() style string.")},
@@ -4476,25 +4510,55 @@ static PyObject *
 datetime_isoformat(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
 {
     int sep = 'T';
-    static char *keywords[] = {"sep", NULL};
+    char *timespec = NULL;
+    static char *keywords[] = {"sep", "timespec", NULL};
     char buffer[100];
-    PyObject *result;
+    PyObject *result = NULL;
     int us = DATE_GET_MICROSECOND(self);
+    static char *specs[][2] = {
+        {"hours", "%04d-%02d-%02d%c%02d"},
+        {"minutes", "%04d-%02d-%02d%c%02d:%02d"},
+        {"seconds", "%04d-%02d-%02d%c%02d:%02d:%02d"},
+        {"milliseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%03d"},
+        {"microseconds", "%04d-%02d-%02d%c%02d:%02d:%02d.%06d"},
+    };
+    size_t given_spec;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kw, "|C:isoformat", keywords, &sep))
+    if (!PyArg_ParseTupleAndKeywords(args, kw, "|Cs:isoformat", keywords, &sep, &timespec))
         return NULL;
-    if (us)
-        result = PyUnicode_FromFormat("%04d-%02d-%02d%c%02d:%02d:%02d.%06d",
+
+    if (timespec == NULL || strcmp(timespec, "auto") == 0) {
+        if (us == 0) {
+            /* seconds */
+            given_spec = 2;
+        }
+        else {
+            /* microseconds */
+            given_spec = 4;
+        }
+    }
+    else {
+        for (given_spec = 0; given_spec < Py_ARRAY_LENGTH(specs); given_spec++) {
+            if (strcmp(timespec, specs[given_spec][0]) == 0) {
+                if (given_spec == 3) {
+                    us = us / 1000;
+                }
+                break;
+            }
+        }
+    }
+
+    if (given_spec == Py_ARRAY_LENGTH(specs)) {
+        PyErr_Format(PyExc_ValueError, "Unknown timespec value");
+        return NULL;
+    }
+    else {
+        result = PyUnicode_FromFormat(specs[given_spec][1],
                                       GET_YEAR(self), GET_MONTH(self),
                                       GET_DAY(self), (int)sep,
                                       DATE_GET_HOUR(self), DATE_GET_MINUTE(self),
                                       DATE_GET_SECOND(self), us);
-    else
-        result = PyUnicode_FromFormat("%04d-%02d-%02d%c%02d:%02d:%02d",
-                                      GET_YEAR(self), GET_MONTH(self),
-                                      GET_DAY(self), (int)sep,
-                                      DATE_GET_HOUR(self), DATE_GET_MINUTE(self),
-                                      DATE_GET_SECOND(self));
+    }
 
     if (!result || !HASTZINFO(self))
         return result;
@@ -5028,9 +5092,12 @@ static PyMethodDef datetime_methods[] = {
 
     {"isoformat",   (PyCFunction)datetime_isoformat, METH_VARARGS | METH_KEYWORDS,
      PyDoc_STR("[sep] -> string in ISO 8601 format, "
-               "YYYY-MM-DDTHH:MM:SS[.mmmmmm][+HH:MM].\n\n"
+               "YYYY-MM-DDT[HH[:MM[:SS[.mmm[uuu]]]]][+HH:MM].\n"
                "sep is used to separate the year from the time, and "
-               "defaults to 'T'.")},
+               "defaults to 'T'.\n"
+               "timespec specifies what components of the time to include"
+               " (allowed values are 'auto', 'hours', 'minutes', 'seconds',"
+               " 'milliseconds', and 'microseconds').\n")},
 
     {"utcoffset",       (PyCFunction)datetime_utcoffset, METH_NOARGS,
      PyDoc_STR("Return self.tzinfo.utcoffset(self).")},
