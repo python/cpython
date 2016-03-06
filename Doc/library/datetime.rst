@@ -1134,7 +1134,7 @@ Instance methods:
    ``self.date().isocalendar()``.
 
 
-.. method:: datetime.isoformat(sep='T')
+.. method:: datetime.isoformat(sep='T', timespec='auto')
 
    Return a string representing the date and time in ISO 8601 format,
    YYYY-MM-DDTHH:MM:SS.mmmmmm or, if :attr:`microsecond` is 0,
@@ -1154,6 +1154,37 @@ Instance methods:
       ...
       >>> datetime(2002, 12, 25, tzinfo=TZ()).isoformat(' ')
       '2002-12-25 00:00:00-06:39'
+
+   The optional argument *timespec* specifies the number of additional
+   components of the time to include (the default is ``'auto'``).
+   It can be one of the following:
+
+   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is 0,
+     same as ``'microseconds'`` otherwise.
+   - ``'hours'``: Include the :attr:`hour` in the two-digit HH format.
+   - ``'minutes'``: Include :attr:`hour` and :attr:`minute` in HH:MM format.
+   - ``'seconds'``: Include :attr:`hour`, :attr:`minute`, and :attr:`second`
+     in HH:MM:SS format.
+   - ``'milliseconds'``: Include full time, but truncate fractional second
+     part to milliseconds. HH:MM:SS.sss format.
+   - ``'microseconds'``: Include full time in HH:MM:SS.mmmmmm format.
+
+   .. note::
+
+      Excluded time components are truncated, not rounded.
+
+   :exc:`ValueError` will be raised on an invalid *timespec* argument.
+
+
+      >>> from datetime import datetime
+      >>> datetime.now().isoformat(timespec='minutes')
+      '2002-12-25T00:00'
+      >>> dt = datetime(2015, 1, 1, 12, 30, 59, 0)
+      >>> dt.isoformat(timespec='microseconds')
+      '2015-01-01T12:30:59.000000'
+
+   .. versionadded:: 3.6
+      Added the *timespec* argument.
 
 
 .. method:: datetime.__str__()
@@ -1404,12 +1435,45 @@ Instance methods:
    aware :class:`.time`, without conversion of the time data.
 
 
-.. method:: time.isoformat()
+.. method:: time.isoformat(timespec='auto')
 
    Return a string representing the time in ISO 8601 format, HH:MM:SS.mmmmmm or, if
-   self.microsecond is 0, HH:MM:SS If :meth:`utcoffset` does not return ``None``, a
+   :attr:`microsecond` is 0, HH:MM:SS If :meth:`utcoffset` does not return ``None``, a
    6-character string is appended, giving the UTC offset in (signed) hours and
    minutes: HH:MM:SS.mmmmmm+HH:MM or, if self.microsecond is 0, HH:MM:SS+HH:MM
+
+   The optional argument *timespec* specifies the number of additional
+   components of the time to include (the default is ``'auto'``).
+   It can be one of the following:
+
+   - ``'auto'``: Same as ``'seconds'`` if :attr:`microsecond` is 0,
+     same as ``'microseconds'`` otherwise.
+   - ``'hours'``: Include the :attr:`hour` in the two-digit HH format.
+   - ``'minutes'``: Include :attr:`hour` and :attr:`minute` in HH:MM format.
+   - ``'seconds'``: Include :attr:`hour`, :attr:`minute`, and :attr:`second`
+     in HH:MM:SS format.
+   - ``'milliseconds'``: Include full time, but truncate fractional second
+     part to milliseconds. HH:MM:SS.sss format.
+   - ``'microseconds'``: Include full time in HH:MM:SS.mmmmmm format.
+
+   .. note::
+
+      Excluded time components are truncated, not rounded.
+
+   :exc:`ValueError` will be raised on an invalid *timespec* argument.
+
+
+      >>> from datetime import time
+      >>> time(hours=12, minute=34, second=56, microsecond=123456).isoformat(timespec='minutes')
+      '12:34'
+      >>> dt = time(hours=12, minute=34, second=56, microsecond=0)
+      >>> dt.isoformat(timespec='microseconds')
+      '12:34:56.000000'
+      >>> dt.isoformat(timespec='auto')
+      '12:34:56'
+
+   .. versionadded:: 3.6
+      Added the *timespec* argument.
 
 
 .. method:: time.__str__()
