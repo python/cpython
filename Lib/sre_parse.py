@@ -833,13 +833,13 @@ def parse(str, flags=0, pattern=None):
         assert source.next == ")"
         raise source.error("unbalanced parenthesis")
 
-    if flags & SRE_FLAG_DEBUG:
-        p.dump()
-
     if not (flags & SRE_FLAG_VERBOSE) and p.pattern.flags & SRE_FLAG_VERBOSE:
         # the VERBOSE flag was switched on inside the pattern.  to be
         # on the safe side, we'll parse the whole thing again...
         return parse(str, p.pattern.flags)
+
+    if flags & SRE_FLAG_DEBUG:
+        p.dump()
 
     return p
 
