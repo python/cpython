@@ -456,12 +456,21 @@ class Unparser:
 
     def _Dict(self, t):
         self.write("{")
-        def write_pair(pair):
-            (k, v) = pair
+        def write_key_value_pair(k, v):
             self.dispatch(k)
             self.write(": ")
             self.dispatch(v)
-        interleave(lambda: self.write(", "), write_pair, zip(t.keys, t.values))
+
+        def write_item(item):
+            k, v = item
+            if k is None:
+                # for dictionary unpacking operator in dicts {**{'y': 2}}
+                # see PEP 448 for details
+                self.write("**")
+                self.dispatch(v)
+            else:
+                write_key_value_pair(k, v)
+        interleave(lambda: self.write(", "), write_item, zip(t.keys, t.values))
         self.write("}")
 
     def _Tuple(self, t):
