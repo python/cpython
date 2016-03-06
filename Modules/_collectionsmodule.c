@@ -1296,31 +1296,31 @@ deque_traverse(dequeobject *deque, visitproc visit, void *arg)
 static PyObject *
 deque_reduce(dequeobject *deque)
 {
-    PyObject *dict, *result, *aslist;
+    PyObject *dict, *it;
     _Py_IDENTIFIER(__dict__);
 
     dict = _PyObject_GetAttrId((PyObject *)deque, &PyId___dict__);
-    if (dict == NULL)
+    if (dict == NULL) {
+        if (!PyErr_ExceptionMatches(PyExc_AttributeError)) {
+            return NULL;
+        }
         PyErr_Clear();
-    aslist = PySequence_List((PyObject *)deque);
-    if (aslist == NULL) {
-        Py_XDECREF(dict);
+        dict = Py_None;
+        Py_INCREF(dict);
+    }
+
+    it = PyObject_GetIter((PyObject *)deque);
+    if (it == NULL) {
+        Py_DECREF(dict);
         return NULL;
     }
-    if (dict == NULL) {
-        if (deque->maxlen < 0)
-            result = Py_BuildValue("O(O)", Py_TYPE(deque), aslist);
-        else
-            result = Py_BuildValue("O(On)", Py_TYPE(deque), aslist, deque->maxlen);
-    } else {
-        if (deque->maxlen < 0)
-            result = Py_BuildValue("O(OO)O", Py_TYPE(deque), aslist, Py_None, dict);
-        else
-            result = Py_BuildValue("O(On)O", Py_TYPE(deque), aslist, deque->maxlen, dict);
+
+    if (deque->maxlen < 0) {
+        return Py_BuildValue("O()NN", Py_TYPE(deque), dict, it);
     }
-    Py_XDECREF(dict);
-    Py_DECREF(aslist);
-    return result;
+    else {
+        return Py_BuildValue("O(()n)NN", Py_TYPE(deque), deque->maxlen, dict, it);
+    }
 }
 
 PyDoc_STRVAR(reduce_doc, "Return state information for pickling.");
