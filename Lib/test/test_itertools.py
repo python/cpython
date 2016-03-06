@@ -1398,6 +1398,16 @@ class TestExamples(unittest.TestCase):
         self.assertEqual(list(copy.deepcopy(it)), accumulated[1:])
         self.assertEqual(list(copy.copy(it)), accumulated[1:])
 
+    def test_accumulate_reducible_none(self):
+        # Issue #25718: total is None
+        it = accumulate([None, None, None], operator.is_)
+        self.assertEqual(next(it), None)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            it_copy = pickle.loads(pickle.dumps(it, proto))
+            self.assertEqual(list(it_copy), [True, False])
+        self.assertEqual(list(copy.deepcopy(it)), [True, False])
+        self.assertEqual(list(copy.copy(it)), [True, False])
+
     def test_chain(self):
         self.assertEqual(''.join(chain('ABC', 'DEF')), 'ABCDEF')
 
