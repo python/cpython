@@ -201,6 +201,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26475: Fixed debugging output for regular expressions with the (?x)
+  flag.
+
 - Issue #26482: Allowed pickling recursive dequeues.
 
 - Issue #26335: Make mmap.write() return the number of bytes written like
