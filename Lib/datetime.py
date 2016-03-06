@@ -152,12 +152,26 @@ def _build_struct_time(y, m, d, hh, mm, ss, dstflag):
     dnum = _days_before_month(y, m) + d
     return _time.struct_time((y, m, d, hh, mm, ss, wday, dnum, dstflag))
 
-def _format_time(hh, mm, ss, us):
-    # Skip trailing microseconds when us==0.
-    result = "%02d:%02d:%02d" % (hh, mm, ss)
-    if us:
-        result += ".%06d" % us
-    return result
+def _format_time(hh, mm, ss, us, timespec='auto'):
+    specs = {
+        'hours': '{:02d}',
+        'minutes': '{:02d}:{:02d}',
+        'seconds': '{:02d}:{:02d}:{:02d}',
+        'milliseconds': '{:02d}:{:02d}:{:02d}.{:03d}',
+        'microseconds': '{:02d}:{:02d}:{:02d}.{:06d}'
+    }
+
+    if timespec == 'auto':
+        # Skip trailing microseconds when us==0.
+        timespec = 'microseconds' if us else 'seconds'
+    elif timespec == 'milliseconds':
+        us //= 1000
+    try:
+        fmt = specs[timespec]
+    except KeyError:
+        raise ValueError('Unknown timespec value')
+    else:
+        return fmt.format(hh, mm, ss, us)
 
 # Correctly substitute for %z and %Z escapes in strftime formats.
 def _wrap_strftime(object, format, timetuple):
@@ -1194,14 +1208,17 @@ class time:
             s = s[:-1] + ", tzinfo=%r" % self._tzinfo + ")"
         return s
 
-    def isoformat(self):
+    def isoformat(self, timespec='auto'):
         """Return the time formatted according to ISO.
 
-        This is 'HH:MM:SS.mmmmmm+zz:zz', or 'HH:MM:SS+zz:zz' if
-        self.microsecond == 0.
+        The full format is 'HH:MM:SS.mmmmmm+zz:zz'. By default, the fractional
+        part is omitted if self.microsecond == 0.
+
+        The optional argument timespec specifies the number of additional
+        terms of the time to include.
         """
         s = _format_time(self._hour, self._minute, self._second,
-                         self._microsecond)
+                          self._microsecond, timespec)
         tz = self._tzstr()
         if tz:
             s += tz
@@ -1550,21 +1567,25 @@ class datetime(date):
             self._hour, self._minute, self._second,
             self._year)
 
-    def isoformat(self, sep='T'):
+    def isoformat(self, sep='T', timespec='auto'):
         """Return the time formatted according to ISO.
 
-        This is 'YYYY-MM-DD HH:MM:SS.mmmmmm', or 'YYYY-MM-DD HH:MM:SS' if
-        self.microsecond == 0.
+        The full format looks like 'YYYY-MM-DD HH:MM:SS.mmmmmm'.
+        By default, the fractional part is omitted if self.microsecond == 0.
 
         If self.tzinfo is not None, the UTC offset is also attached, giving
-        'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM' or 'YYYY-MM-DD HH:MM:SS+HH:MM'.
+        giving a full format of 'YYYY-MM-DD HH:MM:SS.mmmmmm+HH:MM'.
 
         Optional argument sep specifies the separator between date and
         time, default 'T'.
+
+        The optional argument timespec specifies the number of additional
+        terms of the time to include.
         """
         s = ("%04d-%02d-%02d%c" % (self._year, self._month, self._day, sep) +
              _format_time(self._hour, self._minute, self._second,
-                          self._microsecond))
+                          self._microsecond, timespec))
+
         off = self.utcoffset()
         if off is not None:
             if off.days < 0:

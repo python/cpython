@@ -1556,13 +1556,32 @@ class TestDateTime(TestDate):
             self.assertEqual(dt, dt2)
 
     def test_isoformat(self):
-        t = self.theclass(2, 3, 2, 4, 5, 1, 123)
-        self.assertEqual(t.isoformat(),    "0002-03-02T04:05:01.000123")
-        self.assertEqual(t.isoformat('T'), "0002-03-02T04:05:01.000123")
-        self.assertEqual(t.isoformat(' '), "0002-03-02 04:05:01.000123")
-        self.assertEqual(t.isoformat('\x00'), "0002-03-02\x0004:05:01.000123")
+        t = self.theclass(1, 2, 3, 4, 5, 1, 123)
+        self.assertEqual(t.isoformat(),    "0001-02-03T04:05:01.000123")
+        self.assertEqual(t.isoformat('T'), "0001-02-03T04:05:01.000123")
+        self.assertEqual(t.isoformat(' '), "0001-02-03 04:05:01.000123")
+        self.assertEqual(t.isoformat('\x00'), "0001-02-03\x0004:05:01.000123")
+        self.assertEqual(t.isoformat(timespec='hours'), "0001-02-03T04")
+        self.assertEqual(t.isoformat(timespec='minutes'), "0001-02-03T04:05")
+        self.assertEqual(t.isoformat(timespec='seconds'), "0001-02-03T04:05:01")
+        self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.000")
+        self.assertEqual(t.isoformat(timespec='microseconds'), "0001-02-03T04:05:01.000123")
+        self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01.000123")
+        self.assertEqual(t.isoformat(sep=' ', timespec='minutes'), "0001-02-03 04:05")
+        self.assertRaises(ValueError, t.isoformat, timespec='foo')
         # str is ISO format with the separator forced to a blank.
-        self.assertEqual(str(t), "0002-03-02 04:05:01.000123")
+        self.assertEqual(str(t), "0001-02-03 04:05:01.000123")
+
+        t = self.theclass(1, 2, 3, 4, 5, 1, 999500, tzinfo=timezone.utc)
+        self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.999+00:00")
+
+        t = self.theclass(1, 2, 3, 4, 5, 1, 999500)
+        self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.999")
+
+        t = self.theclass(1, 2, 3, 4, 5, 1)
+        self.assertEqual(t.isoformat(timespec='auto'), "0001-02-03T04:05:01")
+        self.assertEqual(t.isoformat(timespec='milliseconds'), "0001-02-03T04:05:01.000")
+        self.assertEqual(t.isoformat(timespec='microseconds'), "0001-02-03T04:05:01.000000")
 
         t = self.theclass(2, 3, 2)
         self.assertEqual(t.isoformat(),    "0002-03-02T00:00:00")
@@ -2321,6 +2340,23 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
         t = self.theclass(microsecond=100000)
         self.assertEqual(t.isoformat(), "00:00:00.100000")
         self.assertEqual(t.isoformat(), str(t))
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=123456)
+        self.assertEqual(t.isoformat(timespec='hours'), "12")
+        self.assertEqual(t.isoformat(timespec='minutes'), "12:34")
+        self.assertEqual(t.isoformat(timespec='seconds'), "12:34:56")
+        self.assertEqual(t.isoformat(timespec='milliseconds'), "12:34:56.123")
+        self.assertEqual(t.isoformat(timespec='microseconds'), "12:34:56.123456")
+        self.assertEqual(t.isoformat(timespec='auto'), "12:34:56.123456")
+        self.assertRaises(ValueError, t.isoformat, timespec='monkey')
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=999500)
+        self.assertEqual(t.isoformat(timespec='milliseconds'), "12:34:56.999")
+
+        t = self.theclass(hour=12, minute=34, second=56, microsecond=0)
+        self.assertEqual(t.isoformat(timespec='milliseconds'), "12:34:56.000")
+        self.assertEqual(t.isoformat(timespec='microseconds'), "12:34:56.000000")
+        self.assertEqual(t.isoformat(timespec='auto'), "12:34:56")
 
     def test_1653736(self):
         # verify it doesn't accept extra keyword arguments
