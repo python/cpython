@@ -328,6 +328,9 @@ Windows
 Tools/Demos
 -----------
 
+- Issue #26489: Add dictionary unpacking support to Tools/parser/unparse.py.
+  Patch by Guo Ci Teo.
+
 - Issue #26316: Fix variable name typo in Argument Clinic.
 
 
