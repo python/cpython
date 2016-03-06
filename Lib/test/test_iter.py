@@ -153,6 +153,42 @@ class TestCase(unittest.TestCase):
     def test_seq_class_iter(self):
         self.check_iterator(iter(SequenceClass(10)), list(range(10)))
 
+    def test_mutating_seq_class_iter_pickle(self):
+        orig = SequenceClass(5)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            # initial iterator
+            itorig = iter(orig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, seq = pickle.loads(d)
+            seq.n = 7
+            self.assertIs(type(it), type(itorig))
+            self.assertEqual(list(it), list(range(7)))
+
+            # running iterator
+            next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, seq = pickle.loads(d)
+            seq.n = 7
+            self.assertIs(type(it), type(itorig))
+            self.assertEqual(list(it), list(range(1, 7)))
+
+            # empty iterator
+            for i in range(1, 5):
+                next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, seq = pickle.loads(d)
+            seq.n = 7
+            self.assertIs(type(it), type(itorig))
+            self.assertEqual(list(it), list(range(5, 7)))
+
+            # exhausted iterator
+            self.assertRaises(StopIteration, next, itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, seq = pickle.loads(d)
+            seq.n = 7
+            self.assertTrue(isinstance(it, collections.abc.Iterator))
+            self.assertEqual(list(it), [])
+
     # Test a new_style class with __iter__ but no next() method
     def test_new_style_iter_class(self):
         class IterClass(object):

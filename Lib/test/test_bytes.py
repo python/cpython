@@ -595,10 +595,9 @@ class BaseBytesTest:
                 self.assertEqual(list(it), data)
 
                 it = pickle.loads(d)
-                try:
-                    next(it)
-                except StopIteration:
+                if not b:
                     continue
+                next(it)
                 d = pickle.dumps(it, proto)
                 it = pickle.loads(d)
                 self.assertEqual(list(it), data[1:])
@@ -1283,6 +1282,43 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
     def test_obsolete_write_lock(self):
         from _testcapi import getbuffer_with_null_view
         self.assertRaises(BufferError, getbuffer_with_null_view, bytearray())
+
+    def test_iterator_pickling2(self):
+        orig = bytearray(b'abc')
+        data = list(b'qwerty')
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            # initial iterator
+            itorig = iter(orig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, b = pickle.loads(d)
+            b[:] = data
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), data)
+
+            # running iterator
+            next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, b = pickle.loads(d)
+            b[:] = data
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), data[1:])
+
+            # empty iterator
+            for i in range(1, len(orig)):
+                next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, b = pickle.loads(d)
+            b[:] = data
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), data[len(orig):])
+
+            # exhausted iterator
+            self.assertRaises(StopIteration, next, itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, b = pickle.loads(d)
+            b[:] = data
+            self.assertEqual(list(it), [])
+
 
 class AssortedBytesTest(unittest.TestCase):
     #

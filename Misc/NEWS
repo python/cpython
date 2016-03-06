@@ -274,6 +274,8 @@ Documentation
 Tests
 -----
 
+- Issue #26015: Added new tests for pickling iterators of mutable sequences.
+
 - Issue #26325: Added test.support.check_no_resource_warning() to check that
   no ResourceWarning is emitted.
 
