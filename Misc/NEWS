@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26475: Fixed debugging output for regular expressions with the (?x)
+  flag.
+
 - Issue #26385: Remove the file if the internal fdopen() call in
   NamedTemporaryFile() fails.  Based on patch by Silent Ghost.
 
