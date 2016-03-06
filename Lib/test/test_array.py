@@ -284,19 +284,42 @@ class BaseTest:
             self.assertEqual(type(a), type(b))
 
     def test_iterator_pickle(self):
-        data = array.array(self.typecode, self.example)
+        orig = array.array(self.typecode, self.example)
+        data = list(orig)
+        data2 = data[::-1]
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            orgit = iter(data)
-            d = pickle.dumps(orgit, proto)
-            it = pickle.loads(d)
-            self.assertEqual(type(orgit), type(it))
-            self.assertEqual(list(it), list(data))
+            # initial iterator
+            itorig = iter(orig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.fromlist(data2)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), data + data2)
 
-            if len(data):
-                it = pickle.loads(d)
-                next(it)
-                d = pickle.dumps(it, proto)
-                self.assertEqual(list(it), list(data)[1:])
+            # running iterator
+            next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.fromlist(data2)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), data[1:] + data2)
+
+            # empty iterator
+            for i in range(1, len(data)):
+                next(itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.fromlist(data2)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), data2)
+
+            # exhausted iterator
+            self.assertRaises(StopIteration, next, itorig)
+            d = pickle.dumps((itorig, orig), proto)
+            it, a = pickle.loads(d)
+            a.fromlist(data2)
+            self.assertEqual(type(it), type(itorig))
+            self.assertEqual(list(it), data2)
 
     def test_insert(self):
         a = array.array(self.typecode, self.example)
