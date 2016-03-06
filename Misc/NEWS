@@ -55,6 +55,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #2202: Fix UnboundLocalError in
+  AbstractDigestAuthHandler.get_algorithm_impls.  Initial patch by Mathieu Dupuy.
+
 - Issue #26475: Fixed debugging output for regular expressions with the (?x)
   flag.
 

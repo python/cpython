@@ -6,7 +6,7 @@ import socket
 import StringIO
 
 import urllib2
-from urllib2 import Request, OpenerDirector
+from urllib2 import Request, OpenerDirector, AbstractDigestAuthHandler
 
 try:
     import ssl
@@ -1289,6 +1289,16 @@ class MiscTests(unittest.TestCase):
                 break
         else:
             self.assertTrue(False)
+
+    def test_unsupported_algorithm(self):
+        handler = AbstractDigestAuthHandler()
+        with self.assertRaises(ValueError) as exc:
+            handler.get_algorithm_impls('invalid')
+        self.assertEqual(
+            str(exc.exception),
+            "Unsupported digest authentication algorithm 'invalid'"
+        )
+
 
 class RequestTests(unittest.TestCase):
 
