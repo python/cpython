@@ -250,6 +250,11 @@ class UnparseTestCase(ASTTestCase):
     def test_with_two_items(self):
         self.check_roundtrip(with_two_items)
 
+    def test_dict_unpacking_in_dict(self):
+        # See issue 26489
+        self.check_roundtrip(r"""{**{'y': 2}, 'x': 1}""")
+        self.check_roundtrip(r"""{**{'y': 2}, **{'x': 1}}""")
+
 
 class DirectoryTestCase(ASTTestCase):
     """Test roundtrip behaviour on all files in Lib and Lib/test."""
