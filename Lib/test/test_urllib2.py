@@ -13,7 +13,8 @@ import urllib.request
 # proxy config data structure but is testable on all platforms.
 from urllib.request import (Request, OpenerDirector, HTTPBasicAuthHandler,
                             HTTPPasswordMgrWithPriorAuth, _parse_proxy,
-                            _proxy_bypass_macosx_sysconf)
+                            _proxy_bypass_macosx_sysconf,
+                            AbstractDigestAuthHandler)
 from urllib.parse import urlparse
 import urllib.error
 import http.client
@@ -1679,6 +1680,15 @@ class MiscTests(unittest.TestCase):
             self.assertEqual(_parse_proxy(tc), expected)
 
         self.assertRaises(ValueError, _parse_proxy, 'file:/ftp.example.com'),
+
+    def test_unsupported_algorithm(self):
+        handler = AbstractDigestAuthHandler()
+        with self.assertRaises(ValueError) as exc:
+            handler.get_algorithm_impls('invalid')
+        self.assertEqual(
+            str(exc.exception),
+            "Unsupported digest authentication algorithm 'invalid'"
+        )
 
 
 class RequestTests(unittest.TestCase):
