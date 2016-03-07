@@ -695,6 +695,11 @@ which incur interpreter overhead.
        "Returns the nth item or a default value"
        return next(islice(iterable, n, None), default)
 
+   def all_equal(iterable):
+       "Returns True if all the elements are equal to each other"
+       g = groupby(iterable)
+       return next(g, True) and not next(g, False)
+
    def quantify(iterable, pred=bool):
        "Count how many times the predicate is true"
        return sum(imap(pred, iterable))

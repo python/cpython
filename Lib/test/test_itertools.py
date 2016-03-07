@@ -1525,6 +1525,11 @@ Samuele
 ...     "Returns the nth item or a default value"
 ...     return next(islice(iterable, n, None), default)
 
+>>> def all_equal(iterable):
+...     "Returns True if all the elements are equal to each other"
+...     g = groupby(iterable)
+...     return next(g, True) and not next(g, False)
+
 >>> def quantify(iterable, pred=bool):
 ...     "Count how many times the predicate is true"
 ...     return sum(imap(pred, iterable))
@@ -1622,6 +1627,9 @@ perform as purported.
 
 >>> nth('abcde', 9) is None
 True
+
+>>> [all_equal(s) for s in ('', 'A', 'AAAA', 'AAAB', 'AAABA')]
+[True, True, True, False, False]
 
 >>> quantify(xrange(99), lambda x: x%2==0)
 50
