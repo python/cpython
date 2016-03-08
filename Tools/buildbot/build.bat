@@ -8,7 +8,7 @@ call "%~dp0clean.bat" %*
 @rem a new version of an external library, especially Tcl/Tk):
 @rem 1) uncomment the following line:
 
-call "%~dp0..\..\PCbuild\get_externals.bat" --clean-only
+@rem    call "%~dp0..\..\PCbuild\get_externals.bat" --clean-only
 
 @rem 2) commit and push
 @rem 3) wait for all Windows bots to start a build with that changeset
