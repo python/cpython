@@ -201,6 +201,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15068: Got rid of excessive buffering in fileinput.
+  The bufsize parameter is now deprecated and ignored.
+
 - Issue #19475: Added an optional argument timespec to the datetime
   isoformat() method to choose the precision of the time component.
 
