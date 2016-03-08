@@ -174,6 +174,9 @@ def main():
     if not find_all_on_path('nmake.exe'):
         print('Could not find nmake.exe, try running env.bat')
         sys.exit(1)
+    if not find_all_on_path('nasm.exe'):
+        print('Could not find nasm.exe, please add to PATH')
+        sys.exit(1)
     sys.stdout.flush()
 
     # Put our working Perl at the front of our path
