@@ -1483,14 +1483,23 @@ yes)
 	 ]))
      CFLAGS="$save_CFLAGS"
      CC="$ac_save_cc"
-    AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
 
     # Don't enable unreachable code warning in debug mode, since it usually
     # results in non-standard code paths.
-    if test $ac_cv_enable_unreachable_code_warning = yes && test "$Py_DEBUG" != "true"
+    # Issue #24324: Unfortunately, the unreachable code warning does not work
+    # correctly on gcc and has been silently removed from the compiler.
+    # It is supported on clang but on OS X systems gcc may be an alias
+    # for clang.  Try to determine if the compiler is not really gcc and,
+    # if so, only then enable the warning.
+    if test $ac_cv_enable_unreachable_code_warning = yes && \
+        test "$Py_DEBUG" != "true" && \
+        test -z "`$CC --version 2>/dev/null | grep 'Free Software Foundation'`"
     then
       BASECFLAGS="$BASECFLAGS -Wunreachable-code"
+    else
+      ac_cv_enable_unreachable_code_warning=no
     fi
+    AC_MSG_RESULT($ac_cv_enable_unreachable_code_warning)
 
     # if using gcc on alpha, use -mieee to get (near) full IEEE 754
     # support.  Without this, treatment of subnormals doesn't follow
