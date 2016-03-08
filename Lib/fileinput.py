@@ -207,7 +207,6 @@ class FileInput:
         self._startlineno = 0
         self._filelineno = 0
         self._file = None
-        self._readline = self._start_readline
         self._isstdin = False
         self._backupfilename = None
         # restrict mode argument to reading modes
@@ -234,15 +233,15 @@ class FileInput:
         return self
 
     def next(self):
-        line = self._readline()
-        if line:
-            self._filelineno += 1
-            return line
-        if not self._file:
-            raise StopIteration
-        self.nextfile()
-        # Recursive call
-        return self.next()
+        while 1:
+            line = self._readline()
+            if line:
+                self._filelineno += 1
+                return line
+            if not self._file:
+                raise StopIteration
+            self.nextfile()
+            # repeat with next file
 
     def __getitem__(self, i):
         if i != self.lineno():
@@ -266,7 +265,10 @@ class FileInput:
         finally:
             file = self._file
             self._file = None
-            self._readline = self._start_readline
+            try:
+                del self._readline  # restore FileInput._readline
+            except AttributeError:
+                pass
             try:
                 if file and not self._isstdin:
                     file.close()
@@ -290,7 +292,7 @@ class FileInput:
             self.nextfile()
             # repeat with next file
 
-    def _start_readline(self):
+    def _readline(self):
         if not self._files:
             return ""
         self._filename = self._files[0]
@@ -336,7 +338,7 @@ class FileInput:
                 else:
                     self._file = open(self._filename, self._mode)
 
-        self._readline = self._file.readline
+        self._readline = self._file.readline  # hide FileInput._readline
         return self._readline()
 
     def filename(self):
