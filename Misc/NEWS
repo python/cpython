@@ -176,8 +176,8 @@ Build
 
 - Issue #25696: Fix installation of Python on UNIX with make -j9.
 
-- Issue #26268: Update OS X 10.5+ 32-bit-only installer to build
-  and link with OpenSSL 1.0.2f.
+- Issue #26465: Update OS X 10.5+ 32-bit-only installer to build
+  and link with OpenSSL 1.0.2g.
 
 - Issue #26268: Update Windows builds to use OpenSSL 1.0.2f.
 
