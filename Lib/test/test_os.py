@@ -1020,6 +1020,17 @@ class FwalkTests(WalkTests):
 
 class BytesWalkTests(WalkTests):
     """Tests for os.walk() with bytes."""
+    def setUp(self):
+        super().setUp()
+        self.stack = contextlib.ExitStack()
+        if os.name == 'nt':
+            self.stack.enter_context(warnings.catch_warnings())
+            warnings.simplefilter("ignore", DeprecationWarning)
+
+    def tearDown(self):
+        self.stack.close()
+        super().tearDown()
+
     def walk(self, top, **kwargs):
         if 'follow_symlinks' in kwargs:
             kwargs['followlinks'] = kwargs.pop('follow_symlinks')
