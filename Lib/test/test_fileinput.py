@@ -5,7 +5,7 @@ Nick Mathewson
 
 import unittest
 from test.test_support import verbose, TESTFN, run_unittest
-from test.test_support import unlink as safe_unlink
+from test.test_support import unlink as safe_unlink, check_warnings
 import sys, re
 from StringIO import StringIO
 from fileinput import FileInput, hook_encoded
@@ -27,6 +27,42 @@ def writeTmp(i, lines, mode='w'):  # opening in text mode is the default
 def remove_tempfiles(*names):
     for name in names:
         safe_unlink(name)
+
+class LineReader:
+
+    def __init__(self):
+        self._linesread = []
+
+    @property
+    def linesread(self):
+        try:
+            return self._linesread[:]
+        finally:
+            self._linesread = []
+
+    def openhook(self, filename, mode):
+        self.it = iter(filename.splitlines(True))
+        return self
+
+    def readline(self, size=None):
+        line = next(self.it, '')
+        self._linesread.append(line)
+        return line
+
+    def readlines(self, hint=-1):
+        lines = []
+        size = 0
+        while True:
+            line = self.readline()
+            if not line:
+                return lines
+            lines.append(line)
+            size += len(line)
+            if size >= hint:
+                return lines
+
+    def close(self):
+        pass
 
 class BufferSizesTests(unittest.TestCase):
     def test_buffer_sizes(self):
@@ -228,7 +264,7 @@ class FileInputTests(unittest.TestCase):
             f.write('\x80')
         self.addCleanup(safe_unlink, TESTFN)
 
-        fi = FileInput(files=TESTFN, openhook=hook_encoded('ascii'), bufsize=8)
+        fi = FileInput(files=TESTFN, openhook=hook_encoded('ascii'))
         # The most likely failure is a UnicodeDecodeError due to the entire
         # file being read when it shouldn't have been.
         self.assertEqual(fi.readline(), u'A\n')
@@ -237,6 +273,38 @@ class FileInputTests(unittest.TestCase):
         with self.assertRaises(UnicodeDecodeError):
             # Read to the end of file.
             list(fi)
+        fi.close()
+
+    def test_readline_buffering(self):
+        src = LineReader()
+        fi = FileInput(files=['line1\nline2', 'line3\n'], openhook=src.openhook)
+        self.assertEqual(src.linesread, [])
+        self.assertEqual(fi.readline(), 'line1\n')
+        self.assertEqual(src.linesread, ['line1\n'])
+        self.assertEqual(fi.readline(), 'line2')
+        self.assertEqual(src.linesread, ['line2'])
+        self.assertEqual(fi.readline(), 'line3\n')
+        self.assertEqual(src.linesread, ['', 'line3\n'])
+        self.assertEqual(fi.readline(), '')
+        self.assertEqual(src.linesread, [''])
+        self.assertEqual(fi.readline(), '')
+        self.assertEqual(src.linesread, [])
+        fi.close()
+
+    def test_iteration_buffering(self):
+        src = LineReader()
+        fi = FileInput(files=['line1\nline2', 'line3\n'], openhook=src.openhook)
+        self.assertEqual(src.linesread, [])
+        self.assertEqual(next(fi), 'line1\n')
+        self.assertEqual(src.linesread, ['line1\n'])
+        self.assertEqual(next(fi), 'line2')
+        self.assertEqual(src.linesread, ['line2'])
+        self.assertEqual(next(fi), 'line3\n')
+        self.assertEqual(src.linesread, ['', 'line3\n'])
+        self.assertRaises(StopIteration, next, fi)
+        self.assertEqual(src.linesread, [''])
+        self.assertRaises(StopIteration, next, fi)
+        self.assertEqual(src.linesread, [])
         fi.close()
 
 class Test_hook_encoded(unittest.TestCase):

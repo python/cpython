@@ -58,6 +58,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #15068: Got rid of excessive buffering in the fileinput module.
+  The bufsize parameter is no longer used.
+
 - Issue #2202: Fix UnboundLocalError in
   AbstractDigestAuthHandler.get_algorithm_impls.  Initial patch by Mathieu Dupuy.
 
