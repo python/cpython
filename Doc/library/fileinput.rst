@@ -71,6 +71,9 @@ The following function is the primary interface of this module:
    .. versionchanged:: 3.2
       Can be used as a context manager.
 
+   .. versionchanged:: 3.5.2
+      The *bufsize* parameter is no longer used.
+
 
 The following functions use the global state created by :func:`fileinput.input`;
 if there is no active state, :exc:`RuntimeError` is raised.
@@ -161,7 +164,10 @@ available for subclassing as well:
       Can be used as a context manager.
 
    .. deprecated:: 3.4
-        The ``'rU'`` and ``'U'`` modes.
+      The ``'rU'`` and ``'U'`` modes.
+
+   .. versionchanged:: 3.5.2
+      The *bufsize* parameter is no longer used.
 
 
 **Optional in-place filtering:** if the keyword argument ``inplace=True`` is

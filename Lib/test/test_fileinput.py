@@ -46,6 +46,42 @@ def remove_tempfiles(*names):
         if name:
             safe_unlink(name)
 
+class LineReader:
+
+    def __init__(self):
+        self._linesread = []
+
+    @property
+    def linesread(self):
+        try:
+            return self._linesread[:]
+        finally:
+            self._linesread = []
+
+    def openhook(self, filename, mode):
+        self.it = iter(filename.splitlines(True))
+        return self
+
+    def readline(self, size=None):
+        line = next(self.it, '')
+        self._linesread.append(line)
+        return line
+
+    def readlines(self, hint=-1):
+        lines = []
+        size = 0
+        while True:
+            line = self.readline()
+            if not line:
+                return lines
+            lines.append(line)
+            size += len(line)
+            if size >= hint:
+                return lines
+
+    def close(self):
+        pass
+
 class BufferSizesTests(unittest.TestCase):
     def test_buffer_sizes(self):
         # First, run the tests with default and teeny buffer size.
@@ -289,7 +325,7 @@ class FileInputTests(unittest.TestCase):
         self.addCleanup(safe_unlink, TESTFN)
 
         with FileInput(files=TESTFN,
-                       openhook=hook_encoded('ascii'), bufsize=8) as fi:
+                       openhook=hook_encoded('ascii')) as fi:
             try:
                 self.assertEqual(fi.readline(), 'A\n')
                 self.assertEqual(fi.readline(), 'B\n')
@@ -456,6 +492,38 @@ class FileInputTests(unittest.TestCase):
                         "_file.fileno() was not invoked")
 
         self.assertEqual(result, -1, "fileno() should return -1")
+
+    def test_readline_buffering(self):
+        src = LineReader()
+        with FileInput(files=['line1\nline2', 'line3\n'],
+                       openhook=src.openhook) as fi:
+            self.assertEqual(src.linesread, [])
+            self.assertEqual(fi.readline(), 'line1\n')
+            self.assertEqual(src.linesread, ['line1\n'])
+            self.assertEqual(fi.readline(), 'line2')
+            self.assertEqual(src.linesread, ['line2'])
+            self.assertEqual(fi.readline(), 'line3\n')
+            self.assertEqual(src.linesread, ['', 'line3\n'])
+            self.assertEqual(fi.readline(), '')
+            self.assertEqual(src.linesread, [''])
+            self.assertEqual(fi.readline(), '')
+            self.assertEqual(src.linesread, [])
+
+    def test_iteration_buffering(self):
+        src = LineReader()
+        with FileInput(files=['line1\nline2', 'line3\n'],
+                       openhook=src.openhook) as fi:
+            self.assertEqual(src.linesread, [])
+            self.assertEqual(next(fi), 'line1\n')
+            self.assertEqual(src.linesread, ['line1\n'])
+            self.assertEqual(next(fi), 'line2')
+            self.assertEqual(src.linesread, ['line2'])
+            self.assertEqual(next(fi), 'line3\n')
+            self.assertEqual(src.linesread, ['', 'line3\n'])
+            self.assertRaises(StopIteration, next, fi)
+            self.assertEqual(src.linesread, [''])
+            self.assertRaises(StopIteration, next, fi)
+            self.assertEqual(src.linesread, [])
 
 class MockFileInput:
     """A class that mocks out fileinput.FileInput for use during unit tests"""
