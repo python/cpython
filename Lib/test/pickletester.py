@@ -1500,17 +1500,6 @@ class AbstractPickleTests(unittest.TestCase):
             self.assertEqual(len(loaded), len(data))
             self.assertEqual(loaded, data)
 
-    def test_int_pickling_efficiency(self):
-        # Test compacity of int representation (see issue #12744)
-        for proto in protocols:
-            pickles = [self.dumps(2**n, proto) for n in xrange(0, 71, 5)]
-            sizes = list(map(len, pickles))
-            # the size function is monotonic
-            self.assertEqual(sorted(sizes), sizes)
-            if proto >= 2:
-                for p in pickles:
-                    self.assertFalse(opcode_in_pickle(pickle.LONG, p))
-
     def _check_pickling_with_opcode(self, obj, opcode, proto):
         pickled = self.dumps(obj, proto)
         self.assertTrue(opcode_in_pickle(opcode, pickled))
