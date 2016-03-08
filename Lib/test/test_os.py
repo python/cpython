@@ -836,11 +836,7 @@ class WalkTests(unittest.TestCase):
         if support.can_symlink():
             os.symlink(os.path.abspath(t2_path), self.link_path)
             os.symlink('broken', broken_link_path, True)
-            if os.path.isdir(broken_link_path):
-                # On Windows a symlink can has the FILE_ATTRIBUTE_DIRECTORY flag.
-                self.sub2_tree = (sub2_path, ["broken_link", "link"], ["tmp3"])
-            else:
-                self.sub2_tree = (sub2_path, ["link"], ["broken_link", "tmp3"])
+            self.sub2_tree = (sub2_path, ["link"], ["broken_link", "tmp3"])
         else:
             self.sub2_tree = (sub2_path, [], ["tmp3"])
 
