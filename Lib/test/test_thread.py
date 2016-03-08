@@ -233,7 +233,12 @@ class TestForkInThread(unittest.TestCase):
             if pid == 0: # child
                 os.close(self.read_fd)
                 os.write(self.write_fd, "OK")
-                sys.exit(0)
+                # Exiting the thread normally in the child process can leave
+                # any additional threads (such as the one started by
+                # importing _tkinter) still running, and this can prevent
+                # the half-zombie child process from being cleaned up. See
+                # Issue #26456.
+                os._exit(0)
             else: # parent
                 os.close(self.write_fd)
 
