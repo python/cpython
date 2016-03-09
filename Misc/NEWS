@@ -201,6 +201,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26177: Fixed the keys() method for Canvas and Scrollbar widgets.
+
 - Issue #21042: Make ctypes.util.find_library() return the full path on
   Linux, similar to other platforms.  Patch by Tamás Bence Gedai.
 
