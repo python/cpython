@@ -58,6 +58,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26177: Fixed the keys() method for Canvas and Scrollbar widgets.
+
 - Issue #15068: Got rid of excessive buffering in the fileinput module.
   The bufsize parameter is no longer used.
 

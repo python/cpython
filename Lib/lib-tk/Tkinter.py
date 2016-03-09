@@ -1335,8 +1335,9 @@ class Misc:
         raise TypeError("Tkinter objects don't support 'in' tests.")
     def keys(self):
         """Return a list of all resource names of this widget."""
-        return [x[0][1:] for x in
-                self.tk.splitlist(self.tk.call(self._w, 'configure'))]
+        splitlist = self.tk.splitlist
+        return [splitlist(x)[0][1:] for x in
+                splitlist(self.tk.call(self._w, 'configure'))]
     def __str__(self):
         """Return the window path name of this widget."""
         return self._w

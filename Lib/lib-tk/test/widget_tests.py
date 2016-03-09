@@ -224,6 +224,32 @@ class AbstractWidgetTest(AbstractTkTest):
                 self.fail('Invalid bounding box: %r' % (bbox,))
                 break
 
+    def test_keys(self):
+        widget = self.create()
+        keys = widget.keys()
+        # XXX
+        if not isinstance(widget, Scale):
+            self.assertEqual(sorted(keys), sorted(widget.configure()))
+        for k in keys:
+            widget[k]
+        # Test if OPTIONS contains all keys
+        if test.test_support.verbose:
+            aliases = {
+                'bd': 'borderwidth',
+                'bg': 'background',
+                'fg': 'foreground',
+                'invcmd': 'invalidcommand',
+                'vcmd': 'validatecommand',
+            }
+            keys = set(keys)
+            expected = set(self.OPTIONS)
+            for k in sorted(keys - expected):
+                if not (k in aliases and
+                        aliases[k] in keys and
+                        aliases[k] in expected):
+                    print('%s.OPTIONS doesn\'t contain "%s"' %
+                          (self.__class__.__name__, k))
+
 
 class StandardOptionsTests(object):
     STANDARD_OPTIONS = (

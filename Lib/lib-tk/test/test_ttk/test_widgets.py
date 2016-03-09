@@ -189,7 +189,7 @@ class AbstractLabelTest(AbstractWidgetTest):
 @add_standard_options(StandardTtkOptionsTests)
 class LabelTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
-        'anchor', 'background',
+        'anchor', 'background', 'borderwidth',
         'class', 'compound', 'cursor', 'font', 'foreground',
         'image', 'justify', 'padding', 'relief', 'state', 'style',
         'takefocus', 'text', 'textvariable',
@@ -210,7 +210,8 @@ class LabelTest(AbstractLabelTest, unittest.TestCase):
 class ButtonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'compound', 'cursor', 'default',
-        'image', 'state', 'style', 'takefocus', 'text', 'textvariable',
+        'image', 'padding', 'state', 'style',
+        'takefocus', 'text', 'textvariable',
         'underline', 'width',
     )
 
@@ -234,7 +235,7 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
         'class', 'command', 'compound', 'cursor',
         'image',
         'offvalue', 'onvalue',
-        'state', 'style',
+        'padding', 'state', 'style',
         'takefocus', 'text', 'textvariable',
         'underline', 'variable', 'width',
     )
@@ -278,136 +279,10 @@ class CheckbuttonTest(AbstractLabelTest, unittest.TestCase):
 
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
-class ComboboxTest(AbstractWidgetTest, unittest.TestCase):
-    OPTIONS = (
-        'class', 'cursor', 'exportselection', 'height',
-        'justify', 'postcommand', 'state', 'style',
-        'takefocus', 'textvariable', 'values', 'width',
-    )
-
-    def setUp(self):
-        super(ComboboxTest, self).setUp()
-        self.combo = self.create()
-
-    def create(self, **kwargs):
-        return ttk.Combobox(self.root, **kwargs)
-
-    def test_height(self):
-        widget = self.create()
-        self.checkParams(widget, 'height', 100, 101.2, 102.6, -100, 0, '1i')
-
-    def test_state(self):
-        widget = self.create()
-        self.checkParams(widget, 'state', 'active', 'disabled', 'normal')
-
-    def _show_drop_down_listbox(self):
-        width = self.combo.winfo_width()
-        self.combo.event_generate('<ButtonPress-1>', x=width - 5, y=5)
-        self.combo.event_generate('<ButtonRelease-1>', x=width - 5, y=5)
-        self.combo.update_idletasks()
-
-
-    def test_virtual_event(self):
-        success = []
-
-        self.combo['values'] = [1]
-        self.combo.bind('<<ComboboxSelected>>',
-            lambda evt: success.append(True))
-        self.combo.pack()
-        self.combo.wait_visibility()
-
-        height = self.combo.winfo_height()
-        self._show_drop_down_listbox()
-        self.combo.update()
-        self.combo.event_generate('<Return>')
-        self.combo.update()
-
-        self.assertTrue(success)
-
-
-    def test_postcommand(self):
-        success = []
-
-        self.combo['postcommand'] = lambda: success.append(True)
-        self.combo.pack()
-        self.combo.wait_visibility()
-
-        self._show_drop_down_listbox()
-        self.assertTrue(success)
-
-        # testing postcommand removal
-        self.combo['postcommand'] = ''
-        self._show_drop_down_listbox()
-        self.assertEqual(len(success), 1)
-
-
-    def test_values(self):
-        def check_get_current(getval, currval):
-            self.assertEqual(self.combo.get(), getval)
-            self.assertEqual(self.combo.current(), currval)
-
-        self.assertEqual(self.combo['values'],
-                         () if tcl_version < (8, 5) else '')
-        check_get_current('', -1)
-
-        self.checkParam(self.combo, 'values', 'mon tue wed thur',
-                        expected=('mon', 'tue', 'wed', 'thur'))
-        self.checkParam(self.combo, 'values', ('mon', 'tue', 'wed', 'thur'))
-        self.checkParam(self.combo, 'values', (42, 3.14, '', 'any string'))
-        self.checkParam(self.combo, 'values', () if tcl_version < (8, 5) else '')
-
-        self.combo['values'] = ['a', 1, 'c']
-
-        self.combo.set('c')
-        check_get_current('c', 2)
-
-        self.combo.current(0)
-        check_get_current('a', 0)
-
-        self.combo.set('d')
-        check_get_current('d', -1)
-
-        # testing values with empty string
-        self.combo.set('')
-        self.combo['values'] = (1, 2, '', 3)
-        check_get_current('', 2)
-
-        # testing values with empty string set through configure
-        self.combo.configure(values=[1, '', 2])
-        self.assertEqual(self.combo['values'],
-                         ('1', '', '2') if self.wantobjects else
-                         '1 {} 2')
-
-        # testing values with spaces
-        self.combo['values'] = ['a b', 'a\tb', 'a\nb']
-        self.assertEqual(self.combo['values'],
-                         ('a b', 'a\tb', 'a\nb') if self.wantobjects else
-                         '{a b} {a\tb} {a\nb}')
-
-        # testing values with special characters
-        self.combo['values'] = [r'a\tb', '"a"', '} {']
-        self.assertEqual(self.combo['values'],
-                         (r'a\tb', '"a"', '} {') if self.wantobjects else
-                         r'a\\tb {"a"} \}\ \{')
-
-        # out of range
-        self.assertRaises(tkinter.TclError, self.combo.current,
-            len(self.combo['values']))
-        # it expects an integer (or something that can be converted to int)
-        self.assertRaises(tkinter.TclError, self.combo.current, '')
-
-        # testing creating combobox with empty string in values
-        combo2 = ttk.Combobox(self.root, values=[1, 2, ''])
-        self.assertEqual(combo2['values'],
-                         ('1', '2', '') if self.wantobjects else '1 2 {}')
-        combo2.destroy()
-
-
-@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
 class EntryTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
         'background', 'class', 'cursor',
-        'exportselection', 'font',
+        'exportselection', 'font', 'foreground',
         'invalidcommand', 'justify',
         'show', 'state', 'style', 'takefocus', 'textvariable',
         'validate', 'validatecommand', 'width', 'xscrollcommand',
@@ -533,6 +408,131 @@ class EntryTest(AbstractWidgetTest, unittest.TestCase):
         self.entry.delete(1)
         self.assertEqual(self.entry.validate(), True)
         self.assertEqual(self.entry.state(), ())
+
+
+@add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
+class ComboboxTest(EntryTest, unittest.TestCase):
+    OPTIONS = (
+        'background', 'class', 'cursor', 'exportselection',
+        'font', 'foreground', 'height', 'invalidcommand',
+        'justify', 'postcommand', 'show', 'state', 'style',
+        'takefocus', 'textvariable',
+        'validate', 'validatecommand', 'values',
+        'width', 'xscrollcommand',
+    )
+
+    def setUp(self):
+        super(ComboboxTest, self).setUp()
+        self.combo = self.create()
+
+    def create(self, **kwargs):
+        return ttk.Combobox(self.root, **kwargs)
+
+    def test_height(self):
+        widget = self.create()
+        self.checkParams(widget, 'height', 100, 101.2, 102.6, -100, 0, '1i')
+
+    def _show_drop_down_listbox(self):
+        width = self.combo.winfo_width()
+        self.combo.event_generate('<ButtonPress-1>', x=width - 5, y=5)
+        self.combo.event_generate('<ButtonRelease-1>', x=width - 5, y=5)
+        self.combo.update_idletasks()
+
+
+    def test_virtual_event(self):
+        success = []
+
+        self.combo['values'] = [1]
+        self.combo.bind('<<ComboboxSelected>>',
+            lambda evt: success.append(True))
+        self.combo.pack()
+        self.combo.wait_visibility()
+
+        height = self.combo.winfo_height()
+        self._show_drop_down_listbox()
+        self.combo.update()
+        self.combo.event_generate('<Return>')
+        self.combo.update()
+
+        self.assertTrue(success)
+
+
+    def test_postcommand(self):
+        success = []
+
+        self.combo['postcommand'] = lambda: success.append(True)
+        self.combo.pack()
+        self.combo.wait_visibility()
+
+        self._show_drop_down_listbox()
+        self.assertTrue(success)
+
+        # testing postcommand removal
+        self.combo['postcommand'] = ''
+        self._show_drop_down_listbox()
+        self.assertEqual(len(success), 1)
+
+
+    def test_values(self):
+        def check_get_current(getval, currval):
+            self.assertEqual(self.combo.get(), getval)
+            self.assertEqual(self.combo.current(), currval)
+
+        self.assertEqual(self.combo['values'],
+                         () if tcl_version < (8, 5) else '')
+        check_get_current('', -1)
+
+        self.checkParam(self.combo, 'values', 'mon tue wed thur',
+                        expected=('mon', 'tue', 'wed', 'thur'))
+        self.checkParam(self.combo, 'values', ('mon', 'tue', 'wed', 'thur'))
+        self.checkParam(self.combo, 'values', (42, 3.14, '', 'any string'))
+        self.checkParam(self.combo, 'values', () if tcl_version < (8, 5) else '')
+
+        self.combo['values'] = ['a', 1, 'c']
+
+        self.combo.set('c')
+        check_get_current('c', 2)
+
+        self.combo.current(0)
+        check_get_current('a', 0)
+
+        self.combo.set('d')
+        check_get_current('d', -1)
+
+        # testing values with empty string
+        self.combo.set('')
+        self.combo['values'] = (1, 2, '', 3)
+        check_get_current('', 2)
+
+        # testing values with empty string set through configure
+        self.combo.configure(values=[1, '', 2])
+        self.assertEqual(self.combo['values'],
+                         ('1', '', '2') if self.wantobjects else
+                         '1 {} 2')
+
+        # testing values with spaces
+        self.combo['values'] = ['a b', 'a\tb', 'a\nb']
+        self.assertEqual(self.combo['values'],
+                         ('a b', 'a\tb', 'a\nb') if self.wantobjects else
+                         '{a b} {a\tb} {a\nb}')
+
+        # testing values with special characters
+        self.combo['values'] = [r'a\tb', '"a"', '} {']
+        self.assertEqual(self.combo['values'],
+                         (r'a\tb', '"a"', '} {') if self.wantobjects else
+                         r'a\\tb {"a"} \}\ \{')
+
+        # out of range
+        self.assertRaises(tkinter.TclError, self.combo.current,
+            len(self.combo['values']))
+        # it expects an integer (or something that can be converted to int)
+        self.assertRaises(tkinter.TclError, self.combo.current, '')
+
+        # testing creating combobox with empty string in values
+        combo2 = ttk.Combobox(self.root, values=[1, 2, ''])
+        self.assertEqual(combo2['values'],
+                         ('1', '2', '') if self.wantobjects else '1 2 {}')
+        combo2.destroy()
 
 
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
@@ -675,7 +675,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'command', 'compound', 'cursor',
         'image',
-        'state', 'style',
+        'padding', 'state', 'style',
         'takefocus', 'text', 'textvariable',
         'underline', 'value', 'variable', 'width',
     )
@@ -725,7 +725,7 @@ class RadiobuttonTest(AbstractLabelTest, unittest.TestCase):
 class MenubuttonTest(AbstractLabelTest, unittest.TestCase):
     OPTIONS = (
         'class', 'compound', 'cursor', 'direction',
-        'image', 'menu', 'state', 'style',
+        'image', 'menu', 'padding', 'state', 'style',
         'takefocus', 'text', 'textvariable',
         'underline', 'width',
     )
@@ -903,7 +903,7 @@ class ScrollbarTest(AbstractWidgetTest, unittest.TestCase):
 @add_standard_options(IntegerSizeTests, StandardTtkOptionsTests)
 class NotebookTest(AbstractWidgetTest, unittest.TestCase):
     OPTIONS = (
-        'class', 'cursor', 'height', 'padding', 'style', 'takefocus',
+        'class', 'cursor', 'height', 'padding', 'style', 'takefocus', 'width',
     )
 
     def setUp(self):

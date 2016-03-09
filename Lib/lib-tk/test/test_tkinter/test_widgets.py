@@ -99,7 +99,7 @@ class FrameTest(AbstractToplevelTest, unittest.TestCase):
         'background', 'borderwidth',
         'class', 'colormap', 'container', 'cursor', 'height',
         'highlightbackground', 'highlightcolor', 'highlightthickness',
-        'relief', 'takefocus', 'visual', 'width',
+        'padx', 'pady', 'relief', 'takefocus', 'visual', 'width',
     )
 
     def create(self, **kwargs):
@@ -633,7 +633,7 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
         'highlightbackground', 'highlightcolor', 'highlightthickness',
         'insertbackground', 'insertborderwidth',
         'insertofftime', 'insertontime', 'insertwidth',
-        'relief', 'scrollregion',
+        'offset', 'relief', 'scrollregion',
         'selectbackground', 'selectborderwidth', 'selectforeground',
         'state', 'takefocus',
         'xscrollcommand', 'xscrollincrement',
@@ -654,6 +654,15 @@ class CanvasTest(AbstractWidgetTest, unittest.TestCase):
     def test_confine(self):
         widget = self.create()
         self.checkBooleanParam(widget, 'confine')
+
+    def test_offset(self):
+        widget = self.create()
+        self.assertEqual(widget['offset'], '0,0')
+        self.checkParams(widget, 'offset',
+                'n', 'ne', 'e', 'se', 's', 'sw', 'w', 'nw', 'center')
+        self.checkParam(widget, 'offset', '10,20')
+        self.checkParam(widget, 'offset', '#5,6')
+        self.checkInvalidParam(widget, 'offset', 'spam')
 
     def test_scrollregion(self):
         widget = self.create()
