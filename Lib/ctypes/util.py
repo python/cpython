@@ -221,8 +221,8 @@ elif os.name == "posix":
             abi_type = mach_map.get(machine, 'libc6')
 
             # XXX assuming GLIBC's ldconfig (with option -p)
-            regex = os.fsencode(
-                '\s+(lib%s\.[^\s]+)\s+\(%s' % (re.escape(name), abi_type))
+            regex = r'lib%s\.[^\s]+\s\(%s(?:,\s.*)?\)\s=>\s(.*)'
+            regex = os.fsencode(regex % (re.escape(name), abi_type))
             try:
                 with subprocess.Popen(['/sbin/ldconfig', '-p'],
                                       stdin=subprocess.DEVNULL,
