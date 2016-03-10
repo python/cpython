@@ -201,6 +201,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21042: Make ctypes.util.find_library() return the full path on
+  Linux, similar to other platforms.  Patch by Tamás Bence Gedai.
+
 - Issue #15068: Got rid of excessive buffering in fileinput.
   The bufsize parameter is now deprecated and ignored.
 

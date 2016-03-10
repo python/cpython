@@ -9,39 +9,39 @@ from ctypes.util import find_library
 class Test_OpenGL_libs(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        lib_gl = lib_glu = lib_gle = None
+        cls.lib_gl = cls.lib_glu = cls.lib_gle = None
         if sys.platform == "win32":
-            lib_gl = find_library("OpenGL32")
-            lib_glu = find_library("Glu32")
+            cls.lib_gl = find_library("OpenGL32")
+            cls.lib_glu = find_library("Glu32")
         elif sys.platform == "darwin":
-            lib_gl = lib_glu = find_library("OpenGL")
+            cls.lib_gl = cls.lib_glu = find_library("OpenGL")
         else:
-            lib_gl = find_library("GL")
-            lib_glu = find_library("GLU")
-            lib_gle = find_library("gle")
+            cls.lib_gl = find_library("GL")
+            cls.lib_glu = find_library("GLU")
+            cls.lib_gle = find_library("gle")
 
         ## print, for debugging
         if test.support.verbose:
             print("OpenGL libraries:")
-            for item in (("GL", lib_gl),
-                         ("GLU", lib_glu),
-                         ("gle", lib_gle)):
+            for item in (("GL", cls.lib_gl),
+                         ("GLU", cls.lib_glu),
+                         ("gle", cls.lib_gle)):
                 print("\t", item)
 
         cls.gl = cls.glu = cls.gle = None
-        if lib_gl:
+        if cls.lib_gl:
             try:
-                cls.gl = CDLL(lib_gl, mode=RTLD_GLOBAL)
+                cls.gl = CDLL(cls.lib_gl, mode=RTLD_GLOBAL)
             except OSError:
                 pass
-        if lib_glu:
+        if cls.lib_glu:
             try:
-                cls.glu = CDLL(lib_glu, RTLD_GLOBAL)
+                cls.glu = CDLL(cls.lib_glu, RTLD_GLOBAL)
             except OSError:
                 pass
-        if lib_gle:
+        if cls.lib_gle:
             try:
-                cls.gle = CDLL(lib_gle)
+                cls.gle = CDLL(cls.lib_gle)
             except OSError:
                 pass
 
@@ -63,6 +63,14 @@ class Test_OpenGL_libs(unittest.TestCase):
         if self.gle is None:
             self.skipTest('lib_gle not available')
         self.gle.gleGetJoinStyle
+
+    def test_abspath(self):
+        if self.lib_gl:
+            self.assertTrue(os.path.isabs(self.lib_gl))
+        if self.lib_glu:
+            self.assertTrue(os.path.isabs(self.lib_glu))
+        if self.lib_gle:
+            self.assertTrue(os.path.isabs(self.lib_gle))
 
 # On platforms where the default shared library suffix is '.so',
 # at least some libraries can be loaded as attributes of the cdll
