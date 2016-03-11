@@ -1156,16 +1156,6 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         # UNC paths are never reserved
         self.assertIs(False, P('//my/share/nul/con/aux').is_reserved())
 
-    def test_owner(self):
-        P = self.cls
-        with self.assertRaises(NotImplementedError):
-            P('c:/').owner()
-
-    def test_group(self):
-        P = self.cls
-        with self.assertRaises(NotImplementedError):
-            P('c:/').group()
-
 class PurePathTest(_BasePurePathTest, unittest.TestCase):
     cls = pathlib.PurePath
 
@@ -1228,6 +1218,16 @@ class PosixPathAsPureTest(PurePosixPathTest):
 @only_nt
 class WindowsPathAsPureTest(PureWindowsPathTest):
     cls = pathlib.WindowsPath
+
+    def test_owner(self):
+        P = self.cls
+        with self.assertRaises(NotImplementedError):
+            P('c:/').owner()
+
+    def test_group(self):
+        P = self.cls
+        with self.assertRaises(NotImplementedError):
+            P('c:/').group()
 
 
 class _BasePathTest(object):
