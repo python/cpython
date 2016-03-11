@@ -1422,8 +1422,8 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
             if d.strftime("%Y") != '%04d' % y:
                 # Year 42 returns '42', not padded
                 self.assertEqual(d.strftime("%Y"), '%d' % y)
-                # '0042' is obtained anyway
-                self.assertEqual(d.strftime("%4Y"), '%04d' % y)
+            # '0042' is obtained anyway
+            self.assertEqual(d.strftime("%4Y"), '%04d' % y)
 
     def test_replace(self):
         cls = self.theclass
