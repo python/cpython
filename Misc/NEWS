@@ -91,6 +91,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20589: Invoking Path.owner() and Path.group() on Windows now raise
+  NotImplementedError instead of ImportError.
+
 - Issue #26177: Fixed the keys() method for Canvas and Scrollbar widgets.
 
 - Issue #15068: Got rid of excessive buffering in the fileinput module.
