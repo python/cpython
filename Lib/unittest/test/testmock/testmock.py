@@ -1222,6 +1222,27 @@ class MockTest(unittest.TestCase):
         with self.assertRaises(AssertionError):
             m.hello.assert_not_called()
 
+    def test_assert_called(self):
+        m = Mock()
+        with self.assertRaises(AssertionError):
+            m.hello.assert_called()
+        m.hello()
+        m.hello.assert_called()
+
+        m.hello()
+        m.hello.assert_called()
+
+    def test_assert_called_once(self):
+        m = Mock()
+        with self.assertRaises(AssertionError):
+            m.hello.assert_called_once()
+        m.hello()
+        m.hello.assert_called_once()
+
+        m.hello()
+        with self.assertRaises(AssertionError):
+            m.hello.assert_called_once()
+
     #Issue21256 printout of keyword args should be in deterministic order
     def test_sorted_call_signature(self):
         m = Mock()
