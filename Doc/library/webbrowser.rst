@@ -144,6 +144,14 @@ for the controller classes, all defined in this module.
 +-----------------------+-----------------------------------------+-------+
 | ``'safari'``          | :class:`MacOSX('safari')`               | \(3)  |
 +-----------------------+-----------------------------------------+-------+
+| ``'google-chrome'``   | :class:`Chrome('google-chrome')`        | \(4)  |
++-----------------------+-----------------------------------------+-------+
+| ``'chrome'``          | :class:`Chrome('chrome')`               | \(4)  |
++-----------------------+-----------------------------------------+-------+
+| ``'chromium'``        | :class:`Chromium('chromium')`           | \(4)  |
++-----------------------+-----------------------------------------+-------+
+| ``'chromium-browser'``| :class:`Chromium('chromium-browser')`   | \(4)  |
++-----------------------+-----------------------------------------+-------+
 
 Notes:
 
@@ -159,6 +167,9 @@ Notes:
 
 (3)
    Only on Mac OS X platform.
+
+(4)
+   Support for Chrome/Chromium has been added in version 2.7.5.
 
 Here are some simple examples::
 
