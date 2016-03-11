@@ -1425,3 +1425,9 @@ class PosixPath(Path, PurePosixPath):
 
 class WindowsPath(Path, PureWindowsPath):
     __slots__ = ()
+
+    def owner(self):
+        raise NotImplementedError("Path.owner() is unsupported on this system")
+
+    def group(self):
+        raise NotImplementedError("Path.group() is unsupported on this system")
