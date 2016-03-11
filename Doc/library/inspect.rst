@@ -272,7 +272,8 @@ Note:
 
 .. function:: ismethod(object)
 
-   Return true if the object is a bound method written in Python.
+   Return true if the object is a bound or unbound method written in Python.
+
 
 
 .. function:: isfunction(object)
