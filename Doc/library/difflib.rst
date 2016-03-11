@@ -501,16 +501,14 @@ The :class:`SequenceMatcher` class has this constructor:
       |               | are equal).                                 |
       +---------------+---------------------------------------------+
 
-      For example:
+      For example::
 
         >>> a = "qabxcd"
         >>> b = "abycdf"
         >>> s = SequenceMatcher(None, a, b)
         >>> for tag, i1, i2, j1, j2 in s.get_opcodes():
-            print('{:7}   a[{}:{}] --> b[{}:{}] {!r:>8} --> {!r}'.format(
-                tag, i1, i2, j1, j2, a[i1:i2], b[j1:j2]))
-
-
+        ...     print('{:7}   a[{}:{}] --> b[{}:{}] {!r:>8} --> {!r}'.format(
+        ...         tag, i1, i2, j1, j2, a[i1:i2], b[j1:j2]))
         delete    a[0:1] --> b[0:0]      'q' --> ''
         equal     a[1:3] --> b[0:2]     'ab' --> 'ab'
         replace   a[3:4] --> b[2:3]      'x' --> 'y'
