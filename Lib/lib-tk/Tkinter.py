@@ -3380,16 +3380,20 @@ class PhotoImage(Image):
         destImage = PhotoImage(master=self.tk)
         self.tk.call(destImage, 'copy', self.name)
         return destImage
-    def zoom(self,x,y=''):
+    def zoom(self, x, y=''):
         """Return a new PhotoImage with the same image as this widget
-        but zoom it with X and Y."""
+        but zoom it with a factor of x in the X direction and y in the Y
+        direction.  If y is not given, the default value is the same as x.
+        """
         destImage = PhotoImage(master=self.tk)
         if y=='': y=x
         self.tk.call(destImage, 'copy', self.name, '-zoom',x,y)
         return destImage
-    def subsample(self,x,y=''):
+    def subsample(self, x, y=''):
         """Return a new PhotoImage based on the same image as this widget
-        but use only every Xth or Yth pixel."""
+        but use only every Xth or Yth pixel.  If y is not given, the
+        default value is the same as x.
+        """
         destImage = PhotoImage(master=self.tk)
         if y=='': y=x
         self.tk.call(destImage, 'copy', self.name, '-subsample',x,y)
