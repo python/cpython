@@ -161,6 +161,18 @@ telnetlib
 Stéphane Wirtel in :issue:`25485`).
 
 
+unittest.mock
+-------------
+
+The :class:`~unittest.mock.Mock` class has the following improvements:
+
+* Two new methods, :meth:`Mock.assert_called()
+  <unittest.mock.Mock.assert_called>` and :meth:`Mock.assert_called_once()
+  <unittest.mock.Mock.assert_called_once>` to check if the mock object
+  was called.
+  (Contributed by Amit Saha in :issue:`26323`.)
+
+
 urllib.robotparser
 ------------------
 

@@ -259,6 +259,34 @@ the *new_callable* argument to :func:`patch`.
     used to set attributes on the mock after it is created. See the
     :meth:`configure_mock` method for details.
 
+    .. method:: assert_called(*args, **kwargs)
+
+        Assert that the mock was called at least once.
+
+            >>> mock = Mock()
+            >>> mock.method()
+            <Mock name='mock.method()' id='...'>
+            >>> mock.method.assert_called()
+
+        .. versionadded:: 3.6
+
+    .. method:: assert_called_once(*args, **kwargs)
+
+        Assert that the mock was called exactly once.
+
+            >>> mock = Mock()
+            >>> mock.method()
+            <Mock name='mock.method()' id='...'>
+            >>> mock.method.assert_called_once()
+            >>> mock.method()
+            <Mock name='mock.method()' id='...'>
+            >>> mock.method.assert_called_once()
+            Traceback (most recent call last):
+            ...
+            AssertionError: Expected 'method' to have been called once. Called 2 times.
+
+        .. versionadded:: 3.6
+
 
     .. method:: assert_called_with(*args, **kwargs)
 
