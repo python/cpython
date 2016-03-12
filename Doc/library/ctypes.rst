@@ -61,6 +61,12 @@ convention::
 
 Windows appends the usual ``.dll`` file suffix automatically.
 
+.. note::
+    Accessing the standard C library through ``cdll.msvcrt`` will use an
+    outdated version of the library that may be incompatible with the one
+    being used by Python. Where possible, use native Python functionality,
+    or else import and use the ``msvcrt`` module.
+
 On Linux, it is required to specify the filename *including* the extension to
 load a library, so attribute access can not be used to load libraries. Either the
 :meth:`LoadLibrary` method of the dll loaders should be used, or you should load
