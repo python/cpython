@@ -811,6 +811,9 @@ Tests
 Build
 -----
 
+- Issue #26079: Fixing the build output folder for tix-8.4.3.6. Patch by
+  Bjoern Thiel.
+
 - Issue #26465: Update Windows builds to use OpenSSL 1.0.2g.
 
 - Issue #25348: Added ``--pgo`` and ``--pgo-job`` arguments to
