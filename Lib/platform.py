@@ -650,7 +650,7 @@ def win32_ver(release='', version='', csd='', ptype=''):
                 csd = 'SP' + csd[13:]
 
     # VER_NT_SERVER = 3
-    if getattr(winver, 'product_type', None) == 3:
+    if getattr(winver, 'product', None) == 3:
         release = (_WIN32_SERVER_RELEASES.get((maj, min)) or
                    _WIN32_SERVER_RELEASES.get((maj, None)) or
                    release)
