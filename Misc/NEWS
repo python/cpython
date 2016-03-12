@@ -284,6 +284,8 @@ Library
 Documentation
 -------------
 
+- Issue #23606: Adds note to ctypes documentation regarding cdll.msvcrt.
+
 - Issue #25500: Fix documentation to not claim that __import__ is searched for
   in the global scope.
 
