@@ -445,6 +445,10 @@ def _strptime(data_string, format="%a %b %d %H:%M:%S %Y"):
         week_starts_Mon = True if week_of_year_start == 0 else False
         julian = _calc_julian_from_U_or_W(year, week_of_year, weekday,
                                             week_starts_Mon)
+        if julian <= 0:
+            year -= 1
+            yday = 366 if calendar.isleap(year) else 365
+            julian += yday
     # Cannot pre-calculate datetime_date() since can change in Julian
     # calculation and thus could have different value for the day of the week
     # calculation.

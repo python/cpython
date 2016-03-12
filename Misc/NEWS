@@ -58,6 +58,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23718: Fixed parsing time in week 0 before Jan 1.  Original patch by
+  Tamás Bence Gedai.
+
 - Issue #26177: Fixed the keys() method for Canvas and Scrollbar widgets.
 
 - Issue #15068: Got rid of excessive buffering in the fileinput module.
