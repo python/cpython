@@ -176,3 +176,8 @@ div.footer a:hover {
 .stableabi {
     color: #229;
 }
+
+.highlight {
+    background: none !important;
+}
+
