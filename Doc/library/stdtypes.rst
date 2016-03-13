@@ -397,8 +397,8 @@ Bitwise Operations on Integer Types
    operator: >>
 
 Bitwise operations only make sense for integers.  Negative numbers are treated
-as their 2's complement value (this assumes a sufficiently large number of bits
-that no overflow occurs during the operation).
+as their 2's complement value (this assumes that there are enough bits so that
+no overflow occurs during the operation).
 
 The priorities of the binary bitwise operations are all lower than the numeric
 operations and higher than the comparisons; the unary operation ``~`` has the
