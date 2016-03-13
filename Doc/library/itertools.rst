@@ -806,7 +806,7 @@ which incur interpreter overhead.
        try:
            if first is not None:
                yield first()            # For database APIs needing an initial cast to db.first()
-           while 1:
+           while True:
                yield func()
        except exception:
            pass
