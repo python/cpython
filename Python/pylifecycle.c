@@ -692,6 +692,7 @@ Py_FinalizeEx(void)
 
     /* Delete current thread. After this, many C API calls become crashy. */
     PyThreadState_Swap(NULL);
+
     PyInterpreterState_Delete(interp);
 
 #ifdef Py_TRACE_REFS
@@ -742,6 +743,10 @@ Py_NewInterpreter(void)
 
     if (!initialized)
         Py_FatalError("Py_NewInterpreter: call Py_Initialize first");
+
+    /* Issue #10915, #15751: The GIL API doesn't work with multiple
+       interpreters: disable PyGILState_Check(). */
+    _PyGILState_check_enabled = 0;
 
     interp = PyInterpreterState_New();
     if (interp == NULL)
