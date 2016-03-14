@@ -1241,61 +1241,11 @@ initstdio(void)
 }
 
 
-/* Print the current exception (if an exception is set) with its traceback,
- * or display the current Python stack.
- *
- * Don't call PyErr_PrintEx() and the except hook, because Py_FatalError() is
- * called on catastrophic cases. */
-
 static void
-_Py_PrintFatalError(int fd)
+_Py_FatalError_DumpTracebacks(int fd)
 {
-    PyObject *ferr, *res;
-    PyObject *exception, *v, *tb;
-    int has_tb;
     PyThreadState *tstate;
 
-    PyErr_Fetch(&exception, &v, &tb);
-    if (exception == NULL) {
-        /* No current exception */
-        goto display_stack;
-    }
-
-    ferr = _PySys_GetObjectId(&PyId_stderr);
-    if (ferr == NULL || ferr == Py_None) {
-        /* sys.stderr is not set yet or set to None,
-           no need to try to display the exception */
-        goto display_stack;
-    }
-
-    PyErr_NormalizeException(&exception, &v, &tb);
-    if (tb == NULL) {
-        tb = Py_None;
-        Py_INCREF(tb);
-    }
-    PyException_SetTraceback(v, tb);
-    if (exception == NULL) {
-        /* PyErr_NormalizeException() failed */
-        goto display_stack;
-    }
-
-    has_tb = (tb != Py_None);
-    PyErr_Display(exception, v, tb);
-    Py_XDECREF(exception);
-    Py_XDECREF(v);
-    Py_XDECREF(tb);
-
-    /* sys.stderr may be buffered: call sys.stderr.flush() */
-    res = _PyObject_CallMethodId(ferr, &PyId_flush, "");
-    if (res == NULL)
-        PyErr_Clear();
-    else
-        Py_DECREF(res);
-
-    if (has_tb)
-        return;
-
-display_stack:
 #ifdef WITH_THREAD
     /* PyGILState_GetThisThreadState() works even if the GIL was released */
     tstate = PyGILState_GetThisThreadState();
@@ -1314,6 +1264,68 @@ display_stack:
     /* display the current Python stack */
     _Py_DumpTracebackThreads(fd, tstate->interp, tstate);
 }
+
+/* Print the current exception (if an exception is set) with its traceback,
+   or display the current Python stack.
+
+   Don't call PyErr_PrintEx() and the except hook, because Py_FatalError() is
+   called on catastrophic cases.
+
+   Return 1 if the traceback was displayed, 0 otherwise. */
+
+static int
+_Py_FatalError_PrintExc(int fd)
+{
+    PyObject *ferr, *res;
+    PyObject *exception, *v, *tb;
+    int has_tb;
+
+    if (PyThreadState_GET() == NULL) {
+        /* The GIL is released: trying to acquire it is likely to deadlock,
+           just give up. */
+        return 0;
+    }
+
+    PyErr_Fetch(&exception, &v, &tb);
+    if (exception == NULL) {
+        /* No current exception */
+        return 0;
+    }
+
+    ferr = _PySys_GetObjectId(&PyId_stderr);
+    if (ferr == NULL || ferr == Py_None) {
+        /* sys.stderr is not set yet or set to None,
+           no need to try to display the exception */
+        return 0;
+    }
+
+    PyErr_NormalizeException(&exception, &v, &tb);
+    if (tb == NULL) {
+        tb = Py_None;
+        Py_INCREF(tb);
+    }
+    PyException_SetTraceback(v, tb);
+    if (exception == NULL) {
+        /* PyErr_NormalizeException() failed */
+        return 0;
+    }
+
+    has_tb = (tb != Py_None);
+    PyErr_Display(exception, v, tb);
+    Py_XDECREF(exception);
+    Py_XDECREF(v);
+    Py_XDECREF(tb);
+
+    /* sys.stderr may be buffered: call sys.stderr.flush() */
+    res = _PyObject_CallMethodId(ferr, &PyId_flush, "");
+    if (res == NULL)
+        PyErr_Clear();
+    else
+        Py_DECREF(res);
+
+    return has_tb;
+}
+
 /* Print fatal error message and abort */
 
 void
@@ -1339,10 +1351,14 @@ Py_FatalError(const char *msg)
 
     /* Print the exception (if an exception is set) with its traceback,
      * or display the current Python stack. */
-    _Py_PrintFatalError(fd);
+    if (!_Py_FatalError_PrintExc(fd))
+        _Py_FatalError_DumpTracebacks(fd);
 
-    /* Flush sys.stdout and sys.stderr */
-    flush_std_files();
+    /* Check if the current Python thread hold the GIL */
+    if (PyThreadState_GET() != NULL) {
+        /* Flush sys.stdout and sys.stderr */
+        flush_std_files();
+    }
 
     /* The main purpose of faulthandler is to display the traceback. We already
      * did our best to display it. So faulthandler can now be disabled.
