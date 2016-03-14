@@ -2,6 +2,9 @@ This document describes some caveats about the use of Valgrind with
 Python.  Valgrind is used periodically by Python developers to try
 to ensure there are no memory leaks or invalid memory reads/writes.
 
+UPDATE: Python 3.6 now supports PYTHONMALLOC=malloc environment variable which
+can be used to force the usage of the malloc() allocator of the C library.
+
 If you don't want to read about the details of using Valgrind, there
 are still two things you must do to suppress the warnings.  First,
 you must use a suppressions file.  One is supplied in

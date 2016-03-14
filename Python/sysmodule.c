@@ -1151,8 +1151,10 @@ static PyObject *
 sys_debugmallocstats(PyObject *self, PyObject *args)
 {
 #ifdef WITH_PYMALLOC
-    _PyObject_DebugMallocStats(stderr);
-    fputc('\n', stderr);
+    if (_PyMem_PymallocEnabled()) {
+        _PyObject_DebugMallocStats(stderr);
+        fputc('\n', stderr);
+    }
 #endif
     _PyObject_DebugTypeStats(stderr);
 

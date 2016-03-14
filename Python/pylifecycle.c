@@ -702,9 +702,12 @@ Py_FinalizeEx(void)
     if (Py_GETENV("PYTHONDUMPREFS"))
         _Py_PrintReferenceAddresses(stderr);
 #endif /* Py_TRACE_REFS */
-#ifdef PYMALLOC_DEBUG
-    if (Py_GETENV("PYTHONMALLOCSTATS"))
-        _PyObject_DebugMallocStats(stderr);
+#ifdef WITH_PYMALLOC
+    if (_PyMem_PymallocEnabled()) {
+        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
+        if (opt != NULL && *opt != '\0')
+            _PyObject_DebugMallocStats(stderr);
+    }
 #endif
 
     call_ll_exitfuncs();

@@ -6,6 +6,7 @@ import pickle
 import random
 import subprocess
 import sys
+import sysconfig
 import textwrap
 import time
 import unittest
@@ -521,6 +522,7 @@ class SkipitemTest(unittest.TestCase):
         self.assertRaises(ValueError, _testcapi.parse_tuple_and_keywords,
                           (), {}, b'', [42])
 
+
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class TestThreadState(unittest.TestCase):
 
@@ -545,6 +547,7 @@ class TestThreadState(unittest.TestCase):
         t.start()
         t.join()
 
+
 class Test_testcapi(unittest.TestCase):
     def test__testcapi(self):
         for name in dir(_testcapi):
@@ -552,6 +555,62 @@ class Test_testcapi(unittest.TestCase):
                 with self.subTest("internal", name=name):
                     test = getattr(_testcapi, name)
                     test()
+
+
+class MallocTests(unittest.TestCase):
+    ENV = 'debug'
+
+    def check(self, code):
+        with support.SuppressCrashReport():
+            out = assert_python_failure('-c', code, PYTHONMALLOC=self.ENV)
+        stderr = out.err
+        return stderr.decode('ascii', 'replace')
+
+    def test_buffer_overflow(self):
+        out = self.check('import _testcapi; _testcapi.pymem_buffer_overflow()')
+        regex = (r"Debug memory block at address p=0x[0-9a-f]+: API 'm'\n"
+                 r"    16 bytes originally requested\n"
+                 r"    The 7 pad bytes at p-7 are FORBIDDENBYTE, as expected.\n"
+                 r"    The 8 pad bytes at tail=0x[0-9a-f]+ are not all FORBIDDENBYTE \(0x[0-9a-f]{2}\):\n"
+                 r"        at tail\+0: 0x78 \*\*\* OUCH\n"
+                 r"        at tail\+1: 0xfb\n"
+                 r"        at tail\+2: 0xfb\n"
+                 r"        at tail\+3: 0xfb\n"
+                 r"        at tail\+4: 0xfb\n"
+                 r"        at tail\+5: 0xfb\n"
+                 r"        at tail\+6: 0xfb\n"
+                 r"        at tail\+7: 0xfb\n"
+                 r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
+                 r"    Data at p: cb cb cb cb cb cb cb cb cb cb cb cb cb cb cb cb\n"
+                 r"Fatal Python error: bad trailing pad byte")
+        self.assertRegex(out, regex)
+
+    def test_api_misuse(self):
+        out = self.check('import _testcapi; _testcapi.pymem_api_misuse()')
+        regex = (r"Debug memory block at address p=0x[0-9a-f]+: API 'm'\n"
+                 r"    16 bytes originally requested\n"
+                 r"    The 7 pad bytes at p-7 are FORBIDDENBYTE, as expected.\n"
+                 r"    The 8 pad bytes at tail=0x[0-9a-f]+ are FORBIDDENBYTE, as expected.\n"
+                 r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
+                 r"    Data at p: .*\n"
+                 r"Fatal Python error: bad ID: Allocated using API 'm', verified using API 'r'\n")
+        self.assertRegex(out, regex)
+
+
+class MallocDebugTests(MallocTests):
+    ENV = 'malloc_debug'
+
+
+@unittest.skipUnless(sysconfig.get_config_var('WITH_PYMALLOC') == 1,
+                     'need pymalloc')
+class PymallocDebugTests(MallocTests):
+    ENV = 'pymalloc_debug'
+
+
+@unittest.skipUnless(Py_DEBUG, 'need Py_DEBUG')
+class DefaultMallocDebugTests(MallocTests):
+    ENV = ''
+
 
 if __name__ == "__main__":
     unittest.main()

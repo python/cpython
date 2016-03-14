@@ -621,6 +621,51 @@ conflict.
    .. versionadded:: 3.4
 
 
+.. envvar:: PYTHONMALLOC
+
+   Set the Python memory allocators and/or install debug hooks.
+
+   Set the family of memory allocators used by Python:
+
+   * ``malloc``: use the :c:func:`malloc` function of the C library
+     for all Python memory allocators (:c:func:`PyMem_RawMalloc`,
+     :c:func:`PyMem_Malloc`, :c:func:`PyObject_Malloc` & cie).
+   * ``pymalloc``: :c:func:`PyObject_Malloc`, :c:func:`PyObject_Calloc` and
+     :c:func:`PyObject_Realloc` use the :ref:`pymalloc allocator <pymalloc>`.
+     Other Python memory allocators (:c:func:`PyMem_RawMalloc`,
+     :c:func:`PyMem_Malloc` & cie) use :c:func:`malloc`.
+
+   Install debug hooks:
+
+   * ``debug``: install debug hooks on top of the default memory allocator
+   * ``malloc_debug``: same than ``malloc`` but also install debug hooks
+   * ``pymalloc_debug``: same than ``malloc`` but also install debug hooks
+
+   See the :c:func:`PyMem_SetupDebugHooks` function for debug hooks on Python
+   memory allocators.
+
+   .. note::
+      ``pymalloc`` and ``pymalloc_debug`` are not available if Python is
+      configured without ``pymalloc`` support.
+
+   .. versionadded:: 3.6
+
+
+.. envvar:: PYTHONMALLOCSTATS
+
+   If set to a non-empty string, Python will print statistics of the
+   :ref:`pymalloc memory allocator <pymalloc>` every time a new pymalloc object
+   arena is created, and on shutdown.
+
+   This variable is ignored if the :envvar:`PYTHONMALLOC` environment variable
+   is used to force the :c:func:`malloc` allocator of the C library, or if
+   Python is configured without ``pymalloc`` support.
+
+   .. versionchanged:: 3.6
+      This variable can now also be used on Python compiled in release mode.
+      It now has no effect if set to an empty string.
+
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 
@@ -636,9 +681,3 @@ if Python was configured with the ``--with-pydebug`` build option.
 
    If set, Python will dump objects and reference counts still alive after
    shutting down the interpreter.
-
-
-.. envvar:: PYTHONMALLOCSTATS
-
-   If set, Python will print memory allocation statistics every time a new
-   object arena is created, and on shutdown.
