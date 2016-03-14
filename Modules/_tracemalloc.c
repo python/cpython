@@ -439,10 +439,6 @@ tracemalloc_add_trace(void *ptr, size_t size)
     trace_t trace;
     int res;
 
-#ifdef WITH_THREAD
-    assert(PyGILState_Check());
-#endif
-
     traceback = traceback_new();
     if (traceback == NULL)
         return -1;
