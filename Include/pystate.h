@@ -247,6 +247,10 @@ PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
  * currently holds the GIL, 0 otherwise
  */
 #ifndef Py_LIMITED_API
+/* Issue #26558: Flag to disable PyGILState_Check().
+   If set, PyGILState_Check() always return 1. */
+PyAPI_DATA(int) _PyGILState_check_enabled;
+
 PyAPI_FUNC(int) PyGILState_Check(void);
 #endif
 

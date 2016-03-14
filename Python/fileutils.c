@@ -683,6 +683,10 @@ _Py_fstat(int fd, struct _Py_stat_struct *status)
 {
     int res;
 
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
     Py_BEGIN_ALLOW_THREADS
     res = _Py_fstat_noraise(fd, status);
     Py_END_ALLOW_THREADS
@@ -1164,6 +1168,10 @@ _Py_read(int fd, void *buf, size_t count)
     int err;
     int async_err = 0;
 
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
     /* _Py_read() must not be called with an exception set, otherwise the
      * caller may think that read() was interrupted by a signal and the signal
      * handler raised an exception. */
@@ -1319,6 +1327,10 @@ _Py_write_impl(int fd, const void *buf, size_t count, int gil_held)
 Py_ssize_t
 _Py_write(int fd, const void *buf, size_t count)
 {
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
     /* _Py_write() must not be called with an exception set, otherwise the
      * caller may think that write() was interrupted by a signal and the signal
      * handler raised an exception. */
@@ -1466,6 +1478,10 @@ _Py_dup(int fd)
 #ifdef MS_WINDOWS
     HANDLE handle;
     DWORD ftype;
+#endif
+
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
 #endif
 
     if (!_PyVerify_fd(fd)) {
