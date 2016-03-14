@@ -341,10 +341,13 @@ Customize Memory Allocators
    Newly allocated memory is filled with the byte ``0xCB``, freed memory is
    filled with the byte ``0xDB``. Additional checks:
 
-   - detect API violations, ex: :c:func:`PyObject_Free` called on a buffer
+   - Detect API violations, ex: :c:func:`PyObject_Free` called on a buffer
      allocated by :c:func:`PyMem_Malloc`
-   - detect write before the start of the buffer (buffer underflow)
-   - detect write after the end of the buffer (buffer overflow)
+   - Detect write before the start of the buffer (buffer underflow)
+   - Detect write after the end of the buffer (buffer overflow)
+   - Check that the :term:`GIL <global interpreter lock>` is held when
+     allocator functions of the :c:data:`PYMEM_DOMAIN_OBJ` domain (ex:
+     :c:func:`PyObject_Malloc`) are called
 
    These hooks are installed by default if Python is compiled in debug
    mode. The :envvar:`PYTHONMALLOC` environment variable can be used to install

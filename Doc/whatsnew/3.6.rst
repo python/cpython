@@ -117,6 +117,9 @@ compiled in release mode using ``PYTHONMALLOC=debug``. Effects of debug hooks:
   :c:func:`PyMem_Malloc`.
 * Detect write before the start of the buffer (buffer underflow)
 * Detect write after the end of the buffer (buffer overflow)
+* Check that the :term:`GIL <global interpreter lock>` is held when allocator
+  functions of the :c:data:`PYMEM_DOMAIN_OBJ` domain (ex:
+  :c:func:`PyObject_Malloc`) are called
 
 See the :c:func:`PyMem_SetupDebugHooks` function for debug hooks on Python
 memory allocators.
