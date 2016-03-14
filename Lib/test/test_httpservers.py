@@ -17,6 +17,7 @@ import urllib.parse
 import html
 import http.client
 import tempfile
+import time
 from io import BytesIO
 
 import unittest
@@ -872,6 +873,19 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         close_values = iter((False, False, True))
         self.handler.handle()
         self.assertRaises(StopIteration, next, close_values)
+
+    def test_date_time_string(self):
+        now = time.time()
+        # this is the old code that formats the timestamp
+        year, month, day, hh, mm, ss, wd, y, z = time.gmtime(now)
+        expected = "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
+            self.handler.weekdayname[wd],
+            day,
+            self.handler.monthname[month],
+            year, hh, mm, ss
+        )
+        self.assertEqual(self.handler.date_time_string(timestamp=now), expected)
+
 
 class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
     """ Test url parsing """

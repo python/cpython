@@ -87,6 +87,7 @@ __all__ = [
     "SimpleHTTPRequestHandler", "CGIHTTPRequestHandler",
 ]
 
+import email.utils
 import html
 import http.client
 import io
@@ -566,12 +567,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         """Return the current date and time formatted for a message header."""
         if timestamp is None:
             timestamp = time.time()
-        year, month, day, hh, mm, ss, wd, y, z = time.gmtime(timestamp)
-        s = "%s, %02d %3s %4d %02d:%02d:%02d GMT" % (
-                self.weekdayname[wd],
-                day, self.monthname[month], year,
-                hh, mm, ss)
-        return s
+        return email.utils.formatdate(timestamp, usegmt=True)
 
     def log_date_time_string(self):
         """Return the current time formatted for logging."""
