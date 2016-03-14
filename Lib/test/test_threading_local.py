@@ -189,7 +189,7 @@ class BaseLocalTest:
         wr = weakref.ref(x)
         del x
         gc.collect()
-        self.assertIs(wr(), None)
+        self.assertIsNone(wr())
 
 
 class ThreadLocalTest(unittest.TestCase, BaseLocalTest):
