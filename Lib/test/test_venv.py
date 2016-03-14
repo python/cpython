@@ -8,6 +8,7 @@ Licensed to the PSF under a contributor agreement.
 import ensurepip
 import os
 import os.path
+import re
 import struct
 import subprocess
 import sys
@@ -394,7 +395,15 @@ class EnsurePipTest(BaseTest):
         # We force everything to text, so unittest gives the detailed diff
         # if we get unexpected results
         err = err.decode("latin-1") # Force to text, prevent decoding errors
-        self.assertEqual(err, "")
+        # Ignore the warning:
+        #   "The directory '$HOME/.cache/pip/http' or its parent directory
+        #    is not owned by the current user and the cache has been disabled.
+        #    Please check the permissions and owner of that directory. If
+        #    executing pip with sudo, you may want sudo's -H flag."
+        # where $HOME is replaced by the HOME environment variable.
+        err = re.sub("^The directory .* or its parent directory is not owned "
+                     "by the current user .*$", "", err, flags=re.MULTILINE)
+        self.assertEqual(err.rstrip(), "")
         # Being fairly specific regarding the expected behaviour for the
         # initial bundling phase in Python 3.4. If the output changes in
         # future pip versions, this test can likely be relaxed further.
