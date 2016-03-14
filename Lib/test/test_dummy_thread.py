@@ -24,14 +24,14 @@ class LockTests(unittest.TestCase):
 
     def test_initlock(self):
         #Make sure locks start locked
-        self.assertTrue(not self.lock.locked(),
+        self.assertFalse(self.lock.locked(),
                         "Lock object is not initialized unlocked.")
 
     def test_release(self):
         # Test self.lock.release()
         self.lock.acquire()
         self.lock.release()
-        self.assertTrue(not self.lock.locked(),
+        self.assertFalse(self.lock.locked(),
                         "Lock object did not release properly.")
 
     def test_improper_release(self):
@@ -46,7 +46,7 @@ class LockTests(unittest.TestCase):
     def test_cond_acquire_fail(self):
         #Test acquiring locked lock returns False
         self.lock.acquire(0)
-        self.assertTrue(not self.lock.acquire(0),
+        self.assertFalse(self.lock.acquire(0),
                         "Conditional acquiring of a locked lock incorrectly "
                          "succeeded.")
 
@@ -58,9 +58,9 @@ class LockTests(unittest.TestCase):
 
     def test_uncond_acquire_return_val(self):
         #Make sure that an unconditional locking returns True.
-        self.assertTrue(self.lock.acquire(1) is True,
+        self.assertIs(self.lock.acquire(1), True,
                         "Unconditional locking did not return True.")
-        self.assertTrue(self.lock.acquire() is True)
+        self.assertIs(self.lock.acquire(), True)
 
     def test_uncond_acquire_blocking(self):
         #Make sure that unconditional acquiring of a locked lock blocks.
@@ -80,7 +80,7 @@ class LockTests(unittest.TestCase):
         end_time = int(time.time())
         if test_support.verbose:
             print "done"
-        self.assertTrue((end_time - start_time) >= DELAY,
+        self.assertGreaterEqual(end_time - start_time, DELAY,
                         "Blocking by unconditional acquiring failed.")
 
 class MiscTests(unittest.TestCase):
@@ -94,7 +94,7 @@ class MiscTests(unittest.TestCase):
         #Test sanity of _thread.get_ident()
         self.assertIsInstance(_thread.get_ident(), int,
                               "_thread.get_ident() returned a non-integer")
-        self.assertTrue(_thread.get_ident() != 0,
+        self.assertNotEqual(_thread.get_ident(), 0,
                         "_thread.get_ident() returned 0")
 
     def test_LockType(self):
@@ -164,7 +164,7 @@ class ThreadTests(unittest.TestCase):
         time.sleep(DELAY)
         if test_support.verbose:
             print 'done'
-        self.assertTrue(testing_queue.qsize() == thread_count,
+        self.assertEqual(testing_queue.qsize(), thread_count,
                         "Not all %s threads executed properly after %s sec." %
                         (thread_count, DELAY))
 

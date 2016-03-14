@@ -51,7 +51,7 @@ class TestThread(threading.Thread):
                 self.nrunning.inc()
                 if verbose:
                     print self.nrunning.get(), 'tasks are running'
-                self.testcase.assertTrue(self.nrunning.get() <= 3)
+                self.testcase.assertLessEqual(self.nrunning.get(), 3)
 
             time.sleep(delay)
             if verbose:
@@ -59,7 +59,7 @@ class TestThread(threading.Thread):
 
             with self.mutex:
                 self.nrunning.dec()
-                self.testcase.assertTrue(self.nrunning.get() >= 0)
+                self.testcase.assertGreaterEqual(self.nrunning.get(), 0)
                 if verbose:
                     print '%s is finished. %d tasks are running' % (
                         self.name, self.nrunning.get())
@@ -92,25 +92,25 @@ class ThreadTests(BaseTestCase):
         for i in range(NUMTASKS):
             t = TestThread("<thread %d>"%i, self, sema, mutex, numrunning)
             threads.append(t)
-            self.assertEqual(t.ident, None)
-            self.assertTrue(re.match('<TestThread\(.*, initial\)>', repr(t)))
+            self.assertIsNone(t.ident)
+            self.assertRegexpMatches(repr(t), r'^<TestThread\(.*, initial\)>$')
             t.start()
 
         if verbose:
             print 'waiting for all tasks to complete'
         for t in threads:
             t.join(NUMTASKS)
-            self.assertTrue(not t.is_alive())
+            self.assertFalse(t.is_alive())
             self.assertNotEqual(t.ident, 0)
-            self.assertFalse(t.ident is None)
-            self.assertTrue(re.match('<TestThread\(.*, \w+ -?\d+\)>', repr(t)))
+            self.assertIsNotNone(t.ident)
+            self.assertRegexpMatches(repr(t), r'^<TestThread\(.*, \w+ -?\d+\)>$')
         if verbose:
             print 'all tasks done'
         self.assertEqual(numrunning.get(), 0)
 
     def test_ident_of_no_threading_threads(self):
         # The ident still must work for the main thread and dummy threads.
-        self.assertFalse(threading.currentThread().ident is None)
+        self.assertIsNotNone(threading.currentThread().ident)
         def f():
             ident.append(threading.currentThread().ident)
             done.set()
@@ -118,7 +118,7 @@ class ThreadTests(BaseTestCase):
         ident = []
         thread.start_new_thread(f, ())
         done.wait()
-        self.assertFalse(ident[0] is None)
+        self.assertIsNotNone(ident[0])
         # Kill the "immortal" _DummyThread
         del threading._active[ident[0]]
 
@@ -236,7 +236,7 @@ class ThreadTests(BaseTestCase):
         self.assertTrue(ret)
         if verbose:
             print "    verifying worker hasn't exited"
-        self.assertTrue(not t.finished)
+        self.assertFalse(t.finished)
         if verbose:
             print "    attempting to raise asynch exception in worker"
         result = set_async_exc(ctypes.c_long(t.id), exception)
