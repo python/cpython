@@ -4982,7 +4982,7 @@ load_counted_binunicode(UnpicklerObject *self, int nbytes)
 }
 
 static int
-load_counted_tuple(UnpicklerObject *self, int len)
+load_counted_tuple(UnpicklerObject *self, Py_ssize_t len)
 {
     PyObject *tuple;
 
