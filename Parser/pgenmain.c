@@ -37,6 +37,14 @@ Py_Exit(int sts)
     exit(sts);
 }
 
+#ifdef WITH_THREAD
+/* Needed by obmalloc.c */
+int PyGILState_Check(void)
+{
+    return 1;
+}
+#endif
+
 int
 main(int argc, char **argv)
 {

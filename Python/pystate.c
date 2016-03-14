@@ -34,6 +34,8 @@ to avoid the expense of doing their own locking).
 extern "C" {
 #endif
 
+int _PyGILState_check_enabled = 1;
+
 #ifdef WITH_THREAD
 #include "pythread.h"
 static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
@@ -45,7 +47,7 @@ static PyThread_type_lock head_mutex = NULL; /* Protects interp->tstate_head */
    GILState implementation
 */
 static PyInterpreterState *autoInterpreterState = NULL;
-static int autoTLSkey = 0;
+static int autoTLSkey = -1;
 #else
 #define HEAD_INIT() /* Nothing */
 #define HEAD_LOCK() /* Nothing */
@@ -449,10 +451,10 @@ PyThreadState_DeleteCurrent()
     if (tstate == NULL)
         Py_FatalError(
             "PyThreadState_DeleteCurrent: no current tstate");
-    SET_TSTATE(NULL);
+    tstate_delete_common(tstate);
     if (autoInterpreterState && PyThread_get_key_value(autoTLSkey) == tstate)
         PyThread_delete_key_value(autoTLSkey);
-    tstate_delete_common(tstate);
+    SET_TSTATE(NULL);
     PyEval_ReleaseLock();
 }
 #endif /* WITH_THREAD */
@@ -716,6 +718,7 @@ void
 _PyGILState_Fini(void)
 {
     PyThread_delete_key(autoTLSkey);
+    autoTLSkey = -1;
     autoInterpreterState = NULL;
 }
 
@@ -784,8 +787,19 @@ PyGILState_GetThisThreadState(void)
 int
 PyGILState_Check(void)
 {
-    PyThreadState *tstate = GET_TSTATE();
-    return tstate && (tstate == PyGILState_GetThisThreadState());
+    PyThreadState *tstate;
+
+    if (!_PyGILState_check_enabled)
+        return 1;
+
+    if (autoTLSkey == -1)
+        return 1;
+
+    tstate = GET_TSTATE();
+    if (tstate == NULL)
+        return 0;
+
+    return (tstate == PyGILState_GetThisThreadState());
 }
 
 PyGILState_STATE
