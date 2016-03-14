@@ -201,6 +201,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #16181: cookiejar.http2time() now returns None if year is higher than
+  datetime.MAXYEAR.
+
 - Issue #26513: Fixes platform module detection of Windows Server
 
 - Issue #23718: Fixed parsing time in week 0 before Jan 1.  Original patch by
