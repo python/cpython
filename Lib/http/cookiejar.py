@@ -143,6 +143,10 @@ def offset_from_tz_string(tz):
     return offset
 
 def _str2time(day, mon, yr, hr, min, sec, tz):
+    yr = int(yr)
+    if yr > datetime.MAXYEAR:
+        return None
+
     # translate month name to number
     # month numbers start with 1 (January)
     try:
@@ -163,7 +167,6 @@ def _str2time(day, mon, yr, hr, min, sec, tz):
     if min is None: min = 0
     if sec is None: sec = 0
 
-    yr = int(yr)
     day = int(day)
     hr = int(hr)
     min = int(min)
