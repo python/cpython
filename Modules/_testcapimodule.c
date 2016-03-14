@@ -3616,6 +3616,33 @@ get_recursion_depth(PyObject *self, PyObject *args)
     return PyLong_FromLong(tstate->recursion_depth - 1);
 }
 
+static PyObject*
+pymem_buffer_overflow(PyObject *self, PyObject *args)
+{
+    char *buffer;
+
+    /* Deliberate buffer overflow to check that PyMem_Free() detects
+       the overflow when debug hooks are installed. */
+    buffer = PyMem_Malloc(16);
+    buffer[16] = 'x';
+    PyMem_Free(buffer);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject*
+pymem_api_misuse(PyObject *self, PyObject *args)
+{
+    char *buffer;
+
+    /* Deliberate misusage of Python allocators:
+       allococate with PyMem but release with PyMem_Raw. */
+    buffer = PyMem_Malloc(16);
+    PyMem_RawFree(buffer);
+
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3798,6 +3825,8 @@ static PyMethodDef TestMethods[] = {
     {"PyTime_AsMilliseconds", test_PyTime_AsMilliseconds, METH_VARARGS},
     {"PyTime_AsMicroseconds", test_PyTime_AsMicroseconds, METH_VARARGS},
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
+    {"pymem_buffer_overflow", pymem_buffer_overflow, METH_NOARGS},
+    {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

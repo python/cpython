@@ -16,7 +16,16 @@ PyAPI_FUNC(void *) PyMem_RawMalloc(size_t size);
 PyAPI_FUNC(void *) PyMem_RawCalloc(size_t nelem, size_t elsize);
 PyAPI_FUNC(void *) PyMem_RawRealloc(void *ptr, size_t new_size);
 PyAPI_FUNC(void) PyMem_RawFree(void *ptr);
+
+/* Configure the Python memory allocators. Pass NULL to use default
+   allocators. */
+PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
+
+#ifdef WITH_PYMALLOC
+PyAPI_FUNC(int) _PyMem_PymallocEnabled(void);
 #endif
+
+#endif   /* !Py_LIMITED_API */
 
 
 /* BEWARE:

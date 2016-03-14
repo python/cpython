@@ -2,7 +2,19 @@
 
 /* Python's malloc wrappers (see pymem.h) */
 
-#ifdef PYMALLOC_DEBUG   /* WITH_PYMALLOC && PYMALLOC_DEBUG */
+/*
+ * Basic types
+ * I don't care if these are defined in <sys/types.h> or elsewhere. Axiom.
+ */
+#undef  uchar
+#define uchar   unsigned char   /* assuming == 8 bits  */
+
+#undef  uint
+#define uint    unsigned int    /* assuming >= 16 bits */
+
+#undef uptr
+#define uptr    Py_uintptr_t
+
 /* Forward declaration */
 static void* _PyMem_DebugMalloc(void *ctx, size_t size);
 static void* _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize);
@@ -11,7 +23,6 @@ static void* _PyMem_DebugRealloc(void *ctx, void *ptr, size_t size);
 
 static void _PyObject_DebugDumpAddress(const void *p);
 static void _PyMem_DebugCheckAddress(char api_id, const void *p);
-#endif
 
 #if defined(__has_feature)  /* Clang */
  #if __has_feature(address_sanitizer)  /* is ASAN enabled? */
@@ -147,7 +158,6 @@ _PyObject_ArenaFree(void *ctx, void *ptr, size_t size)
 #endif
 #define PYMEM_FUNCS PYRAW_FUNCS
 
-#ifdef PYMALLOC_DEBUG
 typedef struct {
     /* We tag each block with an API ID in order to tag API violations */
     char api_id;
@@ -164,10 +174,9 @@ static struct {
     };
 
 #define PYDBG_FUNCS _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree
-#endif
 
 static PyMemAllocatorEx _PyMem_Raw = {
-#ifdef PYMALLOC_DEBUG
+#ifdef Py_DEBUG
     &_PyMem_Debug.raw, PYDBG_FUNCS
 #else
     NULL, PYRAW_FUNCS
@@ -175,7 +184,7 @@ static PyMemAllocatorEx _PyMem_Raw = {
     };
 
 static PyMemAllocatorEx _PyMem = {
-#ifdef PYMALLOC_DEBUG
+#ifdef Py_DEBUG
     &_PyMem_Debug.mem, PYDBG_FUNCS
 #else
     NULL, PYMEM_FUNCS
@@ -183,12 +192,70 @@ static PyMemAllocatorEx _PyMem = {
     };
 
 static PyMemAllocatorEx _PyObject = {
-#ifdef PYMALLOC_DEBUG
+#ifdef Py_DEBUG
     &_PyMem_Debug.obj, PYDBG_FUNCS
 #else
     NULL, PYOBJ_FUNCS
 #endif
     };
+
+int
+_PyMem_SetupAllocators(const char *opt)
+{
+    if (opt == NULL || *opt == '\0') {
+        /* PYTHONMALLOC is empty or is not set or ignored (-E/-I command line
+           options): use default allocators */
+#ifdef Py_DEBUG
+#  ifdef WITH_PYMALLOC
+        opt = "pymalloc_debug";
+#  else
+        opt = "malloc_debug";
+#  endif
+#else
+   /* !Py_DEBUG */
+#  ifdef WITH_PYMALLOC
+        opt = "pymalloc";
+#  else
+        opt = "malloc";
+#  endif
+#endif
+    }
+
+    if (strcmp(opt, "debug") == 0) {
+        PyMem_SetupDebugHooks();
+    }
+    else if (strcmp(opt, "malloc") == 0 || strcmp(opt, "malloc_debug") == 0)
+    {
+        PyMemAllocatorEx alloc = {NULL, PYRAW_FUNCS};
+
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &alloc);
+        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &alloc);
+        PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &alloc);
+
+        if (strcmp(opt, "malloc_debug") == 0)
+            PyMem_SetupDebugHooks();
+    }
+#ifdef WITH_PYMALLOC
+    else if (strcmp(opt, "pymalloc") == 0
+             || strcmp(opt, "pymalloc_debug") == 0)
+    {
+        PyMemAllocatorEx mem_alloc = {NULL, PYRAW_FUNCS};
+        PyMemAllocatorEx obj_alloc = {NULL, PYOBJ_FUNCS};
+
+        PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &mem_alloc);
+        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &mem_alloc);
+        PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &obj_alloc);
+
+        if (strcmp(opt, "pymalloc_debug") == 0)
+            PyMem_SetupDebugHooks();
+    }
+#endif
+    else {
+        /* unknown allocator */
+        return -1;
+    }
+    return 0;
+}
 
 #undef PYRAW_FUNCS
 #undef PYMEM_FUNCS
@@ -205,11 +272,33 @@ static PyObjectArenaAllocator _PyObject_Arena = {NULL,
 #endif
     };
 
+static int
+_PyMem_DebugEnabled(void)
+{
+    return (_PyObject.malloc == _PyMem_DebugMalloc);
+}
+
+#ifdef WITH_PYMALLOC
+int
+_PyMem_PymallocEnabled(void)
+{
+    if (_PyMem_DebugEnabled()) {
+        return (_PyMem_Debug.obj.alloc.malloc == _PyObject_Malloc);
+    }
+    else {
+        return (_PyObject.malloc == _PyObject_Malloc);
+    }
+}
+#endif
+
 void
 PyMem_SetupDebugHooks(void)
 {
-#ifdef PYMALLOC_DEBUG
     PyMemAllocatorEx alloc;
+
+    /* hooks already installed */
+    if (_PyMem_DebugEnabled())
+        return;
 
     alloc.malloc = _PyMem_DebugMalloc;
     alloc.calloc = _PyMem_DebugCalloc;
@@ -233,7 +322,6 @@ PyMem_SetupDebugHooks(void)
         PyMem_GetAllocator(PYMEM_DOMAIN_OBJ, &_PyMem_Debug.obj.alloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &alloc);
     }
-#endif
 }
 
 void
@@ -264,7 +352,6 @@ PyMem_SetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
     case PYMEM_DOMAIN_OBJ: _PyObject = *allocator; break;
     /* ignore unknown domain */
     }
-
 }
 
 void
@@ -642,22 +729,6 @@ static int running_on_valgrind = -1;
 #define SIMPLELOCK_LOCK(lock)   /* acquire released lock */
 #define SIMPLELOCK_UNLOCK(lock) /* release acquired lock */
 
-/*
- * Basic types
- * I don't care if these are defined in <sys/types.h> or elsewhere. Axiom.
- */
-#undef  uchar
-#define uchar   unsigned char   /* assuming == 8 bits  */
-
-#undef  uint
-#define uint    unsigned int    /* assuming >= 16 bits */
-
-#undef  ulong
-#define ulong   unsigned long   /* assuming >= 32 bits */
-
-#undef uptr
-#define uptr    Py_uintptr_t
-
 /* When you say memory, my mind reasons in terms of (pointers to) blocks */
 typedef uchar block;
 
@@ -949,11 +1020,15 @@ new_arena(void)
     struct arena_object* arenaobj;
     uint excess;        /* number of bytes above pool alignment */
     void *address;
+    static int debug_stats = -1;
 
-#ifdef PYMALLOC_DEBUG
-    if (Py_GETENV("PYTHONMALLOCSTATS"))
+    if (debug_stats == -1) {
+        char *opt = Py_GETENV("PYTHONMALLOCSTATS");
+        debug_stats = (opt != NULL && *opt != '\0');
+    }
+    if (debug_stats)
         _PyObject_DebugMallocStats(stderr);
-#endif
+
     if (unused_arena_objects == NULL) {
         uint i;
         uint numarenas;
@@ -1709,7 +1784,7 @@ _Py_GetAllocatedBlocks(void)
 
 #endif /* WITH_PYMALLOC */
 
-#ifdef PYMALLOC_DEBUG
+
 /*==========================================================================*/
 /* A x-platform debugging allocator.  This doesn't manage memory directly,
  * it wraps a real allocator, adding extra debugging info to the memory blocks.
@@ -1766,31 +1841,6 @@ write_size_t(void *p, size_t n)
         n >>= 8;
     }
 }
-
-#ifdef Py_DEBUG
-/* Is target in the list?  The list is traversed via the nextpool pointers.
- * The list may be NULL-terminated, or circular.  Return 1 if target is in
- * list, else 0.
- */
-static int
-pool_is_in_list(const poolp target, poolp list)
-{
-    poolp origlist = list;
-    assert(target != NULL);
-    if (list == NULL)
-        return 0;
-    do {
-        if (target == list)
-            return 1;
-        list = list->nextpool;
-    } while (list != NULL && list != origlist);
-    return 0;
-}
-
-#else
-#define pool_is_in_list(X, Y) 1
-
-#endif  /* Py_DEBUG */
 
 /* Let S = sizeof(size_t).  The debug malloc asks for 4*S extra bytes and
    fills them with useful stuff, here calling the underlying malloc's result p:
@@ -2106,7 +2156,6 @@ _PyObject_DebugDumpAddress(const void *p)
     }
 }
 
-#endif  /* PYMALLOC_DEBUG */
 
 static size_t
 printone(FILE *out, const char* msg, size_t value)
@@ -2158,7 +2207,29 @@ _PyDebugAllocatorStats(FILE *out,
     (void)printone(out, buf2, num_blocks * sizeof_block);
 }
 
+
 #ifdef WITH_PYMALLOC
+
+#ifdef Py_DEBUG
+/* Is target in the list?  The list is traversed via the nextpool pointers.
+ * The list may be NULL-terminated, or circular.  Return 1 if target is in
+ * list, else 0.
+ */
+static int
+pool_is_in_list(const poolp target, poolp list)
+{
+    poolp origlist = list;
+    assert(target != NULL);
+    if (list == NULL)
+        return 0;
+    do {
+        if (target == list)
+            return 1;
+        list = list->nextpool;
+    } while (list != NULL && list != origlist);
+    return 0;
+}
+#endif
 
 /* Print summary info to "out" about the state of pymalloc's structures.
  * In Py_DEBUG mode, also perform some expensive internal consistency
@@ -2233,7 +2304,9 @@ _PyObject_DebugMallocStats(FILE *out)
 
             if (p->ref.count == 0) {
                 /* currently unused */
+#ifdef Py_DEBUG
                 assert(pool_is_in_list(p, arenas[i].freepools));
+#endif
                 continue;
             }
             ++numpools[sz];
@@ -2273,9 +2346,8 @@ _PyObject_DebugMallocStats(FILE *out)
         quantization += p * ((POOL_SIZE - POOL_OVERHEAD) % size);
     }
     fputc('\n', out);
-#ifdef PYMALLOC_DEBUG
-    (void)printone(out, "# times object malloc called", serialno);
-#endif
+    if (_PyMem_DebugEnabled())
+        (void)printone(out, "# times object malloc called", serialno);
     (void)printone(out, "# arenas allocated total", ntimes_arena_allocated);
     (void)printone(out, "# arenas reclaimed", ntimes_arena_allocated - narenas);
     (void)printone(out, "# arenas highwater mark", narenas_highwater);
@@ -2302,6 +2374,7 @@ _PyObject_DebugMallocStats(FILE *out)
 }
 
 #endif /* #ifdef WITH_PYMALLOC */
+
 
 #ifdef Py_USING_MEMORY_DEBUGGER
 /* Make this function last so gcc won't inline it since the definition is

@@ -93,14 +93,15 @@ static const char usage_5[] =
 "               The default module search path uses %s.\n"
 "PYTHONCASEOK : ignore case in 'import' statements (Windows).\n"
 "PYTHONIOENCODING: Encoding[:errors] used for stdin/stdout/stderr.\n"
-"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n\
-";
-static const char usage_6[] = "\
-PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n\
-   to seed the hashes of str, bytes and datetime objects.  It can also be\n\
-   set to an integer in the range [0,4294967295] to get hash values with a\n\
-   predictable seed.\n\
-";
+"PYTHONFAULTHANDLER: dump the Python traceback on fatal errors.\n";
+static const char usage_6[] =
+"PYTHONHASHSEED: if this variable is set to 'random', a random value is used\n"
+"   to seed the hashes of str, bytes and datetime objects.  It can also be\n"
+"   set to an integer in the range [0,4294967295] to get hash values with a\n"
+"   predictable seed.\n"
+"PYTHONMALLOC: set the Python memory allocators and/or install debug hooks\n"
+"   on Python memory allocators. Use PYTHONMALLOC=debug to install debug\n"
+"   hooks.\n";
 
 static int
 usage(int exitcode, const wchar_t* program)
@@ -341,6 +342,7 @@ Py_Main(int argc, wchar_t **argv)
     int help = 0;
     int version = 0;
     int saw_unbuffered_flag = 0;
+    char *opt;
     PyCompilerFlags cf;
     PyObject *warning_option = NULL;
     PyObject *warning_options = NULL;
@@ -363,6 +365,13 @@ Py_Main(int argc, wchar_t **argv)
             Py_IgnoreEnvironmentFlag++;
             break;
         }
+    }
+
+    opt = Py_GETENV("PYTHONMALLOC");
+    if (_PyMem_SetupAllocators(opt) < 0) {
+        fprintf(stderr,
+                "Error in PYTHONMALLOC: unknown allocator \"%s\"!\n", opt);
+        exit(1);
     }
 
     Py_HashRandomizationFlag = 1;

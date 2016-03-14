@@ -85,9 +85,12 @@ for the I/O buffer escapes completely the Python memory manager.
 
 .. seealso::
 
+   The :envvar:`PYTHONMALLOC` environment variable can be used to configure
+   the memory allocators used by Python.
+
    The :envvar:`PYTHONMALLOCSTATS` environment variable can be used to print
-   memory allocation statistics every time a new object arena is created, and
-   on shutdown.
+   statistics of the :ref:`pymalloc memory allocator <pymalloc>` every time a
+   new pymalloc object arena is created, and on shutdown.
 
 
 Raw Memory Interface
@@ -343,24 +346,35 @@ Customize Memory Allocators
    - detect write before the start of the buffer (buffer underflow)
    - detect write after the end of the buffer (buffer overflow)
 
-   The function does nothing if Python is not compiled is debug mode.
+   These hooks are installed by default if Python is compiled in debug
+   mode. The :envvar:`PYTHONMALLOC` environment variable can be used to install
+   debug hooks on a Python compiled in release mode.
+
+   .. versionchanged:: 3.6
+      This function now also works on Python compiled in release mode.
 
 
-Customize PyObject Arena Allocator
-==================================
+.. _pymalloc:
 
-Python has a *pymalloc* allocator for allocations smaller than 512 bytes. This
-allocator is optimized for small objects with a short lifetime. It uses memory
-mappings called "arenas" with a fixed size of 256 KB. It falls back to
-:c:func:`PyMem_RawMalloc` and :c:func:`PyMem_RawRealloc` for allocations larger
-than 512 bytes.  *pymalloc* is the default allocator used by
-:c:func:`PyObject_Malloc`.
+The pymalloc allocator
+======================
 
-The default arena allocator uses the following functions:
+Python has a *pymalloc* allocator optimized for small objects (smaller or equal
+to 512 bytes) with a short lifetime. It uses memory mappings called "arenas"
+with a fixed size of 256 KB. It falls back to :c:func:`PyMem_RawMalloc` and
+:c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
+
+*pymalloc* is the default allocator of the :c:data:`PYMEM_DOMAIN_OBJ` domain
+(:c:func:`PyObject_Malloc` & cie).
+
+The arena allocator uses the following functions:
 
 * :c:func:`VirtualAlloc` and :c:func:`VirtualFree` on Windows,
 * :c:func:`mmap` and :c:func:`munmap` if available,
 * :c:func:`malloc` and :c:func:`free` otherwise.
+
+Customize pymalloc Arena Allocator
+----------------------------------
 
 .. versionadded:: 3.4
 
