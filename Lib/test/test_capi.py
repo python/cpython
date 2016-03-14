@@ -561,7 +561,7 @@ class Test_testcapi(unittest.TestCase):
 class MallocTests(unittest.TestCase):
     ENV = 'debug'
     # '0x04c06e0' or '04C06E0'
-    PTR_REGEX = r'(?:0x[0-9a-f]+|[0-9A-F]+)'
+    PTR_REGEX = r'(?:0x)?[0-9a-fA-F]+'
 
     def check(self, code):
         with support.SuppressCrashReport():
