@@ -3643,6 +3643,20 @@ pymem_api_misuse(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject*
+pyobject_malloc_without_gil(PyObject *self, PyObject *args)
+{
+    char *buffer;
+
+    Py_BEGIN_ALLOW_THREADS
+    buffer = PyObject_Malloc(10);
+    Py_END_ALLOW_THREADS
+
+    PyObject_Free(buffer);
+
+    Py_RETURN_NONE;
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3827,6 +3841,7 @@ static PyMethodDef TestMethods[] = {
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"pymem_buffer_overflow", pymem_buffer_overflow, METH_NOARGS},
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
+    {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
 

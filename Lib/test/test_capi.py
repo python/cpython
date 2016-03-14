@@ -441,6 +441,7 @@ class EmbeddingTests(unittest.TestCase):
         self.maxDiff = None
         self.assertEqual(out.strip(), expected_output)
 
+
 class SkipitemTest(unittest.TestCase):
 
     def test_skipitem(self):
@@ -558,14 +559,15 @@ class Test_testcapi(unittest.TestCase):
                     test()
 
 
-class MallocTests(unittest.TestCase):
-    ENV = 'debug'
+class PyMemDebugTests(unittest.TestCase):
+    PYTHONMALLOC = 'debug'
     # '0x04c06e0' or '04C06E0'
     PTR_REGEX = r'(?:0x)?[0-9a-fA-F]+'
 
     def check(self, code):
         with support.SuppressCrashReport():
-            out = assert_python_failure('-c', code, PYTHONMALLOC=self.ENV)
+            out = assert_python_failure('-c', code,
+                                        PYTHONMALLOC=self.PYTHONMALLOC)
         stderr = out.err
         return stderr.decode('ascii', 'replace')
 
@@ -598,20 +600,30 @@ class MallocTests(unittest.TestCase):
         regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
+    def test_pyobject_malloc_without_gil(self):
+        # Calling PyObject_Malloc() without holding the GIL must raise an
+        # error in debug mode.
+        code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
+        out = self.check(code)
+        expected = ('Fatal Python error: Python memory allocator called '
+                    'without holding the GIL')
+        self.assertIn(expected, out)
 
-class MallocDebugTests(MallocTests):
-    ENV = 'malloc_debug'
+
+class PyMemMallocDebugTests(PyMemDebugTests):
+    PYTHONMALLOC = 'malloc_debug'
 
 
 @unittest.skipUnless(sysconfig.get_config_var('WITH_PYMALLOC') == 1,
                      'need pymalloc')
-class PymallocDebugTests(MallocTests):
-    ENV = 'pymalloc_debug'
+class PyMemPymallocDebugTests(PyMemDebugTests):
+    PYTHONMALLOC = 'pymalloc_debug'
 
 
 @unittest.skipUnless(Py_DEBUG, 'need Py_DEBUG')
-class DefaultMallocDebugTests(MallocTests):
-    ENV = ''
+class PyMemDefaultTests(PyMemDebugTests):
+    # test default allocator of Python compiled in debug mode
+    PYTHONMALLOC = ''
 
 
 if __name__ == "__main__":

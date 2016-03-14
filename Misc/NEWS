@@ -10,6 +10,10 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #26558: The debug hooks on Python memory allocator
+  :c:func:`PyObject_Malloc` now detect when functions are called without
+  holding the GIL.
+
 - Issue #26516: Add :envvar`PYTHONMALLOC` environment variable to set the
   Python memory allocators and/or install debug hooks.
 

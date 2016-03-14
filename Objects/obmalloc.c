@@ -16,10 +16,15 @@
 #define uptr    Py_uintptr_t
 
 /* Forward declaration */
+static void* _PyMem_DebugRawMalloc(void *ctx, size_t size);
+static void* _PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize);
+static void* _PyMem_DebugRawRealloc(void *ctx, void *ptr, size_t size);
+static void _PyMem_DebugRawFree(void *ctx, void *p);
+
 static void* _PyMem_DebugMalloc(void *ctx, size_t size);
 static void* _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize);
-static void _PyMem_DebugFree(void *ctx, void *p);
 static void* _PyMem_DebugRealloc(void *ctx, void *ptr, size_t size);
+static void _PyMem_DebugFree(void *ctx, void *p);
 
 static void _PyObject_DebugDumpAddress(const void *p);
 static void _PyMem_DebugCheckAddress(char api_id, const void *p);
@@ -173,11 +178,14 @@ static struct {
     {'o', {NULL, PYOBJ_FUNCS}}
     };
 
-#define PYDBG_FUNCS _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree
+#define PYRAWDBG_FUNCS \
+    _PyMem_DebugRawMalloc, _PyMem_DebugRawCalloc, _PyMem_DebugRawRealloc, _PyMem_DebugRawFree
+#define PYDBG_FUNCS \
+    _PyMem_DebugMalloc, _PyMem_DebugCalloc, _PyMem_DebugRealloc, _PyMem_DebugFree
 
 static PyMemAllocatorEx _PyMem_Raw = {
 #ifdef Py_DEBUG
-    &_PyMem_Debug.raw, PYDBG_FUNCS
+    &_PyMem_Debug.raw, PYRAWDBG_FUNCS
 #else
     NULL, PYRAW_FUNCS
 #endif
@@ -185,7 +193,7 @@ static PyMemAllocatorEx _PyMem_Raw = {
 
 static PyMemAllocatorEx _PyMem = {
 #ifdef Py_DEBUG
-    &_PyMem_Debug.mem, PYDBG_FUNCS
+    &_PyMem_Debug.mem, PYRAWDBG_FUNCS
 #else
     NULL, PYMEM_FUNCS
 #endif
@@ -260,6 +268,7 @@ _PyMem_SetupAllocators(const char *opt)
 #undef PYRAW_FUNCS
 #undef PYMEM_FUNCS
 #undef PYOBJ_FUNCS
+#undef PYRAWDBG_FUNCS
 #undef PYDBG_FUNCS
 
 static PyObjectArenaAllocator _PyObject_Arena = {NULL,
@@ -296,26 +305,27 @@ PyMem_SetupDebugHooks(void)
 {
     PyMemAllocatorEx alloc;
 
-    /* hooks already installed */
-    if (_PyMem_DebugEnabled())
-        return;
+    alloc.malloc = _PyMem_DebugRawMalloc;
+    alloc.calloc = _PyMem_DebugRawCalloc;
+    alloc.realloc = _PyMem_DebugRawRealloc;
+    alloc.free = _PyMem_DebugRawFree;
 
-    alloc.malloc = _PyMem_DebugMalloc;
-    alloc.calloc = _PyMem_DebugCalloc;
-    alloc.realloc = _PyMem_DebugRealloc;
-    alloc.free = _PyMem_DebugFree;
-
-    if (_PyMem_Raw.malloc != _PyMem_DebugMalloc) {
+    if (_PyMem_Raw.malloc != _PyMem_DebugRawMalloc) {
         alloc.ctx = &_PyMem_Debug.raw;
         PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &_PyMem_Debug.raw.alloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &alloc);
     }
 
-    if (_PyMem.malloc != _PyMem_DebugMalloc) {
+    if (_PyMem.malloc != _PyMem_DebugRawMalloc) {
         alloc.ctx = &_PyMem_Debug.mem;
         PyMem_GetAllocator(PYMEM_DOMAIN_MEM, &_PyMem_Debug.mem.alloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &alloc);
     }
+
+    alloc.malloc = _PyMem_DebugMalloc;
+    alloc.calloc = _PyMem_DebugCalloc;
+    alloc.realloc = _PyMem_DebugRealloc;
+    alloc.free = _PyMem_DebugFree;
 
     if (_PyObject.malloc != _PyMem_DebugMalloc) {
         alloc.ctx = &_PyMem_Debug.obj;
@@ -1869,7 +1879,7 @@ p[2*S+n+S: 2*S+n+2*S]
 */
 
 static void *
-_PyMem_DebugAlloc(int use_calloc, void *ctx, size_t nbytes)
+_PyMem_DebugRawAlloc(int use_calloc, void *ctx, size_t nbytes)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
     uchar *p;           /* base address of malloc'ed block */
@@ -1906,18 +1916,18 @@ _PyMem_DebugAlloc(int use_calloc, void *ctx, size_t nbytes)
 }
 
 static void *
-_PyMem_DebugMalloc(void *ctx, size_t nbytes)
+_PyMem_DebugRawMalloc(void *ctx, size_t nbytes)
 {
-    return _PyMem_DebugAlloc(0, ctx, nbytes);
+    return _PyMem_DebugRawAlloc(0, ctx, nbytes);
 }
 
 static void *
-_PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
+_PyMem_DebugRawCalloc(void *ctx, size_t nelem, size_t elsize)
 {
     size_t nbytes;
     assert(elsize == 0 || nelem <= PY_SSIZE_T_MAX / elsize);
     nbytes = nelem * elsize;
-    return _PyMem_DebugAlloc(1, ctx, nbytes);
+    return _PyMem_DebugRawAlloc(1, ctx, nbytes);
 }
 
 /* The debug free first checks the 2*SST bytes on each end for sanity (in
@@ -1926,7 +1936,7 @@ _PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
    Then calls the underlying free.
 */
 static void
-_PyMem_DebugFree(void *ctx, void *p)
+_PyMem_DebugRawFree(void *ctx, void *p)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
     uchar *q = (uchar *)p - 2*SST;  /* address returned from malloc */
@@ -1943,7 +1953,7 @@ _PyMem_DebugFree(void *ctx, void *p)
 }
 
 static void *
-_PyMem_DebugRealloc(void *ctx, void *p, size_t nbytes)
+_PyMem_DebugRawRealloc(void *ctx, void *p, size_t nbytes)
 {
     debug_alloc_api_t *api = (debug_alloc_api_t *)ctx;
     uchar *q = (uchar *)p, *oldq;
@@ -1953,7 +1963,7 @@ _PyMem_DebugRealloc(void *ctx, void *p, size_t nbytes)
     int i;
 
     if (p == NULL)
-        return _PyMem_DebugAlloc(0, ctx, nbytes);
+        return _PyMem_DebugRawAlloc(0, ctx, nbytes);
 
     _PyMem_DebugCheckAddress(api->api_id, p);
     bumpserialno();
@@ -1994,6 +2004,44 @@ _PyMem_DebugRealloc(void *ctx, void *p, size_t nbytes)
     }
 
     return q;
+}
+
+static void
+_PyMem_DebugCheckGIL(void)
+{
+#ifdef WITH_THREAD
+    if (!PyGILState_Check())
+        Py_FatalError("Python memory allocator called "
+                      "without holding the GIL");
+#endif
+}
+
+static void *
+_PyMem_DebugMalloc(void *ctx, size_t nbytes)
+{
+    _PyMem_DebugCheckGIL();
+    return _PyMem_DebugRawMalloc(ctx, nbytes);
+}
+
+static void *
+_PyMem_DebugCalloc(void *ctx, size_t nelem, size_t elsize)
+{
+    _PyMem_DebugCheckGIL();
+    return _PyMem_DebugRawCalloc(ctx, nelem, elsize);
+}
+
+static void
+_PyMem_DebugFree(void *ctx, void *ptr)
+{
+    _PyMem_DebugCheckGIL();
+    return _PyMem_DebugRawFree(ctx, ptr);
+}
+
+static void *
+_PyMem_DebugRealloc(void *ctx, void *ptr, size_t nbytes)
+{
+    _PyMem_DebugCheckGIL();
+    return _PyMem_DebugRawRealloc(ctx, ptr, nbytes);
 }
 
 /* Check the forbidden bytes on both ends of the memory allocated for p.
