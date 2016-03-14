@@ -559,6 +559,8 @@ class Test_testcapi(unittest.TestCase):
 
 class MallocTests(unittest.TestCase):
     ENV = 'debug'
+    # '0x04c06e0' or '04C06E0'
+    PTR_REGEX = r'(?:0x[0-9a-f]+|[0-9A-F]+)'
 
     def check(self, code):
         with support.SuppressCrashReport():
@@ -568,10 +570,10 @@ class MallocTests(unittest.TestCase):
 
     def test_buffer_overflow(self):
         out = self.check('import _testcapi; _testcapi.pymem_buffer_overflow()')
-        regex = (r"Debug memory block at address p=0x[0-9a-f]+: API 'm'\n"
+        regex = (r"Debug memory block at address p={ptr}: API 'm'\n"
                  r"    16 bytes originally requested\n"
                  r"    The 7 pad bytes at p-7 are FORBIDDENBYTE, as expected.\n"
-                 r"    The 8 pad bytes at tail=0x[0-9a-f]+ are not all FORBIDDENBYTE \(0x[0-9a-f]{2}\):\n"
+                 r"    The 8 pad bytes at tail={ptr} are not all FORBIDDENBYTE \(0x[0-9a-f]{{2}}\):\n"
                  r"        at tail\+0: 0x78 \*\*\* OUCH\n"
                  r"        at tail\+1: 0xfb\n"
                  r"        at tail\+2: 0xfb\n"
@@ -583,17 +585,19 @@ class MallocTests(unittest.TestCase):
                  r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
                  r"    Data at p: cb cb cb cb cb cb cb cb cb cb cb cb cb cb cb cb\n"
                  r"Fatal Python error: bad trailing pad byte")
+        regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
     def test_api_misuse(self):
         out = self.check('import _testcapi; _testcapi.pymem_api_misuse()')
-        regex = (r"Debug memory block at address p=0x[0-9a-f]+: API 'm'\n"
+        regex = (r"Debug memory block at address p={ptr}: API 'm'\n"
                  r"    16 bytes originally requested\n"
                  r"    The 7 pad bytes at p-7 are FORBIDDENBYTE, as expected.\n"
-                 r"    The 8 pad bytes at tail=0x[0-9a-f]+ are FORBIDDENBYTE, as expected.\n"
+                 r"    The 8 pad bytes at tail={ptr} are FORBIDDENBYTE, as expected.\n"
                  r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
                  r"    Data at p: .*\n"
                  r"Fatal Python error: bad ID: Allocated using API 'm', verified using API 'r'\n")
+        regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
 
