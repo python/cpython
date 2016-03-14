@@ -80,6 +80,9 @@ Summary -- Release highlights
        PEP written by Carl Meyer
 
 
+New Features
+============
+
 .. _whatsnew-fstrings:
 
 PEP 498: Formatted string literals
@@ -96,6 +99,34 @@ evaluated at run time, and then formatted using the :func:`format` protocol.
     'He said his name is Fred.'
 
 See :pep:`498` and the main documentation at :ref:`f-strings`.
+
+
+PYTHONMALLOC environment variable
+---------------------------------
+
+The new :envvar:`PYTHONMALLOC` environment variable allows to set the Python
+memory allocators and/or install debug hooks.
+
+It is now possible to install debug hooks on Python memory allocators on Python
+compiled in release mode using ``PYTHONMALLOC=debug``. Effects of debug hooks:
+
+* Newly allocated memory is filled with the byte ``0xCB``
+* Freed memory is filled with the byte ``0xDB``
+* Detect violations of Python memory allocator API. For example,
+  :c:func:`PyObject_Free` called on a memory block allocated by
+  :c:func:`PyMem_Malloc`.
+* Detect write before the start of the buffer (buffer underflow)
+* Detect write after the end of the buffer (buffer overflow)
+
+See the :c:func:`PyMem_SetupDebugHooks` function for debug hooks on Python
+memory allocators.
+
+It is now also possible to force the usage of the :c:func:`malloc` allocator of
+the C library for all Python memory allocations using ``PYTHONMALLOC=malloc``.
+It helps to use external memory debuggers like Valgrind on a Python compiled in
+release mode.
+
+(Contributed by Victor Stinner in :issue:`26516`.)
 
 
 Other Language Changes

@@ -24,6 +24,9 @@ main(int argc, char **argv)
     int i, res;
     char *oldloc;
 
+    /* Force malloc() allocator to bootstrap Python */
+    (void)_PyMem_SetupAllocators("malloc");
+
     argv_copy = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     argv_copy2 = (wchar_t **)PyMem_RawMalloc(sizeof(wchar_t*) * (argc+1));
     if (!argv_copy || !argv_copy2) {
@@ -62,7 +65,13 @@ main(int argc, char **argv)
 
     setlocale(LC_ALL, oldloc);
     PyMem_RawFree(oldloc);
+
     res = Py_Main(argc, argv_copy);
+
+    /* Force again malloc() allocator to release memory blocks allocated
+       before Py_Main() */
+    (void)_PyMem_SetupAllocators("malloc");
+
     for (i = 0; i < argc; i++) {
         PyMem_RawFree(argv_copy2[i]);
     }
