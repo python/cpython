@@ -3320,12 +3320,22 @@ posix_getcwd(int use_bytes)
     Py_BEGIN_ALLOW_THREADS
     do {
         buflen += chunk;
+#ifdef MS_WINDOWS
+        if (buflen > INT_MAX) {
+            PyErr_NoMemory();
+            break;
+        }
+#endif
         tmpbuf = PyMem_RawRealloc(buf, buflen);
         if (tmpbuf == NULL)
             break;
 
         buf = tmpbuf;
+#ifdef MS_WINDOWS
+        cwd = getcwd(buf, (int)buflen);
+#else
         cwd = getcwd(buf, buflen);
+#endif
     } while (cwd == NULL && errno == ERANGE);
     Py_END_ALLOW_THREADS
 
