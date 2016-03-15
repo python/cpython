@@ -22,29 +22,6 @@ except ImportError:
     _testcapi = None
 
 
-class HandlerBCalled(Exception):
-    pass
-
-
-def exit_subprocess():
-    """Use os._exit(0) to exit the current subprocess.
-
-    Otherwise, the test catches the SystemExit and continues executing
-    in parallel with the original test, so you wind up with an
-    exponential number of tests running concurrently.
-    """
-    os._exit(0)
-
-
-def ignoring_eintr(__func, *args, **kwargs):
-    try:
-        return __func(*args, **kwargs)
-    except OSError as e:
-        if e.errno != errno.EINTR:
-            raise
-        return None
-
-
 class GenericTests(unittest.TestCase):
 
     @unittest.skipIf(threading is None, "test needs threading module")
@@ -60,145 +37,6 @@ class GenericTests(unittest.TestCase):
             elif name.startswith('CTRL_'):
                 self.assertIsInstance(sig, signal.Signals)
                 self.assertEqual(sys.platform, "win32")
-
-
-@unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
-class InterProcessSignalTests(unittest.TestCase):
-    MAX_DURATION = 20   # Entire test should last at most 20 sec.
-
-    def setUp(self):
-        self.using_gc = gc.isenabled()
-        gc.disable()
-
-    def tearDown(self):
-        if self.using_gc:
-            gc.enable()
-
-    def format_frame(self, frame, limit=None):
-        return ''.join(traceback.format_stack(frame, limit=limit))
-
-    def handlerA(self, signum, frame):
-        self.a_called = True
-
-    def handlerB(self, signum, frame):
-        self.b_called = True
-        raise HandlerBCalled(signum, self.format_frame(frame))
-
-    def wait(self, child):
-        """Wait for child to finish, ignoring EINTR."""
-        while True:
-            try:
-                child.wait()
-                return
-            except OSError as e:
-                if e.errno != errno.EINTR:
-                    raise
-
-    def run_test(self):
-        # Install handlers. This function runs in a sub-process, so we
-        # don't worry about re-setting the default handlers.
-        signal.signal(signal.SIGHUP, self.handlerA)
-        signal.signal(signal.SIGUSR1, self.handlerB)
-        signal.signal(signal.SIGUSR2, signal.SIG_IGN)
-        signal.signal(signal.SIGALRM, signal.default_int_handler)
-
-        # Variables the signals will modify:
-        self.a_called = False
-        self.b_called = False
-
-        # Let the sub-processes know who to send signals to.
-        pid = os.getpid()
-
-        child = ignoring_eintr(subprocess.Popen, ['kill', '-HUP', str(pid)])
-        if child:
-            self.wait(child)
-            if not self.a_called:
-                time.sleep(1)  # Give the signal time to be delivered.
-        self.assertTrue(self.a_called)
-        self.assertFalse(self.b_called)
-        self.a_called = False
-
-        # Make sure the signal isn't delivered while the previous
-        # Popen object is being destroyed, because __del__ swallows
-        # exceptions.
-        del child
-        try:
-            child = subprocess.Popen(['kill', '-USR1', str(pid)])
-            # This wait should be interrupted by the signal's exception.
-            self.wait(child)
-            time.sleep(1)  # Give the signal time to be delivered.
-            self.fail('HandlerBCalled exception not raised')
-        except HandlerBCalled:
-            self.assertTrue(self.b_called)
-            self.assertFalse(self.a_called)
-
-        child = ignoring_eintr(subprocess.Popen, ['kill', '-USR2', str(pid)])
-        if child:
-            self.wait(child)  # Nothing should happen.
-
-        try:
-            signal.alarm(1)
-            # The race condition in pause doesn't matter in this case,
-            # since alarm is going to raise a KeyboardException, which
-            # will skip the call.
-            signal.pause()
-            # But if another signal arrives before the alarm, pause
-            # may return early.
-            time.sleep(1)
-        except KeyboardInterrupt:
-            pass
-        except:
-            self.fail("Some other exception woke us from pause: %s" %
-                      traceback.format_exc())
-        else:
-            self.fail("pause returned of its own accord, and the signal"
-                      " didn't arrive after another second.")
-
-    # Issue 3864, unknown if this affects earlier versions of freebsd also
-    @unittest.skipIf(sys.platform=='freebsd6',
-        'inter process signals not reliable (do not mix well with threading) '
-        'on freebsd6')
-    def test_main(self):
-        # This function spawns a child process to insulate the main
-        # test-running process from all the signals. It then
-        # communicates with that child process over a pipe and
-        # re-raises information about any exceptions the child
-        # raises. The real work happens in self.run_test().
-        os_done_r, os_done_w = os.pipe()
-        with closing(os.fdopen(os_done_r, 'rb')) as done_r, \
-             closing(os.fdopen(os_done_w, 'wb')) as done_w:
-            child = os.fork()
-            if child == 0:
-                # In the child process; run the test and report results
-                # through the pipe.
-                try:
-                    done_r.close()
-                    # Have to close done_w again here because
-                    # exit_subprocess() will skip the enclosing with block.
-                    with closing(done_w):
-                        try:
-                            self.run_test()
-                        except:
-                            pickle.dump(traceback.format_exc(), done_w)
-                        else:
-                            pickle.dump(None, done_w)
-                except:
-                    print('Uh oh, raised from pickle.')
-                    traceback.print_exc()
-                finally:
-                    exit_subprocess()
-
-            done_w.close()
-            # Block for up to MAX_DURATION seconds for the test to finish.
-            r, w, x = select.select([done_r], [], [], self.MAX_DURATION)
-            if done_r in r:
-                tb = pickle.load(done_r)
-                if tb:
-                    self.fail(tb)
-            else:
-                os.kill(child, signal.SIGKILL)
-                self.fail('Test deadlocked after %d seconds.' %
-                          self.MAX_DURATION)
 
 
 @unittest.skipIf(sys.platform == "win32", "Not valid on Windows")
@@ -223,6 +61,15 @@ class PosixTests(unittest.TestCase):
                          self.trivial_signal_handler)
         signal.signal(signal.SIGHUP, hup)
         self.assertEqual(signal.getsignal(signal.SIGHUP), hup)
+
+    # Issue 3864, unknown if this affects earlier versions of freebsd also
+    @unittest.skipIf(sys.platform=='freebsd6',
+        'inter process signals not reliable (do not mix well with threading) '
+        'on freebsd6')
+    def test_interprocess_signal(self):
+        dirname = os.path.dirname(__file__)
+        script = os.path.join(dirname, 'signalinterproctester.py')
+        assert_python_ok(script)
 
 
 @unittest.skipUnless(sys.platform == "win32", "Windows specific")
