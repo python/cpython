@@ -583,6 +583,7 @@ class PyMemDebugTests(unittest.TestCase):
                  r"        .*\n"
                  r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
                  r"    Data at p: cb cb cb .*\n"
+                 r"\n"
                  r"Fatal Python error: bad trailing pad byte")
         regex = regex.format(ptr=self.PTR_REGEX)
         regex = re.compile(regex, flags=re.DOTALL)
@@ -596,6 +597,7 @@ class PyMemDebugTests(unittest.TestCase):
                  r"    The [0-9] pad bytes at tail={ptr} are FORBIDDENBYTE, as expected.\n"
                  r"    The block was made by call #[0-9]+ to debug malloc/realloc.\n"
                  r"    Data at p: cb cb cb .*\n"
+                 r"\n"
                  r"Fatal Python error: bad ID: Allocated using API 'm', verified using API 'r'\n")
         regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
