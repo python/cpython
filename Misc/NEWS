@@ -91,6 +91,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25320: Handle sockets in directories unittest discovery is scanning.
+  Patch from Victor van den Elzen.
+
 - Issue #16181: cookiejar.http2time() now returns None if year is higher than
   datetime.MAXYEAR.
 

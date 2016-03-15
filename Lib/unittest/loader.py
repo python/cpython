@@ -479,6 +479,8 @@ class TestLoader(object):
                     return tests, True
                 finally:
                     self._loading_packages.discard(name)
+        else:
+            return None, False
 
 
 defaultTestLoader = TestLoader()
