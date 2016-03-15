@@ -803,6 +803,9 @@ Documentation
 Tests
 -----
 
+- Issue #26523: The multiprocessing thread pool (multiprocessing.dummy.Pool)
+  was untested.
+
 - Issue #26015: Added new tests for pickling iterators of mutable sequences.
 
 - Issue #26325: Added test.support.check_no_resource_warning() to check that
