@@ -68,7 +68,7 @@ _declspec(align(4))
     /* filename cannot be NULL: "<unknown>" is used if the Python frame
        filename is NULL */
     PyObject *filename;
-    int lineno;
+    unsigned int lineno;
 } frame_t;
 
 typedef struct {
@@ -268,12 +268,13 @@ tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
     PyCodeObject *code;
     PyObject *filename;
     _Py_hashtable_entry_t *entry;
+    int lineno;
 
     frame->filename = unknown_filename;
-    frame->lineno = PyFrame_GetLineNumber(pyframe);
-    assert(frame->lineno >= 0);
-    if (frame->lineno < 0)
-        frame->lineno = 0;
+    lineno = PyFrame_GetLineNumber(pyframe);
+    if (lineno < 0)
+        lineno = 0;
+    frame->lineno = (unsigned int)lineno;
 
     code = pyframe->f_code;
     if (code == NULL) {
@@ -377,7 +378,6 @@ traceback_get_frames(traceback_t *traceback)
     for (pyframe = tstate->frame; pyframe != NULL; pyframe = pyframe->f_back) {
         tracemalloc_get_frame(pyframe, &traceback->frames[traceback->nframe]);
         assert(traceback->frames[traceback->nframe].filename != NULL);
-        assert(traceback->frames[traceback->nframe].lineno >= 0);
         traceback->nframe++;
         if (traceback->nframe == tracemalloc_config.max_nframe)
             break;
@@ -941,15 +941,6 @@ tracemalloc_stop(void)
     tracemalloc_traceback = NULL;
 }
 
-static PyObject*
-lineno_as_obj(int lineno)
-{
-    if (lineno >= 0)
-        return PyLong_FromLong(lineno);
-    else
-        Py_RETURN_NONE;
-}
-
 PyDoc_STRVAR(tracemalloc_is_tracing_doc,
     "is_tracing()->bool\n"
     "\n"
@@ -992,8 +983,7 @@ frame_to_pyobject(frame_t *frame)
     Py_INCREF(frame->filename);
     PyTuple_SET_ITEM(frame_obj, 0, frame->filename);
 
-    assert(frame->lineno >= 0);
-    lineno_obj = lineno_as_obj(frame->lineno);
+    lineno_obj = PyLong_FromUnsignedLong(frame->lineno);
     if (lineno_obj == NULL) {
         Py_DECREF(frame_obj);
         return NULL;
