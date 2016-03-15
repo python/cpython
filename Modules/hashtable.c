@@ -486,9 +486,9 @@ _Py_hashtable_copy(_Py_hashtable_t *src)
     void *data, *new_data;
 
     dst = _Py_hashtable_new_full(src->data_size, src->num_buckets,
-                            src->hash_func, src->compare_func,
-                            src->copy_data_func, src->free_data_func,
-                            src->get_data_size_func, &src->alloc);
+                                 src->hash_func, src->compare_func,
+                                 src->copy_data_func, src->free_data_func,
+                                 src->get_data_size_func, &src->alloc);
     if (dst == NULL)
         return NULL;
 

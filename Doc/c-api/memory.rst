@@ -349,12 +349,19 @@ Customize Memory Allocators
      allocator functions of the :c:data:`PYMEM_DOMAIN_OBJ` domain (ex:
      :c:func:`PyObject_Malloc`) are called
 
+   On error, the debug hooks use the :mod:`tracemalloc` module to get the
+   traceback where a memory block was allocated. The traceback is only
+   displayed if :mod:`tracemalloc` is tracing Python memory allocations and the
+   memory block was traced.
+
    These hooks are installed by default if Python is compiled in debug
    mode. The :envvar:`PYTHONMALLOC` environment variable can be used to install
    debug hooks on a Python compiled in release mode.
 
    .. versionchanged:: 3.6
       This function now also works on Python compiled in release mode.
+      On error, the debug hooks now use :mod:`tracemalloc` to get the traceback
+      where a memory block was allocated.
 
 
 .. _pymalloc:
