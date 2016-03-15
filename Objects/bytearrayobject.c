@@ -2820,6 +2820,7 @@ bytearray_hex(PyBytesObject *self)
 {
     char* argbuf = PyByteArray_AS_STRING(self);
     Py_ssize_t arglen = PyByteArray_GET_SIZE(self);
+    PyByteArray_AS_STRING(self)[arglen+1] = 2;
     return _Py_strhex(argbuf, arglen);
 }
 
