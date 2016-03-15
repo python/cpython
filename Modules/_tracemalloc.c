@@ -1161,6 +1161,25 @@ finally:
     return get_traces.list;
 }
 
+static traceback_t*
+tracemalloc_get_traceback(const void *ptr)
+{
+    trace_t trace;
+    int found;
+
+    if (!tracemalloc_config.tracing)
+        return NULL;
+
+    TABLES_LOCK();
+    found = _Py_HASHTABLE_GET(tracemalloc_traces, ptr, trace);
+    TABLES_UNLOCK();
+
+    if (!found)
+        return NULL;
+
+    return trace.traceback;
+}
+
 PyDoc_STRVAR(tracemalloc_get_object_traceback_doc,
     "_get_object_traceback(obj)\n"
     "\n"
@@ -1175,11 +1194,7 @@ py_tracemalloc_get_object_traceback(PyObject *self, PyObject *obj)
 {
     PyTypeObject *type;
     void *ptr;
-    trace_t trace;
-    int found;
-
-    if (!tracemalloc_config.tracing)
-        Py_RETURN_NONE;
+    traceback_t *traceback;
 
     type = Py_TYPE(obj);
     if (PyType_IS_GC(type))
@@ -1187,15 +1202,45 @@ py_tracemalloc_get_object_traceback(PyObject *self, PyObject *obj)
     else
         ptr = (void *)obj;
 
-    TABLES_LOCK();
-    found = _Py_HASHTABLE_GET(tracemalloc_traces, ptr, trace);
-    TABLES_UNLOCK();
-
-    if (!found)
+    traceback = tracemalloc_get_traceback(ptr);
+    if (traceback == NULL)
         Py_RETURN_NONE;
 
-    return traceback_to_pyobject(trace.traceback, NULL);
+    return traceback_to_pyobject(traceback, NULL);
 }
+
+#define PUTS(fd, str) _Py_write_noraise(fd, str, (int)strlen(str))
+
+static void
+_PyMem_DumpFrame(int fd, frame_t * frame)
+{
+    PUTS(fd, "  File \"");
+    _Py_DumpASCII(fd, frame->filename);
+    PUTS(fd, "\", line ");
+    _Py_DumpDecimal(fd, frame->lineno);
+    PUTS(fd, "\n");
+}
+
+/* Dump the traceback where a memory block was allocated into file descriptor
+   fd. The function may block on TABLES_LOCK() but it is unlikely. */
+void
+_PyMem_DumpTraceback(int fd, const void *ptr)
+{
+    traceback_t *traceback;
+    int i;
+
+    traceback = tracemalloc_get_traceback(ptr);
+    if (traceback == NULL)
+        return;
+
+    PUTS(fd, "Memory block allocated at (most recent call first):\n");
+    for (i=0; i < traceback->nframe; i++) {
+        _PyMem_DumpFrame(fd, &traceback->frames[i]);
+    }
+    PUTS(fd, "\n");
+}
+
+#undef PUTS
 
 PyDoc_STRVAR(tracemalloc_start_doc,
     "start(nframe: int=1)\n"
