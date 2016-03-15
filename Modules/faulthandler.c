@@ -935,10 +935,18 @@ static PyObject *
 faulthandler_fatal_error_py(PyObject *self, PyObject *args)
 {
     char *message;
-    if (!PyArg_ParseTuple(args, "y:fatal_error", &message))
+    int release_gil = 0;
+    if (!PyArg_ParseTuple(args, "y|i:fatal_error", &message, &release_gil))
         return NULL;
     faulthandler_suppress_crash_report();
-    Py_FatalError(message);
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        Py_FatalError(message);
+        Py_END_ALLOW_THREADS
+    }
+    else {
+        Py_FatalError(message);
+    }
     Py_RETURN_NONE;
 }
 
