@@ -65,6 +65,8 @@ __attribute__((packed))
 _declspec(align(4))
 #endif
 {
+    /* filename cannot be NULL: "<unknown>" is used if the Python frame
+       filename is NULL */
     PyObject *filename;
     int lineno;
 } frame_t;
@@ -987,8 +989,6 @@ frame_to_pyobject(frame_t *frame)
     if (frame_obj == NULL)
         return NULL;
 
-    if (frame->filename == NULL)
-        frame->filename = Py_None;
     Py_INCREF(frame->filename);
     PyTuple_SET_ITEM(frame_obj, 0, frame->filename);
 
