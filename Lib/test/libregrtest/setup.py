@@ -41,8 +41,8 @@ def setup_tests(ns):
     # the packages to prevent later imports to fail when the CWD is different.
     for module in sys.modules.values():
         if hasattr(module, '__path__'):
-            module.__path__ = [os.path.abspath(path)
-                               for path in module.__path__]
+            for index, path in enumerate(module.__path__):
+                module.__path__[index] = os.path.abspath(path)
         if hasattr(module, '__file__'):
             module.__file__ = os.path.abspath(module.__file__)
 
