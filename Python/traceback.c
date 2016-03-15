@@ -479,40 +479,26 @@ PyTraceBack_Print(PyObject *v, PyObject *f)
 
    This function is signal safe. */
 
-static void
-reverse_string(char *text, const size_t len)
+void
+_Py_DumpDecimal(int fd, unsigned long value)
 {
-    char tmp;
-    size_t i, j;
-    if (len == 0)
-        return;
-    for (i=0, j=len-1; i < j; i++, j--) {
-        tmp = text[i];
-        text[i] = text[j];
-        text[j] = tmp;
-    }
-}
+    /* maximum number of characters required for output of %lld or %p.
+       We need at most ceil(log10(256)*SIZEOF_LONG_LONG) digits,
+       plus 1 for the null byte.  53/22 is an upper bound for log10(256). */
+    char buffer[1 + (sizeof(unsigned long)*53-1) / 22 + 1];
+    char *ptr, *end;
 
-/* Format an integer in range [0; 999999] to decimal,
-   and write it into the file fd.
-
-   This function is signal safe. */
-
-static void
-dump_decimal(int fd, int value)
-{
-    char buffer[7];
-    int len;
-    if (value < 0 || 999999 < value)
-        return;
-    len = 0;
+    end = &buffer[Py_ARRAY_LENGTH(buffer) - 1];
+    ptr = end;
+    *ptr = '\0';
     do {
-        buffer[len] = '0' + (value % 10);
+        --ptr;
+        assert(ptr >= buffer);
+        *ptr = '0' + (value % 10);
         value /= 10;
-        len++;
     } while (value);
-    reverse_string(buffer, len);
-    _Py_write_noraise(fd, buffer, len);
+
+    _Py_write_noraise(fd, ptr, end - ptr);
 }
 
 /* Format an integer in range [0; 0xffffffff] to hexadecimal of 'width' digits,
@@ -521,26 +507,29 @@ dump_decimal(int fd, int value)
    This function is signal safe. */
 
 static void
-dump_hexadecimal(int fd, unsigned long value, int width)
+dump_hexadecimal(int fd, unsigned long value, Py_ssize_t width)
 {
-    int len;
-    char buffer[sizeof(unsigned long) * 2 + 1];
-    len = 0;
+    Py_ssize_t size = sizeof(unsigned long) * 2;
+    char buffer[size + 1], *ptr, *end;
+
+    if (width > size)
+        width = size;
+
+    end = &buffer[Py_ARRAY_LENGTH(buffer) - 1];
+    ptr = end;
+    *ptr = '\0';
     do {
-        buffer[len] = Py_hexdigits[value & 15];
+        --ptr;
+        assert(ptr >= buffer);
+        *ptr = Py_hexdigits[value & 15];
         value >>= 4;
-        len++;
-    } while (len < width || value);
-    reverse_string(buffer, len);
-    _Py_write_noraise(fd, buffer, len);
+    } while ((end - ptr) < width || value);
+
+    _Py_write_noraise(fd, ptr, end - ptr);
 }
 
-/* Write an unicode object into the file fd using ascii+backslashreplace.
-
-   This function is signal safe. */
-
-static void
-dump_ascii(int fd, PyObject *text)
+void
+_Py_DumpASCII(int fd, PyObject *text)
 {
     PyASCIIObject *ascii = (PyASCIIObject *)text;
     Py_ssize_t i, size;
@@ -549,6 +538,9 @@ dump_ascii(int fd, PyObject *text)
     void *data = NULL;
     wchar_t *wstr = NULL;
     Py_UCS4 ch;
+
+    if (!PyUnicode_Check(text))
+        return;
 
     size = ascii->length;
     kind = ascii->state.kind;
@@ -574,8 +566,9 @@ dump_ascii(int fd, PyObject *text)
         size = MAX_STRING_LENGTH;
         truncated = 1;
     }
-    else
+    else {
         truncated = 0;
+    }
 
     for (i=0; i < size; i++) {
         if (kind != PyUnicode_WCHAR_KIND)
@@ -600,8 +593,9 @@ dump_ascii(int fd, PyObject *text)
             dump_hexadecimal(fd, ch, 8);
         }
     }
-    if (truncated)
+    if (truncated) {
         PUTS(fd, "...");
+    }
 }
 
 /* Write a frame into the file fd: "File "xxx", line xxx in xxx".
@@ -620,7 +614,7 @@ dump_frame(int fd, PyFrameObject *frame)
         && PyUnicode_Check(code->co_filename))
     {
         PUTS(fd, "\"");
-        dump_ascii(fd, code->co_filename);
+        _Py_DumpASCII(fd, code->co_filename);
         PUTS(fd, "\"");
     } else {
         PUTS(fd, "???");
@@ -629,14 +623,21 @@ dump_frame(int fd, PyFrameObject *frame)
     /* PyFrame_GetLineNumber() was introduced in Python 2.7.0 and 3.2.0 */
     lineno = PyCode_Addr2Line(code, frame->f_lasti);
     PUTS(fd, ", line ");
-    dump_decimal(fd, lineno);
+    if (lineno >= 0) {
+        _Py_DumpDecimal(fd, (unsigned long)lineno);
+    }
+    else {
+        PUTS(fd, "???");
+    }
     PUTS(fd, " in ");
 
     if (code != NULL && code->co_name != NULL
-        && PyUnicode_Check(code->co_name))
-        dump_ascii(fd, code->co_name);
-    else
+       && PyUnicode_Check(code->co_name)) {
+        _Py_DumpASCII(fd, code->co_name);
+    }
+    else {
         PUTS(fd, "???");
+    }
 
     PUTS(fd, "\n");
 }
@@ -692,7 +693,9 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
         PUTS(fd, "Current thread 0x");
     else
         PUTS(fd, "Thread 0x");
-    dump_hexadecimal(fd, (unsigned long)tstate->thread_id, sizeof(unsigned long)*2);
+    dump_hexadecimal(fd,
+                     (unsigned long)tstate->thread_id,
+                     sizeof(unsigned long) * 2);
     PUTS(fd, " (most recent call first):\n");
 }
 
