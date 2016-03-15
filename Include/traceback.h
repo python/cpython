@@ -67,6 +67,24 @@ PyAPI_DATA(const char*) _Py_DumpTracebackThreads(
     PyThreadState *current_thread);
 
 
+#ifndef Py_LIMITED_API
+
+/* Write a Unicode object into the file descriptor fd. Encode the string to
+   ASCII using the backslashreplace error handler.
+
+   Do nothing if text is not a Unicode object. The function accepts Unicode
+   string which is not ready (PyUnicode_WCHAR_KIND).
+
+   This function is signal safe. */
+PyAPI_FUNC(void) _Py_DumpASCII(int fd, PyObject *text);
+
+/* Format an integer as decimal into the file descriptor fd.
+
+   This function is signal safe. */
+PyAPI_FUNC(void) _Py_DumpDecimal(int fd, unsigned long value);
+
+#endif   /* !Py_LIMITED_API */
+
 #ifdef __cplusplus
 }
 #endif
