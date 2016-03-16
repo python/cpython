@@ -707,10 +707,55 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
    handlers if signals were received. */
 const char*
 _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
-                         PyThreadState *current_thread)
+                         PyThreadState *current_tstate)
 {
     PyThreadState *tstate;
     unsigned int nthreads;
+
+#ifdef WITH_THREAD
+    if (current_tstate == NULL) {
+        /* _Py_DumpTracebackThreads() is called from signal handlers by
+           faulthandler.
+
+           SIGSEGV, SIGFPE, SIGABRT, SIGBUS and SIGILL are synchronous signals
+           and are thus delivered to the thread that caused the fault. Get the
+           Python thread state of the current thread.
+
+           PyThreadState_Get() doesn't give the state of the thread that caused
+           the fault if the thread released the GIL, and so this function
+           cannot be used. Read the thread local storage (TLS) instead: call
+           PyGILState_GetThisThreadState(). */
+        current_tstate = PyGILState_GetThisThreadState();
+    }
+
+    if (interp == NULL) {
+        if (current_tstate == NULL) {
+            interp = _PyGILState_GetInterpreterStateUnsafe();
+            if (interp == NULL) {
+                /* We need the interpreter state to get Python threads */
+                return "unable to get the interpreter state";
+            }
+        }
+        else {
+            interp = current_tstate->interp;
+        }
+    }
+#else
+    if (current_tstate == NULL) {
+        /* Call _PyThreadState_UncheckedGet() instead of PyThreadState_Get()
+           to not fail with a fatal error if the thread state is NULL. */
+        current_thread = _PyThreadState_UncheckedGet();
+    }
+
+    if (interp == NULL) {
+        if (current_tstate == NULL) {
+            /* We need the interpreter state to get Python threads */
+            return "unable to get the interpreter state";
+        }
+        interp = current_tstate->interp;
+    }
+#endif
+    assert(interp != NULL);
 
     /* Get the current interpreter from the current thread */
     tstate = PyInterpreterState_ThreadHead(interp);
@@ -729,7 +774,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
             PUTS(fd, "...\n");
             break;
         }
-        write_thread_id(fd, tstate, tstate == current_thread);
+        write_thread_id(fd, tstate, tstate == current_tstate);
         dump_traceback(fd, tstate, 0);
         tstate = PyThreadState_Next(tstate);
         nthreads++;

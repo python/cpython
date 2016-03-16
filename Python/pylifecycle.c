@@ -1275,25 +1275,11 @@ initstdio(void)
 static void
 _Py_FatalError_DumpTracebacks(int fd)
 {
-    PyThreadState *tstate;
-
-#ifdef WITH_THREAD
-    /* PyGILState_GetThisThreadState() works even if the GIL was released */
-    tstate = PyGILState_GetThisThreadState();
-#else
-    tstate = PyThreadState_GET();
-#endif
-    if (tstate == NULL) {
-        /* _Py_DumpTracebackThreads() requires the thread state to display
-         * frames */
-        return;
-    }
-
     fputc('\n', stderr);
     fflush(stderr);
 
     /* display the current Python stack */
-    _Py_DumpTracebackThreads(fd, tstate->interp, tstate);
+    _Py_DumpTracebackThreads(fd, NULL, NULL);
 }
 
 /* Print the current exception (if an exception is set) with its traceback,
