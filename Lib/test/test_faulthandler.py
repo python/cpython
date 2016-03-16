@@ -58,8 +58,9 @@ class FaultHandlerTests(unittest.TestCase):
             pass_fds.append(fd)
         with support.SuppressCrashReport():
             process = script_helper.spawn_python('-c', code, pass_fds=pass_fds)
-        stdout, stderr = process.communicate()
-        exitcode = process.wait()
+            with process:
+                stdout, stderr = process.communicate()
+                exitcode = process.wait()
         output = support.strip_python_stderr(stdout)
         output = output.decode('ascii', 'backslashreplace')
         if filename:
@@ -73,14 +74,11 @@ class FaultHandlerTests(unittest.TestCase):
             with open(fd, "rb", closefd=False) as fp:
                 output = fp.read()
             output = output.decode('ascii', 'backslashreplace')
-        output = re.sub('Current thread 0x[0-9a-f]+',
-                        'Current thread XXX',
-                        output)
         return output.splitlines(), exitcode
 
     def check_fatal_error(self, code, line_number, name_regex,
                           filename=None, all_threads=True, other_regex=None,
-                          fd=None):
+                          fd=None, know_current_thread=True):
         """
         Check that the fault handler for fatal errors is enabled and check the
         traceback from the child process output.
@@ -88,19 +86,22 @@ class FaultHandlerTests(unittest.TestCase):
         Raise an error if the output doesn't match the expected format.
         """
         if all_threads:
-            header = 'Current thread XXX (most recent call first)'
+            if know_current_thread:
+                header = 'Current thread 0x[0-9a-f]+'
+            else:
+                header = 'Thread 0x[0-9a-f]+'
         else:
-            header = 'Stack (most recent call first)'
+            header = 'Stack'
         regex = """
             ^Fatal Python error: {name}
 
-            {header}:
+            {header} \(most recent call first\):
               File "<string>", line {lineno} in <module>
             """
         regex = dedent(regex.format(
             lineno=line_number,
             name=name_regex,
-            header=re.escape(header))).strip()
+            header=header)).strip()
         if other_regex:
             regex += '|' + other_regex
         output, exitcode = self.get_output(code, filename=filename, fd=fd)
@@ -128,6 +129,17 @@ class FaultHandlerTests(unittest.TestCase):
             """,
             3,
             'Segmentation fault')
+
+    @unittest.skipIf(not HAVE_THREADS, 'need threads')
+    def test_fatal_error_c_thread(self):
+        self.check_fatal_error("""
+            import faulthandler
+            faulthandler.enable()
+            faulthandler._fatal_error_c_thread()
+            """,
+            3,
+            'in new thread',
+            know_current_thread=False)
 
     def test_sigabrt(self):
         self.check_fatal_error("""
@@ -465,7 +477,7 @@ class FaultHandlerTests(unittest.TestCase):
               File ".*threading.py", line [0-9]+ in _bootstrap_inner
               File ".*threading.py", line [0-9]+ in _bootstrap
 
-            Current thread XXX \(most recent call first\):
+            Current thread 0x[0-9a-f]+ \(most recent call first\):
               File "<string>", line {lineno} in dump
               File "<string>", line 28 in <module>$
             """
@@ -637,7 +649,7 @@ class FaultHandlerTests(unittest.TestCase):
         trace = '\n'.join(trace)
         if not unregister:
             if all_threads:
-                regex = 'Current thread XXX \(most recent call first\):\n'
+                regex = 'Current thread 0x[0-9a-f]+ \(most recent call first\):\n'
             else:
                 regex = 'Stack \(most recent call first\):\n'
             regex = expected_traceback(14, 32, regex)

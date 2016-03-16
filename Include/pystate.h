@@ -243,15 +243,23 @@ PyAPI_FUNC(void) PyGILState_Release(PyGILState_STATE);
 */
 PyAPI_FUNC(PyThreadState *) PyGILState_GetThisThreadState(void);
 
-/* Helper/diagnostic function - return 1 if the current thread
- * currently holds the GIL, 0 otherwise
- */
 #ifndef Py_LIMITED_API
 /* Issue #26558: Flag to disable PyGILState_Check().
-   If set, PyGILState_Check() always return 1. */
+   If set to non-zero, PyGILState_Check() always return 1. */
 PyAPI_DATA(int) _PyGILState_check_enabled;
 
+/* Helper/diagnostic function - return 1 if the current thread
+   currently holds the GIL, 0 otherwise.
+
+   The function returns 1 if _PyGILState_check_enabled is non-zero. */
 PyAPI_FUNC(int) PyGILState_Check(void);
+
+/* Unsafe function to get the single PyInterpreterState used by this process'
+   GILState implementation.
+
+   Return NULL before _PyGILState_Init() is called and after _PyGILState_Fini()
+   is called. */
+PyAPI_FUNC(PyInterpreterState *) _PyGILState_GetInterpreterStateUnsafe(void);
 #endif
 
 #endif   /* #ifdef WITH_THREAD */

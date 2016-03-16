@@ -202,8 +202,9 @@ faulthandler_get_fileno(PyObject **file_ptr)
 static PyThreadState*
 get_thread_state(void)
 {
-    PyThreadState *tstate = PyThreadState_Get();
+    PyThreadState *tstate = _PyThreadState_UncheckedGet();
     if (tstate == NULL) {
+        /* just in case but very unlikely... */
         PyErr_SetString(PyExc_RuntimeError,
                         "unable to get the current thread state");
         return NULL;
@@ -234,11 +235,12 @@ faulthandler_dump_traceback(int fd, int all_threads,
        PyGILState_GetThisThreadState(). */
     tstate = PyGILState_GetThisThreadState();
 #else
-    tstate = PyThreadState_Get();
+    tstate = _PyThreadState_UncheckedGet();
 #endif
 
-    if (all_threads)
-        _Py_DumpTracebackThreads(fd, interp, tstate);
+    if (all_threads) {
+        (void)_Py_DumpTracebackThreads(fd, NULL, tstate);
+    }
     else {
         if (tstate != NULL)
             _Py_DumpTraceback(fd, tstate);
@@ -272,7 +274,7 @@ faulthandler_dump_traceback_py(PyObject *self,
         return NULL;
 
     if (all_threads) {
-        errmsg = _Py_DumpTracebackThreads(fd, tstate->interp, tstate);
+        errmsg = _Py_DumpTracebackThreads(fd, NULL, tstate);
         if (errmsg != NULL) {
             PyErr_SetString(PyExc_RuntimeError, errmsg);
             return NULL;
@@ -469,7 +471,6 @@ faulthandler_thread(void *unused)
 {
     PyLockStatus st;
     const char* errmsg;
-    PyThreadState *current;
     int ok;
 #if defined(HAVE_PTHREAD_SIGMASK) && !defined(HAVE_BROKEN_PTHREAD_SIGMASK)
     sigset_t set;
@@ -489,12 +490,9 @@ faulthandler_thread(void *unused)
         /* Timeout => dump traceback */
         assert(st == PY_LOCK_FAILURE);
 
-        /* get the thread holding the GIL, NULL if no thread hold the GIL */
-        current = _PyThreadState_UncheckedGet();
-
         _Py_write_noraise(thread.fd, thread.header, (int)thread.header_len);
 
-        errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, current);
+        errmsg = _Py_DumpTracebackThreads(thread.fd, thread.interp, NULL);
         ok = (errmsg == NULL);
 
         if (thread.exit)
@@ -894,7 +892,7 @@ static PyObject *
 faulthandler_sigsegv(PyObject *self, PyObject *args)
 {
     int release_gil = 0;
-    if (!PyArg_ParseTuple(args, "|i:_read_null", &release_gil))
+    if (!PyArg_ParseTuple(args, "|i:_sigsegv", &release_gil))
         return NULL;
 
     if (release_gil) {
@@ -906,6 +904,49 @@ faulthandler_sigsegv(PyObject *self, PyObject *args)
     }
     Py_RETURN_NONE;
 }
+
+#ifdef WITH_THREAD
+static void
+faulthandler_fatal_error_thread(void *plock)
+{
+    PyThread_type_lock *lock = (PyThread_type_lock *)plock;
+
+    Py_FatalError("in new thread");
+
+    /* notify the caller that we are done */
+    PyThread_release_lock(lock);
+}
+
+static PyObject *
+faulthandler_fatal_error_c_thread(PyObject *self, PyObject *args)
+{
+    long thread;
+    PyThread_type_lock lock;
+
+    faulthandler_suppress_crash_report();
+
+    lock = PyThread_allocate_lock();
+    if (lock == NULL)
+        return PyErr_NoMemory();
+
+    PyThread_acquire_lock(lock, WAIT_LOCK);
+
+    thread = PyThread_start_new_thread(faulthandler_fatal_error_thread, lock);
+    if (thread == -1) {
+        PyThread_free_lock(lock);
+        PyErr_SetString(PyExc_RuntimeError, "unable to start the thread");
+        return NULL;
+    }
+
+    /* wait until the thread completes: it will never occur, since Py_FatalError()
+       exits the process immedialty. */
+    PyThread_acquire_lock(lock, WAIT_LOCK);
+    PyThread_release_lock(lock);
+    PyThread_free_lock(lock);
+
+    Py_RETURN_NONE;
+}
+#endif
 
 static PyObject *
 faulthandler_sigfpe(PyObject *self, PyObject *args)
@@ -1065,6 +1106,11 @@ static PyMethodDef module_methods[] = {
                "a SIGSEGV or SIGBUS signal depending on the platform")},
     {"_sigsegv", faulthandler_sigsegv, METH_VARARGS,
      PyDoc_STR("_sigsegv(release_gil=False): raise a SIGSEGV signal")},
+#ifdef WITH_THREAD
+    {"_fatal_error_c_thread", faulthandler_fatal_error_c_thread, METH_NOARGS,
+     PyDoc_STR("fatal_error_c_thread(): "
+               "call Py_FatalError() in a new C thread.")},
+#endif
     {"_sigabrt", faulthandler_sigabrt, METH_NOARGS,
      PyDoc_STR("_sigabrt(): raise a SIGABRT signal")},
     {"_sigfpe", (PyCFunction)faulthandler_sigfpe, METH_NOARGS,
