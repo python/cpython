@@ -509,13 +509,13 @@ _Py_DumpDecimal(int fd, unsigned long value)
 static void
 dump_hexadecimal(int fd, unsigned long value, Py_ssize_t width)
 {
-    Py_ssize_t size = sizeof(unsigned long) * 2;
-    char buffer[size + 1], *ptr, *end;
+    char buffer[sizeof(unsigned long) * 2 + 1], *ptr, *end;
+    const Py_ssize_t size = Py_ARRAY_LENGTH(buffer) - 1;
 
     if (width > size)
         width = size;
 
-    end = &buffer[Py_ARRAY_LENGTH(buffer) - 1];
+    end = &buffer[size];
     ptr = end;
     *ptr = '\0';
     do {
