@@ -1463,7 +1463,7 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
     if(!buf_size)
         return FALSE;
 
-    buf = PyMem_New(wchar_t, buf_size+1);
+    buf = (wchar_t *)PyMem_RawMalloc((buf_size + 1) * sizeof(wchar_t));
     if (!buf) {
         SetLastError(ERROR_OUTOFMEMORY);
         return FALSE;
@@ -1473,12 +1473,12 @@ get_target_path(HANDLE hdl, wchar_t **target_path)
                        buf, buf_size, VOLUME_NAME_DOS);
 
     if(!result_length) {
-        PyMem_Free(buf);
+        PyMem_RawFree(buf);
         return FALSE;
     }
 
     if(!CloseHandle(hdl)) {
-        PyMem_Free(buf);
+        PyMem_RawFree(buf);
         return FALSE;
     }
 
@@ -1563,7 +1563,7 @@ win32_xstat_impl(const char *path, struct _Py_stat_struct *result,
                     return -1;
 
                 code = win32_xstat_impl_w(target_path, result, FALSE);
-                PyMem_Free(target_path);
+                PyMem_RawFree(target_path);
                 return code;
             }
         } else
@@ -1653,7 +1653,7 @@ win32_xstat_impl_w(const wchar_t *path, struct _Py_stat_struct *result,
                     return -1;
 
                 code = win32_xstat_impl_w(target_path, result, FALSE);
-                PyMem_Free(target_path);
+                PyMem_RawFree(target_path);
                 return code;
             }
         } else
