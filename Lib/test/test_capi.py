@@ -602,14 +602,23 @@ class PyMemDebugTests(unittest.TestCase):
         regex = regex.format(ptr=self.PTR_REGEX)
         self.assertRegex(out, regex)
 
-    def test_pyobject_malloc_without_gil(self):
-        # Calling PyObject_Malloc() without holding the GIL must raise an
-        # error in debug mode.
-        code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
+    def check_malloc_without_gil(self, code):
         out = self.check(code)
         expected = ('Fatal Python error: Python memory allocator called '
                     'without holding the GIL')
         self.assertIn(expected, out)
+
+    def test_pymem_malloc_without_gil(self):
+        # Debug hooks must raise an error if PyMem_Malloc() is called
+        # without holding the GIL
+        code = 'import _testcapi; _testcapi.pymem_malloc_without_gil()'
+        self.check_malloc_without_gil(code)
+
+    def test_pyobject_malloc_without_gil(self):
+        # Debug hooks must raise an error if PyObject_Malloc() is called
+        # without holding the GIL
+        code = 'import _testcapi; _testcapi.pyobject_malloc_without_gil()'
+        self.check_malloc_without_gil(code)
 
 
 class PyMemMallocDebugTests(PyMemDebugTests):
