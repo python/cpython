@@ -10,6 +10,10 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #26563: Debug hooks on Python memory allocators now raise a fatal
+  error if functions of the :c:func:`PyMem_Malloc` family are called without
+  holding the GIL.
+
 - Issue #26564: On error, the debug hooks on Python memory allocators now use
   the :mod:`tracemalloc` module to get the traceback where a memory block was
   allocated.

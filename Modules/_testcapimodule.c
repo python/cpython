@@ -3644,10 +3644,28 @@ pymem_api_misuse(PyObject *self, PyObject *args)
 }
 
 static PyObject*
+pymem_malloc_without_gil(PyObject *self, PyObject *args)
+{
+    char *buffer;
+
+    /* Deliberate bug to test debug hooks on Python memory allocators:
+       call PyMem_Malloc() without holding the GIL */
+    Py_BEGIN_ALLOW_THREADS
+    buffer = PyMem_Malloc(10);
+    Py_END_ALLOW_THREADS
+
+    PyMem_Free(buffer);
+
+    Py_RETURN_NONE;
+}
+
+static PyObject*
 pyobject_malloc_without_gil(PyObject *self, PyObject *args)
 {
     char *buffer;
 
+    /* Deliberate bug to test debug hooks on Python memory allocators:
+       call PyObject_Malloc() without holding the GIL */
     Py_BEGIN_ALLOW_THREADS
     buffer = PyObject_Malloc(10);
     Py_END_ALLOW_THREADS
@@ -3841,6 +3859,7 @@ static PyMethodDef TestMethods[] = {
     {"get_recursion_depth", get_recursion_depth, METH_NOARGS},
     {"pymem_buffer_overflow", pymem_buffer_overflow, METH_NOARGS},
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
+    {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
     {NULL, NULL} /* sentinel */
 };
