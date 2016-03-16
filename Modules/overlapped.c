@@ -238,7 +238,7 @@ PostToQueueCallback(PVOID lpParameter, BOOL TimerOrWaitFired)
     PostQueuedCompletionStatus(p->CompletionPort, TimerOrWaitFired,
                                0, p->Overlapped);
     /* ignore possible error! */
-    PyMem_Free(p);
+    PyMem_RawFree(p);
 }
 
 PyDoc_STRVAR(
@@ -262,7 +262,10 @@ overlapped_RegisterWaitWithQueue(PyObject *self, PyObject *args)
                           &Milliseconds))
         return NULL;
 
-    pdata = PyMem_Malloc(sizeof(struct PostCallbackData));
+    /* Use PyMem_RawMalloc() rather than PyMem_Malloc(), since
+       PostToQueueCallback() will call PyMem_Free() from a new C thread
+       which doesn't hold the GIL. */
+    pdata = PyMem_RawMalloc(sizeof(struct PostCallbackData));
     if (pdata == NULL)
         return SetFromWindowsErr(0);
 
@@ -273,7 +276,7 @@ overlapped_RegisterWaitWithQueue(PyObject *self, PyObject *args)
             pdata, Milliseconds,
             WT_EXECUTEINWAITTHREAD | WT_EXECUTEONLYONCE))
     {
-        PyMem_Free(pdata);
+        PyMem_RawFree(pdata);
         return SetFromWindowsErr(0);
     }
 
