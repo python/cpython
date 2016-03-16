@@ -198,7 +198,7 @@ static PyMemAllocatorEx _PyMem_Raw = {
 
 static PyMemAllocatorEx _PyMem = {
 #ifdef Py_DEBUG
-    &_PyMem_Debug.mem, PYRAWDBG_FUNCS
+    &_PyMem_Debug.mem, PYDBG_FUNCS
 #else
     NULL, PYMEM_FUNCS
 #endif
@@ -321,16 +321,16 @@ PyMem_SetupDebugHooks(void)
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &alloc);
     }
 
-    if (_PyMem.malloc != _PyMem_DebugRawMalloc) {
-        alloc.ctx = &_PyMem_Debug.mem;
-        PyMem_GetAllocator(PYMEM_DOMAIN_MEM, &_PyMem_Debug.mem.alloc);
-        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &alloc);
-    }
-
     alloc.malloc = _PyMem_DebugMalloc;
     alloc.calloc = _PyMem_DebugCalloc;
     alloc.realloc = _PyMem_DebugRealloc;
     alloc.free = _PyMem_DebugFree;
+
+    if (_PyMem.malloc != _PyMem_DebugMalloc) {
+        alloc.ctx = &_PyMem_Debug.mem;
+        PyMem_GetAllocator(PYMEM_DOMAIN_MEM, &_PyMem_Debug.mem.alloc);
+        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &alloc);
+    }
 
     if (_PyObject.malloc != _PyMem_DebugMalloc) {
         alloc.ctx = &_PyMem_Debug.obj;
