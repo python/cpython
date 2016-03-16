@@ -714,6 +714,12 @@ _PyGILState_Init(PyInterpreterState *i, PyThreadState *t)
     _PyGILState_NoteThreadState(t);
 }
 
+PyInterpreterState *
+_PyGILState_GetInterpreterStateUnsafe(void)
+{
+    return autoInterpreterState;
+}
+
 void
 _PyGILState_Fini(void)
 {

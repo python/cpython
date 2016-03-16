@@ -53,19 +53,32 @@ PyAPI_DATA(void) _Py_DumpTraceback(
     PyThreadState *tstate);
 
 /* Write the traceback of all threads into the file 'fd'. current_thread can be
-   NULL. Return NULL on success, or an error message on error.
+   NULL.
+
+   Return NULL on success, or an error message on error.
 
    This function is written for debug purpose only. It calls
    _Py_DumpTraceback() for each thread, and so has the same limitations. It
    only write the traceback of the first 100 threads: write "..." if there are
    more threads.
 
+   If current_tstate is NULL, the function tries to get the Python thread state
+   of the current thread. It is not an error if the function is unable to get
+   the current Python thread state.
+
+   If interp is NULL, the function tries to get the interpreter state from
+   the current Python thread state, or from
+   _PyGILState_GetInterpreterStateUnsafe() in last resort.
+
+   It is better to pass NULL to interp and current_tstate, the function tries
+   different options to retrieve these informations.
+
    This function is signal safe. */
 
 PyAPI_DATA(const char*) _Py_DumpTracebackThreads(
-    int fd, PyInterpreterState *interp,
-    PyThreadState *current_thread);
-
+    int fd,
+    PyInterpreterState *interp,
+    PyThreadState *current_tstate);
 
 #ifndef Py_LIMITED_API
 
