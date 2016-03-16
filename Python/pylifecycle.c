@@ -1354,16 +1354,16 @@ Py_FatalError(const char *msg)
     if (!_Py_FatalError_PrintExc(fd))
         _Py_FatalError_DumpTracebacks(fd);
 
+    /* The main purpose of faulthandler is to display the traceback. We already
+     * did our best to display it. So faulthandler can now be disabled.
+     * (Don't trigger it on abort().) */
+    _PyFaulthandler_Fini();
+
     /* Check if the current Python thread hold the GIL */
     if (PyThreadState_GET() != NULL) {
         /* Flush sys.stdout and sys.stderr */
         flush_std_files();
     }
-
-    /* The main purpose of faulthandler is to display the traceback. We already
-     * did our best to display it. So faulthandler can now be disabled.
-     * (Don't trigger it on abort().) */
-    _PyFaulthandler_Fini();
 
 #ifdef MS_WINDOWS
     len = strlen(msg);
