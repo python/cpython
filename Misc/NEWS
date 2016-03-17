@@ -319,6 +319,9 @@ Tests
 - Issue #25616: Tests for OrderedDict are extracted from test_collections
   into separate file test_ordered_dict.
 
+- Issue #26583: Skip test_timestamp_overflow in test_import if bytecode
+  files cannot be written.
+
 Build
 -----
 
