@@ -1258,15 +1258,15 @@ The exact functionality is system dependent.
 
 On Linux, :func:`find_library` tries to run external programs
 (``/sbin/ldconfig``, ``gcc``, and ``objdump``) to find the library file.  It
-returns the absolute path of the library file.  Here are some examples::
+returns the filename of the library file.  Here are some examples::
 
    >>> from ctypes.util import find_library
    >>> find_library("m")
-   '/lib/x86_64-linux-gnu/libm.so.6'
+   'libm.so.6'
    >>> find_library("c")
-   '/lib/x86_64-linux-gnu/libc.so.6'
+   'libc.so.6'
    >>> find_library("bz2")
-   '/lib/x86_64-linux-gnu/libbz2.so.1.0'
+   'libbz2.so.1.0'
    >>>
 
 On OS X, :func:`find_library` tries several predefined naming schemes and paths
@@ -1834,9 +1834,6 @@ Utility functions
    no library can be found, returns ``None``.
 
    The exact functionality is system dependent.
-
-   .. versionchanged:: 3.6
-      On Linux it returns an absolute path.
 
 
 .. function:: find_msvcrt()
