@@ -218,7 +218,7 @@ _ssl
     functionality to _ssl or _hashlib. They will not clean up their output
     with the normal Clean target; CleanAll should be used instead.
 _sqlite3
-    Wraps SQLite 3.6.21, which is itself built by sqlite3.vcxproj
+    Wraps SQLite 3.8.11.0, which is itself built by sqlite3.vcxproj
     Homepage:
         http://www.sqlite.org/
 _tkinter

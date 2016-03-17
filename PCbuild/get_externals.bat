@@ -59,7 +59,7 @@ set libraries=%libraries%                                    bzip2-1.0.6
 if NOT "%IncludeBsddb%"=="false" set libraries=%libraries%   db-4.7.25.0
 if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     nasm-2.11.06
 if NOT "%IncludeSSL%"=="false" set libraries=%libraries%     openssl-1.0.2g
-set libraries=%libraries%                                    sqlite-3.6.21
+set libraries=%libraries%                                    sqlite-3.8.11.0
 if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tcl-8.5.15.0
 if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tk-8.5.15.0
 if NOT "%IncludeTkinter%"=="false" set libraries=%libraries% tix-8.4.3.5
