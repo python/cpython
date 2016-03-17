@@ -58,6 +58,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26313: ssl.py _load_windows_store_certs fails if windows cert store
+  is empty. Patch by Baji.
+
 - Issue #26513: Fixes platform module detection of Windows Server
 
 - Issue #23718: Fixed parsing time in week 0 before Jan 1.  Original patch by

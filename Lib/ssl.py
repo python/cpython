@@ -380,7 +380,8 @@ class SSLContext(_SSLContext):
             if encoding == "x509_asn":
                 if trust is True or purpose.oid in trust:
                     certs.extend(cert)
-        self.load_verify_locations(cadata=certs)
+        if certs:
+            self.load_verify_locations(cadata=certs)
         return certs
 
     def load_default_certs(self, purpose=Purpose.SERVER_AUTH):
