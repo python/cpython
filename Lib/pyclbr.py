@@ -142,10 +142,10 @@ def _readmodule(module, path, inpackage=None):
         search_path = path + sys.path
     # XXX This will change once issue19944 lands.
     spec = importlib.util._find_spec_from_path(fullmodule, search_path)
-    fname = spec.loader.get_filename(fullmodule)
     _modules[fullmodule] = dict
-    if spec.loader.is_package(fullmodule):
-        dict['__path__'] = [os.path.dirname(fname)]
+    # is module a package?
+    if spec.submodule_search_locations is not None:
+        dict['__path__'] = spec.submodule_search_locations
     try:
         source = spec.loader.get_source(fullmodule)
         if source is None:
@@ -153,6 +153,8 @@ def _readmodule(module, path, inpackage=None):
     except (AttributeError, ImportError):
         # not Python source, can't do anything with this module
         return dict
+
+    fname = spec.loader.get_filename(fullmodule)
 
     f = io.StringIO(source)
 
