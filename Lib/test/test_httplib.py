@@ -341,8 +341,8 @@ class BasicTest(TestCase):
         self.assertEqual(repr(exc), '''BadStatusLine("\'\'",)''')
 
     def test_partial_reads(self):
-        # if we have a length, the system knows when to close itself
-        # same behaviour than when we read the whole thing with read()
+        # if we have Content-Length, HTTPResponse knows when to close itself,
+        # the same behaviour as when we read the whole thing with read()
         body = "HTTP/1.1 200 Ok\r\nContent-Length: 4\r\n\r\nText"
         sock = FakeSocket(body)
         resp = client.HTTPResponse(sock)
@@ -355,9 +355,24 @@ class BasicTest(TestCase):
         resp.close()
         self.assertTrue(resp.closed)
 
+    def test_mixed_reads(self):
+        # readline() should update the remaining length, so that read() knows
+        # how much data is left and does not raise IncompleteRead
+        body = "HTTP/1.1 200 Ok\r\nContent-Length: 13\r\n\r\nText\r\nAnother"
+        sock = FakeSocket(body)
+        resp = client.HTTPResponse(sock)
+        resp.begin()
+        self.assertEqual(resp.readline(), b'Text\r\n')
+        self.assertFalse(resp.isclosed())
+        self.assertEqual(resp.read(), b'Another')
+        self.assertTrue(resp.isclosed())
+        self.assertFalse(resp.closed)
+        resp.close()
+        self.assertTrue(resp.closed)
+
     def test_partial_readintos(self):
-        # if we have a length, the system knows when to close itself
-        # same behaviour than when we read the whole thing with read()
+        # if we have Content-Length, HTTPResponse knows when to close itself,
+        # the same behaviour as when we read the whole thing with read()
         body = "HTTP/1.1 200 Ok\r\nContent-Length: 4\r\n\r\nText"
         sock = FakeSocket(body)
         resp = client.HTTPResponse(sock)
@@ -827,7 +842,7 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEqual(resp.read(), expected)
         # we should have reached the end of the file
-        self.assertEqual(sock.file.read(100), b"") #we read to the end
+        self.assertEqual(sock.file.read(), b"") #we read to the end
         resp.close()
 
     def test_chunked_sync(self):
@@ -839,19 +854,65 @@ class BasicTest(TestCase):
         resp.begin()
         self.assertEqual(resp.read(), expected)
         # the file should now have our extradata ready to be read
-        self.assertEqual(sock.file.read(100), extradata.encode("ascii")) #we read to the end
+        self.assertEqual(sock.file.read(), extradata.encode("ascii")) #we read to the end
         resp.close()
 
     def test_content_length_sync(self):
         """Check that we don't read past the end of the Content-Length stream"""
-        extradata = "extradata"
+        extradata = b"extradata"
         expected = b"Hello123\r\n"
-        sock = FakeSocket('HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\nHello123\r\n' + extradata)
+        sock = FakeSocket(b'HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n' + expected + extradata)
         resp = client.HTTPResponse(sock, method="GET")
         resp.begin()
         self.assertEqual(resp.read(), expected)
         # the file should now have our extradata ready to be read
-        self.assertEqual(sock.file.read(100), extradata.encode("ascii")) #we read to the end
+        self.assertEqual(sock.file.read(), extradata) #we read to the end
+        resp.close()
+
+    def test_readlines_content_length(self):
+        extradata = b"extradata"
+        expected = b"Hello123\r\n"
+        sock = FakeSocket(b'HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n' + expected + extradata)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        self.assertEqual(resp.readlines(2000), [expected])
+        # the file should now have our extradata ready to be read
+        self.assertEqual(sock.file.read(), extradata) #we read to the end
+        resp.close()
+
+    def test_read1_content_length(self):
+        extradata = b"extradata"
+        expected = b"Hello123\r\n"
+        sock = FakeSocket(b'HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n' + expected + extradata)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        self.assertEqual(resp.read1(2000), expected)
+        # the file should now have our extradata ready to be read
+        self.assertEqual(sock.file.read(), extradata) #we read to the end
+        resp.close()
+
+    def test_readline_bound_content_length(self):
+        extradata = b"extradata"
+        expected = b"Hello123\r\n"
+        sock = FakeSocket(b'HTTP/1.1 200 OK\r\nContent-Length: 10\r\n\r\n' + expected + extradata)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        self.assertEqual(resp.readline(10), expected)
+        self.assertEqual(resp.readline(10), b"")
+        # the file should now have our extradata ready to be read
+        self.assertEqual(sock.file.read(), extradata) #we read to the end
+        resp.close()
+
+    def test_read1_bound_content_length(self):
+        extradata = b"extradata"
+        expected = b"Hello123\r\n"
+        sock = FakeSocket(b'HTTP/1.1 200 OK\r\nContent-Length: 30\r\n\r\n' + expected*3 + extradata)
+        resp = client.HTTPResponse(sock, method="GET")
+        resp.begin()
+        self.assertEqual(resp.read1(20), expected*2)
+        self.assertEqual(resp.read(), expected)
+        # the file should now have our extradata ready to be read
+        self.assertEqual(sock.file.read(), extradata) #we read to the end
         resp.close()
 
 class ExtendedReadTest(TestCase):
