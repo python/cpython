@@ -362,6 +362,10 @@ server.  It provides access to the request headers and the entity
 body.  The response is an iterable object and can be used in a with
 statement.
 
+.. versionchanged:: 3.5
+   The :class:`io.BufferedIOBase` interface is now implemented and
+   all of its reader operations are supported.
+
 
 .. method:: HTTPResponse.read([amt])
 
