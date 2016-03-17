@@ -635,6 +635,8 @@ class HTTPResponse(io.BufferedIOBase):
             return b""
         if self.chunked:
             return self._read1_chunked(n)
+        if self.length is not None and (n < 0 or n > self.length):
+            n = self.length
         try:
             result = self.fp.read1(n)
         except ValueError:
@@ -645,6 +647,8 @@ class HTTPResponse(io.BufferedIOBase):
             result = self.fp.read1(16*1024)
         if not result and n:
             self._close_conn()
+        elif self.length is not None:
+            self.length -= len(result)
         return result
 
     def peek(self, n=-1):
@@ -662,9 +666,13 @@ class HTTPResponse(io.BufferedIOBase):
         if self.chunked:
             # Fallback to IOBase readline which uses peek() and read()
             return super().readline(limit)
+        if self.length is not None and (limit < 0 or limit > self.length):
+            limit = self.length
         result = self.fp.readline(limit)
         if not result and limit:
             self._close_conn()
+        elif self.length is not None:
+            self.length -= len(result)
         return result
 
     def _read1_chunked(self, n):
