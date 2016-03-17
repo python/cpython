@@ -278,6 +278,7 @@ class ImportTests(unittest.TestCase):
             """))
         script_helper.assert_python_ok(testfn)
 
+    @skip_if_dont_write_bytecode
     def test_timestamp_overflow(self):
         # A modification timestamp larger than 2**32 should not be a problem
         # when importing a module (issue #11235).
