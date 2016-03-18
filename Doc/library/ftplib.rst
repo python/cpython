@@ -148,12 +148,6 @@ The module defines the following items:
       typically used by FTP clients to load user authentication information
       before prompting the user.
 
-   .. index:: single: ftpmirror.py
-
-   The file :file:`Tools/scripts/ftpmirror.py` in the Python source distribution is
-   a script that can mirror FTP sites, or portions thereof, using the :mod:`ftplib`
-   module. It can be used as an extended example that applies this module.
-
 
 .. _ftp-objects:
 
