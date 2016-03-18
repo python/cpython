@@ -359,6 +359,56 @@ error:
     PyErr_Clear();
 }
 
+static int
+call_show_warning(PyObject *category, PyObject *text, PyObject *message,
+                  PyObject *filename, int lineno, PyObject *lineno_obj,
+                  PyObject *sourceline)
+{
+    PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
+
+    show_fn = get_warnings_attr("_showwarnmsg");
+    if (show_fn == NULL) {
+        if (PyErr_Occurred())
+            return -1;
+        show_warning(filename, lineno, text, category, sourceline);
+        return 0;
+    }
+
+    if (!PyCallable_Check(show_fn)) {
+        PyErr_SetString(PyExc_TypeError,
+                "warnings._showwarnmsg() must be set to a callable");
+        goto error;
+    }
+
+    warnmsg_cls = get_warnings_attr("WarningMessage");
+    if (warnmsg_cls == NULL) {
+        PyErr_SetString(PyExc_RuntimeError,
+                "unable to get warnings.WarningMessage");
+        goto error;
+    }
+
+    msg = PyObject_CallFunctionObjArgs(warnmsg_cls, message, category,
+            filename, lineno_obj,
+            NULL);
+    Py_DECREF(warnmsg_cls);
+    if (msg == NULL)
+        goto error;
+
+    res = PyObject_CallFunctionObjArgs(show_fn, msg, NULL);
+    Py_DECREF(show_fn);
+    Py_DECREF(msg);
+
+    if (res == NULL)
+        return -1;
+
+    Py_DECREF(res);
+    return 0;
+
+error:
+    Py_XDECREF(show_fn);
+    return -1;
+}
+
 static PyObject *
 warn_explicit(PyObject *category, PyObject *message,
               PyObject *filename, int lineno,
@@ -470,31 +520,9 @@ warn_explicit(PyObject *category, PyObject *message,
     if (rc == 1)  /* Already warned for this module. */
         goto return_none;
     if (rc == 0) {
-        PyObject *show_fxn = get_warnings_attr("showwarning");
-        if (show_fxn == NULL) {
-            if (PyErr_Occurred())
-                goto cleanup;
-            show_warning(filename, lineno, text, category, sourceline);
-        }
-        else {
-            PyObject *res;
-
-            if (!PyCallable_Check(show_fxn)) {
-                PyErr_SetString(PyExc_TypeError,
-                                "warnings.showwarning() must be set to a "
-                                "callable");
-                Py_DECREF(show_fxn);
-                goto cleanup;
-            }
-
-            res = PyObject_CallFunctionObjArgs(show_fxn, message, category,
-                                                filename, lineno_obj,
-                                                NULL);
-            Py_DECREF(show_fxn);
-            Py_XDECREF(res);
-            if (res == NULL)
-                goto cleanup;
-        }
+        if (call_show_warning(category, text, message, filename, lineno,
+                              lineno_obj, sourceline) < 0)
+            goto cleanup;
     }
     else /* if (rc == -1) */
         goto cleanup;
