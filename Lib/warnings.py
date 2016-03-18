@@ -6,24 +6,63 @@ __all__ = ["warn", "warn_explicit", "showwarning",
            "formatwarning", "filterwarnings", "simplefilter",
            "resetwarnings", "catch_warnings"]
 
-
 def showwarning(message, category, filename, lineno, file=None, line=None):
     """Hook to write a warning to a file; replace if you like."""
-    if file is None:
-        file = sys.stderr
-        if file is None:
-            # sys.stderr is None when run with pythonw.exe - warnings get lost
-            return
-    try:
-        file.write(formatwarning(message, category, filename, lineno, line))
-    except OSError:
-        pass # the file (probably stderr) is invalid - this warning gets lost.
+    msg = WarningMessage(message, category, filename, lineno, file, line)
+    _showwarnmsg(msg)
 
 def formatwarning(message, category, filename, lineno, line=None):
     """Function to format a warning the standard way."""
+    msg = WarningMessage(message, category, filename, lineno, None, line)
+    return _formatwarnmsg(msg)
+
+# Keep references to check if the functions were replaced
+_showwarning = showwarning
+_formatwarning = formatwarning
+
+def _showwarnmsg(msg):
+    """Hook to write a warning to a file; replace if you like."""
+    showwarning = globals().get('showwarning', _showwarning)
+    if showwarning is not _showwarning:
+        # warnings.showwarning() was replaced
+        if not callable(showwarning):
+            raise TypeError("warnings.showwarning() must be set to a "
+                            "function or method")
+
+        showwarning(msg.message, msg.category, msg.filename, msg.lineno,
+                    msg.file, msg.line)
+        return
+
+    file = msg.file
+    if file is None:
+        file = sys.stderr
+        if file is None:
+            # sys.stderr is None when run with pythonw.exe:
+            # warnings get lost
+            return
+    text = _formatwarnmsg(msg)
+    try:
+        file.write(text)
+    except OSError:
+        # the file (probably stderr) is invalid - this warning gets lost.
+        pass
+
+def _formatwarnmsg(msg):
+    """Function to format a warning the standard way."""
+    formatwarning = globals().get('formatwarning', _formatwarning)
+    if formatwarning is not _formatwarning:
+        # warnings.formatwarning() was replaced
+        return formatwarning(msg.message, msg.category,
+                             msg.filename, msg.lineno, line=msg.line)
+
     import linecache
-    s =  "%s:%s: %s: %s\n" % (filename, lineno, category.__name__, message)
-    line = linecache.getline(filename, lineno) if line is None else line
+    s =  ("%s:%s: %s: %s\n"
+          % (msg.filename, msg.lineno, msg.category.__name__,
+             msg.message))
+    if msg.line is None:
+        line = linecache.getline(msg.filename, msg.lineno)
+    else:
+        line = msg.line
     if line:
         line = line.strip()
         s += "  %s\n" % line
@@ -293,16 +332,12 @@ def warn_explicit(message, category, filename, lineno,
         raise RuntimeError(
               "Unrecognized action (%r) in warnings.filters:\n %s" %
               (action, item))
-    if not callable(showwarning):
-        raise TypeError("warnings.showwarning() must be set to a "
-                        "function or method")
     # Print message and context
-    showwarning(message, category, filename, lineno)
+    msg = WarningMessage(message, category, filename, lineno)
+    _showwarnmsg(msg)
 
 
 class WarningMessage(object):
-
-    """Holds the result of a single showwarning() call."""
 
     _WARNING_DETAILS = ("message", "category", "filename", "lineno", "file",
                         "line")
@@ -366,11 +401,12 @@ class catch_warnings(object):
         self._module.filters = self._filters[:]
         self._module._filters_mutated()
         self._showwarning = self._module.showwarning
+        self._showwarnmsg = self._module._showwarnmsg
         if self._record:
             log = []
-            def showwarning(*args, **kwargs):
-                log.append(WarningMessage(*args, **kwargs))
-            self._module.showwarning = showwarning
+            def showarnmsg(msg):
+                log.append(msg)
+            self._module._showwarnmsg = showarnmsg
             return log
         else:
             return None
@@ -381,6 +417,7 @@ class catch_warnings(object):
         self._module.filters = self._filters
         self._module._filters_mutated()
         self._module.showwarning = self._showwarning
+        self._module._showwarnmsg = self._showwarnmsg
 
 
 # filters contains a sequence of filter 5-tuples
