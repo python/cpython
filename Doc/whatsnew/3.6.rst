@@ -121,7 +121,7 @@ compiled in release mode using ``PYTHONMALLOC=debug``. Effects of debug hooks:
   functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex: :c:func:`PyObject_Malloc`) and
   :c:data:`PYMEM_DOMAIN_MEM` (ex: :c:func:`PyMem_Malloc`) domains are called.
 
-Checking if the GIL is hold is also a new feature of Python 3.6.
+Checking if the GIL is held is also a new feature of Python 3.6.
 
 See the :c:func:`PyMem_SetupDebugHooks` function for debug hooks on Python
 memory allocators.
