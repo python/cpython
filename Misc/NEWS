@@ -846,6 +846,9 @@ Tests
 Build
 -----
 
+- Issue #17603: Avoid error about nonexistant fileblocks.o file by using a
+  lower-level check for st_blocks in struct stat.
+
 - Issue #26079: Fixing the build output folder for tix-8.4.3.6. Patch by
   Bjoern Thiel.
 
