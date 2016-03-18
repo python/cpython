@@ -1335,7 +1335,7 @@ import, then you should use :func:`importlib.util.find_spec`.
   if spec is None:
       print("can't find the itertools module")
   else:
-      # If you chose to perform the actual import.
+      # If you chose to perform the actual import ...
       module = importlib.util.module_from_spec(spec)
       spec.loader.exec_module(module)
       # Adding the module to sys.modules is optional.
@@ -1359,11 +1359,41 @@ To import a Python source file directly, use the following recipe
   # by name later.
   sys.modules[module_name] = module
 
+For deep customizations of import, you typically want to implement an
+:term:`importer`. This means managing both the :term:`finder` and :term:`loader`
+side of things. For finders there are two flavours to choose from depending on
+your needs: a :term:`meta path finder` or a :term:`path entry finder`. The
+former is what you would put on :attr:`sys.meta_path` while the latter is what
+you create using a :term:`path entry hook` on :attr:`sys.path_hooks` which works
+with :attr:`sys.path` entries to potentially create a finder. This example will
+show you how to register your own importers so that import will use them (for
+creating an importer for yourself, read the documentation for the appropriate
+classes defined within this package)::
+
+  import importlib.machinery
+  import sys
+
+  # For illustrative purposes only.
+  SpamMetaPathFinder = importlib.machinery.PathFinder
+  SpamPathEntryFinder = importlib.machinery.FileFinder
+  loader_details = (importlib.machinery.SourceFileLoader,
+                    importlib.machinery.SOURCE_SUFFIXES)
+
+  # Setting up a meta path finder.
+  # Make sure to put the finder in the proper location in the list in terms of
+  # priority.
+  sys.meta_path.append(SpamMetaPathFinder)
+
+  # Setting up a path entry finder.
+  # Make sure to put the path hook in the proper location in the list in terms
+  # of priority.
+  sys.path_hooks.append(SpamPathEntryFinder.path_hook(loader_details))
+
 Import itself is implemented in Python code, making it possible to
 expose most of the import machinery through importlib. The following
 helps illustrate the various APIs that importlib exposes by providing an
 approximate implementation of
-:func:`importlib.import_module` (Python 3.4 and newer for importlib usage,
+:func:`importlib.import_module` (Python 3.4 and newer for the importlib usage,
 Python 3.6 and newer for other parts of the code).
 ::
 
