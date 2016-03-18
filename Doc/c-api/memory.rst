@@ -346,8 +346,9 @@ Customize Memory Allocators
    - Detect write before the start of the buffer (buffer underflow)
    - Detect write after the end of the buffer (buffer overflow)
    - Check that the :term:`GIL <global interpreter lock>` is held when
-     allocator functions of the :c:data:`PYMEM_DOMAIN_OBJ` domain (ex:
-     :c:func:`PyObject_Malloc`) are called
+     allocator functions of :c:data:`PYMEM_DOMAIN_OBJ` (ex:
+     :c:func:`PyObject_Malloc`) and :c:data:`PYMEM_DOMAIN_MEM` (ex:
+     :c:func:`PyMem_Malloc`) domains are called
 
    On error, the debug hooks use the :mod:`tracemalloc` module to get the
    traceback where a memory block was allocated. The traceback is only
@@ -361,7 +362,9 @@ Customize Memory Allocators
    .. versionchanged:: 3.6
       This function now also works on Python compiled in release mode.
       On error, the debug hooks now use :mod:`tracemalloc` to get the traceback
-      where a memory block was allocated.
+      where a memory block was allocated. The debug hooks now also check
+      if the GIL is hold when functions of :c:data:`PYMEM_DOMAIN_OBJ` and
+      :c:data:`PYMEM_DOMAIN_MEM` domains are called.
 
 
 .. _pymalloc:
