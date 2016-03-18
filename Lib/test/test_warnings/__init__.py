@@ -651,6 +651,17 @@ class _WarningsTests(BaseTest, unittest.TestCase):
                 result = stream.getvalue()
         self.assertIn(text, result)
 
+    def test_showwarnmsg_missing(self):
+        # Test that _showwarnmsg() missing is okay.
+        text = 'del _showwarnmsg test'
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.filterwarnings("always", category=UserWarning)
+            del self.module._showwarnmsg
+            with support.captured_output('stderr') as stream:
+                self.module.warn(text)
+                result = stream.getvalue()
+        self.assertIn(text, result)
+
     def test_showwarning_not_callable(self):
         with original_warnings.catch_warnings(module=self.module):
             self.module.filterwarnings("always", category=UserWarning)
