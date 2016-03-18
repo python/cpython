@@ -639,11 +639,11 @@ conflict.
 
    * ``debug``: install debug hooks on top of the default memory allocator
    * ``malloc_debug``: same as ``malloc`` but also install debug hooks
-   * ``pymalloc_debug``: same as ``pyalloc`` but also install debug hooks
+   * ``pymalloc_debug``: same as ``pymalloc`` but also install debug hooks
 
-   When is compiled in release mode, the default is ``pymalloc``. When Python
-   is compiled in debug mode, the default is ``pymalloc_debug``: debug hooks
-   are installed.
+   When Python is compiled in release mode, the default is ``pymalloc``. When
+   compiled in debug mode, the default is ``pymalloc_debug`` and the debug hooks
+   are used automatically.
 
    If Python is configured without ``pymalloc`` support, ``pymalloc`` and
    ``pymalloc_debug`` are not available, the default is ``malloc`` in release

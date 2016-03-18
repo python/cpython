@@ -363,7 +363,7 @@ Customize Memory Allocators
       This function now also works on Python compiled in release mode.
       On error, the debug hooks now use :mod:`tracemalloc` to get the traceback
       where a memory block was allocated. The debug hooks now also check
-      if the GIL is hold when functions of :c:data:`PYMEM_DOMAIN_OBJ` and
+      if the GIL is held when functions of :c:data:`PYMEM_DOMAIN_OBJ` and
       :c:data:`PYMEM_DOMAIN_MEM` domains are called.
 
 
