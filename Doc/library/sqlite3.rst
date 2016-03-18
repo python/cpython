@@ -595,6 +595,18 @@ Cursor Objects
 
       It is set for ``SELECT`` statements without any matching rows as well.
 
+   .. attribute:: connection
+
+      This read-only attribute provides the SQLite database :class:`Connection`
+      used by the :class:`Cursor` object.  A :class:`Cursor` object created by
+      calling :meth:`con.cursor() <Connection.cursor>` will have a
+      :attr:`connection` attribute that refers to *con*::
+
+         >>> con = sqlite3.connect(":memory:")
+         >>> cur = con.cursor()
+         >>> cur.connection == con
+         True
+
 .. _sqlite3-row-objects:
 
 Row Objects
