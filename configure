@@ -11962,17 +11962,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-$as_echo "#define HAVE_ST_BLOCKS 1" >>confdefs.h
-
-else
-  case " $LIBOBJS " in
-  *" fileblocks.$ac_objext "* ) ;;
-  *) LIBOBJS="$LIBOBJS fileblocks.$ac_objext"
- ;;
-esac
-
 fi
-
 
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for time.h that defines altzone" >&5

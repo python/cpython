@@ -731,10 +731,6 @@
 /* Define to 1 if `tm_zone' is a member of `struct tm'. */
 #undef HAVE_STRUCT_TM_TM_ZONE
 
-/* Define to 1 if your `struct stat' has `st_blocks'. Deprecated, use
-   `HAVE_STRUCT_STAT_ST_BLOCKS' instead. */
-#undef HAVE_ST_BLOCKS
-
 /* Define if you have the 'symlink' function. */
 #undef HAVE_SYMLINK
 

@@ -3439,7 +3439,7 @@ AC_CHECK_MEMBERS([struct stat.st_blksize])
 AC_CHECK_MEMBERS([struct stat.st_flags])
 AC_CHECK_MEMBERS([struct stat.st_gen])
 AC_CHECK_MEMBERS([struct stat.st_birthtime])
-AC_STRUCT_ST_BLOCKS
+AC_CHECK_MEMBERS([struct stat.st_blocks])
 
 AC_MSG_CHECKING(for time.h that defines altzone)
 AC_CACHE_VAL(ac_cv_header_time_altzone,[
