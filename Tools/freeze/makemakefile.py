@@ -17,12 +17,12 @@ def makemakefile(outfp, makevars, files, target):
             base = os.path.basename(file)
             dest = base[:-2] + '.o'
             outfp.write("%s: %s\n" % (dest, file))
-            outfp.write("\t$(CC) $(CFLAGS) $(CPPFLAGS) -c %s\n" % file)
+            outfp.write("\t$(CC) $(PY_CFLAGS) $(PY_CPPFLAGS) -c %s\n" % file)
             files[i] = dest
             deps.append(dest)
 
     outfp.write("\n%s: %s\n" % (target, ' '.join(deps)))
-    outfp.write("\t$(LINKCC) $(LDFLAGS) $(LINKFORSHARED) %s -o %s $(LDLAST)\n" %
+    outfp.write("\t$(LINKCC) $(PY_LDFLAGS) $(LINKFORSHARED) %s -o %s $(LDLAST)\n" %
                 (' '.join(files), target))
 
     outfp.write("\nclean:\n\t-rm -f *.o %s\n" % target)
