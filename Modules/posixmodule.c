@@ -12111,8 +12111,8 @@ ScandirIterator_dealloc(ScandirIterator *iterator)
          */
         ++Py_REFCNT(iterator);
         PyErr_Fetch(&exc, &val, &tb);
-        if (PyErr_ResourceWarning((PyObject *)iterator, 1,
-                                  "unclosed scandir iterator %R", iterator)) {
+        if (PyErr_WarnFormat(PyExc_ResourceWarning, 1,
+                             "unclosed scandir iterator %R", iterator)) {
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning))
                 PyErr_WriteUnraisable((PyObject *) iterator);
