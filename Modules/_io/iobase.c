@@ -827,7 +827,7 @@ PyTypeObject PyIOBase_Type = {
     0,                          /* tp_weaklist */
     0,                          /* tp_del */
     0,                          /* tp_version_tag */
-    (destructor)iobase_finalize, /* tp_finalize */
+    iobase_finalize,            /* tp_finalize */
 };
 
 
