@@ -4170,8 +4170,7 @@ sock_dealloc(PySocketSockObject *s)
         Py_ssize_t old_refcount = Py_REFCNT(s);
         ++Py_REFCNT(s);
         PyErr_Fetch(&exc, &val, &tb);
-        if (PyErr_WarnFormat(PyExc_ResourceWarning, 1,
-                             "unclosed %R", s))
+        if (PyErr_ResourceWarning(s, 1, "unclosed %R", s))
             /* Spurious errors can appear at shutdown */
             if (PyErr_ExceptionMatches(PyExc_Warning))
                 PyErr_WriteUnraisable((PyObject *) s);
