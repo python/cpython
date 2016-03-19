@@ -117,6 +117,9 @@ class PicklableFixedOffset(FixedOffset):
     def __init__(self, offset=None, name=None, dstoffset=None):
         FixedOffset.__init__(self, offset, name, dstoffset)
 
+    def __getstate__(self):
+        return self.__dict__
+
 class _TZInfo(tzinfo):
     def utcoffset(self, datetime_module):
         return random.random()
