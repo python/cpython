@@ -788,6 +788,8 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
         res = assert_python_ok('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
 
         stderr = res.err.decode('ascii', 'replace')
+        # normalize newlines
+        stderr = '\n'.join(stderr.splitlines())
         stderr = re.sub('<.*>', '<...>', stderr)
         expected = textwrap.dedent('''
             {fname}:5: ResourceWarning: unclosed file <...>
