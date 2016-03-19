@@ -54,6 +54,9 @@ The following functions are defined:
 
    Return the shadow password database entry for the given user name.
 
+   .. versionchanged:: 3.6
+      Raises a :exc:`PermissionError` instead of :exc:`KeyError` if the user
+      doesn't have privileges.
 
 .. function:: getspall()
 

@@ -137,7 +137,10 @@ spwd_getspnam_impl(PyModuleDef *module, PyObject *arg)
     if (PyBytes_AsStringAndSize(bytes, &name, NULL) == -1)
         goto out;
     if ((p = getspnam(name)) == NULL) {
-        PyErr_SetString(PyExc_KeyError, "getspnam(): name not found");
+        if (errno != 0)
+            PyErr_SetFromErrno(PyExc_OSError);
+        else
+            PyErr_SetString(PyExc_KeyError, "getspnam(): name not found");
         goto out;
     }
     retval = mkspent(p);
