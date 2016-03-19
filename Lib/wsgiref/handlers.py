@@ -226,7 +226,7 @@ class BaseHandler:
         self.headers = self.headers_class(headers)
         status = self._convert_string_type(status, "Status")
         assert len(status)>=4,"Status must be at least 4 characters"
-        assert int(status[:3]),"Status message must begin w/3-digit code"
+        assert status[:3].isdigit(), "Status message must begin w/3-digit code"
         assert status[3]==" ", "Status message must have a space after code"
 
         if __debug__:
