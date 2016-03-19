@@ -4,7 +4,6 @@ import os
 from io import StringIO
 import re
 import sys
-import tempfile
 import textwrap
 import unittest
 from test import support
@@ -774,8 +773,10 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = py_warnings
 
     def test_tracemalloc(self):
-        with tempfile.NamedTemporaryFile("w", suffix=".py") as tmpfile:
-            tmpfile.write(textwrap.dedent("""
+        self.addCleanup(support.unlink, support.TESTFN)
+
+        with open(support.TESTFN, 'w') as fp:
+            fp.write(textwrap.dedent("""
                 def func():
                     f = open(__file__)
                     # Emit ResourceWarning
@@ -783,12 +784,12 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
 
                 func()
             """))
-            tmpfile.flush()
-            fname = tmpfile.name
-            res = assert_python_ok('-Wd', '-X', 'tracemalloc=2', fname)
+
+        res = assert_python_ok('-Wd', '-X', 'tracemalloc=2', support.TESTFN)
+
         stderr = res.err.decode('ascii', 'replace')
         stderr = re.sub('<.*>', '<...>', stderr)
-        expected = textwrap.dedent(f'''
+        expected = textwrap.dedent('''
             {fname}:5: ResourceWarning: unclosed file <...>
               f = None
             Object allocated at (most recent call first):
@@ -796,7 +797,8 @@ class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
                 f = open(__file__)
               File "{fname}", lineno 7
                 func()
-        ''').strip()
+        ''')
+        expected = expected.format(fname=support.TESTFN).strip()
         self.assertEqual(stderr, expected)
 
 
