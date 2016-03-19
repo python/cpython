@@ -258,6 +258,40 @@ urllib.robotparser
 (Contributed by Nikolay Bogoychev in :issue:`16099`.)
 
 
+warnings
+--------
+
+A new optional *source* parameter has been added to the
+:func:`warnings.warn_explicit` function: the destroyed object which emitted a
+:exc:`ResourceWarning`. A *source* attribute has also been added to
+:class:`warnings.WarningMessage` (contributed by Victor Stinner in
+:issue:`26568` and :issue:`26567`).
+
+When a :exc:`ResourceWarning` warning is logged, the :mod:`tracemalloc` is now
+used to try to retrieve the traceback where the detroyed object was allocated.
+
+Example with the script ``example.py``::
+
+    def func():
+        f = open(__file__)
+        f = None
+
+    func()
+
+Output of the command ``python3.6 -Wd -X tracemalloc=5 example.py``::
+
+    example.py:3: ResourceWarning: unclosed file <...>
+      f = None
+    Object allocated at (most recent call first):
+      File "example.py", lineno 2
+        f = open(__file__)
+      File "example.py", lineno 5
+        func()
+
+The "Object allocated at" traceback is new and only displayed if
+:mod:`tracemalloc` is tracing Python memory allocations.
+
+
 zipfile
 -------
 

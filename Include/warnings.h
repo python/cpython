@@ -17,6 +17,13 @@ PyAPI_FUNC(int) PyErr_WarnFormat(
     Py_ssize_t stack_level,
     const char *format,         /* ASCII-encoded string  */
     ...);
+
+/* Emit a ResourceWarning warning */
+PyAPI_FUNC(int) PyErr_ResourceWarning(
+    PyObject *source,
+    Py_ssize_t stack_level,
+    const char *format,         /* ASCII-encoded string  */
+    ...);
 #ifndef Py_LIMITED_API
 PyAPI_FUNC(int) PyErr_WarnExplicitObject(
     PyObject *category,

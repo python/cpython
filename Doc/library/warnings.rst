@@ -319,7 +319,7 @@ Available Functions
    of the warning message).
 
 
-.. function:: warn_explicit(message, category, filename, lineno, module=None, registry=None, module_globals=None)
+.. function:: warn_explicit(message, category, filename, lineno, module=None, registry=None, module_globals=None, source=None)
 
    This is a low-level interface to the functionality of :func:`warn`, passing in
    explicitly the message, category, filename and line number, and optionally the
@@ -334,6 +334,12 @@ Available Functions
    for which the warning is issued.  (This argument is used to support displaying
    source for modules found in zipfiles or other non-filesystem import
    sources).
+
+   *source*, if supplied, is the destroyed object which emitted a
+   :exc:`ResourceWarning`.
+
+   .. versionchanged:: 3.6
+      Add the *source* parameter.
 
 
 .. function:: showwarning(message, category, filename, lineno, file=None, line=None)

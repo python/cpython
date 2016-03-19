@@ -334,6 +334,14 @@ an error value).
    .. versionadded:: 3.2
 
 
+.. c:function:: int PyErr_ResourceWarning(PyObject *source, Py_ssize_t stack_level, const char *format, ...)
+
+   Function similar to :c:func:`PyErr_WarnFormat`, but *category* is
+   :exc:`ResourceWarning` and pass *source* to :func:`warnings.WarningMessage`.
+
+   .. versionadded:: 3.6
+
+
 Querying the error indicator
 ============================
 
