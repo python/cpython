@@ -272,24 +272,27 @@ used to try to retrieve the traceback where the detroyed object was allocated.
 
 Example with the script ``example.py``::
 
-    def func():
-        f = open(__file__)
-        f = None
+    import warnings
 
-    func()
+    def func():
+        return open(__file__)
+
+    f = func()
+    f = None
 
 Output of the command ``python3.6 -Wd -X tracemalloc=5 example.py``::
 
-    example.py:3: ResourceWarning: unclosed file <...>
+    example.py:7: ResourceWarning: unclosed file <_io.TextIOWrapper name='example.py' mode='r' encoding='UTF-8'>
       f = None
     Object allocated at (most recent call first):
-      File "example.py", lineno 2
-        f = open(__file__)
-      File "example.py", lineno 5
-        func()
+      File "example.py", lineno 4
+        return open(__file__)
+      File "example.py", lineno 6
+        f = func()
 
 The "Object allocated at" traceback is new and only displayed if
-:mod:`tracemalloc` is tracing Python memory allocations.
+:mod:`tracemalloc` is tracing Python memory allocations and if the
+:mod:`warnings` was already imported.
 
 
 zipfile
