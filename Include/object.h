@@ -785,7 +785,7 @@ PyAPI_FUNC(void) _Py_Dealloc(PyObject *);
         --(_py_decref_tmp)->ob_refcnt != 0)             \
             _Py_CHECK_REFCNT(_py_decref_tmp)            \
         else                                            \
-        _Py_Dealloc(_py_decref_tmp);                    \
+            _Py_Dealloc(_py_decref_tmp);                \
     } while (0)
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
