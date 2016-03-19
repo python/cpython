@@ -226,6 +226,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18787: spwd.getspnam() now raises a PermissionError if the user
+  doesn't have privileges.
+
 - Issue #26560: Avoid potential ValueError in BaseHandler.start_response.
   Initial patch by Peter Inglesby.
 
