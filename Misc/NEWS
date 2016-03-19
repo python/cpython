@@ -226,6 +226,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26560: Avoid potential ValueError in BaseHandler.start_response.
+  Initial patch by Peter Inglesby.
+
 - Issue #26567: Add a new function :c:func:`PyErr_ResourceWarning` function to
   pass the destroyed object. Add a *source* attribute to
   :class:`warnings.WarningMessage`. Add warnings._showwarnmsg() which uses
