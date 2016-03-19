@@ -471,6 +471,8 @@ Changes in the Python API
   the exception will stop a single-threaded server. (Contributed by
   Martin Panter in :issue:`23430`.)
 
+* :func:`spwd.getspnam` now raises a :exc:`PermissionError` instead of
+  :exc:`KeyError` if the user doesn't have privileges.
 
 Changes in the C API
 --------------------
