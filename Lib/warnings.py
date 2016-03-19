@@ -10,30 +10,14 @@ __all__ = ["warn", "warn_explicit", "showwarning",
 def showwarning(message, category, filename, lineno, file=None, line=None):
     """Hook to write a warning to a file; replace if you like."""
     msg = WarningMessage(message, category, filename, lineno, file, line)
-    _showwarnmsg(msg)
+    _showwarnmsg_impl(msg)
 
 def formatwarning(message, category, filename, lineno, line=None):
     """Function to format a warning the standard way."""
     msg = WarningMessage(message, category, filename, lineno, None, line)
-    return _formatwarnmsg(msg)
+    return _formatwarnmsg_impl(msg)
 
-# Keep references to check if the functions were replaced
-_showwarning = showwarning
-_formatwarning = formatwarning
-
-def _showwarnmsg(msg):
-    """Hook to write a warning to a file; replace if you like."""
-    showwarning = globals().get('showwarning', _showwarning)
-    if showwarning is not _showwarning:
-        # warnings.showwarning() was replaced
-        if not callable(showwarning):
-            raise TypeError("warnings.showwarning() must be set to a "
-                            "function or method")
-
-        showwarning(msg.message, msg.category, msg.filename, msg.lineno,
-                    msg.file, msg.line)
-        return
-
+def _showwarnmsg_impl(msg):
     file = msg.file
     if file is None:
         file = sys.stderr
@@ -48,14 +32,7 @@ def _showwarnmsg(msg):
         # the file (probably stderr) is invalid - this warning gets lost.
         pass
 
-def _formatwarnmsg(msg):
-    """Function to format a warning the standard way."""
-    formatwarning = globals().get('formatwarning', _formatwarning)
-    if formatwarning is not _formatwarning:
-        # warnings.formatwarning() was replaced
-        return formatwarning(msg.message, msg.category,
-                             msg.filename, msg.lineno, line=msg.line)
-
+def _formatwarnmsg_impl(msg):
     import linecache
     s =  ("%s:%s: %s: %s\n"
           % (msg.filename, msg.lineno, msg.category.__name__,
@@ -80,6 +57,35 @@ def _formatwarnmsg(msg):
                     line = line.strip()
                     s += '    %s\n' % line
     return s
+
+# Keep a reference to check if the function was replaced
+_showwarning = showwarning
+
+def _showwarnmsg(msg):
+    """Hook to write a warning to a file; replace if you like."""
+    showwarning = globals().get('showwarning', _showwarning)
+    if showwarning is not _showwarning:
+        # warnings.showwarning() was replaced
+        if not callable(showwarning):
+            raise TypeError("warnings.showwarning() must be set to a "
+                            "function or method")
+
+        showwarning(msg.message, msg.category, msg.filename, msg.lineno,
+                    msg.file, msg.line)
+        return
+    _showwarnmsg_impl(msg)
+
+# Keep a reference to check if the function was replaced
+_formatwarning = formatwarning
+
+def _formatwarnmsg(msg):
+    """Function to format a warning the standard way."""
+    formatwarning = globals().get('formatwarning', _formatwarning)
+    if formatwarning is not _formatwarning:
+        # warnings.formatwarning() was replaced
+        return formatwarning(msg.message, msg.category,
+                             msg.filename, msg.lineno, line=msg.line)
+    return _formatwarnmsg_impl(msg)
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
                    append=False):
