@@ -2,6 +2,7 @@
 
 import sys
 
+
 __all__ = ["warn", "warn_explicit", "showwarning",
            "formatwarning", "filterwarnings", "simplefilter",
            "resetwarnings", "catch_warnings"]
@@ -66,6 +67,18 @@ def _formatwarnmsg(msg):
     if line:
         line = line.strip()
         s += "  %s\n" % line
+    if msg.source is not None:
+        import tracemalloc
+        tb = tracemalloc.get_object_traceback(msg.source)
+        if tb is not None:
+            s += 'Object allocated at (most recent call first):\n'
+            for frame in tb:
+                s += ('  File "%s", lineno %s\n'
+                      % (frame.filename, frame.lineno))
+                line = linecache.getline(frame.filename, frame.lineno)
+                if line:
+                    line = line.strip()
+                    s += '    %s\n' % line
     return s
 
 def filterwarnings(action, message="", category=Warning, module="", lineno=0,
@@ -267,7 +280,8 @@ def warn(message, category=None, stacklevel=1):
                   globals)
 
 def warn_explicit(message, category, filename, lineno,
-                  module=None, registry=None, module_globals=None):
+                  module=None, registry=None, module_globals=None,
+                  source=None):
     lineno = int(lineno)
     if module is None:
         module = filename or "<unknown>"
@@ -333,17 +347,17 @@ def warn_explicit(message, category, filename, lineno,
               "Unrecognized action (%r) in warnings.filters:\n %s" %
               (action, item))
     # Print message and context
-    msg = WarningMessage(message, category, filename, lineno)
+    msg = WarningMessage(message, category, filename, lineno, source)
     _showwarnmsg(msg)
 
 
 class WarningMessage(object):
 
     _WARNING_DETAILS = ("message", "category", "filename", "lineno", "file",
-                        "line")
+                        "line", "source")
 
     def __init__(self, message, category, filename, lineno, file=None,
-                    line=None):
+                 line=None, source=None):
         local_values = locals()
         for attr in self._WARNING_DETAILS:
             setattr(self, attr, local_values[attr])

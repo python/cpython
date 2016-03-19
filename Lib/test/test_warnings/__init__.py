@@ -2,7 +2,10 @@ from contextlib import contextmanager
 import linecache
 import os
 from io import StringIO
+import re
 import sys
+import tempfile
+import textwrap
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
@@ -763,11 +766,38 @@ class WarningsDisplayTests(BaseTest):
                                 file_object, expected_file_line)
         self.assertEqual(expect, file_object.getvalue())
 
+
 class CWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = c_warnings
 
 class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = py_warnings
+
+    def test_tracemalloc(self):
+        with tempfile.NamedTemporaryFile("w", suffix=".py") as tmpfile:
+            tmpfile.write(textwrap.dedent("""
+                def func():
+                    f = open(__file__)
+                    # Emit ResourceWarning
+                    f = None
+
+                func()
+            """))
+            tmpfile.flush()
+            fname = tmpfile.name
+            res = assert_python_ok('-Wd', '-X', 'tracemalloc=2', fname)
+        stderr = res.err.decode('ascii', 'replace')
+        stderr = re.sub('<.*>', '<...>', stderr)
+        expected = textwrap.dedent(f'''
+            {fname}:5: ResourceWarning: unclosed file <...>
+              f = None
+            Object allocated at (most recent call first):
+              File "{fname}", lineno 3
+                f = open(__file__)
+              File "{fname}", lineno 7
+                func()
+        ''').strip()
+        self.assertEqual(stderr, expected)
 
 
 class CatchWarningTests(BaseTest):
