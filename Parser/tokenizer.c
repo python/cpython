@@ -275,6 +275,7 @@ get_coding_spec(const char *s, char **spec, Py_ssize_t size, struct tok_state *t
                         return 0;
                 }
                 *spec = r;
+                break;
             }
         }
     }
