@@ -10,6 +10,9 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #26581: If coding cookie is specified multiple times on a line in
+  Python source code file, only the first one is taken to account.
+
 - Issue #22836: Ensure exception reports from PyErr_Display() and
   PyErr_WriteUnraisable() are sensible even when formatting them produces
   secondary errors.  This affects the reports produced by

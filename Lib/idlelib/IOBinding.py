@@ -65,7 +65,7 @@ else:
 
 encoding = encoding.lower()
 
-coding_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
+coding_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)')
 blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)')
 
 class EncodingMessage(SimpleDialog):

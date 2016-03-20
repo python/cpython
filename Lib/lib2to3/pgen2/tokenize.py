@@ -236,7 +236,7 @@ class Untokenizer:
                 startline = False
             toks_append(tokval)
 
-cookie_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
+cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)')
 blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)')
 
 def _get_normal_name(orig_enc):

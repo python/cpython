@@ -32,7 +32,7 @@ except ImportError:
                          "no sophisticated Python source file search will be done.")
 
 
-decl_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)')
+decl_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)')
 blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)')
 
 def get_declaration(line):
