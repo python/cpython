@@ -178,7 +178,7 @@ class AbstractSourceEncodingTest:
     def test_double_coding_same_line(self):
         src = (b'#coding:iso8859-15 coding:latin1\n'
                b'print(ascii("\xc3\xa4"))\n')
-        self.check_script_output(src, br"'\xc3\xa4'")
+        self.check_script_output(src, br"'\xc3\u20ac'")
 
     def test_first_non_utf8_coding_line(self):
         src = (b'#coding:iso-8859-15 \xa4\n'
