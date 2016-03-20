@@ -1,13 +1,14 @@
 # -*- coding: koi8-r -*-
 
 import unittest
-from test.support import TESTFN, unlink, unload, rmtree
+from test.support import TESTFN, unlink, unload, rmtree, script_helper, captured_stdout
 import importlib
 import os
 import sys
 import subprocess
+import tempfile
 
-class SourceEncodingTest(unittest.TestCase):
+class MiscSourceEncodingTest(unittest.TestCase):
 
     def test_pep263(self):
         self.assertEqual(
@@ -140,6 +141,84 @@ class SourceEncodingTest(unittest.TestCase):
                    "ordinal not in range(128)"
         self.assertTrue(c.exception.args[0].startswith(expected),
                         msg=c.exception.args[0])
+
+
+class AbstractSourceEncodingTest:
+
+    def test_default_coding(self):
+        src = (b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xe4'")
+
+    def test_first_coding_line(self):
+        src = (b'#coding:iso8859-15\n'
+               b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xc3\u20ac'")
+
+    def test_second_coding_line(self):
+        src = (b'#\n'
+               b'#coding:iso8859-15\n'
+               b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xc3\u20ac'")
+
+    def test_third_coding_line(self):
+        # Only first two lines are tested for a magic comment.
+        src = (b'#\n'
+               b'#\n'
+               b'#coding:iso8859-15\n'
+               b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xe4'")
+
+    def test_double_coding_line(self):
+        # If the first line matches the second line is ignored.
+        src = (b'#coding:iso8859-15\n'
+               b'#coding:latin1\n'
+               b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xc3\u20ac'")
+
+    def test_double_coding_same_line(self):
+        src = (b'#coding:iso8859-15 coding:latin1\n'
+               b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xc3\xa4'")
+
+    def test_first_non_utf8_coding_line(self):
+        src = (b'#coding:iso-8859-15 \xa4\n'
+               b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xc3\u20ac'")
+
+    def test_second_non_utf8_coding_line(self):
+        src = (b'\n'
+               b'#coding:iso-8859-15 \xa4\n'
+               b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xc3\u20ac'")
+
+    def test_utf8_bom(self):
+        src = (b'\xef\xbb\xbfprint(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xe4'")
+
+    def test_utf8_bom_and_utf8_coding_line(self):
+        src = (b'\xef\xbb\xbf#coding:utf-8\n'
+               b'print(ascii("\xc3\xa4"))\n')
+        self.check_script_output(src, br"'\xe4'")
+
+
+class BytesSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
+
+    def check_script_output(self, src, expected):
+        with captured_stdout() as stdout:
+            exec(src)
+        out = stdout.getvalue().encode('latin1')
+        self.assertEqual(out.rstrip(), expected)
+
+
+class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
+
+    def check_script_output(self, src, expected):
+        with tempfile.TemporaryDirectory() as tmpd:
+            fn = os.path.join(tmpd, 'test.py')
+            with open(fn, 'wb') as fp:
+                fp.write(src)
+            res = script_helper.assert_python_ok(fn)
+        self.assertEqual(res.out.rstrip(), expected)
 
 
 if __name__ == "__main__":
