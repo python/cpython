@@ -98,7 +98,7 @@ Logging from multiple threads
 -----------------------------
 
 Logging from multiple threads requires no special effort. The following example
-shows logging from the main (initIal) thread and another thread::
+shows logging from the main (initial) thread and another thread::
 
     import logging
     import threading
