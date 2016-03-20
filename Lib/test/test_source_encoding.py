@@ -1,9 +1,12 @@
 # -*- coding: koi8-r -*-
 
-import test.test_support, unittest
+import unittest
+from test.test_support import run_unittest, rmtree, captured_stdout
+import script_helper
 import os
+import tempfile
 
-class SourceEncodingTest(unittest.TestCase):
+class MiscSourceEncodingTest(unittest.TestCase):
 
     def test_pep263(self):
         self.assertEqual(
@@ -90,8 +93,77 @@ class SourceEncodingTest(unittest.TestCase):
         self.assertTrue(c.exception.args[0].startswith(expected))
 
 
+class AbstractSourceEncodingTest:
+
+    def test_first_coding_line(self):
+        src = ('#coding:iso8859-15\n'
+               'print(repr(u"\xc3\xa4"))\n')
+        self.check_script_output(src, r"u'\xc3\u20ac'")
+
+    def test_second_coding_line(self):
+        src = ('#\n'
+               '#coding:iso8859-15\n'
+               'print(repr(u"\xc3\xa4"))\n')
+        self.check_script_output(src, r"u'\xc3\u20ac'")
+
+    def test_double_coding_line(self):
+        # If the first line matches the second line is ignored.
+        src = ('#coding:iso8859-15\n'
+               '#coding:latin1\n'
+               'print(repr(u"\xc3\xa4"))\n')
+        self.check_script_output(src, r"u'\xc3\u20ac'")
+
+    def test_double_coding_same_line(self):
+        src = ('#coding:iso8859-15 coding:latin1\n'
+               'print(repr(u"\xc3\xa4"))\n')
+        self.check_script_output(src, r"u'\xc3\u20ac'")
+
+    def test_first_non_utf8_coding_line(self):
+        src = ('#coding:iso-8859-15 \xa4\n'
+               'print(repr(u"\xc3\xa4"))\n')
+        self.check_script_output(src, r"u'\xc3\u20ac'")
+
+    def test_second_non_utf8_coding_line(self):
+        src = ('\n'
+               '#coding:iso-8859-15 \xa4\n'
+               'print(repr(u"\xc3\xa4"))\n')
+        self.check_script_output(src, r"u'\xc3\u20ac'")
+
+    def test_utf8_bom(self):
+        src = ('\xef\xbb\xbfprint(repr(u"\xc3\xa4"))\n')
+        self.check_script_output(src, r"u'\xe4'")
+
+    def test_utf8_bom_and_utf8_coding_line(self):
+        src = ('\xef\xbb\xbf#coding:utf-8\n'
+               'print(repr(u"\xc3\xa4"))\n')
+        self.check_script_output(src, r"u'\xe4'")
+
+
+class BytesSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
+
+    def check_script_output(self, src, expected):
+        with captured_stdout() as stdout:
+            exec(src)
+        out = stdout.getvalue().encode('latin1')
+        self.assertEqual(out.rstrip(), expected)
+
+
+class FileSourceEncodingTest(AbstractSourceEncodingTest, unittest.TestCase):
+
+    def check_script_output(self, src, expected):
+        tmpd = tempfile.mkdtemp()
+        try:
+            fn = os.path.join(tmpd, 'test.py')
+            with open(fn, 'wb') as fp:
+                fp.write(src)
+            rc, out, err = script_helper.assert_python_ok(fn)
+        finally:
+            rmtree(tmpd)
+        self.assertEqual(out.rstrip(), expected)
+
+
 def test_main():
-    test.test_support.run_unittest(SourceEncodingTest)
+    run_unittest(MiscSourceEncodingTest, BytesSourceEncodingTest, FileSourceEncodingTest)
 
 if __name__ == "__main__":
     test_main()
