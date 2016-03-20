@@ -613,6 +613,17 @@ conflict.
    times.
 
 
+.. envvar:: PYTHONHTTPSVERIFY
+
+   If this environment variable is set specifically to ``0``, then it is
+   equivalent to implicitly calling :func:`ssl._https_verify_certificates` with
+   ``enable=False`` when :mod:`ssl` is first imported.
+
+   Refer to the documentation of :func:`ssl._https_verify_certificates` for
+   details.
+
+   .. versionadded:: 2.7.12
+
 Debug-mode variables
 ~~~~~~~~~~~~~~~~~~~~
 

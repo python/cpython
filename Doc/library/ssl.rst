@@ -280,6 +280,44 @@ purposes.
 
      RC4 was dropped from the default cipher string.
 
+.. function:: _https_verify_certificates(enable=True)
+
+   Specifies whether or not server certificates are verified when creating
+   client HTTPS connections without specifying a particular SSL context.
+
+   Starting with Python 2.7.9, :mod:`httplib` and modules which use it, such as
+   :mod:`urllib2` and :mod:`xmlrpclib`, default to verifying remote server
+   certificates received when establishing client HTTPS connections. This
+   default verification checks that the certificate is signed by a Certificate
+   Authority in the system trust store and that the Common Name (or Subject
+   Alternate Name) on the presented certificate matches the requested host.
+
+   Setting *enable* to :const:`True` ensures this default behaviour is in
+   effect.
+
+   Setting *enable* to :const:`False` reverts the default HTTPS certificate
+   handling to that of Python 2.7.8 and earlier, allowing connections to
+   servers using self-signed certificates, servers using certificates signed
+   by a Certicate Authority not present in the system trust store, and servers
+   where the hostname does not match the presented server certificate.
+
+   The leading underscore on this function denotes that it intentionally does
+   not exist in any implementation of Python 3 and may not be present in all
+   Python 2.7 implementations. The portable approach to bypassing certificate
+   checks or the system trust store when necessary is for tools to enable that
+   on a case-by-case basis by explicitly passing in a suitably configured SSL
+   context, rather than reverting the default behaviour of the standard library
+   client modules.
+
+   .. versionadded:: 2.7.12
+
+   .. seealso::
+
+      * `CVE-2014-9365 <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2014-9365>`_
+        -- HTTPS man-in-the-middle attack against Python clients using default settings
+      * :pep:`476` -- Enabling certificate verification by default for HTTPS
+      * :pep:`493` -- HTTPS verification migration tools for Python 2.7
+
 
 Random generation
 ^^^^^^^^^^^^^^^^^

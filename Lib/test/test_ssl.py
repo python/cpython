@@ -4,6 +4,7 @@
 import sys
 import unittest
 from test import test_support as support
+from test.script_helper import assert_python_ok
 import asyncore
 import socket
 import select
@@ -1173,6 +1174,57 @@ class ContextTests(unittest.TestCase):
         self.assertEqual(ctx.protocol, ssl.PROTOCOL_SSLv23)
         self.assertEqual(ctx.verify_mode, ssl.CERT_NONE)
         self.assertEqual(ctx.options & ssl.OP_NO_SSLv2, ssl.OP_NO_SSLv2)
+
+    def test__https_verify_certificates(self):
+        # Unit test to check the contect factory mapping
+        # The factories themselves are tested above
+        # This test will fail by design if run under PYTHONHTTPSVERIFY=0
+        # (as will various test_httplib tests)
+
+        # Uses a fresh SSL module to avoid affecting the real one
+        local_ssl = support.import_fresh_module("ssl")
+        # Certificate verification is enabled by default
+        self.assertIs(local_ssl._create_default_https_context,
+                      local_ssl.create_default_context)
+        # Turn default verification off
+        local_ssl._https_verify_certificates(enable=False)
+        self.assertIs(local_ssl._create_default_https_context,
+                      local_ssl._create_unverified_context)
+        # And back on
+        local_ssl._https_verify_certificates(enable=True)
+        self.assertIs(local_ssl._create_default_https_context,
+                      local_ssl.create_default_context)
+        # The default behaviour is to enable
+        local_ssl._https_verify_certificates(enable=False)
+        local_ssl._https_verify_certificates()
+        self.assertIs(local_ssl._create_default_https_context,
+                      local_ssl.create_default_context)
+
+    def test__https_verify_envvar(self):
+        # Unit test to check the PYTHONHTTPSVERIFY handling
+        # Need to use a subprocess so it can still be run under -E
+        https_is_verified = """import ssl, sys; \
+            status = "Error: _create_default_https_context does not verify certs" \
+                       if ssl._create_default_https_context is \
+                          ssl._create_unverified_context \
+                     else None; \
+            sys.exit(status)"""
+        https_is_not_verified = """import ssl, sys; \
+            status = "Error: _create_default_https_context verifies certs" \
+                       if ssl._create_default_https_context is \
+                          ssl.create_default_context \
+                     else None; \
+            sys.exit(status)"""
+        extra_env = {}
+        # Omitting it leaves verification on
+        assert_python_ok("-c", https_is_verified, **extra_env)
+        # Setting it to zero turns verification off
+        extra_env[ssl._https_verify_envvar] = "0"
+        assert_python_ok("-c", https_is_not_verified, **extra_env)
+        # Any other value should also leave it on
+        for setting in ("", "1", "enabled", "foo"):
+            extra_env[ssl._https_verify_envvar] = setting
+            assert_python_ok("-c", https_is_verified, **extra_env)
 
     def test_check_hostname(self):
         ctx = ssl.SSLContext(ssl.PROTOCOL_TLSv1)

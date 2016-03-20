@@ -2588,7 +2588,7 @@ PEP 477: Backport ensurepip (PEP 453) to Python 2.7
 
 :pep:`477` approves the inclusion of the :pep:`453` ensurepip module and the
 improved documentation that was enabled by it in the Python 2.7 maintenance
-releases, appearing first in the the Python 2.7.9 release.
+releases, appearing first in the Python 2.7.9 release.
 
 
 Bootstrapping pip By Default
@@ -2649,11 +2649,12 @@ and :ref:`distutils-index`.
 PEP 476: Enabling certificate verification by default for stdlib http clients
 -----------------------------------------------------------------------------
 
-:mod:`httplib` and modules which use it, such as :mod:`urllib2` and
-:mod:`xmlrpclib`, will now verify that the server presents a certificate
-which is signed by a CA in the platform trust store and whose hostname matches
-the hostname being requested by default, significantly improving security for
-many applications.
+:pep:`476` updated :mod:`httplib` and modules which use it, such as
+:mod:`urllib2` and :mod:`xmlrpclib`, to now verify that the server
+presents a certificate which is signed by a Certificate Authority in the
+platform trust store and whose hostname matches the hostname being requested
+by default, significantly improving security for many applications. This
+change was made in the Python 2.7.9 release.
 
 For applications which require the old previous behavior, they can pass an
 alternate context::
@@ -2669,6 +2670,29 @@ alternate context::
     context = ssl.create_default_context(cafile="/path/to/file.crt")
 
     urllib2.urlopen("https://invalid-cert", context=context)
+
+
+PEP 493: HTTPS verification migration tools for Python 2.7
+----------------------------------------------------------
+
+:pep:`493` provides additional migration tools to support a more incremental
+infrastructure upgrade process for environments containing applications and
+services relying on the historically permissive processing of server
+certificates when establishing client HTTPS connections.  These additions were
+made in the Python 2.7.12 release.
+
+These tools are intended for use in cases where affected applications and
+services can't be modified to explicitly pass a more permissive SSL context
+when establishing the connection.
+
+For applications and services which can't be modified at all, the new
+``PYTHONHTTPSVERIFY`` environment variable may be set to ``0`` to revert an
+entire Python process back to the default permissive behaviour of Python 2.7.8
+and earlier.
+
+For cases where the connection establishment code can't be modified, but the
+overall application can be, the new :func:`ssl._https_verify_certificates`
+function can be used to adjust the default behaviour at runtime.
 
 .. ======================================================================
 

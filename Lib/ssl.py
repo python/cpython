@@ -482,12 +482,29 @@ def _create_unverified_context(protocol=PROTOCOL_SSLv23, cert_reqs=None,
 
     return context
 
-# Used by http.client if no context is explicitly passed.
-_create_default_https_context = create_default_context
-
-
 # Backwards compatibility alias, even though it's not a public name.
 _create_stdlib_context = _create_unverified_context
+
+# PEP 493: Verify HTTPS by default, but allow envvar to override that
+_https_verify_envvar = 'PYTHONHTTPSVERIFY'
+
+def _get_https_context_factory():
+    if not sys.flags.ignore_environment:
+        config_setting = os.environ.get(_https_verify_envvar)
+        if config_setting == '0':
+            return _create_unverified_context
+    return create_default_context
+
+_create_default_https_context = _get_https_context_factory()
+
+# PEP 493: "private" API to configure HTTPS defaults without monkeypatching
+def _https_verify_certificates(enable=True):
+    """Verify server HTTPS certificates by default?"""
+    global _create_default_https_context
+    if enable:
+        _create_default_https_context = create_default_context
+    else:
+        _create_default_https_context = _create_unverified_context
 
 
 class SSLSocket(socket):

@@ -58,6 +58,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23857: Implement PEP 493, adding a Python-2-only ssl module API and
+  environment variable to configure the default handling of SSL/TLS certificates
+  for HTTPS connections.
+
 - Issue #26313: ssl.py _load_windows_store_certs fails if windows cert store
   is empty. Patch by Baji.
 
