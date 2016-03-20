@@ -62,7 +62,7 @@ locale_encoding = locale_encoding.lower()
 encoding = locale_encoding  ### KBK 07Sep07  This is used all over IDLE, check!
                             ### 'encoding' is used below in encode(), check!
 
-coding_re = re.compile(r'^[ \t\f]*#.*coding[:=][ \t]*([-\w.]+)', re.ASCII)
+coding_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
 
 def coding_spec(data):
