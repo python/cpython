@@ -354,7 +354,6 @@ class TestUUID(unittest.TestCase):
             equal(u, uuid.UUID(v))
             equal(str(u), v)
 
-    @unittest.skipUnless(importable('ctypes'), 'requires ctypes')
     def test_uuid4(self):
         equal = self.assertEqual
 
