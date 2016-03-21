@@ -232,7 +232,7 @@ class HelpWindow(Toplevel):
 
 def copy_strip():
     """Copy idle.html to idlelib/help.html, stripping trailing whitespace.
-    
+
     Files with trailing whitespace cannot be pushed to the hg cpython
     repository.  For 3.x (on Windows), help.html is generated, after
     editing idle.rst in the earliest maintenance version, with
@@ -242,13 +242,13 @@ def copy_strip():
     check  both the diff and displayed text.  Push the diff along with
     the idle.rst change and merge both into default (or an intermediate
     maintenance version).
-    
+
     When the 'earlist' version gets its final maintenance release,
     do an update as described above, without editing idle.rst, to
     rebase help.html on the next version of idle.rst.  Do not worry
     about version changes as version is not displayed.  Examine other
     changes and the result of Help -> IDLE Help.
-    
+
     If maintenance and default versions of idle.rst diverge, and
     merging does not go smoothly, then consider generating
     separate help.html files from separate idle.htmls.
