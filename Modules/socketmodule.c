@@ -2564,12 +2564,14 @@ sock_close(PySocketSockObject *s)
 {
     SOCKET_T fd;
 
-    /* We do not want to retry upon EINTR: see http://lwn.net/Articles/576478/
-     * and http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
-     * for more details.
-     */
-    if ((fd = s->sock_fd) != -1) {
+    fd = s->sock_fd;
+    if (fd != -1) {
         s->sock_fd = -1;
+
+        /* We do not want to retry upon EINTR: see
+           http://lwn.net/Articles/576478/ and
+           http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
+           for more details. */
         Py_BEGIN_ALLOW_THREADS
         (void) SOCKETCLOSE(fd);
         Py_END_ALLOW_THREADS
@@ -4163,22 +4165,45 @@ static PyGetSetDef sock_getsetlist[] = {
    First close the file description. */
 
 static void
+sock_finalize(PySocketSockObject *s)
+{
+    SOCKET_T fd;
+    PyObject *error_type, *error_value, *error_traceback;
+
+    /* Save the current exception, if any. */
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+    if (s->sock_fd != -1) {
+        if (PyErr_ResourceWarning((PyObject *)s, 1, "unclosed %R", s)) {
+            /* Spurious errors can appear at shutdown */
+            if (PyErr_ExceptionMatches(PyExc_Warning)) {
+                PyErr_WriteUnraisable((PyObject *)s);
+            }
+        }
+
+        /* Only close the socket *after* logging the ResourceWarning warning
+           to allow the logger to call socket methods like
+           socket.getsockname(). If the socket is closed before, socket
+           methods fails with the EBADF error. */
+        fd = s->sock_fd;
+        s->sock_fd = -1;
+
+        /* We do not want to retry upon EINTR: see sock_close() */
+        Py_BEGIN_ALLOW_THREADS
+        (void) SOCKETCLOSE(fd);
+        Py_END_ALLOW_THREADS
+    }
+
+    /* Restore the saved exception. */
+    PyErr_Restore(error_type, error_value, error_traceback);
+}
+
+static void
 sock_dealloc(PySocketSockObject *s)
 {
-    if (s->sock_fd != -1) {
-        PyObject *exc, *val, *tb;
-        Py_ssize_t old_refcount = Py_REFCNT(s);
-        ++Py_REFCNT(s);
-        PyErr_Fetch(&exc, &val, &tb);
-        if (PyErr_WarnFormat(PyExc_ResourceWarning, 1,
-                             "unclosed %R", s))
-            /* Spurious errors can appear at shutdown */
-            if (PyErr_ExceptionMatches(PyExc_Warning))
-                PyErr_WriteUnraisable((PyObject *) s);
-        PyErr_Restore(exc, val, tb);
-        (void) SOCKETCLOSE(s->sock_fd);
-        Py_REFCNT(s) = old_refcount;
-    }
+    if (PyObject_CallFinalizerFromDealloc((PyObject *)s) < 0)
+        return;
+
     Py_TYPE(s)->tp_free((PyObject *)s);
 }
 
@@ -4395,7 +4420,8 @@ static PyTypeObject sock_type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE
+        | Py_TPFLAGS_HAVE_FINALIZE,             /* tp_flags */
     sock_doc,                                   /* tp_doc */
     0,                                          /* tp_traverse */
     0,                                          /* tp_clear */
@@ -4415,6 +4441,15 @@ static PyTypeObject sock_type = {
     PyType_GenericAlloc,                        /* tp_alloc */
     sock_new,                                   /* tp_new */
     PyObject_Del,                               /* tp_free */
+    0,                                          /* tp_is_gc */
+    0,                                          /* tp_bases */
+    0,                                          /* tp_mro */
+    0,                                          /* tp_cache */
+    0,                                          /* tp_subclasses */
+    0,                                          /* tp_weaklist */
+    0,                                          /* tp_del */
+    0,                                          /* tp_version_tag */
+    (destructor)sock_finalize,                  /* tp_finalize */
 };
 
 
