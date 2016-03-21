@@ -328,7 +328,7 @@ class BasicSocketTests(unittest.TestCase):
         wr = weakref.ref(ss)
         with support.check_warnings(("", ResourceWarning)):
             del ss
-            self.assertEqual(wr(), None)
+        self.assertEqual(wr(), None)
 
     def test_wrapped_unconnected(self):
         # Methods on an unconnected SSLSocket propagate the original
