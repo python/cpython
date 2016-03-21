@@ -353,7 +353,8 @@ The meaning of the various alignment options is as follows:
    | ``'='`` | Forces the padding to be placed after the sign (if any)  |
    |         | but before the digits.  This is used for printing fields |
    |         | in the form '+000000120'. This alignment option is only  |
-   |         | valid for numeric types.                                 |
+   |         | valid for numeric types.  It becomes the default when '0'|
+   |         | immediately precedes the field width.                    |
    +---------+----------------------------------------------------------+
    | ``'^'`` | Forces the field to be centered within the available     |
    |         | space.                                                   |
@@ -393,7 +394,8 @@ instead.
 *width* is a decimal integer defining the minimum field width.  If not
 specified, then the field width will be determined by the content.
 
-Preceding the *width* field by a zero (``'0'``) character enables
+When no explicit alignment is given, preceding the *width* field by a zero
+(``'0'``) character enables
 sign-aware zero-padding for numeric types.  This is equivalent to a *fill*
 character of ``'0'`` with an *alignment* type of ``'='``.
 
