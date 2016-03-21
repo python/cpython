@@ -1079,8 +1079,8 @@ are always available.  They are listed here in alphabetical order.
 
    Given a string representing one Unicode character, return an integer
    representing the Unicode code point of that character.  For example,
-   ``ord('a')`` returns the integer ``97`` and ``ord('ν')`` returns ``957``.
-   This is the inverse of :func:`chr`.
+   ``ord('a')`` returns the integer ``97`` and ``ord('€')`` (Euro sign)
+   returns ``8364``.  This is the inverse of :func:`chr`.
 
 
 .. function:: pow(x, y[, z])
