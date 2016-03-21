@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
 
-    <title>24.6. IDLE &mdash; Python 2.7.10 documentation</title>
+    <title>24.6. IDLE &mdash; Python 2.7.11 documentation</title>
 
-    <link rel="stylesheet" href="../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
 
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../',
-        VERSION:     '2.7.10',
+        VERSION:     '2.7.11',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -25,11 +25,11 @@
     <script type="text/javascript" src="../_static/doctools.js"></script>
     <script type="text/javascript" src="../_static/sidebar.js"></script>
     <link rel="search" type="application/opensearchdescription+xml"
-          title="Search within Python 2.7.10 documentation"
+          title="Search within Python 2.7.11 documentation"
           href="../_static/opensearch.xml"/>
     <link rel="author" title="About these documents" href="../about.html" />
     <link rel="copyright" title="Copyright" href="../copyright.html" />
-    <link rel="top" title="Python 2.7.10 documentation" href="../index.html" />
+    <link rel="top" title="Python 2.7.11 documentation" href="../contents.html" />
     <link rel="up" title="24. Graphical User Interfaces with Tk" href="tk.html" />
     <link rel="next" title="24.7. Other Graphical User Interface Packages" href="othergui.html" />
     <link rel="prev" title="24.5. turtle — Turtle graphics for Tk" href="turtle.html" />
@@ -40,8 +40,8 @@
 
 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -60,25 +60,25 @@
                  style="vertical-align: middle; margin-top: -1px"/></li>
         <li><a href="https://www.python.org/">Python</a> &raquo;</li>
         <li>
-          <a href="../index.html">Python 2.7.10 documentation</a> &raquo;
+          <a href="../index.html">Python 2.7.11 documentation</a> &raquo;
         </li>
 
-          <li><a href="index.html" >The Python Standard Library</a> &raquo;</li>
-          <li><a href="tk.html" accesskey="U">24. Graphical User Interfaces with Tk</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="tk.html" accesskey="U">24. Graphical User Interfaces with Tk</a> &raquo;</li>
       </ul>
     </div>
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
 
   <div class="section" id="idle">
 <span id="id1"></span><h1>24.6. IDLE<a class="headerlink" href="#idle" title="Permalink to this headline">¶</a></h1>
 <p id="index-0">IDLE is Python&#8217;s Integrated Development and Learning Environment.</p>
 <p>IDLE has the following features:</p>
 <ul class="simple">
-<li>coded in 100% pure Python, using the <tt class="xref py py-mod docutils literal"><span class="pre">tkinter</span></tt> GUI toolkit</li>
+<li>coded in 100% pure Python, using the <code class="xref py py-mod docutils literal"><span class="pre">tkinter</span></code> GUI toolkit</li>
 <li>cross-platform: works mostly the same on Windows, Unix, and Mac OS X</li>
 <li>Python shell window (interactive interpreter) with colorizing
 of code input, output, and error messages</li>
@@ -224,10 +224,10 @@ Editor window.</dd>
 <dt>Run Module</dt>
 <dd>Do Check Module (above).  If no error, restart the shell to clean the
 environment, then execute the module.  Output is displayed in the Shell
-window.  Note that output requires use of <tt class="docutils literal"><span class="pre">print</span></tt> or <tt class="docutils literal"><span class="pre">write</span></tt>.
+window.  Note that output requires use of <code class="docutils literal"><span class="pre">print</span></code> or <code class="docutils literal"><span class="pre">write</span></code>.
 When execution is complete, the Shell retains focus and displays a prompt.
 At this point, one may interactively explore the result of execution.
-This is similar to executing a file with <tt class="docutils literal"><span class="pre">python</span> <span class="pre">-i</span> <span class="pre">file</span></tt> at a command
+This is similar to executing a file with <code class="docutils literal"><span class="pre">python</span> <span class="pre">-i</span> <span class="pre">file</span></code> at a command
 line.</dd>
 </dl>
 </div>
@@ -339,47 +339,47 @@ debugger.  Breakpoints for a file are saved in the user&#8217;s .idlerc director
 </div>
 <div class="section" id="editing-and-navigation">
 <h2>24.6.2. Editing and navigation<a class="headerlink" href="#editing-and-navigation" title="Permalink to this headline">¶</a></h2>
-<p>In this section, &#8216;C&#8217; refers to the <tt class="kbd docutils literal"><span class="pre">Control</span></tt> key on Windows and Unix and
-the <tt class="kbd docutils literal"><span class="pre">Command</span></tt> key on Mac OSX.</p>
+<p>In this section, &#8216;C&#8217; refers to the <code class="kbd docutils literal"><span class="pre">Control</span></code> key on Windows and Unix and
+the <code class="kbd docutils literal"><span class="pre">Command</span></code> key on Mac OSX.</p>
 <ul>
-<li><p class="first"><tt class="kbd docutils literal"><span class="pre">Backspace</span></tt> deletes to the left; <tt class="kbd docutils literal"><span class="pre">Del</span></tt> deletes to the right</p>
+<li><p class="first"><code class="kbd docutils literal"><span class="pre">Backspace</span></code> deletes to the left; <code class="kbd docutils literal"><span class="pre">Del</span></code> deletes to the right</p>
 </li>
-<li><p class="first"><tt class="kbd docutils literal"><span class="pre">C-Backspace</span></tt> delete word left; <tt class="kbd docutils literal"><span class="pre">C-Del</span></tt> delete word to the right</p>
+<li><p class="first"><code class="kbd docutils literal"><span class="pre">C-Backspace</span></code> delete word left; <code class="kbd docutils literal"><span class="pre">C-Del</span></code> delete word to the right</p>
 </li>
-<li><p class="first">Arrow keys and <tt class="kbd docutils literal"><span class="pre">Page</span> <span class="pre">Up</span></tt>/<tt class="kbd docutils literal"><span class="pre">Page</span> <span class="pre">Down</span></tt> to move around</p>
+<li><p class="first">Arrow keys and <code class="kbd docutils literal"><span class="pre">Page</span> <span class="pre">Up</span></code>/<code class="kbd docutils literal"><span class="pre">Page</span> <span class="pre">Down</span></code> to move around</p>
 </li>
-<li><p class="first"><tt class="kbd docutils literal"><span class="pre">C-LeftArrow</span></tt> and <tt class="kbd docutils literal"><span class="pre">C-RightArrow</span></tt> moves by words</p>
+<li><p class="first"><code class="kbd docutils literal"><span class="pre">C-LeftArrow</span></code> and <code class="kbd docutils literal"><span class="pre">C-RightArrow</span></code> moves by words</p>
 </li>
-<li><p class="first"><tt class="kbd docutils literal"><span class="pre">Home</span></tt>/<tt class="kbd docutils literal"><span class="pre">End</span></tt> go to begin/end of line</p>
+<li><p class="first"><code class="kbd docutils literal"><span class="pre">Home</span></code>/<code class="kbd docutils literal"><span class="pre">End</span></code> go to begin/end of line</p>
 </li>
-<li><p class="first"><tt class="kbd docutils literal"><span class="pre">C-Home</span></tt>/<tt class="kbd docutils literal"><span class="pre">C-End</span></tt> go to begin/end of file</p>
+<li><p class="first"><code class="kbd docutils literal"><span class="pre">C-Home</span></code>/<code class="kbd docutils literal"><span class="pre">C-End</span></code> go to begin/end of file</p>
 </li>
 <li><p class="first">Some useful Emacs bindings are inherited from Tcl/Tk:</p>
 <blockquote>
 <div><ul class="simple">
-<li><tt class="kbd docutils literal"><span class="pre">C-a</span></tt> beginning of line</li>
-<li><tt class="kbd docutils literal"><span class="pre">C-e</span></tt> end of line</li>
-<li><tt class="kbd docutils literal"><span class="pre">C-k</span></tt> kill line (but doesn&#8217;t put it in clipboard)</li>
-<li><tt class="kbd docutils literal"><span class="pre">C-l</span></tt> center window around the insertion point</li>
-<li><tt class="kbd docutils literal"><span class="pre">C-b</span></tt> go backwards one character without deleting (usually you can
+<li><code class="kbd docutils literal"><span class="pre">C-a</span></code> beginning of line</li>
+<li><code class="kbd docutils literal"><span class="pre">C-e</span></code> end of line</li>
+<li><code class="kbd docutils literal"><span class="pre">C-k</span></code> kill line (but doesn&#8217;t put it in clipboard)</li>
+<li><code class="kbd docutils literal"><span class="pre">C-l</span></code> center window around the insertion point</li>
+<li><code class="kbd docutils literal"><span class="pre">C-b</span></code> go backwards one character without deleting (usually you can
 also use the cursor key for this)</li>
-<li><tt class="kbd docutils literal"><span class="pre">C-f</span></tt> go forward one character without deleting (usually you can
+<li><code class="kbd docutils literal"><span class="pre">C-f</span></code> go forward one character without deleting (usually you can
 also use the cursor key for this)</li>
-<li><tt class="kbd docutils literal"><span class="pre">C-p</span></tt> go up one line (usually you can also use the cursor key for
+<li><code class="kbd docutils literal"><span class="pre">C-p</span></code> go up one line (usually you can also use the cursor key for
 this)</li>
-<li><tt class="kbd docutils literal"><span class="pre">C-d</span></tt> delete next character</li>
+<li><code class="kbd docutils literal"><span class="pre">C-d</span></code> delete next character</li>
 </ul>
 </div></blockquote>
 </li>
 </ul>
-<p>Standard keybindings (like <tt class="kbd docutils literal"><span class="pre">C-c</span></tt> to copy and <tt class="kbd docutils literal"><span class="pre">C-v</span></tt> to paste)
+<p>Standard keybindings (like <code class="kbd docutils literal"><span class="pre">C-c</span></code> to copy and <code class="kbd docutils literal"><span class="pre">C-v</span></code> to paste)
 may work.  Keybindings are selected in the Configure IDLE dialog.</p>
 <div class="section" id="automatic-indentation">
 <h3>24.6.2.1. Automatic indentation<a class="headerlink" href="#automatic-indentation" title="Permalink to this headline">¶</a></h3>
 <p>After a block-opening statement, the next line is indented by 4 spaces (in the
 Python Shell window by one tab).  After certain keywords (break, return etc.)
-the next line is dedented.  In leading indentation, <tt class="kbd docutils literal"><span class="pre">Backspace</span></tt> deletes up
-to 4 spaces if they are there. <tt class="kbd docutils literal"><span class="pre">Tab</span></tt> inserts spaces (in the Python
+the next line is dedented.  In leading indentation, <code class="kbd docutils literal"><span class="pre">Backspace</span></code> deletes up
+to 4 spaces if they are there. <code class="kbd docutils literal"><span class="pre">Tab</span></code> inserts spaces (in the Python
 Shell window one tab), number depends on Indent width. Currently tabs
 are restricted to four spaces due to Tcl/Tk limitations.</p>
 <p>See also the indent/dedent region commands in the edit menu.</p>
@@ -394,25 +394,25 @@ two seconds) after a &#8216;.&#8217; or (in a string) an os.sep is typed. If aft
 of those characters (plus zero or more other characters) a tab is typed
 the ACW will open immediately if a possible continuation is found.</p>
 <p>If there is only one possible completion for the characters entered, a
-<tt class="kbd docutils literal"><span class="pre">Tab</span></tt> will supply that completion without opening the ACW.</p>
+<code class="kbd docutils literal"><span class="pre">Tab</span></code> will supply that completion without opening the ACW.</p>
 <p>&#8216;Show Completions&#8217; will force open a completions window, by default the
-<tt class="kbd docutils literal"><span class="pre">C-space</span></tt> will open a completions window. In an empty
+<code class="kbd docutils literal"><span class="pre">C-space</span></code> will open a completions window. In an empty
 string, this will contain the files in the current directory. On a
 blank line, it will contain the built-in and user-defined functions and
 classes in the current name spaces, plus any modules imported. If some
 characters have been entered, the ACW will attempt to be more specific.</p>
 <p>If a string of characters is typed, the ACW selection will jump to the
-entry most closely matching those characters.  Entering a <tt class="kbd docutils literal"><span class="pre">tab</span></tt> will
+entry most closely matching those characters.  Entering a <code class="kbd docutils literal"><span class="pre">tab</span></code> will
 cause the longest non-ambiguous match to be entered in the Editor window or
-Shell.  Two <tt class="kbd docutils literal"><span class="pre">tab</span></tt> in a row will supply the current ACW selection, as
+Shell.  Two <code class="kbd docutils literal"><span class="pre">tab</span></code> in a row will supply the current ACW selection, as
 will return or a double click.  Cursor keys, Page Up/Down, mouse selection,
 and the scroll wheel all operate on the ACW.</p>
 <p>&#8220;Hidden&#8221; attributes can be accessed by typing the beginning of hidden
 name after a &#8216;.&#8217;, e.g. &#8216;_&#8217;. This allows access to modules with
-<tt class="docutils literal"><span class="pre">__all__</span></tt> set, or to class-private attributes.</p>
+<code class="docutils literal"><span class="pre">__all__</span></code> set, or to class-private attributes.</p>
 <p>Completions and the &#8216;Expand Word&#8217; facility can save a lot of typing!</p>
 <p>Completions are currently limited to those in the namespaces. Names in
-an Editor window which are not via <tt class="docutils literal"><span class="pre">__main__</span></tt> and <a class="reference internal" href="sys.html#sys.modules" title="sys.modules"><tt class="xref py py-data docutils literal"><span class="pre">sys.modules</span></tt></a> will
+an Editor window which are not via <code class="docutils literal"><span class="pre">__main__</span></code> and <a class="reference internal" href="sys.html#sys.modules" title="sys.modules"><code class="xref py py-data docutils literal"><span class="pre">sys.modules</span></code></a> will
 not be found.  Run the module once with your imports to correct this situation.
 Note that IDLE itself places quite a few modules in sys.modules, so
 much can be found by default, e.g. the re module.</p>
@@ -421,10 +421,10 @@ longer or disable the extension.</p>
 </div>
 <div class="section" id="calltips">
 <h3>24.6.2.3. Calltips<a class="headerlink" href="#calltips" title="Permalink to this headline">¶</a></h3>
-<p>A calltip is shown when one types <tt class="kbd docutils literal"><span class="pre">(</span></tt> after the name of an <em>acccessible</em>
+<p>A calltip is shown when one types <code class="kbd docutils literal"><span class="pre">(</span></code> after the name of an <em>acccessible</em>
 function.  A name expression may include dots and subscripts.  A calltip
 remains until it is clicked, the cursor is moved out of the argument area,
-or <tt class="kbd docutils literal"><span class="pre">)</span></tt> is typed.  When the cursor is in the argument part of a definition,
+or <code class="kbd docutils literal"><span class="pre">)</span></code> is typed.  When the cursor is in the argument part of a definition,
 the menu or shortcut display a calltip.</p>
 <p>A calltip consists of the function signature and the first line of the
 docstring.  For builtins without an accessible signature, the calltip
@@ -433,11 +433,11 @@ details may change.</p>
 <p>The set of <em>accessible</em> functions depends on what modules have been imported
 into the user process, including those imported by Idle itself,
 and what definitions have been run, all since the last restart.</p>
-<p>For example, restart the Shell and enter <tt class="docutils literal"><span class="pre">itertools.count(</span></tt>.  A calltip
+<p>For example, restart the Shell and enter <code class="docutils literal"><span class="pre">itertools.count(</span></code>.  A calltip
 appears because Idle imports itertools into the user process for its own use.
-(This could change.)  Enter <tt class="docutils literal"><span class="pre">turtle.write(</span></tt> and nothing appears.  Idle does
+(This could change.)  Enter <code class="docutils literal"><span class="pre">turtle.write(</span></code> and nothing appears.  Idle does
 not import turtle.  The menu or shortcut do nothing either.  Enter
-<tt class="docutils literal"><span class="pre">import</span> <span class="pre">turtle</span></tt> and then <tt class="docutils literal"><span class="pre">turtle.write(</span></tt> will work.</p>
+<code class="docutils literal"><span class="pre">import</span> <span class="pre">turtle</span></code> and then <code class="docutils literal"><span class="pre">turtle.write(</span></code> will work.</p>
 <p>In an editor, import statements have no effect until one runs the file.  One
 might want to run a file after writing the import statements at the top,
 or immediately run an existing file before editing.</p>
@@ -445,17 +445,17 @@ or immediately run an existing file before editing.</p>
 <div class="section" id="python-shell-window">
 <h3>24.6.2.4. Python Shell window<a class="headerlink" href="#python-shell-window" title="Permalink to this headline">¶</a></h3>
 <ul>
-<li><p class="first"><tt class="kbd docutils literal"><span class="pre">C-c</span></tt> interrupts executing command</p>
+<li><p class="first"><code class="kbd docutils literal"><span class="pre">C-c</span></code> interrupts executing command</p>
 </li>
-<li><p class="first"><tt class="kbd docutils literal"><span class="pre">C-d</span></tt> sends end-of-file; closes window if typed at a <tt class="docutils literal"><span class="pre">&gt;&gt;&gt;</span></tt> prompt</p>
+<li><p class="first"><code class="kbd docutils literal"><span class="pre">C-d</span></code> sends end-of-file; closes window if typed at a <code class="docutils literal"><span class="pre">&gt;&gt;&gt;</span></code> prompt</p>
 </li>
-<li><p class="first"><tt class="kbd docutils literal"><span class="pre">Alt-/</span></tt> (Expand word) is also useful to reduce typing</p>
+<li><p class="first"><code class="kbd docutils literal"><span class="pre">Alt-/</span></code> (Expand word) is also useful to reduce typing</p>
 <p>Command history</p>
 <ul class="simple">
-<li><tt class="kbd docutils literal"><span class="pre">Alt-p</span></tt> retrieves previous command matching what you have typed. On
-OS X use <tt class="kbd docutils literal"><span class="pre">C-p</span></tt>.</li>
-<li><tt class="kbd docutils literal"><span class="pre">Alt-n</span></tt> retrieves next. On OS X use <tt class="kbd docutils literal"><span class="pre">C-n</span></tt>.</li>
-<li><tt class="kbd docutils literal"><span class="pre">Return</span></tt> while on any previous command retrieves that command</li>
+<li><code class="kbd docutils literal"><span class="pre">Alt-p</span></code> retrieves previous command matching what you have typed. On
+OS X use <code class="kbd docutils literal"><span class="pre">C-p</span></code>.</li>
+<li><code class="kbd docutils literal"><span class="pre">Alt-n</span></code> retrieves next. On OS X use <code class="kbd docutils literal"><span class="pre">C-n</span></code>.</li>
+<li><code class="kbd docutils literal"><span class="pre">Return</span></code> while on any previous command retrieves that command</li>
 </ul>
 </li>
 </ul>
@@ -465,8 +465,8 @@ OS X use <tt class="kbd docutils literal"><span class="pre">C-p</span></tt>.</li
 <p>Idle defaults to black on white text, but colors text with special meanings.
 For the shell, these are shell output, shell error, user output, and
 user error.  For Python code, at the shell prompt or in an editor, these are
-keywords, builtin class and function names, names following <tt class="docutils literal"><span class="pre">class</span></tt> and
-<tt class="docutils literal"><span class="pre">def</span></tt>, strings, and comments. For any text window, these are the cursor (when
+keywords, builtin class and function names, names following <code class="docutils literal"><span class="pre">class</span></code> and
+<code class="docutils literal"><span class="pre">def</span></code>, strings, and comments. For any text window, these are the cursor (when
 present), found text (when possible), and selected text.</p>
 <p>Text coloring is done in the background, so uncolorized text is occasionally
 visible.  To change the color scheme, use the Configure IDLE dialog
@@ -476,15 +476,15 @@ text in popups and dialogs is not user-configurable.</p>
 </div>
 <div class="section" id="startup-and-code-execution">
 <h2>24.6.3. Startup and code execution<a class="headerlink" href="#startup-and-code-execution" title="Permalink to this headline">¶</a></h2>
-<p>Upon startup with the <tt class="docutils literal"><span class="pre">-s</span></tt> option, IDLE will execute the file referenced by
-the environment variables <span class="target" id="index-5"></span><tt class="xref std std-envvar docutils literal"><span class="pre">IDLESTARTUP</span></tt> or <span class="target" id="index-6"></span><a class="reference internal" href="../using/cmdline.html#envvar-PYTHONSTARTUP"><tt class="xref std std-envvar docutils literal"><span class="pre">PYTHONSTARTUP</span></tt></a>.
-IDLE first checks for <tt class="docutils literal"><span class="pre">IDLESTARTUP</span></tt>; if <tt class="docutils literal"><span class="pre">IDLESTARTUP</span></tt> is present the file
-referenced is run.  If <tt class="docutils literal"><span class="pre">IDLESTARTUP</span></tt> is not present, IDLE checks for
-<tt class="docutils literal"><span class="pre">PYTHONSTARTUP</span></tt>.  Files referenced by these environment variables are
+<p>Upon startup with the <code class="docutils literal"><span class="pre">-s</span></code> option, IDLE will execute the file referenced by
+the environment variables <span class="target" id="index-5"></span><code class="xref std std-envvar docutils literal"><span class="pre">IDLESTARTUP</span></code> or <span class="target" id="index-6"></span><a class="reference internal" href="../using/cmdline.html#envvar-PYTHONSTARTUP"><code class="xref std std-envvar docutils literal"><span class="pre">PYTHONSTARTUP</span></code></a>.
+IDLE first checks for <code class="docutils literal"><span class="pre">IDLESTARTUP</span></code>; if <code class="docutils literal"><span class="pre">IDLESTARTUP</span></code> is present the file
+referenced is run.  If <code class="docutils literal"><span class="pre">IDLESTARTUP</span></code> is not present, IDLE checks for
+<code class="docutils literal"><span class="pre">PYTHONSTARTUP</span></code>.  Files referenced by these environment variables are
 convenient places to store functions that are used frequently from the IDLE
 shell, or for executing import statements to import common modules.</p>
-<p>In addition, <tt class="docutils literal"><span class="pre">Tk</span></tt> also loads a startup file if it is present.  Note that the
-Tk file is loaded unconditionally.  This additional file is <tt class="docutils literal"><span class="pre">.Idle.py</span></tt> and is
+<p>In addition, <code class="docutils literal"><span class="pre">Tk</span></code> also loads a startup file if it is present.  Note that the
+Tk file is loaded unconditionally.  This additional file is <code class="docutils literal"><span class="pre">.Idle.py</span></code> and is
 looked for in the user&#8217;s home directory.  Statements in this file will be
 executed in the Tk namespace, so this file is not useful for importing
 functions to be used from IDLE&#8217;s Python shell.</p>
@@ -505,12 +505,12 @@ functions to be used from IDLE&#8217;s Python shell.</p>
 </div>
 <p>If there are arguments:</p>
 <ul class="simple">
-<li>If <tt class="docutils literal"><span class="pre">-</span></tt>, <tt class="docutils literal"><span class="pre">-c</span></tt>, or <tt class="docutils literal"><span class="pre">r</span></tt> is used, all arguments are placed in
-<tt class="docutils literal"><span class="pre">sys.argv[1:...]</span></tt> and <tt class="docutils literal"><span class="pre">sys.argv[0]</span></tt> is set to <tt class="docutils literal"><span class="pre">''</span></tt>, <tt class="docutils literal"><span class="pre">'-c'</span></tt>,
-or <tt class="docutils literal"><span class="pre">'-r'</span></tt>.  No editor window is opened, even if that is the default
+<li>If <code class="docutils literal"><span class="pre">-</span></code>, <code class="docutils literal"><span class="pre">-c</span></code>, or <code class="docutils literal"><span class="pre">r</span></code> is used, all arguments are placed in
+<code class="docutils literal"><span class="pre">sys.argv[1:...]</span></code> and <code class="docutils literal"><span class="pre">sys.argv[0]</span></code> is set to <code class="docutils literal"><span class="pre">''</span></code>, <code class="docutils literal"><span class="pre">'-c'</span></code>,
+or <code class="docutils literal"><span class="pre">'-r'</span></code>.  No editor window is opened, even if that is the default
 set in the Options dialog.</li>
 <li>Otherwise, arguments are files opened for editing and
-<tt class="docutils literal"><span class="pre">sys.argv</span></tt> reflects the arguments passed to IDLE itself.</li>
+<code class="docutils literal"><span class="pre">sys.argv</span></code> reflects the arguments passed to IDLE itself.</li>
 </ul>
 </div>
 <div class="section" id="idle-console-differences">
@@ -595,7 +595,7 @@ are currently:</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h3><a href="../contents.html">Table Of Contents</a></h3>
   <ul>
@@ -639,7 +639,7 @@ are currently:</p>
 
   <h4>Previous topic</h4>
   <p class="topless"><a href="turtle.html"
-                        title="previous chapter">24.5. <tt class="docutils literal"><span class="pre">turtle</span></tt> &#8212; Turtle graphics for Tk</a></p>
+                        title="previous chapter">24.5. <code class="docutils literal"><span class="pre">turtle</span></code> &#8212; Turtle graphics for Tk</a></p>
   <h4>Next topic</h4>
   <p class="topless"><a href="othergui.html"
                         title="next chapter">24.7. Other Graphical User Interface Packages</a></p>
@@ -650,7 +650,7 @@ are currently:</p>
          rel="nofollow">Show Source</a></li>
 </ul>
 
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../search.html" method="get">
       <input type="text" name="q" />
@@ -667,7 +667,7 @@ are currently:</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -686,23 +686,23 @@ are currently:</p>
                  style="vertical-align: middle; margin-top: -1px"/></li>
         <li><a href="https://www.python.org/">Python</a> &raquo;</li>
         <li>
-          <a href="../index.html">Python 2.7.10 documentation</a> &raquo;
+          <a href="../index.html">Python 2.7.11 documentation</a> &raquo;
         </li>
 
-          <li><a href="index.html" >The Python Standard Library</a> &raquo;</li>
-          <li><a href="tk.html" >24. Graphical User Interfaces with Tk</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="index.html" >The Python Standard Library</a> &raquo;</li>
+          <li class="nav-item nav-item-2"><a href="tk.html" >24. Graphical User Interfaces with Tk</a> &raquo;</li>
       </ul>
     </div>
     <div class="footer">
-    &copy; <a href="../copyright.html">Copyright</a> 1990-2015, Python Software Foundation.
+    &copy; <a href="../copyright.html">Copyright</a> 1990-2016, Python Software Foundation.
     <br />
     The Python Software Foundation is a non-profit corporation.
     <a href="https://www.python.org/psf/donations/">Please donate.</a>
     <br />
-    Last updated on Oct 13, 2015.
+    Last updated on Mar 20, 2016.
     <a href="../bugs.html">Found a bug</a>?
     <br />
-    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.2.3.
+    Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3.3.
     </div>
 
   </body>
