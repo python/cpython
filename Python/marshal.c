@@ -263,7 +263,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     if (Py_REFCNT(v) == 1)
         return 0;
 
-    entry = _Py_HASHTABLE_GET_ENTRY(p->hashtable, v);
+    entry = _Py_hashtable_get_entry(p->hashtable, v);
     if (entry != NULL) {
         /* write the reference index to the stream */
         _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, &w, sizeof(w), entry);
@@ -571,8 +571,7 @@ static int
 w_init_refs(WFILE *wf, int version)
 {
     if (version >= 3) {
-        wf->hashtable = _Py_hashtable_new(sizeof(void *), sizeof(int),
-                                          _Py_hashtable_hash_ptr,
+        wf->hashtable = _Py_hashtable_new(sizeof(int), _Py_hashtable_hash_ptr,
                                           _Py_hashtable_compare_direct);
         if (wf->hashtable == NULL) {
             PyErr_NoMemory();
@@ -583,11 +582,9 @@ w_init_refs(WFILE *wf, int version)
 }
 
 static int
-w_decref_entry(_Py_hashtable_t *ht, _Py_hashtable_entry_t *entry, void *Py_UNUSED(data))
+w_decref_entry(_Py_hashtable_entry_t *entry, void *Py_UNUSED(data))
 {
-    void *entry_key = *(void **)_Py_HASHTABLE_ENTRY_KEY(entry);
-    assert(ht->key_size == sizeof(entry_key));
-    Py_XDECREF(entry_key);
+    Py_XDECREF(entry->key);
     return 0;
 }
 
