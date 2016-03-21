@@ -1705,17 +1705,27 @@ replace_interleave(PyByteArrayObject *self,
     self_s = PyByteArray_AS_STRING(self);
     result_s = PyByteArray_AS_STRING(result);
 
-    /* TODO: special case single character, which doesn't need memcpy */
-
-    /* Lay the first one down (guaranteed this will occur) */
-    Py_MEMCPY(result_s, to_s, to_len);
-    result_s += to_len;
-    count -= 1;
-
-    for (i=0; i<count; i++) {
-        *result_s++ = *self_s++;
+    if (to_len > 1) {
+        /* Lay the first one down (guaranteed this will occur) */
         Py_MEMCPY(result_s, to_s, to_len);
         result_s += to_len;
+        count -= 1;
+
+        for (i = 0; i < count; i++) {
+            *result_s++ = *self_s++;
+            Py_MEMCPY(result_s, to_s, to_len);
+            result_s += to_len;
+        }
+    }
+    else {
+        result_s[0] = to_s[0];
+        result_s += to_len;
+        count -= 1;
+        for (i = 0; i < count; i++) {
+            *result_s++ = *self_s++;
+            result_s[0] = to_s[0];
+            result_s += to_len;
+        }
     }
 
     /* Copy the rest of the original string */

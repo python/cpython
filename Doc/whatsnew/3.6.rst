@@ -339,6 +339,9 @@ Optimizations
 * Optimize :meth:`bytes.fromhex` and :meth:`bytearray.fromhex`: they are now
   between 2x and 3.5x faster. (Contributed by Victor Stinner in :issue:`25401`).
 
+* Optimize ``bytes.replace(b'', b'.')`` and ``bytearray.replace(b'', b'.')``:
+  up to 80% faster. (Contributed by Josh Snider in :issue:`26574`).
+
 
 Build and C API Changes
 =======================
