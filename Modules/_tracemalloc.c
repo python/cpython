@@ -247,7 +247,7 @@ raw_free(void *ptr)
 static Py_uhash_t
 hashtable_hash_traceback(size_t key_size, const void *pkey)
 {
-    const traceback_t *traceback;
+    traceback_t *traceback;
 
     _Py_HASHTABLE_READ_KEY(key_size, pkey, traceback);
     return traceback->hash;
