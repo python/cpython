@@ -35,9 +35,6 @@ typedef struct {
 #define _Py_HASHTABLE_ENTRY_DATA(TABLE, ENTRY) \
         ((char *)(ENTRY) + sizeof(_Py_hashtable_entry_t) + (TABLE)->key_size)
 
-#define _Py_HASHTABLE_ENTRY_DATA_AS_VOID_P(TABLE, ENTRY) \
-        (*(void **)_Py_HASHTABLE_ENTRY_DATA(TABLE, ENTRY))
-
 /* Get a key value from pkey: use memcpy() rather than a pointer dereference
    to avoid memory alignment issues. */
 #define _Py_HASHTABLE_READ_KEY(KEY_SIZE, PKEY, DST_KEY) \
@@ -66,9 +63,6 @@ typedef Py_uhash_t (*_Py_hashtable_hash_func) (size_t key_size,
 typedef int (*_Py_hashtable_compare_func) (size_t key_size,
                                            const void *pkey,
                                            const _Py_hashtable_entry_t *he);
-typedef void* (*_Py_hashtable_copy_data_func)(void *data);
-typedef void (*_Py_hashtable_free_data_func)(void *data);
-typedef size_t (*_Py_hashtable_get_data_size_func)(void *data);
 
 typedef struct {
     /* allocate a memory block */
@@ -90,9 +84,6 @@ typedef struct {
 
     _Py_hashtable_hash_func hash_func;
     _Py_hashtable_compare_func compare_func;
-    _Py_hashtable_copy_data_func copy_data_func;
-    _Py_hashtable_free_data_func free_data_func;
-    _Py_hashtable_get_data_size_func get_data_size_func;
     _Py_hashtable_allocator_t alloc;
 } _Py_hashtable_t;
 
@@ -119,9 +110,6 @@ PyAPI_FUNC(_Py_hashtable_t *) _Py_hashtable_new_full(
     size_t init_size,
     _Py_hashtable_hash_func hash_func,
     _Py_hashtable_compare_func compare_func,
-    _Py_hashtable_copy_data_func copy_data_func,
-    _Py_hashtable_free_data_func free_data_func,
-    _Py_hashtable_get_data_size_func get_data_size_func,
     _Py_hashtable_allocator_t *allocator);
 
 PyAPI_FUNC(void) _Py_hashtable_destroy(_Py_hashtable_t *ht);
@@ -155,7 +143,7 @@ PyAPI_FUNC(int) _Py_hashtable_set(
     size_t key_size,
     const void *pkey,
     size_t data_size,
-    void *data);
+    const void *data);
 
 #define _Py_HASHTABLE_SET(TABLE, KEY, DATA) \
     _Py_hashtable_set(TABLE, sizeof(KEY), &KEY, sizeof(DATA), &(DATA))
