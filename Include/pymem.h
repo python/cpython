@@ -59,6 +59,8 @@ PyAPI_FUNC(int) _PyTraceMalloc_Untrack(
 PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
     _PyTraceMalloc_domain_t domain,
     Py_uintptr_t ptr);
+
+PyAPI_DATA(int) tracemalloc_debug;
 #endif   /* !Py_LIMITED_API */
 
 
