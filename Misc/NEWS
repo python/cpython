@@ -94,6 +94,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24266: Ctrl+C during Readline history search now cancels the search
+  mode when compiled with Readline 7.
+
 - Issue #26560: Avoid potential ValueError in BaseHandler.start_response.
   Initial patch by Peter Inglesby.
 
