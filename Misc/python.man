@@ -1,4 +1,4 @@
-.TH PYTHON "1" "$Date$"
+.TH PYTHON "1"
 
 .\" To view this file while editing, run it through groff:
 .\"   groff -Tascii -man python.man | less
