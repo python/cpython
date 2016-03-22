@@ -78,10 +78,12 @@ on_completion_display_matches_hook(char **matches,
 static char *completer_word_break_characters;
 
 typedef struct {
+  /* Specify hook functions in Python */
   PyObject *completion_display_matches_hook;
   PyObject *startup_hook;
   PyObject *pre_input_hook;
-  PyObject *completer;
+
+  PyObject *completer; /* Specify a word completer in Python */
   PyObject *begidx;
   PyObject *endidx;
 } readlinestate;
@@ -334,13 +336,6 @@ set_hook(const char *funcname, PyObject **hook_var, PyObject *args)
 }
 
 
-/* Exported functions to specify hook functions in Python */
-
-
-#ifdef HAVE_RL_PRE_INPUT_HOOK
-
-#endif
-
 static PyObject *
 set_completion_display_matches_hook(PyObject *self, PyObject *args)
 {
@@ -399,14 +394,6 @@ has been printed and just before readline starts reading input\n\
 characters.");
 
 #endif
-
-
-/* Exported function to specify a word completer in Python */
-
-
-
-
-
 
 
 /* Get the completion type for the scope of the tab-completion */
