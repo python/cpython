@@ -3675,6 +3675,78 @@ pyobject_malloc_without_gil(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
+static PyObject *
+tracemalloc_track(PyObject *self, PyObject *args)
+{
+    unsigned int domain;
+    PyObject *ptr_obj;
+    void *ptr;
+    Py_ssize_t size;
+    int release_gil = 0;
+    int res;
+
+    if (!PyArg_ParseTuple(args, "IOn|i", &domain, &ptr_obj, &size, &release_gil))
+        return NULL;
+    ptr = PyLong_AsVoidPtr(ptr_obj);
+    if (PyErr_Occurred())
+        return NULL;
+
+    if (release_gil) {
+        Py_BEGIN_ALLOW_THREADS
+        res = _PyTraceMalloc_Track(domain, (Py_uintptr_t)ptr, size);
+        Py_END_ALLOW_THREADS
+    }
+    else {
+        res = _PyTraceMalloc_Track(domain, (Py_uintptr_t)ptr, size);
+    }
+
+    if (res < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "_PyTraceMalloc_Track error");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+tracemalloc_untrack(PyObject *self, PyObject *args)
+{
+    unsigned int domain;
+    PyObject *ptr_obj;
+    void *ptr;
+    int res;
+
+    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj))
+        return NULL;
+    ptr = PyLong_AsVoidPtr(ptr_obj);
+    if (PyErr_Occurred())
+        return NULL;
+
+    res = _PyTraceMalloc_Untrack(domain, (Py_uintptr_t)ptr);
+    if (res < 0) {
+        PyErr_SetString(PyExc_RuntimeError, "_PyTraceMalloc_Track error");
+        return NULL;
+    }
+
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+tracemalloc_get_traceback(PyObject *self, PyObject *args)
+{
+    unsigned int domain;
+    PyObject *ptr_obj;
+    void *ptr;
+
+    if (!PyArg_ParseTuple(args, "IO", &domain, &ptr_obj))
+        return NULL;
+    ptr = PyLong_AsVoidPtr(ptr_obj);
+    if (PyErr_Occurred())
+        return NULL;
+
+    return _PyTraceMalloc_GetTraceback(domain, (Py_uintptr_t)ptr);
+}
+
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3861,6 +3933,9 @@ static PyMethodDef TestMethods[] = {
     {"pymem_api_misuse", pymem_api_misuse, METH_NOARGS},
     {"pymem_malloc_without_gil", pymem_malloc_without_gil, METH_NOARGS},
     {"pyobject_malloc_without_gil", pyobject_malloc_without_gil, METH_NOARGS},
+    {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
+    {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
+    {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 

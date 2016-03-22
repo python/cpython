@@ -11,8 +11,14 @@ try:
     import threading
 except ImportError:
     threading = None
+try:
+    import _testcapi
+except ImportError:
+    _testcapi = None
+
 
 EMPTY_STRING_SIZE = sys.getsizeof(b'')
+
 
 def get_frames(nframe, lineno_delta):
     frames = []
@@ -866,12 +872,121 @@ class TestCommandLine(unittest.TestCase):
         assert_python_ok('-X', 'tracemalloc', '-c', code)
 
 
+@unittest.skipIf(_testcapi is None, 'need _testcapi')
+class TestCAPI(unittest.TestCase):
+    maxDiff = 80 * 20
+
+    def setUp(self):
+        if tracemalloc.is_tracing():
+            self.skipTest("tracemalloc must be stopped before the test")
+
+        self.domain = 5
+        self.size = 123
+        self.obj = allocate_bytes(self.size)[0]
+
+        # for the type "object", id(obj) is the address of its memory block.
+        # This type is not tracked by the garbage collector
+        self.ptr = id(self.obj)
+
+    def tearDown(self):
+        tracemalloc.stop()
+
+    def get_traceback(self):
+        frames = _testcapi.tracemalloc_get_traceback(self.domain, self.ptr)
+        if frames is not None:
+            return tracemalloc.Traceback(frames)
+        else:
+            return None
+
+    def track(self, release_gil=False, nframe=1):
+        frames = get_frames(nframe, 2)
+        _testcapi.tracemalloc_track(self.domain, self.ptr, self.size,
+                                    release_gil)
+        return frames
+
+    def untrack(self):
+        _testcapi.tracemalloc_untrack(self.domain, self.ptr)
+
+    def get_traced_memory(self):
+        # Get the traced size in the domain
+        snapshot = tracemalloc.take_snapshot()
+        domain_filter = tracemalloc.DomainFilter(True, self.domain)
+        snapshot = snapshot.filter_traces([domain_filter])
+        return sum(trace.size for trace in snapshot.traces)
+
+    def check_track(self, release_gil):
+        nframe = 5
+        tracemalloc.start(nframe)
+
+        size = tracemalloc.get_traced_memory()[0]
+
+        frames = self.track(release_gil, nframe)
+        self.assertEqual(self.get_traceback(),
+                         tracemalloc.Traceback(frames))
+
+        self.assertEqual(self.get_traced_memory(), self.size)
+
+    def test_track(self):
+        self.check_track(False)
+
+    def test_track_without_gil(self):
+        # check that calling _PyTraceMalloc_Track() without holding the GIL
+        # works too
+        self.check_track(True)
+
+    def test_track_already_tracked(self):
+        nframe = 5
+        tracemalloc.start(nframe)
+
+        # track a first time
+        self.track()
+
+        # calling _PyTraceMalloc_Track() must remove the old trace and add
+        # a new trace with the new traceback
+        frames = self.track(nframe=nframe)
+        self.assertEqual(self.get_traceback(),
+                         tracemalloc.Traceback(frames))
+
+    def test_untrack(self):
+        tracemalloc.start()
+
+        self.track()
+        self.assertIsNotNone(self.get_traceback())
+        self.assertEqual(self.get_traced_memory(), self.size)
+
+        # untrack must remove the trace
+        self.untrack()
+        self.assertIsNone(self.get_traceback())
+        self.assertEqual(self.get_traced_memory(), 0)
+
+        # calling _PyTraceMalloc_Untrack() multiple times must not crash
+        self.untrack()
+        self.untrack()
+
+    def test_stop_track(self):
+        tracemalloc.start()
+        tracemalloc.stop()
+
+        with self.assertRaises(RuntimeError):
+            self.track()
+        self.assertIsNone(self.get_traceback())
+
+    def test_stop_untrack(self):
+        tracemalloc.start()
+        self.track()
+
+        tracemalloc.stop()
+        with self.assertRaises(RuntimeError):
+            self.untrack()
+
+
 def test_main():
     support.run_unittest(
         TestTracemallocEnabled,
         TestSnapshot,
         TestFilters,
         TestCommandLine,
+        TestCAPI,
     )
 
 if __name__ == "__main__":
