@@ -1,3 +1,4 @@
+import datetime
 import faulthandler
 import os
 import platform
@@ -7,6 +8,7 @@ import sys
 import sysconfig
 import tempfile
 import textwrap
+import time
 from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest,
@@ -79,6 +81,7 @@ class Regrtest:
         self.found_garbage = []
 
         # used to display the progress bar "[ 3/100]"
+        self.start_time = time.monotonic()
         self.test_count = ''
         self.test_count_width = 1
 
@@ -102,16 +105,24 @@ class Regrtest:
             self.skipped.append(test)
             self.resource_denieds.append(test)
 
+    def time_delta(self):
+        seconds = time.monotonic() - self.start_time
+        return datetime.timedelta(seconds=int(seconds))
+
     def display_progress(self, test_index, test):
         if self.ns.quiet:
             return
         if self.bad and not self.ns.pgo:
-            fmt = "[{1:{0}}{2}/{3}] {4}"
+            fmt = "{time} [{test_index:{count_width}}{test_count}/{nbad}] {test_name}"
         else:
-            fmt = "[{1:{0}}{2}] {4}"
-        print(fmt.format(self.test_count_width, test_index,
-                         self.test_count, len(self.bad), test),
-              flush=True)
+            fmt = "{time} [{test_index:{count_width}}{test_count}] {test_name}"
+        line = fmt.format(count_width=self.test_count_width,
+                          test_index=test_index,
+                          test_count=self.test_count,
+                          nbad=len(self.bad),
+                          test_name=test,
+                          time=self.time_delta())
+        print(line, flush=True)
 
     def parse_args(self, kwargs):
         ns = _parse_args(sys.argv[1:], **kwargs)
@@ -367,6 +378,8 @@ class Regrtest:
             r = self.tracer.results()
             r.write_results(show_missing=True, summary=True,
                             coverdir=self.ns.coverdir)
+
+        print("Total duration: %s" % self.time_delta())
 
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
