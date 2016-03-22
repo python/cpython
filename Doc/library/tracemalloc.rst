@@ -355,10 +355,32 @@ Functions
    See also the :func:`get_object_traceback` function.
 
 
+DomainFilter
+^^^^^^^^^^^^
+
+.. class:: DomainFilter(inclusive: bool, domain: int)
+
+   Filter traces of memory blocks by their address space (domain).
+
+   .. versionadded:: 3.6
+
+   .. attribute:: inclusive
+
+      If *inclusive* is ``True`` (include), match memory blocks allocated
+      in the address space :attr:`domain`.
+
+      If *inclusive* is ``False`` (exclude), match memory blocks not allocated
+      in the address space :attr:`domain`.
+
+   .. attribute:: domain
+
+      Address space of a memory block (``int``). Read-only property.
+
+
 Filter
 ^^^^^^
 
-.. class:: Filter(inclusive: bool, filename_pattern: str, lineno: int=None, all_frames: bool=False)
+.. class:: Filter(inclusive: bool, filename_pattern: str, lineno: int=None, all_frames: bool=False, domain: int=None)
 
    Filter on traces of memory blocks.
 
@@ -378,9 +400,17 @@ Filter
    .. versionchanged:: 3.5
       The ``'.pyo'`` file extension is no longer replaced with ``'.py'``.
 
+   .. versionchanged:: 3.6
+      Added the :attr:`domain` attribute.
+
+
+   .. attribute:: domain
+
+      Address space of a memory block (``int`` or ``None``).
+
    .. attribute:: inclusive
 
-      If *inclusive* is ``True`` (include), only trace memory blocks allocated
+      If *inclusive* is ``True`` (include), only match memory blocks allocated
       in a file with a name matching :attr:`filename_pattern` at line number
       :attr:`lineno`.
 
@@ -395,7 +425,7 @@ Filter
 
    .. attribute:: filename_pattern
 
-      Filename pattern of the filter (``str``).
+      Filename pattern of the filter (``str``). Read-only property.
 
    .. attribute:: all_frames
 
@@ -458,13 +488,16 @@ Snapshot
    .. method:: filter_traces(filters)
 
       Create a new :class:`Snapshot` instance with a filtered :attr:`traces`
-      sequence, *filters* is a list of :class:`Filter` instances.  If *filters*
-      is an empty list, return a new :class:`Snapshot` instance with a copy of
-      the traces.
+      sequence, *filters* is a list of :class:`DomainFilter` and
+      :class:`Filter` instances.  If *filters* is an empty list, return a new
+      :class:`Snapshot` instance with a copy of the traces.
 
       All inclusive filters are applied at once, a trace is ignored if no
       inclusive filters match it. A trace is ignored if at least one exclusive
       filter matches it.
+
+      .. versionchanged:: 3.6
+         :class:`DomainFilter` instances are now also accepted in *filters*.
 
 
    .. classmethod:: load(filename)
