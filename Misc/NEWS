@@ -232,6 +232,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24266: Ctrl+C during Readline history search now cancels the search
+  mode when compiled with Readline 7.
+
 - Issue #26590: Implement a safe finalizer for the _socket.socket type. It now
   releases the GIL to close the socket.
 
