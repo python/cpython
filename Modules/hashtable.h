@@ -146,10 +146,10 @@ PyAPI_FUNC(int) _Py_hashtable_set(
     const void *data);
 
 #define _Py_HASHTABLE_SET(TABLE, KEY, DATA) \
-    _Py_hashtable_set(TABLE, sizeof(KEY), &KEY, sizeof(DATA), &(DATA))
+    _Py_hashtable_set(TABLE, sizeof(KEY), &(KEY), sizeof(DATA), &(DATA))
 
 #define _Py_HASHTABLE_SET_NODATA(TABLE, KEY) \
-    _Py_hashtable_set(TABLE, sizeof(KEY), &KEY, 0, NULL)
+    _Py_hashtable_set(TABLE, sizeof(KEY), &(KEY), 0, NULL)
 
 
 /* Get an entry.
