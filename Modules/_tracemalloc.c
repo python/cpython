@@ -992,6 +992,7 @@ DEBUG("tracemalloc_init(): set_reentrant(1)");
 
     tracemalloc_config.initialized = TRACEMALLOC_INITIALIZED;
 DEBUG("tracemalloc_init(): done");
+assert(get_reentrant());
     return 0;
 }
 
