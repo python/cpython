@@ -899,7 +899,7 @@ tracemalloc_clear_traces(void)
 }
 
 #define DEBUG(MSG) \
-    if (tracemalloc_debug) { fprintf(stderr, "[pid %li, tid %li] " MSG "\n", (long)getpid(), PyThread_get_thread_ident()); fflush(stderr); }
+    if (tracemalloc_debug) { fprintf(stderr, "[pid %li, tid %li, reentrant key %i] " MSG "\n", (long)getpid(), PyThread_get_thread_ident(), tracemalloc_reentrant_key); fflush(stderr); }
 
 
 static int
@@ -926,6 +926,7 @@ DEBUG("tracemalloc_init(): exit (already initialized)");
 
 #ifdef REENTRANT_THREADLOCAL
     tracemalloc_reentrant_key = PyThread_create_key();
+fprintf(stderr, "[pid %li, tid %li] PyThread_create_key() -> %i\n", (long)getpid(), PyThread_get_thread_ident(), tracemalloc_reentrant_key); fflush(stderr);
     if (tracemalloc_reentrant_key == -1) {
 #ifdef MS_WINDOWS
         PyErr_SetFromWindowsErr(0);
@@ -1023,6 +1024,7 @@ DEBUG("tracemalloc_deinit(): exit (not initialized)");
 
 DEBUG("tracemalloc_deinit(): delete reentrant key");
 #ifdef REENTRANT_THREADLOCAL
+fprintf(stderr, "[pid %li, tid %li] PyThread_delete_key(%i)\n", (long)getpid(), PyThread_get_thread_ident(), tracemalloc_reentrant_key); fflush(stderr);
     PyThread_delete_key(tracemalloc_reentrant_key);
     tracemalloc_reentrant_key = -1;
 #endif
@@ -1640,6 +1642,9 @@ PyMODINIT_FUNC
 PyInit__tracemalloc(void)
 {
     PyObject *m;
+
+fprintf(stderr, "[pid %li, tid %li] PyInit__tracemalloc\n", (long)getpid(), PyThread_get_thread_ident()); fflush(stderr);
+
     m = PyModule_Create(&module_def);
     if (m == NULL)
         return NULL;
