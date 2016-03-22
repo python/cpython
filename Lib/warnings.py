@@ -233,7 +233,7 @@ def _next_external_frame(frame):
 
 
 # Code typically replaced by _warnings
-def warn(message, category=None, stacklevel=1):
+def warn(message, category=None, stacklevel=1, source=None):
     """Issue a warning, or maybe ignore it or raise an exception."""
     # Check if message is already a Warning object
     if isinstance(message, Warning):
@@ -283,7 +283,7 @@ def warn(message, category=None, stacklevel=1):
             filename = module
     registry = globals.setdefault("__warningregistry__", {})
     warn_explicit(message, category, filename, lineno, module, registry,
-                  globals)
+                  globals, source)
 
 def warn_explicit(message, category, filename, lineno,
                   module=None, registry=None, module_globals=None,
