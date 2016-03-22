@@ -25,6 +25,40 @@ PyAPI_FUNC(int) _PyMem_SetupAllocators(const char *opt);
 PyAPI_FUNC(int) _PyMem_PymallocEnabled(void);
 #endif
 
+/* Identifier of an address space (domain) in tracemalloc */
+typedef unsigned int _PyTraceMalloc_domain_t;
+
+/* Track an allocated memory block in the tracemalloc module.
+   Return 0 on success, return -1 on error (failed to allocate memory to store
+   the trace).
+
+   Return -2 if tracemalloc is disabled.
+
+   If memory block was already tracked, begin by removing the old trace. */
+PyAPI_FUNC(int) _PyTraceMalloc_Track(
+    _PyTraceMalloc_domain_t domain,
+    Py_uintptr_t ptr,
+    size_t size);
+
+/* Untrack an allocated memory block in the tracemalloc module.
+   Do nothing if the block was not tracked.
+
+   Return -2 if tracemalloc is disabled, otherwise return 0. */
+PyAPI_FUNC(int) _PyTraceMalloc_Untrack(
+    _PyTraceMalloc_domain_t domain,
+    Py_uintptr_t ptr);
+
+/* Get the traceback where a memory block was allocated.
+
+   Return a tuple of (filename: str, lineno: int) tuples.
+
+   Return None if the tracemalloc module is disabled or if the memory block
+   is not tracked by tracemalloc.
+
+   Raise an exception and return NULL on error. */
+PyAPI_FUNC(PyObject*) _PyTraceMalloc_GetTraceback(
+    _PyTraceMalloc_domain_t domain,
+    Py_uintptr_t ptr);
 #endif   /* !Py_LIMITED_API */
 
 
