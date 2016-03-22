@@ -193,13 +193,5 @@ PyAPI_FUNC(int) _Py_hashtable_pop(
     _Py_hashtable_pop(TABLE, sizeof(KEY), &(KEY), sizeof(DATA), &(DATA))
 
 
-/* Delete an entry.
-
-   WARNING: The entry must exist. */
-PyAPI_FUNC(void) _Py_hashtable_delete(
-    _Py_hashtable_t *ht,
-    size_t key_size,
-    const void *pkey);
-
 #endif   /* Py_LIMITED_API */
 #endif
