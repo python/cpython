@@ -61,8 +61,6 @@ static PyThread_type_lock tables_lock;
 
 #define DEFAULT_DOMAIN 0
 
-typedef unsigned int domain_t;
-
 /* Pack the frame_t structure to reduce the memory footprint. */
 typedef struct
 #ifdef __GNUC__
@@ -70,7 +68,7 @@ __attribute__((packed))
 #endif
 {
     Py_uintptr_t ptr;
-    domain_t domain;
+    _PyTraceMalloc_domain_t domain;
 } pointer_t;
 
 /* Pack the frame_t structure to reduce the memory footprint on 64-bit
@@ -519,10 +517,12 @@ traceback_new(void)
 
 
 static void
-tracemalloc_remove_trace(domain_t domain, Py_uintptr_t ptr)
+tracemalloc_remove_trace(_PyTraceMalloc_domain_t domain, Py_uintptr_t ptr)
 {
     trace_t trace;
     int removed;
+
+    assert(tracemalloc_config.tracing);
 
     if (tracemalloc_config.use_domain) {
         pointer_t key = {ptr, domain};
@@ -544,11 +544,14 @@ tracemalloc_remove_trace(domain_t domain, Py_uintptr_t ptr)
 
 
 static int
-tracemalloc_add_trace(domain_t domain, Py_uintptr_t ptr, size_t size)
+tracemalloc_add_trace(_PyTraceMalloc_domain_t domain, Py_uintptr_t ptr,
+                      size_t size)
 {
     traceback_t *traceback;
     trace_t trace;
     int res;
+
+    assert(tracemalloc_config.tracing);
 
     /* first, remove the previous trace (if any) */
     tracemalloc_remove_trace(domain, ptr);
@@ -1183,7 +1186,7 @@ traceback_to_pyobject(traceback_t *traceback, _Py_hashtable_t *intern_table)
 
 
 static PyObject*
-trace_to_pyobject(domain_t domain, trace_t *trace,
+trace_to_pyobject(_PyTraceMalloc_domain_t domain, trace_t *trace,
                   _Py_hashtable_t *intern_tracebacks)
 {
     PyObject *trace_obj = NULL;
@@ -1229,7 +1232,7 @@ tracemalloc_get_traces_fill(_Py_hashtable_t *traces, _Py_hashtable_entry_t *entr
                             void *user_data)
 {
     get_traces_t *get_traces = user_data;
-    domain_t domain;
+    _PyTraceMalloc_domain_t domain;
     trace_t *trace;
     PyObject *tracemalloc_obj;
     int res;
@@ -1340,7 +1343,7 @@ finally:
 
 
 static traceback_t*
-tracemalloc_get_traceback(domain_t domain, const void *ptr)
+tracemalloc_get_traceback(_PyTraceMalloc_domain_t domain, Py_uintptr_t ptr)
 {
     trace_t trace;
     int found;
@@ -1350,7 +1353,7 @@ tracemalloc_get_traceback(domain_t domain, const void *ptr)
 
     TABLES_LOCK();
     if (tracemalloc_config.use_domain) {
-        pointer_t key = {(Py_uintptr_t)ptr, domain};
+        pointer_t key = {ptr, domain};
         found = _Py_HASHTABLE_GET(tracemalloc_traces, key, trace);
     }
     else {
@@ -1387,7 +1390,7 @@ py_tracemalloc_get_object_traceback(PyObject *self, PyObject *obj)
     else
         ptr = (void *)obj;
 
-    traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, ptr);
+    traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, (Py_uintptr_t)ptr);
     if (traceback == NULL)
         Py_RETURN_NONE;
 
@@ -1415,7 +1418,7 @@ _PyMem_DumpTraceback(int fd, const void *ptr)
     traceback_t *traceback;
     int i;
 
-    traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, ptr);
+    traceback = tracemalloc_get_traceback(DEFAULT_DOMAIN, (Py_uintptr_t)ptr);
     if (traceback == NULL)
         return;
 
@@ -1685,4 +1688,61 @@ _PyTraceMalloc_Fini(void)
     assert(PyGILState_Check());
 #endif
     tracemalloc_deinit();
+}
+
+int
+_PyTraceMalloc_Track(_PyTraceMalloc_domain_t domain, Py_uintptr_t ptr,
+                     size_t size)
+{
+    int res;
+#ifdef WITH_THREAD
+    PyGILState_STATE gil_state;
+#endif
+
+    if (!tracemalloc_config.tracing) {
+        /* tracemalloc is not tracing: do nothing */
+        return -2;
+    }
+
+#ifdef WITH_THREAD
+    gil_state = PyGILState_Ensure();
+#endif
+
+    TABLES_LOCK();
+    res = tracemalloc_add_trace(domain, ptr, size);
+    TABLES_UNLOCK();
+
+#ifdef WITH_THREAD
+    PyGILState_Release(gil_state);
+#endif
+    return res;
+}
+
+
+int
+_PyTraceMalloc_Untrack(_PyTraceMalloc_domain_t domain, Py_uintptr_t ptr)
+{
+    if (!tracemalloc_config.tracing) {
+        /* tracemalloc is not tracing: do nothing */
+        return -2;
+    }
+
+    TABLES_LOCK();
+    tracemalloc_remove_trace(domain, ptr);
+    TABLES_UNLOCK();
+
+    return 0;
+}
+
+
+PyObject*
+_PyTraceMalloc_GetTraceback(_PyTraceMalloc_domain_t domain, Py_uintptr_t ptr)
+{
+    traceback_t *traceback;
+
+    traceback = tracemalloc_get_traceback(domain, ptr);
+    if (traceback == NULL)
+        Py_RETURN_NONE;
+
+    return traceback_to_pyobject(traceback, NULL);
 }
