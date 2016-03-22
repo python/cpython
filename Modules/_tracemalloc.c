@@ -45,6 +45,8 @@ static struct {
     int use_domain;
 } tracemalloc_config = {TRACEMALLOC_NOT_INITIALIZED, 0, 1, 1};
 
+int tracemalloc_debug = 0;
+
 #if defined(TRACE_RAW_MALLOC) && defined(WITH_THREAD)
 /* This lock is needed because tracemalloc_free() is called without
    the GIL held from PyMem_RawFree(). It cannot acquire the lock because it
@@ -891,18 +893,24 @@ tracemalloc_clear_traces(void)
     _Py_hashtable_clear(tracemalloc_filenames);
 }
 
+#define DEBUG(MSG) \
+    if (tracemalloc_debug) { fprintf(stderr, "[pid %li, tid %li] " MSG "\n", (long)getpid(), PyThread_get_thread_ident()); fflush(stderr); }
+
 
 static int
 tracemalloc_init(void)
 {
+DEBUG("tracemalloc_init()");
     if (tracemalloc_config.initialized == TRACEMALLOC_FINALIZED) {
         PyErr_SetString(PyExc_RuntimeError,
                         "the tracemalloc module has been unloaded");
         return -1;
     }
 
-    if (tracemalloc_config.initialized == TRACEMALLOC_INITIALIZED)
+    if (tracemalloc_config.initialized == TRACEMALLOC_INITIALIZED) {
+DEBUG("tracemalloc_init(): exit (already initialized)");
         return 0;
+    }
 
     PyMem_GetAllocator(PYMEM_DOMAIN_RAW, &allocators.raw);
 
@@ -969,9 +977,11 @@ tracemalloc_init(void)
     /* Disable tracing allocations until hooks are installed. Set
        also the reentrant flag to detect bugs: fail with an assertion error
        if set_reentrant(1) is called while tracing is disabled. */
+DEBUG("tracemalloc_init(): set_reentrant(1)");
     set_reentrant(1);
 
     tracemalloc_config.initialized = TRACEMALLOC_INITIALIZED;
+DEBUG("tracemalloc_init(): done");
     return 0;
 }
 
@@ -979,8 +989,11 @@ tracemalloc_init(void)
 static void
 tracemalloc_deinit(void)
 {
-    if (tracemalloc_config.initialized != TRACEMALLOC_INITIALIZED)
+DEBUG("tracemalloc_deinit()");
+    if (tracemalloc_config.initialized != TRACEMALLOC_INITIALIZED) {
+DEBUG("tracemalloc_deinit(): exit (not initialized)");
         return;
+    }
     tracemalloc_config.initialized = TRACEMALLOC_FINALIZED;
 
     tracemalloc_stop();
@@ -997,11 +1010,13 @@ tracemalloc_deinit(void)
     }
 #endif
 
+DEBUG("tracemalloc_deinit(): delete reentrant key");
 #ifdef REENTRANT_THREADLOCAL
     PyThread_delete_key(tracemalloc_reentrant_key);
 #endif
 
     Py_XDECREF(unknown_filename);
+DEBUG("tracemalloc_deinit(): done");
 }
 
 
@@ -1011,11 +1026,15 @@ tracemalloc_start(int max_nframe)
     PyMemAllocatorEx alloc;
     size_t size;
 
-    if (tracemalloc_init() < 0)
+DEBUG("tracemalloc_start()");
+    if (tracemalloc_init() < 0) {
+DEBUG("tracemalloc_start(): ERROR! init failed!");
         return -1;
+    }
 
     if (tracemalloc_config.tracing) {
         /* hook already installed: do nothing */
+DEBUG("tracemalloc_start(): exit (already tracing)");
         return 0;
     }
 
@@ -1057,8 +1076,11 @@ tracemalloc_start(int max_nframe)
 
     /* everything is ready: start tracing Python memory allocations */
     tracemalloc_config.tracing = 1;
+
+DEBUG("tracemalloc_start(): set_reentrant(0)");
     set_reentrant(0);
 
+DEBUG("tracemalloc_start(): done");
     return 0;
 }
 
@@ -1066,14 +1088,18 @@ tracemalloc_start(int max_nframe)
 static void
 tracemalloc_stop(void)
 {
-    if (!tracemalloc_config.tracing)
+DEBUG("tracemalloc_stop()");
+    if (!tracemalloc_config.tracing) {
+DEBUG("tracemalloc_stop(): exit (not tracing)");
         return;
+    }
 
     /* stop tracing Python memory allocations */
     tracemalloc_config.tracing = 0;
 
     /* set the reentrant flag to detect bugs: fail with an assertion error if
        set_reentrant(1) is called while tracing is disabled. */
+DEBUG("tracemalloc_stop(): set_reentrant(1)");
     set_reentrant(1);
 
     /* unregister the hook on memory allocators */
@@ -1088,6 +1114,7 @@ tracemalloc_stop(void)
     /* release memory */
     raw_free(tracemalloc_traceback);
     tracemalloc_traceback = NULL;
+DEBUG("tracemalloc_stop(): done");
 }
 
 PyDoc_STRVAR(tracemalloc_is_tracing_doc,
@@ -1455,8 +1482,11 @@ py_tracemalloc_start(PyObject *self, PyObject *args)
     }
     nframe_int = Py_SAFE_DOWNCAST(nframe, Py_ssize_t, int);
 
-    if (tracemalloc_start(nframe_int) < 0)
+    if (tracemalloc_start(nframe_int) < 0) {
+DEBUG("start(): ERROR!");
         return NULL;
+    }
+DEBUG("start(): done");
 
     Py_RETURN_NONE;
 }
