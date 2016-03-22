@@ -12101,29 +12101,38 @@ ScandirIterator_exit(ScandirIterator *self, PyObject *args)
 }
 
 static void
+ScandirIterator_finalize(ScandirIterator *iterator)
+{
+    PyObject *error_type, *error_value, *error_traceback;
+
+    /* Save the current exception, if any. */
+    PyErr_Fetch(&error_type, &error_value, &error_traceback);
+
+    if (!ScandirIterator_is_closed(iterator)) {
+        ScandirIterator_closedir(iterator);
+
+        if (PyErr_ResourceWarning((PyObject *)iterator, 1,
+                                  "unclosed scandir iterator %R", iterator)) {
+            /* Spurious errors can appear at shutdown */
+            if (PyErr_ExceptionMatches(PyExc_Warning)) {
+                PyErr_WriteUnraisable((PyObject *) iterator);
+            }
+        }
+    }
+
+    Py_CLEAR(iterator->path.object);
+    path_cleanup(&iterator->path);
+
+    /* Restore the saved exception. */
+    PyErr_Restore(error_type, error_value, error_traceback);
+}
+
+static void
 ScandirIterator_dealloc(ScandirIterator *iterator)
 {
-    if (!ScandirIterator_is_closed(iterator)) {
-        PyObject *exc, *val, *tb;
-        Py_ssize_t old_refcount = Py_REFCNT(iterator);
-        /* Py_INCREF/Py_DECREF cannot be used, because the refcount is
-         * likely zero, Py_DECREF would call again the destructor.
-         */
-        ++Py_REFCNT(iterator);
-        PyErr_Fetch(&exc, &val, &tb);
-        if (PyErr_WarnFormat(PyExc_ResourceWarning, 1,
-                             "unclosed scandir iterator %R", iterator)) {
-            /* Spurious errors can appear at shutdown */
-            if (PyErr_ExceptionMatches(PyExc_Warning))
-                PyErr_WriteUnraisable((PyObject *) iterator);
-        }
-        PyErr_Restore(exc, val, tb);
-        Py_REFCNT(iterator) = old_refcount;
+    if (PyObject_CallFinalizerFromDealloc((PyObject *)iterator) < 0)
+        return;
 
-        ScandirIterator_closedir(iterator);
-    }
-    Py_XDECREF(iterator->path.object);
-    path_cleanup(&iterator->path);
     Py_TYPE(iterator)->tp_free((PyObject *)iterator);
 }
 
@@ -12155,7 +12164,8 @@ static PyTypeObject ScandirIteratorType = {
     0,                                      /* tp_getattro */
     0,                                      /* tp_setattro */
     0,                                      /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT,                     /* tp_flags */
+    Py_TPFLAGS_DEFAULT
+        | Py_TPFLAGS_HAVE_FINALIZE,         /* tp_flags */
     0,                                      /* tp_doc */
     0,                                      /* tp_traverse */
     0,                                      /* tp_clear */
@@ -12164,6 +12174,26 @@ static PyTypeObject ScandirIteratorType = {
     PyObject_SelfIter,                      /* tp_iter */
     (iternextfunc)ScandirIterator_iternext, /* tp_iternext */
     ScandirIterator_methods,                /* tp_methods */
+    0,                                      /* tp_members */
+    0,                                      /* tp_getset */
+    0,                                      /* tp_base */
+    0,                                      /* tp_dict */
+    0,                                      /* tp_descr_get */
+    0,                                      /* tp_descr_set */
+    0,                                      /* tp_dictoffset */
+    0,                                      /* tp_init */
+    0,                                      /* tp_alloc */
+    0,                                      /* tp_new */
+    0,                                      /* tp_free */
+    0,                                      /* tp_is_gc */
+    0,                                      /* tp_bases */
+    0,                                      /* tp_mro */
+    0,                                      /* tp_cache */
+    0,                                      /* tp_subclasses */
+    0,                                      /* tp_weaklist */
+    0,                                      /* tp_del */
+    0,                                      /* tp_version_tag */
+    (destructor)ScandirIterator_finalize,   /* tp_finalize */
 };
 
 static PyObject *
