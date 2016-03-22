@@ -189,11 +189,11 @@ set_reentrant(int reentrant)
 {
     assert(reentrant == 0 || reentrant == 1);
     if (reentrant) {
-        assert(PyThread_get_key_value(tracemalloc_reentrant_key) == NULL);
+        assert(!get_reentrant());
         PyThread_set_key_value(tracemalloc_reentrant_key, REENTRANT);
     }
     else {
-        assert(PyThread_get_key_value(tracemalloc_reentrant_key) == REENTRANT);
+        assert(get_reentrant());
         PyThread_set_key_value(tracemalloc_reentrant_key, NULL);
     }
 }
@@ -901,6 +901,11 @@ static int
 tracemalloc_init(void)
 {
 DEBUG("tracemalloc_init()");
+
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
     if (tracemalloc_config.initialized == TRACEMALLOC_FINALIZED) {
         PyErr_SetString(PyExc_RuntimeError,
                         "the tracemalloc module has been unloaded");
@@ -1027,6 +1032,11 @@ tracemalloc_start(int max_nframe)
     size_t size;
 
 DEBUG("tracemalloc_start()");
+
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
     if (tracemalloc_init() < 0) {
 DEBUG("tracemalloc_start(): ERROR! init failed!");
         return -1;
@@ -1035,8 +1045,10 @@ DEBUG("tracemalloc_start(): ERROR! init failed!");
     if (tracemalloc_config.tracing) {
         /* hook already installed: do nothing */
 DEBUG("tracemalloc_start(): exit (already tracing)");
+assert(!get_reentrant());
         return 0;
     }
+assert(get_reentrant());
 
     assert(1 <= max_nframe && max_nframe <= MAX_NFRAME);
     tracemalloc_config.max_nframe = max_nframe;
@@ -1081,6 +1093,7 @@ DEBUG("tracemalloc_start(): set_reentrant(0)");
     set_reentrant(0);
 
 DEBUG("tracemalloc_start(): done");
+assert(!get_reentrant());
     return 0;
 }
 
@@ -1089,10 +1102,17 @@ static void
 tracemalloc_stop(void)
 {
 DEBUG("tracemalloc_stop()");
+
+#ifdef WITH_THREAD
+    assert(PyGILState_Check());
+#endif
+
     if (!tracemalloc_config.tracing) {
 DEBUG("tracemalloc_stop(): exit (not tracing)");
+assert(get_reentrant());
         return;
     }
+assert(!get_reentrant());
 
     /* stop tracing Python memory allocations */
     tracemalloc_config.tracing = 0;
@@ -1115,6 +1135,7 @@ DEBUG("tracemalloc_stop(): set_reentrant(1)");
     raw_free(tracemalloc_traceback);
     tracemalloc_traceback = NULL;
 DEBUG("tracemalloc_stop(): done");
+assert(get_reentrant());
 }
 
 PyDoc_STRVAR(tracemalloc_is_tracing_doc,
