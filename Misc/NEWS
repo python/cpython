@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24266: Ctrl+C during Readline history search now cancels the search
+  mode when compiled with Readline 7.
+
 - Issue #23857: Implement PEP 493, adding a Python-2-only ssl module API and
   environment variable to configure the default handling of SSL/TLS certificates
   for HTTPS connections.
