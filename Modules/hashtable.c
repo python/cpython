@@ -364,6 +364,8 @@ _Py_hashtable_pop(_Py_hashtable_t *ht, size_t key_size, const void *pkey,
 }
 
 
+/* Code commented since the function is not needed in Python */
+#if 0
 void
 _Py_hashtable_delete(_Py_hashtable_t *ht, size_t key_size, const void *pkey)
 {
@@ -374,6 +376,7 @@ _Py_hashtable_delete(_Py_hashtable_t *ht, size_t key_size, const void *pkey)
     (void)_Py_hashtable_pop_entry(ht, key_size, pkey, NULL, 0);
 #endif
 }
+#endif
 
 
 int
