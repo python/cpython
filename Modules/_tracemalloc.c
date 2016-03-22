@@ -167,7 +167,7 @@ tracemalloc_error(const char *format, ...)
 #  error "need native thread local storage (TLS)"
 #endif
 
-static int tracemalloc_reentrant_key;
+static int tracemalloc_reentrant_key = -1;
 
 /* Any non-NULL pointer can be used */
 #define REENTRANT Py_True
@@ -175,7 +175,10 @@ static int tracemalloc_reentrant_key;
 static int
 get_reentrant(void)
 {
-    void *ptr = PyThread_get_key_value(tracemalloc_reentrant_key);
+    void *ptr;
+
+    assert(tracemalloc_reentrant_key != -1);
+    ptr = PyThread_get_key_value(tracemalloc_reentrant_key);
     if (ptr != NULL) {
         assert(ptr == REENTRANT);
         return 1;
@@ -188,6 +191,8 @@ static void
 set_reentrant(int reentrant)
 {
     assert(reentrant == 0 || reentrant == 1);
+    assert(tracemalloc_reentrant_key != -1);
+
     if (reentrant) {
         assert(!get_reentrant());
         PyThread_set_key_value(tracemalloc_reentrant_key, REENTRANT);
@@ -1018,6 +1023,7 @@ DEBUG("tracemalloc_deinit(): exit (not initialized)");
 DEBUG("tracemalloc_deinit(): delete reentrant key");
 #ifdef REENTRANT_THREADLOCAL
     PyThread_delete_key(tracemalloc_reentrant_key);
+    tracemalloc_reentrant_key = -1;
 #endif
 
     Py_XDECREF(unknown_filename);
