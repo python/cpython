@@ -220,16 +220,15 @@ hashtable_compare_unicode(size_t key_size, const void *pkey,
         return key == entry_key;
 }
 
-static _Py_hashtable_allocator_t hashtable_alloc = {malloc, free};
-
 static _Py_hashtable_t *
 hashtable_new(size_t key_size, size_t data_size,
               _Py_hashtable_hash_func hash_func,
               _Py_hashtable_compare_func compare_func)
 {
+    _Py_hashtable_allocator_t hashtable_alloc = {malloc, free};
     return _Py_hashtable_new_full(key_size, data_size, 0,
                                   hash_func, compare_func,
-                                  NULL, NULL, NULL, &hashtable_alloc);
+                                  &hashtable_alloc);
 }
 
 static void*
@@ -1120,7 +1119,8 @@ tracemalloc_pyobject_decref_cb(_Py_hashtable_t *tracebacks,
                                _Py_hashtable_entry_t *entry,
                                void *user_data)
 {
-    PyObject *obj = (PyObject *)_Py_HASHTABLE_ENTRY_DATA_AS_VOID_P(tracebacks, entry);
+    PyObject *obj;
+    _Py_HASHTABLE_ENTRY_READ_DATA(tracebacks, entry, sizeof(obj), &obj);
     Py_DECREF(obj);
     return 0;
 }
@@ -1151,7 +1151,8 @@ py_tracemalloc_get_traces(PyObject *self, PyObject *obj)
 
     /* the traceback hash table is used temporarily to intern traceback tuple
        of (filename, lineno) tuples */
-    get_traces.tracebacks = hashtable_new(sizeof(traceback_t *), sizeof(PyObject *),
+    get_traces.tracebacks = hashtable_new(sizeof(traceback_t *),
+                                          sizeof(PyObject *),
                                           _Py_hashtable_hash_ptr,
                                           _Py_hashtable_compare_direct);
     if (get_traces.tracebacks == NULL) {
@@ -1186,8 +1187,9 @@ finally:
                               tracemalloc_pyobject_decref_cb, NULL);
         _Py_hashtable_destroy(get_traces.tracebacks);
     }
-    if (get_traces.traces != NULL)
+    if (get_traces.traces != NULL) {
         _Py_hashtable_destroy(get_traces.traces);
+    }
 
     return get_traces.list;
 }
