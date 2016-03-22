@@ -189,7 +189,7 @@ get_reentrant(void)
 static void
 set_reentrant(int reentrant)
 {
-    assert(!reentrant || !get_reentrant());
+    assert(reentrant != tracemalloc_reentrant);
     tracemalloc_reentrant = reentrant;
 }
 #endif
