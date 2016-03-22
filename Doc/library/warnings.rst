@@ -300,7 +300,7 @@ Available Functions
 -------------------
 
 
-.. function:: warn(message, category=None, stacklevel=1)
+.. function:: warn(message, category=None, stacklevel=1, source=None)
 
    Issue a warning, or maybe ignore it or raise an exception.  The *category*
    argument, if given, must be a warning category class (see above); it defaults to
@@ -317,6 +317,12 @@ Available Functions
    This makes the warning refer to :func:`deprecation`'s caller, rather than to the
    source of :func:`deprecation` itself (since the latter would defeat the purpose
    of the warning message).
+
+   *source*, if supplied, is the destroyed object which emitted a
+   :exc:`ResourceWarning`.
+
+   .. versionchanged:: 3.6
+      Added *source* parameter.
 
 
 .. function:: warn_explicit(message, category, filename, lineno, module=None, registry=None, module_globals=None, source=None)

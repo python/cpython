@@ -787,18 +787,19 @@ do_warn(PyObject *message, PyObject *category, Py_ssize_t stack_level,
 static PyObject *
 warnings_warn(PyObject *self, PyObject *args, PyObject *kwds)
 {
-    static char *kw_list[] = { "message", "category", "stacklevel", 0 };
-    PyObject *message, *category = NULL;
+    static char *kw_list[] = {"message", "category", "stacklevel",
+                              "source", NULL};
+    PyObject *message, *category = NULL, *source = NULL;
     Py_ssize_t stack_level = 1;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|On:warn", kw_list,
-                                     &message, &category, &stack_level))
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "O|OnO:warn", kw_list,
+                                     &message, &category, &stack_level, &source))
         return NULL;
 
     category = get_category(message, category);
     if (category == NULL)
         return NULL;
-    return do_warn(message, category, stack_level, NULL);
+    return do_warn(message, category, stack_level, source);
 }
 
 static PyObject *

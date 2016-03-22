@@ -324,7 +324,8 @@ class _SSLProtocolTransport(transports._FlowControlMixin,
     if compat.PY34:
         def __del__(self):
             if not self._closed:
-                warnings.warn("unclosed transport %r" % self, ResourceWarning)
+                warnings.warn("unclosed transport %r" % self, ResourceWarning,
+                              source=self)
                 self.close()
 
     def pause_reading(self):
