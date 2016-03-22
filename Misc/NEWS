@@ -232,6 +232,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26588: The _tracemalloc now supports tracing memory allocations of
+  multiple address spaces (domains).
+
 - Issue #24266: Ctrl+C during Readline history search now cancels the search
   mode when compiled with Readline 7.
 
