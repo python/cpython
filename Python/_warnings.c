@@ -40,11 +40,11 @@ check_matched(PyObject *obj, PyObject *arg)
    A NULL return value can mean false or an error.
 */
 static PyObject *
-get_warnings_attr(const char *attr)
+get_warnings_attr(const char *attr, int try_import)
 {
     static PyObject *warnings_str = NULL;
     PyObject *all_modules;
-    PyObject *warnings_module;
+    PyObject *warnings_module, *obj;
     int result;
 
     if (warnings_str == NULL) {
@@ -53,15 +53,34 @@ get_warnings_attr(const char *attr)
             return NULL;
     }
 
-    all_modules = PyImport_GetModuleDict();
-    result = PyDict_Contains(all_modules, warnings_str);
-    if (result == -1 || result == 0)
-        return NULL;
-
-    warnings_module = PyDict_GetItem(all_modules, warnings_str);
-    if (!PyObject_HasAttrString(warnings_module, attr))
+    /* don't try to import after the start of the Python finallization */
+    if (try_import && _Py_Finalizing == NULL) {
+        warnings_module = PyImport_Import(warnings_str);
+        if (warnings_module == NULL) {
+            /* Fallback to the C implementation if we cannot get
+               the Python implementation */
+            PyErr_Clear();
             return NULL;
-    return PyObject_GetAttrString(warnings_module, attr);
+        }
+    }
+    else {
+        all_modules = PyImport_GetModuleDict();
+        result = PyDict_Contains(all_modules, warnings_str);
+        if (result == -1 || result == 0)
+            return NULL;
+
+        warnings_module = PyDict_GetItem(all_modules, warnings_str);
+        Py_INCREF(warnings_module);
+    }
+
+    if (!PyObject_HasAttrString(warnings_module, attr)) {
+        Py_DECREF(warnings_module);
+        return NULL;
+    }
+
+    obj = PyObject_GetAttrString(warnings_module, attr);
+    Py_DECREF(warnings_module);
+    return obj;
 }
 
 
@@ -70,7 +89,7 @@ get_once_registry(void)
 {
     PyObject *registry;
 
-    registry = get_warnings_attr("onceregistry");
+    registry = get_warnings_attr("onceregistry", 0);
     if (registry == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -87,7 +106,7 @@ get_default_action(void)
 {
     PyObject *default_action;
 
-    default_action = get_warnings_attr("defaultaction");
+    default_action = get_warnings_attr("defaultaction", 0);
     if (default_action == NULL) {
         if (PyErr_Occurred()) {
             return NULL;
@@ -110,7 +129,7 @@ get_filter(PyObject *category, PyObject *text, Py_ssize_t lineno,
     Py_ssize_t i;
     PyObject *warnings_filters;
 
-    warnings_filters = get_warnings_attr("filters");
+    warnings_filters = get_warnings_attr("filters", 0);
     if (warnings_filters == NULL) {
         if (PyErr_Occurred())
             return NULL;
@@ -366,7 +385,10 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
 {
     PyObject *show_fn, *msg, *res, *warnmsg_cls = NULL;
 
-    show_fn = get_warnings_attr("_showwarnmsg");
+    /* If the source parameter is set, try to get the Python implementation.
+       The Python implementation is able to log the traceback where the source
+       was allocated, whereas the C implementation doesnt. */
+    show_fn = get_warnings_attr("_showwarnmsg", source != NULL);
     if (show_fn == NULL) {
         if (PyErr_Occurred())
             return -1;
@@ -380,7 +402,7 @@ call_show_warning(PyObject *category, PyObject *text, PyObject *message,
         goto error;
     }
 
-    warnmsg_cls = get_warnings_attr("WarningMessage");
+    warnmsg_cls = get_warnings_attr("WarningMessage", 0);
     if (warnmsg_cls == NULL) {
         PyErr_SetString(PyExc_RuntimeError,
                 "unable to get warnings.WarningMessage");
