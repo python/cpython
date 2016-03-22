@@ -3747,19 +3747,6 @@ tracemalloc_get_traceback(PyObject *self, PyObject *args)
     return _PyTraceMalloc_GetTraceback(domain, (Py_uintptr_t)ptr);
 }
 
-PyObject*
-tracemalloc_set_debug(PyObject *self, PyObject *args)
-{
-    int debug;
-    extern int tracemalloc_debug;
-
-    if (!PyArg_ParseTuple(args, "i", &debug))
-        return NULL;
-
-    tracemalloc_debug = debug;
-    Py_RETURN_NONE;
-}
-
 
 static PyMethodDef TestMethods[] = {
     {"raise_exception",         raise_exception,                 METH_VARARGS},
@@ -3949,7 +3936,6 @@ static PyMethodDef TestMethods[] = {
     {"tracemalloc_track", tracemalloc_track, METH_VARARGS},
     {"tracemalloc_untrack", tracemalloc_untrack, METH_VARARGS},
     {"tracemalloc_get_traceback", tracemalloc_get_traceback, METH_VARARGS},
-    {"tracemalloc_set_debug", tracemalloc_set_debug, METH_VARARGS},
     {NULL, NULL} /* sentinel */
 };
 
