@@ -1644,8 +1644,10 @@ PyInit__tracemalloc(void)
     if (m == NULL)
         return NULL;
 
+#if 0
     if (tracemalloc_init() < 0)
         return NULL;
+#endif
 
     return m;
 }
