@@ -216,7 +216,7 @@ get_reentrant(void)
 static void
 set_reentrant(int reentrant)
 {
-    assert(!reentrant || !get_reentrant());
+    assert(reentrant != tracemalloc_reentrant);
     tracemalloc_reentrant = reentrant;
 }
 #endif
@@ -879,10 +879,6 @@ tracemalloc_clear_traces(void)
     assert(PyGILState_Check());
 #endif
 
-    /* Disable also reentrant calls to tracemalloc_malloc() to not add a new
-       trace while we are clearing traces */
-    assert(get_reentrant());
-
     TABLES_LOCK();
     _Py_hashtable_clear(tracemalloc_traces);
     tracemalloc_traced_memory = 0;
@@ -971,11 +967,6 @@ tracemalloc_init(void)
     tracemalloc_empty_traceback.frames[0].lineno = 0;
     tracemalloc_empty_traceback.hash = traceback_hash(&tracemalloc_empty_traceback);
 
-    /* Disable tracing allocations until hooks are installed. Set
-       also the reentrant flag to detect bugs: fail with an assertion error
-       if set_reentrant(1) is called while tracing is disabled. */
-    set_reentrant(1);
-
     tracemalloc_config.initialized = TRACEMALLOC_INITIALIZED;
     return 0;
 }
@@ -1063,7 +1054,6 @@ tracemalloc_start(int max_nframe)
 
     /* everything is ready: start tracing Python memory allocations */
     tracemalloc_config.tracing = 1;
-    set_reentrant(0);
 
     return 0;
 }
@@ -1077,10 +1067,6 @@ tracemalloc_stop(void)
 
     /* stop tracing Python memory allocations */
     tracemalloc_config.tracing = 0;
-
-    /* set the reentrant flag to detect bugs: fail with an assertion error if
-       set_reentrant(1) is called while tracing is disabled. */
-    set_reentrant(1);
 
     /* unregister the hook on memory allocators */
 #ifdef TRACE_RAW_MALLOC
