@@ -772,7 +772,6 @@ class CWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
 class PyWarningsDisplayTests(WarningsDisplayTests, unittest.TestCase):
     module = py_warnings
 
-    @unittest.skipIf(True, "FIXME: Issue #26588")
     def test_tracemalloc(self):
         self.addCleanup(support.unlink, support.TESTFN)
 

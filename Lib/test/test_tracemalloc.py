@@ -88,9 +88,6 @@ def traceback_filename(filename):
 
 class TestTracemallocEnabled(unittest.TestCase):
     def setUp(self):
-        if _testcapi:
-            _testcapi.tracemalloc_set_debug(True)
-
         if tracemalloc.is_tracing():
             self.skipTest("tracemalloc must be stopped before the test")
 
@@ -98,8 +95,6 @@ class TestTracemallocEnabled(unittest.TestCase):
 
     def tearDown(self):
         tracemalloc.stop()
-        if _testcapi:
-            _testcapi.tracemalloc_set_debug(False)
 
     def test_get_tracemalloc_memory(self):
         data = [allocate_bytes(123) for count in range(1000)]
@@ -882,9 +877,6 @@ class TestCAPI(unittest.TestCase):
     maxDiff = 80 * 20
 
     def setUp(self):
-        if _testcapi:
-            _testcapi.tracemalloc_set_debug(True)
-
         if tracemalloc.is_tracing():
             self.skipTest("tracemalloc must be stopped before the test")
 
@@ -898,8 +890,6 @@ class TestCAPI(unittest.TestCase):
 
     def tearDown(self):
         tracemalloc.stop()
-        if _testcapi:
-            _testcapi.tracemalloc_set_debug(False)
 
     def get_traceback(self):
         frames = _testcapi.tracemalloc_get_traceback(self.domain, self.ptr)
