@@ -797,7 +797,6 @@ class TemporaryDirectory(object):
         _shutil.rmtree(name)
         _warnings.warn(warn_message, ResourceWarning)
 
-
     def __repr__(self):
         return "<{} {!r}>".format(self.__class__.__name__, self.name)
 

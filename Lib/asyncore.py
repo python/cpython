@@ -595,7 +595,8 @@ if os.name == 'posix':
 
         def __del__(self):
             if self.fd >= 0:
-                warnings.warn("unclosed file %r" % self, ResourceWarning)
+                warnings.warn("unclosed file %r" % self, ResourceWarning,
+                              source=self)
             self.close()
 
         def recv(self, *args):

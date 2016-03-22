@@ -159,7 +159,8 @@ class PipeHandle:
 
     def __del__(self):
         if self._handle is not None:
-            warnings.warn("unclosed %r" % self, ResourceWarning)
+            warnings.warn("unclosed %r" % self, ResourceWarning,
+                          source=self)
             self.close()
 
     def __enter__(self):

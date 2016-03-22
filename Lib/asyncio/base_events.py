@@ -412,7 +412,8 @@ class BaseEventLoop(events.AbstractEventLoop):
     if compat.PY34:
         def __del__(self):
             if not self.is_closed():
-                warnings.warn("unclosed event loop %r" % self, ResourceWarning)
+                warnings.warn("unclosed event loop %r" % self, ResourceWarning,
+                              source=self)
                 if not self.is_running():
                     self.close()
 
