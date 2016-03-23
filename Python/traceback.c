@@ -506,14 +506,15 @@ _Py_DumpDecimal(int fd, unsigned long value)
 
    This function is signal safe. */
 
-static void
-dump_hexadecimal(int fd, unsigned long value, Py_ssize_t width)
+void
+_Py_DumpHexadecimal(int fd, unsigned long value, Py_ssize_t width)
 {
     char buffer[sizeof(unsigned long) * 2 + 1], *ptr, *end;
     const Py_ssize_t size = Py_ARRAY_LENGTH(buffer) - 1;
 
     if (width > size)
         width = size;
+    /* it's ok if width is negative */
 
     end = &buffer[size];
     ptr = end;
@@ -582,15 +583,15 @@ _Py_DumpASCII(int fd, PyObject *text)
         }
         else if (ch <= 0xff) {
             PUTS(fd, "\\x");
-            dump_hexadecimal(fd, ch, 2);
+            _Py_DumpHexadecimal(fd, ch, 2);
         }
         else if (ch <= 0xffff) {
             PUTS(fd, "\\u");
-            dump_hexadecimal(fd, ch, 4);
+            _Py_DumpHexadecimal(fd, ch, 4);
         }
         else {
             PUTS(fd, "\\U");
-            dump_hexadecimal(fd, ch, 8);
+            _Py_DumpHexadecimal(fd, ch, 8);
         }
     }
     if (truncated) {
@@ -693,9 +694,9 @@ write_thread_id(int fd, PyThreadState *tstate, int is_current)
         PUTS(fd, "Current thread 0x");
     else
         PUTS(fd, "Thread 0x");
-    dump_hexadecimal(fd,
-                     (unsigned long)tstate->thread_id,
-                     sizeof(unsigned long) * 2);
+    _Py_DumpHexadecimal(fd,
+                        (unsigned long)tstate->thread_id,
+                        sizeof(unsigned long) * 2);
     PUTS(fd, " (most recent call first):\n");
 }
 
