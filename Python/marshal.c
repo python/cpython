@@ -588,7 +588,7 @@ w_decref_entry(_Py_hashtable_t *ht, _Py_hashtable_entry_t *entry,
 {
     PyObject *entry_key;
 
-    _Py_HASHTABLE_ENTRY_READ_KEY(ht->key_size, entry, entry_key);
+    _Py_HASHTABLE_ENTRY_READ_KEY(ht, entry, entry_key);
     Py_XDECREF(entry_key);
     return 0;
 }
