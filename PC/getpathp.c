@@ -135,7 +135,7 @@ exists(wchar_t *filename)
 static int
 ismodule(wchar_t *filename, int update_filename) /* Is module -- check for .pyc/.pyo too */
 {
-    int n;
+    size_t n;
 
     if (exists(filename))
         return 1;
@@ -553,7 +553,7 @@ calculate_path(void)
                 envpath = NULL;
                 pythonhome = argv0_path;
             }
-            
+
             /* Look for a 'home' variable and set argv0_path to it, if found */
             if (find_env_config_value(env_file, L"home", tmpbuffer)) {
                 wcscpy_s(argv0_path, MAXPATHLEN+1, tmpbuffer);
