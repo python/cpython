@@ -74,6 +74,9 @@ typedef struct {
                (PDATA), (DATA_SIZE)); \
     } while (0)
 
+#define _Py_HASHTABLE_ENTRY_WRITE_DATA(TABLE, ENTRY, DATA) \
+    _Py_HASHTABLE_ENTRY_WRITE_PDATA(TABLE, ENTRY, sizeof(DATA), &(DATA))
+
 
 /* _Py_hashtable: prototypes */
 

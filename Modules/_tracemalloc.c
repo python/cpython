@@ -552,33 +552,49 @@ static int
 tracemalloc_add_trace(_PyTraceMalloc_domain_t domain, Py_uintptr_t ptr,
                       size_t size)
 {
+    pointer_t key = {ptr, domain};
     traceback_t *traceback;
     trace_t trace;
+    _Py_hashtable_entry_t* entry;
     int res;
 
     assert(tracemalloc_config.tracing);
-
-    /* first, remove the previous trace (if any) */
-    tracemalloc_remove_trace(domain, ptr);
 
     traceback = traceback_new();
     if (traceback == NULL) {
         return -1;
     }
 
-    trace.size = size;
-    trace.traceback = traceback;
-
     if (tracemalloc_config.use_domain) {
-        pointer_t key = {ptr, domain};
-        res = _Py_HASHTABLE_SET(tracemalloc_traces, key, trace);
+        entry = _Py_HASHTABLE_GET_ENTRY(tracemalloc_traces, key);
     }
     else {
-        res = _Py_HASHTABLE_SET(tracemalloc_traces, ptr, trace);
+        entry = _Py_HASHTABLE_GET_ENTRY(tracemalloc_traces, ptr);
     }
 
-    if (res != 0) {
-        return res;
+    if (entry != NULL) {
+        /* the memory block is already tracked */
+        _Py_HASHTABLE_ENTRY_READ_DATA(tracemalloc_traces, entry, trace);
+        assert(tracemalloc_traced_memory >= trace.size);
+        tracemalloc_traced_memory -= trace.size;
+
+        trace.size = size;
+        trace.traceback = traceback;
+        _Py_HASHTABLE_ENTRY_WRITE_DATA(tracemalloc_traces, entry, trace);
+    }
+    else {
+        trace.size = size;
+        trace.traceback = traceback;
+
+        if (tracemalloc_config.use_domain) {
+            res = _Py_HASHTABLE_SET(tracemalloc_traces, key, trace);
+        }
+        else {
+            res = _Py_HASHTABLE_SET(tracemalloc_traces, ptr, trace);
+        }
+        if (res != 0) {
+            return res;
+        }
     }
 
     assert(tracemalloc_traced_memory <= PY_SIZE_MAX - size);
