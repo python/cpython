@@ -367,8 +367,15 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 {
     const int fd = fatal_error.fd;
     DWORD code = exc_info->ExceptionRecord->ExceptionCode;
+    DWORD flags = exc_info->ExceptionRecord->ExceptionFlags;
 
-    PUTS(fd, "Windows exception: ");
+    /* only log fatal exceptions */
+    if (flags & EXCEPTION_NONCONTINUABLE) {
+        /* call the next exception handler */
+        return EXCEPTION_CONTINUE_SEARCH;
+    }
+
+    PUTS(fd, "Windows fatal exception: ");
     switch (code)
     {
     /* only format most common errors */
@@ -380,8 +387,8 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     case EXCEPTION_IN_PAGE_ERROR: PUTS(fd, "page error"); break;
     case EXCEPTION_STACK_OVERFLOW: PUTS(fd, "stack overflow"); break;
     default:
-        PUTS(fd, "code 0x");
-        _Py_DumpHexadecimal(fd, code, sizeof(DWORD));
+        PUTS(fd, "code ");
+        _Py_DumpDecimal(fd, code, sizeof(DWORD));
     }
     PUTS(fd, "\n\n");
 

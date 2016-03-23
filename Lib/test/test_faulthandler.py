@@ -115,7 +115,7 @@ class FaultHandlerTests(unittest.TestCase):
         self.check_error(code, line_number, fatal_error, **kw)
 
     def check_windows_exception(self, code, line_number, name_regex, **kw):
-        fatal_error = 'Windows exception: %s' % name_regex
+        fatal_error = 'Windows fatal exception: %s' % name_regex
         self.check_error(code, line_number, fatal_error, **kw)
 
     @unittest.skipIf(sys.platform.startswith('aix'),
