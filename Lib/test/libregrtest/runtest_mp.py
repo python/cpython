@@ -1,3 +1,4 @@
+import faulthandler
 import json
 import os
 import queue
@@ -151,6 +152,8 @@ class MultiprocessThread(threading.Thread):
 def run_tests_multiprocess(regrtest):
     output = queue.Queue()
     pending = MultiprocessIterator(regrtest.tests)
+    test_timeout = regrtest.ns.timeout
+    use_timeout = (test_timeout is not None)
 
     workers = [MultiprocessThread(pending, output, regrtest.ns)
                for i in range(regrtest.ns.use_mp)]
@@ -170,11 +173,14 @@ def run_tests_multiprocess(regrtest):
 
     finished = 0
     test_index = 1
-    timeout = max(PROGRESS_UPDATE, PROGRESS_MIN_TIME)
+    get_timeout = max(PROGRESS_UPDATE, PROGRESS_MIN_TIME)
     try:
         while finished < regrtest.ns.use_mp:
+            if use_timeout:
+                faulthandler.dump_traceback_later(test_timeout, exit=True)
+
             try:
-                item = output.get(timeout=timeout)
+                item = output.get(timeout=get_timeout)
             except queue.Empty:
                 running = get_running(workers)
                 if running and not regrtest.ns.pgo:
@@ -215,6 +221,9 @@ def run_tests_multiprocess(regrtest):
         regrtest.interrupted = True
         pending.interrupted = True
         print()
+    finally:
+        if use_timeout:
+            faulthandler.cancel_dump_traceback_later()
 
     running = [worker.current_test for worker in workers]
     running = list(filter(bool, running))
