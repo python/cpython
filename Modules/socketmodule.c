@@ -2458,13 +2458,26 @@ sock_setsockopt(PySocketSockObject *s, PyObject *args)
         if (!PyArg_ParseTuple(args, "iiy*:setsockopt",
                               &level, &optname, &optval))
             return NULL;
+#ifdef MS_WINDOWS
+        if (optval.len > INT_MAX) {
+            PyBuffer_Release(&optval);
+            PyErr_Format(PyExc_OverflowError,
+                         "socket option is larger than %i bytes",
+                         INT_MAX);
+            return NULL;
+        }
+        res = setsockopt(s->sock_fd, level, optname,
+                         optval.buf, (int)optval.len);
+#else
         res = setsockopt(s->sock_fd, level, optname, optval.buf, optval.len);
+#endif
         PyBuffer_Release(&optval);
     }
-    if (res < 0)
+    if (res < 0) {
         return s->errorhandler();
-    Py_INCREF(Py_None);
-    return Py_None;
+    }
+
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(setsockopt_doc,
