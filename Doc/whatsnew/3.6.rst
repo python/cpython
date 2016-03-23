@@ -199,6 +199,14 @@ directives ``%G``, ``%u`` and ``%V``.
 (Contributed by Ashley Anderson in :issue:`12006`.)
 
 
+faulthandler
+------------
+
+On Windows, the :mod:`faulthandler` module now installs an handler for Windows
+exceptions: see :func:`faulthandler.enable`. (Contributed by Victor Stinner in
+:issue:`23848`.)
+
+
 os
 --
 

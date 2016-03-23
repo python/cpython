@@ -232,6 +232,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23848: On Windows, faulthandler.enable() now also installs an
+  exception handler to dump the traceback of all Python threads on any Windows
+  exception, not only on UNIX signals (SIGSEGV, SIGFPE, SIGABRT).
+
 - Issue #26530: Add C functions :c:func:`_PyTraceMalloc_Track` and
   :c:func:`_PyTraceMalloc_Untrack` to track memory blocks using the
   :mod:`tracemalloc` module. Add :c:func:`_PyTraceMalloc_GetTraceback` to get
