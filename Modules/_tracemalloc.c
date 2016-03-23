@@ -43,7 +43,7 @@ static struct {
     /* use domain in trace key?
        Variable protected by the GIL. */
     int use_domain;
-} tracemalloc_config = {TRACEMALLOC_NOT_INITIALIZED, 0, 1, 1};
+} tracemalloc_config = {TRACEMALLOC_NOT_INITIALIZED, 0, 1, 0};
 
 #if defined(TRACE_RAW_MALLOC) && defined(WITH_THREAD)
 /* This lock is needed because tracemalloc_free() is called without
@@ -519,6 +519,58 @@ traceback_new(void)
 }
 
 
+static int
+tracemalloc_use_domain_cb(_Py_hashtable_t *old_traces,
+                           _Py_hashtable_entry_t *entry, void *user_data)
+{
+    Py_uintptr_t ptr;
+    pointer_t key;
+    _Py_hashtable_t *new_traces = (_Py_hashtable_t *)user_data;
+    const void *pdata = _Py_HASHTABLE_ENTRY_PDATA(old_traces, entry);
+
+    _Py_HASHTABLE_ENTRY_READ_KEY(old_traces, entry, ptr);
+    key.ptr = ptr;
+    key.domain = DEFAULT_DOMAIN;
+
+    return _Py_hashtable_set(new_traces,
+                             sizeof(key), &key,
+                             old_traces->data_size, pdata);
+}
+
+
+/* Convert tracemalloc_traces from compact key (Py_uintptr_t) to pointer_t key.
+ * Return 0 on success, -1 on error. */
+static int
+tracemalloc_use_domain(void)
+{
+    _Py_hashtable_t *new_traces = NULL;
+
+    assert(!tracemalloc_config.use_domain);
+
+    new_traces = hashtable_new(sizeof(pointer_t),
+                               sizeof(trace_t),
+                               hashtable_hash_pointer_t,
+                               hashtable_compare_pointer_t);
+    if (new_traces == NULL) {
+        return -1;
+    }
+
+    if (_Py_hashtable_foreach(tracemalloc_traces, tracemalloc_use_domain_cb,
+                              new_traces) < 0)
+    {
+        _Py_hashtable_destroy(new_traces);
+        return -1;
+    }
+
+    _Py_hashtable_destroy(tracemalloc_traces);
+    tracemalloc_traces = new_traces;
+
+    tracemalloc_config.use_domain = 1;
+
+    return 0;
+}
+
+
 static void
 tracemalloc_remove_trace(_PyTraceMalloc_domain_t domain, Py_uintptr_t ptr)
 {
@@ -561,6 +613,14 @@ tracemalloc_add_trace(_PyTraceMalloc_domain_t domain, Py_uintptr_t ptr,
     traceback = traceback_new();
     if (traceback == NULL) {
         return -1;
+    }
+
+    if (!tracemalloc_config.use_domain && domain != DEFAULT_DOMAIN) {
+        /* first trace using a non-zero domain whereas traces use compact
+           (Py_uintptr_t) keys: switch to pointer_t keys. */
+        if (tracemalloc_use_domain() < 0) {
+            return -1;
+        }
     }
 
     if (tracemalloc_config.use_domain) {
