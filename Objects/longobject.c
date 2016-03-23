@@ -3522,7 +3522,7 @@ fast_mod(PyLongObject *a, PyLongObject *b)
         mod = right - 1 - (left - 1) % right;
     }
 
-    return PyLong_FromLong(mod * Py_SIZE(b));
+    return PyLong_FromLong(mod * (sdigit)Py_SIZE(b));
 }
 
 /* Fast floor division for single-digit longs. */
