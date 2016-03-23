@@ -45,7 +45,6 @@ get_warnings_attr(const char *attr, int try_import)
     static PyObject *warnings_str = NULL;
     PyObject *all_modules;
     PyObject *warnings_module, *obj;
-    int result;
 
     if (warnings_str == NULL) {
         warnings_str = PyUnicode_InternFromString("warnings");
@@ -65,11 +64,11 @@ get_warnings_attr(const char *attr, int try_import)
     }
     else {
         all_modules = PyImport_GetModuleDict();
-        result = PyDict_Contains(all_modules, warnings_str);
-        if (result == -1 || result == 0)
-            return NULL;
 
         warnings_module = PyDict_GetItem(all_modules, warnings_str);
+        if (warnings_module == NULL)
+            return NULL;
+
         Py_INCREF(warnings_module);
     }
 
