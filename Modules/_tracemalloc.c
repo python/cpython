@@ -633,7 +633,12 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
         /* an existing memory block has been resized */
 
         TABLES_LOCK();
-        REMOVE_TRACE(ptr);
+
+        /* tracemalloc_add_trace() updates the trace if there is already
+           a trace at address (domain, ptr2) */
+        if (ptr2 != ptr) {
+            REMOVE_TRACE(ptr);
+        }
 
         if (ADD_TRACE(ptr2, new_size) < 0) {
             /* Memory allocation failed. The error cannot be reported to
