@@ -266,7 +266,7 @@ w_ref(PyObject *v, char *flag, WFILE *p)
     entry = _Py_HASHTABLE_GET_ENTRY(p->hashtable, v);
     if (entry != NULL) {
         /* write the reference index to the stream */
-        _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, sizeof(w), &w);
+        _Py_HASHTABLE_ENTRY_READ_DATA(p->hashtable, entry, w);
         /* we don't store "long" indices in the dict */
         assert(0 <= w && w <= 0x7fffffff);
         w_byte(TYPE_REF, p);

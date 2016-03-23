@@ -1263,7 +1263,7 @@ tracemalloc_pyobject_decref_cb(_Py_hashtable_t *tracebacks,
                                void *user_data)
 {
     PyObject *obj;
-    _Py_HASHTABLE_ENTRY_READ_DATA(tracebacks, entry, sizeof(obj), &obj);
+    _Py_HASHTABLE_ENTRY_READ_DATA(tracebacks, entry, obj);
     Py_DECREF(obj);
     return 0;
 }
