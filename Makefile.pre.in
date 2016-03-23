@@ -431,7 +431,7 @@ build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks
 
 # Compile a binary with profile guided optimization.
 profile-opt:
-	@if [ $(LLVM_PROF_ERR) == yes ]; then \
+	@if [ $(LLVM_PROF_ERR) = yes ]; then \
 		echo "Error: Cannot perform PGO build because llvm-profdata was not found in PATH" ;\
 		echo "Please add it to PATH and run ./configure again" ;\
 		exit 1;\
@@ -530,7 +530,7 @@ pybuilddir.txt: $(BUILDPYTHON)
 
 # This is shared by the math and cmath modules
 Modules/_math.o: Modules/_math.c Modules/_math.h
-	$(CC) -c $(CCSHARED) $(PY_CFLAGS) -o $@ $<
+	$(CC) -c $(CCSHARED) $(PY_CORE_CFLAGS) -o $@ $<
 
 # Build the shared modules
 # Under GNU make, MAKEFLAGS are sorted and normalized; the 's' for
