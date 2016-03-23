@@ -483,7 +483,7 @@ build_all:	$(BUILDPYTHON) oldsharedmods sharedmods gdbhooks Programs/_testembed 
 
 # Compile a binary with profile guided optimization.
 profile-opt:
-	@if [ $(LLVM_PROF_ERR) == yes ]; then \
+	@if [ $(LLVM_PROF_ERR) = yes ]; then \
 		echo "Error: Cannot perform PGO build because llvm-profdata was not found in PATH" ;\
 		echo "Please add it to PATH and run ./configure again" ;\
 		exit 1;\
