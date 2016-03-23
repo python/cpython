@@ -2039,7 +2039,7 @@ static void
 _PyMem_DebugFree(void *ctx, void *ptr)
 {
     _PyMem_DebugCheckGIL();
-    return _PyMem_DebugRawFree(ctx, ptr);
+    _PyMem_DebugRawFree(ctx, ptr);
 }
 
 static void *
