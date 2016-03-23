@@ -108,9 +108,9 @@ MPD_PRAGMA(MPD_HIDE_SYMBOLS_START)
 
 #define MPD_MAJOR_VERSION 2
 #define MPD_MINOR_VERSION 4
-#define MPD_MICRO_VERSION 1
+#define MPD_MICRO_VERSION 2
 
-#define MPD_VERSION "2.4.1"
+#define MPD_VERSION "2.4.2"
 
 #define MPD_VERSION_HEX ((MPD_MAJOR_VERSION << 24) | \
                          (MPD_MINOR_VERSION << 16) | \

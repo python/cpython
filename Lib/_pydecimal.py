@@ -148,7 +148,7 @@ __xname__ = __name__    # sys.modules lookup (--without-threads)
 __name__ = 'decimal'    # For pickling
 __version__ = '1.70'    # Highest version of the spec this complies with
                         # See http://speleotrove.com/decimal/
-__libmpdec_version__ = "2.4.1" # compatible libmpdec version
+__libmpdec_version__ = "2.4.2" # compatible libmpdec version
 
 import math as _math
 import numbers as _numbers
