@@ -61,9 +61,14 @@ class TestSpwdRoot(unittest.TestCase):
 class TestSpwdNonRoot(unittest.TestCase):
 
     def test_getspnam_exception(self):
-        with self.assertRaises(PermissionError) as cm:
-            spwd.getspnam('root')
-        self.assertEqual(str(cm.exception), '[Errno 13] Permission denied')
+        name = 'bin'
+        try:
+            with self.assertRaises(PermissionError) as cm:
+                spwd.getspnam(name)
+        except KeyError as exc:
+            self.skipTest("spwd entry %r doesn't exist: %s" % (name, exc))
+        else:
+            self.assertEqual(str(cm.exception), '[Errno 13] Permission denied')
 
 
 if __name__ == "__main__":
