@@ -223,23 +223,23 @@ set_reentrant(int reentrant)
 
 
 static Py_uhash_t
-hashtable_hash_pyobject(size_t key_size, const void *pkey)
+hashtable_hash_pyobject(_Py_hashtable_t *ht, const void *pkey)
 {
     PyObject *obj;
 
-    _Py_HASHTABLE_READ_KEY(key_size, pkey, obj);
+    _Py_HASHTABLE_READ_KEY(ht, pkey, obj);
     return PyObject_Hash(obj);
 }
 
 
 static int
-hashtable_compare_unicode(size_t key_size, const void *pkey,
+hashtable_compare_unicode(_Py_hashtable_t *ht, const void *pkey,
                           const _Py_hashtable_entry_t *entry)
 {
     PyObject *key1, *key2;
 
-    _Py_HASHTABLE_READ_KEY(key_size, pkey, key1);
-    _Py_HASHTABLE_ENTRY_READ_KEY(key_size, entry, key2);
+    _Py_HASHTABLE_READ_KEY(ht, pkey, key1);
+    _Py_HASHTABLE_ENTRY_READ_KEY(ht, entry, key2);
 
     if (key1 != NULL && key2 != NULL)
         return (PyUnicode_Compare(key1, key2) == 0);
@@ -249,12 +249,12 @@ hashtable_compare_unicode(size_t key_size, const void *pkey,
 
 
 static Py_uhash_t
-hashtable_hash_pointer_t(size_t key_size, const void *pkey)
+hashtable_hash_pointer_t(_Py_hashtable_t *ht, const void *pkey)
 {
     pointer_t ptr;
     Py_uhash_t hash;
 
-    _Py_HASHTABLE_READ_KEY(key_size, pkey, ptr);
+    _Py_HASHTABLE_READ_KEY(ht, pkey, ptr);
 
     hash = (Py_uhash_t)_Py_HashPointer((void*)ptr.ptr);
     hash ^= ptr.domain;
@@ -263,13 +263,13 @@ hashtable_hash_pointer_t(size_t key_size, const void *pkey)
 
 
 int
-hashtable_compare_pointer_t(size_t key_size, const void *pkey,
+hashtable_compare_pointer_t(_Py_hashtable_t *ht, const void *pkey,
                             const _Py_hashtable_entry_t *entry)
 {
     pointer_t ptr1, ptr2;
 
-    _Py_HASHTABLE_READ_KEY(key_size, pkey, ptr1);
-    _Py_HASHTABLE_ENTRY_READ_KEY(key_size, entry, ptr2);
+    _Py_HASHTABLE_READ_KEY(ht, pkey, ptr1);
+    _Py_HASHTABLE_ENTRY_READ_KEY(ht, entry, ptr2);
 
     /* compare pointer before domain, because pointer is more likely to be
        different */
@@ -304,25 +304,25 @@ raw_free(void *ptr)
 
 
 static Py_uhash_t
-hashtable_hash_traceback(size_t key_size, const void *pkey)
+hashtable_hash_traceback(_Py_hashtable_t *ht, const void *pkey)
 {
     traceback_t *traceback;
 
-    _Py_HASHTABLE_READ_KEY(key_size, pkey, traceback);
+    _Py_HASHTABLE_READ_KEY(ht, pkey, traceback);
     return traceback->hash;
 }
 
 
 static int
-hashtable_compare_traceback(size_t key_size, const void *pkey,
-                            const _Py_hashtable_entry_t *he)
+hashtable_compare_traceback(_Py_hashtable_t *ht, const void *pkey,
+                            const _Py_hashtable_entry_t *entry)
 {
     traceback_t *traceback1, *traceback2;
     const frame_t *frame1, *frame2;
     int i;
 
-    _Py_HASHTABLE_READ_KEY(key_size, pkey, traceback1);
-    _Py_HASHTABLE_ENTRY_READ_KEY(key_size, he, traceback2);
+    _Py_HASHTABLE_READ_KEY(ht, pkey, traceback1);
+    _Py_HASHTABLE_ENTRY_READ_KEY(ht, entry, traceback2);
 
     if (traceback1->nframe != traceback2->nframe)
         return 0;
@@ -395,8 +395,7 @@ tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
     /* intern the filename */
     entry = _Py_HASHTABLE_GET_ENTRY(tracemalloc_filenames, filename);
     if (entry != NULL) {
-        _Py_HASHTABLE_ENTRY_READ_KEY(tracemalloc_filenames->key_size, entry,
-                                     filename);
+        _Py_HASHTABLE_ENTRY_READ_KEY(tracemalloc_filenames, entry, filename);
     }
     else {
         /* tracemalloc_filenames is responsible to keep a reference
@@ -490,8 +489,7 @@ traceback_new(void)
     /* intern the traceback */
     entry = _Py_HASHTABLE_GET_ENTRY(tracemalloc_tracebacks, traceback);
     if (entry != NULL) {
-        _Py_HASHTABLE_ENTRY_READ_KEY(tracemalloc_tracebacks->key_size, entry,
-                                     traceback);
+        _Py_HASHTABLE_ENTRY_READ_KEY(tracemalloc_tracebacks, entry, traceback);
     }
     else {
         traceback_t *copy;
@@ -873,7 +871,7 @@ tracemalloc_clear_filename(_Py_hashtable_t *ht, _Py_hashtable_entry_t *entry,
 {
     PyObject *filename;
 
-    _Py_HASHTABLE_ENTRY_READ_KEY(ht->key_size, entry, filename);
+    _Py_HASHTABLE_ENTRY_READ_KEY(ht, entry, filename);
     Py_DECREF(filename);
     return 0;
 }
@@ -885,7 +883,7 @@ traceback_free_traceback(_Py_hashtable_t *ht, _Py_hashtable_entry_t *entry,
 {
     traceback_t *traceback;
 
-    _Py_HASHTABLE_ENTRY_READ_KEY(ht->key_size, entry, traceback);
+    _Py_HASHTABLE_ENTRY_READ_KEY(ht, entry, traceback);
     raw_free(traceback);
     return 0;
 }
@@ -1246,21 +1244,21 @@ tracemalloc_get_traces_fill(_Py_hashtable_t *traces, _Py_hashtable_entry_t *entr
 {
     get_traces_t *get_traces = user_data;
     _PyTraceMalloc_domain_t domain;
-    trace_t *trace;
+    trace_t trace;
     PyObject *tracemalloc_obj;
     int res;
 
     if (tracemalloc_config.use_domain) {
         pointer_t key;
-        _Py_HASHTABLE_ENTRY_READ_KEY(traces->key_size, entry, key);
+        _Py_HASHTABLE_ENTRY_READ_KEY(traces, entry, key);
         domain = key.domain;
     }
     else {
         domain = DEFAULT_DOMAIN;
     }
-    trace = (trace_t *)_Py_HASHTABLE_ENTRY_DATA(traces, entry);
+    _Py_HASHTABLE_ENTRY_READ_DATA(traces, entry, trace);
 
-    tracemalloc_obj = trace_to_pyobject(domain, trace, get_traces->tracebacks);
+    tracemalloc_obj = trace_to_pyobject(domain, &trace, get_traces->tracebacks);
     if (tracemalloc_obj == NULL)
         return 1;
 

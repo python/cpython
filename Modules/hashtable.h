@@ -29,60 +29,52 @@ typedef struct {
     /* key (key_size bytes) and then data (data_size bytes) follows */
 } _Py_hashtable_entry_t;
 
-#define _Py_HASHTABLE_ENTRY_KEY(ENTRY) \
+#define _Py_HASHTABLE_ENTRY_PKEY(ENTRY) \
         ((const void *)((char *)(ENTRY) \
                         + sizeof(_Py_hashtable_entry_t)))
 
-#define _Py_HASHTABLE_ENTRY_DATA(TABLE, ENTRY) \
+#define _Py_HASHTABLE_ENTRY_PDATA(TABLE, ENTRY) \
         ((const void *)((char *)(ENTRY) \
                         + sizeof(_Py_hashtable_entry_t) \
                         + (TABLE)->key_size))
 
 /* Get a key value from pkey: use memcpy() rather than a pointer dereference
    to avoid memory alignment issues. */
-#define _Py_HASHTABLE_READ_KEY(KEY_SIZE, PKEY, DST_KEY) \
+#define _Py_HASHTABLE_READ_KEY(TABLE, PKEY, DST_KEY) \
     do { \
-        assert(sizeof(DST_KEY) == (KEY_SIZE)); \
-        memcpy(&(DST_KEY), (PKEY), sizeof(DST_KEY)); \
+        assert(sizeof(DST_KEY) == (TABLE)->key_size); \
+        Py_MEMCPY(&(DST_KEY), (PKEY), sizeof(DST_KEY)); \
     } while (0)
 
-#define _Py_HASHTABLE_ENTRY_READ_KEY(KEY_SIZE, ENTRY, KEY) \
+#define _Py_HASHTABLE_ENTRY_READ_KEY(TABLE, ENTRY, KEY) \
     do { \
-        assert(sizeof(KEY) == (KEY_SIZE)); \
-        memcpy(&(KEY), _Py_HASHTABLE_ENTRY_KEY(ENTRY), sizeof(KEY)); \
-    } while (0)
-
-#define _Py_HASHTABLE_ENTRY_WRITE_PKEY(KEY_SIZE, ENTRY, PKEY) \
-    do { \
-        memcpy((void *)_Py_HASHTABLE_ENTRY_KEY(ENTRY), (PKEY), (KEY_SIZE)); \
-    } while (0)
-
-#define _Py_HASHTABLE_ENTRY_READ_PDATA(TABLE, ENTRY, DATA_SIZE, PDATA) \
-    do { \
-        assert((DATA_SIZE) == (TABLE)->data_size); \
-        memcpy((PDATA), _Py_HASHTABLE_ENTRY_DATA(TABLE, (ENTRY)), \
-               (DATA_SIZE)); \
+        assert(sizeof(KEY) == (TABLE)->key_size); \
+        Py_MEMCPY(&(KEY), _Py_HASHTABLE_ENTRY_PKEY(ENTRY), sizeof(KEY)); \
     } while (0)
 
 #define _Py_HASHTABLE_ENTRY_READ_DATA(TABLE, ENTRY, DATA) \
-    _Py_HASHTABLE_ENTRY_READ_PDATA((TABLE), (ENTRY), sizeof(DATA), &(DATA))
-
-#define _Py_HASHTABLE_ENTRY_WRITE_PDATA(TABLE, ENTRY, DATA_SIZE, PDATA) \
     do { \
-        assert((DATA_SIZE) == (TABLE)->data_size); \
-        memcpy((void *)_Py_HASHTABLE_ENTRY_DATA((TABLE), (ENTRY)), \
-               (PDATA), (DATA_SIZE)); \
+        assert(sizeof(DATA) == (TABLE)->data_size); \
+        Py_MEMCPY(&(DATA), _Py_HASHTABLE_ENTRY_PDATA(TABLE, (ENTRY)), \
+                  sizeof(DATA)); \
     } while (0)
 
 #define _Py_HASHTABLE_ENTRY_WRITE_DATA(TABLE, ENTRY, DATA) \
-    _Py_HASHTABLE_ENTRY_WRITE_PDATA(TABLE, ENTRY, sizeof(DATA), &(DATA))
+    do { \
+        assert(sizeof(DATA) == (TABLE)->data_size); \
+        Py_MEMCPY((void *)_Py_HASHTABLE_ENTRY_PDATA((TABLE), (ENTRY)), \
+                  &(DATA), sizeof(DATA)); \
+    } while (0)
 
 
 /* _Py_hashtable: prototypes */
 
-typedef Py_uhash_t (*_Py_hashtable_hash_func) (size_t key_size,
+/* Forward declaration */
+struct _Py_hashtable_t;
+
+typedef Py_uhash_t (*_Py_hashtable_hash_func) (struct _Py_hashtable_t *ht,
                                                const void *pkey);
-typedef int (*_Py_hashtable_compare_func) (size_t key_size,
+typedef int (*_Py_hashtable_compare_func) (struct _Py_hashtable_t *ht,
                                            const void *pkey,
                                            const _Py_hashtable_entry_t *he);
 
@@ -97,7 +89,7 @@ typedef struct {
 
 /* _Py_hashtable: table */
 
-typedef struct {
+typedef struct _Py_hashtable_t {
     size_t num_buckets;
     size_t entries; /* Total number of entries in the table. */
     _Py_slist_t *buckets;
@@ -111,12 +103,12 @@ typedef struct {
 
 /* hash a pointer (void*) */
 PyAPI_FUNC(Py_uhash_t) _Py_hashtable_hash_ptr(
-    size_t key_size,
+    struct _Py_hashtable_t *ht,
     const void *pkey);
 
 /* comparison using memcmp() */
 PyAPI_FUNC(int) _Py_hashtable_compare_direct(
-    size_t key_size,
+    _Py_hashtable_t *ht,
     const void *pkey,
     const _Py_hashtable_entry_t *entry);
 
