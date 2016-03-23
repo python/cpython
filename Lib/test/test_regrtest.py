@@ -304,7 +304,7 @@ class ParseArgsTestCase(unittest.TestCase):
 class BaseTestCase(unittest.TestCase):
     TEST_UNIQUE_ID = 1
     TESTNAME_PREFIX = 'test_regrtest_'
-    TESTNAME_REGEX = r'test_[a-z0-9_]+'
+    TESTNAME_REGEX = r'test_[a-zA-Z0-9_]+'
 
     def setUp(self):
         self.testdir = os.path.realpath(os.path.dirname(__file__))
@@ -351,7 +351,8 @@ class BaseTestCase(unittest.TestCase):
         self.assertRegex(output, regex)
 
     def parse_executed_tests(self, output):
-        regex = r'^[0-9]+:[0-9]+:[0-9]+ \[ *[0-9]+(?:/ *[0-9]+)?\] (%s)$' % self.TESTNAME_REGEX
+        regex = (r'^[0-9]+:[0-9]+:[0-9]+ \[ *[0-9]+(?:/ *[0-9]+)?\] (%s)'
+                 % self.TESTNAME_REGEX)
         parser = re.finditer(regex, output, re.MULTILINE)
         return list(match.group(1) for match in parser)
 

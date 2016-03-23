@@ -13,13 +13,10 @@ except ImportError:
     print("Multiprocess option requires thread support")
     sys.exit(2)
 
-from test.libregrtest.runtest import runtest, INTERRUPTED, CHILD_ERROR
+from test.libregrtest.runtest import (
+    runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME)
 from test.libregrtest.setup import setup_tests
 
-
-# Minimum duration of a test to display its duration or to mention that
-# the test is running in background
-PROGRESS_MIN_TIME = 30.0   # seconds
 
 # Display the running tests if nothing happened last N seconds
 PROGRESS_UPDATE = 30.0   # seconds
