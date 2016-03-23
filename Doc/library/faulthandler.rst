@@ -68,6 +68,9 @@ Fault handler state
    .. versionchanged:: 3.5
       Added support for passing file descriptor to this function.
 
+   .. versionchanged:: 3.6
+      On Windows, a handler for Windows exception is also installed.
+
 .. function:: disable()
 
    Disable the fault handler: uninstall the signal handlers installed by
