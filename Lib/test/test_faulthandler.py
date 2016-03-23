@@ -23,6 +23,7 @@ except ImportError:
     _testcapi = None
 
 TIMEOUT = 0.5
+MS_WINDOWS = (os.name == 'nt')
 
 def expected_traceback(lineno1, lineno2, header, min_count=1):
     regex = header
@@ -76,9 +77,9 @@ class FaultHandlerTests(unittest.TestCase):
             output = output.decode('ascii', 'backslashreplace')
         return output.splitlines(), exitcode
 
-    def check_fatal_error(self, code, line_number, name_regex,
-                          filename=None, all_threads=True, other_regex=None,
-                          fd=None, know_current_thread=True):
+    def check_error(self, code, line_number, fatal_error, *,
+                    filename=None, all_threads=True, other_regex=None,
+                    fd=None, know_current_thread=True):
         """
         Check that the fault handler for fatal errors is enabled and check the
         traceback from the child process output.
@@ -93,14 +94,14 @@ class FaultHandlerTests(unittest.TestCase):
         else:
             header = 'Stack'
         regex = """
-            ^Fatal Python error: {name}
+            ^{fatal_error}
 
             {header} \(most recent call first\):
               File "<string>", line {lineno} in <module>
             """
         regex = dedent(regex.format(
             lineno=line_number,
-            name=name_regex,
+            fatal_error=fatal_error,
             header=header)).strip()
         if other_regex:
             regex += '|' + other_regex
@@ -109,17 +110,36 @@ class FaultHandlerTests(unittest.TestCase):
         self.assertRegex(output, regex)
         self.assertNotEqual(exitcode, 0)
 
+    def check_fatal_error(self, code, line_number, name_regex, **kw):
+        fatal_error = 'Fatal Python error: %s' % name_regex
+        self.check_error(code, line_number, fatal_error, **kw)
+
+    def check_windows_exception(self, code, line_number, name_regex, **kw):
+        fatal_error = 'Windows exception: %s' % name_regex
+        self.check_error(code, line_number, fatal_error, **kw)
+
     @unittest.skipIf(sys.platform.startswith('aix'),
                      "the first page of memory is a mapped read-only on AIX")
     def test_read_null(self):
-        self.check_fatal_error("""
-            import faulthandler
-            faulthandler.enable()
-            faulthandler._read_null()
-            """,
-            3,
-            # Issue #12700: Read NULL raises SIGILL on Mac OS X Lion
-            '(?:Segmentation fault|Bus error|Illegal instruction)')
+        if not MS_WINDOWS:
+            self.check_fatal_error("""
+                import faulthandler
+                faulthandler.enable()
+                faulthandler._read_null()
+                """,
+                3,
+                # Issue #12700: Read NULL raises SIGILL on Mac OS X Lion
+                '(?:Segmentation fault'
+                    '|Bus error'
+                    '|Illegal instruction)')
+        else:
+            self.check_windows_exception("""
+                import faulthandler
+                faulthandler.enable()
+                faulthandler._read_null()
+                """,
+                3,
+                'access violation')
 
     def test_sigsegv(self):
         self.check_fatal_error("""
@@ -707,6 +727,22 @@ class FaultHandlerTests(unittest.TestCase):
         if hasattr(faulthandler, "register"):
             with self.check_stderr_none():
                 faulthandler.register(signal.SIGUSR1)
+
+    @unittest.skipUnless(MS_WINDOWS, 'specific to Windows')
+    def test_raise_exception(self):
+        for exc, name in (
+            ('EXCEPTION_ACCESS_VIOLATION', 'access violation'),
+            ('EXCEPTION_INT_DIVIDE_BY_ZERO', 'int divide by zero'),
+            ('EXCEPTION_STACK_OVERFLOW', 'stack overflow'),
+        ):
+            self.check_windows_exception(f"""
+                import faulthandler
+                faulthandler.enable()
+                faulthandler._raise_exception(faulthandler._{exc})
+                """,
+                3,
+                name)
+
 
 
 if __name__ == "__main__":
