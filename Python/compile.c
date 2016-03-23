@@ -195,7 +195,7 @@ static int expr_constant(struct compiler *, expr_ty);
 static int compiler_with(struct compiler *, stmt_ty, int);
 static int compiler_async_with(struct compiler *, stmt_ty, int);
 static int compiler_async_for(struct compiler *, stmt_ty);
-static int compiler_call_helper(struct compiler *c, Py_ssize_t n,
+static int compiler_call_helper(struct compiler *c, int n,
                                 asdl_seq *args,
                                 asdl_seq *keywords);
 static int compiler_try_except(struct compiler *, stmt_ty);
@@ -476,9 +476,9 @@ compiler_unit_check(struct compiler_unit *u)
 {
     basicblock *block;
     for (block = u->u_blocks; block != NULL; block = block->b_list) {
-        assert((void *)block != (void *)0xcbcbcbcb);
-        assert((void *)block != (void *)0xfbfbfbfb);
-        assert((void *)block != (void *)0xdbdbdbdb);
+        assert((Py_uintptr_t)block != 0xcbcbcbcbU);
+        assert((Py_uintptr_t)block != 0xfbfbfbfbU);
+        assert((Py_uintptr_t)block != 0xdbdbdbdbU);
         if (block->b_instr != NULL) {
             assert(block->b_ialloc > 0);
             assert(block->b_iused > 0);
@@ -3097,7 +3097,8 @@ compiler_set(struct compiler *c, expr_ty e)
 static int
 compiler_dict(struct compiler *c, expr_ty e)
 {
-    Py_ssize_t i, n, containers, elements;
+    Py_ssize_t i, n, elements;
+    int containers;
     int is_unpacking = 0;
     n = asdl_seq_LEN(e->v.Dict.values);
     containers = 0;
@@ -3267,12 +3268,13 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
 /* shared code between compiler_call and compiler_class */
 static int
 compiler_call_helper(struct compiler *c,
-                     Py_ssize_t n, /* Args already pushed */
+                     int n, /* Args already pushed */
                      asdl_seq *args,
                      asdl_seq *keywords)
 {
     int code = 0;
-    Py_ssize_t nelts, i, nseen, nkw;
+    Py_ssize_t nelts, i, nseen;
+    int nkw;
 
     /* the number of tuples and dictionaries on the stack */
     Py_ssize_t nsubargs = 0, nsubkwargs = 0;
