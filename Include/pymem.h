@@ -34,7 +34,7 @@ typedef unsigned int _PyTraceMalloc_domain_t;
 
    Return -2 if tracemalloc is disabled.
 
-   If memory block was already tracked, begin by removing the old trace. */
+   If memory block is already tracked, update the existing trace. */
 PyAPI_FUNC(int) _PyTraceMalloc_Track(
     _PyTraceMalloc_domain_t domain,
     Py_uintptr_t ptr,
