@@ -20,6 +20,11 @@ RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
 
+# Minimum duration of a test to display its duration or to mention that
+# the test is running in background
+PROGRESS_MIN_TIME = 30.0   # seconds
+
+
 
 # small set of tests to determine if we have a basically functioning interpreter
 # (i.e. if any of these fail, then anything else is likely to follow)

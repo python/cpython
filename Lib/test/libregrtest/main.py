@@ -13,7 +13,8 @@ from test.libregrtest.cmdline import _parse_args
 from test.libregrtest.runtest import (
     findtests, runtest,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
-    INTERRUPTED, CHILD_ERROR)
+    INTERRUPTED, CHILD_ERROR,
+    PROGRESS_MIN_TIME)
 from test.libregrtest.setup import setup_tests
 from test import support
 try:
@@ -293,8 +294,15 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
+        previous_test = None
         for test_index, test in enumerate(self.tests, 1):
-            self.display_progress(test_index, test)
+            start_time = time.monotonic()
+
+            text = test
+            if previous_test:
+                text = '%s -- %s' % (text, previous_test)
+            self.display_progress(test_index, text)
+
             if self.tracer:
                 # If we're tracing code coverage, then we don't exit with status
                 # if on a false return value from main.
@@ -311,6 +319,12 @@ class Regrtest:
                 else:
                     self.accumulate_result(test, result)
 
+            test_time = time.monotonic() - start_time
+            if test_time >= PROGRESS_MIN_TIME:
+                previous_test = '%s took %.0f sec' % (test, test_time)
+            else:
+                previous_test = None
+
             if self.ns.findleaks:
                 gc.collect()
                 if gc.garbage:
@@ -325,6 +339,9 @@ class Regrtest:
             for module in sys.modules.keys():
                 if module not in save_modules and module.startswith("test."):
                     support.unload(module)
+
+        if previous_test:
+            print(previous_test)
 
     def _test_forever(self, tests):
         while True:
