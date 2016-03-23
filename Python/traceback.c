@@ -545,22 +545,22 @@ _Py_DumpASCII(int fd, PyObject *text)
 
     size = ascii->length;
     kind = ascii->state.kind;
-    if (ascii->state.compact) {
+    if (kind == PyUnicode_WCHAR_KIND) {
+        wstr = ((PyASCIIObject *)text)->wstr;
+        if (wstr == NULL)
+            return;
+        size = ((PyCompactUnicodeObject *)text)->wstr_length;
+    }
+    else if (ascii->state.compact) {
         if (ascii->state.ascii)
             data = ((PyASCIIObject*)text) + 1;
         else
             data = ((PyCompactUnicodeObject*)text) + 1;
     }
-    else if (kind != PyUnicode_WCHAR_KIND) {
+    else {
         data = ((PyUnicodeObject *)text)->data.any;
         if (data == NULL)
             return;
-    }
-    else {
-        wstr = ((PyASCIIObject *)text)->wstr;
-        if (wstr == NULL)
-            return;
-        size = ((PyCompactUnicodeObject *)text)->wstr_length;
     }
 
     if (MAX_STRING_LENGTH < size) {
