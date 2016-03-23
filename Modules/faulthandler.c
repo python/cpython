@@ -418,21 +418,21 @@ int
 faulthandler_enable(void)
 {
     size_t i;
-    fault_handler_t *handler;
-#ifdef HAVE_SIGACTION
-    struct sigaction action;
-#endif
-    int err;
 
     if (fatal_error.enabled) {
         return 0;
     }
-
     fatal_error.enabled = 1;
 
     for (i=0; i < faulthandler_nsignals; i++) {
-        handler = &faulthandler_handlers[i];
+        fault_handler_t *handler;
+#ifdef HAVE_SIGACTION
+        struct sigaction action;
+#endif
+        int err;
 
+        handler = &faulthandler_handlers[i];
+        assert(!handler->enabled);
 #ifdef HAVE_SIGACTION
         action.sa_handler = faulthandler_fatal_error;
         sigemptyset(&action.sa_mask);
@@ -1062,7 +1062,6 @@ faulthandler_fatal_error_py(PyObject *self, PyObject *args)
     Py_RETURN_NONE;
 }
 
-
 #if defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)
 #define FAULTHANDLER_STACK_OVERFLOW
 
@@ -1079,21 +1078,12 @@ stack_overflow(Py_uintptr_t min_sp, Py_uintptr_t max_sp, size_t *depth)
     /* allocate 4096 bytes on the stack at each call */
     unsigned char buffer[4096];
     Py_uintptr_t sp = (Py_uintptr_t)&buffer;
-    Py_uintptr_t stop;
-
     *depth += 1;
-    if (sp < min_sp || max_sp < sp) {
-        printf("call #%lu\n", (unsigned long)*depth);
+    if (sp < min_sp || max_sp < sp)
         return sp;
-    }
-
-    memset(buffer, (unsigned char)*depth, sizeof(buffer));
-    stop = stack_overflow(min_sp, max_sp, depth) + buffer[0];
-
-    memset(buffer, (unsigned char)stop, sizeof(buffer));
-    stop = stack_overflow(min_sp, max_sp, depth) + buffer[0];
-
-    return stop;
+    buffer[0] = 1;
+    buffer[4095] = 0;
+    return stack_overflow(min_sp, max_sp, depth);
 }
 
 static PyObject *
@@ -1101,19 +1091,13 @@ faulthandler_stack_overflow(PyObject *self)
 {
     size_t depth, size;
     Py_uintptr_t sp = (Py_uintptr_t)&depth;
-    Py_uintptr_t min_sp, max_sp, stop;
+    Py_uintptr_t stop;
 
     faulthandler_suppress_crash_report();
-
     depth = 0;
-    if (sp > STACK_OVERFLOW_MAX_SIZE)
-        min_sp = sp - STACK_OVERFLOW_MAX_SIZE;
-    else
-        min_sp = 0;
-    max_sp = sp + STACK_OVERFLOW_MAX_SIZE;
-
-    stop = stack_overflow(min_sp, max_sp, &depth);
-
+    stop = stack_overflow(sp - STACK_OVERFLOW_MAX_SIZE,
+                          sp + STACK_OVERFLOW_MAX_SIZE,
+                          &depth);
     if (sp < stop)
         size = stop - sp;
     else
@@ -1124,7 +1108,7 @@ faulthandler_stack_overflow(PyObject *self)
         size, depth);
     return NULL;
 }
-#endif   /* (defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION)) ... */
+#endif   /* defined(HAVE_SIGALTSTACK) && defined(HAVE_SIGACTION) */
 
 
 static int
