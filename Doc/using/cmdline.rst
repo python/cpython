@@ -628,12 +628,12 @@ conflict.
    Set the family of memory allocators used by Python:
 
    * ``malloc``: use the :c:func:`malloc` function of the C library
-     for all Python memory allocators (:c:func:`PyMem_RawMalloc`,
-     :c:func:`PyMem_Malloc`, :c:func:`PyObject_Malloc` & cie).
+     for all Python memory allocators (ex: :c:func:`PyMem_RawMalloc`,
+     :c:func:`PyMem_Malloc` and :c:func:`PyObject_Malloc`).
    * ``pymalloc``: :c:func:`PyObject_Malloc`, :c:func:`PyObject_Calloc` and
      :c:func:`PyObject_Realloc` use the :ref:`pymalloc allocator <pymalloc>`.
-     Other Python memory allocators (:c:func:`PyMem_RawMalloc`,
-     :c:func:`PyMem_Malloc` & cie) use :c:func:`malloc`.
+     Other Python memory allocators (ex: :c:func:`PyMem_RawMalloc` and
+     :c:func:`PyMem_Malloc`) use :c:func:`malloc`.
 
    Install debug hooks:
 
