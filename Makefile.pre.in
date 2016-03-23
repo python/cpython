@@ -530,7 +530,7 @@ pybuilddir.txt: $(BUILDPYTHON)
 
 # This is shared by the math and cmath modules
 Modules/_math.o: Modules/_math.c Modules/_math.h
-	$(CC) -c $(CCSHARED) $(PY_CORE_CFLAGS) -o $@ $<
+	$(CC) -c $(CCSHARED) $(PY_CFLAGS) -o $@ $<
 
 # Build the shared modules
 # Under GNU make, MAKEFLAGS are sorted and normalized; the 's' for
