@@ -30,10 +30,13 @@ typedef struct {
 } _Py_hashtable_entry_t;
 
 #define _Py_HASHTABLE_ENTRY_KEY(ENTRY) \
-        ((const void *)((char *)(ENTRY) + sizeof(_Py_hashtable_entry_t)))
+        ((const void *)((char *)(ENTRY) \
+                        + sizeof(_Py_hashtable_entry_t)))
 
 #define _Py_HASHTABLE_ENTRY_DATA(TABLE, ENTRY) \
-        ((char *)(ENTRY) + sizeof(_Py_hashtable_entry_t) + (TABLE)->key_size)
+        ((const void *)((char *)(ENTRY) \
+                        + sizeof(_Py_hashtable_entry_t) \
+                        + (TABLE)->key_size))
 
 /* Get a key value from pkey: use memcpy() rather than a pointer dereference
    to avoid memory alignment issues. */
@@ -49,10 +52,26 @@ typedef struct {
         memcpy(&(KEY), _Py_HASHTABLE_ENTRY_KEY(ENTRY), sizeof(KEY)); \
     } while (0)
 
-#define _Py_HASHTABLE_ENTRY_READ_DATA(TABLE, ENTRY, DATA_SIZE, DATA) \
+#define _Py_HASHTABLE_ENTRY_WRITE_PKEY(KEY_SIZE, ENTRY, PKEY) \
+    do { \
+        memcpy((void *)_Py_HASHTABLE_ENTRY_KEY(ENTRY), (PKEY), (KEY_SIZE)); \
+    } while (0)
+
+#define _Py_HASHTABLE_ENTRY_READ_PDATA(TABLE, ENTRY, DATA_SIZE, PDATA) \
     do { \
         assert((DATA_SIZE) == (TABLE)->data_size); \
-        memcpy(DATA, _Py_HASHTABLE_ENTRY_DATA(TABLE, ENTRY), DATA_SIZE); \
+        memcpy((PDATA), _Py_HASHTABLE_ENTRY_DATA(TABLE, (ENTRY)), \
+               (DATA_SIZE)); \
+    } while (0)
+
+#define _Py_HASHTABLE_ENTRY_READ_DATA(TABLE, ENTRY, DATA) \
+    _Py_HASHTABLE_ENTRY_READ_PDATA((TABLE), (ENTRY), sizeof(DATA), &(DATA))
+
+#define _Py_HASHTABLE_ENTRY_WRITE_PDATA(TABLE, ENTRY, DATA_SIZE, PDATA) \
+    do { \
+        assert((DATA_SIZE) == (TABLE)->data_size); \
+        memcpy((void *)_Py_HASHTABLE_ENTRY_DATA((TABLE), (ENTRY)), \
+               (PDATA), (DATA_SIZE)); \
     } while (0)
 
 

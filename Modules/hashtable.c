@@ -287,7 +287,7 @@ _Py_hashtable_pop_entry(_Py_hashtable_t *ht, size_t key_size, const void *pkey,
     ht->entries--;
 
     if (data != NULL)
-        _Py_HASHTABLE_ENTRY_READ_DATA(ht, entry, data_size, data);
+        _Py_HASHTABLE_ENTRY_READ_PDATA(ht, entry, data_size, data);
     ht->alloc.free(entry);
 
     if ((float)ht->entries / (float)ht->num_buckets < HASHTABLE_LOW)
@@ -325,10 +325,8 @@ _Py_hashtable_set(_Py_hashtable_t *ht, size_t key_size, const void *pkey,
     }
 
     entry->key_hash = key_hash;
-    memcpy((void *)_Py_HASHTABLE_ENTRY_KEY(entry), pkey, key_size);
-
-    assert(data_size == ht->data_size);
-    memcpy(_Py_HASHTABLE_ENTRY_DATA(ht, entry), data, data_size);
+    _Py_HASHTABLE_ENTRY_WRITE_PKEY(key_size, entry, pkey);
+    _Py_HASHTABLE_ENTRY_WRITE_PDATA(ht, entry, data_size, data);
 
     _Py_slist_prepend(&ht->buckets[index], (_Py_slist_item_t*)entry);
     ht->entries++;
@@ -350,7 +348,7 @@ _Py_hashtable_get(_Py_hashtable_t *ht, size_t key_size,const void *pkey,
     entry = _Py_hashtable_get_entry(ht, key_size, pkey);
     if (entry == NULL)
         return 0;
-    _Py_HASHTABLE_ENTRY_READ_DATA(ht, entry, data_size, data);
+    _Py_HASHTABLE_ENTRY_READ_PDATA(ht, entry, data_size, data);
     return 1;
 }
 
