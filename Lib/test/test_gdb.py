@@ -208,6 +208,8 @@ class DebuggerTests(unittest.TestCase):
             'warning: ',
             )
         for line in errlines:
+            if not line:
+                continue
             if not line.startswith(ignore_patterns):
                 unexpected_errlines.append(line)
 
