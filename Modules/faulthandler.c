@@ -388,7 +388,7 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
     case EXCEPTION_STACK_OVERFLOW: PUTS(fd, "stack overflow"); break;
     default:
         PUTS(fd, "code ");
-        _Py_DumpDecimal(fd, code, sizeof(DWORD));
+        _Py_DumpDecimal(fd, code);
     }
     PUTS(fd, "\n\n");
 
