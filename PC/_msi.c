@@ -1032,12 +1032,12 @@ PyInit__msi(void)
     if (m == NULL)
         return NULL;
 
-    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATEDIRECT", (int)MSIDBOPEN_CREATEDIRECT);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATE", (int)MSIDBOPEN_CREATE);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_DIRECT", (int)MSIDBOPEN_DIRECT);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_READONLY", (int)MSIDBOPEN_READONLY);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_TRANSACT", (int)MSIDBOPEN_TRANSACT);
-    PyModule_AddIntConstant(m, "MSIDBOPEN_PATCHFILE", (int)MSIDBOPEN_PATCHFILE);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATEDIRECT", (long)MSIDBOPEN_CREATEDIRECT);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_CREATE", (long)MSIDBOPEN_CREATE);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_DIRECT", (long)MSIDBOPEN_DIRECT);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_READONLY", (long)MSIDBOPEN_READONLY);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_TRANSACT", (long)MSIDBOPEN_TRANSACT);
+    PyModule_AddIntConstant(m, "MSIDBOPEN_PATCHFILE", (long)MSIDBOPEN_PATCHFILE);
 
     PyModule_AddIntMacro(m, MSICOLINFO_NAMES);
     PyModule_AddIntMacro(m, MSICOLINFO_TYPES);
