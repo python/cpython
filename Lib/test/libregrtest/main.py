@@ -415,6 +415,28 @@ class Regrtest:
             os.system("leaks %d" % os.getpid())
 
     def main(self, tests=None, **kwargs):
+        global TEMPDIR
+
+        if sysconfig.is_python_build():
+            try:
+                os.mkdir(TEMPDIR)
+            except FileExistsError:
+                pass
+
+        # Define a writable temp dir that will be used as cwd while running
+        # the tests. The name of the dir includes the pid to allow parallel
+        # testing (see the -j option).
+        test_cwd = 'test_python_{}'.format(os.getpid())
+        test_cwd = os.path.join(TEMPDIR, test_cwd)
+
+        # Run the tests in a context manager that temporarily changes the CWD to a
+        # temporary and writable directory.  If it's not possible to create or
+        # change the CWD, the original CWD will be used.  The original CWD is
+        # available from support.SAVEDCWD.
+        with support.temp_cwd(test_cwd, quiet=True):
+            self._main(tests, kwargs)
+
+    def _main(self, tests, kwargs):
         self.ns = self.parse_args(kwargs)
 
         if self.ns.slaveargs is not None:
@@ -473,26 +495,5 @@ def printlist(x, width=70, indent=4):
 
 
 def main(tests=None, **kwargs):
+    """Run the Python suite."""
     Regrtest().main(tests=tests, **kwargs)
-
-
-def main_in_temp_cwd():
-    """Run main() in a temporary working directory."""
-    if sysconfig.is_python_build():
-        try:
-            os.mkdir(TEMPDIR)
-        except FileExistsError:
-            pass
-
-    # Define a writable temp dir that will be used as cwd while running
-    # the tests. The name of the dir includes the pid to allow parallel
-    # testing (see the -j option).
-    test_cwd = 'test_python_{}'.format(os.getpid())
-    test_cwd = os.path.join(TEMPDIR, test_cwd)
-
-    # Run the tests in a context manager that temporarily changes the CWD to a
-    # temporary and writable directory.  If it's not possible to create or
-    # change the CWD, the original CWD will be used.  The original CWD is
-    # available from support.SAVEDCWD.
-    with support.temp_cwd(test_cwd, quiet=True):
-        main()

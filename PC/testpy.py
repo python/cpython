@@ -26,5 +26,5 @@ for dir in sys.path:
             # Add the "test" directory to PYTHONPATH.
             sys.path = sys.path + [test]
 
-import regrtest # Standard Python tester.
-regrtest.main()
+import libregrtest # Standard Python tester.
+libregrtest.main()

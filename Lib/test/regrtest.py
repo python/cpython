@@ -11,11 +11,11 @@ import importlib
 
 import os
 import sys
-from test.libregrtest import main_in_temp_cwd
+from test.libregrtest import main
 
 
-# alias needed by other scripts
-main = main_in_temp_cwd
+# Alias for backward compatibility (just in case)
+main_in_temp_cwd = main
 
 
 def _main():
