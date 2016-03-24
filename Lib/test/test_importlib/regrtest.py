@@ -8,10 +8,10 @@ this script.
 """
 import importlib
 import sys
-from test import regrtest
+from test import libregrtest
 
 if __name__ == '__main__':
     __builtins__.__import__ = importlib.__import__
     sys.path_importer_cache.clear()
 
-    regrtest.main(quiet=True, verbose2=True)
+    libregrtest.main(quiet=True, verbose2=True)
