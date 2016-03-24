@@ -439,15 +439,36 @@ def walk(top, topdown=True, onerror=None, followlinks=False):
         yield top, dirs, nondirs
 
 class _DummyDirEntry:
+    """Dummy implementation of DirEntry
+
+    Only used internally by os.walk(bytes). Since os.walk() doesn't need the
+    follow_symlinks parameter: don't implement it, always follow symbolic
+    links.
+    """
+
     def __init__(self, dir, name):
         self.name = name
         self.path = path.join(dir, name)
+        # Mimick FindFirstFile/FindNextFile: we should get file attributes
+        # while iterating on a directory
+        self._stat = None
+        try:
+            self.stat()
+        except OSError:
+            pass
+
+    def stat(self):
+        if self._stat is None:
+            self._stat = stat(self.path)
+        return self._stat
 
     def is_dir(self):
-        return path.isdir(self.path)
+        stat = self.stat()
+        return st.S_ISDIR(stat.st_mode)
 
     def is_symlink(self):
-        return path.islink(self.path)
+        stat = self.stat()
+        return st.S_ISLNK(stat.st_mode)
 
 class _dummy_scandir:
     # listdir-based implementation for bytes patches on Windows
