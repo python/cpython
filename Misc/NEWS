@@ -94,6 +94,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21925: :func:`warnings.formatwarning` now catches exceptions on
+  ``linecache.getline(...)`` to be able to log :exc:`ResourceWarning` emitted
+  late during the Python shutdown process.
+
 - Issue #24266: Ctrl+C during Readline history search now cancels the search
   mode when compiled with Readline 7.
 

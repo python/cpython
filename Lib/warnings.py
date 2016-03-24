@@ -21,9 +21,15 @@ def showwarning(message, category, filename, lineno, file=None, line=None):
 
 def formatwarning(message, category, filename, lineno, line=None):
     """Function to format a warning the standard way."""
-    import linecache
     s =  "%s:%s: %s: %s\n" % (filename, lineno, category.__name__, message)
-    line = linecache.getline(filename, lineno) if line is None else line
+    if line is None:
+        try:
+            import linecache
+            line = linecache.getline(filename, lineno)
+        except Exception:
+            # When a warning is logged during Python shutdown, linecache
+            # and the improt machinery don't work anymore
+            line = None
     if line:
         line = line.strip()
         s += "  %s\n" % line
