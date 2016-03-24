@@ -33,26 +33,47 @@ def _showwarnmsg_impl(msg):
         pass
 
 def _formatwarnmsg_impl(msg):
-    import linecache
     s =  ("%s:%s: %s: %s\n"
           % (msg.filename, msg.lineno, msg.category.__name__,
              msg.message))
+
     if msg.line is None:
-        line = linecache.getline(msg.filename, msg.lineno)
+        try:
+            import linecache
+            line = linecache.getline(msg.filename, msg.lineno)
+        except Exception:
+            # When a warning is logged during Python shutdown, linecache
+            # and the improt machinery don't work anymore
+            line = None
+            linecache = None
     else:
         line = msg.line
     if line:
         line = line.strip()
         s += "  %s\n" % line
+
     if msg.source is not None:
-        import tracemalloc
-        tb = tracemalloc.get_object_traceback(msg.source)
+        try:
+            import tracemalloc
+            tb = tracemalloc.get_object_traceback(msg.source)
+        except Exception:
+            # When a warning is logged during Python shutdown, tracemalloc
+            # and the import machinery don't work anymore
+            tb = None
+
         if tb is not None:
             s += 'Object allocated at (most recent call first):\n'
             for frame in tb:
                 s += ('  File "%s", lineno %s\n'
                       % (frame.filename, frame.lineno))
-                line = linecache.getline(frame.filename, frame.lineno)
+
+                try:
+                    if linecache is not None:
+                        line = linecache.getline(frame.filename, frame.lineno)
+                    else:
+                        line = None
+                except Exception:
+                    line = None
                 if line:
                     line = line.strip()
                     s += '    %s\n' % line
