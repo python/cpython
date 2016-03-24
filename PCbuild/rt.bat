@@ -42,7 +42,7 @@ if "%1"=="-x64" (set prefix=%pcbuild%amd64\) & shift & goto CheckOpts
 if NOT "%1"=="" (set regrtestargs=%regrtestargs% %1) & shift & goto CheckOpts
 
 set exe=%prefix%python%suffix%.exe
-set cmd="%exe%" %dashO% -Wd -E -bb "%pcbuild%..\lib\test\regrtest.py" %regrtestargs%
+set cmd="%exe%" %dashO% -Wd -E -bb -m test %regrtestargs%
 if defined qmode goto Qmode
 
 echo Deleting .pyc/.pyo files ...
