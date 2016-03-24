@@ -168,13 +168,21 @@ class Regrtest:
 
         if self.ns.fromfile:
             self.tests = []
+            # regex to match 'test_builtin' in line:
+            # '0:00:00 [  4/400] test_builtin -- test_dict took 1 sec'
+            regex = (r'^(?:[0-9]+:[0-9]+:[0-9]+ *)?'
+                     r'(?:\[[0-9/ ]+\] *)?'
+                     r'(test_[a-zA-Z0-9_]+)')
+            regex = re.compile(regex)
             with open(os.path.join(support.SAVEDCWD, self.ns.fromfile)) as fp:
-                count_pat = re.compile(r'\[\s*\d+/\s*\d+\]')
                 for line in fp:
-                    line = count_pat.sub('', line)
-                    guts = line.split() # assuming no test has whitespace in its name
-                    if guts and not guts[0].startswith('#'):
-                        self.tests.extend(guts)
+                    line = line.strip()
+                    if line.startswith('#'):
+                        continue
+                    match = regex.match(line)
+                    if match is None:
+                        continue
+                    self.tests.append(match.group(1))
 
         removepy(self.tests)
 
@@ -194,7 +202,10 @@ class Regrtest:
         else:
             alltests = findtests(self.ns.testdir, stdtests, nottests)
 
-        self.selected = self.tests or self.ns.args or alltests
+        if not self.ns.fromfile:
+            self.selected = self.tests or self.ns.args or alltests
+        else:
+            self.selected = self.tests
         if self.ns.single:
             self.selected = self.selected[:1]
             try:
