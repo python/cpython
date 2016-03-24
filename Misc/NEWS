@@ -232,6 +232,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #26637: The :mod:`importlib` module now emits an :exc:`ImportError`
+  rather than a :exc:`TypeError` if :func:`__import__` is tried during the
+  Python shutdown process but :data:`sys.path` is already cleared (set to
+  ``None``).
+
 - Issue #21925: :func:`warnings.formatwarning` now catches exceptions when
   calling :func;`linecache.getline` and
   :func:`tracemalloc.get_object_traceback` to be able to log
