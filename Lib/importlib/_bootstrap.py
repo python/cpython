@@ -878,13 +878,20 @@ def _find_spec_legacy(finder, name, path):
 
 def _find_spec(name, path, target=None):
     """Find a module's loader."""
-    if sys.meta_path is not None and not sys.meta_path:
+    meta_path = sys.meta_path
+    if meta_path is None:
+        # PyImport_Cleanup() is running or has been called.
+        raise ImportError("sys.meta_path is None, Python is likely "
+                          "shutting down")
+
+    if not meta_path:
         _warnings.warn('sys.meta_path is empty', ImportWarning)
+
     # We check sys.modules here for the reload case.  While a passed-in
     # target will usually indicate a reload there is no guarantee, whereas
     # sys.modules provides one.
     is_reload = name in sys.modules
-    for finder in sys.meta_path:
+    for finder in meta_path:
         with _ImportLockContext():
             try:
                 find_spec = finder.find_spec
