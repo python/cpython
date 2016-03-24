@@ -21,6 +21,9 @@ from test.libregrtest.setup import setup_tests
 # Display the running tests if nothing happened last N seconds
 PROGRESS_UPDATE = 30.0   # seconds
 
+# If interrupted, display the wait process every N seconds
+WAIT_PROGRESS = 2.0   # seconds
+
 
 def run_test_in_subprocess(testname, ns):
     """Run the given test in a subprocess with --slaveargs.
@@ -224,9 +227,18 @@ def run_tests_multiprocess(regrtest):
         if use_timeout:
             faulthandler.cancel_dump_traceback_later()
 
-    running = [worker.current_test for worker in workers]
-    running = list(filter(bool, running))
-    if running:
-        print("Waiting for %s" % ', '.join(running))
-    for worker in workers:
-        worker.join()
+    # If tests are interrupted, wait until tests complete
+    wait_start = time.monotonic()
+    while True:
+        running = [worker.current_test for worker in workers]
+        running = list(filter(bool, running))
+        if not running:
+            break
+
+        dt = time.monotonic() - wait_start
+        line = "Waiting for %s (%s tests)" % (', '.join(running), len(running))
+        if dt >= WAIT_PROGRESS:
+            line = "%s since %.0f sec" % (line, dt)
+        print(line)
+        for worker in workers:
+            worker.join(WAIT_PROGRESS)
