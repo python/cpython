@@ -628,9 +628,33 @@ class ArgsTestCase(BaseTestCase):
         # [2/2] test_2
         filename = support.TESTFN
         self.addCleanup(support.unlink, filename)
+
+        # test format '0:00:00 [2/7] test_opcodes -- test_grammar took 0 sec'
+        with open(filename, "w") as fp:
+            previous = None
+            for index, name in enumerate(tests, 1):
+                line = ("00:00:%02i [%s/%s] %s"
+                        % (index, index, len(tests), name))
+                if previous:
+                    line += " -- %s took 0 sec" % previous
+                print(line, file=fp)
+                previous = name
+
+        output = self.run_tests('--fromfile', filename)
+        self.check_executed_tests(output, tests)
+
+        # test format '[2/7] test_opcodes'
         with open(filename, "w") as fp:
             for index, name in enumerate(tests, 1):
                 print("[%s/%s] %s" % (index, len(tests), name), file=fp)
+
+        output = self.run_tests('--fromfile', filename)
+        self.check_executed_tests(output, tests)
+
+        # test format 'test_opcodes'
+        with open(filename, "w") as fp:
+            for name in tests:
+                print(name, file=fp)
 
         output = self.run_tests('--fromfile', filename)
         self.check_executed_tests(output, tests)
