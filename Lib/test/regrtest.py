@@ -11,21 +11,28 @@ import importlib
 
 import os
 import sys
-from test.libregrtest import main, main_in_temp_cwd
+from test.libregrtest import main_in_temp_cwd
 
 
-if __name__ == '__main__':
+# alias needed by other scripts
+main = main_in_temp_cwd
+
+
+def _main():
+    global __file__
+
     # Remove regrtest.py's own directory from the module search path. Despite
     # the elimination of implicit relative imports, this is still needed to
     # ensure that submodules of the test package do not inappropriately appear
     # as top-level modules even when people (or buildbots!) invoke regrtest.py
     # directly instead of using the -m switch
     mydir = os.path.abspath(os.path.normpath(os.path.dirname(sys.argv[0])))
-    i = len(sys.path)
+    i = len(sys.path) - 1
     while i >= 0:
-        i -= 1
         if os.path.abspath(os.path.normpath(sys.path[i])) == mydir:
             del sys.path[i]
+        else:
+            i -= 1
 
     # findtestdir() gets the dirname out of __file__, so we have to make it
     # absolute before changing the working directory.
@@ -36,4 +43,8 @@ if __name__ == '__main__':
     # sanity check
     assert __file__ == os.path.abspath(sys.argv[0])
 
-    main_in_temp_cwd()
+    main()
+
+
+if __name__ == '__main__':
+    _main()
