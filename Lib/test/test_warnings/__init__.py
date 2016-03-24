@@ -536,6 +536,14 @@ class WCmdLineTests(BaseTest):
             self.module._setoption('error::Warning::0')
             self.assertRaises(UserWarning, self.module.warn, 'convert to error')
 
+
+class CWCmdLineTests(WCmdLineTests, unittest.TestCase):
+    module = c_warnings
+
+
+class PyWCmdLineTests(WCmdLineTests, unittest.TestCase):
+    module = py_warnings
+
     def test_improper_option(self):
         # Same as above, but check that the message is printed out when
         # the interpreter is executed. This also checks that options are
@@ -551,12 +559,6 @@ class WCmdLineTests(BaseTest):
         # '-Wi' was observed
         self.assertFalse(out.strip())
         self.assertNotIn(b'RuntimeWarning', err)
-
-class CWCmdLineTests(WCmdLineTests, unittest.TestCase):
-    module = c_warnings
-
-class PyWCmdLineTests(WCmdLineTests, unittest.TestCase):
-    module = py_warnings
 
 
 class _WarningsTests(BaseTest, unittest.TestCase):
@@ -976,6 +978,7 @@ class BootstrapTest(unittest.TestCase):
             # Use -W to load warnings module at startup
             assert_python_ok('-c', 'pass', '-W', 'always', PYTHONPATH=cwd)
 
+
 class FinalizationTest(unittest.TestCase):
     def test_finalization(self):
         # Issue #19421: warnings.warn() should not crash
@@ -994,6 +997,23 @@ a=A()
         # note: "__main__" filename is not correct, it should be the name
         # of the script
         self.assertEqual(err, b'__main__:7: UserWarning: test')
+
+    def test_late_resource_warning(self):
+        # Issue #21925: Emitting a ResourceWarning late during the Python
+        # shutdown must be logged.
+
+        expected = b"sys:1: ResourceWarning: unclosed file "
+
+        # don't import the warnings module
+        # (_warnings will try to import it)
+        code = "f = open(%a)" % __file__
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertTrue(err.startswith(expected), ascii(err))
+
+        # import the warnings module
+        code = "import warnings; f = open(%a)" % __file__
+        rc, out, err = assert_python_ok("-c", code)
+        self.assertTrue(err.startswith(expected), ascii(err))
 
 
 def setUpModule():
