@@ -10,11 +10,9 @@ import warnings
 from test import support
 
 
-def safe_rmdir(dirname):
-    try:
-        os.rmdir(dirname)
-    except OSError:
-        pass
+def create_file(filename, data=b'foo'):
+    with open(filename, 'xb', 0) as fp:
+        fp.write(data)
 
 
 class GenericTest:
@@ -97,52 +95,47 @@ class GenericTest:
                     self.assertNotEqual(s1[n:n+1], s2[n:n+1])
 
     def test_getsize(self):
-        f = open(support.TESTFN, "wb")
-        try:
-            f.write(b"foo")
-            f.close()
-            self.assertEqual(self.pathmodule.getsize(support.TESTFN), 3)
-        finally:
-            if not f.closed:
-                f.close()
-            support.unlink(support.TESTFN)
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
 
-    def test_time(self):
-        f = open(support.TESTFN, "wb")
-        try:
-            f.write(b"foo")
-            f.close()
-            f = open(support.TESTFN, "ab")
+        create_file(filename, b'Hello')
+        self.assertEqual(self.pathmodule.getsize(filename), 5)
+        os.remove(filename)
+
+        create_file(filename, b'Hello World!')
+        self.assertEqual(self.pathmodule.getsize(filename), 12)
+
+    def test_filetime(self):
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        create_file(filename, b'foo')
+
+        with open(filename, "ab", 0) as f:
             f.write(b"bar")
-            f.close()
-            f = open(support.TESTFN, "rb")
-            d = f.read()
-            f.close()
-            self.assertEqual(d, b"foobar")
 
-            self.assertLessEqual(
-                self.pathmodule.getctime(support.TESTFN),
-                self.pathmodule.getmtime(support.TESTFN)
-            )
-        finally:
-            if not f.closed:
-                f.close()
-            support.unlink(support.TESTFN)
+        with open(filename, "rb", 0) as f:
+            data = f.read()
+        self.assertEqual(data, b"foobar")
+
+        self.assertLessEqual(
+            self.pathmodule.getctime(filename),
+            self.pathmodule.getmtime(filename)
+        )
 
     def test_exists(self):
-        self.assertIs(self.pathmodule.exists(support.TESTFN), False)
-        f = open(support.TESTFN, "wb")
-        try:
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+
+        self.assertIs(self.pathmodule.exists(filename), False)
+
+        with open(filename, "xb") as f:
             f.write(b"foo")
-            f.close()
-            self.assertIs(self.pathmodule.exists(support.TESTFN), True)
-            if not self.pathmodule == genericpath:
-                self.assertIs(self.pathmodule.lexists(support.TESTFN),
-                              True)
-        finally:
-            if not f.close():
-                f.close()
-            support.unlink(support.TESTFN)
+
+        self.assertIs(self.pathmodule.exists(filename), True)
+
+        if not self.pathmodule == genericpath:
+            self.assertIs(self.pathmodule.lexists(filename), True)
 
     @unittest.skipUnless(hasattr(os, "pipe"), "requires os.pipe()")
     def test_exists_fd(self):
@@ -154,53 +147,66 @@ class GenericTest:
             os.close(w)
         self.assertFalse(self.pathmodule.exists(r))
 
-    def test_isdir(self):
-        self.assertIs(self.pathmodule.isdir(support.TESTFN), False)
-        f = open(support.TESTFN, "wb")
-        try:
-            f.write(b"foo")
-            f.close()
-            self.assertIs(self.pathmodule.isdir(support.TESTFN), False)
-            os.remove(support.TESTFN)
-            os.mkdir(support.TESTFN)
-            self.assertIs(self.pathmodule.isdir(support.TESTFN), True)
-            os.rmdir(support.TESTFN)
-        finally:
-            if not f.close():
-                f.close()
-            support.unlink(support.TESTFN)
-            safe_rmdir(support.TESTFN)
+    def test_isdir_file(self):
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        self.assertIs(self.pathmodule.isdir(filename), False)
 
-    def test_isfile(self):
-        self.assertIs(self.pathmodule.isfile(support.TESTFN), False)
-        f = open(support.TESTFN, "wb")
-        try:
-            f.write(b"foo")
-            f.close()
-            self.assertIs(self.pathmodule.isfile(support.TESTFN), True)
-            os.remove(support.TESTFN)
-            os.mkdir(support.TESTFN)
-            self.assertIs(self.pathmodule.isfile(support.TESTFN), False)
-            os.rmdir(support.TESTFN)
-        finally:
-            if not f.close():
-                f.close()
-            support.unlink(support.TESTFN)
-            safe_rmdir(support.TESTFN)
+        create_file(filename)
+        self.assertIs(self.pathmodule.isdir(filename), False)
 
-    @staticmethod
-    def _create_file(filename):
-        with open(filename, 'wb') as f:
-            f.write(b'foo')
+    def test_isdir_dir(self):
+        filename = support.TESTFN
+        self.addCleanup(support.rmdir, filename)
+        self.assertIs(self.pathmodule.isdir(filename), False)
+
+        os.mkdir(filename)
+        self.assertIs(self.pathmodule.isdir(filename), True)
+
+    def test_isfile_file(self):
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        self.assertIs(self.pathmodule.isfile(filename), False)
+
+        create_file(filename)
+        self.assertIs(self.pathmodule.isfile(filename), True)
+
+    def test_isfile_dir(self):
+        filename = support.TESTFN
+        self.addCleanup(support.rmdir, filename)
+        self.assertIs(self.pathmodule.isfile(filename), False)
+
+        os.mkdir(filename)
+        self.assertIs(self.pathmodule.isfile(filename), False)
 
     def test_samefile(self):
-        try:
-            test_fn = support.TESTFN + "1"
-            self._create_file(test_fn)
-            self.assertTrue(self.pathmodule.samefile(test_fn, test_fn))
-            self.assertRaises(TypeError, self.pathmodule.samefile)
-        finally:
-            os.remove(test_fn)
+        file1 = support.TESTFN
+        file2 = support.TESTFN + "2"
+        self.addCleanup(support.unlink, file1)
+        self.addCleanup(support.unlink, file2)
+
+        create_file(file1)
+        self.assertTrue(self.pathmodule.samefile(file1, file1))
+
+        create_file(file2)
+        self.assertFalse(self.pathmodule.samefile(file1, file2))
+
+        self.assertRaises(TypeError, self.pathmodule.samefile)
+
+    def _test_samefile_on_link_func(self, func):
+        test_fn1 = support.TESTFN
+        test_fn2 = support.TESTFN + "2"
+        self.addCleanup(support.unlink, test_fn1)
+        self.addCleanup(support.unlink, test_fn2)
+
+        create_file(test_fn1)
+
+        func(test_fn1, test_fn2)
+        self.assertTrue(self.pathmodule.samefile(test_fn1, test_fn2))
+        os.remove(test_fn2)
+
+        create_file(test_fn2)
+        self.assertFalse(self.pathmodule.samefile(test_fn1, test_fn2))
 
     @support.skip_unless_symlink
     def test_samefile_on_symlink(self):
@@ -209,31 +215,37 @@ class GenericTest:
     def test_samefile_on_link(self):
         self._test_samefile_on_link_func(os.link)
 
-    def _test_samefile_on_link_func(self, func):
-        try:
-            test_fn1 = support.TESTFN + "1"
-            test_fn2 = support.TESTFN + "2"
-            self._create_file(test_fn1)
-
-            func(test_fn1, test_fn2)
-            self.assertTrue(self.pathmodule.samefile(test_fn1, test_fn2))
-            os.remove(test_fn2)
-
-            self._create_file(test_fn2)
-            self.assertFalse(self.pathmodule.samefile(test_fn1, test_fn2))
-        finally:
-            os.remove(test_fn1)
-            os.remove(test_fn2)
-
     def test_samestat(self):
-        try:
-            test_fn = support.TESTFN + "1"
-            self._create_file(test_fn)
-            test_fns = [test_fn]*2
-            stats = map(os.stat, test_fns)
-            self.assertTrue(self.pathmodule.samestat(*stats))
-        finally:
-            os.remove(test_fn)
+        test_fn1 = support.TESTFN
+        test_fn2 = support.TESTFN + "2"
+        self.addCleanup(support.unlink, test_fn1)
+        self.addCleanup(support.unlink, test_fn2)
+
+        create_file(test_fn1)
+        stat1 = os.stat(test_fn1)
+        self.assertTrue(self.pathmodule.samestat(stat1, os.stat(test_fn1)))
+
+        create_file(test_fn2)
+        stat2 = os.stat(test_fn2)
+        self.assertFalse(self.pathmodule.samestat(stat1, stat2))
+
+        self.assertRaises(TypeError, self.pathmodule.samestat)
+
+    def _test_samestat_on_link_func(self, func):
+        test_fn1 = support.TESTFN + "1"
+        test_fn2 = support.TESTFN + "2"
+        self.addCleanup(support.unlink, test_fn1)
+        self.addCleanup(support.unlink, test_fn2)
+
+        create_file(test_fn1)
+        func(test_fn1, test_fn2)
+        self.assertTrue(self.pathmodule.samestat(os.stat(test_fn1),
+                                                 os.stat(test_fn2)))
+        os.remove(test_fn2)
+
+        create_file(test_fn2)
+        self.assertFalse(self.pathmodule.samestat(os.stat(test_fn1),
+                                                  os.stat(test_fn2)))
 
     @support.skip_unless_symlink
     def test_samestat_on_symlink(self):
@@ -242,31 +254,17 @@ class GenericTest:
     def test_samestat_on_link(self):
         self._test_samestat_on_link_func(os.link)
 
-    def _test_samestat_on_link_func(self, func):
-        try:
-            test_fn1 = support.TESTFN + "1"
-            test_fn2 = support.TESTFN + "2"
-            self._create_file(test_fn1)
-            test_fns = (test_fn1, test_fn2)
-            func(*test_fns)
-            stats = map(os.stat, test_fns)
-            self.assertTrue(self.pathmodule.samestat(*stats))
-            os.remove(test_fn2)
-
-            self._create_file(test_fn2)
-            stats = map(os.stat, test_fns)
-            self.assertFalse(self.pathmodule.samestat(*stats))
-
-            self.assertRaises(TypeError, self.pathmodule.samestat)
-        finally:
-            os.remove(test_fn1)
-            os.remove(test_fn2)
-
     def test_sameopenfile(self):
-        fname = support.TESTFN + "1"
-        with open(fname, "wb") as a, open(fname, "wb") as b:
-            self.assertTrue(self.pathmodule.sameopenfile(
-                                a.fileno(), b.fileno()))
+        filename = support.TESTFN
+        self.addCleanup(support.unlink, filename)
+        create_file(filename)
+
+        with open(filename, "rb", 0) as fp1:
+            fd1 = fp1.fileno()
+            with open(filename, "rb", 0) as fp2:
+                fd2 = fp2.fileno()
+                self.assertTrue(self.pathmodule.sameopenfile(fd1, fd2))
+
 
 class TestGenericTest(GenericTest, unittest.TestCase):
     # Issue 16852: GenericTest can't inherit from unittest.TestCase
