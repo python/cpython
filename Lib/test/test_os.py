@@ -15,7 +15,6 @@ import locale
 import mmap
 import os
 import pickle
-import platform
 import re
 import shutil
 import signal
@@ -2456,14 +2455,14 @@ def supports_extended_attributes():
                 return False
     finally:
         support.unlink(support.TESTFN)
-    # Kernels < 2.6.39 don't respect setxattr flags.
-    kernel_version = platform.release()
-    m = re.match("2.6.(\d{1,2})", kernel_version)
-    return m is None or int(m.group(1)) >= 39
+
+    return True
 
 
 @unittest.skipUnless(supports_extended_attributes(),
                      "no non-broken extended attribute support")
+# Kernels < 2.6.39 don't respect setxattr flags.
+@support.requires_linux_version(2, 6, 39)
 class ExtendedAttributeTests(unittest.TestCase):
 
     def tearDown(self):
