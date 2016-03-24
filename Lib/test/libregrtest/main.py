@@ -305,6 +305,8 @@ class Regrtest:
 
         save_modules = sys.modules.keys()
 
+        print("Run tests sequentially")
+
         previous_test = None
         for test_index, test in enumerate(self.tests, 1):
             start_time = time.monotonic()

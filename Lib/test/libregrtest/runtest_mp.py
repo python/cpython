@@ -154,6 +154,8 @@ def run_tests_multiprocess(regrtest):
 
     workers = [MultiprocessThread(pending, output, regrtest.ns)
                for i in range(regrtest.ns.use_mp)]
+    print("Run tests in parallel using %s child processes"
+          % len(workers))
     for worker in workers:
         worker.start()
 
