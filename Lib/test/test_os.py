@@ -812,6 +812,7 @@ class WalkTests(unittest.TestCase):
 
     def setUp(self):
         join = os.path.join
+        self.addCleanup(support.rmtree, support.TESTFN)
 
         # Build:
         #     TESTFN/
@@ -922,22 +923,6 @@ class WalkTests(unittest.TestCase):
         else:
             self.fail("Didn't follow symlink with followlinks=True")
 
-    def tearDown(self):
-        # Tear everything down.  This is a decent use for bottom-up on
-        # Windows, which doesn't have a recursive delete command.  The
-        # (not so) subtlety is that rmdir will fail unless the dir's
-        # kids are removed first, so bottom up is essential.
-        for root, dirs, files in os.walk(support.TESTFN, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                dirname = os.path.join(root, name)
-                if not os.path.islink(dirname):
-                    os.rmdir(dirname)
-                else:
-                    os.remove(dirname)
-        os.rmdir(support.TESTFN)
-
     def test_walk_bad_dir(self):
         # Walk top-down.
         errors = []
@@ -1019,19 +1004,6 @@ class FwalkTests(WalkTests):
         newfd = os.dup(1)
         self.addCleanup(os.close, newfd)
         self.assertEqual(newfd, minfd)
-
-    def tearDown(self):
-        # cleanup
-        for root, dirs, files, rootfd in os.fwalk(support.TESTFN, topdown=False):
-            for name in files:
-                os.unlink(name, dir_fd=rootfd)
-            for name in dirs:
-                st = os.stat(name, dir_fd=rootfd, follow_symlinks=False)
-                if stat.S_ISDIR(st.st_mode):
-                    os.rmdir(name, dir_fd=rootfd)
-                else:
-                    os.unlink(name, dir_fd=rootfd)
-        os.rmdir(support.TESTFN)
 
 class BytesWalkTests(WalkTests):
     """Tests for os.walk() with bytes."""
