@@ -66,6 +66,7 @@ except ImportError:
 
 from test.support.script_helper import assert_python_ok
 
+
 root_in_posix = False
 if hasattr(os, 'geteuid'):
     root_in_posix = (os.geteuid() == 0)
@@ -81,6 +82,23 @@ else:
 
 # Issue #14110: Some tests fail on FreeBSD if the user is in the wheel group.
 HAVE_WHEEL_GROUP = sys.platform.startswith('freebsd') and os.getgid() == 0
+
+
+@contextlib.contextmanager
+def ignore_deprecation_warnings(msg_regex, quiet=False):
+    with support.check_warnings((msg_regex, DeprecationWarning), quiet=quiet):
+        yield
+
+
+@contextlib.contextmanager
+def bytes_filename_warn(expected):
+    msg = 'The Windows bytes API has been deprecated'
+    if os.name == 'nt':
+        with ignore_deprecation_warnings(msg, quiet=not expected):
+            yield
+    else:
+        yield
+
 
 # Tests creating TESTFN
 class FileTests(unittest.TestCase):
@@ -305,8 +323,7 @@ class StatAttributeTests(unittest.TestCase):
             fname = self.fname.encode(sys.getfilesystemencoding())
         except UnicodeEncodeError:
             self.skipTest("cannot encode %a for the filesystem" % self.fname)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with bytes_filename_warn(True):
             self.check_stat_attributes(fname)
 
     def test_stat_result_pickle(self):
@@ -443,15 +460,11 @@ class UtimeTests(unittest.TestCase):
             fp.write(b"ABC")
 
         def restore_float_times(state):
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore", DeprecationWarning)
-
+            with ignore_deprecation_warnings('stat_float_times'):
                 os.stat_float_times(state)
 
         # ensure that st_atime and st_mtime are float
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
-
+        with ignore_deprecation_warnings('stat_float_times'):
             old_float_times = os.stat_float_times(-1)
             self.addCleanup(restore_float_times, old_float_times)
 
@@ -1024,8 +1037,7 @@ class BytesWalkTests(WalkTests):
         super().setUp()
         self.stack = contextlib.ExitStack()
         if os.name == 'nt':
-            self.stack.enter_context(warnings.catch_warnings())
-            warnings.simplefilter("ignore", DeprecationWarning)
+            self.stack.enter_context(bytes_filename_warn(False))
 
     def tearDown(self):
         self.stack.close()
@@ -1580,8 +1592,7 @@ class LinkTests(unittest.TestCase):
         with open(file1, "w") as f1:
             f1.write("test")
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with bytes_filename_warn(False):
             os.link(file1, file2)
         with open(file1, "r") as f1, open(file2, "r") as f2:
             self.assertTrue(os.path.sameopenfile(f1.fileno(), f2.fileno()))
@@ -1873,10 +1884,12 @@ class Win32ListdirTests(unittest.TestCase):
         self.assertEqual(
                 sorted(os.listdir(support.TESTFN)),
                 self.created_paths)
+
         # bytes
-        self.assertEqual(
-                sorted(os.listdir(os.fsencode(support.TESTFN))),
-                [os.fsencode(path) for path in self.created_paths])
+        with bytes_filename_warn(False):
+            self.assertEqual(
+                    sorted(os.listdir(os.fsencode(support.TESTFN))),
+                    [os.fsencode(path) for path in self.created_paths])
 
     def test_listdir_extended_path(self):
         """Test when the path starts with '\\\\?\\'."""
@@ -1886,11 +1899,13 @@ class Win32ListdirTests(unittest.TestCase):
         self.assertEqual(
                 sorted(os.listdir(path)),
                 self.created_paths)
+
         # bytes
-        path = b'\\\\?\\' + os.fsencode(os.path.abspath(support.TESTFN))
-        self.assertEqual(
-                sorted(os.listdir(path)),
-                [os.fsencode(path) for path in self.created_paths])
+        with bytes_filename_warn(False):
+            path = b'\\\\?\\' + os.fsencode(os.path.abspath(support.TESTFN))
+            self.assertEqual(
+                    sorted(os.listdir(path)),
+                    [os.fsencode(path) for path in self.created_paths])
 
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
@@ -1965,9 +1980,9 @@ class Win32SymlinkTests(unittest.TestCase):
         self.assertNotEqual(os.lstat(link), os.stat(link))
 
         bytes_link = os.fsencode(link)
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", DeprecationWarning)
+        with bytes_filename_warn(True):
             self.assertEqual(os.stat(bytes_link), os.stat(target))
+        with bytes_filename_warn(True):
             self.assertNotEqual(os.lstat(bytes_link), os.stat(bytes_link))
 
     def test_12084(self):
@@ -2529,36 +2544,37 @@ class Win32DeprecatedBytesAPI(unittest.TestCase):
     def test_deprecated(self):
         import nt
         filename = os.fsencode(support.TESTFN)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            for func, *args in (
-                (nt._getfullpathname, filename),
-                (nt._isdir, filename),
-                (os.access, filename, os.R_OK),
-                (os.chdir, filename),
-                (os.chmod, filename, 0o777),
-                (os.getcwdb,),
-                (os.link, filename, filename),
-                (os.listdir, filename),
-                (os.lstat, filename),
-                (os.mkdir, filename),
-                (os.open, filename, os.O_RDONLY),
-                (os.rename, filename, filename),
-                (os.rmdir, filename),
-                (os.startfile, filename),
-                (os.stat, filename),
-                (os.unlink, filename),
-                (os.utime, filename),
-            ):
-                self.assertRaises(DeprecationWarning, func, *args)
+        for func, *args in (
+            (nt._getfullpathname, filename),
+            (nt._isdir, filename),
+            (os.access, filename, os.R_OK),
+            (os.chdir, filename),
+            (os.chmod, filename, 0o777),
+            (os.getcwdb,),
+            (os.link, filename, filename),
+            (os.listdir, filename),
+            (os.lstat, filename),
+            (os.mkdir, filename),
+            (os.open, filename, os.O_RDONLY),
+            (os.rename, filename, filename),
+            (os.rmdir, filename),
+            (os.startfile, filename),
+            (os.stat, filename),
+            (os.unlink, filename),
+            (os.utime, filename),
+        ):
+            with bytes_filename_warn(True):
+                try:
+                    func(*args)
+                except OSError:
+                    # ignore OSError, we only care about DeprecationWarning
+                    pass
 
     @support.skip_unless_symlink
     def test_symlink(self):
         filename = os.fsencode(support.TESTFN)
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", DeprecationWarning)
-            self.assertRaises(DeprecationWarning,
-                              os.symlink, filename, filename)
+        with bytes_filename_warn(True):
+            os.symlink(filename, filename)
 
 
 @unittest.skipUnless(hasattr(os, 'get_terminal_size'), "requires os.get_terminal_size")
@@ -2696,7 +2712,8 @@ class OSErrorTests(unittest.TestCase):
         for filenames, func, *func_args in funcs:
             for name in filenames:
                 try:
-                    func(name, *func_args)
+                    with bytes_filename_warn(False):
+                        func(name, *func_args)
                 except OSError as err:
                     self.assertIs(err.filename, name)
                 else:
@@ -3011,7 +3028,8 @@ class TestScandir(unittest.TestCase):
     def test_bytes(self):
         if os.name == "nt":
             # On Windows, os.scandir(bytes) must raise an exception
-            self.assertRaises(TypeError, os.scandir, b'.')
+            with bytes_filename_warn(True):
+                self.assertRaises(TypeError, os.scandir, b'.')
             return
 
         self.create_file("file.txt")
