@@ -173,11 +173,9 @@ PyAPI_FUNC(void) _PyGILState_Reinit(void);
  * the caller needn't check for NULL). */
 PyAPI_FUNC(PyThreadState *) PyThreadState_Get(void);
 
-#ifdef WITH_THREAD
 /* Similar to PyThreadState_Get(), but don't issue a fatal error
  * if it is NULL. */
 PyAPI_FUNC(PyThreadState *) _PyThreadState_UncheckedGet(void);
-#endif
 
 PyAPI_FUNC(PyThreadState *) PyThreadState_Swap(PyThreadState *);
 PyAPI_FUNC(PyObject *) PyThreadState_GetDict(void);
