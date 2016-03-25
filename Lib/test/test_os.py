@@ -845,9 +845,8 @@ class WalkTests(unittest.TestCase):
         os.makedirs(t2_path)
 
         for path in tmp1_path, tmp2_path, tmp3_path, tmp4_path:
-            f = open(path, "w")
-            f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
-            f.close()
+            with open(path, "x") as f:
+                f.write("I'm " + path + " and proud of it.  Blame test_os.\n")
 
         if support.can_symlink():
             os.symlink(os.path.abspath(t2_path), self.link_path)
@@ -1427,6 +1426,9 @@ class ExecTests(unittest.TestCase):
 
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32ErrorTests(unittest.TestCase):
+    def setUp(self):
+        self.assertFalse(os.path.exists(support.TESTFN))
+
     def test_rename(self):
         self.assertRaises(OSError, os.rename, support.TESTFN, support.TESTFN+".bak")
 
@@ -1439,7 +1441,7 @@ class Win32ErrorTests(unittest.TestCase):
     def test_mkdir(self):
         self.addCleanup(support.unlink, support.TESTFN)
 
-        with open(support.TESTFN, "w") as f:
+        with open(support.TESTFN, "x") as f:
             self.assertRaises(OSError, os.mkdir, support.TESTFN)
 
     def test_utime(self):
@@ -1447,6 +1449,7 @@ class Win32ErrorTests(unittest.TestCase):
 
     def test_chmod(self):
         self.assertRaises(OSError, os.chmod, support.TESTFN, 0)
+
 
 class TestInvalidFD(unittest.TestCase):
     singles = ["fchdir", "dup", "fdopen", "fdatasync", "fstat",
@@ -1559,8 +1562,7 @@ class LinkTests(unittest.TestCase):
                 os.unlink(file)
 
     def _test_link(self, file1, file2):
-        with open(file1, "w") as f1:
-            f1.write("test")
+        create_file(file1)
 
         with bytes_filename_warn(False):
             os.link(file1, file2)
