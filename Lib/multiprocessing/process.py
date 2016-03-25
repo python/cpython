@@ -234,12 +234,7 @@ class BaseProcess(object):
                 context._force_start_method(self._start_method)
             _process_counter = itertools.count(1)
             _children = set()
-            if sys.stdin is not None:
-                try:
-                    sys.stdin.close()
-                    sys.stdin = open(os.devnull)
-                except (OSError, ValueError):
-                    pass
+            util._close_stdin()
             old_process = _current_process
             _current_process = self
             try:

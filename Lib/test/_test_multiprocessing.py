@@ -455,13 +455,15 @@ class _TestSubclassingProcess(BaseTestCase):
 
     @classmethod
     def _test_stderr_flush(cls, testfn):
-        sys.stderr = open(testfn, 'w')
+        fd = os.open(testfn, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+        sys.stderr = open(fd, 'w', closefd=False)
         1/0 # MARKER
 
 
     @classmethod
     def _test_sys_exit(cls, reason, testfn):
-        sys.stderr = open(testfn, 'w')
+        fd = os.open(testfn, os.O_WRONLY | os.O_CREAT | os.O_EXCL)
+        sys.stderr = open(fd, 'w', closefd=False)
         sys.exit(reason)
 
     def test_sys_exit(self):
@@ -472,15 +474,21 @@ class _TestSubclassingProcess(BaseTestCase):
         testfn = test.support.TESTFN
         self.addCleanup(test.support.unlink, testfn)
 
-        for reason, code in (([1, 2, 3], 1), ('ignore this', 1)):
+        for reason in (
+            [1, 2, 3],
+            'ignore this',
+        ):
             p = self.Process(target=self._test_sys_exit, args=(reason, testfn))
             p.daemon = True
             p.start()
             p.join(5)
-            self.assertEqual(p.exitcode, code)
+            self.assertEqual(p.exitcode, 1)
 
             with open(testfn, 'r') as f:
-                self.assertEqual(f.read().rstrip(), str(reason))
+                content = f.read()
+            self.assertEqual(content.rstrip(), str(reason))
+
+            os.unlink(testfn)
 
         for reason in (True, False, 8):
             p = self.Process(target=sys.exit, args=(reason,))
