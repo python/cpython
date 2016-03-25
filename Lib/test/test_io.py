@@ -364,7 +364,11 @@ class IOTest(unittest.TestCase):
     def test_open_handles_NUL_chars(self):
         fn_with_NUL = 'foo\0bar'
         self.assertRaises(ValueError, self.open, fn_with_NUL, 'w')
-        self.assertRaises(ValueError, self.open, bytes(fn_with_NUL, 'ascii'), 'w')
+
+        bytes_fn = bytes(fn_with_NUL, 'ascii')
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            self.assertRaises(ValueError, self.open, bytes_fn, 'w')
 
     def test_raw_file_io(self):
         with self.open(support.TESTFN, "wb", buffering=0) as f:
