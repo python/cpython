@@ -399,8 +399,9 @@ def _module_relative_path(module, path):
             basedir = os.curdir
     else:
         # A module w/o __file__ (this includes builtins)
-        raise ValueError("Can't resolve paths relative to the module " +
-                         module + " (it has no __file__)")
+        raise ValueError("Can't resolve paths relative to the module "
+                         "%r (it has no __file__)"
+                         % module.__name__)
 
     # Combine the base directory and the path.
     return os.path.join(basedir, *(path.split('/')))
