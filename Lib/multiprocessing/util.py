@@ -9,6 +9,7 @@
 
 import os
 import itertools
+import sys
 import weakref
 import atexit
 import threading        # we want threading to install it's
@@ -356,6 +357,28 @@ def close_all_fds_except(fds):
     assert fds[-1] == MAXFD, 'fd too large'
     for i in range(len(fds) - 1):
         os.closerange(fds[i]+1, fds[i+1])
+#
+# Close sys.stdin and replace stdin with os.devnull
+#
+
+def _close_stdin():
+    if sys.stdin is None:
+        return
+
+    try:
+        sys.stdin.close()
+    except (OSError, ValueError):
+        pass
+
+    try:
+        fd = os.open(os.devnull, os.O_RDONLY)
+        try:
+            sys.stdin = open(fd, closefd=False)
+        except:
+            os.close(fd)
+            raise
+    except (OSError, ValueError):
+        pass
 
 #
 # Start a program with only specified fds kept open
