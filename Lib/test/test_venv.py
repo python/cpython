@@ -31,6 +31,11 @@ try:
 except ImportError:
     threading = None
 
+try:
+    import ctypes
+except ImportError:
+    ctypes = None
+
 skipInVenv = unittest.skipIf(sys.prefix != sys.base_prefix,
                              'Test not appropriate in a venv')
 
@@ -327,6 +332,8 @@ class EnsurePipTest(BaseTest):
     @unittest.skipIf(ssl is None, ensurepip._MISSING_SSL_MESSAGE)
     @unittest.skipUnless(threading, 'some dependencies of pip import threading'
                                     ' module unconditionally')
+    # Issue #26610: pip/pep425tags.py requires ctypes
+    @unittest.skipUnless(ctypes, 'pip requires ctypes')
     def test_with_pip(self):
         rmtree(self.env_dir)
         with EnvironmentVarGuard() as envvars:
