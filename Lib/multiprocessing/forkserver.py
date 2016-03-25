@@ -147,13 +147,7 @@ def main(listener_fd, alive_r, preload, main_path=None, sys_path=None):
             except ImportError:
                 pass
 
-    # close sys.stdin
-    if sys.stdin is not None:
-        try:
-            sys.stdin.close()
-            sys.stdin = open(os.devnull)
-        except (OSError, ValueError):
-            pass
+    util._close_stdin()
 
     # ignoring SIGCHLD means no need to reap zombie processes
     handler = signal.signal(signal.SIGCHLD, signal.SIG_IGN)
