@@ -2015,11 +2015,12 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 
     if (!PyAnySet_Check(self))
         return -1;
-    if (PySet_Check(self) && !_PyArg_NoKeywords("set()", kwds))
+    if (kwds != NULL && PySet_Check(self) && !_PyArg_NoKeywords("set()", kwds))
         return -1;
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;
-    set_clear_internal(self);
+    if (self->fill)
+        set_clear_internal(self);
     self->hash = -1;
     if (iterable == NULL)
         return 0;
