@@ -3463,6 +3463,14 @@ class TestDateTimeTZ(TestDateTime, TZInfoBase, unittest.TestCase):
         self.assertEqual(dt, local)
         self.assertEqual(local.strftime("%z %Z"), "-0400 EDT")
 
+    @support.run_with_tz('EST+05EDT,M3.2.0,M11.1.0')
+    def test_astimezone_default_near_fold(self):
+        # Issue #26616.
+        u = datetime(2015, 11, 1, 5, tzinfo=timezone.utc)
+        t = u.astimezone()
+        s = t.astimezone()
+        self.assertEqual(t.tzinfo, s.tzinfo)
+
     def test_aware_subtract(self):
         cls = self.theclass
 
