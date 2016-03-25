@@ -39,15 +39,9 @@ except ImportError:
 skipInVenv = unittest.skipIf(sys.prefix != sys.base_prefix,
                              'Test not appropriate in a venv')
 
-# os.path.exists('nul') is False: http://bugs.python.org/issue20541
-if os.devnull.lower() == 'nul':
-    failsOnWindows = unittest.expectedFailure
-else:
-    def failsOnWindows(f):
-        return f
-
 class BaseTest(unittest.TestCase):
     """Base class for venv tests."""
+    maxDiff = 80 * 50
 
     def setUp(self):
         self.env_dir = os.path.realpath(tempfile.mkdtemp())
@@ -318,15 +312,20 @@ class EnsurePipTest(BaseTest):
         self.run_with_capture(venv.create, self.env_dir, with_pip=False)
         self.assert_pip_not_installed()
 
-    @failsOnWindows
-    def test_devnull_exists_and_is_empty(self):
+    def test_devnull(self):
         # Fix for issue #20053 uses os.devnull to force a config file to
         # appear empty. However http://bugs.python.org/issue20541 means
         # that doesn't currently work properly on Windows. Once that is
         # fixed, the "win_location" part of test_with_pip should be restored
-        self.assertTrue(os.path.exists(os.devnull))
         with open(os.devnull, "rb") as f:
             self.assertEqual(f.read(), b"")
+
+        # Issue #20541: os.path.exists('nul') is False on Windows
+        if os.devnull.lower() == 'nul':
+            self.assertFalse(os.path.exists(os.devnull))
+        else:
+            self.assertTrue(os.path.exists(os.devnull))
+
 
     # Requesting pip fails without SSL (http://bugs.python.org/issue19744)
     @unittest.skipIf(ssl is None, ensurepip._MISSING_SSL_MESSAGE)
