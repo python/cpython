@@ -2554,6 +2554,8 @@ class Win32DeprecatedBytesAPI(unittest.TestCase):
 
     @support.skip_unless_symlink
     def test_symlink(self):
+        self.addCleanup(support.unlink, support.TESTFN)
+
         filename = os.fsencode(support.TESTFN)
         with bytes_filename_warn(True):
             os.symlink(filename, filename)
