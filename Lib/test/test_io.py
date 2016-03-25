@@ -3079,8 +3079,7 @@ class CTextIOWrapperTest(TextIOWrapperTest):
 
 class PyTextIOWrapperTest(TextIOWrapperTest):
     io = pyio
-    #shutdown_error = "LookupError: unknown encoding: ascii"
-    shutdown_error = "TypeError: 'NoneType' object is not iterable"
+    shutdown_error = "LookupError: unknown encoding: ascii"
 
 
 class IncrementalNewlineDecoderTest(unittest.TestCase):
