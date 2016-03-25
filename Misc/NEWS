@@ -28,10 +28,10 @@ Core and Builtins
   :c:func:`PyObject_Malloc` now detect when functions are called without
   holding the GIL.
 
-- Issue #26516: Add :envvar`PYTHONMALLOC` environment variable to set the
+- Issue #26516: Add :envvar:`PYTHONMALLOC` environment variable to set the
   Python memory allocators and/or install debug hooks.
 
-- Issue #26516: The :c:func`PyMem_SetupDebugHooks` function can now also be
+- Issue #26516: The :c:func:`PyMem_SetupDebugHooks` function can now also be
   used on Python compiled in release mode.
 
 - Issue #26516: The :envvar:`PYTHONMALLOCSTATS` environment variable can now
@@ -238,7 +238,7 @@ Library
   ``None``).
 
 - Issue #21925: :func:`warnings.formatwarning` now catches exceptions when
-  calling :func;`linecache.getline` and
+  calling :func:`linecache.getline` and
   :func:`tracemalloc.get_object_traceback` to be able to log
   :exc:`ResourceWarning` emitted late during the Python shutdown process.
 
