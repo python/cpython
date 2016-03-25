@@ -4749,7 +4749,12 @@ local_timezone(PyDateTime_DateTime *utc_time)
     PyObject *nameo = NULL;
     const char *zone = NULL;
 
-    delta = datetime_subtract((PyObject *)utc_time, PyDateTime_Epoch);
+    delta = new_delta(ymd_to_ord(GET_YEAR(utc_time), GET_MONTH(utc_time),
+                                 GET_DAY(utc_time)) - 719163,
+                      60 * (60 * DATE_GET_HOUR(utc_time) +
+                            DATE_GET_MINUTE(utc_time)) +
+                      DATE_GET_SECOND(utc_time),
+                      0, 0);
     if (delta == NULL)
         return NULL;
     one_second = new_delta(0, 1, 0, 0);
