@@ -1587,10 +1587,6 @@ tok_get(struct tok_state *tok, char **p_start, char **p_end)
         if (c == '0') {
             /* Hex, octal or binary -- maybe. */
             c = tok_nextc(tok);
-            if (c == '.')
-                goto fraction;
-            if (c == 'j' || c == 'J')
-                goto imaginary;
             if (c == 'x' || c == 'X') {
 
                 /* Hex */
