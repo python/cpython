@@ -17,292 +17,6 @@ except ImportError:
     multiprocessing = None
 
 
-class Resource:
-    name = None
-
-    def __init__(self):
-        self.original = self.get()
-        self.current = None
-
-    def decode_value(self, value):
-        return value
-
-    def display_diff(self):
-        original = self.decode_value(self.original)
-        current = self.decode_value(self.current)
-        print(f"  Before: {original}", file=sys.stderr)
-        print(f"  After:  {current}", file=sys.stderr)
-
-
-class ModuleAttr(Resource):
-    def encode_value(self, value):
-        return value
-
-    def get_module(self):
-        module_name, attr = self.name.split('.', 1)
-        module = globals()[module_name]
-        return (module, attr)
-
-    def get(self):
-        module, attr = self.get_module()
-        value = getattr(module, attr)
-        return self.encode_value(value)
-
-    def restore_attr(self, module, attr):
-        setattr(module, attr, self.original)
-
-    def restore(self):
-        module, attr = self.get_module()
-        self.restore_attr(module, attr)
-
-
-class ModuleAttrList(ModuleAttr):
-    def decode_value(self, value):
-        return value[2]
-
-    def encode_value(self, value):
-        return id(value), value, value.copy()
-
-    def restore_attr(self, module, attr):
-        value = self.original[1]
-        value[:] = self.original[2]
-        setattr(module, attr, value)
-
-
-class ModuleAttrDict(ModuleAttr):
-    _MARKER = object()
-
-    def encode_value(self, value):
-        return id(value), value, value.copy()
-
-    def decode_value(self, value):
-        return value[2]
-
-    def restore_attr(self, module, attr):
-        value = self.original[1]
-        value.clear()
-        value.update(self.original[2])
-        setattr(module, attr, value)
-
-    @classmethod
-    def _get_key(cls, data, key):
-        value = data.get(key, cls._MARKER)
-        if value is not cls._MARKER:
-            return repr(value)
-        else:
-            return '<not set>'
-
-    def display_diff(self):
-        old_dict = self.original[2]
-        new_dict = self.current[2]
-
-        keys = sorted(dict(old_dict).keys() | dict(new_dict).keys())
-        for key in keys:
-            old_value = self._get_key(old_dict, key)
-            new_value = self._get_key(new_dict, key)
-            if old_value == new_value:
-                continue
-
-            print(f"  {self.name}[{key!r}]: {old_value} => {new_value}",
-                  file=sys.stderr)
-
-
-class SysArgv(ModuleAttrList):
-    name = 'sys.argv'
-
-class SysStdin(ModuleAttr):
-    name = 'sys.stdin'
-
-class SysStdout(ModuleAttr):
-    name = 'sys.stdout'
-
-class SysStderr(ModuleAttr):
-    name = 'sys.stderr'
-
-class SysPath(ModuleAttrList):
-    name = 'sys.path'
-
-class SysPathHooks(ModuleAttrList):
-    name = 'sys.path_hooks'
-
-class SysWarnOptions(ModuleAttrList):
-    name = 'sys.warnoptions'
-
-class SysGettrace(Resource):
-    name = 'sys.gettrace'
-
-    def get(self):
-        return sys.gettrace()
-
-    def restore(self):
-        sys.settrace(self.original)
-
-
-class OsEnviron(ModuleAttrDict):
-    name = 'os.environ'
-
-class ImportFunc(ModuleAttr):
-    name = 'builtins.__import__'
-
-class WarningsFilters(ModuleAttrList):
-    name = 'warnings.filters'
-
-class WarningsShowWarning(ModuleAttr):
-    name = 'warnings.showwarning'
-
-
-
-
-class Cwd(Resource):
-    name = 'cwd'
-
-    def get(self):
-        return os.getcwd()
-
-    def restore(self):
-        os.chdir(self.original)
-
-
-class AsyncoreSocketMap(Resource):
-    name = 'asyncore.socket_map'
-
-    def get(self):
-        asyncore = sys.modules.get('asyncore')
-        # XXX Making a copy keeps objects alive until __exit__ gets called.
-        return asyncore and asyncore.socket_map.copy() or {}
-
-    def restore(self):
-        asyncore = sys.modules.get('asyncore')
-        if asyncore is not None:
-            asyncore.close_all(ignore_all=True)
-            asyncore.socket_map.update(self.original)
-
-
-class ShutilUnpackFormats(ModuleAttrDict):
-    name = 'shutil._UNPACK_FORMATS'
-
-class ShutilArchiveFormats(ModuleAttrDict):
-    # we could call get_archives_formats() but that only returns the
-    # registry keys; we want to check the values too (the functions that
-    # are registered)
-
-    name = 'shutil._ARCHIVE_FORMATS'
-
-
-class LoggingHandlers(ModuleAttrDict):
-    # _handlers is a WeakValueDictionary
-    name = 'logging._handlers'
-
-    def restore(self):
-        # Can't easily revert the logging state
-        pass
-
-class LoggingHandlerList(ModuleAttrList):
-    # _handlerList is a list of weakrefs to handlers
-    name = 'logging._handlerList'
-
-    def restore(self):
-        # Can't easily revert the logging state
-        pass
-
-
-class ThreadingDangling(Resource):
-    # Controlling dangling references to Thread objects can make it easier
-    # to track reference leaks.
-
-    name = 'threading._dangling'
-
-    def get(self):
-        if not threading:
-            return None
-        # This copies the weakrefs without making any strong reference
-        return threading._dangling.copy()
-
-    def restore(self):
-        if not threading:
-            return
-        threading._dangling.clear()
-        threading._dangling.update(self.original)
-
-
-if not multiprocessing:
-    class MultiprocessingProcessDangling(Resource):
-        # Same for Process objects
-
-        name = 'multiprocessing.process._dangling'
-
-        def get(self):
-            # Unjoined process objects can survive after process exits
-            multiprocessing.process._cleanup()
-            # This copies the weakrefs without making any strong reference
-            return multiprocessing.process._dangling.copy()
-
-        def restore(self):
-            multiprocessing.process._dangling.clear()
-            multiprocessing.process._dangling.update(self.original)
-
-
-class SysconfigInstallSchemes(ModuleAttrDict):
-    name = 'sysconfig._INSTALL_SCHEMES'
-
-class SysconfigConfigVars(ModuleAttrDict):
-    name = 'sysconfig._CONFIG_VARS'
-
-    def get(self):
-        # make sure the dict is initialized
-        sysconfig.get_config_var('prefix')
-        return super().get()
-
-
-class Files(Resource):
-    name = 'files'
-
-    def get(self):
-        return sorted(fn + ('/' if os.path.isdir(fn) else '')
-                      for fn in os.listdir())
-
-    def restore(self):
-        fn = support.TESTFN
-        if fn not in self.original and (fn + '/') not in self.original:
-            if os.path.isfile(fn):
-                support.unlink(fn)
-            elif os.path.isdir(fn):
-                support.rmtree(fn)
-
-
-class Locale(Resource):
-    name = 'locale'
-
-    _lc = [getattr(locale, lc) for lc in dir(locale)
-           if lc.startswith('LC_')]
-
-    def get(self):
-        pairings = []
-        for lc in self._lc:
-            try:
-                pairings.append((lc, locale.setlocale(lc, None)))
-            except (TypeError, ValueError):
-                continue
-        return pairings
-
-    def restore(self):
-        for lc, setting in self.original:
-            locale.setlocale(lc, setting)
-
-
-def _get_resources(parent_cls, resources):
-    for cls in parent_cls.__subclasses__():
-        if cls.name is not None:
-            resources.append(cls)
-        _get_resources(cls, resources)
-
-def get_resources(resources=None):
-    resources = []
-    _get_resources(Resource, resources)
-    return resources
-
-
-
 # Unit tests are supposed to leave the execution environment unchanged
 # once they complete.  But sometimes tests have bugs, especially when
 # tests fail, and the changes to environment go on to mess up other
@@ -332,31 +46,240 @@ class saved_test_environment:
         self.verbose = verbose
         self.quiet = quiet
         self.pgo = pgo
-        self.resources = None
+
+    # To add things to save and restore, add a name XXX to the resources list
+    # and add corresponding get_XXX/restore_XXX functions.  get_XXX should
+    # return the value to be saved and compared against a second call to the
+    # get function when test execution completes.  restore_XXX should accept
+    # the saved value and restore the resource using it.  It will be called if
+    # and only if a change in the value is detected.
+    #
+    # Note: XXX will have any '.' replaced with '_' characters when determining
+    # the corresponding method names.
+
+    resources = ('sys.argv', 'cwd', 'sys.stdin', 'sys.stdout', 'sys.stderr',
+                 'os.environ', 'sys.path', 'sys.path_hooks', '__import__',
+                 'warnings.filters', 'asyncore.socket_map',
+                 'logging._handlers', 'logging._handlerList', 'sys.gettrace',
+                 'sys.warnoptions',
+                 # multiprocessing.process._cleanup() may release ref
+                 # to a thread, so check processes first.
+                 'multiprocessing.process._dangling', 'threading._dangling',
+                 'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
+                 'files', 'locale', 'warnings.showwarning',
+                )
+
+    def get_sys_argv(self):
+        return id(sys.argv), sys.argv, sys.argv[:]
+    def restore_sys_argv(self, saved_argv):
+        sys.argv = saved_argv[1]
+        sys.argv[:] = saved_argv[2]
+
+    def get_cwd(self):
+        return os.getcwd()
+    def restore_cwd(self, saved_cwd):
+        os.chdir(saved_cwd)
+
+    def get_sys_stdout(self):
+        return sys.stdout
+    def restore_sys_stdout(self, saved_stdout):
+        sys.stdout = saved_stdout
+
+    def get_sys_stderr(self):
+        return sys.stderr
+    def restore_sys_stderr(self, saved_stderr):
+        sys.stderr = saved_stderr
+
+    def get_sys_stdin(self):
+        return sys.stdin
+    def restore_sys_stdin(self, saved_stdin):
+        sys.stdin = saved_stdin
+
+    def get_os_environ(self):
+        return id(os.environ), os.environ, dict(os.environ)
+    def restore_os_environ(self, saved_environ):
+        os.environ = saved_environ[1]
+        os.environ.clear()
+        os.environ.update(saved_environ[2])
+
+    def get_sys_path(self):
+        return id(sys.path), sys.path, sys.path[:]
+    def restore_sys_path(self, saved_path):
+        sys.path = saved_path[1]
+        sys.path[:] = saved_path[2]
+
+    def get_sys_path_hooks(self):
+        return id(sys.path_hooks), sys.path_hooks, sys.path_hooks[:]
+    def restore_sys_path_hooks(self, saved_hooks):
+        sys.path_hooks = saved_hooks[1]
+        sys.path_hooks[:] = saved_hooks[2]
+
+    def get_sys_gettrace(self):
+        return sys.gettrace()
+    def restore_sys_gettrace(self, trace_fxn):
+        sys.settrace(trace_fxn)
+
+    def get___import__(self):
+        return builtins.__import__
+    def restore___import__(self, import_):
+        builtins.__import__ = import_
+
+    def get_warnings_filters(self):
+        return id(warnings.filters), warnings.filters, warnings.filters[:]
+    def restore_warnings_filters(self, saved_filters):
+        warnings.filters = saved_filters[1]
+        warnings.filters[:] = saved_filters[2]
+
+    def get_asyncore_socket_map(self):
+        asyncore = sys.modules.get('asyncore')
+        # XXX Making a copy keeps objects alive until __exit__ gets called.
+        return asyncore and asyncore.socket_map.copy() or {}
+    def restore_asyncore_socket_map(self, saved_map):
+        asyncore = sys.modules.get('asyncore')
+        if asyncore is not None:
+            asyncore.close_all(ignore_all=True)
+            asyncore.socket_map.update(saved_map)
+
+    def get_shutil_archive_formats(self):
+        # we could call get_archives_formats() but that only returns the
+        # registry keys; we want to check the values too (the functions that
+        # are registered)
+        return shutil._ARCHIVE_FORMATS, shutil._ARCHIVE_FORMATS.copy()
+    def restore_shutil_archive_formats(self, saved):
+        shutil._ARCHIVE_FORMATS = saved[0]
+        shutil._ARCHIVE_FORMATS.clear()
+        shutil._ARCHIVE_FORMATS.update(saved[1])
+
+    def get_shutil_unpack_formats(self):
+        return shutil._UNPACK_FORMATS, shutil._UNPACK_FORMATS.copy()
+    def restore_shutil_unpack_formats(self, saved):
+        shutil._UNPACK_FORMATS = saved[0]
+        shutil._UNPACK_FORMATS.clear()
+        shutil._UNPACK_FORMATS.update(saved[1])
+
+    def get_logging__handlers(self):
+        # _handlers is a WeakValueDictionary
+        return id(logging._handlers), logging._handlers, logging._handlers.copy()
+    def restore_logging__handlers(self, saved_handlers):
+        # Can't easily revert the logging state
+        pass
+
+    def get_logging__handlerList(self):
+        # _handlerList is a list of weakrefs to handlers
+        return id(logging._handlerList), logging._handlerList, logging._handlerList[:]
+    def restore_logging__handlerList(self, saved_handlerList):
+        # Can't easily revert the logging state
+        pass
+
+    def get_sys_warnoptions(self):
+        return id(sys.warnoptions), sys.warnoptions, sys.warnoptions[:]
+    def restore_sys_warnoptions(self, saved_options):
+        sys.warnoptions = saved_options[1]
+        sys.warnoptions[:] = saved_options[2]
+
+    # Controlling dangling references to Thread objects can make it easier
+    # to track reference leaks.
+    def get_threading__dangling(self):
+        if not threading:
+            return None
+        # This copies the weakrefs without making any strong reference
+        return threading._dangling.copy()
+    def restore_threading__dangling(self, saved):
+        if not threading:
+            return
+        threading._dangling.clear()
+        threading._dangling.update(saved)
+
+    # Same for Process objects
+    def get_multiprocessing_process__dangling(self):
+        if not multiprocessing:
+            return None
+        # Unjoined process objects can survive after process exits
+        multiprocessing.process._cleanup()
+        # This copies the weakrefs without making any strong reference
+        return multiprocessing.process._dangling.copy()
+    def restore_multiprocessing_process__dangling(self, saved):
+        if not multiprocessing:
+            return
+        multiprocessing.process._dangling.clear()
+        multiprocessing.process._dangling.update(saved)
+
+    def get_sysconfig__CONFIG_VARS(self):
+        # make sure the dict is initialized
+        sysconfig.get_config_var('prefix')
+        return (id(sysconfig._CONFIG_VARS), sysconfig._CONFIG_VARS,
+                dict(sysconfig._CONFIG_VARS))
+    def restore_sysconfig__CONFIG_VARS(self, saved):
+        sysconfig._CONFIG_VARS = saved[1]
+        sysconfig._CONFIG_VARS.clear()
+        sysconfig._CONFIG_VARS.update(saved[2])
+
+    def get_sysconfig__INSTALL_SCHEMES(self):
+        return (id(sysconfig._INSTALL_SCHEMES), sysconfig._INSTALL_SCHEMES,
+                sysconfig._INSTALL_SCHEMES.copy())
+    def restore_sysconfig__INSTALL_SCHEMES(self, saved):
+        sysconfig._INSTALL_SCHEMES = saved[1]
+        sysconfig._INSTALL_SCHEMES.clear()
+        sysconfig._INSTALL_SCHEMES.update(saved[2])
+
+    def get_files(self):
+        return sorted(fn + ('/' if os.path.isdir(fn) else '')
+                      for fn in os.listdir())
+    def restore_files(self, saved_value):
+        fn = support.TESTFN
+        if fn not in saved_value and (fn + '/') not in saved_value:
+            if os.path.isfile(fn):
+                support.unlink(fn)
+            elif os.path.isdir(fn):
+                support.rmtree(fn)
+
+    _lc = [getattr(locale, lc) for lc in dir(locale)
+           if lc.startswith('LC_')]
+    def get_locale(self):
+        pairings = []
+        for lc in self._lc:
+            try:
+                pairings.append((lc, locale.setlocale(lc, None)))
+            except (TypeError, ValueError):
+                continue
+        return pairings
+    def restore_locale(self, saved):
+        for lc, setting in saved:
+            locale.setlocale(lc, setting)
+
+    def get_warnings_showwarning(self):
+        return warnings.showwarning
+    def restore_warnings_showwarning(self, fxn):
+        warnings.showwarning = fxn
+
+    def resource_info(self):
+        for name in self.resources:
+            method_suffix = name.replace('.', '_')
+            get_name = 'get_' + method_suffix
+            restore_name = 'restore_' + method_suffix
+            yield name, getattr(self, get_name), getattr(self, restore_name)
 
     def __enter__(self):
-        self.resources = [resource_class()
-                          for resource_class in get_resources()]
+        self.saved_values = dict((name, get()) for name, get, restore
+                                                   in self.resource_info())
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        # clear resources since they keep strong references to many objects
-        resources = self.resources
-        self.resources = None
-
-        for resource in resources:
-            resource.current = resource.get()
-
+        saved_values = self.saved_values
+        del self.saved_values
+        for name, get, restore in self.resource_info():
+            current = get()
+            original = saved_values.pop(name)
             # Check for changes to the resource's value
-            if resource.current == resource.original:
-                continue
-
-            self.changed = True
-            resource.restore()
-            if self.quiet or self.pgo:
-                continue
-
-            print(f"Warning -- {resource.name} was modified by {self.testname}",
-                  file=sys.stderr)
-            resource.display_diff()
+            if current != original:
+                self.changed = True
+                restore(original)
+                if not self.quiet and not self.pgo:
+                    print("Warning -- {} was modified by {}".format(
+                                                 name, self.testname),
+                                                 file=sys.stderr)
+                    if self.verbose > 1:
+                        print("  Before: {}\n  After:  {} ".format(
+                                                  original, current),
+                                                  file=sys.stderr)
         return False
