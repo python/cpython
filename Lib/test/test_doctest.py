@@ -2948,11 +2948,10 @@ Invalid doctest option:
 def test_main():
     # Check the doctest cases in doctest itself:
     ret = support.run_doctest(doctest, verbosity=True)
+
     # Check the doctest cases defined here:
     from test import test_doctest
     support.run_doctest(test_doctest, verbosity=True)
-
-import sys, re, io
 
 def test_coverage(coverdir):
     trace = support.import_module('trace')
