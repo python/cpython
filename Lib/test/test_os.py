@@ -1427,7 +1427,16 @@ class ExecTests(unittest.TestCase):
 @unittest.skipUnless(sys.platform == "win32", "Win32 specific tests")
 class Win32ErrorTests(unittest.TestCase):
     def setUp(self):
-        self.assertFalse(os.path.exists(support.TESTFN))
+        try:
+            os.stat(support.TESTFN)
+        except FileNotFoundError:
+            exists = False
+        except OSError as exc:
+            exists = True
+            self.fail("file %s must not exist; os.stat failed with %s"
+                      % (support.TESTFN, exc))
+        else:
+            self.fail("file %s must not exist" % support.TESTFN)
 
     def test_rename(self):
         self.assertRaises(OSError, os.rename, support.TESTFN, support.TESTFN+".bak")
