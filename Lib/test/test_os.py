@@ -892,7 +892,7 @@ class WalkTests(unittest.TestCase):
         # Walk bottom-up.
         all = list(self.walk(self.walk_path, topdown=False))
 
-        self.assertEqual(len(all), 4)
+        self.assertEqual(len(all), 4, all)
         # We can't know which order SUB1 and SUB2 will appear in.
         # Not flipped:  SUB11, SUB1, SUB2, TESTFN
         #     flipped:  SUB2, SUB11, SUB1, TESTFN
