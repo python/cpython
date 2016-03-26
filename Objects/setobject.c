@@ -1131,9 +1131,6 @@ PySet_Fini(void)
 static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
-    if (kwds != NULL && type == &PySet_Type && !_PyArg_NoKeywords("set()", kwds))
-        return NULL;
-
     return make_new_set(type, NULL);
 }
 
