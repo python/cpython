@@ -61,6 +61,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26644: Raise ValueError rather than SystemError when a negative
+  length is passed to SSLSocket.recv() or read().
+
 - Issue #24266: Ctrl+C during Readline history search now cancels the search
   mode when compiled with Readline 7.
 

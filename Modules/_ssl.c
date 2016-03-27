@@ -1695,6 +1695,10 @@ static PyObject *PySSL_SSLread(PySSLSocket *self, PyObject *args)
         goto error;
 
     if ((buf.buf == NULL) && (buf.obj == NULL)) {
+        if (len < 0) {
+            PyErr_SetString(PyExc_ValueError, "size should not be negative");
+            goto error;
+        }
         dest = PyBytes_FromStringAndSize(NULL, len);
         if (dest == NULL)
             goto error;
