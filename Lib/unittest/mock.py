@@ -2047,6 +2047,9 @@ class _Call(tuple):
         return (other_args, other_kwargs) == (self_args, self_kwargs)
 
 
+    __ne__ = object.__ne__
+
+
     def __call__(self, *args, **kwargs):
         if self.name is None:
             return _Call(('', args, kwargs), name='()')
