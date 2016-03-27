@@ -140,21 +140,20 @@ classify(parser_state *ps, int type, const char *str)
     int n = g->g_ll.ll_nlabels;
 
     if (type == NAME) {
-        const char *s = str;
         label *l = g->g_ll.ll_label;
         int i;
         for (i = n; i > 0; i--, l++) {
             if (l->lb_type != NAME || l->lb_str == NULL ||
-                l->lb_str[0] != s[0] ||
-                strcmp(l->lb_str, s) != 0)
+                l->lb_str[0] != str[0] ||
+                strcmp(l->lb_str, str) != 0)
                 continue;
 #ifdef PY_PARSER_REQUIRES_FUTURE_KEYWORD
 #if 0
             /* Leaving this in as an example */
             if (!(ps->p_flags & CO_FUTURE_WITH_STATEMENT)) {
-                if (s[0] == 'w' && strcmp(s, "with") == 0)
+                if (str[0] == 'w' && strcmp(str, "with") == 0)
                     break; /* not a keyword yet */
-                else if (s[0] == 'a' && strcmp(s, "as") == 0)
+                else if (str[0] == 'a' && strcmp(str, "as") == 0)
                     break; /* not a keyword yet */
             }
 #endif
