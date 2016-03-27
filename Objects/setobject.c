@@ -1116,18 +1116,6 @@ frozenset_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return emptyfrozenset;
 }
 
-int
-PySet_ClearFreeList(void)
-{
-    return 0;
-}
-
-void
-PySet_Fini(void)
-{
-    Py_CLEAR(emptyfrozenset);
-}
-
 static PyObject *
 set_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
@@ -2336,6 +2324,18 @@ PySet_Add(PyObject *anyset, PyObject *key)
         return -1;
     }
     return set_add_key((PySetObject *)anyset, key);
+}
+
+int
+PySet_ClearFreeList(void)
+{
+    return 0;
+}
+
+void
+PySet_Fini(void)
+{
+    Py_CLEAR(emptyfrozenset);
 }
 
 int
