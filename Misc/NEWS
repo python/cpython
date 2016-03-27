@@ -94,6 +94,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26644: Raise ValueError rather than SystemError when a negative
+  length is passed to SSLSocket.recv() or read().
+
 - Issue #26616: Fixed a bug in datetime.astimezone() method.
 
 - Issue #21925: :func:`warnings.formatwarning` now catches exceptions on

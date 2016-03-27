@@ -1895,6 +1895,11 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
     _PyTime_t timeout, deadline = 0;
     int has_timeout;
 
+    if (!group_right_1 && len < 0) {
+        PyErr_SetString(PyExc_ValueError, "size should not be negative");
+        return NULL;
+    }
+
     if (sock != NULL) {
         if (((PyObject*)sock) == Py_None) {
             _setSSLError("Underlying socket connection gone",
