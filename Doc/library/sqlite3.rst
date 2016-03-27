@@ -593,6 +593,12 @@ Cursor Objects
       the cursor's arraysize attribute can affect the performance of this operation.
       An empty list is returned when no rows are available.
 
+   .. method:: close()
+
+      Close the cursor now (rather than whenever ``__del__`` is called).
+
+      The cursor will be unusable from this point forward; a ``ProgrammingError``
+      exception will be raised if any operation is attempted with the cursor.
 
    .. attribute:: rowcount
 
