@@ -495,7 +495,7 @@ Connection Objects
       deleted since the database connection was opened.
 
 
-   .. attribute:: iterdump
+   .. method:: iterdump
 
       Returns an iterator to dump the database in an SQL text format.  Useful when
       saving an in-memory database for later restoration.  This function provides
@@ -505,7 +505,7 @@ Connection Objects
       Example::
 
          # Convert file existing_db.db to SQL dump file dump.sql
-         import sqlite3, os
+         import sqlite3
 
          con = sqlite3.connect('existing_db.db')
          with open('dump.sql', 'w') as f:
