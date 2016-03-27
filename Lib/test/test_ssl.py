@@ -2783,6 +2783,13 @@ if _have_threads:
                         # consume data
                         s.read()
 
+                # read(-1, buffer) is supported, even though read(-1) is not
+                data = b"data"
+                s.send(data)
+                buffer = bytearray(len(data))
+                self.assertEqual(s.read(-1, buffer), len(data))
+                self.assertEqual(buffer, data)
+
                 # Make sure sendmsg et al are disallowed to avoid
                 # inadvertent disclosure of data and/or corruption
                 # of the encrypted data stream
@@ -2792,6 +2799,10 @@ if _have_threads:
                                   s.recvmsg_into, bytearray(100))
 
                 s.write(b"over\n")
+
+                self.assertRaises(ValueError, s.recv, -1)
+                self.assertRaises(ValueError, s.read, -1)
+
                 s.close()
 
         def test_nonblocking_send(self):
