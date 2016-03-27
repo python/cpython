@@ -1,5 +1,6 @@
 import datetime
 import faulthandler
+import math
 import os
 import platform
 import random
@@ -106,9 +107,13 @@ class Regrtest:
             self.skipped.append(test)
             self.resource_denieds.append(test)
 
-    def time_delta(self):
+    def time_delta(self, ceil=False):
         seconds = time.monotonic() - self.start_time
-        return datetime.timedelta(seconds=int(seconds))
+        if ceil:
+            seconds = math.ceil(seconds)
+        else:
+            seconds = int(seconds)
+        return datetime.timedelta(seconds=seconds)
 
     def display_progress(self, test_index, test):
         if self.ns.quiet:
@@ -409,7 +414,7 @@ class Regrtest:
             r.write_results(show_missing=True, summary=True,
                             coverdir=self.ns.coverdir)
 
-        print("Total duration: %s" % self.time_delta())
+        print("Total duration: %s" % self.time_delta(ceil=True))
 
         if self.ns.runleaks:
             os.system("leaks %d" % os.getpid())
