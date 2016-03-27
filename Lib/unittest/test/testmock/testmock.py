@@ -304,6 +304,17 @@ class MockTest(unittest.TestCase):
         # an exception. See issue 24857.
         self.assertFalse(mock.call_args == "a long sequence")
 
+
+    def test_calls_equal_with_any(self):
+        call1 = mock.call(mock.MagicMock())
+        call2 = mock.call(mock.ANY)
+
+        # Check that equality and non-equality is consistent even when
+        # comparing with mock.ANY
+        self.assertTrue(call1 == call2)
+        self.assertFalse(call1 != call2)
+
+
     def test_assert_called_with(self):
         mock = Mock()
         mock()
@@ -317,6 +328,12 @@ class MockTest(unittest.TestCase):
 
         mock(1, 2, 3, a='fish', b='nothing')
         mock.assert_called_with(1, 2, 3, a='fish', b='nothing')
+
+
+    def test_assert_called_with_any(self):
+        m = MagicMock()
+        m(MagicMock())
+        m.assert_called_with(mock.ANY)
 
 
     def test_assert_called_with_function_spec(self):
