@@ -64,6 +64,9 @@ Library
 - Issue #26644: Raise ValueError rather than SystemError when a negative
   length is passed to SSLSocket.recv() or read().
 
+- Issue #23804: Fix SSL recv(0) and read(0) methods to return zero bytes
+  instead of up to 1024.
+
 - Issue #24266: Ctrl+C during Readline history search now cancels the search
   mode when compiled with Readline 7.
 

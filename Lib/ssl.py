@@ -625,7 +625,7 @@ class SSLSocket(socket):
             # EAGAIN.
             self.getpeername()
 
-    def read(self, len=0, buffer=None):
+    def read(self, len=1024, buffer=None):
         """Read up to LEN bytes and return them.
         Return zero-length string on EOF."""
 
@@ -636,7 +636,7 @@ class SSLSocket(socket):
             if buffer is not None:
                 v = self._sslobj.read(len, buffer)
             else:
-                v = self._sslobj.read(len or 1024)
+                v = self._sslobj.read(len)
             return v
         except SSLError as x:
             if x.args[0] == SSL_ERROR_EOF and self.suppress_ragged_eofs:
