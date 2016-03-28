@@ -561,7 +561,7 @@ class SSLObject:
         server hostame is set."""
         return self._sslobj.server_hostname
 
-    def read(self, len=0, buffer=None):
+    def read(self, len=1024, buffer=None):
         """Read up to 'len' bytes from the SSL object and return them.
 
         If 'buffer' is provided, read into this buffer and return the number of
@@ -570,7 +570,7 @@ class SSLObject:
         if buffer is not None:
             v = self._sslobj.read(len, buffer)
         else:
-            v = self._sslobj.read(len or 1024)
+            v = self._sslobj.read(len)
         return v
 
     def write(self, data):
@@ -776,7 +776,7 @@ class SSLSocket(socket):
             # EAGAIN.
             self.getpeername()
 
-    def read(self, len=0, buffer=None):
+    def read(self, len=1024, buffer=None):
         """Read up to LEN bytes and return them.
         Return zero-length string on EOF."""
 

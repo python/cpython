@@ -2783,12 +2783,19 @@ if _have_threads:
                         # consume data
                         s.read()
 
-                # read(-1, buffer) is supported, even though read(-1) is not
                 data = b"data"
+
+                # read(-1, buffer) is supported, even though read(-1) is not
                 s.send(data)
                 buffer = bytearray(len(data))
                 self.assertEqual(s.read(-1, buffer), len(data))
                 self.assertEqual(buffer, data)
+
+                # recv/read(0) should return no data
+                s.send(data)
+                self.assertEqual(s.recv(0), b"")
+                self.assertEqual(s.read(0), b"")
+                self.assertEqual(s.read(), data)
 
                 # Make sure sendmsg et al are disallowed to avoid
                 # inadvertent disclosure of data and/or corruption
