@@ -842,7 +842,7 @@ SSL Sockets
 
 SSL sockets also have the following additional methods and attributes:
 
-.. method:: SSLSocket.read(len=0, buffer=None)
+.. method:: SSLSocket.read(len=1024, buffer=None)
 
    Read up to *len* bytes of data from the SSL socket and return the result as
    a ``bytes`` instance. If *buffer* is specified, then read into the buffer
