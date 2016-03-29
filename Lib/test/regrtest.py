@@ -1057,6 +1057,7 @@ class saved_test_environment:
                  'multiprocessing.process._dangling', 'threading._dangling',
                  'sysconfig._CONFIG_VARS', 'sysconfig._INSTALL_SCHEMES',
                  'files', 'locale', 'warnings.showwarning',
+                 'shutil_archive_formats', 'shutil_unpack_formats',
                 )
 
     def get_sys_argv(self):
