@@ -452,22 +452,33 @@ class _DummyDirEntry:
         # Mimick FindFirstFile/FindNextFile: we should get file attributes
         # while iterating on a directory
         self._stat = None
+        self._lstat = None
         try:
-            self.stat()
+            self.stat(follow_symlinks=False)
         except OSError:
             pass
 
-    def stat(self):
-        if self._stat is None:
-            self._stat = stat(self.path)
-        return self._stat
+    def stat(self, *, follow_symlinks=True):
+        if follow_symlinks:
+            if self._stat is None:
+                self._stat = stat(self.path)
+            return self._stat
+        else:
+            if self._lstat is None:
+                self._lstat = stat(self.path, follow_symlinks=False)
+            return self._lstat
 
     def is_dir(self):
+        if self._lstat is not None and not self.is_symlink():
+            # use the cache lstat
+            stat = self.stat(follow_symlinks=False)
+            return st.S_ISDIR(stat.st_mode)
+
         stat = self.stat()
         return st.S_ISDIR(stat.st_mode)
 
     def is_symlink(self):
-        stat = self.stat()
+        stat = self.stat(follow_symlinks=False)
         return st.S_ISLNK(stat.st_mode)
 
 class _dummy_scandir:
