@@ -675,6 +675,8 @@ Task functions
       :exc:`asyncio.TimeoutError` is raised outside of
       context manager scope.
 
+   Passing ``None`` as *timeout* argument disables the manager logic.
+
 .. coroutinefunction:: wait(futures, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
