@@ -21,7 +21,7 @@ from test.libregrtest.setup import setup_tests
 # Display the running tests if nothing happened last N seconds
 PROGRESS_UPDATE = 30.0   # seconds
 
-# If interrupted, display the wait process every N seconds
+# If interrupted, display the wait progress every N seconds
 WAIT_PROGRESS = 2.0   # seconds
 
 
