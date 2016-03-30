@@ -318,8 +318,19 @@ class BaseTest:
             d = pickle.dumps((itorig, orig), proto)
             it, a = pickle.loads(d)
             a.fromlist(data2)
-            self.assertEqual(type(it), type(itorig))
-            self.assertEqual(list(it), data2)
+            self.assertEqual(list(it), [])
+
+    def test_exhausted_iterator(self):
+        a = array.array(self.typecode, self.example)
+        self.assertEqual(list(a), list(self.example))
+        exhit = iter(a)
+        empit = iter(a)
+        for x in exhit:  # exhaust the iterator
+            next(empit)  # not exhausted
+        a.append(self.outside)
+        self.assertEqual(list(exhit), [])
+        self.assertEqual(list(empit), [self.outside])
+        self.assertEqual(list(a), list(self.example) + [self.outside])
 
     def test_insert(self):
         a = array.array(self.typecode, self.example)
@@ -1069,6 +1080,12 @@ class BaseTest:
         from _testcapi import getbuffer_with_null_view
         a = array.array('B', b"")
         self.assertRaises(BufferError, getbuffer_with_null_view, a)
+
+    def test_free_after_iterating(self):
+        support.check_free_after_iterating(self, iter, array.array,
+                                           (self.typecode,))
+        support.check_free_after_iterating(self, reversed, array.array,
+                                           (self.typecode,))
 
 class StringTest(BaseTest):
 
