@@ -237,6 +237,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26492: Exhausted iterator of array.array now conforms with the behavior
+  of iterators of other mutable sequences: it lefts exhausted even if iterated
+  array is extended.
+
 - Issue #26641: doctest.DocFileTest and doctest.testfile() now support
   packages (module splitted into multiple directories) for the package
   parameter.
