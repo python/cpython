@@ -1857,6 +1857,11 @@ class UnicodeTest(
                     unicode_encodedecimal(u"123" + s, "xmlcharrefreplace"),
                     '123' + exp)
 
+    def test_free_after_iterating(self):
+        test_support.check_free_after_iterating(self, iter, unicode)
+        test_support.check_free_after_iterating(self, reversed, unicode)
+
+
 def test_main():
     test_support.run_unittest(__name__)
 

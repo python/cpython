@@ -871,8 +871,8 @@ static PyObject *setiter_iternext(setiterobject *si)
     return key;
 
 fail:
-    Py_DECREF(so);
     si->si_set = NULL;
+    Py_DECREF(so);
     return NULL;
 }
 

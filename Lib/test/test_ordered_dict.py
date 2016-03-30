@@ -267,6 +267,15 @@ class TestOrderedDict(unittest.TestCase):
         items = [('a', 1), ('c', 3), ('b', 2)]
         self.assertEqual(list(MyOD(items).items()), items)
 
+    def test_free_after_iterating(self):
+        test_support.check_free_after_iterating(self, iter, OrderedDict)
+        test_support.check_free_after_iterating(self, lambda d: d.iterkeys(), OrderedDict)
+        test_support.check_free_after_iterating(self, lambda d: d.itervalues(), OrderedDict)
+        test_support.check_free_after_iterating(self, lambda d: d.iteritems(), OrderedDict)
+        test_support.check_free_after_iterating(self, lambda d: iter(d.viewkeys()), OrderedDict)
+        test_support.check_free_after_iterating(self, lambda d: iter(d.viewvalues()), OrderedDict)
+        test_support.check_free_after_iterating(self, lambda d: iter(d.viewitems()), OrderedDict)
+
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
     type2test = OrderedDict
 

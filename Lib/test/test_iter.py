@@ -2,7 +2,8 @@
 
 import unittest
 from test.test_support import run_unittest, TESTFN, unlink, have_unicode, \
-                              check_py3k_warnings, cpython_only
+                              check_py3k_warnings, cpython_only, \
+                              check_free_after_iterating
 
 # Test result of triple loop (too big to inline)
 TRIPLETS = [(0, 0, 0), (0, 0, 1), (0, 0, 2),
@@ -920,6 +921,9 @@ class TestCase(unittest.TestCase):
             lst.pop(0)
         lst.extend(gen())
         self.assertEqual(len(lst), 760)
+
+    def test_free_after_iterating(self):
+        check_free_after_iterating(self, iter, SequenceClass, (0,))
 
 
 def test_main():

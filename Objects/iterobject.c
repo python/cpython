@@ -69,8 +69,8 @@ iter_iternext(PyObject *iterator)
         PyErr_ExceptionMatches(PyExc_StopIteration))
     {
         PyErr_Clear();
-        Py_DECREF(seq);
         it->it_seq = NULL;
+        Py_DECREF(seq);
     }
     return NULL;
 }

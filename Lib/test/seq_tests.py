@@ -4,6 +4,7 @@ Tests common to tuple, list and UserList.UserList
 
 import unittest
 import sys
+from test import test_support as support
 
 # Various iterables
 # This is used for checking the constructor (here and in test_deque.py)
@@ -402,3 +403,7 @@ class CommonTest(unittest.TestCase):
         self.assertEqual(a.index(0, -4*sys.maxint, 4*sys.maxint), 2)
         self.assertRaises(ValueError, a.index, 0, 4*sys.maxint,-4*sys.maxint)
         self.assertRaises(ValueError, a.index, 2, 0, -10)
+
+    def test_free_after_iterating(self):
+        support.check_free_after_iterating(self, iter, self.type2test)
+        support.check_free_after_iterating(self, reversed, self.type2test)
