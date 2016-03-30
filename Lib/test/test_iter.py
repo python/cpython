@@ -190,6 +190,17 @@ class TestCase(unittest.TestCase):
             self.assertTrue(isinstance(it, collections.abc.Iterator))
             self.assertEqual(list(it), [])
 
+    def test_mutating_seq_class_exhausted_iter(self):
+        a = SequenceClass(5)
+        exhit = iter(a)
+        empit = iter(a)
+        for x in exhit:  # exhaust the iterator
+            next(empit)  # not exhausted
+        a.n = 7
+        self.assertEqual(list(exhit), [])
+        self.assertEqual(list(empit), [5, 6])
+        self.assertEqual(list(a), [0, 1, 2, 3, 4, 5, 6])
+
     # Test a new_style class with __iter__ but no next() method
     def test_new_style_iter_class(self):
         class IterClass(object):
