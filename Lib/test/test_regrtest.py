@@ -15,6 +15,7 @@ import re
 import subprocess
 import sys
 import sysconfig
+import tempfile
 import textwrap
 import unittest
 from test import libregrtest
@@ -309,15 +310,8 @@ class BaseTestCase(unittest.TestCase):
     def setUp(self):
         self.testdir = os.path.realpath(os.path.dirname(__file__))
 
-        # When test_regrtest is interrupted by CTRL+c, it can leave
-        # temporary test files
-        remove = [entry.path
-                  for entry in os.scandir(self.testdir)
-                  if (entry.name.startswith(self.TESTNAME_PREFIX)
-                      and entry.name.endswith(".py"))]
-        for path in remove:
-            print("WARNING: test_regrtest: remove %s" % path)
-            support.unlink(path)
+        self.tmptestdir = tempfile.mkdtemp()
+        self.addCleanup(support.rmtree, self.tmptestdir)
 
     def create_test(self, name=None, code=''):
         if not name:
@@ -326,8 +320,8 @@ class BaseTestCase(unittest.TestCase):
 
         # test_regrtest cannot be run twice in parallel because
         # of setUp() and create_test()
-        name = self.TESTNAME_PREFIX + "%s_%s" % (os.getpid(), name)
-        path = os.path.join(self.testdir, name + '.py')
+        name = self.TESTNAME_PREFIX + name
+        path = os.path.join(self.tmptestdir, name + '.py')
 
         self.addCleanup(support.unlink, path)
         # Use 'x' mode to ensure that we do not override existing tests
@@ -462,7 +456,8 @@ class ProgramsTestCase(BaseTestCase):
         self.tests = [self.create_test() for index in range(self.NTEST)]
 
         self.python_args = ['-Wd', '-E', '-bb']
-        self.regrtest_args = ['-uall', '-rwW']
+        self.regrtest_args = ['-uall', '-rwW',
+                              '--testdir=%s' % self.tmptestdir]
         if hasattr(faulthandler, 'dump_traceback_later'):
             self.regrtest_args.extend(('--timeout', '3600', '-j4'))
         if sys.platform == 'win32':
@@ -519,7 +514,8 @@ class ProgramsTestCase(BaseTestCase):
     def test_tools_script_run_tests(self):
         # Tools/scripts/run_tests.py
         script = os.path.join(ROOT_DIR, 'Tools', 'scripts', 'run_tests.py')
-        self.run_tests([script, *self.tests])
+        args = [script, '--testdir=%s' % self.tmptestdir, *self.tests]
+        self.run_tests(args)
 
     def run_batch(self, *args):
         proc = self.run_command(args)
@@ -555,8 +551,9 @@ class ArgsTestCase(BaseTestCase):
     Test arguments of the Python test suite.
     """
 
-    def run_tests(self, *args, **kw):
-        return self.run_python(['-m', 'test', *args], **kw)
+    def run_tests(self, *testargs, **kw):
+        cmdargs = ['-m', 'test', '--testdir=%s' % self.tmptestdir, *testargs]
+        return self.run_python(cmdargs, **kw)
 
     def test_failing_test(self):
         # test a failing test
@@ -567,8 +564,8 @@ class ArgsTestCase(BaseTestCase):
                 def test_failing(self):
                     self.fail("bug")
         """)
-        test_ok = self.create_test()
-        test_failing = self.create_test(code=code)
+        test_ok = self.create_test('ok')
+        test_failing = self.create_test('failing', code=code)
         tests = [test_ok, test_failing]
 
         output = self.run_tests(*tests, exitcode=1)
@@ -661,7 +658,7 @@ class ArgsTestCase(BaseTestCase):
 
     def test_interrupted(self):
         code = TEST_INTERRUPTED
-        test = self.create_test("sigint", code=code)
+        test = self.create_test('sigint', code=code)
         output = self.run_tests(test, exitcode=1)
         self.check_executed_tests(output, test, omitted=test)
 
@@ -693,7 +690,7 @@ class ArgsTestCase(BaseTestCase):
 
     def test_coverage(self):
         # test --coverage
-        test = self.create_test()
+        test = self.create_test('coverage')
         output = self.run_tests("--coverage", test)
         self.check_executed_tests(output, [test])
         regex = ('lines +cov% +module +\(path\)\n'
@@ -702,24 +699,28 @@ class ArgsTestCase(BaseTestCase):
 
     def test_wait(self):
         # test --wait
-        test = self.create_test()
+        test = self.create_test('wait')
         output = self.run_tests("--wait", test, input='key')
         self.check_line(output, 'Press any key to continue')
 
     def test_forever(self):
         # test --forever
         code = textwrap.dedent("""
+            import builtins
             import unittest
 
             class ForeverTester(unittest.TestCase):
-                RUN = 1
-
                 def test_run(self):
-                    ForeverTester.RUN += 1
-                    if ForeverTester.RUN > 3:
-                        self.fail("fail at the 3rd runs")
+                    # Store the state in the builtins module, because the test
+                    # module is reload at each run
+                    if 'RUN' in builtins.__dict__:
+                        builtins.__dict__['RUN'] += 1
+                        if builtins.__dict__['RUN'] >= 3:
+                            self.fail("fail at the 3rd runs")
+                    else:
+                        builtins.__dict__['RUN'] = 1
         """)
-        test = self.create_test(code=code)
+        test = self.create_test('forever', code=code)
         output = self.run_tests('--forever', test, exitcode=1)
         self.check_executed_tests(output, [test]*3, failed=test)
 
@@ -747,7 +748,7 @@ class ArgsTestCase(BaseTestCase):
                     fd = os.open(__file__, os.O_RDONLY)
                     # bug: never cloes the file descriptor
         """)
-        test = self.create_test(code=code)
+        test = self.create_test('huntrleaks', code=code)
 
         filename = 'reflog.txt'
         self.addCleanup(support.unlink, filename)
