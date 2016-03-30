@@ -879,6 +879,9 @@ Documentation
 Tests
 -----
 
+- Issue #26295: When using "python3 -m test --testdir=TESTDIR", regrtest
+  doesn't add "test." prefix to test module names.
+
 - Issue #26523: The multiprocessing thread pool (multiprocessing.dummy.Pool)
   was untested.
 
