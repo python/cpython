@@ -3,6 +3,7 @@
 import sys
 import unittest
 from test.support import run_unittest, TESTFN, unlink, cpython_only
+from test.support import check_free_after_iterating
 import pickle
 import collections.abc
 
@@ -979,6 +980,9 @@ class TestCase(unittest.TestCase):
         it.__setstate__(-42)
         self.assertEqual(next(it), 0)
         self.assertEqual(next(it), 1)
+
+    def test_free_after_iterating(self):
+        check_free_after_iterating(self, iter, SequenceClass, (0,))
 
 
 def test_main():
