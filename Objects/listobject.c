@@ -2776,8 +2776,8 @@ listiter_next(listiterobject *it)
         return item;
     }
 
-    Py_DECREF(seq);
     it->it_seq = NULL;
+    Py_DECREF(seq);
     return NULL;
 }
 
@@ -2906,9 +2906,17 @@ static PyObject *
 listreviter_next(listreviterobject *it)
 {
     PyObject *item;
-    Py_ssize_t index = it->it_index;
-    PyListObject *seq = it->it_seq;
+    Py_ssize_t index;
+    PyListObject *seq;
 
+    assert(it != NULL);
+    seq = it->it_seq;
+    if (seq == NULL) {
+        return NULL;
+    }
+    assert(PyList_Check(seq));
+
+    index = it->it_index;
     if (index>=0 && index < PyList_GET_SIZE(seq)) {
         item = PyList_GET_ITEM(seq, index);
         it->it_index--;
@@ -2916,10 +2924,8 @@ listreviter_next(listreviterobject *it)
         return item;
     }
     it->it_index = -1;
-    if (seq != NULL) {
-        it->it_seq = NULL;
-        Py_DECREF(seq);
-    }
+    it->it_seq = NULL;
+    Py_DECREF(seq);
     return NULL;
 }
 

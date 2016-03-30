@@ -2988,8 +2988,8 @@ static PyObject *dictiter_iternextkey(dictiterobject *di)
     return key;
 
 fail:
-    Py_DECREF(d);
     di->di_dict = NULL;
+    Py_DECREF(d);
     return NULL;
 }
 
@@ -3069,8 +3069,8 @@ static PyObject *dictiter_iternextvalue(dictiterobject *di)
     return value;
 
 fail:
-    Py_DECREF(d);
     di->di_dict = NULL;
+    Py_DECREF(d);
     return NULL;
 }
 
@@ -3164,8 +3164,8 @@ static PyObject *dictiter_iternextitem(dictiterobject *di)
     return result;
 
 fail:
-    Py_DECREF(d);
     di->di_dict = NULL;
+    Py_DECREF(d);
     return NULL;
 }
 
