@@ -116,7 +116,7 @@ def runtest(ns, test):
             try:
                 sys.stdout = stream
                 sys.stderr = stream
-                result = runtest_inner(test, verbose, quiet, huntrleaks,
+                result = runtest_inner(ns, test, verbose, quiet, huntrleaks,
                                        display_failure=False, pgo=pgo)
                 if result[0] == FAILED:
                     output = stream.getvalue()
@@ -127,7 +127,7 @@ def runtest(ns, test):
                 sys.stderr = orig_stderr
         else:
             support.verbose = verbose  # Tell tests to be moderately quiet
-            result = runtest_inner(test, verbose, quiet, huntrleaks,
+            result = runtest_inner(ns, test, verbose, quiet, huntrleaks,
                                    display_failure=not verbose, pgo=pgo)
         return result
     finally:
@@ -137,14 +137,14 @@ def runtest(ns, test):
 runtest.stringio = None
 
 
-def runtest_inner(test, verbose, quiet,
+def runtest_inner(ns, test, verbose, quiet,
                   huntrleaks=False, display_failure=True, *, pgo=False):
     support.unload(test)
 
     test_time = 0.0
     refleak = False  # True if the test leaked references.
     try:
-        if test.startswith('test.'):
+        if test.startswith('test.') or ns.testdir:
             abstest = test
         else:
             # Always import it from the test package

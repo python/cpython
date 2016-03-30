@@ -29,6 +29,11 @@ def setup_tests(ns):
     replace_stdout()
     support.record_original_stdout(sys.stdout)
 
+    if ns.testdir:
+        # Prepend test directory to sys.path, so runtest() will be able
+        # to locate tests
+        sys.path.insert(0, os.path.abspath(ns.testdir))
+
     # Some times __path__ and __file__ are not absolute (e.g. while running from
     # Lib/) and, if we change the CWD to run the tests in a temporary dir, some
     # imports might fail.  This affects only the modules imported before os.chdir().
