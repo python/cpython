@@ -17,6 +17,7 @@ import unittest
 import test.support
 import test.string_tests
 import test.buffer_tests
+import test.list_tests
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
 
 
@@ -1418,6 +1419,7 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
             b[:] = data
             self.assertEqual(list(it), [])
 
+    test_exhausted_iterator = test.list_tests.CommonTest.test_exhausted_iterator
 
 class AssortedBytesTest(unittest.TestCase):
     #
