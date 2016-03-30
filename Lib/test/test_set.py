@@ -364,6 +364,9 @@ class TestJointOps:
         gc.collect()
         self.assertTrue(ref() is None, "Cycle was not collected")
 
+    def test_free_after_iterating(self):
+        support.check_free_after_iterating(self, iter, self.thetype)
+
 class TestSet(TestJointOps, unittest.TestCase):
     thetype = set
     basetype = set

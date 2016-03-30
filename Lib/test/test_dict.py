@@ -954,6 +954,12 @@ class DictTest(unittest.TestCase):
         d = {X(): 0, 1: 1}
         self.assertRaises(RuntimeError, d.update, other)
 
+    def test_free_after_iterating(self):
+        support.check_free_after_iterating(self, iter, dict)
+        support.check_free_after_iterating(self, lambda d: iter(d.keys()), dict)
+        support.check_free_after_iterating(self, lambda d: iter(d.values()), dict)
+        support.check_free_after_iterating(self, lambda d: iter(d.items()), dict)
+
 from test import mapping_tests
 
 class GeneralMappingTests(mapping_tests.BasicTestMappingProtocol):
