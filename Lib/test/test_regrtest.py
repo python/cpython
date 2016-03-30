@@ -514,7 +514,7 @@ class ProgramsTestCase(BaseTestCase):
     def test_tools_script_run_tests(self):
         # Tools/scripts/run_tests.py
         script = os.path.join(ROOT_DIR, 'Tools', 'scripts', 'run_tests.py')
-        args = [script, '--testdir=%s' % self.tmptestdir, *self.tests]
+        args = [script, *self.regrtest_args, *self.tests]
         self.run_tests(args)
 
     def run_batch(self, *args):
