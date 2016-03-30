@@ -2875,9 +2875,20 @@ array_iter(arrayobject *ao)
 static PyObject *
 arrayiter_next(arrayiterobject *it)
 {
+    arrayobject *ao;
+
+    assert(it != NULL);
     assert(PyArrayIter_Check(it));
-    if (it->index < Py_SIZE(it->ao))
-        return (*it->getitem)(it->ao, it->index++);
+    ao = it->ao;
+    if (ao == NULL) {
+        return NULL;
+    }
+    assert(array_Check(ao));
+    if (it->index < Py_SIZE(ao)) {
+        return (*it->getitem)(ao, it->index++);
+    }
+    it->ao = NULL;
+    Py_DECREF(ao);
     return NULL;
 }
 
@@ -2906,8 +2917,11 @@ static PyObject *
 array_arrayiterator___reduce___impl(arrayiterobject *self)
 /*[clinic end generated code: output=7898a52e8e66e016 input=a062ea1e9951417a]*/
 {
-    return Py_BuildValue("N(O)n", _PyObject_GetBuiltin("iter"),
-                         self->ao, self->index);
+    PyObject *func = _PyObject_GetBuiltin("iter");
+    if (self->ao == NULL) {
+        return Py_BuildValue("N(())", func);
+    }
+    return Py_BuildValue("N(O)n", func, self->ao, self->index);
 }
 
 /*[clinic input]
