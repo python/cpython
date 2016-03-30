@@ -11928,13 +11928,15 @@ typedef struct {
 static void
 ScandirIterator_close(ScandirIterator *iterator)
 {
-    if (iterator->handle == INVALID_HANDLE_VALUE)
+    HANDLE handle = iterator->handle;
+
+    if (handle == INVALID_HANDLE_VALUE)
         return;
 
-    Py_BEGIN_ALLOW_THREADS
-    FindClose(iterator->handle);
-    Py_END_ALLOW_THREADS
     iterator->handle = INVALID_HANDLE_VALUE;
+    Py_BEGIN_ALLOW_THREADS
+    FindClose(handle);
+    Py_END_ALLOW_THREADS
 }
 
 static PyObject *
@@ -11984,13 +11986,15 @@ ScandirIterator_iternext(ScandirIterator *iterator)
 static void
 ScandirIterator_close(ScandirIterator *iterator)
 {
-    if (!iterator->dirp)
+    DIR *dirp = iterator->dirp;
+
+    if (!dirp)
         return;
 
-    Py_BEGIN_ALLOW_THREADS
-    closedir(iterator->dirp);
-    Py_END_ALLOW_THREADS
     iterator->dirp = NULL;
+    Py_BEGIN_ALLOW_THREADS
+    closedir(dirp);
+    Py_END_ALLOW_THREADS
     return;
 }
 

@@ -5,6 +5,7 @@ Tests common to tuple, list and UserList.UserList
 import unittest
 import sys
 import pickle
+from test import support
 
 # Various iterables
 # This is used for checking the constructor (here and in test_deque.py)
@@ -408,3 +409,7 @@ class CommonTest(unittest.TestCase):
             lst2 = pickle.loads(pickle.dumps(lst, proto))
             self.assertEqual(lst2, lst)
             self.assertNotEqual(id(lst2), id(lst))
+
+    def test_free_after_iterating(self):
+        support.check_free_after_iterating(self, iter, self.type2test)
+        support.check_free_after_iterating(self, reversed, self.type2test)

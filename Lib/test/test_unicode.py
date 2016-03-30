@@ -2729,6 +2729,10 @@ class UnicodeTest(string_tests.CommonTest,
                 # Check that the second call returns the same result
                 self.assertEqual(getargs_s_hash(s), chr(k).encode() * (i + 1))
 
+    def test_free_after_iterating(self):
+        support.check_free_after_iterating(self, iter, str)
+        support.check_free_after_iterating(self, reversed, str)
+
 
 class StringModuleTest(unittest.TestCase):
     def test_formatter_parser(self):
