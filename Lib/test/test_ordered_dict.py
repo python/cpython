@@ -598,6 +598,12 @@ class OrderedDictTests:
         gc.collect()
         self.assertIsNone(r())
 
+    def test_free_after_iterating(self):
+        support.check_free_after_iterating(self, iter, self.OrderedDict)
+        support.check_free_after_iterating(self, lambda d: iter(d.keys()), self.OrderedDict)
+        support.check_free_after_iterating(self, lambda d: iter(d.values()), self.OrderedDict)
+        support.check_free_after_iterating(self, lambda d: iter(d.items()), self.OrderedDict)
+
 
 class PurePythonOrderedDictTests(OrderedDictTests, unittest.TestCase):
 
