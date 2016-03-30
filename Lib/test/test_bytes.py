@@ -900,6 +900,16 @@ class ByteArrayTest(BaseBytesTest):
         # PyByteArray_AS_STRING() C macro.
         self.assertRaises(ValueError, int, bytearray(b''))
 
+    def test_exhausted_iterator(self):
+        a = self.type2test([1, 2, 3])
+        exhit = iter(a)
+        empit = iter(a)
+        for x in exhit:  # exhaust the iterator
+            next(empit)  # not exhausted
+        a.append(9)
+        self.assertEqual(list(exhit), [])
+        self.assertEqual(list(empit), [9])
+        self.assertEqual(a, self.type2test([1, 2, 3, 9]))
 
 class AssortedBytesTest(unittest.TestCase):
     #
