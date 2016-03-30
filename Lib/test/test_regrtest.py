@@ -527,7 +527,7 @@ class ProgramsTestCase(BaseTestCase):
     def test_tools_buildbot_test(self):
         # Tools\buildbot\test.bat
         script = os.path.join(ROOT_DIR, 'Tools', 'buildbot', 'test.bat')
-        test_args = []
+        test_args = ['--testdir=%s' % self.tmptestdir]
         if platform.architecture()[0] == '64bit':
             test_args.append('-x64')   # 64-bit build
         if not Py_DEBUG:
