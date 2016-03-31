@@ -66,7 +66,7 @@ PyDoc_STRVAR(_io__IOBase_seekable__doc__,
 "\n"
 "Return whether object supports random access.\n"
 "\n"
-"If False, seek(), tell() and truncate() will raise UnsupportedOperation.\n"
+"If False, seek(), tell() and truncate() will raise OSError.\n"
 "This method may need to do a test seek().");
 
 #define _IO__IOBASE_SEEKABLE_METHODDEF    \
@@ -87,7 +87,7 @@ PyDoc_STRVAR(_io__IOBase_readable__doc__,
 "\n"
 "Return whether object was opened for reading.\n"
 "\n"
-"If False, read() will raise UnsupportedOperation.");
+"If False, read() will raise OSError.");
 
 #define _IO__IOBASE_READABLE_METHODDEF    \
     {"readable", (PyCFunction)_io__IOBase_readable, METH_NOARGS, _io__IOBase_readable__doc__},
@@ -107,7 +107,7 @@ PyDoc_STRVAR(_io__IOBase_writable__doc__,
 "\n"
 "Return whether object was opened for writing.\n"
 "\n"
-"If False, write() will raise UnsupportedOperation.");
+"If False, write() will raise OSError.");
 
 #define _IO__IOBASE_WRITABLE_METHODDEF    \
     {"writable", (PyCFunction)_io__IOBase_writable, METH_NOARGS, _io__IOBase_writable__doc__},
@@ -127,7 +127,7 @@ PyDoc_STRVAR(_io__IOBase_fileno__doc__,
 "\n"
 "Returns underlying file descriptor if one exists.\n"
 "\n"
-"An IOError is raised if the IO object does not use a file descriptor.");
+"OSError is raised if the IO object does not use a file descriptor.");
 
 #define _IO__IOBASE_FILENO_METHODDEF    \
     {"fileno", (PyCFunction)_io__IOBase_fileno, METH_NOARGS, _io__IOBase_fileno__doc__},
@@ -276,4 +276,4 @@ _io__RawIOBase_readall(PyObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _io__RawIOBase_readall_impl(self);
 }
-/*[clinic end generated code: output=fe034152b6884e65 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b874952f5cc248a4 input=a9049054013a1b77]*/
