@@ -390,7 +390,7 @@ class IOBase(metaclass=abc.ABCMeta):
     def seekable(self):
         """Return a bool indicating whether object supports random access.
 
-        If False, seek(), tell() and truncate() will raise UnsupportedOperation.
+        If False, seek(), tell() and truncate() will raise OSError.
         This method may need to do a test seek().
         """
         return False
@@ -405,7 +405,7 @@ class IOBase(metaclass=abc.ABCMeta):
     def readable(self):
         """Return a bool indicating whether object was opened for reading.
 
-        If False, read() will raise UnsupportedOperation.
+        If False, read() will raise OSError.
         """
         return False
 
@@ -419,7 +419,7 @@ class IOBase(metaclass=abc.ABCMeta):
     def writable(self):
         """Return a bool indicating whether object was opened for writing.
 
-        If False, write() and truncate() will raise UnsupportedOperation.
+        If False, write() and truncate() will raise OSError.
         """
         return False
 
@@ -787,12 +787,6 @@ class _BufferedIOMixin(BufferedIOBase):
     def seekable(self):
         return self.raw.seekable()
 
-    def readable(self):
-        return self.raw.readable()
-
-    def writable(self):
-        return self.raw.writable()
-
     @property
     def raw(self):
         return self._raw
@@ -982,6 +976,9 @@ class BufferedReader(_BufferedIOMixin):
         self._reset_read_buf()
         self._read_lock = Lock()
 
+    def readable(self):
+        return self.raw.readable()
+
     def _reset_read_buf(self):
         self._read_buf = b""
         self._read_pos = 0
@@ -1169,6 +1166,9 @@ class BufferedWriter(_BufferedIOMixin):
         self.buffer_size = buffer_size
         self._write_buf = bytearray()
         self._write_lock = Lock()
+
+    def writable(self):
+        return self.raw.writable()
 
     def write(self, b):
         if self.closed:
