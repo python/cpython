@@ -204,11 +204,11 @@ Python 3.0 has simplified the rules for ordering comparisons:
 Integers
 --------
 
-* :pep:`0237`: Essentially, :class:`long` renamed to :class:`int`.
+* :pep:`237`: Essentially, :class:`long` renamed to :class:`int`.
   That is, there is only one built-in integral type, named
   :class:`int`; but it behaves mostly like the old :class:`long` type.
 
-* :pep:`0238`: An expression like ``1/2`` returns a float.  Use
+* :pep:`238`: An expression like ``1/2`` returns a float.  Use
   ``1//2`` to get the truncating behavior.  (The latter syntax has
   existed for years, at least since Python 2.2.)
 
@@ -384,7 +384,7 @@ New Syntax
 
 * Dictionary comprehensions: ``{k: v for k, v in stuff}`` means the
   same thing as ``dict(stuff)`` but is more flexible.  (This is
-  :pep:`0274` vindicated. :-)
+  :pep:`274` vindicated. :-)
 
 * Set literals, e.g. ``{1, 2}``.  Note that ``{}`` is an empty
   dictionary; use ``set()`` for an empty set.  Set comprehensions are
@@ -469,7 +469,7 @@ Removed Syntax
 
 * The only acceptable syntax for relative imports is :samp:`from .[{module}]
   import {name}`.  All :keyword:`import` forms not starting with ``.`` are
-  interpreted as absolute imports.  (:pep:`0328`)
+  interpreted as absolute imports.  (:pep:`328`)
 
 * Classic classes are gone.
 
@@ -555,9 +555,9 @@ review:
 
 * Many old modules were removed.  Some, like :mod:`gopherlib` (no
   longer used) and :mod:`md5` (replaced by :mod:`hashlib`), were
-  already deprecated by :pep:`0004`.  Others were removed as a result
+  already deprecated by :pep:`4`.  Others were removed as a result
   of the removal of support for various platforms such as Irix, BeOS
-  and Mac OS 9 (see :pep:`0011`).  Some modules were also selected for
+  and Mac OS 9 (see :pep:`11`).  Some modules were also selected for
   removal in Python 3.0 due to lack of use or because a better
   replacement exists.  See :pep:`3108` for an exhaustive list.
 
@@ -568,7 +568,7 @@ review:
   externally maintained at https://www.jcea.es/programacion/pybsddb.htm.
 
 * Some modules were renamed because their old name disobeyed
-  :pep:`0008`, or for various other reasons.  Here's the list:
+  :pep:`8`, or for various other reasons.  Here's the list:
 
   =======================  =======================
   Old Name                 New Name
@@ -685,7 +685,7 @@ Changes To Exceptions
 The APIs for raising and catching exception have been cleaned up and
 new powerful features added:
 
-* :pep:`0352`: All exceptions must be derived (directly or indirectly)
+* :pep:`352`: All exceptions must be derived (directly or indirectly)
   from :exc:`BaseException`.  This is the root of the exception
   hierarchy.  This is not new as a recommendation, but the
   *requirement* to inherit from :exc:`BaseException` is new.  (Python
