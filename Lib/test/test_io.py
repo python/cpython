@@ -693,12 +693,6 @@ class CommonBufferedTests:
 
         self.assertEqual(42, bufio.fileno())
 
-    @unittest.skip('test having existential crisis')
-    def test_no_fileno(self):
-        # XXX will we always have fileno() function? If so, kill
-        # this test. Else, write it.
-        pass
-
     def test_invalid_args(self):
         rawio = self.MockRawIO()
         bufio = self.tp(rawio)
