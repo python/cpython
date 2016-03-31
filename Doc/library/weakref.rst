@@ -245,7 +245,7 @@ methods of :class:`WeakKeyDictionary` objects.
 
 .. seealso::
 
-   :pep:`0205` - Weak References
+   :pep:`205` - Weak References
       The proposal and rationale for this feature, including links to earlier
       implementations and information about similar features in other languages.
 

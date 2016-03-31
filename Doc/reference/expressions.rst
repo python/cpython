@@ -508,7 +508,7 @@ generator functions::
 
 .. seealso::
 
-   :pep:`0342` - Coroutines via Enhanced Generators
+   :pep:`342` - Coroutines via Enhanced Generators
       The proposal to enhance the API and syntax of generators, making them usable as
       simple coroutines.
 

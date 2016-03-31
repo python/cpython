@@ -538,10 +538,10 @@ section.
 
 .. seealso::
 
-   :pep:`0255` - Simple Generators
+   :pep:`255` - Simple Generators
       The proposal for adding generators and the :keyword:`yield` statement to Python.
 
-   :pep:`0342` - Coroutines via Enhanced Generators
+   :pep:`342` - Coroutines via Enhanced Generators
       The proposal that, among other generator enhancements, proposed allowing
       :keyword:`yield` to appear inside a :keyword:`try` ... :keyword:`finally` block.
 
