@@ -237,6 +237,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #22854: Change BufferedReader.writable() and
+  BufferedWriter.readable() to always return False.
+
 - Issue #26492: Exhausted iterator of array.array now conforms with the behavior
   of iterators of other mutable sequences: it lefts exhausted even if iterated
   array is extended.
