@@ -449,7 +449,7 @@ class IOTest(unittest.TestCase):
                 else:
                     self.assertRaises(OSError, obj.write, data)
 
-                if sys.platform.startswith("win") or test in (
+                if sys.platform.startswith("win") and test in (
                         pipe_reader, pipe_writer):
                     # Pipes seem to appear as seekable on Windows
                     continue
