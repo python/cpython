@@ -2382,6 +2382,22 @@ class TimeoutTests(test_utils.TestCase):
 
         self.loop.run_until_complete(go())
 
+    def test_timeout_disable(self):
+        @asyncio.coroutine
+        def long_running_task():
+            yield from asyncio.sleep(0.1, loop=self.loop)
+            return 'done'
+
+        @asyncio.coroutine
+        def go():
+            t0 = self.loop.time()
+            with asyncio.timeout(None, loop=self.loop):
+                resp = yield from long_running_task()
+            self.assertEqual(resp, 'done')
+            dt = self.loop.time() - t0
+            self.assertTrue(0.09 < dt < 0.11, dt)
+        self.loop.run_until_complete(go())
+
     def test_raise_runtimeerror_if_no_task(self):
         with self.assertRaises(RuntimeError):
             with asyncio.timeout(0.1, loop=self.loop):
