@@ -237,6 +237,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26676: Added missing XMLPullParser to ElementTree.__all__.
+
 - Issue #22854: Change BufferedReader.writable() and
   BufferedWriter.readable() to always return False.
 
