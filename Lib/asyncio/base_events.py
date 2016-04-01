@@ -54,6 +54,12 @@ _MIN_SCHEDULED_TIMER_HANDLES = 100
 # before cleanup of cancelled handles is performed.
 _MIN_CANCELLED_TIMER_HANDLES_FRACTION = 0.5
 
+# Exceptions which must not call the exception handler in fatal error
+# methods (_fatal_error())
+_FATAL_ERROR_IGNORE = (BrokenPipeError,
+                       ConnectionResetError, ConnectionAbortedError)
+
+
 def _format_handle(handle):
     cb = handle._callback
     if inspect.ismethod(cb) and isinstance(cb.__self__, tasks.Task):
