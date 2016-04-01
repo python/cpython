@@ -401,7 +401,7 @@ def wait_for(fut, timeout, *, loop=None):
 
 @coroutine
 def _wait(fs, timeout, return_when, loop):
-    """Internal helper for wait() and _wait_for().
+    """Internal helper for wait() and wait_for().
 
     The fs argument must be a collection of Futures.
     """
@@ -747,7 +747,7 @@ def timeout(timeout, *, loop=None):
     ...     yield from coro()
 
 
-    timeout: timeout value in seconds
+    timeout: timeout value in seconds or None to disable timeout logic
     loop: asyncio compatible event loop
     """
     if loop is None:
@@ -768,8 +768,9 @@ class _Timeout:
         if self._task is None:
             raise RuntimeError('Timeout context manager should be used '
                                'inside a task')
-        self._cancel_handler = self._loop.call_later(
-            self._timeout, self._cancel_task)
+        if self._timeout is not None:
+            self._cancel_handler = self._loop.call_later(
+                self._timeout, self._cancel_task)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -777,8 +778,9 @@ class _Timeout:
             self._cancel_handler = None
             self._task = None
             raise futures.TimeoutError
-        self._cancel_handler.cancel()
-        self._cancel_handler = None
+        if self._timeout is not None:
+            self._cancel_handler.cancel()
+            self._cancel_handler = None
         self._task = None
 
     def _cancel_task(self):
