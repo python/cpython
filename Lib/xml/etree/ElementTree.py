@@ -85,7 +85,7 @@ __all__ = [
     "TreeBuilder",
     "VERSION",
     "XML", "XMLID",
-    "XMLParser",
+    "XMLParser", "XMLPullParser",
     "register_namespace",
     ]
 
