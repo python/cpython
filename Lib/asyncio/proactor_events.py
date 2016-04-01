@@ -90,7 +90,7 @@ class _ProactorBasePipeTransport(transports._FlowControlMixin,
                 self.close()
 
     def _fatal_error(self, exc, message='Fatal error on pipe transport'):
-        if isinstance(exc, (BrokenPipeError, ConnectionResetError)):
+        if isinstance(exc, base_events._FATAL_ERROR_IGNORE):
             if self._loop.get_debug():
                 logger.debug("%r: %s", self, message, exc_info=True)
         else:
