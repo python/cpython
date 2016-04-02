@@ -359,7 +359,7 @@ The module name can be 'dotted', in the form ``package.module`` if needed:
 
 A nice pattern is to actually decorate test methods themselves:
 
-    >>> class MyTest(unittest2.TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...     @patch.object(SomeClass, 'attribute', sentinel.attribute)
     ...     def test_something(self):
     ...         self.assertEqual(SomeClass.attribute, sentinel.attribute)
@@ -372,7 +372,7 @@ If you want to patch with a Mock, you can use :func:`patch` with only one argume
 (or :func:`patch.object` with two arguments). The mock will be created for you and
 passed into the test function / method:
 
-    >>> class MyTest(unittest2.TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...     @patch.object(SomeClass, 'static_method')
     ...     def test_something(self, mock_method):
     ...         SomeClass.static_method()
@@ -382,7 +382,7 @@ passed into the test function / method:
 
 You can stack up multiple patch decorators using this pattern:
 
-    >>> class MyTest(unittest2.TestCase):
+    >>> class MyTest(unittest.TestCase):
     ...     @patch('package.module.ClassName1')
     ...     @patch('package.module.ClassName2')
     ...     def test_something(self, MockClass2, MockClass1):
