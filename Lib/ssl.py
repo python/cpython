@@ -886,7 +886,6 @@ class SSLSocket(socket):
             while (count < amount):
                 v = self.send(data[count:])
                 count += v
-            return amount
         else:
             return socket.sendall(self, data, flags)
 
