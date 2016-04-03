@@ -65,6 +65,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23735: Handle terminal resizing with Readline 6.3+ by installing our
+  own SIGWINCH handler.  Patch by Eric Price.
+
 - Issue #26644: Raise ValueError rather than SystemError when a negative
   length is passed to SSLSocket.recv() or read().
 

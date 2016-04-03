@@ -817,6 +817,26 @@ on_completion_display_matches_hook(char **matches,
 }
 
 
+#ifdef HAVE_RL_RESIZE_TERMINAL
+static volatile sig_atomic_t sigwinch_received;
+static sighandler_t sigwinch_ohandler;
+
+static void
+readline_sigwinch_handler(int signum)
+{
+    sigwinch_received = 1;
+    if (sigwinch_ohandler &&
+            sigwinch_ohandler != SIG_IGN && sigwinch_ohandler != SIG_DFL)
+        sigwinch_ohandler(signum);
+
+#ifndef HAVE_SIGACTION
+    /* If the handler was installed with signal() rather than sigaction(),
+    we need to reinstall it. */
+    PyOS_setsig(SIGWINCH, readline_sigwinch_handler);
+#endif
+}
+#endif
+
 /* C function to call the Python completer. */
 
 static char *
@@ -918,6 +938,10 @@ setup_readline(void)
     /* Bind both ESC-TAB and ESC-ESC to the completion function */
     rl_bind_key_in_map ('\t', rl_complete, emacs_meta_keymap);
     rl_bind_key_in_map ('\033', rl_complete, emacs_meta_keymap);
+#ifdef HAVE_RL_RESIZE_TERMINAL
+    /* Set up signal handler for window resize */
+    sigwinch_ohandler = PyOS_setsig(SIGWINCH, readline_sigwinch_handler);
+#endif
     /* Set our hook functions */
     rl_startup_hook = on_startup_hook;
 #ifdef HAVE_RL_PRE_INPUT_HOOK
@@ -1003,6 +1027,13 @@ readline_until_enter_or_signal(char *prompt, int *signal)
             struct timeval *timeoutp = NULL;
             if (PyOS_InputHook)
                 timeoutp = &timeout;
+#ifdef HAVE_RL_RESIZE_TERMINAL
+            /* Update readline's view of the window size after SIGWINCH */
+            if (sigwinch_received) {
+                sigwinch_received = 0;
+                rl_resize_terminal();
+            }
+#endif
             FD_SET(fileno(rl_instream), &selectset);
             /* select resets selectset if no input was available */
             has_input = select(fileno(rl_instream) + 1, &selectset,

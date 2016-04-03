@@ -580,6 +580,9 @@
 /* Define if you have readline 4.0 */
 #undef HAVE_RL_PRE_INPUT_HOOK
 
+/* Define if you have readline 4.0 */
+#undef HAVE_RL_RESIZE_TERMINAL
+
 /* Define to 1 if you have the `round' function. */
 #undef HAVE_ROUND
 

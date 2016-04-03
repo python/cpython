@@ -4199,6 +4199,11 @@ AC_CHECK_LIB(readline, rl_completion_display_matches_hook,
 	AC_DEFINE(HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK, 1,
         [Define if you have readline 4.0]), ,$READLINE_LIBS)
 
+# also in 4.0, but not in editline
+AC_CHECK_LIB(readline, rl_resize_terminal,
+	AC_DEFINE(HAVE_RL_RESIZE_TERMINAL, 1,
+        [Define if you have readline 4.0]), ,$READLINE_LIBS)
+
 # check for readline 4.2
 AC_CHECK_LIB(readline, rl_completion_matches,
 	AC_DEFINE(HAVE_RL_COMPLETION_MATCHES, 1,

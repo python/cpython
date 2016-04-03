@@ -13925,6 +13925,50 @@ $as_echo "#define HAVE_RL_COMPLETION_DISPLAY_MATCHES_HOOK 1" >>confdefs.h
 fi
 
 
+# also in 4.0, but not in editline
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_resize_terminal in -lreadline" >&5
+$as_echo_n "checking for rl_resize_terminal in -lreadline... " >&6; }
+if ${ac_cv_lib_readline_rl_resize_terminal+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lreadline $READLINE_LIBS $LIBS"
+cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char rl_resize_terminal ();
+int
+main ()
+{
+return rl_resize_terminal ();
+  ;
+  return 0;
+}
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+  ac_cv_lib_readline_rl_resize_terminal=yes
+else
+  ac_cv_lib_readline_rl_resize_terminal=no
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_readline_rl_resize_terminal" >&5
+$as_echo "$ac_cv_lib_readline_rl_resize_terminal" >&6; }
+if test "x$ac_cv_lib_readline_rl_resize_terminal" = xyes; then :
+
+$as_echo "#define HAVE_RL_RESIZE_TERMINAL 1" >>confdefs.h
+
+fi
+
+
 # check for readline 4.2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for rl_completion_matches in -lreadline" >&5
 $as_echo_n "checking for rl_completion_matches in -lreadline... " >&6; }
