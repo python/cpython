@@ -137,7 +137,7 @@ class HTTPServer(socketserver.TCPServer):
     def server_bind(self):
         """Override server_bind to store the server name."""
         socketserver.TCPServer.server_bind(self)
-        host, port = self.socket.getsockname()[:2]
+        host, port = self.server_address[:2]
         self.server_name = socket.getfqdn(host)
         self.server_port = port
 
@@ -283,12 +283,9 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         words = requestline.split()
         if len(words) == 3:
             command, path, version = words
-            if version[:5] != 'HTTP/':
-                self.send_error(
-                    HTTPStatus.BAD_REQUEST,
-                    "Bad request version (%r)" % version)
-                return False
             try:
+                if version[:5] != 'HTTP/':
+                    raise ValueError
                 base_version_number = version.split('/', 1)[1]
                 version_number = base_version_number.split(".")
                 # RFC 2145 section 3.1 says there can be only one "." and
@@ -310,7 +307,7 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
             if version_number >= (2, 0):
                 self.send_error(
                     HTTPStatus.HTTP_VERSION_NOT_SUPPORTED,
-                    "Invalid HTTP Version (%s)" % base_version_number)
+                    "Invalid HTTP version (%s)" % base_version_number)
                 return False
         elif len(words) == 2:
             command, path = words
@@ -333,10 +330,11 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         try:
             self.headers = http.client.parse_headers(self.rfile,
                                                      _class=self.MessageClass)
-        except http.client.LineTooLong:
+        except http.client.LineTooLong as err:
             self.send_error(
-                HTTPStatus.BAD_REQUEST,
-                "Line too long")
+                HTTPStatus.REQUEST_HEADER_FIELDS_TOO_LARGE,
+                "Line too long",
+                str(err))
             return False
         except http.client.HTTPException as err:
             self.send_error(
@@ -482,12 +480,12 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
 
     def send_response_only(self, code, message=None):
         """Send the response header only."""
-        if message is None:
-            if code in self.responses:
-                message = self.responses[code][0]
-            else:
-                message = ''
         if self.request_version != 'HTTP/0.9':
+            if message is None:
+                if code in self.responses:
+                    message = self.responses[code][0]
+                else:
+                    message = ''
             if not hasattr(self, '_headers_buffer'):
                 self._headers_buffer = []
             self._headers_buffer.append(("%s %d %s\r\n" %
