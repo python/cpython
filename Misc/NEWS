@@ -237,6 +237,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23735: Handle terminal resizing with Readline 6.3+ by installing our
+  own SIGWINCH handler.  Patch by Eric Price.
+
 - Issue #25951: Change SSLSocket.sendall() to return None, as explicitly
   documented for plain socket objects.  Patch by Aviv Palivoda.
 
