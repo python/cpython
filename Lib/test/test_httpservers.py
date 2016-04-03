@@ -859,6 +859,13 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertFalse(self.handler.get_called)
         self.assertEqual(self.handler.requestline, 'GET / HTTP/1.1')
 
+    def test_too_many_headers(self):
+        result = self.send_typical_request(
+            b'GET / HTTP/1.1\r\n' + b'X-Foo: bar\r\n' * 101 + b'\r\n')
+        self.assertEqual(result[0], b'HTTP/1.1 431 Too many headers\r\n')
+        self.assertFalse(self.handler.get_called)
+        self.assertEqual(self.handler.requestline, 'GET / HTTP/1.1')
+
     def test_close_connection(self):
         # handle_one_request() should be repeatedly called until
         # it sets close_connection
