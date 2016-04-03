@@ -819,7 +819,7 @@ on_completion_display_matches_hook(char **matches,
 
 #ifdef HAVE_RL_RESIZE_TERMINAL
 static volatile sig_atomic_t sigwinch_received;
-static sighandler_t sigwinch_ohandler;
+static PyOS_sighandler_t sigwinch_ohandler;
 
 static void
 readline_sigwinch_handler(int signum)
