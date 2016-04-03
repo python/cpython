@@ -338,6 +338,13 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
                 HTTPStatus.BAD_REQUEST,
                 "Line too long")
             return False
+        except http.client.HTTPException as err:
+            self.send_error(
+                HTTPStatus.REQUEST_HEADER_FIELDS_TOO_LARGE,
+                "Too many headers",
+                str(err)
+            )
+            return False
 
         conntype = self.headers.get('Connection', "")
         if conntype.lower() == 'close':
