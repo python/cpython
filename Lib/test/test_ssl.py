@@ -2709,12 +2709,13 @@ if _have_threads:
                     count, addr = s.recvfrom_into(b)
                     return b[:count]
 
-                # (name, method, whether to expect success, *args)
+                # (name, method, expect success?, *args, return value func)
                 send_methods = [
-                    ('send', s.send, True, []),
-                    ('sendto', s.sendto, False, ["some.address"]),
-                    ('sendall', s.sendall, True, []),
+                    ('send', s.send, True, [], len),
+                    ('sendto', s.sendto, False, ["some.address"], len),
+                    ('sendall', s.sendall, True, [], lambda x: None),
                 ]
+                # (name, method, whether to expect success, *args)
                 recv_methods = [
                     ('recv', s.recv, True, []),
                     ('recvfrom', s.recvfrom, False, ["some.address"]),
@@ -2723,10 +2724,13 @@ if _have_threads:
                 ]
                 data_prefix = "PREFIX_"
 
-                for meth_name, send_meth, expect_success, args in send_methods:
+                for (meth_name, send_meth, expect_success, args,
+                        ret_val_meth) in send_methods:
                     indata = (data_prefix + meth_name).encode('ascii')
                     try:
-                        send_meth(indata, *args)
+                        ret = send_meth(indata, *args)
+                        msg = "sending with {}".format(meth_name)
+                        self.assertEqual(ret, ret_val_meth(indata), msg=msg)
                         outdata = s.read()
                         if outdata != indata.lower():
                             self.fail(
