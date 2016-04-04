@@ -40,12 +40,13 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 :class:`Hashable`                                 ``__hash__``
 :class:`Iterable`                                 ``__iter__``
 :class:`Iterator`          :class:`Iterable`      ``__next__``            ``__iter__``
+:class:`Reversible`        :class:`Iterable`      ``__reversed__``
 :class:`Generator`         :class:`Iterator`      ``send``, ``throw``     ``close``, ``__iter__``, ``__next__``
 :class:`Sized`                                    ``__len__``
 :class:`Callable`                                 ``__call__``
 
 :class:`Sequence`          :class:`Sized`,        ``__getitem__``,        ``__contains__``, ``__iter__``, ``__reversed__``,
-                           :class:`Iterable`,     ``__len__``             ``index``, and ``count``
+                           :class:`Reversible`,   ``__len__``             ``index``, and ``count``
                            :class:`Container`
 
 :class:`MutableSequence`   :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods and
@@ -106,6 +107,10 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    ABC for classes that provide the :meth:`~iterator.__iter__` and
    :meth:`~iterator.__next__` methods.  See also the definition of
    :term:`iterator`.
+
+.. class:: Reversible
+
+   ABC for classes that provide the :meth:`__reversed__` method.
 
 .. class:: Generator
 

@@ -1516,7 +1516,7 @@ class TestSingleDispatch(unittest.TestCase):
             m = mro(D, bases)
             self.assertEqual(m, [D, c.MutableSequence, c.Sequence,
                                  c.defaultdict, dict, c.MutableMapping,
-                                 c.Mapping, c.Sized, c.Iterable, c.Container,
+                                 c.Mapping, c.Sized, c.Reversible, c.Iterable, c.Container,
                                  object])
 
         # Container and Callable are registered on different base classes and

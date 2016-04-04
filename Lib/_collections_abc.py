@@ -10,7 +10,7 @@ from abc import ABCMeta, abstractmethod
 import sys
 
 __all__ = ["Awaitable", "Coroutine", "AsyncIterable", "AsyncIterator",
-           "Hashable", "Iterable", "Iterator", "Generator",
+           "Hashable", "Iterable", "Iterator", "Generator", "Reversible",
            "Sized", "Container", "Callable",
            "Set", "MutableSet",
            "Mapping", "MutableMapping",
@@ -238,6 +238,25 @@ Iterator.register(set_iterator)
 Iterator.register(str_iterator)
 Iterator.register(tuple_iterator)
 Iterator.register(zip_iterator)
+
+
+class Reversible(Iterable):
+
+    __slots__ = ()
+
+    @abstractmethod
+    def __reversed__(self):
+        return NotImplemented
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is Reversible:
+            for B in C.__mro__:
+                if "__reversed__" in B.__dict__:
+                    if B.__dict__["__reversed__"] is not None:
+                        return True
+                    break
+        return NotImplemented
 
 
 class Generator(Iterator):
@@ -794,7 +813,7 @@ MutableMapping.register(dict)
 ### SEQUENCES ###
 
 
-class Sequence(Sized, Iterable, Container):
+class Sequence(Sized, Reversible, Container):
 
     """All the operations on a read-only sequence.
 
