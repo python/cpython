@@ -351,6 +351,10 @@ The module defines the following classes, functions and decorators:
 
     A generic version of the :class:`collections.abc.Iterator`.
 
+.. class:: Reversible(Iterable[T_co])
+
+    A generic version of the :class:`collections.abc.Reversible`.
+
 .. class:: SupportsInt
 
     An ABC with one abstract method ``__int__``.
@@ -368,11 +372,6 @@ The module defines the following classes, functions and decorators:
 
     An ABC with one abstract method ``__round__``
     that is covariant in its return type.
-
-.. class:: Reversible
-
-    An ABC with one abstract method ``__reversed__`` returning
-    an ``Iterator[T_co]``.
 
 .. class:: Container(Generic[T_co])
 
@@ -394,7 +393,7 @@ The module defines the following classes, functions and decorators:
 
     A generic version of :class:`collections.abc.MutableMapping`.
 
-.. class:: Sequence(Sized, Iterable[T_co], Container[T_co])
+.. class:: Sequence(Sized, Reversible[T_co], Container[T_co])
 
     A generic version of :class:`collections.abc.Sequence`.
 
