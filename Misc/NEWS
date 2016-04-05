@@ -3025,7 +3025,7 @@ Library
 - Issue #16152: fix tokenize to ignore whitespace at the end of the code when
   no newline is found.  Patch by Ned Batchelder.
 
-- Issue #16230: Fix a crash in select.select() when one the lists changes
+- Issue #16230: Fix a crash in select.select() when one of the lists changes
   size while iterated on.  Patch by Serhiy Storchaka.
 
 - Issue #16228: Fix a crash in the json module where a list changes size

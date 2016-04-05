@@ -1318,7 +1318,7 @@ PyAPI_FUNC(PyObject *) PyUnicode_Format(
 /* Checks whether element is contained in container and return 1/0
    accordingly.
 
-   element has to coerce to an one element Unicode string. -1 is
+   element has to coerce to a one element Unicode string. -1 is
    returned in case of an error. */
 
 PyAPI_FUNC(int) PyUnicode_Contains(

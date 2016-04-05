@@ -210,7 +210,7 @@ profile the interpreter execution. Note also that any output, both stdout
 and stderr, that may appear at this step is supressed.
 
 Finally, the last step is to rebuild the interpreter, using the information
-collected in the previous one. The end result will be a the Python binary
+collected in the previous one. The end result will be a Python binary
 that is optimized and suitable for distribution or production installation.
 
 
