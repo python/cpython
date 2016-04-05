@@ -1,8 +1,7 @@
-import asyncio
 import pickle
 import re
 import sys
-from unittest import TestCase, main
+from unittest import TestCase, main, skipUnless
 
 from typing import Any
 from typing import TypeVar, AnyStr
@@ -133,6 +132,7 @@ class TypeVarTests(TestCase):
     def test_constrained_error(self):
         with self.assertRaises(TypeError):
             X = TypeVar('X', int)
+            X
 
     def test_union_unique(self):
         X = TypeVar('X')
@@ -317,6 +317,7 @@ class UnionTests(TestCase):
     def test_union_str_pattern(self):
         # Shouldn't crash; see http://bugs.python.org/issue25390
         A = Union[str, Pattern]
+        A
 
 
 class TypeVarUnionTests(TestCase):
@@ -487,7 +488,7 @@ class SimpleMapping(Generic[XK, XV]):
         ...
 
 
-class MySimpleMapping(SimpleMapping):
+class MySimpleMapping(SimpleMapping[XK, XV]):
 
     def __init__(self):
         self.store = {}
@@ -541,6 +542,7 @@ class ProtocolTests(TestCase):
         assert not issubclass(str, typing.SupportsAbs)
 
     def test_supports_round(self):
+        issubclass(float, typing.SupportsRound)
         assert issubclass(float, typing.SupportsRound)
         assert issubclass(int, typing.SupportsRound)
         assert not issubclass(str, typing.SupportsRound)
@@ -551,20 +553,23 @@ class ProtocolTests(TestCase):
 
     def test_protocol_instance_type_error(self):
         with self.assertRaises(TypeError):
-            isinstance([], typing.Reversible)
+            isinstance(0, typing.SupportsAbs)
 
 
 class GenericTests(TestCase):
 
     def test_basics(self):
         X = SimpleMapping[str, Any]
+        assert X.__parameters__ == ()
+        with self.assertRaises(TypeError):
+            X[str]
+        with self.assertRaises(TypeError):
+            X[str, str]
         Y = SimpleMapping[XK, str]
-        X[str, str]
-        Y[str, str]
+        assert Y.__parameters__ == (XK,)
+        Y[str]
         with self.assertRaises(TypeError):
-            X[int, str]
-        with self.assertRaises(TypeError):
-            Y[str, bytes]
+            Y[str, str]
 
     def test_init(self):
         T = TypeVar('T')
@@ -576,30 +581,61 @@ class GenericTests(TestCase):
 
     def test_repr(self):
         self.assertEqual(repr(SimpleMapping),
-                         __name__ + '.' + 'SimpleMapping[~XK, ~XV]')
+                         __name__ + '.' + 'SimpleMapping<~XK, ~XV>')
         self.assertEqual(repr(MySimpleMapping),
-                         __name__ + '.' + 'MySimpleMapping[~XK, ~XV]')
+                         __name__ + '.' + 'MySimpleMapping<~XK, ~XV>')
+
+    def test_chain_repr(self):
+        T = TypeVar('T')
+        S = TypeVar('S')
+
+        class C(Generic[T]):
+            pass
+
+        X = C[Tuple[S, T]]
+        assert X == C[Tuple[S, T]]
+        assert X != C[Tuple[T, S]]
+
+        Y = X[T, int]
+        assert Y == X[T, int]
+        assert Y != X[S, int]
+        assert Y != X[T, str]
+
+        Z = Y[str]
+        assert Z == Y[str]
+        assert Z != Y[int]
+        assert Z != Y[T]
+
+        assert str(Z).endswith(
+            '.C<~T>[typing.Tuple[~S, ~T]]<~S, ~T>[~T, int]<~T>[str]')
 
     def test_dict(self):
         T = TypeVar('T')
+
         class B(Generic[T]):
             pass
+
         b = B()
         b.foo = 42
         self.assertEqual(b.__dict__, {'foo': 42})
+
         class C(B[int]):
             pass
+
         c = C()
         c.bar = 'abc'
         self.assertEqual(c.__dict__, {'bar': 'abc'})
 
     def test_pickle(self):
+        global C  # pickle wants to reference the class by name
         T = TypeVar('T')
+
         class B(Generic[T]):
             pass
-        global C  # pickle wants to reference the class by name
+
         class C(B[int]):
             pass
+
         c = C()
         c.foo = 42
         c.bar = 'abc'
@@ -626,12 +662,12 @@ class GenericTests(TestCase):
         assert C.__module__ == __name__
         if not PY32:
             assert C.__qualname__ == 'GenericTests.test_repr_2.<locals>.C'
-        assert repr(C).split('.')[-1] == 'C[~T]'
+        assert repr(C).split('.')[-1] == 'C<~T>'
         X = C[int]
         assert X.__module__ == __name__
         if not PY32:
             assert X.__qualname__ == 'C'
-        assert repr(X).split('.')[-1] == 'C[int]'
+        assert repr(X).split('.')[-1] == 'C<~T>[int]'
 
         class Y(C[int]):
             pass
@@ -639,7 +675,7 @@ class GenericTests(TestCase):
         assert Y.__module__ == __name__
         if not PY32:
             assert Y.__qualname__ == 'GenericTests.test_repr_2.<locals>.Y'
-        assert repr(Y).split('.')[-1] == 'Y[int]'
+        assert repr(Y).split('.')[-1] == 'Y'
 
     def test_eq_1(self):
         assert Generic == Generic
@@ -667,15 +703,14 @@ class GenericTests(TestCase):
         class B(Generic[KT, T]):
             pass
 
-        class C(A, Generic[KT, VT], B):
+        class C(A[T, VT], Generic[VT, T, KT], B[KT, T]):
             pass
 
-        assert C.__parameters__ == (T, VT, KT)
+        assert C.__parameters__ == (VT, T, KT)
 
     def test_nested(self):
 
-        class G(Generic):
-            pass
+        G = Generic
 
         class Visitor(G[T]):
 
@@ -721,8 +756,29 @@ class GenericTests(TestCase):
             assert type(a) is Node
             assert type(b) is Node
             assert type(c) is Node
+            assert a.label == x
+            assert b.label == x
+            assert c.label == x
 
         foo(42)
+
+    def test_implicit_any(self):
+        T = TypeVar('T')
+
+        class C(Generic[T]):
+            pass
+
+        class D(C):
+            pass
+
+        assert D.__parameters__ == ()
+
+        with self.assertRaises(Exception):
+            D[int]
+        with self.assertRaises(Exception):
+            D[Any]
+        with self.assertRaises(Exception):
+            D[T]
 
 
 class VarianceTests(TestCase):
@@ -956,13 +1012,32 @@ class OverloadTests(TestCase):
         from typing import overload
 
         with self.assertRaises(RuntimeError):
+
             @overload
             def blah():
                 pass
 
+            blah()
+
+    def test_overload_succeeds(self):
+        from typing import overload
+
+        @overload
+        def blah():
+            pass
+
+        def blah():
+            pass
+
+        blah()
+
+
+PY35 = sys.version_info[:2] >= (3, 5)
+
+PY35_TESTS = """
+import asyncio
 
 T_a = TypeVar('T')
-
 
 class AwaitableWrapper(typing.Awaitable[T_a]):
 
@@ -972,7 +1047,6 @@ class AwaitableWrapper(typing.Awaitable[T_a]):
     def __await__(self) -> typing.Iterator[T_a]:
         yield
         return self.value
-
 
 class AsyncIteratorWrapper(typing.AsyncIterator[T_a]):
 
@@ -989,6 +1063,10 @@ class AsyncIteratorWrapper(typing.AsyncIterator[T_a]):
             return data
         else:
             raise StopAsyncIteration
+"""
+
+if PY35:
+    exec(PY35_TESTS)
 
 
 class CollectionsAbcTests(TestCase):
@@ -1015,9 +1093,14 @@ class CollectionsAbcTests(TestCase):
         assert isinstance(it, typing.Iterator[int])
         assert not isinstance(42, typing.Iterator)
 
+    @skipUnless(PY35, 'Python 3.5 required')
     def test_awaitable(self):
-        async def foo() -> typing.Awaitable[int]:
-            return await AwaitableWrapper(42)
+        ns = {}
+        exec(
+            "async def foo() -> typing.Awaitable[int]:\n"
+            "    return await AwaitableWrapper(42)\n",
+            globals(), ns)
+        foo = ns['foo']
         g = foo()
         assert issubclass(type(g), typing.Awaitable[int])
         assert isinstance(g, typing.Awaitable)
@@ -1028,6 +1111,7 @@ class CollectionsAbcTests(TestCase):
                               typing.Awaitable[Manager])
         g.send(None)  # Run foo() till completion, to avoid warning.
 
+    @skipUnless(PY35, 'Python 3.5 required')
     def test_async_iterable(self):
         base_it = range(10)  # type: Iterator[int]
         it = AsyncIteratorWrapper(base_it)
@@ -1037,6 +1121,7 @@ class CollectionsAbcTests(TestCase):
                           typing.AsyncIterable[Employee])
         assert not isinstance(42, typing.AsyncIterable)
 
+    @skipUnless(PY35, 'Python 3.5 required')
     def test_async_iterator(self):
         base_it = range(10)  # type: Iterator[int]
         it = AsyncIteratorWrapper(base_it)
@@ -1126,6 +1211,22 @@ class CollectionsAbcTests(TestCase):
 
         d = MyDict()
         assert isinstance(d, MyDict)
+
+    def test_no_defaultdict_instantiation(self):
+        with self.assertRaises(TypeError):
+            typing.DefaultDict()
+        with self.assertRaises(TypeError):
+            typing.DefaultDict[KT, VT]()
+        with self.assertRaises(TypeError):
+            typing.DefaultDict[str, int]()
+
+    def test_defaultdict_subclass_instantiation(self):
+
+        class MyDefDict(typing.DefaultDict[str, int]):
+            pass
+
+        dd = MyDefDict()
+        assert isinstance(dd, MyDefDict)
 
     def test_no_set_instantiation(self):
         with self.assertRaises(TypeError):
@@ -1251,7 +1352,7 @@ class IOTests(TestCase):
             return a.readline()
 
         a = stuff.__annotations__['a']
-        assert a.__parameters__ == (str,)
+        assert a.__parameters__ == ()
 
     def test_binaryio(self):
 
@@ -1259,7 +1360,7 @@ class IOTests(TestCase):
             return a.readline()
 
         a = stuff.__annotations__['a']
-        assert a.__parameters__ == (bytes,)
+        assert a.__parameters__ == ()
 
     def test_io_submodule(self):
         from typing.io import IO, TextIO, BinaryIO, __all__, __name__
@@ -1346,8 +1447,9 @@ class AllTests(TestCase):
         assert 'ValuesView' in a
         assert 'cast' in a
         assert 'overload' in a
-        assert 'io' in a
-        assert 're' in a
+        # Check that io and re are not exported.
+        assert 'io' not in a
+        assert 're' not in a
         # Spot-check that stdlib modules aren't exported.
         assert 'os' not in a
         assert 'sys' not in a
