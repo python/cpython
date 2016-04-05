@@ -28,7 +28,7 @@ def formatwarning(message, category, filename, lineno, line=None):
             line = linecache.getline(filename, lineno)
         except Exception:
             # When a warning is logged during Python shutdown, linecache
-            # and the improt machinery don't work anymore
+            # and the import machinery don't work anymore
             line = None
     if line:
         line = line.strip()

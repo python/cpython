@@ -708,7 +708,7 @@ the more significant byte last.
 
    Implements assignment with a starred target: Unpacks an iterable in TOS into
    individual values, where the total number of values can be smaller than the
-   number of items in the iterable: one the new values will be a list of all
+   number of items in the iterable: one of the new values will be a list of all
    leftover items.
 
    The low byte of *counts* is the number of values before the list value, the
