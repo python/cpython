@@ -65,6 +65,7 @@ __all__ = [
     'no_type_check',
     'no_type_check_decorator',
     'overload',
+    'Text',
 ]
 
 # The pseudo-submodules 're' and 'io' are part of the public
@@ -1519,7 +1520,7 @@ class KeysView(MappingView[KT], AbstractSet[KT],
 
 
 class ItemsView(MappingView[Tuple[KT, VT_co]],
-                Set[Tuple[KT, VT_co]],
+                AbstractSet[Tuple[KT, VT_co]],
                 Generic[KT, VT_co],
                 extra=collections_abc.ItemsView):
     pass
@@ -1590,6 +1591,10 @@ def NamedTuple(typename, fields):
     except (AttributeError, ValueError):
         pass
     return cls
+
+
+# Python-version-specific alias (Python 2: unicode; Python 3: str)
+Text = str
 
 
 class IO(Generic[AnyStr]):
