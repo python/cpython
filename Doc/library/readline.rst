@@ -9,15 +9,18 @@
 
 The :mod:`readline` module defines a number of functions to facilitate
 completion and reading/writing of history files from the Python interpreter.
-This module can be used directly or via the :mod:`rlcompleter` module.  Settings
+This module can be used directly, or via the :mod:`rlcompleter` module, which
+supports completion of Python identifiers at the interactive prompt.  Settings
 made using  this module affect the behaviour of both the interpreter's
 interactive prompt  and the prompts offered by the :func:`raw_input` and
 :func:`input` built-in functions.
 
 .. note::
 
-  On MacOS X the :mod:`readline` module can be implemented using
+  The underlying Readline library API may be implemented by
   the ``libedit`` library instead of GNU readline.
+  On MacOS X the :mod:`readline` module detects which library is being used
+  at run time.
 
   The configuration file for ``libedit`` is different from that
   of GNU readline. If you programmatically load configuration strings
@@ -25,64 +28,97 @@ interactive prompt  and the prompts offered by the :func:`raw_input` and
   to differentiate between GNU readline and libedit.
 
 
-The :mod:`readline` module defines the following functions:
+Init file
+---------
+
+The following functions relate to the init file and user configuration:
 
 
 .. function:: parse_and_bind(string)
 
-   Parse and execute single line of a readline init file.
-
-
-.. function:: get_line_buffer()
-
-   Return the current contents of the line buffer.
-
-
-.. function:: insert_text(string)
-
-   Insert text into the command line.
+   Execute the init line provided in the *string* argument. This calls
+   :c:func:`rl_parse_and_bind` in the underlying library.
 
 
 .. function:: read_init_file([filename])
 
-   Parse a readline initialization file. The default filename is the last filename
-   used.
+   Execute a readline initialization file. The default filename is the last filename
+   used. This calls :c:func:`rl_read_init_file` in the underlying library.
+
+
+Line buffer
+-----------
+
+The following functions operate on the line buffer:
+
+
+.. function:: get_line_buffer()
+
+   Return the current contents of the line buffer (:c:data:`rl_line_buffer`
+   in the underlying library).
+
+
+.. function:: insert_text(string)
+
+   Insert text into the line buffer at the cursor position.  This calls
+   :c:func:`rl_insert_text` in the underlying library, but ignores
+   the return value.
+
+
+.. function:: redisplay()
+
+   Change what's displayed on the screen to reflect the current contents of the
+   line buffer.  This calls :c:func:`rl_redisplay` in the underlying library.
+
+
+History file
+------------
+
+The following functions operate on a history file:
 
 
 .. function:: read_history_file([filename])
 
-   Load a readline history file. The default filename is :file:`~/.history`.
+   Load a readline history file, and append it to the history list.
+   The default filename is :file:`~/.history`.  This calls
+   :c:func:`read_history` in the underlying library.
 
 
 .. function:: write_history_file([filename])
 
-   Save a readline history file. The default filename is :file:`~/.history`.
+   Save the history list to a readline history file, overwriting any
+   existing file.  The default filename is :file:`~/.history`.  This calls
+   :c:func:`write_history` in the underlying library.
+
+
+.. function:: get_history_length()
+              set_history_length(length)
+
+   Set or return the desired number of lines to save in the history file.
+   The :func:`write_history_file` function uses this value to truncate
+   the history file, by calling :c:func:`history_truncate_file` in
+   the underlying library.  Negative values imply
+   unlimited history file size.
+
+
+History list
+------------
+
+The following functions operate on a global history list:
 
 
 .. function:: clear_history()
 
-   Clear the current history.  (Note: this function is not available if the
-   installed version of GNU readline doesn't support it.)
+   Clear the current history.  This calls :c:func:`clear_history` in the
+   underlying library.  The Python function only exists if Python was
+   compiled for a version of the library that supports it.
 
    .. versionadded:: 2.4
 
 
-.. function:: get_history_length()
-
-   Return the desired length of the history file.  Negative values imply unlimited
-   history file size.
-
-
-.. function:: set_history_length(length)
-
-   Set the number of lines to save in the history file. :func:`write_history_file`
-   uses this value to truncate the history file when saving.  Negative values imply
-   unlimited history file size.
-
-
 .. function:: get_current_history_length()
 
-   Return the number of lines currently in the history.  (This is different from
+   Return the number of items currently in the history.  (This is different from
    :func:`get_history_length`, which returns the maximum number of lines that will
    be written to a history file.)
 
@@ -91,7 +127,8 @@ The :mod:`readline` module defines the following functions:
 
 .. function:: get_history_item(index)
 
-   Return the current contents of history item at *index*.
+   Return the current contents of history item at *index*.  The item index
+   is one-based.  This calls :c:func:`history_get` in the underlying library.
 
    .. versionadded:: 2.3
 
@@ -99,40 +136,61 @@ The :mod:`readline` module defines the following functions:
 .. function:: remove_history_item(pos)
 
    Remove history item specified by its position from the history.
+   The position is zero-based.  This calls :c:func:`remove_history` in
+   the underlying library.
 
    .. versionadded:: 2.4
 
 
 .. function:: replace_history_item(pos, line)
 
-   Replace history item specified by its position with the given line.
+   Replace history item specified by its position with *line*.
+   The position is zero-based.  This calls :c:func:`replace_history_entry`
+   in the underlying library.
 
    .. versionadded:: 2.4
 
 
-.. function:: redisplay()
+.. function:: add_history(line)
 
-   Change what's displayed on the screen to reflect the current contents of the
-   line buffer.
+   Append *line* to the history buffer, as if it was the last line typed.
+   This calls :c:func:`add_history` in the underlying library.
+
+
+Startup hooks
+-------------
 
    .. versionadded:: 2.3
 
 
 .. function:: set_startup_hook([function])
 
-   Set or remove the startup_hook function.  If *function* is specified, it will be
-   used as the new startup_hook function; if omitted or ``None``, any hook function
-   already installed is removed.  The startup_hook function is called with no
+   Set or remove the function invoked by the :c:data:`rl_startup_hook`
+   callback of the underlying library.  If *function* is specified, it will
+   be used as the new hook function; if omitted or ``None``, any function
+   already installed is removed.  The hook is called with no
    arguments just before readline prints the first prompt.
 
 
 .. function:: set_pre_input_hook([function])
 
-   Set or remove the pre_input_hook function.  If *function* is specified, it will
-   be used as the new pre_input_hook function; if omitted or ``None``, any hook
-   function already installed is removed.  The pre_input_hook function is called
+   Set or remove the function invoked by the :c:data:`rl_pre_input_hook`
+   callback of the underlying library.  If *function* is specified, it will
+   be used as the new hook function; if omitted or ``None``, any
+   function already installed is removed.  The hook is called
    with no arguments after the first prompt has been printed and just before
    readline starts reading input characters.
+
+
+Completion
+----------
+
+The following functions relate to implementing a custom word completion
+function.  This is typically operated by the Tab key, and can suggest and
+automatically complete a word being typed.  By default, Readline is set up
+to be used by :mod:`rlcompleter` to complete Python identifiers for
+the interactive interpreter.  If the :mod:`readline` module is to be used
+with a custom completer, a different set of word delimiters should be set.
 
 
 .. function:: set_completer([function])
@@ -144,6 +202,12 @@ The :mod:`readline` module defines the following functions:
    returns a non-string value.  It should return the next possible completion
    starting with *text*.
 
+   The installed completer function is invoked by the *entry_func* callback
+   passed to :c:func:`rl_completion_matches` in the underlying library.
+   The *text* string comes from the first parameter to the
+   :c:data:`rl_attempted_completion_function` callback of the
+   underlying library.
+
 
 .. function:: get_completer()
 
@@ -154,49 +218,41 @@ The :mod:`readline` module defines the following functions:
 
 .. function:: get_completion_type()
 
-   Get the type of completion being attempted.
+   Get the type of completion being attempted.  This returns the
+   :c:data:`rl_completion_type` variable in the underlying library as
+   an integer.
 
    .. versionadded:: 2.6
 
 .. function:: get_begidx()
+              get_endidx()
 
-   Get the beginning index of the readline tab-completion scope.
-
-
-.. function:: get_endidx()
-
-   Get the ending index of the readline tab-completion scope.
+   Get the beginning or ending index of the completion scope.
+   These indexes are the *start* and *end* arguments passed to the
+   :c:data:`rl_attempted_completion_function` callback of the
+   underlying library.
 
 
 .. function:: set_completer_delims(string)
+              get_completer_delims()
 
-   Set the readline word delimiters for tab-completion.
-
-
-.. function:: get_completer_delims()
-
-   Get the readline word delimiters for tab-completion.
+   Set or get the word delimiters for completion.  These determine the
+   start of the word to be considered for completion (the completion scope).
+   These functions access the :c:data:`rl_completer_word_break_characters`
+   variable in the underlying library.
 
 .. function:: set_completion_display_matches_hook([function])
 
    Set or remove the completion display function.  If *function* is
    specified, it will be used as the new completion display function;
    if omitted or ``None``, any completion display function already
-   installed is removed.  The completion display function is called as
+   installed is removed.  This sets or clears the
+   :c:data:`rl_completion_display_matches_hook` callback in the
+   underlying library.  The completion display function is called as
    ``function(substitution, [matches], longest_match_length)`` once
    each time matches need to be displayed.
 
    .. versionadded:: 2.6
-
-.. function:: add_history(line)
-
-   Append a line to the history buffer, as if it was the last line typed.
-
-.. seealso::
-
-   Module :mod:`rlcompleter`
-      Completion of Python identifiers at the interactive prompt.
-
 
 .. _readline-example:
 

@@ -184,6 +184,13 @@ IDLE
   installing IDLE 2.7 on OS X: default configuration settings are
   no longer installed from OS X specific copies.
 
+Documentation
+-------------
+
+- Issue #6953: Rework the Readline module documentation to group related
+  functions together, and add more details such as what underlying Readline
+  functions and variables are accessed.
+
 Tests
 -----
 

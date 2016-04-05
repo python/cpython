@@ -96,7 +96,7 @@ parse_and_bind(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(doc_parse_and_bind,
 "parse_and_bind(string) -> None\n\
-Parse and execute single line of a readline init file.");
+Execute the init line provided in the string argument.");
 
 
 /* Exported function to parse a readline init file */
@@ -115,7 +115,7 @@ read_init_file(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(doc_read_init_file,
 "read_init_file([filename]) -> None\n\
-Parse a readline initialization file.\n\
+Execute a readline initialization file.\n\
 The default filename is the last filename used.");
 
 
@@ -176,7 +176,7 @@ set_history_length(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(set_history_length_doc,
 "set_history_length(length) -> None\n\
-set the maximal number of items which will be written to\n\
+set the maximal number of lines which will be written to\n\
 the history file. A negative length is used to inhibit\n\
 history truncation.");
 
@@ -191,7 +191,7 @@ get_history_length(PyObject *self, PyObject *noarg)
 
 PyDoc_STRVAR(get_history_length_doc,
 "get_history_length() -> int\n\
-return the maximum number of items that will be written to\n\
+return the maximum number of lines that will be written to\n\
 the history file.");
 
 
@@ -269,7 +269,7 @@ set_startup_hook(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(doc_set_startup_hook,
 "set_startup_hook([function]) -> None\n\
-Set or remove the startup_hook function.\n\
+Set or remove the function invoked by the rl_startup_hook callback.\n\
 The function is called with no arguments just\n\
 before readline prints the first prompt.");
 
@@ -286,7 +286,7 @@ set_pre_input_hook(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(doc_set_pre_input_hook,
 "set_pre_input_hook([function]) -> None\n\
-Set or remove the pre_input_hook function.\n\
+Set or remove the function invoked by the rl_pre_input_hook callback.\n\
 The function is called with no arguments after the first prompt\n\
 has been printed and just before readline starts reading input\n\
 characters.");
@@ -325,7 +325,7 @@ get_begidx(PyObject *self, PyObject *noarg)
 
 PyDoc_STRVAR(doc_get_begidx,
 "get_begidx() -> int\n\
-get the beginning index of the readline tab-completion scope");
+get the beginning index of the completion scope");
 
 
 /* Get the ending index for the scope of the tab-completion */
@@ -339,7 +339,7 @@ get_endidx(PyObject *self, PyObject *noarg)
 
 PyDoc_STRVAR(doc_get_endidx,
 "get_endidx() -> int\n\
-get the ending index of the readline tab-completion scope");
+get the ending index of the completion scope");
 
 
 /* Set the tab-completion word-delimiters that readline uses */
@@ -368,7 +368,7 @@ set_completer_delims(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(doc_set_completer_delims,
 "set_completer_delims(string) -> None\n\
-set the readline word delimiters for tab-completion");
+set the word delimiters for completion");
 
 /* _py_free_history_entry: Utility function to free a history entry. */
 
@@ -408,7 +408,7 @@ py_remove_history(PyObject *self, PyObject *args)
     int entry_number;
     HIST_ENTRY *entry;
 
-    if (!PyArg_ParseTuple(args, "i:remove_history", &entry_number))
+    if (!PyArg_ParseTuple(args, "i:remove_history_item", &entry_number))
         return NULL;
     if (entry_number < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -438,7 +438,7 @@ py_replace_history(PyObject *self, PyObject *args)
     char *line;
     HIST_ENTRY *old_entry;
 
-    if (!PyArg_ParseTuple(args, "is:replace_history", &entry_number,
+    if (!PyArg_ParseTuple(args, "is:replace_history_item", &entry_number,
                           &line)) {
         return NULL;
     }
@@ -479,7 +479,7 @@ py_add_history(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(doc_add_history,
 "add_history(string) -> None\n\
-add a line to the history buffer");
+add an item to the history buffer");
 
 
 /* Get the tab-completion word-delimiters that readline uses */
@@ -492,7 +492,7 @@ get_completer_delims(PyObject *self, PyObject *noarg)
 
 PyDoc_STRVAR(doc_get_completer_delims,
 "get_completer_delims() -> string\n\
-get the readline word delimiters for tab-completion");
+get the word delimiters for completion");
 
 
 /* Set the completer function */
@@ -553,7 +553,7 @@ get_history_item(PyObject *self, PyObject *args)
     int idx = 0;
     HIST_ENTRY *hist_ent;
 
-    if (!PyArg_ParseTuple(args, "i:index", &idx))
+    if (!PyArg_ParseTuple(args, "i:get_history_item", &idx))
         return NULL;
 #ifdef  __APPLE__
     if (using_libedit_emulation) {
@@ -645,7 +645,7 @@ insert_text(PyObject *self, PyObject *args)
 
 PyDoc_STRVAR(doc_insert_text,
 "insert_text(string) -> None\n\
-Insert text into the command line.");
+Insert text into the line buffer at the cursor position.");
 
 
 /* Redisplay the line buffer */
