@@ -1204,7 +1204,7 @@ class HTTPConnection:
 
         If the HTTPConnection is in the correct state, returns an
         instance of HTTPResponse or of whatever object is returned by
-        class the response_class variable.
+        the response_class variable.
 
         If a request has not been sent or if a previous response has
         not be handled, ResponseNotReady is raised.  If the HTTP

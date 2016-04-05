@@ -2406,7 +2406,7 @@ Library
 Build
 -----
 
-- Issue #23817: FreeBSD now uses "1.0" the the SOVERSION as other operating
+- Issue #23817: FreeBSD now uses "1.0" in the SOVERSION as other operating
   systems, instead of just "1".
 
 - Issue #23501: Argument Clinic now generates code into separate files by default.
@@ -7420,7 +7420,7 @@ Library
   Thomas Barlow.
 
 - Issue #17358: Modules loaded by imp.load_source() and load_compiled() (and by
-  extention load_module()) now have a better chance of working when reloaded.
+  extension load_module()) now have a better chance of working when reloaded.
 
 - Issue #17804: New function ``struct.iter_unpack`` allows for streaming
   struct unpacking.
@@ -8103,7 +8103,7 @@ Library
 - Issue #16284: Prevent keeping unnecessary references to worker functions
   in concurrent.futures ThreadPoolExecutor.
 
-- Issue #16230: Fix a crash in select.select() when one the lists changes
+- Issue #16230: Fix a crash in select.select() when one of the lists changes
   size while iterated on.  Patch by Serhiy Storchaka.
 
 - Issue #16228: Fix a crash in the json module where a list changes size
