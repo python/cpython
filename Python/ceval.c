@@ -3229,7 +3229,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 Py_INCREF(self);
                 func = PyMethod_GET_FUNCTION(func);
                 Py_INCREF(func);
-                Py_SETREF(*pfunc, self);
+                Py_XSETREF(*pfunc, self);
                 na++;
                 /* n++; */
             } else
@@ -4426,7 +4426,7 @@ _PyEval_SetCoroutineWrapper(PyObject *wrapper)
     PyThreadState *tstate = PyThreadState_GET();
 
     Py_XINCREF(wrapper);
-    Py_SETREF(tstate->coroutine_wrapper, wrapper);
+    Py_XSETREF(tstate->coroutine_wrapper, wrapper);
 }
 
 PyObject *
@@ -4682,7 +4682,7 @@ call_function(PyObject ***pp_stack, int oparg
             Py_INCREF(self);
             func = PyMethod_GET_FUNCTION(func);
             Py_INCREF(func);
-            Py_SETREF(*pfunc, self);
+            Py_XSETREF(*pfunc, self);
             na++;
             n++;
         } else

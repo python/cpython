@@ -391,7 +391,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         Py_DECREF((PyObject *)dict);
         return NULL;
     }
-    Py_SETREF(result->tp_dict, (PyObject *)dict);
+    Py_XSETREF(result->tp_dict, (PyObject *)dict);
     dict->format = _ctypes_alloc_format_string(NULL, "B");
     if (dict->format == NULL) {
         Py_DECREF(result);
@@ -870,7 +870,7 @@ PyCPointerType_SetProto(StgDictObject *stgdict, PyObject *proto)
         return -1;
     }
     Py_INCREF(proto);
-    Py_SETREF(stgdict->proto, proto);
+    Py_XSETREF(stgdict->proto, proto);
     return 0;
 }
 
@@ -960,7 +960,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -1403,7 +1403,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* replace the class dict by our updated spam dict */
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict))
         goto error;
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);  /* steal the reference */
+    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);  /* steal the reference */
     stgdict = NULL;
 
     /* Special case for character arrays.
@@ -1816,7 +1816,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -1944,7 +1944,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
 
     /* Install from_param class methods in ctypes base classes.
        Overrides the PyCSimpleType_from_param generic method.
@@ -2307,7 +2307,7 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
 
     if (-1 == make_funcptrtype_dict(stgdict)) {
         Py_DECREF(result);
@@ -2451,7 +2451,7 @@ KeepRef(CDataObject *target, Py_ssize_t index, PyObject *keep)
         return -1;
     }
     if (ob->b_objects == NULL || !PyDict_CheckExact(ob->b_objects)) {
-        Py_SETREF(ob->b_objects, keep); /* refcount consumed */
+        Py_XSETREF(ob->b_objects, keep); /* refcount consumed */
         return 0;
     }
     key = unique_key(target, index);
@@ -2955,7 +2955,7 @@ PyCFuncPtr_set_errcheck(PyCFuncPtrObject *self, PyObject *ob)
         return -1;
     }
     Py_XINCREF(ob);
-    Py_SETREF(self->errcheck, ob);
+    Py_XSETREF(self->errcheck, ob);
     return 0;
 }
 
@@ -2984,8 +2984,8 @@ PyCFuncPtr_set_restype(PyCFuncPtrObject *self, PyObject *ob)
         return -1;
     }
     Py_INCREF(ob);
-    Py_SETREF(self->restype, ob);
-    Py_SETREF(self->checker, PyObject_GetAttrString(ob, "_check_retval_"));
+    Py_XSETREF(self->restype, ob);
+    Py_XSETREF(self->checker, PyObject_GetAttrString(ob, "_check_retval_"));
     if (self->checker == NULL)
         PyErr_Clear();
     return 0;
@@ -3022,9 +3022,9 @@ PyCFuncPtr_set_argtypes(PyCFuncPtrObject *self, PyObject *ob)
         converters = converters_from_argtypes(ob);
         if (!converters)
             return -1;
-        Py_SETREF(self->converters, converters);
+        Py_XSETREF(self->converters, converters);
         Py_INCREF(ob);
-        Py_SETREF(self->argtypes, ob);
+        Py_XSETREF(self->argtypes, ob);
     }
     return 0;
 }
@@ -5152,7 +5152,7 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     bself = (PyBaseExceptionObject *)self;
     Py_INCREF(args);
-    Py_SETREF(bself->args, args);
+    Py_XSETREF(bself->args, args);
 
     return 0;
 }
