@@ -778,7 +778,7 @@ profiler_init(ProfilerObject *pObj, PyObject *args, PyObject *kw)
         return -1;
     pObj->externalTimerUnit = timeunit;
     Py_XINCREF(timer);
-    Py_SETREF(pObj->externalTimer, timer);
+    Py_XSETREF(pObj->externalTimer, timer);
     return 0;
 }
 

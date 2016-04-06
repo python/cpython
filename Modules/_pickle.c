@@ -869,7 +869,7 @@ PyMemoTable_Set(PyMemoTable *self, PyObject *key, Py_ssize_t value)
 static int
 _Pickler_ClearBuffer(PicklerObject *self)
 {
-    Py_SETREF(self->output_buffer,
+    Py_XSETREF(self->output_buffer,
               PyBytes_FromStringAndSize(NULL, self->max_output_len));
     if (self->output_buffer == NULL)
         return -1;
@@ -3116,7 +3116,7 @@ fix_imports(PyObject **module_name, PyObject **global_name)
             return -1;
         }
         Py_INCREF(item);
-        Py_SETREF(*module_name, item);
+        Py_XSETREF(*module_name, item);
     }
     else if (PyErr_Occurred()) {
         return -1;
@@ -4506,7 +4506,7 @@ Pickler_set_persid(PicklerObject *self, PyObject *value)
     }
 
     Py_INCREF(value);
-    Py_SETREF(self->pers_func, value);
+    Py_XSETREF(self->pers_func, value);
 
     return 0;
 }
@@ -6955,7 +6955,7 @@ Unpickler_set_persload(UnpicklerObject *self, PyObject *value)
     }
 
     Py_INCREF(value);
-    Py_SETREF(self->pers_func, value);
+    Py_XSETREF(self->pers_func, value);
 
     return 0;
 }

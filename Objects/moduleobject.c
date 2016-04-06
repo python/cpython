@@ -69,7 +69,7 @@ module_init_dict(PyModuleObject *mod, PyObject *md_dict,
         return -1;
     if (PyUnicode_CheckExact(name)) {
         Py_INCREF(name);
-        Py_SETREF(mod->md_name, name);
+        Py_XSETREF(mod->md_name, name);
     }
 
     return 0;

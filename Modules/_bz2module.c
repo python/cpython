@@ -540,7 +540,7 @@ decompress(BZ2Decompressor *d, char *data, size_t len, Py_ssize_t max_length)
     if (d->eof) {
         d->needs_input = 0;
         if (d->bzs_avail_in_real > 0) {
-            Py_SETREF(d->unused_data,
+            Py_XSETREF(d->unused_data,
                       PyBytes_FromStringAndSize(bzs->next_in, d->bzs_avail_in_real));
             if (d->unused_data == NULL)
                 goto error;

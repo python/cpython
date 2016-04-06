@@ -1058,7 +1058,7 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     /* Offset is normalized, so it is negative if days < 0 */
     if (GET_TD_DAYS(offset) < 0) {
         sign = '-';
-        Py_SETREF(offset, delta_negative((PyDateTime_Delta *)offset));
+        Py_XSETREF(offset, delta_negative((PyDateTime_Delta *)offset));
         if (offset == NULL)
             return -1;
     }
@@ -3045,7 +3045,7 @@ tzinfo_fromutc(PyDateTime_TZInfo *self, PyObject *dt)
     if (dst == Py_None)
         goto Inconsistent;
     if (delta_bool((PyDateTime_Delta *)dst) != 0) {
-        Py_SETREF(result, add_datetime_timedelta((PyDateTime_DateTime *)result,
+        Py_XSETREF(result, add_datetime_timedelta((PyDateTime_DateTime *)result,
                                                  (PyDateTime_Delta *)dst, 1));
         if (result == NULL)
             goto Fail;
@@ -4445,7 +4445,7 @@ datetime_subtract(PyObject *left, PyObject *right)
                 return NULL;
 
             if (offdiff != NULL) {
-                Py_SETREF(result, delta_subtract(result, offdiff));
+                Py_XSETREF(result, delta_subtract(result, offdiff));
                 Py_DECREF(offdiff);
             }
         }

@@ -353,7 +353,7 @@ frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
     f->f_lineno = PyFrame_GetLineNumber(f);
 
     Py_XINCREF(v);
-    Py_SETREF(f->f_trace, v);
+    Py_XSETREF(f->f_trace, v);
 
     return 0;
 }
@@ -853,7 +853,7 @@ dict_to_map(PyObject *map, Py_ssize_t nmap, PyObject *dict, PyObject **values,
             }
         } else if (values[j] != value) {
             Py_XINCREF(value);
-            Py_SETREF(values[j], value);
+            Py_XSETREF(values[j], value);
         }
         Py_XDECREF(value);
     }

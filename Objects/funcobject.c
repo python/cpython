@@ -127,7 +127,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
-    Py_SETREF(((PyFunctionObject *)op)->func_defaults, defaults);
+    Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
 }
 
@@ -158,7 +158,7 @@ PyFunction_SetKwDefaults(PyObject *op, PyObject *defaults)
                         "non-dict keyword only default args");
         return -1;
     }
-    Py_SETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
+    Py_XSETREF(((PyFunctionObject *)op)->func_kwdefaults, defaults);
     return 0;
 }
 
@@ -190,7 +190,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      closure->ob_type->tp_name);
         return -1;
     }
-    Py_SETREF(((PyFunctionObject *)op)->func_closure, closure);
+    Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
     return 0;
 }
 
@@ -221,7 +221,7 @@ PyFunction_SetAnnotations(PyObject *op, PyObject *annotations)
                         "non-dict annotations");
         return -1;
     }
-    Py_SETREF(((PyFunctionObject *)op)->func_annotations, annotations);
+    Py_XSETREF(((PyFunctionObject *)op)->func_annotations, annotations);
     return 0;
 }
 
@@ -270,7 +270,7 @@ func_set_code(PyFunctionObject *op, PyObject *value)
         return -1;
     }
     Py_INCREF(value);
-    Py_SETREF(op->func_code, value);
+    Py_XSETREF(op->func_code, value);
     return 0;
 }
 
@@ -292,7 +292,7 @@ func_set_name(PyFunctionObject *op, PyObject *value)
         return -1;
     }
     Py_INCREF(value);
-    Py_SETREF(op->func_name, value);
+    Py_XSETREF(op->func_name, value);
     return 0;
 }
 
@@ -314,7 +314,7 @@ func_set_qualname(PyFunctionObject *op, PyObject *value)
         return -1;
     }
     Py_INCREF(value);
-    Py_SETREF(op->func_qualname, value);
+    Py_XSETREF(op->func_qualname, value);
     return 0;
 }
 
@@ -342,7 +342,7 @@ func_set_defaults(PyFunctionObject *op, PyObject *value)
         return -1;
     }
     Py_XINCREF(value);
-    Py_SETREF(op->func_defaults, value);
+    Py_XSETREF(op->func_defaults, value);
     return 0;
 }
 
@@ -370,7 +370,7 @@ func_set_kwdefaults(PyFunctionObject *op, PyObject *value)
         return -1;
     }
     Py_XINCREF(value);
-    Py_SETREF(op->func_kwdefaults, value);
+    Py_XSETREF(op->func_kwdefaults, value);
     return 0;
 }
 
@@ -400,7 +400,7 @@ func_set_annotations(PyFunctionObject *op, PyObject *value)
         return -1;
     }
     Py_XINCREF(value);
-    Py_SETREF(op->func_annotations, value);
+    Py_XSETREF(op->func_annotations, value);
     return 0;
 }
 
@@ -504,7 +504,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 
     if (name != Py_None) {
         Py_INCREF(name);
-        Py_SETREF(newfunc->func_name, name);
+        Py_XSETREF(newfunc->func_name, name);
     }
     if (defaults != Py_None) {
         Py_INCREF(defaults);
