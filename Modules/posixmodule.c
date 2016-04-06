@@ -669,21 +669,20 @@ _Py_Dev_Converter(PyObject *obj, void *p)
 #endif
 
 static int
-_fd_converter(PyObject *o, int *p, const char *allowed)
+_fd_converter(PyObject *o, int *p)
 {
     int overflow;
     long long_value;
 
     PyObject *index = PyNumber_Index(o);
     if (index == NULL) {
-        PyErr_Format(PyExc_TypeError,
-                     "argument should be %s, not %.200s",
-                     allowed, Py_TYPE(o)->tp_name);
         return 0;
     }
 
+    assert(PyLong_Check(index));
     long_value = PyLong_AsLongAndOverflow(index, &overflow);
     Py_DECREF(index);
+    assert(!PyErr_Occurred());
     if (overflow > 0 || long_value > INT_MAX) {
         PyErr_SetString(PyExc_OverflowError,
                         "fd is greater than maximum");
@@ -706,7 +705,15 @@ dir_fd_converter(PyObject *o, void *p)
         *(int *)p = DEFAULT_DIR_FD;
         return 1;
     }
-    return _fd_converter(o, (int *)p, "integer");
+    else if (PyIndex_Check(o)) {
+        return _fd_converter(o, (int *)p);
+    }
+    else {
+        PyErr_Format(PyExc_TypeError,
+                     "argument should be integer or None, not %.200s",
+                     Py_TYPE(o)->tp_name);
+        return 0;
+    }
 }
 
 
@@ -816,9 +823,10 @@ path_cleanup(path_t *path) {
 }
 
 static int
-path_converter(PyObject *o, void *p) {
+path_converter(PyObject *o, void *p)
+{
     path_t *path = (path_t *)p;
-    PyObject *unicode, *bytes;
+    PyObject *bytes;
     Py_ssize_t length;
     char *narrow;
 
@@ -837,12 +845,7 @@ path_converter(PyObject *o, void *p) {
     /* ensure it's always safe to call path_cleanup() */
     path->cleanup = NULL;
 
-    if (o == Py_None) {
-        if (!path->nullable) {
-            FORMAT_EXCEPTION(PyExc_TypeError,
-                             "can't specify None for %s argument");
-            return 0;
-        }
+    if ((o == Py_None) && path->nullable) {
         path->wide = NULL;
         path->narrow = NULL;
         path->length = 0;
@@ -851,24 +854,20 @@ path_converter(PyObject *o, void *p) {
         return 1;
     }
 
-    unicode = PyUnicode_FromObject(o);
-    if (unicode) {
+    if (PyUnicode_Check(o)) {
 #ifdef MS_WINDOWS
         wchar_t *wide;
 
-        wide = PyUnicode_AsUnicodeAndSize(unicode, &length);
+        wide = PyUnicode_AsUnicodeAndSize(o, &length);
         if (!wide) {
-            Py_DECREF(unicode);
             return 0;
         }
         if (length > 32767) {
             FORMAT_EXCEPTION(PyExc_ValueError, "%s too long for Windows");
-            Py_DECREF(unicode);
             return 0;
         }
         if (wcslen(wide) != length) {
-            FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character");
-            Py_DECREF(unicode);
+            FORMAT_EXCEPTION(PyExc_ValueError, "embedded null character in %s");
             return 0;
         }
 
@@ -877,51 +876,46 @@ path_converter(PyObject *o, void *p) {
         path->length = length;
         path->object = o;
         path->fd = -1;
-        path->cleanup = unicode;
-        return Py_CLEANUP_SUPPORTED;
+        return 1;
 #else
-        int converted = PyUnicode_FSConverter(unicode, &bytes);
-        Py_DECREF(unicode);
-        if (!converted)
-            bytes = NULL;
+        if (!PyUnicode_FSConverter(o, &bytes)) {
+            return 0;
+        }
 #endif
     }
-    else {
-        PyErr_Clear();
-        if (PyObject_CheckBuffer(o))
-            bytes = PyBytes_FromObject(o);
-        else
-            bytes = NULL;
+    else if (PyObject_CheckBuffer(o)) {
+#  ifdef MS_WINDOWS
+        if (win32_warn_bytes_api()) {
+            return 0;
+        }
+#  endif
+        bytes = PyBytes_FromObject(o);
         if (!bytes) {
-            PyErr_Clear();
-            if (path->allow_fd) {
-                int fd;
-                int result = _fd_converter(o, &fd,
-                        "string, bytes or integer");
-                if (result) {
-                    path->wide = NULL;
-                    path->narrow = NULL;
-                    path->length = 0;
-                    path->object = o;
-                    path->fd = fd;
-                    return result;
-                }
-            }
+            return 0;
         }
     }
-
-    if (!bytes) {
-        if (!PyErr_Occurred())
-            FORMAT_EXCEPTION(PyExc_TypeError, "illegal type for %s parameter");
+    else if (path->allow_fd && PyIndex_Check(o)) {
+        if (!_fd_converter(o, &path->fd)) {
+            return 0;
+        }
+        path->wide = NULL;
+        path->narrow = NULL;
+        path->length = 0;
+        path->object = o;
+        return 1;
+    }
+    else {
+        PyErr_Format(PyExc_TypeError, "%s%s%s should be %s, not %.200s",
+            path->function_name ? path->function_name : "",
+            path->function_name ? ": "                : "",
+            path->argument_name ? path->argument_name : "path",
+            path->allow_fd && path->nullable ? "string, bytes, integer or None" :
+            path->allow_fd ? "string, bytes or integer" :
+            path->nullable ? "string, bytes or None" :
+                             "string or bytes",
+            Py_TYPE(o)->tp_name);
         return 0;
     }
-
-#ifdef MS_WINDOWS
-    if (win32_warn_bytes_api()) {
-        Py_DECREF(bytes);
-        return 0;
-    }
-#endif
 
     length = PyBytes_GET_SIZE(bytes);
 #ifdef MS_WINDOWS
