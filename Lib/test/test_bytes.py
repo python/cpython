@@ -1,8 +1,7 @@
 """Unit tests for the bytes and bytearray types.
 
-XXX This is a mess.  Common tests should be moved to buffer_tests.py,
-which itself ought to be unified with string_tests.py (and the latter
-should be modernized).
+XXX This is a mess.  Common tests should be unified with string_tests.py (and
+the latter should be modernized).
 """
 
 import os
@@ -15,7 +14,6 @@ import tempfile
 import unittest
 import test.test_support
 import test.string_tests
-import test.buffer_tests
 
 
 if sys.flags.bytes_warning:
@@ -1030,8 +1028,7 @@ class AssortedBytesTest(unittest.TestCase):
     # the rest that make sense (the code can be cleaned up to use modern
     # unittest methods at the same time).
 
-class BytearrayPEP3137Test(unittest.TestCase,
-                       test.buffer_tests.MixinBytesBufferCommonTests):
+class BytearrayPEP3137Test(unittest.TestCase):
     def marshal(self, x):
         return bytearray(x)
 
@@ -1053,12 +1050,10 @@ class BytearrayPEP3137Test(unittest.TestCase,
             self.assertTrue(val is not newval,
                             expr+' returned val on a mutable object')
 
-class FixedStringTest(test.string_tests.BaseTest):
 
-    def fixtype(self, obj):
-        if isinstance(obj, str):
-            return obj.encode("utf-8")
-        return super(FixedStringTest, self).fixtype(obj)
+class ByteArrayAsStringTest(test.string_tests.CommonTest,
+        test.string_tests.NonStringModuleTest):
+    type2test = bytearray
 
     # Currently the bytes containment testing uses a single integer
     # value. This may not be the final design, but until then the
@@ -1074,10 +1069,6 @@ class FixedStringTest(test.string_tests.BaseTest):
     def test_hash(self):
         # XXX check this out
         pass
-
-
-class ByteArrayAsStringTest(FixedStringTest):
-    type2test = bytearray
 
 
 class ByteArraySubclass(bytearray):
@@ -1160,7 +1151,6 @@ class ByteArraySubclassTest(unittest.TestCase):
 def test_main():
     #test.test_support.run_unittest(BytesTest)
     #test.test_support.run_unittest(AssortedBytesTest)
-    #test.test_support.run_unittest(BytesAsStringTest)
     test.test_support.run_unittest(
         ByteArrayTest,
         ByteArrayAsStringTest,

@@ -45,6 +45,9 @@ class CommonTest(unittest.TestCase):
         else:
             return obj
 
+    def test_fixtype(self):
+        self.assertIs(type(self.fixtype("123")), self.type2test)
+
     # check that object.method(*args) returns result
     def checkequal(self, result, object, methodname, *args):
         result = self.fixtype(result)
@@ -404,7 +407,9 @@ class CommonTest(unittest.TestCase):
                         'split', 'BLAH', 18)
 
         # mixed use of str and unicode
-        self.checkequal([u'a', u'b', u'c d'], 'a b c d', 'split', u' ', 2)
+        if self.type2test is not bytearray:
+            result = [u'a', u'b', u'c d']
+            self.checkequal(result, 'a b c d', 'split', u' ', 2)
 
         # argument type
         self.checkraises(TypeError, 'hello', 'split', 42, 42, 42)
@@ -494,7 +499,9 @@ class CommonTest(unittest.TestCase):
                         'rsplit', 'BLAH', 18)
 
         # mixed use of str and unicode
-        self.checkequal([u'a b', u'c', u'd'], 'a b c d', 'rsplit', u' ', 2)
+        if self.type2test is not bytearray:
+            result = [u'a b', u'c', u'd']
+            self.checkequal(result, 'a b c d', 'rsplit', u' ', 2)
 
         # argument type
         self.checkraises(TypeError, 'hello', 'rsplit', 42, 42, 42)
@@ -522,7 +529,7 @@ class CommonTest(unittest.TestCase):
         self.checkequal('hello', 'hello', 'strip', 'xyz')
 
         # strip/lstrip/rstrip with unicode arg
-        if test_support.have_unicode:
+        if self.type2test is not bytearray and test_support.have_unicode:
             self.checkequal(unicode('hello', 'ascii'), 'xyzzyhelloxyzzy',
                  'strip', unicode('xyz', 'ascii'))
             self.checkequal(unicode('helloxyzzy', 'ascii'), 'xyzzyhelloxyzzy',
@@ -542,7 +549,11 @@ class CommonTest(unittest.TestCase):
         self.checkequal('abc   ', 'abc', 'ljust', 6)
         self.checkequal('abc', 'abc', 'ljust', 3)
         self.checkequal('abc', 'abc', 'ljust', 2)
-        self.checkequal('abc*******', 'abc', 'ljust', 10, '*')
+        if self.type2test is bytearray:
+            # Special case because bytearray argument is not accepted
+            self.assertEqual(b'abc*******', bytearray(b'abc').ljust(10, '*'))
+        else:
+            self.checkequal('abc*******', 'abc', 'ljust', 10, '*')
         self.checkraises(TypeError, 'abc', 'ljust')
 
     def test_rjust(self):
@@ -550,7 +561,11 @@ class CommonTest(unittest.TestCase):
         self.checkequal('   abc', 'abc', 'rjust', 6)
         self.checkequal('abc', 'abc', 'rjust', 3)
         self.checkequal('abc', 'abc', 'rjust', 2)
-        self.checkequal('*******abc', 'abc', 'rjust', 10, '*')
+        if self.type2test is bytearray:
+            # Special case because bytearray argument is not accepted
+            self.assertEqual(b'*******abc', bytearray(b'abc').rjust(10, '*'))
+        else:
+            self.checkequal('*******abc', 'abc', 'rjust', 10, '*')
         self.checkraises(TypeError, 'abc', 'rjust')
 
     def test_center(self):
@@ -558,7 +573,12 @@ class CommonTest(unittest.TestCase):
         self.checkequal(' abc  ', 'abc', 'center', 6)
         self.checkequal('abc', 'abc', 'center', 3)
         self.checkequal('abc', 'abc', 'center', 2)
-        self.checkequal('***abc****', 'abc', 'center', 10, '*')
+        if self.type2test is bytearray:
+            # Special case because bytearray argument is not accepted
+            result = bytearray(b'abc').center(10, '*')
+            self.assertEqual(b'***abc****', result)
+        else:
+            self.checkequal('***abc****', 'abc', 'center', 10, '*')
         self.checkraises(TypeError, 'abc', 'center')
 
     def test_swapcase(self):
@@ -772,13 +792,10 @@ class CommonTest(unittest.TestCase):
 
         self.checkraises(TypeError, '123', 'zfill')
 
-# XXX alias for py3k forward compatibility
-BaseTest = CommonTest
 
-class MixinStrUnicodeUserStringTest:
-    # additional tests that only work for
-    # stringlike objects, i.e. str, unicode, UserString
-    # (but not the string module)
+class NonStringModuleTest:
+    # additional test cases for all string classes from bytearray to
+    # UserString, but not valid for the "string" module
 
     def test_islower(self):
         self.checkequal(False, '', 'islower')
@@ -874,6 +891,12 @@ class MixinStrUnicodeUserStringTest:
         self.checkequal(['\n', 'abc\n', 'def\r\n', 'ghi\n', '\r'], "\nabc\ndef\r\nghi\n\r", 'splitlines', 1)
 
         self.checkraises(TypeError, 'abc', 'splitlines', 42, 42)
+
+
+class MixinStrUnicodeUserStringTest(NonStringModuleTest):
+    # additional tests that only work for
+    # stringlike objects, i.e. str, unicode, UserString
+    # (but not the string module)
 
     def test_startswith(self):
         self.checkequal(True, 'hello', 'startswith', 'he')
