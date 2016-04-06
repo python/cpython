@@ -39,7 +39,6 @@
     <RootNamespace>python3dll</RootNamespace>
     <Keyword>Win32Proj</Keyword>
     <TargetName>python3</TargetName>
-    <MakeVersionInfoBeforeTarget>ClCompile</MakeVersionInfoBeforeTarget>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />

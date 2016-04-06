@@ -38,7 +38,6 @@
     <ProjectGuid>{1D4B18D3-7C12-4ECB-9179-8531FF876CE6}</ProjectGuid>
     <RootNamespace>pywlauncher</RootNamespace>
     <TargetName>pyw</TargetName>
-    <MakeVersionInfoBeforeTarget>ClCompile</MakeVersionInfoBeforeTarget>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />

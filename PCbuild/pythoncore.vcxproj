@@ -48,7 +48,6 @@
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
   <PropertyGroup>
-    <MakeVersionInfoBeforeTarget>ClCompile</MakeVersionInfoBeforeTarget>
     <KillPython>true</KillPython>
   </PropertyGroup>
   <ImportGroup Label="PropertySheets">

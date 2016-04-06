@@ -38,7 +38,6 @@
     <ProjectGuid>{7B2727B5-5A3F-40EE-A866-43A13CD31446}</ProjectGuid>
     <RootNamespace>pylauncher</RootNamespace>
     <TargetName>py</TargetName>
-    <MakeVersionInfoBeforeTarget>ClCompile</MakeVersionInfoBeforeTarget>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="python.props" />
