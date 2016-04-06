@@ -884,11 +884,11 @@ path_converter(PyObject *o, void *p)
 #endif
     }
     else if (PyObject_CheckBuffer(o)) {
-#  ifdef MS_WINDOWS
+#ifdef MS_WINDOWS
         if (win32_warn_bytes_api()) {
             return 0;
         }
-#  endif
+#endif
         bytes = PyBytes_FromObject(o);
         if (!bytes) {
             return 0;
@@ -905,6 +905,30 @@ path_converter(PyObject *o, void *p)
         return 1;
     }
     else {
+        PyObject *pathattr;
+        _Py_IDENTIFIER(path);
+
+        pathattr = _PyObject_GetAttrId(o, &PyId_path);
+        if (pathattr == NULL) {
+            PyErr_Clear();
+        }
+        else if (PyUnicode_Check(pathattr) || PyObject_CheckBuffer(pathattr)) {
+            if (!path_converter(pathattr, path)) {
+                Py_DECREF(pathattr);
+                return 0;
+            }
+            if (path->cleanup == NULL) {
+                path->cleanup = pathattr;
+            }
+            else {
+                Py_DECREF(pathattr);
+            }
+            return Py_CLEANUP_SUPPORTED;
+        }
+        else {
+            Py_DECREF(pathattr);
+        }
+
         PyErr_Format(PyExc_TypeError, "%s%s%s should be %s, not %.200s",
             path->function_name ? path->function_name : "",
             path->function_name ? ": "                : "",
