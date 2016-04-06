@@ -37,7 +37,6 @@
   <PropertyGroup Label="Globals">
     <ProjectGuid>{EB1C19C1-1F18-421E-9735-CAEE69DC6A3C}</ProjectGuid>
     <RootNamespace>wininst</RootNamespace>
-    <MakeVersionInfoBeforeTarget>ClCompile</MakeVersionInfoBeforeTarget>
     <SupportPGO>false</SupportPGO>
   </PropertyGroup>
   <Import Project="..\..\PCBuild\python.props" />
