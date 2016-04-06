@@ -884,11 +884,11 @@ path_converter(PyObject *o, void *p)
 #endif
     }
     else if (PyObject_CheckBuffer(o)) {
-#  ifdef MS_WINDOWS
+#ifdef MS_WINDOWS
         if (win32_warn_bytes_api()) {
             return 0;
         }
-#  endif
+#endif
         bytes = PyBytes_FromObject(o);
         if (!bytes) {
             return 0;
