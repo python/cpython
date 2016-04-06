@@ -1196,7 +1196,7 @@ found:
         Py_CLEAR(res);
         goto end;
     }
-    Py_SETREF(res, _PyBytes_Join(_PyIO_empty_bytes, chunks));
+    Py_XSETREF(res, _PyBytes_Join(_PyIO_empty_bytes, chunks));
 
 end:
     LEAVE_BUFFERED(self)
@@ -1452,7 +1452,7 @@ _io_BufferedReader___init___impl(buffered *self, PyObject *raw,
         return -1;
 
     Py_INCREF(raw);
-    Py_SETREF(self->raw, raw);
+    Py_XSETREF(self->raw, raw);
     self->buffer_size = buffer_size;
     self->readable = 1;
     self->writable = 0;
@@ -1804,7 +1804,7 @@ _io_BufferedWriter___init___impl(buffered *self, PyObject *raw,
         return -1;
 
     Py_INCREF(raw);
-    Py_SETREF(self->raw, raw);
+    Py_XSETREF(self->raw, raw);
     self->readable = 0;
     self->writable = 1;
 
@@ -2307,7 +2307,7 @@ _io_BufferedRandom___init___impl(buffered *self, PyObject *raw,
         return -1;
 
     Py_INCREF(raw);
-    Py_SETREF(self->raw, raw);
+    Py_XSETREF(self->raw, raw);
     self->buffer_size = buffer_size;
     self->readable = 1;
     self->writable = 1;
