@@ -316,7 +316,7 @@ assign_version_tag(PyTypeObject *type)
         for (i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
             method_cache[i].value = NULL;
             Py_INCREF(Py_None);
-            Py_SETREF(method_cache[i].name, Py_None);
+            Py_XSETREF(method_cache[i].name, Py_None);
         }
         /* mark all version tags as invalid */
         PyType_Modified(&PyBaseObject_Type);
@@ -424,7 +424,7 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 
     type->tp_name = tp_name;
     Py_INCREF(value);
-    Py_SETREF(((PyHeapTypeObject*)type)->ht_name, value);
+    Py_XSETREF(((PyHeapTypeObject*)type)->ht_name, value);
 
     return 0;
 }
@@ -445,7 +445,7 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 
     et = (PyHeapTypeObject*)type;
     Py_INCREF(value);
-    Py_SETREF(et->ht_qualname, value);
+    Py_XSETREF(et->ht_qualname, value);
     return 0;
 }
 
@@ -2124,7 +2124,7 @@ subtype_setdict(PyObject *obj, PyObject *value, void *context)
         return -1;
     }
     Py_XINCREF(value);
-    Py_SETREF(*dictptr, value);
+    Py_XSETREF(*dictptr, value);
     return 0;
 }
 
@@ -2903,7 +2903,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         else
             method_cache_misses++;
 #endif
-        Py_SETREF(method_cache[h].name, name);
+        Py_XSETREF(method_cache[h].name, name);
     }
     return res;
 }

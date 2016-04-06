@@ -1011,7 +1011,7 @@ decompress(Decompressor *d, uint8_t *data, size_t len, Py_ssize_t max_length)
     if (d->eof) {
         d->needs_input = 0;
         if (lzs->avail_in > 0) {
-            Py_SETREF(d->unused_data,
+            Py_XSETREF(d->unused_data,
                       PyBytes_FromStringAndSize((char *)lzs->next_in, lzs->avail_in));
             if (d->unused_data == NULL)
                 goto error;

@@ -436,7 +436,7 @@ trace_trampoline(PyObject *self, PyFrameObject *frame,
         return -1;
     }
     if (result != Py_None) {
-        Py_SETREF(frame->f_trace, result);
+        Py_XSETREF(frame->f_trace, result);
     }
     else {
         Py_DECREF(result);

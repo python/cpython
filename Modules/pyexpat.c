@@ -1362,7 +1362,7 @@ sethandler(xmlparseobject *self, PyObject *name, PyObject* v)
             Py_INCREF(v);
             c_handler = handler_info[handlernum].handler;
         }
-        Py_SETREF(self->handlers[handlernum], v);
+        Py_XSETREF(self->handlers[handlernum], v);
         handler_info[handlernum].setter(self->itself, c_handler);
         return 1;
     }
