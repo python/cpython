@@ -56,6 +56,12 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <_SqliteVersion>$([System.Text.RegularExpressions.Regex]::Match(`$(sqlite3Dir)`, `((\d+)\.(\d+)\.(\d+)\.(\d+))\\?$`).Groups)</_SqliteVersion>
+    <SqliteVersion>$(_SqliteVersion.Split(`;`)[1])</SqliteVersion>
+    <SqliteMajorVersion>$(_SqliteVersion.Split(`;`)[2])</SqliteMajorVersion>
+    <SqliteMinorVersion>$(_SqliteVersion.Split(`;`)[3])</SqliteMinorVersion>
+    <SqliteMicroVersion>$(_SqliteVersion.Split(`;`)[4])</SqliteMicroVersion>
+    <SqlitePatchVersion>$(_SqliteVersion.Split(`;`)[5])</SqlitePatchVersion>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -63,6 +69,9 @@
       <PreprocessorDefinitions>SQLITE_API=__declspec(dllexport);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <WarningLevel>Level1</WarningLevel>
     </ClCompile>
+    <ResourceCompile>
+      <PreprocessorDefinitions>SQLITE_VERSION=$(SqliteVersion);SQLITE_MAJOR_VERSION=$(SqliteMajorVersion);SQLITE_MINOR_VERSION=$(SqliteMinorVersion);SQLITE_MICRO_VERSION=$(SqliteMicroVersion);SQLITE_PATCH_VERSION=$(SqlitePatchVersion);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="$(sqlite3Dir)\sqlite3.h" />
@@ -70,6 +79,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="$(sqlite3Dir)\sqlite3.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\PC\sqlite3.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
