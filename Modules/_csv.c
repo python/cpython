@@ -277,7 +277,7 @@ _set_str(const char *name, PyObject **target, PyObject *src, const char *dflt)
             if (PyUnicode_READY(src) == -1)
                 return -1;
             Py_INCREF(src);
-            Py_SETREF(*target, src);
+            Py_XSETREF(*target, src);
         }
     }
     return 0;
@@ -783,7 +783,7 @@ parse_process_char(ReaderObj *self, Py_UCS4 c)
 static int
 parse_reset(ReaderObj *self)
 {
-    Py_SETREF(self->fields, PyList_New(0));
+    Py_XSETREF(self->fields, PyList_New(0));
     if (self->fields == NULL)
         return -1;
     self->field_len = 0;

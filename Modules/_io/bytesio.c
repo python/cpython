@@ -969,7 +969,7 @@ _io_BytesIO___init___impl(bytesio *self, PyObject *initvalue)
     if (initvalue && initvalue != Py_None) {
         if (PyBytes_CheckExact(initvalue)) {
             Py_INCREF(initvalue);
-            Py_SETREF(self->buf, initvalue);
+            Py_XSETREF(self->buf, initvalue);
             self->string_size = PyBytes_GET_SIZE(initvalue);
         }
         else {

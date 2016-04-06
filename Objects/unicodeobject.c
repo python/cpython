@@ -1667,7 +1667,7 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
         _Py_INCREF_UNICODE_EMPTY();
         if (!unicode_empty)
             return -1;
-        Py_SETREF(*p_unicode, unicode_empty);
+        Py_XSETREF(*p_unicode, unicode_empty);
         return 0;
     }
 
@@ -1675,7 +1675,7 @@ unicode_resize(PyObject **p_unicode, Py_ssize_t length)
         PyObject *copy = resize_copy(unicode, length);
         if (copy == NULL)
             return -1;
-        Py_SETREF(*p_unicode, copy);
+        Py_XSETREF(*p_unicode, copy);
         return 0;
     }
 
@@ -13326,7 +13326,7 @@ _PyUnicodeWriter_PrepareInternal(_PyUnicodeWriter *writer,
             return -1;
         _PyUnicode_FastCopyCharacters(newbuffer, 0,
                                       writer->buffer, 0, writer->pos);
-        Py_SETREF(writer->buffer, newbuffer);
+        Py_XSETREF(writer->buffer, newbuffer);
     }
     _PyUnicodeWriter_Update(writer);
     return 0;
@@ -15012,7 +15012,7 @@ PyUnicode_InternInPlace(PyObject **p)
 
     if (t) {
         Py_INCREF(t);
-        Py_SETREF(*p, t);
+        Py_XSETREF(*p, t);
         return;
     }
 
