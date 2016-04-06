@@ -162,7 +162,7 @@ PyTuple_SetItem(PyObject *op, Py_ssize_t i, PyObject *newitem)
         return -1;
     }
     p = ((PyTupleObject *)op) -> ob_item + i;
-    Py_SETREF(*p, newitem);
+    Py_XSETREF(*p, newitem);
     return 0;
 }
 

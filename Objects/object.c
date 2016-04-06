@@ -1220,7 +1220,7 @@ PyObject_GenericSetDict(PyObject *obj, PyObject *value, void *context)
         return -1;
     }
     Py_INCREF(value);
-    Py_SETREF(*dictptr, value);
+    Py_XSETREF(*dictptr, value);
     return 0;
 }
 

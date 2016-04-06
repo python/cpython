@@ -397,7 +397,7 @@ element_init(PyObject *self, PyObject *args, PyObject *kwds)
 
     /* Replace the objects already pointed to by tag, text and tail. */
     Py_INCREF(tag);
-    Py_SETREF(self_elem->tag, tag);
+    Py_XSETREF(self_elem->tag, tag);
 
     tmp = self_elem->text;
     Py_INCREF(Py_None);
@@ -964,7 +964,7 @@ element_setstate_from_attributes(ElementObject *self,
     }
 
     Py_INCREF(tag);
-    Py_SETREF(self->tag, tag);
+    Py_XSETREF(self->tag, tag);
 
     _clear_joined_ptr(&self->text);
     self->text = text ? JOIN_SET(text, PyList_CheckExact(text)) : Py_None;
@@ -1008,7 +1008,7 @@ element_setstate_from_attributes(ElementObject *self,
     /* Stash attrib. */
     if (attrib) {
         Py_INCREF(attrib);
-        Py_SETREF(self->extra->attrib, attrib);
+        Py_XSETREF(self->extra->attrib, attrib);
     }
 
     Py_RETURN_NONE;
@@ -1957,7 +1957,7 @@ element_tag_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    Py_SETREF(self->tag, value);
+    Py_XSETREF(self->tag, value);
     return 0;
 }
 
@@ -1990,7 +1990,7 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
             return -1;
     }
     Py_INCREF(value);
-    Py_SETREF(self->extra->attrib, value);
+    Py_XSETREF(self->extra->attrib, value);
     return 0;
 }
 
@@ -2338,7 +2338,7 @@ _elementtree_TreeBuilder___init___impl(TreeBuilderObject *self,
 {
     if (element_factory) {
         Py_INCREF(element_factory);
-        Py_SETREF(self->element_factory, element_factory);
+        Py_XSETREF(self->element_factory, element_factory);
     }
 
     return 0;
@@ -2524,9 +2524,9 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     self->index++;
 
     Py_INCREF(node);
-    Py_SETREF(self->this, node);
+    Py_XSETREF(self->this, node);
     Py_INCREF(node);
-    Py_SETREF(self->last, node);
+    Py_XSETREF(self->last, node);
 
     if (treebuilder_append_event(self, self->start_event_obj, node) < 0)
         goto error;
@@ -3583,7 +3583,7 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
     events_append = PyObject_GetAttrString(events_queue, "append");
     if (events_append == NULL)
         return NULL;
-    Py_SETREF(target->events_append, events_append);
+    Py_XSETREF(target->events_append, events_append);
 
     /* clear out existing events */
     Py_CLEAR(target->start_event_obj);
@@ -3618,18 +3618,18 @@ _elementtree_XMLParser__setevents_impl(XMLParserObject *self,
 
         Py_INCREF(event_name_obj);
         if (strcmp(event_name, "start") == 0) {
-            Py_SETREF(target->start_event_obj, event_name_obj);
+            Py_XSETREF(target->start_event_obj, event_name_obj);
         } else if (strcmp(event_name, "end") == 0) {
-            Py_SETREF(target->end_event_obj, event_name_obj);
+            Py_XSETREF(target->end_event_obj, event_name_obj);
         } else if (strcmp(event_name, "start-ns") == 0) {
-            Py_SETREF(target->start_ns_event_obj, event_name_obj);
+            Py_XSETREF(target->start_ns_event_obj, event_name_obj);
             EXPAT(SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
                 (XML_EndNamespaceDeclHandler) expat_end_ns_handler
                 );
         } else if (strcmp(event_name, "end-ns") == 0) {
-            Py_SETREF(target->end_ns_event_obj, event_name_obj);
+            Py_XSETREF(target->end_ns_event_obj, event_name_obj);
             EXPAT(SetNamespaceDeclHandler)(
                 self->parser,
                 (XML_StartNamespaceDeclHandler) expat_start_ns_handler,
