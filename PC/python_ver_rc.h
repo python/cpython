@@ -10,10 +10,10 @@
 #include "modsupport.h"
 #include "patchlevel.h"
 #ifdef _DEBUG
-#   include "pythonnt_rc_d.h"
+#   include <pythonnt_rc_d.h>
 #   define PYTHON_DEBUG_EXT "_d"
 #else
-#   include "pythonnt_rc.h"
+#   include <pythonnt_rc.h>
 #   define PYTHON_DEBUG_EXT
 #endif
 
