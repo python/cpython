@@ -3865,7 +3865,7 @@ PyString_Concat(register PyObject **pv, register PyObject *w)
         return;
     }
     v = string_concat((PyStringObject *) *pv, w);
-    Py_SETREF(*pv, v);
+    Py_XSETREF(*pv, v);
 }
 
 void
@@ -4750,7 +4750,7 @@ PyString_InternInPlace(PyObject **p)
     t = PyDict_GetItem(interned, (PyObject *)s);
     if (t) {
         Py_INCREF(t);
-        Py_SETREF(*p, t);
+        Py_XSETREF(*p, t);
         return;
     }
 

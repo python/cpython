@@ -172,7 +172,7 @@ int pysqlite_build_row_cast_map(pysqlite_Cursor* self)
         return 0;
     }
 
-    Py_SETREF(self->row_cast_map, PyList_New(0));
+    Py_XSETREF(self->row_cast_map, PyList_New(0));
 
     for (i = 0; i < sqlite3_column_count(self->statement->st); i++) {
         converter = NULL;
@@ -544,7 +544,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
 
     /* reset description and rowcount */
     Py_INCREF(Py_None);
-    Py_SETREF(self->description, Py_None);
+    Py_XSETREF(self->description, Py_None);
     self->rowcount = -1L;
 
     func_args = PyTuple_New(1);
@@ -560,7 +560,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         (void)pysqlite_statement_reset(self->statement);
     }
 
-    Py_SETREF(self->statement,
+    Py_XSETREF(self->statement,
               (pysqlite_Statement *)pysqlite_cache_get(self->connection->statement_cache, func_args));
     Py_DECREF(func_args);
 
@@ -569,7 +569,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
     }
 
     if (self->statement->in_use) {
-        Py_SETREF(self->statement,
+        Py_XSETREF(self->statement,
                   PyObject_New(pysqlite_Statement, &pysqlite_StatementType));
         if (!self->statement) {
             goto error;
@@ -681,7 +681,7 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
                 numcols = sqlite3_column_count(self->statement->st);
                 Py_END_ALLOW_THREADS
 
-                Py_SETREF(self->description, PyTuple_New(numcols));
+                Py_XSETREF(self->description, PyTuple_New(numcols));
                 if (!self->description) {
                     goto error;
                 }

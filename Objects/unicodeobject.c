@@ -436,7 +436,7 @@ int _PyUnicode_Resize(PyUnicodeObject **unicode, Py_ssize_t length)
             return -1;
         Py_UNICODE_COPY(w->str, v->str,
                         length < v->length ? length : v->length);
-        Py_SETREF(*unicode, w);
+        Py_XSETREF(*unicode, w);
         return 0;
     }
 

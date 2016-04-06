@@ -833,14 +833,14 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
  *
  * The safe way is:
  *
- *      Py_SETREF(op, op2);
+ *      Py_XSETREF(op, op2);
  *
  * That arranges to set `op` to `op2` _before_ decref'ing, so that any code
  * triggered as a side-effect of `op` getting torn down no longer believes
  * `op` points to a valid object.
  */
 
-#define Py_SETREF(op, op2)                      \
+#define Py_XSETREF(op, op2)                     \
     do {                                        \
         PyObject *_py_tmp = (PyObject *)(op);   \
         (op) = (op2);                           \

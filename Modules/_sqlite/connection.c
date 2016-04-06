@@ -228,7 +228,7 @@ void pysqlite_flush_statement_cache(pysqlite_Connection* self)
         node = node->next;
     }
 
-    Py_SETREF(self->statement_cache,
+    Py_XSETREF(self->statement_cache,
               (pysqlite_Cache *)PyObject_CallFunction((PyObject *)&pysqlite_CacheType, "O", self));
     Py_DECREF(self);
     self->statement_cache->decref_factory = 0;
@@ -347,7 +347,7 @@ PyObject* pysqlite_connection_cursor(pysqlite_Connection* self, PyObject* args, 
 
     if (cursor && self->row_factory != Py_None) {
         Py_INCREF(self->row_factory);
-        Py_SETREF(((pysqlite_Cursor *)cursor)->row_factory, self->row_factory);
+        Py_XSETREF(((pysqlite_Cursor *)cursor)->row_factory, self->row_factory);
     }
 
     return cursor;
@@ -815,7 +815,7 @@ static void _pysqlite_drop_unused_statement_references(pysqlite_Connection* self
         }
     }
 
-    Py_SETREF(self->statements, new_list);
+    Py_XSETREF(self->statements, new_list);
 }
 
 static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
@@ -846,7 +846,7 @@ static void _pysqlite_drop_unused_cursor_references(pysqlite_Connection* self)
         }
     }
 
-    Py_SETREF(self->cursors, new_list);
+    Py_XSETREF(self->cursors, new_list);
 }
 
 PyObject* pysqlite_connection_create_function(pysqlite_Connection* self, PyObject* args, PyObject* kwargs)

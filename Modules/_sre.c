@@ -2054,7 +2054,7 @@ deepcopy(PyObject** object, PyObject* memo)
     if (!copy)
         return 0;
 
-    Py_SETREF(*object, copy);
+    Py_XSETREF(*object, copy);
 
     return 1; /* success */
 }

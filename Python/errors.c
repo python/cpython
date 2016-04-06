@@ -229,9 +229,9 @@ finally:
         --tstate->recursion_depth;
         /* throw away the old exception and use the recursion error instead */
         Py_INCREF(PyExc_RuntimeError);
-        Py_SETREF(*exc, PyExc_RuntimeError);
+        Py_XSETREF(*exc, PyExc_RuntimeError);
         Py_INCREF(PyExc_RecursionErrorInst);
-        Py_SETREF(*val, PyExc_RecursionErrorInst);
+        Py_XSETREF(*val, PyExc_RecursionErrorInst);
         /* just keeping the old traceback */
         return;
     }

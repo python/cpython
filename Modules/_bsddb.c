@@ -1608,7 +1608,7 @@ DB_associate(DBObject* self, PyObject* args, PyObject* kwargs)
 
     /* Save a reference to the callback in the secondary DB. */
     Py_XINCREF(callback);
-    Py_SETREF(secondaryDB->associateCallback, callback);
+    Py_XSETREF(secondaryDB->associateCallback, callback);
     secondaryDB->primaryDBType = _DB_get_type(self);
 
     /* PyEval_InitThreads is called here due to a quirk in python 1.5
@@ -2498,7 +2498,7 @@ DB_set_private(DBObject* self, PyObject* private_obj)
 {
     /* We can set the private field even if db is closed */
     Py_INCREF(private_obj);
-    Py_SETREF(self->private_obj, private_obj);
+    Py_XSETREF(self->private_obj, private_obj);
     RETURN_NONE();
 }
 
@@ -6997,7 +6997,7 @@ DBEnv_set_private(DBEnvObject* self, PyObject* private_obj)
 {
     /* We can set the private field even if dbenv is closed */
     Py_INCREF(private_obj);
-    Py_SETREF(self->private_obj, private_obj);
+    Py_XSETREF(self->private_obj, private_obj);
     RETURN_NONE();
 }
 
@@ -7251,7 +7251,7 @@ DBEnv_set_event_notify(DBEnvObject* self, PyObject* notifyFunc)
     }
 
     Py_INCREF(notifyFunc);
-    Py_SETREF(self->event_notifyCallback, notifyFunc);
+    Py_XSETREF(self->event_notifyCallback, notifyFunc);
 
     /* This is to workaround a problem with un-initialized threads (see
        comment in DB_associate) */
@@ -7410,7 +7410,7 @@ DBEnv_rep_set_transport(DBEnvObject* self, PyObject* args)
     RETURN_IF_ERR();
 
     Py_INCREF(rep_transport);
-    Py_SETREF(self->rep_transport, rep_transport);
+    Py_XSETREF(self->rep_transport, rep_transport);
     RETURN_NONE();
 }
 

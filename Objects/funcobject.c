@@ -116,7 +116,7 @@ PyFunction_SetDefaults(PyObject *op, PyObject *defaults)
         PyErr_SetString(PyExc_SystemError, "non-tuple default args");
         return -1;
     }
-    Py_SETREF(((PyFunctionObject *)op)->func_defaults, defaults);
+    Py_XSETREF(((PyFunctionObject *)op)->func_defaults, defaults);
     return 0;
 }
 
@@ -148,7 +148,7 @@ PyFunction_SetClosure(PyObject *op, PyObject *closure)
                      closure->ob_type->tp_name);
         return -1;
     }
-    Py_SETREF(((PyFunctionObject *)op)->func_closure, closure);
+    Py_XSETREF(((PyFunctionObject *)op)->func_closure, closure);
     return 0;
 }
 
@@ -428,7 +428,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 
     if (name != Py_None) {
         Py_INCREF(name);
-        Py_SETREF(newfunc->func_name, name);
+        Py_XSETREF(newfunc->func_name, name);
     }
     if (defaults != Py_None) {
         Py_INCREF(defaults);

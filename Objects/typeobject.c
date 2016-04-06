@@ -188,7 +188,7 @@ assign_version_tag(PyTypeObject *type)
         for (i = 0; i < (1 << MCACHE_SIZE_EXP); i++) {
             method_cache[i].value = NULL;
             Py_INCREF(Py_None);
-            Py_SETREF(method_cache[i].name, Py_None);
+            Py_XSETREF(method_cache[i].name, Py_None);
         }
         /* mark all version tags as invalid */
         PyType_Modified(&PyBaseObject_Type);

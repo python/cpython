@@ -320,10 +320,10 @@ partial_setstate(partialobject *pto, PyObject *state)
     else
         Py_INCREF(dict);
 
-    Py_SETREF(pto->fn, fn);
-    Py_SETREF(pto->args, fnargs);
-    Py_SETREF(pto->kw, kw);
-    Py_SETREF(pto->dict, dict);
+    Py_XSETREF(pto->fn, fn);
+    Py_XSETREF(pto->args, fnargs);
+    Py_XSETREF(pto->kw, kw);
+    Py_XSETREF(pto->dict, dict);
     Py_RETURN_NONE;
 }
 

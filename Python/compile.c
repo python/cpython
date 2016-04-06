@@ -1415,7 +1415,7 @@ compiler_class(struct compiler *c, stmt_ty s)
                               s->lineno))
         return 0;
     Py_INCREF(s->v.ClassDef.name);
-    Py_SETREF(c->u->u_private, s->v.ClassDef.name);
+    Py_XSETREF(c->u->u_private, s->v.ClassDef.name);
     str = PyString_InternFromString("__name__");
     if (!str || !compiler_nameop(c, str, Load)) {
         Py_XDECREF(str);

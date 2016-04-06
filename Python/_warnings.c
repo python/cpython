@@ -528,7 +528,7 @@ setup_context(Py_ssize_t stack_level, PyObject **filename, int *lineno,
                     goto handle_error;
                 }
                 else if (!is_true) {
-                    Py_SETREF(*filename, PyString_FromString("__main__"));
+                    Py_XSETREF(*filename, PyString_FromString("__main__"));
                     if (*filename == NULL)
                         goto handle_error;
                 }

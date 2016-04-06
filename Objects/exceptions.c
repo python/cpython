@@ -59,11 +59,11 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     Py_INCREF(args);
-    Py_SETREF(self->args, args);
+    Py_XSETREF(self->args, args);
 
     if (PyTuple_GET_SIZE(self->args) == 1) {
         Py_INCREF(PyTuple_GET_ITEM(self->args, 0));
-        Py_SETREF(self->message, PyTuple_GET_ITEM(self->args, 0));
+        Py_XSETREF(self->message, PyTuple_GET_ITEM(self->args, 0));
     }
     return 0;
 }
@@ -279,7 +279,7 @@ BaseException_set_dict(PyBaseExceptionObject *self, PyObject *val)
         return -1;
     }
     Py_INCREF(val);
-    Py_SETREF(self->dict, val);
+    Py_XSETREF(self->dict, val);
     return 0;
 }
 
@@ -305,7 +305,7 @@ BaseException_set_args(PyBaseExceptionObject *self, PyObject *val)
     seq = PySequence_Tuple(val);
     if (!seq)
         return -1;
-    Py_SETREF(self->args, seq);
+    Py_XSETREF(self->args, seq);
     return 0;
 }
 
@@ -519,11 +519,11 @@ SystemExit_init(PySystemExitObject *self, PyObject *args, PyObject *kwds)
         return 0;
     if (size == 1) {
         Py_INCREF(PyTuple_GET_ITEM(args, 0));
-        Py_SETREF(self->code, PyTuple_GET_ITEM(args, 0));
+        Py_XSETREF(self->code, PyTuple_GET_ITEM(args, 0));
     }
     else { /* size > 1 */
         Py_INCREF(args);
-        Py_SETREF(self->code, args);
+        Py_XSETREF(self->code, args);
     }
     return 0;
 }
@@ -608,21 +608,21 @@ EnvironmentError_init(PyEnvironmentErrorObject *self, PyObject *args,
         return -1;
     }
     Py_INCREF(myerrno);
-    Py_SETREF(self->myerrno, myerrno);
+    Py_XSETREF(self->myerrno, myerrno);
 
     Py_INCREF(strerror);
-    Py_SETREF(self->strerror, strerror);
+    Py_XSETREF(self->strerror, strerror);
 
     /* self->filename will remain Py_None otherwise */
     if (filename != NULL) {
         Py_INCREF(filename);
-        Py_SETREF(self->filename, filename);
+        Py_XSETREF(self->filename, filename);
 
         subslice = PyTuple_GetSlice(args, 0, 2);
         if (!subslice)
             return -1;
 
-        Py_SETREF(self->args, subslice);
+        Py_XSETREF(self->args, subslice);
     }
     return 0;
 }
@@ -873,7 +873,7 @@ WindowsError_init(PyWindowsErrorObject *self, PyObject *args, PyObject *kwds)
         return -1;
     posix_errno = winerror_to_errno(errcode);
 
-    Py_SETREF(self->winerror, self->myerrno);
+    Py_XSETREF(self->winerror, self->myerrno);
 
     o_errcode = PyInt_FromLong(posix_errno);
     if (!o_errcode)
@@ -1059,7 +1059,7 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
 
     if (lenargs >= 1) {
         Py_INCREF(PyTuple_GET_ITEM(args, 0));
-        Py_SETREF(self->msg, PyTuple_GET_ITEM(args, 0));
+        Py_XSETREF(self->msg, PyTuple_GET_ITEM(args, 0));
     }
     if (lenargs == 2) {
         info = PyTuple_GET_ITEM(args, 1);
@@ -1075,16 +1075,16 @@ SyntaxError_init(PySyntaxErrorObject *self, PyObject *args, PyObject *kwds)
         }
 
         Py_INCREF(PyTuple_GET_ITEM(info, 0));
-        Py_SETREF(self->filename, PyTuple_GET_ITEM(info, 0));
+        Py_XSETREF(self->filename, PyTuple_GET_ITEM(info, 0));
 
         Py_INCREF(PyTuple_GET_ITEM(info, 1));
-        Py_SETREF(self->lineno, PyTuple_GET_ITEM(info, 1));
+        Py_XSETREF(self->lineno, PyTuple_GET_ITEM(info, 1));
 
         Py_INCREF(PyTuple_GET_ITEM(info, 2));
-        Py_SETREF(self->offset, PyTuple_GET_ITEM(info, 2));
+        Py_XSETREF(self->offset, PyTuple_GET_ITEM(info, 2));
 
         Py_INCREF(PyTuple_GET_ITEM(info, 3));
-        Py_SETREF(self->text, PyTuple_GET_ITEM(info, 3));
+        Py_XSETREF(self->text, PyTuple_GET_ITEM(info, 3));
 
         Py_DECREF(info);
     }
@@ -1317,7 +1317,7 @@ set_string(PyObject **attr, const char *value)
     PyObject *obj = PyString_FromString(value);
     if (!obj)
         return -1;
-    Py_SETREF(*attr, obj);
+    Py_XSETREF(*attr, obj);
     return 0;
 }
 

@@ -284,7 +284,7 @@ PyCursesPanel_replace_panel(PyCursesPanelObject *self, PyObject *args)
         return NULL;
     }
     Py_INCREF(temp);
-    Py_SETREF(po->wo, temp);
+    Py_XSETREF(po->wo, temp);
     Py_INCREF(Py_None);
     return Py_None;
 }

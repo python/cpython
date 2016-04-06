@@ -491,7 +491,7 @@ save_unconsumed_input(compobject *self, int err)
                       PyString_AS_STRING(self->unused_data), old_size);
             Py_MEMCPY(PyString_AS_STRING(new_data) + old_size,
                       self->zst.next_in, self->zst.avail_in);
-            Py_SETREF(self->unused_data, new_data);
+            Py_XSETREF(self->unused_data, new_data);
             self->zst.avail_in = 0;
         }
     }
@@ -503,7 +503,7 @@ save_unconsumed_input(compobject *self, int err)
                 (char *)self->zst.next_in, self->zst.avail_in);
         if (new_data == NULL)
             return -1;
-        Py_SETREF(self->unconsumed_tail, new_data);
+        Py_XSETREF(self->unconsumed_tail, new_data);
     }
     return 0;
 }
@@ -731,9 +731,9 @@ PyZlib_copy(compobject *self)
     }
 
     Py_INCREF(self->unused_data);
-    Py_SETREF(retval->unused_data, self->unused_data);
+    Py_XSETREF(retval->unused_data, self->unused_data);
     Py_INCREF(self->unconsumed_tail);
-    Py_SETREF(retval->unconsumed_tail, self->unconsumed_tail);
+    Py_XSETREF(retval->unconsumed_tail, self->unconsumed_tail);
 
     /* Mark it as being initialized */
     retval->is_initialised = 1;
@@ -780,9 +780,9 @@ PyZlib_uncopy(compobject *self)
     }
 
     Py_INCREF(self->unused_data);
-    Py_SETREF(retval->unused_data, self->unused_data);
+    Py_XSETREF(retval->unused_data, self->unused_data);
     Py_INCREF(self->unconsumed_tail);
-    Py_SETREF(retval->unconsumed_tail, self->unconsumed_tail);
+    Py_XSETREF(retval->unconsumed_tail, self->unconsumed_tail);
 
     /* Mark it as being initialized */
     retval->is_initialised = 1;

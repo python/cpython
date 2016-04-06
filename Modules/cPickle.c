@@ -689,7 +689,7 @@ read_other(Unpicklerobject *self, char **s, Py_ssize_t  n)
     }
     if (! str) return -1;
 
-    Py_SETREF(self->last_string, str);
+    Py_XSETREF(self->last_string, str);
 
     if (! (*s = PyString_AsString(str))) return -1;
 
@@ -715,7 +715,7 @@ readline_other(Unpicklerobject *self, char **s)
     if ((str_size = PyString_Size(str)) < 0)
         return -1;
 
-    Py_SETREF(self->last_string, str);
+    Py_XSETREF(self->last_string, str);
 
     if (! (*s = PyString_AsString(str)))
         return -1;
@@ -3227,7 +3227,7 @@ Pickler_set_pers_func(Picklerobject *p, PyObject *v)
         return -1;
     }
     Py_INCREF(v);
-    Py_SETREF(p->pers_func, v);
+    Py_XSETREF(p->pers_func, v);
     return 0;
 }
 
@@ -3240,7 +3240,7 @@ Pickler_set_inst_pers_func(Picklerobject *p, PyObject *v)
         return -1;
     }
     Py_INCREF(v);
-    Py_SETREF(p->inst_pers_func, v);
+    Py_XSETREF(p->inst_pers_func, v);
     return 0;
 }
 
@@ -3267,7 +3267,7 @@ Pickler_set_memo(Picklerobject *p, PyObject *v)
         return -1;
     }
     Py_INCREF(v);
-    Py_SETREF(p->memo, v);
+    Py_XSETREF(p->memo, v);
     return 0;
 }
 
@@ -5663,13 +5663,13 @@ Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value)
 
     if (!strcmp(name, "persistent_load")) {
         Py_XINCREF(value);
-        Py_SETREF(self->pers_func, value);
+        Py_XSETREF(self->pers_func, value);
         return 0;
     }
 
     if (!strcmp(name, "find_global")) {
         Py_XINCREF(value);
-        Py_SETREF(self->find_class, value);
+        Py_XSETREF(self->find_class, value);
         return 0;
     }
 
@@ -5686,7 +5686,7 @@ Unpickler_setattr(Unpicklerobject *self, char *name, PyObject *value)
             return -1;
         }
         Py_INCREF(value);
-        Py_SETREF(self->memo, value);
+        Py_XSETREF(self->memo, value);
         return 0;
     }
 

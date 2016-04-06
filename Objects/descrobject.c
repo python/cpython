@@ -1332,7 +1332,7 @@ property_init(PyObject *self, PyObject *args, PyObject *kwds)
         PyObject *get_doc = PyObject_GetAttrString(get, "__doc__");
         if (get_doc) {
             if (Py_TYPE(self) == &PyProperty_Type) {
-                Py_SETREF(prop->prop_doc, get_doc);
+                Py_XSETREF(prop->prop_doc, get_doc);
             }
             else {
                 /* If this is a property subclass, put __doc__
