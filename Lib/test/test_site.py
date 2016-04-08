@@ -75,7 +75,7 @@ class HelperFunctionsTests(unittest.TestCase):
     def test_init_pathinfo(self):
         dir_set = site._init_pathinfo()
         for entry in [site.makepath(path)[1] for path in sys.path
-                        if path and os.path.isdir(path)]:
+                        if path and os.path.exists(path)]:
             self.assertIn(entry, dir_set,
                           "%s from sys.path not found in set returned "
                           "by _init_pathinfo(): %s" % (entry, dir_set))
