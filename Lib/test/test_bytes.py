@@ -1,8 +1,7 @@
 """Unit tests for the bytes and bytearray types.
 
-XXX This is a mess.  Common tests should be moved to buffer_tests.py,
-which itself ought to be unified with string_tests.py (and the latter
-should be modernized).
+XXX This is a mess.  Common tests should be unified with string_tests.py (and
+the latter should be modernized).
 """
 
 import os
@@ -16,7 +15,6 @@ import unittest
 
 import test.support
 import test.string_tests
-import test.buffer_tests
 import test.list_tests
 from test.support import bigaddrspacetest, MAX_Py_ssize_t
 
@@ -1575,8 +1573,7 @@ class AssortedBytesTest(unittest.TestCase):
     # the rest that make sense (the code can be cleaned up to use modern
     # unittest methods at the same time).
 
-class BytearrayPEP3137Test(unittest.TestCase,
-                       test.buffer_tests.MixinBytesBufferCommonTests):
+class BytearrayPEP3137Test(unittest.TestCase):
     def marshal(self, x):
         return bytearray(x)
 
@@ -1606,16 +1603,16 @@ class BytearrayPEP3137Test(unittest.TestCase,
 class FixedStringTest(test.string_tests.BaseTest):
     def fixtype(self, obj):
         if isinstance(obj, str):
-            return obj.encode("utf-8")
+            return self.type2test(obj.encode("utf-8"))
         return super().fixtype(obj)
+
+    contains_bytes = True
 
 class ByteArrayAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytearray
-    contains_bytes = True
 
 class BytesAsStringTest(FixedStringTest, unittest.TestCase):
     type2test = bytes
-    contains_bytes = True
 
 
 class SubclassTest:
