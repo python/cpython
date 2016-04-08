@@ -27,7 +27,7 @@ class AbstractContextManager(abc.ABC):
         if cls is AbstractContextManager:
             if (any("__enter__" in B.__dict__ for B in C.__mro__) and
                 any("__exit__" in B.__dict__ for B in C.__mro__)):
-                    return True
+                return True
         return NotImplemented
 
 
