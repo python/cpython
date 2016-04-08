@@ -190,6 +190,18 @@ New Modules
 Improved Modules
 ================
 
+contextlib
+----------
+
+The :class:`contextlib.AbstractContextManager` class has been added to
+provide an abstract base class for context managers. It provides a
+sensible default implementation for `__enter__()` which returns
+`self` and leaves `__exit__()` an abstract method. A matching
+class has been added to the :mod:`typing` module as
+:class:`typing.ContextManager`.
+(Contributed by Brett Cannon in :issue:`25609`.)
+
+
 datetime
 --------
 
@@ -244,6 +256,14 @@ telnetlib
 
 :class:`~telnetlib.Telnet` is now a context manager (contributed by
 Stéphane Wirtel in :issue:`25485`).
+
+
+typing
+------
+
+The :class:`typing.ContextManager` class has been added for
+representing :class:`contextlib.AbstractContextManager`.
+(Contributed by Brett Cannon in :issue:`25609`.)
 
 
 unittest.mock
@@ -372,9 +392,9 @@ become proper keywords in Python 3.7.
 Deprecated Python modules, functions and methods
 ------------------------------------------------
 
-* :meth:`importlib.machinery.SourceFileLoader` and
-  :meth:`importlib.machinery.SourcelessFileLoader` are now deprecated. They
-  were the only remaining implementations of
+* :meth:`importlib.machinery.SourceFileLoader.load_module` and
+  :meth:`importlib.machinery.SourcelessFileLoader.load_module` are now
+  deprecated. They were the only remaining implementations of
   :meth:`importlib.abc.Loader.load_module` in :mod:`importlib` that had not
   been deprecated in previous versions of Python in favour of
   :meth:`importlib.abc.Loader.exec_module`.

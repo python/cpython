@@ -1,11 +1,34 @@
 """Utilities for with-statement contexts.  See PEP 343."""
-
+import abc
 import sys
 from collections import deque
 from functools import wraps
 
-__all__ = ["contextmanager", "closing", "ContextDecorator", "ExitStack",
-           "redirect_stdout", "redirect_stderr", "suppress"]
+__all__ = ["contextmanager", "closing", "AbstractContextManager",
+           "ContextDecorator", "ExitStack", "redirect_stdout",
+           "redirect_stderr", "suppress"]
+
+
+class AbstractContextManager(abc.ABC):
+
+    """An abstract base class for context managers."""
+
+    def __enter__(self):
+        """Return `self` upon entering the runtime context."""
+        return self
+
+    @abc.abstractmethod
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Raise any exception triggered within the runtime context."""
+        return None
+
+    @classmethod
+    def __subclasshook__(cls, C):
+        if cls is AbstractContextManager:
+            if (any("__enter__" in B.__dict__ for B in C.__mro__) and
+                any("__exit__" in B.__dict__ for B in C.__mro__)):
+                    return True
+        return NotImplemented
 
 
 class ContextDecorator(object):
@@ -31,7 +54,7 @@ class ContextDecorator(object):
         return inner
 
 
-class _GeneratorContextManager(ContextDecorator):
+class _GeneratorContextManager(ContextDecorator, AbstractContextManager):
     """Helper for @contextmanager decorator."""
 
     def __init__(self, func, args, kwds):
@@ -134,7 +157,7 @@ def contextmanager(func):
     return helper
 
 
-class closing(object):
+class closing(AbstractContextManager):
     """Context to automatically close something at the end of a block.
 
     Code like this:
@@ -159,7 +182,7 @@ class closing(object):
         self.thing.close()
 
 
-class _RedirectStream:
+class _RedirectStream(AbstractContextManager):
 
     _stream = None
 
@@ -199,7 +222,7 @@ class redirect_stderr(_RedirectStream):
     _stream = "stderr"
 
 
-class suppress:
+class suppress(AbstractContextManager):
     """Context manager to suppress specified exceptions
 
     After the exception is suppressed, execution proceeds with the next
@@ -230,7 +253,7 @@ class suppress:
 
 
 # Inspired by discussions on http://bugs.python.org/issue13585
-class ExitStack(object):
+class ExitStack(AbstractContextManager):
     """Context manager for dynamic management of a stack of exit callbacks
 
     For example:
@@ -308,9 +331,6 @@ class ExitStack(object):
     def close(self):
         """Immediately unwind the context stack"""
         self.__exit__(None, None, None)
-
-    def __enter__(self):
-        return self
 
     def __exit__(self, *exc_details):
         received_exc = exc_details[0] is not None

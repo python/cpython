@@ -1,3 +1,4 @@
+import contextlib
 import pickle
 import re
 import sys
@@ -1309,6 +1310,21 @@ class CollectionsAbcTests(TestCase):
         assert len(MMB[KT, VT]()) == 0
 
 
+class OtherABCTests(TestCase):
+
+    @skipUnless(hasattr(typing, 'ContextManager'),
+                'requires typing.ContextManager')
+    def test_contextmanager(self):
+        @contextlib.contextmanager
+        def manager():
+            yield 42
+
+        cm = manager()
+        assert isinstance(cm, typing.ContextManager)
+        assert isinstance(cm, typing.ContextManager[int])
+        assert not isinstance(42, typing.ContextManager)
+
+
 class NamedTupleTests(TestCase):
 
     def test_basics(self):
@@ -1447,6 +1463,8 @@ class AllTests(TestCase):
         assert 'ValuesView' in a
         assert 'cast' in a
         assert 'overload' in a
+        if hasattr(contextlib, 'AbstractContextManager'):
+            assert 'ContextManager' in a
         # Check that io and re are not exported.
         assert 'io' not in a
         assert 're' not in a
