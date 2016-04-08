@@ -52,8 +52,7 @@ searched for site-packages; otherwise they won't.
 A path configuration file is a file whose name has the form :file:`{name}.pth`
 and exists in one of the four directories mentioned above; its contents are
 additional items (one per line) to be added to ``sys.path``.  Non-existing items
-are never added to ``sys.path``, and no check is made that the item refers to a
-directory rather than a file.  No item is added to ``sys.path`` more than
+are never added to ``sys.path``.  No item is added to ``sys.path`` more than
 once.  Blank lines and lines beginning with ``#`` are skipped.  Lines starting
 with ``import`` (followed by space or tab) are executed.
 
