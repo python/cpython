@@ -685,7 +685,7 @@ class _BinaryPlistParser:
             f = struct.unpack('>d', self._fp.read(8))[0]
             # timestamp 0 of binary plists corresponds to 1/1/2001
             # (year of Mac OS X 10.0), instead of 1/1/1970.
-            return datetime.datetime.utcfromtimestamp(f + (31 * 365 + 8) * 86400)
+            return datetime.datetime(2001, 1, 1) + datetime.timedelta(seconds=f)
 
         elif tokenH == 0x40:  # data
             s = self._get_size(tokenL)
