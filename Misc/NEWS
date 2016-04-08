@@ -237,6 +237,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26709: Fixed Y2038 problem in loading binary PLists.
+
 - Issue #23735: Handle terminal resizing with Readline 6.3+ by installing our
   own SIGWINCH handler.  Patch by Eric Price.
 
