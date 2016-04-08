@@ -51,6 +51,9 @@ class BaseTest:
         else:
             return obj
 
+    def test_fixtype(self):
+        self.assertIs(type(self.fixtype("123")), self.type2test)
+
     # check that obj.method(*args) returns result
     def checkequal(self, result, obj, methodname, *args, **kwargs):
         result = self.fixtype(result)
@@ -682,44 +685,12 @@ class BaseTest:
         self.checkraises(OverflowError, A2_16, "replace", "A", A2_16)
         self.checkraises(OverflowError, A2_16, "replace", "AA", A2_16+A2_16)
 
-
-
-class CommonTest(BaseTest):
-    # This testcase contains tests that can be used in all
-    # stringlike classes. Currently this is str and UserString.
-
-    def test_hash(self):
-        # SF bug 1054139:  += optimization was not invalidating cached hash value
-        a = self.type2test('DNSSEC')
-        b = self.type2test('')
-        for c in a:
-            b += c
-            hash(b)
-        self.assertEqual(hash(a), hash(b))
-
     def test_capitalize(self):
         self.checkequal(' hello ', ' hello ', 'capitalize')
         self.checkequal('Hello ', 'Hello ','capitalize')
         self.checkequal('Hello ', 'hello ','capitalize')
         self.checkequal('Aaaa', 'aaaa', 'capitalize')
         self.checkequal('Aaaa', 'AaAa', 'capitalize')
-
-        # check that titlecased chars are lowered correctly
-        # \u1ffc is the titlecased char
-        self.checkequal('\u03a9\u0399\u1ff3\u1ff3\u1ff3',
-                        '\u1ff3\u1ff3\u1ffc\u1ffc', 'capitalize')
-        # check with cased non-letter chars
-        self.checkequal('\u24c5\u24e8\u24e3\u24d7\u24de\u24dd',
-                        '\u24c5\u24ce\u24c9\u24bd\u24c4\u24c3', 'capitalize')
-        self.checkequal('\u24c5\u24e8\u24e3\u24d7\u24de\u24dd',
-                        '\u24df\u24e8\u24e3\u24d7\u24de\u24dd', 'capitalize')
-        self.checkequal('\u2160\u2171\u2172',
-                        '\u2160\u2161\u2162', 'capitalize')
-        self.checkequal('\u2160\u2171\u2172',
-                        '\u2170\u2171\u2172', 'capitalize')
-        # check with Ll chars with no upper - nothing changes here
-        self.checkequal('\u019b\u1d00\u1d86\u0221\u1fb7',
-                        '\u019b\u1d00\u1d86\u0221\u1fb7', 'capitalize')
 
         self.checkraises(TypeError, 'hello', 'capitalize', 42)
 
@@ -854,10 +825,6 @@ class CommonTest(BaseTest):
 
         self.checkraises(TypeError, '123', 'zfill')
 
-class MixinStrUnicodeUserStringTest:
-    # additional tests that only work for
-    # stringlike objects, i.e. str, UserString
-
     def test_islower(self):
         self.checkequal(False, '', 'islower')
         self.checkequal(True, 'a', 'islower')
@@ -959,6 +926,43 @@ class MixinStrUnicodeUserStringTest:
                         "\nabc\ndef\r\nghi\n\r", 'splitlines', keepends=True)
 
         self.checkraises(TypeError, 'abc', 'splitlines', 42, 42)
+
+
+class CommonTest(BaseTest):
+    # This testcase contains tests that can be used in all
+    # stringlike classes. Currently this is str and UserString.
+
+    def test_hash(self):
+        # SF bug 1054139:  += optimization was not invalidating cached hash value
+        a = self.type2test('DNSSEC')
+        b = self.type2test('')
+        for c in a:
+            b += c
+            hash(b)
+        self.assertEqual(hash(a), hash(b))
+
+    def test_capitalize_nonascii(self):
+        # check that titlecased chars are lowered correctly
+        # \u1ffc is the titlecased char
+        self.checkequal('\u03a9\u0399\u1ff3\u1ff3\u1ff3',
+                        '\u1ff3\u1ff3\u1ffc\u1ffc', 'capitalize')
+        # check with cased non-letter chars
+        self.checkequal('\u24c5\u24e8\u24e3\u24d7\u24de\u24dd',
+                        '\u24c5\u24ce\u24c9\u24bd\u24c4\u24c3', 'capitalize')
+        self.checkequal('\u24c5\u24e8\u24e3\u24d7\u24de\u24dd',
+                        '\u24df\u24e8\u24e3\u24d7\u24de\u24dd', 'capitalize')
+        self.checkequal('\u2160\u2171\u2172',
+                        '\u2160\u2161\u2162', 'capitalize')
+        self.checkequal('\u2160\u2171\u2172',
+                        '\u2170\u2171\u2172', 'capitalize')
+        # check with Ll chars with no upper - nothing changes here
+        self.checkequal('\u019b\u1d00\u1d86\u0221\u1fb7',
+                        '\u019b\u1d00\u1d86\u0221\u1fb7', 'capitalize')
+
+
+class MixinStrUnicodeUserStringTest:
+    # additional tests that only work for
+    # stringlike objects, i.e. str, UserString
 
     def test_startswith(self):
         self.checkequal(True, 'hello', 'startswith', 'he')
