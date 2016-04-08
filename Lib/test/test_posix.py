@@ -411,7 +411,7 @@ class PosixTester(unittest.TestCase):
         self.assertTrue(posix.stat(bytearray(os.fsencode(support.TESTFN))))
 
         self.assertRaisesRegex(TypeError,
-                'can\'t specify None for path argument',
+                'should be string, bytes or integer, not',
                 posix.stat, None)
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes or integer, not',
@@ -863,9 +863,9 @@ class PosixTester(unittest.TestCase):
             self.assertEqual(s1, s2)
             s2 = posix.stat(support.TESTFN, dir_fd=None)
             self.assertEqual(s1, s2)
-            self.assertRaisesRegex(TypeError, 'should be integer, not',
+            self.assertRaisesRegex(TypeError, 'should be integer or None, not',
                     posix.stat, support.TESTFN, dir_fd=posix.getcwd())
-            self.assertRaisesRegex(TypeError, 'should be integer, not',
+            self.assertRaisesRegex(TypeError, 'should be integer or None, not',
                     posix.stat, support.TESTFN, dir_fd=float(f))
             self.assertRaises(OverflowError,
                     posix.stat, support.TESTFN, dir_fd=10**20)
