@@ -251,6 +251,14 @@ Previously, names of properties and slots which were not yet created on
 an instance were excluded.  (Contributed by Martin Panter in :issue:`25590`.)
 
 
+site
+----
+
+When specifying paths to add to :attr:`sys.path` in a `.pth` file,
+you may now specify file paths on top of directories (e.g. zip files).
+(Contributed by Wolfgang Langner in :issue:`26587`).
+
+
 telnetlib
 ---------
 

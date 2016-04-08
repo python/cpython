@@ -131,13 +131,13 @@ def removeduppaths():
 
 
 def _init_pathinfo():
-    """Return a set containing all existing directory entries from sys.path"""
+    """Return a set containing all existing file system items from sys.path."""
     d = set()
-    for dir in sys.path:
+    for item in sys.path:
         try:
-            if os.path.isdir(dir):
-                dir, dircase = makepath(dir)
-                d.add(dircase)
+            if os.path.exists(item):
+                _, itemcase = makepath(item)
+                d.add(itemcase)
         except TypeError:
             continue
     return d
@@ -150,9 +150,9 @@ def addpackage(sitedir, name, known_paths):
     """
     if known_paths is None:
         known_paths = _init_pathinfo()
-        reset = 1
+        reset = True
     else:
-        reset = 0
+        reset = False
     fullname = os.path.join(sitedir, name)
     try:
         f = open(fullname, "r")
@@ -190,9 +190,9 @@ def addsitedir(sitedir, known_paths=None):
     'sitedir'"""
     if known_paths is None:
         known_paths = _init_pathinfo()
-        reset = 1
+        reset = True
     else:
-        reset = 0
+        reset = False
     sitedir, sitedircase = makepath(sitedir)
     if not sitedircase in known_paths:
         sys.path.append(sitedir)        # Add path component
