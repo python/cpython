@@ -345,15 +345,15 @@ The module defines the following classes, functions and decorators:
 
 .. class:: Iterable(Generic[T_co])
 
-    A generic version of the :class:`collections.abc.Iterable`.
+    A generic version of :class:`collections.abc.Iterable`.
 
 .. class:: Iterator(Iterable[T_co])
 
-    A generic version of the :class:`collections.abc.Iterator`.
+    A generic version of :class:`collections.abc.Iterator`.
 
 .. class:: Reversible(Iterable[T_co])
 
-    A generic version of the :class:`collections.abc.Reversible`.
+    A generic version of :class:`collections.abc.Reversible`.
 
 .. class:: SupportsInt
 
@@ -447,6 +447,12 @@ The module defines the following classes, functions and decorators:
 .. class:: ValuesView(MappingView[VT_co])
 
    A generic version of :class:`collections.abc.ValuesView`.
+
+.. class:: ContextManager(Generic[T_co])
+
+   A generic version of :class:`contextlib.AbstractContextManager`.
+
+   .. versionadded:: 3.6
 
 .. class:: Dict(dict, MutableMapping[KT, VT])
 

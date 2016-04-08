@@ -18,6 +18,18 @@ Utilities
 
 Functions and classes provided:
 
+.. class:: AbstractContextManager
+
+   An abstract base class for classes that implement
+   :meth:`object.__enter__` and :meth:`object.__exit__`. A default
+   implementation for :meth:`object.__enter__` is provided which returns
+   ``self`` while :meth:`object.__exit__` is an abstract method which by default
+   returns ``None``. See also the definition of :ref:`typecontextmanager`.
+
+   .. versionadded:: 3.6
+
+
+
 .. decorator:: contextmanager
 
    This function is a :term:`decorator` that can be used to define a factory
@@ -447,9 +459,9 @@ Here's an example of doing this for a context manager that accepts resource
 acquisition and release functions, along with an optional validation function,
 and maps them to the context management protocol::
 
-   from contextlib import contextmanager, ExitStack
+   from contextlib import contextmanager, AbstractContextManager, ExitStack
 
-   class ResourceManager:
+   class ResourceManager(AbstractContextManager):
 
        def __init__(self, acquire_resource, release_resource, check_resource_ok=None):
            self.acquire_resource = acquire_resource
