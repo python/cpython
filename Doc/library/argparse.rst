@@ -675,8 +675,7 @@ how the command-line arguments should be handled. The supplied actions are:
     Namespace(foo='1')
 
 * ``'store_const'`` - This stores the value specified by the const_ keyword
-  argument.  (Note that the const_ keyword argument defaults to the rather
-  unhelpful ``None``.)  The ``'store_const'`` action is most commonly used with
+  argument.  The ``'store_const'`` action is most commonly used with
   optional arguments that specify some sort of flag.  For example::
 
     >>> parser = argparse.ArgumentParser()
@@ -878,7 +877,8 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   command-line argument following it, the value of ``const`` will be assumed instead.
   See the nargs_ description for examples.
 
-The ``const`` keyword argument defaults to ``None``.
+With the ``'store_const'`` and ``'append_const'`` actions, the ``const``
+keyword argument must be given.  For other actions, is defaults to ``None``.
 
 
 default
