@@ -139,8 +139,7 @@ static PyObject* module_enable_shared_cache(PyObject* self, PyObject* args, PyOb
         PyErr_SetString(pysqlite_OperationalError, "Changing the shared_cache flag failed");
         return NULL;
     } else {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 }
 
@@ -172,8 +171,7 @@ static PyObject* module_register_adapter(PyObject* self, PyObject* args)
     if (rc == -1)
         return NULL;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(module_register_adapter_doc,
@@ -221,8 +219,7 @@ static PyObject* enable_callback_tracebacks(PyObject* self, PyObject* args)
         return NULL;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyDoc_STRVAR(enable_callback_tracebacks_doc,
