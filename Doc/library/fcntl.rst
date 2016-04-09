@@ -83,7 +83,7 @@ The module defines the following functions:
    buffer 1024 bytes long which is then passed to :func:`ioctl` and copied back
    into the supplied buffer.
 
-   If the :c:func:`ioctl` fails, an :exc:`IOError` exception is raised.
+   If the :c:func:`ioctl` fails, an :exc:`OSError` exception is raised.
 
    An example::
 
@@ -106,7 +106,7 @@ The module defines the following functions:
    :manpage:`flock(2)` for details.  (On some systems, this function is emulated
    using :c:func:`fcntl`.)
 
-   If the :c:func:`flock` fails, an :exc:`IOError` exception is raised.
+   If the :c:func:`flock` fails, an :exc:`OSError` exception is raised.
 
 
 .. function:: lockf(fd, cmd, len=0, start=0, whence=0)
