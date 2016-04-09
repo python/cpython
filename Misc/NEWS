@@ -65,6 +65,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #16329: Add .webm to mimetypes.types_map.  Patch by Giampaolo Rodola'.
+
 - Issue #23735: Handle terminal resizing with Readline 6.3+ by installing our
   own SIGWINCH handler.  Patch by Eric Price.
 
