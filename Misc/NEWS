@@ -99,6 +99,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #13952: Add .csv to mimetypes.types_map.  Patch by Geoff Wilson.
+
 - Issue #26709: Fixed Y2038 problem in loading binary PLists.
 
 - Issue #23735: Handle terminal resizing with Readline 6.3+ by installing our
