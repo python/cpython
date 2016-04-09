@@ -363,17 +363,17 @@ class SimpleHTTPServerTestCase(BaseTestCase):
 
     def test_path_without_leading_slash(self):
         response = self.request(self.tempdir_name + '/test')
-        self.check_status_and_reason(response, HTTPStatus.OK, data=self.data)
+        self.check_status_and_reason(response, 200, data=self.data)
         response = self.request(self.tempdir_name + '/test/')
-        self.check_status_and_reason(response, HTTPStatus.NOT_FOUND)
+        self.check_status_and_reason(response, 404)
         response = self.request(self.tempdir_name + '/')
-        self.check_status_and_reason(response, HTTPStatus.OK)
+        self.check_status_and_reason(response, 200)
         response = self.request(self.tempdir_name)
-        self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        self.check_status_and_reason(response, 301)
         response = self.request(self.tempdir_name + '/?hi=2')
-        self.check_status_and_reason(response, HTTPStatus.OK)
+        self.check_status_and_reason(response, 200)
         response = self.request(self.tempdir_name + '?hi=1')
-        self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
+        self.check_status_and_reason(response, 301)
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
 
