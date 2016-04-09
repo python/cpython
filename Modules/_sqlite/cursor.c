@@ -242,8 +242,7 @@ PyObject* _pysqlite_build_column_name(const char* colname)
     const char* pos;
 
     if (!colname) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     for (pos = colname;; pos++) {
@@ -914,8 +913,7 @@ PyObject* pysqlite_cursor_fetchone(pysqlite_Cursor* self, PyObject* args)
 
     row = pysqlite_cursor_iternext(self);
     if (!row && !PyErr_Occurred()) {
-        Py_INCREF(Py_None);
-        return Py_None;
+        Py_RETURN_NONE;
     }
 
     return row;
@@ -996,8 +994,7 @@ PyObject* pysqlite_cursor_fetchall(pysqlite_Cursor* self, PyObject* args)
 PyObject* pysqlite_noop(pysqlite_Connection* self, PyObject* args)
 {
     /* don't care, return None */
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args)
@@ -1013,8 +1010,7 @@ PyObject* pysqlite_cursor_close(pysqlite_Cursor* self, PyObject* args)
 
     self->closed = 1;
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef cursor_methods[] = {

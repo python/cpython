@@ -244,8 +244,7 @@ PyObject* pysqlite_cache_display(pysqlite_Cache* self, PyObject* args)
         ptr = ptr->next;
     }
 
-    Py_INCREF(Py_None);
-    return Py_None;
+    Py_RETURN_NONE;
 }
 
 static PyMethodDef cache_methods[] = {
