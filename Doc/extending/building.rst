@@ -40,7 +40,7 @@ It is possible to export multiple modules from a single shared library by
 defining multiple initialization functions. However, importing them requires
 using symbolic links or a custom importer, because by default only the
 function corresponding to the filename is found.
-See :PEP:`489#multiple-modules-in-one-library` for details.
+See the *"Multiple modules in one library"* section in :pep:`489` for details.
 
 
 .. highlightlang:: c
@@ -88,7 +88,8 @@ distutils; this section explains building extension modules only.
 
 It is common to pre-compute arguments to :func:`setup`, to better structure the
 driver script. In the example above, the ``ext_modules`` argument to
-:func:`setup` is a list of extension modules, each of which is an instance of
+:func:`~distutils.core.setup` is a list of extension modules, each of which is
+an instance of
 the :class:`~distutils.extension.Extension`. In the example, the instance
 defines an extension named ``demo`` which is build by compiling a single source
 file, :file:`demo.c`.
@@ -119,7 +120,8 @@ example below. ::
           ext_modules = [module1])
 
 
-In this example, :func:`setup` is called with additional meta-information, which
+In this example, :func:`~distutils.core.setup` is called with additional
+meta-information, which
 is recommended when distribution packages have to be built. For the extension
 itself, it specifies preprocessor defines, include directories, library
 directories, and libraries. Depending on the compiler, distutils passes this
@@ -150,8 +152,7 @@ Module maintainers should produce source packages; to do so, they run ::
    python setup.py sdist
 
 In some cases, additional files need to be included in a source distribution;
-this is done through a :file:`MANIFEST.in` file; see the distutils documentation
-for details.
+this is done through a :file:`MANIFEST.in` file; see :ref:`manifest` for details.
 
 If the source distribution has been build successfully, maintainers can also
 create binary distributions. Depending on the platform, one of the following
