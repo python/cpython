@@ -65,6 +65,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #19377: Add .svg to mimetypes.types_map.
+
 - Issue #13952: Add .csv to mimetypes.types_map.  Patch by Geoff Wilson.
 
 - Issue #16329: Add .webm to mimetypes.types_map.  Patch by Giampaolo Rodola'.
