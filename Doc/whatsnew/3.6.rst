@@ -196,7 +196,7 @@ contextlib
 The :class:`contextlib.AbstractContextManager` class has been added to
 provide an abstract base class for context managers. It provides a
 sensible default implementation for `__enter__()` which returns
-`self` and leaves `__exit__()` an abstract method. A matching
+``self`` and leaves `__exit__()` an abstract method. A matching
 class has been added to the :mod:`typing` module as
 :class:`typing.ContextManager`.
 (Contributed by Brett Cannon in :issue:`25609`.)
