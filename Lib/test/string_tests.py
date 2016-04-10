@@ -368,6 +368,8 @@ class BaseTest:
                         sys.maxsize-2)
         self.checkequal(['a|b|c|d'], 'a|b|c|d', 'split', '|', 0)
         self.checkequal(['a', '', 'b||c||d'], 'a||b||c||d', 'split', '|', 2)
+        self.checkequal(['abcd'], 'abcd', 'split', '|')
+        self.checkequal([''], '', 'split', '|')
         self.checkequal(['endcase ', ''], 'endcase |', 'split', '|')
         self.checkequal(['', ' startcase'], '| startcase', 'split', '|')
         self.checkequal(['', 'bothcase', ''], '|bothcase|', 'split', '|')
@@ -435,6 +437,8 @@ class BaseTest:
                         sys.maxsize-100)
         self.checkequal(['a|b|c|d'], 'a|b|c|d', 'rsplit', '|', 0)
         self.checkequal(['a||b||c', '', 'd'], 'a||b||c||d', 'rsplit', '|', 2)
+        self.checkequal(['abcd'], 'abcd', 'rsplit', '|')
+        self.checkequal([''], '', 'rsplit', '|')
         self.checkequal(['', ' begincase'], '| begincase', 'rsplit', '|')
         self.checkequal(['endcase ', ''], 'endcase |', 'rsplit', '|')
         self.checkequal(['', 'bothcase', ''], '|bothcase|', 'rsplit', '|')
@@ -641,14 +645,6 @@ class BaseTest:
         EQ("bobobXbobob", "bobobobXbobobob", "replace", "bobob", "bob")
         EQ("BOBOBOB", "BOBOBOB", "replace", "bob", "bobby")
 
-        # XXX Commented out. Is there any reason to support buffer objects
-        # as arguments for str.replace()?  GvR
-##         ba = bytearray('a')
-##         bb = bytearray('b')
-##         EQ("bbc", "abc", "replace", ba, bb)
-##         EQ("aac", "abc", "replace", bb, ba)
-
-        #
         self.checkequal('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)
         self.checkequal('onetwothree', 'one!two!three!', 'replace', '!', '')
         self.checkequal('one@two@three!', 'one!two!three!', 'replace', '!', '@', 2)
@@ -714,16 +710,21 @@ class BaseTest:
         self.checkequal(['a'], '  a    ', 'split')
         self.checkequal(['a', 'b'], '  a    b   ', 'split')
         self.checkequal(['a', 'b   '], '  a    b   ', 'split', None, 1)
+        self.checkequal(['a    b   c   '], '  a    b   c   ', 'split', None, 0)
         self.checkequal(['a', 'b   c   '], '  a    b   c   ', 'split', None, 1)
         self.checkequal(['a', 'b', 'c   '], '  a    b   c   ', 'split', None, 2)
+        self.checkequal(['a', 'b', 'c'], '  a    b   c   ', 'split', None, 3)
         self.checkequal(['a', 'b'], '\n\ta \t\r b \v ', 'split')
         aaa = ' a '*20
         self.checkequal(['a']*20, aaa, 'split')
         self.checkequal(['a'] + [aaa[4:]], aaa, 'split', None, 1)
         self.checkequal(['a']*19 + ['a '], aaa, 'split', None, 19)
 
-        # mixed use of str and unicode
-        self.checkequal(['a', 'b', 'c d'], 'a b c d', 'split', ' ', 2)
+        for b in ('arf\tbarf', 'arf\nbarf', 'arf\rbarf',
+                  'arf\fbarf', 'arf\vbarf'):
+            self.checkequal(['arf', 'barf'], b, 'split')
+            self.checkequal(['arf', 'barf'], b, 'split', None)
+            self.checkequal(['arf', 'barf'], b, 'split', None, 2)
 
     def test_additional_rsplit(self):
         self.checkequal(['this', 'is', 'the', 'rsplit', 'function'],
@@ -745,24 +746,36 @@ class BaseTest:
         self.checkequal(['a'], '  a    ', 'rsplit')
         self.checkequal(['a', 'b'], '  a    b   ', 'rsplit')
         self.checkequal(['  a', 'b'], '  a    b   ', 'rsplit', None, 1)
+        self.checkequal(['  a    b   c'], '  a    b   c   ', 'rsplit',
+                        None, 0)
         self.checkequal(['  a    b','c'], '  a    b   c   ', 'rsplit',
                         None, 1)
         self.checkequal(['  a', 'b', 'c'], '  a    b   c   ', 'rsplit',
                         None, 2)
+        self.checkequal(['a', 'b', 'c'], '  a    b   c   ', 'rsplit',
+                        None, 3)
         self.checkequal(['a', 'b'], '\n\ta \t\r b \v ', 'rsplit', None, 88)
         aaa = ' a '*20
         self.checkequal(['a']*20, aaa, 'rsplit')
         self.checkequal([aaa[:-4]] + ['a'], aaa, 'rsplit', None, 1)
         self.checkequal([' a  a'] + ['a']*18, aaa, 'rsplit', None, 18)
 
-        # mixed use of str and unicode
-        self.checkequal(['a b', 'c', 'd'], 'a b c d', 'rsplit', ' ', 2)
+        for b in ('arf\tbarf', 'arf\nbarf', 'arf\rbarf',
+                  'arf\fbarf', 'arf\vbarf'):
+            self.checkequal(['arf', 'barf'], b, 'rsplit')
+            self.checkequal(['arf', 'barf'], b, 'rsplit', None)
+            self.checkequal(['arf', 'barf'], b, 'rsplit', None, 2)
 
-    def test_strip(self):
+    def test_strip_whitespace(self):
         self.checkequal('hello', '   hello   ', 'strip')
         self.checkequal('hello   ', '   hello   ', 'lstrip')
         self.checkequal('   hello', '   hello   ', 'rstrip')
         self.checkequal('hello', 'hello', 'strip')
+
+        b = ' \t\n\r\f\vabc \t\n\r\f\v'
+        self.checkequal('abc', b, 'strip')
+        self.checkequal('abc \t\n\r\f\v', b, 'lstrip')
+        self.checkequal(' \t\n\r\f\vabc', b, 'rstrip')
 
         # strip/lstrip/rstrip with None arg
         self.checkequal('hello', '   hello   ', 'strip', None)
@@ -770,11 +783,16 @@ class BaseTest:
         self.checkequal('   hello', '   hello   ', 'rstrip', None)
         self.checkequal('hello', 'hello', 'strip', None)
 
+    def test_strip(self):
         # strip/lstrip/rstrip with str arg
         self.checkequal('hello', 'xyzzyhelloxyzzy', 'strip', 'xyz')
         self.checkequal('helloxyzzy', 'xyzzyhelloxyzzy', 'lstrip', 'xyz')
         self.checkequal('xyzzyhello', 'xyzzyhelloxyzzy', 'rstrip', 'xyz')
         self.checkequal('hello', 'hello', 'strip', 'xyz')
+        self.checkequal('', 'mississippi', 'strip', 'mississippi')
+
+        # only trim the start and end; does not strip internal characters
+        self.checkequal('mississipp', 'mississippi', 'strip', 'i')
 
         self.checkraises(TypeError, 'hello', 'strip', 42, 42)
         self.checkraises(TypeError, 'hello', 'lstrip', 42, 42)
@@ -1363,28 +1381,3 @@ class MixinStrUnicodeTest:
         s1 = t("abcd")
         s2 = t().join([s1])
         self.assertIs(s1, s2)
-
-        # Should also test mixed-type join.
-        if t is str:
-            s1 = subclass("abcd")
-            s2 = "".join([s1])
-            self.assertIsNot(s1, s2)
-            self.assertIs(type(s2), t)
-
-            s1 = t("abcd")
-            s2 = "".join([s1])
-            self.assertIs(s1, s2)
-
-##         elif t is str8:
-##             s1 = subclass("abcd")
-##             s2 = "".join([s1])
-##             self.assertIsNot(s1, s2)
-##             self.assertIs(type(s2), str) # promotes!
-
-##             s1 = t("abcd")
-##             s2 = "".join([s1])
-##             self.assertIsNot(s1, s2)
-##             self.assertIs(type(s2), str) # promotes!
-
-        else:
-            self.fail("unexpected type for MixinStrUnicodeTest %r" % t)
