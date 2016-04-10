@@ -349,13 +349,21 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a'], '  a    ', 'split')
         self.checkequal(['a', 'b'], '  a    b   ', 'split')
         self.checkequal(['a', 'b   '], '  a    b   ', 'split', None, 1)
+        self.checkequal(['a    b   c   '], '  a    b   c   ', 'split', None, 0)
         self.checkequal(['a', 'b   c   '], '  a    b   c   ', 'split', None, 1)
         self.checkequal(['a', 'b', 'c   '], '  a    b   c   ', 'split', None, 2)
+        self.checkequal(['a', 'b', 'c'], '  a    b   c   ', 'split', None, 3)
         self.checkequal(['a', 'b'], '\n\ta \t\r b \v ', 'split')
         aaa = ' a '*20
         self.checkequal(['a']*20, aaa, 'split')
         self.checkequal(['a'] + [aaa[4:]], aaa, 'split', None, 1)
         self.checkequal(['a']*19 + ['a '], aaa, 'split', None, 19)
+
+        for b in ('arf\tbarf', 'arf\nbarf', 'arf\rbarf',
+                  'arf\fbarf', 'arf\vbarf'):
+            self.checkequal(['arf', 'barf'], b, 'split')
+            self.checkequal(['arf', 'barf'], b, 'split', None)
+            self.checkequal(['arf', 'barf'], b, 'split', None, 2)
 
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'split', '|')
@@ -368,6 +376,8 @@ class CommonTest(unittest.TestCase):
                         sys.maxint-2)
         self.checkequal(['a|b|c|d'], 'a|b|c|d', 'split', '|', 0)
         self.checkequal(['a', '', 'b||c||d'], 'a||b||c||d', 'split', '|', 2)
+        self.checkequal(['abcd'], 'abcd', 'split', '|')
+        self.checkequal([''], '', 'split', '|')
         self.checkequal(['endcase ', ''], 'endcase |', 'split', '|')
         self.checkequal(['', ' startcase'], '| startcase', 'split', '|')
         self.checkequal(['', 'bothcase', ''], '|bothcase|', 'split', '|')
@@ -438,16 +448,25 @@ class CommonTest(unittest.TestCase):
         self.checkequal(['a'], '  a    ', 'rsplit')
         self.checkequal(['a', 'b'], '  a    b   ', 'rsplit')
         self.checkequal(['  a', 'b'], '  a    b   ', 'rsplit', None, 1)
+        self.checkequal(['  a    b   c'], '  a    b   c   ', 'rsplit',
+                        None, 0)
         self.checkequal(['  a    b','c'], '  a    b   c   ', 'rsplit',
                         None, 1)
         self.checkequal(['  a', 'b', 'c'], '  a    b   c   ', 'rsplit',
                         None, 2)
+        self.checkequal(['a', 'b', 'c'], '  a    b   c   ', 'rsplit',
+                        None, 3)
         self.checkequal(['a', 'b'], '\n\ta \t\r b \v ', 'rsplit', None, 88)
         aaa = ' a '*20
         self.checkequal(['a']*20, aaa, 'rsplit')
         self.checkequal([aaa[:-4]] + ['a'], aaa, 'rsplit', None, 1)
         self.checkequal([' a  a'] + ['a']*18, aaa, 'rsplit', None, 18)
 
+        for b in ('arf\tbarf', 'arf\nbarf', 'arf\rbarf',
+                  'arf\fbarf', 'arf\vbarf'):
+            self.checkequal(['arf', 'barf'], b, 'rsplit')
+            self.checkequal(['arf', 'barf'], b, 'rsplit', None)
+            self.checkequal(['arf', 'barf'], b, 'rsplit', None, 2)
 
         # by a char
         self.checkequal(['a', 'b', 'c', 'd'], 'a|b|c|d', 'rsplit', '|')
@@ -459,6 +478,8 @@ class CommonTest(unittest.TestCase):
                         sys.maxint-100)
         self.checkequal(['a|b|c|d'], 'a|b|c|d', 'rsplit', '|', 0)
         self.checkequal(['a||b||c', '', 'd'], 'a||b||c||d', 'rsplit', '|', 2)
+        self.checkequal(['abcd'], 'abcd', 'rsplit', '|')
+        self.checkequal([''], '', 'rsplit', '|')
         self.checkequal(['', ' begincase'], '| begincase', 'rsplit', '|')
         self.checkequal(['endcase ', ''], 'endcase |', 'rsplit', '|')
         self.checkequal(['', 'bothcase', ''], '|bothcase|', 'rsplit', '|')
@@ -510,11 +531,16 @@ class CommonTest(unittest.TestCase):
         self.checkraises(ValueError, 'hello', 'rsplit', '')
         self.checkraises(ValueError, 'hello', 'rsplit', '', 0)
 
-    def test_strip(self):
+    def test_strip_whitespace(self):
         self.checkequal('hello', '   hello   ', 'strip')
         self.checkequal('hello   ', '   hello   ', 'lstrip')
         self.checkequal('   hello', '   hello   ', 'rstrip')
         self.checkequal('hello', 'hello', 'strip')
+
+        b = ' \t\n\r\f\vabc \t\n\r\f\v'
+        self.checkequal('abc', b, 'strip')
+        self.checkequal('abc \t\n\r\f\v', b, 'lstrip')
+        self.checkequal(' \t\n\r\f\vabc', b, 'rstrip')
 
         # strip/lstrip/rstrip with None arg
         self.checkequal('hello', '   hello   ', 'strip', None)
@@ -522,11 +548,16 @@ class CommonTest(unittest.TestCase):
         self.checkequal('   hello', '   hello   ', 'rstrip', None)
         self.checkequal('hello', 'hello', 'strip', None)
 
+    def test_strip(self):
         # strip/lstrip/rstrip with str arg
         self.checkequal('hello', 'xyzzyhelloxyzzy', 'strip', 'xyz')
         self.checkequal('helloxyzzy', 'xyzzyhelloxyzzy', 'lstrip', 'xyz')
         self.checkequal('xyzzyhello', 'xyzzyhelloxyzzy', 'rstrip', 'xyz')
         self.checkequal('hello', 'hello', 'strip', 'xyz')
+        self.checkequal('', 'mississippi', 'strip', 'mississippi')
+
+        # only trims the start and end, does not strip internal characters
+        self.checkequal('mississipp', 'mississippi', 'strip', 'i')
 
         # strip/lstrip/rstrip with unicode arg
         if self.type2test is not bytearray and test_support.have_unicode:
