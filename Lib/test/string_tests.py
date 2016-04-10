@@ -645,14 +645,6 @@ class BaseTest:
         EQ("bobobXbobob", "bobobobXbobobob", "replace", "bobob", "bob")
         EQ("BOBOBOB", "BOBOBOB", "replace", "bob", "bobby")
 
-        # XXX Commented out. Is there any reason to support buffer objects
-        # as arguments for str.replace()?  GvR
-##         ba = bytearray('a')
-##         bb = bytearray('b')
-##         EQ("bbc", "abc", "replace", ba, bb)
-##         EQ("aac", "abc", "replace", bb, ba)
-
-        #
         self.checkequal('one@two!three!', 'one!two!three!', 'replace', '!', '@', 1)
         self.checkequal('onetwothree', 'one!two!three!', 'replace', '!', '')
         self.checkequal('one@two@three!', 'one!two!three!', 'replace', '!', '@', 2)
@@ -1389,28 +1381,3 @@ class MixinStrUnicodeTest:
         s1 = t("abcd")
         s2 = t().join([s1])
         self.assertIs(s1, s2)
-
-        # Should also test mixed-type join.
-        if t is str:
-            s1 = subclass("abcd")
-            s2 = "".join([s1])
-            self.assertIsNot(s1, s2)
-            self.assertIs(type(s2), t)
-
-            s1 = t("abcd")
-            s2 = "".join([s1])
-            self.assertIs(s1, s2)
-
-##         elif t is str8:
-##             s1 = subclass("abcd")
-##             s2 = "".join([s1])
-##             self.assertIsNot(s1, s2)
-##             self.assertIs(type(s2), str) # promotes!
-
-##             s1 = t("abcd")
-##             s2 = "".join([s1])
-##             self.assertIsNot(s1, s2)
-##             self.assertIs(type(s2), str) # promotes!
-
-        else:
-            self.fail("unexpected type for MixinStrUnicodeTest %r" % t)
