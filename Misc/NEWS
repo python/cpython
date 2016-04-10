@@ -10,6 +10,9 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #13410: Fixed a bug in PyUnicode_Format where it failed to properly
+  ignore errors from a __int__() method.
+
 - Issue #26494: Fixed crash on iterating exhausting iterators.
   Affected classes are generic sequence iterators, iterators of bytearray,
   list, tuple, set, frozenset, dict, OrderedDict and corresponding views.

@@ -243,6 +243,7 @@ class FormatTest(unittest.TestCase):
 
         fst = IntFails()
         testformat("%x", fst, '0')
+        testformat(u"%x", fst, '0')
 
         # Test exception for unknown format characters
         if verbose:
