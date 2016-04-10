@@ -622,7 +622,7 @@ tee_next(teeobject *to)
         link = teedataobject_jumplink(to->dataobj);
         if (link == NULL)
             return NULL;
-        Py_XSETREF(to->dataobj, (teedataobject *)link);
+        Py_SETREF(to->dataobj, (teedataobject *)link);
         to->index = 0;
     }
     value = teedataobject_getitem(to->dataobj, to->index);
@@ -3457,7 +3457,7 @@ accumulate_next(accumulateobject *lz)
         return NULL;
 
     Py_INCREF(newtotal);
-    Py_XSETREF(lz->total, newtotal);
+    Py_SETREF(lz->total, newtotal);
     return newtotal;
 }
 
