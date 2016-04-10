@@ -380,10 +380,6 @@ class UnicodeTest(string_tests.CommonTest,
     def test_split(self):
         string_tests.CommonTest.test_split(self)
 
-        # Mixed arguments
-        self.checkequalnofix(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//')
-        self.checkequalnofix(['a', 'b', 'c', 'd'], 'a//b//c//d', 'split', '//')
-        self.checkequalnofix(['endcase ', ''], 'endcase test', 'split', 'test')
         # test mixed kinds
         for left, right in ('ba', '\u0101\u0100', '\U00010301\U00010300'):
             left *= 9
