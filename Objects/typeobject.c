@@ -424,7 +424,7 @@ type_set_name(PyTypeObject *type, PyObject *value, void *context)
 
     type->tp_name = tp_name;
     Py_INCREF(value);
-    Py_XSETREF(((PyHeapTypeObject*)type)->ht_name, value);
+    Py_SETREF(((PyHeapTypeObject*)type)->ht_name, value);
 
     return 0;
 }
@@ -445,7 +445,7 @@ type_set_qualname(PyTypeObject *type, PyObject *value, void *context)
 
     et = (PyHeapTypeObject*)type;
     Py_INCREF(value);
-    Py_XSETREF(et->ht_qualname, value);
+    Py_SETREF(et->ht_qualname, value);
     return 0;
 }
 
@@ -2903,7 +2903,7 @@ _PyType_Lookup(PyTypeObject *type, PyObject *name)
         else
             method_cache_misses++;
 #endif
-        Py_XSETREF(method_cache[h].name, name);
+        Py_SETREF(method_cache[h].name, name);
     }
     return res;
 }

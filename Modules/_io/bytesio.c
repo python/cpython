@@ -96,7 +96,7 @@ unshare_buffer(bytesio *self, size_t size)
         return -1;
     memcpy(PyBytes_AS_STRING(new_buf), PyBytes_AS_STRING(self->buf),
            self->string_size);
-    Py_XSETREF(self->buf, new_buf);
+    Py_SETREF(self->buf, new_buf);
     return 0;
 }
 

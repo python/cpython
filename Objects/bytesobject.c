@@ -3697,7 +3697,7 @@ PyBytes_Concat(PyObject **pv, PyObject *w)
         /* Multiple references, need to create new object */
         PyObject *v;
         v = bytes_concat(*pv, w);
-        Py_XSETREF(*pv, v);
+        Py_SETREF(*pv, v);
     }
 }
 

@@ -391,7 +391,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         Py_DECREF((PyObject *)dict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)dict);
+    Py_SETREF(result->tp_dict, (PyObject *)dict);
     dict->format = _ctypes_alloc_format_string(NULL, "B");
     if (dict->format == NULL) {
         Py_DECREF(result);
@@ -960,7 +960,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -1403,7 +1403,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     /* replace the class dict by our updated spam dict */
     if (-1 == PyDict_Update((PyObject *)stgdict, result->tp_dict))
         goto error;
-    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);  /* steal the reference */
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);  /* steal the reference */
     stgdict = NULL;
 
     /* Special case for character arrays.
@@ -1816,7 +1816,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -1944,7 +1944,7 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     /* Install from_param class methods in ctypes base classes.
        Overrides the PyCSimpleType_from_param generic method.
@@ -2307,7 +2307,7 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     if (-1 == make_funcptrtype_dict(stgdict)) {
         Py_DECREF(result);
@@ -5150,7 +5150,7 @@ comerror_init(PyObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     Py_INCREF(args);
-    Py_XSETREF(((PyBaseExceptionObject *)self)->args, args);
+    Py_SETREF(((PyBaseExceptionObject *)self)->args, args);
 
     return 0;
 }

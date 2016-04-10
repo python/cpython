@@ -735,7 +735,7 @@ list_ass_item(PyListObject *a, Py_ssize_t i, PyObject *v)
     if (v == NULL)
         return list_ass_slice(a, i, i+1, v);
     Py_INCREF(v);
-    Py_XSETREF(a->ob_item[i], v);
+    Py_SETREF(a->ob_item[i], v);
     return 0;
 }
 
