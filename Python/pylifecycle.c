@@ -1135,15 +1135,6 @@ initstdio(void)
     encoding = _Py_StandardStreamEncoding;
     errors = _Py_StandardStreamErrors;
     if (!encoding || !errors) {
-        if (!errors) {
-            /* When the LC_CTYPE locale is the POSIX locale ("C locale"),
-               stdin and stdout use the surrogateescape error handler by
-               default, instead of the strict error handler. */
-            char *loc = setlocale(LC_CTYPE, NULL);
-            if (loc != NULL && strcmp(loc, "C") == 0)
-                errors = "surrogateescape";
-        }
-
         pythonioencoding = Py_GETENV("PYTHONIOENCODING");
         if (pythonioencoding) {
             char *err;
@@ -1156,13 +1147,21 @@ initstdio(void)
             if (err) {
                 *err = '\0';
                 err++;
-                if (*err && !_Py_StandardStreamErrors) {
+                if (*err && !errors) {
                     errors = err;
                 }
             }
             if (*pythonioencoding && !encoding) {
                 encoding = pythonioencoding;
             }
+        }
+        if (!errors && !(pythonioencoding && *pythonioencoding)) {
+            /* When the LC_CTYPE locale is the POSIX locale ("C locale"),
+               stdin and stdout use the surrogateescape error handler by
+               default, instead of the strict error handler. */
+            char *loc = setlocale(LC_CTYPE, NULL);
+            if (loc != NULL && strcmp(loc, "C") == 0)
+                errors = "surrogateescape";
         }
     }
 
