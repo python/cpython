@@ -1957,7 +1957,7 @@ element_tag_setter(ElementObject *self, PyObject *value, void *closure)
 {
     _VALIDATE_ATTR_VALUE(value);
     Py_INCREF(value);
-    Py_XSETREF(self->tag, value);
+    Py_SETREF(self->tag, value);
     return 0;
 }
 
@@ -1990,7 +1990,7 @@ element_attrib_setter(ElementObject *self, PyObject *value, void *closure)
             return -1;
     }
     Py_INCREF(value);
-    Py_XSETREF(self->extra->attrib, value);
+    Py_SETREF(self->extra->attrib, value);
     return 0;
 }
 
@@ -2524,9 +2524,9 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     self->index++;
 
     Py_INCREF(node);
-    Py_XSETREF(self->this, node);
+    Py_SETREF(self->this, node);
     Py_INCREF(node);
-    Py_XSETREF(self->last, node);
+    Py_SETREF(self->last, node);
 
     if (treebuilder_append_event(self, self->start_event_obj, node) < 0)
         goto error;
