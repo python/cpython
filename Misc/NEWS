@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #25339: PYTHONIOENCODING now has priority over locale in setting the
+  error handler for stdin and stdout.
+
 - Issue #26494: Fixed crash on iterating exhausting iterators.
   Affected classes are generic sequence iterators, iterators of str, bytes,
   bytearray, list, tuple, set, frozenset, dict, OrderedDict, corresponding
