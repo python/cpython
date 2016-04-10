@@ -424,7 +424,7 @@ StructUnionType_new(PyTypeObject *type, PyObject *args, PyObject *kwds, int isSt
         Py_DECREF((PyObject *)dict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)dict);
+    Py_SETREF(result->tp_dict, (PyObject *)dict);
     dict->format = _ctypes_alloc_format_string(NULL, "B");
     if (dict->format == NULL) {
         Py_DECREF(result);
@@ -992,7 +992,7 @@ PyCPointerType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -1457,7 +1457,7 @@ PyCArrayType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     /* Special case for character arrays.
        A permanent annoyance: char arrays are also strings!
@@ -1880,7 +1880,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     return (PyObject *)result;
 }
@@ -2388,7 +2388,7 @@ PyCFuncPtrType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
         Py_DECREF((PyObject *)stgdict);
         return NULL;
     }
-    Py_XSETREF(result->tp_dict, (PyObject *)stgdict);
+    Py_SETREF(result->tp_dict, (PyObject *)stgdict);
 
     if (-1 == make_funcptrtype_dict(stgdict)) {
         Py_DECREF(result);

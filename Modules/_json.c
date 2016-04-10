@@ -1717,7 +1717,7 @@ scanner_init(PyObject *self, PyObject *args, PyObject *kwds)
     }
     else if (PyUnicode_Check(s->encoding)) {
         PyObject *tmp = PyUnicode_AsEncodedString(s->encoding, NULL, NULL);
-        Py_XSETREF(s->encoding, tmp);
+        Py_SETREF(s->encoding, tmp);
     }
     if (s->encoding == NULL)
         goto bail;

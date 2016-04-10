@@ -59,7 +59,7 @@ BaseException_init(PyBaseExceptionObject *self, PyObject *args, PyObject *kwds)
         return -1;
 
     Py_INCREF(args);
-    Py_XSETREF(self->args, args);
+    Py_SETREF(self->args, args);
 
     if (PyTuple_GET_SIZE(self->args) == 1) {
         Py_INCREF(PyTuple_GET_ITEM(self->args, 0));
@@ -622,7 +622,7 @@ EnvironmentError_init(PyEnvironmentErrorObject *self, PyObject *args,
         if (!subslice)
             return -1;
 
-        Py_XSETREF(self->args, subslice);
+        Py_SETREF(self->args, subslice);
     }
     return 0;
 }

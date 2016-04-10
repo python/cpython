@@ -1574,7 +1574,7 @@ element_setattr(ElementObject* self, const char* name, PyObject* value)
 
     if (strcmp(name, "tag") == 0) {
         Py_INCREF(value);
-        Py_XSETREF(self->tag, value);
+        Py_SETREF(self->tag, value);
     } else if (strcmp(name, "text") == 0) {
         Py_DECREF(JOIN_OBJ(self->text));
         self->text = value;
@@ -1587,7 +1587,7 @@ element_setattr(ElementObject* self, const char* name, PyObject* value)
         if (!self->extra)
             element_new_extra(self, NULL);
         Py_INCREF(value);
-        Py_XSETREF(self->extra->attrib, value);
+        Py_SETREF(self->extra->attrib, value);
     } else {
         PyErr_SetString(PyExc_AttributeError, name);
         return -1;
@@ -1799,10 +1799,10 @@ treebuilder_handle_start(TreeBuilderObject* self, PyObject* tag,
     self->index++;
 
     Py_INCREF(node);
-    Py_XSETREF(self->this, (ElementObject*) node);
+    Py_SETREF(self->this, (ElementObject*) node);
 
     Py_INCREF(node);
-    Py_XSETREF(self->last, (ElementObject*) node);
+    Py_SETREF(self->last, (ElementObject*) node);
 
     if (treebuilder_append_event(self, self->start_event_obj, node) < 0)
         goto error;

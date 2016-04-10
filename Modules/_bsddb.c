@@ -2498,7 +2498,7 @@ DB_set_private(DBObject* self, PyObject* private_obj)
 {
     /* We can set the private field even if db is closed */
     Py_INCREF(private_obj);
-    Py_XSETREF(self->private_obj, private_obj);
+    Py_SETREF(self->private_obj, private_obj);
     RETURN_NONE();
 }
 
@@ -6997,7 +6997,7 @@ DBEnv_set_private(DBEnvObject* self, PyObject* private_obj)
 {
     /* We can set the private field even if dbenv is closed */
     Py_INCREF(private_obj);
-    Py_XSETREF(self->private_obj, private_obj);
+    Py_SETREF(self->private_obj, private_obj);
     RETURN_NONE();
 }
 
@@ -7410,7 +7410,7 @@ DBEnv_rep_set_transport(DBEnvObject* self, PyObject* args)
     RETURN_IF_ERR();
 
     Py_INCREF(rep_transport);
-    Py_XSETREF(self->rep_transport, rep_transport);
+    Py_SETREF(self->rep_transport, rep_transport);
     RETURN_NONE();
 }
 

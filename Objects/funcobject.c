@@ -428,7 +428,7 @@ func_new(PyTypeObject* type, PyObject* args, PyObject* kw)
 
     if (name != Py_None) {
         Py_INCREF(name);
-        Py_XSETREF(newfunc->func_name, name);
+        Py_SETREF(newfunc->func_name, name);
     }
     if (defaults != Py_None) {
         Py_INCREF(defaults);

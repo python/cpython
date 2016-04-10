@@ -574,8 +574,8 @@ PyFile_SetEncodingAndErrors(PyObject *f, const char *enc, char* errors)
         oerrors = Py_None;
         Py_INCREF(Py_None);
     }
-    Py_XSETREF(file->f_encoding, str);
-    Py_XSETREF(file->f_errors, oerrors);
+    Py_SETREF(file->f_encoding, str);
+    Py_SETREF(file->f_errors, oerrors);
     return 1;
 }
 

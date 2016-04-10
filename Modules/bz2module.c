@@ -1953,7 +1953,7 @@ BZ2Decomp_decompress(BZ2DecompObject *self, PyObject *args)
             self->running = 0;
             input_left += bzs->avail_in;
             if (input_left != 0) {
-                Py_XSETREF(self->unused_data,
+                Py_SETREF(self->unused_data,
                           PyString_FromStringAndSize(bzs->next_in, input_left));
                 if (self->unused_data == NULL)
                     goto error;
