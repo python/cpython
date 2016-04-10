@@ -495,67 +495,15 @@ class BaseBytesTest:
         self.assertEqual(b.replace(b'i', b'a'), b'massassappa')
         self.assertEqual(b.replace(b'ss', b'x'), b'mixixippi')
 
-    def test_split(self):
-        b = self.type2test(b'mississippi')
-        self.assertEqual(b.split(b'i'), [b'm', b'ss', b'ss', b'pp', b''])
-        self.assertEqual(b.split(b'ss'), [b'mi', b'i', b'ippi'])
-        self.assertEqual(b.split(b'w'), [b])
-        # with keyword args
-        b = self.type2test(b'a|b|c|d')
-        self.assertEqual(b.split(sep=b'|'), [b'a', b'b', b'c', b'd'])
-        self.assertEqual(b.split(b'|', maxsplit=1), [b'a', b'b|c|d'])
-        self.assertEqual(b.split(sep=b'|', maxsplit=1), [b'a', b'b|c|d'])
-        self.assertEqual(b.split(maxsplit=1, sep=b'|'), [b'a', b'b|c|d'])
-        b = self.type2test(b'a b c d')
-        self.assertEqual(b.split(maxsplit=1), [b'a', b'b c d'])
-
-    def test_split_whitespace(self):
-        for b in (b'  arf  barf  ', b'arf\tbarf', b'arf\nbarf', b'arf\rbarf',
-                  b'arf\fbarf', b'arf\vbarf'):
-            b = self.type2test(b)
-            self.assertEqual(b.split(), [b'arf', b'barf'])
-            self.assertEqual(b.split(None), [b'arf', b'barf'])
-            self.assertEqual(b.split(None, 2), [b'arf', b'barf'])
-        for b in (b'a\x1Cb', b'a\x1Db', b'a\x1Eb', b'a\x1Fb'):
-            b = self.type2test(b)
-            self.assertEqual(b.split(), [b])
-        self.assertEqual(self.type2test(b'  a  bb  c  ').split(None, 0), [b'a  bb  c  '])
-        self.assertEqual(self.type2test(b'  a  bb  c  ').split(None, 1), [b'a', b'bb  c  '])
-        self.assertEqual(self.type2test(b'  a  bb  c  ').split(None, 2), [b'a', b'bb', b'c  '])
-        self.assertEqual(self.type2test(b'  a  bb  c  ').split(None, 3), [b'a', b'bb', b'c'])
-
     def test_split_string_error(self):
         self.assertRaises(TypeError, self.type2test(b'a b').split, ' ')
 
     def test_split_unicodewhitespace(self):
+        for b in (b'a\x1Cb', b'a\x1Db', b'a\x1Eb', b'a\x1Fb'):
+            b = self.type2test(b)
+            self.assertEqual(b.split(), [b])
         b = self.type2test(b"\x09\x0A\x0B\x0C\x0D\x1C\x1D\x1E\x1F")
         self.assertEqual(b.split(), [b'\x1c\x1d\x1e\x1f'])
-
-    def test_rsplit(self):
-        b = self.type2test(b'mississippi')
-        self.assertEqual(b.rsplit(b'i'), [b'm', b'ss', b'ss', b'pp', b''])
-        self.assertEqual(b.rsplit(b'ss'), [b'mi', b'i', b'ippi'])
-        self.assertEqual(b.rsplit(b'w'), [b])
-        # with keyword args
-        b = self.type2test(b'a|b|c|d')
-        self.assertEqual(b.rsplit(sep=b'|'), [b'a', b'b', b'c', b'd'])
-        self.assertEqual(b.rsplit(b'|', maxsplit=1), [b'a|b|c', b'd'])
-        self.assertEqual(b.rsplit(sep=b'|', maxsplit=1), [b'a|b|c', b'd'])
-        self.assertEqual(b.rsplit(maxsplit=1, sep=b'|'), [b'a|b|c', b'd'])
-        b = self.type2test(b'a b c d')
-        self.assertEqual(b.rsplit(maxsplit=1), [b'a b c', b'd'])
-
-    def test_rsplit_whitespace(self):
-        for b in (b'  arf  barf  ', b'arf\tbarf', b'arf\nbarf', b'arf\rbarf',
-                  b'arf\fbarf', b'arf\vbarf'):
-            b = self.type2test(b)
-            self.assertEqual(b.rsplit(), [b'arf', b'barf'])
-            self.assertEqual(b.rsplit(None), [b'arf', b'barf'])
-            self.assertEqual(b.rsplit(None, 2), [b'arf', b'barf'])
-        self.assertEqual(self.type2test(b'  a  bb  c  ').rsplit(None, 0), [b'  a  bb  c'])
-        self.assertEqual(self.type2test(b'  a  bb  c  ').rsplit(None, 1), [b'  a  bb', b'c'])
-        self.assertEqual(self.type2test(b'  a  bb  c  ').rsplit(None, 2), [b'  a', b'bb', b'c'])
-        self.assertEqual(self.type2test(b'  a  bb  c  ').rsplit(None, 3), [b'a', b'bb', b'c'])
 
     def test_rsplit_string_error(self):
         self.assertRaises(TypeError, self.type2test(b'a b').rsplit, ' ')
@@ -600,37 +548,6 @@ class BaseBytesTest:
                 d = pickle.dumps(it, proto)
                 it = pickle.loads(d)
                 self.assertEqual(list(it), data[1:])
-
-    def test_strip(self):
-        b = self.type2test(b'mississippi')
-        self.assertEqual(b.strip(b'i'), b'mississipp')
-        self.assertEqual(b.strip(b'm'), b'ississippi')
-        self.assertEqual(b.strip(b'pi'), b'mississ')
-        self.assertEqual(b.strip(b'im'), b'ssissipp')
-        self.assertEqual(b.strip(b'pim'), b'ssiss')
-        self.assertEqual(b.strip(b), b'')
-
-    def test_lstrip(self):
-        b = self.type2test(b'mississippi')
-        self.assertEqual(b.lstrip(b'i'), b'mississippi')
-        self.assertEqual(b.lstrip(b'm'), b'ississippi')
-        self.assertEqual(b.lstrip(b'pi'), b'mississippi')
-        self.assertEqual(b.lstrip(b'im'), b'ssissippi')
-        self.assertEqual(b.lstrip(b'pim'), b'ssissippi')
-
-    def test_rstrip(self):
-        b = self.type2test(b'mississippi')
-        self.assertEqual(b.rstrip(b'i'), b'mississipp')
-        self.assertEqual(b.rstrip(b'm'), b'mississippi')
-        self.assertEqual(b.rstrip(b'pi'), b'mississ')
-        self.assertEqual(b.rstrip(b'im'), b'mississipp')
-        self.assertEqual(b.rstrip(b'pim'), b'mississ')
-
-    def test_strip_whitespace(self):
-        b = self.type2test(b' \t\n\r\f\vabc \t\n\r\f\v')
-        self.assertEqual(b.strip(), b'abc')
-        self.assertEqual(b.lstrip(), b'abc \t\n\r\f\v')
-        self.assertEqual(b.rstrip(), b' \t\n\r\f\vabc')
 
     def test_strip_bytearray(self):
         self.assertEqual(self.type2test(b'abc').strip(memoryview(b'ac')), b'b')
@@ -1470,7 +1387,7 @@ class AssortedBytesTest(unittest.TestCase):
     # XXX More string methods?  (Those that don't use character properties)
 
     # There are tests in string_tests.py that are more
-    # comprehensive for things like split, partition, etc.
+    # comprehensive for things like partition, etc.
     # Unfortunately they are all bundled with tests that
     # are not appropriate for bytes
 
