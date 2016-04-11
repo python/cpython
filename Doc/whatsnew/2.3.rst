@@ -1858,7 +1858,7 @@ and bundle it with the source of your extension.
 
 .. seealso::
 
-   https://svn.python.org/view/python/trunk/Objects/obmalloc.c
+   https://hg.python.org/cpython/file/default/Objects/obmalloc.c
       For the full details of the pymalloc implementation, see the comments at
       the top of the file :file:`Objects/obmalloc.c` in the Python source code.
       The above link points to the file within the python.org SVN browser.

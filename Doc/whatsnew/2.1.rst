@@ -731,7 +731,7 @@ of the more notable changes are:
          ...
 
   For a fuller discussion of the line I/O changes, see the python-dev summary for
-  January 1-15, 2001 at https://www.python.org/dev/summary/2001-01-1/.
+  January 1-15, 2001 at https://mail.python.org/pipermail/python-dev/2001-January/.
 
 * A new method, :meth:`popitem`, was added to dictionaries to enable
   destructively iterating through the contents of a dictionary; this can be faster

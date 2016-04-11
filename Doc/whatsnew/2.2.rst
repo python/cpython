@@ -24,8 +24,8 @@ up irregularities and dark corners of the language design.
 This article doesn't attempt to provide a complete specification of the new
 features, but instead provides a convenient overview.  For full details, you
 should refer to the documentation for Python 2.2, such as the `Python Library
-Reference <https://www.python.org/doc/2.2/lib/lib.html>`_ and the `Python
-Reference Manual <https://www.python.org/doc/2.2/ref/ref.html>`_.  If you want to
+Reference <https://docs.python.org/2.2/lib/lib.html>`_ and the `Python
+Reference Manual <https://docs.python.org/2.2/ref/ref.html>`_.  If you want to
 understand the complete implementation and design rationale for a change, refer
 to the PEP for a particular new feature.
 
@@ -395,7 +395,7 @@ This section has just been a quick overview of the new features, giving enough
 of an explanation to start you programming, but many details have been
 simplified or ignored.  Where should you go to get a more complete picture?
 
-https://www.python.org/2.2/descrintro.html is a lengthy tutorial introduction to
+https://docs.python.org/dev/howto/descriptor.html is a lengthy tutorial introduction to
 the descriptor features, written by Guido van Rossum. If my description has
 whetted your appetite, go read this tutorial next, because it goes into much
 more detail about the new features while still remaining quite easy to read.
