@@ -52,9 +52,9 @@ for detailed information about platforms with precompiled installers.
       by Mark Pilgrim, 2004,
       ISBN 1-59059-356-1
 
-   `For Windows users <http://www.swaroopch.com/notes/python/#install_windows>`_
+   `For Windows users <http://python.swaroopch.com/installation.html#installation-on-windows>`_
       in "Installing Python"
-      in "`A Byte of Python <http://www.swaroopch.com/notes/python/>`_"
+      in "`A Byte of Python <http://python.swaroopch.com/>`_"
       by Swaroop C H, 2003
 
 
