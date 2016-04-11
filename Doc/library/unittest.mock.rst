@@ -1697,7 +1697,7 @@ Methods and their defaults:
 * ``__ge__``: NotImplemented
 * ``__int__``: 1
 * ``__contains__``: False
-* ``__len__``: 1
+* ``__len__``: 0
 * ``__iter__``: iter([])
 * ``__exit__``: False
 * ``__complex__``: 1j
