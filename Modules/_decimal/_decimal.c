@@ -3439,14 +3439,14 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
         goto error;
     }
 
-    Py_XSETREF(exponent, long_methods->nb_power(tmp, exponent, Py_None));
+    Py_SETREF(exponent, long_methods->nb_power(tmp, exponent, Py_None));
     Py_DECREF(tmp);
     if (exponent == NULL) {
         goto error;
     }
 
     if (exp >= 0) {
-        Py_XSETREF(numerator, long_methods->nb_multiply(numerator, exponent));
+        Py_SETREF(numerator, long_methods->nb_multiply(numerator, exponent));
         if (numerator == NULL) {
             goto error;
         }
@@ -3462,8 +3462,8 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
         if (tmp == NULL) {
             goto error;
         }
-        Py_XSETREF(numerator, long_methods->nb_floor_divide(numerator, tmp));
-        Py_XSETREF(denominator, long_methods->nb_floor_divide(denominator, tmp));
+        Py_SETREF(numerator, long_methods->nb_floor_divide(numerator, tmp));
+        Py_SETREF(denominator, long_methods->nb_floor_divide(denominator, tmp));
         Py_DECREF(tmp);
         if (numerator == NULL || denominator == NULL) {
             goto error;
