@@ -514,6 +514,10 @@ Changes in the Python API
 * :func:`spwd.getspnam` now raises a :exc:`PermissionError` instead of
   :exc:`KeyError` if the user doesn't have privileges.
 
+* The :meth:`socket.socket.close` method now raises an exception if
+  an error (e.g. EBADF) was reported by the underlying system call.
+  See :issue:`26685`.
+
 Changes in the C API
 --------------------
 
