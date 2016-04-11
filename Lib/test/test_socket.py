@@ -1161,6 +1161,17 @@ class GeneralModuleTests(unittest.TestCase):
         sock.close()
         self.assertRaises(OSError, sock.send, b"spam")
 
+    def testCloseException(self):
+        sock = socket.socket()
+        socket.socket(fileno=sock.fileno()).close()
+        try:
+            sock.close()
+        except OSError as err:
+            # Winsock apparently raises ENOTSOCK
+            self.assertIn(err.errno, (errno.EBADF, errno.ENOTSOCK))
+        else:
+            self.fail("close() should raise EBADF/ENOTSOCK")
+
     def testNewAttributes(self):
         # testing .family, .type and .protocol
 

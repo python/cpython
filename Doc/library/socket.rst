@@ -868,6 +868,10 @@ to sockets.
    it is recommended to :meth:`close` them explicitly, or to use a
    :keyword:`with` statement around them.
 
+   .. versionchanged:: 3.6
+      :exc:`OSError` is now raised if an error occurs when the underlying
+      :c:func:`close` call is made.
+
    .. note::
 
       :meth:`close()` releases the resource associated with a connection but
