@@ -6,6 +6,8 @@
 
 **Source code:** :source:`Lib/typing.py`
 
+.. versionadded:: 3.5
+
 --------------
 
 This module supports type hints as specified by :pep:`484`.  The most
