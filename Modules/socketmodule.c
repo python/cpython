@@ -2576,6 +2576,7 @@ static PyObject *
 sock_close(PySocketSockObject *s)
 {
     SOCKET_T fd;
+    int res;
 
     fd = s->sock_fd;
     if (fd != -1) {
@@ -2586,8 +2587,11 @@ sock_close(PySocketSockObject *s)
            http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
            for more details. */
         Py_BEGIN_ALLOW_THREADS
-        (void) SOCKETCLOSE(fd);
+        res = SOCKETCLOSE(fd);
         Py_END_ALLOW_THREADS
+        if (res < 0) {
+            return s->errorhandler();
+        }
     }
     Py_INCREF(Py_None);
     return Py_None;
