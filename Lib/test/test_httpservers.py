@@ -344,7 +344,7 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         quotedname = urllib.parse.quote(filename, errors='surrogatepass')
         self.assertIn(('href="%s"' % quotedname)
                       .encode(enc, 'surrogateescape'), body)
-        self.assertIn(('>%s<' % html.escape(filename))
+        self.assertIn(('>%s<' % html.escape(filename, quote=False))
                       .encode(enc, 'surrogateescape'), body)
         response = self.request(self.base_url + '/' + quotedname)
         self.check_status_and_reason(response, HTTPStatus.OK,
@@ -421,6 +421,27 @@ class SimpleHTTPServerTestCase(BaseTestCase):
         self.check_status_and_reason(response, HTTPStatus.MOVED_PERMANENTLY)
         self.assertEqual(response.getheader("Location"),
                          self.tempdir_name + "/?hi=1")
+
+    def test_html_escape_filename(self):
+        filename = '<test&>.txt'
+        fullpath = os.path.join(self.tempdir, filename)
+
+        try:
+            open(fullpath, 'w').close()
+        except OSError:
+            raise unittest.SkipTest('Can not create file %s on current file '
+                                    'system' % filename)
+
+        try:
+            response = self.request(self.base_url + '/')
+            body = self.check_status_and_reason(response, HTTPStatus.OK)
+            enc = response.headers.get_content_charset()
+        finally:
+            os.unlink(fullpath)  # avoid affecting test_undecodable_filename
+
+        self.assertIsNotNone(enc)
+        html_text = '>%s<' % html.escape(filename, quote=False)
+        self.assertIn(html_text.encode(enc), body)
 
 
 cgi_file1 = """\
@@ -882,6 +903,13 @@ class BaseHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(result[0], b'HTTP/1.1 431 Too many headers\r\n')
         self.assertFalse(self.handler.get_called)
         self.assertEqual(self.handler.requestline, 'GET / HTTP/1.1')
+
+    def test_html_escape_on_error(self):
+        result = self.send_typical_request(
+            b'<script>alert("hello")</script> / HTTP/1.1')
+        result = b''.join(result)
+        text = '<script>alert("hello")</script>'
+        self.assertIn(html.escape(text, quote=False).encode('ascii'), result)
 
     def test_close_connection(self):
         # handle_one_request() should be repeatedly called until
