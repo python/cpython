@@ -1074,6 +1074,8 @@ are always available.  They are listed here in alphabetical order.
       exception, the function now retries the system call instead of raising an
       :exc:`InterruptedError` exception (see :pep:`475` for the rationale).
 
+   .. versionchanged:: 3.5
+      The ``'namereplace'`` error handler was added.
 
 .. function:: ord(c)
 
