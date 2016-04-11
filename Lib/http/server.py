@@ -127,9 +127,6 @@ DEFAULT_ERROR_MESSAGE = """\
 
 DEFAULT_ERROR_CONTENT_TYPE = "text/html;charset=utf-8"
 
-def _quote_html(html):
-    return html.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
 class HTTPServer(socketserver.TCPServer):
 
     allow_reuse_address = 1    # Seems to make sense in testing environment
@@ -449,9 +446,12 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         if explain is None:
             explain = longmsg
         self.log_error("code %d, message %s", code, message)
-        # using _quote_html to prevent Cross Site Scripting attacks (see bug #1100201)
-        content = (self.error_message_format %
-                   {'code': code, 'message': _quote_html(message), 'explain': _quote_html(explain)})
+        # HTML encode to prevent Cross Site Scripting attacks (see bug #1100201)
+        content = (self.error_message_format % {
+            'code': code,
+            'message': html.escape(message, quote=False),
+            'explain': html.escape(explain, quote=False)
+        })
         body = content.encode('UTF-8', 'replace')
         self.send_response(code, message)
         self.send_header("Content-Type", self.error_content_type)
@@ -710,7 +710,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
                                                errors='surrogatepass')
         except UnicodeDecodeError:
             displaypath = urllib.parse.unquote(path)
-        displaypath = html.escape(displaypath)
+        displaypath = html.escape(displaypath, quote=False)
         enc = sys.getfilesystemencoding()
         title = 'Directory listing for %s' % displaypath
         r.append('<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01//EN" '
@@ -734,7 +734,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             r.append('<li><a href="%s">%s</a></li>'
                     % (urllib.parse.quote(linkname,
                                           errors='surrogatepass'),
-                       html.escape(displayname)))
+                       html.escape(displayname, quote=False)))
         r.append('</ul>\n<hr>\n</body>\n</html>\n')
         encoded = '\n'.join(r).encode(enc, 'surrogateescape')
         f = io.BytesIO()
