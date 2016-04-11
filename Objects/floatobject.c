@@ -1494,13 +1494,13 @@ float_as_integer_ratio(PyObject *v, PyObject *unused)
 
     /* fold in 2**exponent */
     if (exponent > 0) {
-        Py_XSETREF(numerator,
+        Py_SETREF(numerator,
                   long_methods->nb_lshift(numerator, py_exponent));
         if (numerator == NULL)
             goto error;
     }
     else {
-        Py_XSETREF(denominator,
+        Py_SETREF(denominator,
                   long_methods->nb_lshift(denominator, py_exponent));
         if (denominator == NULL)
             goto error;
