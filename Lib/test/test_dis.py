@@ -31,7 +31,7 @@ class _C:
         self.x = x == 1
 
 dis_c_instance_method = """\
- %-4d         0 LOAD_FAST                1 (x)
+%3d           0 LOAD_FAST                1 (x)
               3 LOAD_CONST               1 (1)
               6 COMPARE_OP               2 (==)
               9 LOAD_FAST                0 (self)
@@ -55,12 +55,12 @@ def _f(a):
     return 1
 
 dis_f = """\
- %-4d         0 LOAD_GLOBAL              0 (print)
+%3d           0 LOAD_GLOBAL              0 (print)
               3 LOAD_FAST                0 (a)
               6 CALL_FUNCTION            1 (1 positional, 0 keyword pair)
               9 POP_TOP
 
- %-4d        10 LOAD_CONST               1 (1)
+%3d          10 LOAD_CONST               1 (1)
              13 RETURN_VALUE
 """ % (_f.__code__.co_firstlineno + 1,
        _f.__code__.co_firstlineno + 2)
@@ -82,17 +82,17 @@ def bug708901():
         pass
 
 dis_bug708901 = """\
- %-4d         0 SETUP_LOOP              23 (to 26)
+%3d           0 SETUP_LOOP              23 (to 26)
               3 LOAD_GLOBAL              0 (range)
               6 LOAD_CONST               1 (1)
 
- %-4d         9 LOAD_CONST               2 (10)
+%3d           9 LOAD_CONST               2 (10)
              12 CALL_FUNCTION            2 (2 positional, 0 keyword pair)
              15 GET_ITER
         >>   16 FOR_ITER                 6 (to 25)
              19 STORE_FAST               0 (res)
 
- %-4d        22 JUMP_ABSOLUTE           16
+%3d          22 JUMP_ABSOLUTE           16
         >>   25 POP_BLOCK
         >>   26 LOAD_CONST               0 (None)
              29 RETURN_VALUE
@@ -191,16 +191,16 @@ dis_compound_stmt_str = """\
 """
 
 dis_traceback = """\
- %-4d         0 SETUP_EXCEPT            12 (to 15)
+%3d           0 SETUP_EXCEPT            12 (to 15)
 
- %-4d         3 LOAD_CONST               1 (1)
+%3d           3 LOAD_CONST               1 (1)
               6 LOAD_CONST               2 (0)
     -->       9 BINARY_TRUE_DIVIDE
              10 POP_TOP
              11 POP_BLOCK
              12 JUMP_FORWARD            46 (to 61)
 
- %-4d   >>   15 DUP_TOP
+%3d     >>   15 DUP_TOP
              16 LOAD_GLOBAL              0 (Exception)
              19 COMPARE_OP              10 (exception match)
              22 POP_JUMP_IF_FALSE       60
@@ -209,7 +209,7 @@ dis_traceback = """\
              29 POP_TOP
              30 SETUP_FINALLY           14 (to 47)
 
- %-4d        33 LOAD_FAST                0 (e)
+%3d          33 LOAD_FAST                0 (e)
              36 LOAD_ATTR                1 (__traceback__)
              39 STORE_FAST               1 (tb)
              42 POP_BLOCK
@@ -222,7 +222,7 @@ dis_traceback = """\
              57 JUMP_FORWARD             1 (to 61)
         >>   60 END_FINALLY
 
- %-4d   >>   61 LOAD_FAST                1 (tb)
+%3d     >>   61 LOAD_FAST                1 (tb)
              64 RETURN_VALUE
 """ % (TRACEBACK_CODE.co_firstlineno + 1,
        TRACEBACK_CODE.co_firstlineno + 2,
