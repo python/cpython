@@ -14,11 +14,11 @@ with warnings.catch_warnings():
     import imp
 
 # XXX Clean up once str8's cstor matches bytes.
-LOAD_CONST = bytes([dis.opname.index('LOAD_CONST')])
-IMPORT_NAME = bytes([dis.opname.index('IMPORT_NAME')])
-STORE_NAME = bytes([dis.opname.index('STORE_NAME')])
-STORE_GLOBAL = bytes([dis.opname.index('STORE_GLOBAL')])
-STORE_OPS = [STORE_NAME, STORE_GLOBAL]
+LOAD_CONST = bytes([dis.opmap['LOAD_CONST']])
+IMPORT_NAME = bytes([dis.opmap['IMPORT_NAME']])
+STORE_NAME = bytes([dis.opmap['STORE_NAME']])
+STORE_GLOBAL = bytes([dis.opmap['STORE_GLOBAL']])
+STORE_OPS = STORE_NAME, STORE_GLOBAL
 HAVE_ARGUMENT = bytes([dis.HAVE_ARGUMENT])
 
 # Modulefinder does a good job at simulating Python's, but it can not
