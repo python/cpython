@@ -102,6 +102,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26735: Fix :func:`os.urandom` on Solaris 11.3 and newer when reading
+  more than 1,024 bytes: call ``getrandom()`` multiple times with a limit of
+  1024 bytes per call.
+
 - Issue #16329: Add .webm to mimetypes.types_map.  Patch by Giampaolo Rodola'.
 
 - Issue #13952: Add .csv to mimetypes.types_map.  Patch by Geoff Wilson.
