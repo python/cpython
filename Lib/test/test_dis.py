@@ -12,11 +12,11 @@ def _f(a):
     return 1
 
 dis_f = """\
- %-4d         0 LOAD_FAST                0 (a)
+%3d           0 LOAD_FAST                0 (a)
               3 PRINT_ITEM
               4 PRINT_NEWLINE
 
- %-4d         5 LOAD_CONST               1 (1)
+%3d           5 LOAD_CONST               1 (1)
               8 RETURN_VALUE
 """%(_f.func_code.co_firstlineno + 1,
      _f.func_code.co_firstlineno + 2)
@@ -28,17 +28,17 @@ def bug708901():
         pass
 
 dis_bug708901 = """\
- %-4d         0 SETUP_LOOP              23 (to 26)
+%3d           0 SETUP_LOOP              23 (to 26)
               3 LOAD_GLOBAL              0 (range)
               6 LOAD_CONST               1 (1)
 
- %-4d         9 LOAD_CONST               2 (10)
+%3d           9 LOAD_CONST               2 (10)
              12 CALL_FUNCTION            2
              15 GET_ITER
         >>   16 FOR_ITER                 6 (to 25)
              19 STORE_FAST               0 (res)
 
- %-4d        22 JUMP_ABSOLUTE           16
+%3d          22 JUMP_ABSOLUTE           16
         >>   25 POP_BLOCK
         >>   26 LOAD_CONST               0 (None)
              29 RETURN_VALUE
@@ -53,7 +53,7 @@ def bug1333982(x=[]):
     pass
 
 dis_bug1333982 = """\
- %-4d         0 LOAD_CONST               1 (0)
+%3d           0 LOAD_CONST               1 (0)
               3 POP_JUMP_IF_TRUE        41
               6 LOAD_GLOBAL              0 (AssertionError)
               9 BUILD_LIST               0
@@ -65,12 +65,12 @@ dis_bug1333982 = """\
              25 LIST_APPEND              2
              28 JUMP_ABSOLUTE           16
 
- %-4d   >>   31 LOAD_CONST               2 (1)
+%3d     >>   31 LOAD_CONST               2 (1)
              34 BINARY_ADD
              35 CALL_FUNCTION            1
              38 RAISE_VARARGS            1
 
- %-4d   >>   41 LOAD_CONST               0 (None)
+%3d     >>   41 LOAD_CONST               0 (None)
              44 RETURN_VALUE
 """%(bug1333982.func_code.co_firstlineno + 1,
      bug1333982.func_code.co_firstlineno + 2,
