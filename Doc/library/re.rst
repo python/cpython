@@ -108,11 +108,11 @@ The special characters are:
 ``*?``, ``+?``, ``??``
    The ``'*'``, ``'+'``, and ``'?'`` qualifiers are all :dfn:`greedy`; they match
    as much text as possible.  Sometimes this behaviour isn't desired; if the RE
-   ``<.*>`` is matched against ``'<H1>title</H1>'``, it will match the entire
-   string, and not just ``'<H1>'``.  Adding ``'?'`` after the qualifier makes it
+   ``<.*>`` is matched against ``<a> b <c>``, it will match the entire
+   string, and not just ``<a>``.  Adding ``?`` after the qualifier makes it
    perform the match in :dfn:`non-greedy` or :dfn:`minimal` fashion; as *few*
-   characters as possible will be matched.  Using ``.*?`` in the previous
-   expression will match only ``'<H1>'``.
+   characters as possible will be matched.  Using the RE ``<.*?>`` will match
+   only ``<a>``.
 
 ``{m}``
    Specifies that exactly *m* copies of the previous RE should be matched; fewer
