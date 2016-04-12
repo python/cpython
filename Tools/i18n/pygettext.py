@@ -156,7 +156,8 @@ If `inputfile' is -, standard input is read.
 """)
 
 import os
-import imp
+import importlib.machinery
+import importlib.util
 import sys
 import glob
 import time
@@ -263,8 +264,7 @@ def _visit_pyfiles(list, dirname, names):
     # get extension for python source files
     if '_py_ext' not in globals():
         global _py_ext
-        _py_ext = [triple[0] for triple in imp.get_suffixes()
-                   if triple[2] == imp.PY_SOURCE][0]
+        _py_ext = importlib.machinery.SOURCE_SUFFIXES[0]
 
     # don't recurse into CVS directories
     if 'CVS' in names:
@@ -275,45 +275,6 @@ def _visit_pyfiles(list, dirname, names):
         [os.path.join(dirname, file) for file in names
          if os.path.splitext(file)[1] == _py_ext]
         )
-
-
-def _get_modpkg_path(dotted_name, pathlist=None):
-    """Get the filesystem path for a module or a package.
-
-    Return the file system path to a file for a module, and to a directory for
-    a package. Return None if the name is not found, or is a builtin or
-    extension module.
-    """
-    # split off top-most name
-    parts = dotted_name.split('.', 1)
-
-    if len(parts) > 1:
-        # we have a dotted path, import top-level package
-        try:
-            file, pathname, description = imp.find_module(parts[0], pathlist)
-            if file: file.close()
-        except ImportError:
-            return None
-
-        # check if it's indeed a package
-        if description[2] == imp.PKG_DIRECTORY:
-            # recursively handle the remaining name parts
-            pathname = _get_modpkg_path(parts[1], [pathname])
-        else:
-            pathname = None
-    else:
-        # plain name
-        try:
-            file, pathname, description = imp.find_module(
-                dotted_name, pathlist)
-            if file:
-                file.close()
-            if description[2] not in [imp.PY_SOURCE, imp.PKG_DIRECTORY]:
-                pathname = None
-        except ImportError:
-            pathname = None
-
-    return pathname
 
 
 def getFilesForName(name):
@@ -330,7 +291,11 @@ def getFilesForName(name):
             return list
 
         # try to find module or package
-        name = _get_modpkg_path(name)
+        try:
+            spec = importlib.util.find_spec(name)
+            name = spec.origin
+        except ImportError:
+            name = None
         if not name:
             return []
 
