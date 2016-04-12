@@ -34,9 +34,7 @@ hasfree = []
 hasnargs = []
 
 opmap = {}
-opname = [''] * 256
-for op in range(256): opname[op] = '<%r>' % (op,)
-del op
+opname = ['<%r>' % (op,) for op in range(256)]
 
 def def_op(name, op):
     opname[op] = name
