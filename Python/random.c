@@ -131,16 +131,23 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
         return 0;
 
     while (0 < size) {
-        errno = 0;
+#ifdef sun
+        /* Issue #26735: On Solaris, getrandom() is limited to returning up
+           to 1024 bytes */
+        n = Py_MIN(size, 1024);
+#else
+        n = size;
+#endif
 
+        errno = 0;
 #ifdef HAVE_GETRANDOM
         if (raise) {
             Py_BEGIN_ALLOW_THREADS
-            n = getrandom(buffer, size, flags);
+            n = getrandom(buffer, n, flags);
             Py_END_ALLOW_THREADS
         }
         else {
-            n = getrandom(buffer, size, flags);
+            n = getrandom(buffer, n, flags);
         }
 #else
         /* On Linux, use the syscall() function because the GNU libc doesn't
@@ -148,11 +155,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
          * https://sourceware.org/bugzilla/show_bug.cgi?id=17252 */
         if (raise) {
             Py_BEGIN_ALLOW_THREADS
-            n = syscall(SYS_getrandom, buffer, size, flags);
+            n = syscall(SYS_getrandom, buffer, n, flags);
             Py_END_ALLOW_THREADS
         }
         else {
-            n = syscall(SYS_getrandom, buffer, size, flags);
+            n = syscall(SYS_getrandom, buffer, n, flags);
         }
 #endif
 
