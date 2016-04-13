@@ -131,9 +131,9 @@ parameter expect a WSGI-compliant dictionary to be supplied; please see
                  for key, value in environ.items()]
           return ret
 
-      httpd = make_server('', 8000, simple_app)
-      print("Serving on port 8000...")
-      httpd.serve_forever()
+      with make_server('', 8000, simple_app) as httpd:
+          print("Serving on port 8000...")
+          httpd.serve_forever()
 
 
 In addition to the environment functions above, the :mod:`wsgiref.util` module
@@ -283,14 +283,14 @@ request.  (E.g., using the :func:`shift_path_info` function from
 
       from wsgiref.simple_server import make_server, demo_app
 
-      httpd = make_server('', 8000, demo_app)
-      print("Serving HTTP on port 8000...")
+      with make_server('', 8000, demo_app) as httpd:
+          print("Serving HTTP on port 8000...")
 
-      # Respond to requests until process is killed
-      httpd.serve_forever()
+          # Respond to requests until process is killed
+          httpd.serve_forever()
 
-      # Alternative: serve one request, then exit
-      httpd.handle_request()
+          # Alternative: serve one request, then exit
+          httpd.handle_request()
 
 
 .. function:: demo_app(environ, start_response)
@@ -430,9 +430,9 @@ Paste" library.
       # This is the application wrapped in a validator
       validator_app = validator(simple_app)
 
-      httpd = make_server('', 8000, validator_app)
-      print("Listening on port 8000....")
-      httpd.serve_forever()
+      with make_server('', 8000, validator_app) as httpd:
+          print("Listening on port 8000....")
+          httpd.serve_forever()
 
 
 :mod:`wsgiref.handlers` -- server/gateway base classes
@@ -769,8 +769,8 @@ This is a working "Hello World" WSGI application::
        # The returned object is going to be printed
        return [b"Hello World"]
 
-   httpd = make_server('', 8000, hello_world_app)
-   print("Serving on port 8000...")
+   with make_server('', 8000, hello_world_app) as httpd:
+       print("Serving on port 8000...")
 
-   # Serve until process is killed
-   httpd.serve_forever()
+       # Serve until process is killed
+       httpd.serve_forever()

@@ -1175,16 +1175,14 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     server_address = (bind, port)
 
     HandlerClass.protocol_version = protocol
-    httpd = ServerClass(server_address, HandlerClass)
-
-    sa = httpd.socket.getsockname()
-    print("Serving HTTP on", sa[0], "port", sa[1], "...")
-    try:
-        httpd.serve_forever()
-    except KeyboardInterrupt:
-        print("\nKeyboard interrupt received, exiting.")
-        httpd.server_close()
-        sys.exit(0)
+    with ServerClass(server_address, HandlerClass) as httpd:
+        sa = httpd.socket.getsockname()
+        print("Serving HTTP on", sa[0], "port", sa[1], "...")
+        try:
+            httpd.serve_forever()
+        except KeyboardInterrupt:
+            print("\nKeyboard interrupt received, exiting.")
+            sys.exit(0)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

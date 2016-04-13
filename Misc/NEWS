@@ -240,6 +240,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26404: Add context manager to socketserver.  Patch by Aviv Palivoda.
+
 - Issue #26735: Fix :func:`os.urandom` on Solaris 11.3 and newer when reading
   more than 1,024 bytes: call ``getrandom()`` multiple times with a limit of
   1024 bytes per call.

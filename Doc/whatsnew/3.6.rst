@@ -259,6 +259,16 @@ you may now specify file paths on top of directories (e.g. zip files).
 (Contributed by Wolfgang Langner in :issue:`26587`).
 
 
+socketserver
+------------
+
+Servers based on the :mod:`socketserver` module, including those
+defined in :mod:`http.server`, :mod:`xmlrpc.server` and
+:mod:`wsgiref.simple_server`, now support the :term:`context manager`
+protocol.
+(Contributed by Aviv Palivoda in :issue:`26404`.)
+
+
 telnetlib
 ---------
 
