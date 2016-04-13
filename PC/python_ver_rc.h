@@ -9,11 +9,10 @@
 #define MS_WINDOWS
 #include "modsupport.h"
 #include "patchlevel.h"
+#include <pythonnt_rc.h>
 #ifdef _DEBUG
-#   include <pythonnt_rc_d.h>
 #   define PYTHON_DEBUG_EXT "_d"
 #else
-#   include <pythonnt_rc.h>
 #   define PYTHON_DEBUG_EXT
 #endif
 
