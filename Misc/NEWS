@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #26718: super.__init__ no longer leaks memory if called multiple times.
+  NOTE: A direct call of super.__init__ is not endorsed!
+
 - Issue #25339: PYTHONIOENCODING now has priority over locale in setting the
   error handler for stdin and stdout.
 
