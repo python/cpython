@@ -83,6 +83,13 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
+  <Target Name="ValidateUcrtbase" AfterTargets="AfterBuild">
+    <PropertyGroup>
+      <UcrtName>ucrtbase</UcrtName>
+      <UcrtName Condition="'$(Configuration)' == 'Debug'">ucrtbased</UcrtName>
+    </PropertyGroup>
+    <Exec Command='"$(OutDir)python$(PyDebugExt).exe" "$(PySourcePath)PC\validate_ucrtbase.py" $(UcrtName)' ContinueOnError="true" />
+  </Target>
   <Target Name="GeneratePythonBat" AfterTargets="AfterBuild">
     <PropertyGroup>
       <_Content>@rem This script invokes the most recently built Python with all arguments
