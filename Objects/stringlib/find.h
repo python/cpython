@@ -123,11 +123,6 @@ STRINGLIB(parse_args_finds)(const char * function_name, PyObject *args,
 /*
 Wraps stringlib_parse_args_finds() and additionally ensures that the
 first argument is a unicode object.
-
-Note that we receive a pointer to the pointer of the substring object,
-so when we create that object in this function we don't DECREF it,
-because it continues living in the caller functions (those functions,
-after finishing using the substring, must DECREF it).
 */
 
 Py_LOCAL_INLINE(int)
@@ -135,14 +130,10 @@ STRINGLIB(parse_args_finds_unicode)(const char * function_name, PyObject *args,
                                    PyObject **substring,
                                    Py_ssize_t *start, Py_ssize_t *end)
 {
-    PyObject *tmp_substring;
-
-    if(STRINGLIB(parse_args_finds)(function_name, args, &tmp_substring,
+    if(STRINGLIB(parse_args_finds)(function_name, args, substring,
                                   start, end)) {
-        tmp_substring = PyUnicode_FromObject(tmp_substring);
-        if (!tmp_substring)
+        if (ensure_unicode(*substring) < 0)
             return 0;
-        *substring = tmp_substring;
         return 1;
     }
     return 0;

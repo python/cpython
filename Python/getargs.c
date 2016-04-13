@@ -1056,34 +1056,24 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
                 return converterr("(AsCharBuffer failed)",
                                   arg, msgbuf, bufsize);
         }
-        else {
-            PyObject *u;
-
-            /* Convert object to Unicode */
-            u = PyUnicode_FromObject(arg);
-            if (u == NULL)
-                return converterr(
-                    "string or unicode or text buffer",
-                    arg, msgbuf, bufsize);
-
+        else if (PyUnicode_Check(arg)) {
             /* Encode object; use default error handling */
-            s = PyUnicode_AsEncodedString(u,
+            s = PyUnicode_AsEncodedString(arg,
                                           encoding,
                                           NULL);
-            Py_DECREF(u);
             if (s == NULL)
                 return converterr("(encoding failed)",
                                   arg, msgbuf, bufsize);
-            if (!PyBytes_Check(s)) {
-                Py_DECREF(s);
-                return converterr(
-                    "(encoder failed to return bytes)",
-                    arg, msgbuf, bufsize);
-            }
+            assert(PyBytes_Check(s));
             size = PyBytes_GET_SIZE(s);
             ptr = PyBytes_AS_STRING(s);
             if (ptr == NULL)
                 ptr = "";
+        }
+        else {
+            return converterr(
+                recode_strings ? "str" : "str, bytes or bytearray",
+                arg, msgbuf, bufsize);
         }
 
         /* Write output; output is guaranteed to be 0-terminated */
