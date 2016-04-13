@@ -375,10 +375,9 @@ the current directory::
 
    Handler = http.server.SimpleHTTPRequestHandler
 
-   httpd = socketserver.TCPServer(("", PORT), Handler)
-
-   print("serving at port", PORT)
-   httpd.serve_forever()
+   with socketserver.TCPServer(("", PORT), Handler) as httpd:
+       print("serving at port", PORT)
+       httpd.serve_forever()
 
 .. _http-server-cli:
 
