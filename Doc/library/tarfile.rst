@@ -79,8 +79,8 @@ Some facts and figures:
    for *name*. It is supposed to be at position 0.
 
    For modes ``'w:gz'``, ``'r:gz'``, ``'w:bz2'``, ``'r:bz2'``, :func:`tarfile.open`
-   accepts the keyword argument *compresslevel* to specify the compression level of
-   the file.
+   accepts the keyword argument *compresslevel* (default ``9``) to
+   specify the compression level of the file.
 
    For special purposes, there is a second format for *mode*:
    ``'filemode|[compression]'``.  :func:`tarfile.open` will return a :class:`TarFile`
