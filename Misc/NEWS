@@ -10,6 +10,9 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #26718: super.__init__ no longer leaks memory if called multiple times.
+  NOTE: A direct call of super.__init__ is not endorsed!
+
 - Issue #13410: Fixed a bug in PyUnicode_Format where it failed to properly
   ignore errors from a __int__() method.
 

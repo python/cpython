@@ -6741,9 +6741,9 @@ super_init(PyObject *self, PyObject *args, PyObject *kwds)
         Py_INCREF(obj);
     }
     Py_INCREF(type);
-    su->type = type;
-    su->obj = obj;
-    su->obj_type = obj_type;
+    Py_XSETREF(su->type, type);
+    Py_XSETREF(su->obj, obj);
+    Py_XSETREF(su->obj_type, obj_type);
     return 0;
 }
 
