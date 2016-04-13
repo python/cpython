@@ -1931,9 +1931,8 @@ builtin_input_impl(PyModuleDef *module, PyObject *prompt)
             Py_CLEAR(stringpo);
             if (po == NULL)
                 goto _readline_errors;
-            promptstr = PyBytes_AsString(po);
-            if (promptstr == NULL)
-                goto _readline_errors;
+            assert(PyBytes_Check(po));
+            promptstr = PyBytes_AS_STRING(po);
         }
         else {
             po = NULL;
