@@ -52,11 +52,12 @@ handler class by subclassing the :class:`BaseRequestHandler` class and
 overriding its :meth:`~BaseRequestHandler.handle` method;
 this method will process incoming
 requests.  Second, you must instantiate one of the server classes, passing it
-the server's address and the request handler class.  Then call the
+the server's address and the request handler class. It is recommended to use
+the server in a :keyword:`with` statement. Then call the
 :meth:`~BaseServer.handle_request` or
 :meth:`~BaseServer.serve_forever` method of the server object to
 process one or many requests.  Finally, call :meth:`~BaseServer.server_close`
-to close the socket.
+to close the socket (unless you used a :keyword:`with` statement).
 
 When inheriting from :class:`ThreadingMixIn` for threaded connection behavior,
 you should explicitly declare how you want your threads to behave on an abrupt
@@ -353,6 +354,11 @@ Server Objects
       default implementation always returns :const:`True`.
 
 
+   .. versionchanged:: 3.6
+      Support for the :term:`context manager` protocol was added.  Exiting the
+      context manager is equivalent to calling :meth:`server_close`.
+
+
 Request Handler Objects
 -----------------------
 
@@ -433,11 +439,10 @@ This is the server side::
        HOST, PORT = "localhost", 9999
 
        # Create the server, binding to localhost on port 9999
-       server = socketserver.TCPServer((HOST, PORT), MyTCPHandler)
-
-       # Activate the server; this will keep running until you
-       # interrupt the program with Ctrl-C
-       server.serve_forever()
+       with socketserver.TCPServer((HOST, PORT), MyTCPHandler) as server:
+           # Activate the server; this will keep running until you
+           # interrupt the program with Ctrl-C
+           server.serve_forever()
 
 An alternative request handler class that makes use of streams (file-like
 objects that simplify communication by providing the standard file interface)::
@@ -529,8 +534,8 @@ This is the server side::
 
    if __name__ == "__main__":
        HOST, PORT = "localhost", 9999
-       server = socketserver.UDPServer((HOST, PORT), MyUDPHandler)
-       server.serve_forever()
+       with socketserver.UDPServer((HOST, PORT), MyUDPHandler) as server:
+           server.serve_forever()
 
 This is the client side::
 
@@ -592,22 +597,22 @@ An example for the :class:`ThreadingMixIn` class::
        HOST, PORT = "localhost", 0
 
        server = ThreadedTCPServer((HOST, PORT), ThreadedTCPRequestHandler)
-       ip, port = server.server_address
+       with server:
+           ip, port = server.server_address
 
-       # Start a thread with the server -- that thread will then start one
-       # more thread for each request
-       server_thread = threading.Thread(target=server.serve_forever)
-       # Exit the server thread when the main thread terminates
-       server_thread.daemon = True
-       server_thread.start()
-       print("Server loop running in thread:", server_thread.name)
+           # Start a thread with the server -- that thread will then start one
+           # more thread for each request
+           server_thread = threading.Thread(target=server.serve_forever)
+           # Exit the server thread when the main thread terminates
+           server_thread.daemon = True
+           server_thread.start()
+           print("Server loop running in thread:", server_thread.name)
 
-       client(ip, port, "Hello World 1")
-       client(ip, port, "Hello World 2")
-       client(ip, port, "Hello World 3")
+           client(ip, port, "Hello World 1")
+           client(ip, port, "Hello World 2")
+           client(ip, port, "Hello World 3")
 
-       server.shutdown()
-       server.server_close()
+           server.shutdown()
 
 
 The output of the example should look something like this::

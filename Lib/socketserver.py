@@ -378,6 +378,12 @@ class BaseServer:
         traceback.print_exc()
         print('-'*40, file=sys.stderr)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        self.server_close()
+
 
 class TCPServer(BaseServer):
 

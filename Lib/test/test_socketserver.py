@@ -104,7 +104,6 @@ class SocketServerTest(unittest.TestCase):
         class MyServer(svrcls):
             def handle_error(self, request, client_address):
                 self.close_request(request)
-                self.server_close()
                 raise
 
         class MyHandler(hdlrbase):
@@ -279,6 +278,12 @@ class SocketServerTest(unittest.TestCase):
             with self.assertRaises(OverflowError):
                 socketserver.TCPServer((HOST, -1),
                                        socketserver.StreamRequestHandler)
+
+    def test_context_manager(self):
+        with socketserver.TCPServer((HOST, 0),
+                                    socketserver.StreamRequestHandler) as server:
+            pass
+        self.assertEqual(-1, server.socket.fileno())
 
 
 class ErrorHandlerTest(unittest.TestCase):

@@ -156,10 +156,9 @@ def make_server(
 
 
 if __name__ == '__main__':
-    httpd = make_server('', 8000, demo_app)
-    sa = httpd.socket.getsockname()
-    print("Serving HTTP on", sa[0], "port", sa[1], "...")
-    import webbrowser
-    webbrowser.open('http://localhost:8000/xyz?abc')
-    httpd.handle_request()  # serve one request, then exit
-    httpd.server_close()
+    with make_server('', 8000, demo_app) as httpd:
+        sa = httpd.socket.getsockname()
+        print("Serving HTTP on", sa[0], "port", sa[1], "...")
+        import webbrowser
+        webbrowser.open('http://localhost:8000/xyz?abc')
+        httpd.handle_request()  # serve one request, then exit
