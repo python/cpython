@@ -2224,7 +2224,9 @@ _ssl__SSLContext_impl(PyTypeObject *type, int proto_version)
     PySSLContext *self;
     long options;
     SSL_CTX *ctx = NULL;
+#if defined(SSL_MODE_RELEASE_BUFFERS)
     unsigned long libver;
+#endif
 
     PySSL_BEGIN_ALLOW_THREADS
     if (proto_version == PY_SSL_VERSION_TLS1)
