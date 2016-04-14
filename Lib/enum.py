@@ -193,6 +193,12 @@ class EnumMeta(type):
             enum_class.__new__ = Enum.__new__
         return enum_class
 
+    def __bool__(self):
+        """
+        classes/types should always be True.
+        """
+        return True
+
     def __call__(cls, value, names=None, *, module=None, qualname=None, type=None):
         """Either returns an existing member, or creates a new enum class.
 
