@@ -360,7 +360,7 @@ starts.  `whence` is as with fileobj.seek(), specifically:
 static PyObject *
 fcntl_lockf_impl(PyModuleDef *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence)
-/*[clinic end generated code: output=31af35eba08b9af7 input=9c594391de821f24]*/
+/*[clinic end generated code: output=31af35eba08b9af7 input=3a5dc01b04371f1a]*/
 {
     int ret;
 
