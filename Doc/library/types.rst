@@ -147,7 +147,7 @@ The module defines the following names:
 
 .. data:: InstanceType
 
-   The type of instances of user-defined classes.
+   The type of instances of user-defined old-style classes.
 
 
 .. data:: MethodType
