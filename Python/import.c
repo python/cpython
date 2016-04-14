@@ -38,14 +38,6 @@ module _imp
 
 #include "clinic/import.c.h"
 
-/*[python input]
-class fs_unicode_converter(CConverter):
-    type = 'PyObject *'
-    converter = 'PyUnicode_FSDecoder'
-
-[python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=9d6786230166006e]*/
-
 /* Initialize things */
 
 void
