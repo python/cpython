@@ -146,4 +146,3 @@ def token_hex(nbytes=None):
 def token_urlsafe(nbytes=None):
     tok = token_bytes(nbytes)
     return base64.urlsafe_b64encode(tok).rstrip(b'=').decode('ascii')
-
