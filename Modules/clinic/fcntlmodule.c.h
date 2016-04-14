@@ -145,7 +145,7 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
 "\n"
 "When operation is LOCK_SH or LOCK_EX, it can also be bitwise ORed with\n"
 "LOCK_NB to avoid blocking on lock acquisition.  If LOCK_NB is used and the\n"
-"lock cannot be acquired, an IOError will be raised and the exception will\n"
+"lock cannot be acquired, an OSError will be raised and the exception will\n"
 "have an errno attribute set to EACCES or EAGAIN (depending on the operating\n"
 "system -- for portability, check for either value).\n"
 "\n"
@@ -182,4 +182,4 @@ fcntl_lockf(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=92963b631d00f0fe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b7d6e8fc2ad09c48 input=a9049054013a1b77]*/
