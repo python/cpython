@@ -823,7 +823,7 @@ PyAPI_FUNC(int) PyUnicode_WriteChar(
 PyAPI_FUNC(Py_UNICODE) PyUnicode_GetMax(void);
 #endif
 
-/* Resize an Unicode object. The length is the number of characters, except
+/* Resize a Unicode object. The length is the number of characters, except
    if the kind of the string is PyUnicode_WCHAR_KIND: in this case, the length
    is the number of Py_UNICODE characters.
 
@@ -844,7 +844,7 @@ PyAPI_FUNC(int) PyUnicode_Resize(
     Py_ssize_t length           /* New length */
     );
 
-/* Coerce obj to an Unicode object and return a reference with
+/* Coerce obj to a Unicode object and return a reference with
    *incremented* refcount.
 
    Coercion is done in the following way:
@@ -867,7 +867,7 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromEncodedObject(
     const char *errors          /* error handling */
     );
 
-/* Coerce obj to an Unicode object and return a reference with
+/* Coerce obj to a Unicode object and return a reference with
    *incremented* refcount.
 
    Unicode objects are passed back as-is (subclasses are converted to
@@ -981,7 +981,7 @@ _PyUnicodeWriter_WriteLatin1String(_PyUnicodeWriter *writer,
     Py_ssize_t len             /* length in bytes */
     );
 
-/* Get the value of the writer as an Unicode string. Clear the
+/* Get the value of the writer as a Unicode string. Clear the
    buffer of the writer. Raise an exception and return NULL
    on error. */
 PyAPI_FUNC(PyObject *)

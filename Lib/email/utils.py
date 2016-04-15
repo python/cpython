@@ -87,7 +87,7 @@ def formataddr(pair, charset='utf-8'):
     'utf-8'.
     """
     name, address = pair
-    # The address MUST (per RFC) be ascii, so raise an UnicodeError if it isn't.
+    # The address MUST (per RFC) be ascii, so raise a UnicodeError if it isn't.
     address.encode('ascii')
     if name:
         try:

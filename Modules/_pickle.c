@@ -1096,7 +1096,7 @@ _Unpickler_SkipConsumed(UnpicklerObject *self)
         return 0;
 
     assert(self->peek);  /* otherwise we did something wrong */
-    /* This makes an useless copy... */
+    /* This makes a useless copy... */
     r = PyObject_CallFunction(self->read, "n", consumed);
     if (r == NULL)
         return -1;

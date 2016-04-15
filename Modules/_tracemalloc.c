@@ -296,7 +296,7 @@ tracemalloc_get_frame(PyFrameObject *pyframe, frame_t *frame)
 
     if (!PyUnicode_Check(filename)) {
 #ifdef TRACE_DEBUG
-        tracemalloc_error("filename is not an unicode string");
+        tracemalloc_error("filename is not a unicode string");
 #endif
         return;
     }
