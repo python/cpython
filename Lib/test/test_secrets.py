@@ -44,8 +44,8 @@ class Compare_Digest_Tests(unittest.TestCase):
 
     def test_bool(self):
         # Test that compare_digest returns a bool.
-        self.assertTrue(isinstance(secrets.compare_digest("abc", "abc"), bool))
-        self.assertTrue(isinstance(secrets.compare_digest("abc", "xyz"), bool))
+        self.assertIsInstance(secrets.compare_digest("abc", "abc"), bool)
+        self.assertIsInstance(secrets.compare_digest("abc", "xyz"), bool)
 
 
 class Random_Tests(unittest.TestCase):
@@ -67,10 +67,8 @@ class Random_Tests(unittest.TestCase):
 
     def test_randbelow(self):
         # Test randbelow.
-        errmsg = "randbelow(%d) returned %d"
         for i in range(2, 10):
-            n = secrets.randbelow(i)
-            self.assertTrue(n in range(i), errmsg % (i, n))
+            self.assertIn(secrets.randbelow(i), range(i))
         self.assertRaises(ValueError, secrets.randbelow, 0)
 
 
@@ -81,39 +79,44 @@ class Token_Tests(unittest.TestCase):
         # Test that token_* functions handle default size correctly.
         for func in (secrets.token_bytes, secrets.token_hex,
                      secrets.token_urlsafe):
-            name = func.__name__
-            try:
-                func()
-            except TypeError:
-                self.fail("%s cannot be called with no argument" % name)
-            try:
-                func(None)
-            except TypeError:
-                self.fail("%s cannot be called with None" % name)
+            with self.subTest(func=func):
+                name = func.__name__
+                try:
+                    func()
+                except TypeError:
+                    self.fail("%s cannot be called with no argument" % name)
+                try:
+                    func(None)
+                except TypeError:
+                    self.fail("%s cannot be called with None" % name)
         size = secrets.DEFAULT_ENTROPY
         self.assertEqual(len(secrets.token_bytes(None)), size)
         self.assertEqual(len(secrets.token_hex(None)), 2*size)
 
     def test_token_bytes(self):
         # Test token_bytes.
-        self.assertTrue(isinstance(secrets.token_bytes(11), bytes))
         for n in (1, 8, 17, 100):
-            self.assertEqual(len(secrets.token_bytes(n)), n)
+            with self.subTest(n=n):
+                self.assertIsInstance(secrets.token_bytes(n), bytes)
+                self.assertEqual(len(secrets.token_bytes(n)), n)
 
     def test_token_hex(self):
         # Test token_hex.
-        self.assertTrue(isinstance(secrets.token_hex(7), str))
         for n in (1, 12, 25, 90):
-            s = secrets.token_hex(n)
-            self.assertEqual(len(s), 2*n)
-            self.assertTrue(all(c in string.hexdigits for c in s))
+            with self.subTest(n=n):
+                s = secrets.token_hex(n)
+                self.assertIsInstance(s, str))
+                self.assertEqual(len(s), 2*n)
+                self.assertTrue(all(c in string.hexdigits for c in s))
 
     def test_token_urlsafe(self):
         # Test token_urlsafe.
-        self.assertTrue(isinstance(secrets.token_urlsafe(9), str))
         legal = string.ascii_letters + string.digits + '-_'
         for n in (1, 11, 28, 76):
-            self.assertTrue(all(c in legal for c in secrets.token_urlsafe(n)))
+            with self.subTest(n=n):
+                s = secrets.token_urlsafe(n)
+                self.assertIsInstance(s, str))
+                self.assertTrue(all(c in legal for c in s))
 
 
 if __name__ == '__main__':
