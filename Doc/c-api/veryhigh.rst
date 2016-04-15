@@ -307,10 +307,16 @@ the same library that the Python runtime is using.
    cells.
 
 
+.. c:type:: PyFrameObject
+
+   The C structure of the objects used to describe frame objects. The
+   fields of this type are subject to change at any time.
+
+
 .. c:function:: PyObject* PyEval_EvalFrame(PyFrameObject *f)
 
    Evaluate an execution frame.  This is a simplified interface to
-   PyEval_EvalFrameEx, for backward compatibility.
+   :c:func:`PyEval_EvalFrameEx`, for backward compatibility.
 
 
 .. c:function:: PyObject* PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
