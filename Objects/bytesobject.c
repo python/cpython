@@ -4150,7 +4150,12 @@ _PyBytesWriter_Finish(_PyBytesWriter *writer, void *str)
         result = PyBytes_FromStringAndSize(NULL, 0);
     }
     else if (writer->use_small_buffer) {
-        result = PyBytes_FromStringAndSize(writer->small_buffer, size);
+        if (writer->use_bytearray) {
+            result = PyByteArray_FromStringAndSize(writer->small_buffer, size);
+        }
+        else {
+            result = PyBytes_FromStringAndSize(writer->small_buffer, size);
+        }
     }
     else {
         result = writer->buffer;
