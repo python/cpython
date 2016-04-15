@@ -3282,15 +3282,13 @@ bytes_methods[] = {
 };
 
 static PyObject *
-bytes_mod(PyObject *self, PyObject *args)
+bytes_mod(PyObject *self, PyObject *arg)
 {
-    if (self == NULL || !PyBytes_Check(self)) {
-        PyErr_BadInternalCall();
-        return NULL;
+    if (!PyBytes_Check(self)) {
+        Py_RETURN_NOTIMPLEMENTED;
     }
-
     return _PyBytes_FormatEx(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self),
-                             args, 0);
+                             arg, 0);
 }
 
 static PyNumberMethods bytes_as_number = {

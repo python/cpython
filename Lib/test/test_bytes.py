@@ -483,26 +483,33 @@ class BaseBytesTest:
         self.assertRaises(ValueError, b.rindex, w, 1, 3)
 
     def test_mod(self):
-        b = b'hello, %b!'
+        b = self.type2test(b'hello, %b!')
         orig = b
         b = b % b'world'
         self.assertEqual(b, b'hello, world!')
         self.assertEqual(orig, b'hello, %b!')
         self.assertFalse(b is orig)
-        b = b'%s / 100 = %d%%'
+        b = self.type2test(b'%s / 100 = %d%%')
         a = b % (b'seventy-nine', 79)
         self.assertEqual(a, b'seventy-nine / 100 = 79%')
+        self.assertIs(type(a), bytes)
 
     def test_imod(self):
-        b = b'hello, %b!'
+        b = self.type2test(b'hello, %b!')
         orig = b
         b %= b'world'
         self.assertEqual(b, b'hello, world!')
         self.assertEqual(orig, b'hello, %b!')
         self.assertFalse(b is orig)
-        b = b'%s / 100 = %d%%'
+        b = self.type2test(b'%s / 100 = %d%%')
         b %= (b'seventy-nine', 79)
         self.assertEqual(b, b'seventy-nine / 100 = 79%')
+        self.assertIs(type(b), bytes)
+
+    def test_rmod(self):
+        with self.assertRaises(TypeError):
+            object() % self.type2test(b'abc')
+        self.assertIs(self.type2test(b'abc').__rmod__('%r'), NotImplemented)
 
     def test_replace(self):
         b = self.type2test(b'mississippi')
@@ -1063,28 +1070,6 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
         b = bytearray(range(256))
         b[8:] = b
         self.assertEqual(b, bytearray(list(range(8)) + list(range(256))))
-
-    def test_mod(self):
-        b = bytearray(b'hello, %b!')
-        orig = b
-        b = b % b'world'
-        self.assertEqual(b, b'hello, world!')
-        self.assertEqual(orig, bytearray(b'hello, %b!'))
-        self.assertFalse(b is orig)
-        b = bytearray(b'%s / 100 = %d%%')
-        a = b % (b'seventy-nine', 79)
-        self.assertEqual(a, bytearray(b'seventy-nine / 100 = 79%'))
-
-    def test_imod(self):
-        b = bytearray(b'hello, %b!')
-        orig = b
-        b %= b'world'
-        self.assertEqual(b, b'hello, world!')
-        self.assertEqual(orig, bytearray(b'hello, %b!'))
-        self.assertFalse(b is orig)
-        b = bytearray(b'%s / 100 = %d%%')
-        b %= (b'seventy-nine', 79)
-        self.assertEqual(b, bytearray(b'seventy-nine / 100 = 79%'))
 
     def test_iconcat(self):
         b = bytearray(b"abc")
