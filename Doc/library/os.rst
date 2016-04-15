@@ -1762,7 +1762,7 @@ features:
    ``os.path.join(os.path.dirname(path), result)``.
 
    If the *path* is a string object, the result will also be a string object,
-   and the call may raise an UnicodeDecodeError. If the *path* is a bytes
+   and the call may raise a UnicodeDecodeError. If the *path* is a bytes
    object, the result will be a bytes object.
 
    This function can also support :ref:`paths relative to directory descriptors

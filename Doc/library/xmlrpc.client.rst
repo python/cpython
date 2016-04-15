@@ -420,7 +420,7 @@ by providing an invalid URI::
 
    import xmlrpc.client
 
-   # create a ServerProxy with an URI that doesn't respond to XMLRPC requests
+   # create a ServerProxy with a URI that doesn't respond to XMLRPC requests
    proxy = xmlrpc.client.ServerProxy("http://google.com/")
 
    try:

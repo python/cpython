@@ -2355,7 +2355,7 @@ class TypesTest(unittest.TestCase):
             self.assertRaises(TypeError, decoder, "xxx")
 
     def test_unicode_escape(self):
-        # Escape-decoding an unicode string is supported ang gives the same
+        # Escape-decoding a unicode string is supported ang gives the same
         # result as decoding the equivalent ASCII bytes string.
         self.assertEqual(codecs.unicode_escape_decode(r"\u1234"), ("\u1234", 6))
         self.assertEqual(codecs.unicode_escape_decode(br"\u1234"), ("\u1234", 6))

@@ -1774,7 +1774,7 @@ class UnicodeTest(string_tests.CommonTest,
 
     def assertCorrectUTF8Decoding(self, seq, res, err):
         """
-        Check that an invalid UTF-8 sequence raises an UnicodeDecodeError when
+        Check that an invalid UTF-8 sequence raises a UnicodeDecodeError when
         'strict' is used, returns res when 'replace' is used, and that doesn't
         return anything when 'ignore' is used.
         """
