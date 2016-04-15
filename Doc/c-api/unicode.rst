@@ -556,14 +556,13 @@ APIs:
 .. c:function:: PyObject* PyUnicode_FromEncodedObject(PyObject *obj, \
                                const char *encoding, const char *errors)
 
-   Coerce an encoded object *obj* to a Unicode object and return a reference with
-   incremented refcount.
+   Decode an encoded object *obj* to a Unicode object.
 
    :class:`bytes`, :class:`bytearray` and other
    :term:`bytes-like objects <bytes-like object>`
    are decoded according to the given *encoding* and using the error handling
    defined by *errors*. Both can be *NULL* to have the interface use the default
-   values (see the next section for details).
+   values (see :ref:`builtincodecs` for details).
 
    All other objects, including Unicode objects, cause a :exc:`TypeError` to be
    set.
@@ -745,8 +744,11 @@ Extension modules can continue using them, as they will not be removed in Python
 
 .. c:function:: PyObject* PyUnicode_FromObject(PyObject *obj)
 
-   Shortcut for ``PyUnicode_FromEncodedObject(obj, NULL, "strict")`` which is used
-   throughout the interpreter whenever coercion to Unicode is needed.
+   Copy an instance of a Unicode subtype to a new true Unicode object if
+   necessary. If *obj* is already a true Unicode object (not a subtype),
+   return the reference with incremented refcount.
+
+   Objects other than Unicode or its subtypes will cause a :exc:`TypeError`.
 
 
 Locale Encoding
