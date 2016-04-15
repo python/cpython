@@ -844,17 +844,13 @@ PyAPI_FUNC(int) PyUnicode_Resize(
     Py_ssize_t length           /* New length */
     );
 
-/* Coerce obj to a Unicode object and return a reference with
-   *incremented* refcount.
+/* Decode obj to an Unicode object.
 
-   Coercion is done in the following way:
+   bytes, bytearray and other bytes-like objects are decoded according to the
+   given encoding and error handler. The encoding and error handler can be
+   NULL to have the interface use UTF-8 and "strict".
 
-   1. bytes, bytearray and other bytes-like objects are decoded
-      under the assumptions that they contain data using the UTF-8
-      encoding. Decoding is done in "strict" mode.
-
-   2. All other objects (including Unicode objects) raise an
-      exception.
+   All other objects (including Unicode objects) raise an exception.
 
    The API returns NULL in case of an error. The caller is responsible
    for decref'ing the returned objects.
@@ -867,13 +863,9 @@ PyAPI_FUNC(PyObject*) PyUnicode_FromEncodedObject(
     const char *errors          /* error handling */
     );
 
-/* Coerce obj to a Unicode object and return a reference with
-   *incremented* refcount.
-
-   Unicode objects are passed back as-is (subclasses are converted to
-   true Unicode objects), all other objects are delegated to
-   PyUnicode_FromEncodedObject(obj, NULL, "strict") which results in
-   using UTF-8 encoding as basis for decoding the object.
+/* Copy an instance of a Unicode subtype to a new true Unicode object if
+   necessary. If obj is already a true Unicode object (not a subtype), return
+   the reference with *incremented* refcount.
 
    The API returns NULL in case of an error. The caller is responsible
    for decref'ing the returned objects.
