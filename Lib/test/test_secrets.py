@@ -105,7 +105,7 @@ class Token_Tests(unittest.TestCase):
         for n in (1, 12, 25, 90):
             with self.subTest(n=n):
                 s = secrets.token_hex(n)
-                self.assertIsInstance(s, str))
+                self.assertIsInstance(s, str)
                 self.assertEqual(len(s), 2*n)
                 self.assertTrue(all(c in string.hexdigits for c in s))
 
@@ -115,7 +115,7 @@ class Token_Tests(unittest.TestCase):
         for n in (1, 11, 28, 76):
             with self.subTest(n=n):
                 s = secrets.token_urlsafe(n)
-                self.assertIsInstance(s, str))
+                self.assertIsInstance(s, str)
                 self.assertTrue(all(c in legal for c in s))
 
 
