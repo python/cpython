@@ -67,7 +67,7 @@ class Test_MultibyteCodec(unittest.TestCase):
                           _multibytecodec.MultibyteStreamWriter, None)
 
     def test_decode_unicode(self):
-        # Trying to decode an unicode string should raise a TypeError
+        # Trying to decode a unicode string should raise a TypeError
         for enc in ALL_CJKENCODINGS:
             self.assertRaises(TypeError, codecs.getdecoder(enc), "")
 
@@ -160,7 +160,7 @@ class Test_IncrementalDecoder(unittest.TestCase):
         self.assertEqual(decoder.decode(b'B@$'), '\u4e16')
 
     def test_decode_unicode(self):
-        # Trying to decode an unicode string should raise a TypeError
+        # Trying to decode a unicode string should raise a TypeError
         for enc in ALL_CJKENCODINGS:
             decoder = codecs.getincrementaldecoder(enc)()
             self.assertRaises(TypeError, decoder.decode, "")

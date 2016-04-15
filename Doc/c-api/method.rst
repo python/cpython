@@ -49,7 +49,7 @@ Method Objects
 .. index:: object: method
 
 Methods are bound function objects. Methods are always bound to an instance of
-an user-defined class. Unbound methods (methods bound to a class object) are
+a user-defined class. Unbound methods (methods bound to a class object) are
 no longer available.
 
 
