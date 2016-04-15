@@ -279,19 +279,6 @@ PyByteArray_Concat(PyObject *a, PyObject *b)
     return (PyObject *)result;
 }
 
-static PyObject *
-bytearray_format(PyByteArrayObject *self, PyObject *args)
-{
-    if (self == NULL || !PyByteArray_Check(self)) {
-        PyErr_BadInternalCall();
-        return NULL;
-    }
-
-    return _PyBytes_FormatEx(PyByteArray_AS_STRING(self),
-                             PyByteArray_GET_SIZE(self),
-                             args, 1);
-}
-
 /* Functions stuffed into the type object */
 
 static Py_ssize_t
@@ -3014,7 +3001,7 @@ bytearray_mod(PyObject *v, PyObject *w)
 {
     if (!PyByteArray_Check(v))
         Py_RETURN_NOTIMPLEMENTED;
-    return bytearray_format((PyByteArrayObject *)v, w);
+    return _PyBytes_FormatEx(PyByteArray_AS_STRING(v), PyByteArray_GET_SIZE(v), w, 1);
 }
 
 static PyNumberMethods bytearray_as_number = {
