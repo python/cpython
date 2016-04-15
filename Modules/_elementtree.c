@@ -2104,7 +2104,7 @@ makeuniversal(XMLParserObject* self, const char* string)
         /* decode universal name */
 #if defined(Py_USING_UNICODE)
         /* inline makestring, to avoid duplicating the source string if
-           it's not an utf-8 string */
+           it's not a utf-8 string */
         p = PyString_AS_STRING(tag);
         if (checkstring(p, size)) {
             value = PyUnicode_DecodeUTF8(p, size, "strict");

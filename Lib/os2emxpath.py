@@ -62,7 +62,7 @@ def splitunc(p):
     Return a 2-tuple (unc, rest); either part may be empty.
     If unc is not empty, it has the form '//host/mount' (or similar
     using backslashes).  unc+rest is always the input path.
-    Paths containing drive letters never have an UNC part.
+    Paths containing drive letters never have a UNC part.
     """
     if p[1:2] == ':':
         return '', p # Drive letter present
@@ -105,7 +105,7 @@ lexists = exists
 # Is a path a directory?
 
 # Is a path a mount point?  Either a root (with or without drive letter)
-# or an UNC path with at most a / or \ after the mount point.
+# or a UNC path with at most a / or \ after the mount point.
 
 def ismount(path):
     """Test whether a path is a mount point (defined as root of drive)"""

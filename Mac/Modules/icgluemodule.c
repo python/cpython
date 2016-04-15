@@ -229,7 +229,7 @@ ici_ICEditPreferences(iciobject *self, PyObject *args)
 
 
 static char ici_ICParseURL__doc__[] =
-"(hint, data, selStart, selEnd, handle)->selStart, selEnd; Find an URL, return in handle"
+"(hint, data, selStart, selEnd, handle)->selStart, selEnd; Find a URL, return in handle"
 ;
 
 static PyObject *
@@ -253,7 +253,7 @@ ici_ICParseURL(iciobject *self, PyObject *args)
 
 
 static char ici_ICLaunchURL__doc__[] =
-"(hint, data, selStart, selEnd)->None; Find an URL and launch the correct app"
+"(hint, data, selStart, selEnd)->None; Find a URL and launch the correct app"
 ;
 
 static PyObject *

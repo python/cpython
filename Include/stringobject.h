@@ -129,7 +129,7 @@ PyAPI_FUNC(PyObject*) PyString_AsEncodedObject(
 /* Encodes a string object and returns the result as Python string
    object.   
    
-   If the codec returns an Unicode object, the object is converted
+   If the codec returns a Unicode object, the object is converted
    back to a string using the default encoding.
 
    DEPRECATED - use PyString_AsEncodedObject() instead. */
@@ -152,7 +152,7 @@ PyAPI_FUNC(PyObject*) PyString_AsDecodedObject(
 /* Decodes a string object and returns the result as Python string
    object.  
    
-   If the codec returns an Unicode object, the object is converted
+   If the codec returns a Unicode object, the object is converted
    back to a string using the default encoding.
 
    DEPRECATED - use PyString_AsDecodedObject() instead. */
@@ -164,7 +164,7 @@ PyAPI_FUNC(PyObject*) PyString_AsDecodedString(
     );
 
 /* Provides access to the internal data buffer and size of a string
-   object or the default encoded version of an Unicode object. Passing
+   object or the default encoded version of a Unicode object. Passing
    NULL as *len parameter will force the string buffer to be
    0-terminated (passing a string with embedded NULL characters will
    cause an exception).  */

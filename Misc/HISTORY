@@ -8024,7 +8024,7 @@ Core language, builtins, and interpreter
 
 - There is a new Unicode companion to the PyObject_Str() API
   called PyObject_Unicode(). It behaves in the same way as the
-  former, but assures that the returned value is an Unicode object
+  former, but assures that the returned value is a Unicode object
   (applying the usual coercion if necessary).
 
 - The comparison operators support "rich comparison overloading" (PEP

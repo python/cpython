@@ -574,7 +574,7 @@ PI = ProcessingInstruction
 # @param text A string containing the QName value, in the form {uri}local,
 #     or, if the tag argument is given, the URI part of a QName.
 # @param tag Optional tag.  If given, the first argument is interpreted as
-#     an URI, and this argument is interpreted as a local name.
+#     a URI, and this argument is interpreted as a local name.
 # @return An opaque object, representing the QName.
 
 class QName(object):

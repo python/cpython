@@ -661,7 +661,7 @@ Text I/O
 
 .. class:: TextIOBase
 
-   Base class for text streams.  This class provides an unicode character
+   Base class for text streams.  This class provides a unicode character
    and line based interface to stream I/O.  There is no :meth:`readinto`
    method because Python's :class:`unicode` strings are immutable.
    It inherits :class:`IOBase`.  There is no public constructor.

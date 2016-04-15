@@ -56,7 +56,7 @@ representation for a tournament.  The numbers below are `k', not a[k]:
 
 
 In the tree above, each cell `k' is topping `2*k+1' and `2*k+2'.  In
-an usual binary tournament we see in sports, each cell is the winner
+a usual binary tournament we see in sports, each cell is the winner
 over the two cells it tops, and we can trace the winner down the tree
 to see all opponents s/he had.  However, in many computer applications
 of such tournaments, we do not need to trace the history of a winner.

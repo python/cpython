@@ -492,7 +492,7 @@ _PyCode_ConstantKey(PyObject *op)
         return key;
     }
     else {
-        /* for other types, use the object identifier as an unique identifier
+        /* for other types, use the object identifier as a unique identifier
          * to ensure that they are seen as unequal. */
         PyObject *obj_id = PyLong_FromVoidPtr(op);
         if (obj_id == NULL)

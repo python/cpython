@@ -434,11 +434,11 @@ does not exist).  It has the following attributes:
    error.
 
 In the following example we're going to intentionally cause a :exc:`ProtocolError`
-by providing an URI that doesn't point to an XMLRPC server::
+by providing a URI that doesn't point to an XMLRPC server::
 
    import xmlrpclib
 
-   # create a ServerProxy with an URI that doesn't respond to XMLRPC requests
+   # create a ServerProxy with a URI that doesn't respond to XMLRPC requests
    proxy = xmlrpclib.ServerProxy("http://www.google.com/")
 
    try:

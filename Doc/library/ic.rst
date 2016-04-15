@@ -83,7 +83,7 @@ methods:
 
 .. method:: IC.parseurl(data[, start[, end[, hint]]])
 
-   Find an URL somewhere in *data* and return start position, end position and the
+   Find a URL somewhere in *data* and return start position, end position and the
    URL. The optional *start* and *end* can be used to limit the search, so for
    instance if a user clicks in a long text field you can pass the whole text field
    and the click-position in *start* and this routine will return the whole URL in

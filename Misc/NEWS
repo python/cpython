@@ -5992,7 +5992,7 @@ Core and Builtins
 - Issue #8211: Save/restore CFLAGS around AC_PROG_CC in configure.in, in case it
   is set.
 
-- Issue #1583863: An unicode subclass can now override the __unicode__ method
+- Issue #1583863: A unicode subclass can now override the __unicode__ method
 
 - Issue #6474: Make error message from passing an inadequate number of keyword
   arguments to a function correct.
@@ -6497,7 +6497,7 @@ Library
   when the release file is empty.
 
 - Issue #7748: Since unicode values are supported for some metadata options in
-  Distutils, the DistributionMetadata get_* methods will now return an utf-8
+  Distutils, the DistributionMetadata get_* methods will now return a utf-8
   encoded string for them.  This ensures that the upload and register commands
   send the correct values to PyPI without any error.
 
@@ -8873,7 +8873,7 @@ Library
 - Silence the DeprecationWarning raised when importing mimetools in
   BaseHTTPServer, cgi (and rfc822), httplib.
 
-- Issue #2776: fixed small issue when handling an URL with double slash
+- Issue #2776: fixed small issue when handling a URL with double slash
   after a 302 response in the case of not going through a proxy.
 
 - Issue #2676: in the email package, content-type parsing was hanging on
@@ -10205,7 +10205,7 @@ Core and builtins
   ``object.__reduce_ex__()`` is called with an object that is faking
   its type.
 
-- Patch #1680015: Don't modify __slots__ tuple if it contains an
+- Patch #1680015: Don't modify __slots__ tuple if it contains a
   unicode name.
 
 - Patch #1444529: the builtin compile() now accepts keyword arguments.

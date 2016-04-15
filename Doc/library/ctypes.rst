@@ -1873,7 +1873,7 @@ Utility functions
    allows specifying the size of the array if the length of the string should not
    be used.
 
-   If the first parameter is a 8-bit string, it is converted into an unicode string
+   If the first parameter is a 8-bit string, it is converted into a unicode string
    according to ctypes conversion rules.
 
 

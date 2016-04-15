@@ -55,7 +55,7 @@ The simplest way to use urllib2 is as follows::
     html = response.read()
 
 Many uses of urllib2 will be that simple (note that instead of an 'http:' URL we
-could have used an URL starting with 'ftp:', 'file:', etc.).  However, it's the
+could have used a URL starting with 'ftp:', 'file:', etc.).  However, it's the
 purpose of this tutorial to explain the more complicated cases, concentrating on
 HTTP.
 

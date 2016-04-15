@@ -901,7 +901,7 @@ QName Objects
    to get proper namespace handling on output.  *text_or_uri* is a string
    containing the QName value, in the form {uri}local, or, if the tag argument
    is given, the URI part of a QName.  If *tag* is given, the first argument is
-   interpreted as an URI, and this argument is interpreted as a local name.
+   interpreted as a URI, and this argument is interpreted as a local name.
    :class:`QName` instances are opaque.
 
 
