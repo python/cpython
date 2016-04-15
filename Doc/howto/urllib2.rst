@@ -64,7 +64,7 @@ you can do so via the :func:`~urllib.request.urlretrieve` function::
     html = open(local_filename)
 
 Many uses of urllib will be that simple (note that instead of an 'http:' URL we
-could have used an URL starting with 'ftp:', 'file:', etc.).  However, it's the
+could have used a URL starting with 'ftp:', 'file:', etc.).  However, it's the
 purpose of this tutorial to explain the more complicated cases, concentrating on
 HTTP.
 

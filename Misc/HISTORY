@@ -2237,7 +2237,7 @@ Library
   attribute which allows setting custom per-pickler reduction functions.
   Patch by sbt.
 
-- Issue #14177: marshal.loads() now raises TypeError when given an unicode
+- Issue #14177: marshal.loads() now raises TypeError when given a unicode
   string.  Patch by Guilherme Gonçalves.
 
 - Issue #13550: Remove the debug machinery from the threading module: remove
@@ -8304,7 +8304,7 @@ Library
 - Issue #1664: Make nntplib IPv6-capable. Patch by Derek Morr.
 
 - Issue #5006: Better handling of unicode byte-order marks (BOM) in the io
-  library. This means, for example, that opening an UTF-16 text file in
+  library. This means, for example, that opening a UTF-16 text file in
   append mode doesn't add a BOM at the end of the file if the file isn't
   empty.
 
@@ -9328,7 +9328,7 @@ Library
 - Issue #4756: zipfile.is_zipfile() now supports file-like objects. Patch by
   Gabriel Genellina.
 
-- Issue #4574: reading an UTF16-encoded text file crashes if \r on 64-char
+- Issue #4574: reading a UTF16-encoded text file crashes if \r on 64-char
   boundary.
 
 - Issue #4223: inspect.getsource() will now correctly display source code
@@ -9929,7 +9929,7 @@ Extension Modules
   exploitation of poor argument checking.
 
 - bsddb code updated to version 4.7.3pre2. This code is the same than
-  Python 2.6 one, since the intention is to keep an unified 2.x/3.x codebase.
+  Python 2.6 one, since the intention is to keep a unified 2.x/3.x codebase.
   The Python code is automatically translated using "2to3". Please, do not
   update this code in Python 3.0 by hand. Update the 2.6 one and then
   do "2to3".
@@ -18936,7 +18936,7 @@ Core language, builtins, and interpreter
 
 - There is a new Unicode companion to the PyObject_Str() API
   called PyObject_Unicode(). It behaves in the same way as the
-  former, but assures that the returned value is an Unicode object
+  former, but assures that the returned value is a Unicode object
   (applying the usual coercion if necessary).
 
 - The comparison operators support "rich comparison overloading" (PEP

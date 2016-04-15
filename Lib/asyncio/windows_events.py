@@ -197,7 +197,7 @@ class _WaitHandleFuture(_BaseWaitHandleFuture):
         #
         # If the IocpProactor already received the event, it's safe to call
         # _unregister() because we kept a reference to the Overlapped object
-        # which is used as an unique key.
+        # which is used as a unique key.
         self._proactor._unregister(self._ov)
         self._proactor = None
 
