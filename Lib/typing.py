@@ -1,6 +1,7 @@
 import abc
 from abc import abstractmethod, abstractproperty
 import collections
+import contextlib
 import functools
 import re as stdlib_re  # Avoid confusion with the re we export.
 import sys
@@ -1528,6 +1529,12 @@ class ItemsView(MappingView[Tuple[KT, VT_co]],
 
 class ValuesView(MappingView[VT_co], extra=collections_abc.ValuesView):
     pass
+
+
+if hasattr(contextlib, 'AbstractContextManager'):
+    class ContextManager(Generic[T_co], extra=contextlib.AbstractContextManager):
+        __slots__ = ()
+    __all__.append('ContextManager')
 
 
 class Dict(dict, MutableMapping[KT, VT]):
