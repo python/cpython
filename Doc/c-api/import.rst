@@ -72,7 +72,7 @@ Importing Modules
 
 .. c:function:: PyObject* PyImport_ImportModuleLevel(const char *name, PyObject *globals, PyObject *locals, PyObject *fromlist, int level)
 
-   Similar to :c:func:`PyImport_ImportModuleLevelObject`, but the name is an
+   Similar to :c:func:`PyImport_ImportModuleLevelObject`, but the name is a
    UTF-8 encoded string instead of a Unicode object.
 
    .. versionchanged:: 3.3

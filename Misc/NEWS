@@ -2834,7 +2834,7 @@ Core and Builtins
   static type in some cases.
 
 - Issue #15859: PyUnicode_EncodeFSDefault(), PyUnicode_EncodeMBCS() and
-  PyUnicode_EncodeCodePage() now raise an exception if the object is not an
+  PyUnicode_EncodeCodePage() now raise an exception if the object is not a
   Unicode object. For PyUnicode_EncodeFSDefault(), it was already the case on
   platforms other than Windows. Patch written by Campbell Barton.
 
@@ -3925,7 +3925,7 @@ Library
 - Issue #21226: Set up modules properly in PyImport_ExecCodeModuleObject
   (and friends).
 
-- Issue #21398: Fix an unicode error in the pydoc pager when the documentation
+- Issue #21398: Fix a unicode error in the pydoc pager when the documentation
   contains characters not encodable to the stdout encoding.
 
 - Issue #16531: ipaddress.IPv4Network and ipaddress.IPv6Network now accept
@@ -6929,7 +6929,7 @@ Core and Builtins
 - Issue #17173: Remove uses of locale-dependent C functions (isalpha() etc.)
   in the interpreter.
 
-- Issue #17137: When an Unicode string is resized, the internal wide character
+- Issue #17137: When a Unicode string is resized, the internal wide character
   string (wstr) format is now cleared.
 
 - Issue #17043: The unicode-internal decoder no longer read past the end of

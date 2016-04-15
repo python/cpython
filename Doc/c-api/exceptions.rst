@@ -285,7 +285,7 @@ an error value).
 .. c:function:: int PyErr_WarnEx(PyObject *category, const char *message, Py_ssize_t stack_level)
 
    Issue a warning message.  The *category* argument is a warning category (see
-   below) or *NULL*; the *message* argument is an UTF-8 encoded string.  *stack_level* is a
+   below) or *NULL*; the *message* argument is a UTF-8 encoded string.  *stack_level* is a
    positive number giving a number of stack frames; the warning will be issued from
    the  currently executing line of code in that stack frame.  A *stack_level* of 1
    is the function calling :c:func:`PyErr_WarnEx`, 2 is  the function above that,
@@ -617,7 +617,7 @@ The following functions are used to create and modify Unicode exceptions from C.
 .. c:function:: PyObject* PyUnicodeTranslateError_Create(const Py_UNICODE *object, Py_ssize_t length, Py_ssize_t start, Py_ssize_t end, const char *reason)
 
    Create a :class:`UnicodeTranslateError` object with the attributes *object*,
-   *length*, *start*, *end* and *reason*. *reason* is an UTF-8 encoded string.
+   *length*, *start*, *end* and *reason*. *reason* is a UTF-8 encoded string.
 
 .. c:function:: PyObject* PyUnicodeDecodeError_GetEncoding(PyObject *exc)
                 PyObject* PyUnicodeEncodeError_GetEncoding(PyObject *exc)
