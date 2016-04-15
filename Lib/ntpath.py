@@ -177,7 +177,7 @@ def splitunc(p):
     Return a 2-tuple (unc, rest); either part may be empty.
     If unc is not empty, it has the form '//host/mount' (or similar
     using backslashes).  unc+rest is always the input path.
-    Paths containing drive letters never have an UNC part.
+    Paths containing drive letters never have a UNC part.
     """
     import warnings
     warnings.warn("ntpath.splitunc is deprecated, use ntpath.splitdrive instead",

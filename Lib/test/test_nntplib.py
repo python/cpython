@@ -609,7 +609,7 @@ class NNTPv1Handler:
                     "\t\t6683\t16"
                     "\t"
                     "\n"
-                # An UTF-8 overview line from fr.comp.lang.python
+                # A UTF-8 overview line from fr.comp.lang.python
                 "59\tRe: Message d'erreur incompréhensible (par moi)"
                     "\tEric Brunel <eric.brunel@pragmadev.nospam.com>"
                     "\tWed, 15 Sep 2010 18:09:15 +0200"
