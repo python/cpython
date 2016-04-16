@@ -10,6 +10,8 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #26659: Make the builtin slice type support cycle collection.
+
 - Issue #26718: super.__init__ no longer leaks memory if called multiple times.
   NOTE: A direct call of super.__init__ is not endorsed!
 

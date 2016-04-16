@@ -1,8 +1,10 @@
 # tests for slice objects; in particular the indices method.
 
 import unittest
-from test import test_support
+import weakref
+
 from cPickle import loads, dumps
+from test import test_support
 
 import sys
 
@@ -127,6 +129,15 @@ class SliceTest(unittest.TestCase):
             self.assertEqual(s, t)
             self.assertEqual(s.indices(15), t.indices(15))
             self.assertNotEqual(id(s), id(t))
+
+    def test_cycle(self):
+        class myobj(): pass
+        o = myobj()
+        o.s = slice(o)
+        w = weakref.ref(o)
+        o = None
+        test_support.gc_collect()
+        self.assertIsNone(w())
 
 def test_main():
     test_support.run_unittest(SliceTest)
