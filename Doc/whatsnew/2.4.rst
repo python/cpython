@@ -1481,7 +1481,7 @@ Some of the changes to Python's build process and to the C API are:
 
 * Python can now be built with additional profiling for the interpreter itself,
   intended as an aid to people developing the Python core.  Providing
-  :option:`----enable-profiling` to the :program:`configure` script will let you
+  :option:`--enable-profiling` to the :program:`configure` script will let you
   profile the interpreter with :program:`gprof`, and providing the
   :option:`--with-tsc` switch enables profiling using the Pentium's Time-Stamp-
   Counter register.  Note that the :option:`--with-tsc` switch is slightly
