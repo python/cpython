@@ -102,7 +102,7 @@ void PySlice_Fini(void)
     PySliceObject *obj = slice_cache;
     if (obj != NULL) {
         slice_cache = NULL;
-        PyObject_Del(obj);
+        PyObject_GC_Del(obj);
     }
 }
 
