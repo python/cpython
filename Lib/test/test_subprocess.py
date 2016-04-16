@@ -2518,7 +2518,7 @@ class Win32ProcessTestCase(BaseTestCase):
     def test_terminate_dead(self):
         self._kill_dead_process('terminate')
 
-class CommandTests(unittest.TestCase):
+class MiscTests(unittest.TestCase):
     def test_getoutput(self):
         self.assertEqual(subprocess.getoutput('echo xyzzy'), 'xyzzy')
         self.assertEqual(subprocess.getstatusoutput('echo xyzzy'),
@@ -2538,19 +2538,6 @@ class CommandTests(unittest.TestCase):
             if dir is not None:
                 os.rmdir(dir)
 
-
-@unittest.skipUnless(hasattr(selectors, 'PollSelector'),
-                     "Test needs selectors.PollSelector")
-class ProcessTestCaseNoPoll(ProcessTestCase):
-    def setUp(self):
-        self.orig_selector = subprocess._PopenSelector
-        subprocess._PopenSelector = selectors.SelectSelector
-        ProcessTestCase.setUp(self)
-
-    def tearDown(self):
-        subprocess._PopenSelector = self.orig_selector
-        ProcessTestCase.tearDown(self)
-
     def test__all__(self):
         """Ensure that __all__ is populated properly."""
         intentionally_excluded = set(("list2cmdline",))
@@ -2565,6 +2552,18 @@ class ProcessTestCaseNoPoll(ProcessTestCase):
             possible_exports.add(name)
         self.assertEqual(exported, possible_exports - intentionally_excluded)
 
+
+@unittest.skipUnless(hasattr(selectors, 'PollSelector'),
+                     "Test needs selectors.PollSelector")
+class ProcessTestCaseNoPoll(ProcessTestCase):
+    def setUp(self):
+        self.orig_selector = subprocess._PopenSelector
+        subprocess._PopenSelector = selectors.SelectSelector
+        ProcessTestCase.setUp(self)
+
+    def tearDown(self):
+        subprocess._PopenSelector = self.orig_selector
+        ProcessTestCase.tearDown(self)
 
 
 @unittest.skipUnless(mswindows, "Windows-specific tests")
@@ -2669,7 +2668,7 @@ def test_main():
     unit_tests = (ProcessTestCase,
                   POSIXProcessTestCase,
                   Win32ProcessTestCase,
-                  CommandTests,
+                  MiscTests,
                   ProcessTestCaseNoPoll,
                   CommandsWithSpaces,
                   ContextManagerTests,
