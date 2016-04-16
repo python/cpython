@@ -122,13 +122,12 @@ raises an uncaught exception.  Keys are no longer echoed to the screen when
 you type them, for example, which makes using the shell difficult.
 
 In Python you can avoid these complications and make debugging much easier by
-importing the module :mod:`curses.wrapper`.  It supplies a :func:`wrapper`
-function that takes a callable.  It does the initializations described above,
-and also initializes colors if color support is present.  It then runs your
-provided callable and finally deinitializes appropriately.  The callable is
-called inside a try-catch clause which catches exceptions, performs curses
-deinitialization, and then passes the exception upwards.  Thus, your terminal
-won't be left in a funny state on exception.
+importing the :func:`curses.wrapper` function.  It takes a callable and does
+the initializations described above, also initializing colors if color support
+is present.  It then runs your provided callable and finally deinitializes
+appropriately.  The callable is called inside a try-catch clause which catches
+exceptions, performs curses deinitialization, and then passes the exception
+upwards.  Thus, your terminal won't be left in a funny state on exception.
 
 
 Windows and Pads
