@@ -549,12 +549,12 @@ _io.BytesIO.readinto
 Read up to len(buffer) bytes into buffer.
 
 Returns number of bytes read (0 for EOF), or None if the object
-is set not to block as has no data to read.
+is set not to block and has no data to read.
 [clinic start generated code]*/
 
 static PyObject *
 _io_BytesIO_readinto_impl(bytesio *self, Py_buffer *buffer)
-/*[clinic end generated code: output=a5d407217dcf0639 input=71581f32635c3a31]*/
+/*[clinic end generated code: output=a5d407217dcf0639 input=b52a8782706f0037]*/
 {
     Py_ssize_t len, n;
 
