@@ -1057,7 +1057,7 @@ Here are all of the changes that Python 2.3 makes to the core Python language.
 * A new warning, :exc:`PendingDeprecationWarning` was added to indicate features
   which are in the process of being deprecated.  The warning will *not* be printed
   by default.  To check for use of features that will be deprecated in the future,
-  supply :option:`-Walways::PendingDeprecationWarning::` on the command line or
+  supply :option:`-Walways::PendingDeprecationWarning:: <-W>` on the command line or
   use :func:`warnings.filterwarnings`.
 
 * The process of deprecating string-based exceptions, as in ``raise "Error
@@ -1734,7 +1734,7 @@ The optparse Module
 The :mod:`getopt` module provides simple parsing of command-line arguments.  The
 new :mod:`optparse` module (originally named Optik) provides more elaborate
 command-line parsing that follows the Unix conventions, automatically creates
-the output for :option:`--help`, and can perform different actions for different
+the output for :option:`!--help`, and can perform different actions for different
 options.
 
 You start by creating an instance of :class:`OptionParser` and telling it what
@@ -1973,7 +1973,7 @@ Some of the more notable changes are:
   the Python program as part of its execution.
 
 * The :file:`regrtest.py` script now provides a way to allow "all resources
-  except *foo*."  A resource name passed to the :option:`-u` option can now be
+  except *foo*."  A resource name passed to the :option:`!-u` option can now be
   prefixed with a hyphen (``'-'``) to mean "remove this resource."  For example,
   the option '``-uall,-bsddb``' could be used to enable the use of all resources
   except ``bsddb``.
