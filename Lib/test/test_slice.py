@@ -1,11 +1,13 @@
 # tests for slice objects; in particular the indices method.
 
-import unittest
-from pickle import loads, dumps
-
 import itertools
 import operator
 import sys
+import unittest
+import weakref
+
+from pickle import loads, dumps
+from test import support
 
 
 def evaluate_slice_index(arg):
@@ -239,6 +241,15 @@ class SliceTest(unittest.TestCase):
             self.assertEqual(s, t)
             self.assertEqual(s.indices(15), t.indices(15))
             self.assertNotEqual(id(s), id(t))
+
+    def test_cycle(self):
+        class myobj(): pass
+        o = myobj()
+        o.s = slice(o)
+        w = weakref.ref(o)
+        o = None
+        test_support.gc_collect()
+        self.assertIsNone(w())
 
 if __name__ == "__main__":
     unittest.main()
