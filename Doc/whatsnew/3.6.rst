@@ -500,7 +500,7 @@ Changes in the Python API
   attributes to match the documented APIs: :mod:`calendar`, :mod:`csv`,
   :mod:`~xml.etree.ElementTree`, :mod:`enum`,
   :mod:`fileinput`, :mod:`ftplib`, :mod:`logging`,
-  :mod:`optparse`, :mod:`tarfile`, :mod:`threading` and
+  :mod:`optparse`, :mod:`subprocess`, :mod:`tarfile`, :mod:`threading` and
   :mod:`wave`.  This means they will export new symbols when ``import *``
   is used.  See :issue:`23883`.
 

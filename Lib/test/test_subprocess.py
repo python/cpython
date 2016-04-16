@@ -2540,8 +2540,7 @@ class MiscTests(unittest.TestCase):
 
     def test__all__(self):
         """Ensure that __all__ is populated properly."""
-        # STARTUPINFO added to __all__ in 3.6
-        intentionally_excluded = {"list2cmdline", "STARTUPINFO", "Handle"}
+        intentionally_excluded = {"list2cmdline", "Handle"}
         exported = set(subprocess.__all__)
         possible_exports = set()
         import types
