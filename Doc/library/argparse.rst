@@ -878,7 +878,7 @@ the various :class:`ArgumentParser` actions.  The two most common uses of it are
   See the nargs_ description for examples.
 
 With the ``'store_const'`` and ``'append_const'`` actions, the ``const``
-keyword argument must be given.  For other actions, is defaults to ``None``.
+keyword argument must be given.  For other actions, it defaults to ``None``.
 
 
 default
