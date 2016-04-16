@@ -843,7 +843,7 @@ class WalkTests(unittest.TestCase):
 
     def test_walk_topdown(self):
         # Walk top-down.
-        all = list(os.walk(self.walk_path))
+        all = list(self.walk(self.walk_path))
 
         self.assertEqual(len(all), 4)
         # We can't know which order SUB1 and SUB2 will appear in.
