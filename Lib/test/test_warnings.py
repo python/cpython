@@ -553,10 +553,13 @@ class _WarningsTests(BaseTest):
         globals_dict = globals()
         oldfile = globals_dict['__file__']
         try:
-            with original_warnings.catch_warnings(module=self.module) as w:
+            with original_warnings.catch_warnings(module=self.module, record=True) as w:
                 self.module.filterwarnings("always", category=UserWarning)
                 globals_dict['__file__'] = None
                 self.module.warn('test', UserWarning)
+            self.assertEqual(len(w), 1)
+            self.assertEqual(w[0].category, UserWarning)
+            self.assertEqual(str(w[0].message), 'test')
         finally:
             globals_dict['__file__'] = oldfile
 
