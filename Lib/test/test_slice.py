@@ -248,7 +248,7 @@ class SliceTest(unittest.TestCase):
         o.s = slice(o)
         w = weakref.ref(o)
         o = None
-        test_support.gc_collect()
+        support.gc_collect()
         self.assertIsNone(w())
 
 if __name__ == "__main__":
