@@ -46,7 +46,8 @@ from sources provided by the operating system.
 .. warning::
 
    The pseudo-random generators of this module should not be used for
-   security purposes.
+   security purposes.  For security or cryptographic uses, see the
+   :mod:`secrets` module.
 
 
 Bookkeeping functions:
