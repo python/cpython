@@ -16,3 +16,4 @@ Here's an overview:
 
    hashlib.rst
    hmac.rst
+   secrets.rst
