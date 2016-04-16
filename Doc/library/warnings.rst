@@ -256,7 +256,7 @@ Updating Code For New Versions of Python
 
 Warnings that are only of interest to the developer are ignored by default. As
 such you should make sure to test your code with typically ignored warnings
-made visible. You can do this from the command-line by passing :option:`-Wd`
+made visible. You can do this from the command-line by passing :option:`-Wd <-W>`
 to the interpreter (this is shorthand for :option:`-W default`).  This enables
 default handling for all warnings, including those that are ignored by default.
 To change what action is taken for encountered warnings you simply change what

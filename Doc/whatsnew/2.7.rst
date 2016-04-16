@@ -1820,12 +1820,12 @@ Consult the :mod:`unittest` module documentation for more details.
 
 The :func:`~unittest.main` function supports some other new options:
 
-* :option:`-b` or :option:`--buffer` will buffer the standard output
+* :option:`-b <unittest -b>` or :option:`--buffer` will buffer the standard output
   and standard error streams during each test.  If the test passes,
   any resulting output will be discarded; on failure, the buffered
   output will be displayed.
 
-* :option:`-c` or :option:`--catch` will cause the control-C interrupt
+* :option:`-c <unittest -c>` or :option:`--catch` will cause the control-C interrupt
   to be handled more gracefully.  Instead of interrupting the test
   process immediately, the currently running test will be completed
   and then the partial results up to the interruption will be reported.
@@ -1839,7 +1839,7 @@ The :func:`~unittest.main` function supports some other new options:
   :func:`~unittest.removeHandler` decorator that can be used to mark tests that
   should have the control-C handling disabled.
 
-* :option:`-f` or :option:`--failfast` makes
+* :option:`-f <unittest -f>` or :option:`--failfast` makes
   test execution stop immediately when a test fails instead of
   continuing to execute further tests.  (Suggested by Cliff Dyer and
   implemented by Michael Foord; :issue:`8074`.)
@@ -2381,7 +2381,7 @@ Other Changes and Fixes
   takes an integer specifying how many tests run in parallel. This
   allows reducing the total runtime on multi-core machines.
   This option is compatible with several other options, including the
-  :option:`-R` switch which is known to produce long runtimes.
+  :option:`!-R` switch which is known to produce long runtimes.
   (Added by Antoine Pitrou, :issue:`6152`.)  This can also be used
   with a new :option:`-F` switch that runs selected tests in a loop
   until they fail.  (Added by Antoine Pitrou; :issue:`7312`.)

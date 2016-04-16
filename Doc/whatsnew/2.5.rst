@@ -1095,7 +1095,7 @@ Here are all of the changes that Python 2.5 makes to the core Python language.
   log all the paths searched. In Python 2.5, a new :exc:`ImportWarning` warning is
   triggered when an import would have picked up a directory as a package but no
   :file:`__init__.py` was found.  This warning is silently ignored by default;
-  provide the :option:`-Wd` option when running the Python executable to display
+  provide the :option:`-Wd <-W>` option when running the Python executable to display
   the warning message. (Implemented by Thomas Wouters.)
 
 * The list of base classes in a class definition can now be empty.   As an
@@ -1126,7 +1126,7 @@ or ``exit()`` will now exit the interpreter as they expect.  (Implemented by
 Georg Brandl.)
 
 The Python executable now accepts the standard long options  :option:`--help`
-and :option:`--version`; on Windows,  it also accepts the :option:`/?` option
+and :option:`--version`; on Windows,  it also accepts the :option:`/? <-?>` option
 for displaying a help message. (Implemented by Georg Brandl.)
 
 .. ======================================================================
@@ -1640,7 +1640,7 @@ complete list of changes, or look through the SVN logs for all the details.
 * The :mod:`webbrowser` module received a number of enhancements. It's now
   usable as a script with ``python -m webbrowser``, taking a URL as the argument;
   there are a number of switches  to control the behaviour (:option:`-n` for a new
-  browser window,  :option:`-t` for a new tab).  New module-level functions,
+  browser window,  :option:`!-t` for a new tab).  New module-level functions,
   :func:`open_new` and :func:`open_new_tab`, were added  to support this.  The
   module's :func:`open` function supports an additional feature, an *autoraise*
   parameter that signals whether to raise the open window when possible. A number

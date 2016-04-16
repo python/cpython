@@ -862,12 +862,12 @@ config file will apply.  (Or if other commands that derive values from it are
 run, they will use the values in the config file.)
 
 You can find out the complete list of options for any command using the
-:option:`--help` option, e.g.::
+:option:`!--help` option, e.g.::
 
    python setup.py build --help
 
 and you can find out the complete list of global options by using
-:option:`--help` without a command::
+:option:`!--help` without a command::
 
    python setup.py --help
 
@@ -924,7 +924,7 @@ Let's examine each of the fields in turn.
   to be in Objective C.
 
 * *cpparg* is an argument for the C preprocessor,  and is anything starting with
-  :option:`-I`, :option:`-D`, :option:`-U` or :option:`-C`.
+  :option:`!-I`, :option:`-D`, :option:`!-U` or :option:`-C`.
 
 * *library* is anything ending in :file:`.a` or beginning with :option:`-l` or
   :option:`-L`.

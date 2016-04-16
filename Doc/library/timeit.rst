@@ -16,7 +16,7 @@
 --------------
 
 This module provides a simple way to time small bits of Python code. It has both
-a :ref:`command-line-interface` as well as a :ref:`callable <python-interface>`
+a :ref:`timeit-command-line-interface` as well as a :ref:`callable <python-interface>`
 one.  It avoids a number of common traps for measuring execution times.
 See also Tim Peters' introduction to the "Algorithms" chapter in the *Python
 Cookbook*, published by O'Reilly.
@@ -25,7 +25,7 @@ Cookbook*, published by O'Reilly.
 Basic Examples
 --------------
 
-The following example shows how the :ref:`command-line-interface`
+The following example shows how the :ref:`timeit-command-line-interface`
 can be used to compare three different expressions:
 
 .. code-block:: sh
@@ -170,7 +170,7 @@ The module defines three convenience functions and a public class:
       where the traceback is sent; it defaults to :data:`sys.stderr`.
 
 
-.. _command-line-interface:
+.. _timeit-command-line-interface:
 
 Command-Line Interface
 ----------------------

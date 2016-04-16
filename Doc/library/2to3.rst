@@ -56,7 +56,7 @@ Comments and exact indentation are preserved throughout the translation process.
 
 By default, 2to3 runs a set of :ref:`predefined fixers <2to3-fixers>`.  The
 :option:`-l` flag lists all available fixers.  An explicit set of fixers to run
-can be given with :option:`-f`.  Likewise the :option:`-x` explicitly disables a
+can be given with :option:`-f`.  Likewise the :option:`!-x` explicitly disables a
 fixer.  The following example runs only the ``imports`` and ``has_key`` fixers::
 
    $ 2to3 -f imports -f has_key example.py
@@ -78,12 +78,12 @@ but 2to3 cannot fix automatically.  In this case, 2to3 will print a warning
 beneath the diff for a file.  You should address the warning in order to have
 compliant 3.x code.
 
-2to3 can also refactor doctests.  To enable this mode, use the :option:`-d`
+2to3 can also refactor doctests.  To enable this mode, use the :option:`!-d`
 flag.  Note that *only* doctests will be refactored.  This also doesn't require
 the module to be valid Python.  For example, doctest like examples in a reST
 document could also be refactored with this option.
 
-The :option:`-v` option enables output of more information on the translation
+The :option:`!-v` option enables output of more information on the translation
 process.
 
 Since some print statements can be parsed as function calls or statements, 2to3
@@ -102,14 +102,14 @@ when not overwriting the input files.
 .. versionadded:: 2.7.3
    The :option:`-o` option was added.
 
-The :option:`-W` or :option:`--write-unchanged-files` flag tells 2to3 to always
+The :option:`!-W` or :option:`--write-unchanged-files` flag tells 2to3 to always
 write output files even if no changes were required to the file.  This is most
 useful with :option:`-o` so that an entire Python source tree is copied with
 translation from one directory to another.
 This option implies the :option:`-w` flag as it would not make sense otherwise.
 
 .. versionadded:: 2.7.3
-   The :option:`-W` flag was added.
+   The :option:`!-W` flag was added.
 
 The :option:`--add-suffix` option specifies a string to append to all output
 filenames.  The :option:`-n` flag is required when specifying this as backups

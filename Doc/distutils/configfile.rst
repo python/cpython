@@ -51,7 +51,7 @@ option values can be split across multiple lines simply by indenting the
 continuation lines.
 
 You can find out the list of options supported by a particular command with the
-universal :option:`--help` option, e.g. ::
+universal :option:`!--help` option, e.g. ::
 
    > python setup.py --help build_ext
    [...]

@@ -759,7 +759,7 @@ Here are the changes 2.2 introduces:
 
 * Python 2.2 supports some command-line arguments for testing whether code will
   works with the changed division semantics.  Running python with :option:`-Q
-  warn` will cause a warning to be issued whenever division is applied to two
+  warn <-Q>` will cause a warning to be issued whenever division is applied to two
   integers.  You can use this to find code that's affected by the change and fix
   it.  By default, Python 2.2 will simply perform classic division without a
   warning; the warning will be turned on by default in Python 2.3.
