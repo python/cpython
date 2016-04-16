@@ -17,7 +17,6 @@ parse_qsl_test_cases = [
     ("=a", [('', 'a')]),
     ("a", [('a', '')]),
     ("a=", [('a', '')]),
-    ("a=", [('a', '')]),
     ("&a=b", [('a', 'b')]),
     ("a=a+b&b=b+c", [('a', 'a b'), ('b', 'b c')]),
     ("a=1&a=2", [('a', '1'), ('a', '2')]),
@@ -28,10 +27,52 @@ parse_qsl_test_cases = [
     (b"=a", [(b'', b'a')]),
     (b"a", [(b'a', b'')]),
     (b"a=", [(b'a', b'')]),
-    (b"a=", [(b'a', b'')]),
     (b"&a=b", [(b'a', b'b')]),
     (b"a=a+b&b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
     (b"a=1&a=2", [(b'a', b'1'), (b'a', b'2')]),
+    (";", []),
+    (";;", []),
+    (";a=b", [('a', 'b')]),
+    ("a=a+b;b=b+c", [('a', 'a b'), ('b', 'b c')]),
+    ("a=1;a=2", [('a', '1'), ('a', '2')]),
+    (b";", []),
+    (b";;", []),
+    (b";a=b", [(b'a', b'b')]),
+    (b"a=a+b;b=b+c", [(b'a', b'a b'), (b'b', b'b c')]),
+    (b"a=1;a=2", [(b'a', b'1'), (b'a', b'2')]),
+]
+
+parse_qs_test_cases = [
+    ("", {}),
+    ("&", {}),
+    ("&&", {}),
+    ("=", {'': ['']}),
+    ("=a", {'': ['a']}),
+    ("a", {'a': ['']}),
+    ("a=", {'a': ['']}),
+    ("&a=b", {'a': ['b']}),
+    ("a=a+b&b=b+c", {'a': ['a b'], 'b': ['b c']}),
+    ("a=1&a=2", {'a': ['1', '2']}),
+    (b"", {}),
+    (b"&", {}),
+    (b"&&", {}),
+    (b"=", {b'': [b'']}),
+    (b"=a", {b'': [b'a']}),
+    (b"a", {b'a': [b'']}),
+    (b"a=", {b'a': [b'']}),
+    (b"&a=b", {b'a': [b'b']}),
+    (b"a=a+b&b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
+    (b"a=1&a=2", {b'a': [b'1', b'2']}),
+    (";", {}),
+    (";;", {}),
+    (";a=b", {'a': ['b']}),
+    ("a=a+b;b=b+c", {'a': ['a b'], 'b': ['b c']}),
+    ("a=1;a=2", {'a': ['1', '2']}),
+    (b";", {}),
+    (b";;", {}),
+    (b";a=b", {b'a': [b'b']}),
+    (b"a=a+b;b=b+c", {b'a': [b'a b'], b'b': [b'b c']}),
+    (b"a=1;a=2", {b'a': [b'1', b'2']}),
 ]
 
 class UrlParseTestCase(unittest.TestCase):
@@ -93,6 +134,16 @@ class UrlParseTestCase(unittest.TestCase):
             self.assertEqual(result, expect, "Error parsing %r" % orig)
             expect_without_blanks = [v for v in expect if len(v[1])]
             result = urllib.parse.parse_qsl(orig, keep_blank_values=False)
+            self.assertEqual(result, expect_without_blanks,
+                            "Error parsing %r" % orig)
+
+    def test_qs(self):
+        for orig, expect in parse_qs_test_cases:
+            result = urllib.parse.parse_qs(orig, keep_blank_values=True)
+            self.assertEqual(result, expect, "Error parsing %r" % orig)
+            expect_without_blanks = {v: expect[v]
+                                     for v in expect if len(expect[v][0])}
+            result = urllib.parse.parse_qs(orig, keep_blank_values=False)
             self.assertEqual(result, expect_without_blanks,
                             "Error parsing %r" % orig)
 
