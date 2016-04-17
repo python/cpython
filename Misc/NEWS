@@ -245,6 +245,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26717: Stop encoding Latin-1-ized WSGI paths with UTF-8.  Patch by
+  Anthony Sottile.
+
 - Issue #26782: Add STARTUPINFO to subprocess.__all__ on Windows.
 
 - Issue #26404: Add context manager to socketserver.  Patch by Aviv Palivoda.
