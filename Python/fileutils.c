@@ -798,7 +798,7 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
     int request;
     int err;
 #endif
-    int flags;
+    int flags, new_flags;
     int res;
 #endif
 
@@ -884,10 +884,18 @@ set_inheritable(int fd, int inheritable, int raise, int *atomic_flag_works)
         return -1;
     }
 
-    if (inheritable)
-        flags &= ~FD_CLOEXEC;
-    else
-        flags |= FD_CLOEXEC;
+    if (inheritable) {
+        new_flags = flags & ~FD_CLOEXEC;
+    }
+    else {
+        new_flags = flags | FD_CLOEXEC;
+    }
+
+    if (new_flags == flags) {
+        /* FD_CLOEXEC flag already set/cleared: nothing to do */
+        return 0;
+    }
+
     res = fcntl(fd, F_SETFD, flags);
     if (res < 0) {
         if (raise)
