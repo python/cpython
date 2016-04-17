@@ -231,7 +231,7 @@ PyThread_start_new_thread(void (*func)(void *), void *arg)
 }
 
 /*
- * Return the thread Id instead of an handle. The Id is said to uniquely identify the
+ * Return the thread Id instead of a handle. The Id is said to uniquely identify the
  * thread in the system
  */
 long

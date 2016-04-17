@@ -1478,7 +1478,7 @@ class LabeledScale(Frame):
     can be accessed through instance.label"""
 
     def __init__(self, master=None, variable=None, from_=0, to=10, **kw):
-        """Construct an horizontal LabeledScale with parent master, a
+        """Construct a horizontal LabeledScale with parent master, a
         variable to be associated with the Ttk Scale widget and its range.
         If variable is not specified, a tkinter.IntVar is created.
 

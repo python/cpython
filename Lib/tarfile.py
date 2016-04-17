@@ -1528,9 +1528,9 @@ class TarFile(object):
 
            'x' or 'x:'  create a tarfile exclusively without compression, raise
                         an exception if the file is already created
-           'x:gz'       create an gzip compressed tarfile, raise an exception
+           'x:gz'       create a gzip compressed tarfile, raise an exception
                         if the file is already created
-           'x:bz2'      create an bzip2 compressed tarfile, raise an exception
+           'x:bz2'      create a bzip2 compressed tarfile, raise an exception
                         if the file is already created
            'x:xz'       create an lzma compressed tarfile, raise an exception
                         if the file is already created

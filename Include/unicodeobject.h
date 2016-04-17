@@ -844,7 +844,7 @@ PyAPI_FUNC(int) PyUnicode_Resize(
     Py_ssize_t length           /* New length */
     );
 
-/* Decode obj to an Unicode object.
+/* Decode obj to a Unicode object.
 
    bytes, bytearray and other bytes-like objects are decoded according to the
    given encoding and error handler. The encoding and error handler can be
