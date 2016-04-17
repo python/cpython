@@ -56,7 +56,7 @@ class Rat(object):
     den = property(_get_den, None)
 
     def __repr__(self):
-        """Convert a Rat to an string resembling a Rat constructor call."""
+        """Convert a Rat to a string resembling a Rat constructor call."""
         return "Rat(%d, %d)" % (self.__num, self.__den)
 
     def __str__(self):
@@ -78,7 +78,7 @@ class Rat(object):
         raise ValueError, "can't convert %s to int" % repr(self)
 
     def __long__(self):
-        """Convert a Rat to an long; self.den must be 1."""
+        """Convert a Rat to a long; self.den must be 1."""
         if self.__den == 1:
             return long(self.__num)
         raise ValueError, "can't convert %s to long" % repr(self)

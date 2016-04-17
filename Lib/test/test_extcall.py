@@ -282,7 +282,7 @@ the function call setup. See <http://bugs.python.org/issue2016>.
     >>> f(**x)
     1 2
 
-A obscure message:
+An obscure message:
 
     >>> def f(a, b):
     ...    pass

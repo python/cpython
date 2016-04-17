@@ -157,7 +157,7 @@ Object Protocol
 
    .. index:: builtin: bytes
 
-   Compute a bytes representation of object *o*.  In 2.x, this is just a alias
+   Compute a bytes representation of object *o*.  In 2.x, this is just an alias
    for :c:func:`PyObject_Str`.
 
 

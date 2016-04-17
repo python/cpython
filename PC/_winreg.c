@@ -301,7 +301,7 @@ PyDoc_STRVAR(SetValueEx_doc,
 "  REG_EXPAND_SZ -- A null-terminated string that contains unexpanded references\n"
 "                   to environment variables (for example, %PATH%).\n"
 "  REG_LINK -- A Unicode symbolic link.\n"
-"  REG_MULTI_SZ -- An sequence of null-terminated strings, terminated by\n"
+"  REG_MULTI_SZ -- A sequence of null-terminated strings, terminated by\n"
 "                  two null characters.  Note that Python handles this\n"
 "                  termination automatically.\n"
 "  REG_NONE -- No defined value type.\n"

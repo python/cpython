@@ -221,7 +221,7 @@ class Tk(Tkinter.Tk, tixCommand):
         self.tk.eval('package require Tix')
 
     def destroy(self):
-        # For safety, remove an delete_window binding before destroy
+        # For safety, remove the delete_window binding before destroy
         self.protocol("WM_DELETE_WINDOW", "")
         Tkinter.Tk.destroy(self)
 
@@ -702,7 +702,7 @@ class DirSelectBox(TixWidget):
 
 class ExFileSelectBox(TixWidget):
     """ExFileSelectBox - MS Windows style file select box.
-    It provides an convenient method for the user to select files.
+    It provides a convenient method for the user to select files.
 
     Subwidget       Class
     ---------       -----
@@ -760,7 +760,7 @@ class DirSelectDialog(TixWidget):
 # Should inherit from a Dialog class
 class ExFileSelectDialog(TixWidget):
     """ExFileSelectDialog - MS Windows style file select dialog.
-    It provides an convenient method for the user to select files.
+    It provides a convenient method for the user to select files.
 
     Subwidgets       Class
     ----------       -----

@@ -276,7 +276,7 @@ File Selectors
 
    The `ExFileSelectBox
    <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixExFileSelectBox.htm>`_
-   widget is usually embedded in a tixExFileSelectDialog widget. It provides an
+   widget is usually embedded in a tixExFileSelectDialog widget. It provides a
    convenient method for the user to select files. The style of the
    :class:`ExFileSelectBox` widget is very similar to the standard file dialog on
    MS Windows 3.1.

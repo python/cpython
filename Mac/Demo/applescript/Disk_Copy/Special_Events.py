@@ -20,7 +20,7 @@ class Special_Events_Events:
     }
 
     def mount(self, _object, _attributes={}, **_arguments):
-        """mount: Mounts an Disk Copy image as a disk volume
+        """mount: Mounts a Disk Copy image as a disk volume
         Required argument: a reference to the disk image to be mounted
         Keyword argument access_mode: the access mode for mounted volume (default is "any", i.e. best possible)
         Keyword argument checksum_verification: Verify the checksum before mounting?

@@ -224,7 +224,7 @@ class InvalidOperation(DecimalException):
 class ConversionSyntax(InvalidOperation):
     """Trying to convert badly formed string.
 
-    This occurs and signals invalid-operation if an string is being
+    This occurs and signals invalid-operation if a string is being
     converted to a number and it does not conform to the numeric string
     syntax.  The result is [0,qNaN].
     """

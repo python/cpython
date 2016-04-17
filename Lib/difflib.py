@@ -1487,7 +1487,7 @@ def _mdiff(fromlines, tolines, context=None, linejunk=None,
                 yield _make_line(lines,'-',0), None, True
                 continue
             elif s.startswith(('--?+', '--+', '- ')):
-                # in delete block and see a intraline change or unchanged line
+                # in delete block and see an intraline change or unchanged line
                 # coming: yield the delete line and then blanks
                 from_line,to_line = _make_line(lines,'-',0), None
                 num_blanks_to_yield,num_blanks_pending = num_blanks_pending-1,0

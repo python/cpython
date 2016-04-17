@@ -47,7 +47,7 @@ class ReadTest(unittest.TestCase):
         self.assertEqual(r.bytebuffer, "")
         self.assertEqual(r.charbuffer, u"")
 
-        # do the check again, this time using a incremental decoder
+        # do the check again, this time using an incremental decoder
         d = codecs.getincrementaldecoder(self.encoding)()
         result = u""
         for (c, partialresult) in zip(input.encode(self.encoding), partialresults):

@@ -2883,7 +2883,7 @@ bytearray(string, encoding[, errors]) -> bytearray.\n\
 bytearray(bytes_or_bytearray) -> mutable copy of bytes_or_bytearray.\n\
 bytearray(memory_view) -> bytearray.\n\
 \n\
-Construct an mutable bytearray object from:\n\
+Construct a mutable bytearray object from:\n\
   - an iterable yielding integers in range(256)\n\
   - a text string encoded using the specified encoding\n\
   - a bytes or a bytearray object\n\

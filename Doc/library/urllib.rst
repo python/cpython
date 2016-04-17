@@ -280,7 +280,7 @@ Utility functions
 
 .. function:: url2pathname(path)
 
-   Convert the path component *path* from an percent-encoded URL to the local syntax for a
+   Convert the path component *path* from a percent-encoded URL to the local syntax for a
    path.  This does not accept a complete URL.  This function uses :func:`unquote`
    to decode *path*.
 

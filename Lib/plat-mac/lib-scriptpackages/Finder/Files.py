@@ -102,7 +102,7 @@ class _Prop_version(aetools.NProperty):
 files = file
 
 class internet_location_file(aetools.ComponentItem):
-    """internet location file - An file containing an internet location """
+    """internet location file - A file containing an internet location """
     want = 'inlf'
 class _Prop_location(aetools.NProperty):
     """location - the internet location """

@@ -2778,7 +2778,7 @@ class Menu(Widget):
                     self.deletecommand(c)
         self.tk.call(self._w, 'delete', index1, index2)
     def entrycget(self, index, option):
-        """Return the resource value of an menu item for OPTION at INDEX."""
+        """Return the resource value of a menu item for OPTION at INDEX."""
         return self.tk.call(self._w, 'entrycget', index, '-' + option)
     def entryconfigure(self, index, cnf=None, **kw):
         """Configure a menu item at INDEX."""

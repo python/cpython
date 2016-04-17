@@ -463,7 +463,7 @@ class SysModuleTest(unittest.TestCase):
         self.assertEqual(os.path.abspath(sys.executable), sys.executable)
 
         # Issue #7774: Ensure that sys.executable is an empty string if argv[0]
-        # has been set to an non existent program name and Python is unable to
+        # has been set to a non existent program name and Python is unable to
         # retrieve the real program name
         import subprocess
         # For a normal installation, it should work without 'cwd'

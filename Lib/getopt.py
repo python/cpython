@@ -28,7 +28,7 @@ option involved with the exception.
 # - RETURN_IN_ORDER option
 # - GNU extension with '-' as first character of option string
 # - optional arguments, specified by double colons
-# - a option string with a W followed by semicolon should
+# - an option string with a W followed by semicolon should
 #   treat "-W foo" as "--foo"
 
 __all__ = ["GetoptError","error","getopt","gnu_getopt"]

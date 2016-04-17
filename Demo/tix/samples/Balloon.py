@@ -11,7 +11,7 @@
 # program.
 
 # This file demonstrates the use of the tixBalloon widget, which provides
-# a interesting way to give help tips about elements in your user interface.
+# an interesting way to give help tips about elements in your user interface.
 # Your can display the help message in a "balloon" and a status bar widget.
 #
 

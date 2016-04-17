@@ -876,7 +876,7 @@ class EventTests(lock_tests.EventTests):
     eventtype = staticmethod(threading.Event)
 
 class ConditionAsRLockTests(lock_tests.RLockTests):
-    # An Condition uses an RLock by default and exports its API.
+    # Condition uses an RLock by default and exports its API.
     locktype = staticmethod(threading.Condition)
 
 class ConditionTests(lock_tests.ConditionTests):

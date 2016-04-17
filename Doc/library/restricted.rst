@@ -34,7 +34,7 @@ the built-in :func:`open` function so that it raises an exception whenever the
 *mode* parameter is ``'w'``.  It might also perform a :c:func:`chroot`\ -like
 operation on the *filename* parameter, such that root is always relative to some
 safe "sandbox" area of the filesystem.  In this case, the untrusted code would
-still see an built-in :func:`open` function in its environment, with the same
+still see a built-in :func:`open` function in its environment, with the same
 calling interface.  The semantics would be identical too, with :exc:`IOError`\ s
 being raised when the supervisor determined that an unallowable parameter is
 being used.

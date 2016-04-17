@@ -110,10 +110,10 @@ Some facts and figures:
    +-------------+--------------------------------------------+
    | ``'w|'``    | Open an uncompressed *stream* for writing. |
    +-------------+--------------------------------------------+
-   | ``'w|gz'``  | Open an gzip compressed *stream* for       |
+   | ``'w|gz'``  | Open a gzip compressed *stream* for        |
    |             | writing.                                   |
    +-------------+--------------------------------------------+
-   | ``'w|bz2'`` | Open an bzip2 compressed *stream* for      |
+   | ``'w|bz2'`` | Open a bzip2 compressed *stream* for       |
    |             | writing.                                   |
    +-------------+--------------------------------------------+
 

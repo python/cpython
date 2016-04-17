@@ -1310,7 +1310,7 @@ static PyTypeObject PyFieldNameIter_Type = {
     0};
 
 /* unicode_formatter_field_name_split is used to implement
-   string.Formatter.vformat.  it takes an PEP 3101 "field name", and
+   string.Formatter.vformat.  it takes a PEP 3101 "field name", and
    returns a tuple of (first, rest): "first", the part before the
    first '.' or '['; and "rest", an iterator for the rest of the field
    name.  it's a wrapper around stringlib/string_format.h's

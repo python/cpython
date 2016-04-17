@@ -162,7 +162,7 @@ A single exception is defined as well:
 .. method:: SGMLParser.handle_entityref(ref)
 
    This method is called to process a general entity reference of the form
-   ``&ref;`` where *ref* is an general entity reference.  It converts *ref* by
+   ``&ref;`` where *ref* is a general entity reference.  It converts *ref* by
    passing it to :meth:`convert_entityref`.  If a translation is returned, it calls
    the method :meth:`handle_data` with the translation; otherwise, it calls the
    method ``unknown_entityref(ref)``. The default :attr:`entitydefs` defines

@@ -328,7 +328,7 @@ def _parse_object(file):
 #################################################################
 
 #
-# External - Create a form an link to an instance variable.
+# External - Create a form and link to an instance variable.
 #
 def create_full_form(inst, (fdata, odatalist)):
     form = create_form(fdata)

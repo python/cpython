@@ -84,7 +84,7 @@ class NullPyObjectPtr(RuntimeError):
 
 
 def safety_limit(val):
-    # Given a integer value from the process being debugged, limit it to some
+    # Given an integer value from the process being debugged, limit it to some
     # safety threshold so that arbitrary breakage within said process doesn't
     # break the gdb process too much (e.g. sizes of iterations, sizes of lists)
     return min(val, 1000)
@@ -132,7 +132,7 @@ class TruncatedStringIO(object):
 
 class PyObjectPtr(object):
     """
-    Class wrapping a gdb.Value that's a either a (PyObject*) within the
+    Class wrapping a gdb.Value that's either a (PyObject*) within the
     inferior process, or some subclass pointer e.g. (PyStringObject*)
 
     There will be a subclass for every refined PyObject type that we care

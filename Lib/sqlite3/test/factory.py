@@ -229,7 +229,7 @@ class TextFactoryTestsWithEmbeddedZeroBytes(unittest.TestCase):
         self.assertEqual(row[0], "a\x00b")
 
     def CheckCustom(self):
-        # A custom factory should receive an str argument
+        # A custom factory should receive a str argument
         self.con.text_factory = lambda x: x
         row = self.con.execute("select value from test").fetchone()
         self.assertIs(type(row[0]), str)

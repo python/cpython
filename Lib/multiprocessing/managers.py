@@ -884,7 +884,7 @@ def RebuildProxy(func, token, serializer, kwds):
 
 def MakeProxyType(name, exposed, _cache={}):
     '''
-    Return an proxy type whose methods are given by `exposed`
+    Return a proxy type whose methods are given by `exposed`
     '''
     exposed = tuple(exposed)
     try:

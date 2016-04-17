@@ -58,7 +58,7 @@ class _Prop_application_file(aetools.NProperty):
 application_processes = application_process
 
 class desk_accessory_process(aetools.ComponentItem):
-    """desk accessory process - A process launched from an desk accessory file """
+    """desk accessory process - A process launched from a desk accessory file """
     want = 'pcda'
 class _Prop_desk_accessory_file(aetools.NProperty):
     """desk accessory file - a reference to the desk accessory file from which this process was launched """

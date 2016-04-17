@@ -67,7 +67,7 @@ class AutoComplete:
 
     def try_open_completions_event(self, event):
         """Happens when it would be nice to open a completion list, but not
-        really necessary, for example after an dot, so function
+        really necessary, for example after a dot, so function
         calls won't be made.
         """
         lastchar = self.text.get("insert-1c")

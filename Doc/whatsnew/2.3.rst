@@ -411,7 +411,7 @@ PEP 279: enumerate()
 
 A new built-in function, :func:`enumerate`, will make certain loops a bit
 clearer.  ``enumerate(thing)``, where *thing* is either an iterator or a
-sequence, returns a iterator that will return ``(0, thing[0])``, ``(1,
+sequence, returns an iterator that will return ``(0, thing[0])``, ``(1,
 thing[1])``, ``(2, thing[2])``, and so forth.
 
 A common idiom to change every element of a list looks like this::

@@ -307,7 +307,7 @@ For non-negative indices, the length of a slice is the difference of the
 indices, if both are within bounds.  For example, the length of ``word[1:3]`` is
 2.
 
-Attempting to use a index that is too large will result in an error::
+Attempting to use an index that is too large will result in an error::
 
    >>> word[42]  # the word only has 6 characters
    Traceback (most recent call last):

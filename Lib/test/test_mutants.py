@@ -4,7 +4,7 @@ import os
 
 # From SF bug #422121:  Insecurities in dict comparison.
 
-# Safety of code doing comparisons has been an historical Python weak spot.
+# Safety of code doing comparisons has been a historical Python weak spot.
 # The problem is that comparison of structures written in C *naturally*
 # wants to hold on to things like the size of the container, or "the
 # biggest" containee so far, across a traversal of the container; but

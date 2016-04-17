@@ -123,7 +123,7 @@ methods (except ``control`` objects which only provide :meth:`getinfo`,
 .. method:: audio device.setinfo(status)
 
    This method sets the audio device status parameters. The *status* parameter is
-   an device status object as returned by :func:`getinfo` and possibly modified by
+   a device status object as returned by :func:`getinfo` and possibly modified by
    the program.
 
 

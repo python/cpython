@@ -657,7 +657,7 @@ positive integer::
 
    TenPointsArrayType = POINT * 10
 
-Here is an example of an somewhat artificial data type, a structure containing 4
+Here is an example of a somewhat artificial data type, a structure containing 4
 POINTs among other stuff::
 
    >>> from ctypes import *
@@ -1576,7 +1576,7 @@ They are instances of a private class:
       tuple, this method allows adapting the actual argument to an object that
       the foreign function accepts.  For example, a :class:`c_char_p` item in
       the :attr:`argtypes` tuple will convert a unicode string passed as
-      argument into an byte string using ctypes conversion rules.
+      argument into a byte string using ctypes conversion rules.
 
       New: It is now possible to put items in argtypes which are not ctypes
       types, but each item must have a :meth:`from_param` method which returns a
@@ -1964,7 +1964,7 @@ Utility functions
 .. function:: POINTER(type)
 
    This factory function creates and returns a new ctypes pointer type. Pointer
-   types are cached an reused internally, so calling this function repeatedly is
+   types are cached and reused internally, so calling this function repeatedly is
    cheap. *type* must be a ctypes type.
 
 

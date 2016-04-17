@@ -1375,7 +1375,7 @@ class OptionParser (OptionContainer):
         sys.argv[1:]).  Any errors result in a call to 'error()', which
         by default prints the usage message to stderr and calls
         sys.exit() with an error message.  On success returns a pair
-        (values, args) where 'values' is an Values instance (with all
+        (values, args) where 'values' is a Values instance (with all
         your option values) and 'args' is the list of arguments left
         over after parsing options.
         """

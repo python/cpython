@@ -6,7 +6,7 @@
 
 .. note::
 
-    There is an French translation of an earlier revision of this
+    There is a French translation of an earlier revision of this
     HOWTO, available at `urllib2 - Le Manuel manquant
     <http://www.voidspace.org.uk/python/articles/urllib2_francais.shtml>`_.
 

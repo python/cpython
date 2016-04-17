@@ -951,7 +951,7 @@ the exception is in the output, but this will fail under Python 2:
         HTTPException: message
     TestResults(failed=1, attempted=2)
 
-But in Python 2 the module path is not included, an therefore a test must look
+But in Python 2 the module path is not included, and therefore a test must look
 like the following test to succeed in Python 2. But that test will fail under
 Python 3.
 

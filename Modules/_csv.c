@@ -717,7 +717,7 @@ parse_process_char(ReaderObj *self, char c)
         break;
 
     case QUOTE_IN_QUOTED_FIELD:
-        /* doublequote - seen a quote in an quoted field */
+        /* doublequote - seen a quote in a quoted field */
         if (dialect->quoting != QUOTE_NONE &&
             c == dialect->quotechar) {
             /* save "" as " */

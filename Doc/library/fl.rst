@@ -310,7 +310,7 @@ here.
 
 .. method:: form.add_input(type, x, y, w, h, name)
 
-   Add a input object to the form.  ---  Methods: :meth:`set_input`,
+   Add an input object to the form.  ---  Methods: :meth:`set_input`,
    :meth:`get_input`, :meth:`set_input_color`, :meth:`set_input_return`.
 
 

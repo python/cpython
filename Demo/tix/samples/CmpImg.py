@@ -155,7 +155,7 @@ def RunSample(w):
     net = Tix.Button(w, padx=4, pady=1, width=120)
 
     # Create the first image: we create a line, then put a string,
-    # a space and a image into this line, from left to right.
+    # a space and an image into this line, from left to right.
     # The result: we have a one-line image that consists of three
     # individual items
     #

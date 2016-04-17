@@ -1213,7 +1213,7 @@ class ConfigDialog(Toplevel):
 
         All values are treated as text, and it is up to the user to supply
         reasonable values. The only exception to this are the 'enable*' options,
-        which are boolean, and can be toggled with an True/False button.
+        which are boolean, and can be toggled with a True/False button.
         """
         parent = self.parent
         frame = self.tabPages.pages['Extensions'].frame

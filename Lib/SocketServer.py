@@ -707,7 +707,7 @@ class StreamRequestHandler(BaseRequestHandler):
             try:
                 self.wfile.flush()
             except socket.error:
-                # An final socket error may have occurred here, such as
+                # A final socket error may have occurred here, such as
                 # the local error ECONNABORTED.
                 pass
         self.wfile.close()

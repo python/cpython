@@ -420,7 +420,7 @@ class IOBase:
         return self.__closed
 
     def _checkClosed(self, msg=None):
-        """Internal: raise an ValueError if file is closed
+        """Internal: raise a ValueError if file is closed
         """
         if self.closed:
             raise ValueError("I/O operation on closed file."
@@ -2022,7 +2022,7 @@ class StringIO(TextIOWrapper):
 
     def __repr__(self):
         # TextIOWrapper tells the encoding in its repr. In StringIO,
-        # that's a implementation detail.
+        # that's an implementation detail.
         return object.__repr__(self)
 
     @property

@@ -50,7 +50,7 @@ class BaseFix(object):
         """Initializer.  Subclass may override.
 
         Args:
-            options: an dict containing the options passed to RefactoringTool
+            options: a dict containing the options passed to RefactoringTool
             that could be used to customize the fixer through the command line.
             log: a list to append warnings and other messages to.
         """

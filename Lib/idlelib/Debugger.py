@@ -373,7 +373,7 @@ class StackViewer(ScrolledList):
     def __init__(self, master, flist, gui):
         if macosxSupport.isAquaTk():
             # At least on with the stock AquaTk version on OSX 10.4 you'll
-            # get an shaking GUI that eventually kills IDLE if the width
+            # get a shaking GUI that eventually kills IDLE if the width
             # argument is specified.
             ScrolledList.__init__(self, master)
         else:

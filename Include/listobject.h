@@ -2,7 +2,7 @@
 /* List object interface */
 
 /*
-Another generally useful object type is an list of object pointers.
+Another generally useful object type is a list of object pointers.
 This is a mutable type: the list items can be changed, and items can be
 added or removed.  Out-of-range indices or non-list objects are ignored.
 

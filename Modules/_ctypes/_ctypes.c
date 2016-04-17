@@ -3899,7 +3899,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
             return NULL;
         }
         /* there should be more checks? No, in Python */
-        /* First arg is an pointer to an interface instance */
+        /* First arg is a pointer to an interface instance */
         if (!this->b_ptr || *(void **)this->b_ptr == NULL) {
             PyErr_SetString(PyExc_ValueError,
                             "NULL COM pointer access");
