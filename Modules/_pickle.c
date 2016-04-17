@@ -4465,7 +4465,7 @@ Pickler_set_memo(PicklerObject *self, PyObject *obj)
     }
     else {
         PyErr_Format(PyExc_TypeError,
-                     "'memo' attribute must be an PicklerMemoProxy object"
+                     "'memo' attribute must be a PicklerMemoProxy object"
                      "or dict, not %.200s", Py_TYPE(obj)->tp_name);
         return -1;
     }
@@ -4703,7 +4703,7 @@ calc_binsize(char *bytes, int nbytes)
 
 /* s contains x bytes of a little-endian integer.  Return its value as a
  * C int.  Obscure:  when x is 1 or 2, this is an unsigned little-endian
- * int, but when x is 4 it's a signed one.  This is an historical source
+ * int, but when x is 4 it's a signed one.  This is a historical source
  * of x-platform bugs.
  */
 static long

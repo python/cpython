@@ -720,7 +720,7 @@ possible types of the operands.
 
 (The controversy is over whether this is *really* a design flaw, and whether
 it's worth breaking existing code to fix this.  It's caused endless discussions
-on python-dev, and in July 2001 erupted into an storm of acidly sarcastic
+on python-dev, and in July 2001 erupted into a storm of acidly sarcastic
 postings on :newsgroup:`comp.lang.python`. I won't argue for either side here
 and will stick to describing what's  implemented in 2.2.  Read :pep:`238` for a
 summary of arguments and counter-arguments.)

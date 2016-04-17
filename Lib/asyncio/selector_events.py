@@ -387,7 +387,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
 
         The address must be already resolved to avoid the trap of hanging the
         entire event loop when the address requires doing a DNS lookup. For
-        example, it must be an IP address, not an hostname, for AF_INET and
+        example, it must be an IP address, not a hostname, for AF_INET and
         AF_INET6 address families. Use getaddrinfo() to resolve the hostname
         asynchronously.
 

@@ -68,7 +68,7 @@ class WidgetRedirector:
         '''Return OriginalCommand(operation) after registering function.
 
         Registration adds an operation: function pair to ._operations.
-        It also adds an widget function attribute that masks the tkinter
+        It also adds a widget function attribute that masks the tkinter
         class instance method.  Method masking operates independently
         from command dispatch.
 
