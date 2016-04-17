@@ -109,7 +109,7 @@ class Group:
     def __init__(self, display_name=None, addresses=None):
         """Create an object representing an address group.
 
-        An address group consists of a display_name followed by colon and an
+        An address group consists of a display_name followed by colon and a
         list of addresses (see Address) terminated by a semi-colon.  The Group
         is created by specifying a display_name and a possibly empty list of
         Address objects.  A Group can also be used to represent a single

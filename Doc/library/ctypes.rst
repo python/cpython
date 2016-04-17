@@ -671,7 +671,7 @@ positive integer::
 
    TenPointsArrayType = POINT * 10
 
-Here is an example of an somewhat artificial data type, a structure containing 4
+Here is an example of a somewhat artificial data type, a structure containing 4
 POINTs among other stuff::
 
    >>> from ctypes import *
@@ -1888,7 +1888,7 @@ Utility functions
 .. function:: POINTER(type)
 
    This factory function creates and returns a new ctypes pointer type. Pointer
-   types are cached an reused internally, so calling this function repeatedly is
+   types are cached and reused internally, so calling this function repeatedly is
    cheap. *type* must be a ctypes type.
 
 

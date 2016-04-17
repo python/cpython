@@ -439,7 +439,7 @@ class IOBase(metaclass=abc.ABCMeta):
         return self.__closed
 
     def _checkClosed(self, msg=None):
-        """Internal: raise an ValueError if file is closed
+        """Internal: raise a ValueError if file is closed
         """
         if self.closed:
             raise ValueError("I/O operation on closed file."

@@ -1522,7 +1522,7 @@ def get_qp_ctext(value):
     This is not the RFC ctext, since we are handling nested comments in comment
     and unquoting quoted-pairs here.  We allow anything except the '()'
     characters, but if we find any ASCII other than the RFC defined printable
-    ASCII an NonPrintableDefect is added to the token's defects list.  Since
+    ASCII, a NonPrintableDefect is added to the token's defects list.  Since
     quoted pairs are converted to their unquoted values, what is returned is
     a 'ptext' token.  In this case it is a WhiteSpaceTerminal, so it's value
     is ' '.
@@ -1537,7 +1537,7 @@ def get_qcontent(value):
     """qcontent = qtext / quoted-pair
 
     We allow anything except the DQUOTE character, but if we find any ASCII
-    other than the RFC defined printable ASCII an NonPrintableDefect is
+    other than the RFC defined printable ASCII, a NonPrintableDefect is
     added to the token's defects list.  Any quoted pairs are converted to their
     unquoted values, so what is returned is a 'ptext' token.  In this case it
     is a ValueTerminal.
@@ -1882,7 +1882,7 @@ def get_dtext(value):
         obs-dtext = obs-NO-WS-CTL / quoted-pair
 
     We allow anything except the excluded characters, but if we find any
-    ASCII other than the RFC defined printable ASCII an NonPrintableDefect is
+    ASCII other than the RFC defined printable ASCII, a NonPrintableDefect is
     added to the token's defects list.  Quoted pairs are converted to their
     unquoted values, so what is returned is a ptext token, in this case a
     ValueTerminal.  If there were quoted-printables, an ObsoleteHeaderDefect is

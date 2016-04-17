@@ -792,7 +792,7 @@ winreg.ConnectRegistry -> HKEY
         The predefined key to connect to.
     /
 
-Establishes a connection to the registry on on another computer.
+Establishes a connection to the registry on another computer.
 
 The return value is the handle of the opened key.
 If the function fails, an OSError exception is raised.
@@ -801,7 +801,7 @@ If the function fails, an OSError exception is raised.
 static HKEY
 winreg_ConnectRegistry_impl(PyModuleDef *module, Py_UNICODE *computer_name,
                             HKEY key)
-/*[clinic end generated code: output=5c52f6f7ba6e7b46 input=9a056558ce318433]*/
+/*[clinic end generated code: output=5c52f6f7ba6e7b46 input=5f98a891a347e68e]*/
 {
     HKEY retKey;
     long rc;
@@ -1605,7 +1605,7 @@ winreg.SetValueEx
                          references to environment variables (for example,
                          %PATH%).
         REG_LINK -- A Unicode symbolic link.
-        REG_MULTI_SZ -- An sequence of null-terminated strings, terminated
+        REG_MULTI_SZ -- A sequence of null-terminated strings, terminated
                         by two null characters.  Note that Python handles
                         this termination automatically.
         REG_NONE -- No defined value type.
@@ -1631,7 +1631,7 @@ the configuration registry to help the registry perform efficiently.
 static PyObject *
 winreg_SetValueEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *value_name,
                        PyObject *reserved, DWORD type, PyObject *value)
-/*[clinic end generated code: output=ea092a935c361582 input=e73dec535ebeea7d]*/
+/*[clinic end generated code: output=ea092a935c361582 input=f1b16cbcc3ed4101]*/
 {
     BYTE *data;
     DWORD len;

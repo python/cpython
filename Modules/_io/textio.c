@@ -2689,7 +2689,7 @@ textiowrapper_iternext(textio *self)
                                            _PyIO_str_readline, NULL);
         if (line && !PyUnicode_Check(line)) {
             PyErr_Format(PyExc_IOError,
-                         "readline() should have returned an str object, "
+                         "readline() should have returned a str object, "
                          "not '%.200s'", Py_TYPE(line)->tp_name);
             Py_DECREF(line);
             return NULL;

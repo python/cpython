@@ -5,7 +5,7 @@
 
 /* Support objects whose length is > PY_SSIZE_T_MAX.
 
-   This could be sped up for small PyLongs if they fit in an Py_ssize_t.
+   This could be sped up for small PyLongs if they fit in a Py_ssize_t.
    This only matters on Win64.  Though we could use PY_LONG_LONG which
    would presumably help perf.
 */

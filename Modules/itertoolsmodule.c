@@ -4484,7 +4484,7 @@ static PyMethodDef zip_longest_methods[] = {
 PyDoc_STRVAR(zip_longest_doc,
 "zip_longest(iter1 [,iter2 [...]], [fillvalue=None]) --> zip_longest object\n\
 \n\
-Return an zip_longest object whose .__next__() method returns a tuple where\n\
+Return a zip_longest object whose .__next__() method returns a tuple where\n\
 the i-th element comes from the i-th iterable argument.  The .__next__()\n\
 method continues until the longest iterable in the argument sequence\n\
 is exhausted and then it raises StopIteration.  When the shorter iterables\n\

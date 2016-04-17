@@ -120,7 +120,7 @@ PyDoc_STRVAR(winreg_ConnectRegistry__doc__,
 "ConnectRegistry($module, computer_name, key, /)\n"
 "--\n"
 "\n"
-"Establishes a connection to the registry on on another computer.\n"
+"Establishes a connection to the registry on another computer.\n"
 "\n"
 "  computer_name\n"
 "    The name of the remote computer, of the form r\"\\\\computername\".  If\n"
@@ -913,7 +913,7 @@ PyDoc_STRVAR(winreg_SetValueEx__doc__,
 "                     references to environment variables (for example,\n"
 "                     %PATH%).\n"
 "    REG_LINK -- A Unicode symbolic link.\n"
-"    REG_MULTI_SZ -- An sequence of null-terminated strings, terminated\n"
+"    REG_MULTI_SZ -- A sequence of null-terminated strings, terminated\n"
 "                    by two null characters.  Note that Python handles\n"
 "                    this termination automatically.\n"
 "    REG_NONE -- No defined value type.\n"
@@ -1056,4 +1056,4 @@ winreg_QueryReflectionKey(PyModuleDef *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=71f5bc30b646807b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e346dccc296f9f1 input=a9049054013a1b77]*/
