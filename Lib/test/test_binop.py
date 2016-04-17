@@ -58,7 +58,7 @@ class Rat(object):
     den = property(_get_den, None)
 
     def __repr__(self):
-        """Convert a Rat to an string resembling a Rat constructor call."""
+        """Convert a Rat to a string resembling a Rat constructor call."""
         return "Rat(%d, %d)" % (self.__num, self.__den)
 
     def __str__(self):

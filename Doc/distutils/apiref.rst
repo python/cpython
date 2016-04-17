@@ -837,7 +837,7 @@ selection by :class:`MSVCCompiler`.
 .. module:: distutils.bcppcompiler
 
 
-This module provides :class:`BorlandCCompiler`, an subclass of the abstract
+This module provides :class:`BorlandCCompiler`, a subclass of the abstract
 :class:`CCompiler` class for the Borland C++ compiler.
 
 

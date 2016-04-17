@@ -1446,7 +1446,7 @@ class ServerProxy:
         # magic method dispatcher
         return _Method(self.__request, name)
 
-    # note: to call a remote object with an non-standard name, use
+    # note: to call a remote object with a non-standard name, use
     # result getattr(server, "strange-python-name")(args)
 
     def __call__(self, attr):
