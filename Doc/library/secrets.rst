@@ -88,7 +88,7 @@ hard-to-guess URLs, and similar.
 .. function:: token_urlsafe([nbytes=None])
 
    Return a random URL-safe text string, containing *nbytes* random
-   bytes.  The text is Base64 encoded, so on average, each byte results
+   bytes.  The text is Base64 encoded, so on average each byte results
    in approximately 1.3 characters.  If *nbytes* is ``None`` or not
    supplied, a reasonable default is used.
 
@@ -106,7 +106,7 @@ To be secure against
 tokens need to have sufficient randomness.  Unfortunately, what is
 considered sufficient will necessarily increase as computers get more
 powerful and able to make more guesses in a shorter period.  As of 2015,
-it is believed that 64 bytes (512 bits) of randomness is sufficient for
+it is believed that 32 bytes (256 bits) of randomness is sufficient for
 the typical use-case expected for the :mod:`secrets` module.
 
 For those who want to manage their own token length, you can explicitly
@@ -129,8 +129,8 @@ Other functions
 .. function:: compare_digest(a, b)
 
    Return ``True`` if strings *a* and *b* are equal, otherwise ``False``,
-   in such a way as to redice the risk of
-   `timing attacks <http://codahale.com/a-lesson-in-timing-attacks/>`_ .
+   in such a way as to reduce the risk of
+   `timing attacks <http://codahale.com/a-lesson-in-timing-attacks/>`_.
    See :func:`hmac.compare_digest` for additional details.
 
 
@@ -151,11 +151,10 @@ Generate an eight-character alphanumeric password:
 
 .. note::
 
-   Applications should
-   `not store passwords in a recoverable format <http://cwe.mitre.org/data/definitions/257.html>`_ ,
-   whether plain text or encrypted.  They should always be salted and
-   hashed using a cryptographically-strong one-way (irreversible) hash
-   function.
+   Applications should not
+   `store passwords in a recoverable format <http://cwe.mitre.org/data/definitions/257.html>`_,
+   whether plain text or encrypted.  They should be salted and hashed
+   using a cryptographically-strong one-way (irreversible) hash function.
 
 
 Generate a ten-character alphanumeric password with at least one
@@ -174,7 +173,7 @@ three digits:
            break
 
 
-Generate an `XKCD-style passphrase <http://xkcd.com/936/>`_ :
+Generate an `XKCD-style passphrase <http://xkcd.com/936/>`_:
 
 .. testcode::
 
