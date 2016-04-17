@@ -1169,7 +1169,7 @@ Core and Builtins
 - Issue #24407: Fix crash when dict is mutated while being updated.
 
 - Issue #24619: New approach for tokenizing async/await. As a consequence,
-  is is now possible to have one-line 'async def foo(): await ..' functions.
+  it is now possible to have one-line 'async def foo(): await ..' functions.
 
 - Issue #24687: Plug refleak on SyntaxError in function parameters
   annotations.
@@ -3515,7 +3515,7 @@ Library
 - Issue #21000: Improve the command-line interface of json.tool.
 
 - Issue #20995: Enhance default ciphers used by the ssl module to enable
-  better security an prioritize perfect forward secrecy.
+  better security and prioritize perfect forward secrecy.
 
 - Issue #20884: Don't assume that __file__ is defined on importlib.__init__.
 

@@ -128,7 +128,7 @@ Find Selection
    Search for the currently selected string, if there is one.
 
 Find in Files...
-   Open a file search dialog.  Put results in an new output window.
+   Open a file search dialog.  Put results in a new output window.
 
 Replace...
    Open a search-and-replace dialog.

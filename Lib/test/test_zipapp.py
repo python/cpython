@@ -195,7 +195,7 @@ class ZipAppTest(unittest.TestCase):
         self.assertTrue(new_target.getvalue().startswith(b'#!python2.7\n'))
 
     def test_read_from_pathobj(self):
-        # Test that we can copy an archive using an pathlib.Path object
+        # Test that we can copy an archive using a pathlib.Path object
         # for the source.
         source = self.tmpdir / 'source'
         source.mkdir()
