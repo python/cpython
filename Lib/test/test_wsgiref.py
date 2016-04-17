@@ -1,3 +1,4 @@
+from unittest import mock
 from unittest import TestCase
 from wsgiref.util import setup_testing_defaults
 from wsgiref.headers import Headers
@@ -220,6 +221,29 @@ class IntegrationTests(TestCase):
                 b"\r\n"
                 b"data",
                 out)
+
+    def test_cp1252_url(self):
+        def app(e, s):
+            s("200 OK", [
+                ("Content-Type", "text/plain"),
+                ("Date", "Wed, 24 Dec 2008 13:29:32 GMT"),
+                ])
+            # PEP3333 says environ variables are decoded as latin1.
+            # Encode as latin1 to get original bytes
+            return [e["PATH_INFO"].encode("latin1")]
+
+        out, err = run_amock(
+            validator(app), data=b"GET /\x80%80 HTTP/1.0")
+        self.assertEqual(
+            [
+                b"HTTP/1.0 200 OK",
+                mock.ANY,
+                b"Content-Type: text/plain",
+                b"Date: Wed, 24 Dec 2008 13:29:32 GMT",
+                b"",
+                b"/\x80\x80",
+            ],
+            out.splitlines())
 
 
 class UtilityTests(TestCase):
