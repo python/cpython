@@ -107,6 +107,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26717: Stop encoding Latin-1-ized WSGI paths with UTF-8.  Patch by
+  Anthony Sottile.
+
 - Issue #26735: Fix :func:`os.urandom` on Solaris 11.3 and newer when reading
   more than 1,024 bytes: call ``getrandom()`` multiple times with a limit of
   1024 bytes per call.
