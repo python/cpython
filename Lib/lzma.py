@@ -279,7 +279,7 @@ def open(filename, mode="rb", *,
     constructor: LZMAFile(filename, mode, ...). In this case, the
     encoding, errors and newline arguments must not be provided.
 
-    For text mode, a LZMAFile object is created, and wrapped in an
+    For text mode, an LZMAFile object is created, and wrapped in an
     io.TextIOWrapper instance with the specified encoding, error
     handling behavior, and line ending(s).
 

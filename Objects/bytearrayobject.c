@@ -3091,7 +3091,7 @@ bytearray(bytes_or_buffer) -> mutable copy of bytes_or_buffer\n\
 bytearray(int) -> bytes array of size given by the parameter initialized with null bytes\n\
 bytearray() -> empty bytes array\n\
 \n\
-Construct an mutable bytearray object from:\n\
+Construct a mutable bytearray object from:\n\
   - an iterable yielding integers in range(256)\n\
   - a text string encoded using the specified encoding\n\
   - a bytes or a buffer object\n\

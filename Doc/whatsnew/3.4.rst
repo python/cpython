@@ -1457,7 +1457,7 @@ s), as well as a :meth:`~ssl.SSLContext.get_ca_certs` method that returns a
 list of the loaded ``CA`` certificates.  (Contributed by Christian Heimes in
 :issue:`18147`.)
 
-If OpenSSL 0.9.8 or later is available, :class:`~ssl.SSLContext` has an new
+If OpenSSL 0.9.8 or later is available, :class:`~ssl.SSLContext` has a new
 attribute :attr:`~ssl.SSLContext.verify_flags` that can be used to control the
 certificate verification process by setting it to some combination of the new
 constants :data:`~ssl.VERIFY_DEFAULT`, :data:`~ssl.VERIFY_CRL_CHECK_LEAF`,

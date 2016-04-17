@@ -72,7 +72,7 @@ def isrecursive(object):
 class _safe_key:
     """Helper function for key functions when sorting unorderable objects.
 
-    The wrapped-object will fallback to an Py2.x style comparison for
+    The wrapped-object will fallback to a Py2.x style comparison for
     unorderable types (sorting first comparing the type name and then by
     the obj ids).  Does not work recursively, so dict.items() must have
     _safe_key applied to both the key and the value.

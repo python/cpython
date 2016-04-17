@@ -683,7 +683,7 @@ class FaultHandlerTests(unittest.TestCase):
             sys.stderr = stderr
 
     def test_stderr_None(self):
-        # Issue #21497: provide an helpful error if sys.stderr is None,
+        # Issue #21497: provide a helpful error if sys.stderr is None,
         # instead of just an attribute error: "None has no attribute fileno".
         with self.check_stderr_none():
             faulthandler.enable()

@@ -519,7 +519,7 @@ tracemalloc_realloc(void *ctx, void *ptr, size_t new_size)
                the caller, because realloc() may already have shrinked the
                memory block and so removed bytes.
 
-               This case is very unlikely: an hash entry has just been
+               This case is very unlikely: a hash entry has just been
                released, so the hash table should have at least one free entry.
 
                The GIL and the table lock ensures that only one thread is

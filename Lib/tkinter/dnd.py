@@ -3,7 +3,7 @@
 This is very preliminary.  I currently only support dnd *within* one
 application, between different windows (or within the same window).
 
-I an trying to make this as generic as possible -- not dependent on
+I am trying to make this as generic as possible -- not dependent on
 the use of a particular widget or icon type, etc.  I also hope that
 this will work with Pmw.
 

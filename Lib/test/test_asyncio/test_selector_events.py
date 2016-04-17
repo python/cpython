@@ -1182,7 +1182,7 @@ class SelectorSslTransportTests(test_utils.TestCase):
         self.assertIs(exc, waiter.exception())
 
     def test_cancel_handshake(self):
-        # Python issue #23197: cancelling an handshake must not raise an
+        # Python issue #23197: cancelling a handshake must not raise an
         # exception or log an error, even if the handshake failed
         waiter = asyncio.Future(loop=self.loop)
         transport = self.ssl_transport(waiter=waiter)

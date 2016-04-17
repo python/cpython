@@ -367,7 +367,7 @@ These APIs can be used to work with surrogates:
 
 .. c:macro:: Py_UNICODE_IS_HIGH_SURROGATE(ch)
 
-   Check if *ch* is an high surrogate (``0xD800 <= ch <= 0xDBFF``).
+   Check if *ch* is a high surrogate (``0xD800 <= ch <= 0xDBFF``).
 
 .. c:macro:: Py_UNICODE_IS_LOW_SURROGATE(ch)
 
@@ -450,7 +450,7 @@ APIs:
    | :attr:`%%`        | *n/a*               | The literal % character.       |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%c`        | int                 | A single character,            |
-   |                   |                     | represented as an C int.       |
+   |                   |                     | represented as a C int.        |
    +-------------------+---------------------+--------------------------------+
    | :attr:`%d`        | int                 | Exactly equivalent to          |
    |                   |                     | ``printf("%d")``.              |
