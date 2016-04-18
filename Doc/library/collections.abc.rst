@@ -112,6 +112,8 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
    ABC for classes that provide the :meth:`__reversed__` method.
 
+   .. versionadded:: 3.6
+
 .. class:: Generator
 
    ABC for generator classes that implement the protocol defined in
