@@ -359,6 +359,12 @@ class TupleTests(TestCase):
         self.assertTrue(issubclass(tuple, Tuple))
         self.assertFalse(issubclass(Tuple, tuple))  # Can't have it both ways.
 
+    def test_equality(self):
+        assert Tuple[int] == Tuple[int]
+        assert Tuple[int, ...] == Tuple[int, ...]
+        assert Tuple[int] != Tuple[int, int]
+        assert Tuple[int] != Tuple[int, ...]
+
     def test_tuple_subclass(self):
         class MyTuple(tuple):
             pass
