@@ -705,7 +705,8 @@ class TupleMeta(TypingMeta):
     def __eq__(self, other):
         if not isinstance(other, TupleMeta):
             return NotImplemented
-        return self.__tuple_params__ == other.__tuple_params__
+        return (self.__tuple_params__ == other.__tuple_params__ and
+                self.__tuple_use_ellipsis__ == other.__tuple_use_ellipsis__)
 
     def __hash__(self):
         return hash(self.__tuple_params__)
