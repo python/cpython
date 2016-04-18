@@ -77,6 +77,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26657: Fix directory traversal vulnerability with SimpleHTTPServer
+  on Windows.  This fixes a regression that was introduced in 2.7.7.  Based
+  on patch by Philipp Hagemeister.
+
 - Issue #19377: Add .svg to mimetypes.types_map.
 
 - Issue #13952: Add .csv to mimetypes.types_map.  Patch by Geoff Wilson.
