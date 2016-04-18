@@ -12,6 +12,7 @@ import os
 import sys
 import re
 import base64
+import ntpath
 import shutil
 import urllib.parse
 import html
@@ -917,6 +918,24 @@ class SimpleHTTPRequestHandlerTestCase(unittest.TestCase):
         self.assertEqual(path, self.translated)
         path = self.handler.translate_path('//filename?foo=bar')
         self.assertEqual(path, self.translated)
+
+    def test_windows_colon(self):
+        with support.swap_attr(server.os, 'path', ntpath):
+            path = self.handler.translate_path('c:c:c:foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated)
+
+            path = self.handler.translate_path('\\c:../filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated)
+
+            path = self.handler.translate_path('c:\\c:..\\foo/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated)
+
+            path = self.handler.translate_path('c:c:foo\\c:c:bar/filename')
+            path = path.replace(ntpath.sep, os.sep)
+            self.assertEqual(path, self.translated)
 
 
 class MiscTestCase(unittest.TestCase):
