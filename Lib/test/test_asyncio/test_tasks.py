@@ -2395,7 +2395,9 @@ class TimeoutTests(test_utils.TestCase):
                 resp = yield from long_running_task()
             self.assertEqual(resp, 'done')
             dt = self.loop.time() - t0
-            self.assertTrue(0.09 < dt < 0.11, dt)
+            # tolerate a time delta for clocks with bad resolution
+            # and slow buildbots
+            self.assertTrue(0.09 < dt < 0.15, dt)
         self.loop.run_until_complete(go())
 
     def test_raise_runtimeerror_if_no_task(self):
