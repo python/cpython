@@ -1837,6 +1837,8 @@ class TermsizeTests(unittest.TestCase):
         self.assertEqual(size.lines, 888)
 
     @unittest.skipUnless(os.isatty(sys.__stdout__.fileno()), "not on tty")
+    @unittest.skipUnless(hasattr(os, 'get_terminal_size'),
+                         'need os.get_terminal_size()')
     def test_stty_match(self):
         """Check if stty returns the same results ignoring env
 
