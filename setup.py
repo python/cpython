@@ -480,6 +480,13 @@ class PyBuildExt(build_ext):
         finally:
             os.unlink(tmpfile)
 
+    def detect_math_libs(self):
+        # Check for MacOS X, which doesn't need libm.a at all
+        if host_platform == 'darwin':
+            return []
+        else:
+            return ['m']
+
     def detect_modules(self):
         # Ensure that /usr/local is always used, but the local build
         # directories (i.e. '.' and 'Include') must be first.  See issue
@@ -584,10 +591,7 @@ class PyBuildExt(build_ext):
                 if item.startswith('-L'):
                     lib_dirs.append(item[2:])
 
-        # Check for MacOS X, which doesn't need libm.a at all
-        math_libs = ['m']
-        if host_platform == 'darwin':
-            math_libs = []
+        math_libs = self.detect_math_libs()
 
         # XXX Omitted modules: gl, pure, dl, SGI-specific modules
 
@@ -620,7 +624,10 @@ class PyBuildExt(build_ext):
         # time operations and variables
         exts.append( Extension('time', ['timemodule.c'],
                                libraries=time_libs) )
-        exts.append( Extension('_datetime', ['_datetimemodule.c']) )
+        # math_libs is needed by delta_new() that uses round() and by accum()
+        # that uses modf().
+        exts.append( Extension('_datetime', ['_datetimemodule.c'],
+                               libraries=math_libs) )
         # random number generator implemented in C
         exts.append( Extension("_random", ["_randommodule.c"]) )
         # bisect
@@ -691,11 +698,14 @@ class PyBuildExt(build_ext):
         # Multimedia modules
         # These don't work for 64-bit platforms!!!
         # These represent audio samples or images as strings:
-
+        #
         # Operations on audio samples
         # According to #993173, this one should actually work fine on
         # 64-bit platforms.
-        exts.append( Extension('audioop', ['audioop.c']) )
+        #
+        # audioop needs math_libs for floor() in multiple functions.
+        exts.append( Extension('audioop', ['audioop.c'],
+                               libraries=math_libs) )
 
         # readline
         do_readline = self.compiler.find_library_file(lib_dirs, 'readline')
@@ -1937,6 +1947,7 @@ class PyBuildExt(build_ext):
                    '_ctypes/stgdict.c',
                    '_ctypes/cfield.c']
         depends = ['_ctypes/ctypes.h']
+        math_libs = self.detect_math_libs()
 
         if host_platform == 'darwin':
             sources.append('_ctypes/malloc_closure.c')
@@ -1967,8 +1978,10 @@ class PyBuildExt(build_ext):
                         libraries=[],
                         sources=sources,
                         depends=depends)
+        # function my_sqrt() needs math library for sqrt()
         ext_test = Extension('_ctypes_test',
-                             sources=['_ctypes/_ctypes_test.c'])
+                     sources=['_ctypes/_ctypes_test.c'],
+                     libraries=math_libs)
         self.extensions.extend([ext, ext_test])
 
         if not '--with-system-ffi' in sysconfig.get_config_var("CONFIG_ARGS"):
