@@ -223,7 +223,7 @@ StreamReaderProtocol
 .. class:: StreamReaderProtocol(stream_reader, client_connected_cb=None, loop=None)
 
     Trivial helper class to adapt between :class:`Protocol` and
-    :class:`StreamReader`. Sublclass of :class:`Protocol`.
+    :class:`StreamReader`. Subclass of :class:`Protocol`.
 
     *stream_reader* is a :class:`StreamReader` instance, *client_connected_cb*
     is an optional function called with (stream_reader, stream_writer) when a
