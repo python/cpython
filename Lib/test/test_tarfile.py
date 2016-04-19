@@ -1795,7 +1795,7 @@ class UstarUnicodeTest(UnicodeTest, unittest.TestCase):
                 self.assertRaises(exc, tar.addfile, t)
 
         if exc is None:
-            with tarfile.open(tmpname, "r") as tar:
+            with tarfile.open(tmpname, "r", encoding="utf-8") as tar:
                 for t in tar:
                     self.assertEqual(name, t.name)
                     break
@@ -1821,7 +1821,7 @@ class UstarUnicodeTest(UnicodeTest, unittest.TestCase):
                 self.assertRaises(exc, tar.addfile, t)
 
         if exc is None:
-            with tarfile.open(tmpname, "r") as tar:
+            with tarfile.open(tmpname, "r", encoding="utf-8") as tar:
                 for t in tar:
                     self.assertEqual(name, t.linkname)
                     break
