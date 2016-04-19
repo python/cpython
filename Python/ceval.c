@@ -4890,6 +4890,21 @@ update_star_args(int nstack, int nstar, PyObject *stararg,
 {
     PyObject *callargs, *w;
 
+    if (!nstack) {
+        if (!stararg) {
+            /* There are no positional arguments on the stack and there is no
+               sequence to be unpacked. */
+            return PyTuple_New(0);
+        }
+        if (PyTuple_CheckExact(stararg)) {
+            /* No arguments are passed on the stack and the sequence is not a
+               tuple subclass so we can just pass the stararg tuple directly
+               to the function. */
+            Py_INCREF(stararg);
+            return stararg;
+        }
+    }
+
     callargs = PyTuple_New(nstack + nstar);
     if (callargs == NULL) {
         return NULL;
