@@ -175,7 +175,7 @@ class SyntaxTracebackCases(unittest.TestCase):
                     text, charset, 5)
             do_test(" \t\f\n# coding: {0}\n".format(charset),
                     text, charset, 5)
-        # Issue #18960: coding spec should has no effect
+        # Issue #18960: coding spec should have no effect
         do_test("x=0\n# coding: GBK\n", "h\xe9 ho", 'utf-8', 5)
 
     def test_print_traceback_at_exit(self):
