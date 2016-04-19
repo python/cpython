@@ -286,13 +286,13 @@ static PyObjectArenaAllocator _PyObject_Arena = {NULL,
 #endif
     };
 
+#ifdef WITH_PYMALLOC
 static int
 _PyMem_DebugEnabled(void)
 {
     return (_PyObject.malloc == _PyMem_DebugMalloc);
 }
 
-#ifdef WITH_PYMALLOC
 int
 _PyMem_PymallocEnabled(void)
 {
