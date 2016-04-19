@@ -812,11 +812,11 @@ class TarInfo(object):
         """
         info["magic"] = POSIX_MAGIC
 
-        if len(info["linkname"]) > LENGTH_LINK:
+        if len(info["linkname"].encode(encoding, errors)) > LENGTH_LINK:
             raise ValueError("linkname is too long")
 
-        if len(info["name"]) > LENGTH_NAME:
-            info["prefix"], info["name"] = self._posix_split_name(info["name"])
+        if len(info["name"].encode(encoding, errors)) > LENGTH_NAME:
+            info["prefix"], info["name"] = self._posix_split_name(info["name"], encoding, errors)
 
         return self._create_header(info, USTAR_FORMAT, encoding, errors)
 
@@ -826,10 +826,10 @@ class TarInfo(object):
         info["magic"] = GNU_MAGIC
 
         buf = b""
-        if len(info["linkname"]) > LENGTH_LINK:
+        if len(info["linkname"].encode(encoding, errors)) > LENGTH_LINK:
             buf += self._create_gnu_long_header(info["linkname"], GNUTYPE_LONGLINK, encoding, errors)
 
-        if len(info["name"]) > LENGTH_NAME:
+        if len(info["name"].encode(encoding, errors)) > LENGTH_NAME:
             buf += self._create_gnu_long_header(info["name"], GNUTYPE_LONGNAME, encoding, errors)
 
         return buf + self._create_header(info, GNU_FORMAT, encoding, errors)
@@ -889,19 +889,20 @@ class TarInfo(object):
         """
         return cls._create_pax_generic_header(pax_headers, XGLTYPE, "utf-8")
 
-    def _posix_split_name(self, name):
+    def _posix_split_name(self, name, encoding, errors):
         """Split a name longer than 100 chars into a prefix
            and a name part.
         """
-        prefix = name[:LENGTH_PREFIX + 1]
-        while prefix and prefix[-1] != "/":
-            prefix = prefix[:-1]
-
-        name = name[len(prefix):]
-        prefix = prefix[:-1]
-
-        if not prefix or len(name) > LENGTH_NAME:
+        components = name.split("/")
+        for i in range(1, len(components)):
+            prefix = "/".join(components[:i])
+            name = "/".join(components[i:])
+            if len(prefix.encode(encoding, errors)) <= LENGTH_PREFIX and \
+                    len(name.encode(encoding, errors)) <= LENGTH_NAME:
+                break
+        else:
             raise ValueError("name is too long")
+
         return prefix, name
 
     @staticmethod
