@@ -550,7 +550,7 @@ The :mod:`test.support` module defines the following functions:
    or passed to an external program (i.e. the ``-accept`` argument to
    openssl's s_server mode).  Always prefer :func:`bind_port` over
    :func:`find_unused_port` where possible.  Using a hard coded port is
-   discouraged since it can makes multiple instances of the test impossible to
+   discouraged since it can make multiple instances of the test impossible to
    run simultaneously, which is a problem for buildbots.
 
 

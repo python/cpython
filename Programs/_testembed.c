@@ -17,7 +17,7 @@ static void _testembed_Py_Initialize(void)
 
 
 /*****************************************************
- * Test repeated initalisation and subinterpreters
+ * Test repeated initialisation and subinterpreters
  *****************************************************/
 
 static void print_subinterp(void)
