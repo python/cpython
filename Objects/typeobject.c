@@ -3901,7 +3901,7 @@ _PyObject_GetState(PyObject *obj, int required)
                     }
                 }
 
-                /* The list is stored on the class so it may mutates while we
+                /* The list is stored on the class so it may mutate while we
                    iterate over it */
                 if (slotnames_size != Py_SIZE(slotnames)) {
                     PyErr_Format(PyExc_RuntimeError,
@@ -4035,7 +4035,7 @@ _PyObject_GetNewArguments(PyObject *obj, PyObject **args, PyObject **kwargs)
     }
 
     /* The object does not have __getnewargs_ex__ and __getnewargs__. This may
-       means __new__ does not takes any arguments on this object, or that the
+       mean __new__ does not takes any arguments on this object, or that the
        object does not implement the reduce protocol for pickling or
        copying. */
     *args = NULL;
