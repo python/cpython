@@ -10,6 +10,10 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #26802: Optimize function calls only using unpacking like
+  ``func(*tuple)`` (no other positional argument, no keyword): avoid copying
+  the tuple. Patch written by Joe Jevnik.
+
 - Issue #26659: Make the builtin slice type support cycle collection.
 
 - Issue #26718: super.__init__ no longer leaks memory if called multiple times.
