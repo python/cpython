@@ -792,6 +792,11 @@ they add the ability to access fields by name instead of position index.
     Named tuple instances do not have per-instance dictionaries, so they are
     lightweight and require no more memory than regular tuples.
 
+    For simple uses, where the only requirement is to be able to refer to a set
+    of values by name using attribute-style access, the
+    :class:`types.SimpleNamespace` type can be a suitable alternative to using
+    a namedtuple.
+
     .. versionchanged:: 3.1
         Added support for *rename*.
 
