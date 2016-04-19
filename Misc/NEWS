@@ -245,6 +245,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26801: Fix error handling in :func:`shutil.get_terminal_size`, catch
+  :exc:`AttributeError` instead of :exc:`NameError`. Patch written by Emanuel
+  Barry.
+
 - Issue #24838: tarfile's ustar and gnu formats now correctly calculate name
   and link field limits for multibyte character encodings like utf-8.
 
