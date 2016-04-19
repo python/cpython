@@ -914,7 +914,7 @@ class OptionContainer:
       _short_opt : { string : Option }
         dictionary mapping short option strings, eg. "-f" or "-X",
         to the Option instances that implement them.  If an Option
-        has multiple short option strings, it will appears in this
+        has multiple short option strings, it will appear in this
         dictionary multiple times. [1]
       _long_opt : { string : Option }
         dictionary mapping long option strings, eg. "--file" or

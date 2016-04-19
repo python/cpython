@@ -12831,7 +12831,7 @@ the first class with an applicable hook wins.  Makes more sense.
 - Changed the checks made in Py_Initialize() and Py_Finalize().  It is
 now legal to call these more than once.  The first call to
 Py_Initialize() initializes, the first call to Py_Finalize()
-finalizes.  There's also a new API, Py_IsInitalized() which checks
+finalizes.  There's also a new API, Py_IsInitialized() which checks
 whether we are already initialized (in case you want to leave things
 as they were).
 

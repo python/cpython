@@ -736,8 +736,8 @@ stringio_setstate(stringio *self, PyObject *state)
     Py_DECREF(initarg);
 
     /* Restore the buffer state. Even if __init__ did initialize the buffer,
-       we have to initialize it again since __init__ may translates the
-       newlines in the inital_value string. We clearly do not want that
+       we have to initialize it again since __init__ may translate the
+       newlines in the initial_value string. We clearly do not want that
        because the string value in the state tuple has already been translated
        once by __init__. So we do not take any chance and replace object's
        buffer completely. */
