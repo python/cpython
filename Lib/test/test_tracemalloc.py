@@ -253,7 +253,7 @@ class TestTracemallocEnabled(unittest.TestCase):
         snapshot.dump(support.TESTFN)
         self.addCleanup(support.unlink, support.TESTFN)
 
-        # load() should recreates the attribute
+        # load() should recreate the attribute
         snapshot2 = tracemalloc.Snapshot.load(support.TESTFN)
         self.assertEqual(snapshot2.test_attr, "new")
 
