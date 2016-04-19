@@ -198,27 +198,17 @@ class DebuggerTests(unittest.TestCase):
         # Ignore some benign messages on stderr.
         ignore_patterns = (
             'Function "%s" not defined.' % breakpoint,
-            "warning: no loadable sections found in added symbol-file"
-            " system-supplied DSO",
-            "warning: Unable to find libthread_db matching"
-            " inferior's thread library, thread debugging will"
-            " not be available.",
-            "warning: Cannot initialize thread debugging"
-            " library: Debugger service failed",
-            'warning: Could not load shared library symbols for '
-            'linux-vdso.so',
-            'warning: Could not load shared library symbols for '
-            'linux-gate.so',
-            'warning: Could not load shared library symbols for '
-            'linux-vdso64.so',
             'Do you need "set solib-search-path" or '
             '"set sysroot"?',
-            'warning: Source file is more recent than executable.',
-            # Issue #19753: missing symbols on System Z
-            'Missing separate debuginfo for ',
-            'Try: zypper install -C ',
+            # BFD: /usr/lib/debug/(...): unable to initialize decompress
+            # status for section .debug_aranges
+            'BFD: ',
+            # ignore all warnings
+            'warning: ',
             )
         for line in errlines:
+            if not line:
+                continue
             if not line.startswith(ignore_patterns):
                 unexpected_errlines.append(line)
 
