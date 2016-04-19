@@ -1667,9 +1667,7 @@ class PaxWriteTest(GNUWriteTest):
             tar.close()
 
 
-class UstarUnicodeTest(unittest.TestCase):
-
-    format = tarfile.USTAR_FORMAT
+class UnicodeTest:
 
     def test_iso8859_1_filename(self):
         self._test_unicode_filename("iso8859-1")
@@ -1750,7 +1748,86 @@ class UstarUnicodeTest(unittest.TestCase):
             tar.close()
 
 
-class GNUUnicodeTest(UstarUnicodeTest):
+class UstarUnicodeTest(UnicodeTest, unittest.TestCase):
+
+    format = tarfile.USTAR_FORMAT
+
+    # Test whether the utf-8 encoded version of a filename exceeds the 100
+    # bytes name field limit (every occurrence of '\xff' will be expanded to 2
+    # bytes).
+    def test_unicode_name1(self):
+        self._test_ustar_name("0123456789" * 10)
+        self._test_ustar_name("0123456789" * 10 + "0", ValueError)
+        self._test_ustar_name("0123456789" * 9 + "01234567\xff")
+        self._test_ustar_name("0123456789" * 9 + "012345678\xff", ValueError)
+
+    def test_unicode_name2(self):
+        self._test_ustar_name("0123456789" * 9 + "012345\xff\xff")
+        self._test_ustar_name("0123456789" * 9 + "0123456\xff\xff", ValueError)
+
+    # Test whether the utf-8 encoded version of a filename exceeds the 155
+    # bytes prefix + '/' + 100 bytes name limit.
+    def test_unicode_longname1(self):
+        self._test_ustar_name("0123456789" * 15 + "01234/" + "0123456789" * 10)
+        self._test_ustar_name("0123456789" * 15 + "0123/4" + "0123456789" * 10, ValueError)
+        self._test_ustar_name("0123456789" * 15 + "012\xff/" + "0123456789" * 10)
+        self._test_ustar_name("0123456789" * 15 + "0123\xff/" + "0123456789" * 10, ValueError)
+
+    def test_unicode_longname2(self):
+        self._test_ustar_name("0123456789" * 15 + "01\xff/2" + "0123456789" * 10, ValueError)
+        self._test_ustar_name("0123456789" * 15 + "01\xff\xff/" + "0123456789" * 10, ValueError)
+
+    def test_unicode_longname3(self):
+        self._test_ustar_name("0123456789" * 15 + "01\xff\xff/2" + "0123456789" * 10, ValueError)
+        self._test_ustar_name("0123456789" * 15 + "01234/" + "0123456789" * 9 + "01234567\xff")
+        self._test_ustar_name("0123456789" * 15 + "01234/" + "0123456789" * 9 + "012345678\xff", ValueError)
+
+    def test_unicode_longname4(self):
+        self._test_ustar_name("0123456789" * 15 + "01234/" + "0123456789" * 9 + "012345\xff\xff")
+        self._test_ustar_name("0123456789" * 15 + "01234/" + "0123456789" * 9 + "0123456\xff\xff", ValueError)
+
+    def _test_ustar_name(self, name, exc=None):
+        with tarfile.open(tmpname, "w", format=self.format, encoding="utf-8") as tar:
+            t = tarfile.TarInfo(name)
+            if exc is None:
+                tar.addfile(t)
+            else:
+                self.assertRaises(exc, tar.addfile, t)
+
+        if exc is None:
+            with tarfile.open(tmpname, "r") as tar:
+                for t in tar:
+                    self.assertEqual(name, t.name)
+                    break
+
+    # Test the same as above for the 100 bytes link field.
+    def test_unicode_link1(self):
+        self._test_ustar_link("0123456789" * 10)
+        self._test_ustar_link("0123456789" * 10 + "0", ValueError)
+        self._test_ustar_link("0123456789" * 9 + "01234567\xff")
+        self._test_ustar_link("0123456789" * 9 + "012345678\xff", ValueError)
+
+    def test_unicode_link2(self):
+        self._test_ustar_link("0123456789" * 9 + "012345\xff\xff")
+        self._test_ustar_link("0123456789" * 9 + "0123456\xff\xff", ValueError)
+
+    def _test_ustar_link(self, name, exc=None):
+        with tarfile.open(tmpname, "w", format=self.format, encoding="utf-8") as tar:
+            t = tarfile.TarInfo("foo")
+            t.linkname = name
+            if exc is None:
+                tar.addfile(t)
+            else:
+                self.assertRaises(exc, tar.addfile, t)
+
+        if exc is None:
+            with tarfile.open(tmpname, "r") as tar:
+                for t in tar:
+                    self.assertEqual(name, t.linkname)
+                    break
+
+
+class GNUUnicodeTest(UnicodeTest, unittest.TestCase):
 
     format = tarfile.GNU_FORMAT
 
@@ -1768,7 +1845,7 @@ class GNUUnicodeTest(UstarUnicodeTest):
                     self.fail("unable to read bad GNU tar pax header")
 
 
-class PAXUnicodeTest(UstarUnicodeTest):
+class PAXUnicodeTest(UnicodeTest, unittest.TestCase):
 
     format = tarfile.PAX_FORMAT
 
