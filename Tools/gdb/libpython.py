@@ -59,17 +59,12 @@ if sys.version_info[0] >= 3:
 # Those need to be refreshed as types (pointer sizes) may change when
 # gdb loads different executables
 
-
 def _type_char_ptr():
     return gdb.lookup_type('char').pointer()  # char*
 
 
 def _type_unsigned_char_ptr():
     return gdb.lookup_type('unsigned char').pointer()  # unsigned char*
-
-
-def _type_void_ptr():
-    return gdb.lookup_type('void').pointer()  # void*
 
 
 def _type_unsigned_short_ptr():
@@ -79,16 +74,15 @@ def _type_unsigned_short_ptr():
 def _type_unsigned_int_ptr():
     return gdb.lookup_type('unsigned int').pointer()
 
+
+def _sizeof_void_p():
+    return gdb.lookup_type('void').pointer().sizeof
+
+
 # value computed later, see PyUnicodeObjectPtr.proxy()
 _is_pep393 = None
 
-
-def _sizeof_void_p():
-    return _type_void_ptr().sizeof
-
-
 Py_TPFLAGS_HEAPTYPE = (1 << 9)
-
 Py_TPFLAGS_LONG_SUBCLASS     = (1 << 24)
 Py_TPFLAGS_LIST_SUBCLASS     = (1 << 25)
 Py_TPFLAGS_TUPLE_SUBCLASS    = (1 << 26)
