@@ -999,7 +999,7 @@ Build
 -----
 
 - Issue #21668: Link audioop, _datetime, _ctypes_test modules to libm,
-  except on Mac OS X. Patch written by Xavier de Gaye.
+  except on Mac OS X. Patch written by Chi Hsuan Yen.
 
 - Issue #25702: A --with-lto configure option has been added that will
   enable link time optimizations at build time during a make profile-opt.
