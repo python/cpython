@@ -56,16 +56,35 @@ if sys.version_info[0] >= 3:
     long = int
 
 # Look up the gdb.Type for some standard types:
-_type_char_ptr = gdb.lookup_type('char').pointer() # char*
-_type_unsigned_char_ptr = gdb.lookup_type('unsigned char').pointer() # unsigned char*
-_type_void_ptr = gdb.lookup_type('void').pointer() # void*
-_type_unsigned_short_ptr = gdb.lookup_type('unsigned short').pointer()
-_type_unsigned_int_ptr = gdb.lookup_type('unsigned int').pointer()
+# Those need to be refreshed as types (pointer sizes) may change when
+# gdb loads different executables
+
+
+def _type_char_ptr():
+    return gdb.lookup_type('char').pointer()  # char*
+
+
+def _type_unsigned_char_ptr():
+    return gdb.lookup_type('unsigned char').pointer()  # unsigned char*
+
+
+def _type_void_ptr():
+    return gdb.lookup_type('void').pointer()  # void*
+
+
+def _type_unsigned_short_ptr():
+    return gdb.lookup_type('unsigned short').pointer()
+
+
+def _type_unsigned_int_ptr():
+    return gdb.lookup_type('unsigned int').pointer()
 
 # value computed later, see PyUnicodeObjectPtr.proxy()
 _is_pep393 = None
 
-SIZEOF_VOID_P = _type_void_ptr.sizeof
+
+def _sizeof_void_p():
+    return _type_void_ptr().sizeof
 
 
 Py_TPFLAGS_HEAPTYPE = (1 << 9)
@@ -460,8 +479,8 @@ def _PyObject_VAR_SIZE(typeobj, nitems):
 
     return ( ( typeobj.field('tp_basicsize') +
                nitems * typeobj.field('tp_itemsize') +
-               (SIZEOF_VOID_P - 1)
-             ) & ~(SIZEOF_VOID_P - 1)
+               (_sizeof_void_p() - 1)
+             ) & ~(_sizeof_void_p() - 1)
            ).cast(_PyObject_VAR_SIZE._type_size_t)
 _PyObject_VAR_SIZE._type_size_t = None
 
@@ -485,9 +504,9 @@ class HeapTypeObjectPtr(PyObjectPtr):
                     size = _PyObject_VAR_SIZE(typeobj, tsize)
                     dictoffset += size
                     assert dictoffset > 0
-                    assert dictoffset % SIZEOF_VOID_P == 0
+                    assert dictoffset % _sizeof_void_p() == 0
 
-                dictptr = self._gdbval.cast(_type_char_ptr) + dictoffset
+                dictptr = self._gdbval.cast(_type_char_ptr()) + dictoffset
                 PyObjectPtrPtr = PyObjectPtr.get_gdb_type().pointer()
                 dictptr = dictptr.cast(PyObjectPtrPtr)
                 return PyObjectPtr.from_pyobject_ptr(dictptr.dereference())
@@ -1004,7 +1023,7 @@ class PyBytesObjectPtr(PyObjectPtr):
     def __str__(self):
         field_ob_size = self.field('ob_size')
         field_ob_sval = self.field('ob_sval')
-        char_ptr = field_ob_sval.address.cast(_type_unsigned_char_ptr)
+        char_ptr = field_ob_sval.address.cast(_type_unsigned_char_ptr())
         return ''.join([chr(char_ptr[i]) for i in safe_range(field_ob_size)])
 
     def proxyval(self, visited):
@@ -1135,11 +1154,11 @@ class PyUnicodeObjectPtr(PyObjectPtr):
                     field_str = self.field('data')['any']
                 repr_kind = int(state['kind'])
                 if repr_kind == 1:
-                    field_str = field_str.cast(_type_unsigned_char_ptr)
+                    field_str = field_str.cast(_type_unsigned_char_ptr())
                 elif repr_kind == 2:
-                    field_str = field_str.cast(_type_unsigned_short_ptr)
+                    field_str = field_str.cast(_type_unsigned_short_ptr())
                 elif repr_kind == 4:
-                    field_str = field_str.cast(_type_unsigned_int_ptr)
+                    field_str = field_str.cast(_type_unsigned_int_ptr())
         else:
             # Python 3.2 and earlier
             field_length = long(self.field('length'))
