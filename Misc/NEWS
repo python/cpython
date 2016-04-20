@@ -1065,6 +1065,11 @@ Windows
 Tools/Demos
 -----------
 
+- Issue #26799: Fix python-gdb.py: don't get once C types when the Python code
+  is loaded, but get C types on demande. The C types can change if
+  python-gdb.py is loaded before the Python executable. Patch written by Thomas
+  Ilsche.
+
 - Issue #26271: Fix the Freeze tool to properly use flags passed through
   configure. Patch by Daniel Shaulov.
 
