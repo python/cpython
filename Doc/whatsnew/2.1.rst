@@ -367,7 +367,7 @@ dictionary::
 
 This version works for simple things such as integers, but it has a side effect;
 the ``_cache`` dictionary holds a reference to the return values, so they'll
-never be deallocated until the Python process exits and cleans up This isn't
+never be deallocated until the Python process exits and cleans up. This isn't
 very noticeable for integers, but if :func:`f` returns an object, or a data
 structure that takes up a lot of memory, this can be a problem.
 
