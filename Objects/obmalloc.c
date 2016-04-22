@@ -198,9 +198,9 @@ static PyMemAllocatorEx _PyMem_Raw = {
 
 static PyMemAllocatorEx _PyMem = {
 #ifdef Py_DEBUG
-    &_PyMem_Debug.mem, PYDBG_FUNCS
+    &_PyMem_Debug.obj, PYDBG_FUNCS
 #else
-    NULL, PYMEM_FUNCS
+    NULL, PYOBJ_FUNCS
 #endif
     };
 
@@ -256,7 +256,7 @@ _PyMem_SetupAllocators(const char *opt)
         PyMemAllocatorEx obj_alloc = {NULL, PYOBJ_FUNCS};
 
         PyMem_SetAllocator(PYMEM_DOMAIN_RAW, &mem_alloc);
-        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &mem_alloc);
+        PyMem_SetAllocator(PYMEM_DOMAIN_MEM, &obj_alloc);
         PyMem_SetAllocator(PYMEM_DOMAIN_OBJ, &obj_alloc);
 
         if (strcmp(opt, "pymalloc_debug") == 0)

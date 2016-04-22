@@ -165,14 +165,16 @@ The following function sets, modeled after the ANSI C standard, but specifying
 behavior when requesting zero bytes, are available for allocating and releasing
 memory from the Python heap.
 
-The default memory block allocator uses the following functions:
-:c:func:`malloc`, :c:func:`calloc`, :c:func:`realloc` and :c:func:`free`; call
-``malloc(1)`` (or ``calloc(1, 1)``) when requesting zero bytes.
+By default, these functions use :ref:`pymalloc memory allocator <pymalloc>`.
 
 .. warning::
 
    The :term:`GIL <global interpreter lock>` must be held when using these
    functions.
+
+.. versionchanged:: 3.6
+
+   The default allocator is now pymalloc instead of system :c:func:`malloc`.
 
 .. c:function:: void* PyMem_Malloc(size_t n)
 
@@ -295,15 +297,32 @@ Customize Memory Allocators
 
    Enum used to identify an allocator domain. Domains:
 
-   * :c:data:`PYMEM_DOMAIN_RAW`: functions :c:func:`PyMem_RawMalloc`,
-     :c:func:`PyMem_RawRealloc`, :c:func:`PyMem_RawCalloc` and
-     :c:func:`PyMem_RawFree`
-   * :c:data:`PYMEM_DOMAIN_MEM`: functions :c:func:`PyMem_Malloc`,
-     :c:func:`PyMem_Realloc`, :c:func:`PyMem_Calloc` and :c:func:`PyMem_Free`
-   * :c:data:`PYMEM_DOMAIN_OBJ`: functions :c:func:`PyObject_Malloc`,
-     :c:func:`PyObject_Realloc`, :c:func:`PyObject_Calloc` and
-     :c:func:`PyObject_Free`
+   .. c:var:: PYMEM_DOMAIN_RAW
 
+      Functions:
+
+      * :c:func:`PyMem_RawMalloc`
+      * :c:func:`PyMem_RawRealloc`
+      * :c:func:`PyMem_RawCalloc`
+      * :c:func:`PyMem_RawFree`
+
+   .. c:var:: PYMEM_DOMAIN_MEM
+
+      Functions:
+
+      * :c:func:`PyMem_Malloc`,
+      * :c:func:`PyMem_Realloc`
+      * :c:func:`PyMem_Calloc`
+      * :c:func:`PyMem_Free`
+
+   .. c:var:: PYMEM_DOMAIN_OBJ
+
+      Functions:
+
+      * :c:func:`PyObject_Malloc`
+      * :c:func:`PyObject_Realloc`
+      * :c:func:`PyObject_Calloc`
+      * :c:func:`PyObject_Free`
 
 .. c:function:: void PyMem_GetAllocator(PyMemAllocatorDomain domain, PyMemAllocatorEx *allocator)
 
@@ -328,18 +347,12 @@ Customize Memory Allocators
 
 .. c:function:: void PyMem_SetupDebugHooks(void)
 
-   Setup hooks to detect bugs in the following Python memory allocator
-   functions:
-
-   - :c:func:`PyMem_RawMalloc`, :c:func:`PyMem_RawRealloc`,
-     :c:func:`PyMem_RawCalloc`, :c:func:`PyMem_RawFree`
-   - :c:func:`PyMem_Malloc`, :c:func:`PyMem_Realloc`, :c:func:`PyMem_Calloc`,
-     :c:func:`PyMem_Free`
-   - :c:func:`PyObject_Malloc`, :c:func:`PyObject_Realloc`,
-     :c:func:`PyObject_Calloc`, :c:func:`PyObject_Free`
+   Setup hooks to detect bugs in the Python memory allocator functions.
 
    Newly allocated memory is filled with the byte ``0xCB``, freed memory is
-   filled with the byte ``0xDB``. Additional checks:
+   filled with the byte ``0xDB``.
+
+   Runtime checks:
 
    - Detect API violations, ex: :c:func:`PyObject_Free` called on a buffer
      allocated by :c:func:`PyMem_Malloc`
@@ -377,8 +390,9 @@ to 512 bytes) with a short lifetime. It uses memory mappings called "arenas"
 with a fixed size of 256 KB. It falls back to :c:func:`PyMem_RawMalloc` and
 :c:func:`PyMem_RawRealloc` for allocations larger than 512 bytes.
 
-*pymalloc* is the default allocator of the :c:data:`PYMEM_DOMAIN_OBJ` domain
-(ex: :c:func:`PyObject_Malloc`).
+*pymalloc* is the default allocator of the :c:data:`PYMEM_DOMAIN_MEM` (ex:
+:c:func:`PyObject_Malloc`) and :c:data:`PYMEM_DOMAIN_OBJ` (ex:
+:c:func:`PyObject_Malloc`) domains.
 
 The arena allocator uses the following functions:
 
