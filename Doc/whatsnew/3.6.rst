@@ -531,5 +531,11 @@ Changes in the Python API
 Changes in the C API
 --------------------
 
+* :c:func:`PyMem_Malloc` allocator family now uses the :ref:`pymalloc allocator
+  <pymalloc>` rather than system :c:func:`malloc`. Applications calling
+  :c:func:`PyMem_Malloc` without holding the GIL can now crash. Set the
+  :envvar:`PYTHONMALLOC` environment variable to ``debug`` to validate the
+  usage of memory allocators in your application. See :issue:`26249`.
+
 * :c:func:`Py_Exit` (and the main interpreter) now override the exit status
   with 120 if flushing buffered data failed.  See :issue:`5319`.
