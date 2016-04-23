@@ -77,6 +77,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26822: itemgetter, attrgetter and methodcaller objects no longer
+  silently ignore keyword arguments.
+
 - Issue #26657: Fix directory traversal vulnerability with SimpleHTTPServer
   on Windows.  This fixes a regression that was introduced in 2.7.7.  Based
   on patch by Philipp Hagemeister.

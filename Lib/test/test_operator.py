@@ -371,6 +371,9 @@ class OperatorTestCase(unittest.TestCase):
         a.name = 'arthur'
         f = operator.attrgetter('name')
         self.assertEqual(f(a), 'arthur')
+        self.assertRaises(TypeError, f)
+        self.assertRaises(TypeError, f, a, 'dent')
+        self.assertRaises(TypeError, f, a, surname='dent')
         f = operator.attrgetter('rank')
         self.assertRaises(AttributeError, f, a)
         f = operator.attrgetter(2)
@@ -414,6 +417,9 @@ class OperatorTestCase(unittest.TestCase):
         a = 'ABCDE'
         f = operator.itemgetter(2)
         self.assertEqual(f(a), 'C')
+        self.assertRaises(TypeError, f)
+        self.assertRaises(TypeError, f, a, 3)
+        self.assertRaises(TypeError, f, a, size=3)
         f = operator.itemgetter(10)
         self.assertRaises(IndexError, f, a)
 
@@ -456,6 +462,9 @@ class OperatorTestCase(unittest.TestCase):
         self.assertRaises(IndexError, f, a)
         f = operator.methodcaller('foo', 1, 2)
         self.assertEqual(f(a), 3)
+        self.assertRaises(TypeError, f)
+        self.assertRaises(TypeError, f, a, 3)
+        self.assertRaises(TypeError, f, a, spam=3)
         f = operator.methodcaller('bar')
         self.assertEqual(f(a), 42)
         self.assertRaises(TypeError, f, a, a)
