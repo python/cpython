@@ -30,6 +30,14 @@ class _C:
     def __init__(self, x):
         self.x = x == 1
 
+    @staticmethod
+    def sm(x):
+        x = x == 1
+
+    @classmethod
+    def cm(cls, x):
+        cls.x = x == 1
+
 dis_c_instance_method = """\
 %3d           0 LOAD_FAST                1 (x)
               3 LOAD_CONST               1 (1)
@@ -49,6 +57,37 @@ dis_c_instance_method_bytes = """\
          15 LOAD_CONST               0 (0)
          18 RETURN_VALUE
 """
+
+dis_c_class_method = """\
+%3d           0 LOAD_FAST                1 (x)
+              3 LOAD_CONST               1 (1)
+              6 COMPARE_OP               2 (==)
+              9 LOAD_FAST                0 (cls)
+             12 STORE_ATTR               0 (x)
+             15 LOAD_CONST               0 (None)
+             18 RETURN_VALUE
+""" % (_C.cm.__code__.co_firstlineno + 2,)
+
+dis_c_static_method = """\
+%3d           0 LOAD_FAST                0 (x)
+              3 LOAD_CONST               1 (1)
+              6 COMPARE_OP               2 (==)
+              9 STORE_FAST               0 (x)
+             12 LOAD_CONST               0 (None)
+             15 RETURN_VALUE
+""" % (_C.sm.__code__.co_firstlineno + 2,)
+
+# Class disassembling info has an extra newline at end.
+dis_c = """\
+Disassembly of %s:
+%s
+Disassembly of %s:
+%s
+Disassembly of %s:
+%s
+""" % (_C.__init__.__name__, dis_c_instance_method,
+       _C.cm.__name__, dis_c_class_method,
+       _C.sm.__name__, dis_c_static_method)
 
 def _f(a):
     print(a)
@@ -311,12 +350,21 @@ class DisTests(unittest.TestCase):
     def test_disassemble_bytes(self):
         self.do_disassembly_test(_f.__code__.co_code, dis_f_co_code)
 
-    def test_disassemble_method(self):
+    def test_disassemble_class(self):
+        self.do_disassembly_test(_C, dis_c)
+
+    def test_disassemble_instance_method(self):
         self.do_disassembly_test(_C(1).__init__, dis_c_instance_method)
 
-    def test_disassemble_method_bytes(self):
+    def test_disassemble_instance_method_bytes(self):
         method_bytecode = _C(1).__init__.__code__.co_code
         self.do_disassembly_test(method_bytecode, dis_c_instance_method_bytes)
+
+    def test_disassemble_static_method(self):
+        self.do_disassembly_test(_C.sm, dis_c_static_method)
+
+    def test_disassemble_class_method(self):
+        self.do_disassembly_test(_C.cm, dis_c_class_method)
 
     def test_disassemble_generator(self):
         gen_func_disas = self.get_disassembly(_g)  # Disassemble generator function
