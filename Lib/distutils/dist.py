@@ -1018,8 +1018,7 @@ class DistributionMetadata:
                          "maintainer", "maintainer_email", "url",
                          "license", "description", "long_description",
                          "keywords", "platforms", "fullname", "contact",
-                         "contact_email", "license", "classifiers",
-                         "download_url",
+                         "contact_email", "classifiers", "download_url",
                          # PEP 314
                          "provides", "requires", "obsoletes",
                          )
