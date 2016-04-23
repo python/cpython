@@ -161,7 +161,7 @@ simple example demonstrates how. ::
 
    #define INITERROR return NULL
 
-   PyObject *
+   PyMODINIT_FUNC
    PyInit_myextension(void)
 
    #else
