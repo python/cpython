@@ -139,11 +139,11 @@ operation is being performed, so the intermediate analysis object isn't useful:
    Disassemble the *x* object.  *x* can denote either a module, a class, a
    method, a function, a generator, a code object, a string of source code or
    a byte sequence of raw bytecode.  For a module, it disassembles all functions.
-   For a class, it disassembles all methods.  For a code object or sequence of
-   raw bytecode, it prints one line per bytecode instruction.  Strings are first
-   compiled to code objects with the :func:`compile` built-in function before being
-   disassembled.  If no object is provided, this function disassembles the last
-   traceback.
+   For a class, it disassembles all methods (including class and static methods).
+   For a code object or sequence of raw bytecode, it prints one line per bytecode
+   instruction.  Strings are first compiled to code objects with the :func:`compile`
+   built-in function before being disassembled.  If no object is provided, this
+   function disassembles the last traceback.
 
    The disassembly is written as text to the supplied *file* argument if
    provided and to ``sys.stdout`` otherwise.
