@@ -404,6 +404,11 @@ Tests
 Build
 -----
 
+- Issue #22359: Disable the rules for running _freeze_importlib and pgen when
+  cross-compiling.  The output of these programs is normally saved with the
+  source code anyway, and is still regenerated when doing a native build.
+  Patch by Xavier de Gaye.
+
 - Issue #21668: Link audioop, _datetime, _ctypes_test modules to libm,
   except on Mac OS X. Patch written by Xavier de Gaye.
 
