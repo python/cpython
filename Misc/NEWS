@@ -107,6 +107,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26822: itemgetter, attrgetter and methodcaller objects no longer
+  silently ignore keyword arguments.
+
 - Issue #26733: Disassembling a class now disassembles class and static methods.
   Patch by Xiang Zhang.
 
