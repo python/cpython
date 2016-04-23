@@ -751,6 +751,7 @@ build_os
 build_vendor
 build_cpu
 build
+cross_compiling
 HAS_HG
 HGBRANCH
 HGTAG
