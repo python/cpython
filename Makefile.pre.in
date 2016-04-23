@@ -221,6 +221,7 @@ LIBOBJS=	@LIBOBJS@
 PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
+cross_compiling=@cross_compiling@
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
@@ -718,12 +719,16 @@ Programs/_freeze_importlib: Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FRO
 	$(LINKCC) $(PY_LDFLAGS) -o $@ Programs/_freeze_importlib.o $(LIBRARY_OBJS_OMIT_FROZEN) $(LIBS) $(MODLIBS) $(SYSLIBS) $(LDLAST)
 
 Python/importlib_external.h: $(srcdir)/Lib/importlib/_bootstrap_external.py Programs/_freeze_importlib
-	./Programs/_freeze_importlib \
-		$(srcdir)/Lib/importlib/_bootstrap_external.py Python/importlib_external.h
+	if test "$(cross_compiling)" != "yes"; then \
+	    ./Programs/_freeze_importlib \
+	        $(srcdir)/Lib/importlib/_bootstrap_external.py Python/importlib_external.h; \
+	fi
 
 Python/importlib.h: $(srcdir)/Lib/importlib/_bootstrap.py Programs/_freeze_importlib
-	./Programs/_freeze_importlib \
-		$(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h
+	if test "$(cross_compiling)" != "yes"; then \
+	    ./Programs/_freeze_importlib \
+	        $(srcdir)/Lib/importlib/_bootstrap.py Python/importlib.h; \
+	fi
 
 
 ############################################################################
@@ -784,10 +789,18 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
 $(IO_OBJS): $(IO_H)
 
 $(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGEN)
-		@$(MKDIR_P) Include
-		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
+	@$(MKDIR_P) Include
+	if test "$(cross_compiling)" != "yes"; then \
+		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C); \
+	else \
+		cp $(srcdir)/Include/graminit.h $(GRAMMAR_H); \
+	fi
 $(GRAMMAR_C): $(GRAMMAR_H)
-		touch $(GRAMMAR_C)
+	if test "$(cross_compiling)" != "yes"; then \
+		touch $(GRAMMAR_C); \
+	else \
+		cp $(srcdir)/Python/graminit.c $(GRAMMAR_C); \
+	fi
 
 $(PGEN): $(PGENOBJS)
 		$(CC) $(OPT) $(PY_LDFLAGS) $(PGENOBJS) $(LIBS) -o $(PGEN)
