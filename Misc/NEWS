@@ -107,6 +107,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26733: Disassembling a class now disassembles class and static methods.
+  Patch by Xiang Zhang.
+
 - Issue #26801: Fix error handling in :func:`shutil.get_terminal_size`, catch
   :exc:`AttributeError` instead of :exc:`NameError`. Patch written by Emanuel
   Barry.
