@@ -200,6 +200,7 @@ UNICODE_OBJS=   @UNICODE_OBJS@
 PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
+cross_compiling=@cross_compiling@
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 HOST_GNU_TYPE=  @host@
@@ -677,13 +678,19 @@ Modules/grpmodule.o: $(srcdir)/Modules/grpmodule.c $(srcdir)/Modules/posixmodule
 
 Modules/pwdmodule.o: $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule.h
 
-$(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGENSRCS)
-		@$(MKDIR_P) Include
-		$(MAKE) $(PGEN)
-		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C)
-$(GRAMMAR_C): $(GRAMMAR_H) $(GRAMMAR_INPUT) $(PGENSRCS)
-		$(MAKE) $(GRAMMAR_H)
-		touch $(GRAMMAR_C)
+$(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGEN)
+	@$(MKDIR_P) Include
+	if test "$(cross_compiling)" != "yes"; then \
+		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C); \
+	else \
+		cp $(srcdir)/Include/graminit.h $(GRAMMAR_H); \
+	fi
+$(GRAMMAR_C): $(GRAMMAR_H)
+	if test "$(cross_compiling)" != "yes"; then \
+		touch $(GRAMMAR_C); \
+	else \
+		cp $(srcdir)/Python/graminit.c $(GRAMMAR_C); \
+	fi
 
 $(PGEN):	$(PGENOBJS)
 		$(CC) $(OPT) $(LDFLAGS) $(PGENOBJS) $(LIBS) -o $(PGEN)

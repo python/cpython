@@ -225,6 +225,11 @@ Tests
 Build
 -----
 
+- Issue #22359: Avoid incorrect recursive $(MAKE), and disable the rules for
+  running pgen when cross-compiling.  The pgen output is normally saved with
+  the source code anyway, and is still regenerated when doing a native build.
+  Patch by Jonas Wagner and Xavier de Gaye.
+
 - Issue #19450: Update Windows builds to use SQLite 3.8.11.0.
 
 - Issue #17603: Avoid error about nonexistant fileblocks.o file by using a

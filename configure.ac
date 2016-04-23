@@ -12,6 +12,7 @@ AC_INIT(python, PYTHON_VERSION, http://bugs.python.org/)
 AC_CONFIG_SRCDIR([Include/object.h])
 AC_CONFIG_HEADER(pyconfig.h)
 
+AC_SUBST(cross_compiling)
 AC_CANONICAL_HOST
 AC_SUBST(build)
 AC_SUBST(host)

@@ -743,6 +743,7 @@ build_os
 build_vendor
 build_cpu
 build
+cross_compiling
 target_alias
 host_alias
 build_alias
