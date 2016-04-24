@@ -303,8 +303,7 @@ def linux_distribution(distname='', version='', id='',
                        full_distribution_name=1):
     import warnings
     warnings.warn("dist() and linux_distribution() functions are deprecated "
-                  "in Python 3.5 and will be removed in Python 3.7",
-                  PendingDeprecationWarning, stacklevel=2)
+                  "in Python 3.5", PendingDeprecationWarning, stacklevel=2)
     return _linux_distribution(distname, version, id, supported_dists,
                                full_distribution_name)
 
@@ -378,8 +377,7 @@ def dist(distname='', version='', id='',
     """
     import warnings
     warnings.warn("dist() and linux_distribution() functions are deprecated "
-                  "in Python 3.5 and will be removed in Python 3.7",
-                  PendingDeprecationWarning, stacklevel=2)
+                  "in Python 3.5", PendingDeprecationWarning, stacklevel=2)
     return _linux_distribution(distname, version, id,
                                supported_dists=supported_dists,
                                full_distribution_name=0)
