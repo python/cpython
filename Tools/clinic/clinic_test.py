@@ -3,7 +3,6 @@
 # Licensed to the PSF under a contributor agreement.
 #
 
-import builtins
 import clinic
 from clinic import DSLParser
 import collections
@@ -746,15 +745,6 @@ Not at column 0!
   x
     Nested docstring here, goeth.
 """.strip(), function.docstring)
-
-    def test_parser_regression_special_character_in_parameter_column_of_docstring_first_line(self):
-        function = self.parse_function("""
-module os
-os.stat
-    path: str
-This/used to break Clinic!
-""")
-        self.assertEqual("stat($module, /, path)\n--\n\nThis/used to break Clinic!", function.docstring)
 
     def test_directive(self):
         c = FakeClinic()
