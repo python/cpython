@@ -7,7 +7,6 @@ from test.support import verbose, import_module, cpython_only
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 import random
-import re
 import sys
 _thread = import_module('_thread')
 threading = import_module('threading')

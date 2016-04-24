@@ -6,7 +6,6 @@ import importlib
 import importlib.util
 import os
 import os.path
-import shutil
 import sys
 from test import support
 import unittest

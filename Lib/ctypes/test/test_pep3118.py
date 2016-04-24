@@ -1,6 +1,6 @@
 import unittest
 from ctypes import *
-import re, struct, sys
+import re, sys
 
 if sys.byteorder == "little":
     THIS_ENDIAN = "<"

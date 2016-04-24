@@ -3,10 +3,8 @@
 
 # Python imports
 import unittest
-import sys
 import os
 import os.path
-import re
 from textwrap import dedent
 
 # Local imports
