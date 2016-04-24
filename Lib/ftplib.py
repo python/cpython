@@ -36,10 +36,8 @@ python ftplib.py -d localhost -l -p -l
 # Modified by Giampaolo Rodola' to add TLS support.
 #
 
-import os
 import sys
 import socket
-import warnings
 from socket import _GLOBAL_DEFAULT_TIMEOUT
 
 __all__ = ["FTP", "error_reply", "error_temp", "error_perm", "error_proto",

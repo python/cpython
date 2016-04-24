@@ -6,7 +6,6 @@
 
 # Local imports
 from lib2to3.fixes.fix_imports import alternates, FixImports
-from lib2to3 import fixer_base
 from lib2to3.fixer_util import (Name, Comma, FromImport, Newline,
                                 find_indentation, Node, syms)
 

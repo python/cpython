@@ -18,7 +18,7 @@ from .. import patcomp
 from .. import pytree
 from ..pgen2 import token
 from .. import fixer_base
-from ..fixer_util import Name, Call, Comma, String, is_tuple
+from ..fixer_util import Name, Call, Comma, String
 
 
 parend_expr = patcomp.compile_pattern(

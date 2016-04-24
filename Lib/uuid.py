@@ -487,7 +487,6 @@ try:
     # Assume that the uuid_generate functions are broken from 10.5 onward,
     # the test can be adjusted when a later version is fixed.
     if sys.platform == 'darwin':
-        import os
         if int(os.uname().release.split('.')[0]) >= 9:
             _uuid_generate_time = None
 
