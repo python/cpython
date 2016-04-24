@@ -1,5 +1,5 @@
 # xml.etree test for cElementTree
-import sys, struct
+import struct
 from test import support
 from test.support import import_fresh_module
 import types

@@ -3,9 +3,7 @@ from weakref import proxy, ref, WeakSet
 import operator
 import copy
 import string
-import os
 from random import randrange, shuffle
-import sys
 import warnings
 import collections
 from collections import UserString as ustr

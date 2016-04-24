@@ -4,7 +4,6 @@ from test import support
 import contextlib
 import socket
 import urllib.request
-import sys
 import os
 import email.message
 import time

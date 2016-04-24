@@ -1,7 +1,6 @@
 import contextlib
 import io
 import os
-import sys
 import importlib.util
 import posixpath
 import time

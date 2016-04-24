@@ -1,5 +1,4 @@
 from importlib import _bootstrap_external
-import sys
 from test import support
 import unittest
 

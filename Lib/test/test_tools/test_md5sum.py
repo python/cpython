@@ -1,7 +1,6 @@
 """Tests for the md5sum script in the Tools directory."""
 
 import os
-import sys
 import unittest
 from test import support
 from test.support.script_helper import assert_python_ok, assert_python_failure
