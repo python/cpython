@@ -1,5 +1,4 @@
 """Tests for distutils.pypirc.pypirc."""
-import sys
 import os
 import unittest
 import tempfile

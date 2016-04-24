@@ -15,7 +15,6 @@ from test.support import verbose
 
 # Python imports
 import os
-import sys
 import unittest
 import warnings
 import subprocess

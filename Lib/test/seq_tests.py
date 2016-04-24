@@ -318,7 +318,6 @@ class CommonTest(unittest.TestCase):
             self.assertEqual(id(s), id(s*1))
 
     def test_bigrepeat(self):
-        import sys
         if sys.maxsize <= 2147483647:
             x = self.type2test([0])
             x *= 2**16

@@ -6,7 +6,6 @@ import operator
 import copy
 import pickle
 from random import randrange, shuffle
-import sys
 import warnings
 import collections
 import collections.abc
