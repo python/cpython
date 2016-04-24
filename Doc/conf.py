@@ -17,7 +17,7 @@ extensions = ['sphinx.ext.coverage', 'sphinx.ext.doctest',
 
 # General substitutions.
 project = 'Python'
-copyright = '1990-%s, Python Software Foundation' % time.strftime('%Y')
+copyright = '2001-%s, Python Software Foundation' % time.strftime('%Y')
 
 # We look for the Include/patchlevel.h file in the current Python source tree
 # and replace the values accordingly.
