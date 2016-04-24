@@ -1,6 +1,5 @@
 import os
 import signal
-import subprocess
 import unittest
 
 from test import support
