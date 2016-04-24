@@ -3,7 +3,6 @@
 Implements the Distutils 'sdist' command (create a source distribution)."""
 
 import os
-import string
 import sys
 from types import *
 from glob import glob

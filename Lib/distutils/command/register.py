@@ -5,7 +5,7 @@ Implements the Distutils 'register' command (register with the repository).
 
 # created 2002/10/21, Richard Jones
 
-import os, string, getpass
+import getpass
 import io
 import urllib.parse, urllib.request
 from warnings import warn

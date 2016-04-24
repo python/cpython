@@ -8,7 +8,7 @@
 
 """
 
-import sys, os, time, difflib, argparse
+import sys, os, difflib, argparse
 from datetime import datetime, timezone
 
 def file_mtime(path):
