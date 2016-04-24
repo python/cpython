@@ -1,5 +1,4 @@
 """Tests for distutils.command.install_data."""
-import sys
 import os
 import unittest
 import getpass

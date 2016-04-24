@@ -11,7 +11,6 @@ especially when debugging a test.
 
 from __future__ import with_statement
 
-import sys
 import warnings
 
 # Testing imports
