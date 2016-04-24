@@ -388,6 +388,13 @@ Optimizations
 * Optimize ``bytes.replace(b'', b'.')`` and ``bytearray.replace(b'', b'.')``:
   up to 80% faster. (Contributed by Josh Snider in :issue:`26574`).
 
+* Allocator functions of the :c:func:`PyMem_Malloc` domain
+  (:c:data:`PYMEM_DOMAIN_MEM`) now use the :ref:`pymalloc memory allocator
+  <pymalloc>` instead of :c:func:`malloc` function of the C library. The
+  pymalloc allocator is optimized for objects smaller or equal to 512 bytes
+  with a short lifetime, and use :c:func:`malloc` for larger memory blocks.
+  (Contributed by Victor Stinner in :issue:`26249`).
+
 
 Build and C API Changes
 =======================
