@@ -15,7 +15,6 @@ import sys
 import tempfile
 from test.support import (captured_stdout, captured_stderr,
                           can_symlink, EnvironmentVarGuard, rmtree)
-import textwrap
 import unittest
 import venv
 

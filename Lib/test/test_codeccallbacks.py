@@ -4,7 +4,6 @@ import sys
 import test.support
 import unicodedata
 import unittest
-import warnings
 
 class PosReturn:
     # this can be used for configurable callbacks

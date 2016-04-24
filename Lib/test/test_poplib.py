@@ -8,7 +8,6 @@ import asyncore
 import asynchat
 import socket
 import os
-import time
 import errno
 
 from unittest import TestCase, skipUnless

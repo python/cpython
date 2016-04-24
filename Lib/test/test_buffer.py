@@ -16,7 +16,6 @@ import unittest
 from test import support
 from itertools import permutations, product
 from random import randrange, sample, choice
-from sysconfig import get_config_var
 import warnings
 import sys, array, io
 from decimal import Decimal

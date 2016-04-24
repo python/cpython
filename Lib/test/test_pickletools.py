@@ -1,4 +1,3 @@
-import struct
 import pickle
 import pickletools
 from test import support

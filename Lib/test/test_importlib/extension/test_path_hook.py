@@ -2,7 +2,6 @@ from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
-import collections
 import unittest
 
 

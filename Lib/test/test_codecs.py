@@ -4,7 +4,6 @@ import io
 import locale
 import sys
 import unittest
-import warnings
 import encodings
 
 from test import support

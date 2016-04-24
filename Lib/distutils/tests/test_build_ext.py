@@ -166,7 +166,6 @@ class BuildExtTestCase(TempdirManager,
         cmd = self.build_ext(dist)
         cmd.finalize_options()
 
-        from distutils import sysconfig
         py_include = sysconfig.get_python_inc()
         self.assertIn(py_include, cmd.include_dirs)
 

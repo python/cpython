@@ -12,7 +12,6 @@ import socket
 import sys
 import time
 import unittest
-import warnings
 import unittest.mock
 try:
     import threading

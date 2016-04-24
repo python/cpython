@@ -1,6 +1,5 @@
 import unittest
 import builtins
-import warnings
 import os
 from platform import system as platform_system
 

@@ -3421,7 +3421,6 @@ Do you like this message?
 class TestFeedParsers(TestEmailBase):
 
     def parse(self, chunks):
-        from email.feedparser import FeedParser
         feedparser = FeedParser()
         for chunk in chunks:
             feedparser.feed(chunk)

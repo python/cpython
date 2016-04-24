@@ -14,7 +14,6 @@ from test.support import bigmemtest, _1G, _2G, _4G
 import unittest
 import operator
 import sys
-import functools
 
 # These tests all use one of the bigmemtest decorators to indicate how much
 # memory they use and how much memory they need to be even meaningful.  The

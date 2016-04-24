@@ -1,11 +1,10 @@
 """Tests for distutils.spawn."""
 import unittest
 import os
-import time
-from test.support import captured_stdout, run_unittest
+from test.support import run_unittest
 
 from distutils.spawn import _nt_quote_args
-from distutils.spawn import spawn, find_executable
+from distutils.spawn import spawn
 from distutils.errors import DistutilsExecError
 from distutils.tests import support
 

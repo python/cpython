@@ -1,6 +1,4 @@
 import collections.abc
-import errno
-import socket
 import unittest
 from test import support
 

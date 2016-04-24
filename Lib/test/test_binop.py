@@ -2,7 +2,7 @@
 
 import unittest
 from test import support
-from operator import eq, ne, lt, gt, le, ge
+from operator import eq, le
 from abc import ABCMeta
 
 def gcd(a, b):

@@ -1,7 +1,6 @@
 import socket
 import selectors
 import telnetlib
-import time
 import contextlib
 
 from test import support
