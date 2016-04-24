@@ -333,16 +333,14 @@ class DeprecationTest(unittest.TestCase):
             platform.dist()
         self.assertEqual(str(cm.warning),
                          'dist() and linux_distribution() functions are '
-                         'deprecated in Python 3.5 and will be removed in '
-                         'Python 3.7')
+                         'deprecated in Python 3.5')
 
     def test_linux_distribution_deprecation(self):
         with self.assertWarns(PendingDeprecationWarning) as cm:
             platform.linux_distribution()
         self.assertEqual(str(cm.warning),
                          'dist() and linux_distribution() functions are '
-                         'deprecated in Python 3.5 and will be removed in '
-                         'Python 3.7')
+                         'deprecated in Python 3.5')
 
 if __name__ == '__main__':
     unittest.main()

@@ -2271,9 +2271,8 @@ class has been deprecated.
 (Contributed by Serhiy Storchaka in :issue:`23671`.)
 
 The :func:`platform.dist` and :func:`platform.linux_distribution` functions
-are now deprecated and will be removed in Python 3.7.  Linux distributions use
-too many different ways of describing themselves, so the functionality is
-left to a package.
+are now deprecated.  Linux distributions use too many different ways of
+describing themselves, so the functionality is left to a package.
 (Contributed by Vajrasky Kok and Berker Peksag in :issue:`1322`.)
 
 The previously undocumented ``from_function`` and ``from_builtin`` methods of
