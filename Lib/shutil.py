@@ -1069,7 +1069,9 @@ def get_terminal_size(fallback=(80, 24)):
     if columns <= 0 or lines <= 0:
         try:
             size = os.get_terminal_size(sys.__stdout__.fileno())
-        except (AttributeError, OSError):
+        except (AttributeError, ValueError, OSError):
+            # stdout is None, closed, detached, or not a terminal, or
+            # os.get_terminal_size() is unsupported
             size = os.terminal_size(fallback)
         if columns <= 0:
             columns = size.columns
