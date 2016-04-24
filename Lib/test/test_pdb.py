@@ -558,7 +558,6 @@ def test_pdb_continue_in_bottomframe():
 
 def pdb_invoke(method, arg):
     """Run pdb.method(arg)."""
-    import pdb
     getattr(pdb.Pdb(nosigint=True), method)(arg)
 
 

@@ -1,7 +1,6 @@
 """Tests for distutils.command.clean."""
 import os
 import unittest
-import getpass
 
 from distutils.command.clean import clean
 from distutils.tests import support

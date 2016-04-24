@@ -4,7 +4,6 @@ try:
 except ImportError:
     nl_langinfo = None
 
-import codecs
 import locale
 import sys
 import unittest

@@ -6,7 +6,6 @@ from test import support
 import unittest
 import math
 import os
-import platform
 import sys
 import struct
 import sysconfig

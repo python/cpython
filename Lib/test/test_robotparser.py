@@ -2,8 +2,6 @@ import io
 import unittest
 import urllib.robotparser
 from collections import namedtuple
-from urllib.error import URLError, HTTPError
-from urllib.request import urlopen
 from test import support
 from http.server import BaseHTTPRequestHandler, HTTPServer
 try:

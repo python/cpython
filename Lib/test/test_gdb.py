@@ -5,7 +5,6 @@
 
 import os
 import re
-import pprint
 import subprocess
 import sys
 import sysconfig

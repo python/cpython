@@ -1,7 +1,6 @@
 from .. import util
 import sys
 import unittest
-import importlib
 from test import support
 
 

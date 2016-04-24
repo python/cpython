@@ -7,17 +7,12 @@ import email
 import email.message
 import re
 import io
-import shutil
 import tempfile
 from test import support
 import unittest
 import textwrap
 import mailbox
 import glob
-try:
-    import fcntl
-except ImportError:
-    pass
 
 
 class TestBase:

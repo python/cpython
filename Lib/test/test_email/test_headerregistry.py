@@ -1,7 +1,6 @@
 import datetime
 import textwrap
 import unittest
-import types
 from email import errors
 from email import policy
 from email.message import Message

@@ -3,7 +3,7 @@ Tests for the threading module.
 """
 
 import test.support
-from test.support import verbose, strip_python_stderr, import_module, cpython_only
+from test.support import verbose, import_module, cpython_only
 from test.support.script_helper import assert_python_ok, assert_python_failure
 
 import random

@@ -2,7 +2,7 @@ from test import support
 gdbm = support.import_module("dbm.gnu") #skip if not supported
 import unittest
 import os
-from test.support import verbose, TESTFN, unlink
+from test.support import TESTFN, unlink
 
 
 filename = TESTFN

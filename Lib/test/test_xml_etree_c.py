@@ -108,7 +108,7 @@ class SizeofTest(unittest.TestCase):
                              struct.calcsize('8P'))
 
 def test_main():
-    from test import test_xml_etree, test_xml_etree_c
+    from test import test_xml_etree
 
     # Run the tests specific to the C implementation
     support.run_unittest(

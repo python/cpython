@@ -1,5 +1,4 @@
 import unittest
-from test import support
 from test.support import import_module
 
 # Skip test if _thread or _tkinter wasn't built or idlelib was deleted.

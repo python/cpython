@@ -4,10 +4,8 @@ Tests of regrtest.py.
 Note: test_regrtest cannot be run twice in parallel.
 """
 
-import argparse
 import contextlib
 import faulthandler
-import getopt
 import io
 import os.path
 import platform

@@ -6,7 +6,7 @@ import os
 import random
 import select
 import unittest
-from test.support import TESTFN, run_unittest, cpython_only
+from test.support import run_unittest, cpython_only
 
 if not hasattr(select, 'devpoll') :
     raise unittest.SkipTest('test works only on Solaris OS family')

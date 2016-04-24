@@ -12,7 +12,6 @@ import zipimport
 import doctest
 import inspect
 import linecache
-import pdb
 import unittest
 from test.support.script_helper import (spawn_python, kill_python, assert_python_ok,
                                         make_script, make_zip_script)

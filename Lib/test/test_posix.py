@@ -11,7 +11,6 @@ import time
 import os
 import platform
 import pwd
-import shutil
 import stat
 import tempfile
 import unittest

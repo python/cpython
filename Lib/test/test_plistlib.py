@@ -7,7 +7,6 @@ import datetime
 import codecs
 import binascii
 import collections
-import struct
 from test import support
 from io import BytesIO
 

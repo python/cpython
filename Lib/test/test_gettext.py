@@ -1,6 +1,5 @@
 import os
 import base64
-import shutil
 import gettext
 import unittest
 

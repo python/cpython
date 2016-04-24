@@ -1,6 +1,5 @@
 import mailcap
 import os
-import shutil
 import test.support
 import unittest
 
