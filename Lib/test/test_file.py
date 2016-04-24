@@ -7,7 +7,7 @@ from weakref import proxy
 import io
 import _pyio as pyio
 
-from test.support import TESTFN, run_unittest
+from test.support import TESTFN
 from collections import UserList
 
 class AutoFileTests:

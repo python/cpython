@@ -3,7 +3,6 @@
 import html.parser
 import pprint
 import unittest
-from test import support
 
 
 class EventCollector(html.parser.HTMLParser):
