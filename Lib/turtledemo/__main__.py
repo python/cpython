@@ -95,7 +95,6 @@ from idlelib.textView import view_text
 from turtledemo import __doc__ as about_turtledemo
 
 import turtle
-import time
 
 demo_dir = os.path.dirname(os.path.abspath(__file__))
 darwin = sys.platform == 'darwin'

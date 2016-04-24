@@ -40,12 +40,10 @@ Instances of this class have the following instance variables:
 """
 
 import io
-import os
 import sys
 import importlib.util
 import tokenize
 from token import NAME, DEDENT, OP
-from operator import itemgetter
 
 __all__ = ["readmodule", "readmodule_ex", "Class", "Function"]
 
@@ -328,6 +326,7 @@ def _getname(g):
 def _main():
     # Main program for testing.
     import os
+    from operator import itemgetter
     mod = sys.argv[1]
     if os.path.exists(mod):
         path = [os.path.dirname(mod)]

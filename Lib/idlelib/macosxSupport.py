@@ -3,7 +3,6 @@ A number of functions that enhance IDLE on Mac OSX.
 """
 import sys
 import tkinter
-from os import path
 import warnings
 
 def runningAsOSXApp():

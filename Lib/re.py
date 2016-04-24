@@ -119,7 +119,6 @@ This module also defines an exception 'error'.
 
 """
 
-import sys
 import sre_compile
 import sre_parse
 try:

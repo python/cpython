@@ -22,7 +22,6 @@ to 0, this animation runs in "line per line"
 mode as fast as possible.
 """
 
-import math
 from turtle import Turtle, mainloop
 from time import clock
 

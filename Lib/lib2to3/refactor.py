@@ -26,7 +26,6 @@ from itertools import chain
 from .pgen2 import driver, tokenize, token
 from .fixer_util import find_root
 from . import pytree, pygram
-from . import btm_utils as bu
 from . import btm_matcher as bm
 
 
