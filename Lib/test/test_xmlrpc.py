@@ -9,7 +9,6 @@ import xmlrpc.server
 import http.client
 import http, http.server
 import socket
-import os
 import re
 import io
 import contextlib

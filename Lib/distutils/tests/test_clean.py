@@ -1,5 +1,4 @@
 """Tests for distutils.command.clean."""
-import sys
 import os
 import unittest
 import getpass

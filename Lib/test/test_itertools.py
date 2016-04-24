@@ -4,7 +4,6 @@ from itertools import *
 import weakref
 from decimal import Decimal
 from fractions import Fraction
-import sys
 import operator
 import random
 import copy
