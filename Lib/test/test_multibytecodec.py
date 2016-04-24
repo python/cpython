@@ -5,7 +5,7 @@
 
 from test import support
 from test.support import TESTFN
-import unittest, io, codecs, sys, os
+import unittest, io, codecs, sys
 import _multibytecodec
 
 ALL_CJKENCODINGS = [

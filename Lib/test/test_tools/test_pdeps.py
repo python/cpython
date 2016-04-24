@@ -1,7 +1,6 @@
 """Tests for the pdeps script in the Tools directory."""
 
 import os
-import sys
 import unittest
 import tempfile
 from test import support

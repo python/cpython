@@ -2,7 +2,6 @@ import builtins
 import os
 import select
 import socket
-import sys
 import unittest
 import errno
 from errno import EEXIST

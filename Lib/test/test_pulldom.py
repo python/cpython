@@ -1,6 +1,5 @@
 import io
 import unittest
-import sys
 import xml.sax
 
 from xml.sax.xmlreader import AttributesImpl
