@@ -2,12 +2,11 @@
 
 import os
 import sys
-import importlib
 import unittest
 from unittest import mock
 import tempfile
 
-from test.test_tools import scriptsdir, skip_if_missing, import_tool
+from test.test_tools import skip_if_missing, import_tool
 
 skip_if_missing()
 

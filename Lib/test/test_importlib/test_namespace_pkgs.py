@@ -1,9 +1,6 @@
 import contextlib
-import importlib.abc
-import importlib.machinery
 import os
 import sys
-import types
 import unittest
 
 from test.test_importlib import util

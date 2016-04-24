@@ -3,7 +3,6 @@ from . import util as test_util
 init = test_util.import_importlib('importlib')
 
 import sys
-import time
 import unittest
 import weakref
 

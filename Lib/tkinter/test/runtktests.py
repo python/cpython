@@ -7,7 +7,6 @@ Extensions also should live in packages following the same rule as above.
 """
 
 import os
-import unittest
 import importlib
 import test.support
 

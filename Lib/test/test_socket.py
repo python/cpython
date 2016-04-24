@@ -13,7 +13,6 @@ import queue
 import sys
 import os
 import array
-import platform
 import contextlib
 from weakref import proxy
 import signal

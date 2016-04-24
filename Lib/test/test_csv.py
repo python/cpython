@@ -2,7 +2,6 @@
 # csv package unit tests
 
 import copy
-import io
 import sys
 import unittest
 from io import StringIO
@@ -1078,7 +1077,6 @@ class TestUnicode(unittest.TestCase):
              "François Pinard"]
 
     def test_unicode_read(self):
-        import io
         with TemporaryFile("w+", newline='', encoding="utf-8") as fileobj:
             fileobj.write(",".join(self.names) + "\r\n")
             fileobj.seek(0)
@@ -1087,7 +1085,6 @@ class TestUnicode(unittest.TestCase):
 
 
     def test_unicode_write(self):
-        import io
         with TemporaryFile("w+", newline='', encoding="utf-8") as fileobj:
             writer = csv.writer(fileobj)
             writer.writerow(self.names)

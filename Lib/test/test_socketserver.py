@@ -7,8 +7,6 @@ import os
 import select
 import signal
 import socket
-import select
-import errno
 import tempfile
 import unittest
 import socketserver

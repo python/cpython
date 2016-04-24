@@ -7,8 +7,6 @@ from test import support
 import weakref
 import pickle
 import operator
-import io
-import math
 import struct
 import sys
 import warnings

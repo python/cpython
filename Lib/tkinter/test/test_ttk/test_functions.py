@@ -1,6 +1,5 @@
 # -*- encoding: utf-8 -*-
 import unittest
-import tkinter
 from tkinter import ttk
 
 class MockTkApp:

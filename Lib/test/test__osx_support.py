@@ -4,7 +4,6 @@ Test suite for _osx_support: shared OS X support functions.
 
 import os
 import platform
-import shutil
 import stat
 import sys
 import unittest

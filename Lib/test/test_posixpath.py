@@ -1,4 +1,3 @@
-import itertools
 import os
 import posixpath
 import unittest

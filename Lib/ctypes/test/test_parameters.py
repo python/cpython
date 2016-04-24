@@ -49,7 +49,7 @@ class SimpleTypesTestCase(unittest.TestCase):
 
     # XXX Replace by c_char_p tests
     def test_cstrings(self):
-        from ctypes import c_char_p, byref
+        from ctypes import c_char_p
 
         # c_char_p.from_param on a Python String packs the string
         # into a cparam object
@@ -68,7 +68,7 @@ class SimpleTypesTestCase(unittest.TestCase):
 
     @need_symbol('c_wchar_p')
     def test_cw_strings(self):
-        from ctypes import byref, c_wchar_p
+        from ctypes import c_wchar_p
 
         c_wchar_p.from_param("123")
 
@@ -98,7 +98,7 @@ class SimpleTypesTestCase(unittest.TestCase):
     def test_byref_pointer(self):
         # The from_param class method of POINTER(typ) classes accepts what is
         # returned by byref(obj), it type(obj) == typ
-        from ctypes import c_short, c_uint, c_int, c_long, pointer, POINTER, byref
+        from ctypes import c_short, c_uint, c_int, c_long, POINTER, byref
         LPINT = POINTER(c_int)
 
         LPINT.from_param(byref(c_int(42)))

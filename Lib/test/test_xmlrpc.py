@@ -1132,7 +1132,6 @@ def captured_stdout(encoding='utf-8'):
     """A variation on support.captured_stdout() which gives a text stream
     having a `buffer` attribute.
     """
-    import io
     orig_stdout = sys.stdout
     sys.stdout = io.TextIOWrapper(io.BytesIO(), encoding=encoding)
     try:

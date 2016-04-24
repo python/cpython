@@ -1,4 +1,3 @@
-from test.support import TESTFN
 import unittest
 from test import audiotests
 from audioop import byteswap

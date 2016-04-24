@@ -462,7 +462,7 @@ class MockHTTPHandler(urllib.request.BaseHandler):
         self.requests = []
 
     def http_open(self, req):
-        import email, http.client, copy
+        import email, copy
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1

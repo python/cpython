@@ -4,7 +4,7 @@ import os
 import unittest
 import tempfile
 
-from test.test_tools import scriptsdir, skip_if_missing, import_tool
+from test.test_tools import skip_if_missing, import_tool
 
 skip_if_missing()
 
