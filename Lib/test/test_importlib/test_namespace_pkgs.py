@@ -7,7 +7,6 @@ import types
 import unittest
 
 from test.test_importlib import util
-from test.support import run_unittest
 
 # needed tests:
 #

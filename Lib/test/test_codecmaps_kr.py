@@ -3,7 +3,6 @@
 #   Codec mapping tests for ROK encodings
 #
 
-from test import support
 from test import multibytecodec_support
 import unittest
 

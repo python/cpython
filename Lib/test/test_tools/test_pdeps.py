@@ -3,7 +3,6 @@
 import os
 import unittest
 import tempfile
-from test import support
 
 from test.test_tools import scriptsdir, skip_if_missing, import_tool
 

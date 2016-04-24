@@ -3,7 +3,6 @@
 # email package unit tests for (optional) Asian codecs
 
 import unittest
-from test.support import run_unittest
 
 from test.test_email.test_email import TestEmailBase
 from email.charset import Charset

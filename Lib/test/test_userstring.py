@@ -3,7 +3,7 @@
 
 import string
 import unittest
-from test import support, string_tests
+from test import string_tests
 
 from collections import UserString
 

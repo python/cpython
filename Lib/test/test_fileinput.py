@@ -22,7 +22,7 @@ except ImportError:
 from io import BytesIO, StringIO
 from fileinput import FileInput, hook_encoded
 
-from test.support import verbose, TESTFN, run_unittest, check_warnings
+from test.support import verbose, TESTFN, check_warnings
 from test.support import unlink as safe_unlink
 from test import support
 from unittest import mock
