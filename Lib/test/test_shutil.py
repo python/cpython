@@ -1828,13 +1828,23 @@ class TermsizeTests(unittest.TestCase):
 
         with support.EnvironmentVarGuard() as env:
             env['COLUMNS'] = '777'
+            del env['LINES']
             size = shutil.get_terminal_size()
         self.assertEqual(size.columns, 777)
 
         with support.EnvironmentVarGuard() as env:
+            del env['COLUMNS']
             env['LINES'] = '888'
             size = shutil.get_terminal_size()
         self.assertEqual(size.lines, 888)
+
+    def test_bad_environ(self):
+        with support.EnvironmentVarGuard() as env:
+            env['COLUMNS'] = 'xxx'
+            env['LINES'] = 'yyy'
+            size = shutil.get_terminal_size()
+        self.assertGreaterEqual(size.columns, 0)
+        self.assertGreaterEqual(size.lines, 0)
 
     @unittest.skipUnless(os.isatty(sys.__stdout__.fileno()), "not on tty")
     @unittest.skipUnless(hasattr(os, 'get_terminal_size'),
@@ -1858,6 +1868,25 @@ class TermsizeTests(unittest.TestCase):
             actual = shutil.get_terminal_size()
 
         self.assertEqual(expected, actual)
+
+    def test_fallback(self):
+        with support.EnvironmentVarGuard() as env:
+            del env['LINES']
+            del env['COLUMNS']
+
+            # sys.__stdout__ has no fileno()
+            with support.swap_attr(sys, '__stdout__', None):
+                size = shutil.get_terminal_size(fallback=(10, 20))
+            self.assertEqual(size.columns, 10)
+            self.assertEqual(size.lines, 20)
+
+            # sys.__stdout__ is not a terminal on Unix
+            # or fileno() not in (0, 1, 2) on Windows
+            with open(os.devnull, 'w') as f, \
+                 support.swap_attr(sys, '__stdout__', f):
+                size = shutil.get_terminal_size(fallback=(30, 40))
+            self.assertEqual(size.columns, 30)
+            self.assertEqual(size.lines, 40)
 
 
 class PublicAPITests(unittest.TestCase):
