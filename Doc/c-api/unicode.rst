@@ -613,8 +613,7 @@ APIs:
 
    This function checks that *unicode* is a Unicode object, that the index is
    not out of bounds, and that the object can be modified safely (i.e. that it
-   its reference count is one), in contrast to the macro version
-   :c:func:`PyUnicode_WRITE_CHAR`.
+   its reference count is one).
 
    .. versionadded:: 3.3
 
