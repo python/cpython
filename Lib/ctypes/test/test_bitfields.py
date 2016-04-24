@@ -3,7 +3,6 @@ from ctypes.test import need_symbol
 import unittest
 import os
 
-import ctypes
 import _ctypes_test
 
 class BITS(Structure):

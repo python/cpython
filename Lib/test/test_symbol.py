@@ -1,6 +1,5 @@
 import unittest
 from test import support
-import filecmp
 import os
 import sys
 import subprocess
