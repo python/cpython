@@ -42,12 +42,6 @@ class SetAttributeTest(unittest.TestCase):
             self.parser.specified_attributes = x
             self.assertIs(self.parser.specified_attributes, bool(x))
 
-    def test_specified_attributes(self):
-        self.assertIs(self.parser.specified_attributes, False)
-        for x in 0, 1, 2, 0:
-            self.parser.specified_attributes = x
-            self.assertIs(self.parser.specified_attributes, bool(x))
-
     def test_invalid_attributes(self):
         with self.assertRaises(AttributeError):
             self.parser.returns_unicode = 1
