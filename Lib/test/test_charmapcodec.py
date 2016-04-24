@@ -9,7 +9,7 @@ Written by Marc-Andre Lemburg (mal@lemburg.com).
 
 """#"
 
-import test.support, unittest
+import unittest
 
 import codecs
 

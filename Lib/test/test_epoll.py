@@ -28,7 +28,6 @@ import socket
 import time
 import unittest
 
-from test import support
 if not hasattr(select, "epoll"):
     raise unittest.SkipTest("test works only on Linux 2.6")
 

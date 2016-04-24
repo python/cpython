@@ -1,4 +1,4 @@
-import test.support, unittest
+import unittest
 
 class PowTest(unittest.TestCase):
 
