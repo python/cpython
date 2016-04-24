@@ -538,8 +538,7 @@ Notes:
       Support for name aliases [#]_ has been added.
 
 (5)
-   Individual code units which form parts of a surrogate pair can be encoded using
-   this escape sequence.  Exactly four hex digits are required.
+   Exactly four hex digits are required.
 
 (6)
    Any Unicode character can be encoded this way.  Exactly eight hex digits
