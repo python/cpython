@@ -465,17 +465,13 @@ This is the client side::
    data = " ".join(sys.argv[1:])
 
    # Create a socket (SOCK_STREAM means a TCP socket)
-   sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-
-   try:
+   with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
        # Connect to server and send data
        sock.connect((HOST, PORT))
        sock.sendall(bytes(data + "\n", "utf-8"))
 
        # Receive data from the server and shut down
        received = str(sock.recv(1024), "utf-8")
-   finally:
-       sock.close()
 
    print("Sent:     {}".format(data))
    print("Received: {}".format(received))
@@ -574,14 +570,11 @@ An example for the :class:`ThreadingMixIn` class::
        pass
 
    def client(ip, port, message):
-       sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-       sock.connect((ip, port))
-       try:
+       with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+           sock.connect((ip, port))
            sock.sendall(bytes(message, 'ascii'))
            response = str(sock.recv(1024), 'ascii')
            print("Received: {}".format(response))
-       finally:
-           sock.close()
 
    if __name__ == "__main__":
        # Port 0 means to select an arbitrary unused port
