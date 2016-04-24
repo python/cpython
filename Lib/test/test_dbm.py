@@ -1,6 +1,5 @@
 """Test script for the dbm.open function based on testdumbdbm.py"""
 
-import os
 import unittest
 import glob
 import test.support

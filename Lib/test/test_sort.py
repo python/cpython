@@ -1,6 +1,5 @@
 from test import support
 import random
-import sys
 import unittest
 from functools import cmp_to_key
 

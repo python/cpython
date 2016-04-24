@@ -5,7 +5,6 @@ import time
 import locale
 import re
 import os
-import sys
 from test import support
 from datetime import date as datetime_date
 

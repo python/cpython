@@ -1,4 +1,4 @@
-import unittest, sys
+import unittest
 from ctypes.test import need_symbol
 
 class SimpleTypesTestCase(unittest.TestCase):

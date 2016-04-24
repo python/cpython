@@ -1,7 +1,6 @@
 from test import support
 support.import_module("dbm.ndbm") #skip if not supported
 import unittest
-import os
 import random
 import dbm.ndbm
 from dbm.ndbm import error

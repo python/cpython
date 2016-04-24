@@ -5,7 +5,6 @@
 import os
 import random
 import select
-import sys
 import unittest
 from test.support import TESTFN, run_unittest, cpython_only
 

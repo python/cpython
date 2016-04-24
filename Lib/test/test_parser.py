@@ -1,6 +1,5 @@
 import parser
 import unittest
-import sys
 import operator
 import struct
 from test import support

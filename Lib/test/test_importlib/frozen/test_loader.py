@@ -3,8 +3,6 @@ from .. import util
 
 machinery = util.import_importlib('importlib.machinery')
 
-
-import sys
 from test.support import captured_stdout
 import types
 import unittest

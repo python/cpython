@@ -1,6 +1,5 @@
 from test import support
 import unittest
-import sys
 
 # Skip test if nis module does not exist.
 nis = support.import_module('nis')
