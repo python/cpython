@@ -3762,6 +3762,10 @@ AC_CHECK_MEMBERS([struct stat.st_flags])
 AC_CHECK_MEMBERS([struct stat.st_gen])
 AC_CHECK_MEMBERS([struct stat.st_birthtime])
 AC_CHECK_MEMBERS([struct stat.st_blocks])
+AC_CHECK_MEMBERS([struct passwd.pw_gecos, struct passwd.pw_passwd], [], [], [[
+  #include <sys/types.h>
+  #include <pwd.h>
+]])
 
 AC_MSG_CHECKING(for time.h that defines altzone)
 AC_CACHE_VAL(ac_cv_header_time_altzone,[
