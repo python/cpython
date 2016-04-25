@@ -15,11 +15,6 @@ class Dialog:
     command  = None
 
     def __init__(self, master=None, **options):
-
-        # FIXME: should this be placed on the module level instead?
-        if TkVersion < 4.2:
-            raise TclError("this module requires Tk 4.2 or newer")
-
         self.master  = master
         self.options = options
         if not master and options.get('parent'):
