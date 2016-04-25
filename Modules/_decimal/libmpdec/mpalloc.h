@@ -26,8 +26,8 @@
  */
 
 
-#ifndef MEMORY_H
-#define MEMORY_H
+#ifndef MPALLOC_H
+#define MPALLOC_H
 
 
 #include "mpdecimal.h"

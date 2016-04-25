@@ -36,7 +36,7 @@
 #include "bits.h"
 #include "convolute.h"
 #include "crt.h"
-#include "memory.h"
+#include "mpalloc.h"
 #include "typearith.h"
 #include "umodarith.h"
 
