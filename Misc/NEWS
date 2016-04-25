@@ -107,6 +107,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26804: urllib.request will prefer lower_case proxy environment
+  variables over UPPER_CASE or Mixed_Case ones. Patch contributed by Hans-Peter
+  Jansen.
+
 - Issue #26837: assertSequenceEqual() now correctly outputs non-stringified
   differing items (like bytes in the -b mode).  This affects assertListEqual()
   and assertTupleEqual().
