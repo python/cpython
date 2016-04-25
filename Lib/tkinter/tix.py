@@ -29,10 +29,6 @@
 from tkinter import *
 from tkinter import _cnfmerge, _default_root
 
-# WARNING - TkVersion is a limited precision floating point number
-if TkVersion < 3.999:
-    raise ImportError("This version of Tix.py requires Tk 4.0 or higher")
-
 import _tkinter # If this fails your Python may not be configured for Tk
 
 # Some more constants (for consistency with Tkinter)
