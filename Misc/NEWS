@@ -256,6 +256,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26837: assertSequenceEqual() now correctly outputs non-stringified
+  differing items (like bytes in the -b mode).  This affects assertListEqual()
+  and assertTupleEqual().
+
 - Issue #26041: Remove "will be removed in Python 3.7" from deprecation
   messages of platform.dist() and platform.linux_distribution().
   Patch by Kumaripaba Miyurusara Athukorala.
