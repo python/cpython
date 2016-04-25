@@ -30,7 +30,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "typearith.h"
-#include "memory.h"
+#include "mpalloc.h"
 
 
 #if defined(_MSC_VER)
