@@ -12918,6 +12918,33 @@ _ACEOF
 
 fi
 
+ac_fn_c_check_member "$LINENO" "struct passwd" "pw_gecos" "ac_cv_member_struct_passwd_pw_gecos" "
+  #include <sys/types.h>
+  #include <pwd.h>
+
+"
+if test "x$ac_cv_member_struct_passwd_pw_gecos" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_PASSWD_PW_GECOS 1
+_ACEOF
+
+
+fi
+ac_fn_c_check_member "$LINENO" "struct passwd" "pw_passwd" "ac_cv_member_struct_passwd_pw_passwd" "
+  #include <sys/types.h>
+  #include <pwd.h>
+
+"
+if test "x$ac_cv_member_struct_passwd_pw_passwd" = xyes; then :
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_STRUCT_PASSWD_PW_PASSWD 1
+_ACEOF
+
+
+fi
+
 
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for time.h that defines altzone" >&5
 $as_echo_n "checking for time.h that defines altzone... " >&6; }
