@@ -37,7 +37,6 @@
 #include <locale.h>
 #include "bits.h"
 #include "constants.h"
-#include "memory.h"
 #include "typearith.h"
 #include "io.h"
 
