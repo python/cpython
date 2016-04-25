@@ -1,5 +1,6 @@
 """Regresssion tests for urllib"""
 
+import collections
 import urllib
 import httplib
 import unittest
@@ -158,8 +159,46 @@ class ProxyTests(unittest.TestCase):
         # getproxies_environment use lowered case truncated (no '_proxy') keys
         self.assertEqual('localhost', proxies['no'])
         # List of no_proxies with space.
-        self.env.set('NO_PROXY', 'localhost, anotherdomain.com, newdomain.com')
+        self.env.set('NO_PROXY', 'localhost, anotherdomain.com, newdomain.com:1234')
         self.assertTrue(urllib.proxy_bypass_environment('anotherdomain.com'))
+        self.assertTrue(urllib.proxy_bypass_environment('anotherdomain.com:8888'))
+        self.assertTrue(urllib.proxy_bypass_environment('newdomain.com:1234'))
+
+
+class ProxyTests_withOrderedEnv(unittest.TestCase):
+
+    def setUp(self):
+        # We need to test conditions, where variable order _is_ significant
+        self._saved_env = os.environ
+        # Monkey patch os.environ, start with empty fake environment
+        os.environ = collections.OrderedDict()
+
+    def tearDown(self):
+        os.environ = self._saved_env
+
+    def test_getproxies_environment_prefer_lowercase(self):
+        # Test lowercase preference with removal
+        os.environ['no_proxy'] = ''
+        os.environ['No_Proxy'] = 'localhost'
+        self.assertFalse(urllib.proxy_bypass_environment('localhost'))
+        self.assertFalse(urllib.proxy_bypass_environment('arbitrary'))
+        os.environ['http_proxy'] = ''
+        os.environ['HTTP_PROXY'] = 'http://somewhere:3128'
+        proxies = urllib.getproxies_environment()
+        self.assertEqual({}, proxies)
+        # Test lowercase preference of proxy bypass and correct matching including ports
+        os.environ['no_proxy'] = 'localhost, noproxy.com, my.proxy:1234'
+        os.environ['No_Proxy'] = 'xyz.com'
+        self.assertTrue(urllib.proxy_bypass_environment('localhost'))
+        self.assertTrue(urllib.proxy_bypass_environment('noproxy.com:5678'))
+        self.assertTrue(urllib.proxy_bypass_environment('my.proxy:1234'))
+        self.assertFalse(urllib.proxy_bypass_environment('my.proxy'))
+        self.assertFalse(urllib.proxy_bypass_environment('arbitrary'))
+        # Test lowercase preference with replacement
+        os.environ['http_proxy'] = 'http://somewhere:3128'
+        os.environ['Http_Proxy'] = 'http://somewhereelse:3128'
+        proxies = urllib.getproxies_environment()
+        self.assertEqual('http://somewhere:3128', proxies['http'])
 
 
 class urlopen_HttpTests(unittest.TestCase, FakeHTTPMixin):
@@ -1030,6 +1069,8 @@ def test_main():
             Pathname_Tests,
             Utility_Tests,
             URLopener_Tests,
+            ProxyTests,
+            ProxyTests_withOrderedEnv,
             #FTPWrapperTests,
         )
 

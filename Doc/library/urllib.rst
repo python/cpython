@@ -292,6 +292,8 @@ Utility functions
    in case insensitive way, for all operating systems first, and when it cannot
    find it, looks for proxy information from Mac OSX System Configuration for
    Mac OS X and Windows Systems Registry for Windows.
+   If both lowercase and uppercase environment variables exist (and disagree),
+   lowercase is preferred.
 
 .. note::
     urllib also exposes certain utility functions like splittype, splithost and
