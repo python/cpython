@@ -916,6 +916,12 @@
 /* Define to 1 if you have the <stropts.h> header file. */
 #undef HAVE_STROPTS_H
 
+/* Define to 1 if `pw_gecos' is a member of `struct passwd'. */
+#undef HAVE_STRUCT_PASSWD_PW_GECOS
+
+/* Define to 1 if `pw_passwd' is a member of `struct passwd'. */
+#undef HAVE_STRUCT_PASSWD_PW_PASSWD
+
 /* Define to 1 if `st_birthtime' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BIRTHTIME
 
