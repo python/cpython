@@ -1624,8 +1624,8 @@ features:
    Create a directory named *path* with numeric mode *mode*.
 
    On some systems, *mode* is ignored.  Where it is used, the current umask
-   value is first masked out.  If the directory already exists, :exc:`OSError`
-   is raised.
+   value is first masked out.  If the directory already exists,
+   :exc:`FileExistsError` is raised.
 
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
