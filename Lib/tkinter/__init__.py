@@ -1887,9 +1887,6 @@ class Tk(Misc, Wm):
         if tcl_version != _tkinter.TCL_VERSION:
             raise RuntimeError("tcl.h version (%s) doesn't match libtcl.a version (%s)" \
                                % (_tkinter.TCL_VERSION, tcl_version))
-        if TkVersion < 4.0:
-            raise RuntimeError("Tk 4.0 or higher is required; found Tk %s"
-                               % str(TkVersion))
         # Create and register the tkerror and exit commands
         # We need to inline parts of _register here, _ register
         # would register differently-named commands.
