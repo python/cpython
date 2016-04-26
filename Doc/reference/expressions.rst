@@ -1153,7 +1153,7 @@ types to support membership tests without being a sequence.  In particular,
 dictionaries (for keys) and sets support membership testing.
 
 For the list and tuple types, ``x in y`` is true if and only if there exists an
-index *i* such that ``x == y[i]`` is true.
+index *i* such that either ``x is y[i]`` or ``x == y[i]`` is true.
 
 For the Unicode and string types, ``x in y`` is true if and only if *x* is a
 substring of *y*.  An equivalent test is ``y.find(x) != -1``.  Note, *x* and *y*
