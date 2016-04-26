@@ -256,6 +256,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26634: recursive_repr() now sets __qualname__ of wrapper.  Patch by
+  Xiang Zhang.
+
 - Issue #26804: urllib.request will prefer lower_case proxy environment
   variables over UPPER_CASE or Mixed_Case ones. Patch contributed by Hans-Peter
   Jansen.

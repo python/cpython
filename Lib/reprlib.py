@@ -30,6 +30,7 @@ def recursive_repr(fillvalue='...'):
         wrapper.__module__ = getattr(user_function, '__module__')
         wrapper.__doc__ = getattr(user_function, '__doc__')
         wrapper.__name__ = getattr(user_function, '__name__')
+        wrapper.__qualname__ = getattr(user_function, '__qualname__')
         wrapper.__annotations__ = getattr(user_function, '__annotations__', {})
         return wrapper
 
