@@ -680,7 +680,7 @@ how the command-line arguments should be handled. The supplied actions are:
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--foo', action='store_const', const=42)
-    >>> parser.parse_args('--foo'.split())
+    >>> parser.parse_args(['--foo'])
     Namespace(foo=42)
 
 * ``'store_true'`` and ``'store_false'`` - These are special cases of
@@ -721,7 +721,7 @@ how the command-line arguments should be handled. The supplied actions are:
 
     >>> parser = argparse.ArgumentParser()
     >>> parser.add_argument('--verbose', '-v', action='count')
-    >>> parser.parse_args('-vvv'.split())
+    >>> parser.parse_args(['-vvv'])
     Namespace(verbose=3)
 
 * ``'help'`` - This prints a complete help message for all the options in the
@@ -796,11 +796,11 @@ values are:
      >>> parser = argparse.ArgumentParser()
      >>> parser.add_argument('--foo', nargs='?', const='c', default='d')
      >>> parser.add_argument('bar', nargs='?', default='d')
-     >>> parser.parse_args('XX --foo YY'.split())
+     >>> parser.parse_args(['XX', '--foo', 'YY'])
      Namespace(bar='XX', foo='YY')
-     >>> parser.parse_args('XX --foo'.split())
+     >>> parser.parse_args(['XX', '--foo'])
      Namespace(bar='XX', foo='c')
-     >>> parser.parse_args(''.split())
+     >>> parser.parse_args([])
      Namespace(bar='d', foo='d')
 
   One of the more common uses of ``nargs='?'`` is to allow optional input and
@@ -836,9 +836,9 @@ values are:
 
      >>> parser = argparse.ArgumentParser(prog='PROG')
      >>> parser.add_argument('foo', nargs='+')
-     >>> parser.parse_args('a b'.split())
+     >>> parser.parse_args(['a', 'b'])
      Namespace(foo=['a', 'b'])
-     >>> parser.parse_args(''.split())
+     >>> parser.parse_args([])
      usage: PROG [-h] foo [foo ...]
      PROG: error: too few arguments
 
@@ -893,9 +893,9 @@ was not present at the command line::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('--foo', default=42)
-   >>> parser.parse_args('--foo 2'.split())
+   >>> parser.parse_args(['--foo', '2'])
    Namespace(foo='2')
-   >>> parser.parse_args(''.split())
+   >>> parser.parse_args([])
    Namespace(foo=42)
 
 If the ``default`` value is a string, the parser parses the value as if it
@@ -914,9 +914,9 @@ is used when no command-line argument was present::
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('foo', nargs='?', default=42)
-   >>> parser.parse_args('a'.split())
+   >>> parser.parse_args(['a'])
    Namespace(foo='a')
-   >>> parser.parse_args(''.split())
+   >>> parser.parse_args([])
    Namespace(foo=42)
 
 
@@ -973,9 +973,9 @@ the converted value::
    ...
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('foo', type=perfect_square)
-   >>> parser.parse_args('9'.split())
+   >>> parser.parse_args(['9'])
    Namespace(foo=9)
-   >>> parser.parse_args('7'.split())
+   >>> parser.parse_args(['7'])
    usage: PROG [-h] foo
    PROG: error: argument foo: '7' is not a perfect square
 
@@ -984,9 +984,9 @@ simply check against a range of values::
 
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('foo', type=int, choices=xrange(5, 10))
-   >>> parser.parse_args('7'.split())
+   >>> parser.parse_args(['7'])
    Namespace(foo=7)
-   >>> parser.parse_args('11'.split())
+   >>> parser.parse_args(['11'])
    usage: PROG [-h] {5,6,7,8,9}
    PROG: error: argument foo: invalid choice: 11 (choose from 5, 6, 7, 8, 9)
 
@@ -1067,7 +1067,7 @@ argument::
    ...         help='foo the bars before frobbling')
    >>> parser.add_argument('bar', nargs='+',
    ...         help='one of the bars to be frobbled')
-   >>> parser.parse_args('-h'.split())
+   >>> parser.parse_args(['-h'])
    usage: frobble [-h] [--foo] bar [bar ...]
 
    positional arguments:
@@ -1182,7 +1182,7 @@ attribute is determined by the ``dest`` keyword argument of
 
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument('bar')
-   >>> parser.parse_args('XXX'.split())
+   >>> parser.parse_args(['XXX'])
    Namespace(bar='XXX')
 
 For optional argument actions, the value of ``dest`` is normally inferred from
@@ -1277,22 +1277,22 @@ option and its value are passed as two separate arguments::
    >>> parser = argparse.ArgumentParser(prog='PROG')
    >>> parser.add_argument('-x')
    >>> parser.add_argument('--foo')
-   >>> parser.parse_args('-x X'.split())
+   >>> parser.parse_args(['-x', 'X'])
    Namespace(foo=None, x='X')
-   >>> parser.parse_args('--foo FOO'.split())
+   >>> parser.parse_args(['--foo', 'FOO'])
    Namespace(foo='FOO', x=None)
 
 For long options (options with names longer than a single character), the option
 and value can also be passed as a single command-line argument, using ``=`` to
 separate them::
 
-   >>> parser.parse_args('--foo=FOO'.split())
+   >>> parser.parse_args(['--foo=FOO'])
    Namespace(foo='FOO', x=None)
 
 For short options (options only one character long), the option and its value
 can be concatenated::
 
-   >>> parser.parse_args('-xX'.split())
+   >>> parser.parse_args(['-xX'])
    Namespace(foo=None, x='X')
 
 Several short options can be joined together, using only a single ``-`` prefix,
@@ -1302,7 +1302,7 @@ as long as only the last option (or none of them) requires a value::
    >>> parser.add_argument('-x', action='store_true')
    >>> parser.add_argument('-y', action='store_true')
    >>> parser.add_argument('-z')
-   >>> parser.parse_args('-xyzZ'.split())
+   >>> parser.parse_args(['-xyzZ'])
    Namespace(x=True, y=True, z='Z')
 
 
@@ -1423,7 +1423,7 @@ interactive prompt::
    ...   default=max, help='sum the integers (default: find the max)')
    >>> parser.parse_args(['1', '2', '3', '4'])
    Namespace(accumulate=<built-in function max>, integers=[1, 2, 3, 4])
-   >>> parser.parse_args('1 2 3 4 --sum'.split())
+   >>> parser.parse_args(['1', '2', '3', '4', '--sum'])
    Namespace(accumulate=<built-in function sum>, integers=[1, 2, 3, 4])
 
 
