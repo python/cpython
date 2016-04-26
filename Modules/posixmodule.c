@@ -32,6 +32,12 @@
 #include "winreparse.h"
 #endif
 
+/* On android API level 21, 'AT_EACCESS' is not declared although
+ * HAVE_FACCESSAT is defined. */
+#ifdef __ANDROID__
+#undef HAVE_FACCESSAT
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -5933,7 +5939,7 @@ os_openpty_impl(PyModuleDef *module)
     if (_Py_set_inheritable(master_fd, 0, NULL) < 0)
         goto posix_error;
 
-#if !defined(__CYGWIN__) && !defined(HAVE_DEV_PTC)
+#if !defined(__CYGWIN__) && !defined(__ANDROID__) && !defined(HAVE_DEV_PTC)
     ioctl(slave_fd, I_PUSH, "ptem"); /* push ptem */
     ioctl(slave_fd, I_PUSH, "ldterm"); /* push ldterm */
 #ifndef __hpux
