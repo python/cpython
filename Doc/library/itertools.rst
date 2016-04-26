@@ -588,7 +588,10 @@ loops that truncate the stream.
 
 .. function:: tee(iterable, n=2)
 
-   Return *n* independent iterators from a single iterable.  Equivalent to::
+   Return *n* independent iterators from a single iterable.
+
+   The following Python code helps explain what *tee* does (although the actual
+   implementation is more complex and uses only a single underlying FIFO queue)::
 
         def tee(iterable, n=2):
             it = iter(iterable)
