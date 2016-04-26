@@ -163,7 +163,7 @@ if_indextoname(index) -- return the corresponding interface name\n\
 # include <sys/uio.h>
 #endif
 
-#ifndef WITH_THREAD
+#if !defined(WITH_THREAD) || defined(__ANDROID__)
 # undef HAVE_GETHOSTBYNAME_R
 #endif
 
