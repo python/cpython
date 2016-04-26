@@ -438,6 +438,7 @@ formatfloat(PyObject *v, int flags, int prec, int type,
         if (str == NULL)
             return NULL;
         Py_MEMCPY(str, p, len);
+        PyMem_Free(p);
         str += len;
         return str;
     }
