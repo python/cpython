@@ -36,7 +36,6 @@
 #include <stdlib.h>
 
 #include "docstrings.h"
-#include "memory.h"
 
 
 #if !defined(MPD_VERSION_HEX) || MPD_VERSION_HEX < 0x02040100
