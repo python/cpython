@@ -274,7 +274,11 @@ Odd and Ends
   twice:
 
     >>> data = [('red', 1), ('blue', 1), ('red', 2), ('blue', 2)]
-    >>> assert sorted(data, reverse=True) == list(reversed(sorted(reversed(data))))
+    >>> standard_way = sorted(data, key=itemgetter(0), reverse=True)
+    >>> double_reversed = list(reversed(sorted(reversed(data), key=itemgetter(0))))
+    >>> assert standard_way == double_reversed
+    >>> standard_way
+    [('red', 1), ('red', 2), ('blue', 1), ('blue', 2)]
 
 * To create a standard sort order for a class, just add the appropriate rich
   comparison methods:
