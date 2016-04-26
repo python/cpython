@@ -262,7 +262,11 @@ Odd and Ends
   twice:
 
     >>> data = [('red', 1), ('blue', 1), ('red', 2), ('blue', 2)]
-    >>> assert sorted(data, reverse=True) == list(reversed(sorted(reversed(data))))
+    >>> standard_way = sorted(data, key=itemgetter(0), reverse=True)
+    >>> double_reversed = list(reversed(sorted(reversed(data), key=itemgetter(0))))
+    >>> assert standard_way == double_reversed
+    >>> standard_way
+    [('red', 1), ('red', 2), ('blue', 1), ('blue', 2)]
 
 * The sort routines are guaranteed to use :meth:`__lt__` when making comparisons
   between two objects. So, it is easy to add a standard sort order to a class by
