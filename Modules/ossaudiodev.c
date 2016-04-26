@@ -31,7 +31,11 @@
 #endif
 
 #include <sys/ioctl.h>
+#ifdef __ANDROID__
+#include <linux/soundcard.h>
+#else
 #include <sys/soundcard.h>
+#endif
 
 #if defined(linux)
 
