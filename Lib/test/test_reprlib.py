@@ -374,6 +374,13 @@ class MyContainer2(MyContainer):
     def __repr__(self):
         return '<' + ', '.join(map(str, self.values)) + '>'
 
+class MyContainer3:
+    def __repr__(self):
+        'Test document content'
+        pass
+    wrapped = __repr__
+    wrapper = recursive_repr()(wrapped)
+
 class TestRecursiveRepr(unittest.TestCase):
     def test_recursive_repr(self):
         m = MyContainer(list('abcde'))
@@ -386,6 +393,13 @@ class TestRecursiveRepr(unittest.TestCase):
         m.append('x')
         m.append(m)
         self.assertEqual(repr(m), '<a, b, c, d, e, +++, x, +++>')
+
+    def test_assigned_attributes(self):
+        from functools import WRAPPER_ASSIGNMENTS as assigned
+        wrapped = MyContainer3.wrapped
+        wrapper = MyContainer3.wrapper
+        for name in assigned:
+            self.assertIs(getattr(wrapper, name), getattr(wrapped, name))
 
 if __name__ == "__main__":
     unittest.main()
