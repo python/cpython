@@ -196,7 +196,7 @@ The two following opening hooks are provided by this module:
 
 .. function:: hook_encoded(encoding)
 
-   Returns a hook which opens each file with :func:`codecs.open`, using the given
+   Returns a hook which opens each file with :func:`open`, using the given
    *encoding* to read the file.
 
    Usage example: ``fi =
