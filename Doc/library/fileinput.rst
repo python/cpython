@@ -193,10 +193,14 @@ The two following opening hooks are provided by this module:
    Usage example:  ``fi = fileinput.FileInput(openhook=fileinput.hook_compressed)``
 
 
-.. function:: hook_encoded(encoding)
+.. function:: hook_encoded(encoding, errors=None)
 
    Returns a hook which opens each file with :func:`open`, using the given
-   *encoding* to read the file.
+   *encoding* and *errors* to read the file.
 
    Usage example: ``fi =
-   fileinput.FileInput(openhook=fileinput.hook_encoded("iso-8859-1"))``
+   fileinput.FileInput(openhook=fileinput.hook_encoded("utf-8",
+   "surrogateescape"))``
+
+   .. versionchanged:: 3.6
+      Added the optional *errors* parameter.
