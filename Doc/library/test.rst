@@ -171,7 +171,7 @@ the test passed or failed and thus minimize output.
 Running :mod:`test.regrtest` directly allows what resources are available for
 tests to use to be set. You do this by using the ``-u`` command-line
 option. Specifying ``all`` as the value for the ``-u`` option enables all
-possible resources: :program:`python -m test -uall`.
+possible resources: :program:`python -m test.regrtest -uall`.
 If all but one resource is desired (a more common case), a
 comma-separated list of resources that are not desired may be listed after
 ``all``. The command :program:`python -m test.regrtest -uall,-audio,-largefile`
