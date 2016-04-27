@@ -400,9 +400,9 @@ def hook_compressed(filename, mode):
         return open(filename, mode)
 
 
-def hook_encoded(encoding):
+def hook_encoded(encoding, errors=None):
     def openhook(filename, mode):
-        return open(filename, mode, encoding=encoding)
+        return open(filename, mode, encoding=encoding, errors=errors)
     return openhook
 
 

@@ -358,6 +358,13 @@ The :func:`~zlib.compress` function now accepts keyword arguments.
 (Contributed by Aviv Palivoda in :issue:`26243`.)
 
 
+fileinput
+---------
+
+:func:`~fileinput.hook_encoded` now supports the *errors* argument.
+(Contributed by Joseph Hackman in :issue:`25788`.)
+
+
 Optimizations
 =============
 

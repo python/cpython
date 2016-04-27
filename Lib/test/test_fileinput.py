@@ -945,7 +945,8 @@ class Test_hook_encoded(unittest.TestCase):
 
     def test(self):
         encoding = object()
-        result = fileinput.hook_encoded(encoding)
+        errors = object()
+        result = fileinput.hook_encoded(encoding, errors=errors)
 
         fake_open = InvocationRecorder()
         original_open = builtins.open
@@ -963,7 +964,25 @@ class Test_hook_encoded(unittest.TestCase):
         self.assertIs(args[0], filename)
         self.assertIs(args[1], mode)
         self.assertIs(kwargs.pop('encoding'), encoding)
+        self.assertIs(kwargs.pop('errors'), errors)
         self.assertFalse(kwargs)
+
+    def test_errors(self):
+        with open(TESTFN, 'wb') as f:
+            f.write(b'\x80abc')
+        self.addCleanup(safe_unlink, TESTFN)
+
+        def check(errors, expected_lines):
+            with FileInput(files=TESTFN, mode='r',
+                           openhook=hook_encoded('utf-8', errors=errors)) as fi:
+                lines = list(fi)
+            self.assertEqual(lines, expected_lines)
+
+        check('ignore', ['abc'])
+        with self.assertRaises(UnicodeDecodeError):
+            check('strict', ['abc'])
+        check('replace', ['\ufffdabc'])
+        check('backslashreplace', ['\\x80abc'])
 
     def test_modes(self):
         with open(TESTFN, 'wb') as f:
