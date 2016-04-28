@@ -796,7 +796,7 @@ divmod as builtin_divmod
     y: object
     /
 
-Return the tuple ((x-x%y)//y, x%y).  Invariant: div*y + mod == x.
+Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.
 [clinic start generated code]*/
 
 static PyObject *
