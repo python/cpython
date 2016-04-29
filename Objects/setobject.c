@@ -1998,9 +1998,7 @@ set_init(PySetObject *self, PyObject *args, PyObject *kwds)
 {
     PyObject *iterable = NULL;
 
-    if (!PyAnySet_Check(self))
-        return -1;
-    if (kwds != NULL && PySet_Check(self) && !_PyArg_NoKeywords("set()", kwds))
+    if (kwds != NULL && !_PyArg_NoKeywords("set()", kwds))
         return -1;
     if (!PyArg_UnpackTuple(args, Py_TYPE(self)->tp_name, 0, 1, &iterable))
         return -1;
