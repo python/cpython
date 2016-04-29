@@ -256,6 +256,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #24902: Print server URL on http.server startup.  Initial patch by
+  Felix Kaiser.
+
 - Issue #25788: fileinput.hook_encoded() now supports an "errors" argument
   for passing to open.  Original patch by Joseph Hackman.
 

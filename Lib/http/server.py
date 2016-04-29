@@ -1177,7 +1177,8 @@ def test(HandlerClass=BaseHTTPRequestHandler,
     HandlerClass.protocol_version = protocol
     with ServerClass(server_address, HandlerClass) as httpd:
         sa = httpd.socket.getsockname()
-        print("Serving HTTP on", sa[0], "port", sa[1], "...")
+        serve_message = "Serving HTTP on {host} port {port} (http://{host}:{port}/) ..."
+        print(serve_message.format(host=sa[0], port=sa[1]))
         try:
             httpd.serve_forever()
         except KeyboardInterrupt:
