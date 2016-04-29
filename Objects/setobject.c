@@ -1043,9 +1043,8 @@ PyDoc_STRVAR(update_doc,
 static PyObject *
 make_new_set(PyTypeObject *type, PyObject *iterable)
 {
-    PySetObject *so = NULL;
+    PySetObject *so;
 
-    /* create PySetObject structure */
     so = (PySetObject *)type->tp_alloc(type, 0);
     if (so == NULL)
         return NULL;
