@@ -511,7 +511,7 @@ itemgetter_call(itemgetterobject *ig, PyObject *args, PyObject *kw)
     PyObject *obj, *result;
     Py_ssize_t i, nitems=ig->nitems;
 
-    if (!_PyArg_NoKeywords("itemgetter", kw))
+    if (kw != NULL && !_PyArg_NoKeywords("itemgetter", kw))
         return NULL;
     if (!PyArg_UnpackTuple(args, "itemgetter", 1, 1, &obj))
         return NULL;
@@ -693,7 +693,7 @@ attrgetter_call(attrgetterobject *ag, PyObject *args, PyObject *kw)
     PyObject *obj, *result;
     Py_ssize_t i, nattrs=ag->nattrs;
 
-    if (!_PyArg_NoKeywords("attrgetter", kw))
+    if (kw != NULL && !_PyArg_NoKeywords("attrgetter", kw))
         return NULL;
     if (!PyArg_UnpackTuple(args, "attrgetter", 1, 1, &obj))
         return NULL;
@@ -842,7 +842,7 @@ methodcaller_call(methodcallerobject *mc, PyObject *args, PyObject *kw)
 {
     PyObject *method, *obj, *result;
 
-    if (!_PyArg_NoKeywords("methodcaller", kw))
+    if (kw != NULL && !_PyArg_NoKeywords("methodcaller", kw))
         return NULL;
     if (!PyArg_UnpackTuple(args, "methodcaller", 1, 1, &obj))
         return NULL;
