@@ -136,7 +136,7 @@ genrand_int32(RandomObject *self)
  * optimize the division away at compile-time.  67108864 is 2**26.  In
  * effect, a contains 27 random bits shifted left 26, and b fills in the
  * lower 26 bits of the 53-bit numerator.
- * The orginal code credited Isaku Wada for this algorithm, 2002/01/09.
+ * The original code credited Isaku Wada for this algorithm, 2002/01/09.
  */
 static PyObject *
 random_random(RandomObject *self)
