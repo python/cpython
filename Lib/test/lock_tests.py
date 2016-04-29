@@ -395,12 +395,13 @@ class EventTests(BaseTestCase):
         self.assertEqual(results, [True] * N)
 
     def test_reset_internal_locks(self):
+        # ensure that condition is still using a Lock after reset
         evt = self.eventtype()
-        old_lock = evt._cond._lock
+        with evt._cond:
+            self.assertFalse(evt._cond.acquire(False))
         evt._reset_internal_locks()
-        new_lock = evt._cond._lock
-        self.assertIsNot(new_lock, old_lock)
-        self.assertIs(type(new_lock), type(old_lock))
+        with evt._cond:
+            self.assertFalse(evt._cond.acquire(False))
 
 
 class ConditionTests(BaseTestCase):
