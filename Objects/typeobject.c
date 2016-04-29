@@ -3944,7 +3944,7 @@ _PyObject_GetState(PyObject *obj, int required)
             }
 
             /* If we found some slot attributes, pack them in a tuple along
-               the orginal attribute dictionary. */
+               the original attribute dictionary. */
             if (PyDict_Size(slots) > 0) {
                 PyObject *state2;
 
