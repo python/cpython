@@ -77,6 +77,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26864: In urllib, change the proxy bypass host checking against
+  no_proxy to be case-insensitive, and to not match unrelated host names that
+  happen to have a bypassed hostname as a suffix.  Patch by Xiang Zhang.
+
 - Issue #26804: urllib will prefer lower_case proxy environment variables over
   UPPER_CASE or Mixed_Case ones. Patch contributed by Hans-Peter Jansen.
 

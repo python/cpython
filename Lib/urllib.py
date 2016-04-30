@@ -1423,8 +1423,12 @@ def proxy_bypass_environment(host, proxies=None):
     # check if the host ends with any of the DNS suffixes
     no_proxy_list = [proxy.strip() for proxy in no_proxy.split(',')]
     for name in no_proxy_list:
-        if name and (hostonly.endswith(name) or host.endswith(name)):
-            return 1
+        if name:
+            name = re.escape(name)
+            pattern = r'(.+\.)?%s$' % name
+            if (re.match(pattern, hostonly, re.I)
+                    or re.match(pattern, host, re.I)):
+                return 1
     # otherwise, don't bypass
     return 0
 

@@ -164,6 +164,19 @@ class ProxyTests(unittest.TestCase):
         self.assertTrue(urllib.proxy_bypass_environment('anotherdomain.com:8888'))
         self.assertTrue(urllib.proxy_bypass_environment('newdomain.com:1234'))
 
+    def test_proxy_bypass_environment_host_match(self):
+        bypass = urllib.proxy_bypass_environment
+        self.env.set('NO_PROXY',
+            'localhost, anotherdomain.com, newdomain.com:1234')
+        self.assertTrue(bypass('localhost'))
+        self.assertTrue(bypass('LocalHost'))                 # MixedCase
+        self.assertTrue(bypass('LOCALHOST'))                 # UPPERCASE
+        self.assertTrue(bypass('newdomain.com:1234'))
+        self.assertTrue(bypass('anotherdomain.com:8888'))
+        self.assertTrue(bypass('www.newdomain.com:1234'))
+        self.assertFalse(bypass('prelocalhost'))
+        self.assertFalse(bypass('newdomain.com'))            # no port
+        self.assertFalse(bypass('newdomain.com:1235'))       # wrong port
 
 class ProxyTests_withOrderedEnv(unittest.TestCase):
 
