@@ -337,22 +337,12 @@ described in those functions, as well as provide an additional method:
 The following classes provide the implementations of the parse results:
 
 
-.. class:: BaseResult
-
-   Base class for the concrete result classes.  This provides most of the attribute
-   definitions.  It does not provide a :meth:`geturl` method.  It is derived from
-   :class:`tuple`, but does not override the :meth:`__init__` or :meth:`__new__`
-   methods.
-
-
 .. class:: ParseResult(scheme, netloc, path, params, query, fragment)
 
-   Concrete class for :func:`urlparse` results.  The :meth:`__new__` method is
-   overridden to support checking that the right number of arguments are passed.
+   Concrete class for :func:`urlparse` results.
 
 
 .. class:: SplitResult(scheme, netloc, path, query, fragment)
 
-   Concrete class for :func:`urlsplit` results.  The :meth:`__new__` method is
-   overridden to support checking that the right number of arguments are passed.
+   Concrete class for :func:`urlsplit` results.
 
