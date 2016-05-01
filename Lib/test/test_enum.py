@@ -1568,6 +1568,19 @@ class TestUnique(unittest.TestCase):
                 triple = 3
                 turkey = 3
 
+    def test_unique_with_name(self):
+        @unique
+        class Silly(Enum):
+            one = 1
+            two = 'dos'
+            name = 3
+        @unique
+        class Sillier(IntEnum):
+            single = 1
+            name = 2
+            triple = 3
+            value = 4
+
 
 expected_help_output_with_docs = """\
 Help on class Color in module %s:
