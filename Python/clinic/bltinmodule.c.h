@@ -179,7 +179,7 @@ PyDoc_STRVAR(builtin_divmod__doc__,
 "divmod($module, x, y, /)\n"
 "--\n"
 "\n"
-"Return the tuple ((x-x%y)/y, x%y).  Invariant: div*y + mod == x.");
+"Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.");
 
 #define BUILTIN_DIVMOD_METHODDEF    \
     {"divmod", (PyCFunction)builtin_divmod, METH_VARARGS, builtin_divmod__doc__},
@@ -660,4 +660,4 @@ builtin_issubclass(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bec3399c0aee98d7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4bef16b6aa432879 input=a9049054013a1b77]*/
