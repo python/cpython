@@ -107,6 +107,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26711: Fixed the comparison of plistlib.Data with other types.
+
 - Issue #24114: Fix an uninitialized variable in `ctypes.util`.
 
   The bug only occurs on SunOS when the ctypes implementation searches
