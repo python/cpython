@@ -191,6 +191,7 @@ elif os.name == "posix":
             else:
                 cmd = 'env LC_ALL=C /usr/bin/crle 2>/dev/null'
 
+            paths = None
             for line in os.popen(cmd).readlines():
                 line = line.strip()
                 if line.startswith('Default Library Path (ELF):'):
