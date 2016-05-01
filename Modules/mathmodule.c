@@ -2046,7 +2046,7 @@ math_isclose(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 PyDoc_STRVAR(math_isclose_doc,
-"is_close(a, b, *, rel_tol=1e-09, abs_tol=0.0) -> bool\n"
+"isclose(a, b, *, rel_tol=1e-09, abs_tol=0.0) -> bool\n"
 "\n"
 "Determine whether two floating point numbers are close in value.\n"
 "\n"
