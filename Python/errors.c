@@ -727,9 +727,9 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
     PyTuple_SET_ITEM(args, 0, msg);
 
     if (PyDict_SetItemString(kwargs, "name", name) < 0)
-        return NULL;
+        goto done;
     if (PyDict_SetItemString(kwargs, "path", path) < 0)
-        return NULL;
+        goto done;
 
     error = PyObject_Call(PyExc_ImportError, args, kwargs);
     if (error != NULL) {
@@ -737,9 +737,9 @@ PyErr_SetImportError(PyObject *msg, PyObject *name, PyObject *path)
         Py_DECREF(error);
     }
 
+done:
     Py_DECREF(args);
     Py_DECREF(kwargs);
-
     return NULL;
 }
 
