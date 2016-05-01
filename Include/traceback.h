@@ -48,7 +48,7 @@ PyAPI_DATA(PyTypeObject) PyTraceBack_Type;
 
    This function is signal safe. */
 
-PyAPI_DATA(void) _Py_DumpTraceback(
+PyAPI_FUNC(void) _Py_DumpTraceback(
     int fd,
     PyThreadState *tstate);
 
@@ -62,7 +62,7 @@ PyAPI_DATA(void) _Py_DumpTraceback(
 
    This function is signal safe. */
 
-PyAPI_DATA(const char*) _Py_DumpTracebackThreads(
+PyAPI_FUNC(const char*) _Py_DumpTracebackThreads(
     int fd, PyInterpreterState *interp,
     PyThreadState *current_thread);
 
