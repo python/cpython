@@ -184,6 +184,7 @@ elif os.name == "posix":
             else:
                 cmd = 'env LC_ALL=C /usr/bin/crle 2>/dev/null'
 
+            paths = None
             with contextlib.closing(os.popen(cmd)) as f:
                 for line in f.readlines():
                     line = line.strip()
