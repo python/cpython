@@ -801,7 +801,7 @@ Return the tuple (x//y, x%y).  Invariant: div*y + mod == x.
 
 static PyObject *
 builtin_divmod_impl(PyModuleDef *module, PyObject *x, PyObject *y)
-/*[clinic end generated code: output=9ad0076120ebf9ac input=7fdb15f8a97a5fe7]*/
+/*[clinic end generated code: output=9ad0076120ebf9ac input=175ad9c84ff41a85]*/
 {
     return PyNumber_Divmod(x, y);
 }
