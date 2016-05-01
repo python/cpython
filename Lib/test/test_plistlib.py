@@ -514,15 +514,15 @@ class TestPlistlibDeprecated(unittest.TestCase):
 
         cur = plistlib.loads(buf)
         self.assertEqual(cur, out_data)
-        self.assertNotEqual(cur, in_data)
+        self.assertEqual(cur, in_data)
 
         cur = plistlib.loads(buf, use_builtin_types=False)
-        self.assertNotEqual(cur, out_data)
+        self.assertEqual(cur, out_data)
         self.assertEqual(cur, in_data)
 
         with self.assertWarns(DeprecationWarning):
             cur = plistlib.readPlistFromBytes(buf)
-        self.assertNotEqual(cur, out_data)
+        self.assertEqual(cur, out_data)
         self.assertEqual(cur, in_data)
 
 
