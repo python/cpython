@@ -225,10 +225,10 @@ class Data:
     def __eq__(self, other):
         if isinstance(other, self.__class__):
             return self.data == other.data
-        elif isinstance(other, str):
+        elif isinstance(other, bytes):
             return self.data == other
         else:
-            return id(self) == id(other)
+            return NotImplemented
 
     def __repr__(self):
         return "%s(%s)" % (self.__class__.__name__, repr(self.data))
