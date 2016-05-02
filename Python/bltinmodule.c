@@ -1078,7 +1078,6 @@ builtin_hasattr_impl(PyModuleDef *module, PyObject *obj, PyObject *name)
 /*[clinic input]
 id as builtin_id
 
-    self: self(type="PyModuleDef *")
     obj as v: object
     /
 
@@ -1089,8 +1088,8 @@ This is guaranteed to be unique among simultaneously existing objects.
 [clinic start generated code]*/
 
 static PyObject *
-builtin_id(PyModuleDef *self, PyObject *v)
-/*[clinic end generated code: output=0aa640785f697f65 input=5a534136419631f4]*/
+builtin_id(PyModuleDef *module, PyObject *v)
+/*[clinic end generated code: output=63635e497e09c2f7 input=57fb4a9aaff96384]*/
 {
     return PyLong_FromVoidPtr(v);
 }

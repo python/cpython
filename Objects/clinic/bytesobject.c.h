@@ -20,10 +20,10 @@ PyDoc_STRVAR(bytes_split__doc__,
     {"split", (PyCFunction)bytes_split, METH_VARARGS|METH_KEYWORDS, bytes_split__doc__},
 
 static PyObject *
-bytes_split_impl(PyBytesObject*self, PyObject *sep, Py_ssize_t maxsplit);
+bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit);
 
 static PyObject *
-bytes_split(PyBytesObject*self, PyObject *args, PyObject *kwargs)
+bytes_split(PyBytesObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"sep", "maxsplit", NULL};
@@ -133,10 +133,10 @@ PyDoc_STRVAR(bytes_rsplit__doc__,
     {"rsplit", (PyCFunction)bytes_rsplit, METH_VARARGS|METH_KEYWORDS, bytes_rsplit__doc__},
 
 static PyObject *
-bytes_rsplit_impl(PyBytesObject*self, PyObject *sep, Py_ssize_t maxsplit);
+bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit);
 
 static PyObject *
-bytes_rsplit(PyBytesObject*self, PyObject *args, PyObject *kwargs)
+bytes_rsplit(PyBytesObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"sep", "maxsplit", NULL};
@@ -359,11 +359,11 @@ PyDoc_STRVAR(bytes_replace__doc__,
     {"replace", (PyCFunction)bytes_replace, METH_VARARGS, bytes_replace__doc__},
 
 static PyObject *
-bytes_replace_impl(PyBytesObject*self, Py_buffer *old, Py_buffer *new,
+bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
                    Py_ssize_t count);
 
 static PyObject *
-bytes_replace(PyBytesObject*self, PyObject *args)
+bytes_replace(PyBytesObject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_buffer old = {NULL, NULL};
@@ -405,11 +405,11 @@ PyDoc_STRVAR(bytes_decode__doc__,
     {"decode", (PyCFunction)bytes_decode, METH_VARARGS|METH_KEYWORDS, bytes_decode__doc__},
 
 static PyObject *
-bytes_decode_impl(PyBytesObject*self, const char *encoding,
+bytes_decode_impl(PyBytesObject *self, const char *encoding,
                   const char *errors);
 
 static PyObject *
-bytes_decode(PyBytesObject*self, PyObject *args, PyObject *kwargs)
+bytes_decode(PyBytesObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"encoding", "errors", NULL};
@@ -438,10 +438,10 @@ PyDoc_STRVAR(bytes_splitlines__doc__,
     {"splitlines", (PyCFunction)bytes_splitlines, METH_VARARGS|METH_KEYWORDS, bytes_splitlines__doc__},
 
 static PyObject *
-bytes_splitlines_impl(PyBytesObject*self, int keepends);
+bytes_splitlines_impl(PyBytesObject *self, int keepends);
 
 static PyObject *
-bytes_splitlines(PyBytesObject*self, PyObject *args, PyObject *kwargs)
+bytes_splitlines(PyBytesObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"keepends", NULL};
@@ -484,4 +484,4 @@ bytes_fromhex(PyTypeObject *type, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=bd0ce8f25d7e18f4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d0e9f5a1c0682910 input=a9049054013a1b77]*/
