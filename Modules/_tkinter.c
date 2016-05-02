@@ -2485,7 +2485,6 @@ Tkapp_CommandProc(CommandEvent *ev, int flags)
 /*[clinic input]
 _tkinter.tkapp.createcommand
 
-    self: self(type="TkappObject *")
     name: str
     func: object
     /
@@ -2495,7 +2494,7 @@ _tkinter.tkapp.createcommand
 static PyObject *
 _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
                                   PyObject *func)
-/*[clinic end generated code: output=2a1c79a4ee2af410 input=2bc2c046a0914234]*/
+/*[clinic end generated code: output=2a1c79a4ee2af410 input=255785cb70edc6a0]*/
 {
     PythonCmd_ClientData *data;
     int err;
@@ -2561,7 +2560,6 @@ _tkinter_tkapp_createcommand_impl(TkappObject *self, const char *name,
 /*[clinic input]
 _tkinter.tkapp.deletecommand
 
-    self: self(type="TkappObject *")
     name: str
     /
 
@@ -2569,7 +2567,7 @@ _tkinter.tkapp.deletecommand
 
 static PyObject *
 _tkinter_tkapp_deletecommand_impl(TkappObject *self, const char *name)
-/*[clinic end generated code: output=a67e8cb5845e0d2d input=b6306468f10b219c]*/
+/*[clinic end generated code: output=a67e8cb5845e0d2d input=53e9952eae1f85f5]*/
 {
     int err;
 
@@ -2762,13 +2760,11 @@ typedef struct {
 /*[clinic input]
 _tkinter.tktimertoken.deletetimerhandler
 
-    self: self(type="TkttObject *")
-
 [clinic start generated code]*/
 
 static PyObject *
 _tkinter_tktimertoken_deletetimerhandler_impl(TkttObject *self)
-/*[clinic end generated code: output=bd7fe17f328cfa55 input=25ba5dd594e52084]*/
+/*[clinic end generated code: output=bd7fe17f328cfa55 input=40bd070ff85f5cf3]*/
 {
     TkttObject *v = self;
     PyObject *func = v->func;
@@ -2894,7 +2890,6 @@ _tkinter_tkapp_createtimerhandler_impl(TkappObject *self, int milliseconds,
 /*[clinic input]
 _tkinter.tkapp.mainloop
 
-    self: self(type="TkappObject *")
     threshold: int = 0
     /
 
@@ -2902,7 +2897,7 @@ _tkinter.tkapp.mainloop
 
 static PyObject *
 _tkinter_tkapp_mainloop_impl(TkappObject *self, int threshold)
-/*[clinic end generated code: output=0ba8eabbe57841b0 input=ad57c9c1dd2b9470]*/
+/*[clinic end generated code: output=0ba8eabbe57841b0 input=036bcdcf03d5eca0]*/
 {
 #ifdef WITH_THREAD
     PyThreadState *tstate = PyThreadState_Get();
@@ -3072,13 +3067,11 @@ Tkapp_WantObjects(PyObject *self, PyObject *args)
 /*[clinic input]
 _tkinter.tkapp.willdispatch
 
-    self: self(type="TkappObject *")
-
 [clinic start generated code]*/
 
 static PyObject *
 _tkinter_tkapp_willdispatch_impl(TkappObject *self)
-/*[clinic end generated code: output=0e3f46d244642155 input=2630699767808970]*/
+/*[clinic end generated code: output=0e3f46d244642155 input=d88f5970843d6dab]*/
 {
     self->dispatching = 1;
 
