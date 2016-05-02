@@ -12,7 +12,7 @@ import tempfile
 __all__ = ["version", "bootstrap"]
 
 
-_SETUPTOOLS_VERSION = "20.3"
+_SETUPTOOLS_VERSION = "20.10.1"
 
 _PIP_VERSION = "8.1.1"
 
