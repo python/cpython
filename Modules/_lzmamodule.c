@@ -553,7 +553,6 @@ error:
 /*[clinic input]
 _lzma.LZMACompressor.compress
 
-    self: self(type="Compressor *")
     data: Py_buffer
     /
 
@@ -567,7 +566,7 @@ flush() method to finish the compression process.
 
 static PyObject *
 _lzma_LZMACompressor_compress_impl(Compressor *self, Py_buffer *data)
-/*[clinic end generated code: output=31f615136963e00f input=8b60cb13e0ce6420]*/
+/*[clinic end generated code: output=31f615136963e00f input=64019eac7f2cc8d0]*/
 {
     PyObject *result = NULL;
 
@@ -583,8 +582,6 @@ _lzma_LZMACompressor_compress_impl(Compressor *self, Py_buffer *data)
 /*[clinic input]
 _lzma.LZMACompressor.flush
 
-    self: self(type="Compressor *")
-
 Finish the compression process.
 
 Returns the compressed data left in internal buffers.
@@ -594,7 +591,7 @@ The compressor object may not be used after this method is called.
 
 static PyObject *
 _lzma_LZMACompressor_flush_impl(Compressor *self)
-/*[clinic end generated code: output=fec21f3e22504f50 input=3060fb26f9b4042c]*/
+/*[clinic end generated code: output=fec21f3e22504f50 input=6b369303f67ad0a8]*/
 {
     PyObject *result = NULL;
 
@@ -698,7 +695,6 @@ Compressor_init_raw(lzma_stream *lzs, PyObject *filterspecs)
 /*[-clinic input]
 _lzma.LZMACompressor.__init__
 
-    self: self(type="Compressor *")
     format: int(c_default="FORMAT_XZ") = FORMAT_XZ
         The container format to use for the output.  This can
         be FORMAT_XZ (default), FORMAT_ALONE, or FORMAT_RAW.
@@ -1063,7 +1059,6 @@ error:
 /*[clinic input]
 _lzma.LZMADecompressor.decompress
 
-    self: self(type="Decompressor *")
     data: Py_buffer
     max_length: Py_ssize_t=-1
 
@@ -1086,7 +1081,7 @@ the unused_data attribute.
 static PyObject *
 _lzma_LZMADecompressor_decompress_impl(Decompressor *self, Py_buffer *data,
                                        Py_ssize_t max_length)
-/*[clinic end generated code: output=ef4e20ec7122241d input=f2bb902cc1caf203]*/
+/*[clinic end generated code: output=ef4e20ec7122241d input=60c1f135820e309d]*/
 {
     PyObject *result = NULL;
 
@@ -1126,7 +1121,6 @@ Decompressor_init_raw(lzma_stream *lzs, PyObject *filterspecs)
 /*[clinic input]
 _lzma.LZMADecompressor.__init__
 
-    self: self(type="Decompressor *")
     format: int(c_default="FORMAT_AUTO") = FORMAT_AUTO
         Specifies the container format of the input stream.  If this is
         FORMAT_AUTO (the default), the decompressor will automatically detect
@@ -1152,7 +1146,7 @@ For one-shot decompression, use the decompress() function instead.
 static int
 _lzma_LZMADecompressor___init___impl(Decompressor *self, int format,
                                      PyObject *memlimit, PyObject *filters)
-/*[clinic end generated code: output=3e1821f8aa36564c input=458ca6132ef29801]*/
+/*[clinic end generated code: output=3e1821f8aa36564c input=81fe684a6c2f8a27]*/
 {
     const uint32_t decoder_flags = LZMA_TELL_ANY_CHECK | LZMA_TELL_NO_CHECK;
     uint64_t memlimit_ = UINT64_MAX;

@@ -9,9 +9,9 @@
 #include <stddef.h>
 
 /*[clinic input]
-class bytes "PyBytesObject*" "&PyBytes_Type"
+class bytes "PyBytesObject *" "&PyBytes_Type"
 [clinic start generated code]*/
-/*[clinic end generated code: output=da39a3ee5e6b4b0d input=1a1d9102afc1b00c]*/
+/*[clinic end generated code: output=da39a3ee5e6b4b0d input=7a238f965d64892b]*/
 
 #include "clinic/bytesobject.c.h"
 
@@ -1752,8 +1752,8 @@ Return a list of the sections in the bytes, using sep as the delimiter.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_split_impl(PyBytesObject*self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=8bde44dacb36ef2e input=8b809b39074abbfa]*/
+bytes_split_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
+/*[clinic end generated code: output=52126b5844c1d8ef input=8b809b39074abbfa]*/
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;
@@ -1777,7 +1777,6 @@ bytes_split_impl(PyBytesObject*self, PyObject *sep, Py_ssize_t maxsplit)
 /*[clinic input]
 bytes.partition
 
-    self: self(type="PyBytesObject *")
     sep: Py_buffer
     /
 
@@ -1793,7 +1792,7 @@ object and two empty bytes objects.
 
 static PyObject *
 bytes_partition_impl(PyBytesObject *self, Py_buffer *sep)
-/*[clinic end generated code: output=f532b392a17ff695 input=bc855dc63ca949de]*/
+/*[clinic end generated code: output=f532b392a17ff695 input=61cca95519406099]*/
 {
     return stringlib_partition(
         (PyObject*) self,
@@ -1805,7 +1804,6 @@ bytes_partition_impl(PyBytesObject *self, Py_buffer *sep)
 /*[clinic input]
 bytes.rpartition
 
-    self: self(type="PyBytesObject *")
     sep: Py_buffer
     /
 
@@ -1821,7 +1819,7 @@ objects and the original bytes object.
 
 static PyObject *
 bytes_rpartition_impl(PyBytesObject *self, Py_buffer *sep)
-/*[clinic end generated code: output=191b114cbb028e50 input=6588fff262a9170e]*/
+/*[clinic end generated code: output=191b114cbb028e50 input=67f689e63a62d478]*/
 {
     return stringlib_rpartition(
         (PyObject*) self,
@@ -1839,8 +1837,8 @@ Splitting is done starting at the end of the bytes and working to the front.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_rsplit_impl(PyBytesObject*self, PyObject *sep, Py_ssize_t maxsplit)
-/*[clinic end generated code: output=0b6570b977911d88 input=0f86c9f28f7d7b7b]*/
+bytes_rsplit_impl(PyBytesObject *self, PyObject *sep, Py_ssize_t maxsplit)
+/*[clinic end generated code: output=ba698d9ea01e1c8f input=0f86c9f28f7d7b7b]*/
 {
     Py_ssize_t len = PyBytes_GET_SIZE(self), n;
     const char *s = PyBytes_AS_STRING(self), *sub;
@@ -1878,8 +1876,8 @@ Example: b'.'.join([b'ab', b'pq', b'rs']) -> b'ab.pq.rs'.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_join(PyBytesObject*self, PyObject *iterable_of_bytes)
-/*[clinic end generated code: output=634aff14764ff997 input=7fe377b95bd549d2]*/
+bytes_join(PyBytesObject *self, PyObject *iterable_of_bytes)
+/*[clinic end generated code: output=a046f379f626f6f8 input=7fe377b95bd549d2]*/
 {
     return stringlib_bytes_join((PyObject*)self, iterable_of_bytes);
 }
@@ -2129,7 +2127,6 @@ do_argstrip(PyBytesObject *self, int striptype, PyObject *bytes)
 /*[clinic input]
 bytes.strip
 
-    self: self(type="PyBytesObject *")
     bytes: object = None
     /
 
@@ -2140,7 +2137,7 @@ If the argument is omitted or None, strip leading and trailing ASCII whitespace.
 
 static PyObject *
 bytes_strip_impl(PyBytesObject *self, PyObject *bytes)
-/*[clinic end generated code: output=c7c228d3bd104a1b input=37daa5fad1395d95]*/
+/*[clinic end generated code: output=c7c228d3bd104a1b input=8a354640e4e0b3ef]*/
 {
     return do_argstrip(self, BOTHSTRIP, bytes);
 }
@@ -2148,7 +2145,6 @@ bytes_strip_impl(PyBytesObject *self, PyObject *bytes)
 /*[clinic input]
 bytes.lstrip
 
-    self: self(type="PyBytesObject *")
     bytes: object = None
     /
 
@@ -2159,7 +2155,7 @@ If the argument is omitted or None, strip leading  ASCII whitespace.
 
 static PyObject *
 bytes_lstrip_impl(PyBytesObject *self, PyObject *bytes)
-/*[clinic end generated code: output=28602e586f524e82 input=88811b09dfbc2988]*/
+/*[clinic end generated code: output=28602e586f524e82 input=9baff4398c3f6857]*/
 {
     return do_argstrip(self, LEFTSTRIP, bytes);
 }
@@ -2167,7 +2163,6 @@ bytes_lstrip_impl(PyBytesObject *self, PyObject *bytes)
 /*[clinic input]
 bytes.rstrip
 
-    self: self(type="PyBytesObject *")
     bytes: object = None
     /
 
@@ -2178,7 +2173,7 @@ If the argument is omitted or None, strip trailing ASCII whitespace.
 
 static PyObject *
 bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes)
-/*[clinic end generated code: output=547e3815c95447da input=8f93c9cd361f0140]*/
+/*[clinic end generated code: output=547e3815c95447da input=b78af445c727e32b]*/
 {
     return do_argstrip(self, RIGHTSTRIP, bytes);
 }
@@ -2235,7 +2230,6 @@ bytes_count(PyBytesObject *self, PyObject *args)
 /*[clinic input]
 bytes.translate
 
-    self: self(type="PyBytesObject *")
     table: object
         Translation table, which must be a bytes object of length 256.
     [
@@ -2252,7 +2246,7 @@ The remaining characters are mapped through the given translation table.
 static PyObject *
 bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1,
                      PyObject *deletechars)
-/*[clinic end generated code: output=233df850eb50bf8d input=d8fa5519d7cc4be7]*/
+/*[clinic end generated code: output=233df850eb50bf8d input=ca20edf39d780d49]*/
 {
     char *input, *output;
     Py_buffer table_view = {NULL, NULL};
@@ -2909,9 +2903,9 @@ replaced.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_replace_impl(PyBytesObject*self, Py_buffer *old, Py_buffer *new,
+bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
                    Py_ssize_t count)
-/*[clinic end generated code: output=403dc9d7a83c5a1d input=b2fbbf0bf04de8e5]*/
+/*[clinic end generated code: output=994fa588b6b9c104 input=b2fbbf0bf04de8e5]*/
 {
     return (PyObject *)replace((PyBytesObject *) self,
                                (const char *)old->buf, old->len,
@@ -3078,9 +3072,9 @@ Decode the bytes using the codec registered for encoding.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_decode_impl(PyBytesObject*self, const char *encoding,
+bytes_decode_impl(PyBytesObject *self, const char *encoding,
                   const char *errors)
-/*[clinic end generated code: output=2d2016ff8e0bb176 input=958174769d2a40ca]*/
+/*[clinic end generated code: output=5649a53dde27b314 input=958174769d2a40ca]*/
 {
     return PyUnicode_FromEncodedObject((PyObject*)self, encoding, errors);
 }
@@ -3098,8 +3092,8 @@ true.
 [clinic start generated code]*/
 
 static PyObject *
-bytes_splitlines_impl(PyBytesObject*self, int keepends)
-/*[clinic end generated code: output=995c3598f7833cad input=7f4aac67144f9944]*/
+bytes_splitlines_impl(PyBytesObject *self, int keepends)
+/*[clinic end generated code: output=3484149a5d880ffb input=7f4aac67144f9944]*/
 {
     return stringlib_splitlines(
         (PyObject*) self, PyBytes_AS_STRING(self),
