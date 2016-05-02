@@ -159,7 +159,7 @@ lock_PyThread_acquire_lock(lockobject *self, PyObject *args, PyObject *kwds)
 }
 
 PyDoc_STRVAR(acquire_doc,
-"acquire([wait]) -> bool\n\
+"acquire(blocking=True, timeout=-1) -> bool\n\
 (acquire_lock() is an obsolete synonym)\n\
 \n\
 Lock the lock.  Without argument, this blocks if the lock is already\n\
@@ -1134,7 +1134,8 @@ PyDoc_STRVAR(allocate_doc,
 "allocate_lock() -> lock object\n\
 (allocate() is an obsolete synonym)\n\
 \n\
-Create a new lock object.  See help(LockType) for information about locks.");
+Create a new lock object. See help(type(threading.Lock())) for\n\
+information about locks.");
 
 static PyObject *
 thread_get_ident(PyObject *self)
@@ -1326,7 +1327,7 @@ The 'threading' module provides a more convenient interface.");
 
 PyDoc_STRVAR(lock_doc,
 "A lock object is a synchronization primitive.  To create a lock,\n\
-call the PyThread_allocate_lock() function.  Methods are:\n\
+call threading.Lock().  Methods are:\n\
 \n\
 acquire() -- lock the lock, possibly blocking until it can be obtained\n\
 release() -- unlock of the lock\n\
