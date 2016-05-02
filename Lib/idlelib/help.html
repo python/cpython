@@ -163,7 +163,7 @@ be undone.</dd>
 <dt>Find Selection</dt>
 <dd>Search for the currently selected string, if there is one.</dd>
 <dt>Find in Files...</dt>
-<dd>Open a file search dialog.  Put results in an new output window.</dd>
+<dd>Open a file search dialog.  Put results in a new output window.</dd>
 <dt>Replace...</dt>
 <dd>Open a search-and-replace dialog.</dd>
 <dt>Go to Line</dt>
@@ -517,13 +517,15 @@ set in the Options dialog.</li>
 <h3>24.6.3.2. IDLE-console differences<a class="headerlink" href="#idle-console-differences" title="Permalink to this headline">¶</a></h3>
 <p>As much as possible, the result of executing Python code with IDLE is the
 same as executing the same code in a console window.  However, the different
-interface and operation occasionally affects results.</p>
-<p>For instance, IDLE normally executes user code in a separate process from
-the IDLE GUI itself.  The IDLE versions of sys.stdin, .stdout, and .stderr in the
-execution process get input from and send output to the GUI process,
-which keeps control of the keyboard and screen.  This is normally transparent,
-but code that access these object will see different attribute values.
-Also, functions that directly access the keyboard and screen will not work.</p>
+interface and operation occasionally affects visible results.  For instance,
+<code class="docutils literal"><span class="pre">sys.modules</span></code> starts with more entries.</p>
+<p>IDLE also replaces <code class="docutils literal"><span class="pre">sys.stdin</span></code>, <code class="docutils literal"><span class="pre">sys.stdout</span></code>, and <code class="docutils literal"><span class="pre">sys.stderr</span></code> with
+objects that get input from and send output to the Shell window.
+When this window has the focus, it controls the keyboard and screen.
+This is normally transparent, but functions that directly access the keyboard
+and screen will not work.  If <code class="docutils literal"><span class="pre">sys</span></code> is reset with <code class="docutils literal"><span class="pre">reload(sys)</span></code>,
+IDLE&#8217;s changes are lost and things like <code class="docutils literal"><span class="pre">input</span></code>, <code class="docutils literal"><span class="pre">raw_input</span></code>, and
+<code class="docutils literal"><span class="pre">print</span></code> will not work correctly.</p>
 <p>With IDLE&#8217;s Shell, one enters, edits, and recalls complete statements.
 Some consoles only work with a single physical line at a time.</p>
 </div>
@@ -699,7 +701,7 @@ are currently:</p>
     The Python Software Foundation is a non-profit corporation.
     <a href="https://www.python.org/psf/donations/">Please donate.</a>
     <br />
-    Last updated on Mar 20, 2016.
+    Last updated on May 02, 2016.
     <a href="../bugs.html">Found a bug</a>?
     <br />
     Created using <a href="http://sphinx.pocoo.org/">Sphinx</a> 1.3.3.
