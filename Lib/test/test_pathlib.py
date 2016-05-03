@@ -2062,7 +2062,7 @@ class PosixPathTest(_BasePathTest, unittest.TestCase):
         import pwd
         pwdent = pwd.getpwuid(os.getuid())
         username = pwdent.pw_name
-        userhome = pwdent.pw_dir.rstrip('/')
+        userhome = pwdent.pw_dir.rstrip('/') or '/'
         # find arbitrary different user (if exists)
         for pwdent in pwd.getpwall():
             othername = pwdent.pw_name
