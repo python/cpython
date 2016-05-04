@@ -699,13 +699,12 @@ class ExactRatioTest(unittest.TestCase):
             num, den = statistics._exact_ratio(x)
             self.assertEqual(x, num/den)
 
-    @unittest.skipIf(True, "temporarily disabled: see #25928")
     def test_decimal(self):
         D = Decimal
         _exact_ratio = statistics._exact_ratio
-        self.assertEqual(_exact_ratio(D("0.125")), (125, 1000))
-        self.assertEqual(_exact_ratio(D("12.345")), (12345, 1000))
-        self.assertEqual(_exact_ratio(D("-1.98")), (-198, 100))
+        self.assertEqual(_exact_ratio(D("0.125")), (1, 8))
+        self.assertEqual(_exact_ratio(D("12.345")), (2469, 200))
+        self.assertEqual(_exact_ratio(D("-1.98")), (-99, 50))
 
     def test_inf(self):
         INF = float("INF")
@@ -731,7 +730,6 @@ class ExactRatioTest(unittest.TestCase):
             self.assertIs(ratio[1], None)
             self.assertEqual(type(ratio[0]), type(nan))
 
-    @unittest.skipIf(True, "temporarily disabled: see #25928")
     def test_decimal_nan(self):
         NAN = Decimal("NAN")
         sNAN = Decimal("sNAN")
@@ -745,18 +743,18 @@ class ExactRatioTest(unittest.TestCase):
 
 
 class DecimalToRatioTest(unittest.TestCase):
-    # Test _decimal_to_ratio private function.
+    # Test _exact_ratio private function.
 
     def test_infinity(self):
         # Test that INFs are handled correctly.
         inf = Decimal('INF')
-        self.assertEqual(statistics._decimal_to_ratio(inf), (inf, None))
-        self.assertEqual(statistics._decimal_to_ratio(-inf), (-inf, None))
+        self.assertEqual(statistics._exact_ratio(inf), (inf, None))
+        self.assertEqual(statistics._exact_ratio(-inf), (-inf, None))
 
     def test_nan(self):
         # Test that NANs are handled correctly.
         for nan in (Decimal('NAN'), Decimal('sNAN')):
-            num, den = statistics._decimal_to_ratio(nan)
+            num, den = statistics._exact_ratio(nan)
             # Because NANs always compare non-equal, we cannot use assertEqual.
             # Nor can we use an identity test, as we don't guarantee anything
             # about the object identity.
@@ -769,30 +767,30 @@ class DecimalToRatioTest(unittest.TestCase):
         for d in numbers:
             # First test positive decimals.
             assert d > 0
-            num, den = statistics._decimal_to_ratio(d)
+            num, den = statistics._exact_ratio(d)
             self.assertGreaterEqual(num, 0)
             self.assertGreater(den, 0)
             # Then test negative decimals.
-            num, den = statistics._decimal_to_ratio(-d)
+            num, den = statistics._exact_ratio(-d)
             self.assertLessEqual(num, 0)
             self.assertGreater(den, 0)
 
     def test_negative_exponent(self):
         # Test result when the exponent is negative.
-        t = statistics._decimal_to_ratio(Decimal("0.1234"))
-        self.assertEqual(t, (1234, 10000))
+        t = statistics._exact_ratio(Decimal("0.1234"))
+        self.assertEqual(t, (617, 5000))
 
     def test_positive_exponent(self):
         # Test results when the exponent is positive.
-        t = statistics._decimal_to_ratio(Decimal("1.234e7"))
+        t = statistics._exact_ratio(Decimal("1.234e7"))
         self.assertEqual(t, (12340000, 1))
 
     def test_regression_20536(self):
         # Regression test for issue 20536.
         # See http://bugs.python.org/issue20536
-        t = statistics._decimal_to_ratio(Decimal("1e2"))
+        t = statistics._exact_ratio(Decimal("1e2"))
         self.assertEqual(t, (100, 1))
-        t = statistics._decimal_to_ratio(Decimal("1.47e5"))
+        t = statistics._exact_ratio(Decimal("1.47e5"))
         self.assertEqual(t, (147000, 1))
 
 
@@ -1260,7 +1258,6 @@ class SumSpecialValues(NumericTestCase):
         with decimal.localcontext(decimal.BasicContext):
             self.assertRaises(decimal.InvalidOperation, statistics._sum, data)
 
-    @unittest.skipIf(True, "temporarily disabled: see #25928")
     def test_decimal_snan_raises(self):
         # Adding sNAN should raise InvalidOperation.
         sNAN = Decimal('sNAN')
