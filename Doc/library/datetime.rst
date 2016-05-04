@@ -1869,7 +1869,7 @@ format codes.
 +-----------+--------------------------------+------------------------+-------+
 | ``%z``    | UTC offset in the form +HHMM   | (empty), +0000, -0400, | \(6)  |
 |           | or -HHMM (empty string if the  | +1030                  |       |
-|           | the object is naive).          |                        |       |
+|           | object is naive).              |                        |       |
 +-----------+--------------------------------+------------------------+-------+
 | ``%Z``    | Time zone name (empty string   | (empty), UTC, EST, CST |       |
 |           | if the object is naive).       |                        |       |
