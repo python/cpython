@@ -25,7 +25,7 @@ to avoid the expense of doing their own locking).
 #ifdef HAVE_DLFCN_H
 #include <dlfcn.h>
 #endif
-#ifndef RTLD_LAZY
+#if !HAVE_DECL_RTLD_LAZY
 #define RTLD_LAZY 1
 #endif
 #endif
@@ -91,7 +91,7 @@ PyInterpreterState_New(void)
         interp->fscodec_initialized = 0;
         interp->importlib = NULL;
 #ifdef HAVE_DLOPEN
-#ifdef RTLD_NOW
+#if HAVE_DECL_RTLD_NOW
         interp->dlopenflags = RTLD_NOW;
 #else
         interp->dlopenflags = RTLD_LAZY;
