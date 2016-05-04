@@ -12895,25 +12895,25 @@ all_ins(PyObject *m)
     if (PyModule_AddIntMacro(m, XATTR_SIZE_MAX)) return -1;
 #endif
 
-#ifdef RTLD_LAZY
+#if HAVE_DECL_RTLD_LAZY
     if (PyModule_AddIntMacro(m, RTLD_LAZY)) return -1;
 #endif
-#ifdef RTLD_NOW
+#if HAVE_DECL_RTLD_NOW
     if (PyModule_AddIntMacro(m, RTLD_NOW)) return -1;
 #endif
-#ifdef RTLD_GLOBAL
+#if HAVE_DECL_RTLD_GLOBAL
     if (PyModule_AddIntMacro(m, RTLD_GLOBAL)) return -1;
 #endif
-#ifdef RTLD_LOCAL
+#if HAVE_DECL_RTLD_LOCAL
     if (PyModule_AddIntMacro(m, RTLD_LOCAL)) return -1;
 #endif
-#ifdef RTLD_NODELETE
+#if HAVE_DECL_RTLD_NODELETE
     if (PyModule_AddIntMacro(m, RTLD_NODELETE)) return -1;
 #endif
-#ifdef RTLD_NOLOAD
+#if HAVE_DECL_RTLD_NOLOAD
     if (PyModule_AddIntMacro(m, RTLD_NOLOAD)) return -1;
 #endif
-#ifdef RTLD_DEEPBIND
+#if HAVE_DECL_RTLD_DEEPBIND
     if (PyModule_AddIntMacro(m, RTLD_DEEPBIND)) return -1;
 #endif
 

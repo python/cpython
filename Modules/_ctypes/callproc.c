@@ -1307,7 +1307,7 @@ static PyObject *py_dl_open(PyObject *self, PyObject *args)
     PyObject *name, *name2;
     char *name_str;
     void * handle;
-#ifdef RTLD_LOCAL
+#if HAVE_DECL_RTLD_LOCAL
     int mode = RTLD_NOW | RTLD_LOCAL;
 #else
     /* cygwin doesn't define RTLD_LOCAL */

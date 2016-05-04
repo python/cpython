@@ -167,6 +167,34 @@
    */
 #undef HAVE_DECL_ISNAN
 
+/* Define to 1 if you have the declaration of `RTLD_DEEPBIND', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_DEEPBIND
+
+/* Define to 1 if you have the declaration of `RTLD_GLOBAL', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_GLOBAL
+
+/* Define to 1 if you have the declaration of `RTLD_LAZY', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_LAZY
+
+/* Define to 1 if you have the declaration of `RTLD_LOCAL', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_LOCAL
+
+/* Define to 1 if you have the declaration of `RTLD_NODELETE', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_NODELETE
+
+/* Define to 1 if you have the declaration of `RTLD_NOLOAD', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_NOLOAD
+
+/* Define to 1 if you have the declaration of `RTLD_NOW', and to 0 if you
+   don't. */
+#undef HAVE_DECL_RTLD_NOW
+
 /* Define to 1 if you have the declaration of `tzname', and to 0 if you don't.
    */
 #undef HAVE_DECL_TZNAME
