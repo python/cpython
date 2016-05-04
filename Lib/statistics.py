@@ -105,6 +105,7 @@ import math
 from fractions import Fraction
 from decimal import Decimal
 from itertools import groupby
+from bisect import bisect_left, bisect_right
 
 
 
@@ -223,54 +224,24 @@ def _exact_ratio(x):
         # Optimise the common case of floats. We expect that the most often
         # used numeric type will be builtin floats, so try to make this as
         # fast as possible.
-        if type(x) is float:
+        if type(x) is float or type(x) is Decimal:
             return x.as_integer_ratio()
         try:
             # x may be an int, Fraction, or Integral ABC.
             return (x.numerator, x.denominator)
         except AttributeError:
             try:
-                # x may be a float subclass.
+                # x may be a float or Decimal subclass.
                 return x.as_integer_ratio()
             except AttributeError:
-                try:
-                    # x may be a Decimal.
-                    return _decimal_to_ratio(x)
-                except AttributeError:
-                    # Just give up?
-                    pass
+                # Just give up?
+                pass
     except (OverflowError, ValueError):
         # float NAN or INF.
-        assert not math.isfinite(x)
+        assert not _isfinite(x)
         return (x, None)
     msg = "can't convert type '{}' to numerator/denominator"
     raise TypeError(msg.format(type(x).__name__))
-
-
-# FIXME This is faster than Fraction.from_decimal, but still too slow.
-def _decimal_to_ratio(d):
-    """Convert Decimal d to exact integer ratio (numerator, denominator).
-
-    >>> from decimal import Decimal
-    >>> _decimal_to_ratio(Decimal("2.6"))
-    (26, 10)
-
-    """
-    sign, digits, exp = d.as_tuple()
-    if exp in ('F', 'n', 'N'):  # INF, NAN, sNAN
-        assert not d.is_finite()
-        return (d, None)
-    num = 0
-    for digit in digits:
-        num = num*10 + digit
-    if exp < 0:
-        den = 10**-exp
-    else:
-        num *= 10**exp
-        den = 1
-    if sign:
-        num = -num
-    return (num, den)
 
 
 def _convert(value, T):
@@ -304,6 +275,21 @@ def _counts(data):
             break
     return table
 
+
+def _find_lteq(a, x):
+    'Locate the leftmost value exactly equal to x'
+    i = bisect_left(a, x)
+    if i != len(a) and a[i] == x:
+        return i
+    raise ValueError
+
+
+def _find_rteq(a, l, x):
+    'Locate the rightmost value exactly equal to x'
+    i = bisect_right(a, x, lo=l)
+    if i != (len(a)+1) and a[i-1] == x:
+        return i-1
+    raise ValueError
 
 # === Measures of central tendency (averages) ===
 
@@ -442,9 +428,15 @@ def median_grouped(data, interval=1):
     except TypeError:
         # Mixed type. For now we just coerce to float.
         L = float(x) - float(interval)/2
-    cf = data.index(x)  # Number of values below the median interval.
-    # FIXME The following line could be more efficient for big lists.
-    f = data.count(x)  # Number of data points in the median interval.
+
+    # Uses bisection search to search for x in data with log(n) time complexity
+    # Find the position of leftmost occurence of x in data
+    l1 = _find_lteq(data, x)
+    # Find the position of rightmost occurence of x in data[l1...len(data)]
+    # Assuming always l1 <= l2
+    l2 = _find_rteq(data, l1, x)
+    cf = l1
+    f = l2 - l1 + 1
     return L + interval*(n/2 - cf)/f
 
 
