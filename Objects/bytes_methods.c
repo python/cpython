@@ -387,3 +387,427 @@ _Py_bytes_maketrans(Py_buffer *frm, Py_buffer *to)
 
     return res;
 }
+
+#define FASTSEARCH fastsearch
+#define STRINGLIB(F) stringlib_##F
+#define STRINGLIB_CHAR char
+#define STRINGLIB_SIZEOF_CHAR 1
+
+#include "stringlib/fastsearch.h"
+#include "stringlib/count.h"
+#include "stringlib/find.h"
+
+/*
+Wraps stringlib_parse_args_finds() and additionally checks whether the
+first argument is an integer in range(0, 256).
+
+If this is the case, writes the integer value to the byte parameter
+and sets subobj to NULL. Otherwise, sets the first argument to subobj
+and doesn't touch byte. The other parameters are similar to those of
+stringlib_parse_args_finds().
+*/
+
+Py_LOCAL_INLINE(int)
+parse_args_finds_byte(const char *function_name, PyObject *args,
+                      PyObject **subobj, char *byte,
+                      Py_ssize_t *start, Py_ssize_t *end)
+{
+    PyObject *tmp_subobj;
+    Py_ssize_t ival;
+    PyObject *err;
+
+    if(!stringlib_parse_args_finds(function_name, args, &tmp_subobj,
+                                   start, end))
+        return 0;
+
+    if (!PyNumber_Check(tmp_subobj)) {
+        *subobj = tmp_subobj;
+        return 1;
+    }
+
+    ival = PyNumber_AsSsize_t(tmp_subobj, PyExc_OverflowError);
+    if (ival == -1) {
+        err = PyErr_Occurred();
+        if (err && !PyErr_GivenExceptionMatches(err, PyExc_OverflowError)) {
+            PyErr_Clear();
+            *subobj = tmp_subobj;
+            return 1;
+        }
+    }
+
+    if (ival < 0 || ival > 255) {
+        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+        return 0;
+    }
+
+    *subobj = NULL;
+    *byte = (char)ival;
+    return 1;
+}
+
+/* helper macro to fixup start/end slice values */
+#define ADJUST_INDICES(start, end, len)         \
+    if (end > len)                          \
+        end = len;                          \
+    else if (end < 0) {                     \
+        end += len;                         \
+        if (end < 0)                        \
+        end = 0;                        \
+    }                                       \
+    if (start < 0) {                        \
+        start += len;                       \
+        if (start < 0)                      \
+        start = 0;                      \
+    }
+
+Py_LOCAL_INLINE(Py_ssize_t)
+find_internal(const char *str, Py_ssize_t len,
+              const char *function_name, PyObject *args, int dir)
+{
+    PyObject *subobj;
+    char byte;
+    Py_buffer subbuf;
+    const char *sub;
+    Py_ssize_t sub_len;
+    Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
+    Py_ssize_t res;
+
+    if (!parse_args_finds_byte(function_name, args,
+                               &subobj, &byte, &start, &end))
+        return -2;
+
+    if (subobj) {
+        if (PyObject_GetBuffer(subobj, &subbuf, PyBUF_SIMPLE) != 0)
+            return -2;
+
+        sub = subbuf.buf;
+        sub_len = subbuf.len;
+    }
+    else {
+        sub = &byte;
+        sub_len = 1;
+    }
+
+    ADJUST_INDICES(start, end, len);
+    if (end - start < sub_len)
+        res = -1;
+    else if (sub_len == 1) {
+        if (dir > 0)
+            res = stringlib_find_char(
+                str + start, end - start,
+                *sub);
+        else
+            res = stringlib_rfind_char(
+                str + start, end - start,
+                *sub);
+        if (res >= 0)
+            res += start;
+    }
+    else {
+        if (dir > 0)
+            res = stringlib_find_slice(
+                str, len,
+                sub, sub_len, start, end);
+        else
+            res = stringlib_rfind_slice(
+                str, len,
+                sub, sub_len, start, end);
+    }
+
+    if (subobj)
+        PyBuffer_Release(&subbuf);
+
+    return res;
+}
+
+PyDoc_STRVAR_shared(_Py_find__doc__,
+"B.find(sub[, start[, end]]) -> int\n\
+\n\
+Return the lowest index in B where subsection sub is found,\n\
+such that sub is contained within B[start,end].  Optional\n\
+arguments start and end are interpreted as in slice notation.\n\
+\n\
+Return -1 on failure.");
+
+PyObject *
+_Py_bytes_find(const char *str, Py_ssize_t len, PyObject *args)
+{
+    Py_ssize_t result = find_internal(str, len, "find", args, +1);
+    if (result == -2)
+        return NULL;
+    return PyLong_FromSsize_t(result);
+}
+
+PyDoc_STRVAR_shared(_Py_index__doc__,
+"B.index(sub[, start[, end]]) -> int\n\
+\n\
+Like B.find() but raise ValueError when the subsection is not found.");
+
+PyObject *
+_Py_bytes_index(const char *str, Py_ssize_t len, PyObject *args)
+{
+    Py_ssize_t result = find_internal(str, len, "index", args, +1);
+    if (result == -2)
+        return NULL;
+    if (result == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "subsection not found");
+        return NULL;
+    }
+    return PyLong_FromSsize_t(result);
+}
+
+PyDoc_STRVAR_shared(_Py_rfind__doc__,
+"B.rfind(sub[, start[, end]]) -> int\n\
+\n\
+Return the highest index in B where subsection sub is found,\n\
+such that sub is contained within B[start,end].  Optional\n\
+arguments start and end are interpreted as in slice notation.\n\
+\n\
+Return -1 on failure.");
+
+PyObject *
+_Py_bytes_rfind(const char *str, Py_ssize_t len, PyObject *args)
+{
+    Py_ssize_t result = find_internal(str, len, "rfind", args, -1);
+    if (result == -2)
+        return NULL;
+    return PyLong_FromSsize_t(result);
+}
+
+PyDoc_STRVAR_shared(_Py_rindex__doc__,
+"B.rindex(sub[, start[, end]]) -> int\n\
+\n\
+Like B.rfind() but raise ValueError when the subsection is not found.");
+
+PyObject *
+_Py_bytes_rindex(const char *str, Py_ssize_t len, PyObject *args)
+{
+    Py_ssize_t result = find_internal(str, len, "rindex", args, -1);
+    if (result == -2)
+        return NULL;
+    if (result == -1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "subsection not found");
+        return NULL;
+    }
+    return PyLong_FromSsize_t(result);
+}
+
+PyDoc_STRVAR_shared(_Py_count__doc__,
+"B.count(sub[, start[, end]]) -> int\n\
+\n\
+Return the number of non-overlapping occurrences of subsection sub in\n\
+bytes B[start:end].  Optional arguments start and end are interpreted\n\
+as in slice notation.");
+
+PyObject *
+_Py_bytes_count(const char *str, Py_ssize_t len, PyObject *args)
+{
+    PyObject *sub_obj;
+    const char *sub;
+    Py_ssize_t sub_len;
+    char byte;
+    Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
+
+    Py_buffer vsub;
+    PyObject *count_obj;
+
+    if (!parse_args_finds_byte("count", args,
+                               &sub_obj, &byte, &start, &end))
+        return NULL;
+
+    if (sub_obj) {
+        if (PyObject_GetBuffer(sub_obj, &vsub, PyBUF_SIMPLE) != 0)
+            return NULL;
+
+        sub = vsub.buf;
+        sub_len = vsub.len;
+    }
+    else {
+        sub = &byte;
+        sub_len = 1;
+    }
+
+    ADJUST_INDICES(start, end, len);
+
+    count_obj = PyLong_FromSsize_t(
+        stringlib_count(str + start, end - start, sub, sub_len, PY_SSIZE_T_MAX)
+        );
+
+    if (sub_obj)
+        PyBuffer_Release(&vsub);
+
+    return count_obj;
+}
+
+int
+_Py_bytes_contains(const char *str, Py_ssize_t len, PyObject *arg)
+{
+    Py_ssize_t ival = PyNumber_AsSsize_t(arg, PyExc_ValueError);
+    if (ival == -1 && PyErr_Occurred()) {
+        Py_buffer varg;
+        Py_ssize_t pos;
+        PyErr_Clear();
+        if (PyObject_GetBuffer(arg, &varg, PyBUF_SIMPLE) != 0)
+            return -1;
+        pos = stringlib_find(str, len,
+                             varg.buf, varg.len, 0);
+        PyBuffer_Release(&varg);
+        return pos >= 0;
+    }
+    if (ival < 0 || ival >= 256) {
+        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
+        return -1;
+    }
+
+    return memchr(str, (int) ival, len) != NULL;
+}
+
+
+/* Matches the end (direction >= 0) or start (direction < 0) of the buffer
+ * against substr, using the start and end arguments. Returns
+ * -1 on error, 0 if not found and 1 if found.
+ */
+Py_LOCAL(int)
+tailmatch(const char *str, Py_ssize_t len, PyObject *substr,
+          Py_ssize_t start, Py_ssize_t end, int direction)
+{
+    Py_buffer sub_view = {NULL, NULL};
+    const char *sub;
+    Py_ssize_t slen;
+
+    if (PyBytes_Check(substr)) {
+        sub = PyBytes_AS_STRING(substr);
+        slen = PyBytes_GET_SIZE(substr);
+    }
+    else {
+        if (PyObject_GetBuffer(substr, &sub_view, PyBUF_SIMPLE) != 0)
+            return -1;
+        sub = sub_view.buf;
+        slen = sub_view.len;
+    }
+
+    ADJUST_INDICES(start, end, len);
+
+    if (direction < 0) {
+        /* startswith */
+        if (start + slen > len)
+            goto notfound;
+    } else {
+        /* endswith */
+        if (end - start < slen || start > len)
+            goto notfound;
+
+        if (end - slen > start)
+            start = end - slen;
+    }
+    if (end - start < slen)
+        goto notfound;
+    if (memcmp(str + start, sub, slen) != 0)
+        goto notfound;
+
+    PyBuffer_Release(&sub_view);
+    return 1;
+
+notfound:
+    PyBuffer_Release(&sub_view);
+    return 0;
+}
+
+Py_LOCAL(PyObject *)
+_Py_bytes_tailmatch(const char *str, Py_ssize_t len,
+                    const char *function_name, PyObject *args,
+                    int direction)
+{
+    Py_ssize_t start = 0;
+    Py_ssize_t end = PY_SSIZE_T_MAX;
+    PyObject *subobj;
+    int result;
+
+    if (!stringlib_parse_args_finds(function_name, args, &subobj, &start, &end))
+        return NULL;
+    if (PyTuple_Check(subobj)) {
+        Py_ssize_t i;
+        for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
+            result = tailmatch(str, len, PyTuple_GET_ITEM(subobj, i),
+                               start, end, direction);
+            if (result == -1)
+                return NULL;
+            else if (result) {
+                Py_RETURN_TRUE;
+            }
+        }
+        Py_RETURN_FALSE;
+    }
+    result = tailmatch(str, len, subobj, start, end, direction);
+    if (result == -1) {
+        if (PyErr_ExceptionMatches(PyExc_TypeError))
+            PyErr_Format(PyExc_TypeError,
+                         "%s first arg must be bytes or a tuple of bytes, "
+                         "not %s",
+                         function_name, Py_TYPE(subobj)->tp_name);
+        return NULL;
+    }
+    else
+        return PyBool_FromLong(result);
+}
+
+PyDoc_STRVAR_shared(_Py_startswith__doc__,
+"B.startswith(prefix[, start[, end]]) -> bool\n\
+\n\
+Return True if B starts with the specified prefix, False otherwise.\n\
+With optional start, test B beginning at that position.\n\
+With optional end, stop comparing B at that position.\n\
+prefix can also be a tuple of bytes to try.");
+
+PyObject *
+_Py_bytes_startswith(const char *str, Py_ssize_t len, PyObject *args)
+{
+    return _Py_bytes_tailmatch(str, len, "startswith", args, -1);
+}
+
+PyDoc_STRVAR_shared(_Py_endswith__doc__,
+"B.endswith(suffix[, start[, end]]) -> bool\n\
+\n\
+Return True if B ends with the specified suffix, False otherwise.\n\
+With optional start, test B beginning at that position.\n\
+With optional end, stop comparing B at that position.\n\
+suffix can also be a tuple of bytes to try.");
+
+PyObject *
+_Py_bytes_endswith(const char *str, Py_ssize_t len, PyObject *args)
+{
+    return _Py_bytes_tailmatch(str, len, "endswith", args, +1);
+}
+
+PyDoc_STRVAR_shared(_Py_expandtabs__doc__,
+"B.expandtabs(tabsize=8) -> copy of B\n\
+\n\
+Return a copy of B where all tab characters are expanded using spaces.\n\
+If tabsize is not given, a tab size of 8 characters is assumed.");
+
+PyDoc_STRVAR_shared(_Py_ljust__doc__,
+"B.ljust(width[, fillchar]) -> copy of B\n"
+"\n"
+"Return B left justified in a string of length width. Padding is\n"
+"done using the specified fill character (default is a space).");
+
+PyDoc_STRVAR_shared(_Py_rjust__doc__,
+"B.rjust(width[, fillchar]) -> copy of B\n"
+"\n"
+"Return B right justified in a string of length width. Padding is\n"
+"done using the specified fill character (default is a space)");
+
+PyDoc_STRVAR_shared(_Py_center__doc__,
+"B.center(width[, fillchar]) -> copy of B\n"
+"\n"
+"Return B centered in a string of length width.  Padding is\n"
+"done using the specified fill character (default is a space).");
+
+PyDoc_STRVAR_shared(_Py_zfill__doc__,
+"B.zfill(width) -> copy of B\n"
+"\n"
+"Pad a numeric string B with zeros on the left, to fill a field\n"
+"of the specified width.  B is never truncated.");
+

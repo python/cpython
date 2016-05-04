@@ -11244,6 +11244,25 @@ PyUnicode_AppendAndDel(PyObject **pleft, PyObject *right)
     Py_XDECREF(right);
 }
 
+/*
+Wraps stringlib_parse_args_finds() and additionally ensures that the
+first argument is a unicode object.
+*/
+
+Py_LOCAL_INLINE(int)
+parse_args_finds_unicode(const char * function_name, PyObject *args,
+                         PyObject **substring,
+                         Py_ssize_t *start, Py_ssize_t *end)
+{
+    if(stringlib_parse_args_finds(function_name, args, substring,
+                                  start, end)) {
+        if (ensure_unicode(*substring) < 0)
+            return 0;
+        return 1;
+    }
+    return 0;
+}
+
 PyDoc_STRVAR(count__doc__,
              "S.count(sub[, start[, end]]) -> int\n\
 \n\
@@ -11262,8 +11281,7 @@ unicode_count(PyObject *self, PyObject *args)
     void *buf1, *buf2;
     Py_ssize_t len1, len2, iresult;
 
-    if (!stringlib_parse_args_finds_unicode("count", args, &substring,
-                                            &start, &end))
+    if (!parse_args_finds_unicode("count", args, &substring, &start, &end))
         return NULL;
 
     kind1 = PyUnicode_KIND(self);
@@ -11445,8 +11463,7 @@ unicode_find(PyObject *self, PyObject *args)
     Py_ssize_t end = 0;
     Py_ssize_t result;
 
-    if (!stringlib_parse_args_finds_unicode("find", args, &substring,
-                                            &start, &end))
+    if (!parse_args_finds_unicode("find", args, &substring, &start, &end))
         return NULL;
 
     if (PyUnicode_READY(self) == -1)
@@ -11525,8 +11542,7 @@ unicode_index(PyObject *self, PyObject *args)
     Py_ssize_t start = 0;
     Py_ssize_t end = 0;
 
-    if (!stringlib_parse_args_finds_unicode("index", args, &substring,
-                                            &start, &end))
+    if (!parse_args_finds_unicode("index", args, &substring, &start, &end))
         return NULL;
 
     if (PyUnicode_READY(self) == -1)
@@ -12555,8 +12571,7 @@ unicode_rfind(PyObject *self, PyObject *args)
     Py_ssize_t end = 0;
     Py_ssize_t result;
 
-    if (!stringlib_parse_args_finds_unicode("rfind", args, &substring,
-                                            &start, &end))
+    if (!parse_args_finds_unicode("rfind", args, &substring, &start, &end))
         return NULL;
 
     if (PyUnicode_READY(self) == -1)
@@ -12584,8 +12599,7 @@ unicode_rindex(PyObject *self, PyObject *args)
     Py_ssize_t end = 0;
     Py_ssize_t result;
 
-    if (!stringlib_parse_args_finds_unicode("rindex", args, &substring,
-                                            &start, &end))
+    if (!parse_args_finds_unicode("rindex", args, &substring, &start, &end))
         return NULL;
 
     if (PyUnicode_READY(self) == -1)
