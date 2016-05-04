@@ -10,6 +10,12 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #20120: Use RawConfigParser for .pypirc parsing,
+  removing support for interpolation unintentionally added
+  with move to Python 3. Behavior no longer does any
+  interpolation in .pypirc files, matching behavior in Python
+  2.7 and Setuptools 19.0.
+
 - Issue #26249: Memory functions of the :c:func:`PyMem_Malloc` domain
   (:c:data:`PYMEM_DOMAIN_MEM`) now use the :ref:`pymalloc allocator <pymalloc>`
   rather than system :c:func:`malloc`. Applications calling
