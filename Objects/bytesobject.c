@@ -486,11 +486,11 @@ formatlong(PyObject *v, int flags, int prec, int type)
 static int
 byte_converter(PyObject *arg, char *p)
 {
-    if (PyBytes_Check(arg) && PyBytes_Size(arg) == 1) {
+    if (PyBytes_Check(arg) && PyBytes_GET_SIZE(arg) == 1) {
         *p = PyBytes_AS_STRING(arg)[0];
         return 1;
     }
-    else if (PyByteArray_Check(arg) && PyByteArray_Size(arg) == 1) {
+    else if (PyByteArray_Check(arg) && PyByteArray_GET_SIZE(arg) == 1) {
         *p = PyByteArray_AS_STRING(arg)[0];
         return 1;
     }
@@ -1488,24 +1488,7 @@ bytes_repeat(PyBytesObject *a, Py_ssize_t n)
 static int
 bytes_contains(PyObject *self, PyObject *arg)
 {
-    Py_ssize_t ival = PyNumber_AsSsize_t(arg, PyExc_ValueError);
-    if (ival == -1 && PyErr_Occurred()) {
-        Py_buffer varg;
-        Py_ssize_t pos;
-        PyErr_Clear();
-        if (PyObject_GetBuffer(arg, &varg, PyBUF_SIMPLE) != 0)
-            return -1;
-        pos = stringlib_find(PyBytes_AS_STRING(self), Py_SIZE(self),
-                             varg.buf, varg.len, 0);
-        PyBuffer_Release(&varg);
-        return pos >= 0;
-    }
-    if (ival < 0 || ival >= 256) {
-        PyErr_SetString(PyExc_ValueError, "byte must be in range(0, 256)");
-        return -1;
-    }
-
-    return memchr(PyBytes_AS_STRING(self), (int) ival, Py_SIZE(self)) != NULL;
+    return _Py_bytes_contains(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), arg);
 }
 
 static PyObject *
@@ -1890,157 +1873,30 @@ _PyBytes_Join(PyObject *sep, PyObject *x)
     return bytes_join((PyBytesObject*)sep, x);
 }
 
-/* helper macro to fixup start/end slice values */
-#define ADJUST_INDICES(start, end, len)         \
-    if (end > len)                          \
-        end = len;                          \
-    else if (end < 0) {                     \
-        end += len;                         \
-        if (end < 0)                        \
-        end = 0;                        \
-    }                                       \
-    if (start < 0) {                        \
-        start += len;                       \
-        if (start < 0)                      \
-        start = 0;                      \
-    }
-
-Py_LOCAL_INLINE(Py_ssize_t)
-bytes_find_internal(PyBytesObject *self, PyObject *args, int dir)
-{
-    PyObject *subobj;
-    char byte;
-    Py_buffer subbuf;
-    const char *sub;
-    Py_ssize_t len, sub_len;
-    Py_ssize_t start=0, end=PY_SSIZE_T_MAX;
-    Py_ssize_t res;
-
-    if (!stringlib_parse_args_finds_byte("find/rfind/index/rindex",
-                                         args, &subobj, &byte, &start, &end))
-        return -2;
-
-    if (subobj) {
-        if (PyObject_GetBuffer(subobj, &subbuf, PyBUF_SIMPLE) != 0)
-            return -2;
-
-        sub = subbuf.buf;
-        sub_len = subbuf.len;
-    }
-    else {
-        sub = &byte;
-        sub_len = 1;
-    }
-    len = PyBytes_GET_SIZE(self);
-
-    ADJUST_INDICES(start, end, len);
-    if (end - start < sub_len)
-        res = -1;
-    else if (sub_len == 1) {
-        if (dir > 0)
-            res = stringlib_find_char(
-                PyBytes_AS_STRING(self) + start, end - start,
-                *sub);
-        else
-            res = stringlib_rfind_char(
-                PyBytes_AS_STRING(self) + start, end - start,
-                *sub);
-        if (res >= 0)
-            res += start;
-    }
-    else {
-        if (dir > 0)
-            res = stringlib_find_slice(
-                PyBytes_AS_STRING(self), len,
-                sub, sub_len, start, end);
-        else
-            res = stringlib_rfind_slice(
-                PyBytes_AS_STRING(self), len,
-                sub, sub_len, start, end);
-    }
-
-    if (subobj)
-        PyBuffer_Release(&subbuf);
-
-    return res;
-}
-
-
-PyDoc_STRVAR(find__doc__,
-"B.find(sub[, start[, end]]) -> int\n\
-\n\
-Return the lowest index in B where substring sub is found,\n\
-such that sub is contained within B[start:end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Return -1 on failure.");
-
 static PyObject *
 bytes_find(PyBytesObject *self, PyObject *args)
 {
-    Py_ssize_t result = bytes_find_internal(self, args, +1);
-    if (result == -2)
-        return NULL;
-    return PyLong_FromSsize_t(result);
+    return _Py_bytes_find(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
-
-
-PyDoc_STRVAR(index__doc__,
-"B.index(sub[, start[, end]]) -> int\n\
-\n\
-Like B.find() but raise ValueError when the substring is not found.");
 
 static PyObject *
 bytes_index(PyBytesObject *self, PyObject *args)
 {
-    Py_ssize_t result = bytes_find_internal(self, args, +1);
-    if (result == -2)
-        return NULL;
-    if (result == -1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "substring not found");
-        return NULL;
-    }
-    return PyLong_FromSsize_t(result);
+    return _Py_bytes_index(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
 
-
-PyDoc_STRVAR(rfind__doc__,
-"B.rfind(sub[, start[, end]]) -> int\n\
-\n\
-Return the highest index in B where substring sub is found,\n\
-such that sub is contained within B[start:end].  Optional\n\
-arguments start and end are interpreted as in slice notation.\n\
-\n\
-Return -1 on failure.");
 
 static PyObject *
 bytes_rfind(PyBytesObject *self, PyObject *args)
 {
-    Py_ssize_t result = bytes_find_internal(self, args, -1);
-    if (result == -2)
-        return NULL;
-    return PyLong_FromSsize_t(result);
+    return _Py_bytes_rfind(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
 
-
-PyDoc_STRVAR(rindex__doc__,
-"B.rindex(sub[, start[, end]]) -> int\n\
-\n\
-Like B.rfind() but raise ValueError when the substring is not found.");
 
 static PyObject *
 bytes_rindex(PyBytesObject *self, PyObject *args)
 {
-    Py_ssize_t result = bytes_find_internal(self, args, -1);
-    if (result == -2)
-        return NULL;
-    if (result == -1) {
-        PyErr_SetString(PyExc_ValueError,
-                        "substring not found");
-        return NULL;
-    }
-    return PyLong_FromSsize_t(result);
+    return _Py_bytes_rindex(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
 
 
@@ -2179,51 +2035,10 @@ bytes_rstrip_impl(PyBytesObject *self, PyObject *bytes)
 }
 
 
-PyDoc_STRVAR(count__doc__,
-"B.count(sub[, start[, end]]) -> int\n\
-\n\
-Return the number of non-overlapping occurrences of substring sub in\n\
-string B[start:end].  Optional arguments start and end are interpreted\n\
-as in slice notation.");
-
 static PyObject *
 bytes_count(PyBytesObject *self, PyObject *args)
 {
-    PyObject *sub_obj;
-    const char *str = PyBytes_AS_STRING(self), *sub;
-    Py_ssize_t sub_len;
-    char byte;
-    Py_ssize_t start = 0, end = PY_SSIZE_T_MAX;
-
-    Py_buffer vsub;
-    PyObject *count_obj;
-
-    if (!stringlib_parse_args_finds_byte("count", args, &sub_obj, &byte,
-                                         &start, &end))
-        return NULL;
-
-    if (sub_obj) {
-        if (PyObject_GetBuffer(sub_obj, &vsub, PyBUF_SIMPLE) != 0)
-            return NULL;
-
-        sub = vsub.buf;
-        sub_len = vsub.len;
-    }
-    else {
-        sub = &byte;
-        sub_len = 1;
-    }
-
-    ADJUST_INDICES(start, end, PyBytes_GET_SIZE(self));
-
-    count_obj = PyLong_FromSsize_t(
-        stringlib_count(str + start, end - start, sub, sub_len, PY_SSIZE_T_MAX)
-        );
-
-    if (sub_obj)
-        PyBuffer_Release(&vsub);
-
-    return count_obj;
+    return _Py_bytes_count(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
 
 
@@ -2307,7 +2122,7 @@ bytes_translate_impl(PyBytesObject *self, PyObject *table, int group_right_1,
         PyBuffer_Release(&table_view);
         return NULL;
     }
-    output_start = output = PyBytes_AsString(result);
+    output_start = output = PyBytes_AS_STRING(result);
     input = PyBytes_AS_STRING(input_obj);
 
     if (dellen == 0 && table_chars != NULL) {
@@ -2914,145 +2729,17 @@ bytes_replace_impl(PyBytesObject *self, Py_buffer *old, Py_buffer *new,
 
 /** End DALKE **/
 
-/* Matches the end (direction >= 0) or start (direction < 0) of self
- * against substr, using the start and end arguments. Returns
- * -1 on error, 0 if not found and 1 if found.
- */
-Py_LOCAL(int)
-_bytes_tailmatch(PyBytesObject *self, PyObject *substr, Py_ssize_t start,
-                  Py_ssize_t end, int direction)
-{
-    Py_ssize_t len = PyBytes_GET_SIZE(self);
-    Py_ssize_t slen;
-    Py_buffer sub_view = {NULL, NULL};
-    const char* sub;
-    const char* str;
-
-    if (PyBytes_Check(substr)) {
-        sub = PyBytes_AS_STRING(substr);
-        slen = PyBytes_GET_SIZE(substr);
-    }
-    else {
-        if (PyObject_GetBuffer(substr, &sub_view, PyBUF_SIMPLE) != 0)
-            return -1;
-        sub = sub_view.buf;
-        slen = sub_view.len;
-    }
-    str = PyBytes_AS_STRING(self);
-
-    ADJUST_INDICES(start, end, len);
-
-    if (direction < 0) {
-        /* startswith */
-        if (start+slen > len)
-            goto notfound;
-    } else {
-        /* endswith */
-        if (end-start < slen || start > len)
-            goto notfound;
-
-        if (end-slen > start)
-            start = end - slen;
-    }
-    if (end-start < slen)
-        goto notfound;
-    if (memcmp(str+start, sub, slen) != 0)
-        goto notfound;
-
-    PyBuffer_Release(&sub_view);
-    return 1;
-
-notfound:
-    PyBuffer_Release(&sub_view);
-    return 0;
-}
-
-
-PyDoc_STRVAR(startswith__doc__,
-"B.startswith(prefix[, start[, end]]) -> bool\n\
-\n\
-Return True if B starts with the specified prefix, False otherwise.\n\
-With optional start, test B beginning at that position.\n\
-With optional end, stop comparing B at that position.\n\
-prefix can also be a tuple of bytes to try.");
 
 static PyObject *
 bytes_startswith(PyBytesObject *self, PyObject *args)
 {
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *subobj;
-    int result;
-
-    if (!stringlib_parse_args_finds("startswith", args, &subobj, &start, &end))
-        return NULL;
-    if (PyTuple_Check(subobj)) {
-        Py_ssize_t i;
-        for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            result = _bytes_tailmatch(self,
-                            PyTuple_GET_ITEM(subobj, i),
-                            start, end, -1);
-            if (result == -1)
-                return NULL;
-            else if (result) {
-                Py_RETURN_TRUE;
-            }
-        }
-        Py_RETURN_FALSE;
-    }
-    result = _bytes_tailmatch(self, subobj, start, end, -1);
-    if (result == -1) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError))
-            PyErr_Format(PyExc_TypeError, "startswith first arg must be bytes "
-                         "or a tuple of bytes, not %s", Py_TYPE(subobj)->tp_name);
-        return NULL;
-    }
-    else
-        return PyBool_FromLong(result);
+    return _Py_bytes_startswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
-
-
-PyDoc_STRVAR(endswith__doc__,
-"B.endswith(suffix[, start[, end]]) -> bool\n\
-\n\
-Return True if B ends with the specified suffix, False otherwise.\n\
-With optional start, test B beginning at that position.\n\
-With optional end, stop comparing B at that position.\n\
-suffix can also be a tuple of bytes to try.");
 
 static PyObject *
 bytes_endswith(PyBytesObject *self, PyObject *args)
 {
-    Py_ssize_t start = 0;
-    Py_ssize_t end = PY_SSIZE_T_MAX;
-    PyObject *subobj;
-    int result;
-
-    if (!stringlib_parse_args_finds("endswith", args, &subobj, &start, &end))
-        return NULL;
-    if (PyTuple_Check(subobj)) {
-        Py_ssize_t i;
-        for (i = 0; i < PyTuple_GET_SIZE(subobj); i++) {
-            result = _bytes_tailmatch(self,
-                            PyTuple_GET_ITEM(subobj, i),
-                            start, end, +1);
-            if (result == -1)
-                return NULL;
-            else if (result) {
-                Py_RETURN_TRUE;
-            }
-        }
-        Py_RETURN_FALSE;
-    }
-    result = _bytes_tailmatch(self, subobj, start, end, +1);
-    if (result == -1) {
-        if (PyErr_ExceptionMatches(PyExc_TypeError))
-            PyErr_Format(PyExc_TypeError, "endswith first arg must be bytes or "
-                         "a tuple of bytes, not %s", Py_TYPE(subobj)->tp_name);
-        return NULL;
-    }
-    else
-        return PyBool_FromLong(result);
+    return _Py_bytes_endswith(PyBytes_AS_STRING(self), PyBytes_GET_SIZE(self), args);
 }
 
 
@@ -3224,17 +2911,20 @@ bytes_methods[] = {
     {"__getnewargs__",          (PyCFunction)bytes_getnewargs,  METH_NOARGS},
     {"capitalize", (PyCFunction)stringlib_capitalize, METH_NOARGS,
      _Py_capitalize__doc__},
-    {"center", (PyCFunction)stringlib_center, METH_VARARGS, center__doc__},
-    {"count", (PyCFunction)bytes_count, METH_VARARGS, count__doc__},
+    {"center", (PyCFunction)stringlib_center, METH_VARARGS,
+     _Py_center__doc__},
+    {"count", (PyCFunction)bytes_count, METH_VARARGS,
+     _Py_count__doc__},
     BYTES_DECODE_METHODDEF
     {"endswith", (PyCFunction)bytes_endswith, METH_VARARGS,
-     endswith__doc__},
+     _Py_endswith__doc__},
     {"expandtabs", (PyCFunction)stringlib_expandtabs, METH_VARARGS | METH_KEYWORDS,
-     expandtabs__doc__},
-    {"find", (PyCFunction)bytes_find, METH_VARARGS, find__doc__},
+     _Py_expandtabs__doc__},
+    {"find", (PyCFunction)bytes_find, METH_VARARGS,
+     _Py_find__doc__},
     BYTES_FROMHEX_METHODDEF
     {"hex", (PyCFunction)bytes_hex, METH_NOARGS, hex__doc__},
-    {"index", (PyCFunction)bytes_index, METH_VARARGS, index__doc__},
+    {"index", (PyCFunction)bytes_index, METH_VARARGS, _Py_index__doc__},
     {"isalnum", (PyCFunction)stringlib_isalnum, METH_NOARGS,
      _Py_isalnum__doc__},
     {"isalpha", (PyCFunction)stringlib_isalpha, METH_NOARGS,
@@ -3250,29 +2940,29 @@ bytes_methods[] = {
     {"isupper", (PyCFunction)stringlib_isupper, METH_NOARGS,
      _Py_isupper__doc__},
     BYTES_JOIN_METHODDEF
-    {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, ljust__doc__},
+    {"ljust", (PyCFunction)stringlib_ljust, METH_VARARGS, _Py_ljust__doc__},
     {"lower", (PyCFunction)stringlib_lower, METH_NOARGS, _Py_lower__doc__},
     BYTES_LSTRIP_METHODDEF
     BYTES_MAKETRANS_METHODDEF
     BYTES_PARTITION_METHODDEF
     BYTES_REPLACE_METHODDEF
-    {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, rfind__doc__},
-    {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, rindex__doc__},
-    {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, rjust__doc__},
+    {"rfind", (PyCFunction)bytes_rfind, METH_VARARGS, _Py_rfind__doc__},
+    {"rindex", (PyCFunction)bytes_rindex, METH_VARARGS, _Py_rindex__doc__},
+    {"rjust", (PyCFunction)stringlib_rjust, METH_VARARGS, _Py_rjust__doc__},
     BYTES_RPARTITION_METHODDEF
     BYTES_RSPLIT_METHODDEF
     BYTES_RSTRIP_METHODDEF
     BYTES_SPLIT_METHODDEF
     BYTES_SPLITLINES_METHODDEF
     {"startswith", (PyCFunction)bytes_startswith, METH_VARARGS,
-     startswith__doc__},
+     _Py_startswith__doc__},
     BYTES_STRIP_METHODDEF
     {"swapcase", (PyCFunction)stringlib_swapcase, METH_NOARGS,
      _Py_swapcase__doc__},
     {"title", (PyCFunction)stringlib_title, METH_NOARGS, _Py_title__doc__},
     BYTES_TRANSLATE_METHODDEF
     {"upper", (PyCFunction)stringlib_upper, METH_NOARGS, _Py_upper__doc__},
-    {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, zfill__doc__},
+    {"zfill", (PyCFunction)stringlib_zfill, METH_VARARGS, _Py_zfill__doc__},
     {NULL,     NULL}                         /* sentinel */
 };
 
