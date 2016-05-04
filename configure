@@ -14255,6 +14255,85 @@ $as_echo "#define HAVE_BROKEN_SEM_GETVALUE 1" >>confdefs.h
 
 fi
 
+ac_fn_c_check_decl "$LINENO" "RTLD_LAZY" "ac_cv_have_decl_RTLD_LAZY" "#include <dlfcn.h>
+"
+if test "x$ac_cv_have_decl_RTLD_LAZY" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_RTLD_LAZY $ac_have_decl
+_ACEOF
+ac_fn_c_check_decl "$LINENO" "RTLD_NOW" "ac_cv_have_decl_RTLD_NOW" "#include <dlfcn.h>
+"
+if test "x$ac_cv_have_decl_RTLD_NOW" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_RTLD_NOW $ac_have_decl
+_ACEOF
+ac_fn_c_check_decl "$LINENO" "RTLD_GLOBAL" "ac_cv_have_decl_RTLD_GLOBAL" "#include <dlfcn.h>
+"
+if test "x$ac_cv_have_decl_RTLD_GLOBAL" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_RTLD_GLOBAL $ac_have_decl
+_ACEOF
+ac_fn_c_check_decl "$LINENO" "RTLD_LOCAL" "ac_cv_have_decl_RTLD_LOCAL" "#include <dlfcn.h>
+"
+if test "x$ac_cv_have_decl_RTLD_LOCAL" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_RTLD_LOCAL $ac_have_decl
+_ACEOF
+ac_fn_c_check_decl "$LINENO" "RTLD_NODELETE" "ac_cv_have_decl_RTLD_NODELETE" "#include <dlfcn.h>
+"
+if test "x$ac_cv_have_decl_RTLD_NODELETE" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_RTLD_NODELETE $ac_have_decl
+_ACEOF
+ac_fn_c_check_decl "$LINENO" "RTLD_NOLOAD" "ac_cv_have_decl_RTLD_NOLOAD" "#include <dlfcn.h>
+"
+if test "x$ac_cv_have_decl_RTLD_NOLOAD" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_RTLD_NOLOAD $ac_have_decl
+_ACEOF
+ac_fn_c_check_decl "$LINENO" "RTLD_DEEPBIND" "ac_cv_have_decl_RTLD_DEEPBIND" "#include <dlfcn.h>
+"
+if test "x$ac_cv_have_decl_RTLD_DEEPBIND" = xyes; then :
+  ac_have_decl=1
+else
+  ac_have_decl=0
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_DECL_RTLD_DEEPBIND $ac_have_decl
+_ACEOF
+
+
 # determine what size digit to use for Python's longs
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking digit size for Python's longs" >&5
 $as_echo_n "checking digit size for Python's longs... " >&6; }
