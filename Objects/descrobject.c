@@ -1386,27 +1386,27 @@ property_descr_get(PyObject *self, PyObject *obj, PyObject *type)
         return NULL;
     }
     args = cached_args;
-    if (!args || Py_REFCNT(args) != 1) {
-        Py_CLEAR(cached_args);
-        if (!(cached_args = args = PyTuple_New(1)))
+    cached_args = NULL;
+    if (!args) {
+        args = PyTuple_New(1);
+        if (!args)
             return NULL;
+        _PyObject_GC_UNTRACK(args);
     }
-    Py_INCREF(args);
-    assert (Py_REFCNT(args) == 2);
     Py_INCREF(obj);
     PyTuple_SET_ITEM(args, 0, obj);
     ret = PyObject_Call(gs->prop_get, args, NULL);
-    if (args == cached_args) {
-        if (Py_REFCNT(args) == 2) {
-            obj = PyTuple_GET_ITEM(args, 0);
-            PyTuple_SET_ITEM(args, 0, NULL);
-            Py_XDECREF(obj);
-        }
-        else {
-            Py_CLEAR(cached_args);
-        }
+    if (cached_args == NULL && Py_REFCNT(args) == 1) {
+        assert(Py_SIZE(args) == 1);
+        assert(PyTuple_GET_ITEM(args, 0) == obj);
+        cached_args = args;
+        Py_DECREF(obj);
     }
-    Py_DECREF(args);
+    else {
+        assert(Py_REFCNT(args) >= 1);
+        _PyObject_GC_TRACK(args);
+        Py_DECREF(args);
+    }
     return ret;
 }
 
