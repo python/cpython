@@ -10,6 +10,12 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #20120: Use RawConfigParser for .pypirc parsing,
+  removing support for interpolation unintentionally added
+  with move to Python 3. Behavior no longer does any
+  interpolation in .pypirc files, matching behavior in Python
+  2.7 and Setuptools 19.0.
+
 - Issue #26659: Make the builtin slice type support cycle collection.
 
 - Issue #26718: super.__init__ no longer leaks memory if called multiple times.
