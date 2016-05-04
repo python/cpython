@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #26811: gc.get_objects() no longer contains a broken tuple with NULL
+  pointer.
+
 - Issue #20120: Use RawConfigParser for .pypirc parsing,
   removing support for interpolation unintentionally added
   with move to Python 3. Behavior no longer does any
