@@ -208,6 +208,20 @@ class XMLRPCTestCase(unittest.TestCase):
             self.assertEqual(s, "abc \xc2\x95")
             self.assertEqual(items, [("def \xc2\x96", "ghi \xc2\x97")])
 
+    def test_loads_unsupported(self):
+        ResponseError = xmlrpclib.ResponseError
+        data = '<params><param><value><spam/></value></param></params>'
+        self.assertRaises(ResponseError, xmlrpclib.loads, data)
+        data = ('<params><param><value><array>'
+                '<value><spam/></value>'
+                '</array></value></param></params>')
+        self.assertRaises(ResponseError, xmlrpclib.loads, data)
+        data = ('<params><param><value><struct>'
+                '<member><name>a</name><value><spam/></value></member>'
+                '<member><name>b</name><value><spam/></value></member>'
+                '</struct></value></param></params>')
+        self.assertRaises(ResponseError, xmlrpclib.loads, data)
+
 
 class HelperTestCase(unittest.TestCase):
     def test_escape(self):

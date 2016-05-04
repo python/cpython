@@ -77,6 +77,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26873: xmlrpclib now raises ResponseError on unsupported type tags
+  instead of silently return incorrect result.
+
 - Issue #24114: Fix an uninitialized variable in `ctypes.util`.
 
   The bug only occurs on SunOS when the ctypes implementation searches
