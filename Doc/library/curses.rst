@@ -1474,9 +1474,9 @@ keys); also, the following keypad mappings are standard:
 +------------------+-----------+
 | :kbd:`End`       | KEY_END   |
 +------------------+-----------+
-| :kbd:`Page Up`   | KEY_NPAGE |
+| :kbd:`Page Up`   | KEY_PPAGE |
 +------------------+-----------+
-| :kbd:`Page Down` | KEY_PPAGE |
+| :kbd:`Page Down` | KEY_NPAGE |
 +------------------+-----------+
 
 The following table lists characters from the alternate character set. These are
