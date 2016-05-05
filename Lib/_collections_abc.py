@@ -689,7 +689,7 @@ class ItemsView(MappingView, Set):
         except KeyError:
             return False
         else:
-            return v == value
+            return v is value or v == value
 
     def __iter__(self):
         for key in self._mapping:
@@ -704,7 +704,8 @@ class ValuesView(MappingView):
 
     def __contains__(self, value):
         for key in self._mapping:
-            if value == self._mapping[key]:
+            v = self._mapping[key]
+            if v is value or v == value:
                 return True
         return False
 
@@ -839,7 +840,7 @@ class Sequence(Sized, Reversible, Container):
 
     def __contains__(self, value):
         for v in self:
-            if v == value:
+            if v is value or v == value:
                 return True
         return False
 

@@ -23,7 +23,7 @@ from collections.abc import Awaitable, Coroutine, AsyncIterator, AsyncIterable
 from collections.abc import Hashable, Iterable, Iterator, Generator, Reversible
 from collections.abc import Sized, Container, Callable
 from collections.abc import Set, MutableSet
-from collections.abc import Mapping, MutableMapping, KeysView, ItemsView
+from collections.abc import Mapping, MutableMapping, KeysView, ItemsView, ValuesView
 from collections.abc import Sequence, MutableSequence
 from collections.abc import ByteString
 
@@ -1073,6 +1073,26 @@ class TestCollectionABCs(ABCTestCase):
         self.assertTrue(ncs <= cs)
         self.assertFalse(ncs > cs)
         self.assertTrue(ncs >= cs)
+
+    def test_issue26915(self):
+        # Container membership test should check identity first
+        class CustomEqualObject:
+            def __eq__(self, other):
+                return False
+        class CustomSequence(list):
+            def __contains__(self, value):
+                return Sequence.__contains__(self, value)
+
+        nan = float('nan')
+        obj = CustomEqualObject()
+        containers = [
+            CustomSequence([nan, obj]),
+            ItemsView({1: nan, 2: obj}),
+            ValuesView({1: nan, 2: obj})
+        ]
+        for container in containers:
+            for elem in container:
+                self.assertIn(elem, container)
 
     def assertSameSet(self, s1, s2):
         # coerce both to a real set then check equality
