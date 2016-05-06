@@ -10,10 +10,9 @@ import sys
 import os
 import unittest
 from io import StringIO
-from types import ListType
 
-from email.test.test_email import TestEmailBase
-from test.support import TestSkipped, run_unittest
+from test.test_email import TestEmailBase
+from test.support import run_unittest
 
 import email
 from email import __file__ as testfile
@@ -28,10 +27,10 @@ def openfile(filename):
 try:
     openfile('crispin-torture.txt')
 except OSError:
-    raise TestSkipped
+    raise unittest.SkipTest
 
 
-
+
 class TortureBase(TestEmailBase):
     def _msgobj(self, filename):
         fp = openfile(filename)
@@ -42,7 +41,7 @@ class TortureBase(TestEmailBase):
         return msg
 
 
-
+
 class TestCrispinTorture(TortureBase):
     # Mark Crispin's torture test from the SquirrelMail project
     def test_mondo_message(self):
@@ -50,7 +49,7 @@ class TestCrispinTorture(TortureBase):
         neq = self.ndiffAssertEqual
         msg = self._msgobj('crispin-torture.txt')
         payload = msg.get_payload()
-        eq(type(payload), ListType)
+        eq(type(payload), list)
         eq(len(payload), 12)
         eq(msg.preamble, None)
         eq(msg.epilogue, '\n')
@@ -113,7 +112,6 @@ multipart/mixed
                         audio/x-sun
 """)
 
-
 def _testclasses():
     mod = sys.modules[__name__]
     return [getattr(mod, name) for name in dir(mod) if name.startswith('Test')]
@@ -131,6 +129,5 @@ def test_main():
         run_unittest(testclass)
 
 
-
 if __name__ == '__main__':
     unittest.main(defaultTest='suite')
