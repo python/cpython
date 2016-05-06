@@ -5,7 +5,7 @@
 import unittest
 from test.support import run_unittest
 
-from test.test_email.test_email import TestEmailBase
+from test.test_email import TestEmailBase
 from email.charset import Charset
 from email.header import Header, decode_header
 from email.message import Message
@@ -18,7 +18,7 @@ except LookupError:
     raise unittest.SkipTest
 
 
-
+
 class TestEmailAsianCodecs(TestEmailBase):
     def test_japanese_codecs(self):
         eq = self.ndiffAssertEqual
@@ -77,6 +77,6 @@ Hello World! =?iso-2022-jp?b?GyRCJU8lbSE8JW8hPCVrJUkhKhsoQg==?=
         self.assertEqual(jhello, ustr)
 
 
-
+
 if __name__ == '__main__':
     unittest.main()
