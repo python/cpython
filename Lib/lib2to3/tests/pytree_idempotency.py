@@ -18,8 +18,8 @@ import logging
 
 # Local imports
 from .. import pytree
-import pgen2
-from pgen2 import driver
+from .. import pgen2
+from ..pgen2 import driver
 
 logging.basicConfig()
 
