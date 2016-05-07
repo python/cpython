@@ -368,7 +368,7 @@ Can Python be compiled to machine code, C or some other language?
 
 Practical answer:
 
-`Cython <http://cython.org/>`_ and `Pyrex <http://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_
+`Cython <http://cython.org/>`_ and `Pyrex <https://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_
 compile a modified version of Python with optional annotations into C
 extensions.  `Weave <https://scipy.github.io/devdocs/tutorial/weave.html>`_ makes it easy to
 intermingle Python and C code in various ways to increase performance.

@@ -271,7 +271,7 @@ Where in the world is www.python.org located?
 
 The Python project's infrastructure is located all over the world.
 `www.python.org <https://www.python.org>`_ is graciously hosted by `Rackspace
-<http://www.rackspace.com>`_, with CDN caching provided by `Fastly
+<https://www.rackspace.com>`_, with CDN caching provided by `Fastly
 <https://www.fastly.com>`_.  `Upfront Systems
 <http://www.upfrontsystems.co.za/>`_ hosts `bugs.python.org
 <https://bugs.python.org>`_.  Many other Python services like `the Wiki

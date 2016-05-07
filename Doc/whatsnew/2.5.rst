@@ -1528,7 +1528,7 @@ complete list of changes, or look through the SVN logs for all the details.
 * The :mod:`socket` module now supports :const:`AF_NETLINK` sockets on Linux,
   thanks to a patch from Philippe Biondi.   Netlink sockets are a Linux-specific
   mechanism for communications between a user-space process and kernel code; an
-  introductory  article about them is at http://www.linuxjournal.com/article/7356.
+  introductory  article about them is at https://www.linuxjournal.com/article/7356.
   In Python code, netlink addresses are represented as a tuple of 2 integers,
   ``(pid, group_mask)``.
 
@@ -2013,7 +2013,7 @@ This example uses the iterator form::
    >>>
 
 For more information about the SQL dialect supported by SQLite, see
-http://www.sqlite.org.
+https://www.sqlite.org.
 
 
 .. seealso::
@@ -2021,7 +2021,7 @@ http://www.sqlite.org.
    http://www.pysqlite.org
       The pysqlite web page.
 
-   http://www.sqlite.org
+   https://www.sqlite.org
       The SQLite web page; the documentation describes the syntax and the available
       data types for the supported SQL dialect.
 
