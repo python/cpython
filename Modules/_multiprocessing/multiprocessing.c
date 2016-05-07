@@ -128,7 +128,7 @@ static PyMethodDef module_methods[] = {
     {"recv", multiprocessing_recv, METH_VARARGS, ""},
     {"send", multiprocessing_send, METH_VARARGS, ""},
 #endif
-#if defined(HAVE_SEM_UNLINK) && !defined(POSIX_SEMAPHORES_NOT_ENABLED) && !defined(__ANDROID__)
+#if !defined(POSIX_SEMAPHORES_NOT_ENABLED) && !defined(__ANDROID__)
     {"sem_unlink", _PyMp_sem_unlink, METH_VARARGS, ""},
 #endif
     {NULL}
