@@ -185,7 +185,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
             try:
                 time.strptime(datevalue, dateformat)
             except ValueError:
-                self.fail('Date value not in %r format', dateformat)
+                self.fail('Date value not in %r format' % dateformat)
 
     def test_reporthook(self):
         records = []
