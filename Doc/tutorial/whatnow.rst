@@ -43,7 +43,7 @@ More Python resources:
   for download.  Once you begin releasing code, you can register it here so that
   others can find it.
 
-* http://code.activestate.com/recipes/langs/python/: The Python Cookbook is a
+* https://code.activestate.com/recipes/langs/python/: The Python Cookbook is a
   sizable collection of code examples, larger modules, and useful scripts.
   Particularly notable contributions are collected in a book also titled Python
   Cookbook (O'Reilly & Associates, ISBN 0-596-00797-3.)
@@ -51,7 +51,7 @@ More Python resources:
 * http://www.pyvideo.org collects links to Python-related videos from
   conferences and user-group meetings.
 
-* http://scipy.org: The Scientific Python project includes modules for fast
+* https://scipy.org: The Scientific Python project includes modules for fast
   array computations and manipulations plus a host of packages for such
   things as linear algebra, Fourier transforms, non-linear solvers,
   random number distributions, statistical analysis and the like.

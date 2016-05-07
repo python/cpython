@@ -549,7 +549,7 @@ Calls to the date constructor are recorded in the ``mock_date`` attributes
 
 An alternative way of dealing with mocking dates, or other builtin classes,
 is discussed in `this blog entry
-<http://williambert.online/2011/07/how-to-unit-testing-in-django-with-mocking-and-patching/>`_.
+<https://williambert.online/2011/07/how-to-unit-testing-in-django-with-mocking-and-patching/>`_.
 
 
 Mocking a Generator Method
@@ -1010,7 +1010,7 @@ subclass.
 Sometimes this is inconvenient. For example, `one user
 <https://code.google.com/p/mock/issues/detail?id=105>`_ is subclassing mock to
 created a `Twisted adaptor
-<http://twistedmatrix.com/documents/11.0.0/api/twisted.python.components.html>`_.
+<https://twistedmatrix.com/documents/11.0.0/api/twisted.python.components.html>`_.
 Having this applied to attributes too actually causes errors.
 
 ``Mock`` (in all its flavours) uses a method called ``_get_child_mock`` to create
