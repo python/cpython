@@ -274,7 +274,7 @@ If the XML input has `namespaces
 with prefixes in the form ``prefix:sometag`` get expanded to
 ``{uri}sometag`` where the *prefix* is replaced by the full *URI*.
 Also, if there is a `default namespace
-<http://www.w3.org/TR/2006/REC-xml-names-20060816/#defaulting>`__,
+<https://www.w3.org/TR/2006/REC-xml-names-20060816/#defaulting>`__,
 that full URI gets prepended to all of the non-prefixed tags.
 
 Here is an XML example that incorporates two namespaces, one with the
@@ -345,7 +345,7 @@ XPath support
 -------------
 
 This module provides limited support for
-`XPath expressions <http://www.w3.org/TR/xpath>`_ for locating elements in a
+`XPath expressions <https://www.w3.org/TR/xpath>`_ for locating elements in a
 tree.  The goal is to support a small subset of the abbreviated syntax; a full
 XPath engine is outside the scope of the module.
 
@@ -1032,5 +1032,5 @@ This is an example of counting the maximum depth of an XML file::
 
 .. [#] The encoding string included in XML output should conform to the
    appropriate standards.  For example, "UTF-8" is valid, but "UTF8" is
-   not.  See http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
-   and http://www.iana.org/assignments/character-sets/character-sets.xhtml.
+   not.  See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
+   and https://www.iana.org/assignments/character-sets/character-sets.xhtml.

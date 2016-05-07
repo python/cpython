@@ -43,7 +43,7 @@ More Python resources:
   for download.  Once you begin releasing code, you can register it here so that
   others can find it.
 
-* http://code.activestate.com/recipes/langs/python/: The Python Cookbook is a
+* https://code.activestate.com/recipes/langs/python/: The Python Cookbook is a
   sizable collection of code examples, larger modules, and useful scripts.
   Particularly notable contributions are collected in a book also titled Python
   Cookbook (O'Reilly & Associates, ISBN 0-596-00797-3.)

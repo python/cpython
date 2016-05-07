@@ -73,10 +73,10 @@ implementations are free to support the strict mapping from IDL).  See section
 
 .. seealso::
 
-   `Document Object Model (DOM) Level 2 Specification <http://www.w3.org/TR/DOM-Level-2-Core/>`_
+   `Document Object Model (DOM) Level 2 Specification <https://www.w3.org/TR/DOM-Level-2-Core/>`_
       The W3C recommendation upon which the Python DOM API is based.
 
-   `Document Object Model (DOM) Level 1 Specification <http://www.w3.org/TR/REC-DOM-Level-1/>`_
+   `Document Object Model (DOM) Level 1 Specification <https://www.w3.org/TR/REC-DOM-Level-1/>`_
       The W3C recommendation for the DOM supported by :mod:`xml.dom.minidom`.
 
    `Python Language Mapping Specification <http://www.omg.org/spec/PYTH/1.2/PDF>`_
@@ -127,7 +127,7 @@ Some convenience constants are also provided:
 .. data:: XML_NAMESPACE
 
    The namespace URI associated with the reserved prefix ``xml``, as defined by
-   `Namespaces in XML <http://www.w3.org/TR/REC-xml-names/>`_ (section 4).
+   `Namespaces in XML <https://www.w3.org/TR/REC-xml-names/>`_ (section 4).
 
    .. versionadded:: 2.2
 
@@ -136,7 +136,7 @@ Some convenience constants are also provided:
 
    The namespace URI for namespace declarations, as defined by `Document Object
    Model (DOM) Level 2 Core Specification
-   <http://www.w3.org/TR/DOM-Level-2-Core/core.html>`_ (section 1.1.8).
+   <https://www.w3.org/TR/DOM-Level-2-Core/core.html>`_ (section 1.1.8).
 
    .. versionadded:: 2.2
 
@@ -144,7 +144,7 @@ Some convenience constants are also provided:
 .. data:: XHTML_NAMESPACE
 
    The URI of the XHTML namespace as defined by `XHTML 1.0: The Extensible
-   HyperText Markup Language <http://www.w3.org/TR/xhtml1/>`_ (section 3.1.1).
+   HyperText Markup Language <https://www.w3.org/TR/xhtml1/>`_ (section 3.1.1).
 
    .. versionadded:: 2.2
 
@@ -895,7 +895,7 @@ attribute.
 .. exception:: NamespaceErr
 
    If an attempt is made to change any object in a way that is not permitted with
-   regard to the `Namespaces in XML <http://www.w3.org/TR/REC-xml-names/>`_
+   regard to the `Namespaces in XML <https://www.w3.org/TR/REC-xml-names/>`_
    recommendation, this exception is raised.
 
 

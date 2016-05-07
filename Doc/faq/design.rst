@@ -431,10 +431,10 @@ much speed.
 There are also several programs which make it easier to intermingle Python and C
 code in various ways to increase performance.  See, for example, `Cython <http://cython.org/>`_ , `Psyco
 <http://psyco.sourceforge.net/>`_, `Pyrex
-<http://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_, `PyInline
+<https://www.cosc.canterbury.ac.nz/~greg/python/Pyrex/>`_, `PyInline
 <http://pyinline.sourceforge.net/>`_, `Py2Cmod
 <http://sourceforge.net/projects/py2cmod/>`_, and
-`Weave <http://docs.scipy.org/doc/scipy-dev/reference/tutorial/weave.html>`_.
+`Weave <https://docs.scipy.org/doc/scipy-dev/reference/tutorial/weave.html>`_.
 
 
 How does Python manage memory?

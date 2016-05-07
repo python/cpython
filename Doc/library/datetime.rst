@@ -515,7 +515,7 @@ Instance methods:
    Return a 3-tuple, (ISO year, ISO week number, ISO weekday).
 
    The ISO calendar is a widely used variant of the Gregorian calendar. See
-   http://www.staff.science.uu.nl/~gent0113/calendar/isocalendar.htm for a good
+   https://www.staff.science.uu.nl/~gent0113/calendar/isocalendar.htm for a good
    explanation.
 
    The ISO year consists of 52 or 53 full weeks, and where a week starts on a
@@ -1573,7 +1573,7 @@ EST (fixed offset -5 hours), or only EDT (fixed offset -4 hours)).
 
       *pytz* contains up-to-date information and its usage is recommended.
 
-   `IANA timezone database <http://www.iana.org/time-zones>`_
+   `IANA timezone database <https://www.iana.org/time-zones>`_
       The Time Zone Database (often called tz or zoneinfo) contains code and
       data that represent the history of local time for many representative
       locations around the globe. It is updated periodically to reflect changes

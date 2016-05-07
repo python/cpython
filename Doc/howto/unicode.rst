@@ -211,7 +211,7 @@ origin and development of Unicode.
 
 To help understand the standard, Jukka Korpela has written an introductory guide
 to reading the Unicode character tables, available at
-<http://www.cs.tut.fi/~jkorpela/unicode/guide.html>.
+<https://www.cs.tut.fi/~jkorpela/unicode/guide.html>.
 
 Another good introductory article was written by Joel Spolsky
 <http://www.joelonsoftware.com/articles/Unicode.html>.

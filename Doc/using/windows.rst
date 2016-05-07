@@ -31,7 +31,7 @@ Check :pep:`11` for details on all unsupported platforms.
   following releases), this support was dropped and new releases are just
   expected to work on the Windows NT family.
 * `Windows CE <http://pythonce.sourceforge.net/>`_ is still supported.
-* The `Cygwin <http://cygwin.com/>`_ installer offers to install the Python
+* The `Cygwin <https://cygwin.com/>`_ installer offers to install the Python
   interpreter as well (cf. `Cygwin package source
   <ftp://ftp.uni-erlangen.de/pub/pc/gnuwin32/cygwin/mirrors/cygnus/
   release/python>`_, `Maintainer releases
@@ -129,7 +129,7 @@ Consult :command:`set /?` for details on this behaviour.
    https://support.microsoft.com/kb/310519
       How To Manage Environment Variables in Windows XP
 
-   http://www.chem.gla.ac.uk/~louis/software/faq/q1.html
+   https://www.chem.gla.ac.uk/~louis/software/faq/q1.html
       Setting Environment variables, Louis J. Farrugia
 
 

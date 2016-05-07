@@ -1009,7 +1009,7 @@ section :ref:`inst-config-files`.)
 
 .. seealso::
 
-   `C++Builder Compiler <http://www.embarcadero.com/downloads>`_
+   `C++Builder Compiler <https://www.embarcadero.com/products>`_
       Information about the free C++ compiler from Borland, including links to the
       download pages.
 
@@ -1052,7 +1052,7 @@ These compilers require some special libraries.  This task is more complex than
 for Borland's C++, because there is no program to convert the library.  First
 you have to create a list of symbols which the Python DLL exports. (You can find
 a good program for this task at
-http://sourceforge.net/projects/mingw/files/MinGW/Extension/pexports/).
+https://sourceforge.net/projects/mingw/files/MinGW/Extension/pexports/).
 
 .. I don't understand what the next line means. --amk
 .. (inclusive the references on data structures.)
@@ -1090,7 +1090,7 @@ normal libraries do.
 .. [#] This also means you could replace all existing COFF-libraries with OMF-libraries
    of the same name.
 
-.. [#] Check http://www.sourceware.org/cygwin/ and http://www.mingw.org/ for more
+.. [#] Check https://www.sourceware.org/cygwin/ and http://www.mingw.org/ for more
    information
 
 .. [#] Then you have no POSIX emulation available, but you also don't need

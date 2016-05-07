@@ -258,7 +258,7 @@ The :mod:`urlparse` module defines the following functions:
 
    .. doctest::
 
-      >>> urljoin('http://www.cwi.nl/%7Eguido/Python.html',
+      >>> urljoin('https://www.cwi.nl/%7Eguido/Python.html',
       ...         '//www.python.org/%7Eguido')
       'http://www.python.org/%7Eguido'
 

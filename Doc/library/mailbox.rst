@@ -409,7 +409,7 @@ Maildir, mbox, MH, Babyl, and MMDF.
    `maildir man page from qmail <http://www.qmail.org/man/man5/maildir.html>`_
       The original specification of the format.
 
-   `Using maildir format <http://cr.yp.to/proto/maildir.html>`_
+   `Using maildir format <https://cr.yp.to/proto/maildir.html>`_
       Notes on Maildir by its inventor. Includes an updated name-creation scheme and
       details on "info" semantics.
 
@@ -677,10 +677,10 @@ Maildir, mbox, MH, Babyl, and MMDF.
 
 .. seealso::
 
-   `Format of Version 5 Babyl Files <http://quimby.gnus.org/notes/BABYL>`_
+   `Format of Version 5 Babyl Files <https://quimby.gnus.org/notes/BABYL>`_
       A specification of the Babyl format.
 
-   `Reading Mail with Rmail <http://www.gnu.org/software/emacs/manual/html_node/emacs/Rmail.html>`_
+   `Reading Mail with Rmail <https://www.gnu.org/software/emacs/manual/html_node/emacs/Rmail.html>`_
       The Rmail manual, with some information on Babyl semantics.
 
 

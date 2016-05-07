@@ -767,11 +767,11 @@ of the Django documentation.
 Inserting a BOM into messages sent to a SysLogHandler
 -----------------------------------------------------
 
-`RFC 5424 <http://tools.ietf.org/html/rfc5424>`_ requires that a
+`RFC 5424 <https://tools.ietf.org/html/rfc5424>`_ requires that a
 Unicode message be sent to a syslog daemon as a set of bytes which have the
 following structure: an optional pure-ASCII component, followed by a UTF-8 Byte
 Order Mark (BOM), followed by Unicode encoded using UTF-8. (See the `relevant
-section of the specification <http://tools.ietf.org/html/rfc5424#section-6>`_.)
+section of the specification <https://tools.ietf.org/html/rfc5424#section-6>`_.)
 
 In Python 2.6 and 2.7, code was added to
 :class:`~logging.handlers.SysLogHandler` to insert a BOM into the message, but

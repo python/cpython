@@ -613,7 +613,7 @@ when serializing instances of "exotic" numerical types such as
 .. rubric:: Footnotes
 
 .. [#rfc-errata] As noted in `the errata for RFC 7159
-   <http://www.rfc-editor.org/errata_search.php?rfc=7159>`_,
+   <https://www.rfc-editor.org/errata_search.php?rfc=7159>`_,
    JSON permits literal U+2028 (LINE SEPARATOR) and
    U+2029 (PARAGRAPH SEPARATOR) characters in strings, whereas JavaScript
    (as of ECMAScript Edition 5.1) does not.

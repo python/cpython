@@ -25,12 +25,12 @@ available for Python:
       book, `GUI Programming with Python: QT Edition
       <https://www.commandprompt.com/community/pyqt/>`_ by Boudewijn
       Rempt. The *PyQt4* bindings also have a book, `Rapid GUI Programming
-      with Python and Qt <http://www.qtrac.eu/pyqtbook.html>`_, by Mark
+      with Python and Qt <https://www.qtrac.eu/pyqtbook.html>`_, by Mark
       Summerfield.
 
    `wxPython <http://www.wxpython.org>`_
       wxPython is a cross-platform GUI toolkit for Python that is built around
-      the popular `wxWidgets <http://www.wxwidgets.org/>`_ (formerly wxWindows)
+      the popular `wxWidgets <https://www.wxwidgets.org/>`_ (formerly wxWindows)
       C++ toolkit.  It provides a native look and feel for applications on
       Windows, Mac OS X, and Unix systems by using each platform's native
       widgets where ever possible, (GTK+ on Unix-like systems).  In addition to

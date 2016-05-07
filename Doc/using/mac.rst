@@ -72,7 +72,7 @@ number of standard Unix command line editors, :program:`vim` and
 :program:`emacs` among them. If you want a more Mac-like editor,
 :program:`BBEdit` or :program:`TextWrangler` from Bare Bones Software (see
 http://www.barebones.com/products/bbedit/index.html) are good choices, as is
-:program:`TextMate` (see http://macromates.com/). Other editors include
+:program:`TextMate` (see https://macromates.com/). Other editors include
 :program:`Gvim` (http://macvim.org) and :program:`Aquamacs`
 (http://aquamacs.org/).
 
@@ -151,9 +151,9 @@ the foundation of most modern Mac development. Information on PyObjC is
 available from https://pythonhosted.org/pyobjc/.
 
 The standard Python GUI toolkit is :mod:`Tkinter`, based on the cross-platform
-Tk toolkit (http://www.tcl.tk). An Aqua-native version of Tk is bundled with OS
+Tk toolkit (https://www.tcl.tk). An Aqua-native version of Tk is bundled with OS
 X by Apple, and the latest version can be downloaded and installed from
-http://www.activestate.com; it can also be built from source.
+https://www.activestate.com; it can also be built from source.
 
 *wxPython* is another popular cross-platform GUI toolkit that runs natively on
 Mac OS X. Packages and documentation are available from http://www.wxpython.org.

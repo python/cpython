@@ -21,7 +21,7 @@ implementing a widget's behavior from the code implementing its appearance.
 
 .. seealso::
 
-   `Tk Widget Styling Support <http://www.tcl.tk/cgi-bin/tct/tip/48>`_
+   `Tk Widget Styling Support <https://www.tcl.tk/cgi-bin/tct/tip/48>`_
       The document which brought up theming support for Tk
 
 

@@ -45,7 +45,7 @@ very little effort, as long as you're running on a machine with an
 x86-compatible processor.
 
 `Cython <http://cython.org>`_ and its relative `Pyrex
-<http://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_ are compilers
+<https://www.cosc.canterbury.ac.nz/greg.ewing/python/Pyrex/>`_ are compilers
 that accept a slightly modified form of Python and generate the corresponding
 C code.  Pyrex makes it possible to write an extension without having to learn
 Python's C API.

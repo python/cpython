@@ -55,7 +55,7 @@ On FreeBSD and OpenBSD
 On OpenSolaris
 --------------
 
-You can get Python from `OpenCSW <http://www.opencsw.org/>`_.  Various versions
+You can get Python from `OpenCSW <https://www.opencsw.org/>`_.  Various versions
 of Python are available and can be installed with e.g. ``pkgutil -i python27``.
 
 
@@ -143,10 +143,10 @@ Vim and Emacs are excellent editors which support Python very well.  For more
 information on how to code in Python in these editors, look at:
 
 * http://www.vim.org/scripts/script.php?script_id=790
-* http://sourceforge.net/projects/python-mode
+* https://sourceforge.net/projects/python-mode
 
 Geany is an excellent IDE with support for a lot of languages. For more
-information, read: http://www.geany.org/
+information, read: https://www.geany.org/
 
 Komodo edit is another extremely good IDE.  It also has support for a lot of
-languages. For more information, read http://komodoide.com/.
+languages. For more information, read https://komodoide.com/.

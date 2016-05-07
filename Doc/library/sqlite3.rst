@@ -55,7 +55,7 @@ The data you've saved is persistent and is available in subsequent sessions::
 Usually your SQL operations will need to use values from Python variables.  You
 shouldn't assemble your query using Python's string operations because doing so
 is insecure; it makes your program vulnerable to an SQL injection attack
-(see http://xkcd.com/327/ for humorous example of what can go wrong).
+(see https://xkcd.com/327/ for humorous example of what can go wrong).
 
 Instead, use the DB-API's parameter substitution.  Put ``?`` as a placeholder
 wherever you want to use a value, and then provide a tuple of values as the
@@ -101,7 +101,7 @@ This example uses the iterator form::
       The pysqlite web page -- sqlite3 is developed externally under the name
       "pysqlite".
 
-   http://www.sqlite.org
+   https://www.sqlite.org
       The SQLite web page; the documentation describes the syntax and the
       available data types for the supported SQL dialect.
 

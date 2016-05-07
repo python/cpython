@@ -594,7 +594,7 @@ If you want to know how to change the first sequence into the second, use
      work.
 
    * `Simple version control recipe
-     <http://code.activestate.com/recipes/576729/>`_ for a small application
+     <https://code.activestate.com/recipes/576729/>`_ for a small application
      built with :class:`SequenceMatcher`.
 
 

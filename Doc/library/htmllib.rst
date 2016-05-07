@@ -64,7 +64,7 @@ The module defines a parser class and an exception:
 .. class:: HTMLParser(formatter)
 
    This is the basic HTML parser class.  It supports all entity names required by
-   the XHTML 1.0 Recommendation (http://www.w3.org/TR/xhtml1).   It also defines
+   the XHTML 1.0 Recommendation (https://www.w3.org/TR/xhtml1).   It also defines
    handlers for all HTML 2.0 and many HTML 3.0 and 3.2 elements.
 
 

@@ -196,9 +196,9 @@ counts, but the output will exclude results with counts of zero or less.
 
 .. seealso::
 
-    * `Counter class <http://code.activestate.com/recipes/576611/>`_
+    * `Counter class <https://code.activestate.com/recipes/576611/>`_
       adapted for Python 2.5 and an early `Bag recipe
-      <http://code.activestate.com/recipes/259174/>`_ for Python 2.4.
+      <https://code.activestate.com/recipes/259174/>`_ for Python 2.4.
 
       in Smalltalk.
 
@@ -785,7 +785,7 @@ and more efficient to use a simple class declaration:
 
 .. seealso::
 
-   `Named tuple recipe <http://code.activestate.com/recipes/500261/>`_
+   `Named tuple recipe <https://code.activestate.com/recipes/500261/>`_
    adapted for Python 2.4.
 
 
@@ -828,7 +828,7 @@ semantics pass-in keyword arguments using a regular unordered dictionary.
 
 .. seealso::
 
-   `Equivalent OrderedDict recipe <http://code.activestate.com/recipes/576693/>`_
+   `Equivalent OrderedDict recipe <https://code.activestate.com/recipes/576693/>`_
    that runs on Python 2.4 or later.
 
 :class:`OrderedDict` Examples and Recipes
@@ -1040,7 +1040,7 @@ Notes on using :class:`Set` and :class:`MutableSet` as a mixin:
 
 .. seealso::
 
-   * `OrderedSet recipe <http://code.activestate.com/recipes/576694/>`_ for an
+   * `OrderedSet recipe <https://code.activestate.com/recipes/576694/>`_ for an
      example built on :class:`MutableSet`.
 
    * For more about ABCs, see the :mod:`abc` module and :pep:`3119`.

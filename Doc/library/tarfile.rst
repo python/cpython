@@ -229,7 +229,7 @@ details.
       Documentation of the higher-level archiving facilities provided by the
       standard :mod:`shutil` module.
 
-   `GNU tar manual, Basic Tar Format <http://www.gnu.org/software/tar/manual/html_node/Standard.html>`_
+   `GNU tar manual, Basic Tar Format <https://www.gnu.org/software/tar/manual/html_node/Standard.html>`_
       Documentation for tar archive files, including GNU tar extensions.
 
 

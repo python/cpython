@@ -218,10 +218,10 @@ queen threatens another) and the Knight's Tour (a route that takes a knight to
 every square of an $NxN$ chessboard without visiting any square twice).
 
 The idea of generators comes from other programming languages, especially Icon
-(http://www.cs.arizona.edu/icon/), where the idea of generators is central.  In
+(https://www.cs.arizona.edu/icon/), where the idea of generators is central.  In
 Icon, every expression and function call behaves like a generator.  One example
 from "An Overview of the Icon Programming Language" at
-http://www.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this looks
+https://www.cs.arizona.edu/icon/docs/ipd266.htm gives an idea of what this looks
 like::
 
    sentence := "Store it in the neighboring harbor"

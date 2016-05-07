@@ -62,7 +62,7 @@ The following functions are provided:
 .. seealso::
 
    `SortedCollection recipe
-   <http://code.activestate.com/recipes/577197-sortedcollection/>`_ that uses
+   <https://code.activestate.com/recipes/577197-sortedcollection/>`_ that uses
    bisect to build a full-featured collection class with straight-forward search
    methods and support for a key-function.  The keys are precomputed to save
    unnecessary calls to the key function during searches.

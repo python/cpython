@@ -148,8 +148,8 @@ implementations do nothing (except for :meth:`~HTMLParser.handle_startendtag`):
    and quotes in the *value* have been removed, and character and entity references
    have been replaced.
 
-   For instance, for the tag ``<A HREF="http://www.cwi.nl/">``, this method
-   would be called as ``handle_starttag('a', [('href', 'http://www.cwi.nl/')])``.
+   For instance, for the tag ``<A HREF="https://www.cwi.nl/">``, this method
+   would be called as ``handle_starttag('a', [('href', 'https://www.cwi.nl/')])``.
 
    .. versionchanged:: 2.6
       All entity references from :mod:`htmlentitydefs` are now replaced in the

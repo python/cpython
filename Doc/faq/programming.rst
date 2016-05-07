@@ -28,9 +28,9 @@ graphical debugger.
 PythonWin is a Python IDE that includes a GUI debugger based on pdb.  The
 Pythonwin debugger colors breakpoints and has quite a few cool features such as
 debugging non-Pythonwin programs.  Pythonwin is available as part of the `Python
-for Windows Extensions <http://sourceforge.net/projects/pywin32/>`__ project and
+for Windows Extensions <https://sourceforge.net/projects/pywin32/>`__ project and
 as a part of the ActivePython distribution (see
-http://www.activestate.com/activepython\ ).
+https://www.activestate.com/activepython\ ).
 
 `Boa Constructor <http://boa-constructor.sourceforge.net/>`_ is an IDE and GUI
 builder that uses wxWidgets.  It offers visual frame creation and manipulation,
@@ -44,13 +44,13 @@ and the Scintilla editing component.
 Pydb is a version of the standard Python debugger pdb, modified for use with DDD
 (Data Display Debugger), a popular graphical debugger front end.  Pydb can be
 found at http://bashdb.sourceforge.net/pydb/ and DDD can be found at
-http://www.gnu.org/software/ddd.
+https://www.gnu.org/software/ddd.
 
 There are a number of commercial Python IDEs that include graphical debuggers.
 They include:
 
-* Wing IDE (http://wingware.com/)
-* Komodo IDE (http://komodoide.com/)
+* Wing IDE (https://wingware.com/)
+* Komodo IDE (https://komodoide.com/)
 * PyCharm (https://www.jetbrains.com/pycharm/)
 
 
@@ -63,13 +63,13 @@ PyChecker is a static analysis tool that finds bugs in Python source code and
 warns about code complexity and style.  You can get PyChecker from
 http://pychecker.sourceforge.net/.
 
-`Pylint <http://www.pylint.org/>`_ is another tool that checks
+`Pylint <https://www.pylint.org/>`_ is another tool that checks
 if a module satisfies a coding standard, and also makes it possible to write
 plug-ins to add a custom feature.  In addition to the bug checking that
 PyChecker performs, Pylint offers some additional features such as checking line
 length, whether variable names are well-formed according to your coding
 standard, whether declared interfaces are fully implemented, and more.
-http://docs.pylint.org/ provides a full list of Pylint's features.
+https://docs.pylint.org/ provides a full list of Pylint's features.
 
 
 How can I create a stand-alone binary from a Python script?
@@ -1225,7 +1225,7 @@ How do you remove duplicates from a list?
 
 See the Python Cookbook for a long discussion of many ways to do this:
 
-   http://code.activestate.com/recipes/52560/
+   https://code.activestate.com/recipes/52560/
 
 If you don't mind reordering the list, sort it and then scan from the end of the
 list, deleting duplicates as you go::

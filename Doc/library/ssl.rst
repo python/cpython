@@ -206,7 +206,7 @@ instead.
 
    The *ciphers* parameter sets the available ciphers for this SSL object.
    It should be a string in the `OpenSSL cipher list format
-   <http://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
+   <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
 
    The parameter ``do_handshake_on_connect`` specifies whether to do the SSL
    handshake automatically after doing a :meth:`socket.connect`, or whether the
@@ -761,7 +761,7 @@ Constants
           ALERT_DESCRIPTION_*
 
    Alert Descriptions from :rfc:`5246` and others. The `IANA TLS Alert Registry
-   <http://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6>`_
+   <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml#tls-parameters-6>`_
    contains this list and references to the RFCs where their meaning is defined.
 
    Used as the return value of the callback function in
@@ -1062,7 +1062,7 @@ to speed up repeated connections from the same clients.
    The *capath* string, if present, is
    the path to a directory containing several CA certificates in PEM format,
    following an `OpenSSL specific layout
-   <http://www.openssl.org/docs/ssl/SSL_CTX_load_verify_locations.html>`_.
+   <https://www.openssl.org/docs/ssl/SSL_CTX_load_verify_locations.html>`_.
 
    The *cadata* object, if present, is either an ASCII string of one or more
    PEM-encoded certificates or a bytes-like object of DER-encoded
@@ -1091,7 +1091,7 @@ to speed up repeated connections from the same clients.
 
    Set the available ciphers for sockets created with this context.
    It should be a string in the `OpenSSL cipher list format
-   <http://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
+   <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
    If no cipher can be selected (because compile-time options or other
    configuration forbids use of all the specified ciphers), an
    :class:`SSLError` will be raised.
@@ -1230,7 +1230,7 @@ to speed up repeated connections from the same clients.
 
    Get statistics about the SSL sessions created or managed by this context.
    A dictionary is returned which maps the names of each `piece of information
-   <http://www.openssl.org/docs/ssl/SSL_CTX_sess_number.html>`_ to their
+   <https://www.openssl.org/docs/ssl/SSL_CTX_sess_number.html>`_ to their
    numeric values.  For example, here is the total number of hits and misses
    in the session cache since the context was created::
 
@@ -1722,7 +1722,7 @@ enabled when negotiating a SSL session is possible through the
 :meth:`SSLContext.set_ciphers` method.  Starting from Python 2.7.9, the
 ssl module disables certain weak ciphers by default, but you may want
 to further restrict the cipher choice. Be sure to read OpenSSL's documentation
-about the `cipher list format <http://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
+about the `cipher list format <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`_.
 If you want to check which ciphers are enabled by a given cipher list, use the
 ``openssl ciphers`` command on your system.
 
@@ -1764,5 +1764,5 @@ successful call of :func:`~ssl.RAND_add`, :func:`~ssl.RAND_bytes` or
    `RFC 6066: Transport Layer Security (TLS) Extensions <https://tools.ietf.org/html/rfc6066>`_
        D. Eastlake
 
-   `IANA TLS: Transport Layer Security (TLS) Parameters <http://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
+   `IANA TLS: Transport Layer Security (TLS) Parameters <https://www.iana.org/assignments/tls-parameters/tls-parameters.xml>`_
        IANA

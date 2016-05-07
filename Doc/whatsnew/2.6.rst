@@ -152,9 +152,9 @@ therefore posted a call for issue trackers, asking volunteers to set
 up different products and import some of the bugs and patches from
 SourceForge.  Four different trackers were examined: `Jira
 <https://www.atlassian.com/software/jira/>`__,
-`Launchpad <https://www.launchpad.net>`__,
+`Launchpad <https://launchpad.net/>`__,
 `Roundup <http://roundup.sourceforge.net/>`__, and
-`Trac <http://trac.edgewall.org/>`__.
+`Trac <https://trac.edgewall.org/>`__.
 The committee eventually settled on Jira
 and Roundup as the two candidates.  Jira is a commercial product that
 offers no-cost hosted instances to free-software projects; Roundup
@@ -1427,7 +1427,7 @@ one, :func:`math.trunc`, that's been backported to Python 2.6.
    :pep:`3141` - A Type Hierarchy for Numbers
       PEP written by Jeffrey Yasskin.
 
-   `Scheme's numerical tower <http://www.gnu.org/software/guile/manual/html_node/Numerical-Tower.html#Numerical-Tower>`__, from the Guile manual.
+   `Scheme's numerical tower <https://www.gnu.org/software/guile/manual/html_node/Numerical-Tower.html#Numerical-Tower>`__, from the Guile manual.
 
    `Scheme's number datatypes <http://schemers.org/Documents/Standards/R5RS/HTML/r5rs-Z-H-9.html#%_sec_6.2>`__ from the R5RS Scheme specification.
 
@@ -2885,7 +2885,7 @@ Improved SSL Support
 
 Bill Janssen made extensive improvements to Python 2.6's support for
 the Secure Sockets Layer by adding a new module, :mod:`ssl`, that's
-built atop the `OpenSSL <http://www.openssl.org/>`__ library.
+built atop the `OpenSSL <https://www.openssl.org/>`__ library.
 This new module provides more control over the protocol negotiated,
 the X.509 certificates used, and has better support for writing SSL
 servers (as opposed to clients) in Python.  The existing SSL support

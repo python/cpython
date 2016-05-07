@@ -64,7 +64,7 @@ The :mod:`urllib2` module defines the following functions:
 
    * :meth:`info` --- return the meta-information of the page, such as headers,
      in the form of an :class:`mimetools.Message` instance
-     (see `Quick Reference to HTTP Headers <http://www.cs.tut.fi/~jkorpela/http.html>`_)
+     (see `Quick Reference to HTTP Headers <https://www.cs.tut.fi/~jkorpela/http.html>`_)
 
    * :meth:`getcode` --- return the HTTP status code of the response.
 

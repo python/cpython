@@ -334,5 +334,5 @@ This is a mistake; the extension should be .TGZ.
 
 Simply rename the downloaded file to have the .TGZ extension, and WinZip will be
 able to handle it.  (If your copy of WinZip doesn't, get a newer one from
-http://www.winzip.com.)
+https://www.winzip.com.)
 

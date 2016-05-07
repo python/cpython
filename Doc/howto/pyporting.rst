@@ -379,10 +379,10 @@ supported by Python 2. You should also update the classifiers in your
 .. _cheat sheet: http://python-future.org/compatible_idioms.html
 .. _coverage.py: https://pypi.python.org/pypi/coverage
 .. _Futurize: http://python-future.org/automatic_conversion.html
-.. _Modernize: http://python-modernize.readthedocs.org/en/latest/
+.. _Modernize: https://python-modernize.readthedocs.org/en/latest/
 .. _Porting to Python 3: http://python3porting.com/
 .. _Pylint: https://pypi.python.org/pypi/pylint
-.. _Python 3 Q & A: http://ncoghlan-devs-python-notes.readthedocs.org/en/latest/python3/questions_and_answers.html
+.. _Python 3 Q & A: https://ncoghlan-devs-python-notes.readthedocs.org/en/latest/python3/questions_and_answers.html
 
 .. _python-future: http://python-future.org/
 .. _python-porting: https://mail.python.org/mailman/listinfo/python-porting

@@ -170,6 +170,6 @@ bpython_.
    :ref:`tut-customize`.
 
 
-.. _GNU Readline: http://tiswww.case.edu/php/chet/readline/rltop.html
+.. _GNU Readline: https://tiswww.case.edu/php/chet/readline/rltop.html
 .. _IPython: http://ipython.scipy.org/
 .. _bpython: http://www.bpython-interpreter.org/

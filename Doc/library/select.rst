@@ -305,7 +305,7 @@ Kqueue Objects
 Kevent Objects
 --------------
 
-http://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
+https://www.freebsd.org/cgi/man.cgi?query=kqueue&sektion=2
 
 .. attribute:: kevent.ident
 
