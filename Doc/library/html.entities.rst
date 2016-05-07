@@ -43,4 +43,4 @@ This module defines four dictionaries, :data:`html5`,
 
 .. rubric:: Footnotes
 
-.. [#] See http://www.w3.org/TR/html5/syntax.html#named-character-references
+.. [#] See https://www.w3.org/TR/html5/syntax.html#named-character-references
