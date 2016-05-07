@@ -21,7 +21,7 @@
 
 --------------
 
-XML-RPC is a Remote Procedure Call method that uses XML passed via HTTP as a
+XML-RPC is a Remote Procedure Call method that uses XML passed via HTTP(S) as a
 transport.  With it, a client can call methods with parameters on a remote
 server (the server is named by a URI) and get back structured data.  This module
 supports writing XML-RPC client code; it handles all the details of translating
@@ -37,7 +37,7 @@ between conformable Python objects and XML on the wire.
 .. versionchanged:: 2.7.9
 
    For https URIs, :mod:`xmlrpclib` now performs all the necessary certificate
-   and hostname checks by default
+   and hostname checks by default.
 
 .. class:: ServerProxy(uri[, transport[, encoding[, verbose[, allow_none[, use_datetime[, context]]]]]])
 
@@ -48,11 +48,15 @@ between conformable Python objects and XML on the wire.
    :class:`SafeTransport` instance for https: URLs and an internal HTTP
    :class:`Transport` instance otherwise.  The optional third argument is an
    encoding, by default UTF-8. The optional fourth argument is a debugging flag.
+
+   The following parameters govern the use of the returned proxy instance.
    If *allow_none* is true,  the Python constant ``None`` will be translated into
    XML; the default behaviour is for ``None`` to raise a :exc:`TypeError`. This is
    a commonly-used extension to the XML-RPC specification, but isn't supported by
-   all clients and servers; see http://ontosys.com/xml-rpc/extensions.php for a
-   description.  The *use_datetime* flag can be used to cause date/time values to
+   all clients and servers; see `http://ontosys.com/xml-rpc/extensions.php
+   <https://web.archive.org/web/20130120074804/http://ontosys.com/xml-rpc/extensions.php>`
+   for a description.
+   The *use_datetime* flag can be used to cause date/time values to
    be presented as :class:`datetime.datetime` objects; this is false by default.
    :class:`datetime.datetime` objects may be passed to calls.
 
@@ -71,40 +75,42 @@ between conformable Python objects and XML on the wire.
    methods it supports (service discovery) and fetch other server-associated
    metadata.
 
-   :class:`ServerProxy` instance methods take Python basic types and objects as
-   arguments and return Python basic types and classes.  Types that are conformable
-   (e.g. that can be marshalled through XML), include the following (and except
-   where noted, they are unmarshalled as the same Python type):
+   Types that are conformable (e.g. that can be marshalled through XML),
+   include the following (and except where noted, they are unmarshalled
+   as the same Python type):
 
-   +---------------------------------+---------------------------------------------+
-   | Name                            | Meaning                                     |
-   +=================================+=============================================+
-   | :const:`boolean`                | The :const:`True` and :const:`False`        |
-   |                                 | constants                                   |
-   +---------------------------------+---------------------------------------------+
-   | :const:`integers`               | Pass in directly                            |
-   +---------------------------------+---------------------------------------------+
-   | :const:`floating-point numbers` | Pass in directly                            |
-   +---------------------------------+---------------------------------------------+
-   | :const:`strings`                | Pass in directly                            |
-   +---------------------------------+---------------------------------------------+
-   | :const:`arrays`                 | Any Python sequence type containing         |
-   |                                 | conformable elements. Arrays are returned   |
-   |                                 | as lists                                    |
-   +---------------------------------+---------------------------------------------+
-   | :const:`structures`             | A Python dictionary. Keys must be strings,  |
-   |                                 | values may be any conformable type. Objects |
-   |                                 | of user-defined classes can be passed in;   |
-   |                                 | only their *__dict__* attribute is          |
-   |                                 | transmitted.                                |
-   +---------------------------------+---------------------------------------------+
-   | :const:`dates`                  | in seconds since the epoch (pass in an      |
-   |                                 | instance of the :class:`DateTime` class) or |
-   |                                 | a :class:`datetime.datetime` instance.      |
-   +---------------------------------+---------------------------------------------+
-   | :const:`binary data`            | pass in an instance of the :class:`Binary`  |
-   |                                 | wrapper class                               |
-   +---------------------------------+---------------------------------------------+
+   .. tabularcolumns:: |l|L|
+
+   +----------------------+-------------------------------------------------------+
+   | XML-RPC type         | Python type                                           |
+   +======================+=======================================================+
+   | ``boolean``          | :class:`bool`                                         |
+   +----------------------+-------------------------------------------------------+
+   | ``int`` or ``i4``    | :class:`int` or :class:`long` in range from           |
+   |                      | -2147483648 to 2147483647.                            |
+   +----------------------+-------------------------------------------------------+
+   | ``double``           | :class:`float`                                        |
+   +----------------------+-------------------------------------------------------+
+   | ``string``           | :class:`str` or :class:`unicode`                      |
+   +----------------------+-------------------------------------------------------+
+   | ``array``            | :class:`list` or :class:`tuple` containing            |
+   |                      | conformable elements.  Arrays are returned as         |
+   |                      | :class:`list`\ s.                                     |
+   +----------------------+-------------------------------------------------------+
+   | ``struct``           | :class:`dict`.  Keys must be strings, values may be   |
+   |                      | any conformable type.  Objects of user-defined        |
+   |                      | classes can be passed in; only their :attr:`__dict__` |
+   |                      | attribute is transmitted.                             |
+   +----------------------+-------------------------------------------------------+
+   | ``dateTime.iso8601`` | :class:`DateTime` or :class:`datetime.datetime`.      |
+   |                      | Returned type depends on values of the *use_datetime* |
+   |                      | flags.                                                |
+   +----------------------+-------------------------------------------------------+
+   | ``base64``           | :class:`Binary`                                       |
+   +----------------------+-------------------------------------------------------+
+   | ``nil``              | The ``None`` constant.  Passing is allowed only if    |
+   |                      | *allow_none* is true.                                 |
+   +----------------------+-------------------------------------------------------+
 
    This is the full set of data types supported by XML-RPC.  Method calls may also
    raise a special :exc:`Fault` instance, used to signal XML-RPC server errors, or
@@ -168,7 +174,7 @@ returning a value, which may be either returned data in a conformant type or a
 :class:`Fault` or :class:`ProtocolError` object indicating an error.
 
 Servers that support the XML introspection API support some common methods
-grouped under the reserved :attr:`system` attribute:
+grouped under the reserved :attr:`~ServerProxy.system` attribute:
 
 
 .. method:: ServerProxy.system.listMethods()
@@ -249,24 +255,26 @@ The client code for the preceding server::
 DateTime Objects
 ----------------
 
-This class may be initialized with seconds since the epoch, a time
-tuple, an ISO 8601 time/date string, or a :class:`datetime.datetime`
-instance.  It has the following methods, supported mainly for internal
-use by the marshalling/unmarshalling code:
+.. class:: DateTime
+
+   This class may be initialized with seconds since the epoch, a time
+   tuple, an ISO 8601 time/date string, or a :class:`datetime.datetime`
+   instance.  It has the following methods, supported mainly for internal
+   use by the marshalling/unmarshalling code:
 
 
-.. method:: DateTime.decode(string)
+   .. method:: decode(string)
 
-   Accept a string as the instance's new time value.
+      Accept a string as the instance's new time value.
 
 
-.. method:: DateTime.encode(out)
+   .. method:: encode(out)
 
-   Write the XML-RPC encoding of this :class:`DateTime` item to the *out* stream
-   object.
+      Write the XML-RPC encoding of this :class:`DateTime` item to the *out* stream
+      object.
 
-It also supports certain of Python's built-in operators through  :meth:`__cmp__`
-and :meth:`__repr__` methods.
+   It also supports certain of Python's built-in operators through :meth:`__cmp__`
+   and :meth:`__repr__` methods.
 
 A working example follows. The server code::
 
@@ -300,36 +308,38 @@ The client code for the preceding server::
 Binary Objects
 --------------
 
-This class may be initialized from string data (which may include NULs). The
-primary access to the content of a :class:`Binary` object is provided by an
-attribute:
+.. class:: Binary
+
+   This class may be initialized from string data (which may include NULs). The
+   primary access to the content of a :class:`Binary` object is provided by an
+   attribute:
 
 
-.. attribute:: Binary.data
+   .. attribute:: data
 
-   The binary data encapsulated by the :class:`Binary` instance.  The data is
-   provided as an 8-bit string.
+      The binary data encapsulated by the :class:`Binary` instance.  The data is
+      provided as an 8-bit string.
 
-:class:`Binary` objects have the following methods, supported mainly for
-internal use by the marshalling/unmarshalling code:
-
-
-.. method:: Binary.decode(string)
-
-   Accept a base64 string and decode it as the instance's new data.
+   :class:`Binary` objects have the following methods, supported mainly for
+   internal use by the marshalling/unmarshalling code:
 
 
-.. method:: Binary.encode(out)
+   .. method:: decode(string)
 
-   Write the XML-RPC base 64 encoding of this binary item to the out stream object.
+      Accept a base64 string and decode it as the instance's new data.
 
-   The encoded data will have newlines every 76 characters as per
-   `RFC 2045 section 6.8 <http://tools.ietf.org/html/rfc2045#section-6.8>`_,
-   which was the de facto standard base64 specification when the
-   XML-RPC spec was written.
 
-It also supports certain of Python's built-in operators through a
-:meth:`__cmp__` method.
+   .. method:: encode(out)
+
+      Write the XML-RPC base 64 encoding of this binary item to the *out* stream object.
+
+      The encoded data will have newlines every 76 characters as per
+      `RFC 2045 section 6.8 <http://tools.ietf.org/html/rfc2045#section-6.8>`_,
+      which was the de facto standard base64 specification when the
+      XML-RPC spec was written.
+
+   It also supports certain of Python's built-in operators through a
+   :meth:`__cmp__` method.
 
 Example usage of the binary objects.  We're going to transfer an image over
 XMLRPC::
@@ -360,18 +370,20 @@ The client gets the image and saves it to a file::
 Fault Objects
 -------------
 
-A :class:`Fault` object encapsulates the content of an XML-RPC fault tag. Fault
-objects have the following attributes:
+.. class:: Fault
+
+   A :class:`Fault` object encapsulates the content of an XML-RPC fault tag. Fault
+   objects have the following attributes:
 
 
-.. attribute:: Fault.faultCode
+   .. attribute:: faultCode
 
-   A string indicating the fault type.
+      A string indicating the fault type.
 
 
-.. attribute:: Fault.faultString
+   .. attribute:: faultString
 
-   A string containing a diagnostic message associated with the fault.
+      A string containing a diagnostic message associated with the fault.
 
 In the following example we're going to intentionally cause a :exc:`Fault` by
 returning a complex type object.  The server code::
@@ -408,30 +420,32 @@ The client code for the preceding server::
 ProtocolError Objects
 ---------------------
 
-A :class:`ProtocolError` object describes a protocol error in the underlying
-transport layer (such as a 404 'not found' error if the server named by the URI
-does not exist).  It has the following attributes:
+.. class:: ProtocolError
+
+   A :class:`ProtocolError` object describes a protocol error in the underlying
+   transport layer (such as a 404 'not found' error if the server named by the URI
+   does not exist).  It has the following attributes:
 
 
-.. attribute:: ProtocolError.url
+   .. attribute:: url
 
-   The URI or URL that triggered the error.
-
-
-.. attribute:: ProtocolError.errcode
-
-   The error code.
+      The URI or URL that triggered the error.
 
 
-.. attribute:: ProtocolError.errmsg
+   .. attribute:: errcode
 
-   The error message or diagnostic string.
+      The error code.
 
 
-.. attribute:: ProtocolError.headers
+   .. attribute:: errmsg
 
-   A string containing the headers of the HTTP/HTTPS request that triggered the
-   error.
+      The error message or diagnostic string.
+
+
+   .. attribute:: headers
+
+      A string containing the headers of the HTTP/HTTPS request that triggered the
+      error.
 
 In the following example we're going to intentionally cause a :exc:`ProtocolError`
 by providing a URI that doesn't point to an XMLRPC server::
