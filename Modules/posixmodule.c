@@ -810,8 +810,8 @@ typedef struct {
     const char *argument_name;
     int nullable;
     int allow_fd;
-    wchar_t *wide;
-    char *narrow;
+    const wchar_t *wide;
+    const char *narrow;
     int fd;
     Py_ssize_t length;
     PyObject *object;
@@ -834,7 +834,7 @@ path_converter(PyObject *o, void *p)
     path_t *path = (path_t *)p;
     PyObject *bytes;
     Py_ssize_t length;
-    char *narrow;
+    const char *narrow;
 
 #define FORMAT_EXCEPTION(exc, fmt) \
     PyErr_Format(exc, "%s%s" fmt, \
@@ -862,7 +862,7 @@ path_converter(PyObject *o, void *p)
 
     if (PyUnicode_Check(o)) {
 #ifdef MS_WINDOWS
-        wchar_t *wide;
+        const wchar_t *wide;
 
         wide = PyUnicode_AsUnicodeAndSize(o, &length);
         if (!wide) {
@@ -1164,7 +1164,7 @@ convertenviron(void)
     for (e = _wenviron; *e != NULL; e++) {
         PyObject *k;
         PyObject *v;
-        wchar_t *p = wcschr(*e, L'=');
+        const wchar_t *p = wcschr(*e, L'=');
         if (p == NULL)
             continue;
         k = PyUnicode_FromWideChar(*e, (Py_ssize_t)(p-*e));
@@ -1192,7 +1192,7 @@ convertenviron(void)
     for (e = environ; *e != NULL; e++) {
         PyObject *k;
         PyObject *v;
-        char *p = strchr(*e, '=');
+        const char *p = strchr(*e, '=');
         if (p == NULL)
             continue;
         k = PyBytes_FromStringAndSize(*e, (int)(p-*e));
@@ -3483,7 +3483,7 @@ _listdir_windows_no_opendir(path_t *path, PyObject *list)
 
     if (!path->narrow) {
         WIN32_FIND_DATAW wFileData;
-        wchar_t *po_wchars;
+        const wchar_t *po_wchars;
 
         if (!path->wide) { /* Default arg: "." */
             po_wchars = L".";
@@ -3649,7 +3649,7 @@ _posix_listdir(path_t *path, PyObject *list)
     else
 #endif
     {
-        char *name;
+        const char *name;
         if (path->narrow) {
             name = path->narrow;
             /* only return bytes if they specified a bytes object */
@@ -3831,7 +3831,7 @@ os__getfinalpathname_impl(PyModuleDef *module, PyObject *path)
     wchar_t *target_path;
     int result_length;
     PyObject *result;
-    wchar_t *path_wchar;
+    const wchar_t *path_wchar;
 
     path_wchar = PyUnicode_AsUnicode(path);
     if (path_wchar == NULL)
@@ -3920,7 +3920,8 @@ os__getvolumepathname_impl(PyModuleDef *module, PyObject *path)
 /*[clinic end generated code: output=79a0ba729f956dbe input=7eacadc40acbda6b]*/
 {
     PyObject *result;
-    wchar_t *path_wchar, *mountpath=NULL;
+    const wchar_t *path_wchar;
+    wchar_t *mountpath=NULL;
     size_t buflen;
     BOOL ret;
 
@@ -4118,7 +4119,7 @@ os_setpriority_impl(PyModuleDef *module, int which, int who, int priority)
 static PyObject *
 internal_rename(path_t *src, path_t *dst, int src_dir_fd, int dst_dir_fd, int is_replace)
 {
-    char *function_name = is_replace ? "replace" : "rename";
+    const char *function_name = is_replace ? "replace" : "rename";
     int dir_fd_specified;
 
 #ifdef MS_WINDOWS
@@ -4298,7 +4299,7 @@ os_system_impl(PyModuleDef *module, PyObject *command)
 /*[clinic end generated code: output=800f775e10b7be55 input=86a58554ba6094af]*/
 {
     long result;
-    char *bytes = PyBytes_AsString(command);
+    const char *bytes = PyBytes_AsString(command);
     Py_BEGIN_ALLOW_THREADS
     result = system(bytes);
     Py_END_ALLOW_THREADS
@@ -4937,7 +4938,8 @@ parse_envlist(PyObject* env, Py_ssize_t *envc_ptr)
     Py_ssize_t i, pos, envc;
     PyObject *keys=NULL, *vals=NULL;
     PyObject *key, *val, *key2, *val2;
-    char *p, *k, *v;
+    char *p;
+    const char *k, *v;
     size_t len;
 
     i = PyMapping_Size(env);
@@ -5052,7 +5054,7 @@ static PyObject *
 os_execv_impl(PyModuleDef *module, PyObject *path, PyObject *argv)
 /*[clinic end generated code: output=9221f08143146fff input=96041559925e5229]*/
 {
-    char *path_char;
+    const char *path_char;
     char **argvlist;
     Py_ssize_t argc;
 
@@ -5173,7 +5175,7 @@ static PyObject *
 os_spawnv_impl(PyModuleDef *module, int mode, PyObject *path, PyObject *argv)
 /*[clinic end generated code: output=140a7945484c8cc5 input=042c91dfc1e6debc]*/
 {
-    char *path_char;
+    const char *path_char;
     char **argvlist;
     int i;
     Py_ssize_t argc;
@@ -5251,7 +5253,7 @@ os_spawnve_impl(PyModuleDef *module, int mode, PyObject *path,
                 PyObject *argv, PyObject *env)
 /*[clinic end generated code: output=e7f5f0703610531f input=02362fd937963f8f]*/
 {
-    char *path_char;
+    const char *path_char;
     char **argvlist;
     char **envlist;
     PyObject *res = NULL;
@@ -6264,7 +6266,7 @@ static PyObject *
 posix_initgroups(PyObject *self, PyObject *args)
 {
     PyObject *oname;
-    char *username;
+    const char *username;
     int res;
 #ifdef __APPLE__
     int gid;
@@ -7138,16 +7140,16 @@ exit:
 static PyObject *
 win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 {
-    wchar_t *path;
+    const wchar_t *path;
     DWORD n_bytes_returned;
     DWORD io_result;
     PyObject *po, *result;
-        int dir_fd;
+    int dir_fd;
     HANDLE reparse_point_handle;
 
     char target_buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
     REPARSE_DATA_BUFFER *rdb = (REPARSE_DATA_BUFFER *)target_buffer;
-    wchar_t *print_name;
+    const wchar_t *print_name;
 
     static char *keywords[] = {"path", "dir_fd", NULL};
 
@@ -7215,8 +7217,8 @@ win_readlink(PyObject *self, PyObject *args, PyObject *kwargs)
 #if defined(MS_WINDOWS)
 
 /* Grab CreateSymbolicLinkW dynamically from kernel32 */
-static DWORD (CALLBACK *Py_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD) = NULL;
-static DWORD (CALLBACK *Py_CreateSymbolicLinkA)(LPSTR, LPSTR, DWORD) = NULL;
+static DWORD (CALLBACK *Py_CreateSymbolicLinkW)(LPCWSTR, LPCWSTR, DWORD) = NULL;
+static DWORD (CALLBACK *Py_CreateSymbolicLinkA)(LPCSTR, LPCSTR, DWORD) = NULL;
 
 static int
 check_CreateSymbolicLink(void)
@@ -7321,7 +7323,7 @@ _joinA(char *dest_path, const char *root, const char *rest)
 
 /* Return True if the path at src relative to dest is a directory */
 static int
-_check_dirW(WCHAR *src, WCHAR *dest)
+_check_dirW(LPCWSTR src, LPCWSTR dest)
 {
     WIN32_FILE_ATTRIBUTE_DATA src_info;
     WCHAR dest_parent[MAX_PATH];
@@ -7340,7 +7342,7 @@ _check_dirW(WCHAR *src, WCHAR *dest)
 
 /* Return True if the path at src relative to dest is a directory */
 static int
-_check_dirA(const char *src, char *dest)
+_check_dirA(LPCSTR src, LPCSTR dest)
 {
     WIN32_FILE_ATTRIBUTE_DATA src_info;
     char dest_parent[MAX_PATH];
@@ -9030,7 +9032,7 @@ static PyObject *
 os_putenv_impl(PyModuleDef *module, PyObject *name, PyObject *value)
 /*[clinic end generated code: output=a2438cf95e5a0c1c input=ba586581c2e6105f]*/
 {
-    wchar_t *env;
+    const wchar_t *env;
 
     PyObject *unicode = PyUnicode_FromFormat("%U=%U", name, value);
     if (unicode == NULL) {
@@ -9076,8 +9078,8 @@ os_putenv_impl(PyModuleDef *module, PyObject *name, PyObject *value)
 {
     PyObject *bytes = NULL;
     char *env;
-    char *name_string = PyBytes_AsString(name);
-    char *value_string = PyBytes_AsString(value);
+    const char *name_string = PyBytes_AsString(name);
+    const char *value_string = PyBytes_AsString(value);
 
     bytes = PyBytes_FromFormat("%s=%s", name_string, value_string);
     if (bytes == NULL) {
@@ -10469,7 +10471,7 @@ cmp_constdefs(const void *v1,  const void *v2)
 
 static int
 setup_confname_table(struct constdef *table, size_t tablesize,
-                     char *tablename, PyObject *module)
+                     const char *tablename, PyObject *module)
 {
     PyObject *d = NULL;
     size_t i;
@@ -10596,9 +10598,9 @@ static PyObject *
 win32_startfile(PyObject *self, PyObject *args)
 {
     PyObject *ofilepath;
-    char *filepath;
-    char *operation = NULL;
-    wchar_t *wpath, *woperation;
+    const char *filepath;
+    const char *operation = NULL;
+    const wchar_t *wpath, *woperation;
     HINSTANCE rc;
 
     PyObject *unipath, *uoperation = NULL;
@@ -11003,7 +11005,7 @@ os_listxattr_impl(PyModuleDef *module, path_t *path, int follow_symlinks)
     name = path->narrow ? path->narrow : ".";
 
     for (i = 0; ; i++) {
-        char *start, *trace, *end;
+        const char *start, *trace, *end;
         ssize_t length;
         static const Py_ssize_t buffer_sizes[] = { 256, XATTR_LIST_MAX, 0 };
         Py_ssize_t buffer_size = buffer_sizes[i];
@@ -11482,7 +11484,7 @@ DirEntry_fetch_stat(DirEntry *self, int follow_symlinks)
     struct _Py_stat_struct st;
 
 #ifdef MS_WINDOWS
-    wchar_t *path;
+    const wchar_t *path;
 
     path = PyUnicode_AsUnicode(self->path);
     if (!path)
@@ -11499,7 +11501,7 @@ DirEntry_fetch_stat(DirEntry *self, int follow_symlinks)
     }
 #else /* POSIX */
     PyObject *bytes;
-    char *path;
+    const char *path;
 
     if (!PyUnicode_FSConverter(self->path, &bytes))
         return NULL;
@@ -11683,7 +11685,7 @@ DirEntry_inode(DirEntry *self)
 {
 #ifdef MS_WINDOWS
     if (!self->got_file_index) {
-        wchar_t *path;
+        const wchar_t *path;
         struct _Py_stat_struct stat;
 
         path = PyUnicode_AsUnicode(self->path);
@@ -11777,7 +11779,7 @@ static PyTypeObject DirEntryType = {
 #ifdef MS_WINDOWS
 
 static wchar_t *
-join_path_filenameW(wchar_t *path_wide, wchar_t* filename)
+join_path_filenameW(const wchar_t *path_wide, const wchar_t *filename)
 {
     Py_ssize_t path_len;
     Py_ssize_t size;
@@ -12208,7 +12210,7 @@ posix_scandir(PyObject *self, PyObject *args, PyObject *kwargs)
 #ifdef MS_WINDOWS
     wchar_t *path_strW;
 #else
-    char *path;
+    const char *path;
 #endif
 
     iterator = PyObject_New(ScandirIterator, &ScandirIteratorType);
