@@ -152,7 +152,7 @@ The :mod:`statistics` module calculates basic statistical properties
     >>> statistics.variance(data)
     1.3720238095238095
 
-The SciPy project <http://scipy.org> has many other modules for numerical
+The SciPy project <https://scipy.org> has many other modules for numerical
 computations.
 
 .. _tut-internet-access:

@@ -11,12 +11,12 @@ History of the software
 =======================
 
 Python was created in the early 1990s by Guido van Rossum at Stichting
-Mathematisch Centrum (CWI, see http://www.cwi.nl/) in the Netherlands as a
+Mathematisch Centrum (CWI, see https://www.cwi.nl/) in the Netherlands as a
 successor of a language called ABC.  Guido remains Python's principal author,
 although it includes many contributions from others.
 
 In 1995, Guido continued his work on Python at the Corporation for National
-Research Initiatives (CNRI, see http://www.cnri.reston.va.us/) in Reston,
+Research Initiatives (CNRI, see https://www.cnri.reston.va.us/) in Reston,
 Virginia where he released several versions of the software.
 
 In May 2000, Guido and the Python core development team moved to BeOpen.com to
@@ -27,7 +27,7 @@ https://www.python.org/psf/) was formed, a non-profit organization created
 specifically to own Python-related Intellectual Property.  Zope Corporation is a
 sponsoring member of the PSF.
 
-All Python releases are Open Source (see http://opensource.org/ for the Open
+All Python releases are Open Source (see https://opensource.org/ for the Open
 Source Definition). Historically, most, but not all, Python releases have also
 been GPL-compatible; the table below summarizes the various releases.
 

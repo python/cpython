@@ -22,7 +22,7 @@ appearance.
 
 .. seealso::
 
-   `Tk Widget Styling Support <http://www.tcl.tk/cgi-bin/tct/tip/48>`_
+   `Tk Widget Styling Support <https://www.tcl.tk/cgi-bin/tct/tip/48>`_
       A document introducing theming support for Tk
 
 

@@ -1157,7 +1157,7 @@ changes, or look through the Subversion logs for all the details.
 * The :mod:`ctypes` module now always converts ``None`` to a C NULL
   pointer for arguments declared as pointers.  (Changed by Thomas
   Heller; :issue:`4606`.)  The underlying `libffi library
-  <http://sourceware.org/libffi/>`__ has been updated to version
+  <https://sourceware.org/libffi/>`__ has been updated to version
   3.0.9, containing various fixes for different platforms.  (Updated
   by Matthias Klose; :issue:`8142`.)
 
@@ -1530,7 +1530,7 @@ changes, or look through the Subversion logs for all the details.
   *ciphers* argument that's a string listing the encryption algorithms
   to be allowed; the format of the string is described
   `in the OpenSSL documentation
-  <http://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`__.
+  <https://www.openssl.org/docs/apps/ciphers.html#CIPHER-LIST-FORMAT>`__.
   (Added by Antoine Pitrou; :issue:`8322`.)
 
   Another change makes the extension load all of OpenSSL's ciphers and
@@ -1783,7 +1783,7 @@ on being added to Tcl/Tck release 8.5.
 To learn more, read the :mod:`ttk` module documentation.  You may also
 wish to read the Tcl/Tk manual page describing the
 Ttk theme engine, available at
-http://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.htm. Some
+https://www.tcl.tk/man/tcl8.5/TkCmd/ttk_intro.htm. Some
 screenshots of the Python/Ttk code in use are at
 http://code.google.com/p/python-ttk/wiki/Screenshots.
 
@@ -2079,7 +2079,7 @@ Changes to Python's build process and to the C API include:
 
 * The latest release of the GNU Debugger, GDB 7, can be `scripted
   using Python
-  <http://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
+  <https://sourceware.org/gdb/current/onlinedocs/gdb/Python.html>`__.
   When you begin debugging an executable program P, GDB will look for
   a file named ``P-gdb.py`` and automatically read it.  Dave Malcolm
   contributed a :file:`python-gdb.py` that adds a number of
@@ -2149,7 +2149,7 @@ Changes to Python's build process and to the C API include:
   with *updatepath* set to false.
 
   Security issue reported as `CVE-2008-5983
-  <http://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_;
+  <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2008-5983>`_;
   discussed in :issue:`5753`, and fixed by Antoine Pitrou.
 
 * New macros: the Python header files now define the following macros:
