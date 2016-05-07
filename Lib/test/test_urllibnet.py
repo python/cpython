@@ -38,11 +38,13 @@ class urlopenNetworkTests(unittest.TestCase):
     for transparent redirection have been written.
 
     setUp is not used for always constructing a connection to
-    http://www.example.com/ since there a few tests that don't use that address
+    http://www.pythontest.net/ since there a few tests that don't use that address
     and making a connection is expensive enough to warrant minimizing unneeded
     connections.
 
     """
+
+    url = 'http://www.pythontest.net/'
 
     @contextlib.contextmanager
     def urlopen(self, *args, **kwargs):
@@ -56,7 +58,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_basic(self):
         # Simple test expected to pass.
-        with self.urlopen("http://www.example.com/") as open_url:
+        with self.urlopen(self.url) as open_url:
             for attr in ("read", "readline", "readlines", "fileno", "close",
                          "info", "geturl"):
                 self.assertTrue(hasattr(open_url, attr), "object returned from "
@@ -65,7 +67,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_readlines(self):
         # Test both readline and readlines.
-        with self.urlopen("http://www.example.com/") as open_url:
+        with self.urlopen(self.url) as open_url:
             self.assertIsInstance(open_url.readline(), bytes,
                                   "readline did not return a string")
             self.assertIsInstance(open_url.readlines(), list,
@@ -73,7 +75,7 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_info(self):
         # Test 'info'.
-        with self.urlopen("http://www.example.com/") as open_url:
+        with self.urlopen(self.url) as open_url:
             info_obj = open_url.info()
             self.assertIsInstance(info_obj, email.message.Message,
                                   "object returned by 'info' is not an "
@@ -82,14 +84,13 @@ class urlopenNetworkTests(unittest.TestCase):
 
     def test_geturl(self):
         # Make sure same URL as opened is returned by geturl.
-        URL = "http://www.example.com/"
-        with self.urlopen(URL) as open_url:
+        with self.urlopen(self.url) as open_url:
             gotten_url = open_url.geturl()
-            self.assertEqual(gotten_url, URL)
+            self.assertEqual(gotten_url, self.url)
 
     def test_getcode(self):
         # test getcode() with the fancy opener to get 404 error codes
-        URL = "http://www.example.com/XXXinvalidXXX"
+        URL = self.url + "XXXinvalidXXX"
         with support.transient_internet(URL):
             with self.assertWarns(DeprecationWarning):
                 open_url = urllib.request.FancyURLopener().open(URL)
@@ -153,7 +154,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_basic(self):
         # Test basic functionality.
-        with self.urlretrieve("http://www.example.com/") as (file_location, info):
+        with self.urlretrieve(self.logo) as (file_location, info):
             self.assertTrue(os.path.exists(file_location), "file location returned by"
                             " urlretrieve is not a valid path")
             with open(file_location, 'rb') as f:
@@ -162,7 +163,7 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_specified_path(self):
         # Make sure that specifying the location of the file to write to works.
-        with self.urlretrieve("http://www.example.com/",
+        with self.urlretrieve(self.logo,
                               support.TESTFN) as (file_location, info):
             self.assertEqual(file_location, support.TESTFN)
             self.assertTrue(os.path.exists(file_location))
@@ -171,11 +172,11 @@ class urlretrieveNetworkTests(unittest.TestCase):
 
     def test_header(self):
         # Make sure header returned as 2nd value from urlretrieve is good.
-        with self.urlretrieve("http://www.example.com/") as (file_location, info):
+        with self.urlretrieve(self.logo) as (file_location, info):
             self.assertIsInstance(info, email.message.Message,
                                   "info is not an instance of email.message.Message")
 
-    logo = "http://www.example.com/"
+    logo = "http://www.pythontest.net/"
 
     def test_data_header(self):
         with self.urlretrieve(self.logo) as (file_location, fileheaders):
