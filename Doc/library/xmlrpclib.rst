@@ -54,7 +54,7 @@ between conformable Python objects and XML on the wire.
    XML; the default behaviour is for ``None`` to raise a :exc:`TypeError`. This is
    a commonly-used extension to the XML-RPC specification, but isn't supported by
    all clients and servers; see `http://ontosys.com/xml-rpc/extensions.php
-   <https://web.archive.org/web/20130120074804/http://ontosys.com/xml-rpc/extensions.php>`
+   <https://web.archive.org/web/20130120074804/http://ontosys.com/xml-rpc/extensions.php>`_
    for a description.
    The *use_datetime* flag can be used to cause date/time values to
    be presented as :class:`datetime.datetime` objects; this is false by default.
@@ -95,12 +95,12 @@ between conformable Python objects and XML on the wire.
    +----------------------+-------------------------------------------------------+
    | ``array``            | :class:`list` or :class:`tuple` containing            |
    |                      | conformable elements.  Arrays are returned as         |
-   |                      | :class:`list`\ s.                                     |
+   |                      | :class:`lists <list>`.                                |
    +----------------------+-------------------------------------------------------+
    | ``struct``           | :class:`dict`.  Keys must be strings, values may be   |
    |                      | any conformable type.  Objects of user-defined        |
-   |                      | classes can be passed in; only their :attr:`__dict__` |
-   |                      | attribute is transmitted.                             |
+   |                      | classes can be passed in; only their                  |
+   |                      | :attr:`~object.__dict__` attribute is transmitted.    |
    +----------------------+-------------------------------------------------------+
    | ``dateTime.iso8601`` | :class:`DateTime` or :class:`datetime.datetime`.      |
    |                      | Returned type depends on values of the *use_datetime* |
