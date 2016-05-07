@@ -232,5 +232,5 @@ include a `salt <https://en.wikipedia.org/wiki/Salt_%28cryptography%29>`_.
       Wikipedia article with information on which algorithms have known issues and
       what that means regarding their use.
 
-   http://www.ietf.org/rfc/rfc2898.txt
+   https://www.ietf.org/rfc/rfc2898.txt
       PKCS #5: Password-Based Cryptography Specification Version 2.0

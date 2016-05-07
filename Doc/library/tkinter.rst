@@ -22,13 +22,13 @@ this should open a window demonstrating a simple Tk interface.
    `TKDocs <http://www.tkdocs.com/>`_
       Extensive tutorial plus friendlier widget pages for some of the widgets.
 
-   `Tkinter reference: a GUI for Python <http://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
+   `Tkinter reference: a GUI for Python <https://infohost.nmt.edu/tcc/help/pubs/tkinter/web/index.html>`_
       On-line reference material.
 
    `Tkinter docs from effbot <http://effbot.org/tkinterbook/>`_
       Online reference for tkinter supported by effbot.org.
 
-   `Tcl/Tk manual <http://www.tcl.tk/man/tcl8.5/>`_
+   `Tcl/Tk manual <https://www.tcl.tk/man/tcl8.5/>`_
       Official manual for the latest tcl/tk version.
 
    `Programming Python <http://learning-python.com/books/about-pp4e.html>`_
@@ -173,7 +173,7 @@ documentation that exists. Here are some hints:
 
 .. seealso::
 
-   `Tcl/Tk 8.6 man pages <http://www.tcl.tk/man/tcl8.6/>`_
+   `Tcl/Tk 8.6 man pages <https://www.tcl.tk/man/tcl8.6/>`_
       The Tcl/Tk manual on www.tcl.tk.
 
    `ActiveState Tcl Home Page <http://tcl.activestate.com/>`_

@@ -1410,7 +1410,7 @@ sqlite3
 
 A new boolean parameter to the :func:`~sqlite3.connect` function, *uri*, can be
 used to indicate that the *database* parameter is a ``uri`` (see the `SQLite
-URI documentation <http://www.sqlite.org/uri.html>`_).  (Contributed by poq in
+URI documentation <https://www.sqlite.org/uri.html>`_).  (Contributed by poq in
 :issue:`13773`.)
 
 

@@ -116,12 +116,12 @@ The class can be used to simulate nested scopes and is useful in templating.
       :meth:`~collections.ChainMap.parents` property.
 
     * The `Nested Contexts recipe
-      <http://code.activestate.com/recipes/577434/>`_ has options to control
+      <https://code.activestate.com/recipes/577434/>`_ has options to control
       whether writes and other mutations apply only to the first mapping or to
       any mapping in the chain.
 
     * A `greatly simplified read-only version of Chainmap
-      <http://code.activestate.com/recipes/305268/>`_.
+      <https://code.activestate.com/recipes/305268/>`_.
 
 
 :class:`ChainMap` Examples and Recipes
@@ -957,7 +957,7 @@ customize a prototype instance:
 .. seealso::
 
     * `Recipe for named tuple abstract base class with a metaclass mix-in
-      <http://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
+      <https://code.activestate.com/recipes/577629-namedtupleabc-abstract-base-class-mix-in-for-named/>`_
       by Jan Kaliszewski.  Besides providing an :term:`abstract base class` for
       named tuples, it also supports an alternate :term:`metaclass`-based
       constructor that is convenient for use cases where named tuples are being

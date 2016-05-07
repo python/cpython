@@ -51,7 +51,7 @@ HTTP status codes
 -----------------
 
 Supported,
-`IANA-registered <http://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_
+`IANA-registered <https://www.iana.org/assignments/http-status-codes/http-status-codes.xhtml>`_
 status codes available in :class:`http.HTTPStatus` are:
 
 ======= =================================== ==================================================================
