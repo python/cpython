@@ -100,7 +100,7 @@ eventually take care of the objects in the tree.
 
 .. seealso::
 
-   `Document Object Model (DOM) Level 1 Specification <http://www.w3.org/TR/REC-DOM-Level-1/>`_
+   `Document Object Model (DOM) Level 1 Specification <https://www.w3.org/TR/REC-DOM-Level-1/>`_
       The W3C recommendation for the DOM supported by :mod:`xml.dom.minidom`.
 
 
@@ -251,5 +251,5 @@ utility to most DOM users.
    the appropriate standards. For example, "UTF-8" is valid, but
    "UTF8" is not valid in an XML document's declaration, even though
    Python accepts it as an encoding name.
-   See http://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
-   and http://www.iana.org/assignments/character-sets/character-sets.xhtml.
+   See https://www.w3.org/TR/2006/REC-xml11-20060816/#NT-EncodingDecl
+   and https://www.iana.org/assignments/character-sets/character-sets.xhtml.

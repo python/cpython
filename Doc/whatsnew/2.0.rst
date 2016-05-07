@@ -61,7 +61,7 @@ how Python is developed: in May 2000 the Python developers began using the tools
 made available by SourceForge for storing  source code, tracking bug reports,
 and managing the queue of patch submissions.  To report bugs or submit patches
 for Python 2.0, use the bug tracking and patch manager tools available from
-Python's project page, located at http://sourceforge.net/projects/python/.
+Python's project page, located at https://sourceforge.net/projects/python/.
 
 The most important of the services now hosted at SourceForge is the Python CVS
 tree, the version-controlled repository containing the source code for Python.

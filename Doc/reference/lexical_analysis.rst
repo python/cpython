@@ -322,7 +322,7 @@ of identifiers is based on NFKC.
 
 A non-normative HTML file listing all valid identifier characters for Unicode
 4.1 can be found at
-http://www.dcl.hpi.uni-potsdam.de/home/loewis/table-3131.html.
+https://www.dcl.hpi.uni-potsdam.de/home/loewis/table-3131.html.
 
 
 .. _keywords:
