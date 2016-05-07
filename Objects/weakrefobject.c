@@ -271,7 +271,6 @@ static int
 parse_weakref_init_args(char *funcname, PyObject *args, PyObject *kwargs,
                         PyObject **obp, PyObject **callbackp)
 {
-    /* XXX Should check that kwargs == NULL or is empty. */
     return PyArg_UnpackTuple(args, funcname, 1, 2, obp, callbackp);
 }
 
@@ -333,6 +332,9 @@ static int
 weakref___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 {
     PyObject *tmp;
+
+    if (!_PyArg_NoKeywords("ref()", kwargs))
+        return -1;
 
     if (parse_weakref_init_args("__init__", args, kwargs, &tmp, &tmp))
         return 0;
