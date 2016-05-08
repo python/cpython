@@ -649,6 +649,8 @@ class TclTest(unittest.TestCase):
                 expected = {'a': (1, 2, 3), 'something': 'foo', 'status': ''}
             self.assertEqual(splitdict(tcl, arg), expected)
 
+    def test_new_tcl_obj(self):
+        self.assertRaises(TypeError, _tkinter.Tcl_Obj)
 
 class BigmemTclTest(unittest.TestCase):
 
