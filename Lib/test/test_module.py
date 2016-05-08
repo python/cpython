@@ -30,7 +30,7 @@ class ModuleTests(unittest.TestCase):
             pass
         self.assertEqual(foo.__doc__, ModuleType.__doc__)
 
-    def test_unintialized_missing_getattr(self):
+    def test_uninitialized_missing_getattr(self):
         # Issue 8297
         # test the text in the AttributeError of an uninitialized module
         foo = ModuleType.__new__(ModuleType)

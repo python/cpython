@@ -1574,7 +1574,7 @@ Mon Oct 12 23:59:27 1998  Guido van Rossum  <guido@cnri.reston.va.us>
 	* Attic/PopupMenu.py: Pass a root to the help window.
 
 	* SearchBinding.py:
-	Add parent argument to 'to to line number' dialog box.
+	Add parent argument to 'go to line number' dialog box.
 
 Sat Oct 10 19:15:32 1998  Guido van Rossum  <guido@cnri.reston.va.us>
 
