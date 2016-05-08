@@ -3551,6 +3551,7 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
+    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "TkappType", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
@@ -3563,6 +3564,7 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
+    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "TkttType", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
@@ -3575,6 +3577,7 @@ PyInit__tkinter(void)
         Py_DECREF(m);
         return NULL;
     }
+    ((PyTypeObject *)o)->tp_new = NULL;
     if (PyModule_AddObject(m, "Tcl_Obj", o)) {
         Py_DECREF(o);
         Py_DECREF(m);
