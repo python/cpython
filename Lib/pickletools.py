@@ -590,7 +590,7 @@ bytes8 = ArgumentDescriptor(
               reader=read_bytes8,
               doc="""A counted bytes string.
 
-              The first argument is a 8-byte little-endian unsigned int giving
+              The first argument is an 8-byte little-endian unsigned int giving
               the number of bytes, and the second argument is that many bytes.
               """)
 
@@ -734,7 +734,7 @@ unicodestring8 = ArgumentDescriptor(
                     reader=read_unicodestring8,
                     doc="""A counted Unicode string.
 
-                    The first argument is a 8-byte little-endian signed int
+                    The first argument is an 8-byte little-endian signed int
                     giving the number of bytes in the string, and the second
                     argument-- the UTF-8 encoding of the Unicode string --
                     contains that many bytes.
@@ -1330,7 +1330,7 @@ opcodes = [
       proto=4,
       doc="""Push a Python bytes object.
 
-      There are two arguments:  the first is a 8-byte unsigned int giving
+      There are two arguments:  the first is an 8-byte unsigned int giving
       the number of bytes in the string, and the second is that many bytes,
       which are taken literally as the string content.
       """),
@@ -1417,7 +1417,7 @@ opcodes = [
       proto=4,
       doc="""Push a Python Unicode string object.
 
-      There are two arguments:  the first is a 8-byte little-endian signed int
+      There are two arguments:  the first is an 8-byte little-endian signed int
       giving the number of bytes in the string.  The second is that many
       bytes, and is the UTF-8 encoding of the Unicode string.
       """),
