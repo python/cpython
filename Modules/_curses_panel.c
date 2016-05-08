@@ -506,10 +506,11 @@ PyInit__curses_panel(void)
     d = PyModule_GetDict(m);
 
     /* Initialize object type */
-    _curses_panelstate(m)->PyCursesPanel_Type = \
-        PyType_FromSpec(&PyCursesPanel_Type_spec);
-    if (_curses_panelstate(m)->PyCursesPanel_Type == NULL)
+    v = PyType_FromSpec(&PyCursesPanel_Type_spec);
+    if (v == NULL)
         goto fail;
+    ((PyTypeObject *)v)->tp_new = NULL;
+    _curses_panelstate(m)->PyCursesPanel_Type = v;
 
     import_curses();
     if (PyErr_Occurred())
