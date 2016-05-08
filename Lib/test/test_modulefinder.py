@@ -278,6 +278,19 @@ class ModuleFinderTest(unittest.TestCase):
         def test_relative_imports_3(self):
             self._do_test(relative_import_test_3)
 
+    def test_extended_opargs(self):
+        extended_opargs_test = [
+            "a",
+            ["a", "b"],
+            [], [],
+            """\
+a.py
+                                %r
+                                import b
+b.py
+""" % range(2**16)]  # 2**16 constants
+        self._do_test(extended_opargs_test)
+
 def test_main():
     distutils.log.set_threshold(distutils.log.WARN)
     test_support.run_unittest(ModuleFinderTest)

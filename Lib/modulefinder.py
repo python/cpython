@@ -16,12 +16,32 @@ else:
     # remain compatible with Python  < 2.3
     READ_MODE = "r"
 
-LOAD_CONST = chr(dis.opname.index('LOAD_CONST'))
-IMPORT_NAME = chr(dis.opname.index('IMPORT_NAME'))
-STORE_NAME = chr(dis.opname.index('STORE_NAME'))
-STORE_GLOBAL = chr(dis.opname.index('STORE_GLOBAL'))
-STORE_OPS = [STORE_NAME, STORE_GLOBAL]
-HAVE_ARGUMENT = chr(dis.HAVE_ARGUMENT)
+LOAD_CONST = dis.opmap['LOAD_CONST']
+IMPORT_NAME = dis.opmap['IMPORT_NAME']
+STORE_NAME = dis.opmap['STORE_NAME']
+STORE_GLOBAL = dis.opmap['STORE_GLOBAL']
+STORE_OPS = STORE_NAME, STORE_GLOBAL
+HAVE_ARGUMENT = dis.HAVE_ARGUMENT
+EXTENDED_ARG = dis.EXTENDED_ARG
+
+def _unpack_opargs(code):
+    # enumerate() is not an option, since we sometimes process
+    # multiple elements on a single pass through the loop
+    extended_arg = 0
+    n = len(code)
+    i = 0
+    while i < n:
+        op = ord(code[i])
+        offset = i
+        i = i+1
+        arg = None
+        if op >= HAVE_ARGUMENT:
+            arg = ord(code[i]) + ord(code[i+1])*256 + extended_arg
+            extended_arg = 0
+            i = i+2
+            if op == EXTENDED_ARG:
+                extended_arg = arg*65536
+        yield (offset, op, arg)
 
 # Modulefinder does a good job at simulating Python's, but it can not
 # handle __path__ modifications packages make at runtime.  Therefore there
@@ -344,53 +364,40 @@ class ModuleFinder:
         code = co.co_code
         names = co.co_names
         consts = co.co_consts
-        while code:
-            c = code[0]
+        opargs = [(op, arg) for _, op, arg in _unpack_opargs(code)
+                  if op != EXTENDED_ARG]
+        for i, (op, oparg) in enumerate(opargs):
             if c in STORE_OPS:
-                oparg, = unpack('<H', code[1:3])
                 yield "store", (names[oparg],)
-                code = code[3:]
                 continue
-            if c == LOAD_CONST and code[3] == IMPORT_NAME:
-                oparg_1, oparg_2 = unpack('<xHxH', code[:6])
-                yield "import", (consts[oparg_1], names[oparg_2])
-                code = code[6:]
+            if (op == IMPORT_NAME and i >= 1
+                    and opargs[i-1][0] == LOAD_CONST):
+                fromlist = consts[opargs[i-1][1]]
+                yield "import", (fromlist, names[oparg])
                 continue
-            if c >= HAVE_ARGUMENT:
-                code = code[3:]
-            else:
-                code = code[1:]
 
-    def scan_opcodes_25(self, co,
-                     unpack = struct.unpack):
+    def scan_opcodes_25(self, co):
         # Scan the code, and yield 'interesting' opcode combinations
-        # Python 2.5 version (has absolute and relative imports)
         code = co.co_code
         names = co.co_names
         consts = co.co_consts
-        LOAD_LOAD_AND_IMPORT = LOAD_CONST + LOAD_CONST + IMPORT_NAME
-        while code:
-            c = code[0]
-            if c in STORE_OPS:
-                oparg, = unpack('<H', code[1:3])
+        opargs = [(op, arg) for _, op, arg in _unpack_opargs(code)
+                  if op != EXTENDED_ARG]
+        for i, (op, oparg) in enumerate(opargs):
+            if op in STORE_OPS:
                 yield "store", (names[oparg],)
-                code = code[3:]
                 continue
-            if code[:9:3] == LOAD_LOAD_AND_IMPORT:
-                oparg_1, oparg_2, oparg_3 = unpack('<xHxHxH', code[:9])
-                level = consts[oparg_1]
+            if (op == IMPORT_NAME and i >= 2
+                    and opargs[i-1][0] == opargs[i-2][0] == LOAD_CONST):
+                level = consts[opargs[i-2][1]]
+                fromlist = consts[opargs[i-1][1]]
                 if level == -1: # normal import
-                    yield "import", (consts[oparg_2], names[oparg_3])
+                    yield "import", (fromlist, names[oparg])
                 elif level == 0: # absolute import
-                    yield "absolute_import", (consts[oparg_2], names[oparg_3])
+                    yield "absolute_import", (fromlist, names[oparg])
                 else: # relative import
-                    yield "relative_import", (level, consts[oparg_2], names[oparg_3])
-                code = code[9:]
+                    yield "relative_import", (level, fromlist, names[oparg])
                 continue
-            if c >= HAVE_ARGUMENT:
-                code = code[3:]
-            else:
-                code = code[1:]
 
     def scan_code(self, co, m):
         code = co.co_code
