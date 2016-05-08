@@ -116,6 +116,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26881: The modulefinder module now supports extended opcode arguments.
+
 - Issue #23815: Fixed crashes related to directly created instances of types in
   _tkinter and curses.panel modules.
 
@@ -124,6 +126,8 @@ Library
 
 - Issue #26873: xmlrpc now raises ResponseError on unsupported type tags
   instead of silently return incorrect result.
+
+- Issue #26881: modulefinder now works with bytecode with extended args.
 
 - Issue #26711: Fixed the comparison of plistlib.Data with other types.
 
