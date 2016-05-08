@@ -4993,7 +4993,7 @@ ext_do_call(PyObject *func, PyObject ***pp_stack, int flags, int na, int nk)
 
     if (flags & CALL_FLAG_KW) {
         kwdict = EXT_POP(*pp_stack);
-        if (!PyDict_Check(kwdict)) {
+        if (!PyDict_CheckExact(kwdict)) {
             PyObject *d;
             d = PyDict_New();
             if (d == NULL)
