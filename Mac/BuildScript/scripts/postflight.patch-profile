@@ -58,7 +58,7 @@ case "${BSH}" in
 	fi
 	echo "" >> "${RC}"
 	echo "# Setting PATH for Python ${PYVER}" >> "${RC}"
-	echo "# The orginal version is saved in .cshrc.pysave" >> "${RC}"
+	echo "# The original version is saved in .cshrc.pysave" >> "${RC}"
 	echo "set path=(${PYTHON_ROOT}/bin "'$path'")" >> "${RC}"
 	if [ `id -ur` = 0 ]; then
 		chown "${USER}" "${RC}"
@@ -90,7 +90,7 @@ if [ -f "${PR}" ]; then
 fi
 echo "" >> "${PR}"
 echo "# Setting PATH for Python ${PYVER}" >> "${PR}"
-echo "# The orginal version is saved in `basename ${PR}`.pysave" >> "${PR}"
+echo "# The original version is saved in `basename ${PR}`.pysave" >> "${PR}"
 echo 'PATH="'"${PYTHON_ROOT}/bin"':${PATH}"' >> "${PR}"
 echo 'export PATH' >> "${PR}"
 if [ `id -ur` = 0 ]; then
