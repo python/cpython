@@ -275,31 +275,17 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
 
     """
     labels = findlabels(code)
-    extended_arg = 0
     starts_line = None
     free = None
-    # enumerate() is not an option, since we sometimes process
-    # multiple elements on a single pass through the loop
-    n = len(code)
-    i = 0
-    while i < n:
-        op = code[i]
-        offset = i
+    for offset, op, arg in _unpack_opargs(code):
         if linestarts is not None:
-            starts_line = linestarts.get(i, None)
+            starts_line = linestarts.get(offset, None)
             if starts_line is not None:
                 starts_line += line_offset
-        is_jump_target = i in labels
-        i = i+1
-        arg = None
+        is_jump_target = offset in labels
         argval = None
         argrepr = ''
-        if op >= HAVE_ARGUMENT:
-            arg = code[i] + code[i+1]*256 + extended_arg
-            extended_arg = 0
-            i = i+2
-            if op == EXTENDED_ARG:
-                extended_arg = arg*65536
+        if arg is not None:
             #  Set argval to the dereferenced value of the argument when
             #  availabe, and argrepr to the string representation of argval.
             #    _disassemble_bytes needs the string repr of the
@@ -310,7 +296,7 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
             elif op in hasname:
                 argval, argrepr = _get_name_info(arg, names)
             elif op in hasjrel:
-                argval = i + arg
+                argval = offset + 3 + arg
                 argrepr = "to " + repr(argval)
             elif op in haslocal:
                 argval, argrepr = _get_name_info(arg, varnames)
@@ -320,7 +306,7 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
             elif op in hasfree:
                 argval, argrepr = _get_name_info(arg, cells)
             elif op in hasnargs:
-                argrepr = "%d positional, %d keyword pair" % (code[i-2], code[i-1])
+                argrepr = "%d positional, %d keyword pair" % (arg%256, arg//256)
         yield Instruction(opname[op], op,
                           arg, argval, argrepr,
                           offset, starts_line, is_jump_target)
@@ -356,6 +342,25 @@ def _disassemble_str(source, *, file=None):
 
 disco = disassemble                     # XXX For backwards compatibility
 
+def _unpack_opargs(code):
+    # enumerate() is not an option, since we sometimes process
+    # multiple elements on a single pass through the loop
+    extended_arg = 0
+    n = len(code)
+    i = 0
+    while i < n:
+        op = code[i]
+        offset = i
+        i = i+1
+        arg = None
+        if op >= HAVE_ARGUMENT:
+            arg = code[i] + code[i+1]*256 + extended_arg
+            extended_arg = 0
+            i = i+2
+            if op == EXTENDED_ARG:
+                extended_arg = arg*65536
+        yield (offset, op, arg)
+
 def findlabels(code):
     """Detect all offsets in a byte code which are jump targets.
 
@@ -363,19 +368,11 @@ def findlabels(code):
 
     """
     labels = []
-    # enumerate() is not an option, since we sometimes process
-    # multiple elements on a single pass through the loop
-    n = len(code)
-    i = 0
-    while i < n:
-        op = code[i]
-        i = i+1
-        if op >= HAVE_ARGUMENT:
-            arg = code[i] + code[i+1]*256
-            i = i+2
+    for offset, op, arg in _unpack_opargs(code):
+        if arg is not None:
             label = -1
             if op in hasjrel:
-                label = i+arg
+                label = offset + 3 + arg
             elif op in hasjabs:
                 label = arg
             if label >= 0:
