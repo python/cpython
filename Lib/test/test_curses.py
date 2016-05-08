@@ -285,6 +285,10 @@ class TestCurses(unittest.TestCase):
         panel.set_userptr(A())
         panel.set_userptr(None)
 
+    def test_new_curses_panel(self):
+        panel = curses.panel.new_panel(self.stdscr)
+        self.assertRaises(TypeError, type(panel))
+
     @unittest.skipUnless(hasattr(curses, 'resizeterm'),
                            'resizeterm not available')
     def test_resize_term(self):
