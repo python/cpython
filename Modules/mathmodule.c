@@ -957,8 +957,8 @@ static PyObject * math_ceil(PyObject *self, PyObject *number) {
 }
 
 PyDoc_STRVAR(math_ceil_doc,
-             "ceil(x)\n\nReturn the ceiling of x as an int.\n"
-             "This is the smallest integral value >= x.");
+             "ceil(x)\n\nReturn the ceiling of x as an Integral.\n"
+             "This is the smallest integer >= x.");
 
 FUNC2(copysign, copysign,
       "copysign(x, y)\n\nReturn a float with the magnitude (absolute value) "
@@ -997,8 +997,8 @@ static PyObject * math_floor(PyObject *self, PyObject *number) {
 }
 
 PyDoc_STRVAR(math_floor_doc,
-             "floor(x)\n\nReturn the floor of x as an int.\n"
-             "This is the largest integral value <= x.");
+             "floor(x)\n\nReturn the floor of x as an Integral.\n"
+             "This is the largest integer <= x.");
 
 FUNC1A(gamma, m_tgamma,
       "gamma(x)\n\nGamma function at x.")
