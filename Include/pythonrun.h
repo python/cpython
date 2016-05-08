@@ -155,7 +155,7 @@ PyAPI_DATA(PyThreadState*) _PyOS_ReadlineTState;
 
 /* Stack size, in "pointers" (so we get extra safety margins
    on 64-bit platforms).  On a 32-bit platform, this translates
-   to a 8k margin. */
+   to an 8k margin. */
 #define PYOS_STACK_MARGIN 2048
 
 #if defined(WIN32) && !defined(MS_WIN64) && defined(_MSC_VER) && _MSC_VER >= 1300

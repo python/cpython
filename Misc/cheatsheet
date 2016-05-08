@@ -1053,7 +1053,7 @@ type(obj)           types.StringType: print 'It is a string'NB: it is
                     recommanded to use the following form:if isinstance(x,
                     types.StringType): etc...
 unichr(code)        code.
-unicode(string[,    Creates a Unicode string from a 8-bit string, using
+unicode(string[,    Creates a Unicode string from an 8-bit string, using
 encoding[, error    thegiven encoding name and error treatment ('strict',
 ]]])                'ignore',or 'replace'}.
                     Without arguments, returns a dictionary correspondingto the

@@ -33,7 +33,7 @@ PyAPI_FUNC(PyObject *) PyMemoryView_GetContiguous(PyObject *base,
        original buffer if a copy must be made.  If buffertype is
        PyBUF_WRITE and the buffer is not contiguous an error will
        be raised.  In this circumstance, the user can use
-       PyBUF_SHADOW to ensure that a a writable temporary
+       PyBUF_SHADOW to ensure that a writable temporary
        contiguous buffer is returned.  The contents of this
        contiguous buffer will be copied back into the original
        object after the memoryview object is deleted as long as

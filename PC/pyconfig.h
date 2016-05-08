@@ -368,7 +368,7 @@ Py_NO_ENABLE_SHARED to find out.  Also support MS_NO_COREDLL for b/w compat */
 #	define SIZEOF_FPOS_T 8
 #	define SIZEOF_HKEY 4
 #	define SIZEOF_SIZE_T 4
-	/* MS VS2005 changes time_t to an 64-bit type on all platforms */
+	/* MS VS2005 changes time_t to a 64-bit type on all platforms */
 #	if defined(_MSC_VER) && _MSC_VER >= 1400
 #	define SIZEOF_TIME_T 8
 #	else

@@ -55,7 +55,7 @@ fbound(double val, double minval, double maxval)
  */
 #define BIAS 0x84   /* define the add-in bias for 16 bit samples */
 #define CLIP 32635
-#define SIGN_BIT        (0x80)          /* Sign bit for a A-law byte. */
+#define SIGN_BIT        (0x80)          /* Sign bit for an A-law byte. */
 #define QUANT_MASK      (0xf)           /* Quantization field mask. */
 #define SEG_SHIFT       (4)             /* Left shift for segment number. */
 #define SEG_MASK        (0x70)          /* Segment field mask. */
@@ -229,8 +229,8 @@ static PyInt16 _st_alaw2linear16[256] = {
 };
 
 /*
- * linear2alaw() accepts an 13-bit signed integer and encodes it as A-law data
- * stored in a unsigned char.  This function should only be called with
+ * linear2alaw() accepts a 13-bit signed integer and encodes it as A-law data
+ * stored in an unsigned char.  This function should only be called with
  * the data shifted such that it only contains information in the lower
  * 13-bits.
  *

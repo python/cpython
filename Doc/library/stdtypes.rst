@@ -2749,7 +2749,7 @@ is generally interpreted as simple bytes.
    .. attribute:: shape
 
       A tuple of integers the length of :attr:`ndim` giving the shape of the
-      memory as a N-dimensional array.
+      memory as an N-dimensional array.
 
    .. attribute:: ndim
 

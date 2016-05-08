@@ -49,7 +49,7 @@ The module defines the following variables and functions:
 
 .. function:: grey2mono(image, width, height, threshold)
 
-   Convert a 8-bit deep greyscale image to a 1-bit deep image by thresholding all
+   Convert an 8-bit deep greyscale image to a 1-bit deep image by thresholding all
    the pixels.  The resulting image is tightly packed and is probably only useful
    as an argument to :func:`mono2grey`.
 

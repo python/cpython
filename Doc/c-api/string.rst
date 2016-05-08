@@ -88,7 +88,7 @@ called with a non-string parameter.
    | :attr:`%%`        | *n/a*         | The literal % character.       |
    +-------------------+---------------+--------------------------------+
    | :attr:`%c`        | int           | A single character,            |
-   |                   |               | represented as an C int.       |
+   |                   |               | represented as a C int.        |
    +-------------------+---------------+--------------------------------+
    | :attr:`%d`        | int           | Exactly equivalent to          |
    |                   |               | ``printf("%d")``.              |

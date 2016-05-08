@@ -125,7 +125,7 @@ values are available:
 
 To build a universal binary that includes a 64-bit architecture, you must build
 on a system running OS X 10.5 or later.  The ``all`` and ``64-bit`` flavors can
-only be built with an 10.5 SDK because ``ppc64`` support was only included with
+only be built with a 10.5 SDK because ``ppc64`` support was only included with
 OS X 10.5.  Although legacy ``ppc`` support was included with Xcode 3 on OS X
 10.6, it was removed in Xcode 4, versions of which were released on OS X 10.6
 and which is the standard for OS X 10.7.  To summarize, the
