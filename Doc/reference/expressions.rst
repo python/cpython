@@ -821,7 +821,7 @@ Suspend the execution of :term:`coroutine` on an :term:`awaitable` object.
 Can only be used inside a :term:`coroutine function`.
 
 .. productionlist::
-   await: ["await"] `primary`
+   await_expr: "await" `primary`
 
 .. versionadded:: 3.5
 
@@ -835,7 +835,7 @@ The power operator binds more tightly than unary operators on its left; it binds
 less tightly than unary operators on its right.  The syntax is:
 
 .. productionlist::
-   power: `await` ["**" `u_expr`]
+   power: ( `await_expr` | `primary` ) ["**" `u_expr`]
 
 Thus, in an unparenthesized sequence of power and unary operators, the operators
 are evaluated from right to left (this does not constrain the evaluation order
