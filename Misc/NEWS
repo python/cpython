@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #18531: Single var-keyword argument of dict subtype was passed
+  unscathed to the C-defined function.  Now it is converted to exact dict.
+
 - Issue #26811: gc.get_objects() no longer contains a broken tuple with NULL
   pointer.
 
