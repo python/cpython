@@ -1247,7 +1247,7 @@ flushing behavior.
 
 The example script has a simple function, ``foo``, which just cycles through
 all the logging levels, writing to ``sys.stderr`` to say what level it's about
-to log at, and then actually logging a message that that level. You can pass a
+to log at, and then actually logging a message at that level. You can pass a
 parameter to ``foo`` which, if true, will log at ERROR and CRITICAL levels -
 otherwise, it only logs at DEBUG, INFO and WARNING levels.
 

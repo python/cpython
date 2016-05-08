@@ -349,7 +349,7 @@ sends logging output to a network socket. The base class uses a TCP socket.
    .. method:: createSocket()
 
       Tries to create a socket; on failure, uses an exponential back-off
-      algorithm.  On intial failure, the handler will drop the message it was
+      algorithm.  On initial failure, the handler will drop the message it was
       trying to send.  When subsequent messages are handled by the same
       instance, it will not try connecting until some time has passed.  The
       default parameters are such that the initial delay is one second, and if

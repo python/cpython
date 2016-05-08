@@ -3723,7 +3723,7 @@ order (MRO) for bases """
         b.a = a
         z = deepcopy(a) # This blew up before
 
-    def test_unintialized_modules(self):
+    def test_uninitialized_modules(self):
         # Testing uninitialized module objects...
         from types import ModuleType as M
         m = M.__new__(M)

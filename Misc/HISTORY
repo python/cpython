@@ -3134,7 +3134,7 @@ Core and builtins
 - When method objects have an attribute that can be satisfied either
   by the function object or by the method object, the function
   object's attribute usually wins.  Christian Tismer pointed out that
-  that this is really a mistake, because this only happens for special
+  this is really a mistake, because this only happens for special
   methods (like __reduce__) where the method object's version is
   really more appropriate than the function's attribute.  So from now
   on, all method attributes will have precedence over function

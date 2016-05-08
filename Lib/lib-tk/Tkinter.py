@@ -1244,7 +1244,7 @@ class Misc:
         nsign, b, f, h, k, s, t, w, x, y, A, E, K, N, W, T, X, Y, D = args
         # Missing: (a, c, d, m, o, v, B, R)
         e = Event()
-        # serial field: valid vor all events
+        # serial field: valid for all events
         # number of button: ButtonPress and ButtonRelease events only
         # height field: Configure, ConfigureRequest, Create,
         # ResizeRequest, and Expose events only
@@ -1256,7 +1256,7 @@ class Misc:
         # y field: "valid for events that contain a y field"
         # keysym as decimal: KeyPress and KeyRelease events only
         # x_root, y_root fields: ButtonPress, ButtonRelease, KeyPress,
-        # KeyRelease,and Motion events
+        # KeyRelease, and Motion events
         e.serial = getint(nsign)
         e.num = getint_event(b)
         try: e.focus = getboolean(f)
