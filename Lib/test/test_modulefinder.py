@@ -319,6 +319,19 @@ class ModuleFinderTest(unittest.TestCase):
         expected = "co_filename %r changed to %r" % (old_path, new_path)
         self.assertIn(expected, output)
 
+    def test_extended_opargs(self):
+        extended_opargs_test = [
+            "a",
+            ["a", "b"],
+            [], [],
+            """\
+a.py
+                                %r
+                                import b
+b.py
+""" % list(range(2**16))]  # 2**16 constants
+        self._do_test(extended_opargs_test)
+
 
 if __name__ == "__main__":
     unittest.main()
