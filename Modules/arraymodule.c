@@ -2090,7 +2090,7 @@ array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype,
          * that fits better. This may result in an array with narrower
          * or wider elements.
          *
-         * For example, if a 32-bit machine pickles a L-code array of
+         * For example, if a 32-bit machine pickles an L-code array of
          * unsigned longs, then the array will be unpickled by 64-bit
          * machine as an I-code array of unsigned ints.
          *
