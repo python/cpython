@@ -393,19 +393,22 @@ Notes:
 All :class:`numbers.Real` types (:class:`int`, :class:`long`, and
 :class:`float`) also include the following operations:
 
-+--------------------+------------------------------------+--------+
-| Operation          | Result                             | Notes  |
-+====================+====================================+========+
-| ``math.trunc(x)``  | *x* truncated to Integral          |        |
-+--------------------+------------------------------------+--------+
-| ``round(x[, n])``  | *x* rounded to n digits,           |        |
-|                    | rounding ties away from zero. If n |        |
-|                    | is omitted, it defaults to 0.      |        |
-+--------------------+------------------------------------+--------+
-| ``math.floor(x)``  | the greatest integral float <= *x* |        |
-+--------------------+------------------------------------+--------+
-| ``math.ceil(x)``   | the least integral float >= *x*    |        |
-+--------------------+------------------------------------+--------+
++--------------------+---------------------------------------------+
+| Operation          | Result                                      |
++====================+=============================================+
+| :func:`math.trunc(\| *x* truncated to :class:`~numbers.Integral` |
+| x) <math.trunc>`   |                                             |
++--------------------+---------------------------------------------+
+| :func:`round(x[,   | *x* rounded to *n* digits,                  |
+| n]) <round>`       | rounding ties away from zero. If *n*        |
+|                    | is omitted, it defaults to 0.               |
++--------------------+---------------------------------------------+
+| :func:`math.floor(\| the greatest integer as a float <= *x*      |
+| x) <math.floor>`   |                                             |
++--------------------+---------------------------------------------+
+| :func:`math.ceil(x)| the least integer as a float >= *x*         |
+| <math.ceil>`       |                                             |
++--------------------+---------------------------------------------+
 
 .. XXXJH exceptions: overflow (when? what operations?) zerodivision
 
