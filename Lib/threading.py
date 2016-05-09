@@ -923,7 +923,7 @@ class Thread:
                 # self.
                 if _sys and _sys.stderr is not None:
                     print("Exception in thread %s:\n%s" %
-                          (self.name, _format_exc()), file=self._stderr)
+                          (self.name, _format_exc()), file=_sys.stderr)
                 elif self._stderr is not None:
                     # Do the best job possible w/o a huge amt. of code to
                     # approximate a traceback (code ideas from
