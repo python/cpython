@@ -59,6 +59,8 @@ Core and Builtins
 
 - Issue #19711: Add tests for reloading namespace packages.
 
+- Issue #21099: Switch applicable importlib tests to use PEP 451 API.
+
 - Issue #26563: Debug hooks on Python memory allocators now raise a fatal
   error if functions of the :c:func:`PyMem_Malloc` family are called without
   holding the GIL.

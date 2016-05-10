@@ -6,7 +6,6 @@ machinery = util.import_importlib('importlib.machinery')
 import unittest
 import warnings
 
-# XXX find_spec tests
 
 class FinderTests(abc.FinderTests):
 
