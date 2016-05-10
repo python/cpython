@@ -99,9 +99,7 @@ class ImportModuleTests:
 
 class FindLoaderTests:
 
-    class FakeMetaFinder:
-        @staticmethod
-        def find_module(name, path=None): return name, path
+    FakeMetaFinder = None
 
     def test_sys_modules(self):
         # If a module with __loader__ is in sys.modules, then return it.
@@ -171,9 +169,30 @@ class FindLoaderTests:
             self.assertIsNone(self.init.find_loader('nevergoingtofindthismodule'))
 
 
-(Frozen_FindLoaderTests,
- Source_FindLoaderTests
- ) = test_util.test_both(FindLoaderTests, init=init)
+class FindLoaderPEP451Tests(FindLoaderTests):
+
+    class FakeMetaFinder:
+        @staticmethod
+        def find_spec(name, path=None, target=None):
+            return machinery['Source'].ModuleSpec(name, (name, path))
+
+
+(Frozen_FindLoaderPEP451Tests,
+ Source_FindLoaderPEP451Tests
+ ) = test_util.test_both(FindLoaderPEP451Tests, init=init)
+
+
+class FindLoaderPEP302Tests(FindLoaderTests):
+
+    class FakeMetaFinder:
+        @staticmethod
+        def find_module(name, path=None):
+            return name, path
+
+
+(Frozen_FindLoaderPEP302Tests,
+ Source_FindLoaderPEP302Tests
+ ) = test_util.test_both(FindLoaderPEP302Tests, init=init)
 
 
 class ReloadTests:
