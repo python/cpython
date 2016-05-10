@@ -34,8 +34,9 @@ There are a few functions specific to Python functions.
    Return a new function object associated with the code object *code*. *globals*
    must be a dictionary with the global variables accessible to the function.
 
-   The function's docstring, name and *__module__* are retrieved from the code
-   object, the argument defaults and closure are set to *NULL*.
+   The function's docstring and name are retrieved from the code object. *__module__*
+   is retrieved from *globals*. The argument defaults, annotations and closure are
+   set to *NULL*. *__qualname__* is set to the same value as the function's name.
 
 
 .. c:function:: PyObject* PyFunction_NewWithQualName(PyObject *code, PyObject *globals, PyObject *qualname)
