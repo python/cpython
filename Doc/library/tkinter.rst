@@ -206,7 +206,7 @@ A Simple Hello World Program
             self.hi_there.pack(side="top")
 
             self.QUIT = tk.Button(self, text="QUIT", fg="red",
-                                                command=root.destroy)
+                                  command=root.destroy)
             self.QUIT.pack(side="bottom")
 
         def say_hi(self):
