@@ -489,8 +489,8 @@ To get interpolation, you will need to use a :class:`ConfigParser` or
    config.read('example.cfg')
 
    # Set the third, optional argument of get to 1 if you wish to use raw mode.
-   print config.get('Section1', 'foo', 0) # -> "Python is fun!"
-   print config.get('Section1', 'foo', 1) # -> "%(bar)s is %(baz)s!"
+   print config.get('Section1', 'foo', 0)  # -> "Python is fun!"
+   print config.get('Section1', 'foo', 1)  # -> "%(bar)s is %(baz)s!"
 
    # The optional fourth argument is a dict with members that will take
    # precedence in interpolation.
@@ -506,10 +506,10 @@ interpolation if an option used is not defined elsewhere. ::
    config = ConfigParser.SafeConfigParser({'bar': 'Life', 'baz': 'hard'})
    config.read('example.cfg')
 
-   print config.get('Section1', 'foo') # -> "Python is fun!"
+   print config.get('Section1', 'foo')  # -> "Python is fun!"
    config.remove_option('Section1', 'bar')
    config.remove_option('Section1', 'baz')
-   print config.get('Section1', 'foo') # -> "Life is hard!"
+   print config.get('Section1', 'foo')  # -> "Life is hard!"
 
 The function ``opt_move`` below can be used to move options between sections::
 

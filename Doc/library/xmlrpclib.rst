@@ -235,7 +235,7 @@ A working example follows. The server code::
    from SimpleXMLRPCServer import SimpleXMLRPCServer
 
    def is_even(n):
-       return n%2 == 0
+       return n % 2 == 0
 
    server = SimpleXMLRPCServer(("localhost", 8000))
    print "Listening on port 8000..."
@@ -392,7 +392,7 @@ returning a complex type object.  The server code::
 
    # A marshalling error is going to occur because we're returning a
    # complex number
-   def add(x,y):
+   def add(x, y):
        return x+y+0j
 
    server = SimpleXMLRPCServer(("localhost", 8000))
@@ -590,12 +590,15 @@ transport.  The following example shows how:
    class ProxiedTransport(xmlrpclib.Transport):
        def set_proxy(self, proxy):
            self.proxy = proxy
+
        def make_connection(self, host):
            self.realhost = host
            h = httplib.HTTPConnection(self.proxy)
            return h
+
        def send_request(self, connection, handler, request_body):
            connection.putrequest("POST", 'http://%s%s' % (self.realhost, handler))
+
        def send_host(self, connection, host):
            connection.putheader('Host', self.realhost)
 

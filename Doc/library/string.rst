@@ -262,12 +262,12 @@ does an index lookup using :func:`__getitem__`.
 
 Some simple format string examples::
 
-   "First, thou shalt count to {0}" # References first positional argument
-   "Bring me a {}"                  # Implicitly references the first positional argument
-   "From {} to {}"                  # Same as "From {0} to {1}"
-   "My quest is {name}"             # References keyword argument 'name'
-   "Weight in tons {0.weight}"      # 'weight' attribute of first positional arg
-   "Units destroyed: {players[0]}"  # First element of keyword argument 'players'.
+   "First, thou shalt count to {0}"  # References first positional argument
+   "Bring me a {}"                   # Implicitly references the first positional argument
+   "From {} to {}"                   # Same as "From {0} to {1}"
+   "My quest is {name}"              # References keyword argument 'name'
+   "Weight in tons {0.weight}"       # 'weight' attribute of first positional arg
+   "Units destroyed: {players[0]}"   # First element of keyword argument 'players'.
 
 The *conversion* field causes a type coercion before formatting.  Normally, the
 job of formatting a value is done by the :meth:`__format__` method of the value

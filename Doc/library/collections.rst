@@ -838,7 +838,7 @@ Since an ordered dictionary remembers its insertion order, it can be used
 in conjuction with sorting to make a sorted dictionary::
 
     >>> # regular unsorted dictionary
-    >>> d = {'banana': 3, 'apple':4, 'pear': 1, 'orange': 2}
+    >>> d = {'banana': 3, 'apple': 4, 'pear': 1, 'orange': 2}
 
     >>> # dictionary sorted by key
     >>> OrderedDict(sorted(d.items(), key=lambda t: t[0]))
@@ -1002,10 +1002,13 @@ The ABC supplies the remaining methods such as :meth:`__and__` and
              for value in iterable:
                  if value not in lst:
                      lst.append(value)
+
          def __iter__(self):
              return iter(self.elements)
+
          def __contains__(self, value):
              return value in self.elements
+
          def __len__(self):
              return len(self.elements)
 

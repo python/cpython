@@ -1452,7 +1452,7 @@ should use the following idiom::
    except ImportError:
        pass
    else:
-       ... # do something that requires SSL support
+       ...  # do something that requires SSL support
 
 Client-side operation
 ^^^^^^^^^^^^^^^^^^^^^

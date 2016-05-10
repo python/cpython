@@ -35,10 +35,10 @@ produces either the sum or the max::
 
    parser = argparse.ArgumentParser(description='Process some integers.')
    parser.add_argument('integers', metavar='N', type=int, nargs='+',
-                      help='an integer for the accumulator')
+                       help='an integer for the accumulator')
    parser.add_argument('--sum', dest='accumulate', action='store_const',
-                      const=sum, default=max,
-                      help='sum the integers (default: find the max)')
+                       const=sum, default=max,
+                       help='sum the integers (default: find the max)')
 
    args = parser.parse_args()
    print args.accumulate(args.integers)
@@ -463,7 +463,7 @@ specified characters will be treated as files, and will be replaced by the
 arguments they contain.  For example::
 
    >>> with open('args.txt', 'w') as fp:
-   ...    fp.write('-f\nbar')
+   ...     fp.write('-f\nbar')
    >>> parser = argparse.ArgumentParser(fromfile_prefix_chars='@')
    >>> parser.add_argument('-f')
    >>> parser.parse_args(['-f', 'foo', '@args.txt'])
@@ -1064,9 +1064,9 @@ argument::
 
    >>> parser = argparse.ArgumentParser(prog='frobble')
    >>> parser.add_argument('--foo', action='store_true',
-   ...         help='foo the bars before frobbling')
+   ...                     help='foo the bars before frobbling')
    >>> parser.add_argument('bar', nargs='+',
-   ...         help='one of the bars to be frobbled')
+   ...                     help='one of the bars to be frobbled')
    >>> parser.parse_args(['-h'])
    usage: frobble [-h] [--foo] bar [bar ...]
 
@@ -1084,7 +1084,7 @@ specifiers include the program name, ``%(prog)s`` and most keyword arguments to
 
    >>> parser = argparse.ArgumentParser(prog='frobble')
    >>> parser.add_argument('bar', nargs='?', type=int, default=42,
-   ...         help='the bar to %(prog)s (default: %(default)s)')
+   ...                     help='the bar to %(prog)s (default: %(default)s)')
    >>> parser.print_help()
    usage: frobble [-h] [bar]
 
@@ -1417,10 +1417,10 @@ interactive prompt::
    >>> parser = argparse.ArgumentParser()
    >>> parser.add_argument(
    ...     'integers', metavar='int', type=int, choices=xrange(10),
-   ...  nargs='+', help='an integer in the range 0..9')
+   ...     nargs='+', help='an integer in the range 0..9')
    >>> parser.add_argument(
    ...     '--sum', dest='accumulate', action='store_const', const=sum,
-   ...   default=max, help='sum the integers (default: find the max)')
+   ...     default=max, help='sum the integers (default: find the max)')
    >>> parser.parse_args(['1', '2', '3', '4'])
    Namespace(accumulate=<built-in function max>, integers=[1, 2, 3, 4])
    >>> parser.parse_args(['1', '2', '3', '4', '--sum'])

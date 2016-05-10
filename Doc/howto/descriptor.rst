@@ -108,7 +108,7 @@ like::
         "Emulate type_getattro() in Objects/typeobject.c"
         v = object.__getattribute__(self, key)
         if hasattr(v, '__get__'):
-           return v.__get__(None, self)
+            return v.__get__(None, self)
         return v
 
 The important points to remember are:
@@ -169,9 +169,9 @@ descriptor is useful for monitoring just a few chosen attributes::
             self.val = val
 
     >>> class MyClass(object):
-        x = RevealAccess(10, 'var "x"')
-        y = 5
-
+    ...     x = RevealAccess(10, 'var "x"')
+    ...     y = 5
+    ...
     >>> m = MyClass()
     >>> m.x
     Retrieving var "x"
@@ -293,15 +293,15 @@ this::
 Running the interpreter shows how the function descriptor works in practice::
 
     >>> class D(object):
-         def f(self, x):
-              return x
-
+    ...     def f(self, x):
+    ...         return x
+    ...
     >>> d = D()
-    >>> D.__dict__['f'] # Stored internally as a function
+    >>> D.__dict__['f']  # Stored internally as a function
     <function f at 0x00C45070>
-    >>> D.f             # Get from a class becomes an unbound method
+    >>> D.f              # Get from a class becomes an unbound method
     <unbound method D.f>
-    >>> d.f             # Get from an instance becomes a bound method
+    >>> d.f              # Get from an instance becomes a bound method
     <bound method D.f of <__main__.D object at 0x00B18C90>>
 
 The output suggests that bound and unbound methods are two different types.
@@ -364,10 +364,10 @@ Since staticmethods return the underlying function with no changes, the example
 calls are unexciting::
 
     >>> class E(object):
-         def f(x):
-              print x
-         f = staticmethod(f)
-
+    ...     def f(x):
+    ...         print x
+    ...     f = staticmethod(f)
+    ...
     >>> print E.f(3)
     3
     >>> print E().f(3)
@@ -377,23 +377,23 @@ Using the non-data descriptor protocol, a pure Python version of
 :func:`staticmethod` would look like this::
 
     class StaticMethod(object):
-     "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
+        "Emulate PyStaticMethod_Type() in Objects/funcobject.c"
 
-     def __init__(self, f):
-          self.f = f
+        def __init__(self, f):
+            self.f = f
 
-     def __get__(self, obj, objtype=None):
-          return self.f
+        def __get__(self, obj, objtype=None):
+            return self.f
 
 Unlike static methods, class methods prepend the class reference to the
 argument list before calling the function.  This format is the same
 for whether the caller is an object or a class::
 
     >>> class E(object):
-         def f(klass, x):
-              return klass.__name__, x
-         f = classmethod(f)
-
+    ...     def f(klass, x):
+    ...          return klass.__name__, x
+    ...     f = classmethod(f)
+    ...
     >>> print E.f(3)
     ('E', 3)
     >>> print E().f(3)
@@ -425,15 +425,15 @@ Using the non-data descriptor protocol, a pure Python version of
 :func:`classmethod` would look like this::
 
     class ClassMethod(object):
-         "Emulate PyClassMethod_Type() in Objects/funcobject.c"
+        "Emulate PyClassMethod_Type() in Objects/funcobject.c"
 
-         def __init__(self, f):
-              self.f = f
+        def __init__(self, f):
+            self.f = f
 
-         def __get__(self, obj, klass=None):
-              if klass is None:
-                   klass = type(obj)
-              def newfunc(*args):
-                   return self.f(klass, *args)
-              return newfunc
+        def __get__(self, obj, klass=None):
+            if klass is None:
+                klass = type(obj)
+            def newfunc(*args):
+                return self.f(klass, *args)
+            return newfunc
 

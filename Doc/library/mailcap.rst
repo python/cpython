@@ -70,7 +70,7 @@ standard.  However, mailcap files are supported on most Unix systems.
 An example usage::
 
    >>> import mailcap
-   >>> d=mailcap.getcaps()
+   >>> d = mailcap.getcaps()
    >>> mailcap.findmatch(d, 'video/mpeg', filename='tmp1223')
    ('xmpeg tmp1223', {'view': 'xmpeg %s'})
 

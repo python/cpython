@@ -269,6 +269,6 @@ sample and subtract the whole output sample from the input sample::
        #              out_test)
        prefill = '\0'*(pos+ipos)*2
        postfill = '\0'*(len(inputdata)-len(prefill)-len(outputdata))
-       outputdata = prefill + audioop.mul(outputdata,2,-factor) + postfill
+       outputdata = prefill + audioop.mul(outputdata, 2, -factor) + postfill
        return audioop.add(inputdata, outputdata, 2)
 

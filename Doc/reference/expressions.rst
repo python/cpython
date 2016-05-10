@@ -761,7 +761,7 @@ A consequence of this is that although the ``*expression`` syntax may appear
 (and the ``**expression`` argument, if any -- see below).  So::
 
    >>> def f(a, b):
-   ...  print a, b
+   ...     print a, b
    ...
    >>> f(b=1, *(2,))
    2 1

@@ -353,7 +353,7 @@ functions), e.g.::
 
    >>> squares = []
    >>> for x in range(5):
-   ...    squares.append(lambda: x**2)
+   ...     squares.append(lambda: x**2)
 
 This gives you a list that contains 5 lambdas that calculate ``x**2``.  You
 might expect that, when called, they would return, respectively, ``0``, ``1``,
@@ -380,7 +380,7 @@ lambdas, so that they don't rely on the value of the global ``x``::
 
    >>> squares = []
    >>> for x in range(5):
-   ...    squares.append(lambda n=x: n**2)
+   ...     squares.append(lambda n=x: n**2)
 
 Here, ``n=x`` creates a new variable ``n`` local to the lambda and computed
 when the lambda is defined so that it has the same value that ``x`` had at
@@ -699,7 +699,7 @@ desired effect in a number of ways.
           args['a'] = 'new-value'     # args is a mutable dictionary
           args['b'] = args['b'] + 1   # change it in-place
 
-      args = {'a':' old-value', 'b': 99}
+      args = {'a': 'old-value', 'b': 99}
       func3(args)
       print args['a'], args['b']
 
@@ -815,16 +815,15 @@ Essentially, assignment always binds a name to a value; The same is true of
 ``def`` and ``class`` statements, but in that case the value is a
 callable. Consider the following code::
 
-   class A:
-       pass
-
-   B = A
-
-   a = B()
-   b = a
-   print b
+   >>> class A:
+   ...     pass
+   ...
+   >>> B = A
+   >>> a = B()
+   >>> b = a
+   >>> print b
    <__main__.A instance at 0x16D07CC>
-   print a
+   >>> print a
    <__main__.A instance at 0x16D07CC>
 
 Arguably the class has a name: even though it is bound to two names and invoked
@@ -1209,7 +1208,7 @@ How do I iterate over a sequence in reverse order?
 Use the :func:`reversed` built-in function, which is new in Python 2.4::
 
    for x in reversed(sequence):
-       ... # do something with x...
+       ...  # do something with x ...
 
 This won't touch your original sequence, but build a new copy with reversed
 order to iterate over.
@@ -1217,7 +1216,7 @@ order to iterate over.
 With Python 2.3, you can use an extended slice syntax::
 
    for x in sequence[::-1]:
-       ... # do something with x...
+       ...  # do something with x ...
 
 
 How do you remove duplicates from a list?
@@ -1552,7 +1551,7 @@ A method is a function on some object ``x`` that you normally call as
 definition::
 
    class C:
-       def meth (self, arg):
+       def meth(self, arg):
            return arg * 2 + self.attribute
 
 
@@ -1585,9 +1584,9 @@ that does something::
 
    def search(obj):
        if isinstance(obj, Mailbox):
-           # ... code to search a mailbox
+           ...  # code to search a mailbox
        elif isinstance(obj, Document):
-           # ... code to search a document
+           ...  # code to search a document
        elif ...
 
 A better approach is to define a ``search()`` method on all the classes and just
@@ -1595,11 +1594,11 @@ call it::
 
    class Mailbox:
        def search(self):
-           # ... code to search a mailbox
+           ...  # code to search a mailbox
 
    class Document:
        def search(self):
-           # ... code to search a document
+           ...  # code to search a document
 
    obj.search()
 
@@ -1656,7 +1655,7 @@ How do I call a method defined in a base class from a derived class that overrid
 If you're using new-style classes, use the built-in :func:`super` function::
 
    class Derived(Base):
-       def meth (self):
+       def meth(self):
            super(Derived, self).meth()
 
 If you're using classic classes: For a class definition such as ``class

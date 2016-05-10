@@ -103,8 +103,8 @@ A simple example
 A very simple example is::
 
    import logging
-   logging.warning('Watch out!') # will print a message to the console
-   logging.info('I told you so') # will not print anything
+   logging.warning('Watch out!')  # will print a message to the console
+   logging.info('I told you so')  # will not print anything
 
 If you type these lines into a script and run it, you'll see::
 

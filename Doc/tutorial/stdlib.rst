@@ -283,7 +283,7 @@ file::
            with self.assertRaises(TypeError):
                average(20, 30, 70)
 
-   unittest.main() # Calling from the command line invokes all tests
+   unittest.main()  # Calling from the command line invokes all tests
 
 
 .. _tut-batteries-included:

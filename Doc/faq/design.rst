@@ -169,7 +169,7 @@ where in Python you're forced to write this::
        line = f.readline()
        if not line:
            break
-       ... # do something with line
+       ...  # do something with line
 
 The reason for not allowing assignment in Python expressions is a common,
 hard-to-find bug in those other languages, caused by this construct:
@@ -201,7 +201,7 @@ generally less robust than the "while True" solution::
 
    line = f.readline()
    while line:
-       ... # do something with line...
+       ...  # do something with line...
        line = f.readline()
 
 The problem with this is that if you change your mind about exactly how you get
@@ -214,7 +214,7 @@ objects using the ``for`` statement.  For example, in the current version of
 Python file objects support the iterator protocol, so you can now write simply::
 
    for line in f:
-       ... # do something with line...
+       ...  # do something with line...
 
 
 
@@ -625,8 +625,10 @@ other structure). ::
    class ListWrapper:
        def __init__(self, the_list):
            self.the_list = the_list
+
        def __eq__(self, other):
            return self.the_list == other.the_list
+
        def __hash__(self):
            l = self.the_list
            result = 98767 - len(l)*555
@@ -667,7 +669,7 @@ it.  For example, here's how to iterate over the keys of a dictionary in sorted
 order::
 
    for key in sorted(mydict):
-       ... # do whatever with mydict[key]...
+       ...  # do whatever with mydict[key]...
 
 
 How do you specify and enforce an interface spec in Python?
@@ -723,11 +725,11 @@ languages.  For example::
    class label: pass  # declare a label
 
    try:
-        ...
-        if condition: raise label()  # goto label
-        ...
+       ...
+       if condition: raise label()  # goto label
+       ...
    except label:  # where to goto
-        pass
+       pass
    ...
 
 This doesn't allow you to jump into the middle of a loop, but that's usually

@@ -228,7 +228,7 @@ any extraneous data sent by the web client are ignored. ::
                    self.set_terminator(None)
                    self.handle_request()
            elif not self.handling:
-               self.set_terminator(None) # browsers sometimes over-send
+               self.set_terminator(None)  # browsers sometimes over-send
                self.cgi_data = parse(self.headers, "".join(self.ibuffer))
                self.handling = True
                self.ibuffer = []

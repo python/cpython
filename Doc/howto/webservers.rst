@@ -295,7 +295,7 @@ following WSGI-application::
         yield '<h1>FastCGI Environment</h1>'
         yield '<table>'
         for k, v in sorted(environ.items()):
-             yield '<tr><th>%s</th><td>%s</td></tr>' % (escape(k), escape(v))
+            yield '<tr><th>%s</th><td>%s</td></tr>' % (escape(k), escape(v))
         yield '</table>'
 
     WSGIServer(app).run()

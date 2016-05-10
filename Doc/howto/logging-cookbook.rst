@@ -63,6 +63,7 @@ Here is the auxiliary module::
         def __init__(self):
             self.logger = logging.getLogger('spam_application.auxiliary.Auxiliary')
             self.logger.info('creating an instance of Auxiliary')
+
         def do_something(self):
             self.logger.info('doing something')
             a = 1 + 1
@@ -585,21 +586,21 @@ script::
             return True
 
     if __name__ == '__main__':
-       levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)
-       logging.basicConfig(level=logging.DEBUG,
-                           format='%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s')
-       a1 = logging.getLogger('a.b.c')
-       a2 = logging.getLogger('d.e.f')
+        levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s')
+        a1 = logging.getLogger('a.b.c')
+        a2 = logging.getLogger('d.e.f')
 
-       f = ContextFilter()
-       a1.addFilter(f)
-       a2.addFilter(f)
-       a1.debug('A debug message')
-       a1.info('An info message with %s', 'some parameters')
-       for x in range(10):
-           lvl = choice(levels)
-           lvlname = logging.getLevelName(lvl)
-           a2.log(lvl, 'A message at %s level with %d %s', lvlname, 2, 'parameters')
+        f = ContextFilter()
+        a1.addFilter(f)
+        a2.addFilter(f)
+        a1.debug('A debug message')
+        a1.info('An info message with %s', 'some parameters')
+        for x in range(10):
+            lvl = choice(levels)
+            lvlname = logging.getLevelName(lvl)
+            a2.log(lvl, 'A message at %s level with %d %s', lvlname, 2, 'parameters')
 
 which, when run, produces something like::
 

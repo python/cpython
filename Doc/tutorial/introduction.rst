@@ -236,7 +236,7 @@ If you want to concatenate variables or a variable and a literal, use ``+``::
 This feature is particularly useful when you want to break long strings::
 
    >>> text = ('Put several strings within parentheses '
-               'to have them joined together.')
+   ...         'to have them joined together.')
    >>> text
    'Put several strings within parentheses to have them joined together.'
 
@@ -280,11 +280,11 @@ makes sure that ``s[:i] + s[i:]`` is always equal to ``s``::
 Slice indices have useful defaults; an omitted first index defaults to zero, an
 omitted second index defaults to the size of the string being sliced. ::
 
-   >>> word[:2]  # character from the beginning to position 2 (excluded)
+   >>> word[:2]   # character from the beginning to position 2 (excluded)
    'Py'
-   >>> word[4:]  # characters from position 4 (included) to the end
+   >>> word[4:]   # characters from position 4 (included) to the end
    'on'
-   >>> word[-2:] # characters from the second-last (included) to the end
+   >>> word[-2:]  # characters from the second-last (included) to the end
    'on'
 
 One way to remember how slices work is to think of the indices as pointing

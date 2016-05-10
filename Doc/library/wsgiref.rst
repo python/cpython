@@ -418,8 +418,8 @@ Paste" library.
       # Our callable object which is intentionally not compliant to the
       # standard, so the validator is going to break
       def simple_app(environ, start_response):
-          status = '200 OK' # HTTP Status
-          headers = [('Content-type', 'text/plain')] # HTTP Headers
+          status = '200 OK'  # HTTP Status
+          headers = [('Content-type', 'text/plain')]  # HTTP Headers
           start_response(status, headers)
 
           # This is going to break because we need to return a list, and
@@ -714,8 +714,8 @@ This is a working "Hello World" WSGI application::
    # is a dictionary containing CGI-style envrironment variables and the
    # second variable is the callable object (see PEP 333).
    def hello_world_app(environ, start_response):
-       status = '200 OK' # HTTP Status
-       headers = [('Content-type', 'text/plain')] # HTTP Headers
+       status = '200 OK'  # HTTP Status
+       headers = [('Content-type', 'text/plain')]  # HTTP Headers
        start_response(status, headers)
 
        # The returned object is going to be printed

@@ -180,14 +180,14 @@ One may also instantiate an exception first before raising it and add any
 attributes to it as desired. ::
 
    >>> try:
-   ...    raise Exception('spam', 'eggs')
+   ...     raise Exception('spam', 'eggs')
    ... except Exception as inst:
-   ...    print type(inst)     # the exception instance
-   ...    print inst.args      # arguments stored in .args
-   ...    print inst           # __str__ allows args to be printed directly
-   ...    x, y = inst.args
-   ...    print 'x =', x
-   ...    print 'y =', y
+   ...     print type(inst)     # the exception instance
+   ...     print inst.args      # arguments stored in .args
+   ...     print inst           # __str__ allows args to be printed directly
+   ...     x, y = inst.args
+   ...     print 'x =', x
+   ...     print 'y =', y
    ...
    <type 'exceptions.Exception'>
    ('spam', 'eggs')

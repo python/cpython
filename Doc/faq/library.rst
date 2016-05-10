@@ -658,20 +658,20 @@ Yes. Here's a simple example that uses httplib::
 
    import httplib, sys, time
 
-   ### build the query string
+   # build the query string
    qs = "First=Josephine&MI=Q&Last=Public"
 
-   ### connect and send the server a path
+   # connect and send the server a path
    httpobj = httplib.HTTP('www.some-server.out-there', 80)
    httpobj.putrequest('POST', '/cgi-bin/some-cgi-script')
-   ### now generate the rest of the HTTP headers...
+   # now generate the rest of the HTTP headers...
    httpobj.putheader('Accept', '*/*')
    httpobj.putheader('Connection', 'Keep-Alive')
    httpobj.putheader('Content-type', 'application/x-www-form-urlencoded')
    httpobj.putheader('Content-length', '%d' % len(qs))
    httpobj.endheaders()
    httpobj.send(qs)
-   ### find out what the server said in response...
+   # find out what the server said in response...
    reply, msg, hdrs = httpobj.getreply()
    if reply != 200:
        sys.stdout.write(httpobj.getfile().read())
@@ -724,8 +724,9 @@ varies between systems; sometimes it is ``/usr/lib/sendmail``, sometimes
 ``/usr/sbin/sendmail``.  The sendmail manual page will help you out.  Here's
 some sample code::
 
-   SENDMAIL = "/usr/sbin/sendmail" # sendmail location
    import os
+
+   SENDMAIL = "/usr/sbin/sendmail"  # sendmail location
    p = os.popen("%s -t -i" % SENDMAIL, "w")
    p.write("To: receiver@example.com\n")
    p.write("Subject: test\n")

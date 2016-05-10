@@ -49,11 +49,11 @@ library containing most standard C functions, and uses the cdecl calling
 convention::
 
    >>> from ctypes import *
-   >>> print windll.kernel32 # doctest: +WINDOWS
+   >>> print windll.kernel32  # doctest: +WINDOWS
    <WinDLL 'kernel32', handle ... at ...>
-   >>> print cdll.msvcrt # doctest: +WINDOWS
+   >>> print cdll.msvcrt      # doctest: +WINDOWS
    <CDLL 'msvcrt', handle ... at ...>
-   >>> libc = cdll.msvcrt # doctest: +WINDOWS
+   >>> libc = cdll.msvcrt     # doctest: +WINDOWS
    >>>
 
 Windows appends the usual ``.dll`` file suffix automatically.
@@ -63,10 +63,10 @@ load a library, so attribute access can not be used to load libraries. Either th
 :meth:`LoadLibrary` method of the dll loaders should be used, or you should load
 the library by creating an instance of CDLL by calling the constructor::
 
-   >>> cdll.LoadLibrary("libc.so.6") # doctest: +LINUX
+   >>> cdll.LoadLibrary("libc.so.6")  # doctest: +LINUX
    <CDLL 'libc.so.6', handle ... at ...>
-   >>> libc = CDLL("libc.so.6")     # doctest: +LINUX
-   >>> libc                         # doctest: +LINUX
+   >>> libc = CDLL("libc.so.6")       # doctest: +LINUX
+   >>> libc                           # doctest: +LINUX
    <CDLL 'libc.so.6', handle ... at ...>
    >>>
 
@@ -83,9 +83,9 @@ Functions are accessed as attributes of dll objects::
    >>> from ctypes import *
    >>> libc.printf
    <_FuncPtr object at 0x...>
-   >>> print windll.kernel32.GetModuleHandleA # doctest: +WINDOWS
+   >>> print windll.kernel32.GetModuleHandleA  # doctest: +WINDOWS
    <_FuncPtr object at 0x...>
-   >>> print windll.kernel32.MyOwnFunction # doctest: +WINDOWS
+   >>> print windll.kernel32.MyOwnFunction     # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
      File "ctypes.py", line 239, in __getattr__
@@ -115,16 +115,16 @@ Sometimes, dlls export functions with names which aren't valid Python
 identifiers, like ``"??2@YAPAXI@Z"``. In this case you have to use
 :func:`getattr` to retrieve the function::
 
-   >>> getattr(cdll.msvcrt, "??2@YAPAXI@Z") # doctest: +WINDOWS
+   >>> getattr(cdll.msvcrt, "??2@YAPAXI@Z")  # doctest: +WINDOWS
    <_FuncPtr object at 0x...>
    >>>
 
 On Windows, some dlls export functions not by name but by ordinal. These
 functions can be accessed by indexing the dll object with the ordinal number::
 
-   >>> cdll.kernel32[1] # doctest: +WINDOWS
+   >>> cdll.kernel32[1]  # doctest: +WINDOWS
    <_FuncPtr object at 0x...>
-   >>> cdll.kernel32[0] # doctest: +WINDOWS
+   >>> cdll.kernel32[0]  # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
      File "ctypes.py", line 310, in __getitem__
@@ -146,9 +146,9 @@ handle.
 This example calls both functions with a NULL pointer (``None`` should be used
 as the NULL pointer)::
 
-   >>> print libc.time(None) # doctest: +SKIP
+   >>> print libc.time(None)  # doctest: +SKIP
    1150640792
-   >>> print hex(windll.kernel32.GetModuleHandleA(None)) # doctest: +WINDOWS
+   >>> print hex(windll.kernel32.GetModuleHandleA(None))  # doctest: +WINDOWS
    0x1d000000
    >>>
 
@@ -157,11 +157,11 @@ of arguments or the wrong calling convention.  Unfortunately this only works on
 Windows.  It does this by examining the stack after the function returns, so
 although an error is raised the function *has* been called::
 
-   >>> windll.kernel32.GetModuleHandleA() # doctest: +WINDOWS
+   >>> windll.kernel32.GetModuleHandleA()      # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    ValueError: Procedure probably called with not enough arguments (4 bytes missing)
-   >>> windll.kernel32.GetModuleHandleA(0, 0) # doctest: +WINDOWS
+   >>> windll.kernel32.GetModuleHandleA(0, 0)  # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    ValueError: Procedure probably called with too many arguments (4 bytes in excess)
@@ -170,13 +170,13 @@ although an error is raised the function *has* been called::
 The same exception is raised when you call an ``stdcall`` function with the
 ``cdecl`` calling convention, or vice versa::
 
-   >>> cdll.kernel32.GetModuleHandleA(None) # doctest: +WINDOWS
+   >>> cdll.kernel32.GetModuleHandleA(None)  # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    ValueError: Procedure probably called with not enough arguments (4 bytes missing)
    >>>
 
-   >>> windll.msvcrt.printf("spam") # doctest: +WINDOWS
+   >>> windll.msvcrt.printf("spam")  # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    ValueError: Procedure probably called with too many arguments (4 bytes in excess)
@@ -189,7 +189,7 @@ On Windows, :mod:`ctypes` uses win32 structured exception handling to prevent
 crashes from general protection faults when functions are called with invalid
 argument values::
 
-   >>> windll.kernel32.GetModuleHandleA(32) # doctest: +WINDOWS
+   >>> windll.kernel32.GetModuleHandleA(32)  # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
    WindowsError: exception: access violation reading 0x00000020
@@ -448,9 +448,9 @@ Here is a more advanced example, it uses the ``strchr`` function, which expects
 a string pointer and a char, and returns a pointer to a string::
 
    >>> strchr = libc.strchr
-   >>> strchr("abcdef", ord("d")) # doctest: +SKIP
+   >>> strchr("abcdef", ord("d"))  # doctest: +SKIP
    8059983
-   >>> strchr.restype = c_char_p # c_char_p is a pointer to a string
+   >>> strchr.restype = c_char_p   # c_char_p is a pointer to a string
    >>> strchr("abcdef", ord("d"))
    'def'
    >>> print strchr("abcdef", ord("x"))
@@ -481,17 +481,17 @@ callable will be called with the *integer* the C function returns, and the
 result of this call will be used as the result of your function call. This is
 useful to check for error return values and automatically raise an exception::
 
-   >>> GetModuleHandle = windll.kernel32.GetModuleHandleA # doctest: +WINDOWS
+   >>> GetModuleHandle = windll.kernel32.GetModuleHandleA  # doctest: +WINDOWS
    >>> def ValidHandle(value):
    ...     if value == 0:
    ...         raise WinError()
    ...     return value
    ...
    >>>
-   >>> GetModuleHandle.restype = ValidHandle # doctest: +WINDOWS
-   >>> GetModuleHandle(None) # doctest: +WINDOWS
+   >>> GetModuleHandle.restype = ValidHandle  # doctest: +WINDOWS
+   >>> GetModuleHandle(None)  # doctest: +WINDOWS
    486539264
-   >>> GetModuleHandle("something silly") # doctest: +WINDOWS
+   >>> GetModuleHandle("something silly")  # doctest: +WINDOWS
    Traceback (most recent call last):
      File "<stdin>", line 1, in ?
      File "<stdin>", line 3, in ValidHandle
@@ -662,12 +662,12 @@ POINTs among other stuff::
 
    >>> from ctypes import *
    >>> class POINT(Structure):
-   ...    _fields_ = ("x", c_int), ("y", c_int)
+   ...     _fields_ = ("x", c_int), ("y", c_int)
    ...
    >>> class MyStruct(Structure):
-   ...    _fields_ = [("a", c_int),
-   ...                ("b", c_float),
-   ...                ("point_array", POINT * 4)]
+   ...     _fields_ = [("a", c_int),
+   ...                 ("b", c_float),
+   ...                 ("point_array", POINT * 4)]
    >>>
    >>> print len(MyStruct().point_array)
    4
@@ -1028,7 +1028,7 @@ Here is what we get on Windows::
 It is funny to see that on linux the sort function seems to work much more
 efficiently, it is doing less comparisons::
 
-   >>> qsort(ia, len(ia), sizeof(c_int), cmp_func) # doctest: +LINUX
+   >>> qsort(ia, len(ia), sizeof(c_int), cmp_func)  # doctest: +LINUX
    py_cmp_func 5 1
    py_cmp_func 33 99
    py_cmp_func 7 33
@@ -1151,9 +1151,9 @@ access violation or whatever, so it's better to break out of the loop when we
 hit the NULL entry::
 
    >>> for item in table:
-   ...    print item.name, item.size
-   ...    if item.name is None:
-   ...        break
+   ...     print item.name, item.size
+   ...     if item.name is None:
+   ...         break
    ...
    __hello__ 104
    __phello__ -104
