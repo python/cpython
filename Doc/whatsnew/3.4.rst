@@ -746,7 +746,7 @@ optional *current_offset*), and the resulting object can be iterated to produce
 method, equivalent to calling :mod:`~dis.dis` on the constructor argument, but
 returned as a multi-line string::
 
-    >>> bytecode = dis.Bytecode(lambda x: x +1, current_offset=3)
+    >>> bytecode = dis.Bytecode(lambda x: x + 1, current_offset=3)
     >>> for instr in bytecode:
     ...     print('{} ({})'.format(instr.opname, instr.opcode))
     LOAD_FAST (124)

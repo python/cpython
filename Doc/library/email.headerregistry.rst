@@ -171,7 +171,7 @@ headers.
    :class:`~datetime.datetime` instance.  This means, for example, that
    the following code is valid and does what one would expect::
 
-       msg['Date']  = datetime(2011, 7, 15, 21)
+       msg['Date'] = datetime(2011, 7, 15, 21)
 
    Because this is a naive ``datetime`` it will be interpreted as a UTC
    timestamp, and the resulting value will have a timezone of ``-0000``.  Much

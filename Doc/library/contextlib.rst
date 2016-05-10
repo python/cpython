@@ -656,7 +656,7 @@ to yield if an attempt is made to use them a second time::
     Before
     After
     >>> with cm:
-    ...    pass
+    ...     pass
     ...
     Traceback (most recent call last):
         ...
