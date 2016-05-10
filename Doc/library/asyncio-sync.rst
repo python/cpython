@@ -71,14 +71,14 @@ Lock
        lock = Lock()
        ...
        with (yield from lock):
-            ...
+           ...
 
    Lock objects can be tested for locking state::
 
        if not lock.locked():
-          yield from lock
+           yield from lock
        else:
-          # lock is acquired
+           # lock is acquired
            ...
 
    .. method:: locked()

@@ -440,15 +440,15 @@ return a final value to the outer generator::
     ...
     >>> tallies = []
     >>> acc = gather_tallies(tallies)
-    >>> next(acc) # Ensure the accumulator is ready to accept values
+    >>> next(acc)  # Ensure the accumulator is ready to accept values
     >>> for i in range(4):
     ...     acc.send(i)
     ...
-    >>> acc.send(None) # Finish the first tally
+    >>> acc.send(None)  # Finish the first tally
     >>> for i in range(5):
     ...     acc.send(i)
     ...
-    >>> acc.send(None) # Finish the second tally
+    >>> acc.send(None)  # Finish the second tally
     >>> tallies
     [6, 10]
 

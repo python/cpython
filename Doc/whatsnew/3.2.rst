@@ -116,7 +116,7 @@ or more positional arguments is present, and making a required option::
 
 Example of calling the parser on a command string::
 
-    >>> cmd  = 'deploy sneezy.example.com sleepy.example.com -u skycaptain'
+    >>> cmd = 'deploy sneezy.example.com sleepy.example.com -u skycaptain'
     >>> result = parser.parse_args(cmd.split())
     >>> result.action
     'deploy'
@@ -212,7 +212,8 @@ loaded and called with code like this::
 
    >>> import json, logging.config
    >>> with open('conf.json') as f:
-           conf = json.load(f)
+   ...     conf = json.load(f)
+   ...
    >>> logging.config.dictConfig(conf)
    >>> logging.info("Transaction completed normally")
    INFO    : root           : Transaction completed normally
@@ -460,15 +461,15 @@ Some smaller changes made to the core Python language are:
     'The testing project status is green as of February 15, 2011'
 
     >>> class LowerCasedDict(dict):
-            def __getitem__(self, key):
-                return dict.__getitem__(self, key.lower())
+    ...     def __getitem__(self, key):
+    ...         return dict.__getitem__(self, key.lower())
     >>> lcd = LowerCasedDict(part='widgets', quantity=10)
     >>> 'There are {QUANTITY} {Part} in stock'.format_map(lcd)
     'There are 10 widgets in stock'
 
     >>> class PlaceholderDict(dict):
-            def __missing__(self, key):
-                return '<{}>'.format(key)
+    ...     def __missing__(self, key):
+    ...         return '<{}>'.format(key)
     >>> 'Hello {name}, welcome to {location}'.format_map(PlaceholderDict())
     'Hello <name>, welcome to <location>'
 
@@ -496,10 +497,10 @@ Some smaller changes made to the core Python language are:
   exceptions pass through::
 
     >>> class A:
-            @property
-            def f(self):
-                return 1 // 0
-
+    ...     @property
+    ...     def f(self):
+    ...         return 1 // 0
+    ...
     >>> a = A()
     >>> hasattr(a, 'f')
     Traceback (most recent call last):
@@ -537,7 +538,7 @@ Some smaller changes made to the core Python language are:
 
        def outer(x):
            def inner():
-              return x
+               return x
            inner()
            del x
 
@@ -547,12 +548,12 @@ Some smaller changes made to the core Python language are:
 
        def f():
            def print_error():
-              print(e)
+               print(e)
            try:
-              something
+               something
            except Exception as e:
-              print_error()
-              # implicit "del e" here
+               print_error()
+               # implicit "del e" here
 
   (See :issue:`4617`.)
 
@@ -799,6 +800,7 @@ functools
         def __eq__(self, other):
             return ((self.lastname.lower(), self.firstname.lower()) ==
                     (other.lastname.lower(), other.firstname.lower()))
+
         def __lt__(self, other):
             return ((self.lastname.lower(), self.firstname.lower()) <
                     (other.lastname.lower(), other.firstname.lower()))
@@ -942,7 +944,7 @@ released and a :exc:`~threading.BrokenBarrierError` exception is raised::
     def get_votes(site):
         ballots = conduct_election(site)
         try:
-            all_polls_closed.wait(timeout = midnight - time.now())
+            all_polls_closed.wait(timeout=midnight - time.now())
         except BrokenBarrierError:
             lockbox = seal_ballots(ballots)
             queue.put(lockbox)
@@ -1097,16 +1099,16 @@ for slice notation are well-suited to in-place editing::
     >>> REC_LEN, LOC_START, LOC_LEN = 34, 7, 11
 
     >>> def change_location(buffer, record_number, location):
-            start = record_number * REC_LEN + LOC_START
-            buffer[start: start+LOC_LEN] = location
+    ...     start = record_number * REC_LEN + LOC_START
+    ...     buffer[start: start+LOC_LEN] = location
 
     >>> import io
 
     >>> byte_stream = io.BytesIO(
-        b'G3805  storeroom  Main chassis    '
-        b'X7899  shipping   Reserve cog     '
-        b'L6988  receiving  Primary sprocket'
-    )
+    ...     b'G3805  storeroom  Main chassis    '
+    ...     b'X7899  shipping   Reserve cog     '
+    ...     b'L6988  receiving  Primary sprocket'
+    ... )
     >>> buffer = byte_stream.getbuffer()
     >>> change_location(buffer, 1, b'warehouse  ')
     >>> change_location(buffer, 0, b'showroom   ')
@@ -1131,10 +1133,10 @@ decorator, :func:`~reprlib.recursive_repr`, for detecting recursive calls to
 :meth:`__repr__` and substituting a placeholder string instead::
 
         >>> class MyList(list):
-                @recursive_repr()
-                def __repr__(self):
-                    return '<' + '|'.join(map(repr, self)) + '>'
-
+        ...     @recursive_repr()
+        ...     def __repr__(self):
+        ...         return '<' + '|'.join(map(repr, self)) + '>'
+        ...
         >>> m = MyList('abc')
         >>> m.append(m)
         >>> m.append('x')
@@ -1197,8 +1199,8 @@ the field names::
     >>> w.writeheader()
     "name","dept"
     >>> w.writerows([
-            {'name': 'tom', 'dept': 'accounting'},
-            {'name': 'susan', 'dept': 'Salesl'}])
+    ...     {'name': 'tom', 'dept': 'accounting'},
+    ...     {'name': 'susan', 'dept': 'Salesl'}])
     "tom","accounting"
     "susan","sales"
 
@@ -1423,14 +1425,14 @@ function can return *None*::
     >>> import tarfile, glob
 
     >>> def myfilter(tarinfo):
-           if tarinfo.isfile():             # only save real files
-                tarinfo.uname = 'monty'     # redact the user name
-                return tarinfo
+    ...     if tarinfo.isfile():             # only save real files
+    ...         tarinfo.uname = 'monty'      # redact the user name
+    ...         return tarinfo
 
     >>> with tarfile.open(name='myarchive.tar.gz', mode='w:gz') as tf:
-            for filename in glob.glob('*.txt'):
-                tf.add(filename, filter=myfilter)
-            tf.list()
+    ...     for filename in glob.glob('*.txt'):
+    ...         tf.add(filename, filter=myfilter)
+    ...     tf.list()
     -rw-r--r-- monty/501        902 2011-01-26 17:59:11 annotations.txt
     -rw-r--r-- monty/501        123 2011-01-26 17:59:11 general_questions.txt
     -rw-r--r-- monty/501       3514 2011-01-26 17:59:11 prion.txt
@@ -1536,26 +1538,26 @@ step is non-destructive (the original files are left unchanged).
 
     >>> import shutil, pprint
 
-    >>> os.chdir('mydata')                               # change to the source directory
+    >>> os.chdir('mydata')  # change to the source directory
     >>> f = shutil.make_archive('/var/backup/mydata',
-                                'zip')                   # archive the current directory
-    >>> f                                                # show the name of archive
+    ...                         'zip')      # archive the current directory
+    >>> f                                   # show the name of archive
     '/var/backup/mydata.zip'
-    >>> os.chdir('tmp')                                  # change to an unpacking
+    >>> os.chdir('tmp')                     # change to an unpacking
     >>> shutil.unpack_archive('/var/backup/mydata.zip')  # recover the data
 
-    >>> pprint.pprint(shutil.get_archive_formats())      # display known formats
+    >>> pprint.pprint(shutil.get_archive_formats())  # display known formats
     [('bztar', "bzip2'ed tar-file"),
      ('gztar', "gzip'ed tar-file"),
      ('tar', 'uncompressed tar file'),
      ('zip', 'ZIP file')]
 
-    >>> shutil.register_archive_format(                  # register a new archive format
-            name = 'xz',
-            function = xz.compress,                      # callable archiving function
-            extra_args = [('level', 8)],                 # arguments to the function
-            description = 'xz compression'
-    )
+    >>> shutil.register_archive_format(     # register a new archive format
+    ...     name='xz',
+    ...     function=xz.compress,           # callable archiving function
+    ...     extra_args=[('level', 8)],      # arguments to the function
+    ...     description='xz compression'
+    ... )
 
 (Contributed by Tarek Ziadé.)
 
@@ -1854,7 +1856,7 @@ inspect
 
     >>> from inspect import getgeneratorstate
     >>> def gen():
-            yield 'demo'
+    ...     yield 'demo'
     >>> g = gen()
     >>> getgeneratorstate(g)
     'GEN_CREATED'
@@ -1874,11 +1876,11 @@ inspect
   change state while it is searching::
 
     >>> class A:
-            @property
-            def f(self):
-                print('Running')
-                return 10
-
+    ...     @property
+    ...     def f(self):
+    ...         print('Running')
+    ...         return 10
+    ...
     >>> a = A()
     >>> getattr(a, 'f')
     Running
@@ -2102,19 +2104,19 @@ Config parsers gained a new API based on the mapping protocol::
 
     >>> parser = ConfigParser()
     >>> parser.read_string("""
-    [DEFAULT]
-    location = upper left
-    visible = yes
-    editable = no
-    color = blue
-
-    [main]
-    title = Main Menu
-    color = green
-
-    [options]
-    title = Options
-    """)
+    ... [DEFAULT]
+    ... location = upper left
+    ... visible = yes
+    ... editable = no
+    ... color = blue
+    ...
+    ... [main]
+    ... title = Main Menu
+    ... color = green
+    ...
+    ... [options]
+    ... title = Options
+    ... """)
     >>> parser['main']['color']
     'green'
     >>> parser['main']['editable']
@@ -2138,24 +2140,24 @@ handler :class:`~configparser.ExtendedInterpolation`::
 
   >>> parser = ConfigParser(interpolation=ExtendedInterpolation())
   >>> parser.read_dict({'buildout': {'directory': '/home/ambv/zope9'},
-                        'custom': {'prefix': '/usr/local'}})
+  ...                   'custom': {'prefix': '/usr/local'}})
   >>> parser.read_string("""
-      [buildout]
-      parts =
-        zope9
-        instance
-      find-links =
-        ${buildout:directory}/downloads/dist
-
-      [zope9]
-      recipe = plone.recipe.zope9install
-      location = /opt/zope
-
-      [instance]
-      recipe = plone.recipe.zope9instance
-      zope9-location = ${zope9:location}
-      zope-conf = ${custom:prefix}/etc/zope.conf
-      """)
+  ... [buildout]
+  ... parts =
+  ...   zope9
+  ...   instance
+  ... find-links =
+  ...   ${buildout:directory}/downloads/dist
+  ...
+  ... [zope9]
+  ... recipe = plone.recipe.zope9install
+  ... location = /opt/zope
+  ...
+  ... [instance]
+  ... recipe = plone.recipe.zope9instance
+  ... zope9-location = ${zope9:location}
+  ... zope-conf = ${custom:prefix}/etc/zope.conf
+  ... """)
   >>> parser['buildout']['find-links']
   '\n/home/ambv/zope9/downloads/dist'
   >>> parser['instance']['zope-conf']
@@ -2207,9 +2209,9 @@ string, then the *safe*, *encoding*, and *error* parameters are sent to
 :func:`~urllib.parse.quote_plus` for encoding::
 
     >>> urllib.parse.urlencode([
-             ('type', 'telenovela'),
-             ('name', '¿Dónde Está Elisa?')],
-             encoding='latin-1')
+    ...      ('type', 'telenovela'),
+    ...      ('name', '¿Dónde Está Elisa?')],
+    ...      encoding='latin-1')
     'type=telenovela&name=%BFD%F3nde+Est%E1+Elisa%3F'
 
 As detailed in :ref:`parsing-ascii-encoded-bytes`, all the :mod:`urllib.parse`

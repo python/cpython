@@ -312,7 +312,7 @@ You can see it if you really want to using :func:`print`::
 It is simple to write a function that returns a list of the numbers of the
 Fibonacci series, instead of printing it::
 
-   >>> def fib2(n): # return Fibonacci series up to n
+   >>> def fib2(n):  # return Fibonacci series up to n
    ...     """Return a list containing the Fibonacci series up to n."""
    ...     result = []
    ...     a, b = 0, 1
@@ -540,7 +540,7 @@ parameter are 'keyword-only' arguments, meaning that they can only be used as
 keywords rather than positional arguments. ::
 
    >>> def concat(*args, sep="/"):
-   ...    return sep.join(args)
+   ...     return sep.join(args)
    ...
    >>> concat("earth", "mars", "venus")
    'earth/mars/venus'

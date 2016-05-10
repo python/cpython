@@ -257,7 +257,8 @@ all the threads to finish::
    import threading, time
 
    def thread_task(name, n):
-       for i in range(n): print(name, i)
+       for i in range(n):
+           print(name, i)
 
    for i in range(10):
        T = threading.Thread(target=thread_task, args=(str(i), i))
@@ -273,7 +274,8 @@ A simple fix is to add a tiny sleep to the start of the run function::
 
    def thread_task(name, n):
        time.sleep(0.001)  # <--------------------!
-       for i in range(n): print(name, i)
+       for i in range(n):
+           print(name, i)
 
    for i in range(10):
        T = threading.Thread(target=thread_task, args=(str(i), i))
@@ -502,8 +504,8 @@ in big-endian format from a file::
    import struct
 
    with open(filename, "rb") as f:
-      s = f.read(8)
-      x, y, z = struct.unpack(">hhl", s)
+       s = f.read(8)
+       x, y, z = struct.unpack(">hhl", s)
 
 The '>' in the format string forces big-endian data; the letter 'h' reads one
 "short integer" (2 bytes), and 'l' reads one "long integer" (4 bytes) from the
@@ -681,10 +683,10 @@ Yes. Here's a simple example that uses urllib.request::
 
    import urllib.request
 
-   ### build the query string
+   # build the query string
    qs = "First=Josephine&MI=Q&Last=Public"
 
-   ### connect and send the server a path
+   # connect and send the server a path
    req = urllib.request.urlopen('http://www.some-server.out-there'
                                 '/cgi-bin/some-cgi-script', data=qs)
    with req:
@@ -740,8 +742,9 @@ varies between systems; sometimes it is ``/usr/lib/sendmail``, sometimes
 ``/usr/sbin/sendmail``.  The sendmail manual page will help you out.  Here's
 some sample code::
 
-   SENDMAIL = "/usr/sbin/sendmail"  # sendmail location
    import os
+
+   SENDMAIL = "/usr/sbin/sendmail"  # sendmail location
    p = os.popen("%s -t -i" % SENDMAIL, "w")
    p.write("To: receiver@example.com\n")
    p.write("Subject: test\n")
