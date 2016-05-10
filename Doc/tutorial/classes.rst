@@ -162,12 +162,15 @@ binding::
    def scope_test():
        def do_local():
            spam = "local spam"
+
        def do_nonlocal():
            nonlocal spam
            spam = "nonlocal spam"
+
        def do_global():
            global spam
            spam = "global spam"
+
        spam = "test spam"
        do_local()
        print("After local assignment:", spam)
@@ -260,6 +263,7 @@ definition looked like this::
    class MyClass:
        """A simple example class"""
        i = 12345
+
        def f(self):
            return 'hello world'
 
@@ -508,8 +512,10 @@ variable in the class is also ok.  For example::
 
    class C:
        f = f1
+
        def g(self):
            return 'hello world'
+
        h = g
 
 Now ``f``, ``g`` and ``h`` are all attributes of class :class:`C` that refer to
@@ -523,8 +529,10 @@ argument::
    class Bag:
        def __init__(self):
            self.data = []
+
        def add(self, x):
            self.data.append(x)
+
        def addtwice(self, x):
            self.add(x)
            self.add(x)
@@ -713,7 +721,7 @@ will do nicely::
    class Employee:
        pass
 
-   john = Employee() # Create an empty employee record
+   john = Employee()  # Create an empty employee record
 
    # Fill the fields of the record
    john.name = 'John Doe'
@@ -839,8 +847,10 @@ defines :meth:`__next__`, then :meth:`__iter__` can just return ``self``::
        def __init__(self, data):
            self.data = data
            self.index = len(data)
+
        def __iter__(self):
            return self
+
        def __next__(self):
            if self.index == 0:
                raise StopIteration

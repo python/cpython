@@ -63,6 +63,7 @@ Here is the auxiliary module::
         def __init__(self):
             self.logger = logging.getLogger('spam_application.auxiliary.Auxiliary')
             self.logger.info('creating an instance of Auxiliary')
+
         def do_something(self):
             self.logger.info('doing something')
             a = 1 + 1
@@ -360,7 +361,7 @@ classes, which would eat up one thread per handler for no particular benefit.
 
 An example of using these two classes follows (imports omitted)::
 
-    que = queue.Queue(-1) # no limit on size
+    que = queue.Queue(-1)  # no limit on size
     queue_handler = QueueHandler(que)
     handler = logging.StreamHandler()
     listener = QueueListener(que, handler)
@@ -656,21 +657,21 @@ script::
             return True
 
     if __name__ == '__main__':
-       levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)
-       logging.basicConfig(level=logging.DEBUG,
-                           format='%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s')
-       a1 = logging.getLogger('a.b.c')
-       a2 = logging.getLogger('d.e.f')
+        levels = (logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR, logging.CRITICAL)
+        logging.basicConfig(level=logging.DEBUG,
+                            format='%(asctime)-15s %(name)-5s %(levelname)-8s IP: %(ip)-15s User: %(user)-8s %(message)s')
+        a1 = logging.getLogger('a.b.c')
+        a2 = logging.getLogger('d.e.f')
 
-       f = ContextFilter()
-       a1.addFilter(f)
-       a2.addFilter(f)
-       a1.debug('A debug message')
-       a1.info('An info message with %s', 'some parameters')
-       for x in range(10):
-           lvl = choice(levels)
-           lvlname = logging.getLevelName(lvl)
-           a2.log(lvl, 'A message at %s level with %d %s', lvlname, 2, 'parameters')
+        f = ContextFilter()
+        a1.addFilter(f)
+        a2.addFilter(f)
+        a1.debug('A debug message')
+        a1.info('An info message with %s', 'some parameters')
+        for x in range(10):
+            lvl = choice(levels)
+            lvlname = logging.getLevelName(lvl)
+            a2.log(lvl, 'A message at %s level with %d %s', lvlname, 2, 'parameters')
 
 which, when run, produces something like::
 
@@ -764,10 +765,10 @@ the basis for code meeting your own specific requirements::
         while True:
             try:
                 record = queue.get()
-                if record is None: # We send this as a sentinel to tell the listener to quit.
+                if record is None:  # We send this as a sentinel to tell the listener to quit.
                     break
                 logger = logging.getLogger(record.name)
-                logger.handle(record) # No level or filter logic applied - just do it!
+                logger.handle(record)  # No level or filter logic applied - just do it!
             except Exception:
                 import sys, traceback
                 print('Whoops! Problem:', file=sys.stderr)
@@ -790,10 +791,11 @@ the basis for code meeting your own specific requirements::
     # Note that on Windows you can't rely on fork semantics, so each process
     # will run the logging configuration code when it starts.
     def worker_configurer(queue):
-        h = logging.handlers.QueueHandler(queue) # Just the one handler needed
+        h = logging.handlers.QueueHandler(queue)  # Just the one handler needed
         root = logging.getLogger()
         root.addHandler(h)
-        root.setLevel(logging.DEBUG) # send all messages, for demo; no other level or filter logic applied.
+        # send all messages, for demo; no other level or filter logic applied.
+        root.setLevel(logging.DEBUG)
 
     # This is the worker process top-level loop, which just logs ten events with
     # random intervening delays before terminating.
@@ -821,7 +823,7 @@ the basis for code meeting your own specific requirements::
         workers = []
         for i in range(10):
             worker = multiprocessing.Process(target=worker_process,
-                                           args=(queue, worker_configurer))
+                                             args=(queue, worker_configurer))
             workers.append(worker)
             worker.start()
         for w in workers:
@@ -1245,12 +1247,12 @@ You can use a :class:`QueueHandler` subclass to send messages to other kinds
 of queues, for example a ZeroMQ 'publish' socket. In the example below,the
 socket is created separately and passed to the handler (as its 'queue')::
 
-    import zmq # using pyzmq, the Python binding for ZeroMQ
-    import json # for serializing records portably
+    import zmq   # using pyzmq, the Python binding for ZeroMQ
+    import json  # for serializing records portably
 
     ctx = zmq.Context()
-    sock = zmq.Socket(ctx, zmq.PUB) # or zmq.PUSH, or other suitable value
-    sock.bind('tcp://*:5556') # or wherever
+    sock = zmq.Socket(ctx, zmq.PUB)  # or zmq.PUSH, or other suitable value
+    sock.bind('tcp://*:5556')        # or wherever
 
     class ZeroMQSocketHandler(QueueHandler):
         def enqueue(self, record):
@@ -1288,7 +1290,7 @@ of queues, for example a ZeroMQ 'subscribe' socket. Here's an example::
         def __init__(self, uri, *handlers, **kwargs):
             self.ctx = kwargs.get('ctx') or zmq.Context()
             socket = zmq.Socket(self.ctx, zmq.SUB)
-            socket.setsockopt(zmq.SUBSCRIBE, '') # subscribe to everything
+            socket.setsockopt(zmq.SUBSCRIBE, '')  # subscribe to everything
             socket.connect(uri)
 
         def dequeue(self):
@@ -2116,7 +2118,7 @@ class, as shown in the following example::
             Format an exception so that it prints on a single line.
             """
             result = super(OneLineExceptionFormatter, self).formatException(exc_info)
-            return repr(result) # or format into one line however you want to
+            return repr(result)  # or format into one line however you want to
 
         def format(self, record):
             s = super(OneLineExceptionFormatter, self).format(record)

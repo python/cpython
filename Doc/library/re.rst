@@ -1234,15 +1234,15 @@ does by default).
 
 For example::
 
-   >>> re.match("c", "abcdef")  # No match
-   >>> re.search("c", "abcdef") # Match
+   >>> re.match("c", "abcdef")    # No match
+   >>> re.search("c", "abcdef")   # Match
    <_sre.SRE_Match object; span=(2, 3), match='c'>
 
 Regular expressions beginning with ``'^'`` can be used with :func:`search` to
 restrict the match at the beginning of the string::
 
-   >>> re.match("c", "abcdef")  # No match
-   >>> re.search("^c", "abcdef") # No match
+   >>> re.match("c", "abcdef")    # No match
+   >>> re.search("^c", "abcdef")  # No match
    >>> re.search("^a", "abcdef")  # Match
    <_sre.SRE_Match object; span=(0, 1), match='a'>
 
@@ -1323,9 +1323,9 @@ a function to "munge" text, or randomize the order of all the characters
 in each word of a sentence except for the first and last characters::
 
    >>> def repl(m):
-   ...   inner_word = list(m.group(2))
-   ...   random.shuffle(inner_word)
-   ...   return m.group(1) + "".join(inner_word) + m.group(3)
+   ...     inner_word = list(m.group(2))
+   ...     random.shuffle(inner_word)
+   ...     return m.group(1) + "".join(inner_word) + m.group(3)
    >>> text = "Professor Abdolmalek, please report your absences promptly."
    >>> re.sub(r"(\w)(\w+)(\w)", repl, text)
    'Poefsrosr Aealmlobdk, pslaee reorpt your abnseces plmrptoy.'
@@ -1405,14 +1405,14 @@ successive matches::
     def tokenize(code):
         keywords = {'IF', 'THEN', 'ENDIF', 'FOR', 'NEXT', 'GOSUB', 'RETURN'}
         token_specification = [
-            ('NUMBER',  r'\d+(\.\d*)?'), # Integer or decimal number
-            ('ASSIGN',  r':='),          # Assignment operator
-            ('END',     r';'),           # Statement terminator
-            ('ID',      r'[A-Za-z]+'),   # Identifiers
-            ('OP',      r'[+\-*/]'),     # Arithmetic operators
-            ('NEWLINE', r'\n'),          # Line endings
-            ('SKIP',    r'[ \t]+'),      # Skip over spaces and tabs
-            ('MISMATCH',r'.'),           # Any other character
+            ('NUMBER',  r'\d+(\.\d*)?'),  # Integer or decimal number
+            ('ASSIGN',  r':='),           # Assignment operator
+            ('END',     r';'),            # Statement terminator
+            ('ID',      r'[A-Za-z]+'),    # Identifiers
+            ('OP',      r'[+\-*/]'),      # Arithmetic operators
+            ('NEWLINE', r'\n'),           # Line endings
+            ('SKIP',    r'[ \t]+'),       # Skip over spaces and tabs
+            ('MISMATCH',r'.'),            # Any other character
         ]
         tok_regex = '|'.join('(?P<%s>%s)' % pair for pair in token_specification)
         line_num = 1

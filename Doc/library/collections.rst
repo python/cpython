@@ -1029,7 +1029,7 @@ Since an ordered dictionary remembers its insertion order, it can be used
 in conjunction with sorting to make a sorted dictionary::
 
     >>> # regular unsorted dictionary
-    >>> d = {'banana': 3, 'apple':4, 'pear': 1, 'orange': 2}
+    >>> d = {'banana': 3, 'apple': 4, 'pear': 1, 'orange': 2}
 
     >>> # dictionary sorted by key
     >>> OrderedDict(sorted(d.items(), key=lambda t: t[0]))
