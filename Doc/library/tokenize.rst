@@ -201,7 +201,7 @@ objects::
         we're only showing 12 digits, and the 13th isn't close to 5, the
         rest of the output should be platform-independent.
 
-        >>> exec(s) #doctest: +ELLIPSIS
+        >>> exec(s)  #doctest: +ELLIPSIS
         -3.21716034272e-0...7
 
         Output from calculations with Decimal should be identical across all
@@ -211,8 +211,8 @@ objects::
         -3.217160342717258261933904529E-7
         """
         result = []
-        g = tokenize(BytesIO(s.encode('utf-8')).readline) # tokenize the string
-        for toknum, tokval, _, _, _  in g:
+        g = tokenize(BytesIO(s.encode('utf-8')).readline)  # tokenize the string
+        for toknum, tokval, _, _, _ in g:
             if toknum == NUMBER and '.' in tokval:  # replace NUMBER tokens
                 result.extend([
                     (NAME, 'Decimal'),

@@ -441,7 +441,7 @@ Here is an example session that uses the ``GET`` method::
    >>> conn.request("GET", "/")
    >>> r1 = conn.getresponse()
    >>> while not r1.closed:
-   ...     print(r1.read(200)) # 200 bytes
+   ...     print(r1.read(200))  # 200 bytes
    b'<!doctype html>\n<!--[if"...
    ...
    >>> # Example of an invalid request

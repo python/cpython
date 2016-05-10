@@ -768,7 +768,7 @@ function.
    functions::
 
       def test(a, *, b):
-         ...
+          ...
 
       sig = signature(test)
       ba = sig.bind(10, b=20)

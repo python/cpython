@@ -1907,9 +1907,9 @@ Subclasses of :class:`Command` must define the following methods.
    that is designed to run with both Python 2.x and 3.x, add::
 
      try:
-        from distutils.command.build_py import build_py_2to3 as build_py
+         from distutils.command.build_py import build_py_2to3 as build_py
      except ImportError:
-        from distutils.command.build_py import build_py
+         from distutils.command.build_py import build_py
 
    to your setup.py, and later::
 

@@ -170,15 +170,15 @@ reference ``.args``.  One may also instantiate an exception first before
 raising it and add any attributes to it as desired. ::
 
    >>> try:
-   ...    raise Exception('spam', 'eggs')
+   ...     raise Exception('spam', 'eggs')
    ... except Exception as inst:
-   ...    print(type(inst))    # the exception instance
-   ...    print(inst.args)     # arguments stored in .args
-   ...    print(inst)          # __str__ allows args to be printed directly,
-   ...                         # but may be overridden in exception subclasses
-   ...    x, y = inst.args     # unpack args
-   ...    print('x =', x)
-   ...    print('y =', y)
+   ...     print(type(inst))    # the exception instance
+   ...     print(inst.args)     # arguments stored in .args
+   ...     print(inst)          # __str__ allows args to be printed directly,
+   ...                          # but may be overridden in exception subclasses
+   ...     x, y = inst.args     # unpack args
+   ...     print('x =', x)
+   ...     print('y =', y)
    ...
    <class 'Exception'>
    ('spam', 'eggs')
