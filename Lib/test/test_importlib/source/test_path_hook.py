@@ -16,9 +16,18 @@ class PathHookTest:
     def test_success(self):
         with util.create_modules('dummy') as mapping:
             self.assertTrue(hasattr(self.path_hook()(mapping['.root']),
-                                 'find_module'))
+                                    'find_spec'))
+
+    def test_success_legacy(self):
+        with util.create_modules('dummy') as mapping:
+            self.assertTrue(hasattr(self.path_hook()(mapping['.root']),
+                                    'find_module'))
 
     def test_empty_string(self):
+        # The empty string represents the cwd.
+        self.assertTrue(hasattr(self.path_hook()(''), 'find_spec'))
+
+    def test_empty_string_legacy(self):
         # The empty string represents the cwd.
         self.assertTrue(hasattr(self.path_hook()(''), 'find_module'))
 

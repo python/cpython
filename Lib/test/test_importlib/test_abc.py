@@ -207,6 +207,10 @@ class LoaderDefaultsTests(ABCTestHarness):
 
     SPLIT = make_abc_subclasses(Loader)
 
+    def test_create_module(self):
+        spec = 'a spec'
+        self.assertIsNone(self.ins.create_module(spec))
+
     def test_load_module(self):
         with self.assertRaises(ImportError):
             self.ins.load_module('something')
@@ -519,6 +523,12 @@ class InspectLoaderLoadModuleTests:
         support.unload(self.module_name)
         self.addCleanup(support.unload, self.module_name)
 
+    def load(self, loader):
+        spec = self.util.spec_from_loader(self.module_name, loader)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', DeprecationWarning)
+            return self.init._bootstrap._load_unlocked(spec)
+
     def mock_get_code(self):
         return mock.patch.object(self.InspectLoaderSubclass, 'get_code')
 
@@ -528,9 +538,7 @@ class InspectLoaderLoadModuleTests:
             mocked_get_code.side_effect = ImportError
             with self.assertRaises(ImportError):
                 loader = self.InspectLoaderSubclass()
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore', DeprecationWarning)
-                    loader.load_module(self.module_name)
+                self.load(loader)
 
     def test_get_code_None(self):
         # If get_code() returns None, raise ImportError.
@@ -538,7 +546,7 @@ class InspectLoaderLoadModuleTests:
             mocked_get_code.return_value = None
             with self.assertRaises(ImportError):
                 loader = self.InspectLoaderSubclass()
-                loader.load_module(self.module_name)
+                self.load(loader)
 
     def test_module_returned(self):
         # The loaded module should be returned.
@@ -546,14 +554,16 @@ class InspectLoaderLoadModuleTests:
         with self.mock_get_code() as mocked_get_code:
             mocked_get_code.return_value = code
             loader = self.InspectLoaderSubclass()
-            module = loader.load_module(self.module_name)
+            module = self.load(loader)
             self.assertEqual(module, sys.modules[self.module_name])
 
 
 (Frozen_ILLoadModuleTests,
  Source_ILLoadModuleTests
  ) = test_util.test_both(InspectLoaderLoadModuleTests,
-                         InspectLoaderSubclass=SPLIT_IL)
+                         InspectLoaderSubclass=SPLIT_IL,
+                         init=init,
+                         util=util)
 
 
 ##### ExecutionLoader concrete methods #########################################
