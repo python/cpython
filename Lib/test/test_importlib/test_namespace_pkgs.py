@@ -1,4 +1,5 @@
 import contextlib
+import importlib
 import os
 import sys
 import unittest
@@ -67,6 +68,7 @@ class NamespacePackageTest(unittest.TestCase):
         # TODO: will we ever want to pass exc_info to __exit__?
         self.ctx.__exit__(None, None, None)
 
+
 class SingleNamespacePackage(NamespacePackageTest):
     paths = ['portion1']
 
@@ -83,7 +85,7 @@ class SingleNamespacePackage(NamespacePackageTest):
         self.assertEqual(repr(foo), "<module 'foo' (namespace)>")
 
 
-class DynamicPatheNamespacePackage(NamespacePackageTest):
+class DynamicPathNamespacePackage(NamespacePackageTest):
     paths = ['portion1']
 
     def test_dynamic_path(self):
@@ -283,6 +285,36 @@ class ModuleAndNamespacePackageInSameDir(NamespacePackageTest):
         #  namespace package.
         import a_test
         self.assertEqual(a_test.attr, 'in module')
+
+
+class ReloadTests(NamespacePackageTest):
+    paths = ['portion1']
+
+    def test_simple_package(self):
+        import foo.one
+        foo = importlib.reload(foo)
+        self.assertEqual(foo.one.attr, 'portion1 foo one')
+
+    def test_cant_import_other(self):
+        import foo
+        with self.assertRaises(ImportError):
+            import foo.two
+        foo = importlib.reload(foo)
+        with self.assertRaises(ImportError):
+            import foo.two
+
+    def test_dynamic_path(self):
+        import foo.one
+        with self.assertRaises(ImportError):
+            import foo.two
+
+        # Now modify sys.path and reload.
+        sys.path.append(os.path.join(self.root, 'portion2'))
+        foo = importlib.reload(foo)
+
+        # And make sure foo.two is now importable
+        import foo.two
+        self.assertEqual(foo.two.attr, 'portion2 foo two')
 
 
 if __name__ == "__main__":
