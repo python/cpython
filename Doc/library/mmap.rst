@@ -144,7 +144,7 @@ To map anonymous memory, -1 should be passed as the fileno along with the length
 
       pid = os.fork()
 
-      if pid == 0: # In a child process
+      if pid == 0:  # In a child process
           mm.seek(0)
           print(mm.readline())
 

@@ -175,10 +175,10 @@ Explorer [#]_. ::
 
     url = 'http://www.someserver.com/cgi-bin/register.cgi'
     user_agent = 'Mozilla/5.0 (Windows NT 6.1; Win64; x64)'
-    values = {'name' : 'Michael Foord',
-              'location' : 'Northampton',
-              'language' : 'Python' }
-    headers = { 'User-Agent' : user_agent }
+    values = {'name': 'Michael Foord',
+              'location': 'Northampton',
+              'language': 'Python' }
+    headers = {'User-Agent': user_agent}
 
     data = urllib.parse.urlencode(values)
     data = data.encode('ascii')
@@ -215,7 +215,7 @@ e.g. ::
     >>> req = urllib.request.Request('http://www.pretend_server.org')
     >>> try: urllib.request.urlopen(req)
     ... except urllib.error.URLError as e:
-    ...    print(e.reason)      #doctest: +SKIP
+    ...     print(e.reason)      #doctest: +SKIP
     ...
     (4, 'getaddrinfo failed')
 
@@ -372,7 +372,7 @@ Number 2
 ::
 
     from urllib.request import Request, urlopen
-    from urllib.error import  URLError
+    from urllib.error import URLError
     req = Request(someurl)
     try:
         response = urlopen(req)

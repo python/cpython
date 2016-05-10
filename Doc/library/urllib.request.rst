@@ -1174,7 +1174,7 @@ The code for the sample CGI used in the above example is::
 Here is an example of doing a ``PUT`` request using :class:`Request`::
 
     import urllib.request
-    DATA=b'some data'
+    DATA = b'some data'
     req = urllib.request.Request(url='http://localhost:8080', data=DATA,method='PUT')
     with urllib.request.urlopen(req) as f:
         pass

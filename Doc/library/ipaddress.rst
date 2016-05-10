@@ -653,7 +653,7 @@ network.  For iteration, *all* hosts are returned, including unusable hosts
 example::
 
    >>> for addr in IPv4Network('192.0.2.0/28'):
-   ...   addr
+   ...     addr
    ...
    IPv4Address('192.0.2.0')
    IPv4Address('192.0.2.1')

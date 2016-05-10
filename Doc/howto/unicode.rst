@@ -687,7 +687,7 @@ with the ``surrogateescape`` error handler::
    # make changes to the string 'data'
 
    with open(fname + '.new', 'w',
-              encoding="ascii", errors="surrogateescape") as f:
+             encoding="ascii", errors="surrogateescape") as f:
        f.write(data)
 
 The ``surrogateescape`` error handler will decode any non-ASCII bytes

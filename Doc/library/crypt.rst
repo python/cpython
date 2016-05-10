@@ -149,4 +149,4 @@ check it against the original::
 
    hashed = crypt.crypt(plaintext)
    if not compare_hash(hashed, crypt.crypt(plaintext, hashed)):
-      raise ValueError("hashed version doesn't validate against original")
+       raise ValueError("hashed version doesn't validate against original")
