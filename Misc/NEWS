@@ -294,8 +294,6 @@ Library
 - Issue #26873: xmlrpc now raises ResponseError on unsupported type tags
   instead of silently return incorrect result.
 
-- Issue #26881: modulefinder now works with bytecode with extended args.
-
 - Issue #26915:  The __contains__ methods in the collections ABCs now check
   for identity before checking equality.  This better matches the behavior
   of the concrete classes, allows sensible handling of NaNs, and makes it
