@@ -601,7 +601,6 @@ def pvariance(data, mu=None):
     n = len(data)
     if n < 1:
         raise StatisticsError('pvariance requires at least one data point')
-    ss = _ss(data, mu)
     T, ss = _ss(data, mu)
     return _convert(ss/n, T)
 
