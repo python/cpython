@@ -272,6 +272,9 @@ Library
 
 - Issue #25745: Fixed leaking a userptr in curses panel destructor.
 
+- Issue #26977: Removed unnecessary, and ignored, call to sum of squares helper
+  in statistics.pvariance.
+
 - Issue #26881: The modulefinder module now supports extended opcode arguments.
 
 - Issue #23815: Fixed crashes related to directly created instances of types in
