@@ -275,6 +275,14 @@ Library
 - Issue #26977: Removed unnecessary, and ignored, call to sum of squares helper
   in statistics.pvariance.
 
+- Issue #26002: Use bisect in statistics.median instead of a linear search. 
+  Patch by Upendra Kuma.
+
+- Issue #25974: Make use of new Decimal.as_integer_ratio() method in statistics
+  module. Patch by Stefan Krah.
+
+- Issue #26996: Add secrets module as described in PEP 506.
+
 - Issue #26881: The modulefinder module now supports extended opcode arguments.
 
 - Issue #23815: Fixed crashes related to directly created instances of types in
