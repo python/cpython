@@ -1412,7 +1412,7 @@ float_fromhex(PyObject *cls, PyObject *arg)
         goto parse_error;
     result = PyFloat_FromDouble(negate ? -x : x);
     if (cls != (PyObject *)&PyFloat_Type && result != NULL) {
-        Py_SETREF(result, PyObject_CallFunctionObjArgs(cls, result));
+        Py_SETREF(result, PyObject_CallFunctionObjArgs(cls, result, NULL));
     }
     return result;
 
