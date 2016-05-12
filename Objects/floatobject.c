@@ -1195,7 +1195,7 @@ Return a hexadecimal representation of a floating-point number.\n\
 static PyObject *
 float_fromhex(PyObject *cls, PyObject *arg)
 {
-    PyObject *result_as_float, *result;
+    PyObject *result;
     double x;
     long exp, top_exp, lsb, key_digit;
     char *s, *coeff_start, *s_store, *coeff_end, *exp_start, *s_end;
@@ -1410,11 +1410,10 @@ float_fromhex(PyObject *cls, PyObject *arg)
         s++;
     if (s != s_end)
         goto parse_error;
-    result_as_float = Py_BuildValue("(d)", negate ? -x : x);
-    if (result_as_float == NULL)
-        return NULL;
-    result = PyObject_CallObject(cls, result_as_float);
-    Py_DECREF(result_as_float);
+    result = PyFloat_FromDouble(negate ? -x : x);
+    if (cls != (PyObject *)&PyFloat_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallFunctionObjArgs(cls, result));
+    }
     return result;
 
   overflow_error:
