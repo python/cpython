@@ -10,6 +10,8 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #23640: int.from_bytes() no longer bypasses constructors for subclasses.
+
 - Issue #27005: Optimized the float.fromhex() class method for exact float.
   It is now 2 times faster.
 
