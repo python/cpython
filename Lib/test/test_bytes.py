@@ -1425,11 +1425,11 @@ class BytesAsStringTest(FixedStringTest, unittest.TestCase):
 class SubclassTest:
 
     def test_basic(self):
-        self.assertTrue(issubclass(self.subclass2test, self.type2test))
-        self.assertIsInstance(self.subclass2test(), self.type2test)
+        self.assertTrue(issubclass(self.type2test, self.basetype))
+        self.assertIsInstance(self.type2test(), self.basetype)
 
         a, b = b"abcd", b"efgh"
-        _a, _b = self.subclass2test(a), self.subclass2test(b)
+        _a, _b = self.type2test(a), self.type2test(b)
 
         # test comparison operators with subclass instances
         self.assertTrue(_a == _a)
@@ -1452,19 +1452,19 @@ class SubclassTest:
         # Make sure join returns a NEW object for single item sequences
         # involving a subclass.
         # Make sure that it is of the appropriate type.
-        s1 = self.subclass2test(b"abcd")
-        s2 = self.type2test().join([s1])
+        s1 = self.type2test(b"abcd")
+        s2 = self.basetype().join([s1])
         self.assertTrue(s1 is not s2)
-        self.assertTrue(type(s2) is self.type2test, type(s2))
+        self.assertTrue(type(s2) is self.basetype, type(s2))
 
         # Test reverse, calling join on subclass
         s3 = s1.join([b"abcd"])
-        self.assertTrue(type(s3) is self.type2test)
+        self.assertTrue(type(s3) is self.basetype)
 
     def test_pickle(self):
-        a = self.subclass2test(b"abcd")
+        a = self.type2test(b"abcd")
         a.x = 10
-        a.y = self.subclass2test(b"efgh")
+        a.y = self.type2test(b"efgh")
         for proto in range(pickle.HIGHEST_PROTOCOL + 1):
             b = pickle.loads(pickle.dumps(a, proto))
             self.assertNotEqual(id(a), id(b))
@@ -1475,9 +1475,9 @@ class SubclassTest:
             self.assertEqual(type(a.y), type(b.y))
 
     def test_copy(self):
-        a = self.subclass2test(b"abcd")
+        a = self.type2test(b"abcd")
         a.x = 10
-        a.y = self.subclass2test(b"efgh")
+        a.y = self.type2test(b"efgh")
         for copy_method in (copy.copy, copy.deepcopy):
             b = copy_method(a)
             self.assertNotEqual(id(a), id(b))
@@ -1486,6 +1486,8 @@ class SubclassTest:
             self.assertEqual(a.y, b.y)
             self.assertEqual(type(a), type(b))
             self.assertEqual(type(a.y), type(b.y))
+
+    test_fromhex = BaseBytesTest.test_fromhex
 
 
 class ByteArraySubclass(bytearray):
@@ -1498,8 +1500,8 @@ class OtherBytesSubclass(bytes):
     pass
 
 class ByteArraySubclassTest(SubclassTest, unittest.TestCase):
-    type2test = bytearray
-    subclass2test = ByteArraySubclass
+    basetype = bytearray
+    type2test = ByteArraySubclass
 
     def test_init_override(self):
         class subclass(bytearray):
@@ -1513,8 +1515,8 @@ class ByteArraySubclassTest(SubclassTest, unittest.TestCase):
 
 
 class BytesSubclassTest(SubclassTest, unittest.TestCase):
-    type2test = bytes
-    subclass2test = BytesSubclass
+    basetype = bytes
+    type2test = BytesSubclass
 
 
 if __name__ == "__main__":
