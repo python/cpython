@@ -5049,27 +5049,9 @@ long_from_bytes(PyTypeObject *type, PyObject *args, PyObject *kwds)
         little_endian, is_signed);
     Py_DECREF(bytes);
 
-    /* If from_bytes() was used on subclass, allocate new subclass
-     * instance, initialize it with decoded int value and return it.
-     */
-    if (type != &PyLong_Type && PyType_IsSubtype(type, &PyLong_Type)) {
-        PyLongObject *newobj;
-        int i;
-        Py_ssize_t n = Py_ABS(Py_SIZE(long_obj));
-
-        newobj = (PyLongObject *)type->tp_alloc(type, n);
-        if (newobj == NULL) {
-            Py_DECREF(long_obj);
-            return NULL;
-        }
-        assert(PyLong_Check(newobj));
-        Py_SIZE(newobj) = Py_SIZE(long_obj);
-        for (i = 0; i < n; i++) {
-            newobj->ob_digit[i] =
-                ((PyLongObject *)long_obj)->ob_digit[i];
-        }
-        Py_DECREF(long_obj);
-        return (PyObject *)newobj;
+    if (type != &PyLong_Type) {
+        Py_SETREF(long_obj, PyObject_CallFunctionObjArgs((PyObject *)type,
+                                                         long_obj, NULL));
     }
 
     return long_obj;
