@@ -1203,6 +1203,23 @@ class LongTest(unittest.TestCase):
         self.assertRaises(TypeError, myint.from_bytes, 0, 'big')
         self.assertRaises(TypeError, int.from_bytes, 0, 'big', True)
 
+        class myint2(int):
+            def __new__(cls, value):
+                return int.__new__(cls, value + 1)
+
+        i = myint2.from_bytes(b'\x01', 'big')
+        self.assertIs(type(i), myint2)
+        self.assertEqual(i, 2)
+
+        class myint3(int):
+            def __init__(self, value):
+                self.foo = 'bar'
+
+        i = myint3.from_bytes(b'\x01', 'big')
+        self.assertIs(type(i), myint3)
+        self.assertEqual(i, 1)
+        self.assertEqual(getattr(i, 'foo', 'none'), 'bar')
+
     def test_access_to_nonexistent_digit_0(self):
         # http://bugs.python.org/issue14630: A bug in _PyLong_Copy meant that
         # ob_digit[0] was being incorrectly accessed for instances of a
