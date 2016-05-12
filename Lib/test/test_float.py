@@ -1355,6 +1355,24 @@ class HexFloatTestCase(unittest.TestCase):
             else:
                 self.identical(x, fromHex(toHex(x)))
 
+    def test_subclass(self):
+        class F(float):
+            def __new__(cls, value):
+                return float.__new__(cls, value + 1)
+
+        f = F.fromhex((1.5).hex())
+        self.assertIs(type(f), F)
+        self.assertEqual(f, 2.5)
+
+        class F2(float):
+            def __init__(self, value):
+                self.foo = 'bar'
+
+        f = F2.fromhex((1.5).hex())
+        self.assertIs(type(f), F2)
+        self.assertEqual(f, 1.5)
+        self.assertEqual(getattr(f, 'foo', 'none'), 'bar')
+
 
 if __name__ == '__main__':
     unittest.main()
