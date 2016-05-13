@@ -1412,7 +1412,10 @@ class Popen(object):
             elif stderr == PIPE:
                 errread, errwrite = os.pipe()
             elif stderr == STDOUT:
-                errwrite = c2pwrite
+                if c2pwrite != -1:
+                    errwrite = c2pwrite
+                else: # child's stdout is not set, use parent's stdout
+                    errwrite = sys.__stdout__.fileno()
             elif stderr == DEVNULL:
                 errwrite = self._get_devnull()
             elif isinstance(stderr, int):
