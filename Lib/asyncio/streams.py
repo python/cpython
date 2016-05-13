@@ -242,11 +242,14 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
                 self._loop.create_task(res)
 
     def connection_lost(self, exc):
-        if exc is None:
-            self._stream_reader.feed_eof()
-        else:
-            self._stream_reader.set_exception(exc)
+        if self._stream_reader is not None:
+            if exc is None:
+                self._stream_reader.feed_eof()
+            else:
+                self._stream_reader.set_exception(exc)
         super().connection_lost(exc)
+        self._stream_reader = None
+        self._stream_writer = None
 
     def data_received(self, data):
         self._stream_reader.feed_data(data)
