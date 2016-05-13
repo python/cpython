@@ -1002,7 +1002,7 @@ class EventLoopTestsMixin:
         with mock.patch.object(self.loop, 'call_exception_handler'):
             with test_utils.disable_logger():
                 with self.assertRaisesRegex(ssl.SSLError,
-                                            '(?i)certificate.verify.failed '):
+                                            '(?i)certificate.verify.failed'):
                     self.loop.run_until_complete(f_c)
 
             # execute the loop to log the connection error
@@ -1036,7 +1036,7 @@ class EventLoopTestsMixin:
         with mock.patch.object(self.loop, 'call_exception_handler'):
             with test_utils.disable_logger():
                 with self.assertRaisesRegex(ssl.SSLError,
-                                            '(?i)certificate.verify.failed '):
+                                            '(?i)certificate.verify.failed'):
                     self.loop.run_until_complete(f_c)
 
             # execute the loop to log the connection error
