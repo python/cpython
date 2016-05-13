@@ -116,8 +116,8 @@ PyTypeObject PyCell_Type = {
     "cell",
     sizeof(PyCellObject),
     0,
-    (destructor)cell_dealloc,               /* tp_dealloc */
-    0,                                      /* tp_print */
+    (destructor)cell_dealloc,                   /* tp_dealloc */
+    0,                                          /* tp_print */
     0,                                          /* tp_getattr */
     0,                                          /* tp_setattr */
     (cmpfunc)cell_compare,                      /* tp_compare */
@@ -131,7 +131,7 @@ PyTypeObject PyCell_Type = {
     PyObject_GenericGetAttr,                    /* tp_getattro */
     0,                                          /* tp_setattro */
     0,                                          /* tp_as_buffer */
-    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,/* tp_flags */
+    Py_TPFLAGS_DEFAULT | Py_TPFLAGS_HAVE_GC,    /* tp_flags */
     0,                                          /* tp_doc */
     (traverseproc)cell_traverse,                /* tp_traverse */
     (inquiry)cell_clear,                        /* tp_clear */
