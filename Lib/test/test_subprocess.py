@@ -285,6 +285,27 @@ class ProcessTestCase(BaseTestCase):
         tf.seek(0)
         self.assertStderrEqual(tf.read(), "strawberry")
 
+    def test_stderr_redirect_with_no_stdout_redirect(self):
+        # test stderr=STDOUT while stdout=None (not set)
+
+        # - grandchild prints to stderr
+        # - child redirects grandchild's stderr to its stdout
+        # - the parent should get grandchild's stderr in child's stdout
+        p = subprocess.Popen([sys.executable, "-c",
+                              'import sys, subprocess;'
+                              'rc = subprocess.call([sys.executable, "-c",'
+                              '    "import sys;"'
+                              '    "sys.stderr.write(\'42\')"],'
+                              '    stderr=subprocess.STDOUT);'
+                              'sys.exit(rc)'],
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        stdout, stderr = p.communicate()
+        #NOTE: stdout should get stderr from grandchild
+        self.assertStderrEqual(stdout, b'42')
+        self.assertStderrEqual(stderr, b'') # should be empty
+        self.assertEqual(p.returncode, 0)
+
     def test_stdout_stderr_pipe(self):
         # capture stdout and stderr to the same pipe
         p = subprocess.Popen([sys.executable, "-c",
