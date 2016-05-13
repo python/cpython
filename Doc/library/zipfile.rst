@@ -207,15 +207,15 @@ ZipFile Objects
 .. index::
    single: universal newlines; zipfile.ZipFile.open method
 
-.. method:: ZipFile.open(name, mode='r', pwd=None)
+.. method:: ZipFile.open(name, mode='r', pwd=None, force_zip64=False)
 
-   Extract a member from the archive as a file-like object (ZipExtFile). *name*
-   is the name of the file in the archive, or a :class:`ZipInfo` object. The
+   Access a member of the archive as a file-like object.  *name*
+   is the name of the file in the archive, or a :class:`ZipInfo` object.  The
    *mode* parameter, if included, must be one of the following: ``'r'`` (the
-   default), ``'U'``, or ``'rU'``. Choosing ``'U'`` or  ``'rU'`` will enable
-   :term:`universal newlines` support in the read-only object.  *pwd* is the
-   password used for encrypted files.  Calling  :meth:`.open` on a closed
-   ZipFile will raise a  :exc:`RuntimeError`.
+   default), ``'U'``, ``'rU'`` or ``'w'``.  Choosing ``'U'`` or  ``'rU'`` will
+   enable :term:`universal newlines` support in the read-only object.  *pwd* is
+   the password used to decrypt encrypted ZIP files.  Calling  :meth:`.open` on
+   a closed ZipFile will raise a  :exc:`RuntimeError`.
 
    :meth:`~ZipFile.open` is also a context manager and therefore supports the
    :keyword:`with` statement::
@@ -224,17 +224,23 @@ ZipFile Objects
           with myzip.open('eggs.txt') as myfile:
               print(myfile.read())
 
-   .. note::
+   With *mode* ``'r'``, ``'U'`` or ``'rU'``, the file-like object
+   (``ZipExtFile``) is read-only and provides the following methods:
+   :meth:`~io.BufferedIOBase.read`, :meth:`~io.IOBase.readline`,
+   :meth:`~io.IOBase.readlines`, :meth:`__iter__`,
+   :meth:`~iterator.__next__`.  These objects can operate independently of
+   the ZipFile.
 
-      The file-like object is read-only and provides the following methods:
-      :meth:`~io.BufferedIOBase.read`, :meth:`~io.IOBase.readline`,
-      :meth:`~io.IOBase.readlines`, :meth:`__iter__`,
-      :meth:`~iterator.__next__`.
+   With ``mode='w'``, a writable file handle is returned, which supports the
+   :meth:`~io.BufferedIOBase.write` method.  While a writable file handle is open,
+   attempting to read or write other files in the ZIP file will raise a
+   :exc:`RuntimeError`.
 
-   .. note::
-
-      Objects returned by :meth:`.open` can operate independently of the
-      ZipFile.
+   When writing a file, if the file size is not known in advance but may exceed
+   2 GiB, pass ``force_zip64=True`` to ensure that the header format is
+   capable of supporting large files.  If the file size is known in advance,
+   construct a :class:`ZipInfo` object with :attr:`~ZipInfo.file_size` set, and
+   use that as the *name* parameter.
 
    .. note::
 
@@ -245,6 +251,10 @@ ZipFile Objects
    .. deprecated-removed:: 3.4 3.6
       The ``'U'`` or  ``'rU'`` mode.  Use :class:`io.TextIOWrapper` for reading
       compressed text files in :term:`universal newlines` mode.
+
+   .. versionchanged:: 3.6
+      :meth:`open` can now be used to write files into the archive with the
+      ``mode='w'`` option.
 
 .. method:: ZipFile.extract(member, path=None, pwd=None)
 
