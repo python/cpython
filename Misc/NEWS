@@ -277,6 +277,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26892: Honor debuglevel flag in urllib.request.HTTPHandler. Patch
+  contributed by Chi Hsuan Yen.
+
 - Issue #22274: In the subprocess module, allow stderr to be redirected to
   stdout even when stdout is not redirected.  Patch by Akira Li.
 

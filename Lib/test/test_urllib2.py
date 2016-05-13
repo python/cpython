@@ -480,8 +480,8 @@ class MockHTTPSHandler(urllib.request.AbstractHTTPHandler):
     # Useful for testing the Proxy-Authorization request by verifying the
     # properties of httpcon
 
-    def __init__(self):
-        urllib.request.AbstractHTTPHandler.__init__(self)
+    def __init__(self, debuglevel=0):
+        urllib.request.AbstractHTTPHandler.__init__(self, debuglevel=debuglevel)
         self.httpconn = MockHTTPClass()
 
     def https_open(self, req):
@@ -949,6 +949,13 @@ class HandlerTests(unittest.TestCase):
             req = Request("http://example.com/", iterable_array, headers)
             newreq = h.do_request_(req)
             self.assertEqual(int(newreq.get_header('Content-length')),16)
+
+    def test_http_handler_debuglevel(self):
+        o = OpenerDirector()
+        h = MockHTTPSHandler(debuglevel=1)
+        o.add_handler(h)
+        o.open("https://www.example.com")
+        self.assertEqual(h._debuglevel, 1)
 
     def test_http_doubleslash(self):
         # Checks the presence of any unnecessary double slash in url does not
