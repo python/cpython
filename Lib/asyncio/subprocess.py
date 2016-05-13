@@ -166,7 +166,7 @@ class Process:
 
     @coroutine
     def communicate(self, input=None):
-        if input:
+        if input is not None:
             stdin = self._feed_stdin(input)
         else:
             stdin = self._noop()
