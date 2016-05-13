@@ -350,6 +350,10 @@ A new :meth:`ZipInfo.is_dir() <zipfile.ZipInfo.is_dir>` method can be used
 to check if the :class:`~zipfile.ZipInfo` instance represents a directory.
 (Contributed by Thomas Kluyver in :issue:`26039`.)
 
+The :meth:`ZipFile.open() <zipfile.ZipFile.open>` method can now be used to
+write data into a ZIP file, as well as for extracting data.
+(Contributed by Thomas Kluyver in :issue:`26039`.)
+
 
 zlib
 ----

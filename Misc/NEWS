@@ -277,6 +277,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26039: zipfile.ZipFile.open() can now be used to write data into a ZIP
+  file, as well as for extracting data.  Patch by Thomas Kluyver.
+
 - Issue #26892: Honor debuglevel flag in urllib.request.HTTPHandler. Patch
   contributed by Chi Hsuan Yen.
 
