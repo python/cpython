@@ -436,6 +436,9 @@ Library
 - Issue #26406: Avoid unnecessary serialization of getaddrinfo(3) calls on
   current versions of OpenBSD and NetBSD.  Patch by A. Jesse Jiryu Davis.
 
+- Issue #26848: Fix asyncio/subprocess.communicate() to handle empty input.
+  Patch by Jack O'Connor.
+
 Documentation
 -------------
 

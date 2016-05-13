@@ -287,6 +287,25 @@ class SubprocessMixin:
         self.assertEqual(output.rstrip(), b'3')
         self.assertEqual(exitcode, 0)
 
+    def test_empty_input(self):
+        @asyncio.coroutine
+        def empty_input():
+            code = 'import sys; data = sys.stdin.read(); print(len(data))'
+            proc = yield from asyncio.create_subprocess_exec(
+                                          sys.executable, '-c', code,
+                                          stdin=asyncio.subprocess.PIPE,
+                                          stdout=asyncio.subprocess.PIPE,
+                                          stderr=asyncio.subprocess.PIPE,
+                                          close_fds=False,
+                                          loop=self.loop)
+            stdout, stderr = yield from proc.communicate(b'')
+            exitcode = yield from proc.wait()
+            return (stdout, exitcode)
+
+        output, exitcode = self.loop.run_until_complete(empty_input())
+        self.assertEqual(output.rstrip(), b'0')
+        self.assertEqual(exitcode, 0)
+
     def test_cancel_process_wait(self):
         # Issue #23140: cancel Process.wait()
 
