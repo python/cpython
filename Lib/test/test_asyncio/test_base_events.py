@@ -628,6 +628,7 @@ class BaseEventLoopTests(test_utils.TestCase):
             fut.add_done_callback(lambda *args: self.loop.stop())
             self.loop.run_forever()
             fut = None # Trigger Future.__del__ or futures._TracebackLogger
+            support.gc_collect()
             if PY34:
                 # Future.__del__ in Python 3.4 logs error with
                 # an actual exception context
