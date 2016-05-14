@@ -326,6 +326,7 @@ class StructureTestCase(unittest.TestCase):
                                  "(Phone) <type 'exceptions.TypeError'>: "
                                  "expected string or Unicode object, int found")
         else:
+            # Compatibility no longer strictly required
             self.assertEqual(msg,
                                  "(Phone) exceptions.TypeError: "
                                  "expected string or Unicode object, int found")

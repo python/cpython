@@ -1,7 +1,3 @@
-/*****************************************************************
-  This file should be kept compatible with Python 2.3, see PEP 291.
- *****************************************************************/
-
 #include <Python.h>
 #include <ffi.h>
 #ifdef MS_WIN32

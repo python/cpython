@@ -1,7 +1,3 @@
-/*****************************************************************
-  This file should be kept compatible with Python 2.3, see PEP 291.
- *****************************************************************/
-
 #ifndef _CTYPES_DLFCN_H_
 #define _CTYPES_DLFCN_H_
 

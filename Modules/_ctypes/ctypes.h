@@ -1,5 +1,6 @@
 /*****************************************************************
-  This file should be kept compatible with Python 2.3, see PEP 291.
+  This file contains remnant Python 2.3 compatibility code that is no longer
+  strictly required.
  *****************************************************************/
 
 #if defined (__SVR4) && defined (__sun)
