@@ -156,6 +156,20 @@ The following functions operate on a global history list:
    This calls :c:func:`add_history` in the underlying library.
 
 
+.. function:: set_auto_history(enabled)
+
+   Enable or disable automatic calls to :c:func:`add_history` when reading
+   input via readline.  The *enabled* argument should be a Boolean value
+   that when true, enables auto history, and that when False, disables
+   auto history.
+
+   .. versionadded:: 3.6
+
+   .. impl-detail::
+      Auto history is enabled by default, and changes to this do not persist
+      across multiple sessions.
+
+
 Startup hooks
 -------------
 

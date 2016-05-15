@@ -575,6 +575,24 @@ PyDoc_STRVAR(doc_add_history,
 "add_history(string) -> None\n\
 add an item to the history buffer");
 
+static int should_auto_add_history = 1;
+
+/* Enable or disable automatic history */
+
+static PyObject *
+py_set_auto_history(PyObject *self, PyObject *args)
+{
+    if (!PyArg_ParseTuple(args, "p:set_auto_history",
+                          &should_auto_add_history)) {
+        return NULL;
+    }
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(doc_set_auto_history,
+"set_auto_history(enabled) -> None\n\
+Enables or disables automatic history.");
+
 
 /* Get the tab-completion word-delimiters that readline uses */
 
@@ -791,6 +809,7 @@ static struct PyMethodDef readline_methods[] =
 
     {"set_completer_delims", set_completer_delims,
      METH_VARARGS, doc_set_completer_delims},
+    {"set_auto_history", py_set_auto_history, METH_VARARGS, doc_set_auto_history},
     {"add_history", py_add_history, METH_VARARGS, doc_add_history},
     {"remove_history_item", py_remove_history, METH_VARARGS, doc_remove_history},
     {"replace_history_item", py_replace_history, METH_VARARGS, doc_replace_history},
@@ -1266,7 +1285,7 @@ call_readline(FILE *sys_stdin, FILE *sys_stdout, const char *prompt)
 
     /* we have a valid line */
     n = strlen(p);
-    if (n > 0) {
+    if (should_auto_add_history && n > 0) {
         const char *line;
         int length = _py_get_history_length();
         if (length > 0)

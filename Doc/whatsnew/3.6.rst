@@ -239,6 +239,14 @@ Protocol version 4 already supports this case.  (Contributed by Serhiy
 Storchaka in :issue:`24164`.)
 
 
+readline
+--------
+
+Added :func:`~readline.set_auto_history` to enable or disable
+automatic addition of input to the history list.  (Contributed by
+Tyler Crompton in :issue:`26870`.)
+
+
 rlcompleter
 -----------
 

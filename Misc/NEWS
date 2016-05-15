@@ -277,6 +277,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26870: Added readline.set_auto_history(), which can stop entries
+  being automatically added to the history list.  Based on patch by Tyler
+  Crompton.
+
 - Issue #26039: zipfile.ZipFile.open() can now be used to write data into a ZIP
   file, as well as for extracting data.  Patch by Thomas Kluyver.
 
