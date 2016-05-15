@@ -9,7 +9,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from test.support import import_module, unlink
+from test.support import import_module, unlink, get_original_stdout
 from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
@@ -131,20 +131,25 @@ def run_pty(script, input=b"dummy input\r"):
         sel.register(master, selectors.EVENT_READ | selectors.EVENT_WRITE)
         os.set_blocking(master, False)
         while True:
+            get_original_stdout().write(f"test_readline: select()\n")
             for [_, events] in sel.select():
                 if events & selectors.EVENT_READ:
                     try:
+                        get_original_stdout().write(f"test_readline: read()\n")
                         chunk = os.read(master, 0x10000)
                     except OSError as err:
                         # Linux raises EIO when the slave is closed
                         if err.errno != EIO:
                             raise
                         chunk = b""
+                    get_original_stdout().write(f"test_readline: read {chunk!r}\n")
                     if not chunk:
                         return output
                     output.extend(chunk)
                 if events & selectors.EVENT_WRITE:
+                    get_original_stdout().write(f"test_readline: write()\n")
                     input = input[os.write(master, input):]
+                    get_original_stdout().write(f"test_readline: remaining input = {input!r}\n")
                     if not input:
                         sel.modify(master, selectors.EVENT_READ)
 
