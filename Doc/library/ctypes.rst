@@ -1100,14 +1100,15 @@ access violation or whatever, so it's better to break out of the loop when we
 hit the NULL entry::
 
    >>> for item in table:
-   ...     print(item.name, item.size)
    ...     if item.name is None:
    ...         break
+   ...     print(item.name.decode("ascii"), item.size)
    ...
-   __hello__ 104
-   __phello__ -104
-   __phello__.spam 104
-   None 0
+   _frozen_importlib 31764
+   _frozen_importlib_external 41499
+   __hello__ 161
+   __phello__ -161
+   __phello__.spam 161
    >>>
 
 The fact that standard Python has a frozen module and a frozen package
