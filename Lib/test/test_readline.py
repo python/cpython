@@ -1,6 +1,7 @@
 """
 Very minimal unittests for parts of the readline module.
 """
+from contextlib import ExitStack
 from errno import EIO
 import os
 import selectors
@@ -123,7 +124,10 @@ def run_pty(script, input=b"dummy input\r"):
     args = (sys.executable, '-c', script)
     proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave)
     os.close(slave)
-    with proc, selectors.DefaultSelector() as sel:
+    with ExitStack() as cleanup:
+        cleanup.enter_context(proc)
+        cleanup.callback(os.close, master)
+        sel = cleanup.enter_context(selectors.DefaultSelector())
         sel.register(master, selectors.EVENT_READ | selectors.EVENT_WRITE)
         os.set_blocking(master, False)
         while True:
@@ -137,7 +141,6 @@ def run_pty(script, input=b"dummy input\r"):
                             raise
                         chunk = b""
                     if not chunk:
-                        os.close(master)
                         return output
                     output.extend(chunk)
                 if events & selectors.EVENT_WRITE:
