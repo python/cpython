@@ -272,7 +272,7 @@ Importing Modules
       };
 
 
-.. c:var:: struct _frozen* PyImport_FrozenModules
+.. c:var:: const struct _frozen* PyImport_FrozenModules
 
    This pointer is initialized to point to an array of :c:type:`struct _frozen`
    records, terminated by one whose members are all *NULL* or zero.  When a frozen

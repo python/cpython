@@ -140,7 +140,7 @@ support.
 .. function:: iter_modules(path=None, prefix='')
 
    Yields ``(module_finder, name, ispkg)`` for all submodules on *path*, or, if
-   path is ``None``, all top-level modules on ``sys.path``.
+   *path* is ``None``, all top-level modules on ``sys.path``.
 
    *path* should be either ``None`` or a list of paths to look for modules in.
 
@@ -161,7 +161,7 @@ support.
 .. function:: walk_packages(path=None, prefix='', onerror=None)
 
    Yields ``(module_finder, name, ispkg)`` for all modules recursively on
-   *path*, or, if path is ``None``, all accessible modules.
+   *path*, or, if *path* is ``None``, all accessible modules.
 
    *path* should be either ``None`` or a list of paths to look for modules in.
 
