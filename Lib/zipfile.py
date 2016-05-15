@@ -502,6 +502,7 @@ class ZipInfo (object):
         return zinfo
 
     def is_dir(self):
+        """Return True if this archive member is a directory."""
         return self.filename[-1] == '/'
 
 
@@ -1343,7 +1344,7 @@ class ZipFile:
         with self.open(name, "r", pwd) as fp:
             return fp.read()
 
-    def open(self, name, mode="r", pwd=None, force_zip64=False):
+    def open(self, name, mode="r", pwd=None, *, force_zip64=False):
         """Return file-like object for 'name'.
 
         name is a string for the file name within the ZIP file, or a ZipInfo

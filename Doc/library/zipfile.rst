@@ -207,7 +207,7 @@ ZipFile Objects
 .. index::
    single: universal newlines; zipfile.ZipFile.open method
 
-.. method:: ZipFile.open(name, mode='r', pwd=None, force_zip64=False)
+.. method:: ZipFile.open(name, mode='r', pwd=None, *, force_zip64=False)
 
    Access a member of the archive as a file-like object.  *name*
    is the name of the file in the archive, or a :class:`ZipInfo` object.  The
@@ -490,7 +490,15 @@ file:
 
    .. versionadded:: 3.6
 
-Instances have the following attributes:
+Instances have the following methods and attributes:
+
+.. method:: ZipInfo.is_dir()
+
+   Return True if this archive member is a directory.
+
+   This uses the entry's name: directories should always end with ``/``.
+
+   .. versionadded:: 3.6
 
 
 .. attribute:: ZipInfo.filename
