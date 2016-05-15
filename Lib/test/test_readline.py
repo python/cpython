@@ -126,13 +126,20 @@ def run_pty(script, input=b"dummy input\r"):
     os.close(slave)
     with ExitStack() as cleanup:
         cleanup.enter_context(proc)
-        cleanup.callback(proc.terminate)
+        def terminate(proc):
+            try:
+                proc.terminate()
+            except ProcessLookupError:
+                # Workaround for Open/Net BSD bug (Issue 16762)
+                pass
+        cleanup.callback(terminate, proc)
         cleanup.callback(os.close, master)
-        # Avoid using DefaultSelector, because it may choose a kqueue()
-        # implementation, which does not work with pseudo-terminals on OS X
-        # < 10.9 (Issue 20365) and Open BSD (Issue 20667).
-        sel = getattr(selectors, "PollSelector", selectors.DefaultSelector)()
-        cleanup.enter_context(sel)
+        # Avoid using DefaultSelector and PollSelector. Kqueue() does not
+        # work with pseudo-terminals on OS X < 10.9 (Issue 20365) and Open
+        # BSD (Issue 20667). Poll() does not work with OS X 10.6 or 10.4
+        # either (Issue 20472). Hopefully the file descriptor is low enough
+        # to use with select().
+        sel = cleanup.enter_context(selectors.SelectSelector())
         sel.register(master, selectors.EVENT_READ | selectors.EVENT_WRITE)
         os.set_blocking(master, False)
         while True:
