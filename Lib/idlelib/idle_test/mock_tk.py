@@ -296,3 +296,8 @@ class Text:
     def bind(sequence=None, func=None, add=None):
         "Bind to this widget at event sequence a call to function func."
         pass
+
+class Entry:
+    "Mock for tkinter.Entry."
+    def focus_set(self):
+        pass
