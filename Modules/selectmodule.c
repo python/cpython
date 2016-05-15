@@ -1438,7 +1438,7 @@ PyDoc_STRVAR(pyepoll_register_doc,
 Registers a new fd or raises an OSError if the fd is already registered.\n\
 fd is the target file descriptor of the operation.\n\
 events is a bit set composed of the various EPOLL constants; the default\n\
-is EPOLL_IN | EPOLL_OUT | EPOLL_PRI.\n\
+is EPOLLIN | EPOLLOUT | EPOLLPRI.\n\
 \n\
 The epoll interface supports all file descriptors that support poll.");
 
