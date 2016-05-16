@@ -285,35 +285,6 @@ class simple_producer:
             return result
 
 
-class fifo:
-    def __init__(self, list=None):
-        import warnings
-        warnings.warn('fifo class will be removed in Python 3.6',
-                      DeprecationWarning, stacklevel=2)
-        if not list:
-            self.list = deque()
-        else:
-            self.list = deque(list)
-
-    def __len__(self):
-        return len(self.list)
-
-    def is_empty(self):
-        return not self.list
-
-    def first(self):
-        return self.list[0]
-
-    def push(self, data):
-        self.list.append(data)
-
-    def pop(self):
-        if self.list:
-            return (1, self.list.popleft())
-        else:
-            return (0, None)
-
-
 # Given 'haystack', see if any prefix of 'needle' is at its end.  This
 # assumes an exact match has already been checked.  Return the number of
 # characters matched.
