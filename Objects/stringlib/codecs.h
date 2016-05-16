@@ -1,6 +1,8 @@
 /* stringlib: codec implementations */
 
-#if STRINGLIB_IS_UNICODE
+#if !STRINGLIB_IS_UNICODE
+# error "codecs.h is specific to Unicode"
+#endif
 
 /* Mask to quickly check whether a C 'long' contains a
    non-ASCII, UTF8-encoded char. */
@@ -823,5 +825,3 @@ STRINGLIB(utf32_encode)(const STRINGLIB_CHAR *in,
 #undef SWAB4
 
 #endif
-
-#endif /* STRINGLIB_IS_UNICODE */
