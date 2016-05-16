@@ -1734,11 +1734,8 @@ bytearray_remove_impl(PyByteArrayObject *self, int value)
     Py_ssize_t where, n = Py_SIZE(self);
     char *buf = PyByteArray_AS_STRING(self);
 
-    for (where = 0; where < n; where++) {
-        if (buf[where] == value)
-            break;
-    }
-    if (where == n) {
+    where = stringlib_find_char(buf, n, value);
+    if (where < 0) {
         PyErr_SetString(PyExc_ValueError, "value not found in bytearray");
         return NULL;
     }
