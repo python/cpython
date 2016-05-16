@@ -1224,6 +1224,41 @@ class HandlerTests(unittest.TestCase):
         fp = urllib.request.urlopen("http://python.org/path")
         self.assertEqual(fp.geturl(), "http://python.org/path?query")
 
+    def test_redirect_encoding(self):
+        # Some characters in the redirect target may need special handling,
+        # but most ASCII characters should be treated as already encoded
+        class Handler(urllib.request.HTTPHandler):
+            def http_open(self, req):
+                result = self.do_open(self.connection, req)
+                self.last_buf = self.connection.buf
+                # Set up a normal response for the next request
+                self.connection = test_urllib.fakehttp(
+                    b'HTTP/1.1 200 OK\r\n'
+                    b'Content-Length: 3\r\n'
+                    b'\r\n'
+                    b'123'
+                )
+                return result
+        handler = Handler()
+        opener = urllib.request.build_opener(handler)
+        tests = (
+            (b'/p\xC3\xA5-dansk/', b'/p%C3%A5-dansk/'),
+            (b'/spaced%20path/', b'/spaced%20path/'),
+            (b'/spaced path/', b'/spaced%20path/'),
+            (b'/?p\xC3\xA5-dansk', b'/?p%C3%A5-dansk'),
+        )
+        for [location, result] in tests:
+            with self.subTest(repr(location)):
+                handler.connection = test_urllib.fakehttp(
+                    b'HTTP/1.1 302 Redirect\r\n'
+                    b'Location: ' + location + b'\r\n'
+                    b'\r\n'
+                )
+                response = opener.open('http://example.com/')
+                expected = b'GET ' + result + b' '
+                request = handler.last_buf
+                self.assertTrue(request.startswith(expected), repr(request))
+
     def test_proxy(self):
         o = OpenerDirector()
         ph = urllib.request.ProxyHandler(dict(http="proxy.example.com:3128"))
