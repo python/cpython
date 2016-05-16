@@ -1,4 +1,6 @@
 import unittest
+import math
+import sys
 from test import support
 # Skip this test if the _testcapi module isn't available.
 support.import_module('_testcapi')
@@ -43,7 +45,11 @@ VERY_LARGE = 0xFF0000121212121212121242
 
 from _testcapi import UCHAR_MAX, USHRT_MAX, UINT_MAX, ULONG_MAX, INT_MAX, \
      INT_MIN, LONG_MIN, LONG_MAX, PY_SSIZE_T_MIN, PY_SSIZE_T_MAX, \
-     SHRT_MIN, SHRT_MAX
+     SHRT_MIN, SHRT_MAX, FLT_MIN, FLT_MAX, DBL_MIN, DBL_MAX
+
+DBL_MAX_EXP = sys.float_info.max_exp
+INF = float('inf')
+NAN = float('nan')
 
 # fake, they are not defined in Python's header files
 LLONG_MAX = 2**63-1
@@ -69,6 +75,55 @@ class BadInt2:
 class BadInt3(int):
     def __int__(self):
         return True
+
+
+class Float:
+    def __float__(self):
+        return 4.25
+
+class FloatSubclass(float):
+    pass
+
+class FloatSubclass2(float):
+    def __float__(self):
+        return 4.25
+
+class BadFloat:
+    def __float__(self):
+        return 687
+
+class BadFloat2:
+    def __float__(self):
+        return FloatSubclass(4.25)
+
+class BadFloat3(float):
+    def __float__(self):
+        return FloatSubclass(4.25)
+
+
+class Complex:
+    def __complex__(self):
+        return 4.25+0.5j
+
+class ComplexSubclass(complex):
+    pass
+
+class ComplexSubclass2(complex):
+    def __complex__(self):
+        return 4.25+0.5j
+
+class BadComplex:
+    def __complex__(self):
+        return 1.25
+
+class BadComplex2:
+    def __complex__(self):
+        return ComplexSubclass(4.25+0.5j)
+
+class BadComplex3(complex):
+    def __complex__(self):
+        return ComplexSubclass(4.25+0.5j)
+
 
 class TupleSubclass(tuple):
     pass
@@ -294,6 +349,81 @@ class LongLong_TestCase(unittest.TestCase):
         self.assertEqual(42, getargs_K(42))
 
         self.assertEqual(VERY_LARGE & ULLONG_MAX, getargs_K(VERY_LARGE))
+
+
+class Float_TestCase(unittest.TestCase):
+    def assertEqualWithSign(self, actual, expected):
+        self.assertEqual(actual, expected)
+        self.assertEqual(math.copysign(1, actual), math.copysign(1, expected))
+
+    def test_f(self):
+        from _testcapi import getargs_f
+        self.assertEqual(getargs_f(4.25), 4.25)
+        self.assertEqual(getargs_f(4), 4.0)
+        self.assertRaises(TypeError, getargs_f, 4.25+0j)
+        self.assertEqual(getargs_f(Float()), 4.25)
+        self.assertEqual(getargs_f(FloatSubclass(7.5)), 7.5)
+        self.assertEqual(getargs_f(FloatSubclass2(7.5)), 7.5)
+        self.assertRaises(TypeError, getargs_f, BadFloat())
+        self.assertEqual(getargs_f(BadFloat2()), 4.25)
+        self.assertEqual(getargs_f(BadFloat3(7.5)), 7.5)
+
+        for x in (FLT_MIN, -FLT_MIN, FLT_MAX, -FLT_MAX, INF, -INF):
+            self.assertEqual(getargs_f(x), x)
+        if FLT_MAX < DBL_MAX:
+            self.assertEqual(getargs_f(DBL_MAX), INF)
+            self.assertEqual(getargs_f(-DBL_MAX), -INF)
+        if FLT_MIN > DBL_MIN:
+            self.assertEqualWithSign(getargs_f(DBL_MIN), 0.0)
+            self.assertEqualWithSign(getargs_f(-DBL_MIN), -0.0)
+        self.assertEqualWithSign(getargs_f(0.0), 0.0)
+        self.assertEqualWithSign(getargs_f(-0.0), -0.0)
+        r = getargs_f(NAN)
+        self.assertNotEqual(r, r)
+
+    def test_d(self):
+        from _testcapi import getargs_d
+        self.assertEqual(getargs_d(4.25), 4.25)
+        self.assertEqual(getargs_d(4), 4.0)
+        self.assertRaises(TypeError, getargs_d, 4.25+0j)
+        self.assertEqual(getargs_d(Float()), 4.25)
+        self.assertEqual(getargs_d(FloatSubclass(7.5)), 7.5)
+        self.assertEqual(getargs_d(FloatSubclass2(7.5)), 7.5)
+        self.assertRaises(TypeError, getargs_d, BadFloat())
+        self.assertEqual(getargs_d(BadFloat2()), 4.25)
+        self.assertEqual(getargs_d(BadFloat3(7.5)), 7.5)
+
+        for x in (DBL_MIN, -DBL_MIN, DBL_MAX, -DBL_MAX, INF, -INF):
+            self.assertEqual(getargs_d(x), x)
+        self.assertRaises(OverflowError, getargs_d, 1<<DBL_MAX_EXP)
+        self.assertRaises(OverflowError, getargs_d, -1<<DBL_MAX_EXP)
+        self.assertEqualWithSign(getargs_d(0.0), 0.0)
+        self.assertEqualWithSign(getargs_d(-0.0), -0.0)
+        r = getargs_d(NAN)
+        self.assertNotEqual(r, r)
+
+    def test_D(self):
+        from _testcapi import getargs_D
+        self.assertEqual(getargs_D(4.25+0.5j), 4.25+0.5j)
+        self.assertEqual(getargs_D(4.25), 4.25+0j)
+        self.assertEqual(getargs_D(4), 4.0+0j)
+        self.assertEqual(getargs_D(Complex()), 4.25+0.5j)
+        self.assertEqual(getargs_D(ComplexSubclass(7.5+0.25j)), 7.5+0.25j)
+        self.assertEqual(getargs_D(ComplexSubclass2(7.5+0.25j)), 7.5+0.25j)
+        self.assertRaises(TypeError, getargs_D, BadComplex())
+        self.assertEqual(getargs_D(BadComplex2()), 4.25+0.5j)
+        self.assertEqual(getargs_D(BadComplex3(7.5+0.25j)), 7.5+0.25j)
+
+        for x in (DBL_MIN, -DBL_MIN, DBL_MAX, -DBL_MAX, INF, -INF):
+            c = complex(x, 1.0)
+            self.assertEqual(getargs_D(c), c)
+            c = complex(1.0, x)
+            self.assertEqual(getargs_D(c), c)
+        self.assertEqualWithSign(getargs_D(complex(0.0, 1.0)).real, 0.0)
+        self.assertEqualWithSign(getargs_D(complex(-0.0, 1.0)).real, -0.0)
+        self.assertEqualWithSign(getargs_D(complex(1.0, 0.0)).imag, 0.0)
+        self.assertEqualWithSign(getargs_D(complex(1.0, -0.0)).imag, -0.0)
+
 
 class Paradox:
     "This statement is false."
@@ -758,6 +888,34 @@ class String_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_Z_hash, bytearray(b'bytearray'))
         self.assertRaises(TypeError, getargs_Z_hash, memoryview(b'memoryview'))
         self.assertIsNone(getargs_Z_hash(None))
+
+
+class Object_TestCase(unittest.TestCase):
+    def test_S(self):
+        from _testcapi import getargs_S
+        obj = b'bytes'
+        self.assertIs(getargs_S(obj), obj)
+        self.assertRaises(TypeError, getargs_S, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_S, 'str')
+        self.assertRaises(TypeError, getargs_S, None)
+        self.assertRaises(TypeError, getargs_S, memoryview(obj))
+
+    def test_Y(self):
+        from _testcapi import getargs_Y
+        obj = bytearray(b'bytearray')
+        self.assertIs(getargs_Y(obj), obj)
+        self.assertRaises(TypeError, getargs_Y, b'bytes')
+        self.assertRaises(TypeError, getargs_Y, 'str')
+        self.assertRaises(TypeError, getargs_Y, None)
+        self.assertRaises(TypeError, getargs_Y, memoryview(obj))
+
+    def test_U(self):
+        from _testcapi import getargs_U
+        obj = 'str'
+        self.assertIs(getargs_U(obj), obj)
+        self.assertRaises(TypeError, getargs_U, b'bytes')
+        self.assertRaises(TypeError, getargs_U, bytearray(b'bytearray'))
+        self.assertRaises(TypeError, getargs_U, None)
 
 
 if __name__ == "__main__":
