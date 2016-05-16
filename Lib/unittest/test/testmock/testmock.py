@@ -1419,6 +1419,18 @@ class MockTest(unittest.TestCase):
         self.assertEqual('abc', first)
         self.assertEqual('abc', second)
 
+    def test_mock_open_after_eof(self):
+        # read, readline and readlines should work after end of file.
+        _open = mock.mock_open(read_data='foo')
+        h = _open('bar')
+        h.read()
+        self.assertEqual('', h.read())
+        self.assertEqual('', h.read())
+        self.assertEqual('', h.readline())
+        self.assertEqual('', h.readline())
+        self.assertEqual([], h.readlines())
+        self.assertEqual([], h.readlines())
+
     def test_mock_parents(self):
         for Klass in Mock, MagicMock:
             m = Klass()
