@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #27039: Fixed bytearray.remove() for values greater than 127.  Based on
+  patch by Joe Jevnik.
+
 - Issue #23640: int.from_bytes() no longer bypasses constructors for subclasses.
 
 - Issue #27005: Optimized the float.fromhex() class method for exact float.
