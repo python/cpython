@@ -124,6 +124,9 @@ Library
 - Issue #22274: In the subprocess module, allow stderr to be redirected to
   stdout even when stdout is not redirected.  Patch by Akira Li.
 
+- Issue #26807: mock_open 'files' no longer error on readline at end of file.
+  Patch from Yolanda Robla.
+
 - Issue #25745: Fixed leaking a userptr in curses panel destructor.
 
 - Issue #26977: Removed unnecessary, and ignored, call to sum of squares helper
