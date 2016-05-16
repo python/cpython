@@ -227,7 +227,7 @@ class BaseSubprocessTransport(transports.SubprocessTransport):
         if self._returncode is not None:
             return self._returncode
 
-        waiter = futures.Future(loop=self._loop)
+        waiter = self._loop.create_future()
         self._exit_waiters.append(waiter)
         return (yield from waiter)
 

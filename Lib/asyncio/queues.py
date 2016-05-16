@@ -128,7 +128,7 @@ class Queue:
         This method is a coroutine.
         """
         while self.full():
-            putter = futures.Future(loop=self._loop)
+            putter = self._loop.create_future()
             self._putters.append(putter)
             try:
                 yield from putter
@@ -162,7 +162,7 @@ class Queue:
         This method is a coroutine.
         """
         while self.empty():
-            getter = futures.Future(loop=self._loop)
+            getter = self._loop.create_future()
             self._getters.append(getter)
             try:
                 yield from getter

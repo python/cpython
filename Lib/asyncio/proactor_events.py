@@ -443,7 +443,7 @@ class BaseProactorEventLoop(base_events.BaseEventLoop):
         try:
             base_events._check_resolved_address(sock, address)
         except ValueError as err:
-            fut = futures.Future(loop=self)
+            fut = self.create_future()
             fut.set_exception(err)
             return fut
         else:
