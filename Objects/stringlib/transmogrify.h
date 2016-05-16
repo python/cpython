@@ -1,5 +1,6 @@
-/* NOTE: this API is -ONLY- for use with single byte character strings. */
-/* Do not use it with Unicode. */
+#if STRINGLIB_IS_UNICODE
+# error "transmogrify.h only compatible with byte-wise strings"
+#endif
 
 /* the more complicated methods.  parts of these should be pulled out into the
    shared code in bytes_methods.c to cut down on duplicate code bloat.  */
