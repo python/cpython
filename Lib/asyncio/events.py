@@ -266,6 +266,9 @@ class AbstractEventLoop:
     def time(self):
         raise NotImplementedError
 
+    def create_future(self):
+        raise NotImplementedError
+
     # Method scheduling a coroutine object: create a task.
 
     def create_task(self, coro):

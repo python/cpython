@@ -981,6 +981,8 @@ Library
 
 - Issue #27040: Add loop.get_exception_handler method
 
+- Issue #27041: asyncio: Add loop.create_future method
+
 IDLE
 ----
 

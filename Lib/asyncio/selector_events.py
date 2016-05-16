@@ -196,7 +196,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         transport = None
         try:
             protocol = protocol_factory()
-            waiter = futures.Future(loop=self)
+            waiter = self.create_future()
             if sslcontext:
                 transport = self._make_ssl_transport(
                     conn, protocol, sslcontext, waiter=waiter,
@@ -314,7 +314,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
-        fut = futures.Future(loop=self)
+        fut = self.create_future()
         self._sock_recv(fut, False, sock, n)
         return fut
 
@@ -352,7 +352,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
-        fut = futures.Future(loop=self)
+        fut = self.create_future()
         if data:
             self._sock_sendall(fut, False, sock, data)
         else:
@@ -395,7 +395,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
-        fut = futures.Future(loop=self)
+        fut = self.create_future()
         try:
             base_events._check_resolved_address(sock, address)
         except ValueError as err:
@@ -453,7 +453,7 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
-        fut = futures.Future(loop=self)
+        fut = self.create_future()
         self._sock_accept(fut, False, sock)
         return fut
 

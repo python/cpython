@@ -170,7 +170,7 @@ class Lock(_ContextManagerMixin):
             self._locked = True
             return True
 
-        fut = futures.Future(loop=self._loop)
+        fut = self._loop.create_future()
         self._waiters.append(fut)
         try:
             yield from fut
@@ -258,7 +258,7 @@ class Event:
         if self._value:
             return True
 
-        fut = futures.Future(loop=self._loop)
+        fut = self._loop.create_future()
         self._waiters.append(fut)
         try:
             yield from fut
@@ -320,7 +320,7 @@ class Condition(_ContextManagerMixin):
 
         self.release()
         try:
-            fut = futures.Future(loop=self._loop)
+            fut = self._loop.create_future()
             self._waiters.append(fut)
             try:
                 yield from fut
@@ -433,7 +433,7 @@ class Semaphore(_ContextManagerMixin):
         True.
         """
         while self._value <= 0:
-            fut = futures.Future(loop=self._loop)
+            fut = self._loop.create_future()
             self._waiters.append(fut)
             try:
                 yield from fut
