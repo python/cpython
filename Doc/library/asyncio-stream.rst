@@ -142,6 +142,30 @@ StreamReader
 
       This method is a :ref:`coroutine <coroutine>`.
 
+   .. coroutinemethod:: readuntil(separator=b'\n')
+
+      Read data from the stream until ``separator`` is found.
+
+      On success, the data and separator will be removed from the
+      internal buffer (consumed). Returned data will include the
+      separator at the end.
+
+      Configured stream limit is used to check result. Limit sets the
+      maximal length of data that can be returned, not counting the
+      separator.
+
+      If an EOF occurs and the complete separator is still not found,
+      an :exc:`IncompleteReadError` exception will be
+      raised, and the internal buffer will be reset.  The
+      :attr:`IncompleteReadError.partial` attribute may contain the
+      separator partially.
+
+      If the data cannot be read because of over limit, a
+      :exc:`LimitOverrunError` exception  will be raised, and the data
+      will be left in the internal buffer, so it can be read again.
+
+      .. versionadded:: 3.5.2
+
    .. method:: at_eof()
 
       Return ``True`` if the buffer is empty and :meth:`feed_eof` was called.
@@ -249,6 +273,18 @@ IncompleteReadError
    .. attribute:: partial
 
       Read bytes string before the end of stream was reached (:class:`bytes`).
+
+
+LimitOverrunError
+=================
+
+.. exception:: LimitOverrunError
+
+   Reached the buffer limit while looking for a separator.
+
+   .. attribute:: consumed
+
+      Total number of to be consumed bytes.
 
 
 Stream examples

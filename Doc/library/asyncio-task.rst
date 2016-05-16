@@ -677,6 +677,8 @@ Task functions
 
    Passing ``None`` as *timeout* argument disables the manager logic.
 
+   .. versionadded:: 3.5.2
+
 .. coroutinefunction:: wait(futures, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)
 
