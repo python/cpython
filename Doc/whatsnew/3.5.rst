@@ -822,6 +822,33 @@ Updates in 3.5.1:
   method can now accept a list of hosts.
   (Contributed by Yann Sionneau.)
 
+Updates in 3.5.2:
+
+* New :meth:`loop.create_future() <asyncio.BaseEventLoop.create_future>`
+  method to create Future objects.  This allows alternative event
+  loop implementations, such as
+  `uvloop <https://github.com/MagicStack/uvloop>`_, to provide a faster
+  :class:`asyncio.Future` implementation.
+  (Contributed by Yury Selivanov.)
+
+* New :meth:`loop.get_exception_handler() <asyncio.BaseEventLoop.get_exception_handler>`
+  method to get the current exception handler.
+  (Contributed by Yury Selivanov.)
+
+* New :func:`~asyncio.timeout` context manager to simplify timeouts
+  handling code.
+  (Contributed by Andrew Svetlov.)
+
+* New :meth:`StreamReader.readuntil() <asyncio.StreamReader.readuntil>`
+  method to read data from the stream until a separator bytes
+  sequence appears.
+  (Contributed by Mark Korenberg.)
+
+* The :meth:`loop.getaddrinfo() <asyncio.BaseEventLoop.getaddrinfo>`
+  method is optimized to avoid calling the system ``getaddrinfo``
+  function if the address is already resolved.
+  (Contributed by A. Jesse Jiryu Davis.)
+
 
 bz2
 ---
