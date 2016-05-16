@@ -2565,21 +2565,18 @@ static PyObject *
 bytearray_remove_impl(PyByteArrayObject *self, int value)
 /*[clinic end generated code: output=d659e37866709c13 input=47560b11fd856c24]*/
 {
-    Py_ssize_t where, n = Py_SIZE(self);
+    Py_ssize_t n = Py_SIZE(self);
     char *buf = PyByteArray_AS_STRING(self);
+    char *where = memchr(buf, value, n);
 
-    for (where = 0; where < n; where++) {
-        if (buf[where] == value)
-            break;
-    }
-    if (where == n) {
+    if (!where) {
         PyErr_SetString(PyExc_ValueError, "value not found in bytearray");
         return NULL;
     }
     if (!_canresize(self))
         return NULL;
 
-    memmove(buf + where, buf + where + 1, n - where);
+    memmove(where, where + 1, buf + n - where);
     if (PyByteArray_Resize((PyObject *)self, n - 1) < 0)
         return NULL;
 
