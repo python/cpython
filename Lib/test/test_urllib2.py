@@ -462,7 +462,7 @@ class MockHTTPHandler(urllib.request.BaseHandler):
         self.requests = []
 
     def http_open(self, req):
-        import email, http.client, copy
+        import email, copy
         self.requests.append(copy.deepcopy(req))
         if self._count == 0:
             self._count = self._count + 1
@@ -1207,6 +1207,22 @@ class HandlerTests(unittest.TestCase):
         o = build_test_opener(hh, hdeh, hrh)
         fp = o.open('http://www.example.com')
         self.assertEqual(fp.geturl(), redirected_url.strip())
+
+    def test_redirect_no_path(self):
+        # Issue 14132: Relative redirect strips original path
+        real_class = http.client.HTTPConnection
+        response1 = b"HTTP/1.1 302 Found\r\nLocation: ?query\r\n\r\n"
+        http.client.HTTPConnection = test_urllib.fakehttp(response1)
+        self.addCleanup(setattr, http.client, "HTTPConnection", real_class)
+        urls = iter(("/path", "/path?query"))
+        def request(conn, method, url, *pos, **kw):
+            self.assertEqual(url, next(urls))
+            real_class.request(conn, method, url, *pos, **kw)
+            # Change response for subsequent connection
+            conn.__class__.fakedata = b"HTTP/1.1 200 OK\r\n\r\nHello!"
+        http.client.HTTPConnection.request = request
+        fp = urllib.request.urlopen("http://python.org/path")
+        self.assertEqual(fp.geturl(), "http://python.org/path?query")
 
     def test_proxy(self):
         o = OpenerDirector()
