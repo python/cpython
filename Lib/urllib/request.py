@@ -652,7 +652,7 @@ class HTTPRedirectHandler(BaseHandler):
                 "%s - Redirection to url '%s' is not allowed" % (msg, newurl),
                 headers, fp)
 
-        if not urlparts.path:
+        if not urlparts.path and urlparts.netloc:
             urlparts = list(urlparts)
             urlparts[2] = "/"
         newurl = urlunparse(urlparts)
