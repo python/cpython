@@ -1136,6 +1136,65 @@ test_k_code(PyObject *self)
 }
 
 static PyObject *
+getargs_f(PyObject *self, PyObject *args)
+{
+    float f;
+    if (!PyArg_ParseTuple(args, "f", &f))
+        return NULL;
+    return PyFloat_FromDouble(f);
+}
+
+static PyObject *
+getargs_d(PyObject *self, PyObject *args)
+{
+    double d;
+    if (!PyArg_ParseTuple(args, "d", &d))
+        return NULL;
+    return PyFloat_FromDouble(d);
+}
+
+static PyObject *
+getargs_D(PyObject *self, PyObject *args)
+{
+    Py_complex cval;
+    if (!PyArg_ParseTuple(args, "D", &cval))
+        return NULL;
+    return PyComplex_FromCComplex(cval);
+}
+
+static PyObject *
+getargs_S(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "S", &obj))
+        return NULL;
+    Py_INCREF(obj);
+    return obj;
+}
+
+static PyObject *
+getargs_Y(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "Y", &obj))
+        return NULL;
+    Py_INCREF(obj);
+    return obj;
+}
+
+#ifdef Py_USING_UNICODE
+static PyObject *
+getargs_U(PyObject *self, PyObject *args)
+{
+    PyObject *obj;
+    if (!PyArg_ParseTuple(args, "U", &obj))
+        return NULL;
+    Py_INCREF(obj);
+    return obj;
+}
+#endif
+
+static PyObject *
 getargs_c(PyObject *self, PyObject *args)
 {
     char c;
@@ -2376,6 +2435,14 @@ static PyMethodDef TestMethods[] = {
     {"test_long_long_and_overflow",
         (PyCFunction)test_long_long_and_overflow, METH_NOARGS},
     {"test_L_code",             (PyCFunction)test_L_code,        METH_NOARGS},
+#endif
+    {"getargs_f",               getargs_f,                       METH_VARARGS},
+    {"getargs_d",               getargs_d,                       METH_VARARGS},
+    {"getargs_D",               getargs_D,                       METH_VARARGS},
+    {"getargs_S",               getargs_S,                       METH_VARARGS},
+    {"getargs_Y",               getargs_Y,                       METH_VARARGS},
+#ifdef Py_USING_UNICODE
+    {"getargs_U",               getargs_U,                       METH_VARARGS},
 #endif
     {"getargs_c",               getargs_c,                       METH_VARARGS},
     {"getargs_s",               getargs_s,                       METH_VARARGS},
