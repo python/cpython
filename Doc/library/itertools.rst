@@ -591,7 +591,8 @@ loops that truncate the stream.
    Return *n* independent iterators from a single iterable.
 
    The following Python code helps explain what *tee* does (although the actual
-   implementation is more complex and uses only a single underlying FIFO queue)::
+   implementation is more complex and uses only a single underlying
+   :abbr:`FIFO (first-in, first-out)` queue)::
 
         def tee(iterable, n=2):
             it = iter(iterable)
