@@ -128,24 +128,17 @@ class SMTPChannel(asynchat.async_chat):
             return self.command_size_limit
 
     def __init__(self, server, conn, addr, data_size_limit=DATA_SIZE_DEFAULT,
-                 map=None, enable_SMTPUTF8=False, decode_data=None):
+                 map=None, enable_SMTPUTF8=False, decode_data=False):
         asynchat.async_chat.__init__(self, conn, map=map)
         self.smtp_server = server
         self.conn = conn
         self.addr = addr
         self.data_size_limit = data_size_limit
-        self.enable_SMTPUTF8 = enable_SMTPUTF8
-        if enable_SMTPUTF8:
-            if decode_data:
-                raise ValueError("decode_data and enable_SMTPUTF8 cannot"
-                                 " be set to True at the same time")
-            decode_data = False
-        if decode_data is None:
-            warn("The decode_data default of True will change to False in 3.6;"
-                 " specify an explicit value for this keyword",
-                 DeprecationWarning, 2)
-            decode_data = True
-        self._decode_data = decode_data
+        self.enable_SMTPUTF8 = enable_SMTPUTF8 = bool(enable_SMTPUTF8)
+        self._decode_data = decode_data = bool(decode_data)
+        if enable_SMTPUTF8 and decode_data:
+            raise ValueError("decode_data and enable_SMTPUTF8 cannot"
+                             " be set to True at the same time")
         if decode_data:
             self._emptystring = ''
             self._linesep = '\r\n'
@@ -635,23 +628,15 @@ class SMTPServer(asyncore.dispatcher):
 
     def __init__(self, localaddr, remoteaddr,
                  data_size_limit=DATA_SIZE_DEFAULT, map=None,
-                 enable_SMTPUTF8=False, decode_data=None):
+                 enable_SMTPUTF8=False, decode_data=False):
         self._localaddr = localaddr
         self._remoteaddr = remoteaddr
         self.data_size_limit = data_size_limit
-        self.enable_SMTPUTF8 = enable_SMTPUTF8
-        if enable_SMTPUTF8:
-            if decode_data:
-                raise ValueError("The decode_data and enable_SMTPUTF8"
-                                 " parameters cannot be set to True at the"
-                                 " same time.")
-            decode_data = False
-        if decode_data is None:
-            warn("The decode_data default of True will change to False in 3.6;"
-                 " specify an explicit value for this keyword",
-                 DeprecationWarning, 2)
-            decode_data = True
-        self._decode_data = decode_data
+        self.enable_SMTPUTF8 = enable_SMTPUTF8 = bool(enable_SMTPUTF8)
+        self._decode_data = decode_data = bool(decode_data)
+        if enable_SMTPUTF8 and decode_data:
+            raise ValueError("decode_data and enable_SMTPUTF8 cannot"
+                             " be set to True at the same time")
         asyncore.dispatcher.__init__(self, map=map)
         try:
             gai_results = socket.getaddrinfo(*localaddr,
@@ -698,9 +683,9 @@ class SMTPServer(asyncore.dispatcher):
         containing a `.' followed by other text has had the leading dot
         removed.
 
-        kwargs is a dictionary containing additional information. It is empty
-        unless decode_data=False or enable_SMTPUTF8=True was given as init
-        parameter, in which case ut will contain the following keys:
+        kwargs is a dictionary containing additional information.  It is
+        empty if decode_data=True was given as init parameter, otherwise
+        it will contain the following keys:
             'mail_options': list of parameters to the mail command.  All
                             elements are uppercase strings.  Example:
                             ['BODY=8BITMIME', 'SMTPUTF8'].
