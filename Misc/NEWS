@@ -280,6 +280,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27031: Removed dummy methods in Tkinter widget classes: tk_menuBar()
+  and tk_bindForTraversal().
+
 - Issue #14132: Fix urllib.request redirect handling when the target only has
   a query string.  Original fix by Ján Janech.
 
