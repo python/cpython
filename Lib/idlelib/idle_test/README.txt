@@ -65,6 +65,8 @@ widget attributes should also be deleted..
         cls.root.destroy()
         del cls.root
 
+WARNING: In 2.7, "requires('gui') MUST NOT be called at module scope.
+See https://bugs.python.org/issue18910
 
 Requires('gui') causes the test(s) it guards to be skipped if any of
 a few conditions are met:
