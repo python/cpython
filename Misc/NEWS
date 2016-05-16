@@ -277,6 +277,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27033: The default value of the decode_data parameter for
+  smtpd.SMTPChannel and smtpd.SMTPServer constructors is changed to False.
+
 - Issue #27034: Removed deprecated class asynchat.fifo.
 
 - Issue #26870: Added readline.set_auto_history(), which can stop entries
