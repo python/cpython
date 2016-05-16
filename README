@@ -81,7 +81,7 @@ What's New
 We have a comprehensive overview of the changes in the "What's New in
 Python 3.6" document, found at
 
-    http://docs.python.org/3.6/whatsnew/3.6.html
+    https://docs.python.org/3.6/whatsnew/3.6.html
 
 For a more detailed change log, read Misc/NEWS (though this file, too,
 is incomplete, and also doesn't list anything merged in from the 2.7
@@ -96,7 +96,7 @@ Documentation
 
 Documentation for Python 3.6 is online, updated daily:
 
-    http://docs.python.org/3.6/
+    https://docs.python.org/3.6/
 
 It can also be downloaded in many formats for faster access.  The documentation
 is downloadable in HTML, PDF, and reStructuredText formats; the latter version
@@ -106,7 +106,7 @@ formatting requirements.
 If you would like to contribute to the development of Python, relevant
 documentation is available at:
 
-    http://docs.python.org/devguide/
+    https://docs.python.org/devguide/
 
 For information about building Python's documentation, refer to Doc/README.txt.
 
@@ -121,7 +121,7 @@ backported versions of certain key Python 3.x features.
 A source-to-source translation tool, "2to3", can take care of the mundane task
 of converting large amounts of source code.  It is not a complete solution but
 is complemented by the deprecation warnings in 2.6.  See
-http://docs.python.org/3.6/library/2to3.html for more information.
+https://docs.python.org/3.6/library/2to3.html for more information.
 
 
 Testing
@@ -171,7 +171,7 @@ Issue Tracker and Mailing List
 We're soliciting bug reports about all aspects of the language.  Fixes are also
 welcome, preferably in unified diff format.  Please use the issue tracker:
 
-    http://bugs.python.org/
+    https://bugs.python.org/
 
 If you're not sure whether you're dealing with a bug or a feature, use the
 mailing list:
@@ -180,7 +180,7 @@ mailing list:
 
 To subscribe to the list, use the mailman form:
 
-    http://mail.python.org/mailman/listinfo/python-dev/
+    https://mail.python.org/mailman/listinfo/python-dev/
 
 
 Proposals for enhancement
@@ -190,13 +190,13 @@ If you have a proposal to change Python, you may want to send an email to the
 comp.lang.python or python-ideas mailing lists for initial feedback.  A Python
 Enhancement Proposal (PEP) may be submitted if your idea gains ground.  All
 current PEPs, as well as guidelines for submitting a new PEP, are listed at
-http://www.python.org/dev/peps/.
+https://www.python.org/dev/peps/.
 
 
 Release Schedule
 ----------------
 
-See PEP 494 for release details: http://www.python.org/dev/peps/pep-0494/
+See PEP 494 for release details: https://www.python.org/dev/peps/pep-0494/
 
 
 Copyright and License Information
