@@ -296,37 +296,6 @@ class TestHelperFunctions(unittest.TestCase):
         self.assertEqual(asynchat.find_prefix_at_end("qwertydkjf", "\r\n"), 0)
 
 
-class TestFifo(unittest.TestCase):
-    def test_basic(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            f = asynchat.fifo()
-        self.assertEqual(str(cm.warning),
-                         "fifo class will be removed in Python 3.6")
-        f.push(7)
-        f.push(b'a')
-        self.assertEqual(len(f), 2)
-        self.assertEqual(f.first(), 7)
-        self.assertEqual(f.pop(), (1, 7))
-        self.assertEqual(len(f), 1)
-        self.assertEqual(f.first(), b'a')
-        self.assertEqual(f.is_empty(), False)
-        self.assertEqual(f.pop(), (1, b'a'))
-        self.assertEqual(len(f), 0)
-        self.assertEqual(f.is_empty(), True)
-        self.assertEqual(f.pop(), (0, None))
-
-    def test_given_list(self):
-        with self.assertWarns(DeprecationWarning) as cm:
-            f = asynchat.fifo([b'x', 17, 3])
-        self.assertEqual(str(cm.warning),
-                         "fifo class will be removed in Python 3.6")
-        self.assertEqual(len(f), 3)
-        self.assertEqual(f.pop(), (1, b'x'))
-        self.assertEqual(f.pop(), (1, 17))
-        self.assertEqual(f.pop(), (1, 3))
-        self.assertEqual(f.pop(), (0, None))
-
-
 class TestNotConnected(unittest.TestCase):
     def test_disallow_negative_terminator(self):
         # Issue #11259
