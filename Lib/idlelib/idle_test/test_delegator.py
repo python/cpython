@@ -4,34 +4,37 @@ from idlelib.Delegator import Delegator
 class DelegatorTest(unittest.TestCase):
 
     def test_mydel(self):
-        # test a simple use scenario
+        # Test a simple use scenario.
 
-        # initialize
+        # Initialize an int delegator.
         mydel = Delegator(int)
         self.assertIs(mydel.delegate, int)
         self.assertEqual(mydel._Delegator__cache, set())
-
-        # add an attribute:
+        # Trying to access a non-attribute of int fails.
         self.assertRaises(AttributeError, mydel.__getattr__, 'xyz')
+
+        # Add real int attribute 'bit_length' by accessing it.
         bl = mydel.bit_length
         self.assertIs(bl, int.bit_length)
         self.assertIs(mydel.__dict__['bit_length'], int.bit_length)
         self.assertEqual(mydel._Delegator__cache, {'bit_length'})
 
-        # add a second attribute
+        # Add attribute 'numerator'.
         mydel.numerator
         self.assertEqual(mydel._Delegator__cache, {'bit_length', 'numerator'})
 
-        # delete the second (which, however, leaves it in the name cache)
+        # Delete 'numerator'.
         del mydel.numerator
         self.assertNotIn('numerator', mydel.__dict__)
-        self.assertIn('numerator', mydel._Delegator__cache)
+        # The current implementation leaves  it in the name cache.
+        # self.assertIn('numerator', mydel._Delegator__cache)
+        # However, this is not required and not part of the specification
 
-        # reset by calling .setdelegate, which calls .resetcache
-        mydel.setdelegate(float)
-        self.assertIs(mydel.delegate, float)
+        # Change delegate to float, first resetting the attributes.
+        mydel.setdelegate(float)  # calls resetcache
         self.assertNotIn('bit_length', mydel.__dict__)
         self.assertEqual(mydel._Delegator__cache, set())
+        self.assertIs(mydel.delegate, float)
 
 if __name__ == '__main__':
     unittest.main(verbosity=2, exit=2)
