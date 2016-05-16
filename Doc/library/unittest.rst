@@ -1388,9 +1388,9 @@ Test cases
 
       Add a function to be called after :meth:`tearDown` to cleanup resources
       used during the test. Functions will be called in reverse order to the
-      order they are added (LIFO). They are called with any arguments and
-      keyword arguments passed into :meth:`addCleanup` when they are
-      added.
+      order they are added (:abbr:`LIFO (last-in, first-out)`).  They
+      are called with any arguments and keyword arguments passed into
+      :meth:`addCleanup` when they are added.
 
       If :meth:`setUp` fails, meaning that :meth:`tearDown` is not called,
       then any cleanup functions added will still be called.

@@ -101,8 +101,9 @@ keywords to your callback, use :func:`functools.partial`. For example,
    called after :meth:`call_soon` returns, when control returns to the event
    loop.
 
-   This operates as a FIFO queue, callbacks are called in the order in
-   which they are registered.  Each callback will be called exactly once.
+   This operates as a :abbr:`FIFO (first-in, first-out)` queue, callbacks
+   are called in the order in which they are registered.  Each callback
+   will be called exactly once.
 
    Any positional arguments after the callback will be passed to the
    callback when it is called.

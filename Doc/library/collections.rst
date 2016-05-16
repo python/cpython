@@ -987,8 +987,9 @@ the items are returned in the order their keys were first added.
     .. method:: popitem(last=True)
 
         The :meth:`popitem` method for ordered dictionaries returns and removes a
-        (key, value) pair.  The pairs are returned in LIFO order if *last* is true
-        or FIFO order if false.
+        (key, value) pair.  The pairs are returned in
+        :abbr:`LIFO (last-in, first-out)` order if *last* is true
+        or :abbr:`FIFO (first-in, first-out)` order if false.
 
     .. method:: move_to_end(key, last=True)
 
