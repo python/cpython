@@ -373,7 +373,7 @@ def wait_for(fut, timeout, *, loop=None):
     if timeout is None:
         return (yield from fut)
 
-    waiter = futures.Future(loop=loop)
+    waiter = loop.create_future()
     timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
     cb = functools.partial(_release_waiter, waiter)
 
@@ -406,7 +406,7 @@ def _wait(fs, timeout, return_when, loop):
     The fs argument must be a collection of Futures.
     """
     assert fs, 'Set of Futures is empty.'
-    waiter = futures.Future(loop=loop)
+    waiter = loop.create_future()
     timeout_handle = None
     if timeout is not None:
         timeout_handle = loop.call_later(timeout, _release_waiter, waiter)
@@ -507,7 +507,9 @@ def sleep(delay, result=None, *, loop=None):
         yield
         return result
 
-    future = futures.Future(loop=loop)
+    if loop is None:
+        loop = events.get_event_loop()
+    future = loop.create_future()
     h = future._loop.call_later(delay,
                                 futures._set_result_unless_cancelled,
                                 future, result)
@@ -604,7 +606,9 @@ def gather(*coros_or_futures, loop=None, return_exceptions=False):
     be cancelled.)
     """
     if not coros_or_futures:
-        outer = futures.Future(loop=loop)
+        if loop is None:
+            loop = events.get_event_loop()
+        outer = loop.create_future()
         outer.set_result([])
         return outer
 
@@ -692,7 +696,7 @@ def shield(arg, *, loop=None):
         # Shortcut.
         return inner
     loop = inner._loop
-    outer = futures.Future(loop=loop)
+    outer = loop.create_future()
 
     def _done_callback(inner):
         if outer.cancelled():

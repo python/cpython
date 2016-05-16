@@ -210,7 +210,7 @@ class FlowControlMixin(protocols.Protocol):
             return
         waiter = self._drain_waiter
         assert waiter is None or waiter.cancelled()
-        waiter = futures.Future(loop=self._loop)
+        waiter = self._loop.create_future()
         self._drain_waiter = waiter
         yield from waiter
 
@@ -449,7 +449,7 @@ class StreamReader:
             self._paused = False
             self._transport.resume_reading()
 
-        self._waiter = futures.Future(loop=self._loop)
+        self._waiter = self._loop.create_future()
         try:
             yield from self._waiter
         finally:

@@ -278,14 +278,15 @@ class FutureTests(test_utils.TestCase):
         f2 = asyncio.wrap_future(f1)
         self.assertIs(f1, f2)
 
-    @mock.patch('asyncio.futures.events')
-    def test_wrap_future_use_global_loop(self, m_events):
-        def run(arg):
-            return (arg, threading.get_ident())
-        ex = concurrent.futures.ThreadPoolExecutor(1)
-        f1 = ex.submit(run, 'oi')
-        f2 = asyncio.wrap_future(f1)
-        self.assertIs(m_events.get_event_loop.return_value, f2._loop)
+    def test_wrap_future_use_global_loop(self):
+        with mock.patch('asyncio.futures.events') as events:
+            events.get_event_loop = lambda: self.loop
+            def run(arg):
+                return (arg, threading.get_ident())
+            ex = concurrent.futures.ThreadPoolExecutor(1)
+            f1 = ex.submit(run, 'oi')
+            f2 = asyncio.wrap_future(f1)
+            self.assertIs(self.loop, f2._loop)
 
     def test_wrap_future_cancel(self):
         f1 = concurrent.futures.Future()
