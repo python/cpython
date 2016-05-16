@@ -14,13 +14,12 @@ if hasattr(socket, 'AF_UNIX'):
 from . import coroutines
 from . import compat
 from . import events
-from . import futures
 from . import protocols
 from .coroutines import coroutine
 from .log import logger
 
 
-_DEFAULT_LIMIT = 2**16
+_DEFAULT_LIMIT = 2 ** 16
 
 
 class IncompleteReadError(EOFError):
@@ -38,15 +37,13 @@ class IncompleteReadError(EOFError):
 
 
 class LimitOverrunError(Exception):
-    """Reached buffer limit while looking for the separator.
+    """Reached the buffer limit while looking for a separator.
 
     Attributes:
-    - message: error message
-    - consumed: total number of bytes that should be consumed
+    - consumed: total number of to be consumed bytes.
     """
     def __init__(self, message, consumed):
         super().__init__(message)
-        self.message = message
         self.consumed = consumed
 
 
@@ -131,7 +128,6 @@ if hasattr(socket, 'AF_UNIX'):
             lambda: protocol, path, **kwds)
         writer = StreamWriter(transport, protocol, reader, loop)
         return reader, writer
-
 
     @coroutine
     def start_unix_server(client_connected_cb, path=None, *,
@@ -416,8 +412,8 @@ class StreamReader:
         self._wakeup_waiter()
 
         if (self._transport is not None and
-            not self._paused and
-            len(self._buffer) > 2*self._limit):
+                not self._paused and
+                len(self._buffer) > 2 * self._limit):
             try:
                 self._transport.pause_reading()
             except NotImplementedError:
@@ -489,24 +485,24 @@ class StreamReader:
 
     @coroutine
     def readuntil(self, separator=b'\n'):
-        """Read chunk of data from the stream until `separator` is found.
+        """Read data from the stream until ``separator`` is found.
 
-        On success, chunk and its separator will be removed from internal buffer
-        (i.e. consumed). Returned chunk will include separator at the end.
+        On success, the data and separator will be removed from the
+        internal buffer (consumed). Returned data will include the
+        separator at the end.
 
-        Configured stream limit is used to check result. Limit means maximal
-        length of chunk that can be returned, not counting the separator.
+        Configured stream limit is used to check result. Limit sets the
+        maximal length of data that can be returned, not counting the
+        separator.
 
-        If EOF occurs and complete separator still not found,
-        IncompleteReadError(<partial data>, None) will be raised and internal
-        buffer becomes empty. This partial data may contain a partial separator.
+        If an EOF occurs and the complete separator is still not found,
+        an IncompleteReadError exception will be raised, and the internal
+        buffer will be reset.  The IncompleteReadError.partial attribute
+        may contain the separator partially.
 
-        If chunk cannot be read due to overlimit, LimitOverrunError will be raised
-        and data will be left in internal buffer, so it can be read again, in
-        some different way.
-
-        If stream was paused, this function will automatically resume it if
-        needed.
+        If the data cannot be read because of over limit, a
+        LimitOverrunError exception  will be raised, and the data
+        will be left in the internal buffer, so it can be read again.
         """
         seplen = len(separator)
         if seplen == 0:
@@ -532,8 +528,8 @@ class StreamReader:
         #   performance problems. Even when reading MIME-encoded
         #   messages :)
 
-        # `offset` is the number of bytes from the beginning of the buffer where
-        # is no occurrence of `separator`.
+        # `offset` is the number of bytes from the beginning of the buffer
+        # where there is no occurrence of `separator`.
         offset = 0
 
         # Loop until we find `separator` in the buffer, exceed the buffer size,
@@ -547,14 +543,16 @@ class StreamReader:
                 isep = self._buffer.find(separator, offset)
 
                 if isep != -1:
-                    # `separator` is in the buffer. `isep` will be used later to
-                    # retrieve the data.
+                    # `separator` is in the buffer. `isep` will be used later
+                    # to retrieve the data.
                     break
 
                 # see upper comment for explanation.
                 offset = buflen + 1 - seplen
                 if offset > self._limit:
-                    raise LimitOverrunError('Separator is not found, and chunk exceed the limit', offset)
+                    raise LimitOverrunError(
+                        'Separator is not found, and chunk exceed the limit',
+                        offset)
 
             # Complete message (with full separator) may be present in buffer
             # even when EOF flag is set. This may happen when the last chunk
@@ -569,7 +567,8 @@ class StreamReader:
             yield from self._wait_for_data('readuntil')
 
         if isep > self._limit:
-            raise LimitOverrunError('Separator is found, but chunk is longer than limit', isep)
+            raise LimitOverrunError(
+                'Separator is found, but chunk is longer than limit', isep)
 
         chunk = self._buffer[:isep + seplen]
         del self._buffer[:isep + seplen]
@@ -591,7 +590,8 @@ class StreamReader:
         received before any byte is read, this function returns empty byte
         object.
 
-        Returned value is not limited with limit, configured at stream creation.
+        Returned value is not limited with limit, configured at stream
+        creation.
 
         If stream was paused, this function will automatically resume it if
         needed.
@@ -630,13 +630,14 @@ class StreamReader:
     def readexactly(self, n):
         """Read exactly `n` bytes.
 
-        Raise an `IncompleteReadError` if EOF is reached before `n` bytes can be
-        read. The `IncompleteReadError.partial` attribute of the exception will
+        Raise an IncompleteReadError if EOF is reached before `n` bytes can be
+        read. The IncompleteReadError.partial attribute of the exception will
         contain the partial read bytes.
 
         if n is zero, return empty bytes object.
 
-        Returned value is not limited with limit, configured at stream creation.
+        Returned value is not limited with limit, configured at stream
+        creation.
 
         If stream was paused, this function will automatically resume it if
         needed.
