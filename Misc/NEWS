@@ -10,6 +10,9 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #27039: Fixed bytearray.remove() for values greater than 127.  Patch by
+  Joe Jevnik.
+
 - Issue #4806: Avoid masking the original TypeError exception when using star
   (*) unpacking and the exception was raised from a generator.  Based on
   patch by Hagen Fürstenau.

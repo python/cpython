@@ -723,6 +723,13 @@ class ByteArrayTest(BaseBytesTest):
         b.remove(Indexable(ord('e')))
         self.assertEqual(b, b'')
 
+        # test values outside of the ascii range: (0, 127)
+        c = bytearray([126, 127, 128, 129])
+        c.remove(127)
+        self.assertEqual(c, bytearray([126, 128, 129]))
+        c.remove(129)
+        self.assertEqual(c, bytearray([126, 128]))
+
     def test_pop(self):
         b = bytearray(b'world')
         self.assertEqual(b.pop(), ord('d'))
