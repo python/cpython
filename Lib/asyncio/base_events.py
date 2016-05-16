@@ -1079,6 +1079,11 @@ class BaseEventLoop(events.AbstractEventLoop):
             logger.info('%s: %r' % (debug_log, transport))
         return transport, protocol
 
+    def get_exception_handler(self):
+        """Return an exception handler, or None if the default one is in use.
+        """
+        return self._exception_handler
+
     def set_exception_handler(self, handler):
         """Set handler as the new event loop exception handler.
 

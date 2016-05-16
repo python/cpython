@@ -658,8 +658,10 @@ class BaseEventLoopTests(test_utils.TestCase):
         self.loop.set_debug(True)
         self.loop._process_events = mock.Mock()
 
+        self.assertIsNone(self.loop.get_exception_handler())
         mock_handler = mock.Mock()
         self.loop.set_exception_handler(mock_handler)
+        self.assertIs(self.loop.get_exception_handler(), mock_handler)
         handle = run_loop()
         mock_handler.assert_called_with(self.loop, {
             'exception': MOCK_ANY,
