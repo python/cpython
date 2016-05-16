@@ -1,5 +1,6 @@
-/* NOTE: this API is -ONLY- for use with single byte character strings. */
-/* Do not use it with Unicode. */
+#if STRINGLIB_IS_UNICODE
+# error "ctype.h only compatible with byte-wise strings"
+#endif
 
 #include "bytes_methods.h"
 

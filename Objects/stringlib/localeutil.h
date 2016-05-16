@@ -2,8 +2,8 @@
 
 #include <locale.h>
 
-#ifndef STRINGLIB_IS_UNICODE
-#   error "localeutil is specific to Unicode"
+#if !STRINGLIB_IS_UNICODE
+#   error "localeutil.h is specific to Unicode"
 #endif
 
 typedef struct {

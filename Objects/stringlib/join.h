@@ -1,6 +1,6 @@
 /* stringlib: bytes joining implementation */
 
-#if STRINGLIB_SIZEOF_CHAR != 1
+#if STRINGLIB_IS_UNICODE
 #error join.h only compatible with byte-wise strings
 #endif
 

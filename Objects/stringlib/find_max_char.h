@@ -1,6 +1,8 @@
 /* Finding the optimal width of unicode characters in a buffer */
 
-#if STRINGLIB_IS_UNICODE
+#if !STRINGLIB_IS_UNICODE
+# error "find_max_char.h is specific to Unicode"
+#endif
 
 /* Mask to quickly check whether a C 'long' contains a
    non-ASCII, UTF8-encoded char. */
@@ -129,5 +131,4 @@ STRINGLIB(find_max_char)(const STRINGLIB_CHAR *begin, const STRINGLIB_CHAR *end)
 #undef MAX_CHAR_UCS4
 
 #endif /* STRINGLIB_SIZEOF_CHAR == 1 */
-#endif /* STRINGLIB_IS_UNICODE */
 
