@@ -91,6 +91,7 @@ import os
 import posixpath
 import re
 import socket
+import string
 import sys
 import time
 import collections
@@ -676,8 +677,12 @@ class HTTPRedirectHandler(BaseHandler):
         # from the user (of urllib.request, in this case).  In practice,
         # essentially all clients do redirect in this case, so we do
         # the same.
-        # be conciliant with URIs containing a space
+
+        # Be conciliant with URIs containing a space.  This is mainly
+        # redundant with the more complete encoding done in http_error_302(),
+        # but it is kept for compatibility with other callers.
         newurl = newurl.replace(' ', '%20')
+
         CONTENT_HEADERS = ("content-length", "content-type")
         newheaders = dict((k, v) for k, v in req.headers.items()
                           if k.lower() not in CONTENT_HEADERS)
@@ -712,11 +717,16 @@ class HTTPRedirectHandler(BaseHandler):
                 "%s - Redirection to url '%s' is not allowed" % (msg, newurl),
                 headers, fp)
 
-        if not urlparts.path:
+        if not urlparts.path and urlparts.netloc:
             urlparts = list(urlparts)
             urlparts[2] = "/"
         newurl = urlunparse(urlparts)
 
+        # http.client.parse_headers() decodes as ISO-8859-1.  Recover the
+        # original bytes and percent-encode non-ASCII bytes, and any special
+        # characters such as the space.
+        newurl = quote(
+            newurl, encoding="iso-8859-1", safe=string.punctuation)
         newurl = urljoin(req.full_url, newurl)
 
         # XXX Probably want to forget about the state of the current
