@@ -45,10 +45,11 @@ def fakehttp(fakedata):
 
         # buffer to store data for verification in urlopen tests.
         buf = ""
-        fakesock = FakeSocket(fakedata)
 
         def connect(self):
-            self.sock = self.fakesock
+            self.sock = FakeSocket(self.fakedata)
+            self.__class__.fakesock = self.sock
+    FakeHTTPConnection.fakedata = fakedata
 
     return FakeHTTPConnection
 
