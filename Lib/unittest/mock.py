@@ -2341,6 +2341,8 @@ def mock_open(mock=None, read_data=''):
                 yield handle.readline.return_value
         for line in _state[0]:
             yield line
+        while True:
+            yield type(read_data)()
 
 
     global file_spec
