@@ -64,6 +64,12 @@ class Int:
     def __int__(self):
         return 99
 
+class TupleSubclass(tuple):
+    pass
+
+class DictSubclass(dict):
+    pass
+
 class Unsigned_TestCase(unittest.TestCase):
     def test_b(self):
         from _testcapi import getargs_b
@@ -268,6 +274,33 @@ class LongLong_TestCase(unittest.TestCase):
 
 
 class Tuple_TestCase(unittest.TestCase):
+    def test_args(self):
+        from _testcapi import get_args
+
+        ret = get_args(1, 2)
+        self.assertEqual(ret, (1, 2))
+        self.assertIs(type(ret), tuple)
+
+        ret = get_args(1, *(2, 3))
+        self.assertEqual(ret, (1, 2, 3))
+        self.assertIs(type(ret), tuple)
+
+        ret = get_args(*[1, 2])
+        self.assertEqual(ret, (1, 2))
+        self.assertIs(type(ret), tuple)
+
+        ret = get_args(*TupleSubclass([1, 2]))
+        self.assertEqual(ret, (1, 2))
+        self.assertIsInstance(ret, tuple)
+
+        ret = get_args()
+        self.assertIn(ret, ((), None))
+        self.assertIn(type(ret), (tuple, type(None)))
+
+        ret = get_args(*())
+        self.assertIn(ret, ((), None))
+        self.assertIn(type(ret), (tuple, type(None)))
+
     def test_tuple(self):
         from _testcapi import getargs_tuple
 
@@ -283,6 +316,29 @@ class Tuple_TestCase(unittest.TestCase):
         self.assertRaises(TypeError, getargs_tuple, 1, seq())
 
 class Keywords_TestCase(unittest.TestCase):
+    def test_kwargs(self):
+        from _testcapi import get_kwargs
+
+        ret = get_kwargs(a=1, b=2)
+        self.assertEqual(ret, {'a': 1, 'b': 2})
+        self.assertIs(type(ret), dict)
+
+        ret = get_kwargs(a=1, **{'b': 2, 'c': 3})
+        self.assertEqual(ret, {'a': 1, 'b': 2, 'c': 3})
+        self.assertIs(type(ret), dict)
+
+        ret = get_kwargs(**DictSubclass({'a': 1, 'b': 2}))
+        self.assertEqual(ret, {'a': 1, 'b': 2})
+        self.assertIsInstance(ret, dict)
+
+        ret = get_kwargs()
+        self.assertIn(ret, ({}, None))
+        self.assertIn(type(ret), (dict, type(None)))
+
+        ret = get_kwargs(**{})
+        self.assertIn(ret, ({}, None))
+        self.assertIn(type(ret), (dict, type(None)))
+
     def test_positional_args(self):
         # using all positional args
         self.assertEqual(

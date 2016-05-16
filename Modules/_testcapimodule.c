@@ -930,6 +930,26 @@ test_L_code(PyObject *self)
 
 #endif  /* ifdef HAVE_LONG_LONG */
 
+static PyObject *
+get_args(PyObject *self, PyObject *args)
+{
+    if (args == NULL) {
+        args = Py_None;
+    }
+    Py_INCREF(args);
+    return args;
+}
+
+static PyObject *
+get_kwargs(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    if (kwargs == NULL) {
+        kwargs = Py_None;
+    }
+    Py_INCREF(kwargs);
+    return kwargs;
+}
+
 /* Test tuple argument processing */
 static PyObject *
 getargs_tuple(PyObject *self, PyObject *args)
@@ -2335,6 +2355,8 @@ static PyMethodDef TestMethods[] = {
     {"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,
      PyDoc_STR("This is a pretty normal docstring.")},
 
+    {"get_args", get_args, METH_VARARGS},
+    {"get_kwargs", (PyCFunction)get_kwargs, METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},
     {"getargs_keywords", (PyCFunction)getargs_keywords,
       METH_VARARGS|METH_KEYWORDS},
