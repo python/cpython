@@ -1,4 +1,4 @@
-"""Regresssion tests for urllib"""
+"""Regresssion tests for what was in Python 2's "urllib" module"""
 
 import urllib.parse
 import urllib.request
@@ -86,10 +86,11 @@ def fakehttp(fakedata):
 
         # buffer to store data for verification in urlopen tests.
         buf = None
-        fakesock = FakeSocket(fakedata)
 
         def connect(self):
-            self.sock = self.fakesock
+            self.sock = FakeSocket(self.fakedata)
+            type(self).fakesock = self.sock
+    FakeHTTPConnection.fakedata = fakedata
 
     return FakeHTTPConnection
 
