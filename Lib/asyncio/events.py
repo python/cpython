@@ -484,6 +484,9 @@ class AbstractEventLoop:
 
     # Error handlers.
 
+    def get_exception_handler(self):
+        raise NotImplementedError
+
     def set_exception_handler(self, handler):
         raise NotImplementedError
 
