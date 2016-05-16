@@ -16,8 +16,9 @@ availability of thread support in Python; see the :mod:`threading`
 module.
 
 The module implements three types of queue, which differ only in the order in
-which the entries are retrieved.  In a FIFO queue, the first tasks added are
-the first retrieved. In a LIFO queue, the most recently added entry is
+which the entries are retrieved.  In a :abbr:`FIFO (first-in, first-out)`
+queue, the first tasks added are the first retrieved. In a
+:abbr:`LIFO (last-in, first-out)` queue, the most recently added entry is
 the first retrieved (operating like a stack).  With a priority queue,
 the entries are kept sorted (using the :mod:`heapq` module) and the
 lowest valued entry is retrieved first.
@@ -27,14 +28,16 @@ The :mod:`queue` module defines the following classes and exceptions:
 
 .. class:: Queue(maxsize=0)
 
-   Constructor for a FIFO queue.  *maxsize* is an integer that sets the upperbound
+   Constructor for a :abbr:`FIFO (first-in, first-out)` queue.  *maxsize* is
+   an integer that sets the upperbound
    limit on the number of items that can be placed in the queue.  Insertion will
    block once this size has been reached, until queue items are consumed.  If
    *maxsize* is less than or equal to zero, the queue size is infinite.
 
 .. class:: LifoQueue(maxsize=0)
 
-   Constructor for a LIFO queue.  *maxsize* is an integer that sets the upperbound
+   Constructor for a :abbr:`LIFO (last-in, first-out)` queue.  *maxsize* is
+   an integer that sets the upperbound
    limit on the number of items that can be placed in the queue.  Insertion will
    block once this size has been reached, until queue items are consumed.  If
    *maxsize* is less than or equal to zero, the queue size is infinite.
