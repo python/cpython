@@ -366,7 +366,7 @@ class ProactorEventLoop(proactor_events.BaseProactorEventLoop):
     def _make_subprocess_transport(self, protocol, args, shell,
                                    stdin, stdout, stderr, bufsize,
                                    extra=None, **kwargs):
-        waiter = futures.Future(loop=self)
+        waiter = self.create_future()
         transp = _WindowsSubprocessTransport(self, protocol, args, shell,
                                              stdin, stdout, stderr, bufsize,
                                              waiter=waiter, extra=extra,
@@ -417,7 +417,7 @@ class IocpProactor:
         return tmp
 
     def _result(self, value):
-        fut = futures.Future(loop=self._loop)
+        fut = self._loop.create_future()
         fut.set_result(value)
         return fut
 
