@@ -489,6 +489,10 @@ API and Feature Removals
   :mod:`traceback` module. They were undocumented methods deprecated since
   Python 3.2 and equivalent functionality is available from private methods.
 
+* The ``tk_menuBar()`` and ``tk_bindForTraversal()`` dummy methods in
+  :mod:`tkinter` widget classes were removed (corresponding Tk commands
+  were obsolete since Tk 4.0).
+
 
 Porting to Python 3.6
 =====================
