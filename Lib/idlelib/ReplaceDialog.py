@@ -1,3 +1,8 @@
+"""Replace dialog for IDLE. Inherits SearchDialogBase for GUI.
+Uses idlelib.SearchEngine for search capability.
+Defines various replace related functions like replace, replace all,
+replace+find.
+"""
 from tkinter import *
 
 from idlelib import SearchEngine
@@ -6,6 +11,8 @@ import re
 
 
 def replace(text):
+    """Returns a singleton ReplaceDialog instance.The single dialog
+     saves user entries and preferences across instances."""
     root = text._root()
     engine = SearchEngine.get(root)
     if not hasattr(engine, "_replacedialog"):
@@ -24,6 +31,7 @@ class ReplaceDialog(SearchDialogBase):
         self.replvar = StringVar(root)
 
     def open(self, text):
+        """Display the replace dialog"""
         SearchDialogBase.open(self, text)
         try:
             first = text.index("sel.first")
@@ -39,6 +47,7 @@ class ReplaceDialog(SearchDialogBase):
         self.ok = 1
 
     def create_entries(self):
+        """Create label and text entry widgets"""
         SearchDialogBase.create_entries(self)
         self.replent = self.make_entry("Replace with:", self.replvar)[0]
 
@@ -57,9 +66,10 @@ class ReplaceDialog(SearchDialogBase):
             self.do_replace()
 
     def default_command(self, event=None):
+        "Replace and find next."
         if self.do_find(self.ok):
-            if self.do_replace():   # Only find next match if replace succeeded.
-                                    # A bad re can cause it to fail.
+            if self.do_replace():  # Only find next match if replace succeeded.
+                                   # A bad re can cause it to fail.
                 self.do_find(0)
 
     def _replace_expand(self, m, repl):
@@ -77,6 +87,7 @@ class ReplaceDialog(SearchDialogBase):
         return new
 
     def replace_all(self, event=None):
+        """Replace all instances of patvar with replvar in text"""
         prog = self.engine.getprog()
         if not prog:
             return
@@ -173,6 +184,8 @@ class ReplaceDialog(SearchDialogBase):
         return True
 
     def show_hit(self, first, last):
+        """Highlight text from 'first' to 'last'.
+        'first', 'last' - Text indices"""
         text = self.text
         text.mark_set("insert", first)
         text.tag_remove("sel", "1.0", "end")
@@ -189,11 +202,13 @@ class ReplaceDialog(SearchDialogBase):
         SearchDialogBase.close(self, event)
         self.text.tag_remove("hit", "1.0", "end")
 
-def _replace_dialog(parent):
-    root = Tk()
-    root.title("Test ReplaceDialog")
+
+def _replace_dialog(parent):  # htest #
+    """htest wrapper function"""
+    box = Toplevel(parent)
+    box.title("Test ReplaceDialog")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
+    box.geometry("+%d+%d"%(x, y + 150))
 
     # mock undo delegator methods
     def undo_block_start():
@@ -202,20 +217,25 @@ def _replace_dialog(parent):
     def undo_block_stop():
         pass
 
-    text = Text(root)
+    text = Text(box, inactiveselectbackground='gray')
     text.undo_block_start = undo_block_start
     text.undo_block_stop = undo_block_stop
     text.pack()
-    text.insert("insert","This is a sample string.\n"*10)
+    text.insert("insert","This is a sample sTring\nPlus MORE.")
+    text.focus_set()
 
     def show_replace():
         text.tag_add(SEL, "1.0", END)
         replace(text)
         text.tag_remove(SEL, "1.0", END)
 
-    button = Button(root, text="Replace", command=show_replace)
+    button = Button(box, text="Replace", command=show_replace)
     button.pack()
 
 if __name__ == '__main__':
+    import unittest
+    unittest.main('idlelib.idle_test.test_replacedialog',
+                verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_replace_dialog)
