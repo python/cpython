@@ -469,7 +469,7 @@ A function definition defines a user-defined function object (see section
 .. productionlist::
    funcdef: [`decorators`] "def" `funcname` "(" [`parameter_list`] ")" ["->" `expression`] ":" `suite`
    decorators: `decorator`+
-   decorator: "@" `dotted_name` ["(" [`parameter_list` [","]] ")"] NEWLINE
+   decorator: "@" `dotted_name` ["(" [`argument_list` [","]] ")"] NEWLINE
    dotted_name: `identifier` ("." `identifier`)*
    parameter_list: `defparameter` ("," `defparameter`)* ["," [`parameter_list_starargs`]]
                  : | `parameter_list_starargs`
@@ -604,7 +604,7 @@ A class definition defines a class object (see section :ref:`types`):
 
 .. productionlist::
    classdef: [`decorators`] "class" `classname` [`inheritance`] ":" `suite`
-   inheritance: "(" [`parameter_list`] ")"
+   inheritance: "(" [`argument_list`] ")"
    classname: `identifier`
 
 A class definition is an executable statement.  The inheritance list usually
