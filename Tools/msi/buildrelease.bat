@@ -168,7 +168,7 @@ if not "%SKIPBUILD%" EQU "1" (
             "%BUILD%python.exe" %PGO%
         )
         
-        @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -c PGUpdate -t %TARGET% %CERTOPTS%
+        @call "%PCBUILD%build.bat" -e -p %BUILD_PLAT% -c PGUpdate -t Build %CERTOPTS%
     )
     @if errorlevel 1 exit /B
     @echo off
