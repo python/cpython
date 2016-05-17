@@ -414,7 +414,7 @@ faulthandler_exc_handler(struct _EXCEPTION_POINTERS *exc_info)
 
 /* Install the handler for fatal signals, faulthandler_fatal_error(). */
 
-int
+static int
 faulthandler_enable(void)
 {
     size_t i;
