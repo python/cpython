@@ -3284,6 +3284,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 PyObject *anns = PyDict_New();
                 if (anns == NULL) {
                     Py_DECREF(func);
+                    Py_DECREF(names);
                     goto error;
                 }
                 name_ix = PyTuple_Size(names);
@@ -3299,9 +3300,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     if (err != 0) {
                         Py_DECREF(anns);
                         Py_DECREF(func);
+                        Py_DECREF(names);
                         goto error;
                     }
                 }
+                Py_DECREF(names);
 
                 if (PyFunction_SetAnnotations(func, anns) != 0) {
                     /* Can't happen unless
@@ -3311,7 +3314,6 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                     goto error;
                 }
                 Py_DECREF(anns);
-                Py_DECREF(names);
             }
 
             /* XXX Maybe this should be a separate opcode? */
