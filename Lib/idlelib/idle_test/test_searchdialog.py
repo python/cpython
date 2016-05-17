@@ -29,7 +29,7 @@ class SearchDialogTest(unittest.TestCase):
     def setUp(self):
         self.engine = se.SearchEngine(self.root)
         self.dialog = sd.SearchDialog(self.root, self.engine)
-        self.text = tk.Text()
+        self.text = tk.Text(self.root)
         self.text.insert('1.0', 'Hello World!')
 
     def test_find_again(self):
