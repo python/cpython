@@ -336,30 +336,33 @@ class CommandSequence(Command):
         self.depth = self.depth + incr
         return self.depth
 
-def _undo_delegator(parent):
-    from idlelib.Percolator import Percolator
-    root = Tk()
-    root.title("Test UndoDelegator")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
 
-    text = Text(root)
-    text.config(height=10)
+def _undo_delegator(parent):  # htest #
+    import re
+    import tkinter as tk
+    from idlelib.Percolator import Percolator
+    undowin = tk.Toplevel()
+    undowin.title("Test UndoDelegator")
+    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
+    undowin.geometry("+%d+%d"%(x, y + 150))
+
+    text = Text(undowin, height=10)
     text.pack()
     text.focus_set()
     p = Percolator(text)
     d = UndoDelegator()
     p.insertfilter(d)
 
-    undo = Button(root, text="Undo", command=lambda:d.undo_event(None))
+    undo = Button(undowin, text="Undo", command=lambda:d.undo_event(None))
     undo.pack(side='left')
-    redo = Button(root, text="Redo", command=lambda:d.redo_event(None))
+    redo = Button(undowin, text="Redo", command=lambda:d.redo_event(None))
     redo.pack(side='left')
-    dump = Button(root, text="Dump", command=lambda:d.dump_event(None))
+    dump = Button(undowin, text="Dump", command=lambda:d.dump_event(None))
     dump.pack(side='left')
 
-    root.mainloop()
-
 if __name__ == "__main__":
+    import unittest
+    unittest.main('idlelib.idle_test.test_undodelegator', verbosity=2,
+                  exit=False)
     from idlelib.idle_test.htest import run
     run(_undo_delegator)
