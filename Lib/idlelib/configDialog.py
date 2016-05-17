@@ -500,6 +500,16 @@ class ConfigDialog(Toplevel):
         self.autoSave.trace_variable('w', self.VarChanged_autoSave)
         self.encoding.trace_variable('w', self.VarChanged_encoding)
 
+    def remove_var_callbacks(self):
+        for var in (
+                self.fontSize, self.fontName, self.fontBold,
+                self.spaceNum, self.colour, self.builtinTheme,
+                self.customTheme, self.themeIsBuiltin, self.highlightTarget,
+                self.keyBinding, self.builtinKeys, self.customKeys,
+                self.keysAreBuiltin, self.winWidth, self.winHeight,
+                self.startupEdit, self.autoSave, self.encoding,):
+            var.trace_vdelete('w', var.trace_vinfo()[0][1])
+
     def VarChanged_font(self, *params):
         '''When one font attribute changes, save them all, as they are
         not independent from each other. In particular, when we are
