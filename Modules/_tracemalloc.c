@@ -262,7 +262,7 @@ hashtable_hash_pointer_t(_Py_hashtable_t *ht, const void *pkey)
 }
 
 
-int
+static int
 hashtable_compare_pointer_t(_Py_hashtable_t *ht, const void *pkey,
                             const _Py_hashtable_entry_t *entry)
 {
