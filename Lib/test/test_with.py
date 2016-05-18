@@ -140,11 +140,6 @@ class FailureTestCase(unittest.TestCase):
             'with mock as (None):\n'
             '  pass')
 
-    def testAssignmentToEmptyTupleError(self):
-        self.assertRaisesSyntaxError(
-            'with mock as ():\n'
-            '  pass')
-
     def testAssignmentToTupleOnlyContainingNoneError(self):
         self.assertRaisesSyntaxError('with mock as None,:\n  pass')
         self.assertRaisesSyntaxError(

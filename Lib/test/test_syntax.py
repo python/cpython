@@ -35,14 +35,6 @@ SyntaxError: invalid syntax
 Traceback (most recent call last):
 SyntaxError: can't assign to keyword
 
-It's a syntax error to assign to the empty tuple.  Why isn't it an
-error to assign to the empty list?  It will always raise some error at
-runtime.
-
->>> () = 1
-Traceback (most recent call last):
-SyntaxError: can't assign to ()
-
 >>> f() = 1
 Traceback (most recent call last):
 SyntaxError: can't assign to function call
@@ -490,10 +482,6 @@ Make sure that the old "raise X, Y[, Z]" form is gone:
 Traceback (most recent call last):
    ...
 SyntaxError: keyword argument repeated
-
->>> del ()
-Traceback (most recent call last):
-SyntaxError: can't delete ()
 
 >>> {1, 2, 3} = 42
 Traceback (most recent call last):

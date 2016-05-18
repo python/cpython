@@ -117,6 +117,27 @@ error)
       ...
     test.test_unpack.BozoError
 
+Allow unpacking empty iterables
+
+    >>> () = []
+    >>> [] = ()
+    >>> [] = []
+    >>> () = ()
+
+Unpacking non-iterables should raise TypeError
+
+    >>> () = 42
+    Traceback (most recent call last):
+      ...
+    TypeError: 'int' object is not iterable
+
+Unpacking to an empty iterable should raise ValueError
+
+    >>> () = [42]
+    Traceback (most recent call last):
+      ...
+    ValueError: too many values to unpack (expected 0)
+
 """
 
 __test__ = {'doctests' : doctests}
