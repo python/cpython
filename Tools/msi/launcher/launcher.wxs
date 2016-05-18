@@ -5,7 +5,6 @@
         <MediaTemplate EmbedCab="yes" CompressionLevel="high" />
         
         <Property Id="Suppress_TARGETDIR_Check" Value="1" />
-        <PropertyRef Id="UpgradeTable" />
         <PropertyRef Id="ARPPRODUCTICON" />
 
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
@@ -27,12 +26,18 @@
             <Custom Before="SetLauncherInstallDirectoryLM" Action="SetLauncherInstallDirectoryCU">NOT Installed AND NOT ALLUSERS=1</Custom>
             <Custom Before="CostFinalize" Action="SetLauncherInstallDirectoryLM">NOT Installed AND ALLUSERS=1</Custom>
 
-            <RemoveExistingProducts After="InstallInitialize">UPGRADE or REMOVE_OLD_LAUNCHER</RemoveExistingProducts>
+            <RemoveExistingProducts After="InstallValidate">UPGRADE or REMOVE_350_LAUNCHER</RemoveExistingProducts>
         </InstallExecuteSequence>
         
-        <!-- Python 3.5.0 shipped with an incorrect UpgradeCode -->
+        <!-- Python 3.5.0 shipped with a different UpgradeCode -->
         <Upgrade Id="A71530B9-E89D-53DB-9C2D-C6D7551876D8">
-            <UpgradeVersion Maximum="$(var.Version)" Property="REMOVE_OLD_LAUNCHER" />
+            <UpgradeVersion Minimum="0.0.0.0" Property="REMOVE_350_LAUNCHER" />
         </Upgrade>
+        <!-- Python 3.6.0a1 shipped with a different UpgradeCode -->
+        <Upgrade Id="394750C0-7880-5A8F-999F-933965FBCFB4">
+            <UpgradeVersion Maximum="$(var.Version)" Property="REMOVE_360A1_LAUNCHER" />
+            <UpgradeVersion Minimum="$(var.Version)" Property="BLOCK_360A1_LAUNCHER" />
+        </Upgrade>
+        <Condition Message="!(loc.NoDowngrade)">Installed OR NOT BLOCK_360A1_LAUNCHER</Condition>
     </Product>
 </Wix>
