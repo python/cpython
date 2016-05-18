@@ -41,7 +41,7 @@ Hash algorithms
 There is one constructor method named for each type of :dfn:`hash`.  All return
 a hash object with the same simple interface. For example: use :func:`sha1` to
 create a SHA1 hash object. You can now feed this object with :term:`bytes-like
-object`\ s (normally :class:`bytes`) using the :meth:`update` method.
+objects <bytes-like object>` (normally :class:`bytes`) using the :meth:`update` method.
 At any point you can ask it for the :dfn:`digest` of the
 concatenation of the data fed to it so far using the :meth:`digest` or
 :meth:`hexdigest` methods.
