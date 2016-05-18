@@ -744,8 +744,8 @@ class TestBasic(unittest.TestCase):
     @support.cpython_only
     def test_sizeof(self):
         BLOCKLEN = 64
-        basesize = support.calcobjsize('2P4nlP')
-        blocksize = struct.calcsize('2P%dP' % BLOCKLEN)
+        basesize = support.calcvobjsize('2P4nP')
+        blocksize = struct.calcsize('P%dPP' % BLOCKLEN)
         self.assertEqual(object.__sizeof__(deque()), basesize)
         check = self.check_sizeof
         check(deque(), basesize + blocksize)
