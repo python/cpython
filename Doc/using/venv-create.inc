@@ -89,9 +89,9 @@ venv's binary directory. The invocation of the script is platform-specific:
 +-------------+-----------------+-----------------------------------------+
 |             | csh/tcsh        | $ source <venv>/bin/activate.csh        |
 +-------------+-----------------+-----------------------------------------+
-| Windows     | cmd.exe         | C:\> <venv>/Scripts/activate.bat        |
+| Windows     | cmd.exe         | C:\> <venv>\Scripts\activate.bat        |
 +-------------+-----------------+-----------------------------------------+
-|             | PowerShell      | PS C:\> <venv>/Scripts/Activate.ps1     |
+|             | PowerShell      | PS C:\> <venv>\Scripts\Activate.ps1     |
 +-------------+-----------------+-----------------------------------------+
 
 You don't specifically *need* to activate an environment; activation just
