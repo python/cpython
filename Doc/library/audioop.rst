@@ -7,7 +7,7 @@
 
 The :mod:`audioop` module contains some useful operations on sound fragments.
 It operates on sound fragments consisting of signed integer samples 8, 16, 24
-or 32 bits wide, stored in :term:`bytes-like object`\ s.  All scalar items are
+or 32 bits wide, stored in :term:`bytes-like objects <bytes-like object>`.  All scalar items are
 integers, unless specified otherwise.
 
 .. versionchanged:: 3.4
