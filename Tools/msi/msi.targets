@@ -25,7 +25,7 @@
     </Target>
 
     <Target Name="_TransformWxlTemplates" AfterTargets="PrepareForBuild" Inputs="@(WxlTemplate);$(PySourcePath)include\patchlevel.h" Outputs="$(IntermediateOutputPath)%(Filename).wxl">
-        <PropertyGroup>
+        <PropertyGroup Condition="'@(WxlTemplate)' != ''">
             <_Content>$([System.IO.File]::ReadAllText(%(WxlTemplate.FullPath)).Replace(`{{ShortVersion}}`, `$(MajorVersionNumber).$(MinorVersionNumber)$(PyTestExt)`).Replace(`{{LongVersion}}`, `$(PythonVersion)$(PyTestExt)`).Replace(`{{Bitness}}`, `$(Bitness)`))</_Content>
             <_ExistingContent Condition="Exists('$(IntermediateOutputPath)%(WxlTemplate.Filename).wxl')">$([System.IO.File]::ReadAllText($(IntermediateOutputPath)%(WxlTemplate.Filename).wxl))</_ExistingContent>
         </PropertyGroup>
@@ -35,7 +35,7 @@
                           Overwrite="true"
                           Condition="$(_Content) != $(_ExistingContent)" />
         
-        <ItemGroup>
+        <ItemGroup Condition="'@(WxlTemplate)' != ''">
             <EmbeddedResource Include="$(IntermediateOutputPath)%(WxlTemplate.Filename).wxl" />
             <FileWrites Include="$(IntermediateOutputPath)%(WxlTemplate.Filename).wxl" />
         </ItemGroup>

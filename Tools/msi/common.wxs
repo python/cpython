@@ -21,8 +21,8 @@
             <UpgradeVersion Property="UPGRADE" Minimum="$(var.UpgradeMinimumVersion)" IncludeMinimum="yes" Maximum="$(var.Version)" IncludeMaximum="no" />
         </Upgrade>
         
+        <?ifdef CoreUpgradeCode ?>
         <?if $(var.UpgradeCode)!=$(var.CoreUpgradeCode) ?>
-        <?ifndef SkipMissingCore ?>
         <Upgrade Id="$(var.CoreUpgradeCode)">
             <UpgradeVersion Property="MISSING_CORE" Minimum="$(var.Version)" IncludeMinimum="yes" Maximum="$(var.Version)" IncludeMaximum="yes" OnlyDetect="yes" />
         </Upgrade>
@@ -47,9 +47,11 @@
     </Fragment>
     
     <Fragment>
+    <?ifdef InstallDirectoryGuidSeed ?>
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="InstallDirectory" ComponentGuidGenerationSeed="$(var.InstallDirectoryGuidSeed)" />
         </Directory>
+    <?endif ?>
     </Fragment>
     
     <!-- Top-level directories -->
