@@ -40,7 +40,7 @@ package instead.
    the modern interface.
 
 .. versionchanged:: 3.4
-   Any :term:`bytes-like object`\ s are now accepted by all
+   Any :term:`bytes-like objects <bytes-like object>` are now accepted by all
    encoding and decoding functions in this module.  Ascii85/Base85 support added.
 
 The modern interface provides:

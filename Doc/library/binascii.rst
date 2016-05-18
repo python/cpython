@@ -21,7 +21,7 @@ higher-level modules.
 .. note::
 
    ``a2b_*`` functions accept Unicode strings containing only ASCII characters.
-   Other functions only accept :term:`bytes-like object`\ s (such as
+   Other functions only accept :term:`bytes-like objects <bytes-like object>` (such as
    :class:`bytes`, :class:`bytearray` and other objects that support the buffer
    protocol).
 
