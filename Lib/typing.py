@@ -894,8 +894,6 @@ def _next_in_mro(cls):
 class GenericMeta(TypingMeta, abc.ABCMeta):
     """Metaclass for generic types."""
 
-    __extra__ = None
-
     def __new__(cls, name, bases, namespace,
                 tvars=None, args=None, origin=None, extra=None):
         self = super().__new__(cls, name, bases, namespace, _root=True)
@@ -943,10 +941,7 @@ class GenericMeta(TypingMeta, abc.ABCMeta):
         self.__parameters__ = tvars
         self.__args__ = args
         self.__origin__ = origin
-        if extra is not None:
-            self.__extra__ = extra
-        # Else __extra__ is inherited, eventually from the
-        # (meta-)class default above.
+        self.__extra__ = extra
         # Speed hack (https://github.com/python/typing/issues/196).
         self.__next_in_mro__ = _next_in_mro(self)
         return self
@@ -1307,6 +1302,7 @@ class _ProtocolMeta(GenericMeta):
                             attr != '__next_in_mro__' and
                             attr != '__parameters__' and
                             attr != '__origin__' and
+                            attr != '__extra__' and
                             attr != '__module__'):
                         attrs.add(attr)
 
@@ -1470,7 +1466,7 @@ class ByteString(Sequence[int], extra=collections_abc.ByteString):
 ByteString.register(type(memoryview(b'')))
 
 
-class List(list, MutableSequence[T]):
+class List(list, MutableSequence[T], extra=list):
 
     def __new__(cls, *args, **kwds):
         if _geqv(cls, List):
@@ -1479,7 +1475,7 @@ class List(list, MutableSequence[T]):
         return list.__new__(cls, *args, **kwds)
 
 
-class Set(set, MutableSet[T]):
+class Set(set, MutableSet[T], extra=set):
 
     def __new__(cls, *args, **kwds):
         if _geqv(cls, Set):
@@ -1502,7 +1498,8 @@ class _FrozenSetMeta(GenericMeta):
         return super().__subclasscheck__(cls)
 
 
-class FrozenSet(frozenset, AbstractSet[T_co], metaclass=_FrozenSetMeta):
+class FrozenSet(frozenset, AbstractSet[T_co], metaclass=_FrozenSetMeta,
+                extra=frozenset):
     __slots__ = ()
 
     def __new__(cls, *args, **kwds):
@@ -1538,7 +1535,7 @@ if hasattr(contextlib, 'AbstractContextManager'):
     __all__.append('ContextManager')
 
 
-class Dict(dict, MutableMapping[KT, VT]):
+class Dict(dict, MutableMapping[KT, VT], extra=dict):
 
     def __new__(cls, *args, **kwds):
         if _geqv(cls, Dict):
@@ -1546,7 +1543,8 @@ class Dict(dict, MutableMapping[KT, VT]):
                             "use dict() instead")
         return dict.__new__(cls, *args, **kwds)
 
-class DefaultDict(collections.defaultdict, MutableMapping[KT, VT]):
+class DefaultDict(collections.defaultdict, MutableMapping[KT, VT],
+                  extra=collections.defaultdict):
 
     def __new__(cls, *args, **kwds):
         if _geqv(cls, DefaultDict):
