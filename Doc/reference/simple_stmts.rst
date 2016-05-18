@@ -661,7 +661,7 @@ steps:
 
 When the statement contains multiple clauses (separated by
 commas) the two steps are carried out separately for each clause, just
-as though the clauses had been separated out into individiual import
+as though the clauses had been separated out into individual import
 statements.
 
 The details of the first step, finding and loading modules are described in
