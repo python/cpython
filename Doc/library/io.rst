@@ -130,7 +130,7 @@ High-level Module Interface
 In-memory streams
 ^^^^^^^^^^^^^^^^^
 
-It is also possible to use a :class:`str` or :class:`bytes`-like object as a
+It is also possible to use a :class:`str` or :term:`bytes-like object` as a
 file for both reading and writing.  For strings :class:`StringIO` can be used
 like a file opened in text mode.  :class:`BytesIO` can be used like a file
 opened in binary mode.  Both provide full read-write capabilities with random
