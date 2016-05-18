@@ -22,6 +22,9 @@ Release date: 2016-05-16
 Core and Builtins
 -----------------
 
+- Issue #23275: Allow assigning to an empty target list in round brackets:
+  () = iterable.
+
 - Issue #26991: Fix possible refleak when creating a function with annotations.
 
 - Issue #27039: Fixed bytearray.remove() for values greater than 127.  Based on

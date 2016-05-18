@@ -84,8 +84,8 @@ attributes or items of mutable objects:
    assignment_stmt: (`target_list` "=")+ (`expression_list` | `yield_expression`)
    target_list: `target` ("," `target`)* [","]
    target: `identifier`
-         : | "(" `target_list` ")"
-         : | "[" `target_list` "]"
+         : | "(" [`target_list`] ")"
+         : | "[" [`target_list`] "]"
          : | `attributeref`
          : | `subscription`
          : | `slicing`
@@ -115,21 +115,25 @@ given with the definition of the object types (see section :ref:`types`).
 Assignment of an object to a target list, optionally enclosed in parentheses or
 square brackets, is recursively defined as follows.
 
-* If the target list is a single target: The object is assigned to that target.
+* If the target list is empty: The object must also be an empty iterable.
 
-* If the target list is a comma-separated list of targets: The object must be an
-  iterable with the same number of items as there are targets in the target list,
-  and the items are assigned, from left to right, to the corresponding targets.
+* If the target list is a single target in parentheses: The object is assigned
+  to that target.
+
+* If the target list is a comma-separated list of targets, or a single target
+  in square brackets: The object must be an iterable with the same number of
+  items as there are targets in the target list, and the items are assigned,
+  from left to right, to the corresponding targets.
 
   * If the target list contains one target prefixed with an asterisk, called a
-    "starred" target: The object must be a sequence with at least as many items
+    "starred" target: The object must be an iterable with at least as many items
     as there are targets in the target list, minus one.  The first items of the
-    sequence are assigned, from left to right, to the targets before the starred
-    target.  The final items of the sequence are assigned to the targets after
-    the starred target.  A list of the remaining items in the sequence is then
+    iterable are assigned, from left to right, to the targets before the starred
+    target.  The final items of the iterable are assigned to the targets after
+    the starred target.  A list of the remaining items in the iterable is then
     assigned to the starred target (the list can be empty).
 
-  * Else: The object must be a sequence with the same number of items as there
+  * Else: The object must be an iterable with the same number of items as there
     are targets in the target list, and the items are assigned, from left to
     right, to the corresponding targets.
 
@@ -149,11 +153,6 @@ Assignment of an object to a single target is recursively defined as follows.
   The name is rebound if it was already bound.  This may cause the reference
   count for the object previously bound to the name to reach zero, causing the
   object to be deallocated and its destructor (if it has one) to be called.
-
-* If the target is a target list enclosed in parentheses or in square brackets:
-  The object must be an iterable with the same number of items as there are
-  targets in the target list, and its items are assigned, from left to right,
-  to the corresponding targets.
 
   .. index:: pair: attribute; assignment
 

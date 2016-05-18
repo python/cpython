@@ -990,13 +990,8 @@ set_context(struct compiling *c, expr_ty e, expr_context_ty ctx, const node *n)
             s = e->v.List.elts;
             break;
         case Tuple_kind:
-            if (asdl_seq_LEN(e->v.Tuple.elts))  {
-                e->v.Tuple.ctx = ctx;
-                s = e->v.Tuple.elts;
-            }
-            else {
-                expr_name = "()";
-            }
+            e->v.Tuple.ctx = ctx;
+            s = e->v.Tuple.elts;
             break;
         case Lambda_kind:
             expr_name = "lambda";
