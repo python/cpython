@@ -91,7 +91,7 @@ Array objects support the ordinary sequence operations of indexing, slicing,
 concatenation, and multiplication.  When using slice assignment, the assigned
 value must be an array object with the same type code; in all other cases,
 :exc:`TypeError` is raised. Array objects also implement the buffer interface,
-and may be used wherever :term:`bytes-like object`\ s are supported.
+and may be used wherever :term:`bytes-like objects <bytes-like object>` are supported.
 
 The following data items and methods are also supported:
 
