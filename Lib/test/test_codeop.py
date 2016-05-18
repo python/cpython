@@ -282,7 +282,6 @@ class CodeopTests(unittest.TestCase):
         ai("if (a == 1 and b = 2): pass")
 
         ai("del 1")
-        ai("del ()")
         ai("del (1,)")
         ai("del [1]")
         ai("del '1'")
