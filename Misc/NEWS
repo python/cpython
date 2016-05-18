@@ -297,6 +297,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27014: Fix infinite recursion using typing.py.  Thanks to Kalle Tuure!
+
 - Issue #27031: Removed dummy methods in Tkinter widget classes: tk_menuBar()
   and tk_bindForTraversal().
 
