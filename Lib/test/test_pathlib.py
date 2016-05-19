@@ -477,22 +477,6 @@ class _BasePurePathTest(object):
         self.assertEqual(P('a/b.py').name, 'b.py')
         self.assertEqual(P('/a/b.py').name, 'b.py')
 
-    def test_path_common(self):
-        P = self.cls
-        def check(arg, expected=None):
-            if expected is None:
-                expected = arg
-            self.assertEqual(P(arg).path, expected.replace('/', self.sep))
-        check('', '.')
-        check('.')
-        check('/')
-        check('a/b')
-        check('/a/b')
-        check('/a/b/', '/a/b')
-        check('/a/b/.', '/a/b')
-        check('a/b.py')
-        check('/a/b.py')
-
     def test_suffix_common(self):
         P = self.cls
         self.assertEqual(P('').suffix, '')
@@ -914,17 +898,6 @@ class PureWindowsPathTest(_BasePurePathTest, unittest.TestCase):
         self.assertEqual(P('c:/a/b.py').name, 'b.py')
         self.assertEqual(P('//My.py/Share.php').name, '')
         self.assertEqual(P('//My.py/Share.php/a/b').name, 'b')
-
-    def test_path(self):
-        P = self.cls
-        self.assertEqual(P('c:').path, 'c:')
-        self.assertEqual(P('c:/').path, 'c:\\')
-        self.assertEqual(P('c:a/b').path, 'c:a\\b')
-        self.assertEqual(P('c:/a/b').path, 'c:\\a\\b')
-        self.assertEqual(P('c:a/b.py').path, 'c:a\\b.py')
-        self.assertEqual(P('c:/a/b.py').path, 'c:\\a\\b.py')
-        self.assertEqual(P('//My.py/Share.php').path, '\\\\My.py\\Share.php\\')
-        self.assertEqual(P('//My.py/Share.php/a/b').path, '\\\\My.py\\Share.php\\a\\b')
 
     def test_suffix(self):
         P = self.cls
