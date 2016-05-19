@@ -123,6 +123,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #27057: Fix os.set_inheritable() on Android, ioctl() is blocked by
+  SELinux and fails with EACCESS. The function now falls back to fcntl().
+  Patch written by Michał Bednarski.
+
 - Issue #27014: Fix infinite recursion using typing.py.  Thanks to Kalle Tuure!
 
 - Issue #14132: Fix urllib.request redirect handling when the target only has
