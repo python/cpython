@@ -89,7 +89,7 @@ EMBED_LAYOUT = [
     ('/', 'PCBuild/$arch', 'python*.exe', is_not_debug),
     ('/', 'PCBuild/$arch', '*.pyd', is_not_debug),
     ('/', 'PCBuild/$arch', '*.dll', is_not_debug),
-    ('python35.zip', 'Lib', '**/*', include_in_lib),
+    ('python{0.major}{0.minor}.zip'.format(sys.version_info), 'Lib', '**/*', include_in_lib),
 ]
 
 if os.getenv('DOC_FILENAME'):
