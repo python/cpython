@@ -15,7 +15,7 @@ from test.libregrtest.runtest import (
     findtests, runtest,
     STDTESTS, NOTTESTS, PASSED, FAILED, ENV_CHANGED, SKIPPED, RESOURCE_DENIED,
     INTERRUPTED, CHILD_ERROR,
-    PROGRESS_MIN_TIME)
+    PROGRESS_MIN_TIME, format_test_result)
 from test.libregrtest.setup import setup_tests
 from test import support
 try:
@@ -326,7 +326,9 @@ class Regrtest:
                 # if on a false return value from main.
                 cmd = ('result = runtest(self.ns, test); '
                        'self.accumulate_result(test, result)')
-                self.tracer.runctx(cmd, globals=globals(), locals=vars())
+                ns = dict(locals())
+                self.tracer.runctx(cmd, globals=globals(), locals=ns)
+                result = ns['result']
             else:
                 try:
                     result = runtest(self.ns, test)
@@ -337,10 +339,12 @@ class Regrtest:
                 else:
                     self.accumulate_result(test, result)
 
+            previous_test = format_test_result(test, result[0])
             test_time = time.monotonic() - start_time
             if test_time >= PROGRESS_MIN_TIME:
-                previous_test = '%s took %.0f sec' % (test, test_time)
-            else:
+                previous_test = "%s in %.0f sec" % (previous_test, test_time)
+            elif result[0] == PASSED:
+                # be quiet: say nothing if the test passed shortly
                 previous_test = None
 
             if self.ns.findleaks:
