@@ -1244,7 +1244,7 @@ _Unpickler_ReadImpl(UnpicklerObject *self, char **s, Py_ssize_t n)
    Returns -1 (with an exception set) on failure. On success, return the
    number of chars read. */
 #define _Unpickler_Read(self, s, n) \
-    (((self)->next_read_idx + (n) <= (self)->input_len)      \
+    (((n) <= (self)->input_len - (self)->next_read_idx)      \
      ? (*(s) = (self)->input_buffer + (self)->next_read_idx, \
         (self)->next_read_idx += (n),                        \
         (n))                                                 \
