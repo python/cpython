@@ -238,6 +238,9 @@ class CAPITest(unittest.TestCase):
                              'return_result_with_error.* '
                              'returned a result with an error set')
 
+    def test_buildvalue_N(self):
+        _testcapi.test_buildvalue_N()
+
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class TestPendingCalls(unittest.TestCase):
