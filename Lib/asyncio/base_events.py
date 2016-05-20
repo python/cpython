@@ -102,6 +102,11 @@ def _ipaddr_info(host, port, family, type, proto):
     else:
         return None
 
+    if port in {None, ''}:
+        port = 0
+    elif isinstance(port, (bytes, str)):
+        port = int(port)
+
     if hasattr(socket, 'inet_pton'):
         if family == socket.AF_UNSPEC:
             afs = [socket.AF_INET, socket.AF_INET6]
