@@ -4,7 +4,7 @@ setlocal
 
 set here=%~dp0
 set rt_opts=-q -d
-set regrtest_args=
+set regrtest_args=-j1
 
 :CheckOpts
 if "%1"=="-x64" (set rt_opts=%rt_opts% %1) & shift & goto CheckOpts
