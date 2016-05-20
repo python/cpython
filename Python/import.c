@@ -1349,7 +1349,6 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     _Py_IDENTIFIER(_find_and_load);
     _Py_IDENTIFIER(_handle_fromlist);
     _Py_IDENTIFIER(_lock_unlock_module);
-    _Py_static_string(single_dot, ".");
     PyObject *abs_name = NULL;
     PyObject *builtins_import = NULL;
     PyObject *final_mod = NULL;
@@ -1471,19 +1470,25 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
             }
 
             if (_PyDict_GetItemId(globals, &PyId___path__) == NULL) {
-                PyObject *partition = NULL;
-                PyObject *borrowed_dot = _PyUnicode_FromId(&single_dot);
-                if (borrowed_dot == NULL) {
+                Py_ssize_t dot;
+
+                if (PyUnicode_READY(package) < 0) {
                     goto error;
                 }
-                partition = PyUnicode_RPartition(package, borrowed_dot);
-                Py_DECREF(package);
-                if (partition == NULL) {
+
+                dot = PyUnicode_FindChar(package, '.',
+                                         0, PyUnicode_GET_LENGTH(package), -1);
+                if (dot == -2) {
                     goto error;
                 }
-                package = PyTuple_GET_ITEM(partition, 0);
-                Py_INCREF(package);
-                Py_DECREF(partition);
+
+                if (dot >= 0) {
+                    PyObject *substr = PyUnicode_Substring(package, 0, dot);
+                    if (substr == NULL) {
+                        goto error;
+                    }
+                    Py_SETREF(package, substr);
+                }
             }
         }
 
@@ -1531,17 +1536,8 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
             goto error;
 
         if (PyUnicode_GET_LENGTH(name) > 0) {
-            PyObject *borrowed_dot, *seq = NULL;
-
-            borrowed_dot = _PyUnicode_FromId(&single_dot);
-            seq = PyTuple_Pack(2, base, name);
+            abs_name = PyUnicode_FromFormat("%U.%U", base, name);
             Py_DECREF(base);
-            if (borrowed_dot == NULL || seq == NULL) {
-                goto error;
-            }
-
-            abs_name = PyUnicode_Join(borrowed_dot, seq);
-            Py_DECREF(seq);
             if (abs_name == NULL) {
                 goto error;
             }
@@ -1639,43 +1635,36 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     if (has_from < 0)
         goto error;
     if (!has_from) {
-        if (level == 0 || PyUnicode_GET_LENGTH(name) > 0) {
-            PyObject *front = NULL;
-            PyObject *partition = NULL;
-            PyObject *borrowed_dot = _PyUnicode_FromId(&single_dot);
+        Py_ssize_t len = PyUnicode_GET_LENGTH(name);
+        if (level == 0 || len > 0) {
+            Py_ssize_t dot;
 
-            if (borrowed_dot == NULL) {
+            dot = PyUnicode_FindChar(name, '.', 0, len, 1);
+            if (dot == -2) {
                 goto error;
             }
 
-            partition = PyUnicode_Partition(name, borrowed_dot);
-            if (partition == NULL) {
-                goto error;
-            }
-
-            if (PyUnicode_GET_LENGTH(PyTuple_GET_ITEM(partition, 1)) == 0) {
+            if (dot == -1) {
                 /* No dot in module name, simple exit */
-                Py_DECREF(partition);
                 final_mod = mod;
                 Py_INCREF(mod);
                 goto error;
             }
 
-            front = PyTuple_GET_ITEM(partition, 0);
-            Py_INCREF(front);
-            Py_DECREF(partition);
-
             if (level == 0) {
+                PyObject *front = PyUnicode_Substring(name, 0, dot);
+                if (front == NULL) {
+                    goto error;
+                }
+
                 final_mod = PyObject_CallFunctionObjArgs(builtins_import, front, NULL);
                 Py_DECREF(front);
             }
             else {
-                Py_ssize_t cut_off = PyUnicode_GET_LENGTH(name) -
-                                        PyUnicode_GET_LENGTH(front);
+                Py_ssize_t cut_off = len - dot;
                 Py_ssize_t abs_name_len = PyUnicode_GET_LENGTH(abs_name);
                 PyObject *to_return = PyUnicode_Substring(abs_name, 0,
                                                         abs_name_len - cut_off);
-                Py_DECREF(front);
                 if (to_return == NULL) {
                     goto error;
                 }
