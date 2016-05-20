@@ -467,6 +467,9 @@ Optimizations
   with a short lifetime, and use :c:func:`malloc` for larger memory blocks.
   (Contributed by Victor Stinner in :issue:`26249`).
 
+* :func:`pickle.load` and :func:`pickle.loads` are now up to 10% faster when
+  deserializing many small objects (Contributed by Victor Stinner in
+  :issue:`27056`).
 
 Build and C API Changes
 =======================
