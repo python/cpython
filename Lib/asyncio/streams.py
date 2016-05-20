@@ -225,9 +225,11 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
         self._stream_reader = stream_reader
         self._stream_writer = None
         self._client_connected_cb = client_connected_cb
+        self._over_ssl = False
 
     def connection_made(self, transport):
         self._stream_reader.set_transport(transport)
+        self._over_ssl = transport.get_extra_info('sslcontext') is not None
         if self._client_connected_cb is not None:
             self._stream_writer = StreamWriter(transport, self,
                                                self._stream_reader,
@@ -252,6 +254,11 @@ class StreamReaderProtocol(FlowControlMixin, protocols.Protocol):
 
     def eof_received(self):
         self._stream_reader.feed_eof()
+        if self._over_ssl:
+            # Prevent a warning in SSLProtocol.eof_received:
+            # "returning true from eof_received()
+            # has no effect when using ssl"
+            return False
         return True
 
 
