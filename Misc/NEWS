@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #26168: Fixed possible refleaks in failing Py_BuildValue() with the "N"
+  format unit.
+
 - Issue #26991: Fix possible refleak when creating a function with annotations.
 
 - Issue #27039: Fixed bytearray.remove() for values greater than 127.  Patch by
