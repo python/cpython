@@ -14,7 +14,8 @@ except ImportError:
     sys.exit(2)
 
 from test.libregrtest.runtest import (
-    runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME)
+    runtest, INTERRUPTED, CHILD_ERROR, PROGRESS_MIN_TIME,
+    format_test_result)
 from test.libregrtest.setup import setup_tests
 
 
@@ -196,8 +197,8 @@ def run_tests_multiprocess(regrtest):
             regrtest.accumulate_result(test, result)
 
             # Display progress
-            text = test
             ok, test_time = result
+            text = format_test_result(test, ok)
             if (ok not in (CHILD_ERROR, INTERRUPTED)
                 and test_time >= PROGRESS_MIN_TIME
                 and not regrtest.ns.pgo):
