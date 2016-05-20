@@ -443,8 +443,8 @@ class ProcessTestCase(BaseTestCase):
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stdout.write("orange")'],
                          stdout=subprocess.PIPE)
-        self.addCleanup(p.stdout.close)
-        self.assertEqual(p.stdout.read(), b"orange")
+        with p:
+            self.assertEqual(p.stdout.read(), b"orange")
 
     def test_stdout_filedes(self):
         # stdout is set to open file descriptor
@@ -474,8 +474,8 @@ class ProcessTestCase(BaseTestCase):
         p = subprocess.Popen([sys.executable, "-c",
                           'import sys; sys.stderr.write("strawberry")'],
                          stderr=subprocess.PIPE)
-        self.addCleanup(p.stderr.close)
-        self.assertStderrEqual(p.stderr.read(), b"strawberry")
+        with p:
+            self.assertStderrEqual(p.stderr.read(), b"strawberry")
 
     def test_stderr_filedes(self):
         # stderr is set to open file descriptor
@@ -530,8 +530,8 @@ class ProcessTestCase(BaseTestCase):
                               'sys.stderr.write("orange")'],
                              stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT)
-        self.addCleanup(p.stdout.close)
-        self.assertStderrEqual(p.stdout.read(), b"appleorange")
+        with p:
+            self.assertStderrEqual(p.stdout.read(), b"appleorange")
 
     def test_stdout_stderr_file(self):
         # capture stdout and stderr to the same open file
@@ -789,18 +789,19 @@ class ProcessTestCase(BaseTestCase):
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              universal_newlines=1)
-        p.stdin.write("line1\n")
-        p.stdin.flush()
-        self.assertEqual(p.stdout.readline(), "line1\n")
-        p.stdin.write("line3\n")
-        p.stdin.close()
-        self.addCleanup(p.stdout.close)
-        self.assertEqual(p.stdout.readline(),
-                         "line2\n")
-        self.assertEqual(p.stdout.read(6),
-                         "line3\n")
-        self.assertEqual(p.stdout.read(),
-                         "line4\nline5\nline6\nline7\nline8")
+        with p:
+            p.stdin.write("line1\n")
+            p.stdin.flush()
+            self.assertEqual(p.stdout.readline(), "line1\n")
+            p.stdin.write("line3\n")
+            p.stdin.close()
+            self.addCleanup(p.stdout.close)
+            self.assertEqual(p.stdout.readline(),
+                             "line2\n")
+            self.assertEqual(p.stdout.read(6),
+                             "line3\n")
+            self.assertEqual(p.stdout.read(),
+                             "line4\nline5\nline6\nline7\nline8")
 
     def test_universal_newlines_communicate(self):
         # universal newlines through communicate()
@@ -1434,8 +1435,8 @@ class POSIXProcessTestCase(BaseTestCase):
                               'sys.stdout.write(os.getenv("FRUIT"))'],
                              stdout=subprocess.PIPE,
                              preexec_fn=lambda: os.putenv("FRUIT", "apple"))
-        self.addCleanup(p.stdout.close)
-        self.assertEqual(p.stdout.read(), b"apple")
+        with p:
+            self.assertEqual(p.stdout.read(), b"apple")
 
     def test_preexec_exception(self):
         def raise_it():
@@ -1583,8 +1584,8 @@ class POSIXProcessTestCase(BaseTestCase):
         p = subprocess.Popen(["echo $FRUIT"], shell=1,
                              stdout=subprocess.PIPE,
                              env=newenv)
-        self.addCleanup(p.stdout.close)
-        self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
+        with p:
+            self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
 
     def test_shell_string(self):
         # Run command through the shell (string)
@@ -1593,8 +1594,8 @@ class POSIXProcessTestCase(BaseTestCase):
         p = subprocess.Popen("echo $FRUIT", shell=1,
                              stdout=subprocess.PIPE,
                              env=newenv)
-        self.addCleanup(p.stdout.close)
-        self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
+        with p:
+            self.assertEqual(p.stdout.read().strip(b" \t\r\n\f"), b"apple")
 
     def test_call_string(self):
         # call() function with string argument on UNIX
@@ -1626,8 +1627,8 @@ class POSIXProcessTestCase(BaseTestCase):
         for sh in shells:
             p = subprocess.Popen("echo $0", executable=sh, shell=True,
                                  stdout=subprocess.PIPE)
-            self.addCleanup(p.stdout.close)
-            self.assertEqual(p.stdout.read().strip(), bytes(sh, 'ascii'))
+            with p:
+                self.assertEqual(p.stdout.read().strip(), bytes(sh, 'ascii'))
 
     def _kill_process(self, method, *args):
         # Do not inherit file handles from the parent.
@@ -2450,8 +2451,8 @@ class Win32ProcessTestCase(BaseTestCase):
         p = subprocess.Popen(["set"], shell=1,
                              stdout=subprocess.PIPE,
                              env=newenv)
-        self.addCleanup(p.stdout.close)
-        self.assertIn(b"physalis", p.stdout.read())
+        with p:
+            self.assertIn(b"physalis", p.stdout.read())
 
     def test_shell_string(self):
         # Run command through the shell (string)
@@ -2460,8 +2461,8 @@ class Win32ProcessTestCase(BaseTestCase):
         p = subprocess.Popen("set", shell=1,
                              stdout=subprocess.PIPE,
                              env=newenv)
-        self.addCleanup(p.stdout.close)
-        self.assertIn(b"physalis", p.stdout.read())
+        with p:
+            self.assertIn(b"physalis", p.stdout.read())
 
     def test_call_string(self):
         # call() function with string argument on Windows
@@ -2480,16 +2481,14 @@ class Win32ProcessTestCase(BaseTestCase):
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-        self.addCleanup(p.stdout.close)
-        self.addCleanup(p.stderr.close)
-        self.addCleanup(p.stdin.close)
-        # Wait for the interpreter to be completely initialized before
-        # sending any signal.
-        p.stdout.read(1)
-        getattr(p, method)(*args)
-        _, stderr = p.communicate()
-        self.assertStderrEqual(stderr, b'')
-        returncode = p.wait()
+        with p:
+            # Wait for the interpreter to be completely initialized before
+            # sending any signal.
+            p.stdout.read(1)
+            getattr(p, method)(*args)
+            _, stderr = p.communicate()
+            self.assertStderrEqual(stderr, b'')
+            returncode = p.wait()
         self.assertNotEqual(returncode, 0)
 
     def _kill_dead_process(self, method, *args):
@@ -2502,19 +2501,17 @@ class Win32ProcessTestCase(BaseTestCase):
                              stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE)
-        self.addCleanup(p.stdout.close)
-        self.addCleanup(p.stderr.close)
-        self.addCleanup(p.stdin.close)
-        # Wait for the interpreter to be completely initialized before
-        # sending any signal.
-        p.stdout.read(1)
-        # The process should end after this
-        time.sleep(1)
-        # This shouldn't raise even though the child is now dead
-        getattr(p, method)(*args)
-        _, stderr = p.communicate()
-        self.assertStderrEqual(stderr, b'')
-        rc = p.wait()
+        with p:
+            # Wait for the interpreter to be completely initialized before
+            # sending any signal.
+            p.stdout.read(1)
+            # The process should end after this
+            time.sleep(1)
+            # This shouldn't raise even though the child is now dead
+            getattr(p, method)(*args)
+            _, stderr = p.communicate()
+            self.assertStderrEqual(stderr, b'')
+            rc = p.wait()
         self.assertEqual(rc, 42)
 
     def test_send_signal(self):
@@ -2602,11 +2599,11 @@ class CommandsWithSpaces (BaseTestCase):
     def with_spaces(self, *args, **kwargs):
         kwargs['stdout'] = subprocess.PIPE
         p = subprocess.Popen(*args, **kwargs)
-        self.addCleanup(p.stdout.close)
-        self.assertEqual(
-          p.stdout.read ().decode("mbcs"),
-          "2 [%r, 'ab cd']" % self.fname
-        )
+        with p:
+            self.assertEqual(
+              p.stdout.read ().decode("mbcs"),
+              "2 [%r, 'ab cd']" % self.fname
+            )
 
     def test_shell_string_with_spaces(self):
         # call() function with string argument with spaces on Windows
