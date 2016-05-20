@@ -20,11 +20,19 @@ RESOURCE_DENIED = -3
 INTERRUPTED = -4
 CHILD_ERROR = -5   # error in a child process
 
+_FORMAT_TEST_RESULT = {
+    PASSED: '%s passed',
+    FAILED: '%s failed',
+    ENV_CHANGED: '%s failed (env changed)',
+    SKIPPED: '%s skipped',
+    RESOURCE_DENIED: '%s skipped (resource denied)',
+    INTERRUPTED: '%s interrupted',
+    CHILD_ERROR: '%s crashed',
+}
+
 # Minimum duration of a test to display its duration or to mention that
 # the test is running in background
 PROGRESS_MIN_TIME = 30.0   # seconds
-
-
 
 # small set of tests to determine if we have a basically functioning interpreter
 # (i.e. if any of these fail, then anything else is likely to follow)
@@ -43,6 +51,11 @@ STDTESTS = [
 
 # set of tests that we don't want to be executed when using regrtest
 NOTTESTS = set()
+
+
+def format_test_result(test_name, result):
+    fmt = _FORMAT_TEST_RESULT.get(result, "%s")
+    return fmt % test_name
 
 
 def findtests(testdir=None, stdtests=STDTESTS, nottests=NOTTESTS):
