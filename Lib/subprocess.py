@@ -1524,9 +1524,14 @@ class Popen(object):
 
             if errpipe_data:
                 try:
-                    os.waitpid(self.pid, 0)
+                    pid, sts = os.waitpid(self.pid, 0)
+                    if pid == self.pid:
+                        self._handle_exitstatus(sts)
+                    else:
+                        self.returncode = sys.maxsize
                 except ChildProcessError:
                     pass
+
                 try:
                     exception_name, hex_errno, err_msg = (
                             errpipe_data.split(b':', 2))
