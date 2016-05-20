@@ -120,6 +120,28 @@ class BaseEventTests(test_utils.TestCase):
             (INET6, STREAM, TCP, '', ('::3%lo0', 1)),
             base_events._ipaddr_info('::3%lo0', 1, INET6, STREAM, TCP))
 
+    def test_port_parameter_types(self):
+        # Test obscure kinds of arguments for "port".
+        INET = socket.AF_INET
+        STREAM = socket.SOCK_STREAM
+        TCP = socket.IPPROTO_TCP
+
+        self.assertEqual(
+            (INET, STREAM, TCP, '', ('1.2.3.4', 0)),
+            base_events._ipaddr_info('1.2.3.4', None, INET, STREAM, TCP))
+
+        self.assertEqual(
+            (INET, STREAM, TCP, '', ('1.2.3.4', 0)),
+            base_events._ipaddr_info('1.2.3.4', '', INET, STREAM, TCP))
+
+        self.assertEqual(
+            (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
+            base_events._ipaddr_info('1.2.3.4', '1', INET, STREAM, TCP))
+
+        self.assertEqual(
+            (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
+            base_events._ipaddr_info('1.2.3.4', b'1', INET, STREAM, TCP))
+
     @patch_socket
     def test_ipaddr_info_no_inet_pton(self, m_socket):
         del m_socket.inet_pton
