@@ -931,6 +931,100 @@ test_L_code(PyObject *self)
 #endif  /* ifdef HAVE_LONG_LONG */
 
 static PyObject *
+return_none(void *unused)
+{
+    Py_RETURN_NONE;
+}
+
+static PyObject *
+raise_error(void *unused)
+{
+    PyErr_SetNone(PyExc_ValueError);
+    return NULL;
+}
+
+static int
+test_buildvalue_N_error(const char *fmt)
+{
+    PyObject *arg, *res;
+
+    arg = PyList_New(0);
+    if (arg == NULL) {
+        return -1;
+    }
+
+    Py_INCREF(arg);
+    res = Py_BuildValue(fmt, return_none, NULL, arg);
+    if (res == NULL) {
+        return -1;
+    }
+    Py_DECREF(res);
+    if (Py_REFCNT(arg) != 1) {
+        PyErr_Format(TestError, "test_buildvalue_N: "
+                     "arg was not decrefed in successful "
+                     "Py_BuildValue(\"%s\")", fmt);
+        return -1;
+    }
+
+    Py_INCREF(arg);
+    res = Py_BuildValue(fmt, raise_error, NULL, arg);
+    if (res != NULL || !PyErr_Occurred()) {
+        PyErr_Format(TestError, "test_buildvalue_N: "
+                     "Py_BuildValue(\"%s\") didn't complain", fmt);
+        return -1;
+    }
+    PyErr_Clear();
+    if (Py_REFCNT(arg) != 1) {
+        PyErr_Format(TestError, "test_buildvalue_N: "
+                     "arg was not decrefed in failed "
+                     "Py_BuildValue(\"%s\")", fmt);
+        return -1;
+    }
+    Py_DECREF(arg);
+    return 0;
+}
+
+static PyObject *
+test_buildvalue_N(PyObject *self, PyObject *noargs)
+{
+    PyObject *arg, *res;
+
+    arg = PyList_New(0);
+    if (arg == NULL) {
+        return NULL;
+    }
+    Py_INCREF(arg);
+    res = Py_BuildValue("N", arg);
+    if (res == NULL) {
+        return NULL;
+    }
+    if (res != arg) {
+        return raiseTestError("test_buildvalue_N",
+                              "Py_BuildValue(\"N\") returned wrong result");
+    }
+    if (Py_REFCNT(arg) != 2) {
+        return raiseTestError("test_buildvalue_N",
+                              "arg was not decrefed in Py_BuildValue(\"N\")");
+    }
+    Py_DECREF(res);
+    Py_DECREF(arg);
+
+    if (test_buildvalue_N_error("O&N") < 0)
+        return NULL;
+    if (test_buildvalue_N_error("(O&N)") < 0)
+        return NULL;
+    if (test_buildvalue_N_error("[O&N]") < 0)
+        return NULL;
+    if (test_buildvalue_N_error("{O&N}") < 0)
+        return NULL;
+    if (test_buildvalue_N_error("{()O&(())N}") < 0)
+        return NULL;
+
+    Py_RETURN_NONE;
+}
+
+
+static PyObject *
 get_args(PyObject *self, PyObject *args)
 {
     if (args == NULL) {
@@ -2414,6 +2508,7 @@ static PyMethodDef TestMethods[] = {
     {"test_with_docstring", (PyCFunction)test_with_docstring, METH_NOARGS,
      PyDoc_STR("This is a pretty normal docstring.")},
 
+    {"test_buildvalue_N",       test_buildvalue_N,               METH_NOARGS},
     {"get_args", get_args, METH_VARARGS},
     {"get_kwargs", (PyCFunction)get_kwargs, METH_VARARGS|METH_KEYWORDS},
     {"getargs_tuple",           getargs_tuple,                   METH_VARARGS},

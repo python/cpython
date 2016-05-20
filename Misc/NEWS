@@ -10,6 +10,9 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #26168: Fixed possible refleaks in failing Py_BuildValue() with the "N"
+  format unit.
+
 - Issue #27039: Fixed bytearray.remove() for values greater than 127.  Patch by
   Joe Jevnik.
 

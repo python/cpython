@@ -16,6 +16,11 @@ except ImportError:
 # Skip this test if the _testcapi module isn't available.
 _testcapi = support.import_module('_testcapi')
 
+class CAPITest(unittest.TestCase):
+
+    def test_buildvalue_N(self):
+        _testcapi.test_buildvalue_N()
+
 
 @unittest.skipUnless(threading, 'Threading required for this test.')
 class TestPendingCalls(unittest.TestCase):
@@ -132,7 +137,7 @@ def test_main():
             except _testcapi.error:
                 raise support.TestFailed, sys.exc_info()[1]
 
-    support.run_unittest(TestPendingCalls, TestThreadState)
+    support.run_unittest(CAPITest, TestPendingCalls, TestThreadState)
 
 if __name__ == "__main__":
     test_main()

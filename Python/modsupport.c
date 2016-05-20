@@ -156,48 +156,83 @@ static PyObject *do_mkdict(const char**, va_list *, int, int, int);
 static PyObject *do_mkvalue(const char**, va_list *, int);
 
 
+static void
+do_ignore(const char **p_format, va_list *p_va, int endchar, int n, int flags)
+{
+    PyObject *v;
+    int i;
+    assert(PyErr_Occurred());
+    v = PyTuple_New(n);
+    for (i = 0; i < n; i++) {
+        PyObject *exception, *value, *tb, *w;
+        PyErr_Fetch(&exception, &value, &tb);
+        w = do_mkvalue(p_format, p_va, flags);
+        PyErr_Restore(exception, value, tb);
+        if (w != NULL) {
+            if (v != NULL) {
+                PyTuple_SET_ITEM(v, i, w);
+            }
+            else {
+                Py_DECREF(w);
+            }
+        }
+    }
+    Py_XDECREF(v);
+    if (**p_format != endchar) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Unmatched paren in format");
+        return;
+    }
+    if (endchar)
+        ++*p_format;
+}
+
 static PyObject *
 do_mkdict(const char **p_format, va_list *p_va, int endchar, int n, int flags)
 {
     PyObject *d;
     int i;
-    int itemfailed = 0;
     if (n < 0)
         return NULL;
-    if ((d = PyDict_New()) == NULL)
+    if (n % 2) {
+        PyErr_SetString(PyExc_SystemError,
+                        "Bad dict format");
+        do_ignore(p_format, p_va, endchar, n, flags);
         return NULL;
+    }
     /* Note that we can't bail immediately on error as this will leak
        refcounts on any 'N' arguments. */
+    if ((d = PyDict_New()) == NULL) {
+        do_ignore(p_format, p_va, endchar, n, flags);
+        return NULL;
+    }
     for (i = 0; i < n; i+= 2) {
         PyObject *k, *v;
-        int err;
+
         k = do_mkvalue(p_format, p_va, flags);
         if (k == NULL) {
-            itemfailed = 1;
-            Py_INCREF(Py_None);
-            k = Py_None;
-        }
-        v = do_mkvalue(p_format, p_va, flags);
-        if (v == NULL) {
-            itemfailed = 1;
-            Py_INCREF(Py_None);
-            v = Py_None;
-        }
-        err = PyDict_SetItem(d, k, v);
-        Py_DECREF(k);
-        Py_DECREF(v);
-        if (err < 0 || itemfailed) {
+            do_ignore(p_format, p_va, endchar, n - i - 1, flags);
             Py_DECREF(d);
             return NULL;
         }
+        v = do_mkvalue(p_format, p_va, flags);
+        if (v == NULL || PyDict_SetItem(d, k, v) < 0) {
+            do_ignore(p_format, p_va, endchar, n - i - 2, flags);
+            Py_DECREF(k);
+            Py_XDECREF(v);
+            Py_DECREF(d);
+            return NULL;
+        }
+        Py_DECREF(k);
+        Py_DECREF(v);
     }
-    if (d != NULL && **p_format != endchar) {
+    if (**p_format != endchar) {
         Py_DECREF(d);
-        d = NULL;
         PyErr_SetString(PyExc_SystemError,
                         "Unmatched paren in format");
+        return NULL;
     }
-    else if (endchar)
+    if (endchar)
         ++*p_format;
     return d;
 }
@@ -207,28 +242,23 @@ do_mklist(const char **p_format, va_list *p_va, int endchar, int n, int flags)
 {
     PyObject *v;
     int i;
-    int itemfailed = 0;
     if (n < 0)
-        return NULL;
-    v = PyList_New(n);
-    if (v == NULL)
         return NULL;
     /* Note that we can't bail immediately on error as this will leak
        refcounts on any 'N' arguments. */
+    v = PyList_New(n);
+    if (v == NULL) {
+        do_ignore(p_format, p_va, endchar, n, flags);
+        return NULL;
+    }
     for (i = 0; i < n; i++) {
         PyObject *w = do_mkvalue(p_format, p_va, flags);
         if (w == NULL) {
-            itemfailed = 1;
-            Py_INCREF(Py_None);
-            w = Py_None;
+            do_ignore(p_format, p_va, endchar, n - i - 1, flags);
+            Py_DECREF(v);
+            return NULL;
         }
         PyList_SET_ITEM(v, i, w);
-    }
-
-    if (itemfailed) {
-        /* do_mkvalue() should have already set an error */
-        Py_DECREF(v);
-        return NULL;
     }
     if (**p_format != endchar) {
         Py_DECREF(v);
@@ -257,26 +287,22 @@ do_mktuple(const char **p_format, va_list *p_va, int endchar, int n, int flags)
 {
     PyObject *v;
     int i;
-    int itemfailed = 0;
     if (n < 0)
-        return NULL;
-    if ((v = PyTuple_New(n)) == NULL)
         return NULL;
     /* Note that we can't bail immediately on error as this will leak
        refcounts on any 'N' arguments. */
+    if ((v = PyTuple_New(n)) == NULL) {
+        do_ignore(p_format, p_va, endchar, n, flags);
+        return NULL;
+    }
     for (i = 0; i < n; i++) {
         PyObject *w = do_mkvalue(p_format, p_va, flags);
         if (w == NULL) {
-            itemfailed = 1;
-            Py_INCREF(Py_None);
-            w = Py_None;
+            do_ignore(p_format, p_va, endchar, n - i - 1, flags);
+            Py_DECREF(v);
+            return NULL;
         }
         PyTuple_SET_ITEM(v, i, w);
-    }
-    if (itemfailed) {
-        /* do_mkvalue() should have already set an error */
-        Py_DECREF(v);
-        return NULL;
     }
     if (**p_format != endchar) {
         Py_DECREF(v);
