@@ -497,6 +497,10 @@ functions.
    .. versionchanged:: 3.2
       Added context manager support.
 
+   .. versionchanged:: 3.6
+      Popen destructor now emits a :exc:`ResourceWarning` warning if the child
+      process is still running.
+
 
 Exceptions
 ^^^^^^^^^^

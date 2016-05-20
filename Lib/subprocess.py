@@ -1006,6 +1006,9 @@ class Popen(object):
         if not self._child_created:
             # We didn't get to successfully create a child process.
             return
+        if self.returncode is None:
+            warnings.warn("running subprocess %r" % self, ResourceWarning,
+                          source=self)
         # In case the child hasn't been waited on, check if it's done.
         self._internal_poll(_deadstate=_maxsize)
         if self.returncode is None and _active is not None:
