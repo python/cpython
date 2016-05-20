@@ -16,6 +16,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26741: subprocess.Popen destructor now emits a ResourceWarning warning
+  if the child process is still running.
+
 - Issue #27056: Optimize pickle.load() and pickle.loads(), up to 10% faster
   to deserialize a lot of small objects.
 
