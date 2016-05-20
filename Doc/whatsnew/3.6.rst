@@ -330,6 +330,16 @@ protocol.
 (Contributed by Aviv Palivoda in :issue:`26404`.)
 
 
+subprocess
+----------
+
+:class:`subprocess.Popen` destructor now emits a :exc:`ResourceWarning` warning
+if the child process is still running. Use the context manager protocol (``with
+proc: ...``) or call explicitly the :meth:`~subprocess.Popen.wait` method to
+read the exit status of the child process (Contributed by Victor Stinner in
+:issue:`26741`).
+
+
 telnetlib
 ---------
 
