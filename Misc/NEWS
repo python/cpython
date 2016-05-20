@@ -22,6 +22,16 @@ Library
 - Issue #27056: Optimize pickle.load() and pickle.loads(), up to 10% faster
   to deserialize a lot of small objects.
 
+Tests
+-----
+
+- Issue #25285: regrtest now uses subprocesses when the -j1 command line option
+  is used: each test file runs in a fresh child process. Before, the -j1 option
+  was ignored.
+
+- Issue #25285: Tools/buildbot/test.bat script now uses -j1 by default to run
+  each test file in fresh child process.
+
 
 What's New in Python 3.6.0 alpha 1?
 ===================================
