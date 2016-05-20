@@ -1197,21 +1197,9 @@ _Unpickler_ReadFromFile(UnpicklerObject *self, Py_ssize_t n)
     return read_size;
 }
 
-/* Read `n` bytes from the unpickler's data source, storing the result in `*s`.
-
-   This should be used for all data reads, rather than accessing the unpickler's
-   input buffer directly. This method deals correctly with reading from input
-   streams, which the input buffer doesn't deal with.
-
-   Note that when reading from a file-like object, self->next_read_idx won't
-   be updated (it should remain at 0 for the entire unpickling process). You
-   should use this function's return value to know how many bytes you can
-   consume.
-
-   Returns -1 (with an exception set) on failure. On success, return the
-   number of chars read. */
+/* Don't call it directly: use _Unpickler_Read() */
 static Py_ssize_t
-_Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
+_Unpickler_ReadImpl(UnpicklerObject *self, char **s, Py_ssize_t n)
 {
     Py_ssize_t num_read;
 
@@ -1222,11 +1210,10 @@ _Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
                         "read would overflow (invalid bytecode)");
         return -1;
     }
-    if (self->next_read_idx + n <= self->input_len) {
-        *s = self->input_buffer + self->next_read_idx;
-        self->next_read_idx += n;
-        return n;
-    }
+
+    /* This case is handled by the _Unpickler_Read() macro for efficiency */
+    assert(self->next_read_idx + n > self->input_len);
+
     if (!self->read) {
         PyErr_Format(PyExc_EOFError, "Ran out of input");
         return -1;
@@ -1242,6 +1229,26 @@ _Unpickler_Read(UnpicklerObject *self, char **s, Py_ssize_t n)
     self->next_read_idx = n;
     return n;
 }
+
+/* Read `n` bytes from the unpickler's data source, storing the result in `*s`.
+
+   This should be used for all data reads, rather than accessing the unpickler's
+   input buffer directly. This method deals correctly with reading from input
+   streams, which the input buffer doesn't deal with.
+
+   Note that when reading from a file-like object, self->next_read_idx won't
+   be updated (it should remain at 0 for the entire unpickling process). You
+   should use this function's return value to know how many bytes you can
+   consume.
+
+   Returns -1 (with an exception set) on failure. On success, return the
+   number of chars read. */
+#define _Unpickler_Read(self, s, n) \
+    (((self)->next_read_idx + (n) <= (self)->input_len)      \
+     ? (*(s) = (self)->input_buffer + (self)->next_read_idx, \
+        (self)->next_read_idx += (n),                        \
+        (n))                                                 \
+     : _Unpickler_ReadImpl(self, (s), (n)))
 
 static Py_ssize_t
 _Unpickler_CopyLine(UnpicklerObject *self, char *line, Py_ssize_t len,
