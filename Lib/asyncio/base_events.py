@@ -86,7 +86,7 @@ if hasattr(socket, 'SOCK_CLOEXEC'):
     _SOCKET_TYPE_MASK |= socket.SOCK_CLOEXEC
 
 
-@functools.lru_cache(maxsize=1024)
+@functools.lru_cache(maxsize=1024, typed=True)
 def _ipaddr_info(host, port, family, type, proto):
     # Try to skip getaddrinfo if "host" is already an IP. Since getaddrinfo
     # blocks on an exclusive lock on some platforms, users might handle name
