@@ -24,19 +24,39 @@ requires('curses')
 
 # If either of these don't exist, skip the tests.
 curses = import_module('curses')
-curses.panel = import_module('curses.panel')
+import_module('curses.panel')
+import_module('curses.ascii')
 
-term = os.environ.get('TERM', 'unknown')
+def requires_curses_func(name):
+    return unittest.skipUnless(hasattr(curses, name),
+                               'requires curses.%s' % name)
 
-@unittest.skipUnless(sys.__stdout__.isatty(), 'sys.__stdout__ is not a tty')
-@unittest.skipIf(term == 'unknown',
+term = os.environ.get('TERM')
+
+# If newterm was supported we could use it instead of initscr and not exit
+@unittest.skipIf(not term or term == 'unknown',
                  "$TERM=%r, calling initscr() may cause exit" % term)
 @unittest.skipIf(sys.platform == "cygwin",
                  "cygwin's curses mostly just hangs")
 class TestCurses(unittest.TestCase):
+
     @classmethod
     def setUpClass(cls):
-        curses.setupterm(fd=sys.__stdout__.fileno())
+        if not sys.__stdout__.isatty():
+            cls.tmp = tempfile.TemporaryFile()
+            fd = cls.tmp.fileno()
+        else:
+            cls.tmp = None
+            fd = sys.__stdout__.fileno()
+        # testing setupterm() inside initscr/endwin
+        # causes terminal breakage
+        curses.setupterm(fd=fd)
+
+    @classmethod
+    def tearDownClass(cls):
+        if cls.tmp:
+            cls.tmp.close()
+            del cls.tmp
 
     def setUp(self):
         if verbose:
@@ -59,7 +79,8 @@ class TestCurses(unittest.TestCase):
         for meth in [stdscr.addch, stdscr.addstr]:
             for args in [('a'), ('a', curses.A_BOLD),
                          (4,4, 'a'), (5,5, 'a', curses.A_BOLD)]:
-                meth(*args)
+                with self.subTest(meth=meth.__qualname__, args=args):
+                    meth(*args)
 
         for meth in [stdscr.box, stdscr.clear, stdscr.clrtobot,
                      stdscr.clrtoeol, stdscr.cursyncup, stdscr.delch,
@@ -70,7 +91,8 @@ class TestCurses(unittest.TestCase):
                      win.noutrefresh, stdscr.redrawwin, stdscr.refresh,
                      stdscr.standout, stdscr.standend, stdscr.syncdown,
                      stdscr.syncup, stdscr.touchwin, stdscr.untouchwin]:
-            meth()
+            with self.subTest(meth=meth.__qualname__):
+                meth()
 
         stdscr.addnstr('1234', 3)
         stdscr.addnstr('1234', 3, curses.A_BOLD)
@@ -166,7 +188,6 @@ class TestCurses(unittest.TestCase):
 
     def test_module_funcs(self):
         "Test module-level functions"
-        stdscr = self.stdscr
         for func in [curses.baudrate, curses.beep, curses.can_change_color,
                      curses.cbreak, curses.def_prog_mode, curses.doupdate,
                      curses.filter, curses.flash, curses.flushinp,
@@ -176,7 +197,8 @@ class TestCurses(unittest.TestCase):
                      curses.noqiflush, curses.noraw,
                      curses.reset_prog_mode, curses.termattrs,
                      curses.termname, curses.erasechar, curses.getsyx]:
-            func()
+            with self.subTest(func=func.__qualname__):
+                func()
 
         # Functions that actually need arguments
         if curses.tigetstr("cnorm"):
@@ -184,11 +206,10 @@ class TestCurses(unittest.TestCase):
         curses.delay_output(1)
         curses.echo() ; curses.echo(1)
 
-        f = tempfile.TemporaryFile()
-        stdscr.putwin(f)
-        f.seek(0)
-        curses.getwin(f)
-        f.close()
+        with tempfile.TemporaryFile() as f:
+            self.stdscr.putwin(f)
+            f.seek(0)
+            curses.getwin(f)
 
         curses.halfdelay(1)
         curses.intrflush(1)
@@ -211,51 +232,37 @@ class TestCurses(unittest.TestCase):
         curses.ungetch('a')
         curses.use_env(1)
 
-        # Functions only available on a few platforms
-        if curses.has_colors():
-            curses.start_color()
-            curses.init_pair(2, 1,1)
-            curses.color_content(1)
-            curses.color_pair(2)
-            curses.pair_content(curses.COLOR_PAIRS - 1)
-            curses.pair_number(0)
+    # Functions only available on a few platforms
+    def test_colors_funcs(self):
+        if not curses.has_colors():
+            self.skip('requires colors support')
+        curses.start_color()
+        curses.init_pair(2, 1,1)
+        curses.color_content(1)
+        curses.color_pair(2)
+        curses.pair_content(curses.COLOR_PAIRS - 1)
+        curses.pair_number(0)
 
-            if hasattr(curses, 'use_default_colors'):
-                curses.use_default_colors()
+        if hasattr(curses, 'use_default_colors'):
+            curses.use_default_colors()
 
-        if hasattr(curses, 'keyname'):
-            curses.keyname(13)
+    @requires_curses_func('keyname')
+    def test_keyname(self):
+        curses.keyname(13)
 
-        if hasattr(curses, 'has_key'):
-            curses.has_key(13)
+    @requires_curses_func('has_key')
+    def test_has_key(self):
+        curses.has_key(13)
 
-        if hasattr(curses, 'getmouse'):
-            (availmask, oldmask) = curses.mousemask(curses.BUTTON1_PRESSED)
-            # availmask indicates that mouse stuff not available.
-            if availmask != 0:
-                curses.mouseinterval(10)
-                # just verify these don't cause errors
-                curses.ungetmouse(0, 0, 0, 0, curses.BUTTON1_PRESSED)
-                m = curses.getmouse()
-
-        if hasattr(curses, 'is_term_resized'):
-            curses.is_term_resized(*stdscr.getmaxyx())
-        if hasattr(curses, 'resizeterm'):
-            curses.resizeterm(*stdscr.getmaxyx())
-        if hasattr(curses, 'resize_term'):
-            curses.resize_term(*stdscr.getmaxyx())
-
-    def test_unctrl(self):
-        from curses import ascii
-        for ch, expected in [('a', 'a'), ('A', 'A'),
-                             (';', ';'), (' ', ' '),
-                             ('\x7f', '^?'), ('\n', '^J'), ('\0', '^@'),
-                             # Meta-bit characters
-                             ('\x8a', '!^J'), ('\xc1', '!A'),
-                             ]:
-            self.assertEqual(ascii.unctrl(ch), expected,
-                             'curses.unctrl fails on character %r' % ch)
-
+    @requires_curses_func('getmouse')
+    def test_getmouse(self):
+        (availmask, oldmask) = curses.mousemask(curses.BUTTON1_PRESSED)
+        if availmask == 0:
+            self.skip('mouse stuff not available')
+        curses.mouseinterval(10)
+        # just verify these don't cause errors
+        curses.ungetmouse(0, 0, 0, 0, curses.BUTTON1_PRESSED)
+        m = curses.getmouse()
 
     def test_userptr_without_set(self):
         w = curses.newwin(10, 10)
@@ -289,9 +296,17 @@ class TestCurses(unittest.TestCase):
         panel = curses.panel.new_panel(self.stdscr)
         self.assertRaises(TypeError, type(panel))
 
-    @unittest.skipUnless(hasattr(curses, 'resizeterm'),
-                           'resizeterm not available')
+    @requires_curses_func('is_term_resized')
+    def test_is_term_resized(self):
+        curses.is_term_resized(*self.stdscr.getmaxyx())
+
+    @requires_curses_func('resize_term')
     def test_resize_term(self):
+        curses.resize_term(*self.stdscr.getmaxyx())
+
+    @requires_curses_func('resizeterm')
+    def test_resizeterm(self):
+        stdscr = self.stdscr
         lines, cols = curses.LINES, curses.COLS
         new_lines = lines - 1
         new_cols = cols + 1
@@ -304,8 +319,7 @@ class TestCurses(unittest.TestCase):
         curses.ungetch(1025)
         self.stdscr.getkey()
 
-    @unittest.skipUnless(hasattr(curses, 'unget_wch'),
-                         'unget_wch not available')
+    @requires_curses_func('unget_wch')
     def test_unget_wch(self):
         stdscr = self.stdscr
         encoding = stdscr.encoding
@@ -330,17 +344,14 @@ class TestCurses(unittest.TestCase):
     def test_issue10570(self):
         b = curses.tparm(curses.tigetstr("cup"), 5, 3)
         self.assertIs(type(b), bytes)
-        curses.putp(b)
 
     def test_encoding(self):
         stdscr = self.stdscr
         import codecs
         encoding = stdscr.encoding
         codecs.lookup(encoding)
-
         with self.assertRaises(TypeError):
             stdscr.encoding = 10
-
         stdscr.encoding = encoding
         with self.assertRaises(TypeError):
             del stdscr.encoding
@@ -371,8 +382,10 @@ class TestCurses(unittest.TestCase):
         # be reasonably certain the generated parsing code will be
         # correct too.
         human_readable_signature = stdscr.addch.__doc__.split("\n")[0]
-        offset = human_readable_signature.find("[y, x,]")
-        assert offset >= 0, ""
+        self.assertIn("[y, x,]", human_readable_signature)
+
+
+class MiscTests(unittest.TestCase):
 
     def test_update_lines_cols(self):
         # this doesn't actually test that LINES and COLS are updated,
@@ -380,6 +393,22 @@ class TestCurses(unittest.TestCase):
         # a manual test script. We can only test that the function
         # can be called.
         curses.update_lines_cols()
+
+
+class TestAscii(unittest.TestCase):
+
+    def test_unctrl(self):
+        unctrl = curses.ascii.unctrl
+        self.assertEqual(unctrl('a'), 'a')
+        self.assertEqual(unctrl('A'), 'A')
+        self.assertEqual(unctrl(';'), ';')
+        self.assertEqual(unctrl(' '), ' ')
+        self.assertEqual(unctrl('\x7f'), '^?')
+        self.assertEqual(unctrl('\n'), '^J')
+        self.assertEqual(unctrl('\0'), '^@')
+        # Meta-bit characters
+        self.assertEqual(unctrl('\x8a'), '!^J')
+        self.assertEqual(unctrl('\xc1'), '!A')
 
 
 if __name__ == '__main__':
