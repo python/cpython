@@ -44,7 +44,7 @@ class TestCurses(unittest.TestCase):
     def setUpClass(cls):
         if not sys.__stdout__.isatty():
             # Temporary skip tests on non-tty
-            self.skip('sys.__stdout__ is not a tty')
+            raise unittest.SkipTest('sys.__stdout__ is not a tty')
             cls.tmp = tempfile.TemporaryFile()
             fd = cls.tmp.fileno()
         else:
