@@ -465,7 +465,7 @@ get_configured_value(wchar_t * key)
 }
 
 static INSTALLED_PYTHON *
-locate_python(wchar_t * wanted_ver)
+locate_python(wchar_t * wanted_ver, BOOL from_shebang)
 {
     static wchar_t config_key [] = { L"pythonX" };
     static wchar_t * last_char = &config_key[sizeof(config_key) /
@@ -497,10 +497,17 @@ locate_python(wchar_t * wanted_ver)
         configured_value = get_configured_value(config_key);
         if (configured_value)
             result = find_python_by_version(configured_value);
+        /* Not found a value yet - try by major version.
+         * If we're looking for an interpreter specified in a shebang line,
+         * we want to try Python 2 first, then Python 3 (for Unix and backward
+         * compatibility). If we're being called interactively, assume the user
+         * wants the latest version available, so try Python 3 first, then
+         * Python 2.
+         */
         if (result == NULL)
-            result = find_python_by_version(L"2");
+            result = find_python_by_version(from_shebang ? L"2" : L"3");
         if (result == NULL)
-            result = find_python_by_version(L"3");
+            result = find_python_by_version(from_shebang ? L"3" : L"2");
         debug(L"search for default Python found ");
         if (result) {
             debug(L"version %ls at '%ls'\n",
@@ -1094,7 +1101,7 @@ find_by_magic(unsigned short magic)
 
     for (mp = magic_values; mp->min; mp++) {
         if ((magic >= mp->min) && (magic <= mp->max)) {
-            result = locate_python(mp->version);
+            result = locate_python(mp->version, FALSE);
             if (result != NULL)
                 break;
         }
@@ -1279,7 +1286,7 @@ specification: '%ls'.\nIn the first line of the script, 'python' needs to be \
 followed by a valid version specifier.\nPlease check the documentation.",
                                   command);
                         /* TODO could call validate_version(command) */
-                        ip = locate_python(command);
+                        ip = locate_python(command, TRUE);
                         if (ip == NULL) {
                             error(RC_NO_PYTHON, L"Requested Python version \
 (%ls) is not installed", command);
@@ -1485,7 +1492,7 @@ process(int argc, wchar_t ** argv)
         plen = wcslen(p);
         valid = (*p == L'-') && validate_version(&p[1]);
         if (valid) {
-            ip = locate_python(&p[1]);
+            ip = locate_python(&p[1], FALSE);
             if (ip == NULL)
                 error(RC_NO_PYTHON, L"Requested Python version (%ls) not \
 installed", &p[1]);
@@ -1512,7 +1519,7 @@ installed", &p[1]);
 
         /* If we didn't find one, look for the default Python */
         if (executable == NULL) {
-            ip = locate_python(L"");
+            ip = locate_python(L"", FALSE);
             if (ip == NULL)
                 error(RC_NO_PYTHON, L"Can't find a default Python.");
             executable = ip->executable;
