@@ -565,7 +565,7 @@ Library
 IDLE
 ----
 
-- Issue 15348: Stop the debugger engine (normally in a user process)
+- Issue #15348: Stop the debugger engine (normally in a user process)
   before closing the debugger window (running in the IDLE process).
   This prevents the RuntimeErrors that were being caught and ignored.
 
@@ -662,7 +662,7 @@ IDLE
 - Issue #23672: Allow Idle to edit and run files with astral chars in name.
   Patch by Mohd Sanad Zaki Rizvi.
 
-- Issue 24745: Idle editor default font. Switch from Courier to
+- Issue #24745: Idle editor default font. Switch from Courier to
   platform-sensitive TkFixedFont.  This should not affect current customized
   font selections.  If there is a problem, edit $HOME/.idlerc/config-main.cfg
   and remove 'fontxxx' entries from [Editor Window].  Patch by Mark Roseman.
@@ -936,7 +936,7 @@ Library
 - Issue #23016: A warning no longer produces an AttributeError when sys.stderr
   is None.
 
-- Issue #21032. Fixed socket leak if HTTPConnection.getresponse() fails.
+- Issue #21032: Fixed socket leak if HTTPConnection.getresponse() fails.
   Original patch by Martin Panter.
 
 - Issue #22609: Constructors and update methods of mapping classes in the
@@ -2493,7 +2493,7 @@ Library
 - Issue #16601: Restarting iteration over tarfile no more continues from where
   it left off.  Patch by Michael Birtwell.
 
-- Issue 16584: in filecomp._cmp, catch IOError as well as os.error.
+- Issue #16584: in filecomp._cmp, catch IOError as well as os.error.
   Patch by Till Maas.
 
 - Issue #17926: Fix dbm.__contains__ on 64-bit big-endian machines.
@@ -2663,7 +2663,7 @@ Tests
 Documentation
 -------------
 
-- Issue 17538: Document XML vulnerabilties
+- Issue #17538: Document XML vulnerabilties
 
 
 What's New in Python 2.7.4 release candidate 1
@@ -4247,7 +4247,7 @@ Extension Modules
 IDLE
 ----
 
-- Issue #964437 Make IDLE help window non-modal.
+- Issue #964437: Make IDLE help window non-modal.
   Patch by Guilherme Polo and Roger Serwy.
 
 - Issue #13933: IDLE auto-complete did not work with some imported
@@ -4720,7 +4720,7 @@ Library
 
 - Subclasses of collections.OrderedDict now work correctly with __missing__.
 
-- Issue #10753 - Characters ';', '=' and ',' in the PATH_INFO environment
+- Issue #10753: Characters ';', '=' and ',' in the PATH_INFO environment
   variable won't be quoted when the URI is constructed by the wsgiref.util 's
   request_uri method. According to RFC 3986, these characters can be a part of
   params in PATH component of URI and need not be quoted.
@@ -4850,7 +4850,7 @@ IDLE
 - Issue #4676: <Home> toggle failing on Tk 8.5, causing IDLE exits and
   strange selection behavior.  Improve selection extension behaviour.
 
-- Issue #3851 <Home> toggle non-functional when NumLock set on Windows.
+- Issue #3851: <Home> toggle non-functional when NumLock set on Windows.
 
 Build
 -----
@@ -5279,10 +5279,10 @@ Library
 
 - Issue #6869: Fix a refcount problem in the _ctypes extension.
 
-- Issue5504 - ctypes should now work with systems where mmap can't be
+- Issue #5504: ctypes should now work with systems where mmap can't be
   PROT_WRITE and PROT_EXEC.
 
-- Fix Issue8280 - urllib2's Request method will remove fragements in the url.
+- Issue #8280: urllib2's Request method will remove fragements in the url.
   This is how it is supposed to work, wget and curl do the same.  Previous
   behavior was wrong.
 
@@ -5634,7 +5634,7 @@ Library
 Documentation
 -------------
 
-- Issues #8909: Added the size of the bitmap used in the installer created by
+- Issue #8909: Added the size of the bitmap used in the installer created by
   distutils' bdist_wininst. Patch by Anatoly Techtonik.
 
 Misc
@@ -10600,7 +10600,7 @@ Library
 - Doctest now returns results as a named tuple for readability:
       (0, 7) --> TestResults(failed=0, attempted=7)
 
-- Issue #846388:q re.match is interruptible now, which is particularly
+- Issue #846388: re.match is interruptible now, which is particularly
   good for long regular expression matches.
 
 - Patch #1137: allow setting buffer_size attribute on pyexpat Parser
