@@ -187,7 +187,7 @@ Library
 
 - Issue #15777: Fix a refleak in _posixsubprocess.
 
-- Issue ##665194: Update `email.utils.localtime` to use datetime.astimezone and
+- Issue #665194: Update `email.utils.localtime` to use datetime.astimezone and
   correctly handle historic changes in UTC offsets.
 
 - Issue #15199: Fix JavaScript's default MIME type to application/javascript.
@@ -782,7 +782,7 @@ Library
 - Issue #15008: Implement PEP 362 "Signature Objects".
   Patch by Yury Selivanov.
 
-- Issue: #15138: base64.urlsafe_{en,de}code() are now 3-4x faster.
+- Issue #15138: base64.urlsafe_{en,de}code() are now 3-4x faster.
 
 - Issue #444582: Add shutil.which, for finding programs on the system path.
   Original patch by Erik Demaine, with later iterations by Jan Killian
@@ -2482,11 +2482,11 @@ Library
 - Issue #13591: A bug in importlib has been fixed that caused import_module
   to load a module twice.
 
-- Issue #13449 sched.scheduler.run() method has a new "blocking" parameter which
+- Issue #13449: sched.scheduler.run() method has a new "blocking" parameter which
   when set to False makes run() execute the scheduled events due to expire
   soonest (if any) and then return.  Patch by Giampaolo Rodolà.
 
-- Issue #8684 sched.scheduler class can be safely used in multi-threaded
+- Issue #8684: sched.scheduler class can be safely used in multi-threaded
   environments.  Patch by Josiah Carlson and Giampaolo Rodolà.
 
 - Alias resource.error to OSError ala PEP 3151.
@@ -9822,7 +9822,7 @@ Core and Builtins
   the recursion limit checking code, due to bogus handling of recursion
   limit when USE_STACKCHEK was enabled.
 
-- Issue 3639: The _warnings module could segfault the interpreter when
+- Issue #3639: The _warnings module could segfault the interpreter when
   unexpected types were passed in as arguments.
 
 - Issue #3712: The memoryview object had a reference leak and didn't support
@@ -9901,14 +9901,14 @@ Library
   It is now maintained outside of the standard library at
   http://www.jcea.es/programacion/pybsddb.htm.
 
-- Issue 600362:  Relocated parse_qs() and parse_qsl(), from the cgi module
+- Issue #600362:  Relocated parse_qs() and parse_qsl(), from the cgi module
   to the urlparse one.  Added a DeprecationWarning in the old module, it
   will be deprecated in the future.
 
 - Issue #3719: platform.architecture() fails if there are spaces in the
   path to the Python binary.
 
-- Issue 3602: As part of the merge of r66135, make the parameters on
+- Issue #3602: As part of the merge of r66135, make the parameters on
   warnings.catch_warnings() keyword-only. Also remove a DeprecationWarning.
 
 - The deprecation warnings for the camelCase threading API names were removed.

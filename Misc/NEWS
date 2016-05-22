@@ -781,7 +781,7 @@ Library
 
 - Issue #25111: Fixed comparison of traceback.FrameSummary.
 
-- Issue #25262. Added support for BINBYTES8 opcode in Python implementation of
+- Issue #25262: Added support for BINBYTES8 opcode in Python implementation of
   unpickler.  Highest 32 bits of 64-bit size for BINUNICODE8 and BINBYTES8
   opcodes no longer silently ignored on 32-bit platforms in C implementation.
 
@@ -906,7 +906,7 @@ Library
 IDLE
 ----
 
-- Issue 15348: Stop the debugger engine (normally in a user process)
+- Issue #15348: Stop the debugger engine (normally in a user process)
   before closing the debugger window (running in the IDLE process).
   This prevents the RuntimeErrors that were being caught and ignored.
 
@@ -2754,7 +2754,7 @@ Library
 
 - Issue #21971: Update turtledemo doc and add module to the index.
 
-- Issue #21032. Fixed socket leak if HTTPConnection.getresponse() fails.
+- Issue #21032: Fixed socket leak if HTTPConnection.getresponse() fails.
   Original patch by Martin Panter.
 
 - Issue #22407: Deprecated the use of re.LOCALE flag with str patterns or
