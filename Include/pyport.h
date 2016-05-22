@@ -897,4 +897,8 @@ extern _invalid_parameter_handler _Py_silent_invalid_parameter_handler;
 #endif /* _MSC_VER >= 1900 */
 #endif /* Py_BUILD_CORE */
 
+#ifdef __ANDROID__
+#include <android/api-level.h>
+#endif
+
 #endif /* Py_PYPORT_H */
