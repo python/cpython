@@ -62,7 +62,16 @@ Summary -- Release highlights
 .. This section singles out the most important changes in Python 3.6.
    Brevity is key.
 
+New syntax features:
+
 * PEP 498: :ref:`Formatted string literals <whatsnew-fstrings>`
+
+Windows improvements:
+
+* The ``py.exe`` launcher, when used interactively, no longer prefers
+  Python 2 over Python 3 when the user doesn't specify a version (via
+  command line arguments or a config file).  Handling of shebang lines
+  remains unchanged - "python" refers to Python 2 in that case.
 
 .. PEP-sized items next.
 
