@@ -730,7 +730,7 @@ class LargeMmapTests(unittest.TestCase):
             f.seek(num_zeroes)
             f.write(tail)
             f.flush()
-        except (OSError, OverflowError):
+        except (OSError, OverflowError, ValueError):
             try:
                 f.close()
             except (OSError, OverflowError):
