@@ -886,23 +886,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 /* Import the static jump table */
 #include "opcode_targets.h"
 
-/* This macro is used when several opcodes defer to the same implementation
-   (e.g. SETUP_LOOP, SETUP_FINALLY) */
-#define TARGET_WITH_IMPL(op, impl) \
-    TARGET_##op: \
-        opcode = op; \
-        if (HAS_ARG(op)) \
-            oparg = NEXTARG(); \
-    case op: \
-        goto impl; \
-
 #define TARGET(op) \
     TARGET_##op: \
-        opcode = op; \
-        if (HAS_ARG(op)) \
-            oparg = NEXTARG(); \
     case op:
-
 
 #define DISPATCH() \
     { \
@@ -917,7 +903,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     { \
         if (!lltrace && !_Py_TracingPossible) { \
             f->f_lasti = INSTR_OFFSET(); \
-            goto *opcode_targets[*next_instr++]; \
+            opcode = NEXTOP(); \
+            oparg = NEXTARG(); \
+            goto *opcode_targets[opcode]; \
         } \
         goto fast_next_opcode; \
     }
@@ -926,7 +914,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     { \
         if (!_Py_TracingPossible) { \
             f->f_lasti = INSTR_OFFSET(); \
-            goto *opcode_targets[*next_instr++]; \
+            opcode = NEXTOP(); \
+            oparg = NEXTARG(); \
+            goto *opcode_targets[opcode]; \
         } \
         goto fast_next_opcode; \
     }
@@ -935,10 +925,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #else
 #define TARGET(op) \
     case op:
-#define TARGET_WITH_IMPL(op, impl) \
-    /* silence compiler warnings about `impl` unused */ \
-    if (0) goto impl; \
-    case op:
+
 #define DISPATCH() continue
 #define FAST_DISPATCH() goto fast_next_opcode
 #endif
@@ -995,9 +982,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 /* Code access macros */
 
 #define INSTR_OFFSET()  ((int)(next_instr - first_instr))
-#define NEXTOP()        (*next_instr++)
-#define NEXTARG()       (next_instr += 2, (next_instr[-1]<<8) + next_instr[-2])
-#define PEEKARG()       ((next_instr[2]<<8) + next_instr[1])
+#define NEXTOP()        (next_instr+=2, next_instr[-2])
+#define NEXTARG()       (next_instr[-1])
+#define PEEKARG()       (next_instr[1])
 #define JUMPTO(x)       (next_instr = first_instr + (x))
 #define JUMPBY(x)       (next_instr += (x))
 
@@ -1012,10 +999,10 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     processor's own internal branch predication has a high likelihood of
     success, resulting in a nearly zero-overhead transition to the
     next opcode.  A successful prediction saves a trip through the eval-loop
-    including its two unpredictable branches, the HAS_ARG test and the
-    switch-case.  Combined with the processor's internal branch prediction,
-    a successful PREDICT has the effect of making the two opcodes run as if
-    they were a single new opcode with the bodies combined.
+    including its unpredictable switch-case branch.  Combined with the
+    processor's internal branch prediction, a successful PREDICT has the
+    effect of making the two opcodes run as if they were a single new opcode
+    with the bodies combined.
 
     If collecting opcode statistics, your choices are to either keep the
     predictions turned-on and interpret the results as if some opcodes
@@ -1030,13 +1017,18 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 #if defined(DYNAMIC_EXECUTION_PROFILE) || USE_COMPUTED_GOTOS
 #define PREDICT(op)             if (0) goto PRED_##op
-#define PREDICTED(op)           PRED_##op:
-#define PREDICTED_WITH_ARG(op)  PRED_##op:
 #else
-#define PREDICT(op)             if (*next_instr == op) goto PRED_##op
-#define PREDICTED(op)           PRED_##op: next_instr++
-#define PREDICTED_WITH_ARG(op)  PRED_##op: oparg = PEEKARG(); next_instr += 3
+#define PREDICT(op) \
+    do{ \
+        if (*next_instr == op){ \
+            opcode = op; \
+            oparg = PEEKARG(); \
+            next_instr += 2; \
+            goto PRED_##op; \
+        } \
+    } while(0)
 #endif
+#define PREDICTED(op)           PRED_##op:
 
 
 /* Stack manipulation macros */
@@ -1100,7 +1092,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     }
 
 #define UNWIND_EXCEPT_HANDLER(b) \
-    { \
+    do { \
         PyObject *type, *value, *traceback; \
         assert(STACK_LEVEL() >= (b)->b_level + 3); \
         while (STACK_LEVEL() > (b)->b_level + 3) { \
@@ -1116,7 +1108,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         Py_XDECREF(type); \
         Py_XDECREF(value); \
         Py_XDECREF(traceback); \
-    }
+    } while(0)
 
 /* Start of code */
 
@@ -1166,15 +1158,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     fastlocals = f->f_localsplus;
     freevars = f->f_localsplus + co->co_nlocals;
     first_instr = (unsigned char*) PyBytes_AS_STRING(co->co_code);
-    /* An explanation is in order for the next line.
+    /*
+       f->f_lasti refers to the index of the last instruction,
+       unless it's -1 in which case next_instr should be first_instr.
 
-       f->f_lasti now refers to the index of the last instruction
-       executed.  You might think this was obvious from the name, but
-       this wasn't always true before 2.3!  PyFrame_New now sets
-       f->f_lasti to -1 (i.e. the index *before* the first instruction)
-       and YIELD_VALUE doesn't fiddle with f_lasti any more.  So this
-       does work.  Promise.
-       YIELD_FROM sets f_lasti to itself, in order to repeated yield
+       YIELD_FROM sets f_lasti to itself, in order to repeatedly yield
        multiple values.
 
        When the PREDICT() macros are enabled, some opcode pairs follow in
@@ -1183,9 +1171,12 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
        were a single new opcode; accordingly,f->f_lasti will point to
        the first code in the pair (for instance, GET_ITER followed by
        FOR_ITER is effectively a single opcode and f->f_lasti will point
-       at to the beginning of the combined pair.)
+       to the beginning of the combined pair.)
     */
-    next_instr = first_instr + f->f_lasti + 1;
+    next_instr = first_instr;
+    if (f->f_lasti >= 0) {
+        next_instr += f->f_lasti + 2;
+    }
     stack_pointer = f->f_stacktop;
     assert(stack_pointer != NULL);
     f->f_stacktop = NULL;       /* remains NULL unless yield suspends frame */
@@ -1323,10 +1314,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         /* Extract opcode and argument */
 
         opcode = NEXTOP();
-        oparg = 0;   /* allows oparg to be stored in a register because
-            it doesn't have to be remembered across a full loop */
-        if (HAS_ARG(opcode))
-            oparg = NEXTARG();
+        oparg = NEXTARG();
     dispatch_opcode:
 #ifdef DYNAMIC_EXECUTION_PROFILE
 #ifdef DXPAIRS
@@ -1384,7 +1372,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             FAST_DISPATCH();
         }
 
-        PREDICTED_WITH_ARG(STORE_FAST);
+        PREDICTED(STORE_FAST);
         TARGET(STORE_FAST) {
             PyObject *value = POP();
             SETLOCAL(oparg, value);
@@ -2075,7 +2063,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             f->f_stacktop = stack_pointer;
             why = WHY_YIELD;
             /* and repeat... */
-            f->f_lasti--;
+            f->f_lasti -= 2;
             goto fast_yield;
         }
 
@@ -2213,7 +2201,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        PREDICTED_WITH_ARG(UNPACK_SEQUENCE);
+        PREDICTED(UNPACK_SEQUENCE);
         TARGET(UNPACK_SEQUENCE) {
             PyObject *seq = POP(), *item, **items;
             if (PyTuple_CheckExact(seq) &&
@@ -2511,9 +2499,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        TARGET_WITH_IMPL(BUILD_TUPLE_UNPACK, _build_list_unpack)
-        TARGET(BUILD_LIST_UNPACK)
-        _build_list_unpack: {
+        TARGET(BUILD_TUPLE_UNPACK)
+        TARGET(BUILD_LIST_UNPACK) {
             int convert_to_tuple = opcode == BUILD_TUPLE_UNPACK;
             int i;
             PyObject *sum = PyList_New(0);
@@ -2610,9 +2597,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        TARGET_WITH_IMPL(BUILD_MAP_UNPACK_WITH_CALL, _build_map_unpack)
-        TARGET(BUILD_MAP_UNPACK)
-        _build_map_unpack: {
+        TARGET(BUILD_MAP_UNPACK_WITH_CALL)
+        TARGET(BUILD_MAP_UNPACK) {
             int with_call = opcode == BUILD_MAP_UNPACK_WITH_CALL;
             int num_maps;
             int function_location;
@@ -2819,7 +2805,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             FAST_DISPATCH();
         }
 
-        PREDICTED_WITH_ARG(POP_JUMP_IF_FALSE);
+        PREDICTED(POP_JUMP_IF_FALSE);
         TARGET(POP_JUMP_IF_FALSE) {
             PyObject *cond = POP();
             int err;
@@ -2843,7 +2829,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        PREDICTED_WITH_ARG(POP_JUMP_IF_TRUE);
+        PREDICTED(POP_JUMP_IF_TRUE);
         TARGET(POP_JUMP_IF_TRUE) {
             PyObject *cond = POP();
             int err;
@@ -2920,7 +2906,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        PREDICTED_WITH_ARG(JUMP_ABSOLUTE);
+        PREDICTED(JUMP_ABSOLUTE);
         TARGET(JUMP_ABSOLUTE) {
             JUMPTO(oparg);
 #if FAST_LOOPS
@@ -2977,7 +2963,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        PREDICTED_WITH_ARG(FOR_ITER);
+        PREDICTED(FOR_ITER);
         TARGET(FOR_ITER) {
             /* before: [iter]; after: [iter, iter()] *or* [] */
             PyObject *iter = TOP();
@@ -3015,10 +3001,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             goto fast_block_end;
         }
 
-        TARGET_WITH_IMPL(SETUP_LOOP, _setup_finally)
-        TARGET_WITH_IMPL(SETUP_EXCEPT, _setup_finally)
-        TARGET(SETUP_FINALLY)
-        _setup_finally: {
+        TARGET(SETUP_LOOP)
+        TARGET(SETUP_EXCEPT)
+        TARGET(SETUP_FINALLY) {
             /* NOTE: If you add any new block-setup opcodes that
                are not try/except/finally handlers, you may need
                to update the PyGen_NeedsFinalizing() function.
@@ -3213,10 +3198,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        TARGET_WITH_IMPL(CALL_FUNCTION_VAR, _call_function_var_kw)
-        TARGET_WITH_IMPL(CALL_FUNCTION_KW, _call_function_var_kw)
-        TARGET(CALL_FUNCTION_VAR_KW)
-        _call_function_var_kw: {
+        TARGET(CALL_FUNCTION_VAR)
+        TARGET(CALL_FUNCTION_KW)
+        TARGET(CALL_FUNCTION_VAR_KW) {
             int na = oparg & 0xff;
             int nk = (oparg>>8) & 0xff;
             int flags = (opcode - CALL_FUNCTION) & 3;
@@ -3258,9 +3242,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
-        TARGET_WITH_IMPL(MAKE_CLOSURE, _make_function)
-        TARGET(MAKE_FUNCTION)
-        _make_function: {
+        TARGET(MAKE_CLOSURE)
+        TARGET(MAKE_FUNCTION) {
             int posdefaults = oparg & 0xff;
             int kwdefaults = (oparg>>8) & 0xff;
             int num_annotations = (oparg >> 16) & 0x7fff;
@@ -3450,7 +3433,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         TARGET(EXTENDED_ARG) {
             opcode = NEXTOP();
-            oparg = oparg<<16 | NEXTARG();
+            oparg = oparg<<8 | NEXTARG();
             goto dispatch_opcode;
         }
 

@@ -189,7 +189,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
     memset(blockstack, '\0', sizeof(blockstack));
     memset(in_finally, '\0', sizeof(in_finally));
     blockstack_top = 0;
-    for (addr = 0; addr < code_len; addr++) {
+    for (addr = 0; addr < code_len; addr += 2) {
         unsigned char op = code[addr];
         switch (op) {
         case SETUP_LOOP:
@@ -251,10 +251,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
                 }
             }
         }
-
-        if (op >= HAVE_ARGUMENT) {
-            addr += 2;
-        }
     }
 
     /* Verify that the blockstack tracking code didn't get lost. */
@@ -277,7 +273,7 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
      * can tell whether the jump goes into any blocks without coming out
      * again - in that case we raise an exception below. */
     delta_iblock = 0;
-    for (addr = min_addr; addr < max_addr; addr++) {
+    for (addr = min_addr; addr < max_addr; addr += 2) {
         unsigned char op = code[addr];
         switch (op) {
         case SETUP_LOOP:
@@ -294,10 +290,6 @@ frame_setlineno(PyFrameObject *f, PyObject* p_new_lineno)
         }
 
         min_delta_iblock = Py_MIN(min_delta_iblock, delta_iblock);
-
-        if (op >= HAVE_ARGUMENT) {
-            addr += 2;
-        }
     }
 
     /* Derive the absolute iblock values from the deltas. */
