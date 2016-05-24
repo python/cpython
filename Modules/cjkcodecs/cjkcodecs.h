@@ -325,22 +325,26 @@ find_pairencmap(ucs2_t body, ucs2_t modifier,
     min = 0;
     max = haystacksize;
 
-    for (pos = haystacksize >> 1; min != max; pos = (min + max) >> 1)
+    for (pos = haystacksize >> 1; min != max; pos = (min + max) >> 1) {
         if (value < haystack[pos].uniseq) {
-            if (max == pos) break;
-            else max = pos;
+            if (max != pos) {
+                max = pos;
+                continue;
+            }
         }
         else if (value > haystack[pos].uniseq) {
-            if (min == pos) break;
-            else min = pos;
+            if (min != pos) {
+                min = pos;
+                continue;
+            }
         }
-        else
-            break;
+        break;
+    }
 
-        if (value == haystack[pos].uniseq)
-            return haystack[pos].code;
-        else
-            return DBCINV;
+    if (value == haystack[pos].uniseq) {
+        return haystack[pos].code;
+    }
+    return DBCINV;
 }
 #endif
 
