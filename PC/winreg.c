@@ -563,6 +563,24 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 memcpy(*retDataBuf, &d, sizeof(DWORD));
             }
             break;
+        case REG_QWORD:
+          if (value != Py_None && !PyLong_Check(value))
+                return FALSE;
+            *retDataBuf = (BYTE *)PyMem_NEW(DWORD64, 1);
+            if (*retDataBuf==NULL){
+                PyErr_NoMemory();
+                return FALSE;
+            }
+            *retDataSize = sizeof(DWORD64);
+            if (value == Py_None) {
+                DWORD64 zero = 0;
+                memcpy(*retDataBuf, &zero, sizeof(DWORD64));
+            }
+            else {
+                DWORD64 d = PyLong_AsUnsignedLongLong(value);
+                memcpy(*retDataBuf, &d, sizeof(DWORD64));
+            }
+            break;
         case REG_SZ:
         case REG_EXPAND_SZ:
             {
@@ -690,7 +708,13 @@ Reg2Py(BYTE *retDataBuf, DWORD retDataSize, DWORD typ)
             if (retDataSize == 0)
                 obData = PyLong_FromUnsignedLong(0);
             else
-                obData = PyLong_FromUnsignedLong(*(int *)retDataBuf);
+                obData = PyLong_FromUnsignedLong(*(DWORD *)retDataBuf);
+            break;
+        case REG_QWORD:
+            if (retDataSize == 0)
+                obData = PyLong_FromUnsignedLongLong(0);
+            else
+                obData = PyLong_FromUnsignedLongLong(*(DWORD64 *)retDataBuf);
             break;
         case REG_SZ:
         case REG_EXPAND_SZ:
@@ -1599,7 +1623,7 @@ winreg.SetValueEx
         An integer that specifies the type of the data, one of:
         REG_BINARY -- Binary data in any form.
         REG_DWORD -- A 32-bit number.
-        REG_DWORD_LITTLE_ENDIAN -- A 32-bit number in little-endian format.
+        REG_DWORD_LITTLE_ENDIAN -- A 32-bit number in little-endian format. Equivalent to REG_DWORD
         REG_DWORD_BIG_ENDIAN -- A 32-bit number in big-endian format.
         REG_EXPAND_SZ -- A null-terminated string that contains unexpanded
                          references to environment variables (for example,
@@ -1609,6 +1633,8 @@ winreg.SetValueEx
                         by two null characters.  Note that Python handles
                         this termination automatically.
         REG_NONE -- No defined value type.
+        REG_QWORD -- A 64-bit number.
+        REG_QWORD_LITTLE_ENDIAN -- A 64-bit number in little-endian format. Equivalent to REG_QWORD.
         REG_RESOURCE_LIST -- A device-driver resource list.
         REG_SZ -- A null-terminated string.
     value: object
@@ -1918,6 +1944,8 @@ PyMODINIT_FUNC PyInit_winreg(void)
     ADD_INT(REG_DWORD);
     ADD_INT(REG_DWORD_LITTLE_ENDIAN);
     ADD_INT(REG_DWORD_BIG_ENDIAN);
+    ADD_INT(REG_QWORD);
+    ADD_INT(REG_QWORD_LITTLE_ENDIAN);
     ADD_INT(REG_LINK);
     ADD_INT(REG_MULTI_SZ);
     ADD_INT(REG_RESOURCE_LIST);
