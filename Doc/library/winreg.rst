@@ -633,7 +633,7 @@ For more information, see `Registry Value Types
 
 .. data:: REG_DWORD_LITTLE_ENDIAN
 
-   A 32-bit number in little-endian format.
+   A 32-bit number in little-endian format. Equivalent to :const:`REG_DWORD`.
 
 .. data:: REG_DWORD_BIG_ENDIAN
 
@@ -656,6 +656,14 @@ For more information, see `Registry Value Types
 .. data:: REG_NONE
 
    No defined value type.
+
+.. data:: REG_QWORD
+
+   A 64-bit number.
+
+.. data:: REG_QWORD_LITTLE_ENDIAN
+
+   A 64-bit number in little-endian format. Equivalent to :const:`REG_QWORD`.
 
 .. data:: REG_RESOURCE_LIST
 

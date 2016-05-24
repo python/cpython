@@ -421,6 +421,14 @@ The "Object allocated at" traceback is new and only displayed if
 :mod:`warnings` was already imported.
 
 
+winreg
+------
+
+The :func:`QueryValueEx <winreg.QueryValueEx>` function now returns
+integer values for registry type ``REG_QWORD``.
+(Contributed by Clement Rouault in :issue:`23026`.)
+
+
 zipfile
 -------
 
