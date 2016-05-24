@@ -19,6 +19,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #23026: winreg.QueryValueEx() now return an integer for REG_QWORD type.
+
 - Issue #26741: subprocess.Popen destructor now emits a ResourceWarning warning
   if the child process is still running.
 
