@@ -209,6 +209,7 @@
     <ClInclude Include="..\Python\condvar.h" />
     <ClInclude Include="..\Python\importdl.h" />
     <ClInclude Include="..\Python\thread_nt.h" />
+    <ClInclude Include="..\Python\wordcode_helpers.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Modules\_bisectmodule.c" />

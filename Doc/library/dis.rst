@@ -31,9 +31,9 @@ the following command can be used to display the disassembly of
 
    >>> dis.dis(myfunc)
      2           0 LOAD_GLOBAL              0 (len)
-                 3 LOAD_FAST                0 (alist)
-                 6 CALL_FUNCTION            1
-                 9 RETURN_VALUE
+                 2 LOAD_FAST                0 (alist)
+                 4 CALL_FUNCTION            1
+                 6 RETURN_VALUE
 
 (The "2" is a line number).
 
@@ -682,8 +682,7 @@ iterations of the loop.
    .. XXX explain the WHY stuff!
 
 
-All of the following opcodes expect arguments.  An argument is two bytes, with
-the more significant byte last.
+All of the following opcodes use their arguments.
 
 .. opcode:: STORE_NAME (namei)
 

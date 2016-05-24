@@ -29,6 +29,7 @@
 #include "code.h"
 #include "symtable.h"
 #include "opcode.h"
+#include "wordcode_helpers.h"
 
 #define DEFAULT_BLOCK_SIZE 16
 #define DEFAULT_BLOCKS 8
@@ -43,7 +44,6 @@
 struct instr {
     unsigned i_jabs : 1;
     unsigned i_jrel : 1;
-    unsigned i_hasarg : 1;
     unsigned char i_opcode;
     int i_oparg;
     struct basicblock_ *i_target; /* target block (if jump instruction) */
@@ -1080,13 +1080,14 @@ compiler_addop(struct compiler *c, int opcode)
     basicblock *b;
     struct instr *i;
     int off;
+    assert(!HAS_ARG(opcode));
     off = compiler_next_instr(c, c->u->u_curblock);
     if (off < 0)
         return 0;
     b = c->u->u_curblock;
     i = &b->b_instr[off];
     i->i_opcode = opcode;
-    i->i_hasarg = 0;
+    i->i_oparg = 0;
     if (opcode == RETURN_VALUE)
         b->b_return = 1;
     compiler_set_lineno(c, off);
@@ -1168,8 +1169,9 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
 
        Limit to 32-bit signed C int (rather than INT_MAX) for portability.
 
-       The argument of a concrete bytecode instruction is limited to 16-bit.
-       EXTENDED_ARG is used for 32-bit arguments. */
+       The argument of a concrete bytecode instruction is limited to 8-bit.
+       EXTENDED_ARG is used for 16, 24, and 32-bit arguments. */
+    assert(HAS_ARG(opcode));
     assert(0 <= oparg && oparg <= 2147483647);
 
     off = compiler_next_instr(c, c->u->u_curblock);
@@ -1178,7 +1180,6 @@ compiler_addop_i(struct compiler *c, int opcode, Py_ssize_t oparg)
     i = &c->u->u_curblock->b_instr[off];
     i->i_opcode = opcode;
     i->i_oparg = Py_SAFE_DOWNCAST(oparg, Py_ssize_t, int);
-    i->i_hasarg = 1;
     compiler_set_lineno(c, off);
     return 1;
 }
@@ -1189,6 +1190,7 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
     struct instr *i;
     int off;
 
+    assert(HAS_ARG(opcode));
     assert(b != NULL);
     off = compiler_next_instr(c, c->u->u_curblock);
     if (off < 0)
@@ -1196,7 +1198,6 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
     i = &c->u->u_curblock->b_instr[off];
     i->i_opcode = opcode;
     i->i_target = b;
-    i->i_hasarg = 1;
     if (absolute)
         i->i_jabs = 1;
     else
@@ -4397,18 +4398,6 @@ assemble_free(struct assembler *a)
         PyObject_Free(a->a_postorder);
 }
 
-/* Return the size of a basic block in bytes. */
-
-static int
-instrsize(struct instr *instr)
-{
-    if (!instr->i_hasarg)
-        return 1;               /* 1 byte for the opcode*/
-    if (instr->i_oparg > 0xffff)
-        return 6;               /* 1 (opcode) + 1 (EXTENDED_ARG opcode) + 2 (oparg) + 2(oparg extended) */
-    return 3;                   /* 1 (opcode) + 2 (oparg) */
-}
-
 static int
 blocksize(basicblock *b)
 {
@@ -4416,7 +4405,7 @@ blocksize(basicblock *b)
     int size = 0;
 
     for (i = 0; i < b->b_iused; i++)
-        size += instrsize(&b->b_instr[i]);
+        size += instrsize(b->b_instr[i].i_oparg);
     return size;
 }
 
@@ -4536,15 +4525,12 @@ assemble_lnotab(struct assembler *a, struct instr *i)
 static int
 assemble_emit(struct assembler *a, struct instr *i)
 {
-    int size, arg = 0, ext = 0;
+    int size, arg = 0;
     Py_ssize_t len = PyBytes_GET_SIZE(a->a_bytecode);
     char *code;
 
-    size = instrsize(i);
-    if (i->i_hasarg) {
-        arg = i->i_oparg;
-        ext = arg >> 16;
-    }
+    arg = i->i_oparg;
+    size = instrsize(arg);
     if (i->i_lineno && !assemble_lnotab(a, i))
         return 0;
     if (a->a_offset + size >= len) {
@@ -4555,19 +4541,7 @@ assemble_emit(struct assembler *a, struct instr *i)
     }
     code = PyBytes_AS_STRING(a->a_bytecode) + a->a_offset;
     a->a_offset += size;
-    if (size == 6) {
-        assert(i->i_hasarg);
-        *code++ = (char)EXTENDED_ARG;
-        *code++ = ext & 0xff;
-        *code++ = ext >> 8;
-        arg &= 0xffff;
-    }
-    *code++ = i->i_opcode;
-    if (i->i_hasarg) {
-        assert(size == 3 || size == 6);
-        *code++ = arg & 0xff;
-        *code++ = arg >> 8;
-    }
+    write_op_arg((unsigned char*)code, i->i_opcode, arg, size);
     return 1;
 }
 
@@ -4575,7 +4549,7 @@ static void
 assemble_jump_offsets(struct assembler *a, struct compiler *c)
 {
     basicblock *b;
-    int bsize, totsize, extended_arg_count = 0, last_extended_arg_count;
+    int bsize, totsize, extended_arg_recompile;
     int i;
 
     /* Compute the size of each block and fixup jump args.
@@ -4588,27 +4562,26 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
             b->b_offset = totsize;
             totsize += bsize;
         }
-        last_extended_arg_count = extended_arg_count;
-        extended_arg_count = 0;
+        extended_arg_recompile = 0;
         for (b = c->u->u_blocks; b != NULL; b = b->b_list) {
             bsize = b->b_offset;
             for (i = 0; i < b->b_iused; i++) {
                 struct instr *instr = &b->b_instr[i];
+                int isize = instrsize(instr->i_oparg);
                 /* Relative jumps are computed relative to
                    the instruction pointer after fetching
                    the jump instruction.
                 */
-                bsize += instrsize(instr);
-                if (instr->i_jabs)
+                bsize += isize;
+                if (instr->i_jabs || instr->i_jrel) {
                     instr->i_oparg = instr->i_target->b_offset;
-                else if (instr->i_jrel) {
-                    int delta = instr->i_target->b_offset - bsize;
-                    instr->i_oparg = delta;
+                    if (instr->i_jrel) {
+                        instr->i_oparg -= bsize;
+                    }
+                    if (instrsize(instr->i_oparg) != isize) {
+                        extended_arg_recompile = 1;
+                    }
                 }
-                else
-                    continue;
-                if (instr->i_oparg > 0xffff)
-                    extended_arg_count++;
             }
         }
 
@@ -4618,7 +4591,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
 
         The issue is that in the first loop blocksize() is called
         which calls instrsize() which requires i_oparg be set
-        appropriately.          There is a bootstrap problem because
+        appropriately. There is a bootstrap problem because
         i_oparg is calculated in the second loop above.
 
         So we loop until we stop seeing new EXTENDED_ARGs.
@@ -4626,7 +4599,7 @@ assemble_jump_offsets(struct assembler *a, struct compiler *c)
         ones in jump instructions.  So this should converge
         fairly quickly.
     */
-    } while (last_extended_arg_count != extended_arg_count);
+    } while (extended_arg_recompile);
 }
 
 static PyObject *
@@ -4772,9 +4745,9 @@ dump_instr(const struct instr *i)
     char arg[128];
 
     *arg = '\0';
-    if (i->i_hasarg)
+    if (HAS_ARG(i->i_opcode)) {
         sprintf(arg, "arg: %d ", i->i_oparg);
-
+    }
     fprintf(stderr, "line: %d, opcode: %d %s%s%s\n",
                     i->i_lineno, i->i_opcode, arg, jabs, jrel);
 }
