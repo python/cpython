@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 2
 Core and Builtins
 -----------------
 
+- Issue #26647: Python interpreter now uses 16-bit wordcode instead of bytecode.
+  Patch by Demur Rumed.
+
 - Issue #23275: Allow assigning to an empty target list in round brackets:
   () = iterable.
 

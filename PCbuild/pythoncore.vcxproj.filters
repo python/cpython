@@ -420,6 +420,9 @@
     <ClInclude Include="..\Python\thread_nt.h">
       <Filter>Python</Filter>
     </ClInclude>
+    <ClInclude Include="..\Python\wordcode_helpers.h">
+      <Filter>Python</Filter>
+    </ClInclude>
     <ClInclude Include="..\Python\condvar.h">
       <Filter>Python</Filter>
     </ClInclude>
