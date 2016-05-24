@@ -15,6 +15,7 @@ from typing import Generic
 from typing import cast
 from typing import get_type_hints
 from typing import no_type_check, no_type_check_decorator
+from typing import Type
 from typing import NamedTuple
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
@@ -1371,6 +1372,33 @@ class OtherABCTests(BaseTestCase):
         self.assertIsInstance(cm, typing.ContextManager)
         self.assertIsInstance(cm, typing.ContextManager[int])
         self.assertNotIsInstance(42, typing.ContextManager)
+
+
+class TypeTests(BaseTestCase):
+
+    def test_type_basic(self):
+
+        class User: pass
+        class BasicUser(User): pass
+        class ProUser(User): pass
+
+        def new_user(user_class: Type[User]) -> User:
+            return user_class()
+
+        joe = new_user(BasicUser)
+
+    def test_type_typevar(self):
+
+        class User: pass
+        class BasicUser(User): pass
+        class ProUser(User): pass
+
+        U = TypeVar('U', bound=User)
+
+        def new_user(user_class: Type[U]) -> U:
+            return user_class()
+
+        joe = new_user(BasicUser)
 
 
 class NamedTupleTests(BaseTestCase):
