@@ -661,9 +661,13 @@ For more information, see `Registry Value Types
 
    A 64-bit number.
 
+   .. versionadded:: 3.6
+
 .. data:: REG_QWORD_LITTLE_ENDIAN
 
    A 64-bit number in little-endian format. Equivalent to :const:`REG_QWORD`.
+
+   .. versionadded:: 3.6
 
 .. data:: REG_RESOURCE_LIST
 
