@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 2
 Core and Builtins
 -----------------
 
+- Issue #27097: Python interpreter is now about 7% faster due to optimized
+  instruction decoding.  Based on patch by Demur Rumed.
+
 - Issue #26647: Python interpreter now uses 16-bit wordcode instead of bytecode.
   Patch by Demur Rumed.
 

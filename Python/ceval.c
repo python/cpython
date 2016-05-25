@@ -144,7 +144,7 @@ static int import_all_from(PyObject *, PyObject *);
 static void format_exc_check_arg(PyObject *, const char *, PyObject *);
 static void format_exc_unbound(PyCodeObject *co, int oparg);
 static PyObject * unicode_concatenate(PyObject *, PyObject *,
-                                      PyFrameObject *, unsigned char *);
+                                      PyFrameObject *, const unsigned short *);
 static PyObject * special_lookup(PyObject *, _Py_Identifier *);
 
 #define NAME_ERROR_MSG \
@@ -800,7 +800,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     int lastopcode = 0;
 #endif
     PyObject **stack_pointer;  /* Next free slot in value stack */
-    unsigned char *next_instr;
+    const unsigned short *next_instr;
     int opcode;        /* Current opcode */
     int oparg;         /* Current opcode argument, if any */
     enum why_code why; /* Reason for block stack unwind */
@@ -818,7 +818,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
        time it is tested. */
     int instr_ub = -1, instr_lb = 0, instr_prev = -1;
 
-    unsigned char *first_instr;
+    const unsigned short *first_instr;
     PyObject *names;
     PyObject *consts;
 
@@ -903,8 +903,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     { \
         if (!lltrace && !_Py_TracingPossible) { \
             f->f_lasti = INSTR_OFFSET(); \
-            opcode = NEXTOP(); \
-            oparg = NEXTARG(); \
+            NEXTOPARG(); \
             goto *opcode_targets[opcode]; \
         } \
         goto fast_next_opcode; \
@@ -914,8 +913,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     { \
         if (!_Py_TracingPossible) { \
             f->f_lasti = INSTR_OFFSET(); \
-            opcode = NEXTOP(); \
-            oparg = NEXTARG(); \
+            NEXTOPARG(); \
             goto *opcode_targets[opcode]; \
         } \
         goto fast_next_opcode; \
@@ -981,12 +979,23 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
 /* Code access macros */
 
-#define INSTR_OFFSET()  ((int)(next_instr - first_instr))
-#define NEXTOP()        (next_instr+=2, next_instr[-2])
-#define NEXTARG()       (next_instr[-1])
-#define PEEKARG()       (next_instr[1])
-#define JUMPTO(x)       (next_instr = first_instr + (x))
-#define JUMPBY(x)       (next_instr += (x))
+#ifdef WORDS_BIGENDIAN
+    #define OPCODE(word) ((word) >> 8)
+    #define OPARG(word) ((word) & 255)
+#else
+    #define OPCODE(word) ((word) & 255)
+    #define OPARG(word) ((word) >> 8)
+#endif
+/* The integer overflow is checked by an assertion below. */
+#define INSTR_OFFSET()  (2*(int)(next_instr - first_instr))
+#define NEXTOPARG()  do { \
+        unsigned short word = *next_instr; \
+        opcode = OPCODE(word); \
+        oparg = OPARG(word); \
+        next_instr++; \
+    } while (0)
+#define JUMPTO(x)       (next_instr = first_instr + (x)/2)
+#define JUMPBY(x)       (next_instr += (x)/2)
 
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
@@ -1020,10 +1029,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 #else
 #define PREDICT(op) \
     do{ \
-        if (*next_instr == op){ \
-            opcode = op; \
-            oparg = PEEKARG(); \
-            next_instr += 2; \
+        unsigned short word = *next_instr; \
+        opcode = OPCODE(word); \
+        if (opcode == op){ \
+            oparg = OPARG(word); \
+            next_instr++; \
             goto PRED_##op; \
         } \
     } while(0)
@@ -1157,7 +1167,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     consts = co->co_consts;
     fastlocals = f->f_localsplus;
     freevars = f->f_localsplus + co->co_nlocals;
-    first_instr = (unsigned char*) PyBytes_AS_STRING(co->co_code);
+    assert(PyBytes_Check(co->co_code));
+    assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
+    assert(PyBytes_GET_SIZE(co->co_code) % 2 == 0);
+    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code), unsigned short));
+    first_instr = (unsigned short*) PyBytes_AS_STRING(co->co_code);
     /*
        f->f_lasti refers to the index of the last instruction,
        unless it's -1 in which case next_instr should be first_instr.
@@ -1175,7 +1189,8 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     */
     next_instr = first_instr;
     if (f->f_lasti >= 0) {
-        next_instr += f->f_lasti + 2;
+        assert(f->f_lasti % 2 == 0);
+        next_instr += f->f_lasti/2 + 1;
     }
     stack_pointer = f->f_stacktop;
     assert(stack_pointer != NULL);
@@ -1240,7 +1255,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
            Py_MakePendingCalls() above. */
 
         if (_Py_atomic_load_relaxed(&eval_breaker)) {
-            if (*next_instr == SETUP_FINALLY) {
+            if (OPCODE(*next_instr) == SETUP_FINALLY) {
                 /* Make the last opcode before
                    a try: finally: block uninterruptible. */
                 goto fast_next_opcode;
@@ -1313,8 +1328,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 
         /* Extract opcode and argument */
 
-        opcode = NEXTOP();
-        oparg = NEXTARG();
+        NEXTOPARG();
     dispatch_opcode:
 #ifdef DYNAMIC_EXECUTION_PROFILE
 #ifdef DXPAIRS
@@ -3432,8 +3446,9 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
         }
 
         TARGET(EXTENDED_ARG) {
-            opcode = NEXTOP();
-            oparg = oparg<<8 | NEXTARG();
+            int oldoparg = oparg;
+            NEXTOPARG();
+            oparg |= oldoparg << 8;
             goto dispatch_opcode;
         }
 
@@ -5288,7 +5303,7 @@ format_exc_unbound(PyCodeObject *co, int oparg)
 
 static PyObject *
 unicode_concatenate(PyObject *v, PyObject *w,
-                    PyFrameObject *f, unsigned char *next_instr)
+                    PyFrameObject *f, const unsigned short *next_instr)
 {
     PyObject *res;
     if (Py_REFCNT(v) == 2) {
@@ -5298,10 +5313,11 @@ unicode_concatenate(PyObject *v, PyObject *w,
          * 'variable'.  We try to delete the variable now to reduce
          * the refcnt to 1.
          */
-        switch (*next_instr) {
+        int opcode, oparg;
+        NEXTOPARG();
+        switch (opcode) {
         case STORE_FAST:
         {
-            int oparg = PEEKARG();
             PyObject **fastlocals = f->f_localsplus;
             if (GETLOCAL(oparg) == v)
                 SETLOCAL(oparg, NULL);
@@ -5311,7 +5327,7 @@ unicode_concatenate(PyObject *v, PyObject *w,
         {
             PyObject **freevars = (f->f_localsplus +
                                    f->f_code->co_nlocals);
-            PyObject *c = freevars[PEEKARG()];
+            PyObject *c = freevars[oparg];
             if (PyCell_GET(c) == v)
                 PyCell_Set(c, NULL);
             break;
@@ -5319,7 +5335,7 @@ unicode_concatenate(PyObject *v, PyObject *w,
         case STORE_NAME:
         {
             PyObject *names = f->f_code->co_names;
-            PyObject *name = GETITEM(names, PEEKARG());
+            PyObject *name = GETITEM(names, oparg);
             PyObject *locals = f->f_locals;
             if (PyDict_CheckExact(locals) &&
                 PyDict_GetItem(locals, name) == v) {
