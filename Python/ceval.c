@@ -1170,7 +1170,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
     assert(PyBytes_Check(co->co_code));
     assert(PyBytes_GET_SIZE(co->co_code) <= INT_MAX);
     assert(PyBytes_GET_SIZE(co->co_code) % 2 == 0);
-    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code), unsigned short));
+    assert(_Py_IS_ALIGNED(PyBytes_AS_STRING(co->co_code), 2));
     first_instr = (unsigned short*) PyBytes_AS_STRING(co->co_code);
     /*
        f->f_lasti refers to the index of the last instruction,
