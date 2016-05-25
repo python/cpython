@@ -549,7 +549,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
             if (value != Py_None && !PyLong_Check(value))
                 return FALSE;
             *retDataBuf = (BYTE *)PyMem_NEW(DWORD, 1);
-            if (*retDataBuf==NULL){
+            if (*retDataBuf == NULL){
                 PyErr_NoMemory();
                 return FALSE;
             }
@@ -567,7 +567,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
           if (value != Py_None && !PyLong_Check(value))
                 return FALSE;
             *retDataBuf = (BYTE *)PyMem_NEW(DWORD64, 1);
-            if (*retDataBuf==NULL){
+            if (*retDataBuf == NULL){
                 PyErr_NoMemory();
                 return FALSE;
             }
@@ -637,7 +637,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                 *retDataSize = size + 2;
                 *retDataBuf = (BYTE *)PyMem_NEW(char,
                                                 *retDataSize);
-                if (*retDataBuf==NULL){
+                if (*retDataBuf == NULL){
                     PyErr_NoMemory();
                     return FALSE;
                 }
@@ -683,7 +683,7 @@ Py2Reg(PyObject *value, DWORD typ, BYTE **retDataBuf, DWORD *retDataSize)
                     return FALSE;
 
                 *retDataBuf = (BYTE *)PyMem_NEW(char, view.len);
-                if (*retDataBuf==NULL){
+                if (*retDataBuf == NULL){
                     PyBuffer_Release(&view);
                     PyErr_NoMemory();
                     return FALSE;
