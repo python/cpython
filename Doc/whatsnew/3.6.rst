@@ -424,8 +424,7 @@ The "Object allocated at" traceback is new and only displayed if
 winreg
 ------
 
-The :func:`QueryValueEx <winreg.QueryValueEx>` function now returns
-integer values for registry type ``REG_QWORD``.
+Added the 64-bit integer type :data:`REG_QWORD <winreg.REG_QWORD>`.
 (Contributed by Clement Rouault in :issue:`23026`.)
 
 
