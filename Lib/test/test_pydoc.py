@@ -734,7 +734,7 @@ class PydocImportTest(PydocBaseTest):
             finally:
                 sys.path[:] = saved_paths
 
-    @unittest.skip('causes undesireable side-effects (#20128)')
+    @unittest.skip('causes undesirable side-effects (#20128)')
     def test_modules(self):
         # See Helper.listmodules().
         num_header_lines = 2
@@ -750,7 +750,7 @@ class PydocImportTest(PydocBaseTest):
 
         self.assertGreaterEqual(num_lines, expected)
 
-    @unittest.skip('causes undesireable side-effects (#20128)')
+    @unittest.skip('causes undesirable side-effects (#20128)')
     def test_modules_search(self):
         # See Helper.listmodules().
         expected = 'pydoc - '

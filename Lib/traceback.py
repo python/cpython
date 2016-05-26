@@ -136,7 +136,7 @@ def format_exception_only(etype, value):
     return list(TracebackException(etype, value, None).format_exception_only())
 
 
-# -- not offical API but folk probably use these two functions.
+# -- not official API but folk probably use these two functions.
 
 def _format_final_exc_line(etype, value):
     valuestr = _some_str(value)
@@ -418,13 +418,13 @@ class TracebackException:
     - :attr:`stack` A `StackSummary` representing the traceback.
     - :attr:`exc_type` The class of the original traceback.
     - :attr:`filename` For syntax errors - the filename where the error
-      occured.
+      occurred.
     - :attr:`lineno` For syntax errors - the linenumber where the error
-      occured.
+      occurred.
     - :attr:`text` For syntax errors - the text where the error
-      occured.
+      occurred.
     - :attr:`offset` For syntax errors - the offset into the text where the
-      error occured.
+      error occurred.
     - :attr:`msg` For syntax errors - the compiler error message.
     """
 

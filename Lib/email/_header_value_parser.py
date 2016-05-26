@@ -2872,7 +2872,7 @@ def parse_content_type_header(value):
         _find_mime_parameters(ctype, value)
         return ctype
     ctype.append(token)
-    # XXX: If we really want to follow the formal grammer we should make
+    # XXX: If we really want to follow the formal grammar we should make
     # mantype and subtype specialized TokenLists here.  Probably not worth it.
     if not value or value[0] != '/':
         ctype.defects.append(errors.InvalidHeaderDefect(

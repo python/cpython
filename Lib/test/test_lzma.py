@@ -1211,7 +1211,7 @@ class OpenTestCase(unittest.TestCase):
                 self.assertEqual(f.read(), uncompressed)
 
     def test_encoding_error_handler(self):
-        # Test wih non-default encoding error handler.
+        # Test with non-default encoding error handler.
         with BytesIO(lzma.compress(b"foo\xffbar")) as bio:
             with lzma.open(bio, "rt", encoding="ascii", errors="ignore") as f:
                 self.assertEqual(f.read(), "foobar")

@@ -68,7 +68,7 @@ class IncrementalDecoder(codecs.BufferedIncrementalDecoder):
         self.decoder = None
 
     def getstate(self):
-        # additonal state info from the base class must be None here,
+        # additional state info from the base class must be None here,
         # as it isn't passed along to the caller
         state = codecs.BufferedIncrementalDecoder.getstate(self)[0]
         # additional state info we pass to the caller:
