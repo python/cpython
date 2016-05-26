@@ -83,6 +83,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27114: Fix SSLContext._load_windows_store_certs fails with
+  PermissionError
+
 - Issue #14132: Fix urllib.request redirect handling when the target only has
   a query string.  Fix by Ján Janech.
 
