@@ -106,7 +106,15 @@ class FilterTests(BaseTest):
             message = "FilterTests.test_ignore_after_default"
             def f():
                 self.module.warn(message, UserWarning)
-            f()
+
+            with support.captured_stderr() as stderr:
+                f()
+            stderr = stderr.getvalue()
+            self.assertIn("UserWarning: FilterTests.test_ignore_after_default",
+                          stderr)
+            self.assertIn("self.module.warn(message, UserWarning)",
+                          stderr)
+
             self.module.filterwarnings("error", category=UserWarning)
             self.assertRaises(UserWarning, f)
 
