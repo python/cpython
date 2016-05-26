@@ -267,6 +267,53 @@ class FilterTests(BaseTest):
             self.module.warn_explicit(UserWarning("b"), None, "f.py", 42)
             self.assertEqual(str(w[-1].message), "b")
 
+    def test_filterwarnings_duplicate_filters(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            self.module.filterwarnings("error", category=UserWarning)
+            self.assertEqual(len(self.module.filters), 1)
+            self.module.filterwarnings("ignore", category=UserWarning)
+            self.module.filterwarnings("error", category=UserWarning)
+            self.assertEqual(
+                len(self.module.filters), 2,
+                "filterwarnings inserted duplicate filter"
+            )
+            self.assertEqual(
+                self.module.filters[0][0], "error",
+                "filterwarnings did not promote filter to "
+                "the beginning of list"
+            )
+
+    def test_simplefilter_duplicate_filters(self):
+        with original_warnings.catch_warnings(module=self.module):
+            self.module.resetwarnings()
+            self.module.simplefilter("error", category=UserWarning)
+            self.assertEqual(len(self.module.filters), 1)
+            self.module.simplefilter("ignore", category=UserWarning)
+            self.module.simplefilter("error", category=UserWarning)
+            self.assertEqual(
+                len(self.module.filters), 2,
+                "simplefilter inserted duplicate filter"
+            )
+            self.assertEqual(
+                self.module.filters[0][0], "error",
+                "simplefilter did not promote filter to the beginning of list"
+            )
+    def test_append_duplicate(self):
+        with original_warnings.catch_warnings(module=self.module,
+                record=True) as w:
+            self.module.resetwarnings()
+            self.module.simplefilter("ignore")
+            self.module.simplefilter("error", append=True)
+            self.module.simplefilter("ignore", append=True)
+            self.module.warn("test_append_duplicate", category=UserWarning)
+            self.assertEqual(len(self.module.filters), 2,
+                "simplefilter inserted duplicate filter"
+            )
+            self.assertEqual(len(w), 0,
+                "appended duplicate changed order of filters"
+            )
+
 class CFilterTests(FilterTests, unittest.TestCase):
     module = c_warnings
 
