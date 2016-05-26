@@ -139,7 +139,7 @@ class LineCacheTests(unittest.TestCase):
         self.assertEqual(
             True, linecache.lazycache(NONEXISTENT_FILENAME, globals()))
         self.assertEqual(1, len(linecache.cache[NONEXISTENT_FILENAME]))
-        # Note here that we're looking up a non existant filename with no
+        # Note here that we're looking up a nonexistent filename with no
         # globals: this would error if the lazy value wasn't resolved.
         self.assertEqual(lines, linecache.getlines(NONEXISTENT_FILENAME))
 

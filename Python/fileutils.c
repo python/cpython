@@ -176,7 +176,7 @@ check_force_ascii(void)
 #endif
 
 error:
-    /* if an error occured, force the ASCII encoding */
+    /* if an error occurred, force the ASCII encoding */
     return 1;
 }
 

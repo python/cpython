@@ -1506,7 +1506,7 @@ class TestSingleDispatch(unittest.TestCase):
                                  object])
 
         # MutableSequence below is registered directly on D. In other words, it
-        # preceeds MutableMapping which means single dispatch will always
+        # precedes MutableMapping which means single dispatch will always
         # choose MutableSequence here.
         class D(c.defaultdict):
             pass

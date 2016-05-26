@@ -344,7 +344,7 @@ markblocks(unsigned char *code, Py_ssize_t len)
    appear before MAKE_FUNCTION; in this case both opcodes are skipped.
    EXTENDED_ARG preceding any other opcode causes the optimizer to bail.
 
-   Optimizations are restricted to simple transformations occuring within a
+   Optimizations are restricted to simple transformations occurring within a
    single basic block.  All transformations keep the code size the same or
    smaller.  For those that reduce size, the gaps are initially filled with
    NOPs.  Later those NOPs are removed and the jump addresses retargeted in
