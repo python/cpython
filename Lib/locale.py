@@ -1835,7 +1835,7 @@ windows_locale = {
     0x1809: "en_IE", # English - Ireland
     0x1c09: "en_ZA", # English - South Africa
     0x2009: "en_JA", # English - Jamaica
-    0x2409: "en_CB", # English - Carribbean
+    0x2409: "en_CB", # English - Caribbean
     0x2809: "en_BZ", # English - Belize
     0x2c09: "en_TT", # English - Trinidad
     0x3009: "en_ZW", # English - Zimbabwe

@@ -159,7 +159,7 @@ class PlaySoundTest(unittest.TestCase):
             )
 
     def test_alias_fallback(self):
-        # In the absense of the ability to tell if a sound was actually
+        # In the absence of the ability to tell if a sound was actually
         # played, this test has two acceptable outcomes: success (no error,
         # sound was theoretically played; although as issue #19987 shows
         # a box without a soundcard can "succeed") or RuntimeError.  Any

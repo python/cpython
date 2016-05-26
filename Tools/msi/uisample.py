@@ -996,7 +996,7 @@ _Validation = [
 (u'CustomAction', u'Type', u'N', 1, 16383, None, None, None, None, u'The numeric custom action type, consisting of source location, code type, entry, option flags.'),
 (u'CustomAction', u'Action', u'N', None, None, None, None, u'Identifier', None, u'Primary key, name of action, normally appears in sequence table unless private use.'),
 (u'CustomAction', u'Source', u'Y', None, None, None, None, u'CustomSource', None, u'The table reference of the source of the code.'),
-(u'CustomAction', u'Target', u'Y', None, None, None, None, u'Formatted', None, u'Excecution parameter, depends on the type of custom action'),
+(u'CustomAction', u'Target', u'Y', None, None, None, None, u'Formatted', None, u'Execution parameter, depends on the type of custom action'),
 (u'DrLocator', u'Signature_', u'N', None, None, None, None, u'Identifier', None, u'The Signature_ represents a unique file signature and is also the foreign key in the Signature table.'),
 (u'DrLocator', u'Path', u'Y', None, None, None, None, u'AnyPath', None, u'The path on the user system. This is a either a subpath below the value of the Parent or a full path. The path may contain properties enclosed within [ ] that will be expanded.'),
 (u'DrLocator', u'Depth', u'Y', 0, 32767, None, None, None, None, u'The depth below the path to which the Signature_ is recursively searched. If absent, the depth is assumed to be 0.'),

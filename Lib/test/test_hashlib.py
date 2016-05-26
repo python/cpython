@@ -408,7 +408,7 @@ class KDFTests(unittest.TestCase):
 
     pbkdf2_results = {
         "sha1": [
-            # offical test vectors from RFC 6070
+            # official test vectors from RFC 6070
             (unhexlify('0c60c80f961f0e71f3a9b524af6012062fe037a6'), None),
             (unhexlify('ea6c014dc72d6f8ccd1ed92ace1d41f0d8de8957'), None),
             (unhexlify('4b007901b765489abead49d926f721d065a429c1'), None),

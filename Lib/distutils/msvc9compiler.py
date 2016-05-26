@@ -54,7 +54,7 @@ else:
 
 # A map keyed by get_platform() return values to values accepted by
 # 'vcvarsall.bat'.  Note a cross-compile may combine these (eg, 'x86_amd64' is
-# the param to cross-compile on x86 targetting amd64.)
+# the param to cross-compile on x86 targeting amd64.)
 PLAT_TO_VCVARS = {
     'win32' : 'x86',
     'win-amd64' : 'amd64',

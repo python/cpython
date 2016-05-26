@@ -197,7 +197,7 @@ days_in_month(int year, int month)
         return _days_in_month[month];
 }
 
-/* year, month -> number of days in year preceeding first day of month */
+/* year, month -> number of days in year preceding first day of month */
 static int
 days_before_month(int year, int month)
 {

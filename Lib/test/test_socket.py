@@ -86,7 +86,7 @@ class ThreadableTest:
         clientTearDown ()
 
     Any new test functions within the class must then define
-    tests in pairs, where the test name is preceeded with a
+    tests in pairs, where the test name is preceded with a
     '_' to indicate the client portion of the test. Ex:
 
         def testFoo(self):

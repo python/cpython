@@ -59,7 +59,7 @@ class Headers:
         Return None if the header is missing instead of raising an exception.
 
         Note that if the header appeared multiple times, the first exactly which
-        occurrance gets returned is undefined.  Use getall() to get all
+        occurrence gets returned is undefined.  Use getall() to get all
         the values matching a header field name.
         """
         return self.get(name)

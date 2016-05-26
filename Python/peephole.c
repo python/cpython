@@ -289,7 +289,7 @@ markblocks(unsigned char *code, Py_ssize_t len)
    allows us to avoid overflow and sign issues.  Likewise, it bails when
    the lineno table has complex encoding for gaps >= 255.
 
-   Optimizations are restricted to simple transformations occuring within a
+   Optimizations are restricted to simple transformations occurring within a
    single basic block.  All transformations keep the code size the same or
    smaller.  For those that reduce size, the gaps are initially filled with
    NOPs.  Later those NOPs are removed and the jump addresses retargeted in

@@ -1094,7 +1094,7 @@ class Queens:
 
         # For each square, compute a bit vector of the columns and
         # diagonals it covers, and for each row compute a function that
-        # generates the possiblities for the columns in that row.
+        # generates the possibilities for the columns in that row.
         self.rowgenerators = []
         for i in rangen:
             rowuses = [(1L << j) |                  # column ordinal

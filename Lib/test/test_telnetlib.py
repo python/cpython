@@ -248,8 +248,8 @@ class ReadTests(TestCase):
         func = getattr(telnet, func_name)
         self.assertRaises(EOFError, func)
 
-    # read_eager and read_very_eager make the same gaurantees
-    # (they behave differently but we only test the gaurantees)
+    # read_eager and read_very_eager make the same guarantees
+    # (they behave differently but we only test the guarantees)
     def test_read_very_eager_A(self):
         self._test_read_any_eager_A('read_very_eager')
     def test_read_very_eager_B(self):

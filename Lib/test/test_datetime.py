@@ -882,7 +882,7 @@ class TestDate(HarmlessMixedComparison, unittest.TestCase):
         #self.assertRaises(ValueError, t.strftime, "%#")
 
         #oh well, some systems just ignore those invalid ones.
-        #at least, excercise them to make sure that no crashes
+        #at least, exercise them to make sure that no crashes
         #are generated
         for f in ["%e", "%", "%#"]:
             try:
@@ -1992,7 +1992,7 @@ class TestTime(HarmlessMixedComparison, unittest.TestCase):
                                          hour_byte + base[1:])
 
 # A mixin for classes with a tzinfo= argument.  Subclasses must define
-# theclass as a class atribute, and theclass(1, 1, 1, tzinfo=whatever)
+# theclass as a class attribute, and theclass(1, 1, 1, tzinfo=whatever)
 # must be legit (which is true for time and datetime).
 class TZInfoBase:
 

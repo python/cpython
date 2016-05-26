@@ -132,7 +132,7 @@ class TestResult(object):
         self.skipped.append((test, reason))
 
     def addExpectedFailure(self, test, err):
-        """Called when an expected failure/error occured."""
+        """Called when an expected failure/error occurred."""
         self.expectedFailures.append(
             (test, self._exc_info_to_string(err, test)))
 

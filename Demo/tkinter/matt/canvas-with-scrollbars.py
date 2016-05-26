@@ -1,7 +1,7 @@
 from Tkinter import *
 
-# This example program creates a scroling canvas, and demonstrates
-# how to tie scrollbars and canvses together. The mechanism
+# This example program creates a scrolling canvas, and demonstrates
+# how to tie scrollbars and canvases together. The mechanism
 # is analogus for listboxes and other widgets with
 # "xscroll" and "yscroll" configuration options.
 

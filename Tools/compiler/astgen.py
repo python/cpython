@@ -1,7 +1,7 @@
 """Generate ast module from specification
 
 This script generates the ast module from a simple specification,
-which makes it easy to accomodate changes in the grammar.  This
+which makes it easy to accommodate changes in the grammar.  This
 approach would be quite reasonable if the grammar changed often.
 Instead, it is rather complex to generate the appropriate code.  And
 the Node interface has changed more often than the grammar.

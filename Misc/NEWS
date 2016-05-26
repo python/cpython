@@ -2970,7 +2970,7 @@ Library
 
 - Issue #17073: Fix some integer overflows in sqlite3 module.
 
-- Issue #6083: Fix multiple segmentation faults occured when PyArg_ParseTuple
+- Issue #6083: Fix multiple segmentation faults occurred when PyArg_ParseTuple
   parses nested mutating sequence.
 
 - Issue #5289: Fix ctypes.util.find_library on Solaris.

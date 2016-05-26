@@ -15887,7 +15887,7 @@ the first time it is imported.
 python parser.  Corresponding standard library modules token and symbol
 defines the numeric values of tokens and non-terminal symbols.
 
-* The posix module has aquired new functions setuid(), setgid(),
+* The posix module has acquired new functions setuid(), setgid(),
 execve(), and exec() has been renamed to execv().
 
 * The array module is extended with 8-byte object swaps, the 'i'
@@ -15901,7 +15901,7 @@ module can't be decoded by the new version.
 * For select.select(), a timeout (4th) argument of None means the same
 as leaving the timeout argument out.
 
-* Module strop (and hence standard library module string) has aquired
+* Module strop (and hence standard library module string) has acquired
 a new function: rindex().  Thanks to Amrit Prem!
 
 * Module regex defines a new function symcomp() which uses an extended
@@ -17047,7 +17047,7 @@ New features in 0.9.6:
   to give more useful results for negative operands
 - Changed/added range checks for long/plain integer shifts
 - Options found after "-c command" are now passed to the command in sys.argv
-  (note subtle incompatiblity with "python -c command -- -options"!)
+  (note subtle incompatibility with "python -c command -- -options"!)
 - Module stdwin is better protected against touching objects after they've
   been closed; menus can now also be closed explicitly
 - Stdwin now uses its own exception (stdwin.error)

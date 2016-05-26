@@ -3378,7 +3378,7 @@ fi
 #
 # SGI compilers allow the specification of the both the ABI and the
 # ISA on the command line.  Depending on the values of these switches,
-# different and often incompatable code will be generated.
+# different and often incompatible code will be generated.
 #
 # The SGI_ABI variable can be used to modify the CC and LDFLAGS and
 # thus supply support for various ABI/ISA combinations.  The MACHDEP

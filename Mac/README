@@ -54,7 +54,7 @@ OS X specific arguments to configure
   See the section _`Building and using a universal binary of Python on Mac OS X`
   for more information.
 
-* ``--with-univeral-archs=VALUE``
+* ``--with-universal-archs=VALUE``
 
   Specify the kind of universal binary that should be created. This option is 
   only valid when ``--enable-universalsdk`` is specified.

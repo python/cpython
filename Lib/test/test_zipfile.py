@@ -184,7 +184,7 @@ class TestsWithSourceFile(unittest.TestCase):
         for f in (TESTFN2, TemporaryFile(), StringIO()):
             self.zip_random_open_test(f, zipfile.ZIP_STORED)
 
-    def test_univeral_readaheads(self):
+    def test_universal_readaheads(self):
         f = StringIO()
 
         data = 'a\r\n' * 16 * 1024

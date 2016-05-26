@@ -1919,7 +1919,7 @@ PyOS_setsig(int sig, PyOS_sighandler_t handler)
 #endif
 }
 
-/* Deprecated C API functions still provided for binary compatiblity */
+/* Deprecated C API functions still provided for binary compatibility */
 
 #undef PyParser_SimpleParseFile
 PyAPI_FUNC(node *)

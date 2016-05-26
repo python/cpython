@@ -1273,7 +1273,7 @@ sharedinstall: sharedmods
 # the Makefile in Mac
 #
 #
-# This target is here for backward compatiblity, previous versions of Python
+# This target is here for backward compatibility, previous versions of Python
 # hadn't integrated framework installation in the normal install process.
 frameworkinstall: install
 
