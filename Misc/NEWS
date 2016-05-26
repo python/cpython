@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #18383: Avoid creating duplicate filters when using filterwarnings
+  and simplefilter.  Based on patch by Alex Shkop.
+
 - Issue #23026: winreg.QueryValueEx() now return an integer for REG_QWORD type.
 
 - Issue #26741: subprocess.Popen destructor now emits a ResourceWarning warning

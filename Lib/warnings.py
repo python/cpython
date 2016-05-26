@@ -129,13 +129,8 @@ def filterwarnings(action, message="", category=Warning, module="", lineno=0,
     assert isinstance(module, str), "module must be a string"
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
-    item = (action, re.compile(message, re.I), category,
-            re.compile(module), lineno)
-    if append:
-        filters.append(item)
-    else:
-        filters.insert(0, item)
-    _filters_mutated()
+    _add_filter(action, re.compile(message, re.I), category,
+            re.compile(module), lineno, append=append)
 
 def simplefilter(action, category=Warning, lineno=0, append=False):
     """Insert a simple entry into the list of warnings filters (at the front).
@@ -151,11 +146,20 @@ def simplefilter(action, category=Warning, lineno=0, append=False):
                       "once"), "invalid action: %r" % (action,)
     assert isinstance(lineno, int) and lineno >= 0, \
            "lineno must be an int >= 0"
-    item = (action, None, category, None, lineno)
-    if append:
-        filters.append(item)
-    else:
+    _add_filter(action, None, category, None, lineno, append=append)
+
+def _add_filter(*item, append):
+    # Remove possible duplicate filters, so new one will be placed
+    # in correct place. If append=True and duplicate exists, do nothing.
+    if not append:
+        try:
+            filters.remove(item)
+        except ValueError:
+            pass
         filters.insert(0, item)
+    else:
+        if item not in filters:
+            filters.append(item)
     _filters_mutated()
 
 def resetwarnings():
