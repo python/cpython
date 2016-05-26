@@ -145,6 +145,7 @@ from socket import socket, AF_INET, SOCK_STREAM, create_connection
 from socket import SOL_SOCKET, SO_TYPE
 import base64        # for DER-to-PEM translation
 import errno
+import warnings
 
 
 socket_error = OSError  # keep that public name in module namespace
@@ -405,11 +406,14 @@ class SSLContext(_SSLContext):
 
     def _load_windows_store_certs(self, storename, purpose):
         certs = bytearray()
-        for cert, encoding, trust in enum_certificates(storename):
-            # CA certs are never PKCS#7 encoded
-            if encoding == "x509_asn":
-                if trust is True or purpose.oid in trust:
-                    certs.extend(cert)
+        try:
+            for cert, encoding, trust in enum_certificates(storename):
+                # CA certs are never PKCS#7 encoded
+                if encoding == "x509_asn":
+                    if trust is True or purpose.oid in trust:
+                        certs.extend(cert)
+        except PermissionError:
+            warnings.warn("unable to enumerate Windows certificate store")
         if certs:
             self.load_verify_locations(cadata=certs)
         return certs

@@ -126,6 +126,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27114: Fix SSLContext._load_windows_store_certs fails with
+  PermissionError
+
 - Issue #18383: Avoid creating duplicate filters when using filterwarnings
   and simplefilter.  Based on patch by Alex Shkop.
 
