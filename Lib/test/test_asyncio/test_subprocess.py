@@ -407,7 +407,7 @@ class SubprocessMixin:
             transport, protocol = yield from create
             proc = transport.get_extra_info('subprocess')
 
-            # kill the process (but asyncio is not notified immediatly)
+            # kill the process (but asyncio is not notified immediately)
             proc.kill()
             proc.wait()
 

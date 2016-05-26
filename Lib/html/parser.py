@@ -143,7 +143,7 @@ class HTMLParser(_markupbase.ParserBase):
                     # or there's more text incoming.  If the latter is True,
                     # we can't pass the text to handle_data in case we have
                     # a charref cut in half at end.  Try to determine if
-                    # this is the case before proceding by looking for an
+                    # this is the case before proceeding by looking for an
                     # & near the end and see if it's followed by a space or ;.
                     amppos = rawdata.rfind('&', max(i, n-34))
                     if (amppos >= 0 and

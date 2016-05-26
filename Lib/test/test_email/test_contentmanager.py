@@ -621,7 +621,7 @@ class TestRawDataManager(TestEmailBase):
         self.assertEqual(m.get_content(), content)
 
     def test_set_application_octet_stream_with_8bit_cte(self):
-        # In 8bit mode, univeral line end logic applies.  It is up to the
+        # In 8bit mode, universal line end logic applies.  It is up to the
         # application to make sure the lines are short enough; we don't check.
         m = self._make_message()
         content = b'b\xFFgus\tcon\nt\rent\n' + b'z'*60 + b'\n'
