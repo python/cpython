@@ -1579,8 +1579,9 @@ class Generator(Iterator[T_co], Generic[T_co, T_contra, V_co],
 CT = TypeVar('CT', covariant=True, bound=type)
 
 
+# This is not a real generic class.  Don't use outside annotations.
 class Type(type, Generic[CT], extra=type):
-    """A generic type usable to annotate class objects.
+    """A special construct usable to annotate class objects.
 
     For example, suppose we have the following classes::
 
