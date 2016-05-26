@@ -287,7 +287,7 @@ def _get_instructions_bytes(code, varnames=None, names=None, constants=None,
         argrepr = ''
         if arg is not None:
             #  Set argval to the dereferenced value of the argument when
-            #  availabe, and argrepr to the string representation of argval.
+            #  available, and argrepr to the string representation of argval.
             #    _disassemble_bytes needs the string repr of the
             #    raw name index for LOAD_GLOBAL, LOAD_CONST, etc.
             argval = arg

@@ -824,7 +824,7 @@ def test_pdb_until_command_for_generator():
     """
 
 def test_pdb_next_command_in_generator_for_loop():
-    """The next command on returning from a generator controled by a for loop.
+    """The next command on returning from a generator controlled by a for loop.
 
     >>> def test_gen():
     ...     yield 0

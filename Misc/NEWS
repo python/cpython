@@ -2105,7 +2105,7 @@ Library
 
 - Issue #23704: collections.deque() objects now support methods for index(),
   insert(), and copy().  This allows deques to be registered as a
-  MutableSequence and it improves their substitutablity for lists.
+  MutableSequence and it improves their substitutability for lists.
 
 - Issue #23715: :func:`signal.sigwaitinfo` and :func:`signal.sigtimedwait` are
   now retried when interrupted by a signal not in the *sigset* parameter, if
@@ -7342,7 +7342,7 @@ Library
   internal XML encoding is not UTF-8 or US-ASCII.  It also now accepts bytes
   and strings larger than 2 GiB.
 
-- Issue #6083: Fix multiple segmentation faults occured when PyArg_ParseTuple
+- Issue #6083: Fix multiple segmentation faults occurred when PyArg_ParseTuple
   parses nested mutating sequence.
 
 - Issue #5289: Fix ctypes.util.find_library on Solaris.

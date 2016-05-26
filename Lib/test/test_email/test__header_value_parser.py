@@ -2498,7 +2498,7 @@ class Test_parse_mime_parameters(TestParserMixin, TestEmailBase):
         # Note that it is undefined what we should do for error recovery when
         # there are duplicate parameter names or duplicate parts in a split
         # part.  We choose to ignore all duplicate parameters after the first
-        # and to take duplicate or missing rfc 2231 parts in apperance order.
+        # and to take duplicate or missing rfc 2231 parts in appearance order.
         # This is backward compatible with get_param's behavior, but the
         # decisions are arbitrary.
 

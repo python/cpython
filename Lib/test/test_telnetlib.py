@@ -237,8 +237,8 @@ class ReadTests(ExpectAndReadTestCase):
         self.assertEqual(data, want)
 
     def test_read_eager(self):
-        # read_eager and read_very_eager make the same gaurantees
-        # (they behave differently but we only test the gaurantees)
+        # read_eager and read_very_eager make the same guarantees
+        # (they behave differently but we only test the guarantees)
         self._read_eager('read_eager')
         self._read_eager('read_very_eager')
         # NB -- we need to test the IAC block which is mentioned in the

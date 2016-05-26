@@ -1061,7 +1061,7 @@ class Thread:
         # Issue #18808: wait for the thread state to be gone.
         # At the end of the thread's life, after all knowledge of the thread
         # is removed from C data structures, C code releases our _tstate_lock.
-        # This method passes its arguments to _tstate_lock.aquire().
+        # This method passes its arguments to _tstate_lock.acquire().
         # If the lock is acquired, the C code is done, and self._stop() is
         # called.  That sets ._is_stopped to True, and ._tstate_lock to None.
         lock = self._tstate_lock
