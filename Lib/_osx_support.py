@@ -151,7 +151,7 @@ def _find_appropriate_compiler(_config_vars):
     #    can only be found inside Xcode.app if the "Command Line Tools"
     #    are not installed.
     #
-    #    Futhermore, the compiler that can be used varies between
+    #    Furthermore, the compiler that can be used varies between
     #    Xcode releases. Up to Xcode 4 it was possible to use 'gcc-4.2'
     #    as the compiler, after that 'clang' should be used because
     #    gcc-4.2 is either not present, or a copy of 'llvm-gcc' that

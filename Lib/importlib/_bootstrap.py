@@ -1043,7 +1043,7 @@ def _calc___package__(globals):
 def __import__(name, globals=None, locals=None, fromlist=(), level=0):
     """Import a module.
 
-    The 'globals' argument is used to infer where the import is occuring from
+    The 'globals' argument is used to infer where the import is occurring from
     to handle relative imports. The 'locals' argument is ignored. The
     'fromlist' argument specifies what should exist as attributes on the module
     being imported (e.g. ``from module import <fromlist>``).  The 'level'
