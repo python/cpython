@@ -100,7 +100,7 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
         def do_EXPLAINERROR(self):
             self.send_error(999, "Short Message",
-                            "This is a long \n explaination")
+                            "This is a long \n explanation")
 
         def do_CUSTOM(self):
             self.send_response(999)
