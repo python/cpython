@@ -2079,7 +2079,7 @@ Notes:
    Similar to ``%U`` and ``%W``, ``%V`` is only used in calculations when the
    day of the week and the ISO year (``%G``) are specified in a
    :meth:`strptime` format string. Also note that ``%G`` and ``%Y`` are not
-   interchangable.
+   interchangeable.
 
 .. rubric:: Footnotes
 

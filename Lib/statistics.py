@@ -430,9 +430,9 @@ def median_grouped(data, interval=1):
         L = float(x) - float(interval)/2
 
     # Uses bisection search to search for x in data with log(n) time complexity
-    # Find the position of leftmost occurence of x in data
+    # Find the position of leftmost occurrence of x in data
     l1 = _find_lteq(data, x)
-    # Find the position of rightmost occurence of x in data[l1...len(data)]
+    # Find the position of rightmost occurrence of x in data[l1...len(data)]
     # Assuming always l1 <= l2
     l2 = _find_rteq(data, l1, x)
     cf = l1

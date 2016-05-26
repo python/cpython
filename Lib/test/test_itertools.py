@@ -635,7 +635,7 @@ class TestBasicOps(unittest.TestCase):
         # Mode 0 is efficient.  It uses an incompletely consumed input
         # iterator to build a cycle object and then passes in state with
         # a list of previously consumed values.  There is no data
-        # overlap bewteen the two.
+        # overlap between the two.
         c = cycle('defg')
         c.__setstate__((list('abc'), 0))
         self.assertEqual(take(20, c), list('defgabcdefgabcdefgab'))
