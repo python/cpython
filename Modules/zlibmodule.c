@@ -106,7 +106,7 @@ PyDoc_STRVAR(compressobj__doc__,
 PyDoc_STRVAR(decompressobj__doc__,
 "decompressobj([wbits]) -- Return a decompressor object.\n"
 "\n"
-"Optional arg wbits is the window buffer size.");
+"Optional arg wbits indicates the window buffer size and container format.");
 
 static compobject *
 newcompobject(PyTypeObject *type)
@@ -208,8 +208,8 @@ PyZlib_compress(PyObject *self, PyObject *args)
 PyDoc_STRVAR(decompress__doc__,
 "decompress(string[, wbits[, bufsize]]) -- Return decompressed string.\n"
 "\n"
-"Optional arg wbits is the window buffer size.  Optional arg bufsize is\n"
-"the initial output buffer size.");
+"Optional arg wbits indicates the window buffer size and container format.\n"
+"Optional arg bufsize is the initial output buffer size.");
 
 static PyObject *
 PyZlib_decompress(PyObject *self, PyObject *args)
@@ -1039,7 +1039,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
 "decompressobj([wbits]) -- Return a decompressor object.\n"
 "\n"
-"'wbits' is window buffer size.\n"
+"'wbits' is window buffer size and container format.\n"
 "Compressor objects support compress() and flush() methods; decompressor\n"
 "objects support decompress() and flush().");
 

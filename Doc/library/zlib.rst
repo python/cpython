@@ -81,9 +81,23 @@ The available exception and functions in this module are:
    *method* is the compression algorithm. Currently, the only supported value is
    ``DEFLATED``.
 
-   *wbits* is the base two logarithm of the size of the window buffer. This
-   should be an integer from ``8`` to ``15``. Higher values give better
-   compression, but use more memory. The default is 15.
+   The *wbits* argument controls the size of the history buffer (or the
+   "window size") used when compressing data, and whether a header and
+   trailer is included in the output.  It can take several ranges of values.
+   The default is 15.
+
+   * +9 to +15: The base-two logarithm of the window size, which
+     therefore ranges between 512 and 32768.  Larger values produce
+     better compression at the expense of greater memory usage.  The
+     resulting output will include a zlib-specific header and trailer.
+
+   * −9 to −15: Uses the absolute value of *wbits* as the
+     window size logarithm, while producing a raw output stream with no
+     header or trailing checksum.
+
+   * +25 to +31 = 16 + (9 to 15): Uses the low 4 bits of the value as the
+     window size logarithm, while including a basic :program:`gzip` header
+     and trailing checksum in the output.
 
    *memlevel* controls the amount of memory used for internal compression state.
    Valid values range from ``1`` to ``9``. Higher values using more memory,
@@ -130,20 +144,39 @@ The available exception and functions in this module are:
 .. function:: decompress(string[, wbits[, bufsize]])
 
    Decompresses the data in *string*, returning a string containing the
-   uncompressed data.  The *wbits* parameter controls the size of the window
-   buffer, and is discussed further below.
+   uncompressed data.  The *wbits* parameter depends on
+   the format of *string*, and is discussed further below.
    If *bufsize* is given, it is used as the initial size of the output
    buffer.  Raises the :exc:`error` exception if any error occurs.
 
-   The absolute value of *wbits* is the base two logarithm of the size of the
-   history buffer (the "window size") used when compressing data.  Its absolute
-   value should be between 8 and 15 for the most recent versions of the zlib
-   library, larger values resulting in better compression at the expense of greater
-   memory usage.  When decompressing a stream, *wbits* must not be smaller
+   .. _decompress-wbits:
+
+   The *wbits* parameter controls the size of the history buffer
+   (or "window size"), and what header and trailer format is expected.
+   It is similar to the parameter for :func:`compressobj`, but accepts
+   more ranges of values:
+
+   * +8 to +15: The base-two logarithm of the window size.  The input
+     must include a zlib header and trailer.
+
+   * 0: Automatically determine the window size from the zlib header.
+
+   * −8 to −15: Uses the absolute value of *wbits* as the window size
+     logarithm.  The input must be a raw stream with no header or trailer.
+
+   * +24 to +31 = 16 + (8 to 15): Uses the low 4 bits of the value as
+     the window size logarithm.  The input must include a gzip header and
+     trailer.
+
+   * +40 to +47 = 32 + (8 to 15): Uses the low 4 bits of the value as
+     the window size logarithm, and automatically accepts either
+     the zlib or gzip format.
+
+   When decompressing a stream, the window size must not be smaller
    than the size originally used to compress the stream; using a too-small
-   value will result in an exception. The default value is therefore the
-   highest value, 15.  When *wbits* is negative, the standard
-   :program:`gzip` header is suppressed.
+   value may result in an :exc:`error` exception. The default *wbits* value
+   is 15, which corresponds to the largest window size and requires a zlib
+   header and trailer to be included.
 
    *bufsize* is the initial size of the buffer used to hold decompressed data.  If
    more space is required, the buffer size will be increased as needed, so you
@@ -154,8 +187,11 @@ The available exception and functions in this module are:
 .. function:: decompressobj([wbits])
 
    Returns a decompression object, to be used for decompressing data streams that
-   won't fit into memory at once.  The *wbits* parameter controls the size of the
-   window buffer.
+   won't fit into memory at once.
+
+   The *wbits* parameter controls the size of the history buffer (or the
+   "window size"), and what header and trailer format is expected.  It has
+   the same meaning as `described for decompress() <#decompress-wbits>`__.
 
 Compression objects support the following methods:
 
