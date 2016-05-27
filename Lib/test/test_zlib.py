@@ -681,10 +681,18 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
             data = None
 
     def test_wbits(self):
+        # wbits=0 only supported since zlib v1.2.3.5
+        # Register "1.2.3" as "1.2.3.0"
+        v = (zlib.ZLIB_RUNTIME_VERSION + ".0").split(".", 4)
+        supports_wbits_0 = int(v[0]) > 1 or int(v[0]) == 1 \
+            and (int(v[1]) > 2 or int(v[1]) == 2
+            and (int(v[2]) > 3 or int(v[2]) == 3 and int(v[3]) >= 5))
+
         co = zlib.compressobj(level=1, wbits=15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
         self.assertEqual(zlib.decompress(zlib15, 15), HAMLET_SCENE)
-        self.assertEqual(zlib.decompress(zlib15, 0), HAMLET_SCENE)
+        if supports_wbits_0:
+            self.assertEqual(zlib.decompress(zlib15, 0), HAMLET_SCENE)
         self.assertEqual(zlib.decompress(zlib15, 32 + 15), HAMLET_SCENE)
         with self.assertRaisesRegex(zlib.error, 'invalid window size'):
             zlib.decompress(zlib15, 14)
@@ -698,7 +706,8 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         zlib9 = co.compress(HAMLET_SCENE) + co.flush()
         self.assertEqual(zlib.decompress(zlib9, 9), HAMLET_SCENE)
         self.assertEqual(zlib.decompress(zlib9, 15), HAMLET_SCENE)
-        self.assertEqual(zlib.decompress(zlib9, 0), HAMLET_SCENE)
+        if supports_wbits_0:
+            self.assertEqual(zlib.decompress(zlib9, 0), HAMLET_SCENE)
         self.assertEqual(zlib.decompress(zlib9, 32 + 9), HAMLET_SCENE)
         dco = zlib.decompressobj(wbits=32 + 9)
         self.assertEqual(dco.decompress(zlib9), HAMLET_SCENE)
