@@ -1317,7 +1317,7 @@ use a list comprehension::
    w, h = 2, 3
    A = [[None] * w for i in range(h)]
 
-Or, you can use an extension that provides a matrix datatype; `Numeric Python
+Or, you can use an extension that provides a matrix datatype; `NumPy
 <http://www.numpy.org/>`_ is the best known.
 
 
