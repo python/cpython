@@ -270,7 +270,7 @@ zlib.decompress
     data: Py_buffer
         Compressed data.
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
-        The window buffer size.
+        The window buffer size and container format.
     bufsize: capped_uint(c_default="DEF_BUF_SIZE") = DEF_BUF_SIZE
         The initial output buffer size.
     /
@@ -281,7 +281,7 @@ Returns a bytes object containing the uncompressed data.
 static PyObject *
 zlib_decompress_impl(PyModuleDef *module, Py_buffer *data, int wbits,
                      unsigned int bufsize)
-/*[clinic end generated code: output=444d0987f3429574 input=da095118b3243b27]*/
+/*[clinic end generated code: output=444d0987f3429574 input=75123b0d4ff0541d]*/
 {
     PyObject *result_str = NULL;
     Byte *input;
@@ -395,7 +395,10 @@ zlib.compressobj
     method: int(c_default="DEFLATED") = DEFLATED
         The compression algorithm.  If given, this must be DEFLATED.
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
-        The base two logarithm of the window size (range: 8..15).
+        +9 to +15: The base-two logarithm of the window size.  Include a zlib
+            container.
+        -9 to -15: Generate a raw stream.
+        +25 to +31: Include a gzip container.
     memLevel: int(c_default="DEF_MEM_LEVEL") = DEF_MEM_LEVEL
         Controls the amount of memory used for internal compression state.
         Valid values range from 1 to 9.  Higher values result in higher memory
@@ -413,7 +416,7 @@ Return a compressor object.
 static PyObject *
 zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits,
                       int memLevel, int strategy, Py_buffer *zdict)
-/*[clinic end generated code: output=2949bbb9a5723ccd input=de2ffab6e910cd8b]*/
+/*[clinic end generated code: output=2949bbb9a5723ccd input=2fa3d026f90ab8d5]*/
 {
     compobject *self = NULL;
     int err;
@@ -474,7 +477,7 @@ zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits,
 zlib.decompressobj
 
     wbits: int(c_default="MAX_WBITS") = MAX_WBITS
-        The window buffer size.
+        The window buffer size and container format.
     zdict: object(c_default="NULL") = b''
         The predefined compression dictionary.  This must be the same
         dictionary as used by the compressor that produced the input data.
@@ -484,7 +487,7 @@ Return a decompressor object.
 
 static PyObject *
 zlib_decompressobj_impl(PyModuleDef *module, int wbits, PyObject *zdict)
-/*[clinic end generated code: output=8ccd583fbd631798 input=67f05145a6920127]*/
+/*[clinic end generated code: output=8ccd583fbd631798 input=d3832b8511fc977b]*/
 {
     int err;
     compobject *self;
@@ -1328,7 +1331,7 @@ PyDoc_STRVAR(zlib_module_documentation,
 "decompress(string,[wbits],[bufsize]) -- Decompresses a compressed string.\n"
 "decompressobj([wbits[, zdict]]]) -- Return a decompressor object.\n"
 "\n"
-"'wbits' is window buffer size.\n"
+"'wbits' is window buffer size and container format.\n"
 "Compressor objects support compress() and flush() methods; decompressor\n"
 "objects support decompress() and flush().");
 
