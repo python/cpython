@@ -61,6 +61,8 @@ Core and Builtins
   (*) unpacking in function calls.  Based on patch by Hagen Fürstenau and
   Daniel Urban.
 
+- Issue #27138: Fix the doc comment for FileFinder.find_spec().
+
 - Issue #26154: Add a new private _PyThreadState_UncheckedGet() function to get
   the current Python thread state, but don't issue a fatal error if it is NULL.
   This new function must be used instead of accessing directly the
