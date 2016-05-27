@@ -160,6 +160,7 @@ The available exception and functions in this module are:
      must include a zlib header and trailer.
 
    * 0: Automatically determine the window size from the zlib header.
+     Only supported since zlib 1.2.3.5.
 
    * −8 to −15: Uses the absolute value of *wbits* as the window size
      logarithm.  The input must be a raw stream with no header or trailer.

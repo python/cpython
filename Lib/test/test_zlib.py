@@ -531,7 +531,6 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         co = zlib.compressobj(1, zlib.DEFLATED, 15)
         zlib15 = co.compress(HAMLET_SCENE) + co.flush()
         self.assertEqual(zlib.decompress(zlib15, 15), HAMLET_SCENE)
-        self.assertEqual(zlib.decompress(zlib15, 0), HAMLET_SCENE)
         self.assertEqual(zlib.decompress(zlib15, 32 + 15), HAMLET_SCENE)
         with self.assertRaisesRegexp(zlib.error, 'invalid window size'):
             zlib.decompress(zlib15, 14)
@@ -545,7 +544,6 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         zlib9 = co.compress(HAMLET_SCENE) + co.flush()
         self.assertEqual(zlib.decompress(zlib9, 9), HAMLET_SCENE)
         self.assertEqual(zlib.decompress(zlib9, 15), HAMLET_SCENE)
-        self.assertEqual(zlib.decompress(zlib9, 0), HAMLET_SCENE)
         self.assertEqual(zlib.decompress(zlib9, 32 + 9), HAMLET_SCENE)
         dco = zlib.decompressobj(32 + 9)
         self.assertEqual(dco.decompress(zlib9), HAMLET_SCENE)
