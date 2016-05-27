@@ -1215,8 +1215,8 @@ class FileFinder:
                                        submodule_search_locations=smsl)
 
     def find_spec(self, fullname, target=None):
-        """Try to find a loader for the specified module, or the namespace
-        package portions. Returns (loader, list-of-portions)."""
+        """Try to find a spec for the specified module.  Returns the
+        matching spec, or None if not found."""
         is_namespace = False
         tail_module = fullname.rpartition('.')[2]
         try:
