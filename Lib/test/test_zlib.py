@@ -684,6 +684,49 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         finally:
             data = None
 
+    def test_wbits(self):
+        co = zlib.compressobj(level=1, wbits=15)
+        zlib15 = co.compress(HAMLET_SCENE) + co.flush()
+        self.assertEqual(zlib.decompress(zlib15, 15), HAMLET_SCENE)
+        self.assertEqual(zlib.decompress(zlib15, 0), HAMLET_SCENE)
+        self.assertEqual(zlib.decompress(zlib15, 32 + 15), HAMLET_SCENE)
+        with self.assertRaisesRegex(zlib.error, 'invalid window size'):
+            zlib.decompress(zlib15, 14)
+        dco = zlib.decompressobj(wbits=32 + 15)
+        self.assertEqual(dco.decompress(zlib15), HAMLET_SCENE)
+        dco = zlib.decompressobj(wbits=14)
+        with self.assertRaisesRegex(zlib.error, 'invalid window size'):
+            dco.decompress(zlib15)
+
+        co = zlib.compressobj(level=1, wbits=9)
+        zlib9 = co.compress(HAMLET_SCENE) + co.flush()
+        self.assertEqual(zlib.decompress(zlib9, 9), HAMLET_SCENE)
+        self.assertEqual(zlib.decompress(zlib9, 15), HAMLET_SCENE)
+        self.assertEqual(zlib.decompress(zlib9, 0), HAMLET_SCENE)
+        self.assertEqual(zlib.decompress(zlib9, 32 + 9), HAMLET_SCENE)
+        dco = zlib.decompressobj(wbits=32 + 9)
+        self.assertEqual(dco.decompress(zlib9), HAMLET_SCENE)
+
+        co = zlib.compressobj(level=1, wbits=-15)
+        deflate15 = co.compress(HAMLET_SCENE) + co.flush()
+        self.assertEqual(zlib.decompress(deflate15, -15), HAMLET_SCENE)
+        dco = zlib.decompressobj(wbits=-15)
+        self.assertEqual(dco.decompress(deflate15), HAMLET_SCENE)
+
+        co = zlib.compressobj(level=1, wbits=-9)
+        deflate9 = co.compress(HAMLET_SCENE) + co.flush()
+        self.assertEqual(zlib.decompress(deflate9, -9), HAMLET_SCENE)
+        self.assertEqual(zlib.decompress(deflate9, -15), HAMLET_SCENE)
+        dco = zlib.decompressobj(wbits=-9)
+        self.assertEqual(dco.decompress(deflate9), HAMLET_SCENE)
+
+        co = zlib.compressobj(level=1, wbits=16 + 15)
+        gzip = co.compress(HAMLET_SCENE) + co.flush()
+        self.assertEqual(zlib.decompress(gzip, 16 + 15), HAMLET_SCENE)
+        self.assertEqual(zlib.decompress(gzip, 32 + 15), HAMLET_SCENE)
+        dco = zlib.decompressobj(32 + 15)
+        self.assertEqual(dco.decompress(gzip), HAMLET_SCENE)
+
 
 def genblock(seed, length, step=1024, generator=random):
     """length-byte stream of random data from a seed (in step-byte blocks)."""
