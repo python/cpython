@@ -1,4 +1,4 @@
-'''Unittests for idlelib/configHandler.py
+'''Unittests for idlelib/config.py
 
 Coverage: 46% just by creating dialog. The other half is change code.
 
@@ -6,8 +6,8 @@ Coverage: 46% just by creating dialog. The other half is change code.
 import unittest
 from test.support import requires
 from tkinter import Tk
-from idlelib.configDialog import ConfigDialog
-from idlelib.macosxSupport import _initializeTkVariantTests
+from idlelib.configdialog import ConfigDialog
+from idlelib.macosx import _initializeTkVariantTests
 
 
 class ConfigDialogTest(unittest.TestCase):

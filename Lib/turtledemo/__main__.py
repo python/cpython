@@ -89,9 +89,9 @@ import sys
 import os
 
 from tkinter import *
-from idlelib.Percolator import Percolator
-from idlelib.ColorDelegator import ColorDelegator
-from idlelib.textView import view_text
+from idlelib.percolator import Percolator
+from idlelib.colorizer import ColorDelegator
+from idlelib.textview import view_text
 from turtledemo import __doc__ as about_turtledemo
 
 import turtle
