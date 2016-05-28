@@ -4,8 +4,8 @@ from test.support import requires
 import tkinter as tk
 from tkinter import Text as tkText
 from idlelib.idle_test.mock_tk import Text as mkText
-from idlelib.IdleHistory import History
-from idlelib.configHandler import idleConf
+from idlelib.history import History
+from idlelib.config import idleConf
 
 line1 = 'a = 7'
 line2 = 'b = a'

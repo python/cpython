@@ -1,5 +1,5 @@
 """ !Changing this line will break Test_findfile.test_found!
-Non-gui unit tests for idlelib.GrepDialog methods.
+Non-gui unit tests for grep.GrepDialog methods.
 dummy_command calls grep_it calls findfiles.
 An exception raised in one method will fail callers.
 Otherwise, tests are mostly independent.
@@ -8,7 +8,7 @@ Otherwise, tests are mostly independent.
 import unittest
 from test.support import captured_stdout
 from idlelib.idle_test.mock_tk import Var
-from idlelib.GrepDialog import GrepDialog
+from idlelib.grep import GrepDialog
 import re
 
 class Dummy_searchengine:
@@ -72,7 +72,7 @@ class Grep_itTest(unittest.TestCase):
         self.assertTrue(lines[4].startswith('(Hint:'))
 
 class Default_commandTest(unittest.TestCase):
-    # To write this, mode OutputWindow import to top of GrepDialog
+    # To write this, move outwin import to top of GrepDialog
     # so it can be replaced by captured_stdout in class setup/teardown.
     pass
 

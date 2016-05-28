@@ -14,13 +14,13 @@ import os
 import sys
 import pyclbr
 
-from idlelib import PyShell
-from idlelib.WindowList import ListedToplevel
-from idlelib.TreeWidget import TreeNode, TreeItem, ScrolledCanvas
-from idlelib.configHandler import idleConf
+from idlelib import pyshell
+from idlelib.windows import ListedToplevel
+from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
+from idlelib.config import idleConf
 
 file_open = None  # Method...Item and Class...Item use this.
-# Normally PyShell.flist.open, but there is no PyShell.flist for htest.
+# Normally pyshell.flist.open, but there is no pyshell.flist for htest.
 
 class ClassBrowser:
 
@@ -32,7 +32,7 @@ class ClassBrowser:
         """
         global file_open
         if not _htest:
-            file_open = PyShell.flist.open
+            file_open = pyshell.flist.open
         self.name = name
         self.file = os.path.join(path[0], self.name + ".py")
         self._htest = _htest
@@ -95,7 +95,7 @@ class ModuleBrowserTreeItem(TreeItem):
             return
         if not os.path.exists(self.file):
             return
-        PyShell.flist.open(self.file)
+        pyshell.flist.open(self.file)
 
     def IsExpandable(self):
         return os.path.normcase(self.file[-3:]) == ".py"
@@ -226,7 +226,7 @@ def _class_browser(parent): #Wrapper for htest
             file = sys.argv[0]
     dir, file = os.path.split(file)
     name = os.path.splitext(file)[0]
-    flist = PyShell.PyShellFileList(parent)
+    flist = pyshell.PyShellFileList(parent)
     global file_open
     file_open = flist.open
     ClassBrowser(flist, name, [dir], _htest=True)

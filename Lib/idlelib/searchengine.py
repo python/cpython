@@ -57,7 +57,7 @@ class SearchEngine:
 
     def setcookedpat(self, pat):
         "Set pattern after escaping if re."
-        # called only in SearchDialog.py: 66
+        # called only in search.py: 66
         if self.isre():
             pat = re.escape(pat)
         self.setpat(pat)

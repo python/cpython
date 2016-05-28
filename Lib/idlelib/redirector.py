@@ -104,7 +104,7 @@ class WidgetRedirector:
 
         Note that if a registered function is called, the operation is not
         passed through to Tk.  Apply the function returned by self.register()
-        to *args to accomplish that.  For an example, see ColorDelegator.py.
+        to *args to accomplish that.  For an example, see colorizer.py.
 
         '''
         m = self._operations.get(operation)

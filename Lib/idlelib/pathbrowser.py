@@ -2,9 +2,9 @@ import os
 import sys
 import importlib.machinery
 
-from idlelib.TreeWidget import TreeItem
-from idlelib.ClassBrowser import ClassBrowser, ModuleBrowserTreeItem
-from idlelib.PyShell import PyShellFileList
+from idlelib.tree import TreeItem
+from idlelib.browser import ClassBrowser, ModuleBrowserTreeItem
+from idlelib.pyshell import PyShellFileList
 
 
 class PathBrowser(ClassBrowser):

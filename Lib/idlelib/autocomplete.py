@@ -1,4 +1,4 @@
-"""AutoComplete.py - An IDLE extension for automatically completing names.
+"""autocomplete.py - An IDLE extension for automatically completing names.
 
 This extension can complete either attribute names of file names. It can pop
 a window with all available names, for the user to select from.
@@ -7,7 +7,7 @@ import os
 import sys
 import string
 
-from idlelib.configHandler import idleConf
+from idlelib.config import idleConf
 
 # This string includes all chars that may be in an identifier
 ID_CHARS = string.ascii_letters + string.digits + "_"
@@ -15,8 +15,8 @@ ID_CHARS = string.ascii_letters + string.digits + "_"
 # These constants represent the two different types of completions
 COMPLETE_ATTRIBUTES, COMPLETE_FILES = range(1, 2+1)
 
-from idlelib import AutoCompleteWindow
-from idlelib.HyperParser import HyperParser
+from idlelib import autocomplete_w
+from idlelib.hyperparser import HyperParser
 
 import __main__
 
@@ -49,7 +49,7 @@ class AutoComplete:
         self._delayed_completion_index = None
 
     def _make_autocomplete_window(self):
-        return AutoCompleteWindow.AutoCompleteWindow(self.text)
+        return autocomplete_w.AutoCompleteWindow(self.text)
 
     def _remove_autocomplete_window(self, event=None):
         if self.autocompletewindow:

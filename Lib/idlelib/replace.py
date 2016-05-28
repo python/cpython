@@ -5,8 +5,8 @@ replace+find.
 """
 from tkinter import *
 
-from idlelib import SearchEngine
-from idlelib.SearchDialogBase import SearchDialogBase
+from idlelib import searchengine
+from idlelib.searchbase import SearchDialogBase
 import re
 
 
@@ -14,7 +14,7 @@ def replace(text):
     """Returns a singleton ReplaceDialog instance.The single dialog
      saves user entries and preferences across instances."""
     root = text._root()
-    engine = SearchEngine.get(root)
+    engine = searchengine.get(root)
     if not hasattr(engine, "_replacedialog"):
         engine._replacedialog = ReplaceDialog(root, engine)
     dialog = engine._replacedialog
@@ -164,7 +164,7 @@ class ReplaceDialog(SearchDialogBase):
             pos = None
         if not pos:
             first = last = pos = text.index("insert")
-        line, col = SearchEngine.get_line_col(pos)
+        line, col = searchengine.get_line_col(pos)
         chars = text.get("%d.0" % line, "%d.0" % (line+1))
         m = prog.match(chars, col)
         if not prog:

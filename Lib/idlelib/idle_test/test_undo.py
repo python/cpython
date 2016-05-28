@@ -1,4 +1,4 @@
-"""Unittest for UndoDelegator in idlelib.UndoDelegator.
+"""Unittest for UndoDelegator in idlelib.undo.py.
 
 Coverage about 80% (retest).
 """
@@ -8,8 +8,8 @@ requires('gui')
 import unittest
 from unittest.mock import Mock
 from tkinter import Text, Tk
-from idlelib.UndoDelegator import UndoDelegator
-from idlelib.Percolator import Percolator
+from idlelib.undo import UndoDelegator
+from idlelib.percolator import Percolator
 
 
 class UndoDelegatorTest(unittest.TestCase):

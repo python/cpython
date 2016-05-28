@@ -14,14 +14,14 @@ import tkinter.messagebox as tkMessageBox
 import tkinter.colorchooser as tkColorChooser
 import tkinter.font as tkFont
 
-from idlelib.configHandler import idleConf
-from idlelib.dynOptionMenuWidget import DynOptionMenu
-from idlelib.keybindingDialog import GetKeysDialog
-from idlelib.configSectionNameDialog import GetCfgSectionNameDialog
-from idlelib.configHelpSourceEdit import GetHelpSourceDialog
+from idlelib.config import idleConf
+from idlelib.dynoption import DynOptionMenu
+from idlelib.config_key import GetKeysDialog
+from idlelib.config_sec import GetCfgSectionNameDialog
+from idlelib.config_help import GetHelpSourceDialog
 from idlelib.tabbedpages import TabbedPageSet
-from idlelib.textView import view_text
-from idlelib import macosxSupport
+from idlelib.textview import view_text
+from idlelib import macosx
 
 class ConfigDialog(Toplevel):
 
@@ -91,7 +91,7 @@ class ConfigDialog(Toplevel):
         self.create_action_buttons().pack(side=BOTTOM)
 
     def create_action_buttons(self):
-        if macosxSupport.isAquaTk():
+        if macosx.isAquaTk():
             # Changing the default padding on OSX results in unreadable
             # text in the buttons
             paddingArgs = {}

@@ -1,5 +1,5 @@
 from tkinter import *
-from idlelib import macosxSupport
+from idlelib import macosx
 
 class ScrolledList:
 
@@ -23,7 +23,7 @@ class ScrolledList:
         # Bind events to the list box
         listbox.bind("<ButtonRelease-1>", self.click_event)
         listbox.bind("<Double-ButtonRelease-1>", self.double_click_event)
-        if macosxSupport.isAquaTk():
+        if macosx.isAquaTk():
             listbox.bind("<ButtonPress-2>", self.popup_event)
             listbox.bind("<Control-Button-1>", self.popup_event)
         else:

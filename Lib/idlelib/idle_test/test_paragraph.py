@@ -1,7 +1,7 @@
-# Test the functions and main class method of FormatParagraph.py
+# Test the functions and main class method of paragraph.py
 import unittest
-from idlelib import FormatParagraph as fp
-from idlelib.EditorWindow import EditorWindow
+from idlelib import paragraph as fp
+from idlelib.editor import EditorWindow
 from tkinter import Tk, Text
 from test.support import requires
 
@@ -38,7 +38,7 @@ class Is_Get_Test(unittest.TestCase):
 
 
 class FindTest(unittest.TestCase):
-    """Test the find_paragraph function in FormatParagraph.
+    """Test the find_paragraph function in paragraph module.
 
     Using the runcase() function, find_paragraph() is called with 'mark' set at
     multiple indexes before and inside the test paragraph.

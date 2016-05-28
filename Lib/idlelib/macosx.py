@@ -123,23 +123,23 @@ def overrideRootMenu(root, flist):
     # Due to a (mis-)feature of TkAqua the user will also see an empty Help
     # menu.
     from tkinter import Menu
-    from idlelib import Bindings
-    from idlelib import WindowList
+    from idlelib import mainmenu
+    from idlelib import windows
 
-    closeItem = Bindings.menudefs[0][1][-2]
+    closeItem = mainmenu.menudefs[0][1][-2]
 
     # Remove the last 3 items of the file menu: a separator, close window and
     # quit. Close window will be reinserted just above the save item, where
     # it should be according to the HIG. Quit is in the application menu.
-    del Bindings.menudefs[0][1][-3:]
-    Bindings.menudefs[0][1].insert(6, closeItem)
+    del mainmenu.menudefs[0][1][-3:]
+    mainmenu.menudefs[0][1].insert(6, closeItem)
 
     # Remove the 'About' entry from the help menu, it is in the application
     # menu
-    del Bindings.menudefs[-1][1][0:2]
+    del mainmenu.menudefs[-1][1][0:2]
     # Remove the 'Configure Idle' entry from the options menu, it is in the
     # application menu as 'Preferences'
-    del Bindings.menudefs[-2][1][0]
+    del mainmenu.menudefs[-2][1][0]
     menubar = Menu(root)
     root.configure(menu=menubar)
     menudict = {}
@@ -154,30 +154,30 @@ def overrideRootMenu(root, flist):
 
         if end > 0:
             menu.delete(0, end)
-        WindowList.add_windows_to_menu(menu)
-    WindowList.register_callback(postwindowsmenu)
+        windows.add_windows_to_menu(menu)
+    Windows.register_callback(postwindowsmenu)
 
     def about_dialog(event=None):
         "Handle Help 'About IDLE' event."
-        # Synchronize with EditorWindow.EditorWindow.about_dialog.
-        from idlelib import aboutDialog
-        aboutDialog.AboutDialog(root, 'About IDLE')
+        # Synchronize with editor.EditorWindow.about_dialog.
+        from idlelib import help_about
+        help_about.AboutDialog(root, 'About IDLE')
 
     def config_dialog(event=None):
         "Handle Options 'Configure IDLE' event."
-        # Synchronize with EditorWindow.EditorWindow.config_dialog.
-        from idlelib import configDialog
+        # Synchronize with editor.EditorWindow.config_dialog.
+        from idlelib import configdialog
 
         # Ensure that the root object has an instance_dict attribute,
         # mirrors code in EditorWindow (although that sets the attribute
         # on an EditorWindow instance that is then passed as the first
         # argument to ConfigDialog)
         root.instance_dict = flist.inversedict
-        configDialog.ConfigDialog(root, 'Settings')
+        configdialog.ConfigDialog(root, 'Settings')
 
     def help_dialog(event=None):
         "Handle Help 'IDLE Help' event."
-        # Synchronize with EditorWindow.EditorWindow.help_dialog.
+        # Synchronize with editor.EditorWindow.help_dialog.
         from idlelib import help
         help.show_idlehelp(root)
 
@@ -197,7 +197,7 @@ def overrideRootMenu(root, flist):
         menudict['application'] = menu = Menu(menubar, name='apple',
                                               tearoff=0)
         menubar.add_cascade(label='IDLE', menu=menu)
-        Bindings.menudefs.insert(0,
+        mainmenu.menudefs.insert(0,
             ('application', [
                 ('About IDLE', '<<about-idle>>'),
                     None,
@@ -205,7 +205,7 @@ def overrideRootMenu(root, flist):
         tkversion = root.tk.eval('info patchlevel')
         if tuple(map(int, tkversion.split('.'))) < (8, 4, 14):
             # for earlier AquaTk versions, supply a Preferences menu item
-            Bindings.menudefs[0][1].append(
+            mainmenu.menudefs[0][1].append(
                     ('_Preferences....', '<<open-config-dialog>>'),
                 )
     if isCocoaTk():
@@ -214,12 +214,12 @@ def overrideRootMenu(root, flist):
         # replace default "Help" item in Help menu
         root.createcommand('::tk::mac::ShowHelp', help_dialog)
         # remove redundant "IDLE Help" from menu
-        del Bindings.menudefs[-1][1][0]
+        del mainmenu.menudefs[-1][1][0]
 
 def setupApp(root, flist):
     """
     Perform initial OS X customizations if needed.
-    Called from PyShell.main() after initial calls to Tk()
+    Called from pyshell.main() after initial calls to Tk()
 
     There are currently three major versions of Tk in use on OS X:
         1. Aqua Cocoa Tk (native default since OS X 10.6)

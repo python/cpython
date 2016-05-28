@@ -1,4 +1,4 @@
-"""Unittest for idlelib.ReplaceDialog"""
+"""Unittest for idlelib.replace.py"""
 from test.support import requires
 requires('gui')
 
@@ -6,8 +6,8 @@ import unittest
 from unittest.mock import Mock
 from tkinter import Tk, Text
 from idlelib.idle_test.mock_tk import Mbox
-import idlelib.SearchEngine as se
-import idlelib.ReplaceDialog as rd
+import idlelib.searchengine as se
+import idlelib.replace as rd
 
 orig_mbox = se.tkMessageBox
 showerror = Mbox.showerror
