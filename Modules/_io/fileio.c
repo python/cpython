@@ -835,7 +835,7 @@ _io.FileIO.write
     b: Py_buffer
     /
 
-Write bytes b to file, return number written.
+Write buffer b to file, return number of bytes written.
 
 Only makes one system call, so not all of the data may be written.
 The number of bytes actually written is returned.  In non-blocking mode,
@@ -844,7 +844,7 @@ returns None if the write would block.
 
 static PyObject *
 _io_FileIO_write_impl(fileio *self, Py_buffer *b)
-/*[clinic end generated code: output=b4059db3d363a2f7 input=ffbd8834f447ac31]*/
+/*[clinic end generated code: output=b4059db3d363a2f7 input=6e7908b36f0ce74f]*/
 {
     Py_ssize_t n;
     int err;
