@@ -21,10 +21,10 @@ import os
 import tabnanny
 import tokenize
 import tkinter.messagebox as tkMessageBox
-from idlelib import PyShell
+from idlelib import pyshell
 
-from idlelib.configHandler import idleConf
-from idlelib import macosxSupport
+from idlelib.config import idleConf
+from idlelib import macosx
 
 indent_message = """Error: Inconsistent indentation detected!
 
@@ -46,12 +46,12 @@ class ScriptBinding:
 
     def __init__(self, editwin):
         self.editwin = editwin
-        # Provide instance variables referenced by Debugger
+        # Provide instance variables referenced by debugger
         # XXX This should be done differently
         self.flist = self.editwin.flist
         self.root = self.editwin.root
 
-        if macosxSupport.isCocoaTk():
+        if macosx.isCocoaTk():
             self.editwin.text_frame.bind('<<run-module-event-2>>', self._run_module_event)
 
     def check_module_event(self, event):
@@ -112,7 +112,7 @@ class ScriptBinding:
             shell.set_warning_stream(saved_stream)
 
     def run_module_event(self, event):
-        if macosxSupport.isCocoaTk():
+        if macosx.isCocoaTk():
             # Tk-Cocoa in MacOSX is broken until at least
             # Tk 8.5.9, and without this rather
             # crude workaround IDLE would hang when a user
@@ -142,7 +142,7 @@ class ScriptBinding:
         if not self.tabnanny(filename):
             return 'break'
         interp = self.shell.interp
-        if PyShell.use_subprocess:
+        if pyshell.use_subprocess:
             interp.restart_subprocess(with_cwd=False, filename=
                         self.editwin._filename_to_unicode(filename))
         dirname = os.path.dirname(filename)
@@ -161,7 +161,7 @@ class ScriptBinding:
         interp.prepend_syspath(filename)
         # XXX KBK 03Jul04 When run w/o subprocess, runtime warnings still
         #         go to __stderr__.  With subprocess, they go to the shell.
-        #         Need to change streams in PyShell.ModifiedInterpreter.
+        #         Need to change streams in pyshell.ModifiedInterpreter.
         interp.runcode(code)
         return 'break'
 

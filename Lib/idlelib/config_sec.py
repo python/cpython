@@ -1,7 +1,7 @@
 """
 Dialog that allows user to specify a new config file section name.
 Used to get new highlight theme and keybinding set names.
-The 'return value' for the dialog, used two placed in configDialog.py,
+The 'return value' for the dialog, used two placed in configdialog.py,
 is the .result attribute set in the Ok and Cancel methods.
 """
 from tkinter import *

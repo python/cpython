@@ -12,15 +12,15 @@ import tkinter.messagebox as tkMessageBox
 import traceback
 import webbrowser
 
-from idlelib.MultiCall import MultiCallCreator
-from idlelib import WindowList
-from idlelib import SearchDialog
-from idlelib import GrepDialog
-from idlelib import ReplaceDialog
-from idlelib import PyParse
-from idlelib.configHandler import idleConf
-from idlelib import aboutDialog, textView, configDialog
-from idlelib import macosxSupport
+from idlelib.multicall import MultiCallCreator
+from idlelib import windows
+from idlelib import search
+from idlelib import grep
+from idlelib import replace
+from idlelib import pyparse
+from idlelib.config import idleConf
+from idlelib import help_about, textview, configdialog
+from idlelib import macosx
 from idlelib import help
 
 # The default tab setting for a Text widget, in average-width characters.
@@ -67,7 +67,7 @@ class HelpDialog(object):
     def show_dialog(self, parent):
         self.parent = parent
         fn=os.path.join(os.path.abspath(os.path.dirname(__file__)),'help.txt')
-        self.dlg = dlg = textView.view_file(parent,'Help',fn, modal=False)
+        self.dlg = dlg = textview.view_file(parent,'Help',fn, modal=False)
         dlg.bind('<Destroy>', self.destroy, '+')
 
     def nearwindow(self, near):
@@ -89,13 +89,13 @@ helpDialog = HelpDialog()  # singleton instance, no longer used
 
 
 class EditorWindow(object):
-    from idlelib.Percolator import Percolator
-    from idlelib.ColorDelegator import ColorDelegator
-    from idlelib.UndoDelegator import UndoDelegator
-    from idlelib.IOBinding import IOBinding, filesystemencoding, encoding
-    from idlelib import Bindings
+    from idlelib.percolator import Percolator
+    from idlelib.colorizer import ColorDelegator
+    from idlelib.undo import UndoDelegator
+    from idlelib.iomenu import IOBinding, filesystemencoding, encoding
+    from idlelib import mainmenu
     from tkinter import Toplevel
-    from idlelib.MultiStatusBar import MultiStatusBar
+    from idlelib.statusbar import MultiStatusBar
 
     help_url = None
 
@@ -136,11 +136,11 @@ class EditorWindow(object):
         except AttributeError:
             sys.ps1 = '>>> '
         self.menubar = Menu(root)
-        self.top = top = WindowList.ListedToplevel(root, menu=self.menubar)
+        self.top = top = windows.ListedToplevel(root, menu=self.menubar)
         if flist:
             self.tkinter_vars = flist.vars
             #self.top.instance_dict makes flist.inversedict available to
-            #configDialog.py so it can access all EditorWindow instances
+            #configdialog.py so it can access all EditorWindow instances
             self.top.instance_dict = flist.inversedict
         else:
             self.tkinter_vars = {}  # keys: Tkinter event names
@@ -173,7 +173,7 @@ class EditorWindow(object):
 
         self.top.protocol("WM_DELETE_WINDOW", self.close)
         self.top.bind("<<close-window>>", self.close_event)
-        if macosxSupport.isAquaTk():
+        if macosx.isAquaTk():
             # Command-W on editorwindows doesn't work without this.
             text.bind('<<close-window>>', self.close_event)
             # Some OS X systems have only one mouse button, so use
@@ -309,7 +309,7 @@ class EditorWindow(object):
                 menu.add_separator()
                 end = end + 1
             self.wmenu_end = end
-            WindowList.register_callback(self.postwindowsmenu)
+            windows.register_callback(self.postwindowsmenu)
 
         # Some abstractions so IDLE extensions are cross-IDE
         self.askyesno = tkMessageBox.askyesno
@@ -418,7 +418,7 @@ class EditorWindow(object):
             underline, label = prepstr(label)
             menudict[name] = menu = Menu(mbar, name=name, tearoff=0)
             mbar.add_cascade(label=label, menu=menu, underline=underline)
-        if macosxSupport.isCarbonTk():
+        if macosx.isCarbonTk():
             # Insert the application menu
             menudict['application'] = menu = Menu(mbar, name='apple',
                                                   tearoff=0)
@@ -439,7 +439,7 @@ class EditorWindow(object):
             end = -1
         if end > self.wmenu_end:
             menu.delete(self.wmenu_end+1, end)
-        WindowList.add_windows_to_menu(menu)
+        windows.add_windows_to_menu(menu)
 
     rmenu = None
 
@@ -507,17 +507,17 @@ class EditorWindow(object):
 
     def about_dialog(self, event=None):
         "Handle Help 'About IDLE' event."
-        # Synchronize with macosxSupport.overrideRootMenu.about_dialog.
-        aboutDialog.AboutDialog(self.top,'About IDLE')
+        # Synchronize with macosx.overrideRootMenu.about_dialog.
+        help_about.AboutDialog(self.top,'About IDLE')
 
     def config_dialog(self, event=None):
         "Handle Options 'Configure IDLE' event."
-        # Synchronize with macosxSupport.overrideRootMenu.config_dialog.
-        configDialog.ConfigDialog(self.top,'Settings')
+        # Synchronize with macosx.overrideRootMenu.config_dialog.
+        configdialog.ConfigDialog(self.top,'Settings')
 
     def help_dialog(self, event=None):
         "Handle Help 'IDLE Help' event."
-        # Synchronize with macosxSupport.overrideRootMenu.help_dialog.
+        # Synchronize with macosx.overrideRootMenu.help_dialog.
         if self.root:
             parent = self.root
         else:
@@ -590,23 +590,23 @@ class EditorWindow(object):
         return "break"
 
     def find_event(self, event):
-        SearchDialog.find(self.text)
+        search.find(self.text)
         return "break"
 
     def find_again_event(self, event):
-        SearchDialog.find_again(self.text)
+        search.find_again(self.text)
         return "break"
 
     def find_selection_event(self, event):
-        SearchDialog.find_selection(self.text)
+        search.find_selection(self.text)
         return "break"
 
     def find_in_files_event(self, event):
-        GrepDialog.grep(self.text, self.io, self.flist)
+        grep.grep(self.text, self.io, self.flist)
         return "break"
 
     def replace_event(self, event):
-        ReplaceDialog.replace(self.text)
+        replace.replace(self.text)
         return "break"
 
     def goto_line_event(self, event):
@@ -673,12 +673,12 @@ class EditorWindow(object):
                 return
         head, tail = os.path.split(filename)
         base, ext = os.path.splitext(tail)
-        from idlelib import ClassBrowser
-        ClassBrowser.ClassBrowser(self.flist, base, [head])
+        from idlelib import browser
+        browser.ClassBrowser(self.flist, base, [head])
 
     def open_path_browser(self, event=None):
-        from idlelib import PathBrowser
-        PathBrowser.PathBrowser(self.flist)
+        from idlelib import pathbrowser
+        pathbrowser.PathBrowser(self.flist)
 
     def open_turtle_demo(self, event = None):
         import subprocess
@@ -739,7 +739,7 @@ class EditorWindow(object):
 
     def ResetColorizer(self):
         "Update the color theme"
-        # Called from self.filename_change_hook and from configDialog.py
+        # Called from self.filename_change_hook and from configdialog.py
         self._rmcolorizer()
         self._addcolorizer()
         theme = idleConf.CurrentTheme()
@@ -772,14 +772,14 @@ class EditorWindow(object):
 
     def ResetFont(self):
         "Update the text widgets' font if it is changed"
-        # Called from configDialog.py
+        # Called from configdialog.py
 
         self.text['font'] = idleConf.GetFont(self.root, 'main','EditorWindow')
 
     def RemoveKeybindings(self):
         "Remove the keybindings before they are changed."
-        # Called from configDialog.py
-        self.Bindings.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
+        # Called from configdialog.py
+        self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         for event, keylist in keydefs.items():
             self.text.event_delete(event, *keylist)
         for extensionName in self.get_standard_extension_names():
@@ -790,8 +790,8 @@ class EditorWindow(object):
 
     def ApplyKeybindings(self):
         "Update the keybindings after they are changed"
-        # Called from configDialog.py
-        self.Bindings.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
+        # Called from configdialog.py
+        self.mainmenu.default_keydefs = keydefs = idleConf.GetCurrentKeySet()
         self.apply_bindings()
         for extensionName in self.get_standard_extension_names():
             xkeydefs = idleConf.GetExtensionBindings(extensionName)
@@ -799,7 +799,7 @@ class EditorWindow(object):
                 self.apply_bindings(xkeydefs)
         #update menu accelerators
         menuEventDict = {}
-        for menu in self.Bindings.menudefs:
+        for menu in self.mainmenu.menudefs:
             menuEventDict[menu[0]] = {}
             for item in menu[1]:
                 if item:
@@ -826,7 +826,7 @@ class EditorWindow(object):
 
     def set_notabs_indentwidth(self):
         "Update the indentwidth if changed and not using tabs in this window"
-        # Called from configDialog.py
+        # Called from configdialog.py
         if not self.usetabs:
             self.indentwidth = idleConf.GetOption('main', 'Indent','num-spaces',
                                                   type='int')
@@ -1006,7 +1006,7 @@ class EditorWindow(object):
     def _close(self):
         if self.io.filename:
             self.update_recent_files_list(new_file=self.io.filename)
-        WindowList.unregister_callback(self.postwindowsmenu)
+        windows.unregister_callback(self.postwindowsmenu)
         self.unload_extensions()
         self.io.close()
         self.io = None
@@ -1044,12 +1044,25 @@ class EditorWindow(object):
     def get_standard_extension_names(self):
         return idleConf.GetExtensions(editor_only=True)
 
+    extfiles = {  # map config-extension section names to new file names
+        'AutoComplete': 'autocomplete',
+        'AutoExpand': 'autoexpand',
+        'CallTips': 'calltips',
+        'CodeContext': 'codecontext',
+        'FormatParagraph': 'paragraph',
+        'ParenMatch': 'parenmatch',
+        'RstripExtension': 'rstrip',
+        'ScriptBinding': 'runscript',
+        'ZoomHeight': 'zoomheight',
+        }
+
     def load_extension(self, name):
+        fname = self.extfiles.get(name, name)
         try:
             try:
-                mod = importlib.import_module('.' + name, package=__package__)
+                mod = importlib.import_module('.' + fname, package=__package__)
             except (ImportError, TypeError):
-                mod = importlib.import_module(name)
+                mod = importlib.import_module(fname)
         except ImportError:
             print("\nFailed to import extension: ", name)
             raise
@@ -1073,7 +1086,7 @@ class EditorWindow(object):
 
     def apply_bindings(self, keydefs=None):
         if keydefs is None:
-            keydefs = self.Bindings.default_keydefs
+            keydefs = self.mainmenu.default_keydefs
         text = self.text
         text.keydefs = keydefs
         for event, keylist in keydefs.items():
@@ -1086,9 +1099,9 @@ class EditorWindow(object):
         Menus that are absent or None in self.menudict are ignored.
         """
         if menudefs is None:
-            menudefs = self.Bindings.menudefs
+            menudefs = self.mainmenu.menudefs
         if keydefs is None:
-            keydefs = self.Bindings.default_keydefs
+            keydefs = self.mainmenu.default_keydefs
         menudict = self.menudict
         text = self.text
         for mname, entrylist in menudefs:
@@ -1315,7 +1328,7 @@ class EditorWindow(object):
             # adjust indentation for continuations and block
             # open/close first need to find the last stmt
             lno = index2line(text.index('insert'))
-            y = PyParse.Parser(self.indentwidth, self.tabwidth)
+            y = pyparse.Parser(self.indentwidth, self.tabwidth)
             if not self.context_use_ps1:
                 for context in self.num_context_lines:
                     startat = max(lno - context, 1)
@@ -1339,22 +1352,22 @@ class EditorWindow(object):
                 y.set_lo(0)
 
             c = y.get_continuation_type()
-            if c != PyParse.C_NONE:
+            if c != pyparse.C_NONE:
                 # The current stmt hasn't ended yet.
-                if c == PyParse.C_STRING_FIRST_LINE:
+                if c == pyparse.C_STRING_FIRST_LINE:
                     # after the first line of a string; do not indent at all
                     pass
-                elif c == PyParse.C_STRING_NEXT_LINES:
+                elif c == pyparse.C_STRING_NEXT_LINES:
                     # inside a string which started before this line;
                     # just mimic the current indent
                     text.insert("insert", indent)
-                elif c == PyParse.C_BRACKET:
+                elif c == pyparse.C_BRACKET:
                     # line up with the first (if any) element of the
                     # last open bracket structure; else indent one
                     # level beyond the indent of the line with the
                     # last open bracket
                     self.reindent_to(y.compute_bracket_indent())
-                elif c == PyParse.C_BACKSLASH:
+                elif c == pyparse.C_BACKSLASH:
                     # if more than one line in this stmt already, just
                     # mimic the current indent; else if initial line
                     # has a start on an assignment stmt, indent to
@@ -1657,7 +1670,7 @@ def get_accelerator(keydefs, eventname):
     keylist = keydefs.get(eventname)
     # issue10940: temporary workaround to prevent hang with OS X Cocoa Tk 8.5
     # if not keylist:
-    if (not keylist) or (macosxSupport.isCocoaTk() and eventname in {
+    if (not keylist) or (macosx.isCocoaTk() and eventname in {
                             "<<open-module>>",
                             "<<goto-line>>",
                             "<<change-indentwidth>>"}):
@@ -1692,7 +1705,7 @@ def _editor_window(parent):  # htest #
         filename = sys.argv[1]
     else:
         filename = None
-    macosxSupport.setupApp(root, None)
+    macosx.setupApp(root, None)
     edit = EditorWindow(root=root, filename=filename)
     edit.text.bind("<<close-all-windows>>", edit.close_event)
     # Does not stop error, neither does following

@@ -1,4 +1,4 @@
-# general purpose 'tooltip' routines - currently unused in idlefork
+# general purpose 'tooltip' routines - currently unused in idlelib
 # (although the 'calltips' extension is partly based on this code)
 # may be useful for some purposes in (or almost in ;) the current project scope
 # Ideas gleaned from PySol
@@ -76,7 +76,7 @@ class ListboxToolTip(ToolTipBase):
         for item in self.items:
             listbox.insert(END, item)
 
-def _tooltip(parent):
+def _tooltip(parent):  # htest #
     root = Tk()
     root.title("Test tooltip")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))

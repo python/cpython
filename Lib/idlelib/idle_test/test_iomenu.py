@@ -1,6 +1,6 @@
 import unittest
 import io
-from idlelib.PyShell import PseudoInputFile, PseudoOutputFile
+from idlelib.pyshell import PseudoInputFile, PseudoOutputFile
 
 
 class S(str):

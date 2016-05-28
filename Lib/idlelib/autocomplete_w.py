@@ -1,9 +1,9 @@
 """
-An auto-completion window for IDLE, used by the AutoComplete extension
+An auto-completion window for IDLE, used by the autocomplete extension
 """
 from tkinter import *
-from idlelib.MultiCall import MC_SHIFT
-from idlelib.AutoComplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
+from idlelib.multicall import MC_SHIFT
+from idlelib.autocomplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
 
 HIDE_VIRTUAL_EVENT_NAME = "<<autocompletewindow-hide>>"
 HIDE_SEQUENCES = ("<FocusOut>", "<ButtonPress>")
@@ -34,8 +34,8 @@ class AutoCompleteWindow:
         self.completions = None
         # A list with more completions, or None
         self.morecompletions = None
-        # The completion mode. Either AutoComplete.COMPLETE_ATTRIBUTES or
-        # AutoComplete.COMPLETE_FILES
+        # The completion mode. Either autocomplete.COMPLETE_ATTRIBUTES or
+        # autocomplete.COMPLETE_FILES
         self.mode = None
         # The current completion start, on the text box (a string)
         self.start = None

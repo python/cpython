@@ -1,7 +1,7 @@
 import string
 from tkinter import *
 
-from idlelib.Delegator import Delegator
+from idlelib.delegator import Delegator
 
 #$ event <<redo>>
 #$ win <Control-y>
@@ -340,7 +340,7 @@ class CommandSequence(Command):
 def _undo_delegator(parent):  # htest #
     import re
     import tkinter as tk
-    from idlelib.Percolator import Percolator
+    from idlelib.percolator import Percolator
     undowin = tk.Toplevel()
     undowin.title("Test UndoDelegator")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))

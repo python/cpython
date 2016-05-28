@@ -7,7 +7,7 @@ duplicate the defaults will be removed from the user's configuration files,
 and if a file becomes empty, it will be deleted.
 
 The contents of the user files may be altered using the Options/Configure IDLE
-menu to access the configuration GUI (configDialog.py), or manually.
+menu to access the configuration GUI (configdialog.py), or manually.
 
 Throughout this module there is an emphasis on returning useable defaults
 when a problem occurs in returning a requested configuration value back to
@@ -230,7 +230,7 @@ class IdleConf:
                 return self.userCfg[configType].Get(section, option,
                                                     type=type, raw=raw)
         except ValueError:
-            warning = ('\n Warning: configHandler.py - IdleConf.GetOption -\n'
+            warning = ('\n Warning: config.py - IdleConf.GetOption -\n'
                        ' invalid %r value for configuration option %r\n'
                        ' from section %r: %r' %
                        (type, option, section,
@@ -247,7 +247,7 @@ class IdleConf:
             pass
         #returning default, print warning
         if warn_on_default:
-            warning = ('\n Warning: configHandler.py - IdleConf.GetOption -\n'
+            warning = ('\n Warning: config.py - IdleConf.GetOption -\n'
                        ' problem retrieving configuration option %r\n'
                        ' from section %r.\n'
                        ' returning default value: %r' %
@@ -358,7 +358,7 @@ class IdleConf:
         for element in theme:
             if not cfgParser.has_option(themeName, element):
                 # Print warning that will return a default color
-                warning = ('\n Warning: configHandler.IdleConf.GetThemeDict'
+                warning = ('\n Warning: config.IdleConf.GetThemeDict'
                            ' -\n problem retrieving theme element %r'
                            '\n from theme %r.\n'
                            ' returning default color: %r' %
@@ -644,7 +644,7 @@ class IdleConf:
                 if binding:
                     keyBindings[event] = binding
                 else: #we are going to return a default, print warning
-                    warning=('\n Warning: configHandler.py - IdleConf.GetCoreKeys'
+                    warning=('\n Warning: config.py - IdleConf.GetCoreKeys'
                                ' -\n problem retrieving key binding for event %r'
                                '\n from key set %r.\n'
                                ' returning default value: %r' %

@@ -1,7 +1,7 @@
-"""Unittests for idlelib.configHelpSourceEdit"""
+"""Unittests for idlelib.config_help.py"""
 import unittest
 from idlelib.idle_test.mock_tk import Var, Mbox, Entry
-from idlelib import configHelpSourceEdit as help_dialog_module
+from idlelib import config_help as help_dialog_module
 
 help_dialog = help_dialog_module.GetHelpSourceDialog
 

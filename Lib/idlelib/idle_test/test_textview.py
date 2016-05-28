@@ -1,4 +1,4 @@
-'''Test the functions and main class method of textView.py.
+'''Test the functions and main class method of textview.py.
 
 Since all methods and functions create (or destroy) a TextViewer, which
 is a widget containing multiple widgets, all tests must be gui tests.
@@ -13,7 +13,7 @@ requires('gui')
 import unittest
 import os
 from tkinter import Tk
-from idlelib import textView as tv
+from idlelib import textview as tv
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox
 
