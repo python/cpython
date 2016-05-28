@@ -1,4 +1,4 @@
-'''Unittests for idlelib/SearchDialogBase.py
+'''Unittests for idlelib/searchbase.py
 
 Coverage: 99%. The only thing not covered is inconsequential --
 testing skipping of suite when self.needwrapbutton is false.
@@ -7,8 +7,8 @@ testing skipping of suite when self.needwrapbutton is false.
 import unittest
 from test.support import requires
 from tkinter import Tk, Toplevel, Frame ##, BooleanVar, StringVar
-from idlelib import SearchEngine as se
-from idlelib import SearchDialogBase as sdb
+from idlelib import searchengine as se
+from idlelib import searchbase as sdb
 from idlelib.idle_test.mock_idle import Func
 ## from idlelib.idle_test.mock_tk import Var
 

@@ -17,8 +17,8 @@
 import os
 from tkinter import *
 
-from idlelib import ZoomHeight
-from idlelib.configHandler import idleConf
+from idlelib import zoomheight
+from idlelib.config import idleConf
 
 ICONDIR = "Icons"
 
@@ -445,7 +445,7 @@ class ScrolledCanvas:
         self.canvas.yview_scroll(1, "unit")
         return "break"
     def zoom_height(self, event):
-        ZoomHeight.zoom_height(self.master)
+        zoomheight.zoom_height(self.master)
         return "break"
 
 

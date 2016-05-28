@@ -125,7 +125,7 @@ class SearchDialogBase:
     def create_option_buttons(self):
         '''Return (filled frame, options) for testing.
 
-        Options is a list of SearchEngine booleanvar, label pairs.
+        Options is a list of searchengine booleanvar, label pairs.
         A gridded frame from make_frame is filled with a Checkbutton
         for each pair, bound to the var, with the corresponding label.
         '''

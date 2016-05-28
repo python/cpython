@@ -1,8 +1,8 @@
 from tkinter import *
-from idlelib.EditorWindow import EditorWindow
+from idlelib.editor import EditorWindow
 import re
 import tkinter.messagebox as tkMessageBox
-from idlelib import IOBinding
+from idlelib import iomenu
 
 class OutputWindow(EditorWindow):
 
@@ -36,7 +36,7 @@ class OutputWindow(EditorWindow):
 
     def write(self, s, tags=(), mark="insert"):
         if isinstance(s, (bytes, bytes)):
-            s = s.decode(IOBinding.encoding, "replace")
+            s = s.decode(iomenu.encoding, "replace")
         self.text.insert(mark, s, tags)
         self.text.see(mark)
         self.text.update()

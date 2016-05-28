@@ -2,9 +2,9 @@ import unittest
 from test.support import requires
 from tkinter import Tk, Text
 
-import idlelib.AutoComplete as ac
-import idlelib.AutoCompleteWindow as acw
-import idlelib.macosxSupport as mac
+import idlelib.autocomplete as ac
+import idlelib.autocomplete_w as acw
+import idlelib.macosx as mac
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Event
 

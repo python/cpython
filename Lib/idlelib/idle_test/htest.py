@@ -59,19 +59,19 @@ msg: master window hints about testing the widget.
 
 
 Modules and classes not being tested at the moment:
-PyShell.PyShellEditorWindow
-Debugger.Debugger
-AutoCompleteWindow.AutoCompleteWindow
-OutputWindow.OutputWindow (indirectly being tested with grep test)
+pyshell.PyShellEditorWindow
+debugger.Debugger
+autocomplete_w.AutoCompleteWindow
+outwin.OutputWindow (indirectly being tested with grep test)
 '''
 
 from importlib import import_module
-from idlelib.macosxSupport import _initializeTkVariantTests
+from idlelib.macosx import _initializeTkVariantTests
 import tkinter as tk
 
 AboutDialog_spec = {
-    'file': 'aboutDialog',
-    'kwds': {'title': 'aboutDialog test',
+    'file': 'help_about',
+    'kwds': {'title': 'help_about test',
              '_htest': True,
              },
     'msg': "Test every button. Ensure Python, TK and IDLE versions "
@@ -79,14 +79,14 @@ AboutDialog_spec = {
     }
 
 _calltip_window_spec = {
-    'file': 'CallTipWindow',
+    'file': 'calltip_w',
     'kwds': {},
     'msg': "Typing '(' should display a calltip.\n"
            "Typing ') should hide the calltip.\n"
     }
 
 _class_browser_spec = {
-    'file': 'ClassBrowser',
+    'file': 'browser',
     'kwds': {},
     'msg': "Inspect names of module, class(with superclass if "
            "applicable), methods and functions.\nToggle nested items.\n"
@@ -95,7 +95,7 @@ _class_browser_spec = {
     }
 
 _color_delegator_spec = {
-    'file': 'ColorDelegator',
+    'file': 'colorizer',
     'kwds': {},
     'msg': "The text is sample Python code.\n"
            "Ensure components like comments, keywords, builtins,\n"
@@ -104,7 +104,7 @@ _color_delegator_spec = {
     }
 
 ConfigDialog_spec = {
-    'file': 'configDialog',
+    'file': 'configdialog',
     'kwds': {'title': 'ConfigDialogTest',
              '_htest': True,},
     'msg': "IDLE preferences dialog.\n"
@@ -121,7 +121,7 @@ ConfigDialog_spec = {
 
 # TODO Improve message
 _dyn_option_menu_spec = {
-    'file': 'dynOptionMenuWidget',
+    'file': 'dynoption',
     'kwds': {},
     'msg': "Select one of the many options in the 'old option set'.\n"
            "Click the button to change the option set.\n"
@@ -130,14 +130,14 @@ _dyn_option_menu_spec = {
 
 # TODO edit wrapper
 _editor_window_spec = {
-   'file': 'EditorWindow',
+   'file': 'editor',
     'kwds': {},
     'msg': "Test editor functions of interest.\n"
            "Best to close editor first."
     }
 
 GetCfgSectionNameDialog_spec = {
-    'file': 'configSectionNameDialog',
+    'file': 'config_sec',
     'kwds': {'title':'Get Name',
              'message':'Enter something',
              'used_names': {'abc'},
@@ -149,7 +149,7 @@ GetCfgSectionNameDialog_spec = {
     }
 
 GetHelpSourceDialog_spec = {
-    'file': 'configHelpSourceEdit',
+    'file': 'config_help',
     'kwds': {'title': 'Get helpsource',
              '_htest': True},
     'msg': "Enter menu item name and help file path\n "
@@ -162,7 +162,7 @@ GetHelpSourceDialog_spec = {
 
 # Update once issue21519 is resolved.
 GetKeysDialog_spec = {
-    'file': 'keybindingDialog',
+    'file': 'config_key',
     'kwds': {'title': 'Test keybindings',
              'action': 'find-again',
              'currentKeySequences': [''] ,
@@ -177,7 +177,7 @@ GetKeysDialog_spec = {
     }
 
 _grep_dialog_spec = {
-    'file': 'GrepDialog',
+    'file': 'grep',
     'kwds': {},
     'msg': "Click the 'Show GrepDialog' button.\n"
            "Test the various 'Find-in-files' functions.\n"
@@ -187,7 +187,7 @@ _grep_dialog_spec = {
     }
 
 _io_binding_spec = {
-    'file': 'IOBinding',
+    'file': 'iomenu',
     'kwds': {},
     'msg': "Test the following bindings.\n"
            "<Control-o> to open file from dialog.\n"
@@ -200,7 +200,7 @@ _io_binding_spec = {
     }
 
 _multi_call_spec = {
-    'file': 'MultiCall',
+    'file': 'multicall',
     'kwds': {},
     'msg': "The following actions should trigger a print to console or IDLE"
            " Shell.\nEntering and leaving the text area, key entry, "
@@ -210,14 +210,14 @@ _multi_call_spec = {
     }
 
 _multistatus_bar_spec = {
-    'file': 'MultiStatusBar',
+    'file': 'statusbar',
     'kwds': {},
     'msg': "Ensure presence of multi-status bar below text area.\n"
            "Click 'Update Status' to change the multi-status text"
     }
 
 _object_browser_spec = {
-    'file': 'ObjectBrowser',
+    'file': 'debugobj',
     'kwds': {},
     'msg': "Double click on items upto the lowest level.\n"
            "Attributes of the objects and related information "
@@ -225,7 +225,7 @@ _object_browser_spec = {
     }
 
 _path_browser_spec = {
-    'file': 'PathBrowser',
+    'file': 'pathbrowser',
     'kwds': {},
     'msg': "Test for correct display of all paths in sys.path.\n"
            "Toggle nested items upto the lowest level.\n"
@@ -234,7 +234,7 @@ _path_browser_spec = {
     }
 
 _percolator_spec = {
-    'file': 'Percolator',
+    'file': 'percolator',
     'kwds': {},
     'msg': "There are two tracers which can be toggled using a checkbox.\n"
            "Toggling a tracer 'on' by checking it should print tracer"
@@ -245,7 +245,7 @@ _percolator_spec = {
     }
 
 _replace_dialog_spec = {
-    'file': 'ReplaceDialog',
+    'file': 'replace',
     'kwds': {},
     'msg': "Click the 'Replace' button.\n"
            "Test various replace options in the 'Replace dialog'.\n"
@@ -253,7 +253,7 @@ _replace_dialog_spec = {
     }
 
 _search_dialog_spec = {
-    'file': 'SearchDialog',
+    'file': 'search',
     'kwds': {},
     'msg': "Click the 'Search' button.\n"
            "Test various search options in the 'Search dialog'.\n"
@@ -261,7 +261,7 @@ _search_dialog_spec = {
     }
 
 _scrolled_list_spec = {
-    'file': 'ScrolledList',
+    'file': 'scrolledlist',
     'kwds': {},
     'msg': "You should see a scrollable list of items\n"
            "Selecting (clicking) or double clicking an item "
@@ -277,7 +277,7 @@ show_idlehelp_spec = {
     }
 
 _stack_viewer_spec = {
-    'file': 'StackViewer',
+    'file': 'stackviewer',
     'kwds': {},
     'msg': "A stacktrace for a NameError exception.\n"
            "Expand 'idlelib ...' and '<locals>'.\n"
@@ -295,8 +295,8 @@ _tabbed_pages_spec = {
     }
 
 TextViewer_spec = {
-    'file': 'textView',
-    'kwds': {'title': 'Test textView',
+    'file': 'textview',
+    'kwds': {'title': 'Test textview',
              'text':'The quick brown fox jumps over the lazy dog.\n'*35,
              '_htest': True},
     'msg': "Test for read-only property of text.\n"
@@ -304,21 +304,21 @@ TextViewer_spec = {
      }
 
 _tooltip_spec = {
-    'file': 'ToolTip',
+    'file': 'tooltip',
     'kwds': {},
     'msg': "Place mouse cursor over both the buttons\n"
            "A tooltip should appear with some text."
     }
 
 _tree_widget_spec = {
-    'file': 'TreeWidget',
+    'file': 'tree',
     'kwds': {},
     'msg': "The canvas is scrollable.\n"
            "Click on folders upto to the lowest level."
     }
 
 _undo_delegator_spec = {
-    'file': 'UndoDelegator',
+    'file': 'undo',
     'kwds': {},
     'msg': "Click [Undo] to undo any action.\n"
            "Click [Redo] to redo any action.\n"
@@ -327,7 +327,7 @@ _undo_delegator_spec = {
     }
 
 _widget_redirector_spec = {
-    'file': 'WidgetRedirector',
+    'file': 'redirector',
     'kwds': {},
     'msg': "Every text insert should be printed to the console."
            "or the IDLE shell."

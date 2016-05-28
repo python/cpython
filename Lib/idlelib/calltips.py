@@ -1,4 +1,4 @@
-"""CallTips.py - An IDLE Extension to Jog Your Memory
+"""calltips.py - An IDLE Extension to Jog Your Memory
 
 Call Tips are floating windows which display function, class, and method
 parameter and docstring information when you type an opening parenthesis, and
@@ -12,8 +12,8 @@ import sys
 import textwrap
 import types
 
-from idlelib import CallTipWindow
-from idlelib.HyperParser import HyperParser
+from idlelib import calltip_w
+from idlelib.hyperparser import HyperParser
 
 class CallTips:
 
@@ -37,7 +37,7 @@ class CallTips:
 
     def _make_tk_calltip_window(self):
         # See __init__ for usage
-        return CallTipWindow.CallTip(self.text)
+        return calltip_w.CallTip(self.text)
 
     def _remove_calltip_window(self, event=None):
         if self.active_calltip:

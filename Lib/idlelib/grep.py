@@ -4,14 +4,14 @@ import re  # for htest
 import sys
 from tkinter import StringVar, BooleanVar, Checkbutton  # for GrepDialog
 from tkinter import Tk, Text, Button, SEL, END  # for htest
-from idlelib import SearchEngine
-from idlelib.SearchDialogBase import SearchDialogBase
+from idlelib import searchengine
+from idlelib.searchbase import SearchDialogBase
 # Importing OutputWindow fails due to import loop
 # EditorWindow -> GrepDialop -> OutputWindow -> EditorWindow
 
 def grep(text, io=None, flist=None):
     root = text._root()
-    engine = SearchEngine.get(root)
+    engine = searchengine.get(root)
     if not hasattr(engine, "_grepdialog"):
         engine._grepdialog = GrepDialog(root, engine, flist)
     dialog = engine._grepdialog
@@ -67,7 +67,7 @@ class GrepDialog(SearchDialogBase):
         if not path:
             self.top.bell()
             return
-        from idlelib.OutputWindow import OutputWindow  # leave here!
+        from idlelib.outwin import OutputWindow  # leave here!
         save = sys.stdout
         try:
             sys.stdout = OutputWindow(self.flist)
@@ -131,7 +131,7 @@ class GrepDialog(SearchDialogBase):
 
 
 def _grep_dialog(parent):  # htest #
-    from idlelib.PyShell import PyShellFileList
+    from idlelib.pyshell import PyShellFileList
     root = Tk()
     root.title("Test GrepDialog")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))

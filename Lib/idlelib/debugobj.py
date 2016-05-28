@@ -11,7 +11,7 @@
 
 import re
 
-from idlelib.TreeWidget import TreeItem, TreeNode, ScrolledCanvas
+from idlelib.tree import TreeItem, TreeNode, ScrolledCanvas
 
 from reprlib import Repr
 
@@ -126,7 +126,7 @@ def _object_browser(parent):
     import sys
     from tkinter import Tk
     root = Tk()
-    root.title("Test ObjectBrowser")
+    root.title("Test debug object browser")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
     root.geometry("+%d+%d"%(x, y + 150))
     root.configure(bd=0, bg="yellow")

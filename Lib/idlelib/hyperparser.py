@@ -7,7 +7,7 @@ the structure of code.
 
 import string
 from keyword import iskeyword
-from idlelib import PyParse
+from idlelib import pyparse
 
 
 # all ASCII chars that may be in an identifier
@@ -30,7 +30,7 @@ class HyperParser:
         self.editwin = editwin
         self.text = text = editwin.text
 
-        parser = PyParse.Parser(editwin.indentwidth, editwin.tabwidth)
+        parser = pyparse.Parser(editwin.indentwidth, editwin.tabwidth)
 
         def index2line(index):
             return int(float(index))

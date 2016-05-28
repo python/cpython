@@ -1,4 +1,4 @@
-"""Test SearchDialog class in SearchDialogue.py"""
+"""Test SearchDialog class in idlelib.search.py"""
 
 # Does not currently test the event handler wrappers.
 # A usage test should simulate clicks and check hilighting.
@@ -11,8 +11,8 @@ requires('gui')
 import unittest
 import tkinter as tk
 from tkinter import BooleanVar
-import idlelib.SearchEngine as se
-import idlelib.SearchDialog as sd
+import idlelib.searchengine as se
+import idlelib.search as sd
 
 
 class SearchDialogTest(unittest.TestCase):

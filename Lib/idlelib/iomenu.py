@@ -10,7 +10,7 @@ import tkinter.filedialog as tkFileDialog
 import tkinter.messagebox as tkMessageBox
 from tkinter.simpledialog import askstring
 
-from idlelib.configHandler import idleConf
+from idlelib.config import idleConf
 
 
 # Try setting the locale, so that we can find out
@@ -107,6 +107,9 @@ def coding_spec(data):
 
 
 class IOBinding:
+# One instance per editor Window so methods know which to save, close.
+# Open returns focus to self.editwin if aborted.
+# EditorWindow.open_module, others, belong here.
 
     def __init__(self, editwin):
         self.editwin = editwin

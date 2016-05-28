@@ -1,7 +1,7 @@
 """A CallTip window class for Tkinter/IDLE.
 
-After ToolTip.py, which uses ideas gleaned from PySol
-Used by the CallTips IDLE extension.
+After tooltip.py, which uses ideas gleaned from PySol
+Used by the calltips IDLE extension.
 """
 from tkinter import Toplevel, Label, LEFT, SOLID, TclError
 

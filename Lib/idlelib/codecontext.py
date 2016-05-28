@@ -1,11 +1,11 @@
-"""CodeContext - Extension to display the block context above the edit window
+"""codecontext - Extension to display the block context above the edit window
 
 Once code has scrolled off the top of a window, it can be difficult to
 determine which block you are in.  This extension implements a pane at the top
 of each IDLE edit window which provides block structure hints.  These hints are
 the lines which contain the block opening keywords, e.g. 'if', for the
 enclosing block.  The number of hint lines is determined by the numlines
-variable in the CodeContext section of config-extensions.def. Lines which do
+variable in the codecontext section of config-extensions.def. Lines which do
 not open blocks are not shown in the context hints pane.
 
 """
@@ -13,7 +13,7 @@ import tkinter
 from tkinter.constants import TOP, LEFT, X, W, SUNKEN
 import re
 from sys import maxsize as INFINITY
-from idlelib.configHandler import idleConf
+from idlelib.config import idleConf
 
 BLOCKOPENERS = {"class", "def", "elif", "else", "except", "finally", "for",
                     "if", "try", "while", "with"}

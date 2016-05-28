@@ -1,12 +1,12 @@
 from tkinter import *
 
-from idlelib import SearchEngine
-from idlelib.SearchDialogBase import SearchDialogBase
+from idlelib import searchengine
+from idlelib.searchbase import SearchDialogBase
 
 def _setup(text):
     "Create or find the singleton SearchDialog instance."
     root = text._root()
-    engine = SearchEngine.get(root)
+    engine = searchengine.get(root)
     if not hasattr(engine, "_searchdialog"):
         engine._searchdialog = SearchDialog(root, engine)
     return engine._searchdialog

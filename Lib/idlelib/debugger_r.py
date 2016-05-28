@@ -21,7 +21,7 @@ barrier, in particular frame and traceback objects.
 """
 
 import types
-from idlelib import Debugger
+from idlelib import debugger
 
 debugging = 0
 
@@ -187,7 +187,7 @@ def start_debugger(rpchandler, gui_adap_oid):
 
     """
     gui_proxy = GUIProxy(rpchandler, gui_adap_oid)
-    idb = Debugger.Idb(gui_proxy)
+    idb = debugger.Idb(gui_proxy)
     idb_adap = IdbAdapter(idb)
     rpchandler.register(idb_adap_oid, idb_adap)
     return idb_adap_oid
@@ -362,7 +362,7 @@ def start_remote_debugger(rpcclt, pyshell):
     idb_adap_oid = rpcclt.remotecall("exec", "start_the_debugger",\
                                    (gui_adap_oid,), {})
     idb_proxy = IdbProxy(rpcclt, pyshell, idb_adap_oid)
-    gui = Debugger.Debugger(pyshell, idb_proxy)
+    gui = debugger.Debugger(pyshell, idb_proxy)
     gui_adap = GUIAdapter(rpcclt, gui)
     rpcclt.register(gui_adap_oid, gui_adap)
     return gui
@@ -373,7 +373,7 @@ def close_remote_debugger(rpcclt):
     Request that the RPCServer shut down the subprocess debugger and link.
     Unregister the GUIAdapter, which will cause a GC on the Idle process
     debugger and RPC link objects.  (The second reference to the debugger GUI
-    is deleted in PyShell.close_remote_debugger().)
+    is deleted in pyshell.close_remote_debugger().)
 
     """
     close_subprocess_debugger(rpcclt)
