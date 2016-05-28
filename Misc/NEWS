@@ -204,7 +204,8 @@ Core and Builtins
 - Issue #25791: If __package__ != __spec__.parent or if neither __package__ or
   __spec__ are defined then ImportWarning is raised.
 
-- Issue #25731: Fix set and deleting __new__ on a class.
+- Issue #22995: [UPDATE] Comment out the one of the pickleability tests in
+  _PyObject_GetState() due to regressions observed in Cython-based projects.
 
 - Issue #25961: Disallowed null characters in the type name.
 
