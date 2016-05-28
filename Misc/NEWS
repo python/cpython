@@ -105,6 +105,8 @@ Core and Builtins
 
 - Issue #27138: Fix the doc comment for FileFinder.find_spec().
 
+- Issue #27147: Mention PEP 420 in the importlib docs.
+
 - Issue #25339: PYTHONIOENCODING now has priority over locale in setting the
   error handler for stdin and stdout.
 
