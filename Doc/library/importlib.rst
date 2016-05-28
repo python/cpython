@@ -52,6 +52,9 @@ generically as an :term:`importer`) to participate in the import process.
     :pep:`366`
         Main module explicit relative imports
 
+    :pep:`420`
+        Implicit namespace packages
+
     :pep:`451`
         A ModuleSpec Type for the Import System
 
