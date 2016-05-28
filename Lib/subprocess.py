@@ -1317,7 +1317,7 @@ class Popen(object):
 
                 # Wait for exec to fail or succeed; possibly raising exception
                 data = _eintr_retry_call(os.read, errpipe_read, 1048576)
-                pickle_bits = [data]
+                pickle_bits = []
                 while data:
                     pickle_bits.append(data)
                     data = _eintr_retry_call(os.read, errpipe_read, 1048576)
