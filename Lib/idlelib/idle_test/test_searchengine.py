@@ -1,4 +1,4 @@
-'''Test functions and SearchEngine class in SearchEngine.py.'''
+'''Test functions and SearchEngine class in idlelib.searchengine.py.'''
 
 # With mock replacements, the module does not use any gui widgets.
 # The use of tk.Text is avoided (for now, until mock Text is improved)
@@ -10,7 +10,7 @@ import unittest
 # from test.support import requires
 from tkinter import  BooleanVar, StringVar, TclError  # ,Tk, Text
 import tkinter.messagebox as tkMessageBox
-from idlelib import SearchEngine as se
+from idlelib import searchengine as se
 from idlelib.idle_test.mock_tk import Var, Mbox
 from idlelib.idle_test.mock_tk import Text as mockText
 

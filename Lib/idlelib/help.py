@@ -4,7 +4,7 @@ Contents are subject to revision at any time, without notice.
 
 Help => About IDLE: diplay About Idle dialog
 
-<to be moved here from aboutDialog.py>
+<to be moved here from help_about.py>
 
 
 Help => IDLE Help: Display help.html with proper formatting.
@@ -28,7 +28,7 @@ from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
 from tkinter import Toplevel, Frame, Text, Scrollbar, Menu, Menubutton
 from tkinter import font as tkfont
-from idlelib.configHandler import idleConf
+from idlelib.config import idleConf
 
 use_ttk = False # until available to import
 if use_ttk:
