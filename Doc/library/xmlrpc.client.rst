@@ -29,7 +29,7 @@ between conformable Python objects and XML on the wire.
 
 .. versionchanged:: 3.5
 
-   For https URIs, :mod:`xmlrpc.client` now performs all the necessary
+   For HTTPS URIs, :mod:`xmlrpc.client` now performs all the necessary
    certificate and hostname checks by default.
 
 .. class:: ServerProxy(uri, transport=None, encoding=None, verbose=False, \
@@ -67,7 +67,7 @@ between conformable Python objects and XML on the wire.
    portion will be base64-encoded as an HTTP 'Authorization' header, and sent to
    the remote server as part of the connection process when invoking an XML-RPC
    method.  You only need to use this if the remote server requires a Basic
-   Authentication user and password. If an HTTPS url is provided, *context* may
+   Authentication user and password. If an HTTPS URL is provided, *context* may
    be :class:`ssl.SSLContext` and configures the SSL settings of the underlying
    HTTPS connection.
 

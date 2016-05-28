@@ -22,7 +22,7 @@ HTTPS protocols.  It is normally not used directly --- the module
 .. seealso::
 
     The `Requests package <https://requests.readthedocs.org/>`_
-    is recommended for a higher-level http client interface.
+    is recommended for a higher-level HTTP client interface.
 
 .. note::
 

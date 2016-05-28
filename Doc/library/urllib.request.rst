@@ -15,7 +15,7 @@ authentication, redirections, cookies and more.
 .. seealso::
 
     The `Requests package <https://requests.readthedocs.org/>`_
-    is recommended for a higher-level http client interface.
+    is recommended for a higher-level HTTP client interface.
 
 
 The :mod:`urllib.request` module defines the following functions:
@@ -71,7 +71,7 @@ The :mod:`urllib.request` module defines the following functions:
 
    * :meth:`~urllib.response.addinfourl.getcode` -- return the HTTP status code of the response.
 
-   For http and https urls, this function returns a
+   For HTTP and HTTPS URLs, this function returns a
    :class:`http.client.HTTPResponse` object slightly modified. In addition
    to the three new methods above, the msg attribute contains the
    same information as the :attr:`~http.client.HTTPResponse.reason`
@@ -79,7 +79,7 @@ The :mod:`urllib.request` module defines the following functions:
    the response headers as it is specified in the documentation for
    :class:`~http.client.HTTPResponse`.
 
-   For ftp, file, and data urls and requests explicitly handled by legacy
+   For FTP, file, and data URLs and requests explicitly handled by legacy
    :class:`URLopener` and :class:`FancyURLopener` classes, this function
    returns a :class:`urllib.response.addinfourl` object.
 
@@ -453,7 +453,7 @@ request.
 .. attribute:: Request.selector
 
    The URI path.  If the :class:`Request` uses a proxy, then selector
-   will be the full url that is passed to the proxy.
+   will be the full URL that is passed to the proxy.
 
 .. attribute:: Request.data
 
@@ -772,8 +772,8 @@ HTTPRedirectHandler Objects
    details of the precise meanings of the various redirection codes.
 
    An :class:`HTTPError` exception raised as a security consideration if the
-   HTTPRedirectHandler is presented with a redirected url which is not an HTTP,
-   HTTPS or FTP url.
+   HTTPRedirectHandler is presented with a redirected URL which is not an HTTP,
+   HTTPS or FTP URL.
 
 
 .. method:: HTTPRedirectHandler.redirect_request(req, fp, code, msg, hdrs, newurl)
@@ -1126,7 +1126,7 @@ it. ::
 
 Note that urlopen returns a bytes object.  This is because there is no way
 for urlopen to automatically determine the encoding of the byte stream
-it receives from the http server. In general, a program will decode
+it receives from the HTTP server. In general, a program will decode
 the returned bytes object to string once it determines or guesses
 the appropriate encoding.
 
