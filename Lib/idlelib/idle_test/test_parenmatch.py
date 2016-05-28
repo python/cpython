@@ -1,4 +1,4 @@
-"""Test idlelib.ParenMatch."""
+"""Test idlelib.parenmatch."""
 # This must currently be a gui test because ParenMatch methods use
 # several text methods not defined on idlelib.idle_test.mock_tk.Text.
 from test.support import requires
@@ -7,7 +7,7 @@ requires('gui')
 import unittest
 from unittest.mock import Mock
 from tkinter import Tk, Text
-from idlelib.ParenMatch import ParenMatch
+from idlelib.parenmatch import ParenMatch
 
 class DummyEditwin:
     def __init__(self, text):

@@ -1,4 +1,4 @@
-'''Test warnings replacement in PyShell.py and run.py.
+'''Test warnings replacement in pyshell.py and run.py.
 
 This file could be expanded to include traceback overrides
 (in same two modules). If so, change name.
@@ -17,9 +17,9 @@ showwarning = warnings.showwarning
 running_in_idle = 'idle' in showwarning.__name__
 
 from idlelib import run
-from idlelib import PyShell as shell
+from idlelib import pyshell as shell
 
-# The following was generated from PyShell.idle_formatwarning
+# The following was generated from pyshell.idle_formatwarning
 # and checked as matching expectation.
 idlemsg = '''
 Warning (from warnings module):
