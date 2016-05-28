@@ -153,7 +153,7 @@ ThreadPoolExecutor Example
            'http://www.bbc.co.uk/',
            'http://some-made-up-domain.com/']
 
-   # Retrieve a single page and report the url and contents
+   # Retrieve a single page and report the URL and contents
    def load_url(url, timeout):
        with urllib.request.urlopen(url, timeout=timeout) as conn:
            return conn.read()
