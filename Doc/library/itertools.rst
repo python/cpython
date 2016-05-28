@@ -94,7 +94,7 @@ loops that truncate the stream.
    Make an iterator that returns elements from the first iterable until it is
    exhausted, then proceeds to the next iterable, until all of the iterables are
    exhausted.  Used for treating consecutive sequences as a single sequence.
-   Equivalent to::
+   Roughly equivalent to::
 
       def chain(*iterables):
           # chain('ABC', 'DEF') --> A B C D E F
@@ -129,7 +129,7 @@ loops that truncate the stream.
    value.  So if the input elements are unique, there will be no repeat
    values in each combination.
 
-   Equivalent to::
+   Roughly equivalent to::
 
         def combinations(iterable, r):
             # combinations('ABCD', 2) --> AB AC AD BC BD CD
@@ -180,7 +180,7 @@ loops that truncate the stream.
    value.  So if the input elements are unique, the generated combinations
    will also be unique.
 
-   Equivalent to::
+   Roughly equivalent to::
 
         def combinations_with_replacement(iterable, r):
             # combinations_with_replacement('ABC', 2) --> AA AB AC BB BC CC
@@ -219,7 +219,7 @@ loops that truncate the stream.
    Make an iterator that filters elements from *data* returning only those that
    have a corresponding element in *selectors* that evaluates to ``True``.
    Stops when either the *data* or *selectors* iterables has been exhausted.
-   Equivalent to::
+   Roughly equivalent to::
 
        def compress(data, selectors):
            # compress('ABCDEF', [1,0,1,0,1,1]) --> A C E F
@@ -253,7 +253,7 @@ loops that truncate the stream.
 
    Make an iterator returning elements from the iterable and saving a copy of each.
    When the iterable is exhausted, return elements from the saved copy.  Repeats
-   indefinitely.  Equivalent to::
+   indefinitely.  Roughly equivalent to::
 
       def cycle(iterable):
           # cycle('ABCD') --> A B C D A B C D A B C D ...
@@ -274,7 +274,7 @@ loops that truncate the stream.
    Make an iterator that drops elements from the iterable as long as the predicate
    is true; afterwards, returns every element.  Note, the iterator does not produce
    *any* output until the predicate first becomes false, so it may have a lengthy
-   start-up time.  Equivalent to::
+   start-up time.  Roughly equivalent to::
 
       def dropwhile(predicate, iterable):
           # dropwhile(lambda x: x<5, [1,4,6,4,1]) --> 6 4 1
@@ -313,7 +313,7 @@ loops that truncate the stream.
           groups.append(list(g))      # Store group iterator as a list
           uniquekeys.append(k)
 
-   :func:`groupby` is equivalent to::
+   :func:`groupby` is roughly equivalent to::
 
       class groupby(object):
           # [k for k, g in groupby('AAAABBBCCDAABBB')] --> A B C D A B
@@ -345,7 +345,7 @@ loops that truncate the stream.
 
    Make an iterator that filters elements from iterable returning only those for
    which the predicate is ``True``. If *predicate* is ``None``, return the items
-   that are true. Equivalent to::
+   that are true. Roughly equivalent to::
 
       def ifilter(predicate, iterable):
           # ifilter(lambda x: x%2, range(10)) --> 1 3 5 7 9
@@ -360,7 +360,7 @@ loops that truncate the stream.
 
    Make an iterator that filters elements from iterable returning only those for
    which the predicate is ``False``. If *predicate* is ``None``, return the items
-   that are false. Equivalent to::
+   that are false. Roughly equivalent to::
 
       def ifilterfalse(predicate, iterable):
           # ifilterfalse(lambda x: x%2, range(10)) --> 0 2 4 6 8
@@ -379,7 +379,7 @@ loops that truncate the stream.
    exhausted instead of filling in ``None`` for shorter iterables.  The reason for
    the difference is that infinite iterator arguments are typically an error for
    :func:`map` (because the output is fully evaluated) but represent a common and
-   useful way of supplying arguments to :func:`imap`. Equivalent to::
+   useful way of supplying arguments to :func:`imap`. Roughly equivalent to::
 
       def imap(function, *iterables):
           # imap(pow, (2,3,10), (5,2,3)) --> 32 9 1000
@@ -403,7 +403,7 @@ loops that truncate the stream.
    specified position.  Unlike regular slicing, :func:`islice` does not support
    negative values for *start*, *stop*, or *step*.  Can be used to extract related
    fields from data where the internal structure has been flattened (for example, a
-   multi-line report may list a name field on every third line).  Equivalent to::
+   multi-line report may list a name field on every third line).  Roughly equivalent to::
 
       def islice(iterable, *args):
           # islice('ABCDEFG', 2) --> A B
@@ -429,7 +429,7 @@ loops that truncate the stream.
 
    Make an iterator that aggregates elements from each of the iterables. Like
    :func:`zip` except that it returns an iterator instead of a list.  Used for
-   lock-step iteration over several iterables at a time.  Equivalent to::
+   lock-step iteration over several iterables at a time.  Roughly equivalent to::
 
       def izip(*iterables):
           # izip('ABCD', 'xy') --> Ax By
@@ -454,7 +454,7 @@ loops that truncate the stream.
 
    Make an iterator that aggregates elements from each of the iterables. If the
    iterables are of uneven length, missing values are filled-in with *fillvalue*.
-   Iteration continues until the longest iterable is exhausted.  Equivalent to::
+   Iteration continues until the longest iterable is exhausted.  Roughly equivalent to::
 
       class ZipExhausted(Exception):
           pass
@@ -499,7 +499,7 @@ loops that truncate the stream.
    value.  So if the input elements are unique, there will be no repeat
    values in each permutation.
 
-   Equivalent to::
+   Roughly equivalent to::
 
         def permutations(iterable, r=None):
             # permutations('ABCD', 2) --> AB AC AD BA BC BD CA CB CD DA DB DC
@@ -547,7 +547,7 @@ loops that truncate the stream.
 
    Cartesian product of input iterables.
 
-   Equivalent to nested for-loops in a generator expression. For example,
+   Roughly equivalent to nested for-loops in a generator expression. For example,
    ``product(A, B)`` returns the same as ``((x,y) for x in A for y in B)``.
 
    The nested loops cycle like an odometer with the rightmost element advancing
@@ -559,7 +559,7 @@ loops that truncate the stream.
    repetitions with the optional *repeat* keyword argument.  For example,
    ``product(A, repeat=4)`` means the same as ``product(A, A, A, A)``.
 
-   This function is equivalent to the following code, except that the
+   This function is roughly equivalent to the following code, except that the
    actual implementation does not build up intermediate results in memory::
 
        def product(*args, **kwds):
@@ -579,7 +579,7 @@ loops that truncate the stream.
    Make an iterator that returns *object* over and over again. Runs indefinitely
    unless the *times* argument is specified. Used as argument to :func:`imap` for
    invariant function parameters.  Also used with :func:`izip` to create constant
-   fields in a tuple record.  Equivalent to::
+   fields in a tuple record.  Roughly equivalent to::
 
       def repeat(object, times=None):
           # repeat(10, 3) --> 10 10 10
@@ -602,7 +602,7 @@ loops that truncate the stream.
    the iterable.  Used instead of :func:`imap` when argument parameters are already
    grouped in tuples from a single iterable (the data has been "pre-zipped").  The
    difference between :func:`imap` and :func:`starmap` parallels the distinction
-   between ``function(a,b)`` and ``function(*c)``. Equivalent to::
+   between ``function(a,b)`` and ``function(*c)``. Roughly equivalent to::
 
       def starmap(function, iterable):
           # starmap(pow, [(2,5), (3,2), (10,3)]) --> 32 9 1000
@@ -616,7 +616,7 @@ loops that truncate the stream.
 .. function:: takewhile(predicate, iterable)
 
    Make an iterator that returns elements from the iterable as long as the
-   predicate is true.  Equivalent to::
+   predicate is true.  Roughly equivalent to::
 
       def takewhile(predicate, iterable):
           # takewhile(lambda x: x<5, [1,4,6,4,1]) --> 1 4
@@ -629,7 +629,7 @@ loops that truncate the stream.
 
 .. function:: tee(iterable[, n=2])
 
-   Return *n* independent iterators from a single iterable.  Equivalent to::
+   Return *n* independent iterators from a single iterable.  Roughly equivalent to::
 
         def tee(iterable, n=2):
             it = iter(iterable)
