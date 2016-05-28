@@ -296,8 +296,9 @@ class IOBase(metaclass=abc.ABCMeta):
     called.
 
     The basic type used for binary data read from or written to a file is
-    bytes. bytearrays are accepted too, and in some cases (such as
-    readinto) needed. Text I/O classes work with str data.
+    bytes. Other bytes-like objects are accepted as method arguments too. In
+    some cases (such as readinto), a writable object is required. Text I/O
+    classes work with str data.
 
     Note that calling any method (even inquiries) on a closed stream is
     undefined. Implementations may raise OSError in this case.
@@ -596,7 +597,7 @@ class RawIOBase(IOBase):
             return data
 
     def readinto(self, b):
-        """Read up to len(b) bytes into bytearray b.
+        """Read bytes into a pre-allocated bytes-like object b.
 
         Returns an int representing the number of bytes read (0 for EOF), or
         None if the object is set not to block and has no data to read.
@@ -606,7 +607,8 @@ class RawIOBase(IOBase):
     def write(self, b):
         """Write the given buffer to the IO stream.
 
-        Returns the number of bytes written, which may be less than len(b).
+        Returns the number of bytes written, which may be less than the
+        length of b in bytes.
         """
         self._unsupported("write")
 
@@ -659,7 +661,7 @@ class BufferedIOBase(IOBase):
         self._unsupported("read1")
 
     def readinto(self, b):
-        """Read up to len(b) bytes into bytearray b.
+        """Read bytes into a pre-allocated bytes-like object b.
 
         Like read(), this may issue multiple reads to the underlying raw
         stream, unless the latter is 'interactive'.
@@ -673,7 +675,7 @@ class BufferedIOBase(IOBase):
         return self._readinto(b, read1=False)
 
     def readinto1(self, b):
-        """Read up to len(b) bytes into *b*, using at most one system call
+        """Read bytes into buffer *b*, using at most one system call
 
         Returns an int representing the number of bytes read (0 for EOF).
 
@@ -701,8 +703,8 @@ class BufferedIOBase(IOBase):
     def write(self, b):
         """Write the given bytes buffer to the IO stream.
 
-        Return the number of bytes written, which is never less than
-        len(b).
+        Return the number of bytes written, which is always the length of b
+        in bytes.
 
         Raises BlockingIOError if the buffer is full and the
         underlying raw stream cannot accept more data at the moment.
@@ -884,7 +886,8 @@ class BytesIO(BufferedIOBase):
             raise ValueError("write to closed file")
         if isinstance(b, str):
             raise TypeError("can't write str to binary stream")
-        n = len(b)
+        with memoryview(b) as view:
+            n = view.nbytes  # Size of any bytes-like object
         if n == 0:
             return 0
         pos = self._pos
@@ -1090,14 +1093,13 @@ class BufferedReader(_BufferedIOMixin):
     def _readinto(self, buf, read1):
         """Read data into *buf* with at most one system call."""
 
-        if len(buf) == 0:
-            return 0
-
         # Need to create a memoryview object of type 'b', otherwise
         # we may not be able to assign bytes to it, and slicing it
         # would create a new object.
         if not isinstance(buf, memoryview):
             buf = memoryview(buf)
+        if buf.nbytes == 0:
+            return 0
         buf = buf.cast('B')
 
         written = 0
