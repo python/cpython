@@ -190,8 +190,8 @@ bufferediobase_read1(PyObject *self, PyObject *args)
 PyDoc_STRVAR(bufferediobase_write_doc,
     "Write the given buffer to the IO stream.\n"
     "\n"
-    "Returns the number of bytes written, which is never less than\n"
-    "len(b).\n"
+    "Returns the number of bytes written, which is always the length of b\n"
+    "in bytes.\n"
     "\n"
     "Raises BlockingIOError if the buffer is full and the\n"
     "underlying raw stream cannot accept more data at the moment.\n");

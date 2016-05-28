@@ -222,7 +222,7 @@ PyDoc_STRVAR(_io_FileIO_write__doc__,
 "write($self, b, /)\n"
 "--\n"
 "\n"
-"Write bytes b to file, return number written.\n"
+"Write buffer b to file, return number of bytes written.\n"
 "\n"
 "Only makes one system call, so not all of the data may be written.\n"
 "The number of bytes actually written is returned.  In non-blocking mode,\n"
@@ -364,4 +364,4 @@ _io_FileIO_isatty(fileio *self, PyObject *Py_UNUSED(ignored))
 #ifndef _IO_FILEIO_TRUNCATE_METHODDEF
     #define _IO_FILEIO_TRUNCATE_METHODDEF
 #endif /* !defined(_IO_FILEIO_TRUNCATE_METHODDEF) */
-/*[clinic end generated code: output=b1a20b10c81add64 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dcbc39b466598492 input=a9049054013a1b77]*/
