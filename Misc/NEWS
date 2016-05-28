@@ -80,8 +80,6 @@ Core and Builtins
   (``int``) and ``f2()`` returns ``1.0`` (``int``), even if ``1`` and ``1.0``
   are equal.
 
-- Issue #25731: Fix set and deleting __new__ on a class.
-
 - Issue #22995: [UPDATE] Comment out the one of the pickleability tests in
   _PyObject_GetState() due to regressions observed in Cython-based projects.
 
