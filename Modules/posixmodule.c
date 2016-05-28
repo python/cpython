@@ -38,6 +38,8 @@
 #undef HAVE_FACCESSAT
 #endif
 
+#include <stdio.h>  /* needed for ctermid() */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
