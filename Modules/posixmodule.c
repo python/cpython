@@ -32,6 +32,8 @@
 #include "winreparse.h"
 #endif
 
+#include <stdio.h>  /* needed for ctermid() */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
