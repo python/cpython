@@ -259,7 +259,7 @@ PyDoc_STRVAR(_io_BytesIO_readinto__doc__,
 "readinto($self, buffer, /)\n"
 "--\n"
 "\n"
-"Read up to len(buffer) bytes into buffer.\n"
+"Read bytes into buffer.\n"
 "\n"
 "Returns number of bytes read (0 for EOF), or None if the object\n"
 "is set not to block and has no data to read.");
@@ -419,4 +419,4 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=164cf0e4117dadbe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=60ce2c6272718431 input=a9049054013a1b77]*/

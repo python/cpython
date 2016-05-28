@@ -399,7 +399,16 @@ class MemoryTestMixin:
         del __main__.PickleTestMemIO
 
 
-class BytesIOMixin:
+class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin, unittest.TestCase):
+    # Test _pyio.BytesIO; class also inherited for testing C implementation
+
+    UnsupportedOperation = pyio.UnsupportedOperation
+
+    @staticmethod
+    def buftype(s):
+        return s.encode("ascii")
+    ioclass = pyio.BytesIO
+    EOF = b""
 
     def test_getbuffer(self):
         memio = self.ioclass(b"1234567890")
@@ -425,18 +434,6 @@ class BytesIOMixin:
         memio.truncate()
         memio.close()
         self.assertRaises(ValueError, memio.getbuffer)
-
-
-class PyBytesIOTest(MemoryTestMixin, MemorySeekTestMixin,
-                    BytesIOMixin, unittest.TestCase):
-
-    UnsupportedOperation = pyio.UnsupportedOperation
-
-    @staticmethod
-    def buftype(s):
-        return s.encode("ascii")
-    ioclass = pyio.BytesIO
-    EOF = b""
 
     def test_read1(self):
         buf = self.buftype("1234567890")

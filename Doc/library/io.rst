@@ -66,7 +66,8 @@ The text stream API is described in detail in the documentation of
 Binary I/O
 ^^^^^^^^^^
 
-Binary I/O (also called *buffered I/O*) expects and produces :class:`bytes`
+Binary I/O (also called *buffered I/O*) expects
+:term:`bytes-like objects <bytes-like object>` and produces :class:`bytes`
 objects.  No encoding, decoding, or newline translation is performed.  This
 category of streams can be used for all kinds of non-text data, and also when
 manual control over the handling of text data is desired.
@@ -227,9 +228,10 @@ I/O Base Classes
    when operations they do not support are called.
 
    The basic type used for binary data read from or written to a file is
-   :class:`bytes`.  :class:`bytearray`\s are accepted too, and in some cases
-   (such as :meth:`readinto`) required.  Text I/O classes work with
-   :class:`str` data.
+   :class:`bytes`.  Other :term:`bytes-like objects <bytes-like object>` are
+   accepted as method arguments too.  In some cases, such as
+   :meth:`~RawIOBase.readinto`, a writable object such as :class:`bytearray`
+   is required.  Text I/O classes work with :class:`str` data.
 
    Note that calling any method (even inquiries) on a closed stream is
    undefined.  Implementations may raise :exc:`ValueError` in this case.
@@ -393,18 +395,22 @@ I/O Base Classes
 
    .. method:: readinto(b)
 
-      Read up to ``len(b)`` bytes into :class:`bytearray` *b* and return the
+      Read bytes into a pre-allocated, writable
+      :term:`bytes-like object` *b*, and return the
       number of bytes read.  If the object is in non-blocking mode and no bytes
       are available, ``None`` is returned.
 
    .. method:: write(b)
 
-      Write the given :class:`bytes` or :class:`bytearray` object, *b*, to the
-      underlying raw stream and return the number of bytes written.  This can
-      be less than ``len(b)``, depending on specifics of the underlying raw
+      Write the given :term:`bytes-like object`, *b*, to the
+      underlying raw stream, and return the number of
+      bytes written.  This can be less than the length of *b* in
+      bytes, depending on specifics of the underlying raw
       stream, and especially if it is in non-blocking mode.  ``None`` is
       returned if the raw stream is set not to block and no single byte could
-      be readily written to it.
+      be readily written to it.  The caller may release or mutate *b* after
+      this method returns, so the implementation should only access *b*
+      during the method call.
 
 
 .. class:: BufferedIOBase
@@ -476,8 +482,8 @@ I/O Base Classes
 
    .. method:: readinto(b)
 
-      Read up to ``len(b)`` bytes into bytearray *b* and return the number of
-      bytes read.
+      Read bytes into a pre-allocated, writable
+      :term:`bytes-like object` *b* and return the number of bytes read.
 
       Like :meth:`read`, multiple reads may be issued to the underlying raw
       stream, unless the latter is interactive.
@@ -487,7 +493,8 @@ I/O Base Classes
 
    .. method:: readinto1(b)
 
-      Read up to ``len(b)`` bytes into bytearray *b*, using at most one call to
+      Read bytes into a pre-allocated, writable
+      :term:`bytes-like object` *b*, using at most one call to
       the underlying raw stream's :meth:`~RawIOBase.read` (or
       :meth:`~RawIOBase.readinto`) method. Return the number of bytes read.
 
@@ -498,8 +505,8 @@ I/O Base Classes
 
    .. method:: write(b)
 
-      Write the given :class:`bytes` or :class:`bytearray` object, *b* and
-      return the number of bytes written (never less than ``len(b)``, since if
+      Write the given :term:`bytes-like object`, *b*, and return the number
+      of bytes written (always equal to the length of *b* in bytes, since if
       the write fails an :exc:`OSError` will be raised).  Depending on the
       actual implementation, these bytes may be readily written to the
       underlying stream, or held in a buffer for performance and latency
@@ -508,6 +515,9 @@ I/O Base Classes
       When in non-blocking mode, a :exc:`BlockingIOError` is raised if the
       data needed to be written to the raw stream but it couldn't accept
       all the data without blocking.
+
+      The caller may release or mutate *b* after this method returns,
+      so the implementation should only access *b* during the method call.
 
 
 Raw File I/O
@@ -584,7 +594,8 @@ than raw I/O does.
    :class:`BufferedIOBase`.  The buffer is discarded when the
    :meth:`~IOBase.close` method is called.
 
-   The argument *initial_bytes* contains optional initial :class:`bytes` data.
+   The optional argument *initial_bytes* is a :term:`bytes-like object` that
+   contains initial data.
 
    :class:`BytesIO` provides or overrides these methods in addition to those
    from :class:`BufferedIOBase` and :class:`IOBase`:
@@ -682,7 +693,7 @@ than raw I/O does.
 
    .. method:: write(b)
 
-      Write the :class:`bytes` or :class:`bytearray` object, *b* and return the
+      Write the :term:`bytes-like object`, *b*, and return the
       number of bytes written.  When in non-blocking mode, a
       :exc:`BlockingIOError` is raised if the buffer needs to be written out but
       the raw stream blocks.
