@@ -27,7 +27,7 @@ reading, and no seek operations are available.
 .. seealso::
 
     The `Requests package <http://requests.readthedocs.org/>`_
-    is recommended for a higher-level http client interface.
+    is recommended for a higher-level HTTP client interface.
 
 .. warning:: When opening HTTPS URLs, it does not attempt to validate the
    server certificate.  Use at your own risk!
@@ -118,7 +118,7 @@ High-level interface
    causes environmental proxy settings to be used as discussed above.  For
    example::
 
-      # Use http://www.someproxy.com:3128 for http proxying
+      # Use http://www.someproxy.com:3128 for HTTP proxying
       proxies = {'http': 'http://www.someproxy.com:3128'}
       filehandle = urllib.urlopen(some_url, proxies=proxies)
       # Don't use any proxies
@@ -297,8 +297,8 @@ Utility functions
 
 .. note::
     urllib also exposes certain utility functions like splittype, splithost and
-    others parsing url into various components. But it is recommended to use
-    :mod:`urlparse` for parsing urls rather than using these functions directly.
+    others parsing URL into various components. But it is recommended to use
+    :mod:`urlparse` for parsing URLs rather than using these functions directly.
     Python 3 does not expose these helper functions from :mod:`urllib.parse`
     module.
 

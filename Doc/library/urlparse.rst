@@ -290,7 +290,7 @@ The :mod:`urlparse` module defines the following functions:
       Names (URNs) and Uniform Resource Locators (URLs).
 
    :rfc:`2368` - The mailto URL scheme.
-      Parsing requirements for mailto url schemes.
+      Parsing requirements for mailto URL schemes.
 
    :rfc:`1808` - Relative Uniform Resource Locators
       This Request For Comments includes the rules for joining an absolute and a

@@ -17,7 +17,7 @@
    single: Overmars, Mark
 
 This module provides an interface to the FORMS Library by Mark Overmars.  The
-source for the library can be retrieved by anonymous ftp from host
+source for the library can be retrieved by anonymous FTP from host
 ``ftp.cs.ruu.nl``, directory :file:`SGI/FORMS`.  It was last tested with version
 2.0b.
 

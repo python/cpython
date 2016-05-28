@@ -27,7 +27,7 @@ uses it to handle URLs that use HTTP and HTTPS.
 .. seealso::
 
     The `Requests package <http://requests.readthedocs.org/>`_
-    is recommended for a higher-level http client interface.
+    is recommended for a higher-level HTTP client interface.
 
 .. note::
 
