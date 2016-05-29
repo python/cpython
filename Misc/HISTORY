@@ -6633,7 +6633,7 @@ C-API
   PyErr_Format, on machines with HAVE_LONG_LONG defined.
 
 - Issue #6151: Made PyDescr_COMMON conform to standard C (like PyObject_HEAD in
-  PEP 3123).  The PyDescr_TYPE and PyDescr_NAME macros should be should used for
+  PEP 3123).  The PyDescr_TYPE and PyDescr_NAME macros should be used for
   accessing the d_type and d_name members of structures using PyDescr_COMMON.
 
 - Issue #6405: Remove duplicate type declarations in descrobject.h.
@@ -16065,7 +16065,7 @@ Core and builtins
 - All standard iterators now ensure that, once StopIteration has been
   raised, all future calls to next() on the same iterator will also
   raise StopIteration.  There used to be various counterexamples to
-  this behavior, which could caused confusion or subtle program
+  this behavior, which could have caused confusion or subtle program
   breakage, without any benefits.  (Note that this is still an
   iterator's responsibility; the iterator framework does not enforce
   this.)

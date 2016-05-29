@@ -1865,7 +1865,7 @@ _PyObject_DebugTypeStats(FILE *out)
 
 /* These methods are used to control infinite recursion in repr, str, print,
    etc.  Container objects that may recursively contain themselves,
-   e.g. builtin dictionaries and lists, should used Py_ReprEnter() and
+   e.g. builtin dictionaries and lists, should use Py_ReprEnter() and
    Py_ReprLeave() to avoid infinite recursion.
 
    Py_ReprEnter() returns 0 the first time it is called for a particular

@@ -1052,7 +1052,7 @@ class InputOnly(TixWidget):
 
 class LabelEntry(TixWidget):
     """LabelEntry - Entry field with label. Packages an entry widget
-    and a label into one mega widget. It can beused be used to simplify
+    and a label into one mega widget. It can be used be used to simplify
     the creation of ``entry-form'' type of interface.
 
     Subwidgets       Class

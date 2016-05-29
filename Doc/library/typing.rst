@@ -156,7 +156,7 @@ You can use multiple inheritance with :class:`Generic`::
    class LinkedList(Sized, Generic[T]):
        ...
 
-When inheriting from generic classes, some type variables could fixed::
+When inheriting from generic classes, some type variables could be fixed::
 
     from typing import TypeVar, Mapping
 
