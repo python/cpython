@@ -152,8 +152,8 @@ The :mod:`binascii` module defines the following functions:
 
    Return the binary data represented by the hexadecimal string *hexstr*.  This
    function is the inverse of :func:`b2a_hex`. *hexstr* must contain an even number
-   of hexadecimal digits (which can be upper or lower case), otherwise a
-   :exc:`TypeError` is raised.
+   of hexadecimal digits (which can be upper or lower case), otherwise an
+   :exc:`Error` exception is raised.
 
 
 .. exception:: Error
