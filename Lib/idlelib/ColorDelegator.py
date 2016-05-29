@@ -2,6 +2,7 @@ import time
 import re
 import keyword
 import builtins
+from tkinter import TkVersion
 from idlelib.Delegator import Delegator
 from idlelib.configHandler import idleConf
 
@@ -31,6 +32,28 @@ def make_pat():
 
 prog = re.compile(make_pat(), re.S)
 idprog = re.compile(r"\s+(\w+)", re.S)
+
+def color_config(text):  # Called from htest, Editor, and Turtle Demo.
+    '''Set color opitons of Text widget.
+
+    Should be called whenever ColorDelegator is called.
+    '''
+    # Not automatic because ColorDelegator does not know 'text'.
+    theme = idleConf.CurrentTheme()
+    normal_colors = idleConf.GetHighlight(theme, 'normal')
+    cursor_color = idleConf.GetHighlight(theme, 'cursor', fgBg='fg')
+    select_colors = idleConf.GetHighlight(theme, 'hilite')
+    text.config(
+        foreground=normal_colors['foreground'],
+        background=normal_colors['background'],
+        insertbackground=cursor_color,
+        selectforeground=select_colors['foreground'],
+        selectbackground=select_colors['background'],
+        )
+    if TkVersion >= 8.5:
+        text.config(
+            inactiveselectbackground=select_colors['background'])
+
 
 class ColorDelegator(Delegator):
 
@@ -233,6 +256,7 @@ class ColorDelegator(Delegator):
         for tag in self.tagdefs:
             self.tag_remove(tag, "1.0", "end")
 
+
 def _color_delegator(parent):  # htest #
     from tkinter import Toplevel, Text
     from idlelib.Percolator import Percolator
@@ -247,6 +271,7 @@ def _color_delegator(parent):  # htest #
     text.insert("insert", source)
     text.focus_set()
 
+    color_config(text)
     p = Percolator(text)
     d = ColorDelegator()
     p.insertfilter(d)
