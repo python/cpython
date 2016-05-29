@@ -579,7 +579,7 @@ class Message:
         message, it will be set to "text/plain" and the new parameter and
         value will be appended as per RFC 2045.
 
-        An alternate header can specified in the header argument, and all
+        An alternate header can be specified in the header argument, and all
         parameters will be quoted as necessary unless requote is False.
 
         If charset is specified, the parameter will be encoded according to RFC

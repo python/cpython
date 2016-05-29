@@ -2137,9 +2137,9 @@ connection is established both ends will demand proof that the other knows the
 authentication key.  (Demonstrating that both ends are using the same key does
 **not** involve sending the key over the connection.)
 
-If authentication is requested but do authentication key is specified then the
+If authentication is requested but no authentication key is specified then the
 return value of ``current_process().authkey`` is used (see
-:class:`~multiprocessing.Process`).  This value will automatically inherited by
+:class:`~multiprocessing.Process`).  This value will be automatically inherited by
 any :class:`~multiprocessing.Process` object that the current process creates.
 This means that (by default) all processes of a multi-process program will share
 a single authentication key which can be used when setting up connections

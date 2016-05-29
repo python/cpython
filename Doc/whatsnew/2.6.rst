@@ -3150,7 +3150,7 @@ Port-Specific Changes: Mac OS X
   :func:`macostools.touched` function to be removed because it depended on the
   :mod:`macfs` module.  (:issue:`1490190`)
 
-* Many other Mac OS modules have been deprecated and will removed in
+* Many other Mac OS modules have been deprecated and will be removed in
   Python 3.0:
   :mod:`_builtinSuites`,
   :mod:`aepack`,

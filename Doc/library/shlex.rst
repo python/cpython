@@ -231,7 +231,8 @@ variables which either control lexical analysis or can be used for debugging:
    This attribute is ``None`` by default.  If you assign a string to it, that
    string will be recognized as a lexical-level inclusion request similar to the
    ``source`` keyword in various shells.  That is, the immediately following token
-   will opened as a filename and input taken from that stream until EOF, at which
+   will be opened as a filename and input will
+   be taken from that stream until EOF, at which
    point the :meth:`~io.IOBase.close` method of that stream will be called and
    the input source will again become the original input stream.  Source
    requests may be stacked any number of levels deep.

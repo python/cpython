@@ -961,7 +961,7 @@ def formatdate(timeval=None):
 
     According to RFC 1123, day and month names must always be in
     English.  If not for that, this code could use strftime().  It
-    can't because strftime() honors the locale and could generated
+    can't because strftime() honors the locale and could generate
     non-English names.
     """
     if timeval is None:

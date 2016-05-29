@@ -5148,7 +5148,7 @@ Core and builtins
 - All standard iterators now ensure that, once StopIteration has been
   raised, all future calls to next() on the same iterator will also
   raise StopIteration.  There used to be various counterexamples to
-  this behavior, which could caused confusion or subtle program
+  this behavior, which could have caused confusion or subtle program
   breakage, without any benefits.  (Note that this is still an
   iterator's responsibility; the iterator framework does not enforce
   this.)

@@ -98,7 +98,7 @@ Allocating Objects on the Heap
    Create a new module object based on a name and table of functions,
    returning the new module object.  If *doc* is non-*NULL*, it will be used
    to define the docstring for the module.  If *self* is non-*NULL*, it will
-   passed to the functions of the module as their (otherwise *NULL*) first
+   be passed to the functions of the module as their (otherwise *NULL*) first
    parameter.  (This was added as an experimental feature, and there are no
    known uses in the current version of Python.)  For *apiver*, the only value
    which should be passed is defined by the constant

@@ -24,7 +24,7 @@ class Object:
     depends on the object; for simple objects, it may be their center.
 
     Objects have mouse sensitivity.  They can be clicked, dragged and
-    double-clicked.  The behavior may actually determined by the pile
+    double-clicked.  The behavior may actually be determined by the pile
     they are in.
 
     All instance attributes are public since the derived class may
