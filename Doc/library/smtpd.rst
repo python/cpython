@@ -52,8 +52,8 @@ SMTPServer Objects
    cannot be set to ``True`` at the same time.
 
    *decode_data* specifies whether the data portion of the SMTP transaction
-   should be decoded using UTF-8.  The default is ``False``.  When
-   *decode_data* is not set to ``True`` the server advertises the ``8BITMIME``
+   should be decoded using UTF-8.  When *decode_data* is ``False`` (the
+   default), the server advertises the ``8BITMIME``
    extension (:rfc:`6152`), accepts the ``BODY=8BITMIME`` parameter to
    the ``MAIL`` command, and when present passes it to :meth:`process_message`
    in the ``kwargs['mail_options']`` list. *decode_data* and *enable_SMTPUTF8*
@@ -70,7 +70,7 @@ SMTPServer Objects
       format).
 
       If the *decode_data* constructor keyword is set to ``True``, the *data*
-      parameter will be a unicode string.  If it is set to ``False``, it
+      argument will be a unicode string.  If it is set to ``False``, it
       will be a bytes object.
 
       *kwargs* is a dictionary containing additional information. It is empty
@@ -107,8 +107,8 @@ SMTPServer Objects
 
    .. versionadded:: 3.5
       The *decode_data* and *enable_SMTPUTF8* constructor parameters, and the
-      *kwargs* parameter to :meth:`process_message` when one or more of these is
-      specified.
+      *kwargs* parameter to :meth:`process_message` when *decode_data* is
+      ``False``.
 
    .. versionchanged:: 3.6
       *decode_data* is now ``False`` by default.
