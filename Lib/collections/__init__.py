@@ -850,7 +850,8 @@ class ChainMap(MutableMapping):
     to create a single, updateable view.
 
     The underlying mappings are stored in a list.  That list is public and can
-    accessed or updated using the *maps* attribute.  There is no other state.
+    be accessed or updated using the *maps* attribute.  There is no other
+    state.
 
     Lookups search the underlying mappings successively until a key is found.
     In contrast, writes, updates, and deletions only operate on the first
