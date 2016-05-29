@@ -3507,7 +3507,7 @@ operating system.
 
 .. data:: SCHED_RESET_ON_FORK
 
-   This flag can OR'ed with any other scheduling policy. When a process with
+   This flag can be OR'ed with any other scheduling policy. When a process with
    this flag set forks, its child's scheduling policy and priority are reset to
    the default.
 
