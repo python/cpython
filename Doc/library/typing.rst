@@ -297,7 +297,7 @@ The module defines the following classes, functions and decorators:
 
 .. class:: Tuple
 
-  Tuple type; ``Tuple[X, Y]`` is the is the type of a tuple of two items
+  Tuple type; ``Tuple[X, Y]`` is the type of a tuple of two items
   with the first item of type X and the second of type Y.
 
   Example: ``Tuple[T1, T2]`` is a tuple of two elements corresponding

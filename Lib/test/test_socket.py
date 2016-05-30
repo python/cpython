@@ -4747,7 +4747,7 @@ class TIPCThreadableTest(unittest.TestCase, ThreadableTest):
         self.addCleanup(self.conn.close)
 
     def clientSetUp(self):
-        # The is a hittable race between serverExplicitReady() and the
+        # There is a hittable race between serverExplicitReady() and the
         # accept() call; sleep a little while to avoid it, otherwise
         # we could get an exception
         time.sleep(0.1)
