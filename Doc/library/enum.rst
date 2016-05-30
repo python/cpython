@@ -314,8 +314,8 @@ Then::
     >>> str(Mood.funky)
     'my custom str! 1'
 
-The rules for what is allowed are as follows: names that start and end with a
-with a single underscore are reserved by enum and cannot be used; all other
+The rules for what is allowed are as follows: names that start and end with
+a single underscore are reserved by enum and cannot be used; all other
 attributes defined within an enumeration will become members of this
 enumeration, with the exception of special methods (:meth:`__str__`,
 :meth:`__add__`, etc.) and descriptors (methods are also descriptors).
