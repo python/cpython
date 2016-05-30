@@ -573,7 +573,7 @@ typedef struct PicklerObject {
     int bin;                    /* Boolean, true if proto > 0 */
     int framing;                /* True when framing is enabled, proto >= 4 */
     Py_ssize_t frame_start;     /* Position in output_buffer where the
-                                   where the current frame begins. -1 if there
+                                   current frame begins. -1 if there
                                    is no frame currently open. */
 
     Py_ssize_t buf_size;        /* Size of the current buffered pickle data */

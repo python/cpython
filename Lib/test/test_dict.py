@@ -863,7 +863,7 @@ class DictTest(unittest.TestCase):
             itorg = iter(data.items())
             d = pickle.dumps(itorg, proto)
             it = pickle.loads(d)
-            # note that the type of type of the unpickled iterator
+            # note that the type of the unpickled iterator
             # is not necessarily the same as the original.  It is
             # merely an object supporting the iterator protocol, yielding
             # the same objects as the original one.
