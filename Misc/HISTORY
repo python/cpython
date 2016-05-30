@@ -10639,8 +10639,8 @@ Core and Builtins
   certain operations between bytes/buffer and str like str(b'') and
   comparison.
 
-- The standards streams sys.stdin, stdout and stderr may be None when
-  the when the C runtime library returns an invalid file descriptor
+- The standard streams sys.stdin, stdout and stderr may be None
+  when the C runtime library returns an invalid file descriptor
   for the streams (fileno(stdin) < 0). For now this happens only for
   Windows GUI apps and scripts started with `pythonw.exe`.
 
