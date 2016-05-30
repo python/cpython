@@ -254,7 +254,7 @@ def _check_utc_offset(name, offset):
         raise ValueError("tzinfo.%s() must return a whole number "
                          "of minutes, got %s" % (name, offset))
     if not -timedelta(1) < offset < timedelta(1):
-        raise ValueError("%s()=%s, must be must be strictly between "
+        raise ValueError("%s()=%s, must be strictly between "
                          "-timedelta(hours=24) and timedelta(hours=24)" %
                          (name, offset))
 
