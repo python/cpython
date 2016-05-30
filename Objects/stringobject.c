@@ -35,7 +35,7 @@ static PyObject *interned;
    For PyString_FromString(), the parameter `str' points to a null-terminated
    string containing exactly `size' bytes.
 
-   For PyString_FromStringAndSize(), the parameter the parameter `str' is
+   For PyString_FromStringAndSize(), the parameter `str' is
    either NULL or else points to a string containing at least `size' bytes.
    For PyString_FromStringAndSize(), the string in the `str' parameter does
    not have to be null-terminated.  (Therefore it is safe to construct a

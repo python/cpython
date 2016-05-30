@@ -784,7 +784,7 @@ frozenset_hash(PyObject *self)
     hash *= PySet_GET_SIZE(self) + 1;
     while (set_next(so, &pos, &entry)) {
         /* Work to increase the bit dispersion for closely spaced hash
-           values.  The is important because some use cases have many
+           values.  This is important because some use cases have many
            combinations of a small number of elements with nearby
            hashes so that many distinct combinations collapse to only
            a handful of distinct hash values. */

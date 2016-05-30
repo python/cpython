@@ -346,7 +346,7 @@ your tests under multiple Python interpreters is tox_. You can then integrate
 tox with your continuous integration system so that you never accidentally break
 Python 2 or 3 support.
 
-You may also want to use use the ``-bb`` flag with the Python 3 interpreter to
+You may also want to use the ``-bb`` flag with the Python 3 interpreter to
 trigger an exception when you are comparing bytes to strings. Usually it's
 simply ``False``, but if you made a mistake in your separation of text/binary
 data handling you may be accidentally comparing text and binary data. This flag

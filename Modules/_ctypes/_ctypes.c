@@ -55,7 +55,7 @@ from_address(addr)
 
 from_param(obj)
     - typecheck and convert a Python object into a C function call parameter
-      the result may be an instance of the type, or an integer or tuple
+      The result may be an instance of the type, or an integer or tuple
       (typecode, value[, obj])
 
 instance methods/properties

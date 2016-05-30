@@ -16,7 +16,7 @@ python -m idlelib.idle_test.htest
 
 The idle directory, idlelib, has over 60 xyz.py files. The idle_test
 subdirectory should contain a test_xyz.py for each, where 'xyz' is lowercased
-even if xyz.py is not. Here is a possible template, with the blanks after after
+even if xyz.py is not. Here is a possible template, with the blanks after
 '.' and 'as', and before and after '_' to be filled in.
 
 import unittest

@@ -151,7 +151,7 @@ Basic Widgets
 
    The `LabelEntry
    <http://tix.sourceforge.net/dist/current/man/html/TixCmd/tixLabelEntry.htm>`_
-   widget packages an entry widget and a label into one mega widget. It can be used
+   widget packages an entry widget and a label into one mega widget. It can
    be used to simplify the creation of "entry-form" type of interface.
 
 .. Python Demo of:
