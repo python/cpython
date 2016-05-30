@@ -1690,7 +1690,7 @@ messages. (Contributed by Gavin Chappell and Maciej Szulik in :issue:`16914`.)
 
 Both the :meth:`SMTP.sendmail() <smtplib.SMTP.sendmail>` and
 :meth:`SMTP.send_message() <smtplib.SMTP.send_message>` methods now
-support support :rfc:`6531` (SMTPUTF8).
+support :rfc:`6531` (SMTPUTF8).
 (Contributed by Milan Oberkirch and R. David Murray in :issue:`22027`.)
 
 

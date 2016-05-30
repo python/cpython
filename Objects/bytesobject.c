@@ -38,7 +38,7 @@ Py_LOCAL_INLINE(Py_ssize_t) _PyBytesWriter_GetSize(_PyBytesWriter *writer,
    For PyBytes_FromString(), the parameter `str' points to a null-terminated
    string containing exactly `size' bytes.
 
-   For PyBytes_FromStringAndSize(), the parameter the parameter `str' is
+   For PyBytes_FromStringAndSize(), the parameter `str' is
    either NULL or else points to a string containing at least `size' bytes.
    For PyBytes_FromStringAndSize(), the string in the `str' parameter does
    not have to be null-terminated.  (Therefore it is safe to construct a
