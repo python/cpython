@@ -167,7 +167,7 @@ The following classes are provided:
 
    *headers* should be a dictionary, and will be treated as if :meth:`add_header`
    was called with each key and value as arguments.  This is often used to "spoof"
-   the ``User-Agent`` header, which is used by a browser to identify itself --
+   the ``User-Agent`` header value, which is used by a browser to identify itself --
    some HTTP servers only allow requests coming from common browsers as opposed
    to scripts.  For example, Mozilla Firefox may identify itself as ``"Mozilla/5.0
    (X11; U; Linux i686) Gecko/20071127 Firefox/2.0.0.11"``, while :mod:`urllib2`'s
@@ -950,6 +950,9 @@ HTTPErrorProcessor Objects
 Examples
 --------
 
+In addition to the examples below, more examples are given in
+:ref:`urllib-howto`.
+
 This example gets the python.org main page and displays the first 100 bytes of
 it::
 
@@ -1016,6 +1019,8 @@ Use the *headers* argument to the :class:`Request` constructor, or::
    import urllib2
    req = urllib2.Request('http://www.example.com/')
    req.add_header('Referer', 'http://www.python.org/')
+   # Customize the default User-Agent header value:
+   req.add_header('User-Agent', 'urllib-example/0.1 (Contact: . . .)')
    r = urllib2.urlopen(req)
 
 :class:`OpenerDirector` automatically adds a :mailheader:`User-Agent` header to
