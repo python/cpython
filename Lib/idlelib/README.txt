@@ -29,61 +29,61 @@ idle.pyw
 
 Implementation
 --------------
-AutoComplete.py   # Complete attribute names or filenames.
-AutoCompleteWindow.py  # Display completions.
-AutoExpand.py     # Expand word with previous word in file.
-Bindings.py       # Define most of IDLE menu.
-CallTipWindow.py  # Display calltip.
-CallTips.py       # Create calltip text.
-ClassBrowser.py   # Create module browser window.
-CodeContext.py    # Show compound statement headers otherwise not visible.
-ColorDelegator.py # Colorize text (nim).
-Debugger.py       # Debug code run from editor; show window.
-Delegator.py      # Define base class for delegators (nim).
-EditorWindow.py   # Define most of editor and utility functions.
-FileList.py       # Open files and manage list of open windows (nim).
-FormatParagraph.py# Re-wrap multiline strings and comments.
-GrepDialog.py     # Find all occurrences of pattern in multiple files.
-HyperParser.py    # Parse code around a given index.
-IOBinding.py      # Open, read, and write files
-IdleHistory.py    # Get previous or next user input in shell (nim)
-MultiCall.py      # Wrap tk widget to allow multiple calls per event (nim).
-MultiStatusBar.py # Define status bar for windows (nim).
-ObjectBrowser.py  # Define class used in StackViewer (nim).
-OutputWindow.py   # Create window for grep output.
-ParenMatch.py     # Match fenceposts: (), [], and {}.
-PathBrowser.py    # Create path browser window.
-Percolator.py     # Manage delegator stack (nim).
-PyParse.py        # Give information on code indentation
-PyShell.py        # Start IDLE, manage shell, complete editor window
-RemoteDebugger.py # Debug code run in remote process.
-RemoteObjectBrowser.py # Communicate objects between processes with rpc (nim).
-ReplaceDialog.py  # Search and replace pattern in text.
-RstripExtension.py# Strip trailing whitespace
-ScriptBinding.py  # Check and run user code.
-ScrolledList.py   # Define ScrolledList widget for IDLE (nim).
-SearchDialog.py   # Search for pattern in text.
-SearchDialogBase.py  # Define base for search, replace, and grep dialogs.
-SearchEngine.py   # Define engine for all 3 search dialogs.
-StackViewer.py    # View stack after exception.
-TreeWidget.py     # Define tree widger, used in browsers (nim).
-UndoDelegator.py  # Manage undo stack.
-WidgetRedirector.py # Intercept widget subcommands (for percolator) (nim).
-WindowList.py     # Manage window list and define listed top level.
-ZoomHeight.py     # Zoom window to full height of screen.
-aboutDialog.py    # Display About IDLE dialog.
-configDialog.py   # Display user configuration dialogs.
-configHandler.py  # Load, fetch, and save configuration (nim).
-configHelpSourceEdit.py  # Specify help source.
-configSectionNameDialog.py  # Spefify user config section name
-dynOptionMenuWidget.py  # define mutable OptionMenu widget (nim).
+autocomplete.py   # Complete attribute names or filenames.
+autocomplete_w.py # Display completions.
+autoexpand.py     # Expand word with previous word in file.
+browser.py        # Create module browser window.
+calltip_w.py      # Display calltip.
+calltips.py       # Create calltip text.
+codecontext.py    # Show compound statement headers otherwise not visible.
+colorizer.py      # Colorize text (nim)
+config.py         # Load, fetch, and save configuration (nim).
+configdialog.py   # Display user configuration dialogs.
+config_help.py    # Specify help source in configdialog.
+config_key.py     # Change keybindings.
+config_sec.py     # Spefify user config section name
+dynoption.py      # Define mutable OptionMenu widget (nim).
+debugobj.py       # Define class used in stackviewer.
+debugobj_r.py     # Communicate objects between processes with rpc (nim).
+debugger.py       # Debug code run from shell or editor; show window.
+debugger_r.py     # Debug code run in remote process.
+delegator.py      # Define base class for delegators (nim).
+editor.py         # Define most of editor and utility functions.
+filelist.py       # Open files and manage list of open windows (nim).
+grep.py           # Find all occurrences of pattern in multiple files.
 help.py           # Display IDLE's html doc.
-keybindingDialog.py  # Change keybindings.
-macosxSupport.py  # Help IDLE run on Macs (nim).
+help_about.py     # Display About IDLE dialog.
+history.py        # Get previous or next user input in shell (nim)
+hyperparser.py    # Parse code around a given index.
+iomenu.py         # Open, read, and write files
+macosx.py         # Help IDLE run on Macs (nim).
+mainmenu.py       # Define most of IDLE menu.
+multicall.py      # Wrap tk widget to allow multiple calls per event (nim).
+outwin.py         # Create window for grep output.
+paragraph.py      # Re-wrap multiline strings and comments.
+parenmatch.py     # Match fenceposts: (), [], and {}.
+pathbrowser.py    # Create path browser window.
+percolator.py     # Manage delegator stack (nim).
+pyparse.py        # Give information on code indentation
+pyshell.py        # Start IDLE, manage shell, complete editor window
+redirector.py     # Intercept widget subcommands (for percolator) (nim).
+replace.py        # Search and replace pattern in text.
 rpc.py            # Commuicate between idle and user processes (nim).
+rstrip.py         # Strip trailing whitespace.
 run.py            # Manage user code execution subprocess.
+runscript.py      # Check and run user code.
+scrolledlist.py   # Define scrolledlist widget for IDLE (nim).
+search.py         # Search for pattern in text.
+searchbase.py     # Define base for search, replace, and grep dialogs.
+searchengine.py   # Define engine for all 3 search dialogs.
+stackviewer.py    # View stack after exception.
+statusbar.py      # Define status bar for windows (nim).
 tabbedpages.py    # Define tabbed pages widget (nim).
-textView.py       # Define read-only text widget (nim).
+textview.py       # Define read-only text widget (nim).
+tree.py           # Define tree widger, used in browsers (nim).
+undo.py           # Manage undo stack.
+windows.py        # Manage window list and define listed top level.
+zoomheight.py     # Zoom window to full height of screen.
 
 Configuration
 -------------
@@ -104,126 +104,128 @@ help.html    # copy of idle.html in docs, displayed by IDLE Help
 
 Subdirectories
 --------------
-Icons  # small image files
-idle_test  # files for human test and automated unit tests
+Icons        # small image files
+idle_test    # files for human test and automated unit tests
 
 Unused and Deprecated files and objects (nim)
 ---------------------------------------------
-EditorWindow.py: Helpdialog and helpDialog
-ToolTip.py: unused.
-help.txt
-idlever.py
+tooltip.py # unused
+
 
 
 IDLE MENUS
-Top level items and most submenu items are defined in Bindings.
+Top level items and most submenu items are defined in mainmenu.
 Extenstions add submenu items when active.  The names given are
 found, quoted, in one of these modules, paired with a '<<pseudoevent>>'.
 Each pseudoevent is bound to an event handler.  Some event handlers
 call another function that does the actual work.  The annotations below
 are intended to at least give the module where the actual work is done.
+'eEW' = editor.EditorWindow
 
-File  # IOBindig except as noted
-  New File
-  Open...  # IOBinding.open
-  Open Module
+File
+  New File         # eEW.new_callback
+  Open...          # iomenu.open
+  Open Module      # eEw.open_module
   Recent Files
-  Class Browser  # Class Browser
-  Path Browser  # Path Browser
+  Class Browser    # eEW.open_class_browser, browser.ClassBrowser
+  Path Browser     # eEW.open_path_browser, pathbrowser
   ---
-  Save  # IDBinding.save
-  Save As...  # IOBinding.save_as
-  Save Copy As...  # IOBindling.save_a_copy
+  Save             # iomenu.save
+  Save As...       # iomenu.save_as
+  Save Copy As...  # iomenu.save_a_copy
   ---
-  Print Window  # IOBinding.print_window
+  Print Window     # iomenu.print_window
   ---
-  Close
-  Exit
+  Close            # eEW.close_event
+  Exit             # flist.close_all_callback (bound in eEW)
 
 Edit
-  Undo  # undoDelegator
-  Redo  # undoDelegator
-  ---
-  Cut
-  Copy
-  Paste
-  Select All
-  ---  # Next 5 items use SearchEngine; dialogs use SearchDialogBase
-  Find  # Search Dialog
-  Find Again
-  Find Selection
-  Find in Files...  # GrepDialog
-  Replace...  # ReplaceDialog
-  Go to Line
-  Show Completions  # AutoComplete extension and AutoCompleteWidow (&HP)
-  Expand Word  # AutoExpand extension
-  Show call tip  # Calltips extension and CalltipWindow (& Hyperparser)
-  Show surrounding parens  # ParenMatch (& Hyperparser)
+  Undo             # undodelegator
+  Redo             # undodelegator
+  ---              # eEW.right_menu_event
+  Cut              # eEW.cut
+  Copy             # eEW.copy
+  Paste            # eEW.past
+  Select All       # eEW.select_all (+ see eEW.remove_selection)
+  ---              # Next 5 items use searchengine; dialogs use searchbase
+  Find             # eEW.find_event, search.SearchDialog.find
+  Find Again       # eEW.find_again_event, sSD.find_again
+  Find Selection   # eEW.find_selection_event, sSD.find_selection
+  Find in Files... # eEW.find_in_files_event, grep
+  Replace...       # eEW.replace_event, replace.ReplaceDialog.replace
+  Go to Line       # eEW.goto_line_event
+  Show Completions # autocomplete extension and autocompleteWidow (&HP)
+  Expand Word      # autoexpand extension
+  Show call tip    # Calltips extension and CalltipWindow (& Hyperparser)
+  Show surrounding parens  # parenmatch (& Hyperparser)
 
-Shell  # PyShell
-  View Last Restart  # PyShell.?
-  Restart Shell  # PyShell.?
+Shell  # pyshell
+  View Last Restart# pyshell.?
+  Restart Shell    # pyshell.?
 
 Debug (Shell only)
   Go to File/Line
-  Debugger  # Debugger, RemoteDebugger
-  Stack Viewer  # StackViewer
-  Auto-open Stack Viewer  # StackViewer
+  debugger         # debugger, debugger_r
+  Stack Viewer     # stackviewer
+  Auto-open Stack Viewer  # stackviewer
 
 Format (Editor only)
-  Indent Region
-  Dedent Region
-  Comment Out Region
-  Uncomment Region
-  Tabify Region
-  Untabify Region
-  Toggle Tabs
-  New Indent Width
-  Format Paragraph  # FormatParagraph extension
+  Indent Region    # eEW.indent_region_event
+  Dedent Region    # eEW.dedent_region_event
+  Comment Out Reg. # eEW.comment_region_event
+  Uncomment Region # eEW.uncomment_region_event
+  Tabify Region    # eEW.tabify_region_event
+  Untabify Region  # eEW.untabify_region_event
+  Toggle Tabs      # eEW.toggle_tabs_event
+  New Indent Width # eEW.change_indentwidth_event
+  Format Paragraph # paragraph extension
   ---
-  Strip tailing whitespace  # RstripExtension extension
+  Strip tailing whitespace  # rstrip extension
 
 Run (Editor only)
-  Python Shell  # PyShell
+  Python Shell     # pyshell
   ---
-  Check Module  # ScriptBinding
-  Run Module  # ScriptBinding
+  Check Module     # runscript
+  Run Module       # runscript
 
 Options
-  Configure IDLE  # configDialog
+  Configure IDLE   # eEW.config_dialog, configdialog
     (tabs in the dialog)
-    Font tab  # onfig-main.def
-    Highlight tab  # configSectionNameDialog, config-highlight.def
-    Keys tab  # keybindingDialog, configSectionNameDialog, onfig-keus.def
-    General tab  # configHelpSourceEdit, config-main.def
-  Configure Extensions  # configDialog
-    Xyz tab  # xyz.py, config-extensions.def
+    Font tab       # config-main.def
+    Highlight tab  # config_sec, config-highlight.def
+    Keys tab       # config_key, configconfig_secg-keus.def
+    General tab    # config_help, config-main.def
+    Extensions tab # config-extensions.def, corresponding .py
   ---
-  Code Context (editor only)  # CodeContext extension
+  Code Context (ed)# codecontext extension
 
 Window
-  Zoomheight  # ZoomHeight extension
+  Zoomheight       # zoomheight extension
   ---
-  <open windows>  # WindowList
+  <open windows>   # windows
 
 Help
-  About IDLE  # aboutDialog
+  About IDLE       # eEW.about_dialog, help_about.AboutDialog 
   ---
-  IDLE Help  # help
-  Python Doc
-  Turtle Demo
+  IDLE Help        # eEW.help_dialog, helpshow_idlehelp
+  Python Doc       # eEW.python_docs
+  Turtle Demo      # eEW.open_turtle_demo
   ---
   <other help sources>
 
 <Context Menu> (right click)
-Defined in EditorWindow, PyShell, Output
-   Cut
-   Copy
-   Paste
-   ---
-   Go to file/line (shell and output only)
-   Set Breakpoint (editor only)
-   Clear Breakpoint (editor only)
- Defined in Debugger
-   Go to source line
-   Show stack frame
+  Defined in editor, PyShelpyshellut
+    Cut
+    Copy
+    Paste
+    ---
+    Go to file/line (shell and output only)
+    Set Breakpoint (editor only)
+    Clear Breakpoint (editor only)
+  Defined in debugger
+    Go to source line
+    Show stack frame
+
+<No menu>
+Center Insert      # eEW.center_insert_event
+   
