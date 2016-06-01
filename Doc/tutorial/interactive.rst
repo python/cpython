@@ -50,5 +50,5 @@ bpython_.
 
 
 .. _GNU Readline: https://tiswww.case.edu/php/chet/readline/rltop.html
-.. _IPython: http://ipython.scipy.org/
+.. _IPython: https://ipython.org/
 .. _bpython: http://www.bpython-interpreter.org/
