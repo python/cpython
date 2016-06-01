@@ -1,4 +1,4 @@
-3.6.. _tut-using:
+.. _tut-using:
 
 ****************************
 Using the Python Interpreter
