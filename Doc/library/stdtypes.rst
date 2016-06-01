@@ -1217,13 +1217,68 @@ string functions based on regular expressions.
    Line breaks are not included in the resulting list unless *keepends* is
    given and true.
 
-   For example, ``'ab c\n\nde fg\rkl\r\n'.splitlines()`` returns
-   ``['ab c', '', 'de fg', 'kl']``, while the same call with ``splitlines(True)``
-   returns ``['ab c\n', '\n', 'de fg\r', 'kl\r\n']``.
+   Python recognizes ``"\r"``, ``"\n"``, and ``"\r\n"`` as line boundaries for
+   8-bit strings.
+
+   For example::
+
+      >>> 'ab c\n\nde fg\rkl\r\n'.splitlines()
+      ['ab c', '', 'de fg', 'kl']
+      >>> 'ab c\n\nde fg\rkl\r\n'.splitlines(True)
+      ['ab c\n', '\n', 'de fg\r', 'kl\r\n']
 
    Unlike :meth:`~str.split` when a delimiter string *sep* is given, this
    method returns an empty list for the empty string, and a terminal line
-   break does not result in an extra line.
+   break does not result in an extra line::
+
+      >>> "".splitlines()
+      []
+      >>> "One line\n".splitlines()
+      ['One line']
+
+   For comparison, ``split('\n')`` gives::
+
+      >>> ''.split('\n')
+      ['']
+      >>> 'Two lines\n'.split('\n')
+      ['Two lines', '']
+
+.. method:: unicode.splitlines([keepends])
+
+   Return a list of the lines in the string, like :meth:`str.splitlines`.
+   However, the Unicode method splits on the following line boundaries,
+   which are a superset of the :term:`universal newlines` recognized for
+   8-bit strings.
+
+   +-----------------------+-----------------------------+
+   | Representation        | Description                 |
+   +=======================+=============================+
+   | ``\n``                | Line Feed                   |
+   +-----------------------+-----------------------------+
+   | ``\r``                | Carriage Return             |
+   +-----------------------+-----------------------------+
+   | ``\r\n``              | Carriage Return + Line Feed |
+   +-----------------------+-----------------------------+
+   | ``\v`` or ``\x0b``    | Line Tabulation             |
+   +-----------------------+-----------------------------+
+   | ``\f`` or ``\x0c``    | Form Feed                   |
+   +-----------------------+-----------------------------+
+   | ``\x1c``              | File Separator              |
+   +-----------------------+-----------------------------+
+   | ``\x1d``              | Group Separator             |
+   +-----------------------+-----------------------------+
+   | ``\x1e``              | Record Separator            |
+   +-----------------------+-----------------------------+
+   | ``\x85``              | Next Line (C1 Control Code) |
+   +-----------------------+-----------------------------+
+   | ``\u2028``            | Line Separator              |
+   +-----------------------+-----------------------------+
+   | ``\u2029``            | Paragraph Separator         |
+   +-----------------------+-----------------------------+
+
+   .. versionchanged:: 2.7
+
+      ``\v`` and ``\f`` added to list of line boundaries.
 
 
 .. method:: str.startswith(prefix[, start[, end]])
