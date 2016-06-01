@@ -620,7 +620,7 @@ Task functions
 
       Unlike other functions from the module,
       :func:`run_coroutine_threadsafe` requires the *loop* argument to
-      be passed explicitely.
+      be passed explicitly.
 
    .. versionadded:: 3.5.1
 
