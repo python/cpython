@@ -1313,7 +1313,7 @@ I want to do a complicated sort: can you do a Schwartzian Transform in Python?
 
 The technique, attributed to Randal Schwartz of the Perl community, sorts the
 elements of a list by a metric which maps each element to its "sort value". In
-Python, use the ``key`` argument for the :func:`sort()` function::
+Python, use the ``key`` argument for the :meth:`list.sort` method::
 
    Isorted = L[:]
    Isorted.sort(key=lambda s: int(s[10:15]))
