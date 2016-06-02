@@ -102,7 +102,7 @@ def _ipaddr_info(host, port, family, type, proto):
     else:
         return None
 
-    if port in {None, ''}:
+    if port in {None, '', b''}:
         port = 0
     elif isinstance(port, (bytes, str)):
         port = int(port)
