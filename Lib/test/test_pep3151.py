@@ -163,7 +163,7 @@ class ExplicitSubclassingTest(unittest.TestCase):
         e = SubOSError(EEXIST, "Bad file descriptor")
         self.assertIs(type(e), SubOSError)
 
-    def test_init_overriden(self):
+    def test_init_overridden(self):
         e = SubOSErrorWithInit("some message", "baz")
         self.assertEqual(e.bar, "baz")
         self.assertEqual(e.args, ("some message",))
@@ -173,7 +173,7 @@ class ExplicitSubclassingTest(unittest.TestCase):
         self.assertEqual(e.bar, "baz")
         self.assertEqual(e.args, ("some message",))
 
-    def test_new_overriden(self):
+    def test_new_overridden(self):
         e = SubOSErrorWithNew("some message", "baz")
         self.assertEqual(e.baz, "baz")
         self.assertEqual(e.args, ("some message",))
@@ -183,7 +183,7 @@ class ExplicitSubclassingTest(unittest.TestCase):
         self.assertEqual(e.baz, "baz")
         self.assertEqual(e.args, ("some message",))
 
-    def test_init_new_overriden(self):
+    def test_init_new_overridden(self):
         e = SubOSErrorCombinedInitFirst("some message", "baz")
         self.assertEqual(e.bar, "baz")
         self.assertEqual(e.baz, "baz")

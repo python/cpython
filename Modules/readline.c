@@ -1092,7 +1092,7 @@ setup_readline(readlinestate *mod_state)
 
 #ifndef __APPLE__
     if (!isatty(STDOUT_FILENO)) {
-        /* Issue #19884: stdout is no a terminal. Disable meta modifier
+        /* Issue #19884: stdout is not a terminal. Disable meta modifier
            keys to not write the ANSI sequence "\033[1034h" into stdout. On
            terminals supporting 8 bit characters like TERM=xterm-256color
            (which is now the default Fedora since Fedora 18), the meta key is

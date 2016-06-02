@@ -231,7 +231,7 @@ class Random(_random.Random):
             while r >= n:
                 r = getrandbits(k)
             return r
-        # There's an overriden random() method but no new getrandbits() method,
+        # There's an overridden random() method but no new getrandbits() method,
         # so we can only use random() from here.
         if n >= maxsize:
             _warn("Underlying random() generator does not supply \n"

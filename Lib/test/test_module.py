@@ -227,7 +227,7 @@ a = A(destroyed)"""
             b"len = len",
             b"shutil.rmtree = rmtree"})
 
-    def test_descriptor_errors_propogate(self):
+    def test_descriptor_errors_propagate(self):
         class Descr:
             def __get__(self, o, t):
                 raise RuntimeError
