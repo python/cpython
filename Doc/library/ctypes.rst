@@ -20,11 +20,10 @@ Note: The code samples in this tutorial use :mod:`doctest` to make sure that
 they actually work.  Since some code samples behave differently under Linux,
 Windows, or Mac OS X, they contain doctest directives in comments.
 
-Note: Some code samples reference the ctypes :class:`c_int` type. This type is
-an alias for the :class:`c_long` type on 32-bit systems.  So, you should not be
-confused if :class:`c_long` is printed if you would expect :class:`c_int` ---
-they are actually the same type.
-
+Note: Some code samples reference the ctypes :class:`c_int` type.  On platforms
+where ``sizeof(long double) == sizeof(double)`` it is an alias to
+:class:`c_double`.  So, you should not be confused if :class:`c_long` is
+printed if you would expect :class:`c_int` --- they are actually the same type.
 
 .. _ctypes-loading-dynamic-link-libraries:
 
