@@ -22,8 +22,6 @@ The :mod:`getpass` module provides two functions:
    a warning message to *stream* and reading from ``sys.stdin`` and
    issuing a :exc:`GetPassWarning`.
 
-   Availability: Macintosh, Unix, Windows.
-
    .. versionchanged:: 2.5
       The *stream* parameter was added.
    .. versionchanged:: 2.6
@@ -41,7 +39,7 @@ The :mod:`getpass` module provides two functions:
 
 .. function:: getuser()
 
-   Return the "login name" of the user. Availability: Unix, Windows.
+   Return the "login name" of the user.
 
    This function checks the environment variables :envvar:`LOGNAME`,
    :envvar:`USER`, :envvar:`LNAME` and :envvar:`USERNAME`, in order, and returns
