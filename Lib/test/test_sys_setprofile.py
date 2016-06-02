@@ -164,7 +164,7 @@ class ProfileHookTestCase(TestCaseBase):
                               (1, 'return', g_ident),
                               ])
 
-    def test_exception_propogation(self):
+    def test_exception_propagation(self):
         def f(p):
             1/0
         def g(p):
