@@ -66,7 +66,7 @@
       * Therefore surpress the toolbox-glue in 64-bit mode.
       */
 
-    /* In 64-bit mode setpgrp always has no argments, in 32-bit
+    /* In 64-bit mode setpgrp always has no arguments, in 32-bit
      * mode that depends on the compilation environment
      */
 #       undef SETPGRP_HAVE_ARG

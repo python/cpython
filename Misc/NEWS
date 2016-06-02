@@ -2344,8 +2344,8 @@ Library
   with port None or "0" and flags AI_NUMERICSERV.
 
 - Issue #18080: When building a C extension module on OS X, if the compiler
-  is overriden with the CC environment variable, use the new compiler as
-  the default for linking if LDSHARED is not also overriden.  This restores
+  is overridden with the CC environment variable, use the new compiler as
+  the default for linking if LDSHARED is not also overridden.  This restores
   Distutils behavior introduced in 2.7.3 and inadvertently dropped in 2.7.4.
 
 - Issue #18071: C extension module builds on OS X could fail with TypeError
@@ -5467,7 +5467,7 @@ Extension Modules
 
 - Issue #7900: The getgroups(2) system call on MacOSX behaves rather oddly
   compared to other unix systems. In particular, os.getgroups() does
-  not reflect any changes made using os.setgroups() but basicly always
+  not reflect any changes made using os.setgroups() but basically always
   returns the same information as the id command.
 
   os.getgroups() can now return more than 16 groups on MacOSX.
@@ -8076,7 +8076,7 @@ Library
   backported to help facilitate transitions from 2.7 to 3.1.
 
 - Issue #1885: distutils: When running sdist with --formats=tar,gztar the tar
-  file was overriden by the gztar one.
+  file was overridden by the gztar one.
 
 - Issue #4863: distutils.mwerkscompiler has been removed.
 
@@ -8365,7 +8365,7 @@ Build
   installed.
 
 - Issue #5809: Specifying both --enable-framework and --enable-shared is an
-  error. Configure now explicity tells you about this.
+  error. Configure now explicitly tells you about this.
 
 - Issue #3585: Add pkg-config support.  It creates a python-2.7.pc file and a
   python.pc symlink in the $(LIBDIR)/pkgconfig directory.  Patch by Clinton Roy.

@@ -16,7 +16,7 @@ import re
 import operator
 import functools
 
-# keep a copy of the builtin str type, because 'str' name is overriden
+# keep a copy of the builtin str type, because 'str' name is overridden
 # in globals by a function below
 _str = str
 

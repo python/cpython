@@ -1082,7 +1082,7 @@ class Decimal(object):
     def __pos__(self, context=None):
         """Returns a copy, unless it is a sNaN.
 
-        Rounds the number (if more then precision digits)
+        Rounds the number (if more than precision digits)
         """
         if self._is_special:
             ans = self._check_nans(context=context)

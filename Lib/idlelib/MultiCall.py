@@ -101,7 +101,7 @@ class _SimpleBinder:
             self.widget.unbind(self.widgetinst, self.sequence, self.handlerid)
 
 # An int in range(1 << len(_modifiers)) represents a combination of modifiers
-# (if the least significent bit is on, _modifiers[0] is on, and so on).
+# (if the least significant bit is on, _modifiers[0] is on, and so on).
 # _state_subsets gives for each combination of modifiers, or *state*,
 # a list of the states which are a subset of it. This list is ordered by the
 # number of modifiers is the state - the most specific state comes first.

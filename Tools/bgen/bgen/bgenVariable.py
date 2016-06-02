@@ -20,7 +20,7 @@ class Variable:
 
     """A Variable holds a type, a name, a transfer mode and flags.
 
-    Most of its methods call the correponding type method with the
+    Most of its methods call the corresponding type method with the
     variable name.
     """
 

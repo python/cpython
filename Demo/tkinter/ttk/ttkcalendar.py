@@ -191,7 +191,7 @@ class Calendar(ttk.Frame):
 
         self._date = self._date - self.timedelta(days=1)
         self._date = self.datetime(self._date.year, self._date.month, 1)
-        self._build_calendar() # reconstuct calendar
+        self._build_calendar() # reconstruct calendar
 
     def _next_month(self):
         """Update calendar to show the next month."""

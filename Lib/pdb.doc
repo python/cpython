@@ -48,7 +48,7 @@ If a file ".pdbrc" exists in your home directory or in the current
 directory, it is read in and executed as if it had been typed at the
 debugger prompt.  This is particularly useful for aliases.  If both
 files exist, the one in the home directory is read first and aliases
-defined there can be overriden by the local file.
+defined there can be overridden by the local file.
 
 Aside from aliases, the debugger is not directly programmable; but it
 is implemented as a class from which you can derive your own debugger

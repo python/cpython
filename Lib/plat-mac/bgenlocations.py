@@ -34,7 +34,7 @@ TOOLBOXDIR="/Users/jack/src/python/Lib/plat-mac/Carbon"
 # Creator for C files:
 CREATOR="CWIE"
 
-# The previous definitions can be overriden by creating a module
+# The previous definitions can be overridden by creating a module
 # bgenlocationscustomize.py and putting it in site-packages (or anywere else
 # on sys.path, actually)
 try:

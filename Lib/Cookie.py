@@ -190,7 +190,7 @@ as a string.
 Backwards Compatibility
 -----------------------
 
-In order to keep compatibilty with earlier versions of Cookie.py,
+In order to keep compatibility with earlier versions of Cookie.py,
 it is still possible to use Cookie.Cookie() to create a Cookie.  In
 fact, this simply returns a SmartCookie.
 

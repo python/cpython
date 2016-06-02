@@ -3686,7 +3686,7 @@ _DB_has_key(DBObject* self, PyObject* keyobj, PyObject* txnobj)
     /*
     ** DB_BUFFER_SMALL is only used if we use "get".
     ** We can drop it when we only use "exists",
-    ** when we drop suport for Berkeley DB < 4.6.
+    ** when we drop support for Berkeley DB < 4.6.
     */
     if (err == DB_BUFFER_SMALL || err == 0) {
         Py_INCREF(Py_True);

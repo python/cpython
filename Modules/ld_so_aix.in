@@ -12,7 +12,7 @@
 #
 #   ARGUMENTS:      Same as for "ld". The following arguments are processed
 #                   or supplied by this script (those marked with an asterisk
-#                   can be overriden from command line):
+#                   can be overridden from command line):
 #
 #                       Argument                     Default value
 #                   (*) -o [OutputFileName]          -o shr.o
@@ -85,7 +85,7 @@ if test ! -n "$*"; then
 fi
 
 # Default import file for Python
-# Can be overriden by providing a -bI: argument.
+# Can be overridden by providing a -bI: argument.
 impfile="./python.exp"
 
 # Parse arguments
@@ -156,7 +156,7 @@ if test -z "$expfile"; then
 fi
 
 # Default entry symbol for Python modules = init[modulename]
-# Can be overriden by providing a -e argument.
+# Can be overridden by providing a -e argument.
 if test -z "$entry"; then
   entry=init`echo $filename | sed "s/module.*//"`
 fi

@@ -10009,7 +10009,7 @@ Fri Mar 26 22:36:00 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
 
 	* Tools/scripts/dutree.py:
 	During display, if EPIPE is raised, it's probably because a pager was
-	killed.  Discard the error in that case, but propogate it otherwise.
+	killed.  Discard the error in that case, but propagate it otherwise.
 
 Fri Mar 26 16:20:45 1999  Guido van Rossum  <guido@eric.cnri.reston.va.us>
 

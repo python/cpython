@@ -835,7 +835,7 @@ file_truncate(PyFileObject *f, PyObject *args)
     if (initialpos == -1)
         goto onioerror;
 
-    /* Set newsize to current postion if newsizeobj NULL, else to the
+    /* Set newsize to current position if newsizeobj NULL, else to the
      * specified value.
      */
     if (newsizeobj != NULL) {
