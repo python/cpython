@@ -17,7 +17,6 @@ rarely does). [#]_
 .. index::
    module: pickle
    module: shelve
-   object: code
 
 This is not a general "persistence" module.  For general persistence and
 transfer of Python objects through RPC calls, see the modules :mod:`pickle` and
@@ -34,6 +33,8 @@ supports a substantially wider range of objects than marshal.
    The :mod:`marshal` module is not intended to be secure against erroneous or
    maliciously constructed data.  Never unmarshal data received from an
    untrusted or unauthenticated source.
+
+.. index:: object; code, code object
 
 Not all Python object types are supported; in general, only objects whose value
 is independent from a particular invocation of Python can be written and read by
