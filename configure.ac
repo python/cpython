@@ -1377,6 +1377,40 @@ then
 fi
 
 
+# Enable LTO flags
+AC_SUBST(LTOFLAGS)
+AC_MSG_CHECKING(for --with-lto)
+AC_ARG_WITH(lto, AS_HELP_STRING([--with-lto], [Enable Link Time Optimization in PGO builds. Disabled by default.]),
+[
+if test "$withval" != no
+then
+  Py_LTO='true'
+  AC_MSG_RESULT(yes);
+else
+  Py_LTO='false'
+  AC_MSG_RESULT(no);
+fi],
+[AC_MSG_RESULT(no)])
+if test "$Py_LTO" = 'true' ; then
+  case $CC in
+    *clang*)
+      # Any changes made here should be reflected in the GCC+Darwin case below
+      LTOFLAGS="-flto"
+      ;;
+    *gcc*)
+      case $ac_sys_system in
+        Darwin*)
+          LTOFLAGS="-flto"
+          ;;
+        *)
+          LTOFLAGS="-flto -fuse-linker-plugin -ffat-lto-objects -flto-partition=none"
+          ;;
+      esac
+      ;;
+  esac
+fi
+
+
 # Enable PGO flags.
 AC_SUBST(PGO_PROF_GEN_FLAG)
 AC_SUBST(PGO_PROF_USE_FLAG)

@@ -451,7 +451,7 @@ profile-opt:
 	$(MAKE) profile-removal
 
 build_all_generate_profile:
-	$(MAKE) all CFLAGS="$(CFLAGS) $(PGO_PROF_GEN_FLAG)" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG)" LIBS="$(LIBS)"
+	$(MAKE) all CFLAGS="$(CFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) $(PGO_PROF_GEN_FLAG) @LTOFLAGS@" LIBS="$(LIBS)"
 
 run_profile_task:
 	: # FIXME: can't run for a cross build
@@ -461,7 +461,7 @@ build_all_merge_profile:
 	$(LLVM_PROF_MERGER)
 
 build_all_use_profile:
-	$(MAKE) all CFLAGS="$(CFLAGS) $(PGO_PROF_USE_FLAG)"
+	$(MAKE) all CFLAGS="$(CFLAGS) $(PGO_PROF_USE_FLAG) @LTOFLAGS@" LDFLAGS="$(LDFLAGS) @LTOFLAGS@"
 
 # Compile and run with gcov
 .PHONY=coverage coverage-lcov coverage-report
