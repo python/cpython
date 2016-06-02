@@ -523,7 +523,7 @@ class NonCallableMock(Base):
     side_effect = property(__get_side_effect, __set_side_effect)
 
 
-    def reset_mock(self, visited=None):
+    def reset_mock(self,  visited=None,*, return_value=False, side_effect=False):
         "Restore the mock object to its initial state."
         if visited is None:
             visited = []
@@ -537,6 +537,11 @@ class NonCallableMock(Base):
         self.mock_calls = _CallList()
         self.call_args_list = _CallList()
         self.method_calls = _CallList()
+
+        if return_value:
+            self._mock_return_value = DEFAULT
+        if side_effect:
+            self._mock_side_effect = None
 
         for child in self._mock_children.values():
             if isinstance(child, _SpecState):

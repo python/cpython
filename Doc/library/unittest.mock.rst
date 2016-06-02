@@ -364,7 +364,7 @@ the *new_callable* argument to :func:`patch`.
         .. versionadded:: 3.5
 
 
-    .. method:: reset_mock()
+    .. method:: reset_mock(*, return_value=False, side_effect=False)
 
         The reset_mock method resets all the call attributes on a mock object:
 
@@ -376,11 +376,19 @@ the *new_callable* argument to :func:`patch`.
             >>> mock.called
             False
 
+        .. versionchanged:: 3.6
+           Added two keyword only argument to the reset_mock function.
+
         This can be useful where you want to make a series of assertions that
         reuse the same object. Note that :meth:`reset_mock` *doesn't* clear the
         return value, :attr:`side_effect` or any child attributes you have
-        set using normal assignment. Child mocks and the return value mock
+        set using normal assignment by default. In case you want to reset
+        *return_value* or :attr:`side_effect`, then pass the corresponding
+        parameter as ``True``. Child mocks and the return value mock
         (if any) are reset as well.
+
+        .. note:: *return_value*, and :attr:`side_effect` are keyword only
+                  argument.
 
 
     .. method:: mock_add_spec(spec, spec_set=False)
