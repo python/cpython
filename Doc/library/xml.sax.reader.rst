@@ -228,12 +228,12 @@ Instances of :class:`Locator` provide these methods:
 
 .. method:: Locator.getColumnNumber()
 
-   Return the column number where the current event ends.
+   Return the column number where the current event begins.
 
 
 .. method:: Locator.getLineNumber()
 
-   Return the line number where the current event ends.
+   Return the line number where the current event begins.
 
 
 .. method:: Locator.getPublicId()
