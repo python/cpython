@@ -102,10 +102,26 @@ def _ipaddr_info(host, port, family, type, proto):
     else:
         return None
 
-    if port in {None, '', b''}:
+    if port is None:
         port = 0
-    elif isinstance(port, (bytes, str)):
-        port = int(port)
+    elif isinstance(port, bytes):
+        if port == b'':
+            port = 0
+        else:
+            try:
+                port = int(port)
+            except ValueError:
+                # Might be a service name like b"http".
+                port = socket.getservbyname(port.decode('ascii'))
+    elif isinstance(port, str):
+        if port == '':
+            port = 0
+        else:
+            try:
+                port = int(port)
+            except ValueError:
+                # Might be a service name like "http".
+                port = socket.getservbyname(port)
 
     if hasattr(socket, 'inet_pton'):
         if family == socket.AF_UNSPEC:
