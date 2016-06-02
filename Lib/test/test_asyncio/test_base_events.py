@@ -146,6 +146,26 @@ class BaseEventTests(test_utils.TestCase):
             (INET, STREAM, TCP, '', ('1.2.3.4', 1)),
             base_events._ipaddr_info('1.2.3.4', b'1', INET, STREAM, TCP))
 
+    def test_getaddrinfo_servname(self):
+        INET = socket.AF_INET
+        STREAM = socket.SOCK_STREAM
+        TCP = socket.IPPROTO_TCP
+
+        self.assertEqual(
+            (INET, STREAM, TCP, '', ('1.2.3.4', 80)),
+            base_events._ipaddr_info('1.2.3.4', 'http', INET, STREAM, TCP))
+
+        self.assertEqual(
+            (INET, STREAM, TCP, '', ('1.2.3.4', 80)),
+            base_events._ipaddr_info('1.2.3.4', b'http', INET, STREAM, TCP))
+
+        # Raises "service/proto not found".
+        with self.assertRaises(OSError):
+            base_events._ipaddr_info('1.2.3.4', 'nonsense', INET, STREAM, TCP)
+
+        with self.assertRaises(OSError):
+            base_events._ipaddr_info('1.2.3.4', 'nonsense', INET, STREAM, TCP)
+
     @patch_socket
     def test_ipaddr_info_no_inet_pton(self, m_socket):
         del m_socket.inet_pton
