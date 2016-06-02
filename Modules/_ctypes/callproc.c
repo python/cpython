@@ -380,7 +380,7 @@ static void SetException(DWORD code, EXCEPTION_RECORD *pr)
            whose operation is not allowed in the current
            machine mode. */
         PyErr_SetString(PyExc_OSError,
-                        "exception: priviledged instruction");
+                        "exception: privileged instruction");
         break;
 
     case EXCEPTION_NONCONTINUABLE_EXCEPTION:
