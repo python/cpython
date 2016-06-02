@@ -1304,7 +1304,7 @@ class GeneralModuleTests(unittest.TestCase):
         # socket.gethostbyaddr('испытание.python.org')
 
     def check_sendall_interrupted(self, with_timeout):
-        # socketpair() is not stricly required, but it makes things easier.
+        # socketpair() is not strictly required, but it makes things easier.
         if not hasattr(signal, 'alarm') or not hasattr(socket, 'socketpair'):
             self.skipTest("signal.alarm and socket.socketpair required for this test")
         # Our signal handlers clobber the C errno by calling a math function

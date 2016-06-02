@@ -1043,7 +1043,7 @@ class BufferedReader(_BufferedIOMixin):
                 break
             avail += len(chunk)
             chunks.append(chunk)
-        # n is more then avail only when an EOF occurred or when
+        # n is more than avail only when an EOF occurred or when
         # read() would have blocked.
         n = min(n, avail)
         out = b"".join(chunks)

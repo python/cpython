@@ -494,7 +494,7 @@ class MersenneTwister_TestBasicOps(TestBasicOps, unittest.TestCase):
             self.assertTrue(2**k > n > 2**(k-1))   # note the stronger assertion
 
     @unittest.mock.patch('random.Random.random')
-    def test_randbelow_overriden_random(self, random_mock):
+    def test_randbelow_overridden_random(self, random_mock):
         # Random._randbelow() can only use random() when the built-in one
         # has been overridden but no new getrandbits() method was supplied.
         random_mock.side_effect = random.SystemRandom().random
