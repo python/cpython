@@ -2,14 +2,12 @@
 
 .. _codeobjects:
 
+.. index:: object; code, code object
+
 Code Objects
 ------------
 
 .. sectionauthor:: Jeffrey Yasskin <jyasskin@gmail.com>
-
-
-.. index::
-   object: code
 
 Code objects are a low-level detail of the CPython implementation.
 Each one represents a chunk of executable code that hasn't yet been
