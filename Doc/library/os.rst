@@ -1222,9 +1222,16 @@ Files and Directories
 .. function:: mkdir(path[, mode])
 
    Create a directory named *path* with numeric mode *mode*. The default *mode* is
-   ``0777`` (octal).  On some systems, *mode* is ignored.  Where it is used, the
-   current umask value is first masked out.  If the directory already exists,
+   ``0777`` (octal).  If the directory already exists,
    :exc:`OSError` is raised.
+
+   .. _mkdir_modebits:
+
+   On some systems, *mode* is ignored.  Where it is used, the current umask
+   value is first masked out.  If bits other than the last 9 (i.e. the last 3
+   digits of the octal representation of the *mode*) are set, their meaning is
+   platform-dependent.  On some platforms, they are ignored and you should call
+   :func:`chmod` explicitly to set them.
 
    It is also possible to create temporary directories; see the
    :mod:`tempfile` module's :func:`tempfile.mkdtemp` function.
@@ -1241,8 +1248,10 @@ Files and Directories
    Recursive directory creation function.  Like :func:`mkdir`, but makes all
    intermediate-level directories needed to contain the leaf directory.  Raises an
    :exc:`error` exception if the leaf directory already exists or cannot be
-   created.  The default *mode* is ``0777`` (octal).  On some systems, *mode* is
-   ignored. Where it is used, the current umask value is first masked out.
+   created.  The default *mode* is ``0777`` (octal).
+
+   The *mode* parameter is passed to :func:`mkdir`; see :ref:`the mkdir()
+   description <mkdir_modebits>` for how it is interpreted.
 
    .. note::
 
