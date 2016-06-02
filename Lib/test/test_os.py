@@ -3095,5 +3095,26 @@ class TestScandir(unittest.TestCase):
             del iterator
 
 
+class TestPEP519(unittest.TestCase):
+    "os.fspath()"
+
+    def test_return_bytes(self):
+        for b in b'hello', b'goodbye', b'some/path/and/file':
+            self.assertEqual(b, os.fspath(b))
+
+    def test_return_string(self):
+        for s in 'hello', 'goodbye', 'some/path/and/file':
+            self.assertEqual(s, os.fspath(s))
+
+    def test_garbage_in_exception_out(self):
+        vapor = type('blah', (), {})
+        for o in int, type, os, vapor():
+            self.assertRaises(TypeError, os.fspath, o)
+
+    def test_argument_required(self):
+        with self.assertRaises(TypeError):
+            os.fspath()
+
+
 if __name__ == "__main__":
     unittest.main()

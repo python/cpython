@@ -1097,3 +1097,24 @@ def fdopen(fd, *args, **kwargs):
         raise TypeError("invalid fd type (%s, expected integer)" % type(fd))
     import io
     return io.open(fd, *args, **kwargs)
+
+# Supply os.fspath()
+def fspath(path):
+    """Return the string representation of the path.
+
+    If str or bytes is passed in, it is returned unchanged.
+    """
+    if isinstance(path, (str, bytes)):
+        return path
+
+    # Work from the object's type to match method resolution of other magic
+    # methods.
+    path_type = type(path)
+    try:
+        return path_type.__fspath__(path)
+    except AttributeError:
+        if hasattr(path_type, '__fspath__'):
+            raise
+
+        raise TypeError("expected str, bytes or os.PathLike object, not "
+                        + path_type.__name__)
