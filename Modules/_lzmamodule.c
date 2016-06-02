@@ -701,7 +701,7 @@ _lzma.LZMACompressor.__init__
 
     check: int(c_default="-1") = unspecified
         The integrity check to use.  For FORMAT_XZ, the default
-        is CHECK_CRC64.  FORMAT_ALONE and FORMAT_RAW do not suport integrity
+        is CHECK_CRC64.  FORMAT_ALONE and FORMAT_RAW do not support integrity
         checks; for these formats, check must be omitted, or be CHECK_NONE.
 
     preset: object = None

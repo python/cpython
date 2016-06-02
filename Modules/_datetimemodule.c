@@ -1071,7 +1071,7 @@ format_utcoffset(char *buf, size_t buflen, const char *sep,
     minutes = divmod(seconds, 60, &seconds);
     hours = divmod(minutes, 60, &minutes);
     assert(seconds == 0);
-    /* XXX ignore sub-minute data, curently not allowed. */
+    /* XXX ignore sub-minute data, currently not allowed. */
     PyOS_snprintf(buf, buflen, "%c%02d%s%02d", sign, hours, sep, minutes);
 
     return 0;
@@ -3305,7 +3305,7 @@ timezone_str(PyDateTime_TimeZone *self)
     Py_DECREF(offset);
     minutes = divmod(seconds, 60, &seconds);
     hours = divmod(minutes, 60, &minutes);
-    /* XXX ignore sub-minute data, curently not allowed. */
+    /* XXX ignore sub-minute data, currently not allowed. */
     assert(seconds == 0);
     return PyUnicode_FromFormat("UTC%c%02d:%02d", sign, hours, minutes);
 }
