@@ -279,7 +279,7 @@ class BuildExtTestCase(TempdirManager,
 
     def test_compiler_option(self):
         # cmd.compiler is an option and
-        # should not be overriden by a compiler instance
+        # should not be overridden by a compiler instance
         # when the command is run
         dist = Distribution()
         cmd = self.build_ext(dist)

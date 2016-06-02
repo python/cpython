@@ -177,7 +177,7 @@ class PolicyAPITests(unittest.TestCase):
         with self.assertRaisesRegex(self.MyDefect, "the telly is broken"):
             self.MyPolicy(raise_on_defect=True).handle_defect(foo, defect)
 
-    def test_overriden_register_defect_works(self):
+    def test_overridden_register_defect_works(self):
         foo = self.MyObj()
         defect1 = self.MyDefect("one")
         my_policy = self.MyPolicy()

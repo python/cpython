@@ -674,7 +674,7 @@ class PurePath(object):
             return cls._flavour.join(parts)
 
     def _init(self):
-        # Overriden in concrete Path
+        # Overridden in concrete Path
         pass
 
     def _make_child(self, args):

@@ -737,7 +737,7 @@ class StrTest(unittest.TestCase, BaseStrTest):
         finally:
             r = s = None
 
-    # The original test_translate is overriden here, so as to get the
+    # The original test_translate is overridden here, so as to get the
     # correct size estimate: str.translate() uses an intermediate Py_UCS4
     # representation.
 

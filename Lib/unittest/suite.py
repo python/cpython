@@ -71,7 +71,7 @@ class BaseTestSuite(object):
         try:
             test = self._tests[index]
         except TypeError:
-            # support for suite implementations that have overriden self._tests
+            # support for suite implementations that have overridden self._tests
             pass
         else:
             # Some unittest tests add non TestCase/TestSuite objects to

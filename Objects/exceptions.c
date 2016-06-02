@@ -876,7 +876,7 @@ oserror_use_init(PyTypeObject *type)
        solution, given __new__ takes a variable number of arguments,
        is to defer arg parsing and initialization to __init__.
 
-       But when __new__ is overriden as well, it should call our __new__
+       But when __new__ is overridden as well, it should call our __new__
        with the right arguments.
 
        (see http://bugs.python.org/issue12555#msg148829 )

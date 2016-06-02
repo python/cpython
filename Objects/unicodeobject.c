@@ -9323,7 +9323,7 @@ tailmatch(PyObject *self,
                             PyUnicode_GET_LENGTH(substring) *
                                 PyUnicode_KIND(substring));
         }
-        /* otherwise we have to compare each character by first accesing it */
+        /* otherwise we have to compare each character by first accessing it */
         else {
             /* We do not need to compare 0 and len(substring)-1 because
                the if statement above ensured already that they are equal
