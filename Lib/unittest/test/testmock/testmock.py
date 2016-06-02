@@ -1277,6 +1277,24 @@ class MockTest(unittest.TestCase):
         self.assertEqual(m.method_calls[0], c)
         self.assertEqual(m.method_calls[1], i)
 
+    def test_reset_return_sideeffect(self):
+        m = Mock(return_value=10, side_effect=[2,3])
+        m.reset_mock(return_value=True, side_effect=True)
+        self.assertIsInstance(m.return_value, Mock)
+        self.assertEqual(m.side_effect, None)
+
+    def test_reset_return(self):
+        m = Mock(return_value=10, side_effect=[2,3])
+        m.reset_mock(return_value=True)
+        self.assertIsInstance(m.return_value, Mock)
+        self.assertNotEqual(m.side_effect, None)
+
+    def test_reset_sideeffect(self):
+        m = Mock(return_value=10, side_effect=[2,3])
+        m.reset_mock(side_effect=True)
+        self.assertEqual(m.return_value, 10)
+        self.assertEqual(m.side_effect, None)
+
     def test_mock_add_spec(self):
         class _One(object):
             one = 1
