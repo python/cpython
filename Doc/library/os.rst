@@ -186,6 +186,15 @@ process and user.
    .. versionadded:: 3.2
 
 
+.. function:: fspath(path)
+
+   Return the string representation of the path.
+
+   If :class:`str` or :class:`bytes` is passed in, it is returned unchanged;
+   otherwise, the result of calling ``type(path).__fspath__`` is returned, or an
+   exception is raised.
+
+
 .. function:: getenv(key, default=None)
 
    Return the value of the environment variable *key* if it exists, or
