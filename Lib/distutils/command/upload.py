@@ -181,21 +181,21 @@ class upload(PyPIRCCommand):
             result = urlopen(request)
             status = result.getcode()
             reason = result.msg
-        except OSError as e:
-            self.announce(str(e), log.ERROR)
-            raise
         except HTTPError as e:
             status = e.code
             reason = e.msg
+        except OSError as e:
+            self.announce(str(e), log.ERROR)
+            raise
 
         if status == 200:
             self.announce('Server response (%s): %s' % (status, reason),
                           log.INFO)
+            if self.show_response:
+                text = self._read_pypi_response(result)
+                msg = '\n'.join(('-' * 75, text, '-' * 75))
+                self.announce(msg, log.INFO)
         else:
             msg = 'Upload failed (%s): %s' % (status, reason)
             self.announce(msg, log.ERROR)
             raise DistutilsError(msg)
-        if self.show_response:
-            text = self._read_pypi_response(result)
-            msg = '\n'.join(('-' * 75, text, '-' * 75))
-            self.announce(msg, log.INFO)
