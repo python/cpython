@@ -361,7 +361,7 @@ The most useful form is to specify a default value for one or more arguments.
 This creates a function that can be called with fewer arguments than it is
 defined to allow.  For example::
 
-   def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
+   def ask_ok(prompt, retries=4, reminder='Please try again!'):
        while True:
            ok = input(prompt)
            if ok in ('y', 'ye', 'yes'):
@@ -370,8 +370,8 @@ defined to allow.  For example::
                return False
            retries = retries - 1
            if retries < 0:
-               raise OSError('uncooperative user')
-           print(complaint)
+               raise ValueError('invalid user response')
+           print(reminder)
 
 This function can be called in several ways:
 
