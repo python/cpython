@@ -1433,7 +1433,9 @@ class POSIXProcessTestCase(BaseTestCase):
         # We're relying on the repr() of the signal.Signals intenum to provide
         # the word signal, the signal name and the numeric value.
         self.assertIn("signal", error_string.lower())
-        self.assertIn("SIGABRT", error_string)
+        # We're not being specific about the signal name as some signals have
+        # multiple names and which name is revealed can vary.
+        self.assertIn("SIG", error_string)
         self.assertIn(str(signal.SIGABRT), error_string)
 
     def test_CalledProcessError_str_unknown_signal(self):
