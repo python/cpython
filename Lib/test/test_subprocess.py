@@ -1427,6 +1427,25 @@ class POSIXProcessTestCase(BaseTestCase):
             p.wait()
         self.assertEqual(-p.returncode, signal.SIGABRT)
 
+    def test_CalledProcessError_str_signal(self):
+        err = subprocess.CalledProcessError(-int(signal.SIGABRT), "fake cmd")
+        error_string = str(err)
+        # We're relying on the repr() of the signal.Signals intenum to provide
+        # the word signal, the signal name and the numeric value.
+        self.assertIn("signal", error_string.lower())
+        self.assertIn("SIGABRT", error_string)
+        self.assertIn(str(signal.SIGABRT), error_string)
+
+    def test_CalledProcessError_str_unknown_signal(self):
+        err = subprocess.CalledProcessError(-9876543, "fake cmd")
+        error_string = str(err)
+        self.assertIn("unknown signal 9876543.", error_string)
+
+    def test_CalledProcessError_str_non_zero(self):
+        err = subprocess.CalledProcessError(2, "fake cmd")
+        error_string = str(err)
+        self.assertIn("non-zero exit status 2.", error_string)
+
     def test_preexec(self):
         # DISCLAIMER: Setting environment variables is *not* a good use
         # of a preexec_fn.  This is merely a test.
