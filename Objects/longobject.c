@@ -3022,8 +3022,14 @@ long_add(PyLongObject *a, PyLongObject *b)
     if (Py_SIZE(a) < 0) {
         if (Py_SIZE(b) < 0) {
             z = x_add(a, b);
-            if (z != NULL && Py_SIZE(z) != 0)
+            if (z != NULL) {
+                /* x_add received at least one multiple-digit int,
+                   and thus z must be a multiple-digit int.
+                   That also means z is not an element of
+                   small_ints, so negating it in-place is safe. */
+                assert(Py_REFCNT(z) == 1);
                 Py_SIZE(z) = -(Py_SIZE(z));
+            }
         }
         else
             z = x_sub(b, a);
@@ -3054,8 +3060,10 @@ long_sub(PyLongObject *a, PyLongObject *b)
             z = x_sub(a, b);
         else
             z = x_add(a, b);
-        if (z != NULL && Py_SIZE(z) != 0)
+        if (z != NULL) {
+            assert(Py_SIZE(z) == 0 || Py_REFCNT(z) == 1);
             Py_SIZE(z) = -(Py_SIZE(z));
+        }
     }
     else {
         if (Py_SIZE(b) < 0)
