@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #25931: Don't defining socketserver.Forking* names on platforms such
+  as Windows that do not support os.fork().
+
 - Issue #21776: distutils.upload now correctly handles HTTPError.
   Initial patch by Claudiu Popa.
 
