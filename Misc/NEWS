@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27167: Clarify the subprocess.CalledProcessError error message text
+  when the child process died due to a signal.
+
 - Issue #25931: Don't define socketserver.Forking* names on platforms such
   as Windows that do not support os.fork().
 
