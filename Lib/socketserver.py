@@ -540,87 +540,85 @@ class UDPServer(TCPServer):
         pass
 
 if hasattr(os, "fork"):
-  # Non-standard indentation on this statement to avoid reindenting the body.
-  class ForkingMixIn:
+    class ForkingMixIn:
+        """Mix-in class to handle each request in a new process."""
 
-    """Mix-in class to handle each request in a new process."""
+        timeout = 300
+        active_children = None
+        max_children = 40
 
-    timeout = 300
-    active_children = None
-    max_children = 40
-
-    def collect_children(self):
-        """Internal routine to wait for children that have exited."""
-        if self.active_children is None:
-            return
-
-        # If we're above the max number of children, wait and reap them until
-        # we go back below threshold. Note that we use waitpid(-1) below to be
-        # able to collect children in size(<defunct children>) syscalls instead
-        # of size(<children>): the downside is that this might reap children
-        # which we didn't spawn, which is why we only resort to this when we're
-        # above max_children.
-        while len(self.active_children) >= self.max_children:
-            try:
-                pid, _ = os.waitpid(-1, 0)
-                self.active_children.discard(pid)
-            except ChildProcessError:
-                # we don't have any children, we're done
-                self.active_children.clear()
-            except OSError:
-                break
-
-        # Now reap all defunct children.
-        for pid in self.active_children.copy():
-            try:
-                pid, _ = os.waitpid(pid, os.WNOHANG)
-                # if the child hasn't exited yet, pid will be 0 and ignored by
-                # discard() below
-                self.active_children.discard(pid)
-            except ChildProcessError:
-                # someone else reaped it
-                self.active_children.discard(pid)
-            except OSError:
-                pass
-
-    def handle_timeout(self):
-        """Wait for zombies after self.timeout seconds of inactivity.
-
-        May be extended, do not override.
-        """
-        self.collect_children()
-
-    def service_actions(self):
-        """Collect the zombie child processes regularly in the ForkingMixIn.
-
-        service_actions is called in the BaseServer's serve_forver loop.
-        """
-        self.collect_children()
-
-    def process_request(self, request, client_address):
-        """Fork a new subprocess to process the request."""
-        pid = os.fork()
-        if pid:
-            # Parent process
+        def collect_children(self):
+            """Internal routine to wait for children that have exited."""
             if self.active_children is None:
-                self.active_children = set()
-            self.active_children.add(pid)
-            self.close_request(request)
-            return
-        else:
-            # Child process.
-            # This must never return, hence os._exit()!
-            status = 1
-            try:
-                self.finish_request(request, client_address)
-                status = 0
-            except Exception:
-                self.handle_error(request, client_address)
-            finally:
+                return
+
+            # If we're above the max number of children, wait and reap them until
+            # we go back below threshold. Note that we use waitpid(-1) below to be
+            # able to collect children in size(<defunct children>) syscalls instead
+            # of size(<children>): the downside is that this might reap children
+            # which we didn't spawn, which is why we only resort to this when we're
+            # above max_children.
+            while len(self.active_children) >= self.max_children:
                 try:
-                    self.shutdown_request(request)
+                    pid, _ = os.waitpid(-1, 0)
+                    self.active_children.discard(pid)
+                except ChildProcessError:
+                    # we don't have any children, we're done
+                    self.active_children.clear()
+                except OSError:
+                    break
+
+            # Now reap all defunct children.
+            for pid in self.active_children.copy():
+                try:
+                    pid, _ = os.waitpid(pid, os.WNOHANG)
+                    # if the child hasn't exited yet, pid will be 0 and ignored by
+                    # discard() below
+                    self.active_children.discard(pid)
+                except ChildProcessError:
+                    # someone else reaped it
+                    self.active_children.discard(pid)
+                except OSError:
+                    pass
+
+        def handle_timeout(self):
+            """Wait for zombies after self.timeout seconds of inactivity.
+
+            May be extended, do not override.
+            """
+            self.collect_children()
+
+        def service_actions(self):
+            """Collect the zombie child processes regularly in the ForkingMixIn.
+
+            service_actions is called in the BaseServer's serve_forver loop.
+            """
+            self.collect_children()
+
+        def process_request(self, request, client_address):
+            """Fork a new subprocess to process the request."""
+            pid = os.fork()
+            if pid:
+                # Parent process
+                if self.active_children is None:
+                    self.active_children = set()
+                self.active_children.add(pid)
+                self.close_request(request)
+                return
+            else:
+                # Child process.
+                # This must never return, hence os._exit()!
+                status = 1
+                try:
+                    self.finish_request(request, client_address)
+                    status = 0
+                except Exception:
+                    self.handle_error(request, client_address)
                 finally:
-                    os._exit(status)
+                    try:
+                        self.shutdown_request(request)
+                    finally:
+                        os._exit(status)
 
 
 class ThreadingMixIn:
