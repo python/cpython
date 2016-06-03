@@ -24,9 +24,8 @@ class ConfigDialogTest(unittest.TestCase):
         del cls.root
 
     def test_dialog(self):
-        d=ConfigDialog(self.root, 'Test', _utest=True)
+        d = ConfigDialog(self.root, 'Test', _utest=True)
         d.remove_var_callbacks()
-        d.destroy()
 
 
 if __name__ == '__main__':

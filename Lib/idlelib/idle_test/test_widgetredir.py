@@ -14,14 +14,14 @@ class InitCloseTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        cls.tk = Tk()
-        cls.text = Text(cls.tk)
+        cls.root = Tk()
+        cls.text = Text(cls.root)
 
     @classmethod
     def tearDownClass(cls):
-        cls.text.destroy()
-        cls.tk.destroy()
-        del cls.text, cls.tk
+        del cls.text
+        cls.root.destroy()
+        del cls.root
 
     def test_init(self):
         redir = WidgetRedirector(self.text)
@@ -43,14 +43,14 @@ class WidgetRedirectorTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        cls.tk = Tk()
-        cls.text = Text(cls.tk)
+        cls.root = Tk()
+        cls.text = Text(cls.root)
 
     @classmethod
     def tearDownClass(cls):
-        cls.text.destroy()
-        cls.tk.destroy()
-        del cls.text, cls.tk
+        del cls.text
+        cls.root.destroy()
+        del cls.root
 
     def setUp(self):
         self.redir = WidgetRedirector(self.text)
@@ -108,13 +108,13 @@ class WidgetRedirectorTest(unittest.TestCase):
     def test_command_dispatch(self):
         # Test that .__init__ causes redirection of tk calls
         # through redir.dispatch
-        self.tk.call(self.text._w, 'insert', 'hello')
+        self.root.call(self.text._w, 'insert', 'hello')
         self.assertEqual(self.func.args, ('hello',))
         self.assertEqual(self.text.get('1.0', 'end'), '\n')
         # Ensure that called through redir .dispatch and not through
         # self.text.insert by having mock raise TclError.
         self.func.__init__(TclError())
-        self.assertEqual(self.tk.call(self.text._w, 'insert', 'boo'), '')
+        self.assertEqual(self.root.call(self.text._w, 'insert', 'boo'), '')
 
 
 

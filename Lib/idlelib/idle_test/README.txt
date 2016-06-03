@@ -51,17 +51,20 @@ tests must be 'guarded' by "requires('gui')" in a setUp function or method.
 This will typically be setUpClass.
 
 To avoid interfering with other gui tests, all gui objects must be destroyed and
-deleted by the end of the test.  Widgets, such as a Tk root, created in a setUpX
-function, should be destroyed in the corresponding tearDownX.  Module and class
-widget attributes should also be deleted..
+deleted by the end of the test.  The Tk root created in a setUpX function should
+be destroyed in the corresponding tearDownX and the module or class attribute
+deleted.  Others widgets should descend from the single root and the attributes
+deleted BEFORE root is destroyed.  See https://bugs.python.org/issue20567.
 
     @classmethod
     def setUpClass(cls):
         requires('gui')
         cls.root = tk.Tk()
+        cls.text = tk.Text(root)
 
     @classmethod
     def tearDownClass(cls):
+        del cls.text
         cls.root.destroy()
         del cls.root
 
@@ -69,13 +72,15 @@ WARNING: In 2.7, "requires('gui') MUST NOT be called at module scope.
 See https://bugs.python.org/issue18910
 
 Requires('gui') causes the test(s) it guards to be skipped if any of
-a few conditions are met:
+these conditions are met:
     
  - The tests are being run by regrtest.py, and it was started without enabling
    the "gui" resource with the "-u" command line option.
    
  - The tests are being run on Windows by a service that is not allowed to
    interact with the graphical environment.
+
+ - The tests are being run on Linux and X window is not available.
    
  - The tests are being run on Mac OSX in a process that cannot make a window
    manager connection.

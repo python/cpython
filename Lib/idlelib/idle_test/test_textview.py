@@ -23,10 +23,9 @@ class textviewClassTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        del cls.TV
         cls.root.destroy()
-        TV = cls.TV
-        del cls.root, cls.TV
-        del TV.transient, TV.grab_set, TV.wait_window
+        del cls.root
 
     def setUp(self):
         TV = self.TV
