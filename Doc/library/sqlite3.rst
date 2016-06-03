@@ -190,6 +190,11 @@ Module functions and constants
    any combination of :const:`PARSE_DECLTYPES` and :const:`PARSE_COLNAMES` to turn
    type detection on.
 
+   By default, *check_same_thread* is :const:`True` and only the creating thread may
+   use the connection. If set :const:`False`, the returned connection may be shared
+   across multiple threads. When using multiple threads with the same connection
+   writing operations should be serialized by the user to avoid data corruption.
+
    By default, the :mod:`sqlite3` module uses its :class:`Connection` class for the
    connect call.  You can, however, subclass the :class:`Connection` class and make
    :func:`connect` use your class instead by providing your class for the *factory*
