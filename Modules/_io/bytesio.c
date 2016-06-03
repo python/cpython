@@ -392,7 +392,7 @@ bytesio_readlines(bytesio *self, PyObject *args)
 }
 
 PyDoc_STRVAR(readinto_doc,
-"readinto(bytearray) -> int.  Read up to len(b) bytes into b.\n"
+"readinto(b) -> int.  Read up to len(b) bytes into b.\n"
 "\n"
 "Returns number of bytes read (0 for EOF), or None if the object\n"
 "is set not to block and has no data to read.");

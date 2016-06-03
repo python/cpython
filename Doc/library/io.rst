@@ -225,9 +225,14 @@ I/O Base Classes
    support are called.
 
    The basic type used for binary data read from or written to a file is
-   :class:`bytes` (also known as :class:`str`).  :class:`bytearray`\s are
-   accepted too, and in some cases (such as :class:`readinto`) required.
+   :class:`bytes` (also known as :class:`str`).  Method arguments may
+   also be :class:`bytearray` or :class:`memoryview` of arrays of bytes.
+   In some cases, such as :meth:`~RawIOBase.readinto`, a writable object
+   such as :class:`bytearray` is required.
    Text I/O classes work with :class:`unicode` data.
+
+   .. versionchanged:: 2.7
+      Implementations should support :class:`memoryview` arguments.
 
    Note that calling any method (even inquiries) on a closed stream is
    undefined.  Implementations may raise :exc:`IOError` in this case.
@@ -383,18 +388,24 @@ I/O Base Classes
 
    .. method:: readinto(b)
 
-      Read up to len(b) bytes into bytearray *b* and return the number
-      of bytes read.  If the object is in non-blocking mode and no
+      Read up to len(b) bytes into *b*, and return the number
+      of bytes read.  The object *b* should be a pre-allocated, writable
+      array of bytes, either :class:`bytearray` or :class:`memoryview`.
+      If the object is in non-blocking mode and no
       bytes are available, ``None`` is returned.
 
    .. method:: write(b)
 
-      Write the given bytes or bytearray object, *b*, to the underlying raw
-      stream and return the number of bytes written.  This can be less than
+      Write *b* to the underlying raw stream, and return the
+      number of bytes written.  The object *b* should be an array
+      of bytes, either :class:`bytes`, :class:`bytearray`, or
+      :class:`memoryview`.  The return value can be less than
       ``len(b)``, depending on specifics of the underlying raw stream, and
       especially if it is in non-blocking mode.  ``None`` is returned if the
       raw stream is set not to block and no single byte could be readily
-      written to it.
+      written to it.  The caller may release or mutate *b* after
+      this method returns, so the implementation should only access *b*
+      during the method call.
 
 
 .. class:: BufferedIOBase
@@ -465,8 +476,9 @@ I/O Base Classes
 
    .. method:: readinto(b)
 
-      Read up to len(b) bytes into bytearray *b* and return the number of bytes
-      read.
+      Read up to len(b) bytes into *b*, and return the number of bytes read.
+      The object *b* should be a pre-allocated, writable array of bytes,
+      either :class:`bytearray` or :class:`memoryview`.
 
       Like :meth:`read`, multiple reads may be issued to the underlying raw
       stream, unless the latter is 'interactive'.
@@ -476,15 +488,20 @@ I/O Base Classes
 
    .. method:: write(b)
 
-      Write the given bytes or bytearray object, *b* and return the number
-      of bytes written (never less than ``len(b)``, since if the write fails
-      an :exc:`IOError` will be raised).  Depending on the actual
+      Write *b*, and return the number of bytes written
+      (always equal to ``len(b)``, since if the write fails
+      an :exc:`IOError` will be raised).  The object *b* should be
+      an array of bytes, either :class:`bytes`, :class:`bytearray`,
+      or :class:`memoryview`.  Depending on the actual
       implementation, these bytes may be readily written to the underlying
       stream, or held in a buffer for performance and latency reasons.
 
       When in non-blocking mode, a :exc:`BlockingIOError` is raised if the
       data needed to be written to the raw stream but it couldn't accept
       all the data without blocking.
+
+      The caller may release or mutate *b* after this method returns,
+      so the implementation should only access *b* during the method call.
 
 
 Raw File I/O
@@ -535,7 +552,8 @@ than raw I/O does.
    A stream implementation using an in-memory bytes buffer.  It inherits
    :class:`BufferedIOBase`.
 
-   The argument *initial_bytes* is an optional initial :class:`bytes`.
+   The optional argument *initial_bytes* is a :class:`bytes` object that
+   contains initial data.
 
    :class:`BytesIO` provides or overrides these methods in addition to those
    from :class:`BufferedIOBase` and :class:`IOBase`:
@@ -611,8 +629,10 @@ than raw I/O does.
 
    .. method:: write(b)
 
-      Write the bytes or bytearray object, *b* and return the number of bytes
-      written.  When in non-blocking mode, a :exc:`BlockingIOError` is raised
+      Write *b*, and return the number of bytes written.
+      The object *b* should be an array of bytes, either
+      :class:`bytes`, :class:`bytearray`, or :class:`memoryview`.
+      When in non-blocking mode, a :exc:`BlockingIOError` is raised
       if the buffer needs to be written out but the raw stream blocks.
 
 

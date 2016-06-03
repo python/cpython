@@ -969,7 +969,7 @@ PyDoc_STRVAR(readall_doc,
 "or None if no data is available.  On end-of-file, returns ''.");
 
 PyDoc_STRVAR(write_doc,
-"write(b: bytes) -> int.  Write bytes b to file, return number written.\n"
+"write(b) -> int.  Write array of bytes b, return number written.\n"
 "\n"
 "Only makes one system call, so not all of the data may be written.\n"
 "The number of bytes actually written is returned.  In non-blocking mode,\n"

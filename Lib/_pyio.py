@@ -277,8 +277,9 @@ class IOBase:
     may raise a IOError when operations they do not support are called.
 
     The basic type used for binary data read from or written to a file is
-    bytes. bytearrays are accepted too, and in some cases (such as
-    readinto) needed. Text I/O classes work with str data.
+    the bytes type. Method arguments may also be bytearray or memoryview of
+    arrays of bytes. In some cases, such as readinto, a writable object such
+    as bytearray is required. Text I/O classes work with unicode data.
 
     Note that calling any method (even inquiries) on a closed stream is
     undefined. Implementations may raise IOError in this case.
@@ -649,7 +650,6 @@ class BufferedIOBase(IOBase):
         Raises BlockingIOError if the underlying raw stream has no
         data at the moment.
         """
-        # XXX This ought to work with anything that supports the buffer API
         data = self.read(len(b))
         n = len(data)
         try:
@@ -664,8 +664,7 @@ class BufferedIOBase(IOBase):
     def write(self, b):
         """Write the given buffer to the IO stream.
 
-        Return the number of bytes written, which is never less than
-        len(b).
+        Return the number of bytes written, which is always len(b).
 
         Raises BlockingIOError if the buffer is full and the
         underlying raw stream cannot accept more data at the moment.
