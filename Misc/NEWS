@@ -10,6 +10,11 @@ What's New in Python 3.6.0 alpha 2
 Core and Builtins
 -----------------
 
+- Issue #26983: float() now always return an instance of exact float.
+  The deprecation warning is emitted if __float__ returns an instance of
+  a strict subclass of float.  In a future versions of Python this can
+  be an error.
+
 - Issue #27097: Python interpreter is now about 7% faster due to optimized
   instruction decoding.  Based on patch by Demur Rumed.
 
