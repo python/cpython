@@ -354,7 +354,7 @@ def safeimport(path, forceload=0, cache={}):
 class Doc:
 
     PYTHONDOCS = os.environ.get("PYTHONDOCS",
-                                "http://docs.python.org/%d.%d/library"
+                                "https://docs.python.org/%d.%d/library"
                                 % sys.version_info[:2])
 
     def document(self, object, name=None, *args):
@@ -383,7 +383,9 @@ class Doc:
 
     docmodule = docclass = docroutine = docother = docproperty = docdata = fail
 
-    def getdocloc(self, object):
+    def getdocloc(self, object,
+                  basedir=os.path.join(sys.base_exec_prefix, "lib",
+                                       "python%d.%d" %  sys.version_info[:2])):
         """Return the location of module docs or None"""
 
         try:
@@ -393,8 +395,6 @@ class Doc:
 
         docloc = os.environ.get("PYTHONDOCS", self.PYTHONDOCS)
 
-        basedir = os.path.join(sys.base_exec_prefix, "lib",
-                               "python%d.%d" %  sys.version_info[:2])
         if (isinstance(object, type(os)) and
             (object.__name__ in ('errno', 'exceptions', 'gc', 'imp',
                                  'marshal', 'posix', 'signal', 'sys',
@@ -403,9 +403,9 @@ class Doc:
               not file.startswith(os.path.join(basedir, 'site-packages')))) and
             object.__name__ not in ('xml.etree', 'test.pydoc_mod')):
             if docloc.startswith("http://"):
-                docloc = "%s/%s" % (docloc.rstrip("/"), object.__name__)
+                docloc = "%s/%s" % (docloc.rstrip("/"), object.__name__.lower())
             else:
-                docloc = os.path.join(docloc, object.__name__ + ".html")
+                docloc = os.path.join(docloc, object.__name__.lower() + ".html")
         else:
             docloc = None
         return docloc
