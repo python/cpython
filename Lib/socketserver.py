@@ -134,10 +134,12 @@ except ImportError:
     import dummy_threading as threading
 from time import monotonic as time
 
-__all__ = ["BaseServer", "TCPServer", "UDPServer", "ForkingUDPServer",
-           "ForkingTCPServer", "ThreadingUDPServer", "ThreadingTCPServer",
+__all__ = ["BaseServer", "TCPServer", "UDPServer",
+           "ThreadingUDPServer", "ThreadingTCPServer",
            "BaseRequestHandler", "StreamRequestHandler",
-           "DatagramRequestHandler", "ThreadingMixIn", "ForkingMixIn"]
+           "DatagramRequestHandler", "ThreadingMixIn"]
+if hasattr(os, "fork"):
+    __all__.extend(["ForkingUDPServer","ForkingTCPServer", "ForkingMixIn"])
 if hasattr(socket, "AF_UNIX"):
     __all__.extend(["UnixStreamServer","UnixDatagramServer",
                     "ThreadingUnixStreamServer",
@@ -537,7 +539,9 @@ class UDPServer(TCPServer):
         # No need to close anything.
         pass
 
-class ForkingMixIn:
+if hasattr(os, "fork"):
+  # Non-standard indentation on this statement to avoid reindenting the body.
+  class ForkingMixIn:
 
     """Mix-in class to handle each request in a new process."""
 
@@ -647,8 +651,9 @@ class ThreadingMixIn:
         t.start()
 
 
-class ForkingUDPServer(ForkingMixIn, UDPServer): pass
-class ForkingTCPServer(ForkingMixIn, TCPServer): pass
+if hasattr(os, "fork"):
+    class ForkingUDPServer(ForkingMixIn, UDPServer): pass
+    class ForkingTCPServer(ForkingMixIn, TCPServer): pass
 
 class ThreadingUDPServer(ThreadingMixIn, UDPServer): pass
 class ThreadingTCPServer(ThreadingMixIn, TCPServer): pass
