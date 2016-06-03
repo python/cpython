@@ -11,10 +11,10 @@
    pair: POSIX; I/O control
    pair: tty; I/O control
 
-This module provides an interface to the POSIX calls for tty I/O control.  For a
-complete description of these calls, see the POSIX or Unix manual pages.  It is
-only available for those Unix versions that support POSIX *termios* style tty
-I/O control (and then only if configured at installation time).
+This module provides an interface to the POSIX calls for tty I/O control. For a
+complete description of these calls, see :manpage:`termios(2)` Unix manual
+page.  It is only available for those Unix versions that support POSIX
+*termios* style tty I/O control configured during installation.
 
 All functions in this module take a file descriptor *fd* as their first
 argument.  This can be an integer file descriptor, such as returned by
