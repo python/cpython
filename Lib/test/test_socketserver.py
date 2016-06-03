@@ -44,7 +44,7 @@ def receive(sock, n, timeout=20):
     else:
         raise RuntimeError("timed out on %r" % (sock,))
 
-if HAVE_UNIX_SOCKETS:
+if HAVE_UNIX_SOCKETS and HAVE_FORKING:
     class ForkingUnixStreamServer(socketserver.ForkingMixIn,
                                   socketserver.UnixStreamServer):
         pass
@@ -368,11 +368,12 @@ class ThreadingErrorTestServer(socketserver.ThreadingMixIn,
         self.done.wait()
 
 
-class ForkingErrorTestServer(socketserver.ForkingMixIn, BaseErrorTestServer):
-    def wait_done(self):
-        [child] = self.active_children
-        os.waitpid(child, 0)
-        self.active_children.clear()
+if HAVE_FORKING:
+    class ForkingErrorTestServer(socketserver.ForkingMixIn, BaseErrorTestServer):
+        def wait_done(self):
+            [child] = self.active_children
+            os.waitpid(child, 0)
+            self.active_children.clear()
 
 
 class MiscTestCase(unittest.TestCase):
