@@ -116,6 +116,9 @@ server classes.
    :class:`UDPServer`.  Setting the various attributes also changes the
    behavior of the underlying server mechanism.
 
+   :class:`ForkingMixIn` and the Forking classes mentioned below are
+   only available on POSIX platforms that support :func:`~os.fork`.
+
 
 .. class:: ForkingTCPServer
            ForkingUDPServer
@@ -612,3 +615,4 @@ The output of the example should look something like this::
 
 The :class:`ForkingMixIn` class is used in the same way, except that the server
 will spawn a new process for each request.
+Available only on POSIX platforms that support :func:`~os.fork`.
