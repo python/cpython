@@ -83,7 +83,7 @@ The :mod:`urllib.request` module defines the following functions:
    :class:`URLopener` and :class:`FancyURLopener` classes, this function
    returns a :class:`urllib.response.addinfourl` object.
 
-   Raises :exc:`~urllib.error.URLError` on errors.
+   Raises :exc:`~urllib.error.URLError` on protocol errors.
 
    Note that ``None`` may be returned if no handler handles the request (though
    the default installed global :class:`OpenerDirector` uses
