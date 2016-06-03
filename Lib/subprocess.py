@@ -372,9 +372,11 @@ class SubprocessError(Exception): pass
 
 
 class CalledProcessError(SubprocessError):
-    """This exception is raised when a process run by check_call() or
-    check_output() returns a non-zero exit status.
-    The exit status will be stored in the returncode attribute;
+    """Raised when a check_call() or check_output() process returns non-zero.
+
+    The exit status will be stored in the returncode attribute, negative
+    if it represents a signal number.
+
     check_output() will also store the output in the output attribute.
     """
     def __init__(self, returncode, cmd, output=None, stderr=None):
@@ -384,7 +386,16 @@ class CalledProcessError(SubprocessError):
         self.stderr = stderr
 
     def __str__(self):
-        return "Command '%s' returned non-zero exit status %d" % (self.cmd, self.returncode)
+        if self.returncode and self.returncode < 0:
+            try:
+                return "Command '%s' died with %r." % (
+                        self.cmd, signal.Signals(-self.returncode))
+            except ValueError:
+                return "Command '%s' died with unknown signal %d." % (
+                        self.cmd, -self.returncode)
+        else:
+            return "Command '%s' returned non-zero exit status %d." % (
+                    self.cmd, self.returncode)
 
     @property
     def stdout(self):
