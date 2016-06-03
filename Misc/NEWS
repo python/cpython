@@ -27,6 +27,11 @@ Core and Builtins
 Library
 -------
 
+- signal, socket, and ssl module IntEnum constant name lookups now return a
+  consistent name for values having multiple names.  Ex: signal.Signals(6)
+  now refers to itself as signal.SIGALRM rather than flipping between that
+  and signal.SIGIOT based on the interpreter's hash randomization seed.
+
 - Issue #27167: Clarify the subprocess.CalledProcessError error message text
   when the child process died due to a signal.
 
