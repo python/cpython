@@ -215,35 +215,49 @@ double
 PyFloat_AsDouble(PyObject *op)
 {
     PyNumberMethods *nb;
-    PyFloatObject *fo;
+    PyObject *res;
     double val;
-
-    if (op && PyFloat_Check(op))
-        return PyFloat_AS_DOUBLE((PyFloatObject*) op);
 
     if (op == NULL) {
         PyErr_BadArgument();
         return -1;
     }
 
-    if ((nb = Py_TYPE(op)->tp_as_number) == NULL || nb->nb_float == NULL) {
-        PyErr_SetString(PyExc_TypeError, "a float is required");
+    if (PyFloat_Check(op)) {
+        return PyFloat_AS_DOUBLE(op);
+    }
+
+    nb = Py_TYPE(op)->tp_as_number;
+    if (nb == NULL || nb->nb_float == NULL) {
+        PyErr_Format(PyExc_TypeError, "must be real number, not %.50s",
+                     op->ob_type->tp_name);
         return -1;
     }
 
-    fo = (PyFloatObject*) (*nb->nb_float) (op);
-    if (fo == NULL)
-        return -1;
-    if (!PyFloat_Check(fo)) {
-        Py_DECREF(fo);
-        PyErr_SetString(PyExc_TypeError,
-                        "nb_float should return float object");
+    res = (*nb->nb_float) (op);
+    if (res == NULL) {
         return -1;
     }
+    if (!PyFloat_CheckExact(res)) {
+        if (!PyFloat_Check(res)) {
+            PyErr_Format(PyExc_TypeError,
+                         "%.50s.__float__ returned non-float (type %.50s)",
+                         op->ob_type->tp_name, res->ob_type->tp_name);
+            Py_DECREF(res);
+            return -1;
+        }
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "%.50s.__float__ returned non-float (type %.50s).  "
+                "The ability to return an instance of a strict subclass of float "
+                "is deprecated, and may be removed in a future version of Python.",
+                op->ob_type->tp_name, res->ob_type->tp_name)) {
+            Py_DECREF(res);
+            return -1;
+        }
+    }
 
-    val = PyFloat_AS_DOUBLE(fo);
-    Py_DECREF(fo);
-
+    val = PyFloat_AS_DOUBLE(res);
+    Py_DECREF(res);
     return val;
 }
 
