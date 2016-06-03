@@ -1351,21 +1351,39 @@ PyNumber_Float(PyObject *o)
 
     if (o == NULL)
         return null_error();
+    if (PyFloat_CheckExact(o)) {
+        Py_INCREF(o);
+        return o;
+    }
     m = o->ob_type->tp_as_number;
     if (m && m->nb_float) { /* This should include subclasses of float */
         PyObject *res = m->nb_float(o);
-        if (res && !PyFloat_Check(res)) {
+        double val;
+        if (!res || PyFloat_CheckExact(res)) {
+            return res;
+        }
+        if (!PyFloat_Check(res)) {
             PyErr_Format(PyExc_TypeError,
-              "__float__ returned non-float (type %.200s)",
-              res->ob_type->tp_name);
+                         "%.50s.__float__ returned non-float (type %.50s)",
+                         o->ob_type->tp_name, res->ob_type->tp_name);
             Py_DECREF(res);
             return NULL;
         }
-        return res;
+        /* Issue #26983: warn if 'res' not of exact type float. */
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+                "%.50s.__float__ returned non-float (type %.50s).  "
+                "The ability to return an instance of a strict subclass of float "
+                "is deprecated, and may be removed in a future version of Python.",
+                o->ob_type->tp_name, res->ob_type->tp_name)) {
+            Py_DECREF(res);
+            return NULL;
+        }
+        val = PyFloat_AS_DOUBLE(res);
+        Py_DECREF(res);
+        return PyFloat_FromDouble(val);
     }
     if (PyFloat_Check(o)) { /* A float subclass with nb_float == NULL */
-        PyFloatObject *po = (PyFloatObject *)o;
-        return PyFloat_FromDouble(po->ob_fval);
+        return PyFloat_FromDouble(PyFloat_AS_DOUBLE(o));
     }
     return PyFloat_FromString(o);
 }
