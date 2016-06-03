@@ -1449,8 +1449,9 @@ are always available.  They are listed here in alphabetical order.
    class name and becomes the :attr:`~class.__name__` attribute; the *bases*
    tuple itemizes the base classes and becomes the :attr:`~class.__bases__`
    attribute; and the *dict* dictionary is the namespace containing definitions
-   for class body and becomes the :attr:`~object.__dict__` attribute.  For
-   example, the following two statements create identical :class:`type` objects:
+   for class body and is copied to a standard dictionary to become the
+   :attr:`~object.__dict__` attribute.  For example, the following two
+   statements create identical :class:`type` objects:
 
       >>> class X:
       ...     a = 1
