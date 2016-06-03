@@ -188,7 +188,8 @@ compatibility with older versions, see the :ref:`call-function-trio` section.
 
     .. attribute:: returncode
 
-        Exit status of the child process.
+        Exit status of the child process.  If the process exited due to a
+        signal, this will be the negative signal number.
 
     .. attribute:: cmd
 
