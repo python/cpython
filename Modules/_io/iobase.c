@@ -529,7 +529,10 @@ iobase_readline(PyObject *self, PyObject *args)
         }
 
         old_size = PyByteArray_GET_SIZE(buffer);
-        PyByteArray_Resize(buffer, old_size + PyBytes_GET_SIZE(b));
+        if (PyByteArray_Resize(buffer, old_size + PyBytes_GET_SIZE(b)) < 0) {
+            Py_DECREF(b);
+            goto fail;
+        }
         memcpy(PyByteArray_AS_STRING(buffer) + old_size,
                PyBytes_AS_STRING(b), PyBytes_GET_SIZE(b));
 
