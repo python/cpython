@@ -3107,28 +3107,35 @@ class TestPEP519(unittest.TestCase):
             self.assertEqual(s, os.fspath(s))
 
     def test_fsencode_fsdecode_return_pathlike(self):
-        class Pathlike:
+        class PathLike:
             def __init__(self, path):
                 self.path = path
-
             def __fspath__(self):
                 return self.path
 
         for p in "path/like/object", b"path/like/object":
-            pathlike = Pathlike(p)
+            pathlike = PathLike(p)
 
             self.assertEqual(p, os.fspath(pathlike))
             self.assertEqual(b"path/like/object", os.fsencode(pathlike))
             self.assertEqual("path/like/object", os.fsdecode(pathlike))
 
     def test_fspathlike(self):
-        class PathLike(object):
+        class PathLike:
+            def __init__(self, path=''):
+                self.path = path
             def __fspath__(self):
-                return '#feelthegil'
+                return self.path
 
-        self.assertEqual('#feelthegil', os.fspath(PathLike()))
+        self.assertEqual('#feelthegil', os.fspath(PathLike('#feelthegil')))
         self.assertTrue(issubclass(PathLike, os.PathLike))
         self.assertTrue(isinstance(PathLike(), os.PathLike))
+
+        message = 'expected str, bytes or os.PathLike object, not'
+        for fn in (os.fsencode, os.fsdecode):
+            for obj in PathLike(None), None:
+                with self.assertRaisesRegex(TypeError, message):
+                    fn(obj)
 
     def test_garbage_in_exception_out(self):
         vapor = type('blah', (), {})
