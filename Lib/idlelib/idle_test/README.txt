@@ -42,15 +42,15 @@ if __name__ == "__main__":
 
 2. GUI Tests
 
-When run as part of the Python test suite, Idle gui tests need to run
-test.support.requires('gui') (test.test_support in 2.7).  A test is a gui test
+When run as part of the Python test suite, Idle GUI tests need to run
+test.test_support.requires('gui') (test.support in 3.x).  A test is a GUI test
 if it creates a Tk root or master object either directly or indirectly by
 instantiating a tkinter or idle class.  For the benefit of test processes that
-either have no graphical environment available or are not allowed to use it, gui
+either have no graphical environment available or are not allowed to use it, GUI
 tests must be 'guarded' by "requires('gui')" in a setUp function or method.
 This will typically be setUpClass.
 
-To avoid interfering with other gui tests, all gui objects must be destroyed and
+To avoid interfering with other GUI tests, all GUI objects must be destroyed and
 deleted by the end of the test.  The Tk root created in a setUpX function should
 be destroyed in the corresponding tearDownX and the module or class attribute
 deleted.  Others widgets should descend from the single root and the attributes
@@ -73,24 +73,24 @@ See https://bugs.python.org/issue18910
 
 Requires('gui') causes the test(s) it guards to be skipped if any of
 these conditions are met:
-    
+
  - The tests are being run by regrtest.py, and it was started without enabling
    the "gui" resource with the "-u" command line option.
-   
+
  - The tests are being run on Windows by a service that is not allowed to
    interact with the graphical environment.
 
- - The tests are being run on Linux and X window is not available.
-   
+ - The tests are being run on Linux and X Windows is not available.
+
  - The tests are being run on Mac OSX in a process that cannot make a window
    manager connection.
-   
+
  - tkinter.Tk cannot be successfully instantiated for some reason.
- 
+
  - test.support.use_resources has been set by something other than
    regrtest.py and does not contain "gui".
-   
-Tests of non-gui operations should avoid creating tk widgets. Incidental uses of
+
+Tests of non-GUI operations should avoid creating tk widgets. Incidental uses of
 tk variables and messageboxes can be replaced by the mock classes in
 idle_test/mock_tk.py. The mock text handles some uses of the tk Text widget.
 
@@ -105,7 +105,7 @@ when developing tests. The 'exit=False' option is needed in xyx.py files when an
 htest follows.
 
 The following command lines also run all test methods, including
-gui tests, in test_xyz.py. (Both '-m idlelib' and '-m idlelib.idle' start
+GUI tests, in test_xyz.py. (Both '-m idlelib' and '-m idlelib.idle' start
 Idle and so cannot run tests.)
 
 python -m idlelib.xyz
