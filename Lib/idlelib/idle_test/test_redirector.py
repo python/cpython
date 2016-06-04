@@ -1,7 +1,7 @@
-"""Unittest for idlelib.redirector
+'''Test idlelib.redirector.
 
 100% coverage
-"""
+'''
 from test.support import requires
 import unittest
 from idlelib.idle_test.mock_idle import Func
@@ -48,8 +48,8 @@ class WidgetRedirectorTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.text.destroy()
         del cls.text
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 
