@@ -3106,6 +3106,21 @@ class TestPEP519(unittest.TestCase):
         for s in 'hello', 'goodbye', 'some/path/and/file':
             self.assertEqual(s, os.fspath(s))
 
+    def test_fsencode_fsdecode_return_pathlike(self):
+        class Pathlike:
+            def __init__(self, path):
+                self.path = path
+
+            def __fspath__(self):
+                return self.path
+
+        for p in "path/like/object", b"path/like/object":
+            pathlike = Pathlike(p)
+
+            self.assertEqual(p, os.fspath(pathlike))
+            self.assertEqual(b"path/like/object", os.fsencode(pathlike))
+            self.assertEqual("path/like/object", os.fsdecode(pathlike))
+
     def test_garbage_in_exception_out(self):
         vapor = type('blah', (), {})
         for o in int, type, os, vapor():
