@@ -1,4 +1,4 @@
-'''Test the functions and main class method of textview.py.
+'''Test idlelib.textview.
 
 Since all methods and functions create (or destroy) a TextViewer, which
 is a widget containing multiple widgets, all tests must be gui tests.
@@ -24,6 +24,7 @@ def setUpModule():
 def tearDownModule():
     global root, TV
     del TV
+    root.update_idletasks()
     root.destroy()  # pyflakes falsely sees root as undefined
     del root
 
