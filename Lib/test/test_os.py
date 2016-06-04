@@ -3121,6 +3121,13 @@ class TestPEP519(unittest.TestCase):
             self.assertEqual(b"path/like/object", os.fsencode(pathlike))
             self.assertEqual("path/like/object", os.fsdecode(pathlike))
 
+    def test_fspathlike(self):
+        class PathLike(object):
+            def __fspath__(self):
+                return '#feelthegil'
+
+        self.assertEqual('#feelthegil', os.fspath(PathLike()))
+
     def test_garbage_in_exception_out(self):
         vapor = type('blah', (), {})
         for o in int, type, os, vapor():
