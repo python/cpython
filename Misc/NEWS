@@ -1290,6 +1290,8 @@ Tests
 Build
 -----
 
+- Issue #21277: Don't try to link _ctypes with a ffi_convenience library.
+
 - Issue #26884: Fix linking extension modules for cross builds.
   Patch by Xavier de Gaye.
 
