@@ -538,6 +538,9 @@ Documentation
 Tests
 -----
 
+- Issue #21916: Added tests for the turtle module.  Patch by ingrid,
+  Gregory Loyse and Jelle Zijlstra.
+
 - Issue #26523: The multiprocessing thread pool (multiprocessing.dummy.Pool)
   was untested.
 
