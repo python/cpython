@@ -1267,7 +1267,7 @@ class ProcessTestCase(BaseTestCase):
                                 stdin=subprocess.PIPE,
                                 stdout=subprocess.PIPE)
         with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin, \
-                open('/dev/null', 'wb') as dev_null:
+                open(os.devnull, 'wb') as dev_null:
             mock_proc_stdin.flush.side_effect = BrokenPipeError
             # because _communicate registers a selector using proc.stdin...
             mock_proc_stdin.fileno.return_value = dev_null.fileno()
