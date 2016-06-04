@@ -1011,8 +1011,7 @@ class Popen(object):
             try:
                 self.stdin.write(input)
             except BrokenPipeError:
-                # communicate() must ignore broken pipe error
-                pass
+                pass  # communicate() must ignore broken pipe errors.
             except OSError as e:
                 if e.errno == errno.EINVAL and self.poll() is not None:
                     # Issue #19612: On Windows, stdin.write() fails with EINVAL
@@ -1020,7 +1019,15 @@ class Popen(object):
                     pass
                 else:
                     raise
-        self.stdin.close()
+        try:
+            self.stdin.close()
+        except BrokenPipeError:
+            pass  # communicate() must ignore broken pipe errors.
+        except OSError as e:
+            if e.errno == errno.EINVAL and self.poll() is not None:
+                pass
+            else:
+                raise
 
     def communicate(self, input=None, timeout=None):
         """Interact with process: Send data to stdin.  Read data from
@@ -1661,9 +1668,15 @@ class Popen(object):
             if self.stdin and not self._communication_started:
                 # Flush stdio buffer.  This might block, if the user has
                 # been writing to .stdin in an uncontrolled fashion.
-                self.stdin.flush()
+                try:
+                    self.stdin.flush()
+                except BrokenPipeError:
+                    pass  # communicate() must ignore BrokenPipeError.
                 if not input:
-                    self.stdin.close()
+                    try:
+                        self.stdin.close()
+                    except BrokenPipeError:
+                        pass  # communicate() must ignore BrokenPipeError.
 
             stdout = None
             stderr = None
