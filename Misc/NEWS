@@ -7778,7 +7778,7 @@ Library
 - Issue #16176: Properly identify Windows 8 via platform.platform()
 
 - Issue #16088: BaseHTTPRequestHandler's send_error method includes a
-  Content-Length header in it's response now. Patch by Antoine Pitrou.
+  Content-Length header in its response now. Patch by Antoine Pitrou.
 
 - Issue #16114: The subprocess module no longer provides a misleading error
   message stating that args[0] did not exist when either the cwd or executable
