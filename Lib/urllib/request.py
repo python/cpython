@@ -173,12 +173,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
     The *cadefault* parameter is ignored.
 
     For http and https urls, this function returns a http.client.HTTPResponse
-    object which has the following HTTPResponse Objects methods.
-
-    For ftp, file, and data urls and requests explicitly handled by legacy
-    URLopener and FancyURLopener classes, this function returns a
-    urllib.response.addinfourl object which can work as context manager and has
-    methods such as:
+    object which has the following HTTPResponse Objects methods:
 
     * geturl() - return the URL of the resource retrieved, commonly used to
       determine if a redirect was followed
@@ -189,6 +184,11 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
 
     * getcode() - return the HTTP status code of the response.  Raises URLError
       on errors.
+
+    For ftp, file, and data urls and requests explicitly handled by legacy
+    URLopener and FancyURLopener classes, this function returns a
+    urllib.response.addinfourl object which can work as context manager and
+    also support the geturl(), info(), getcode() methods listed above.
 
     Note that *None& may be returned if no handler handles the request (though
     the default installed global OpenerDirector uses UnknownHandler to ensure
