@@ -1,22 +1,21 @@
-'''Test idlelib.configHandler.
+'''Test idlelib.configDialog.
 
 Coverage: 46% just by creating dialog.
 The other half is code for working with user customizations.
 '''
-import unittest
+from idlelib.configDialog import ConfigDialog  # always test import
 from test.support import requires
+requires('gui')
 from tkinter import Tk
-from idlelib.configDialog import ConfigDialog
-from idlelib.macosxSupport import _initializeTkVariantTests
-
+import unittest
+from idlelib import macosxSupport as macosx
 
 class ConfigDialogTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        requires('gui')
         cls.root = Tk()
-        _initializeTkVariantTests(cls.root)
+        macosx._initializeTkVariantTests(cls.root)
 
     @classmethod
     def tearDownClass(cls):
@@ -27,7 +26,6 @@ class ConfigDialogTest(unittest.TestCase):
     def test_dialog(self):
         d = ConfigDialog(self.root, 'Test', _utest=True)
         d.remove_var_callbacks()
-        d.destroy()
 
 
 if __name__ == '__main__':
