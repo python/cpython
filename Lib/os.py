@@ -889,7 +889,7 @@ def _fscodec():
             return filename.encode(encoding, errors)
         else:
             raise TypeError("expected str, bytes or os.PathLike object, not "
-                            + path_type.__name__)
+                            + type(filename).__name__)
 
     def fsdecode(filename):
         """
@@ -905,7 +905,7 @@ def _fscodec():
             return filename.decode(encoding, errors)
         else:
             raise TypeError("expected str, bytes or os.PathLike object, not "
-                            + path_type.__name__)
+                            + type(filename).__name__)
 
     return fsencode, fsdecode
 
