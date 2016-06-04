@@ -71,9 +71,15 @@ deleted BEFORE root is destroyed.  See https://bugs.python.org/issue20567.
     @classmethod
     def tearDownClass(cls):
         del cls.text
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 
+The update_idletasks call is sometimes needed to prevent the following warning
+either when running a test alone or as part of the test suite (#27196).
+  can't invoke "event" command: application has been destroyed
+  ...
+  "ttk::ThemeChanged"
 
 Requires('gui') causes the test(s) it guards to be skipped if any of
 these conditions are met:
