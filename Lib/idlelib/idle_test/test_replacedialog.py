@@ -31,8 +31,9 @@ class ReplaceDialogTest(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         se.tkMessageBox = orig_mbox
+        del cls.text, cls.dialog, cls.engine
         cls.root.destroy()
-        del cls.text, cls.dialog, cls.engine, cls.root
+        del cls.root
 
     def setUp(self):
         self.text.insert('insert', 'This is a sample sTring')
