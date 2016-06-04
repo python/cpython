@@ -12284,6 +12284,56 @@ error:
     return NULL;
 }
 
+/*
+    Return the file system path representation of the object.
+
+    If the object is str or bytes, then allow it to pass through with
+    an incremented refcount. If the object defines __fspath__(), then
+    return the result of that method. All other types raise a TypeError.
+*/
+PyObject *
+PyOS_FSPath(PyObject *path)
+{
+    _Py_IDENTIFIER(__fspath__);
+    PyObject *func = NULL;
+    PyObject *path_repr = NULL;
+
+    if (PyUnicode_Check(path) || PyBytes_Check(path)) {
+        Py_INCREF(path);
+        return path;
+    }
+
+    func = _PyObject_LookupSpecial(path, &PyId___fspath__);
+    if (NULL == func) {
+        return PyErr_Format(PyExc_TypeError,
+                            "expected str, bytes or os.PathLike object, "
+                            "not %S",
+                            path->ob_type);
+    }
+
+    path_repr = PyObject_CallFunctionObjArgs(func, NULL);
+    Py_DECREF(func);
+    return path_repr;
+}
+
+/*[clinic input]
+os.fspath
+
+    path: object
+
+Return the file system path representation of the object.
+
+If the object is str or bytes, then allow it to pass through with
+an incremented refcount. If the object defines __fspath__(), then
+return the result of that method. All other types raise a TypeError.
+[clinic start generated code]*/
+
+static PyObject *
+os_fspath_impl(PyModuleDef *module, PyObject *path)
+/*[clinic end generated code: output=51ef0c2772c1932a input=652c7c37e4be1c13]*/
+{
+    return PyOS_FSPath(path);
+}
 
 #include "clinic/posixmodule.c.h"
 
@@ -12484,6 +12534,7 @@ static PyMethodDef posix_methods[] = {
     {"scandir",         (PyCFunction)posix_scandir,
                         METH_VARARGS | METH_KEYWORDS,
                         posix_scandir__doc__},
+    OS_FSPATH_METHODDEF
     {NULL,              NULL}            /* Sentinel */
 };
 

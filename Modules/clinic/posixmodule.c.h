@@ -5321,6 +5321,38 @@ exit:
 
 #endif /* defined(MS_WINDOWS) */
 
+PyDoc_STRVAR(os_fspath__doc__,
+"fspath($module, /, path)\n"
+"--\n"
+"\n"
+"Return the file system path representation of the object.\n"
+"\n"
+"If the object is str or bytes, then allow it to pass through with\n"
+"an incremented refcount. If the object defines __fspath__(), then\n"
+"return the result of that method. All other types raise a TypeError.");
+
+#define OS_FSPATH_METHODDEF    \
+    {"fspath", (PyCFunction)os_fspath, METH_VARARGS|METH_KEYWORDS, os_fspath__doc__},
+
+static PyObject *
+os_fspath_impl(PyModuleDef *module, PyObject *path);
+
+static PyObject *
+os_fspath(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+{
+    PyObject *return_value = NULL;
+    static char *_keywords[] = {"path", NULL};
+    PyObject *path;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:fspath", _keywords,
+        &path))
+        goto exit;
+    return_value = os_fspath_impl(module, path);
+
+exit:
+    return return_value;
+}
+
 #ifndef OS_TTYNAME_METHODDEF
     #define OS_TTYNAME_METHODDEF
 #endif /* !defined(OS_TTYNAME_METHODDEF) */
@@ -5792,4 +5824,4 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=a5c9bef9ad11a20b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e64e246b8270abda input=a9049054013a1b77]*/
