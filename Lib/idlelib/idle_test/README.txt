@@ -56,7 +56,7 @@ requires('gui')
 
 To guard a test class, put "requires('gui')" in its setUpClass function.
 
-To avoid interfering with other gui tests, all gui objects must be destroyed and
+To avoid interfering with other GUI tests, all GUI objects must be destroyed and
 deleted by the end of the test.  The Tk root created in a setUpX function should
 be destroyed in the corresponding tearDownX and the module or class attribute
 deleted.  Others widgets should descend from the single root and the attributes
@@ -116,7 +116,7 @@ file, which is appropriate when developing tests. The 'exit=False'
 option is needed in xyx.py files when an htest follows.
 
 The following command lines also run all test methods, including
-gui tests, in test_xyz.py. (Both '-m idlelib' and '-m idlelib.idle'
+GUI tests, in test_xyz.py. (Both '-m idlelib' and '-m idlelib.idle'
 start Idle and so cannot run tests.)
 
 python -m idlelib.xyz
