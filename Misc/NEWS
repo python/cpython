@@ -10,6 +10,9 @@ What's New in Python 2.7.12?
 Core and Builtins
 -----------------
 
+- Issue #20041: Fixed TypeError when frame.f_trace is set to None.
+  Patch by Xavier de Gaye.
+
 - Issue #25702: A --with-lto configure option has been added that will
   enable link time optimizations at build time during a make profile-opt.
   Some compilers and toolchains are known to not produce stable code when

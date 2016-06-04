@@ -364,15 +364,13 @@ frame_gettrace(PyFrameObject *f, void *closure)
 static int
 frame_settrace(PyFrameObject *f, PyObject* v, void *closure)
 {
-    PyObject* old_value;
-
     /* We rely on f_lineno being accurate when f_trace is set. */
     f->f_lineno = PyFrame_GetLineNumber(f);
 
-    old_value = f->f_trace;
+    if (v == Py_None)
+        v = NULL;
     Py_XINCREF(v);
-    f->f_trace = v;
-    Py_XDECREF(old_value);
+    Py_XSETREF(f->f_trace, v);
 
     return 0;
 }
