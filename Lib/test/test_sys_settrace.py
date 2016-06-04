@@ -388,6 +388,15 @@ class TraceTestCase(unittest.TestCase):
              (257, 'line'),
              (257, 'return')])
 
+    def test_17_none_f_trace(self):
+        # Issue 20041: fix TypeError when f_trace is set to None.
+        def func():
+            sys._getframe().f_trace = None
+            lineno = 2
+        self.run_and_compare(func,
+            [(0, 'call'),
+             (1, 'line')])
+
 
 class RaisingTraceFuncTestCase(unittest.TestCase):
     def setUp(self):
