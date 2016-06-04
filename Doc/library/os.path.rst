@@ -185,7 +185,7 @@ the :mod:`glob` module.)
 .. function:: islink(path)
 
    Return ``True`` if *path* refers to a directory entry that is a symbolic link.
-   Always ``False`` if symbolic links are not supported by the python runtime.
+   Always ``False`` if symbolic links are not supported by the Python runtime.
 
 
 .. function:: ismount(path)
