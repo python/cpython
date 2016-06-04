@@ -224,7 +224,7 @@ class CoverageResults:
 
         :param show_missing: Show lines that had no hits.
         :param summary: Include coverage summary per module.
-        :param coverdir: If None, the results of each module are placed in it's
+        :param coverdir: If None, the results of each module are placed in its
                          directory, otherwise it is included in the directory
                          specified.
         """

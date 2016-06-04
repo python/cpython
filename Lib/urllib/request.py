@@ -187,7 +187,7 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT,
 
     For ftp, file, and data urls and requests explicitly handled by legacy
     URLopener and FancyURLopener classes, this function returns a
-    urllib.response.addinfourl object which can work as context manager and
+    urllib.response.addinfourl object which can work as a context manager and
     also support the geturl(), info(), getcode() methods listed above.
 
     Note that *None& may be returned if no handler handles the request (though
