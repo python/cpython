@@ -3127,6 +3127,8 @@ class TestPEP519(unittest.TestCase):
                 return '#feelthegil'
 
         self.assertEqual('#feelthegil', os.fspath(PathLike()))
+        self.assertTrue(issubclass(PathLike, os.PathLike))
+        self.assertTrue(isinstance(PathLike(), os.PathLike))
 
     def test_garbage_in_exception_out(self):
         vapor = type('blah', (), {})
