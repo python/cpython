@@ -65,7 +65,7 @@ class TestDefaultDict(unittest.TestCase):
         d2 = defaultdict(int)
         self.assertEqual(d2.default_factory, int)
         d2[12] = 42
-        self.assertEqual(repr(d2), "defaultdict(<class 'int'>, {12: 42})")
+        self.assertRegex(repr(d2), r"defaultdict\(<class 'int' at 0x.+>, {12: 42}\)")
         def foo(): return 43
         d3 = defaultdict(foo)
         self.assertTrue(d3.default_factory is foo)

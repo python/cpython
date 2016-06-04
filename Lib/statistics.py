@@ -131,23 +131,23 @@ def _sum(data, start=0):
     --------
 
     >>> _sum([3, 2.25, 4.5, -0.5, 1.0], 0.75)
-    (<class 'float'>, Fraction(11, 1), 5)
+    (<class 'float' ...>, Fraction(11, 1), 5)
 
     Some sources of round-off error will be avoided:
 
     >>> _sum([1e50, 1, -1e50] * 1000)  # Built-in sum returns zero.
-    (<class 'float'>, Fraction(1000, 1), 3000)
+    (<class 'float' ...>, Fraction(1000, 1), 3000)
 
     Fractions and Decimals are also supported:
 
     >>> from fractions import Fraction as F
     >>> _sum([F(2, 3), F(7, 5), F(1, 4), F(5, 6)])
-    (<class 'fractions.Fraction'>, Fraction(63, 20), 4)
+    (<class 'fractions.Fraction' ...>, Fraction(63, 20), 4)
 
     >>> from decimal import Decimal as D
     >>> data = [D("0.1375"), D("0.2108"), D("0.3061"), D("0.0419")]
     >>> _sum(data)
-    (<class 'decimal.Decimal'>, Fraction(6963, 10000), 4)
+    (<class 'decimal.Decimal' ...>, Fraction(6963, 10000), 4)
 
     Mixed types are currently treated as an error, except that int is
     allowed.

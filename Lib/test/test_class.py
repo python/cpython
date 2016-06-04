@@ -568,5 +568,15 @@ class ClassTests(unittest.TestCase):
         a = A(hash(A.f)^(-1))
         hash(a.f)
 
+    def test_class_repr(self):
+        # We should get the address of the object
+        class A:
+            pass
+
+        result = repr(A)
+        self.assertRegex(result,
+            "<class 'test.test_class.ClassTests.test_class_repr.<locals>.A'"
+            " at 0x.+>")
+
 if __name__ == '__main__':
     unittest.main()

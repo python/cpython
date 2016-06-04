@@ -161,10 +161,10 @@ class IntegrationTests(TestCase):
         self.assertTrue(out.endswith(
             b"A server error occurred.  Please contact the administrator."
         ))
-        self.assertEqual(
+        self.assertRegex(
             err.splitlines()[-2],
-            "AssertionError: Headers (('Content-Type', 'text/plain')) must"
-            " be of type list: <class 'tuple'>"
+            r"AssertionError: Headers \(\('Content-Type', 'text/plain'\)\) must"
+            r" be of type list: <class 'tuple' at 0x.+>"
         )
 
     def test_status_validation_errors(self):
@@ -704,3 +704,4 @@ class HandlerTests(TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
