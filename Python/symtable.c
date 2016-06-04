@@ -738,7 +738,7 @@ analyze_child_block(PySTEntryObject *entry, PyObject *bound, PyObject *free,
 
     /* Copy the bound and global dictionaries.
 
-       These dictionary are used by all blocks enclosed by the
+       These dictionaries are used by all blocks enclosed by the
        current block.  The analyze_block() call modifies these
        dictionaries.
 
