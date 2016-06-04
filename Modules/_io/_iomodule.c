@@ -238,21 +238,33 @@ _io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
     int text = 0, binary = 0, universal = 0;
 
     char rawmode[6], *m;
-    int line_buffering;
+    int line_buffering, is_number;
     long isatty;
 
-    PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL;
+    PyObject *raw, *modeobj = NULL, *buffer, *wrapper, *result = NULL, *path_or_fd = NULL;
 
     _Py_IDENTIFIER(_blksize);
     _Py_IDENTIFIER(isatty);
     _Py_IDENTIFIER(mode);
     _Py_IDENTIFIER(close);
 
-    if (!PyUnicode_Check(file) &&
-        !PyBytes_Check(file) &&
-        !PyNumber_Check(file)) {
+    is_number = PyNumber_Check(file);
+
+    if (is_number) {
+        path_or_fd = file;
+        Py_INCREF(path_or_fd);
+    } else {
+        path_or_fd = PyOS_FSPath(file);
+        if (path_or_fd == NULL) {
+            return NULL;
+        }
+    }
+
+    if (!is_number &&
+        !PyUnicode_Check(path_or_fd) &&
+        !PyBytes_Check(path_or_fd)) {
         PyErr_Format(PyExc_TypeError, "invalid file: %R", file);
-        return NULL;
+        goto error;
     }
 
     /* Decode mode */
@@ -293,7 +305,7 @@ _io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
         if (strchr(mode+i+1, c)) {
           invalid_mode:
             PyErr_Format(PyExc_ValueError, "invalid mode: '%s'", mode);
-            return NULL;
+            goto error;
         }
 
     }
@@ -311,50 +323,53 @@ _io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
         if (creating || writing || appending || updating) {
             PyErr_SetString(PyExc_ValueError,
                             "mode U cannot be combined with x', 'w', 'a', or '+'");
-            return NULL;
+            goto error;
         }
         if (PyErr_WarnEx(PyExc_DeprecationWarning,
                          "'U' mode is deprecated", 1) < 0)
-            return NULL;
+            goto error;
         reading = 1;
     }
 
     if (text && binary) {
         PyErr_SetString(PyExc_ValueError,
                         "can't have text and binary mode at once");
-        return NULL;
+        goto error;
     }
 
     if (creating + reading + writing + appending > 1) {
         PyErr_SetString(PyExc_ValueError,
                         "must have exactly one of create/read/write/append mode");
-        return NULL;
+        goto error;
     }
 
     if (binary && encoding != NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "binary mode doesn't take an encoding argument");
-        return NULL;
+        goto error;
     }
 
     if (binary && errors != NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "binary mode doesn't take an errors argument");
-        return NULL;
+        goto error;
     }
 
     if (binary && newline != NULL) {
         PyErr_SetString(PyExc_ValueError,
                         "binary mode doesn't take a newline argument");
-        return NULL;
+        goto error;
     }
 
     /* Create the Raw file stream */
     raw = PyObject_CallFunction((PyObject *)&PyFileIO_Type,
-                                "OsiO", file, rawmode, closefd, opener);
+                                "OsiO", path_or_fd, rawmode, closefd, opener);
     if (raw == NULL)
-        return NULL;
+        goto error;
     result = raw;
+
+    Py_DECREF(path_or_fd);
+    path_or_fd = NULL;
 
     modeobj = PyUnicode_FromString(mode);
     if (modeobj == NULL)
@@ -461,6 +476,7 @@ _io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
         Py_XDECREF(close_result);
         Py_DECREF(result);
     }
+    Py_XDECREF(path_or_fd);
     Py_XDECREF(modeobj);
     return NULL;
 }

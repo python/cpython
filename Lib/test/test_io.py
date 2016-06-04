@@ -844,6 +844,32 @@ class IOTest(unittest.TestCase):
                 self.assertEqual(getattr(stream, method)(buffer), 5)
                 self.assertEqual(bytes(buffer), b"12345")
 
+    def test_fspath_support(self):
+        class PathLike:
+            def __init__(self, path):
+                self.path = path
+
+            def __fspath__(self):
+                return self.path
+
+        def check_path_succeeds(path):
+            with self.open(path, "w") as f:
+                f.write("egg\n")
+
+            with self.open(path, "r") as f:
+                self.assertEqual(f.read(), "egg\n")
+
+        check_path_succeeds(PathLike(support.TESTFN))
+        check_path_succeeds(PathLike(support.TESTFN.encode('utf-8')))
+
+        bad_path = PathLike(TypeError)
+        with self.assertRaisesRegex(TypeError, 'invalid file'):
+            self.open(bad_path, 'w')
+
+        # ensure that refcounting is correct with some error conditions
+        with self.assertRaisesRegex(ValueError, 'read/write/append mode'):
+            self.open(PathLike(support.TESTFN), 'rwxa')
+
 
 class CIOTest(IOTest):
 
