@@ -56,40 +56,44 @@ requires('gui')
 
 To guard a test class, put "requires('gui')" in its setUpClass function.
 
-To avoid interfering with other GUI tests, all GUI objects must be
-destroyed and deleted by the end of the test.  Widgets, such as a Tk
-root, created in a setUpX function, should be destroyed in the
-corresponding tearDownX.  Module and class widget attributes should also
-be deleted.
+To avoid interfering with other gui tests, all gui objects must be destroyed and
+deleted by the end of the test.  The Tk root created in a setUpX function should
+be destroyed in the corresponding tearDownX and the module or class attribute
+deleted.  Others widgets should descend from the single root and the attributes
+deleted BEFORE root is destroyed.  See https://bugs.python.org/issue20567.
 
     @classmethod
     def setUpClass(cls):
         requires('gui')
         cls.root = tk.Tk()
+        cls.text = tk.Text(root)
 
     @classmethod
     def tearDownClass(cls):
+        del cls.text
         cls.root.destroy()
         del cls.root
 
 
 Requires('gui') causes the test(s) it guards to be skipped if any of
-a few conditions are met:
-    
+these conditions are met:
+
  - The tests are being run by regrtest.py, and it was started without
    enabling the "gui" resource with the "-u" command line option.
-   
+
  - The tests are being run on Windows by a service that is not allowed
    to interact with the graphical environment.
-   
+
+ - The tests are being run on Linux and X Windows is not available.
+
  - The tests are being run on Mac OSX in a process that cannot make a
    window manager connection.
-   
+
  - tkinter.Tk cannot be successfully instantiated for some reason.
- 
+
  - test.support.use_resources has been set by something other than
    regrtest.py and does not contain "gui".
-   
+
 Tests of non-GUI operations should avoid creating tk widgets. Incidental
 uses of tk variables and messageboxes can be replaced by the mock
 classes in idle_test/mock_tk.py. The mock text handles some uses of the
