@@ -296,6 +296,9 @@ Documentation
 Tests
 -----
 
+- Issue #21916: Added tests for the turtle module.  Patch by ingrid,
+  Gregory Loyse and Jelle Zijlstra.
+
 - Issue #25940: Changed test_ssl to use self-signed.pythontest.net.  This
   avoids relying on svn.python.org, which recently changed root certificate.
 
