@@ -625,6 +625,16 @@ function.
       The name of the parameter as a string.  The name must be a valid
       Python identifier.
 
+      .. impl-detail::
+
+         CPython generates implicit parameter names of the form ``.0`` on the
+         code objects used to implement comprehensions and generator
+         expressions.
+
+         .. versionchanged:: 3.6
+            These parameter names are exposed by this module as names like
+            ``implicit0``.
+
    .. attribute:: Parameter.default
 
       The default value for the parameter.  If the parameter has no default
