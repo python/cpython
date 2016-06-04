@@ -775,8 +775,8 @@ class SimpleServerTestCase(BaseServerTestCase):
             #   'method "this_is_not_exists" is not supported'>}]
 
             self.assertEqual(result.results[0]['faultCode'], 1)
-            self.assertEqual(result.results[0]['faultString'],
-                '<class \'Exception\'>:method "this_is_not_exists" '
+            self.assertRegex(result.results[0]['faultString'],
+                '<class \'Exception\' at 0x.+>:method "this_is_not_exists" '
                 'is not supported')
         except (xmlrpclib.ProtocolError, OSError) as e:
             # ignore failures due to non-blocking socket 'unavailable' errors

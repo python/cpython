@@ -1697,13 +1697,10 @@ class TestSingleDispatch(unittest.TestCase):
         c.Container.register(P)
         with self.assertRaises(RuntimeError) as re_one:
             g(p)
-        self.assertIn(
-            str(re_one.exception),
-            (("Ambiguous dispatch: <class 'collections.abc.Container'> "
-              "or <class 'collections.abc.Iterable'>"),
-             ("Ambiguous dispatch: <class 'collections.abc.Iterable'> "
-              "or <class 'collections.abc.Container'>")),
-        )
+        self.assertIn("Ambiguous dispatch:", str(re_one.exception))
+        self.assertIn("<class 'collections.abc.Container'", str(re_one.exception))
+        self.assertIn("<class 'collections.abc.Iterable'", str(re_one.exception))
+
         class Q(c.Sized):
             def __len__(self):
                 return 0
@@ -1729,13 +1726,10 @@ class TestSingleDispatch(unittest.TestCase):
         # perspective.
         with self.assertRaises(RuntimeError) as re_two:
             h(c.defaultdict(lambda: 0))
-        self.assertIn(
-            str(re_two.exception),
-            (("Ambiguous dispatch: <class 'collections.abc.Container'> "
-              "or <class 'collections.abc.Sized'>"),
-             ("Ambiguous dispatch: <class 'collections.abc.Sized'> "
-              "or <class 'collections.abc.Container'>")),
-        )
+        self.assertIn("Ambiguous dispatch:", str(re_two.exception))
+        self.assertIn("<class 'collections.abc.Container'", str(re_two.exception))
+        self.assertIn("<class 'collections.abc.Sized'", str(re_two.exception))
+
         class R(c.defaultdict):
             pass
         c.MutableSequence.register(R)
@@ -1769,13 +1763,10 @@ class TestSingleDispatch(unittest.TestCase):
         # There is no preference for registered versus inferred ABCs.
         with self.assertRaises(RuntimeError) as re_three:
             h(u)
-        self.assertIn(
-            str(re_three.exception),
-            (("Ambiguous dispatch: <class 'collections.abc.Container'> "
-              "or <class 'collections.abc.Sized'>"),
-             ("Ambiguous dispatch: <class 'collections.abc.Sized'> "
-              "or <class 'collections.abc.Container'>")),
-        )
+        self.assertIn("Ambiguous dispatch:", str(re_three.exception))
+        self.assertIn("<class 'collections.abc.Container'", str(re_three.exception))
+        self.assertIn("<class 'collections.abc.Sized'", str(re_three.exception))
+
         class V(c.Sized, S):
             def __len__(self):
                 return 0

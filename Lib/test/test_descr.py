@@ -4544,9 +4544,9 @@ order (MRO) for bases """
                 pass
         foo = Foo()
         self.assertRegex(repr(foo.method), # access via instance
-            r"<bound method .*Foo\.method of <class '.*Foo'>>")
+            r"<bound method .*Foo\.method of <class '.*Foo' at 0x.+>>")
         self.assertRegex(repr(Foo.method), # access via the class
-            r"<bound method .*Foo\.method of <class '.*Foo'>>")
+            r"<bound method .*Foo\.method of <class '.*Foo' at 0x.+>>")
 
 
         class MyCallable:
