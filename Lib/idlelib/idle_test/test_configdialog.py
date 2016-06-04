@@ -1,7 +1,7 @@
-'''Unittests for idlelib/configHandler.py
+'''Test idlelib.configHandler.
 
-Coverage: 46% just by creating dialog. The other half is change code.
-
+Coverage: 46% just by creating dialog.
+The other half is code for working with user customizations.
 '''
 import unittest
 from test.support import requires
@@ -20,11 +20,12 @@ class ConfigDialogTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
 
     def test_dialog(self):
-        d=ConfigDialog(self.root, 'Test', _utest=True)
+        d = ConfigDialog(self.root, 'Test', _utest=True)
         d.remove_var_callbacks()
         d.destroy()
 
