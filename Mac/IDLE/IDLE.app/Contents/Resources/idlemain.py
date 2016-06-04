@@ -70,6 +70,6 @@ for idx, value in enumerate(sys.argv):
 # Now it is safe to import idlelib.
 from idlelib import macosxSupport
 macosxSupport._appbundle = True
-from idlelib.PyShell import main
+from idlelib.pyshell import main
 if __name__ == '__main__':
     main()
