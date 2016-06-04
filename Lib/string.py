@@ -14,6 +14,10 @@ printable -- a string containing all ASCII characters considered printable
 
 """
 
+__all__ = ["ascii_letters", "ascii_lowercase", "ascii_uppercase", "capwords",
+           "digits", "hexdigits", "octdigits", "printable", "punctuation",
+           "whitespace", "Formatter", "Template"]
+
 import _string
 
 # Some strings for ctype-style character classification
@@ -46,7 +50,7 @@ def capwords(s, sep=None):
 
 ####################################################################
 import re as _re
-from collections import ChainMap
+from collections import ChainMap as _ChainMap
 
 class _TemplateMetaclass(type):
     pattern = r"""
@@ -104,7 +108,7 @@ class Template(metaclass=_TemplateMetaclass):
         if not args:
             mapping = kws
         elif kws:
-            mapping = ChainMap(kws, args[0])
+            mapping = _ChainMap(kws, args[0])
         else:
             mapping = args[0]
         # Helper function for .sub()
@@ -134,7 +138,7 @@ class Template(metaclass=_TemplateMetaclass):
         if not args:
             mapping = kws
         elif kws:
-            mapping = ChainMap(kws, args[0])
+            mapping = _ChainMap(kws, args[0])
         else:
             mapping = args[0]
         # Helper function for .sub()
