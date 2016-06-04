@@ -73,6 +73,8 @@ Library
 
 - Issue #21271: New keyword only parameters in reset_mock call.
 
+- Issue #25548: Showing memory address of class objects in repl.
+
 IDLE
 ----
 

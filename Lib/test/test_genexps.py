@@ -27,7 +27,7 @@ Test first class
 
     >>> g = (i*i for i in range(4))
     >>> type(g)
-    <class 'generator'>
+    <class 'generator' ...>
     >>> list(g)
     [0, 1, 4, 9]
 
@@ -269,7 +269,8 @@ else:
 def test_main(verbose=None):
     from test import support
     from test import test_genexps
-    support.run_doctest(test_genexps, verbose)
+    import doctest
+    support.run_doctest(test_genexps, verbose, optionflags=doctest.ELLIPSIS)
 
     # verify reference counting
     if verbose and hasattr(sys, "gettotalrefcount"):

@@ -2338,7 +2338,7 @@ def test_DocFileSuite():
        `__file__` global, which is set to the name of the file
        containing the tests:
 
-         >>> suite = doctest.DocFileSuite('test_doctest3.txt')
+         >>> suite = doctest.DocFileSuite('test_doctest3.txt', optionflags=doctest.ELLIPSIS)
          >>> suite.run(unittest.TestResult())
          <unittest.result.TestResult run=1 errors=0 failures=0>
 

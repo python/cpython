@@ -859,9 +859,9 @@ type_repr(PyTypeObject *type)
     }
 
     if (mod != NULL && _PyUnicode_CompareWithId(mod, &PyId_builtins))
-        rtn = PyUnicode_FromFormat("<class '%U.%U'>", mod, name);
-    else
-        rtn = PyUnicode_FromFormat("<class '%s'>", type->tp_name);
+        rtn = PyUnicode_FromFormat("<class '%U.%U' at %p>", mod, name, type);
+    else    
+        rtn = PyUnicode_FromFormat("<class '%s' at %p>", type->tp_name, type);
 
     Py_XDECREF(mod);
     Py_DECREF(name);

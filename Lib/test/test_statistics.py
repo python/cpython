@@ -659,7 +659,7 @@ class DocTests(unittest.TestCase):
     @unittest.skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -OO and above")
     def test_doc_tests(self):
-        failed, tried = doctest.testmod(statistics)
+        failed, tried = doctest.testmod(statistics, optionflags=doctest.ELLIPSIS)
         self.assertGreater(tried, 0)
         self.assertEqual(failed, 0)
 

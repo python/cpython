@@ -292,8 +292,8 @@ class foo(object):
 ''')
         importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import foo
-        eq(repr(foo.foo),
-               "<class '%s.foo'>" % foo.__name__)
+        self.assertRegex(repr(foo.foo),
+               r"<class '%s.foo' at 0x.+>" % foo.__name__)
 
     @unittest.skip('need a suitable object')
     def test_object(self):
@@ -310,7 +310,7 @@ class bar:
         importlib.invalidate_caches()
         from areallylongpackageandmodulenametotestreprtruncation.areallylongpackageandmodulenametotestreprtruncation import bar
         # Module name may be prefixed with "test.", depending on how run.
-        self.assertEqual(repr(bar.bar), "<class '%s.bar'>" % bar.__name__)
+        self.assertRegex(repr(bar.bar), r"<class '%s.bar' at 0x.+>" % bar.__name__)
 
     def test_instance(self):
         self._check_path_limitations('baz')
