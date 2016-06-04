@@ -161,6 +161,8 @@ def open(file, mode="r", buffering=-1, encoding=None, errors=None,
     opened in a text mode, and for bytes a BytesIO can be used like a file
     opened in a binary mode.
     """
+    if not isinstance(file, int):
+        file = os.fspath(file)
     if not isinstance(file, (str, bytes, int)):
         raise TypeError("invalid file: %r" % file)
     if not isinstance(mode, str):
