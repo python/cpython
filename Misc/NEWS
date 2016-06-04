@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26373: subprocess.Popen.communicate now correctly ignores
+  BrokenPipeError when the child process dies before .communicate()
+  is called in more/all circumstances.
+
 - signal, socket, and ssl module IntEnum constant name lookups now return a
   consistent name for values having multiple names.  Ex: signal.Signals(6)
   now refers to itself as signal.SIGALRM rather than flipping between that
