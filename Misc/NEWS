@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #20041: Fixed TypeError when frame.f_trace is set to None.
+  Patch by Xavier de Gaye.
+
 - Issue #26168: Fixed possible refleaks in failing Py_BuildValue() with the "N"
   format unit.
 
