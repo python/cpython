@@ -40,7 +40,7 @@ this module.  The following types are supported: booleans, integers, floating
 point numbers, complex numbers, strings, bytes, bytearrays, tuples, lists, sets,
 frozensets, dictionaries, and code objects, where it should be understood that
 tuples, lists, sets, frozensets and dictionaries are only supported as long as
-the values contained therein are themselves supported.
+the values contained therein are themselves supported.  The
 singletons :const:`None`, :const:`Ellipsis` and :exc:`StopIteration` can also be
 marshalled and unmarshalled.
 For format *version* lower than 3, recursive lists, sets and dictionaries cannot

@@ -59,7 +59,7 @@ The :mod:`urllib.request` module defines the following functions:
 
    The *cadefault* parameter is ignored.
 
-   This function always returns an object which can work as
+   This function always returns an object which can work as a
    :term:`context manager` and has methods such as
 
    * :meth:`~urllib.response.addinfourl.geturl` --- return the URL of the resource retrieved,
