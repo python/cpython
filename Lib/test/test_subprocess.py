@@ -1238,52 +1238,6 @@ class ProcessTestCase(BaseTestCase):
         fds_after_exception = os.listdir(fd_directory)
         self.assertEqual(fds_before_popen, fds_after_exception)
 
-    def test_communicate_BrokenPipeError_stdin_close(self):
-        # By not setting stdout or stderr or a timeout we force the fast path
-        # that just calls _stdin_write() internally due to our mock.
-        proc = subprocess.Popen([sys.executable, '-c', 'pass'])
-        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin:
-            mock_proc_stdin.close.side_effect = BrokenPipeError
-            proc.communicate()  # Should swallow BrokenPipeError from close.
-            mock_proc_stdin.close.assert_called_with()
-
-    def test_communicate_BrokenPipeError_stdin_write(self):
-        # By not setting stdout or stderr or a timeout we force the fast path
-        # that just calls _stdin_write() internally due to our mock.
-        proc = subprocess.Popen([sys.executable, '-c', 'pass'])
-        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin:
-            mock_proc_stdin.write.side_effect = BrokenPipeError
-            proc.communicate(b'stuff')  # Should swallow the BrokenPipeError.
-            mock_proc_stdin.write.assert_called_once_with(b'stuff')
-            mock_proc_stdin.close.assert_called_once_with()
-
-    def test_communicate_BrokenPipeError_stdin_flush(self):
-        # Setting stdin and stdout forces the ._communicate() code path.
-        # python -h exits faster than python -c pass (but spams stdout).
-        proc = subprocess.Popen([sys.executable, '-h'],
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE)
-        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin, \
-                open(os.devnull, 'wb') as dev_null:
-            mock_proc_stdin.flush.side_effect = BrokenPipeError
-            # because _communicate registers a selector using proc.stdin...
-            mock_proc_stdin.fileno.return_value = dev_null.fileno()
-            # _communicate() should swallow BrokenPipeError from flush.
-            proc.communicate(b'stuff')
-            mock_proc_stdin.flush.assert_called_once_with()
-
-    def test_communicate_BrokenPipeError_stdin_close_with_timeout(self):
-        # Setting stdin and stdout forces the ._communicate() code path.
-        # python -h exits faster than python -c pass (but spams stdout).
-        proc = subprocess.Popen([sys.executable, '-h'],
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE)
-        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin:
-            mock_proc_stdin.close.side_effect = BrokenPipeError
-            # _communicate() should swallow BrokenPipeError from close.
-            proc.communicate(timeout=999)
-            mock_proc_stdin.close.assert_called_once_with()
-
 
 class RunFuncTestCase(BaseTestCase):
     def run_python(self, code, **kwargs):
@@ -2469,6 +2423,52 @@ class POSIXProcessTestCase(BaseTestCase):
         finally:
             if not gc_enabled:
                 gc.disable()
+
+    def test_communicate_BrokenPipeError_stdin_close(self):
+        # By not setting stdout or stderr or a timeout we force the fast path
+        # that just calls _stdin_write() internally due to our mock.
+        proc = subprocess.Popen([sys.executable, '-c', 'pass'])
+        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin:
+            mock_proc_stdin.close.side_effect = BrokenPipeError
+            proc.communicate()  # Should swallow BrokenPipeError from close.
+            mock_proc_stdin.close.assert_called_with()
+
+    def test_communicate_BrokenPipeError_stdin_write(self):
+        # By not setting stdout or stderr or a timeout we force the fast path
+        # that just calls _stdin_write() internally due to our mock.
+        proc = subprocess.Popen([sys.executable, '-c', 'pass'])
+        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin:
+            mock_proc_stdin.write.side_effect = BrokenPipeError
+            proc.communicate(b'stuff')  # Should swallow the BrokenPipeError.
+            mock_proc_stdin.write.assert_called_once_with(b'stuff')
+            mock_proc_stdin.close.assert_called_once_with()
+
+    def test_communicate_BrokenPipeError_stdin_flush(self):
+        # Setting stdin and stdout forces the ._communicate() code path.
+        # python -h exits faster than python -c pass (but spams stdout).
+        proc = subprocess.Popen([sys.executable, '-h'],
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE)
+        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin, \
+                open(os.devnull, 'wb') as dev_null:
+            mock_proc_stdin.flush.side_effect = BrokenPipeError
+            # because _communicate registers a selector using proc.stdin...
+            mock_proc_stdin.fileno.return_value = dev_null.fileno()
+            # _communicate() should swallow BrokenPipeError from flush.
+            proc.communicate(b'stuff')
+            mock_proc_stdin.flush.assert_called_once_with()
+
+    def test_communicate_BrokenPipeError_stdin_close_with_timeout(self):
+        # Setting stdin and stdout forces the ._communicate() code path.
+        # python -h exits faster than python -c pass (but spams stdout).
+        proc = subprocess.Popen([sys.executable, '-h'],
+                                stdin=subprocess.PIPE,
+                                stdout=subprocess.PIPE)
+        with proc, mock.patch.object(proc, 'stdin') as mock_proc_stdin:
+            mock_proc_stdin.close.side_effect = BrokenPipeError
+            # _communicate() should swallow BrokenPipeError from close.
+            proc.communicate(timeout=999)
+            mock_proc_stdin.close.assert_called_once_with()
 
 
 @unittest.skipUnless(mswindows, "Windows specific tests")
