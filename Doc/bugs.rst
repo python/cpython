@@ -1,13 +1,16 @@
 .. _reporting-bugs:
 
-**************
-Reporting Bugs
-**************
+*****************
+Dealing with Bugs
+*****************
 
 Python is a mature programming language which has established a reputation for
 stability.  In order to maintain this reputation, the developers would like to
 know of any deficiencies you find in Python.
 
+It can be sometimes faster to fix bugs yourself and contribute patches to
+Python as it streamlines the process and involves less people. Learn how to
+:ref:`contribute <contributing-to-python>`.
 
 Documentation bugs
 ==================
@@ -73,6 +76,7 @@ taken on the bug.
       Information about writing a good bug report.  Some of this is specific to the
       Mozilla project, but describes general good practices.
 
+.. _contributing-to-python:
 
 Getting started contributing to Python yourself
 ===============================================
