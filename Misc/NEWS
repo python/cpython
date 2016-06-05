@@ -122,6 +122,12 @@ Windows
   The Windows launcher ``py.exe`` no longer prefers an installed
   Python 2 version over Python 3 by default when used interactively.
 
+Build
+-----
+
+- Issue #26930: Update OS X 10.5+ 32-bit-only installer to build
+  and link with OpenSSL 1.0.2h.
+
 
 What's New in Python 3.6.0 alpha 1?
 ===================================
