@@ -557,6 +557,15 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
                 self.assertEqual(dco.unconsumed_tail, b'')
                 self.assertEqual(dco.unused_data, remainder)
 
+    # issue27164
+    def test_decompress_raw_with_dictionary(self):
+        zdict = b'abcdefghijklmnopqrstuvwxyz'
+        co = zlib.compressobj(wbits=-zlib.MAX_WBITS, zdict=zdict)
+        comp = co.compress(zdict) + co.flush()
+        dco = zlib.decompressobj(wbits=-zlib.MAX_WBITS, zdict=zdict)
+        uncomp = dco.decompress(comp) + dco.flush()
+        self.assertEqual(zdict, uncomp)
+
     def test_flush_with_freed_input(self):
         # Issue #16411: decompressor accesses input to last decompress() call
         # in flush(), even if this object has been freed in the meanwhile.
