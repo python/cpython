@@ -450,7 +450,17 @@ class SimpleHandler(BaseHandler):
         self.environ.update(self.base_env)
 
     def _write(self,data):
-        self.stdout.write(data)
+        result = self.stdout.write(data)
+        if result is None or result == len(data):
+            return
+        from warnings import warn
+        warn("SimpleHandler.stdout.write() should not do partial writes",
+            DeprecationWarning)
+        while True:
+            data = data[result:]
+            if not data:
+                break
+            result = self.stdout.write(data)
 
     def _flush(self):
         self.stdout.flush()
