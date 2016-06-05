@@ -1466,9 +1466,9 @@ Instance methods:
 
 
       >>> from datetime import time
-      >>> time(hours=12, minute=34, second=56, microsecond=123456).isoformat(timespec='minutes')
+      >>> time(hour=12, minute=34, second=56, microsecond=123456).isoformat(timespec='minutes')
       '12:34'
-      >>> dt = time(hours=12, minute=34, second=56, microsecond=0)
+      >>> dt = time(hour=12, minute=34, second=56, microsecond=0)
       >>> dt.isoformat(timespec='microseconds')
       '12:34:56.000000'
       >>> dt.isoformat(timespec='auto')
