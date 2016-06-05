@@ -36,9 +36,8 @@ highlight_language = 'python3'
 # Require Sphinx 1.2 for build.
 needs_sphinx = '1.2'
 
-# Ignore any .rst files in the venv/ directory, and don't attempt to run tests
-# in the 2.x release notes.
-exclude_patterns = ['venv/*', 'whatsnew/2.*.rst']
+# Ignore any .rst files in the venv/ directory.
+exclude_patterns = ['venv/*']
 
 
 # Options for HTML output
