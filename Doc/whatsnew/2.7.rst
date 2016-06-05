@@ -613,6 +613,9 @@ PEP 3137: The memoryview Object
 The :class:`memoryview` object provides a view of another object's
 memory content that matches the :class:`bytes` type's interface.
 
+.. doctest::
+    :options: +SKIP
+
     >>> import string
     >>> m = memoryview(string.letters)
     >>> m
@@ -628,6 +631,9 @@ memory content that matches the :class:`bytes` type's interface.
 The content of the view can be converted to a string of bytes or
 a list of integers:
 
+.. doctest::
+    :options: +SKIP
+
     >>> m2.tobytes()
     'abcdefghijklmnopqrstuvwxyz'
     >>> m2.tolist()
@@ -636,6 +642,9 @@ a list of integers:
 
 :class:`memoryview` objects allow modifying the underlying object if
 it's a mutable object.
+
+.. doctest::
+    :options: +SKIP
 
     >>> m2[0] = 75
     Traceback (most recent call last):
@@ -671,6 +680,9 @@ Some smaller changes made to the core Python language are:
   ``{}`` continues to represent an empty dictionary; use
   ``set()`` for an empty set.
 
+  .. doctest::
+    :options: +SKIP
+
     >>> {1, 2, 3, 4, 5}
     set([1, 2, 3, 4, 5])
     >>> set() # empty set
@@ -683,6 +695,9 @@ Some smaller changes made to the core Python language are:
 * Dictionary and set comprehensions are another feature backported from
   3.x, generalizing list/generator comprehensions to use
   the literal syntax for sets and dictionaries.
+
+  .. doctest::
+    :options: +SKIP
 
     >>> {x: x*x for x in range(6)}
     {0: 0, 1: 1, 2: 4, 3: 9, 4: 16, 5: 25}
@@ -1052,7 +1067,7 @@ changes, or look through the Subversion logs for all the details.
      >>> for letter in 'here is a sample of english text':
      ...   c[letter] += 1
      ...
-     >>> c
+     >>> c # doctest: +SKIP
      Counter({' ': 6, 'e': 5, 's': 3, 'a': 2, 'i': 2, 'h': 2,
      'l': 2, 't': 2, 'g': 1, 'f': 1, 'm': 1, 'o': 1, 'n': 1,
      'p': 1, 'r': 1, 'x': 1})
@@ -1638,11 +1653,17 @@ changes, or look through the Subversion logs for all the details.
   worked around the old behaviour.  For example, Python 2.6.4 or 2.5
   will return the following:
 
+  .. doctest::
+    :options: +SKIP
+
     >>> import urlparse
     >>> urlparse.urlsplit('invented://host/filename?query')
     ('invented', '', '//host/filename?query', '', '')
 
   Python 2.7 (and Python 2.6.5) will return:
+
+  .. doctest::
+    :options: +SKIP
 
     >>> import urlparse
     >>> urlparse.urlsplit('invented://host/filename?query')
@@ -1652,7 +1673,10 @@ changes, or look through the Subversion logs for all the details.
   returns a named tuple instead of a standard tuple.)
 
   The :mod:`urlparse` module also supports IPv6 literal addresses as defined by
-  :rfc:`2732` (contributed by Senthil Kumaran; :issue:`2987`). ::
+  :rfc:`2732` (contributed by Senthil Kumaran; :issue:`2987`).
+
+  .. doctest::
+    :options: +SKIP
 
     >>> urlparse.urlparse('http://[1080::8:800:200C:417A]/foo')
     ParseResult(scheme='http', netloc='[1080::8:800:200C:417A]',
@@ -2475,11 +2499,17 @@ In the standard library:
   worked around the old behaviour.  For example, Python 2.6.4 or 2.5
   will return the following:
 
+  .. doctest::
+    :options: +SKIP
+
     >>> import urlparse
     >>> urlparse.urlsplit('invented://host/filename?query')
     ('invented', '', '//host/filename?query', '', '')
 
   Python 2.7 (and Python 2.6.5) will return:
+
+  .. doctest::
+    :options: +SKIP
 
     >>> import urlparse
     >>> urlparse.urlsplit('invented://host/filename?query')
