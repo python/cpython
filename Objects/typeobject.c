@@ -2430,7 +2430,11 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
             Py_DECREF(type);
             return NULL;
         }
-        PyDict_SetItemString(dict, "__new__", tmp);
+        if (PyDict_SetItemString(dict, "__new__", tmp) < 0) {
+            Py_DECREF(tmp);
+            Py_DECREF(type);
+            return NULL;
+        }
         Py_DECREF(tmp);
     }
 
