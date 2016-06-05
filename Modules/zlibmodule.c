@@ -22,6 +22,10 @@
     #define LEAVE_ZLIB(obj)
 #endif
 
+#if defined(ZLIB_VERNUM) && ZLIB_VERNUM >= 0x1221
+#define AT_LEAST_ZLIB_1_2_2_1
+#endif
+
 /* The following parameters are copied from zutil.h, version 0.95 */
 #define DEFLATED   8
 #if MAX_MEM_LEVEL >= 8
@@ -473,6 +477,31 @@ zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits,
     return (PyObject*)self;
 }
 
+static int
+set_inflate_zdict(compobject *self)
+{
+    Py_buffer zdict_buf;
+    int err;
+
+    if (PyObject_GetBuffer(self->zdict, &zdict_buf, PyBUF_SIMPLE) == -1) {
+        return -1;
+    }
+    if ((size_t)zdict_buf.len > UINT_MAX) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "zdict length does not fit in an unsigned int");
+        PyBuffer_Release(&zdict_buf);
+        return -1;
+    }
+    err = inflateSetDictionary(&(self->zst),
+                               zdict_buf.buf, (unsigned int)zdict_buf.len);
+    PyBuffer_Release(&zdict_buf);
+    if (err != Z_OK) {
+        zlib_error(self->zst, err, "while setting zdict");
+        return -1;
+    }
+    return 0;
+}
+
 /*[clinic input]
 zlib.decompressobj
 
@@ -514,6 +543,20 @@ zlib_decompressobj_impl(PyModuleDef *module, int wbits, PyObject *zdict)
     switch(err) {
     case (Z_OK):
         self->is_initialised = 1;
+        if (self->zdict != NULL && wbits < 0) {
+#ifdef AT_LEAST_ZLIB_1_2_2_1
+            if (set_inflate_zdict(self) < 0) {
+                Py_DECREF(self);
+                return NULL;
+            }
+#else
+            PyErr_Format(ZlibError,
+                         "zlib version %s does not allow raw inflate with dictionary",
+                         ZLIB_VERSION);
+            Py_DECREF(self);
+            return NULL;
+#endif
+        }
         return (PyObject*)self;
     case(Z_STREAM_ERROR):
         Py_DECREF(self);
@@ -740,29 +783,12 @@ zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
     Py_END_ALLOW_THREADS
 
     if (err == Z_NEED_DICT && self->zdict != NULL) {
-        Py_buffer zdict_buf;
-        if (PyObject_GetBuffer(self->zdict, &zdict_buf, PyBUF_SIMPLE) == -1) {
+        if (set_inflate_zdict(self) < 0) {
             Py_DECREF(RetVal);
             RetVal = NULL;
             goto error;
         }
 
-        if ((size_t)zdict_buf.len > UINT_MAX) {
-            PyErr_SetString(PyExc_OverflowError,
-                    "zdict length does not fit in an unsigned int");
-            PyBuffer_Release(&zdict_buf);
-            Py_CLEAR(RetVal);
-            goto error;
-        }
-
-        err = inflateSetDictionary(&(self->zst),
-                                   zdict_buf.buf, (unsigned int)zdict_buf.len);
-        PyBuffer_Release(&zdict_buf);
-        if (err != Z_OK) {
-            zlib_error(self->zst, err, "while decompressing data");
-            Py_CLEAR(RetVal);
-            goto error;
-        }
         /* Repeat the call to inflate. */
         Py_BEGIN_ALLOW_THREADS
         err = inflate(&(self->zst), Z_SYNC_FLUSH);

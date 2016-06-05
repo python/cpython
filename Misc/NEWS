@@ -27,6 +27,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #27164: In the zlib module, allow decompressing raw Deflate streams
+  with a predefined zdict.  Based on patch by Xiang Zhang.
+
 - Issue #24291: Fix wsgiref.simple_server.WSGIRequestHandler to completely
   write data to the client.  Previously it could do partial writes and
   truncate data.  Also, wsgiref.handler.ServerHandler can now handle stdout
