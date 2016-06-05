@@ -1,3 +1,4 @@
+import pickle
 import unittest
 from test import test_support as support
 
@@ -128,6 +129,40 @@ class VectorComparisonMixin:
 
 
 class TestVec2D(VectorComparisonMixin, unittest.TestCase):
+
+    def test_constructor(self):
+        vec = Vec2D(0.5, 2)
+        self.assertEqual(vec[0], 0.5)
+        self.assertEqual(vec[1], 2)
+        self.assertIsInstance(vec, Vec2D)
+
+        self.assertRaises(TypeError, Vec2D)
+        self.assertRaises(TypeError, Vec2D, 0)
+        self.assertRaises(TypeError, Vec2D, (0, 1))
+        self.assertRaises(TypeError, Vec2D, vec)
+        self.assertRaises(TypeError, Vec2D, 0, 1, 2)
+
+    def test_repr(self):
+        vec = Vec2D(0.567, 1.234)
+        self.assertEqual(repr(vec), '(0.57,1.23)')
+
+    def test_equality(self):
+        vec1 = Vec2D(0, 1)
+        vec2 = Vec2D(0.0, 1)
+        vec3 = Vec2D(42, 1)
+        self.assertEqual(vec1, vec2)
+        self.assertEqual(vec1, tuple(vec1))
+        self.assertEqual(tuple(vec1), vec1)
+        self.assertNotEqual(vec1, vec3)
+        self.assertNotEqual(vec2, vec3)
+
+    def test_pickling(self):
+        vec = Vec2D(0.5, 2)
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            pickled = pickle.dumps(vec, protocol=proto)
+            unpickled = pickle.loads(pickled)
+            self.assertEqual(unpickled, vec)
+            self.assertIsInstance(unpickled, Vec2D)
 
     def _assert_arithmetic_cases(self, test_cases, lambda_operator):
         for test_case in test_cases:
