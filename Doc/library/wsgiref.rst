@@ -515,6 +515,9 @@ input, output, and error streams.
    streams are stored in the :attr:`stdin`, :attr:`stdout`, :attr:`stderr`, and
    :attr:`environ` attributes.
 
+   The :meth:`~io.BufferedIOBase.write` method of *stdout* should write
+   each chunk in full, like :class:`io.BufferedIOBase`.
+
 
 .. class:: BaseHandler()
 
