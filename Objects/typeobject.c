@@ -2575,8 +2575,10 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         tmp = PyStaticMethod_New(tmp);
         if (tmp == NULL)
             goto error;
-        if (_PyDict_SetItemId(dict, &PyId___new__, tmp) < 0)
+        if (_PyDict_SetItemId(dict, &PyId___new__, tmp) < 0) {
+            Py_DECREF(tmp);
             goto error;
+        }
         Py_DECREF(tmp);
     }
 
