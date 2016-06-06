@@ -5,16 +5,6 @@ import sys
 import tkinter
 import warnings
 
-def runningAsOSXApp():
-    warnings.warn("runningAsOSXApp() is deprecated, use isAquaTk()",
-                        DeprecationWarning, stacklevel=2)
-    return isAquaTk()
-
-def isCarbonAquaTk(root):
-    warnings.warn("isCarbonAquaTk(root) is deprecated, use isCarbonTk()",
-                        DeprecationWarning, stacklevel=2)
-    return isCarbonTk()
-
 _tk_type = None
 
 def _initializeTkVariantTests(root):
