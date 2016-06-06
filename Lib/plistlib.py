@@ -47,7 +47,7 @@ Parse Plist example:
 """
 __all__ = [
     "readPlist", "writePlist", "readPlistFromBytes", "writePlistToBytes",
-    "Plist", "Data", "Dict", "FMT_XML", "FMT_BINARY",
+    "Plist", "Data", "Dict", "InvalidFileException", "FMT_XML", "FMT_BINARY",
     "load", "dump", "loads", "dumps"
 ]
 
