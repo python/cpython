@@ -7,6 +7,7 @@ import unittest
 import warnings
 from collections import namedtuple
 from io import StringIO, BytesIO
+from test import support
 
 class HackedSysModule:
     # The regression test will have real values in sys.argv, which
@@ -472,6 +473,11 @@ this is the content of the fake file
         self.assertEqual(
             cgi.parse_header('form-data; name="files"; filename="fo\\"o;bar"'),
             ("form-data", {"name": "files", "filename": 'fo"o;bar'}))
+
+    def test_all(self):
+        blacklist = {"logfile", "logfp", "initlog", "dolog", "nolog",
+                     "closelog", "log", "maxlen", "valid_boundary"}
+        support.check__all__(self, cgi, blacklist=blacklist)
 
 
 BOUNDARY = "---------------------------721837373350705526688164684"

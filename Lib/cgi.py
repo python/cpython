@@ -45,7 +45,7 @@ import tempfile
 
 __all__ = ["MiniFieldStorage", "FieldStorage",
            "parse", "parse_qs", "parse_qsl", "parse_multipart",
-           "parse_header", "print_exception", "print_environ",
+           "parse_header", "test", "print_exception", "print_environ",
            "print_form", "print_directory", "print_arguments",
            "print_environ_usage", "escape"]
 
