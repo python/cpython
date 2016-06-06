@@ -2268,12 +2268,18 @@ Gregory K. Johnson
 """)
 
 
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        blacklist = {"linesep"}
+        support.check__all__(self, mailbox, blacklist=blacklist)
+
+
 def test_main():
     tests = (TestMailboxSuperclass, TestMaildir, TestMbox, TestMMDF, TestMH,
              TestBabyl, TestMessage, TestMaildirMessage, TestMboxMessage,
              TestMHMessage, TestBabylMessage, TestMMDFMessage,
              TestMessageConversion, TestProxyFile, TestPartialFile,
-             MaildirTestCase, TestFakeMailBox)
+             MaildirTestCase, TestFakeMailBox, MiscTestCase)
     support.run_unittest(*tests)
     support.reap_children()
 

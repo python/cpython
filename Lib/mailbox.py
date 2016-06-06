@@ -23,9 +23,10 @@ try:
 except ImportError:
     fcntl = None
 
-__all__ = [ 'Mailbox', 'Maildir', 'mbox', 'MH', 'Babyl', 'MMDF',
-            'Message', 'MaildirMessage', 'mboxMessage', 'MHMessage',
-            'BabylMessage', 'MMDFMessage']
+__all__ = ['Mailbox', 'Maildir', 'mbox', 'MH', 'Babyl', 'MMDF',
+           'Message', 'MaildirMessage', 'mboxMessage', 'MHMessage',
+           'BabylMessage', 'MMDFMessage', 'Error', 'NoSuchMailboxError',
+           'NotEmptyError', 'ExternalClashError', 'FormatError']
 
 linesep = os.linesep.encode('ascii')
 
