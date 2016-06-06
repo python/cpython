@@ -61,7 +61,7 @@ Key terms
   extensions, to be installed on a system without needing to be built
   locally.
 
-.. _setuptools: https://setuptools.pypa.io/en/latest/setuptools.html
+.. _setuptools: https://setuptools.readthedocs.io/en/latest/
 .. _wheel: https://wheel.readthedocs.org
 
 Open source licensing and collaboration
