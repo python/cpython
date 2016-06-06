@@ -7,6 +7,11 @@
 :Authors: Greg Ward, Anthony Baxter
 :Email: distutils-sig@python.org
 
+.. seealso::
+
+   :ref:`distributing-index`
+      The up to date module distribution documentations
+
 This document describes the Python Distribution Utilities ("Distutils") from
 the module developer's point of view, describing how to use the Distutils to
 make Python modules and extensions easily available to a wider audience with
@@ -19,7 +24,6 @@ very little overhead for build/release/install mechanics.
    tools offer easier to use and more secure alternatives. Refer to the `quick
    recommendations section <https://packaging.python.org/en/latest/current/>`__
    in the Python Packaging User Guide for more information.
-
 
 .. toctree::
    :maxdepth: 2
