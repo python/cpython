@@ -33,8 +33,10 @@ except ImportError:
     _winreg = None
 
 __all__ = [
-    "guess_type","guess_extension","guess_all_extensions",
-    "add_type","read_mime_types","init"
+    "knownfiles", "inited", "MimeTypes",
+    "guess_type", "guess_all_extensions", "guess_extension",
+    "add_type", "init", "read_mime_types",
+    "suffix_map", "encodings_map", "types_map", "common_types"
 ]
 
 knownfiles = [
