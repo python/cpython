@@ -543,6 +543,10 @@ Documentation
 - Issue #25500: Fix documentation to not claim that __import__ is searched for
   in the global scope.
 
+- Issue #26014: Update 3.x packaging documentation:
+  * "See also" links to the new docs are now provided in the legacy pages
+  * links to setuptools documentation have been updated
+
 Tests
 -----
 
