@@ -10,6 +10,11 @@
 
 .. TODO: Fill in XXX comments
 
+.. seealso::
+
+   :ref:`installing-index`
+      The up to date module installation documentations
+
 .. The audience for this document includes people who don't know anything
    about Python and aren't about to learn the language just in order to
    install and maintain it for their users, i.e. system administrators.
