@@ -526,8 +526,14 @@ class TestPlistlibDeprecated(unittest.TestCase):
         self.assertEqual(cur, in_data)
 
 
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        blacklist = {"PlistFormat", "PLISTHEADER"}
+        support.check__all__(self, plistlib, blacklist=blacklist)
+
+
 def test_main():
-    support.run_unittest(TestPlistlib, TestPlistlibDeprecated)
+    support.run_unittest(TestPlistlib, TestPlistlibDeprecated, MiscTestCase)
 
 
 if __name__ == '__main__':
