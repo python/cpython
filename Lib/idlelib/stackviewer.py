@@ -120,9 +120,6 @@ class VariablesTreeItem(ObjectTreeItem):
             sublist.append(item)
         return sublist
 
-    def keys(self):  # unused, left for possible 3rd party use
-        return list(self.object.keys())
-
 def _stack_viewer(parent):
     root = tk.Tk()
     root.title("Test StackViewer")
