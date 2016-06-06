@@ -293,6 +293,12 @@ Documentation
   functions together, and add more details such as what underlying Readline
   functions and variables are accessed.
 
+- Issue #26014: Guide users to the newer packaging documentation as was done
+  for Python 3.x.  In particular, the top-level 2.7 documentation page now
+  links to the newer installer and distributions pages rather than the
+  legacy install and Distutils pages; these are still linked to in the
+  library/distutils doc page.
+
 Tests
 -----
 
