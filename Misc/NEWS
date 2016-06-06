@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #23883: Added missing APIs to __all__ to match the documented APIs
+  for the following modules: cgi, mailbox, mimetypes, plistlib and smtpd.
+  Patches by Jacek Kołodziej.
+
 - Issue #27164: In the zlib module, allow decompressing raw Deflate streams
   with a predefined zdict.  Based on patch by Xiang Zhang.
 
