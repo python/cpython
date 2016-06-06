@@ -274,7 +274,7 @@ class FormatTest(unittest.TestCase):
         test_exc('%d', '1', TypeError, "%d format: a number is required, not str")
         test_exc('%x', '1', TypeError, "%x format: an integer is required, not str")
         test_exc('%x', 3.14, TypeError, "%x format: an integer is required, not float")
-        test_exc('%g', '1', TypeError, "a float is required")
+        test_exc('%g', '1', TypeError, "must be real number, not str")
         test_exc('no format', '1', TypeError,
                  "not all arguments converted during string formatting")
         test_exc('%c', -1, OverflowError, "%c arg not in range(0x110000)")
