@@ -101,5 +101,11 @@ class Win32MimeTypesTestCase(unittest.TestCase):
         eq(self.db.guess_type("image.jpg"), ("image/jpeg", None))
         eq(self.db.guess_type("image.png"), ("image/png", None))
 
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        support.check__all__(self, mimetypes)
+
+
 if __name__ == "__main__":
     unittest.main()
