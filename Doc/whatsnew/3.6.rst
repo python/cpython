@@ -609,10 +609,12 @@ Changes in the Python API
   :exc:`PendingDeprecationWarning`.
 
 * The following modules have had missing APIs added to their :attr:`__all__`
-  attributes to match the documented APIs: :mod:`calendar`, :mod:`csv`,
+  attributes to match the documented APIs:
+  :mod:`calendar`, :mod:`cgi`, :mod:`csv`,
   :mod:`~xml.etree.ElementTree`, :mod:`enum`,
-  :mod:`fileinput`, :mod:`ftplib`, :mod:`logging`,
-  :mod:`optparse`, :mod:`subprocess`, :mod:`tarfile`, :mod:`threading` and
+  :mod:`fileinput`, :mod:`ftplib`, :mod:`logging`, :mod:`mailbox`,
+  :mod:`mimetypes`, :mod:`optparse`, :mod:`plistlib`, :mod:`smtpd`,
+  :mod:`subprocess`, :mod:`tarfile`, :mod:`threading` and
   :mod:`wave`.  This means they will export new symbols when ``import *``
   is used.  See :issue:`23883`.
 
