@@ -15,7 +15,7 @@ collections of Python packages which include modules coded in both Python and C.
 Most Python users will *not* want to use this module directly, but instead
 use the cross-version tools maintained by the Python Packaging Authority. In
 particular,
-`setuptools <https://setuptools.pypa.io/en/latest/setuptools.html>`__ is an
+`setuptools <https://setuptools.readthedocs.io/en/latest/>`__ is an
 enhanced alternative to :mod:`distutils` that provides:
 
 * support for declaring project dependencies
