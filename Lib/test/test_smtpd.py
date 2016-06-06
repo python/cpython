@@ -998,5 +998,16 @@ class SMTPDChannelTestWithEnableSMTPUTF8True(unittest.TestCase):
             self.write_line(b'test\r\n.')
             self.assertEqual(self.channel.socket.last[0:3], b'250')
 
+
+class MiscTestCase(unittest.TestCase):
+    def test__all__(self):
+        blacklist = {
+            "program", "Devnull", "DEBUGSTREAM", "NEWLINE", "COMMASPACE",
+            "DATA_SIZE_DEFAULT", "usage", "Options", "parseargs",
+
+        }
+        support.check__all__(self, smtpd, blacklist=blacklist)
+
+
 if __name__ == "__main__":
     unittest.main()
