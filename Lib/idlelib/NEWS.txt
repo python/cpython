@@ -2,6 +2,29 @@ What's New in IDLE 3.6.0?
 ===========================
 *Release date: 2016-09-??*
 
+- Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
+  is a private implementation of test.test_idle and tool for maintainers.
+
+- Issue #27196: Stop 'ThemeChanged' warnings when running IDLE tests.
+  These persisted after other warnings were suppressed in #20567.
+  Apply Serhiy Storchaka's update_idletasks solution to four test files.
+  Record this additional advice in idle_test/README.txt
+
+- Issue #20567: Revise idle_test/README.txt with advice about avoiding
+  tk warning messages from tests.  Apply advice to several IDLE tests.
+
+- Issue # 24225: Update idlelib/README.txt with new file names
+  and event handlers.
+
+- Issue #27156: Remove obsolete code not used by IDLE.  Replacements:
+  1. help.txt, replaced by help.html, is out-of-date and should not be used.
+  Its dedicated viewer has be replaced by the html viewer in help.py.
+  2. 'import idlever; I = idlever.IDLE_VERSION' is the same as
+  'import sys; I = version[:version.index(' ')]'
+  3. After 'ob = stackviewer.VariablesTreeItem(*args)',
+  'ob.keys()' == 'list(ob.object.keys).
+  4. In macosc, runningAsOSXAPP == isAquaTk; idCarbonAquaTk == isCarbonTk
+
 - Issue #27117: Make colorizer htest and turtledemo work with dark themes.
   Move code for configuring text widget colors to a new function.
 
