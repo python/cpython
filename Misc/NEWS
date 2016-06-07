@@ -131,6 +131,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26839: On Linux, :func:`os.urandom` now calls ``getrandom()`` with
+  ``GRND_NONBLOCK`` to fall back on reading ``/dev/urandom`` if the urandom
+  entropy pool is not initialized yet. Patch written by Colm Buckley.
+
 - Issue #27164: In the zlib module, allow decompressing raw Deflate streams
   with a predefined zdict.  Based on patch by Xiang Zhang.
 
