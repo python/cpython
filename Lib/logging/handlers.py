@@ -1165,8 +1165,8 @@ class HTTPHandler(logging.Handler):
                 h.putheader("Content-length", str(len(data)))
             if self.credentials:
                 import base64
-                s = ('u%s:%s' % self.credentials).encode('utf-8')
-                s = 'Basic ' + base64.b64encode(s).strip()
+                s = ('%s:%s' % self.credentials).encode('utf-8')
+                s = 'Basic ' + base64.b64encode(s).strip().decode('ascii')
                 h.putheader('Authorization', s)
             h.endheaders()
             if self.method == "POST":
