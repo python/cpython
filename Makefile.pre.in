@@ -682,10 +682,10 @@ Modules/pwdmodule.o: $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule
 
 $(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGEN)
 	@$(MKDIR_P) Include
+	# Avoid copying the file onto itself for an in-tree build
 	if test "$(cross_compiling)" != "yes"; then \
 		$(PGEN) $(GRAMMAR_INPUT) $(GRAMMAR_H) $(GRAMMAR_C); \
 	else \
-		# Avoid copying the file onto itself for an in-tree build \
 		cp $(srcdir)/Include/graminit.h $(GRAMMAR_H).tmp; \
 		mv $(GRAMMAR_H).tmp $(GRAMMAR_H); \
 	fi
