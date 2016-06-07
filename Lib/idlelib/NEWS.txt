@@ -2,6 +2,17 @@ What's New in IDLE 3.5.2?
 =========================
 *Release date: 2016-06-30?*
 
+- Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
+  is a private implementation of test.test_idle and tool for maintainers.
+
+- Issue #27196: Stop 'ThemeChangef' warnings when running IDLE tests.
+  These persisted after other warnings were suppressed in #20567.
+  Apply Serhiy Storchaka's update_idletasks solution to four test files.
+  Record this additional advice in idle_test/README.txt
+
+- Issue #20567: Revise idle_test/README.txt with advice about avoiding
+  tk warning messages from tests.  Apply advice to several IDLE tests.
+
 - Issue #27117: Make colorizer htest and turtledemo work with dark themes.
   Move code for configuring text widget colors to a new function.
 
