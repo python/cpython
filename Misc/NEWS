@@ -321,6 +321,9 @@ Build
 
 - Issue #19450: Update Windows builds to use SQLite 3.8.11.0.
 
+- Issue #27229: Fix the cross-compiling pgen rule for in-tree builds.  Patch
+  by Xavier de Gaye.
+
 - Issue #17603: Avoid error about nonexistant fileblocks.o file by using a
   lower-level check for st_blocks in struct stat.
 
