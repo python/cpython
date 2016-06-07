@@ -137,6 +137,9 @@ Windows
 Build
 -----
 
+- Issue #27229: Fix the cross-compiling pgen rule for in-tree builds.  Patch
+  by Xavier de Gaye.
+
 - Issue #26930: Update OS X 10.5+ 32-bit-only installer to build
   and link with OpenSSL 1.0.2h.
 
