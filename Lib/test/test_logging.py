@@ -1672,7 +1672,8 @@ class HTTPHandlerTest(BaseTest):
             secure_client = secure and sslctx
             self.h_hdlr = logging.handlers.HTTPHandler(host, '/frob',
                                                        secure=secure_client,
-                                                       context=context)
+                                                       context=context,
+                                                       credentials=('foo', 'bar'))
             self.log_data = None
             root_logger.addHandler(self.h_hdlr)
 
