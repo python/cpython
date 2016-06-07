@@ -3768,13 +3768,20 @@ Miscellaneous Functions
 
    This function returns random bytes from an OS-specific randomness source.  The
    returned data should be unpredictable enough for cryptographic applications,
-   though its exact quality depends on the OS implementation.  On a Unix-like
-   system this will query ``/dev/urandom``, and on Windows it will use
-   ``CryptGenRandom()``.  If a randomness source is not found,
+   though its exact quality depends on the OS implementation.
+
+   On Linux, ``getrandom()`` syscall is used if available and the urandom
+   entropy pool is initialized (``getrandom()`` does not block).
+   On a Unix-like system this will query ``/dev/urandom``. On Windows, it
+   will use ``CryptGenRandom()``.  If a randomness source is not found,
    :exc:`NotImplementedError` will be raised.
 
    For an easy-to-use interface to the random number generator
    provided by your platform, please see :class:`random.SystemRandom`.
+
+   .. versionchanged:: 3.5.2
+      On Linux, if ``getrandom()`` blocks (the urandom entropy pool is not
+      initialized yet), fall back on reading ``/dev/urandom``.
 
    .. versionchanged:: 3.5
       On Linux 3.17 and newer, the ``getrandom()`` syscall is now used

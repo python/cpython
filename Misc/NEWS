@@ -27,6 +27,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26839: On Linux, :func:`os.urandom` now calls ``getrandom()`` with
+  ``GRND_NONBLOCK`` to fall back on reading ``/dev/urandom`` if the urandom
+  entropy pool is not initialized yet. Patch written by Colm Buckley.
+
 - Issue #23883: Added missing APIs to __all__ to match the documented APIs
   for the following modules: cgi, mailbox, mimetypes, plistlib and smtpd.
   Patches by Jacek Kołodziej.
