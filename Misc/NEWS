@@ -18,7 +18,7 @@ Core and Builtins
   Some compilers and toolchains are known to not produce stable code when
   using LTO, be sure to test things thoroughly before relying on it.
   It can provide a few % speed up over profile-opt alone.
-  
+
 - Issue #26168: Fixed possible refleaks in failing Py_BuildValue() with the "N"
   format unit.
 
@@ -263,6 +263,8 @@ Library
 
 IDLE
 ----
+- Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
+  is a private implementation of test.test_idle and tool for maintainers.
 
 - Issue #26673: When tk reports font size as 0, change to size 10.
   Such fonts on Linux prevented the configuration dialog from opening.
