@@ -574,6 +574,9 @@
 /* Define to 1 if you have the <linux/tipc.h> header file. */
 #undef HAVE_LINUX_TIPC_H
 
+/* Define to 1 if you have the <linux/random.h> header file. */
+#undef HAVE_LINUX_RANDOM_H
+
 /* Define to 1 if you have the `lockf' function. */
 #undef HAVE_LOCKF
 

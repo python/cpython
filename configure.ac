@@ -1881,7 +1881,7 @@ sys/param.h sys/select.h sys/sendfile.h sys/socket.h sys/statvfs.h \
 sys/stat.h sys/syscall.h sys/sys_domain.h sys/termio.h sys/time.h \
 sys/times.h sys/types.h sys/uio.h sys/un.h sys/utsname.h sys/wait.h pty.h \
 libutil.h sys/resource.h netpacket/packet.h sysexits.h bluetooth.h \
-bluetooth/bluetooth.h linux/tipc.h spawn.h util.h alloca.h endian.h \
+bluetooth/bluetooth.h linux/tipc.h linux/random.h spawn.h util.h alloca.h endian.h \
 sys/endian.h)
 AC_HEADER_DIRENT
 AC_HEADER_MAJOR
@@ -5246,12 +5246,13 @@ AC_LINK_IFELSE(
   AC_LANG_SOURCE([[
     #include <unistd.h>
     #include <sys/syscall.h>
+    #include <linux/random.h>
 
     int main() {
         char buffer[1];
         const size_t buflen = sizeof(buffer);
-        const int flags = 0;
-        /* ignore the result, Python checks for ENOSYS at runtime */
+        const int flags = GRND_NONBLOCK;
+        /* ignore the result, Python checks for ENOSYS and EAGAIN at runtime */
         (void)syscall(SYS_getrandom, buffer, buflen, flags);
         return 0;
     }
