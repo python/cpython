@@ -132,11 +132,14 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
      * see https://bugs.python.org/issue26839. To avoid this, use the
      * GRND_NONBLOCK flag. */
     const int flags = GRND_NONBLOCK;
+
+    char *dest;
     int n;
 
     if (!getrandom_works)
         return 0;
 
+    dest = buffer;
     while (0 < size) {
 #ifdef sun
         /* Issue #26735: On Solaris, getrandom() is limited to returning up
@@ -150,11 +153,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
 #ifdef HAVE_GETRANDOM
         if (raise) {
             Py_BEGIN_ALLOW_THREADS
-            n = getrandom(buffer, n, flags);
+            n = getrandom(dest, n, flags);
             Py_END_ALLOW_THREADS
         }
         else {
-            n = getrandom(buffer, n, flags);
+            n = getrandom(dest, n, flags);
         }
 #else
         /* On Linux, use the syscall() function because the GNU libc doesn't
@@ -162,11 +165,11 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
          * https://sourceware.org/bugzilla/show_bug.cgi?id=17252 */
         if (raise) {
             Py_BEGIN_ALLOW_THREADS
-            n = syscall(SYS_getrandom, buffer, n, flags);
+            n = syscall(SYS_getrandom, dest, n, flags);
             Py_END_ALLOW_THREADS
         }
         else {
-            n = syscall(SYS_getrandom, buffer, n, flags);
+            n = syscall(SYS_getrandom, dest, n, flags);
         }
 #endif
 
@@ -204,7 +207,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
             return -1;
         }
 
-        buffer += n;
+        dest += n;
         size -= n;
     }
     return 1;
