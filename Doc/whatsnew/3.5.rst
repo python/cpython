@@ -844,9 +844,14 @@ Updates in 3.5.2:
   sequence appears.
   (Contributed by Mark Korenberg.)
 
-* The :meth:`loop.getaddrinfo() <asyncio.BaseEventLoop.getaddrinfo>`
-  method is optimized to avoid calling the system ``getaddrinfo``
+* The :meth:`loop.create_connection() <asyncio.BaseEventLoop.create_connection>`
+  and :meth:`loop.create_server() <asyncio.BaseEventLoop.create_server>`
+  methods are optimized to avoid calling the system ``getaddrinfo``
   function if the address is already resolved.
+  (Contributed by A. Jesse Jiryu Davis.)
+
+* The :meth:`loop.sock_connect(sock, address) <asyncio.BaseEventLoop.sock_connect>`
+  no longer requires the *address* to be resolved prior to the call.
   (Contributed by A. Jesse Jiryu Davis.)
 
 
