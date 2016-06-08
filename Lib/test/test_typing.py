@@ -3,7 +3,7 @@ import collections
 import pickle
 import re
 import sys
-from unittest import TestCase, main, skipUnless
+from unittest import TestCase, main, skipUnless, SkipTest
 
 from typing import Any
 from typing import TypeVar, AnyStr
@@ -16,6 +16,7 @@ from typing import cast
 from typing import get_type_hints
 from typing import no_type_check, no_type_check_decorator
 from typing import Type
+from typing import NewType
 from typing import NamedTuple
 from typing import IO, TextIO, BinaryIO
 from typing import Pattern, Match
@@ -339,6 +340,20 @@ class UnionTests(BaseTestCase):
         A = Union[str, Pattern]
         A
 
+    def test_etree(self):
+        # See https://github.com/python/typing/issues/229
+        # (Only relevant for Python 2.)
+        try:
+            from xml.etree.cElementTree import Element
+        except ImportError:
+            raise SkipTest("cElementTree not found")
+        Union[Element, str]  # Shouldn't crash
+
+        def Elem(*args):
+            return Element(*args)
+
+        Union[Elem, str]  # Nor should this
+
 
 class TypeVarUnionTests(BaseTestCase):
 
@@ -410,7 +425,7 @@ class TupleTests(BaseTestCase):
 
     def test_repr(self):
         self.assertEqual(repr(Tuple), 'typing.Tuple')
-        self.assertEqual(repr(Tuple[()]), 'typing.Tuple[]')
+        self.assertEqual(repr(Tuple[()]), 'typing.Tuple[()]')
         self.assertEqual(repr(Tuple[int, float]), 'typing.Tuple[int, float]')
         self.assertEqual(repr(Tuple[int, ...]), 'typing.Tuple[int, ...]')
 
@@ -1399,6 +1414,25 @@ class TypeTests(BaseTestCase):
             return user_class()
 
         joe = new_user(BasicUser)
+
+
+class NewTypeTests(BaseTestCase):
+
+    def test_basic(self):
+        UserId = NewType('UserId', int)
+        UserName = NewType('UserName', str)
+        self.assertIsInstance(UserId(5), int)
+        self.assertIsInstance(UserName('Joe'), str)
+        self.assertEqual(UserId(5) + 1, 6)
+
+    def test_errors(self):
+        UserId = NewType('UserId', int)
+        UserName = NewType('UserName', str)
+        with self.assertRaises(TypeError):
+            issubclass(UserId, int)
+        with self.assertRaises(TypeError):
+            class D(UserName):
+                pass
 
 
 class NamedTupleTests(BaseTestCase):
