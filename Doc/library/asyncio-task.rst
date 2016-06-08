@@ -662,22 +662,6 @@ Task functions
        except CancelledError:
            res = None
 
-.. function:: timeout(timeout, \*, loop=None)
-
-   Return a context manager that cancels a block on *timeout* expiring::
-
-       with timeout(1.5):
-           yield from inner()
-
-   1. If ``inner()`` is executed faster than in ``1.5`` seconds
-      nothing happens.
-   2. Otherwise ``inner()`` is cancelled internally but
-      :exc:`asyncio.TimeoutError` is raised outside of
-      context manager scope.
-
-   Passing ``None`` as *timeout* argument disables the manager logic.
-
-   .. versionadded:: 3.5.2
 
 .. coroutinefunction:: wait(futures, \*, loop=None, timeout=None,\
                             return_when=ALL_COMPLETED)

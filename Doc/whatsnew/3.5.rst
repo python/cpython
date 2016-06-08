@@ -835,10 +835,6 @@ Updates in 3.5.2:
   method to get the current exception handler.
   (Contributed by Yury Selivanov.)
 
-* New :func:`~asyncio.timeout` context manager to simplify timeouts
-  handling code.
-  (Contributed by Andrew Svetlov.)
-
 * New :meth:`StreamReader.readuntil() <asyncio.StreamReader.readuntil>`
   method to read data from the stream until a separator bytes
   sequence appears.
