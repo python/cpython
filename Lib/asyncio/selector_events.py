@@ -385,24 +385,28 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
     def sock_connect(self, sock, address):
         """Connect to a remote socket at address.
 
-        The address must be already resolved to avoid the trap of hanging the
-        entire event loop when the address requires doing a DNS lookup. For
-        example, it must be an IP address, not a hostname, for AF_INET and
-        AF_INET6 address families. Use getaddrinfo() to resolve the hostname
-        asynchronously.
-
         This method is a coroutine.
         """
         if self._debug and sock.gettimeout() != 0:
             raise ValueError("the socket must be non-blocking")
+
         fut = self.create_future()
+        if hasattr(socket, 'AF_UNIX') and sock.family == socket.AF_UNIX:
+            self._sock_connect(fut, sock, address)
+        else:
+            resolved = base_events._ensure_resolved(address, loop=self)
+            resolved.add_done_callback(
+                lambda resolved: self._on_resolved(fut, sock, resolved))
+
+        return fut
+
+    def _on_resolved(self, fut, sock, resolved):
         try:
-            base_events._check_resolved_address(sock, address)
-        except ValueError as err:
-            fut.set_exception(err)
+            _, _, _, _, address = resolved.result()[0]
+        except Exception as exc:
+            fut.set_exception(exc)
         else:
             self._sock_connect(fut, sock, address)
-        return fut
 
     def _sock_connect(self, fut, sock, address):
         fd = sock.fileno()
