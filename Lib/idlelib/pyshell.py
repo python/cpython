@@ -1548,14 +1548,6 @@ def main():
     flist = PyShellFileList(root)
     macosx.setupApp(root, flist)
 
-    if macosx.isAquaTk():
-        # There are some screwed up <2> class bindings for text
-        # widgets defined in Tk which we need to do away with.
-        # See issue #24801.
-        root.unbind_class('Text', '<B2>')
-        root.unbind_class('Text', '<B2-Motion>')
-        root.unbind_class('Text', '<<PasteSelection>>')
-
     if enable_edit:
         if not (cmd or script):
             for filename in args[:]:

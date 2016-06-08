@@ -206,6 +206,16 @@ def overrideRootMenu(root, flist):
         # remove redundant "IDLE Help" from menu
         del mainmenu.menudefs[-1][1][0]
 
+def fixb2context(root):
+    '''Removed bad AquaTk Button-2 (right) and Paste bindings.
+
+    They prevent context menu access and seem to be gone in AquaTk8.6.
+    See issue #24801.
+    '''
+    root.unbind_class('Text', '<B2>')
+    root.unbind_class('Text', '<B2-Motion>')
+    root.unbind_class('Text', '<<PasteSelection>>')
+
 def setupApp(root, flist):
     """
     Perform initial OS X customizations if needed.
@@ -227,3 +237,4 @@ def setupApp(root, flist):
         hideTkConsole(root)
         overrideRootMenu(root, flist)
         addOpenEventSupport(root, flist)
+        fixb2context()
