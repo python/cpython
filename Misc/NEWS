@@ -113,22 +113,22 @@ IDLE
 - Issue #20567: Revise idle_test/README.txt with advice about avoiding
   tk warning messages from tests.  Apply advice to several IDLE tests.
 
-- Issue # 24225: Update idlelib/README.txt with new file names
+- Issue #24225: Update idlelib/README.txt with new file names
   and event handlers.
 
 - Issue #27156: Remove obsolete code not used by IDLE.  Replacements:
   1. help.txt, replaced by help.html, is out-of-date and should not be used.
   Its dedicated viewer has be replaced by the html viewer in help.py.
-  2. 'import idlever; I = idlever.IDLE_VERSION' is the same as
-  'import sys; I = version[:version.index(' ')]'
-  3. After 'ob = stackviewer.VariablesTreeItem(*args)',
-  'ob.keys()' == 'list(ob.object.keys).
+  2. ‘`import idlever; I = idlever.IDLE_VERSION`’ is the same as
+  ‘`import sys; I = version[:version.index(' ')]`’
+  3. After ‘`ob = stackviewer.VariablesTreeItem(*args)`’,
+  ‘`ob.keys() == list(ob.object.keys)`’.
   4. In macosc, runningAsOSXAPP == isAquaTk; idCarbonAquaTk == isCarbonTk
 
 - Issue #27117: Make colorizer htest and turtledemo work with dark themes.
   Move code for configuring text widget colors to a new function.
 
-- Issue #24225: Rename many idlelib/*.py and idle_test/test_*.py files.
+- Issue #24225: Rename many `idlelib/*.py` and `idle_test/test_*.py` files.
   Edit files to replace old names with new names when the old name
   referred to the module rather than the class it contained.
   See the issue and IDLE section in What's New in 3.6 for more.
