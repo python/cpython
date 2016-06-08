@@ -191,7 +191,9 @@ of which this module provides three different variants:
       a complete set of headers, as the response body.  The :attr:`responses`
       attribute holds the default values for *message* and *explain* that
       will be used if no value is provided; for unknown codes the default value
-      for both is the string ``???``.
+      for both is the string ``???``. The body will be empty if the method is
+      HEAD or the response code is one of the following: ``1xx``,
+      ``204 No Content``, ``205 Reset Content``, ``304 Not Modified``.
 
       .. versionchanged:: 3.4
          The error response includes a Content-Length header.
