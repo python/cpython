@@ -16,10 +16,8 @@ to modify the meaning of the API call itself.
 
 import collections
 import concurrent.futures
-import functools
 import heapq
 import inspect
-import ipaddress
 import itertools
 import logging
 import os
@@ -86,12 +84,14 @@ if hasattr(socket, 'SOCK_CLOEXEC'):
     _SOCKET_TYPE_MASK |= socket.SOCK_CLOEXEC
 
 
-@functools.lru_cache(maxsize=1024, typed=True)
 def _ipaddr_info(host, port, family, type, proto):
-    # Try to skip getaddrinfo if "host" is already an IP. Since getaddrinfo
-    # blocks on an exclusive lock on some platforms, users might handle name
-    # resolution in their own code and pass in resolved IPs.
-    if proto not in {0, socket.IPPROTO_TCP, socket.IPPROTO_UDP} or host is None:
+    # Try to skip getaddrinfo if "host" is already an IP. Users might have
+    # handled name resolution in their own code and pass in resolved IPs.
+    if not hasattr(socket, 'inet_pton'):
+        return
+
+    if proto not in {0, socket.IPPROTO_TCP, socket.IPPROTO_UDP} or \
+            host is None:
         return None
 
     type &= ~_SOCKET_TYPE_MASK
@@ -123,59 +123,42 @@ def _ipaddr_info(host, port, family, type, proto):
                 # Might be a service name like "http".
                 port = socket.getservbyname(port)
 
-    if hasattr(socket, 'inet_pton'):
-        if family == socket.AF_UNSPEC:
-            afs = [socket.AF_INET, socket.AF_INET6]
-        else:
-            afs = [family]
+    if family == socket.AF_UNSPEC:
+        afs = [socket.AF_INET, socket.AF_INET6]
+    else:
+        afs = [family]
 
-        for af in afs:
-            # Linux's inet_pton doesn't accept an IPv6 zone index after host,
-            # like '::1%lo0', so strip it. If we happen to make an invalid
-            # address look valid, we fail later in sock.connect or sock.bind.
-            try:
-                if af == socket.AF_INET6:
-                    socket.inet_pton(af, host.partition('%')[0])
-                else:
-                    socket.inet_pton(af, host)
-                return af, type, proto, '', (host, port)
-            except OSError:
-                pass
-
-        # "host" is not an IP address.
+    if isinstance(host, bytes):
+        host = host.decode('idna')
+    if '%' in host:
+        # Linux's inet_pton doesn't accept an IPv6 zone index after host,
+        # like '::1%lo0'.
         return None
 
-    # No inet_pton. (On Windows it's only available since Python 3.4.)
-    # Even though getaddrinfo with AI_NUMERICHOST would be non-blocking, it
-    # still requires a lock on some platforms, and waiting for that lock could
-    # block the event loop. Use ipaddress instead, it's just text parsing.
-    try:
-        addr = ipaddress.IPv4Address(host)
-    except ValueError:
+    for af in afs:
         try:
-            addr = ipaddress.IPv6Address(host.partition('%')[0])
-        except ValueError:
-            return None
+            socket.inet_pton(af, host)
+            # The host has already been resolved.
+            return af, type, proto, '', (host, port)
+        except OSError:
+            pass
 
-    af = socket.AF_INET if addr.version == 4 else socket.AF_INET6
-    if family not in (socket.AF_UNSPEC, af):
-        # "host" is wrong IP version for "family".
-        return None
-
-    return af, type, proto, '', (host, port)
+    # "host" is not an IP address.
+    return None
 
 
-def _check_resolved_address(sock, address):
-    # Ensure that the address is already resolved to avoid the trap of hanging
-    # the entire event loop when the address requires doing a DNS lookup.
-
-    if hasattr(socket, 'AF_UNIX') and sock.family == socket.AF_UNIX:
-        return
-
+def _ensure_resolved(address, *, family=0, type=socket.SOCK_STREAM, proto=0,
+                     flags=0, loop):
     host, port = address[:2]
-    if _ipaddr_info(host, port, sock.family, sock.type, sock.proto) is None:
-        raise ValueError("address must be resolved (IP address),"
-                         " got host %r" % host)
+    info = _ipaddr_info(host, port, family, type, proto)
+    if info is not None:
+        # "host" is already a resolved IP.
+        fut = loop.create_future()
+        fut.set_result([info])
+        return fut
+    else:
+        return loop.getaddrinfo(host, port, family=family, type=type,
+                                proto=proto, flags=flags)
 
 
 def _run_until_complete_cb(fut):
@@ -603,12 +586,7 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     def getaddrinfo(self, host, port, *,
                     family=0, type=0, proto=0, flags=0):
-        info = _ipaddr_info(host, port, family, type, proto)
-        if info is not None:
-            fut = self.create_future()
-            fut.set_result([info])
-            return fut
-        elif self._debug:
+        if self._debug:
             return self.run_in_executor(None, self._getaddrinfo_debug,
                                         host, port, family, type, proto, flags)
         else:
@@ -657,14 +635,14 @@ class BaseEventLoop(events.AbstractEventLoop):
                 raise ValueError(
                     'host/port and sock can not be specified at the same time')
 
-            f1 = self.getaddrinfo(
-                host, port, family=family,
-                type=socket.SOCK_STREAM, proto=proto, flags=flags)
+            f1 = _ensure_resolved((host, port), family=family,
+                                  type=socket.SOCK_STREAM, proto=proto,
+                                  flags=flags, loop=self)
             fs = [f1]
             if local_addr is not None:
-                f2 = self.getaddrinfo(
-                    *local_addr, family=family,
-                    type=socket.SOCK_STREAM, proto=proto, flags=flags)
+                f2 = _ensure_resolved(local_addr, family=family,
+                                      type=socket.SOCK_STREAM, proto=proto,
+                                      flags=flags, loop=self)
                 fs.append(f2)
             else:
                 f2 = None
@@ -799,9 +777,9 @@ class BaseEventLoop(events.AbstractEventLoop):
                         assert isinstance(addr, tuple) and len(addr) == 2, (
                             '2-tuple is expected')
 
-                        infos = yield from self.getaddrinfo(
-                            *addr, family=family, type=socket.SOCK_DGRAM,
-                            proto=proto, flags=flags)
+                        infos = yield from _ensure_resolved(
+                            addr, family=family, type=socket.SOCK_DGRAM,
+                            proto=proto, flags=flags, loop=self)
                         if not infos:
                             raise OSError('getaddrinfo() returned empty list')
 
@@ -889,9 +867,9 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     @coroutine
     def _create_server_getaddrinfo(self, host, port, family, flags):
-        infos = yield from self.getaddrinfo(host, port, family=family,
+        infos = yield from _ensure_resolved((host, port), family=family,
                                             type=socket.SOCK_STREAM,
-                                            flags=flags)
+                                            flags=flags, loop=self)
         if not infos:
             raise OSError('getaddrinfo({!r}) returned empty list'.format(host))
         return infos
