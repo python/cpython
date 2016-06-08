@@ -197,7 +197,10 @@ to a handler.  Code to create and run the server looks like this::
       Sends and logs a complete error reply to the client. The numeric *code*
       specifies the HTTP error code, with *message* as optional, more specific text. A
       complete set of headers is sent, followed by text composed using the
-      :attr:`error_message_format` class variable.
+      :attr:`error_message_format` class variable. The body will be empty
+      if the method is HEAD or the response code is one of the following:
+      ``1xx``, ``204 No Content``, ``205 Reset Content``,
+      ``304 Not Modified``.
 
 
    .. method:: send_response(code[, message])

@@ -92,6 +92,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #25738: Stop BaseHTTPServer.BaseHTTPRequestHandler.send_error() from
+  sending a message body for 205 Reset Content.  Also, don't send the
+  Content-Type header field in responses that don't have a body.  Based on
+  patch by Susumu Koshiba.
+
 - Issue #21313: Fix the "platform" module to tolerate when sys.version
   contains truncated build information.
 
