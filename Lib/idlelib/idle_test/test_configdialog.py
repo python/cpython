@@ -8,14 +8,12 @@ from test.support import requires
 requires('gui')
 from tkinter import Tk
 import unittest
-from idlelib import macosx
 
 class ConfigDialogTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
         cls.root = Tk()
-        macosx._initializeTkVariantTests(cls.root)
 
     @classmethod
     def tearDownClass(cls):
