@@ -64,10 +64,12 @@ __all__ = [
     'AnyStr',
     'cast',
     'get_type_hints',
+    'NewType',
     'no_type_check',
     'no_type_check_decorator',
     'overload',
     'Text',
+    'TYPE_CHECKING',
 ]
 
 # The pseudo-submodules 're' and 'io' are part of the public
@@ -306,7 +308,7 @@ def _type_check(arg, msg):
         return type(None)
     if isinstance(arg, str):
         arg = _ForwardRef(arg)
-    if not isinstance(arg, (type, _TypeAlias)):
+    if not isinstance(arg, (type, _TypeAlias)) and not callable(arg):
         raise TypeError(msg + " Got %.100r." % (arg,))
     return arg
 
@@ -503,7 +505,10 @@ class UnionMeta(TypingMeta):
             if isinstance(t1, _TypeAlias):
                 # _TypeAlias is not a real class.
                 continue
-            if any(issubclass(t1, t2)
+            if not isinstance(t1, type):
+                assert callable(t1)  # A callable might sneak through.
+                continue
+            if any(isinstance(t2, type) and issubclass(t1, t2)
                    for t2 in all_params - {t1} if not isinstance(t2, TypeVar)):
                 all_params.remove(t1)
         # It's not a union if there's only one type left.
@@ -684,6 +689,8 @@ class TupleMeta(TypingMeta):
             params = [_type_repr(p) for p in self.__tuple_params__]
             if self.__tuple_use_ellipsis__:
                 params.append('...')
+            if not params:
+                params.append('()')
             r += '[%s]' % (
                 ', '.join(params))
         return r
@@ -1632,8 +1639,39 @@ def NamedTuple(typename, fields):
     return cls
 
 
+def NewType(name, tp):
+    """NewType creates simple unique types with almost zero
+    runtime overhead. NewType(name, tp) is considered a subtype of tp
+    by static type checkers. At runtime, NewType(name, tp) returns
+    a dummy function that simply returns its argument. Usage::
+
+        UserId = NewType('UserId', int)
+
+        def name_by_id(user_id: UserId) -> str:
+            ...
+
+        UserId('user')          # Fails type check
+
+        name_by_id(42)          # Fails type check
+        name_by_id(UserId(42))  # OK
+
+        num = UserId(5) + 1     # type: int
+    """
+
+    def new_type(x):
+        return x
+
+    new_type.__name__ = name
+    new_type.__supertype__ = tp
+    return new_type
+
+
 # Python-version-specific alias (Python 2: unicode; Python 3: str)
 Text = str
+
+
+# Constant that's True when type checking, but False here.
+TYPE_CHECKING = False
 
 
 class IO(Generic[AnyStr]):
