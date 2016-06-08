@@ -423,7 +423,8 @@ _io_FileIO___init___impl(fileio *self, PyObject *nameobj, const char *mode,
             Py_DECREF(fdobj);
             if (self->fd < 0) {
                 if (!PyErr_Occurred()) {
-                    /* The opener returned -1.  See issue #27066 */
+                    /* The opener returned a negative but didn't set an
+                       exception.  See issue #27066 */
                     PyErr_Format(PyExc_ValueError,
                                  "opener returned %d", self->fd);
                 }
