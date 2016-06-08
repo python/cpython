@@ -450,20 +450,30 @@ class BaseHTTPRequestHandler(socketserver.StreamRequestHandler):
         if explain is None:
             explain = longmsg
         self.log_error("code %d, message %s", code, message)
-        # using _quote_html to prevent Cross Site Scripting attacks (see bug #1100201)
-        content = (self.error_message_format %
-                   {'code': code, 'message': _quote_html(message), 'explain': _quote_html(explain)})
-        body = content.encode('UTF-8', 'replace')
         self.send_response(code, message)
-        self.send_header("Content-Type", self.error_content_type)
         self.send_header('Connection', 'close')
-        self.send_header('Content-Length', int(len(body)))
+
+        # Message body is omitted for cases described in:
+        #  - RFC7230: 3.3. 1xx, 204(No Content), 304(Not Modified)
+        #  - RFC7231: 6.3.6. 205(Reset Content)
+        body = None
+        if (code >= 200 and
+            code not in (HTTPStatus.NO_CONTENT,
+                         HTTPStatus.RESET_CONTENT,
+                         HTTPStatus.NOT_MODIFIED)):
+            # HTML encode to prevent Cross Site Scripting attacks
+            # (see bug #1100201)
+            content = (self.error_message_format % {
+                'code': code,
+                'message': _quote_html(message),
+                'explain': _quote_html(explain)
+            })
+            body = content.encode('UTF-8', 'replace')
+            self.send_header("Content-Type", self.error_content_type)
+            self.send_header('Content-Length', int(len(body)))
         self.end_headers()
 
-        if (self.command != 'HEAD' and
-                code >= 200 and
-                code not in (
-                    HTTPStatus.NO_CONTENT, HTTPStatus.NOT_MODIFIED)):
+        if self.command != 'HEAD' and body:
             self.wfile.write(body)
 
     def send_response(self, code, message=None):
