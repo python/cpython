@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #21313: Fix the "platform" module to tolerate when sys.version
+  contains truncated build information.
+
 - Issue #27211: Fix possible memory corruption in io.IOBase.readline().
 
 - Issue #27114: Fix SSLContext._load_windows_store_certs fails with
