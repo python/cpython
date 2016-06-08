@@ -7,13 +7,14 @@ import warnings
 
 _tk_type = None
 
-def _initializeTkVariantTests(root):
+def _init_tk_type(idleroot=None):
     """
     Initializes OS X Tk variant values for
     isAquaTk(), isCarbonTk(), isCocoaTk(), and isXQuartz().
     """
     global _tk_type
     if sys.platform == 'darwin':
+        root = idleroot or tkinter.Tk()
         ws = root.tk.call('tk', 'windowingsystem')
         if 'x11' in ws:
             _tk_type = "xquartz"
@@ -23,6 +24,8 @@ def _initializeTkVariantTests(root):
             _tk_type = "cocoa"
         else:
             _tk_type = "carbon"
+        if not idleroot:
+            root.destroy
     else:
         _tk_type = "other"
 
@@ -30,7 +33,8 @@ def isAquaTk():
     """
     Returns True if IDLE is using a native OS X Tk (Cocoa or Carbon).
     """
-    assert _tk_type is not None
+    if not _tk_type:
+        _init_tk_type()
     return _tk_type == "cocoa" or _tk_type == "carbon"
 
 def isCarbonTk():
@@ -38,21 +42,24 @@ def isCarbonTk():
     Returns True if IDLE is using a Carbon Aqua Tk (instead of the
     newer Cocoa Aqua Tk).
     """
-    assert _tk_type is not None
+    if not _tk_type:
+        _init_tk_type()
     return _tk_type == "carbon"
 
 def isCocoaTk():
     """
     Returns True if IDLE is using a Cocoa Aqua Tk.
     """
-    assert _tk_type is not None
+    if not _tk_type:
+        _init_tk_type()
     return _tk_type == "cocoa"
 
 def isXQuartz():
     """
     Returns True if IDLE is using an OS X X11 Tk.
     """
-    assert _tk_type is not None
+    if not _tk_type:
+        _init_tk_type()
     return _tk_type == "xquartz"
 
 def tkVersionWarning(root):
@@ -232,7 +239,7 @@ def setupApp(root, flist):
     isAquaTk(), isCarbonTk(), isCocoaTk(), isXQuartz() functions which
     are initialized here as well.
     """
-    _initializeTkVariantTests(root)
+    _init_tk_type(root)
     if isAquaTk():
         hideTkConsole(root)
         overrideRootMenu(root, flist)
