@@ -116,6 +116,12 @@ class BaseHTTPServerTestCase(BaseTestCase):
             body = self.headers['x-special-incoming'].encode('utf-8')
             self.wfile.write(body)
 
+        def do_SEND_ERROR(self):
+            self.send_error(int(self.path[1:]))
+
+        def do_HEAD(self):
+            self.send_error(int(self.path[1:]))
+
     def setUp(self):
         BaseTestCase.setUp(self)
         self.con = http.client.HTTPConnection(self.HOST, self.PORT)
@@ -236,6 +242,44 @@ class BaseHTTPServerTestCase(BaseTestCase):
 
         data = res.read()
         self.assertEqual(int(res.getheader('Content-Length')), len(data))
+
+    def test_send_error(self):
+        allow_transfer_encoding_codes = (HTTPStatus.NOT_MODIFIED,
+                                         HTTPStatus.RESET_CONTENT)
+        for code in (HTTPStatus.NO_CONTENT, HTTPStatus.NOT_MODIFIED,
+                     HTTPStatus.PROCESSING, HTTPStatus.RESET_CONTENT,
+                     HTTPStatus.SWITCHING_PROTOCOLS):
+            self.con.request('SEND_ERROR', '/{}'.format(code))
+            res = self.con.getresponse()
+            self.assertEqual(code, res.status)
+            self.assertEqual(None, res.getheader('Content-Length'))
+            self.assertEqual(None, res.getheader('Content-Type'))
+            if code not in allow_transfer_encoding_codes:
+                self.assertEqual(None, res.getheader('Transfer-Encoding'))
+
+            data = res.read()
+            self.assertEqual(b'', data)
+
+    def test_head_via_send_error(self):
+        allow_transfer_encoding_codes = (HTTPStatus.NOT_MODIFIED,
+                                         HTTPStatus.RESET_CONTENT)
+        for code in (HTTPStatus.OK, HTTPStatus.NO_CONTENT,
+                     HTTPStatus.NOT_MODIFIED, HTTPStatus.RESET_CONTENT,
+                     HTTPStatus.SWITCHING_PROTOCOLS):
+            self.con.request('HEAD', '/{}'.format(code))
+            res = self.con.getresponse()
+            self.assertEqual(code, res.status)
+            if code == HTTPStatus.OK:
+                self.assertTrue(int(res.getheader('Content-Length')) > 0)
+                self.assertIn('text/html', res.getheader('Content-Type'))
+            else:
+                self.assertEqual(None, res.getheader('Content-Length'))
+                self.assertEqual(None, res.getheader('Content-Type'))
+            if code not in allow_transfer_encoding_codes:
+                self.assertEqual(None, res.getheader('Transfer-Encoding'))
+
+            data = res.read()
+            self.assertEqual(b'', data)
 
 
 class RequestHandlerLoggingTestCase(BaseTestCase):
