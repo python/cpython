@@ -87,7 +87,7 @@ attributes or items of mutable objects:
    target_list: `target` ("," `target`)* [","]
    target: `identifier`
          : | "(" `target_list` ")"
-         : | "[" `target_list` "]"
+         : | "[" [`target_list`] "]"
          : | `attributeref`
          : | `subscription`
          : | `slicing`
