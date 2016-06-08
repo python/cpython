@@ -805,6 +805,22 @@ class IOTest(unittest.TestCase):
         with self.open("non-existent", "r", opener=opener) as f:
             self.assertEqual(f.read(), "egg\n")
 
+    def test_bad_opener_negative_1(self):
+        # Issue #27066.
+        def badopener(fname, flags):
+            return -1
+        with self.assertRaises(ValueError) as cm:
+            open('non-existent', 'r', opener=badopener)
+        self.assertEqual(str(cm.exception), 'opener returned -1')
+
+    def test_bad_opener_other_negative(self):
+        # Issue #27066.
+        def badopener(fname, flags):
+            return -2
+        with self.assertRaises(ValueError) as cm:
+            open('non-existent', 'r', opener=badopener)
+        self.assertEqual(str(cm.exception), 'opener returned -2')
+
     def test_fileio_closefd(self):
         # Issue #4841
         with self.open(__file__, 'rb') as f1, \

@@ -10,6 +10,9 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #27066: Fixed SystemError if a custom opener (for open()) returns a
+  negative number without setting an exception.
+
 - Issue #20041: Fixed TypeError when frame.f_trace is set to None.
   Patch by Xavier de Gaye.
 
