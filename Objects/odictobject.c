@@ -1462,7 +1462,7 @@ odict_dealloc(PyODictObject *self)
     ++tstate->trash_delete_nesting;
 
     Py_TRASHCAN_SAFE_END(self)
-};
+}
 
 /* tp_repr */
 
@@ -1539,7 +1539,7 @@ Done:
     Py_XDECREF(pieces);
     Py_ReprLeave((PyObject *)self);
     return result;
-};
+}
 
 /* tp_doc */
 
@@ -1611,7 +1611,7 @@ odict_richcompare(PyObject *v, PyObject *w, int op)
     } else {
         Py_RETURN_NOTIMPLEMENTED;
     }
-};
+}
 
 /* tp_iter */
 
@@ -1619,7 +1619,7 @@ static PyObject *
 odict_iter(PyODictObject *od)
 {
     return odictiter_new(od, _odict_ITER_KEYS);
-};
+}
 
 /* tp_init */
 
@@ -1645,7 +1645,7 @@ odict_init(PyObject *self, PyObject *args, PyObject *kwds)
         Py_DECREF(res);
         return 0;
     }
-};
+}
 
 /* tp_new */
 
@@ -1720,7 +1720,7 @@ PyTypeObject PyODict_Type = {
 PyObject *
 PyODict_New(void) {
     return odict_new(&PyODict_Type, NULL, NULL);
-};
+}
 
 static int
 _PyODict_SetItem_KnownHash(PyObject *od, PyObject *key, PyObject *value,
@@ -1738,7 +1738,7 @@ _PyODict_SetItem_KnownHash(PyObject *od, PyObject *key, PyObject *value,
         }
     }
     return res;
-};
+}
 
 int
 PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value)
@@ -1747,7 +1747,7 @@ PyODict_SetItem(PyObject *od, PyObject *key, PyObject *value)
     if (hash == -1)
         return -1;
     return _PyODict_SetItem_KnownHash(od, key, value, hash);
-};
+}
 
 int
 PyODict_DelItem(PyObject *od, PyObject *key)
@@ -1760,7 +1760,7 @@ PyODict_DelItem(PyObject *od, PyObject *key)
     if (res < 0)
         return -1;
     return _PyDict_DelItem_KnownHash(od, key, hash);
-};
+}
 
 
 /* -------------------------------------------
