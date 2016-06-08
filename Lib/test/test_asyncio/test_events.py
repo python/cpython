@@ -1610,25 +1610,6 @@ class EventLoopTestsMixin:
             {'clock_resolution': self.loop._clock_resolution,
              'selector': self.loop._selector.__class__.__name__})
 
-    def test_sock_connect_address(self):
-        addresses = [(socket.AF_INET, ('www.python.org', 80))]
-        if support.IPV6_ENABLED:
-            addresses.extend((
-                (socket.AF_INET6, ('www.python.org', 80)),
-                (socket.AF_INET6, ('www.python.org', 80, 0, 0)),
-            ))
-
-        for family, address in addresses:
-            for sock_type in (socket.SOCK_STREAM, socket.SOCK_DGRAM):
-                sock = socket.socket(family, sock_type)
-                with sock:
-                    sock.setblocking(False)
-                    connect = self.loop.sock_connect(sock, address)
-                    with self.assertRaises(ValueError) as cm:
-                        self.loop.run_until_complete(connect)
-                    self.assertIn('address must be resolved',
-                                  str(cm.exception))
-
     def test_remove_fds_after_closing(self):
         loop = self.create_event_loop()
         callback = lambda: None
