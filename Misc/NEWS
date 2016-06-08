@@ -131,6 +131,14 @@ Core and Builtins
 Library
 -------
 
+- A new version of typing.py provides several new classes and
+  features: @overload outside stubs, Reversible, DefaultDict, Text,
+  ContextManager, Type[], NewType(), TYPE_CHECKING, and numerous bug
+  fixes (note that some of the new features are not yet implemented in
+  mypy or other static analyzers).  Also classes for PEP 492
+  (Awaitable, AsyncIterable, AsyncIterator) have been added (in fact
+  they made it into 3.5.1 but were never mentioned).
+
 - Issue #25738: Stop http.server.BaseHTTPRequestHandler.send_error() from
   sending a message body for 205 Reset Content.  Also, don't send Content
   header fields in responses that don't have a body.  Patch by Susumu
