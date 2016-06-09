@@ -77,8 +77,9 @@ array_array_pop(arrayobject *self, PyObject *args)
     Py_ssize_t i = -1;
 
     if (!PyArg_ParseTuple(args, "|n:pop",
-        &i))
+        &i)) {
         goto exit;
+    }
     return_value = array_array_pop_impl(self, i);
 
 exit:
@@ -114,8 +115,9 @@ array_array_insert(arrayobject *self, PyObject *args)
     PyObject *v;
 
     if (!PyArg_ParseTuple(args, "nO:insert",
-        &i, &v))
+        &i, &v)) {
         goto exit;
+    }
     return_value = array_array_insert_impl(self, i, v);
 
 exit:
@@ -211,8 +213,9 @@ array_array_fromfile(arrayobject *self, PyObject *args)
     Py_ssize_t n;
 
     if (!PyArg_ParseTuple(args, "On:fromfile",
-        &f, &n))
+        &f, &n)) {
         goto exit;
+    }
     return_value = array_array_fromfile_impl(self, f, n);
 
 exit:
@@ -275,14 +278,16 @@ array_array_fromstring(arrayobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "s*:fromstring", &buffer))
+    if (!PyArg_Parse(arg, "s*:fromstring", &buffer)) {
         goto exit;
+    }
     return_value = array_array_fromstring_impl(self, &buffer);
 
 exit:
     /* Cleanup for buffer */
-    if (buffer.obj)
+    if (buffer.obj) {
        PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -305,14 +310,16 @@ array_array_frombytes(arrayobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:frombytes", &buffer))
+    if (!PyArg_Parse(arg, "y*:frombytes", &buffer)) {
         goto exit;
+    }
     return_value = array_array_frombytes_impl(self, &buffer);
 
 exit:
     /* Cleanup for buffer */
-    if (buffer.obj)
+    if (buffer.obj) {
        PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -379,8 +386,9 @@ array_array_fromunicode(arrayobject *self, PyObject *arg)
     Py_UNICODE *ustr;
     Py_ssize_clean_t ustr_length;
 
-    if (!PyArg_Parse(arg, "u#:fromunicode", &ustr, &ustr_length))
+    if (!PyArg_Parse(arg, "u#:fromunicode", &ustr, &ustr_length)) {
         goto exit;
+    }
     return_value = array_array_fromunicode_impl(self, ustr, ustr_length);
 
 exit:
@@ -453,8 +461,9 @@ array__array_reconstructor(PyModuleDef *module, PyObject *args)
     PyObject *items;
 
     if (!PyArg_ParseTuple(args, "OCiO:_array_reconstructor",
-        &arraytype, &typecode, &mformat_code, &items))
+        &arraytype, &typecode, &mformat_code, &items)) {
         goto exit;
+    }
     return_value = array__array_reconstructor_impl(module, arraytype, typecode, mformat_code, items);
 
 exit:
@@ -496,4 +505,4 @@ PyDoc_STRVAR(array_arrayiterator___setstate____doc__,
 
 #define ARRAY_ARRAYITERATOR___SETSTATE___METHODDEF    \
     {"__setstate__", (PyCFunction)array_arrayiterator___setstate__, METH_O, array_arrayiterator___setstate____doc__},
-/*[clinic end generated code: output=d2e82c65ea841cfc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0b99c89275eda265 input=a9049054013a1b77]*/

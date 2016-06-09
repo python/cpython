@@ -61,8 +61,9 @@ _io_StringIO_read(stringio *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "read",
         0, 1,
-        &arg))
+        &arg)) {
         goto exit;
+    }
     return_value = _io_StringIO_read_impl(self, arg);
 
 exit:
@@ -91,8 +92,9 @@ _io_StringIO_readline(stringio *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "readline",
         0, 1,
-        &arg))
+        &arg)) {
         goto exit;
+    }
     return_value = _io_StringIO_readline_impl(self, arg);
 
 exit:
@@ -123,8 +125,9 @@ _io_StringIO_truncate(stringio *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "truncate",
         0, 1,
-        &arg))
+        &arg)) {
         goto exit;
+    }
     return_value = _io_StringIO_truncate_impl(self, arg);
 
 exit:
@@ -157,8 +160,9 @@ _io_StringIO_seek(stringio *self, PyObject *args)
     int whence = 0;
 
     if (!PyArg_ParseTuple(args, "n|i:seek",
-        &pos, &whence))
+        &pos, &whence)) {
         goto exit;
+    }
     return_value = _io_StringIO_seek_impl(self, pos, whence);
 
 exit:
@@ -222,8 +226,9 @@ _io_StringIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *newline_obj = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OO:StringIO", _keywords,
-        &value, &newline_obj))
+        &value, &newline_obj)) {
         goto exit;
+    }
     return_value = _io_StringIO___init___impl((stringio *)self, value, newline_obj);
 
 exit:
@@ -283,4 +288,4 @@ _io_StringIO_seekable(stringio *self, PyObject *Py_UNUSED(ignored))
 {
     return _io_StringIO_seekable_impl(self);
 }
-/*[clinic end generated code: output=f061cf3a20cd14ed input=a9049054013a1b77]*/
+/*[clinic end generated code: output=0513219581cbe952 input=a9049054013a1b77]*/

@@ -40,22 +40,26 @@ curses_window_addch(PyCursesWindowObject *self, PyObject *args)
 
     switch (PyTuple_GET_SIZE(args)) {
         case 1:
-            if (!PyArg_ParseTuple(args, "O:addch", &ch))
+            if (!PyArg_ParseTuple(args, "O:addch", &ch)) {
                 goto exit;
+            }
             break;
         case 2:
-            if (!PyArg_ParseTuple(args, "Ol:addch", &ch, &attr))
+            if (!PyArg_ParseTuple(args, "Ol:addch", &ch, &attr)) {
                 goto exit;
+            }
             group_right_1 = 1;
             break;
         case 3:
-            if (!PyArg_ParseTuple(args, "iiO:addch", &y, &x, &ch))
+            if (!PyArg_ParseTuple(args, "iiO:addch", &y, &x, &ch)) {
                 goto exit;
+            }
             group_left_1 = 1;
             break;
         case 4:
-            if (!PyArg_ParseTuple(args, "iiOl:addch", &y, &x, &ch, &attr))
+            if (!PyArg_ParseTuple(args, "iiOl:addch", &y, &x, &ch, &attr)) {
                 goto exit;
+            }
             group_right_1 = 1;
             group_left_1 = 1;
             break;
@@ -68,4 +72,4 @@ curses_window_addch(PyCursesWindowObject *self, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=982b1e709577f3ec input=a9049054013a1b77]*/
+/*[clinic end generated code: output=13ffc5f8d79cbfbf input=a9049054013a1b77]*/

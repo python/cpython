@@ -23,8 +23,9 @@ dict_fromkeys(PyTypeObject *type, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "fromkeys",
         1, 2,
-        &iterable, &value))
+        &iterable, &value)) {
         goto exit;
+    }
     return_value = dict_fromkeys_impl(type, iterable, value);
 
 exit:
@@ -39,4 +40,4 @@ PyDoc_STRVAR(dict___contains____doc__,
 
 #define DICT___CONTAINS___METHODDEF    \
     {"__contains__", (PyCFunction)dict___contains__, METH_O|METH_COEXIST, dict___contains____doc__},
-/*[clinic end generated code: output=fe74d676332fdba6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=926326109e3d9839 input=a9049054013a1b77]*/

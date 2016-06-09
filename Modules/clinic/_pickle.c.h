@@ -53,8 +53,9 @@ _pickle_Pickler___sizeof__(PicklerObject *self, PyObject *Py_UNUSED(ignored))
     Py_ssize_t _return_value;
 
     _return_value = _pickle_Pickler___sizeof___impl(self);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
@@ -98,8 +99,9 @@ _pickle_Pickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     int fix_imports = 1;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|Op:Pickler", _keywords,
-        &file, &protocol, &fix_imports))
+        &file, &protocol, &fix_imports)) {
         goto exit;
+    }
     return_value = _pickle_Pickler___init___impl((PicklerObject *)self, file, protocol, fix_imports);
 
 exit:
@@ -212,8 +214,9 @@ _pickle_Unpickler_find_class(UnpicklerObject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "find_class",
         2, 2,
-        &module_name, &global_name))
+        &module_name, &global_name)) {
         goto exit;
+    }
     return_value = _pickle_Unpickler_find_class_impl(self, module_name, global_name);
 
 exit:
@@ -239,8 +242,9 @@ _pickle_Unpickler___sizeof__(UnpicklerObject *self, PyObject *Py_UNUSED(ignored)
     Py_ssize_t _return_value;
 
     _return_value = _pickle_Unpickler___sizeof___impl(self);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
@@ -288,8 +292,9 @@ _pickle_Unpickler___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     const char *errors = "strict";
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$pss:Unpickler", _keywords,
-        &file, &fix_imports, &encoding, &errors))
+        &file, &fix_imports, &encoding, &errors)) {
         goto exit;
+    }
     return_value = _pickle_Unpickler___init___impl((UnpicklerObject *)self, file, fix_imports, encoding, errors);
 
 exit:
@@ -394,8 +399,9 @@ _pickle_dump(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int fix_imports = 1;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|O$p:dump", _keywords,
-        &obj, &file, &protocol, &fix_imports))
+        &obj, &file, &protocol, &fix_imports)) {
         goto exit;
+    }
     return_value = _pickle_dump_impl(module, obj, file, protocol, fix_imports);
 
 exit:
@@ -437,8 +443,9 @@ _pickle_dumps(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int fix_imports = 1;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O$p:dumps", _keywords,
-        &obj, &protocol, &fix_imports))
+        &obj, &protocol, &fix_imports)) {
         goto exit;
+    }
     return_value = _pickle_dumps_impl(module, obj, protocol, fix_imports);
 
 exit:
@@ -492,8 +499,9 @@ _pickle_load(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     const char *errors = "strict";
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$pss:load", _keywords,
-        &file, &fix_imports, &encoding, &errors))
+        &file, &fix_imports, &encoding, &errors)) {
         goto exit;
+    }
     return_value = _pickle_load_impl(module, file, fix_imports, encoding, errors);
 
 exit:
@@ -538,11 +546,12 @@ _pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     const char *errors = "strict";
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|$pss:loads", _keywords,
-        &data, &fix_imports, &encoding, &errors))
+        &data, &fix_imports, &encoding, &errors)) {
         goto exit;
+    }
     return_value = _pickle_loads_impl(module, data, fix_imports, encoding, errors);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=a7169d4fbbeef827 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5e972f339d197760 input=a9049054013a1b77]*/

@@ -149,11 +149,12 @@ _io_open(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *opener = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|sizzziO:open", _keywords,
-        &file, &mode, &buffering, &encoding, &errors, &newline, &closefd, &opener))
+        &file, &mode, &buffering, &encoding, &errors, &newline, &closefd, &opener)) {
         goto exit;
+    }
     return_value = _io_open_impl(module, file, mode, buffering, encoding, errors, newline, closefd, opener);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=97cdc09bf68a8064 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=079f597e71e9f0c6 input=a9049054013a1b77]*/

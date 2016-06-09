@@ -27,11 +27,12 @@ datetime_datetime_now(PyTypeObject *type, PyObject *args, PyObject *kwargs)
     PyObject *tz = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:now", _keywords,
-        &tz))
+        &tz)) {
         goto exit;
+    }
     return_value = datetime_datetime_now_impl(type, tz);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=7f45c670d6e4953a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a82e6bd057a5dab9 input=a9049054013a1b77]*/

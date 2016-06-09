@@ -89,8 +89,9 @@ _imp__fix_co_filename(PyModuleDef *module, PyObject *args)
     PyObject *path;
 
     if (!PyArg_ParseTuple(args, "O!U:_fix_co_filename",
-        &PyCode_Type, &code, &path))
+        &PyCode_Type, &code, &path)) {
         goto exit;
+    }
     return_value = _imp__fix_co_filename_impl(module, code, path);
 
 exit:
@@ -142,8 +143,9 @@ _imp_init_frozen(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:init_frozen", &name))
+    if (!PyArg_Parse(arg, "U:init_frozen", &name)) {
         goto exit;
+    }
     return_value = _imp_init_frozen_impl(module, name);
 
 exit:
@@ -168,8 +170,9 @@ _imp_get_frozen_object(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:get_frozen_object", &name))
+    if (!PyArg_Parse(arg, "U:get_frozen_object", &name)) {
         goto exit;
+    }
     return_value = _imp_get_frozen_object_impl(module, name);
 
 exit:
@@ -194,8 +197,9 @@ _imp_is_frozen_package(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:is_frozen_package", &name))
+    if (!PyArg_Parse(arg, "U:is_frozen_package", &name)) {
         goto exit;
+    }
     return_value = _imp_is_frozen_package_impl(module, name);
 
 exit:
@@ -220,8 +224,9 @@ _imp_is_builtin(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:is_builtin", &name))
+    if (!PyArg_Parse(arg, "U:is_builtin", &name)) {
         goto exit;
+    }
     return_value = _imp_is_builtin_impl(module, name);
 
 exit:
@@ -246,8 +251,9 @@ _imp_is_frozen(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *name;
 
-    if (!PyArg_Parse(arg, "U:is_frozen", &name))
+    if (!PyArg_Parse(arg, "U:is_frozen", &name)) {
         goto exit;
+    }
     return_value = _imp_is_frozen_impl(module, name);
 
 exit:
@@ -277,8 +283,9 @@ _imp_create_dynamic(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "create_dynamic",
         1, 2,
-        &spec, &file))
+        &spec, &file)) {
         goto exit;
+    }
     return_value = _imp_create_dynamic_impl(module, spec, file);
 
 exit:
@@ -308,8 +315,9 @@ _imp_exec_dynamic(PyModuleDef *module, PyObject *mod)
     int _return_value;
 
     _return_value = _imp_exec_dynamic_impl(module, mod);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong((long)_return_value);
 
 exit:
@@ -337,8 +345,9 @@ _imp_exec_builtin(PyModuleDef *module, PyObject *mod)
     int _return_value;
 
     _return_value = _imp_exec_builtin_impl(module, mod);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong((long)_return_value);
 
 exit:
@@ -352,4 +361,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=32324a5e46cdfc4b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=22a7225925755674 input=a9049054013a1b77]*/

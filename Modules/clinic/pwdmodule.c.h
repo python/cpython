@@ -33,8 +33,9 @@ pwd_getpwnam(PyModuleDef *module, PyObject *arg_)
     PyObject *return_value = NULL;
     PyObject *arg;
 
-    if (!PyArg_Parse(arg_, "U:getpwnam", &arg))
+    if (!PyArg_Parse(arg_, "U:getpwnam", &arg)) {
         goto exit;
+    }
     return_value = pwd_getpwnam_impl(module, arg);
 
 exit:
@@ -68,4 +69,4 @@ pwd_getpwall(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 #ifndef PWD_GETPWALL_METHODDEF
     #define PWD_GETPWALL_METHODDEF
 #endif /* !defined(PWD_GETPWALL_METHODDEF) */
-/*[clinic end generated code: output=2ed0ecf34fd3f98f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f807c89b44be0fde input=a9049054013a1b77]*/

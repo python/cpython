@@ -33,8 +33,9 @@ fcntl_fcntl(PyModuleDef *module, PyObject *args)
     PyObject *arg = NULL;
 
     if (!PyArg_ParseTuple(args, "O&i|O:fcntl",
-        conv_descriptor, &fd, &code, &arg))
+        conv_descriptor, &fd, &code, &arg)) {
         goto exit;
+    }
     return_value = fcntl_fcntl_impl(module, fd, code, arg);
 
 exit:
@@ -91,8 +92,9 @@ fcntl_ioctl(PyModuleDef *module, PyObject *args)
     int mutate_arg = 1;
 
     if (!PyArg_ParseTuple(args, "O&I|Op:ioctl",
-        conv_descriptor, &fd, &code, &ob_arg, &mutate_arg))
+        conv_descriptor, &fd, &code, &ob_arg, &mutate_arg)) {
         goto exit;
+    }
     return_value = fcntl_ioctl_impl(module, fd, code, ob_arg, mutate_arg);
 
 exit:
@@ -122,8 +124,9 @@ fcntl_flock(PyModuleDef *module, PyObject *args)
     int code;
 
     if (!PyArg_ParseTuple(args, "O&i:flock",
-        conv_descriptor, &fd, &code))
+        conv_descriptor, &fd, &code)) {
         goto exit;
+    }
     return_value = fcntl_flock_impl(module, fd, code);
 
 exit:
@@ -175,11 +178,12 @@ fcntl_lockf(PyModuleDef *module, PyObject *args)
     int whence = 0;
 
     if (!PyArg_ParseTuple(args, "O&i|OOi:lockf",
-        conv_descriptor, &fd, &code, &lenobj, &startobj, &whence))
+        conv_descriptor, &fd, &code, &lenobj, &startobj, &whence)) {
         goto exit;
+    }
     return_value = fcntl_lockf_impl(module, fd, code, lenobj, startobj, whence);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b7d6e8fc2ad09c48 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=b08537e9adc04ca2 input=a9049054013a1b77]*/

@@ -23,8 +23,9 @@ _gdbm_gdbm_get(dbmobject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "get",
         1, 2,
-        &key, &default_value))
+        &key, &default_value)) {
         goto exit;
+    }
     return_value = _gdbm_gdbm_get_impl(self, key, default_value);
 
 exit:
@@ -53,8 +54,9 @@ _gdbm_gdbm_setdefault(dbmobject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "setdefault",
         1, 2,
-        &key, &default_value))
+        &key, &default_value)) {
         goto exit;
+    }
     return_value = _gdbm_gdbm_setdefault_impl(self, key, default_value);
 
 exit:
@@ -147,8 +149,9 @@ _gdbm_gdbm_nextkey(dbmobject *self, PyObject *arg)
     const char *key;
     Py_ssize_clean_t key_length;
 
-    if (!PyArg_Parse(arg, "s#:nextkey", &key, &key_length))
+    if (!PyArg_Parse(arg, "s#:nextkey", &key, &key_length)) {
         goto exit;
+    }
     return_value = _gdbm_gdbm_nextkey_impl(self, key, key_length);
 
 exit:
@@ -243,11 +246,12 @@ dbmopen(PyModuleDef *module, PyObject *args)
     int mode = 438;
 
     if (!PyArg_ParseTuple(args, "s|si:open",
-        &name, &flags, &mode))
+        &name, &flags, &mode)) {
         goto exit;
+    }
     return_value = dbmopen_impl(module, name, flags, mode);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d3d8d871bcccb68a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=418849fb5dbe69a5 input=a9049054013a1b77]*/
