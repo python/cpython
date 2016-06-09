@@ -503,6 +503,11 @@ Build and C API Changes
 * New :c:func:`Py_FinalizeEx` API which indicates if flushing buffered data
   failed (:issue:`5319`).
 
+* :c:func:`PyArg_ParseTupleAndKeywords` now supports :ref:`positional-only
+  parameters <positional-only_parameter>`.  Positional-only parameters are
+  defined by empty names.
+  (Contributed by Serhit Storchaka in :issue:`26282`).
+
 
 Deprecated
 ==========

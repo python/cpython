@@ -658,6 +658,39 @@ class KeywordOnly_TestCase(unittest.TestCase):
             getargs_keyword_only(1, 2, **{'\uDC80': 10})
 
 
+class PositionalOnlyAndKeywords_TestCase(unittest.TestCase):
+    from _testcapi import getargs_positional_only_and_keywords as getargs
+
+    def test_positional_args(self):
+        # using all possible positional args
+        self.assertEqual(self.getargs(1, 2, 3), (1, 2, 3))
+
+    def test_mixed_args(self):
+        # positional and keyword args
+        self.assertEqual(self.getargs(1, 2, keyword=3), (1, 2, 3))
+
+    def test_optional_args(self):
+        # missing optional args
+        self.assertEqual(self.getargs(1, 2), (1, 2, -1))
+        self.assertEqual(self.getargs(1, keyword=3), (1, -1, 3))
+
+    def test_required_args(self):
+        self.assertEqual(self.getargs(1), (1, -1, -1))
+        # required positional arg missing
+        with self.assertRaisesRegex(TypeError,
+            "Function takes at least 1 positional arguments \(0 given\)"):
+            self.getargs()
+
+        with self.assertRaisesRegex(TypeError,
+            "Function takes at least 1 positional arguments \(0 given\)"):
+            self.getargs(keyword=3)
+
+    def test_empty_keyword(self):
+        with self.assertRaisesRegex(TypeError,
+            "'' is an invalid keyword argument for this function"):
+            self.getargs(1, 2, **{'': 666})
+
+
 class Bytes_TestCase(unittest.TestCase):
     def test_c(self):
         from _testcapi import getargs_c

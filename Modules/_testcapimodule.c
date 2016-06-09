@@ -1028,6 +1028,21 @@ getargs_keyword_only(PyObject *self, PyObject *args, PyObject *kwargs)
     return Py_BuildValue("iii", required, optional, keyword_only);
 }
 
+/* test PyArg_ParseTupleAndKeywords positional-only arguments */
+static PyObject *
+getargs_positional_only_and_keywords(PyObject *self, PyObject *args, PyObject *kwargs)
+{
+    static char *keywords[] = {"", "", "keyword", NULL};
+    int required = -1;
+    int optional = -1;
+    int keyword = -1;
+
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "i|ii", keywords,
+                                     &required, &optional, &keyword))
+        return NULL;
+    return Py_BuildValue("iii", required, optional, keyword);
+}
+
 /* Functions to call PyArg_ParseTuple with integer format codes,
    and return the result.
 */
@@ -3962,6 +3977,9 @@ static PyMethodDef TestMethods[] = {
     {"getargs_keywords", (PyCFunction)getargs_keywords,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_keyword_only", (PyCFunction)getargs_keyword_only,
+      METH_VARARGS|METH_KEYWORDS},
+    {"getargs_positional_only_and_keywords",
+      (PyCFunction)getargs_positional_only_and_keywords,
       METH_VARARGS|METH_KEYWORDS},
     {"getargs_b",               getargs_b,                       METH_VARARGS},
     {"getargs_B",               getargs_B,                       METH_VARARGS},
