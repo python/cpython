@@ -876,8 +876,7 @@ def _fscodec():
         errors = 'surrogateescape'
 
     def fsencode(filename):
-        """
-        Encode filename (an os.PathLike, bytes, or str) to the filesystem
+        """Encode filename (an os.PathLike, bytes, or str) to the filesystem
         encoding with 'surrogateescape' error handler, return bytes unchanged.
         On Windows, use 'strict' error handler if the file system encoding is
         'mbcs' (which is the default encoding).
@@ -892,8 +891,7 @@ def _fscodec():
                             + type(filename).__name__)
 
     def fsdecode(filename):
-        """
-        Decode filename (an os.PathLike, bytes, or str) from the filesystem
+        """Decode filename (an os.PathLike, bytes, or str) from the filesystem
         encoding with 'surrogateescape' error handler, return str unchanged. On
         Windows, use 'strict' error handler if the file system encoding is
         'mbcs' (which is the default encoding).
@@ -1127,14 +1125,12 @@ if not _exists('fspath'):
                             + path_type.__name__)
 
 class PathLike(abc.ABC):
-    """
-    Abstract base class for implementing the file system path protocol.
-    """
+
+    """Abstract base class for implementing the file system path protocol."""
+
     @abc.abstractmethod
     def __fspath__(self):
-        """
-        Return the file system path representation of the object.
-        """
+        """Return the file system path representation of the object."""
         raise NotImplementedError
 
     @classmethod
