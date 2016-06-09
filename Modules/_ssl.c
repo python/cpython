@@ -2614,6 +2614,7 @@ load_cert_chain(PySSLContext *self, PyObject *args, PyObject *kwds)
     SSL_CTX_set_default_passwd_cb(self->ctx, orig_passwd_cb);
     SSL_CTX_set_default_passwd_cb_userdata(self->ctx, orig_passwd_userdata);
     PyMem_Free(pw_info.password);
+    PyMem_Free(certfile_bytes);
     Py_RETURN_NONE;
 
 error:
