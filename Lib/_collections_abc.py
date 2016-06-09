@@ -156,7 +156,7 @@ class AsyncIterable(metaclass=ABCMeta):
     __slots__ = ()
 
     @abstractmethod
-    async def __aiter__(self):
+    def __aiter__(self):
         return AsyncIterator()
 
     @classmethod
@@ -176,7 +176,7 @@ class AsyncIterator(AsyncIterable):
         """Return the next item or raise StopAsyncIteration when exhausted."""
         raise StopAsyncIteration
 
-    async def __aiter__(self):
+    def __aiter__(self):
         return self
 
     @classmethod
