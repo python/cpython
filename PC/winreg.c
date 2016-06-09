@@ -1657,7 +1657,7 @@ the configuration registry to help the registry perform efficiently.
 static PyObject *
 winreg_SetValueEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *value_name,
                        PyObject *reserved, DWORD type, PyObject *value)
-/*[clinic end generated code: output=ea092a935c361582 input=f1b16cbcc3ed4101]*/
+/*[clinic end generated code: output=ea092a935c361582 input=900a9e3990bfb196]*/
 {
     BYTE *data;
     DWORD len;
