@@ -5,6 +5,16 @@
 Operating System Utilities
 ==========================
 
+.. c:function:: PyObject* PyOS_FSPath(PyObject *path)
+
+   Return the file system representation for *path*. If the object is a
+   :class:`str` or :class:`bytes` object, then its reference count is
+   incremented. If the object implements the :class:`os.PathLike` interface,
+   then ``type(path).__fspath__()`` is returned. Otherwise :exc:`TypeError` is
+   raised and ``NULL`` is returned.
+
+   .. versionadded:: 3.6
+
 
 .. c:function:: int Py_FdIsInteractive(FILE *fp, const char *filename)
 
