@@ -175,6 +175,9 @@ process and user.
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.6
+      Support added to accept objects implementing :class:`os.PathLike`.
+
 
 .. function:: fsdecode(filename)
 
@@ -185,6 +188,9 @@ process and user.
 
    .. versionadded:: 3.2
 
+   .. versionchanged:: 3.6
+      Support added to accept objects implementing :class:`os.PathLike`.
+
 
 .. function:: fspath(path)
 
@@ -194,6 +200,21 @@ process and user.
    otherwise, the result of calling ``type(path).__fspath__`` is returned
    (which is represented by :class:`os.PathLike`). All other types raise a
    :exc:`TypeError`.
+
+   .. versionadded:: 3.6
+
+
+.. class:: PathLike
+
+   An :term:`abstract base class` for objects representing a file system path,
+   e.g. :class:`pathlib.PurePath`.
+
+   .. abstractmethod:: __fspath__()
+
+      Return the file system path representation of the object.
+
+      The method should only return a :class:`str` or :class:`bytes` object,
+      with the preference being for :class:`str`.
 
 
 .. function:: getenv(key, default=None)
