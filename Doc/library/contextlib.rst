@@ -20,7 +20,7 @@ Functions and classes provided:
 
 .. class:: AbstractContextManager
 
-   An abstract base class for classes that implement
+   An :term:`abstract base class` for classes that implement
    :meth:`object.__enter__` and :meth:`object.__exit__`. A default
    implementation for :meth:`object.__enter__` is provided which returns
    ``self`` while :meth:`object.__exit__` is an abstract method which by default
