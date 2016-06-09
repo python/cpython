@@ -921,6 +921,9 @@ PyNumber_Xor:PyObject*:o2:0:
 PyObject_AsFileDescriptor:int:::
 PyObject_AsFileDescriptor:PyObject*:o:0:
 
+PyOS_FSPath:PyObject*::+1:
+PyOS_FSPath:PyObject*:path:0:
+
 PyObject_Call:PyObject*::+1:
 PyObject_Call:PyObject*:callable_object:0:
 PyObject_Call:PyObject*:args:0:
