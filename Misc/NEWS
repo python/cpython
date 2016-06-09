@@ -130,6 +130,11 @@ Core and Builtins
 - Issue #25887: Raise a RuntimeError when a coroutine object is awaited
   more than once.
 
+- Issue #27243: Update the __aiter__ protocol: instead of returning
+  an awaitable that resolves to an asynchronous iterator, the asynchronous
+  iterator should be returned directly.  Doing the former will trigger a
+  PendingDeprecationWarning.
+
 
 Library
 -------

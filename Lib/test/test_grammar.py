@@ -1076,7 +1076,7 @@ class GrammarTests(unittest.TestCase):
         class Done(Exception): pass
 
         class AIter:
-            async def __aiter__(self):
+            def __aiter__(self):
                 return self
             async def __anext__(self):
                 raise StopAsyncIteration
