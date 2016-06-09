@@ -23,11 +23,13 @@ signal_alarm(PyModuleDef *module, PyObject *arg)
     int seconds;
     long _return_value;
 
-    if (!PyArg_Parse(arg, "i:alarm", &seconds))
+    if (!PyArg_Parse(arg, "i:alarm", &seconds)) {
         goto exit;
+    }
     _return_value = signal_alarm_impl(module, seconds);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong(_return_value);
 
 exit:
@@ -85,8 +87,9 @@ signal_signal(PyModuleDef *module, PyObject *args)
     PyObject *handler;
 
     if (!PyArg_ParseTuple(args, "iO:signal",
-        &signalnum, &handler))
+        &signalnum, &handler)) {
         goto exit;
+    }
     return_value = signal_signal_impl(module, signalnum, handler);
 
 exit:
@@ -117,8 +120,9 @@ signal_getsignal(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     int signalnum;
 
-    if (!PyArg_Parse(arg, "i:getsignal", &signalnum))
+    if (!PyArg_Parse(arg, "i:getsignal", &signalnum)) {
         goto exit;
+    }
     return_value = signal_getsignal_impl(module, signalnum);
 
 exit:
@@ -150,8 +154,9 @@ signal_siginterrupt(PyModuleDef *module, PyObject *args)
     int flag;
 
     if (!PyArg_ParseTuple(args, "ii:siginterrupt",
-        &signalnum, &flag))
+        &signalnum, &flag)) {
         goto exit;
+    }
     return_value = signal_siginterrupt_impl(module, signalnum, flag);
 
 exit:
@@ -189,8 +194,9 @@ signal_setitimer(PyModuleDef *module, PyObject *args)
     double interval = 0.0;
 
     if (!PyArg_ParseTuple(args, "id|d:setitimer",
-        &which, &seconds, &interval))
+        &which, &seconds, &interval)) {
         goto exit;
+    }
     return_value = signal_setitimer_impl(module, which, seconds, interval);
 
 exit:
@@ -219,8 +225,9 @@ signal_getitimer(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     int which;
 
-    if (!PyArg_Parse(arg, "i:getitimer", &which))
+    if (!PyArg_Parse(arg, "i:getitimer", &which)) {
         goto exit;
+    }
     return_value = signal_getitimer_impl(module, which);
 
 exit:
@@ -251,8 +258,9 @@ signal_pthread_sigmask(PyModuleDef *module, PyObject *args)
     PyObject *mask;
 
     if (!PyArg_ParseTuple(args, "iO:pthread_sigmask",
-        &how, &mask))
+        &how, &mask)) {
         goto exit;
+    }
     return_value = signal_pthread_sigmask_impl(module, how, mask);
 
 exit:
@@ -344,8 +352,9 @@ signal_sigtimedwait(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "sigtimedwait",
         2, 2,
-        &sigset, &timeout_obj))
+        &sigset, &timeout_obj)) {
         goto exit;
+    }
     return_value = signal_sigtimedwait_impl(module, sigset, timeout_obj);
 
 exit:
@@ -376,8 +385,9 @@ signal_pthread_kill(PyModuleDef *module, PyObject *args)
     int signalnum;
 
     if (!PyArg_ParseTuple(args, "li:pthread_kill",
-        &thread_id, &signalnum))
+        &thread_id, &signalnum)) {
         goto exit;
+    }
     return_value = signal_pthread_kill_impl(module, thread_id, signalnum);
 
 exit:
@@ -429,4 +439,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=b99278c16c40ea43 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4b9519180a091536 input=a9049054013a1b77]*/

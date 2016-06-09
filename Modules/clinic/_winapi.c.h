@@ -19,8 +19,9 @@ _winapi_Overlapped_GetOverlappedResult(OverlappedObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     int wait;
 
-    if (!PyArg_Parse(arg, "p:GetOverlappedResult", &wait))
+    if (!PyArg_Parse(arg, "p:GetOverlappedResult", &wait)) {
         goto exit;
+    }
     return_value = _winapi_Overlapped_GetOverlappedResult_impl(self, wait);
 
 exit:
@@ -79,8 +80,9 @@ _winapi_CloseHandle(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     HANDLE handle;
 
-    if (!PyArg_Parse(arg, "" F_HANDLE ":CloseHandle", &handle))
+    if (!PyArg_Parse(arg, "" F_HANDLE ":CloseHandle", &handle)) {
         goto exit;
+    }
     return_value = _winapi_CloseHandle_impl(module, handle);
 
 exit:
@@ -108,8 +110,9 @@ _winapi_ConnectNamedPipe(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int use_overlapped = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "" F_HANDLE "|i:ConnectNamedPipe", _keywords,
-        &handle, &use_overlapped))
+        &handle, &use_overlapped)) {
         goto exit;
+    }
     return_value = _winapi_ConnectNamedPipe_impl(module, handle, use_overlapped);
 
 exit:
@@ -147,13 +150,16 @@ _winapi_CreateFile(PyModuleDef *module, PyObject *args)
     HANDLE _return_value;
 
     if (!PyArg_ParseTuple(args, "skk" F_POINTER "kk" F_HANDLE ":CreateFile",
-        &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file))
+        &file_name, &desired_access, &share_mode, &security_attributes, &creation_disposition, &flags_and_attributes, &template_file)) {
         goto exit;
+    }
     _return_value = _winapi_CreateFile_impl(module, file_name, desired_access, share_mode, security_attributes, creation_disposition, flags_and_attributes, template_file);
-    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred())
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
-    if (_return_value == NULL)
+    }
+    if (_return_value == NULL) {
         Py_RETURN_NONE;
+    }
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
@@ -180,8 +186,9 @@ _winapi_CreateJunction(PyModuleDef *module, PyObject *args)
     LPWSTR dst_path;
 
     if (!PyArg_ParseTuple(args, "uu:CreateJunction",
-        &src_path, &dst_path))
+        &src_path, &dst_path)) {
         goto exit;
+    }
     return_value = _winapi_CreateJunction_impl(module, src_path, dst_path);
 
 exit:
@@ -220,13 +227,16 @@ _winapi_CreateNamedPipe(PyModuleDef *module, PyObject *args)
     HANDLE _return_value;
 
     if (!PyArg_ParseTuple(args, "skkkkkk" F_POINTER ":CreateNamedPipe",
-        &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes))
+        &name, &open_mode, &pipe_mode, &max_instances, &out_buffer_size, &in_buffer_size, &default_timeout, &security_attributes)) {
         goto exit;
+    }
     _return_value = _winapi_CreateNamedPipe_impl(module, name, open_mode, pipe_mode, max_instances, out_buffer_size, in_buffer_size, default_timeout, security_attributes);
-    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred())
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
-    if (_return_value == NULL)
+    }
+    if (_return_value == NULL) {
         Py_RETURN_NONE;
+    }
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
@@ -259,8 +269,9 @@ _winapi_CreatePipe(PyModuleDef *module, PyObject *args)
     DWORD size;
 
     if (!PyArg_ParseTuple(args, "Ok:CreatePipe",
-        &pipe_attrs, &size))
+        &pipe_attrs, &size)) {
         goto exit;
+    }
     return_value = _winapi_CreatePipe_impl(module, pipe_attrs, size);
 
 exit:
@@ -309,8 +320,9 @@ _winapi_CreateProcess(PyModuleDef *module, PyObject *args)
     PyObject *startup_info;
 
     if (!PyArg_ParseTuple(args, "ZZOOikOZO:CreateProcess",
-        &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, &current_directory, &startup_info))
+        &application_name, &command_line, &proc_attrs, &thread_attrs, &inherit_handles, &creation_flags, &env_mapping, &current_directory, &startup_info)) {
         goto exit;
+    }
     return_value = _winapi_CreateProcess_impl(module, application_name, command_line, proc_attrs, thread_attrs, inherit_handles, creation_flags, env_mapping, current_directory, startup_info);
 
 exit:
@@ -353,13 +365,16 @@ _winapi_DuplicateHandle(PyModuleDef *module, PyObject *args)
     HANDLE _return_value;
 
     if (!PyArg_ParseTuple(args, "" F_HANDLE "" F_HANDLE "" F_HANDLE "ki|k:DuplicateHandle",
-        &source_process_handle, &source_handle, &target_process_handle, &desired_access, &inherit_handle, &options))
+        &source_process_handle, &source_handle, &target_process_handle, &desired_access, &inherit_handle, &options)) {
         goto exit;
+    }
     _return_value = _winapi_DuplicateHandle_impl(module, source_process_handle, source_handle, target_process_handle, desired_access, inherit_handle, options);
-    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred())
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
-    if (_return_value == NULL)
+    }
+    if (_return_value == NULL) {
         Py_RETURN_NONE;
+    }
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
@@ -383,8 +398,9 @@ _winapi_ExitProcess(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     UINT ExitCode;
 
-    if (!PyArg_Parse(arg, "I:ExitProcess", &ExitCode))
+    if (!PyArg_Parse(arg, "I:ExitProcess", &ExitCode)) {
         goto exit;
+    }
     return_value = _winapi_ExitProcess_impl(module, ExitCode);
 
 exit:
@@ -410,10 +426,12 @@ _winapi_GetCurrentProcess(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
     HANDLE _return_value;
 
     _return_value = _winapi_GetCurrentProcess_impl(module);
-    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred())
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
-    if (_return_value == NULL)
+    }
+    if (_return_value == NULL) {
         Py_RETURN_NONE;
+    }
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
@@ -439,11 +457,13 @@ _winapi_GetExitCodeProcess(PyModuleDef *module, PyObject *arg)
     HANDLE process;
     DWORD _return_value;
 
-    if (!PyArg_Parse(arg, "" F_HANDLE ":GetExitCodeProcess", &process))
+    if (!PyArg_Parse(arg, "" F_HANDLE ":GetExitCodeProcess", &process)) {
         goto exit;
+    }
     _return_value = _winapi_GetExitCodeProcess_impl(module, process);
-    if ((_return_value == DWORD_MAX) && PyErr_Occurred())
+    if ((_return_value == DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = Py_BuildValue("k", _return_value);
 
 exit:
@@ -468,8 +488,9 @@ _winapi_GetLastError(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
     DWORD _return_value;
 
     _return_value = _winapi_GetLastError_impl(module);
-    if ((_return_value == DWORD_MAX) && PyErr_Occurred())
+    if ((_return_value == DWORD_MAX) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = Py_BuildValue("k", _return_value);
 
 exit:
@@ -501,8 +522,9 @@ _winapi_GetModuleFileName(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     HMODULE module_handle;
 
-    if (!PyArg_Parse(arg, "" F_HANDLE ":GetModuleFileName", &module_handle))
+    if (!PyArg_Parse(arg, "" F_HANDLE ":GetModuleFileName", &module_handle)) {
         goto exit;
+    }
     return_value = _winapi_GetModuleFileName_impl(module, module_handle);
 
 exit:
@@ -533,13 +555,16 @@ _winapi_GetStdHandle(PyModuleDef *module, PyObject *arg)
     DWORD std_handle;
     HANDLE _return_value;
 
-    if (!PyArg_Parse(arg, "k:GetStdHandle", &std_handle))
+    if (!PyArg_Parse(arg, "k:GetStdHandle", &std_handle)) {
         goto exit;
+    }
     _return_value = _winapi_GetStdHandle_impl(module, std_handle);
-    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred())
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
-    if (_return_value == NULL)
+    }
+    if (_return_value == NULL) {
         Py_RETURN_NONE;
+    }
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
@@ -565,8 +590,9 @@ _winapi_GetVersion(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
     long _return_value;
 
     _return_value = _winapi_GetVersion_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong(_return_value);
 
 exit:
@@ -595,13 +621,16 @@ _winapi_OpenProcess(PyModuleDef *module, PyObject *args)
     HANDLE _return_value;
 
     if (!PyArg_ParseTuple(args, "kik:OpenProcess",
-        &desired_access, &inherit_handle, &process_id))
+        &desired_access, &inherit_handle, &process_id)) {
         goto exit;
+    }
     _return_value = _winapi_OpenProcess_impl(module, desired_access, inherit_handle, process_id);
-    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred())
+    if ((_return_value == INVALID_HANDLE_VALUE) && PyErr_Occurred()) {
         goto exit;
-    if (_return_value == NULL)
+    }
+    if (_return_value == NULL) {
         Py_RETURN_NONE;
+    }
     return_value = HANDLE_TO_PYNUM(_return_value);
 
 exit:
@@ -627,8 +656,9 @@ _winapi_PeekNamedPipe(PyModuleDef *module, PyObject *args)
     int size = 0;
 
     if (!PyArg_ParseTuple(args, "" F_HANDLE "|i:PeekNamedPipe",
-        &handle, &size))
+        &handle, &size)) {
         goto exit;
+    }
     return_value = _winapi_PeekNamedPipe_impl(module, handle, size);
 
 exit:
@@ -657,8 +687,9 @@ _winapi_ReadFile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int use_overlapped = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "" F_HANDLE "i|i:ReadFile", _keywords,
-        &handle, &size, &use_overlapped))
+        &handle, &size, &use_overlapped)) {
         goto exit;
+    }
     return_value = _winapi_ReadFile_impl(module, handle, size, use_overlapped);
 
 exit:
@@ -690,8 +721,9 @@ _winapi_SetNamedPipeHandleState(PyModuleDef *module, PyObject *args)
     PyObject *collect_data_timeout;
 
     if (!PyArg_ParseTuple(args, "" F_HANDLE "OOO:SetNamedPipeHandleState",
-        &named_pipe, &mode, &max_collection_count, &collect_data_timeout))
+        &named_pipe, &mode, &max_collection_count, &collect_data_timeout)) {
         goto exit;
+    }
     return_value = _winapi_SetNamedPipeHandleState_impl(module, named_pipe, mode, max_collection_count, collect_data_timeout);
 
 exit:
@@ -719,8 +751,9 @@ _winapi_TerminateProcess(PyModuleDef *module, PyObject *args)
     UINT exit_code;
 
     if (!PyArg_ParseTuple(args, "" F_HANDLE "I:TerminateProcess",
-        &handle, &exit_code))
+        &handle, &exit_code)) {
         goto exit;
+    }
     return_value = _winapi_TerminateProcess_impl(module, handle, exit_code);
 
 exit:
@@ -746,8 +779,9 @@ _winapi_WaitNamedPipe(PyModuleDef *module, PyObject *args)
     DWORD timeout;
 
     if (!PyArg_ParseTuple(args, "sk:WaitNamedPipe",
-        &name, &timeout))
+        &name, &timeout)) {
         goto exit;
+    }
     return_value = _winapi_WaitNamedPipe_impl(module, name, timeout);
 
 exit:
@@ -777,8 +811,9 @@ _winapi_WaitForMultipleObjects(PyModuleDef *module, PyObject *args)
     DWORD milliseconds = INFINITE;
 
     if (!PyArg_ParseTuple(args, "Oi|k:WaitForMultipleObjects",
-        &handle_seq, &wait_flag, &milliseconds))
+        &handle_seq, &wait_flag, &milliseconds)) {
         goto exit;
+    }
     return_value = _winapi_WaitForMultipleObjects_impl(module, handle_seq, wait_flag, milliseconds);
 
 exit:
@@ -811,11 +846,13 @@ _winapi_WaitForSingleObject(PyModuleDef *module, PyObject *args)
     long _return_value;
 
     if (!PyArg_ParseTuple(args, "" F_HANDLE "k:WaitForSingleObject",
-        &handle, &milliseconds))
+        &handle, &milliseconds)) {
         goto exit;
+    }
     _return_value = _winapi_WaitForSingleObject_impl(module, handle, milliseconds);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong(_return_value);
 
 exit:
@@ -844,11 +881,12 @@ _winapi_WriteFile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int use_overlapped = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "" F_HANDLE "O|i:WriteFile", _keywords,
-        &handle, &buffer, &use_overlapped))
+        &handle, &buffer, &use_overlapped)) {
         goto exit;
+    }
     return_value = _winapi_WriteFile_impl(module, handle, buffer, use_overlapped);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=98771c6584056d19 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d099ee4fbcdd5bc0 input=a9049054013a1b77]*/

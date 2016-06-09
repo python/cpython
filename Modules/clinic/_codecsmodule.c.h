@@ -33,8 +33,9 @@ _codecs_lookup(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *encoding;
 
-    if (!PyArg_Parse(arg, "s:lookup", &encoding))
+    if (!PyArg_Parse(arg, "s:lookup", &encoding)) {
         goto exit;
+    }
     return_value = _codecs_lookup_impl(module, encoding);
 
 exit:
@@ -70,8 +71,9 @@ _codecs_encode(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     const char *errors = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|ss:encode", _keywords,
-        &obj, &encoding, &errors))
+        &obj, &encoding, &errors)) {
         goto exit;
+    }
     return_value = _codecs_encode_impl(module, obj, encoding, errors);
 
 exit:
@@ -107,8 +109,9 @@ _codecs_decode(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     const char *errors = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|ss:decode", _keywords,
-        &obj, &encoding, &errors))
+        &obj, &encoding, &errors)) {
         goto exit;
+    }
     return_value = _codecs_decode_impl(module, obj, encoding, errors);
 
 exit:
@@ -133,8 +136,9 @@ _codecs__forget_codec(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *encoding;
 
-    if (!PyArg_Parse(arg, "s:_forget_codec", &encoding))
+    if (!PyArg_Parse(arg, "s:_forget_codec", &encoding)) {
         goto exit;
+    }
     return_value = _codecs__forget_codec_impl(module, encoding);
 
 exit:
@@ -161,14 +165,16 @@ _codecs_escape_decode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "s*|z:escape_decode",
-        &data, &errors))
+        &data, &errors)) {
         goto exit;
+    }
     return_value = _codecs_escape_decode_impl(module, &data, errors);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -193,8 +199,9 @@ _codecs_escape_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "O!|z:escape_encode",
-        &PyBytes_Type, &data, &errors))
+        &PyBytes_Type, &data, &errors)) {
         goto exit;
+    }
     return_value = _codecs_escape_encode_impl(module, data, errors);
 
 exit:
@@ -221,8 +228,9 @@ _codecs_unicode_internal_decode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "O|z:unicode_internal_decode",
-        &obj, &errors))
+        &obj, &errors)) {
         goto exit;
+    }
     return_value = _codecs_unicode_internal_decode_impl(module, obj, errors);
 
 exit:
@@ -250,14 +258,16 @@ _codecs_utf_7_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zi:utf_7_decode",
-        &data, &errors, &final))
+        &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_7_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -283,14 +293,16 @@ _codecs_utf_8_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zi:utf_8_decode",
-        &data, &errors, &final))
+        &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_8_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -316,14 +328,16 @@ _codecs_utf_16_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zi:utf_16_decode",
-        &data, &errors, &final))
+        &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_16_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -349,14 +363,16 @@ _codecs_utf_16_le_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zi:utf_16_le_decode",
-        &data, &errors, &final))
+        &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_16_le_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -382,14 +398,16 @@ _codecs_utf_16_be_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zi:utf_16_be_decode",
-        &data, &errors, &final))
+        &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_16_be_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -417,14 +435,16 @@ _codecs_utf_16_ex_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zii:utf_16_ex_decode",
-        &data, &errors, &byteorder, &final))
+        &data, &errors, &byteorder, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_16_ex_decode_impl(module, &data, errors, byteorder, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -450,14 +470,16 @@ _codecs_utf_32_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zi:utf_32_decode",
-        &data, &errors, &final))
+        &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_32_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -483,14 +505,16 @@ _codecs_utf_32_le_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zi:utf_32_le_decode",
-        &data, &errors, &final))
+        &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_32_le_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -516,14 +540,16 @@ _codecs_utf_32_be_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zi:utf_32_be_decode",
-        &data, &errors, &final))
+        &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_32_be_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -551,14 +577,16 @@ _codecs_utf_32_ex_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zii:utf_32_ex_decode",
-        &data, &errors, &byteorder, &final))
+        &data, &errors, &byteorder, &final)) {
         goto exit;
+    }
     return_value = _codecs_utf_32_ex_decode_impl(module, &data, errors, byteorder, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -583,14 +611,16 @@ _codecs_unicode_escape_decode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "s*|z:unicode_escape_decode",
-        &data, &errors))
+        &data, &errors)) {
         goto exit;
+    }
     return_value = _codecs_unicode_escape_decode_impl(module, &data, errors);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -615,14 +645,16 @@ _codecs_raw_unicode_escape_decode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "s*|z:raw_unicode_escape_decode",
-        &data, &errors))
+        &data, &errors)) {
         goto exit;
+    }
     return_value = _codecs_raw_unicode_escape_decode_impl(module, &data, errors);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -647,14 +679,16 @@ _codecs_latin_1_decode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "y*|z:latin_1_decode",
-        &data, &errors))
+        &data, &errors)) {
         goto exit;
+    }
     return_value = _codecs_latin_1_decode_impl(module, &data, errors);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -679,14 +713,16 @@ _codecs_ascii_decode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "y*|z:ascii_decode",
-        &data, &errors))
+        &data, &errors)) {
         goto exit;
+    }
     return_value = _codecs_ascii_decode_impl(module, &data, errors);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -712,14 +748,16 @@ _codecs_charmap_decode(PyModuleDef *module, PyObject *args)
     PyObject *mapping = NULL;
 
     if (!PyArg_ParseTuple(args, "y*|zO:charmap_decode",
-        &data, &errors, &mapping))
+        &data, &errors, &mapping)) {
         goto exit;
+    }
     return_value = _codecs_charmap_decode_impl(module, &data, errors, mapping);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -747,14 +785,16 @@ _codecs_mbcs_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "y*|zi:mbcs_decode",
-        &data, &errors, &final))
+        &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_mbcs_decode_impl(module, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -785,14 +825,16 @@ _codecs_code_page_decode(PyModuleDef *module, PyObject *args)
     int final = 0;
 
     if (!PyArg_ParseTuple(args, "iy*|zi:code_page_decode",
-        &codepage, &data, &errors, &final))
+        &codepage, &data, &errors, &final)) {
         goto exit;
+    }
     return_value = _codecs_code_page_decode_impl(module, codepage, &data, errors, final);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -819,14 +861,16 @@ _codecs_readbuffer_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "s*|z:readbuffer_encode",
-        &data, &errors))
+        &data, &errors)) {
         goto exit;
+    }
     return_value = _codecs_readbuffer_encode_impl(module, &data, errors);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -851,8 +895,9 @@ _codecs_unicode_internal_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "O|z:unicode_internal_encode",
-        &obj, &errors))
+        &obj, &errors)) {
         goto exit;
+    }
     return_value = _codecs_unicode_internal_encode_impl(module, obj, errors);
 
 exit:
@@ -879,8 +924,9 @@ _codecs_utf_7_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:utf_7_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_utf_7_encode_impl(module, str, errors);
 
 exit:
@@ -907,8 +953,9 @@ _codecs_utf_8_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:utf_8_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_utf_8_encode_impl(module, str, errors);
 
 exit:
@@ -936,8 +983,9 @@ _codecs_utf_16_encode(PyModuleDef *module, PyObject *args)
     int byteorder = 0;
 
     if (!PyArg_ParseTuple(args, "U|zi:utf_16_encode",
-        &str, &errors, &byteorder))
+        &str, &errors, &byteorder)) {
         goto exit;
+    }
     return_value = _codecs_utf_16_encode_impl(module, str, errors, byteorder);
 
 exit:
@@ -964,8 +1012,9 @@ _codecs_utf_16_le_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:utf_16_le_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_utf_16_le_encode_impl(module, str, errors);
 
 exit:
@@ -992,8 +1041,9 @@ _codecs_utf_16_be_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:utf_16_be_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_utf_16_be_encode_impl(module, str, errors);
 
 exit:
@@ -1021,8 +1071,9 @@ _codecs_utf_32_encode(PyModuleDef *module, PyObject *args)
     int byteorder = 0;
 
     if (!PyArg_ParseTuple(args, "U|zi:utf_32_encode",
-        &str, &errors, &byteorder))
+        &str, &errors, &byteorder)) {
         goto exit;
+    }
     return_value = _codecs_utf_32_encode_impl(module, str, errors, byteorder);
 
 exit:
@@ -1049,8 +1100,9 @@ _codecs_utf_32_le_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:utf_32_le_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_utf_32_le_encode_impl(module, str, errors);
 
 exit:
@@ -1077,8 +1129,9 @@ _codecs_utf_32_be_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:utf_32_be_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_utf_32_be_encode_impl(module, str, errors);
 
 exit:
@@ -1105,8 +1158,9 @@ _codecs_unicode_escape_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:unicode_escape_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_unicode_escape_encode_impl(module, str, errors);
 
 exit:
@@ -1133,8 +1187,9 @@ _codecs_raw_unicode_escape_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:raw_unicode_escape_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_raw_unicode_escape_encode_impl(module, str, errors);
 
 exit:
@@ -1161,8 +1216,9 @@ _codecs_latin_1_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:latin_1_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_latin_1_encode_impl(module, str, errors);
 
 exit:
@@ -1189,8 +1245,9 @@ _codecs_ascii_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:ascii_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_ascii_encode_impl(module, str, errors);
 
 exit:
@@ -1218,8 +1275,9 @@ _codecs_charmap_encode(PyModuleDef *module, PyObject *args)
     PyObject *mapping = NULL;
 
     if (!PyArg_ParseTuple(args, "U|zO:charmap_encode",
-        &str, &errors, &mapping))
+        &str, &errors, &mapping)) {
         goto exit;
+    }
     return_value = _codecs_charmap_encode_impl(module, str, errors, mapping);
 
 exit:
@@ -1243,8 +1301,9 @@ _codecs_charmap_build(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *map;
 
-    if (!PyArg_Parse(arg, "U:charmap_build", &map))
+    if (!PyArg_Parse(arg, "U:charmap_build", &map)) {
         goto exit;
+    }
     return_value = _codecs_charmap_build_impl(module, map);
 
 exit:
@@ -1273,8 +1332,9 @@ _codecs_mbcs_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "U|z:mbcs_encode",
-        &str, &errors))
+        &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_mbcs_encode_impl(module, str, errors);
 
 exit:
@@ -1306,8 +1366,9 @@ _codecs_code_page_encode(PyModuleDef *module, PyObject *args)
     const char *errors = NULL;
 
     if (!PyArg_ParseTuple(args, "iU|z:code_page_encode",
-        &code_page, &str, &errors))
+        &code_page, &str, &errors)) {
         goto exit;
+    }
     return_value = _codecs_code_page_encode_impl(module, code_page, str, errors);
 
 exit:
@@ -1341,8 +1402,9 @@ _codecs_register_error(PyModuleDef *module, PyObject *args)
     PyObject *handler;
 
     if (!PyArg_ParseTuple(args, "sO:register_error",
-        &errors, &handler))
+        &errors, &handler)) {
         goto exit;
+    }
     return_value = _codecs_register_error_impl(module, errors, handler);
 
 exit:
@@ -1370,8 +1432,9 @@ _codecs_lookup_error(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     const char *name;
 
-    if (!PyArg_Parse(arg, "s:lookup_error", &name))
+    if (!PyArg_Parse(arg, "s:lookup_error", &name)) {
         goto exit;
+    }
     return_value = _codecs_lookup_error_impl(module, name);
 
 exit:
@@ -1393,4 +1456,4 @@ exit:
 #ifndef _CODECS_CODE_PAGE_ENCODE_METHODDEF
     #define _CODECS_CODE_PAGE_ENCODE_METHODDEF
 #endif /* !defined(_CODECS_CODE_PAGE_ENCODE_METHODDEF) */
-/*[clinic end generated code: output=04007a13c8387689 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=120320fe2ac32085 input=a9049054013a1b77]*/

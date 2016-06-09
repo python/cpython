@@ -28,14 +28,16 @@ zlib_compress(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int level = Z_DEFAULT_COMPRESSION;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "y*|i:compress", _keywords,
-        &data, &level))
+        &data, &level)) {
         goto exit;
+    }
     return_value = zlib_compress_impl(module, &data, level);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -69,14 +71,16 @@ zlib_decompress(PyModuleDef *module, PyObject *args)
     unsigned int bufsize = DEF_BUF_SIZE;
 
     if (!PyArg_ParseTuple(args, "y*|iO&:decompress",
-        &data, &wbits, capped_uint_converter, &bufsize))
+        &data, &wbits, capped_uint_converter, &bufsize)) {
         goto exit;
+    }
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -131,14 +135,16 @@ zlib_compressobj(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     Py_buffer zdict = {NULL, NULL};
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iiiiiy*:compressobj", _keywords,
-        &level, &method, &wbits, &memLevel, &strategy, &zdict))
+        &level, &method, &wbits, &memLevel, &strategy, &zdict)) {
         goto exit;
+    }
     return_value = zlib_compressobj_impl(module, level, method, wbits, memLevel, strategy, &zdict);
 
 exit:
     /* Cleanup for zdict */
-    if (zdict.obj)
+    if (zdict.obj) {
        PyBuffer_Release(&zdict);
+    }
 
     return return_value;
 }
@@ -170,8 +176,9 @@ zlib_decompressobj(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *zdict = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|iO:decompressobj", _keywords,
-        &wbits, &zdict))
+        &wbits, &zdict)) {
         goto exit;
+    }
     return_value = zlib_decompressobj_impl(module, wbits, zdict);
 
 exit:
@@ -203,14 +210,16 @@ zlib_Compress_compress(compobject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:compress", &data))
+    if (!PyArg_Parse(arg, "y*:compress", &data)) {
         goto exit;
+    }
     return_value = zlib_Compress_compress_impl(self, &data);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -247,14 +256,16 @@ zlib_Decompress_decompress(compobject *self, PyObject *args)
     unsigned int max_length = 0;
 
     if (!PyArg_ParseTuple(args, "y*|O&:decompress",
-        &data, capped_uint_converter, &max_length))
+        &data, capped_uint_converter, &max_length)) {
         goto exit;
+    }
     return_value = zlib_Decompress_decompress_impl(self, &data, max_length);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -284,8 +295,9 @@ zlib_Compress_flush(compobject *self, PyObject *args)
     int mode = Z_FINISH;
 
     if (!PyArg_ParseTuple(args, "|i:flush",
-        &mode))
+        &mode)) {
         goto exit;
+    }
     return_value = zlib_Compress_flush_impl(self, mode);
 
 exit:
@@ -358,8 +370,9 @@ zlib_Decompress_flush(compobject *self, PyObject *args)
     unsigned int length = DEF_BUF_SIZE;
 
     if (!PyArg_ParseTuple(args, "|O&:flush",
-        capped_uint_converter, &length))
+        capped_uint_converter, &length)) {
         goto exit;
+    }
     return_value = zlib_Decompress_flush_impl(self, length);
 
 exit:
@@ -391,14 +404,16 @@ zlib_adler32(PyModuleDef *module, PyObject *args)
     unsigned int value = 1;
 
     if (!PyArg_ParseTuple(args, "y*|I:adler32",
-        &data, &value))
+        &data, &value)) {
         goto exit;
+    }
     return_value = zlib_adler32_impl(module, &data, value);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -428,14 +443,16 @@ zlib_crc32(PyModuleDef *module, PyObject *args)
     unsigned int value = 0;
 
     if (!PyArg_ParseTuple(args, "y*|I:crc32",
-        &data, &value))
+        &data, &value)) {
         goto exit;
+    }
     return_value = zlib_crc32_impl(module, &data, value);
 
 exit:
     /* Cleanup for data */
-    if (data.obj)
+    if (data.obj) {
        PyBuffer_Release(&data);
+    }
 
     return return_value;
 }
@@ -443,4 +460,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=8669ba9266c78433 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9bd8a093baa653b2 input=a9049054013a1b77]*/

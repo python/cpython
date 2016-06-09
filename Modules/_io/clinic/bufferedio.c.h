@@ -19,14 +19,16 @@ _io__BufferedIOBase_readinto(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "w*:readinto", &buffer))
+    if (!PyArg_Parse(arg, "w*:readinto", &buffer)) {
         goto exit;
+    }
     return_value = _io__BufferedIOBase_readinto_impl(self, &buffer);
 
 exit:
     /* Cleanup for buffer */
-    if (buffer.obj)
+    if (buffer.obj) {
        PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -48,14 +50,16 @@ _io__BufferedIOBase_readinto1(PyObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "w*:readinto1", &buffer))
+    if (!PyArg_Parse(arg, "w*:readinto1", &buffer)) {
         goto exit;
+    }
     return_value = _io__BufferedIOBase_readinto1_impl(self, &buffer);
 
 exit:
     /* Cleanup for buffer */
-    if (buffer.obj)
+    if (buffer.obj) {
        PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -99,8 +103,9 @@ _io__Buffered_peek(buffered *self, PyObject *args)
     Py_ssize_t size = 0;
 
     if (!PyArg_ParseTuple(args, "|n:peek",
-        &size))
+        &size)) {
         goto exit;
+    }
     return_value = _io__Buffered_peek_impl(self, size);
 
 exit:
@@ -125,8 +130,9 @@ _io__Buffered_read(buffered *self, PyObject *args)
     Py_ssize_t n = -1;
 
     if (!PyArg_ParseTuple(args, "|O&:read",
-        _PyIO_ConvertSsize_t, &n))
+        _PyIO_ConvertSsize_t, &n)) {
         goto exit;
+    }
     return_value = _io__Buffered_read_impl(self, n);
 
 exit:
@@ -150,8 +156,9 @@ _io__Buffered_read1(buffered *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_ssize_t n;
 
-    if (!PyArg_Parse(arg, "n:read1", &n))
+    if (!PyArg_Parse(arg, "n:read1", &n)) {
         goto exit;
+    }
     return_value = _io__Buffered_read1_impl(self, n);
 
 exit:
@@ -175,14 +182,16 @@ _io__Buffered_readinto(buffered *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "w*:readinto", &buffer))
+    if (!PyArg_Parse(arg, "w*:readinto", &buffer)) {
         goto exit;
+    }
     return_value = _io__Buffered_readinto_impl(self, &buffer);
 
 exit:
     /* Cleanup for buffer */
-    if (buffer.obj)
+    if (buffer.obj) {
        PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -204,14 +213,16 @@ _io__Buffered_readinto1(buffered *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "w*:readinto1", &buffer))
+    if (!PyArg_Parse(arg, "w*:readinto1", &buffer)) {
         goto exit;
+    }
     return_value = _io__Buffered_readinto1_impl(self, &buffer);
 
 exit:
     /* Cleanup for buffer */
-    if (buffer.obj)
+    if (buffer.obj) {
        PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -234,8 +245,9 @@ _io__Buffered_readline(buffered *self, PyObject *args)
     Py_ssize_t size = -1;
 
     if (!PyArg_ParseTuple(args, "|O&:readline",
-        _PyIO_ConvertSsize_t, &size))
+        _PyIO_ConvertSsize_t, &size)) {
         goto exit;
+    }
     return_value = _io__Buffered_readline_impl(self, size);
 
 exit:
@@ -261,8 +273,9 @@ _io__Buffered_seek(buffered *self, PyObject *args)
     int whence = 0;
 
     if (!PyArg_ParseTuple(args, "O|i:seek",
-        &targetobj, &whence))
+        &targetobj, &whence)) {
         goto exit;
+    }
     return_value = _io__Buffered_seek_impl(self, targetobj, whence);
 
 exit:
@@ -288,8 +301,9 @@ _io__Buffered_truncate(buffered *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "truncate",
         0, 1,
-        &pos))
+        &pos)) {
         goto exit;
+    }
     return_value = _io__Buffered_truncate_impl(self, pos);
 
 exit:
@@ -315,8 +329,9 @@ _io_BufferedReader___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n:BufferedReader", _keywords,
-        &raw, &buffer_size))
+        &raw, &buffer_size)) {
         goto exit;
+    }
     return_value = _io_BufferedReader___init___impl((buffered *)self, raw, buffer_size);
 
 exit:
@@ -346,8 +361,9 @@ _io_BufferedWriter___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n:BufferedWriter", _keywords,
-        &raw, &buffer_size))
+        &raw, &buffer_size)) {
         goto exit;
+    }
     return_value = _io_BufferedWriter___init___impl((buffered *)self, raw, buffer_size);
 
 exit:
@@ -371,14 +387,16 @@ _io_BufferedWriter_write(buffered *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "y*:write", &buffer))
+    if (!PyArg_Parse(arg, "y*:write", &buffer)) {
         goto exit;
+    }
     return_value = _io_BufferedWriter_write_impl(self, &buffer);
 
 exit:
     /* Cleanup for buffer */
-    if (buffer.obj)
+    if (buffer.obj) {
        PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -410,11 +428,13 @@ _io_BufferedRWPair___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
     if ((Py_TYPE(self) == &PyBufferedRWPair_Type) &&
-        !_PyArg_NoKeywords("BufferedRWPair", kwargs))
+        !_PyArg_NoKeywords("BufferedRWPair", kwargs)) {
         goto exit;
+    }
     if (!PyArg_ParseTuple(args, "OO|n:BufferedRWPair",
-        &reader, &writer, &buffer_size))
+        &reader, &writer, &buffer_size)) {
         goto exit;
+    }
     return_value = _io_BufferedRWPair___init___impl((rwpair *)self, reader, writer, buffer_size);
 
 exit:
@@ -444,11 +464,12 @@ _io_BufferedRandom___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t buffer_size = DEFAULT_BUFFER_SIZE;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|n:BufferedRandom", _keywords,
-        &raw, &buffer_size))
+        &raw, &buffer_size)) {
         goto exit;
+    }
     return_value = _io_BufferedRandom___init___impl((buffered *)self, raw, buffer_size);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=2bbb5e239b4ffe6f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4f6196c756b880c8 input=a9049054013a1b77]*/

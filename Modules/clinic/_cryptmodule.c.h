@@ -27,11 +27,12 @@ crypt_crypt(PyModuleDef *module, PyObject *args)
     const char *salt;
 
     if (!PyArg_ParseTuple(args, "ss:crypt",
-        &word, &salt))
+        &word, &salt)) {
         goto exit;
+    }
     return_value = crypt_crypt_impl(module, word, salt);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=22c295c9bce018c4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=6977cf9917d9a684 input=a9049054013a1b77]*/

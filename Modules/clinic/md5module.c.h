@@ -85,11 +85,12 @@ _md5_md5(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *string = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:md5", _keywords,
-        &string))
+        &string)) {
         goto exit;
+    }
     return_value = _md5_md5_impl(module, string);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=0f803ded701aca54 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d701d041d387b081 input=a9049054013a1b77]*/

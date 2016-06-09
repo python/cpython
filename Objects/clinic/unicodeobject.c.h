@@ -31,11 +31,12 @@ unicode_maketrans(void *null, PyObject *args)
     PyObject *z = NULL;
 
     if (!PyArg_ParseTuple(args, "O|UU:maketrans",
-        &x, &y, &z))
+        &x, &y, &z)) {
         goto exit;
+    }
     return_value = unicode_maketrans_impl(x, y, z);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=94affdff5b2daff5 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=4a86dd108d92d104 input=a9049054013a1b77]*/

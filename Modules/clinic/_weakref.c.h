@@ -21,11 +21,12 @@ _weakref_getweakrefcount(PyModuleDef *module, PyObject *object)
     Py_ssize_t _return_value;
 
     _return_value = _weakref_getweakrefcount_impl(module, object);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4da9aade63eed77f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00e317cda5359ea3 input=a9049054013a1b77]*/

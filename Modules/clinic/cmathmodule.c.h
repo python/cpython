@@ -21,8 +21,9 @@ cmath_acos(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:acos", &z))
+    if (!PyArg_Parse(arg, "D:acos", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_acos_impl(module, z);
@@ -62,8 +63,9 @@ cmath_acosh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:acosh", &z))
+    if (!PyArg_Parse(arg, "D:acosh", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_acosh_impl(module, z);
@@ -103,8 +105,9 @@ cmath_asin(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:asin", &z))
+    if (!PyArg_Parse(arg, "D:asin", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_asin_impl(module, z);
@@ -144,8 +147,9 @@ cmath_asinh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:asinh", &z))
+    if (!PyArg_Parse(arg, "D:asinh", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_asinh_impl(module, z);
@@ -185,8 +189,9 @@ cmath_atan(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:atan", &z))
+    if (!PyArg_Parse(arg, "D:atan", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_atan_impl(module, z);
@@ -226,8 +231,9 @@ cmath_atanh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:atanh", &z))
+    if (!PyArg_Parse(arg, "D:atanh", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_atanh_impl(module, z);
@@ -267,8 +273,9 @@ cmath_cos(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:cos", &z))
+    if (!PyArg_Parse(arg, "D:cos", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_cos_impl(module, z);
@@ -308,8 +315,9 @@ cmath_cosh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:cosh", &z))
+    if (!PyArg_Parse(arg, "D:cosh", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_cosh_impl(module, z);
@@ -349,8 +357,9 @@ cmath_exp(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:exp", &z))
+    if (!PyArg_Parse(arg, "D:exp", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_exp_impl(module, z);
@@ -390,8 +399,9 @@ cmath_log10(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:log10", &z))
+    if (!PyArg_Parse(arg, "D:log10", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_log10_impl(module, z);
@@ -431,8 +441,9 @@ cmath_sin(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:sin", &z))
+    if (!PyArg_Parse(arg, "D:sin", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_sin_impl(module, z);
@@ -472,8 +483,9 @@ cmath_sinh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:sinh", &z))
+    if (!PyArg_Parse(arg, "D:sinh", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_sinh_impl(module, z);
@@ -513,8 +525,9 @@ cmath_sqrt(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:sqrt", &z))
+    if (!PyArg_Parse(arg, "D:sqrt", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_sqrt_impl(module, z);
@@ -554,8 +567,9 @@ cmath_tan(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:tan", &z))
+    if (!PyArg_Parse(arg, "D:tan", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_tan_impl(module, z);
@@ -595,8 +609,9 @@ cmath_tanh(PyModuleDef *module, PyObject *arg)
     Py_complex z;
     Py_complex _return_value;
 
-    if (!PyArg_Parse(arg, "D:tanh", &z))
+    if (!PyArg_Parse(arg, "D:tanh", &z)) {
         goto exit;
+    }
     /* modifications for z */
     errno = 0; PyFPE_START_PROTECT("complex function", goto exit);
     _return_value = cmath_tanh_impl(module, z);
@@ -639,8 +654,9 @@ cmath_log(PyModuleDef *module, PyObject *args)
     PyObject *y_obj = NULL;
 
     if (!PyArg_ParseTuple(args, "D|O:log",
-        &x, &y_obj))
+        &x, &y_obj)) {
         goto exit;
+    }
     return_value = cmath_log_impl(module, x, y_obj);
 
 exit:
@@ -665,8 +681,9 @@ cmath_phase(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:phase", &z))
+    if (!PyArg_Parse(arg, "D:phase", &z)) {
         goto exit;
+    }
     return_value = cmath_phase_impl(module, z);
 
 exit:
@@ -693,8 +710,9 @@ cmath_polar(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:polar", &z))
+    if (!PyArg_Parse(arg, "D:polar", &z)) {
         goto exit;
+    }
     return_value = cmath_polar_impl(module, z);
 
 exit:
@@ -721,8 +739,9 @@ cmath_rect(PyModuleDef *module, PyObject *args)
     double phi;
 
     if (!PyArg_ParseTuple(args, "dd:rect",
-        &r, &phi))
+        &r, &phi)) {
         goto exit;
+    }
     return_value = cmath_rect_impl(module, r, phi);
 
 exit:
@@ -747,8 +766,9 @@ cmath_isfinite(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:isfinite", &z))
+    if (!PyArg_Parse(arg, "D:isfinite", &z)) {
         goto exit;
+    }
     return_value = cmath_isfinite_impl(module, z);
 
 exit:
@@ -773,8 +793,9 @@ cmath_isnan(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:isnan", &z))
+    if (!PyArg_Parse(arg, "D:isnan", &z)) {
         goto exit;
+    }
     return_value = cmath_isnan_impl(module, z);
 
 exit:
@@ -799,8 +820,9 @@ cmath_isinf(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     Py_complex z;
 
-    if (!PyArg_Parse(arg, "D:isinf", &z))
+    if (!PyArg_Parse(arg, "D:isinf", &z)) {
         goto exit;
+    }
     return_value = cmath_isinf_impl(module, z);
 
 exit:
@@ -847,14 +869,16 @@ cmath_isclose(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int _return_value;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "DD|$dd:isclose", _keywords,
-        &a, &b, &rel_tol, &abs_tol))
+        &a, &b, &rel_tol, &abs_tol)) {
         goto exit;
+    }
     _return_value = cmath_isclose_impl(module, a, b, rel_tol, abs_tol);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyBool_FromLong((long)_return_value);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=229e9c48c9d27362 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f166205b4beb1826 input=a9049054013a1b77]*/

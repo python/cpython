@@ -171,8 +171,9 @@ _io_BytesIO_read(bytesio *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "read",
         0, 1,
-        &arg))
+        &arg)) {
         goto exit;
+    }
     return_value = _io_BytesIO_read_impl(self, arg);
 
 exit:
@@ -215,8 +216,9 @@ _io_BytesIO_readline(bytesio *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "readline",
         0, 1,
-        &arg))
+        &arg)) {
         goto exit;
+    }
     return_value = _io_BytesIO_readline_impl(self, arg);
 
 exit:
@@ -247,8 +249,9 @@ _io_BytesIO_readlines(bytesio *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "readlines",
         0, 1,
-        &arg))
+        &arg)) {
         goto exit;
+    }
     return_value = _io_BytesIO_readlines_impl(self, arg);
 
 exit:
@@ -276,14 +279,16 @@ _io_BytesIO_readinto(bytesio *self, PyObject *arg)
     PyObject *return_value = NULL;
     Py_buffer buffer = {NULL, NULL};
 
-    if (!PyArg_Parse(arg, "w*:readinto", &buffer))
+    if (!PyArg_Parse(arg, "w*:readinto", &buffer)) {
         goto exit;
+    }
     return_value = _io_BytesIO_readinto_impl(self, &buffer);
 
 exit:
     /* Cleanup for buffer */
-    if (buffer.obj)
+    if (buffer.obj) {
        PyBuffer_Release(&buffer);
+    }
 
     return return_value;
 }
@@ -311,8 +316,9 @@ _io_BytesIO_truncate(bytesio *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "truncate",
         0, 1,
-        &arg))
+        &arg)) {
         goto exit;
+    }
     return_value = _io_BytesIO_truncate_impl(self, arg);
 
 exit:
@@ -345,8 +351,9 @@ _io_BytesIO_seek(bytesio *self, PyObject *args)
     int whence = 0;
 
     if (!PyArg_ParseTuple(args, "n|i:seek",
-        &pos, &whence))
+        &pos, &whence)) {
         goto exit;
+    }
     return_value = _io_BytesIO_seek_impl(self, pos, whence);
 
 exit:
@@ -412,11 +419,12 @@ _io_BytesIO___init__(PyObject *self, PyObject *args, PyObject *kwargs)
     PyObject *initvalue = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:BytesIO", _keywords,
-        &initvalue))
+        &initvalue)) {
         goto exit;
+    }
     return_value = _io_BytesIO___init___impl((bytesio *)self, initvalue);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=60ce2c6272718431 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=3fdb62f3e3b0544d input=a9049054013a1b77]*/

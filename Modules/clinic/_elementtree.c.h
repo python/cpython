@@ -19,8 +19,9 @@ _elementtree_Element_append(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyArg_Parse(arg, "O!:append", &Element_Type, &subelement))
+    if (!PyArg_Parse(arg, "O!:append", &Element_Type, &subelement)) {
         goto exit;
+    }
     return_value = _elementtree_Element_append_impl(self, subelement);
 
 exit:
@@ -87,8 +88,9 @@ _elementtree_Element___sizeof__(ElementObject *self, PyObject *Py_UNUSED(ignored
     Py_ssize_t _return_value;
 
     _return_value = _elementtree_Element___sizeof___impl(self);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
@@ -149,8 +151,9 @@ _elementtree_Element_find(ElementObject *self, PyObject *args, PyObject *kwargs)
     PyObject *namespaces = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:find", _keywords,
-        &path, &namespaces))
+        &path, &namespaces)) {
         goto exit;
+    }
     return_value = _elementtree_Element_find_impl(self, path, namespaces);
 
 exit:
@@ -180,8 +183,9 @@ _elementtree_Element_findtext(ElementObject *self, PyObject *args, PyObject *kwa
     PyObject *namespaces = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|OO:findtext", _keywords,
-        &path, &default_value, &namespaces))
+        &path, &default_value, &namespaces)) {
         goto exit;
+    }
     return_value = _elementtree_Element_findtext_impl(self, path, default_value, namespaces);
 
 exit:
@@ -209,8 +213,9 @@ _elementtree_Element_findall(ElementObject *self, PyObject *args, PyObject *kwar
     PyObject *namespaces = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:findall", _keywords,
-        &path, &namespaces))
+        &path, &namespaces)) {
         goto exit;
+    }
     return_value = _elementtree_Element_findall_impl(self, path, namespaces);
 
 exit:
@@ -238,8 +243,9 @@ _elementtree_Element_iterfind(ElementObject *self, PyObject *args, PyObject *kwa
     PyObject *namespaces = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:iterfind", _keywords,
-        &path, &namespaces))
+        &path, &namespaces)) {
         goto exit;
+    }
     return_value = _elementtree_Element_iterfind_impl(self, path, namespaces);
 
 exit:
@@ -267,8 +273,9 @@ _elementtree_Element_get(ElementObject *self, PyObject *args, PyObject *kwargs)
     PyObject *default_value = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|O:get", _keywords,
-        &key, &default_value))
+        &key, &default_value)) {
         goto exit;
+    }
     return_value = _elementtree_Element_get_impl(self, key, default_value);
 
 exit:
@@ -311,8 +318,9 @@ _elementtree_Element_iter(ElementObject *self, PyObject *args, PyObject *kwargs)
     PyObject *tag = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:iter", _keywords,
-        &tag))
+        &tag)) {
         goto exit;
+    }
     return_value = _elementtree_Element_iter_impl(self, tag);
 
 exit:
@@ -356,8 +364,9 @@ _elementtree_Element_insert(ElementObject *self, PyObject *args)
     PyObject *subelement;
 
     if (!PyArg_ParseTuple(args, "nO!:insert",
-        &index, &Element_Type, &subelement))
+        &index, &Element_Type, &subelement)) {
         goto exit;
+    }
     return_value = _elementtree_Element_insert_impl(self, index, subelement);
 
 exit:
@@ -419,8 +428,9 @@ _elementtree_Element_makeelement(ElementObject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "makeelement",
         2, 2,
-        &tag, &attrib))
+        &tag, &attrib)) {
         goto exit;
+    }
     return_value = _elementtree_Element_makeelement_impl(self, tag, attrib);
 
 exit:
@@ -444,8 +454,9 @@ _elementtree_Element_remove(ElementObject *self, PyObject *arg)
     PyObject *return_value = NULL;
     PyObject *subelement;
 
-    if (!PyArg_Parse(arg, "O!:remove", &Element_Type, &subelement))
+    if (!PyArg_Parse(arg, "O!:remove", &Element_Type, &subelement)) {
         goto exit;
+    }
     return_value = _elementtree_Element_remove_impl(self, subelement);
 
 exit:
@@ -473,8 +484,9 @@ _elementtree_Element_set(ElementObject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "set",
         2, 2,
-        &key, &value))
+        &key, &value)) {
         goto exit;
+    }
     return_value = _elementtree_Element_set_impl(self, key, value);
 
 exit:
@@ -493,8 +505,9 @@ _elementtree_TreeBuilder___init__(PyObject *self, PyObject *args, PyObject *kwar
     PyObject *element_factory = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:TreeBuilder", _keywords,
-        &element_factory))
+        &element_factory)) {
         goto exit;
+    }
     return_value = _elementtree_TreeBuilder___init___impl((TreeBuilderObject *)self, element_factory);
 
 exit:
@@ -555,8 +568,9 @@ _elementtree_TreeBuilder_start(TreeBuilderObject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "start",
         1, 2,
-        &tag, &attrs))
+        &tag, &attrs)) {
         goto exit;
+    }
     return_value = _elementtree_TreeBuilder_start_impl(self, tag, attrs);
 
 exit:
@@ -577,8 +591,9 @@ _elementtree_XMLParser___init__(PyObject *self, PyObject *args, PyObject *kwargs
     const char *encoding = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|OOz:XMLParser", _keywords,
-        &html, &target, &encoding))
+        &html, &target, &encoding)) {
         goto exit;
+    }
     return_value = _elementtree_XMLParser___init___impl((XMLParserObject *)self, html, target, encoding);
 
 exit:
@@ -640,8 +655,9 @@ _elementtree_XMLParser_doctype(XMLParserObject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "doctype",
         3, 3,
-        &name, &pubid, &system))
+        &name, &pubid, &system)) {
         goto exit;
+    }
     return_value = _elementtree_XMLParser_doctype_impl(self, name, pubid, system);
 
 exit:
@@ -670,11 +686,12 @@ _elementtree_XMLParser__setevents(XMLParserObject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "_setevents",
         1, 2,
-        &events_queue, &events_to_report))
+        &events_queue, &events_to_report)) {
         goto exit;
+    }
     return_value = _elementtree_XMLParser__setevents_impl(self, events_queue, events_to_report);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=19d94e2d2726d3aa input=a9049054013a1b77]*/
+/*[clinic end generated code: output=491eb5718c1ae64b input=a9049054013a1b77]*/
