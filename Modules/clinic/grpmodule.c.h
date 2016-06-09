@@ -24,8 +24,9 @@ grp_getgrgid(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *id;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:getgrgid", _keywords,
-        &id))
+        &id)) {
         goto exit;
+    }
     return_value = grp_getgrgid_impl(module, id);
 
 exit:
@@ -54,8 +55,9 @@ grp_getgrnam(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *name;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "U:getgrnam", _keywords,
-        &name))
+        &name)) {
         goto exit;
+    }
     return_value = grp_getgrnam_impl(module, name);
 
 exit:
@@ -82,4 +84,4 @@ grp_getgrall(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=5191c25600afb1bd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a8a097520206ccd6 input=a9049054013a1b77]*/

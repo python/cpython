@@ -24,14 +24,16 @@ audioop_getsample(PyModuleDef *module, PyObject *args)
     Py_ssize_t index;
 
     if (!PyArg_ParseTuple(args, "y*in:getsample",
-        &fragment, &width, &index))
+        &fragment, &width, &index)) {
         goto exit;
+    }
     return_value = audioop_getsample_impl(module, &fragment, width, index);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -56,14 +58,16 @@ audioop_max(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:max",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_max_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -88,14 +92,16 @@ audioop_minmax(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:minmax",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_minmax_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -120,14 +126,16 @@ audioop_avg(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:avg",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_avg_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -152,14 +160,16 @@ audioop_rms(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:rms",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_rms_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -185,17 +195,20 @@ audioop_findfit(PyModuleDef *module, PyObject *args)
     Py_buffer reference = {NULL, NULL};
 
     if (!PyArg_ParseTuple(args, "y*y*:findfit",
-        &fragment, &reference))
+        &fragment, &reference)) {
         goto exit;
+    }
     return_value = audioop_findfit_impl(module, &fragment, &reference);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
     /* Cleanup for reference */
-    if (reference.obj)
+    if (reference.obj) {
        PyBuffer_Release(&reference);
+    }
 
     return return_value;
 }
@@ -221,17 +234,20 @@ audioop_findfactor(PyModuleDef *module, PyObject *args)
     Py_buffer reference = {NULL, NULL};
 
     if (!PyArg_ParseTuple(args, "y*y*:findfactor",
-        &fragment, &reference))
+        &fragment, &reference)) {
         goto exit;
+    }
     return_value = audioop_findfactor_impl(module, &fragment, &reference);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
     /* Cleanup for reference */
-    if (reference.obj)
+    if (reference.obj) {
        PyBuffer_Release(&reference);
+    }
 
     return return_value;
 }
@@ -257,14 +273,16 @@ audioop_findmax(PyModuleDef *module, PyObject *args)
     Py_ssize_t length;
 
     if (!PyArg_ParseTuple(args, "y*n:findmax",
-        &fragment, &length))
+        &fragment, &length)) {
         goto exit;
+    }
     return_value = audioop_findmax_impl(module, &fragment, length);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -289,14 +307,16 @@ audioop_avgpp(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:avgpp",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_avgpp_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -321,14 +341,16 @@ audioop_maxpp(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:maxpp",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_maxpp_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -353,14 +375,16 @@ audioop_cross(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:cross",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_cross_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -387,14 +411,16 @@ audioop_mul(PyModuleDef *module, PyObject *args)
     double factor;
 
     if (!PyArg_ParseTuple(args, "y*id:mul",
-        &fragment, &width, &factor))
+        &fragment, &width, &factor)) {
         goto exit;
+    }
     return_value = audioop_mul_impl(module, &fragment, width, factor);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -422,14 +448,16 @@ audioop_tomono(PyModuleDef *module, PyObject *args)
     double rfactor;
 
     if (!PyArg_ParseTuple(args, "y*idd:tomono",
-        &fragment, &width, &lfactor, &rfactor))
+        &fragment, &width, &lfactor, &rfactor)) {
         goto exit;
+    }
     return_value = audioop_tomono_impl(module, &fragment, width, lfactor, rfactor);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -457,14 +485,16 @@ audioop_tostereo(PyModuleDef *module, PyObject *args)
     double rfactor;
 
     if (!PyArg_ParseTuple(args, "y*idd:tostereo",
-        &fragment, &width, &lfactor, &rfactor))
+        &fragment, &width, &lfactor, &rfactor)) {
         goto exit;
+    }
     return_value = audioop_tostereo_impl(module, &fragment, width, lfactor, rfactor);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -491,17 +521,20 @@ audioop_add(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*y*i:add",
-        &fragment1, &fragment2, &width))
+        &fragment1, &fragment2, &width)) {
         goto exit;
+    }
     return_value = audioop_add_impl(module, &fragment1, &fragment2, width);
 
 exit:
     /* Cleanup for fragment1 */
-    if (fragment1.obj)
+    if (fragment1.obj) {
        PyBuffer_Release(&fragment1);
+    }
     /* Cleanup for fragment2 */
-    if (fragment2.obj)
+    if (fragment2.obj) {
        PyBuffer_Release(&fragment2);
+    }
 
     return return_value;
 }
@@ -528,14 +561,16 @@ audioop_bias(PyModuleDef *module, PyObject *args)
     int bias;
 
     if (!PyArg_ParseTuple(args, "y*ii:bias",
-        &fragment, &width, &bias))
+        &fragment, &width, &bias)) {
         goto exit;
+    }
     return_value = audioop_bias_impl(module, &fragment, width, bias);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -560,14 +595,16 @@ audioop_reverse(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:reverse",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_reverse_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -592,14 +629,16 @@ audioop_byteswap(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:byteswap",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_byteswap_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -626,14 +665,16 @@ audioop_lin2lin(PyModuleDef *module, PyObject *args)
     int newwidth;
 
     if (!PyArg_ParseTuple(args, "y*ii:lin2lin",
-        &fragment, &width, &newwidth))
+        &fragment, &width, &newwidth)) {
         goto exit;
+    }
     return_value = audioop_lin2lin_impl(module, &fragment, width, newwidth);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -667,14 +708,16 @@ audioop_ratecv(PyModuleDef *module, PyObject *args)
     int weightB = 0;
 
     if (!PyArg_ParseTuple(args, "y*iiiiO|ii:ratecv",
-        &fragment, &width, &nchannels, &inrate, &outrate, &state, &weightA, &weightB))
+        &fragment, &width, &nchannels, &inrate, &outrate, &state, &weightA, &weightB)) {
         goto exit;
+    }
     return_value = audioop_ratecv_impl(module, &fragment, width, nchannels, inrate, outrate, state, weightA, weightB);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -699,14 +742,16 @@ audioop_lin2ulaw(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:lin2ulaw",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_lin2ulaw_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -731,14 +776,16 @@ audioop_ulaw2lin(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:ulaw2lin",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_ulaw2lin_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -763,14 +810,16 @@ audioop_lin2alaw(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:lin2alaw",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_lin2alaw_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -795,14 +844,16 @@ audioop_alaw2lin(PyModuleDef *module, PyObject *args)
     int width;
 
     if (!PyArg_ParseTuple(args, "y*i:alaw2lin",
-        &fragment, &width))
+        &fragment, &width)) {
         goto exit;
+    }
     return_value = audioop_alaw2lin_impl(module, &fragment, width);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -829,14 +880,16 @@ audioop_lin2adpcm(PyModuleDef *module, PyObject *args)
     PyObject *state;
 
     if (!PyArg_ParseTuple(args, "y*iO:lin2adpcm",
-        &fragment, &width, &state))
+        &fragment, &width, &state)) {
         goto exit;
+    }
     return_value = audioop_lin2adpcm_impl(module, &fragment, width, state);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
@@ -863,15 +916,17 @@ audioop_adpcm2lin(PyModuleDef *module, PyObject *args)
     PyObject *state;
 
     if (!PyArg_ParseTuple(args, "y*iO:adpcm2lin",
-        &fragment, &width, &state))
+        &fragment, &width, &state)) {
         goto exit;
+    }
     return_value = audioop_adpcm2lin_impl(module, &fragment, width, state);
 
 exit:
     /* Cleanup for fragment */
-    if (fragment.obj)
+    if (fragment.obj) {
        PyBuffer_Release(&fragment);
+    }
 
     return return_value;
 }
-/*[clinic end generated code: output=a076e1b213a8727b input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af5b025f0241fee2 input=a9049054013a1b77]*/

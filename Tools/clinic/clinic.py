@@ -797,8 +797,9 @@ class CLanguage(Language):
                     """ % argname)
 
                 parser_definition = parser_body(parser_prototype, normalize_snippet("""
-                    if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments}))
+                    if (!PyArg_Parse(%s, "{format_units}:{name}", {parse_arguments})) {{
                         goto exit;
+                    }}
                     """ % argname, indent=4))
 
         elif has_option_groups:
@@ -822,8 +823,9 @@ class CLanguage(Language):
             parser_definition = parser_body(parser_prototype, normalize_snippet("""
                 if (!PyArg_UnpackTuple(args, "{name}",
                     {unpack_min}, {unpack_max},
-                    {parse_arguments}))
+                    {parse_arguments})) {{
                     goto exit;
+                }}
                 """, indent=4))
 
         elif positional:
@@ -835,8 +837,9 @@ class CLanguage(Language):
 
             parser_definition = parser_body(parser_prototype, normalize_snippet("""
                 if (!PyArg_ParseTuple(args, "{format_units}:{name}",
-                    {parse_arguments}))
+                    {parse_arguments})) {{
                     goto exit;
+                }}
                 """, indent=4))
 
         else:
@@ -847,13 +850,15 @@ class CLanguage(Language):
 
             body = normalize_snippet("""
                 if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
-                    {parse_arguments}))
+                    {parse_arguments})) {{
                     goto exit;
-            """, indent=4)
+                }}
+                """, indent=4)
             parser_definition = parser_body(parser_prototype, normalize_snippet("""
                 if (!PyArg_ParseTupleAndKeywords(args, kwargs, "{format_units}:{name}", _keywords,
-                    {parse_arguments}))
+                    {parse_arguments})) {{
                     goto exit;
+                }}
                 """, indent=4))
             parser_definition = insert_keywords(parser_definition)
 
@@ -878,13 +883,15 @@ class CLanguage(Language):
 
             if not parses_keywords:
                 fields.insert(0, normalize_snippet("""
-                    if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs))
+                    if ({self_type_check}!_PyArg_NoKeywords("{name}", kwargs)) {{
                         goto exit;
+                    }}
                     """, indent=4))
                 if not parses_positional:
                     fields.insert(0, normalize_snippet("""
-                        if ({self_type_check}!_PyArg_NoPositional("{name}", args))
+                        if ({self_type_check}!_PyArg_NoPositional("{name}", args)) {{
                             goto exit;
+                        }}
                         """, indent=4))
 
             parser_definition = parser_body(parser_prototype, *fields)
@@ -1032,8 +1039,9 @@ class CLanguage(Language):
 
             s = """
     case {count}:
-        if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments}))
+        if (!PyArg_ParseTuple(args, "{format_units}:{name}", {parse_arguments})) {{
             goto exit;
+        }}
         {group_booleans}
         break;
 """[1:]
@@ -2676,7 +2684,7 @@ class str_converter(CConverter):
     def cleanup(self):
         if self.encoding:
             name = ensure_legal_c_identifier(self.name)
-            return "".join(["if (", name, ")\n   PyMem_FREE(", name, ");\n"])
+            return "".join(["if (", name, ") {\n   PyMem_FREE(", name, ");\n}\n"])
 
 #
 # This is the fourth or fifth rewrite of registering all the
@@ -2786,7 +2794,7 @@ class Py_buffer_converter(CConverter):
 
     def cleanup(self):
         name = ensure_legal_c_identifier(self.name)
-        return "".join(["if (", name, ".obj)\n   PyBuffer_Release(&", name, ");\n"])
+        return "".join(["if (", name, ".obj) {\n   PyBuffer_Release(&", name, ");\n}\n"])
 
 
 def correct_name_for_self(f):
@@ -2959,10 +2967,10 @@ class CReturnConverter(metaclass=CReturnConverterAutoRegister):
         data.return_value = name
 
     def err_occurred_if(self, expr, data):
-        data.return_conversion.append('if (({}) && PyErr_Occurred())\n    goto exit;\n'.format(expr))
+        data.return_conversion.append('if (({}) && PyErr_Occurred()) {{\n    goto exit;\n}}\n'.format(expr))
 
     def err_occurred_if_null_pointer(self, variable, data):
-        data.return_conversion.append('if ({} == NULL)\n    goto exit;\n'.format(variable))
+        data.return_conversion.append('if ({} == NULL) {{\n    goto exit;\n}}\n'.format(variable))
 
     def render(self, function, data):
         """
@@ -2977,8 +2985,9 @@ class NoneType_return_converter(CReturnConverter):
     def render(self, function, data):
         self.declare(data)
         data.return_conversion.append('''
-if (_return_value != Py_None)
+if (_return_value != Py_None) {
     goto exit;
+}
 return_value = Py_None;
 Py_INCREF(Py_None);
 '''.strip())

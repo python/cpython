@@ -51,8 +51,9 @@ msvcrt_locking(PyModuleDef *module, PyObject *args)
     long nbytes;
 
     if (!PyArg_ParseTuple(args, "iil:locking",
-        &fd, &mode, &nbytes))
+        &fd, &mode, &nbytes)) {
         goto exit;
+    }
     return_value = msvcrt_locking_impl(module, fd, mode, nbytes);
 
 exit:
@@ -85,11 +86,13 @@ msvcrt_setmode(PyModuleDef *module, PyObject *args)
     long _return_value;
 
     if (!PyArg_ParseTuple(args, "ii:setmode",
-        &fd, &flags))
+        &fd, &flags)) {
         goto exit;
+    }
     _return_value = msvcrt_setmode_impl(module, fd, flags);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong(_return_value);
 
 exit:
@@ -122,11 +125,13 @@ msvcrt_open_osfhandle(PyModuleDef *module, PyObject *args)
     long _return_value;
 
     if (!PyArg_ParseTuple(args, ""_Py_PARSE_INTPTR"i:open_osfhandle",
-        &handle, &flags))
+        &handle, &flags)) {
         goto exit;
+    }
     _return_value = msvcrt_open_osfhandle_impl(module, handle, flags);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong(_return_value);
 
 exit:
@@ -154,11 +159,13 @@ msvcrt_get_osfhandle(PyModuleDef *module, PyObject *arg)
     int fd;
     Py_intptr_t _return_value;
 
-    if (!PyArg_Parse(arg, "i:get_osfhandle", &fd))
+    if (!PyArg_Parse(arg, "i:get_osfhandle", &fd)) {
         goto exit;
+    }
     _return_value = msvcrt_get_osfhandle_impl(module, fd);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromVoidPtr((void *)_return_value);
 
 exit:
@@ -184,8 +191,9 @@ msvcrt_kbhit(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
     long _return_value;
 
     _return_value = msvcrt_kbhit_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong(_return_value);
 
 exit:
@@ -312,8 +320,9 @@ msvcrt_putch(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     char char_value;
 
-    if (!PyArg_Parse(arg, "c:putch", &char_value))
+    if (!PyArg_Parse(arg, "c:putch", &char_value)) {
         goto exit;
+    }
     return_value = msvcrt_putch_impl(module, char_value);
 
 exit:
@@ -338,8 +347,9 @@ msvcrt_putwch(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     int unicode_char;
 
-    if (!PyArg_Parse(arg, "C:putwch", &unicode_char))
+    if (!PyArg_Parse(arg, "C:putwch", &unicode_char)) {
         goto exit;
+    }
     return_value = msvcrt_putwch_impl(module, unicode_char);
 
 exit:
@@ -368,8 +378,9 @@ msvcrt_ungetch(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     char char_value;
 
-    if (!PyArg_Parse(arg, "c:ungetch", &char_value))
+    if (!PyArg_Parse(arg, "c:ungetch", &char_value)) {
         goto exit;
+    }
     return_value = msvcrt_ungetch_impl(module, char_value);
 
 exit:
@@ -394,8 +405,9 @@ msvcrt_ungetwch(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     int unicode_char;
 
-    if (!PyArg_Parse(arg, "C:ungetwch", &unicode_char))
+    if (!PyArg_Parse(arg, "C:ungetwch", &unicode_char)) {
         goto exit;
+    }
     return_value = msvcrt_ungetwch_impl(module, unicode_char);
 
 exit:
@@ -427,11 +439,13 @@ msvcrt_CrtSetReportFile(PyModuleDef *module, PyObject *args)
     long _return_value;
 
     if (!PyArg_ParseTuple(args, "ii:CrtSetReportFile",
-        &type, &file))
+        &type, &file)) {
         goto exit;
+    }
     _return_value = msvcrt_CrtSetReportFile_impl(module, type, file);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong(_return_value);
 
 exit:
@@ -465,11 +479,13 @@ msvcrt_CrtSetReportMode(PyModuleDef *module, PyObject *args)
     long _return_value;
 
     if (!PyArg_ParseTuple(args, "ii:CrtSetReportMode",
-        &type, &mode))
+        &type, &mode)) {
         goto exit;
+    }
     _return_value = msvcrt_CrtSetReportMode_impl(module, type, mode);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong(_return_value);
 
 exit:
@@ -501,11 +517,13 @@ msvcrt_set_error_mode(PyModuleDef *module, PyObject *arg)
     int mode;
     long _return_value;
 
-    if (!PyArg_Parse(arg, "i:set_error_mode", &mode))
+    if (!PyArg_Parse(arg, "i:set_error_mode", &mode)) {
         goto exit;
+    }
     _return_value = msvcrt_set_error_mode_impl(module, mode);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong(_return_value);
 
 exit:
@@ -532,8 +550,9 @@ msvcrt_SetErrorMode(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     unsigned int mode;
 
-    if (!PyArg_Parse(arg, "I:SetErrorMode", &mode))
+    if (!PyArg_Parse(arg, "I:SetErrorMode", &mode)) {
         goto exit;
+    }
     return_value = msvcrt_SetErrorMode_impl(module, mode);
 
 exit:
@@ -551,4 +570,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=16613d3119a1fd44 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=636de3460aecbca7 input=a9049054013a1b77]*/

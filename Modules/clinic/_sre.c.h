@@ -20,8 +20,9 @@ _sre_getcodesize(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
     int _return_value;
 
     _return_value = _sre_getcodesize_impl(module);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong((long)_return_value);
 
 exit:
@@ -48,11 +49,13 @@ _sre_getlower(PyModuleDef *module, PyObject *args)
     int _return_value;
 
     if (!PyArg_ParseTuple(args, "ii:getlower",
-        &character, &flags))
+        &character, &flags)) {
         goto exit;
+    }
     _return_value = _sre_getlower_impl(module, character, flags);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromLong((long)_return_value);
 
 exit:
@@ -84,8 +87,9 @@ _sre_SRE_Pattern_match(PatternObject *self, PyObject *args, PyObject *kwargs)
     PyObject *pattern = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Onn$O:match", _keywords,
-        &string, &pos, &endpos, &pattern))
+        &string, &pos, &endpos, &pattern)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern_match_impl(self, string, pos, endpos, pattern);
 
 exit:
@@ -118,8 +122,9 @@ _sre_SRE_Pattern_fullmatch(PatternObject *self, PyObject *args, PyObject *kwargs
     PyObject *pattern = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Onn$O:fullmatch", _keywords,
-        &string, &pos, &endpos, &pattern))
+        &string, &pos, &endpos, &pattern)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern_fullmatch_impl(self, string, pos, endpos, pattern);
 
 exit:
@@ -154,8 +159,9 @@ _sre_SRE_Pattern_search(PatternObject *self, PyObject *args, PyObject *kwargs)
     PyObject *pattern = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Onn$O:search", _keywords,
-        &string, &pos, &endpos, &pattern))
+        &string, &pos, &endpos, &pattern)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern_search_impl(self, string, pos, endpos, pattern);
 
 exit:
@@ -188,8 +194,9 @@ _sre_SRE_Pattern_findall(PatternObject *self, PyObject *args, PyObject *kwargs)
     PyObject *source = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|Onn$O:findall", _keywords,
-        &string, &pos, &endpos, &source))
+        &string, &pos, &endpos, &source)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern_findall_impl(self, string, pos, endpos, source);
 
 exit:
@@ -221,8 +228,9 @@ _sre_SRE_Pattern_finditer(PatternObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nn:finditer", _keywords,
-        &string, &pos, &endpos))
+        &string, &pos, &endpos)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern_finditer_impl(self, string, pos, endpos);
 
 exit:
@@ -251,8 +259,9 @@ _sre_SRE_Pattern_scanner(PatternObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t endpos = PY_SSIZE_T_MAX;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|nn:scanner", _keywords,
-        &string, &pos, &endpos))
+        &string, &pos, &endpos)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern_scanner_impl(self, string, pos, endpos);
 
 exit:
@@ -282,8 +291,9 @@ _sre_SRE_Pattern_split(PatternObject *self, PyObject *args, PyObject *kwargs)
     PyObject *source = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|On$O:split", _keywords,
-        &string, &maxsplit, &source))
+        &string, &maxsplit, &source)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern_split_impl(self, string, maxsplit, source);
 
 exit:
@@ -313,8 +323,9 @@ _sre_SRE_Pattern_sub(PatternObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t count = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|n:sub", _keywords,
-        &repl, &string, &count))
+        &repl, &string, &count)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern_sub_impl(self, repl, string, count);
 
 exit:
@@ -344,8 +355,9 @@ _sre_SRE_Pattern_subn(PatternObject *self, PyObject *args, PyObject *kwargs)
     Py_ssize_t count = 0;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO|n:subn", _keywords,
-        &repl, &string, &count))
+        &repl, &string, &count)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern_subn_impl(self, repl, string, count);
 
 exit:
@@ -388,8 +400,9 @@ _sre_SRE_Pattern___deepcopy__(PatternObject *self, PyObject *args, PyObject *kwa
     PyObject *memo;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:__deepcopy__", _keywords,
-        &memo))
+        &memo)) {
         goto exit;
+    }
     return_value = _sre_SRE_Pattern___deepcopy___impl(self, memo);
 
 exit:
@@ -423,8 +436,9 @@ _sre_compile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *indexgroup;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OiO!nOO:compile", _keywords,
-        &pattern, &flags, &PyList_Type, &code, &groups, &groupindex, &indexgroup))
+        &pattern, &flags, &PyList_Type, &code, &groups, &groupindex, &indexgroup)) {
         goto exit;
+    }
     return_value = _sre_compile_impl(module, pattern, flags, code, groups, groupindex, indexgroup);
 
 exit:
@@ -451,8 +465,9 @@ _sre_SRE_Match_expand(MatchObject *self, PyObject *args, PyObject *kwargs)
     PyObject *template;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:expand", _keywords,
-        &template))
+        &template)) {
         goto exit;
+    }
     return_value = _sre_SRE_Match_expand_impl(self, template);
 
 exit:
@@ -482,8 +497,9 @@ _sre_SRE_Match_groups(MatchObject *self, PyObject *args, PyObject *kwargs)
     PyObject *default_value = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:groups", _keywords,
-        &default_value))
+        &default_value)) {
         goto exit;
+    }
     return_value = _sre_SRE_Match_groups_impl(self, default_value);
 
 exit:
@@ -513,8 +529,9 @@ _sre_SRE_Match_groupdict(MatchObject *self, PyObject *args, PyObject *kwargs)
     PyObject *default_value = Py_None;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:groupdict", _keywords,
-        &default_value))
+        &default_value)) {
         goto exit;
+    }
     return_value = _sre_SRE_Match_groupdict_impl(self, default_value);
 
 exit:
@@ -542,11 +559,13 @@ _sre_SRE_Match_start(MatchObject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "start",
         0, 1,
-        &group))
+        &group)) {
         goto exit;
+    }
     _return_value = _sre_SRE_Match_start_impl(self, group);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
@@ -574,11 +593,13 @@ _sre_SRE_Match_end(MatchObject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "end",
         0, 1,
-        &group))
+        &group)) {
         goto exit;
+    }
     _return_value = _sre_SRE_Match_end_impl(self, group);
-    if ((_return_value == -1) && PyErr_Occurred())
+    if ((_return_value == -1) && PyErr_Occurred()) {
         goto exit;
+    }
     return_value = PyLong_FromSsize_t(_return_value);
 
 exit:
@@ -605,8 +626,9 @@ _sre_SRE_Match_span(MatchObject *self, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "span",
         0, 1,
-        &group))
+        &group)) {
         goto exit;
+    }
     return_value = _sre_SRE_Match_span_impl(self, group);
 
 exit:
@@ -649,8 +671,9 @@ _sre_SRE_Match___deepcopy__(MatchObject *self, PyObject *args, PyObject *kwargs)
     PyObject *memo;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O:__deepcopy__", _keywords,
-        &memo))
+        &memo)) {
         goto exit;
+    }
     return_value = _sre_SRE_Match___deepcopy___impl(self, memo);
 
 exit:
@@ -690,4 +713,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=d1d73ab2c5008bd4 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=00f7bf869b3283bc input=a9049054013a1b77]*/

@@ -85,8 +85,9 @@ _sha256_sha256(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *string = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha256", _keywords,
-        &string))
+        &string)) {
         goto exit;
+    }
     return_value = _sha256_sha256_impl(module, string);
 
 exit:
@@ -113,11 +114,12 @@ _sha256_sha224(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     PyObject *string = NULL;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|O:sha224", _keywords,
-        &string))
+        &string)) {
         goto exit;
+    }
     return_value = _sha256_sha224_impl(module, string);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=354cedf3b632c7b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e85cc4a223371d84 input=a9049054013a1b77]*/

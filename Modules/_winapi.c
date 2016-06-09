@@ -175,7 +175,7 @@ class HANDLE_return_converter(CReturnConverter):
         self.declare(data)
         self.err_occurred_if("_return_value == INVALID_HANDLE_VALUE", data)
         data.return_conversion.append(
-            'if (_return_value == NULL)\n    Py_RETURN_NONE;\n')
+            'if (_return_value == NULL) {\n    Py_RETURN_NONE;\n}\n')
         data.return_conversion.append(
             'return_value = HANDLE_TO_PYNUM(_return_value);\n')
 
@@ -188,7 +188,7 @@ class DWORD_return_converter(CReturnConverter):
         data.return_conversion.append(
             'return_value = Py_BuildValue("k", _return_value);\n')
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=374076979596ebba]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=94819e72d2c6d558]*/
 
 #include "clinic/_winapi.c.h"
 

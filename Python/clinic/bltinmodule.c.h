@@ -94,8 +94,9 @@ builtin_format(PyModuleDef *module, PyObject *args)
     PyObject *format_spec = NULL;
 
     if (!PyArg_ParseTuple(args, "O|U:format",
-        &value, &format_spec))
+        &value, &format_spec)) {
         goto exit;
+    }
     return_value = builtin_format_impl(module, value, format_spec);
 
 exit:
@@ -120,8 +121,9 @@ builtin_chr(PyModuleDef *module, PyObject *arg)
     PyObject *return_value = NULL;
     int i;
 
-    if (!PyArg_Parse(arg, "i:chr", &i))
+    if (!PyArg_Parse(arg, "i:chr", &i)) {
         goto exit;
+    }
     return_value = builtin_chr_impl(module, i);
 
 exit:
@@ -167,8 +169,9 @@ builtin_compile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
     int optimize = -1;
 
     if (!PyArg_ParseTupleAndKeywords(args, kwargs, "OO&s|iii:compile", _keywords,
-        &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize))
+        &source, PyUnicode_FSDecoder, &filename, &mode, &flags, &dont_inherit, &optimize)) {
         goto exit;
+    }
     return_value = builtin_compile_impl(module, source, filename, mode, flags, dont_inherit, optimize);
 
 exit:
@@ -196,8 +199,9 @@ builtin_divmod(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "divmod",
         2, 2,
-        &x, &y))
+        &x, &y)) {
         goto exit;
+    }
     return_value = builtin_divmod_impl(module, x, y);
 
 exit:
@@ -233,8 +237,9 @@ builtin_eval(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "eval",
         1, 3,
-        &source, &globals, &locals))
+        &source, &globals, &locals)) {
         goto exit;
+    }
     return_value = builtin_eval_impl(module, source, globals, locals);
 
 exit:
@@ -270,8 +275,9 @@ builtin_exec(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "exec",
         1, 3,
-        &source, &globals, &locals))
+        &source, &globals, &locals)) {
         goto exit;
+    }
     return_value = builtin_exec_impl(module, source, globals, locals);
 
 exit:
@@ -322,8 +328,9 @@ builtin_hasattr(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "hasattr",
         2, 2,
-        &obj, &name))
+        &obj, &name)) {
         goto exit;
+    }
     return_value = builtin_hasattr_impl(module, obj, name);
 
 exit:
@@ -367,8 +374,9 @@ builtin_setattr(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "setattr",
         3, 3,
-        &obj, &name, &value))
+        &obj, &name, &value)) {
         goto exit;
+    }
     return_value = builtin_setattr_impl(module, obj, name, value);
 
 exit:
@@ -398,8 +406,9 @@ builtin_delattr(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "delattr",
         2, 2,
-        &obj, &name))
+        &obj, &name)) {
         goto exit;
+    }
     return_value = builtin_delattr_impl(module, obj, name);
 
 exit:
@@ -507,8 +516,9 @@ builtin_pow(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "pow",
         2, 3,
-        &x, &y, &z))
+        &x, &y, &z)) {
         goto exit;
+    }
     return_value = builtin_pow_impl(module, x, y, z);
 
 exit:
@@ -541,8 +551,9 @@ builtin_input(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "input",
         0, 1,
-        &prompt))
+        &prompt)) {
         goto exit;
+    }
     return_value = builtin_input_impl(module, prompt);
 
 exit:
@@ -585,8 +596,9 @@ builtin_sum(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "sum",
         1, 2,
-        &iterable, &start))
+        &iterable, &start)) {
         goto exit;
+    }
     return_value = builtin_sum_impl(module, iterable, start);
 
 exit:
@@ -619,8 +631,9 @@ builtin_isinstance(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "isinstance",
         2, 2,
-        &obj, &class_or_tuple))
+        &obj, &class_or_tuple)) {
         goto exit;
+    }
     return_value = builtin_isinstance_impl(module, obj, class_or_tuple);
 
 exit:
@@ -653,11 +666,12 @@ builtin_issubclass(PyModuleDef *module, PyObject *args)
 
     if (!PyArg_UnpackTuple(args, "issubclass",
         2, 2,
-        &cls, &class_or_tuple))
+        &cls, &class_or_tuple)) {
         goto exit;
+    }
     return_value = builtin_issubclass_impl(module, cls, class_or_tuple);
 
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=4bef16b6aa432879 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=940f25126caf8166 input=a9049054013a1b77]*/
