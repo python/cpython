@@ -1443,7 +1443,8 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
     const char *fname, *msg, *custom_msg, *keyword;
     int min = INT_MAX;
     int max = INT_MAX;
-    int i, len;
+    int i, pos, len;
+    int skip = 0;
     Py_ssize_t nargs, nkeywords;
     PyObject *current_arg;
     freelistentry_t static_entries[STATIC_FREELIST_ENTRIES];
@@ -1471,9 +1472,17 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
             custom_msg++;
     }
 
+    /* scan kwlist and count the number of positional-only parameters */
+    for (pos = 0; kwlist[pos] && !*kwlist[pos]; pos++) {
+    }
     /* scan kwlist and get greatest possible nbr of args */
-    for (len=0; kwlist[len]; len++)
-        continue;
+    for (len = pos; kwlist[len]; len++) {
+        if (!*kwlist[len]) {
+            PyErr_SetString(PyExc_SystemError,
+                            "Empty keyword parameter name");
+            return cleanreturn(0, &freelist);
+        }
+    }
 
     if (len > STATIC_FREELIST_ENTRIES) {
         freelist.entries = PyMem_NEW(freelistentry_t, len);
@@ -1526,6 +1535,14 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
             max = i;
             format++;
 
+            if (max < pos) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Empty parameter name after $");
+                return cleanreturn(0, &freelist);
+            }
+            if (skip) {
+                break;
+            }
             if (max < nargs) {
                 PyErr_Format(PyExc_TypeError,
                              "Function takes %s %d positional arguments"
@@ -1541,48 +1558,59 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
                          "format specifiers (%d)", len, i);
             return cleanreturn(0, &freelist);
         }
-        current_arg = NULL;
-        if (nkeywords) {
-            current_arg = PyDict_GetItemString(keywords, keyword);
-        }
-        if (current_arg) {
-            --nkeywords;
-            if (i < nargs) {
-                /* arg present in tuple and in dict */
-                PyErr_Format(PyExc_TypeError,
-                             "Argument given by name ('%s') "
-                             "and position (%d)",
-                             keyword, i+1);
-                return cleanreturn(0, &freelist);
+        if (!skip) {
+            current_arg = NULL;
+            if (nkeywords && i >= pos) {
+                current_arg = PyDict_GetItemString(keywords, keyword);
+                if (!current_arg && PyErr_Occurred()) {
+                    return cleanreturn(0, &freelist);
+                }
+            }
+            if (current_arg) {
+                --nkeywords;
+                if (i < nargs) {
+                    /* arg present in tuple and in dict */
+                    PyErr_Format(PyExc_TypeError,
+                                 "Argument given by name ('%s') "
+                                 "and position (%d)",
+                                 keyword, i+1);
+                    return cleanreturn(0, &freelist);
+                }
+            }
+            else if (i < nargs)
+                current_arg = PyTuple_GET_ITEM(args, i);
+
+            if (current_arg) {
+                msg = convertitem(current_arg, &format, p_va, flags,
+                    levels, msgbuf, sizeof(msgbuf), &freelist);
+                if (msg) {
+                    seterror(i+1, msg, levels, fname, custom_msg);
+                    return cleanreturn(0, &freelist);
+                }
+                continue;
+            }
+
+            if (i < min) {
+                if (i < pos) {
+                    assert (min == INT_MAX);
+                    assert (max == INT_MAX);
+                    skip = 1;
+                }
+                else {
+                    PyErr_Format(PyExc_TypeError, "Required argument "
+                                "'%s' (pos %d) not found",
+                                keyword, i+1);
+                    return cleanreturn(0, &freelist);
+                }
+            }
+            /* current code reports success when all required args
+             * fulfilled and no keyword args left, with no further
+             * validation. XXX Maybe skip this in debug build ?
+             */
+            if (!nkeywords && !skip) {
+                return cleanreturn(1, &freelist);
             }
         }
-        else if (nkeywords && PyErr_Occurred())
-            return cleanreturn(0, &freelist);
-        else if (i < nargs)
-            current_arg = PyTuple_GET_ITEM(args, i);
-
-        if (current_arg) {
-            msg = convertitem(current_arg, &format, p_va, flags,
-                levels, msgbuf, sizeof(msgbuf), &freelist);
-            if (msg) {
-                seterror(i+1, msg, levels, fname, custom_msg);
-                return cleanreturn(0, &freelist);
-            }
-            continue;
-        }
-
-        if (i < min) {
-            PyErr_Format(PyExc_TypeError, "Required argument "
-                         "'%s' (pos %d) not found",
-                         keyword, i+1);
-            return cleanreturn(0, &freelist);
-        }
-        /* current code reports success when all required args
-         * fulfilled and no keyword args left, with no further
-         * validation. XXX Maybe skip this in debug build ?
-         */
-        if (!nkeywords)
-            return cleanreturn(1, &freelist);
 
         /* We are into optional args, skip thru to any remaining
          * keyword args */
@@ -1592,6 +1620,15 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
                          format);
             return cleanreturn(0, &freelist);
         }
+    }
+
+    if (skip) {
+        PyErr_Format(PyExc_TypeError,
+                     "Function takes %s %d positional arguments"
+                     " (%d given)",
+                     (Py_MIN(pos, min) < i) ? "at least" : "exactly",
+                     Py_MIN(pos, min), nargs);
+        return cleanreturn(0, &freelist);
     }
 
     if (!IS_END_OF_FORMAT(*format) && (*format != '|') && (*format != '$')) {
@@ -1613,7 +1650,7 @@ vgetargskeywords(PyObject *args, PyObject *keywords, const char *format,
                 return cleanreturn(0, &freelist);
             }
             for (i = 0; i < len; i++) {
-                if (!PyUnicode_CompareWithASCIIString(key, kwlist[i])) {
+                if (*kwlist[i] && !PyUnicode_CompareWithASCIIString(key, kwlist[i])) {
                     match = 1;
                     break;
                 }

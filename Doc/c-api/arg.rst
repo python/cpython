@@ -406,8 +406,15 @@ API Functions
 .. c:function:: int PyArg_ParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char *keywords[], ...)
 
    Parse the parameters of a function that takes both positional and keyword
-   parameters into local variables.  Returns true on success; on failure, it
-   returns false and raises the appropriate exception.
+   parameters into local variables.  The *keywords* argument is a
+   *NULL*-terminated array of keyword parameter names.  Empty names denote
+   :ref:`positional-only parameters <positional-only_parameter>`.
+   Returns true on success; on failure, it returns false and raises the
+   appropriate exception.
+
+   .. versionchanged:: 3.6
+      Added support for :ref:`positional-only parameters
+      <positional-only_parameter>`.
 
 
 .. c:function:: int PyArg_VaParseTupleAndKeywords(PyObject *args, PyObject *kw, const char *format, char *keywords[], va_list vargs)

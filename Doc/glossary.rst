@@ -718,6 +718,8 @@ Glossary
 
            def func(foo, bar=None): ...
 
+      .. _positional-only_parameter:
+
       * :dfn:`positional-only`: specifies an argument that can be supplied only
         by position.  Python has no syntax for defining positional-only
         parameters.  However, some built-in functions have positional-only

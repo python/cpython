@@ -644,7 +644,7 @@ class CLanguage(Language):
         default_return_converter = (not f.return_converter or
             f.return_converter.type == 'PyObject *')
 
-        positional = parameters and (parameters[-1].kind == inspect.Parameter.POSITIONAL_ONLY)
+        positional = parameters and parameters[-1].is_positional_only()
         all_boring_objects = False # yes, this will be false if there are 0 parameters, it's fine
         first_optional = len(parameters)
         for i, p in enumerate(parameters):
@@ -661,7 +661,7 @@ class CLanguage(Language):
         new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
 
         meth_o = (len(parameters) == 1 and
-              parameters[0].kind == inspect.Parameter.POSITIONAL_ONLY and
+              parameters[0].is_positional_only() and
               not converters[0].is_optional() and
               not new_or_init)
 
@@ -1075,7 +1075,7 @@ class CLanguage(Language):
 
         last_group = 0
         first_optional = len(selfless)
-        positional = selfless and selfless[-1].kind == inspect.Parameter.POSITIONAL_ONLY
+        positional = selfless and selfless[-1].is_positional_only()
         new_or_init = f.kind in (METHOD_NEW, METHOD_INIT)
         default_return_converter = (not f.return_converter or
             f.return_converter.type == 'PyObject *')
@@ -2367,7 +2367,10 @@ class CConverter(metaclass=CConverterAutoRegister):
             data.modifications.append('/* modifications for ' + name + ' */\n' + modifications.rstrip())
 
         # keywords
-        data.keywords.append(parameter.name)
+        if parameter.is_positional_only():
+            data.keywords.append('')
+        else:
+            data.keywords.append(parameter.name)
 
         # format_units
         if self.is_optional() and '|' not in data.format_units:
@@ -3192,6 +3195,7 @@ class DSLParser:
         self.state = self.state_dsl_start
         self.parameter_indent = None
         self.keyword_only = False
+        self.positional_only = False
         self.group = 0
         self.parameter_state = self.ps_start
         self.seen_positional_with_default = False
@@ -3570,8 +3574,8 @@ class DSLParser:
     # "parameter_state".  (Previously the code was a miasma of ifs and
     # separate boolean state variables.)  The states are:
     #
-    #  [ [ a, b, ] c, ] d, e, f=3, [ g, h, [ i ] ] /   <- line
-    # 01   2          3       4    5           6   7   <- state transitions
+    #  [ [ a, b, ] c, ] d, e, f=3, [ g, h, [ i ] ]   <- line
+    # 01   2          3       4    5           6     <- state transitions
     #
     # 0: ps_start.  before we've seen anything.  legal transitions are to 1 or 3.
     # 1: ps_left_square_before.  left square brackets before required parameters.
@@ -3582,9 +3586,8 @@ class DSLParser:
     #    now must have default values.
     # 5: ps_group_after.  in a group, after required parameters.
     # 6: ps_right_square_after.  right square brackets after required parameters.
-    # 7: ps_seen_slash.  seen slash.
     ps_start, ps_left_square_before, ps_group_before, ps_required, \
-    ps_optional, ps_group_after, ps_right_square_after, ps_seen_slash = range(8)
+    ps_optional, ps_group_after, ps_right_square_after = range(7)
 
     def state_parameters_start(self, line):
         if self.ignore_line(line):
@@ -3863,9 +3866,6 @@ class DSLParser:
         return name, False, kwargs
 
     def parse_special_symbol(self, symbol):
-        if self.parameter_state == self.ps_seen_slash:
-            fail("Function " + self.function.name + " specifies " + symbol + " after /, which is unsupported.")
-
         if symbol == '*':
             if self.keyword_only:
                 fail("Function " + self.function.name + " uses '*' more than once.")
@@ -3892,13 +3892,15 @@ class DSLParser:
             else:
                 fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".c)")
         elif symbol == '/':
+            if self.positional_only:
+                fail("Function " + self.function.name + " uses '/' more than once.")
+            self.positional_only = True
             # ps_required and ps_optional are allowed here, that allows positional-only without option groups
             # to work (and have default values!)
             if (self.parameter_state not in (self.ps_required, self.ps_optional, self.ps_right_square_after, self.ps_group_before)) or self.group:
                 fail("Function " + self.function.name + " has an unsupported group configuration. (Unexpected state " + str(self.parameter_state) + ".d)")
             if self.keyword_only:
                 fail("Function " + self.function.name + " mixes keyword-only and positional-only parameters, which is unsupported.")
-            self.parameter_state = self.ps_seen_slash
             # fixup preceding parameters
             for p in self.function.parameters.values():
                 if (p.kind != inspect.Parameter.POSITIONAL_OR_KEYWORD and not isinstance(p.converter, self_converter)):
@@ -3986,23 +3988,20 @@ class DSLParser:
         # populate "right_bracket_count" field for every parameter
         assert parameters, "We should always have a self parameter. " + repr(f)
         assert isinstance(parameters[0].converter, self_converter)
+        # self is always positional-only.
+        assert parameters[0].is_positional_only()
         parameters[0].right_bracket_count = 0
-        parameters_after_self = parameters[1:]
-        if parameters_after_self:
-            # for now, the only way Clinic supports positional-only parameters
-            # is if all of them are positional-only...
-            #
-            # ... except for self!  self is always positional-only.
-
-            positional_only_parameters = [p.kind == inspect.Parameter.POSITIONAL_ONLY for p in parameters_after_self]
-            if parameters_after_self[0].kind == inspect.Parameter.POSITIONAL_ONLY:
-                assert all(positional_only_parameters)
-                for p in parameters:
-                    p.right_bracket_count = abs(p.group)
+        positional_only = True
+        for p in parameters[1:]:
+            if not p.is_positional_only():
+                positional_only = False
+            else:
+                assert positional_only
+            if positional_only:
+                p.right_bracket_count = abs(p.group)
             else:
                 # don't put any right brackets around non-positional-only parameters, ever.
-                for p in parameters_after_self:
-                    p.right_bracket_count = 0
+                p.right_bracket_count = 0
 
         right_bracket_count = 0
 
