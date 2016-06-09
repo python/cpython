@@ -4437,12 +4437,12 @@ attribute, you need to explicitly set it on the underlying function object::
 See :ref:`types` for more information.
 
 
+.. index:: object; code, code object
+
 .. _bltin-code-objects:
 
 Code Objects
 ------------
-
-.. index:: object: code
 
 .. index::
    builtin: compile
