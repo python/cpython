@@ -5486,9 +5486,9 @@ PyDoc_STRVAR(os_fspath__doc__,
 "\n"
 "Return the file system path representation of the object.\n"
 "\n"
-"If the object is str or bytes, then allow it to pass through with\n"
-"an incremented refcount. If the object defines __fspath__(), then\n"
-"return the result of that method. All other types raise a TypeError.");
+"If the object is str or bytes, then allow it to pass through as-is. If the\n"
+"object defines __fspath__(), then return the result of that method. All other\n"
+"types raise a TypeError.");
 
 #define OS_FSPATH_METHODDEF    \
     {"fspath", (PyCFunction)os_fspath, METH_VARARGS|METH_KEYWORDS, os_fspath__doc__},
@@ -5984,4 +5984,4 @@ exit:
 #ifndef OS_SET_HANDLE_INHERITABLE_METHODDEF
     #define OS_SET_HANDLE_INHERITABLE_METHODDEF
 #endif /* !defined(OS_SET_HANDLE_INHERITABLE_METHODDEF) */
-/*[clinic end generated code: output=31dd4f672c8a6f8c input=a9049054013a1b77]*/
+/*[clinic end generated code: output=1b91c3a100e75a4d input=a9049054013a1b77]*/
