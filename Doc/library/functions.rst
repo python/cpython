@@ -1077,6 +1077,9 @@ are always available.  They are listed here in alphabetical order.
    .. versionchanged:: 3.5
       The ``'namereplace'`` error handler was added.
 
+   .. versionchanged:: 3.6
+      Support added to accept objects implementing :class:`os.PathLike`.
+
 .. function:: ord(c)
 
    Given a string representing one Unicode character, return an integer
