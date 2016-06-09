@@ -247,6 +247,19 @@ be used inside a coroutine function declared with :keyword:`async def`.
 Coroutine functions are intended to be run inside a compatible event loop,
 such as the :ref:`asyncio loop <asyncio-event-loop>`.
 
+
+.. note::
+
+   .. versionchanged:: 3.5.2
+      Starting with CPython 3.5.2, ``__aiter__`` can directly return
+      :term:`asynchronous iterators <asynchronous iterator>`.  Returning
+      an :term:`awaitable` object will result in a
+      :exc:`PendingDeprecationWarning`.
+
+      See more details in the :ref:`async-iterators` documentation
+      section.
+
+
 .. seealso::
 
    :pep:`492` -- Coroutines with async and await syntax

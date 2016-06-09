@@ -689,3 +689,9 @@ class StreamReader:
             if val == b'':
                 raise StopAsyncIteration
             return val
+
+    if compat.PY352:
+        # In Python 3.5.2 and greater, __aiter__ should return
+        # the asynchronous iterator directly.
+        def __aiter__(self):
+            return self
