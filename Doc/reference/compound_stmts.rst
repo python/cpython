@@ -726,7 +726,7 @@ The following code::
 Is semantically equivalent to::
 
     iter = (ITER)
-    iter = await type(iter).__aiter__(iter)
+    iter = type(iter).__aiter__(iter)
     running = True
     while running:
         try:
