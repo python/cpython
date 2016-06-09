@@ -188,11 +188,12 @@ process and user.
 
 .. function:: fspath(path)
 
-   Return the string representation of the path.
+   Return the file system representation of the path.
 
    If :class:`str` or :class:`bytes` is passed in, it is returned unchanged;
-   otherwise, the result of calling ``type(path).__fspath__`` is returned, or an
-   exception is raised.
+   otherwise, the result of calling ``type(path).__fspath__`` is returned
+   (which is represented by :class:`os.PathLike`). All other types raise a
+   :exc:`TypeError`.
 
 
 .. function:: getenv(key, default=None)
