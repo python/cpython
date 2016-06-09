@@ -12323,14 +12323,14 @@ os.fspath
 
 Return the file system path representation of the object.
 
-If the object is str or bytes, then allow it to pass through with
-an incremented refcount. If the object defines __fspath__(), then
-return the result of that method. All other types raise a TypeError.
+If the object is str or bytes, then allow it to pass through as-is. If the
+object defines __fspath__(), then return the result of that method. All other
+types raise a TypeError.
 [clinic start generated code]*/
 
 static PyObject *
 os_fspath_impl(PyModuleDef *module, PyObject *path)
-/*[clinic end generated code: output=51ef0c2772c1932a input=652c7c37e4be1c13]*/
+/*[clinic end generated code: output=51ef0c2772c1932a input=e357165f7b22490f]*/
 {
     return PyOS_FSPath(path);
 }
