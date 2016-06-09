@@ -178,6 +178,12 @@ class BaseHTTPServerTestCase(BaseTestCase):
             self.send_header('Connection', 'close')
             self.end_headers()
 
+        def do_SEND_ERROR(self):
+            self.send_error(int(self.path[1:]))
+
+        def do_HEAD(self):
+            self.send_error(int(self.path[1:]))
+
     def setUp(self):
         BaseTestCase.setUp(self)
         self.con = httplib.HTTPConnection('localhost', self.PORT)
@@ -275,6 +281,38 @@ class BaseHTTPServerTestCase(BaseTestCase):
         self.con.request('CUSTOM', '/')
         res = self.con.getresponse()
         self.assertEqual(res.status, 999)
+
+    def test_send_error(self):
+        allow_transfer_encoding_codes = (205, 304)
+        for code in (101, 102, 204, 205, 304):
+            self.con.request('SEND_ERROR', '/{}'.format(code))
+            res = self.con.getresponse()
+            self.assertEqual(code, res.status)
+            self.assertEqual(None, res.getheader('Content-Length'))
+            self.assertEqual(None, res.getheader('Content-Type'))
+            if code not in allow_transfer_encoding_codes:
+                self.assertEqual(None, res.getheader('Transfer-Encoding'))
+
+            data = res.read()
+            self.assertEqual(b'', data)
+
+    def test_head_via_send_error(self):
+        allow_transfer_encoding_codes = (205, 304)
+        for code in (101, 200, 204, 205, 304):
+            self.con.request('HEAD', '/{}'.format(code))
+            res = self.con.getresponse()
+            self.assertEqual(code, res.status)
+            if code == 200:
+                self.assertEqual(None, res.getheader('Content-Length'))
+                self.assertIn('text/html', res.getheader('Content-Type'))
+            else:
+                self.assertEqual(None, res.getheader('Content-Length'))
+                self.assertEqual(None, res.getheader('Content-Type'))
+            if code not in allow_transfer_encoding_codes:
+                self.assertEqual(None, res.getheader('Transfer-Encoding'))
+
+            data = res.read()
+            self.assertEqual(b'', data)
 
 
 class SimpleHTTPServerTestCase(BaseTestCase):

@@ -2,13 +2,18 @@
 
 .. _install-index:
 
-*****************************
-  Installing Python Modules
-*****************************
+********************************************
+  Installing Python Modules (Legacy version)
+********************************************
 
 :Author: Greg Ward
 
 .. TODO: Fill in XXX comments
+
+.. seealso::
+
+   :ref:`installing-index`
+      The up to date module installation documentations
 
 .. The audience for this document includes people who don't know anything
    about Python and aren't about to learn the language just in order to

@@ -67,6 +67,22 @@ class PlatformTest(unittest.TestCase):
              ('IronPython', '1.0.60816', '', '', '', '', '.NET 2.0.50727.42')),
             ('IronPython 1.0 (1.0.61005.1977) on .NET 2.0.50727.42',
              ('IronPython', '1.0.0', '', '', '', '', '.NET 2.0.50727.42')),
+            ('2.4.3 (truncation, date, t) \n[GCC]',
+             ('CPython', '2.4.3', '', '', 'truncation', 'date t', 'GCC')),
+            ('2.4.3 (truncation, date, ) \n[GCC]',
+             ('CPython', '2.4.3', '', '', 'truncation', 'date', 'GCC')),
+            ('2.4.3 (truncation, date,) \n[GCC]',
+             ('CPython', '2.4.3', '', '', 'truncation', 'date', 'GCC')),
+            ('2.4.3 (truncation, date) \n[GCC]',
+             ('CPython', '2.4.3', '', '', 'truncation', 'date', 'GCC')),
+            ('2.4.3 (truncation, d) \n[GCC]',
+             ('CPython', '2.4.3', '', '', 'truncation', 'd', 'GCC')),
+            ('2.4.3 (truncation, ) \n[GCC]',
+             ('CPython', '2.4.3', '', '', 'truncation', '', 'GCC')),
+            ('2.4.3 (truncation,) \n[GCC]',
+             ('CPython', '2.4.3', '', '', 'truncation', '', 'GCC')),
+            ('2.4.3 (truncation) \n[GCC]',
+             ('CPython', '2.4.3', '', '', 'truncation', '', 'GCC')),
             ):
             # branch and revision are not "parsed", but fetched
             # from sys.subversion.  Ignore them

@@ -18,7 +18,7 @@ Core and Builtins
   Some compilers and toolchains are known to not produce stable code when
   using LTO, be sure to test things thoroughly before relying on it.
   It can provide a few % speed up over profile-opt alone.
-  
+
 - Issue #26168: Fixed possible refleaks in failing Py_BuildValue() with the "N"
   format unit.
 
@@ -91,6 +91,14 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #25738: Stop BaseHTTPServer.BaseHTTPRequestHandler.send_error() from
+  sending a message body for 205 Reset Content.  Also, don't send the
+  Content-Type header field in responses that don't have a body.  Based on
+  patch by Susumu Koshiba.
+
+- Issue #21313: Fix the "platform" module to tolerate when sys.version
+  contains truncated build information.
 
 - Issue #27211: Fix possible memory corruption in io.IOBase.readline().
 
@@ -263,6 +271,8 @@ Library
 
 IDLE
 ----
+- Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
+  is a private implementation of test.test_idle and tool for maintainers.
 
 - Issue #26673: When tk reports font size as 0, change to size 10.
   Such fonts on Linux prevented the configuration dialog from opening.
@@ -293,8 +303,17 @@ Documentation
   functions together, and add more details such as what underlying Readline
   functions and variables are accessed.
 
+- Issue #26014: Guide users to the newer packaging documentation as was done
+  for Python 3.x.  In particular, the top-level 2.7 documentation page now
+  links to the newer installer and distributions pages rather than the
+  legacy install and Distutils pages; these are still linked to in the
+  library/distutils doc page.
+
 Tests
 -----
+
+- Issue #21916: Added tests for the turtle module.  Patch by ingrid,
+  Gregory Loyse and Jelle Zijlstra.
 
 - Issue #25940: Changed test_ssl to use self-signed.pythontest.net.  This
   avoids relying on svn.python.org, which recently changed root certificate.
@@ -311,6 +330,9 @@ Build
   Patch by Jonas Wagner and Xavier de Gaye.
 
 - Issue #19450: Update Windows builds to use SQLite 3.8.11.0.
+
+- Issue #27229: Fix the cross-compiling pgen rule for in-tree builds.  Patch
+  by Xavier de Gaye.
 
 - Issue #17603: Avoid error about nonexistant fileblocks.o file by using a
   lower-level check for st_blocks in struct stat.
@@ -333,8 +355,8 @@ Build
 
 - Issue #25696: Fix installation of Python on UNIX with make -j9.
 
-- Issue #26465: Update OS X 10.5+ 32-bit-only installer to build
-  and link with OpenSSL 1.0.2g.
+- Issue #26930: Update OS X 10.5+ 32-bit-only installer to build
+  and link with OpenSSL 1.0.2h.
 
 - Issue #26268: Update Windows builds to use OpenSSL 1.0.2f.
 
