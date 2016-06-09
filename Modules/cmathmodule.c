@@ -27,20 +27,20 @@ class Py_complex_protected_return_converter(CReturnConverter):
         self.declare(data)
         data.return_conversion.append("""
 PyFPE_END_PROTECT(_return_value);
-if (errno == EDOM) {{
+if (errno == EDOM) {
     PyErr_SetString(PyExc_ValueError, "math domain error");
     goto exit;
-}}
-else if (errno == ERANGE) {{
+}
+else if (errno == ERANGE) {
     PyErr_SetString(PyExc_OverflowError, "math range error");
     goto exit;
-}}
-else {{
+}
+else {
     return_value = PyComplex_FromCComplex(_return_value);
-}}
+}
 """.strip())
 [python start generated code]*/
-/*[python end generated code: output=da39a3ee5e6b4b0d input=231019039a6fbb9a]*/
+/*[python end generated code: output=da39a3ee5e6b4b0d input=345daa075b1028e7]*/
 
 #if (FLT_RADIX != 2 && FLT_RADIX != 16)
 #error "Modules/cmathmodule.c expects FLT_RADIX to be 2 or 16"
