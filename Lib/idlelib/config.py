@@ -22,7 +22,6 @@ import os
 import sys
 
 from configparser import ConfigParser
-from tkinter import TkVersion
 from tkinter.font import Font, nametofont
 
 class InvalidConfigType(Exception): pass
@@ -713,16 +712,13 @@ class IdleConf:
         bold = self.GetOption(configType, section, 'font-bold', default=0,
                               type='bool')
         if (family == 'TkFixedFont'):
-            if TkVersion < 8.5:
-                family = 'Courier'
-            else:
-                f = Font(name='TkFixedFont', exists=True, root=root)
-                actualFont = Font.actual(f)
-                family = actualFont['family']
-                size = actualFont['size']
-                if size <= 0:
-                    size = 10  # if font in pixels, ignore actual size
-                bold = actualFont['weight']=='bold'
+            f = Font(name='TkFixedFont', exists=True, root=root)
+            actualFont = Font.actual(f)
+            family = actualFont['family']
+            size = actualFont['size']
+            if size <= 0:
+                size = 10  # if font in pixels, ignore actual size
+            bold = actualFont['weight'] == 'bold'
         return (family, size, 'bold' if bold else 'normal')
 
     def LoadCfgFiles(self):
@@ -740,7 +736,7 @@ class IdleConf:
 idleConf = IdleConf()
 
 # TODO Revise test output, write expanded unittest
-### module test
+#
 if __name__ == '__main__':
     def dumpCfg(cfg):
         print('\n', cfg, '\n')

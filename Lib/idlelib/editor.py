@@ -110,13 +110,10 @@ class EditorWindow(object):
                 'wrap': 'none',
                 'highlightthickness': 0,
                 'width': self.width,
-                'height': idleConf.GetOption('main', 'EditorWindow',
-                                             'height', type='int')}
-        if TkVersion >= 8.5:
-            # Starting with tk 8.5 we have to set the new tabstyle option
-            # to 'wordprocessor' to achieve the same display of tabs as in
-            # older tk versions.
-            text_options['tabstyle'] = 'wordprocessor'
+                'tabstyle': 'wordprocessor',  # new in 8.5
+                'height': idleConf.GetOption(
+                        'main', 'EditorWindow', 'height', type='int'),
+                }
         self.text = text = MultiCallCreator(Text)(text_frame, **text_options)
         self.top.focused_widget = self.text
 
