@@ -379,6 +379,12 @@ C API
 - Issue #26476: Fixed compilation error when use PyErr_BadInternalCall() in C++.
   Patch by Jeroen Demeyer.
 
+Misc
+----
+
+- Issue #17500, and https://github.com/python/pythondotorg/issues/945: Remove
+  unused and outdated icons.
+
 
 What's New in Python 2.7.11?
 ============================
