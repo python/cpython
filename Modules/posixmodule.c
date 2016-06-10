@@ -11718,6 +11718,13 @@ DirEntry_repr(DirEntry *self)
     return PyUnicode_FromFormat("<DirEntry %R>", self->name);
 }
 
+static PyObject *
+DirEntry_fspath(DirEntry *self)
+{
+    Py_INCREF(self->path);
+    return self->path;
+}
+
 static PyMemberDef DirEntry_members[] = {
     {"name", T_OBJECT_EX, offsetof(DirEntry, name), READONLY,
      "the entry's base filename, relative to scandir() \"path\" argument"},
@@ -11741,6 +11748,9 @@ static PyMethodDef DirEntry_methods[] = {
     },
     {"inode", (PyCFunction)DirEntry_inode, METH_NOARGS,
      "return inode of the entry; cached per entry",
+    },
+    {"__fspath__", (PyCFunction)DirEntry_fspath, METH_NOARGS,
+     "returns the path for the entry",
     },
     {NULL}
 };
