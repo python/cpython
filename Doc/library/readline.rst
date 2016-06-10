@@ -27,6 +27,13 @@ interactive prompt  and the prompts offered by the :func:`raw_input` and
   you can check for the text "libedit" in :const:`readline.__doc__`
   to differentiate between GNU readline and libedit.
 
+Readline keybindings may be configured via an initialization file, typically
+``.inputrc`` in your home directory.  See `Readline Init File
+<https://cnswww.cns.cwru.edu/php/chet/readline/rluserman.html#SEC9>`_
+in the GNU Readline manual for information about the format and
+allowable constructs of that file, and the capabilities of the
+Readline library in general.
+
 
 Init file
 ---------
