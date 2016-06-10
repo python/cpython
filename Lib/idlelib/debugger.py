@@ -1,6 +1,7 @@
 import os
 import bdb
 from tkinter import *
+from tkinter.ttk import Scrollbar
 from idlelib.windows import ListedToplevel
 from idlelib.scrolledlist import ScrolledList
 from idlelib import macosx

@@ -2,6 +2,7 @@
 An auto-completion window for IDLE, used by the autocomplete extension
 """
 from tkinter import *
+from tkinter.ttk import Scrollbar
 from idlelib.multicall import MC_SHIFT
 from idlelib.autocomplete import COMPLETE_FILES, COMPLETE_ATTRIBUTES
 
