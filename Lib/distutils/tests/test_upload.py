@@ -140,7 +140,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
 
         # The PyPI response body was echoed
         results = self.get_logs(INFO)
-        self.assertIn('xyzzy\n', results[-1])
+        self.assertEqual(results[-1], 75 * '-' + '\nxyzzy\n' + 75 * '-')
 
     def test_upload_fails(self):
         self.next_msg = "Not Found"
