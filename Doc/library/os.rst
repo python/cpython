@@ -1656,9 +1656,15 @@ features:
 
    Create a directory named *path* with numeric mode *mode*.
 
+   If the directory already exists, :exc:`FileExistsError` is raised.
+
+   .. _mkdir_modebits:
+
    On some systems, *mode* is ignored.  Where it is used, the current umask
-   value is first masked out.  If the directory already exists,
-   :exc:`FileExistsError` is raised.
+   value is first masked out.  If bits other than the last 9 (i.e. the last 3
+   digits of the octal representation of the *mode*) are set, their meaning is
+   platform-dependent.  On some platforms, they are ignored and you should call
+   :func:`chmod` explicitly to set them.
 
    This function can also support :ref:`paths relative to directory descriptors
    <dir_fd>`.
@@ -1679,8 +1685,8 @@ features:
    Recursive directory creation function.  Like :func:`mkdir`, but makes all
    intermediate-level directories needed to contain the leaf directory.
 
-   The default *mode* is ``0o777`` (octal).  On some systems, *mode* is
-   ignored.  Where it is used, the current umask value is first masked out.
+   The *mode* parameter is passed to :func:`mkdir`; see :ref:`the mkdir()
+   description <mkdir_modebits>` for how it is interpreted.
 
    If *exist_ok* is ``False`` (the default), an :exc:`OSError` is raised if the
    target directory already exists.
