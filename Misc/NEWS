@@ -139,6 +139,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #20900: distutils register command now decodes HTTP responses
+  correctly.  Initial patch by ingrid.
+
 - A new version of typing.py provides several new classes and
   features: @overload outside stubs, Reversible, DefaultDict, Text,
   ContextManager, Type[], NewType(), TYPE_CHECKING, and numerous bug
