@@ -7,13 +7,13 @@ information about calls.
 
 The coverage is essentially 100%.
 '''
+from idlelib import textview as tv
 from test.support import requires
 requires('gui')
 
 import unittest
 import os
 from tkinter import Tk
-from idlelib import textview as tv
 from idlelib.idle_test.mock_idle import Func
 from idlelib.idle_test.mock_tk import Mbox
 

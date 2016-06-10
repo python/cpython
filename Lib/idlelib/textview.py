@@ -3,6 +3,7 @@
 """
 
 from tkinter import *
+from tkinter.ttk import Scrollbar
 import tkinter.messagebox as tkMessageBox
 
 class TextViewer(Toplevel):
@@ -50,7 +51,7 @@ class TextViewer(Toplevel):
         self.buttonOk = Button(frameButtons, text='Close',
                                command=self.Ok, takefocus=FALSE)
         self.scrollbarView = Scrollbar(frameText, orient=VERTICAL,
-                                       takefocus=FALSE, highlightthickness=0)
+                                       takefocus=FALSE)
         self.textView = Text(frameText, wrap=WORD, highlightthickness=0,
                              fg=self.fg, bg=self.bg)
         self.scrollbarView.config(command=self.textView.yview)

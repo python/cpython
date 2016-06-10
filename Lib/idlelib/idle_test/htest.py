@@ -68,6 +68,7 @@ outwin.OutputWindow (indirectly being tested with grep test)
 from importlib import import_module
 from idlelib.macosx import _init_tk_type
 import tkinter as tk
+from tkinter.ttk import Scrollbar
 
 AboutDialog_spec = {
     'file': 'help_about',
@@ -344,7 +345,7 @@ def run(*tests):
     frameLabel.pack()
     text = tk.Text(frameLabel, wrap='word')
     text.configure(bg=root.cget('bg'), relief='flat', height=4, width=70)
-    scrollbar = tk.Scrollbar(frameLabel, command=text.yview)
+    scrollbar = Scrollbar(frameLabel, command=text.yview)
     text.config(yscrollcommand=scrollbar.set)
     scrollbar.pack(side='right', fill='y', expand=False)
     text.pack(side='left', fill='both', expand=True)

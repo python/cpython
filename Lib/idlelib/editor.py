@@ -7,6 +7,7 @@ import re
 import string
 import sys
 from tkinter import *
+from tkinter.ttk import Scrollbar
 import tkinter.simpledialog as tkSimpleDialog
 import tkinter.messagebox as tkMessageBox
 import traceback
