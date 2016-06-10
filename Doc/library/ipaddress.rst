@@ -580,7 +580,7 @@ so to avoid duplication they are only documented for :class:`IPv4Network`.
 
    4. A two-tuple of an address description and a netmask, where the address
       description is either a string, a 128-bits integer, a 16-bytes packed
-      integer, or an existing IPv4Address object; and the netmask is an
+      integer, or an existing IPv6Address object; and the netmask is an
       integer representing the prefix length.
 
    An :exc:`AddressValueError` is raised if *address* is not a valid IPv6
