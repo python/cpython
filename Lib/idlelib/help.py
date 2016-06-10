@@ -26,13 +26,10 @@ show_idlehelp - Create HelpWindow.  Called in EditorWindow.help_dialog.
 """
 from html.parser import HTMLParser
 from os.path import abspath, dirname, isfile, join
-from tkinter import Toplevel, Frame, Text, Scrollbar, Menu, Menubutton
+from tkinter import Toplevel, Frame, Text, Menu
+from tkinter.ttk import Menubutton, Scrollbar
 from tkinter import font as tkfont
 from idlelib.config import idleConf
-
-use_ttk = False # until available to import
-if use_ttk:
-    from tkinter.ttk import Menubutton
 
 ## About IDLE ##
 
@@ -196,15 +193,18 @@ class HelpFrame(Frame):
     "Display html text, scrollbar, and toc."
     def __init__(self, parent, filename):
         Frame.__init__(self, parent)
-        text = HelpText(self, filename)
+        # keep references to widgets for test access.
+        self.text = text = HelpText(self, filename)
         self['background'] = text['background']
-        scroll = Scrollbar(self, command=text.yview)
+        self.toc = toc = self.toc_menu(text)
+        self.scroll = scroll = Scrollbar(self, command=text.yview)
         text['yscrollcommand'] = scroll.set
+
         self.rowconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)  # text
-        self.toc_menu(text).grid(column=0, row=0, sticky='nw')
-        text.grid(column=1, row=0, sticky='nsew')
-        scroll.grid(column=2, row=0, sticky='ns')
+        toc.grid(row=0, column=0, sticky='nw')
+        text.grid(row=0, column=1, sticky='nsew')
+        scroll.grid(row=0, column=2, sticky='ns')
 
     def toc_menu(self, text):
         "Create table of contents as drop-down menu."
@@ -265,7 +265,7 @@ def show_idlehelp(parent):
     if not isfile(filename):
         # try copy_strip, present message
         return
-    HelpWindow(parent, filename, 'IDLE Help')
+    return HelpWindow(parent, filename, 'IDLE Help')
 
 if __name__ == '__main__':
     from idlelib.idle_test.htest import run

@@ -1,5 +1,6 @@
 from tkinter import *
 from idlelib import macosx
+from tkinter.ttk import Scrollbar
 
 class ScrolledList:
 
@@ -124,22 +125,20 @@ class ScrolledList:
         pass
 
 
-def _scrolled_list(parent):
-    root = Tk()
-    root.title("Test ScrolledList")
+def _scrolled_list(parent):  # htest #
+    top = Toplevel(parent)
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
+    top.geometry("+%d+%d"%(x+200, y + 175))
     class MyScrolledList(ScrolledList):
         def fill_menu(self): self.menu.add_command(label="right click")
         def on_select(self, index): print("select", self.get(index))
         def on_double(self, index): print("double", self.get(index))
 
-    scrolled_list = MyScrolledList(root)
+    scrolled_list = MyScrolledList(top)
     for i in range(30):
         scrolled_list.append("Item %02d" % i)
 
-    root.mainloop()
-
 if __name__ == '__main__':
+    # At the moment, test_scrolledlist merely creates instance, like htest.
     from idlelib.idle_test.htest import run
     run(_scrolled_list)

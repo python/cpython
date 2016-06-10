@@ -2,31 +2,35 @@
 Dialog for building Tkinter accelerator key bindings
 """
 from tkinter import *
+from tkinter.ttk import Scrollbar
 import tkinter.messagebox as tkMessageBox
 import string
 import sys
 
 class GetKeysDialog(Toplevel):
-    def __init__(self,parent,title,action,currentKeySequences,_htest=False):
+    def __init__(self, parent, title, action, currentKeySequences,
+                 _htest=False, _utest=False):
         """
         action - string, the name of the virtual event these keys will be
                  mapped to
         currentKeys - list, a list of all key sequence lists currently mapped
                  to virtual events, for overlap checking
+        _utest - bool, do not wait when running unittest
         _htest - bool, change box location when running htest
         """
         Toplevel.__init__(self, parent)
+        self.withdraw() #hide while setting geometry
         self.configure(borderwidth=5)
-        self.resizable(height=FALSE,width=FALSE)
+        self.resizable(height=FALSE, width=FALSE)
         self.title(title)
         self.transient(parent)
         self.grab_set()
         self.protocol("WM_DELETE_WINDOW", self.Cancel)
         self.parent = parent
         self.action=action
-        self.currentKeySequences=currentKeySequences
-        self.result=''
-        self.keyString=StringVar(self)
+        self.currentKeySequences = currentKeySequences
+        self.result = ''
+        self.keyString = StringVar(self)
         self.keyString.set('')
         self.SetModifiersForPlatform() # set self.modifiers, self.modifier_label
         self.modifier_vars = []
@@ -37,7 +41,6 @@ class GetKeysDialog(Toplevel):
         self.advanced = False
         self.CreateWidgets()
         self.LoadFinalKeyList()
-        self.withdraw() #hide while setting geometry
         self.update_idletasks()
         self.geometry(
                 "+%d+%d" % (
@@ -47,8 +50,9 @@ class GetKeysDialog(Toplevel):
                     ((parent.winfo_height()/2 - self.winfo_reqheight()/2)
                     if not _htest else 150)
                 ) )  #centre dialog over parent (or below htest box)
-        self.deiconify() #geometry set, unhide
-        self.wait_window()
+        if not _utest:
+            self.deiconify() #geometry set, unhide
+            self.wait_window()
 
     def CreateWidgets(self):
         frameMain = Frame(self,borderwidth=2,relief=SUNKEN)
@@ -260,6 +264,7 @@ class GetKeysDialog(Toplevel):
         else:
             keysOK = True
         return keysOK
+
 
 if __name__ == '__main__':
     from idlelib.idle_test.htest import run

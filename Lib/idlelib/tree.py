@@ -16,7 +16,7 @@
 
 import os
 from tkinter import *
-
+from tkinter.ttk import Scrollbar
 from idlelib import zoomheight
 from idlelib.config import idleConf
 
@@ -449,18 +449,17 @@ class ScrolledCanvas:
         return "break"
 
 
-def _tree_widget(parent):
-    root = Tk()
-    root.title("Test TreeWidget")
+def _tree_widget(parent):  # htest #
+    top = Toplevel(parent)
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
-    sc = ScrolledCanvas(root, bg="white", highlightthickness=0, takefocus=1)
+    top.geometry("+%d+%d"%(x+50, y+175))
+    sc = ScrolledCanvas(top, bg="white", highlightthickness=0, takefocus=1)
     sc.frame.pack(expand=1, fill="both", side=LEFT)
-    item = FileTreeItem(os.getcwd())
+    item = FileTreeItem(ICONDIR)
     node = TreeNode(sc.canvas, None, item)
     node.expand()
-    root.mainloop()
 
 if __name__ == '__main__':
+    # test_tree is currently a copy of this
     from idlelib.idle_test.htest import run
     run(_tree_widget)
