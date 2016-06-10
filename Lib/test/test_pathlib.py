@@ -190,13 +190,18 @@ class _BasePurePathTest(object):
         P = self.cls
         p = P('a')
         self.assertIsInstance(p, P)
+        class PathLike:
+            def __fspath__(self):
+                return "a/b/c"
         P('a', 'b', 'c')
         P('/a', 'b', 'c')
         P('a/b/c')
         P('/a/b/c')
+        P(PathLike())
         self.assertEqual(P(P('a')), P('a'))
         self.assertEqual(P(P('a'), 'b'), P('a/b'))
         self.assertEqual(P(P('a'), P('b')), P('a/b'))
+        self.assertEqual(P(P('a'), P('b'), P('c')), P(PathLike()))
 
     def _check_str_subclass(self, *args):
         # Issue #21127: it should be possible to construct a PurePath object
@@ -383,6 +388,12 @@ class _BasePurePathTest(object):
         p = P('/a/b')
         parts = p.parts
         self.assertEqual(parts, (sep, 'a', 'b'))
+
+    def test_fspath_common(self):
+        P = self.cls
+        p = P('a/b')
+        self._check_str(p.__fspath__(), ('a/b',))
+        self._check_str(os.fspath(p), ('a/b',))
 
     def test_equivalences(self):
         for k, tuples in self.equivalences.items():

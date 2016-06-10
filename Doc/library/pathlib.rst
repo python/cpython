@@ -31,12 +31,6 @@ Pure paths are useful in some special cases; for example:
    accessing the OS. In this case, instantiating one of the pure classes may be
    useful since those simply don't have any OS-accessing operations.
 
-.. note::
-   This module has been included in the standard library on a
-   :term:`provisional basis <provisional package>`. Backwards incompatible
-   changes (up to and including removal of the package) may occur if deemed
-   necessary by the core developers.
-
 .. seealso::
    :pep:`428`: The pathlib module -- object-oriented filesystem paths.
 
@@ -107,7 +101,8 @@ we also call *flavours*:
       PurePosixPath('setup.py')
 
    Each element of *pathsegments* can be either a string representing a
-   path segment, or another path object::
+   path segment, an object implementing the :class:`os.PathLike` interface
+   which returns a string, or another path object::
 
       >>> PurePath('foo', 'some/path', 'bar')
       PurePosixPath('foo/some/path/bar')
@@ -147,6 +142,12 @@ we also call *flavours*:
    (a naïve approach would make ``PurePosixPath('foo/../bar')`` equivalent
    to ``PurePosixPath('bar')``, which is wrong if ``foo`` is a symbolic link
    to another directory)
+
+   Pure path objects implement the :class:`os.PathLike` interface, allowing them
+   to be used anywhere the interface is accepted.
+
+   .. versionchanged:: 3.6
+      Added support for the :class:`os.PathLike` interface.
 
 .. class:: PurePosixPath(*pathsegments)
 
@@ -211,6 +212,14 @@ The slash operator helps create child paths, similarly to :func:`os.path.join`::
    >>> q = PurePath('bin')
    >>> '/usr' / q
    PurePosixPath('/usr/bin')
+
+A path object can be used anywhere an object implementing :class:`os.PathLike`
+is accepted::
+
+   >>> import os
+   >>> p = PurePath('/etc')
+   >>> os.fspath(p)
+   '/etc'
 
 The string representation of a path is the raw filesystem path itself
 (in native form, e.g. with backslashes under Windows), which you can

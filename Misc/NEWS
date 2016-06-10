@@ -10,6 +10,8 @@ What's New in Python 3.6.0 alpha 2
 Core and Builtins
 -----------------
 
+- Issue #27186: Add support for os.PathLike objects to open() (part of PEP 519).
+
 - Issue #27066: Fixed SystemError if a custom opener (for open()) returns a
   negative number without setting an exception.
 
@@ -35,6 +37,14 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #27186: Add os.PathLike support to pathlib, removing its provisional
+  status (part of PEP 519).
+
+- Issue #27186: Add support for os.PathLike objects to os.fsencode() and
+  os.fsdecode() (part of PEP 519).
+
+- Issue #27186: Introduce os.PathLike and os.fspath() (part of PEP 519).
 
 - A new version of typing.py provides several new classes and
   features: @overload outside stubs, Reversible, DefaultDict, Text,
@@ -198,11 +208,13 @@ Build
 Misc
 ----
 
-- Issue #17500, and https://github.com/python/pythondotorg/issues/945: Remove 
+- Issue #17500, and https://github.com/python/pythondotorg/issues/945: Remove
   unused and outdated icons.
 
 C API
 -----
+
+- Issue #27186: Add the PyOS_FSPath() function (part of PEP 519).
 
 - Issue #26282: PyArg_ParseTupleAndKeywords() now supports positional-only
   parameters.
