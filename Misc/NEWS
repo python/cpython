@@ -38,11 +38,14 @@ Core and Builtins
 Library
 -------
 
+- Issue #27186: Add os.PathLike support to DirEntry (part of PEP 519).
+  Initial patch by Jelle Zijlstra.
+
 - Issue #20900: distutils register command now decodes HTTP responses
   correctly.  Initial patch by ingrid.
 
 - Issue #27186: Add os.PathLike support to pathlib, removing its provisional
-  status (part of PEP 519).
+  status (part of PEP 519). Initial patch by Dusty Phillips.
 
 - Issue #27186: Add support for os.PathLike objects to os.fsencode() and
   os.fsdecode() (part of PEP 519).

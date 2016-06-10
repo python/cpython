@@ -2824,11 +2824,13 @@ class TestScandir(unittest.TestCase):
 
     def setUp(self):
         self.path = os.path.realpath(support.TESTFN)
+        self.bytes_path = os.fsencode(self.path)
         self.addCleanup(support.rmtree, self.path)
         os.mkdir(self.path)
 
     def create_file(self, name="file.txt"):
-        filename = os.path.join(self.path, name)
+        path = self.bytes_path if isinstance(name, bytes) else self.path
+        filename = os.path.join(path, name)
         create_file(filename, b'python')
         return filename
 
@@ -2917,15 +2919,16 @@ class TestScandir(unittest.TestCase):
             self.check_entry(entry, 'symlink_file.txt', False, True, True)
 
     def get_entry(self, name):
-        entries = list(os.scandir(self.path))
+        path = self.bytes_path if isinstance(name, bytes) else self.path
+        entries = list(os.scandir(path))
         self.assertEqual(len(entries), 1)
 
         entry = entries[0]
         self.assertEqual(entry.name, name)
         return entry
 
-    def create_file_entry(self):
-        filename = self.create_file()
+    def create_file_entry(self, name='file.txt'):
+        filename = self.create_file(name=name)
         return self.get_entry(os.path.basename(filename))
 
     def test_current_directory(self):
@@ -2945,6 +2948,18 @@ class TestScandir(unittest.TestCase):
     def test_repr(self):
         entry = self.create_file_entry()
         self.assertEqual(repr(entry), "<DirEntry 'file.txt'>")
+
+    def test_fspath_protocol(self):
+        entry = self.create_file_entry()
+        self.assertEqual(os.fspath(entry), os.path.join(self.path, 'file.txt'))
+
+    def test_fspath_protocol_bytes(self):
+        bytes_filename = os.fsencode('bytesfile.txt')
+        bytes_entry = self.create_file_entry(name=bytes_filename)
+        fspath = os.fspath(bytes_entry)
+        self.assertIsInstance(fspath, bytes)
+        self.assertEqual(fspath,
+                         os.path.join(os.fsencode(self.path),bytes_filename))
 
     def test_removed_dir(self):
         path = os.path.join(self.path, 'dir')

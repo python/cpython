@@ -1994,6 +1994,9 @@ features:
    control over errors, you can catch :exc:`OSError` when calling one of the
    ``DirEntry`` methods and handle as appropriate.
 
+   To be directly usable as a path-like object, ``DirEntry`` implements the
+   :class:`os.PathLike` interface.
+
    Attributes and methods on a ``DirEntry`` instance are as follows:
 
    .. attribute:: name
@@ -2105,6 +2108,9 @@ features:
    and ``stat()`` methods.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.6
+      Added support for the :class:`os.PathLike` interface.
 
 
 .. function:: stat(path, \*, dir_fd=None, follow_symlinks=True)
