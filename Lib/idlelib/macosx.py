@@ -199,12 +199,6 @@ def overrideRootMenu(root, flist):
                 ('About IDLE', '<<about-idle>>'),
                     None,
                 ]))
-        tkversion = root.tk.eval('info patchlevel')
-        if tuple(map(int, tkversion.split('.'))) < (8, 4, 14):
-            # for earlier AquaTk versions, supply a Preferences menu item
-            mainmenu.menudefs[0][1].append(
-                    ('_Preferences....', '<<open-config-dialog>>'),
-                )
     if isCocoaTk():
         # replace default About dialog with About IDLE one
         root.createcommand('tkAboutDialog', about_dialog)

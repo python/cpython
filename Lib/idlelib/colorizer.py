@@ -2,7 +2,6 @@ import time
 import re
 import keyword
 import builtins
-from tkinter import TkVersion
 from idlelib.delegator import Delegator
 from idlelib.config import idleConf
 
@@ -49,11 +48,8 @@ def color_config(text):  # Called from htest, Editor, and Turtle Demo.
         insertbackground=cursor_color,
         selectforeground=select_colors['foreground'],
         selectbackground=select_colors['background'],
-        )
-    if TkVersion >= 8.5:
-        text.config(
-            inactiveselectbackground=select_colors['background'])
-
+        inactiveselectbackground=select_colors['background'],  # new in 8.5
+    )
 
 class ColorDelegator(Delegator):
 
@@ -277,5 +273,8 @@ def _color_delegator(parent):  # htest #
     p.insertfilter(d)
 
 if __name__ == "__main__":
+    import unittest
+    unittest.main('idlelib.idle_test.test_colorizer',
+                  verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
     run(_color_delegator)

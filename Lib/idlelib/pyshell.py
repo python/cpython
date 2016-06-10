@@ -1,5 +1,20 @@
 #! /usr/bin/env python3
 
+try:
+    from tkinter import *
+except ImportError:
+    print("** IDLE can't import Tkinter.\n"
+          "Your Python may not be configured for Tk. **", file=sys.__stderr__)
+    sys.exit(1)
+import tkinter.messagebox as tkMessageBox
+if TkVersion < 8.5:
+    root = Tk()  # otherwise create root in main
+    root.withdraw()
+    tkMessageBox.showerror("Idle Cannot Start",
+            "Idle requires tcl/tk 8.5+, not $s." % TkVersion,
+            parent=root)
+    sys.exit(1)
+
 import getopt
 import os
 import os.path
@@ -15,14 +30,6 @@ import io
 import linecache
 from code import InteractiveInterpreter
 from platform import python_version, system
-
-try:
-    from tkinter import *
-except ImportError:
-    print("** IDLE can't import Tkinter.\n"
-          "Your Python may not be configured for Tk. **", file=sys.__stderr__)
-    sys.exit(1)
-import tkinter.messagebox as tkMessageBox
 
 from idlelib.editor import EditorWindow, fixwordbreaks
 from idlelib.filelist import FileList
@@ -1536,7 +1543,7 @@ def main():
     if system() == 'Windows':
         iconfile = os.path.join(icondir, 'idle.ico')
         root.wm_iconbitmap(default=iconfile)
-    elif TkVersion >= 8.5:
+    else:
         ext = '.png' if TkVersion >= 8.6 else '.gif'
         iconfiles = [os.path.join(icondir, 'idle_%d%s' % (size, ext))
                      for size in (16, 32, 48)]
