@@ -75,6 +75,8 @@ win32_urandom(unsigned char *buffer, Py_ssize_t size, int raise)
     return 0;
 }
 
+/* Issue #25003: Don't use getentropy() on Solaris (available since
+ * Solaris 11.3), it is blocking whereas os.urandom() should not block. */
 #elif defined(HAVE_GETENTROPY) && !defined(sun)
 #define PY_GETENTROPY 1
 
@@ -114,8 +116,6 @@ py_getentropy(unsigned char *buffer, Py_ssize_t size, int fatal)
 
 #else
 
-/* Issue #25003: Don' use getentropy() on Solaris (available since
- * Solaris 11.3), it is blocking whereas os.urandom() should not block. */
 #if defined(HAVE_GETRANDOM) || defined(HAVE_GETRANDOM_SYSCALL)
 #define PY_GETRANDOM 1
 
