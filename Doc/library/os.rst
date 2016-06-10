@@ -209,6 +209,8 @@ process and user.
    An :term:`abstract base class` for objects representing a file system path,
    e.g. :class:`pathlib.PurePath`.
 
+   .. versionadded:: 3.6
+
    .. abstractmethod:: __fspath__()
 
       Return the file system path representation of the object.
