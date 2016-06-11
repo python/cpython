@@ -580,6 +580,11 @@ API and Feature Removals
   :mod:`tkinter` widget classes were removed (corresponding Tk commands
   were obsolete since Tk 4.0).
 
+* The :meth:`~zipfile.ZipFile.open` method of the :class:`zipfile.ZipFile`
+  class no longer supports the ``'U'`` mode (was deprecated since Python 3.4).
+  Use :class:`io.TextIOWrapper` for reading compressed text files in
+  :term:`universal newlines` mode.
+
 
 Porting to Python 3.6
 =====================
