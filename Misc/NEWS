@@ -39,7 +39,8 @@ Library
 -------
 
 - Issue #27030: Unknown escapes consisting of ``'\'`` and ASCII letter in
-  regular expressions now are errors.
+  regular expressions now are errors.  The re.LOCALE flag now can be used
+  only with bytes patterns.
 
 - Issue #27186: Add os.PathLike support to DirEntry (part of PEP 519).
   Initial patch by Jelle Zijlstra.
