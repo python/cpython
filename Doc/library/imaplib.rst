@@ -3,6 +3,7 @@
 
 .. module:: imaplib
    :synopsis: IMAP4 protocol client (requires sockets).
+
 .. moduleauthor:: Piers Lauder <piers@communitysolutions.com.au>
 .. sectionauthor:: Piers Lauder <piers@communitysolutions.com.au>
 .. revised by ESR, January 2000
@@ -10,13 +11,12 @@
 .. changes for IMAP4_stream by Piers Lauder <piers@communitysolutions.com.au>,
    November 2002
 
+**Source code:** :source:`Lib/imaplib.py`
 
 .. index::
    pair: IMAP4; protocol
    pair: IMAP4_SSL; protocol
    pair: IMAP4_stream; protocol
-
-**Source code:** :source:`Lib/imaplib.py`
 
 --------------
 

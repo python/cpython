@@ -3,9 +3,13 @@
 
 .. module:: subprocess
    :synopsis: Subprocess management.
+
 .. moduleauthor:: Peter Åstrand <astrand@lysator.liu.se>
 .. sectionauthor:: Peter Åstrand <astrand@lysator.liu.se>
 
+**Source code:** :source:`Lib/subprocess.py`
+
+--------------
 
 The :mod:`subprocess` module allows you to spawn new processes, connect to their
 input/output/error pipes, and obtain their return codes.  This module intends to

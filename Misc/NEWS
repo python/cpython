@@ -1139,6 +1139,9 @@ IDLE
 Documentation
 -------------
 
+- Issue #22558: Add remaining doc links to source code for Python-coded modules.
+  Patch by Yoni Lavi.
+
 - Issue #12067: Rewrite Comparisons section in the Expressions chapter of the
   language reference. Some of the details of comparing mixed types were
   incorrect or ambiguous. NotImplemented is only relevant at a lower level

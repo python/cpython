@@ -5,10 +5,11 @@
    :platform: Unix
    :synopsis: POSIX style tty control.
 
-
 .. index::
    pair: POSIX; I/O control
    pair: tty; I/O control
+
+--------------
 
 This module provides an interface to the POSIX calls for tty I/O control. For a
 complete description of these calls, see :manpage:`termios(2)` Unix manual

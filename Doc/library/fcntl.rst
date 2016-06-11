@@ -4,12 +4,14 @@
 .. module:: fcntl
    :platform: Unix
    :synopsis: The fcntl() and ioctl() system calls.
-.. sectionauthor:: Jaap Vermeulen
 
+.. sectionauthor:: Jaap Vermeulen
 
 .. index::
    pair: UNIX; file control
    pair: UNIX; I/O control
+
+----------------
 
 This module performs file control and I/O control on file descriptors. It is an
 interface to the :c:func:`fcntl` and :c:func:`ioctl` Unix routines.  For a

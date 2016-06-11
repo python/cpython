@@ -4,14 +4,18 @@
 .. module:: urllib.robotparser
    :synopsis: Load a robots.txt file and answer questions about
               fetchability of other URLs.
+
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
+**Source code:** :source:`Lib/urllib/robotparser.py`
 
 .. index::
    single: WWW
    single: World Wide Web
    single: URL
    single: robots.txt
+
+--------------
 
 This module provides a single class, :class:`RobotFileParser`, which answers
 questions about whether or not a particular user agent can fetch a URL on the

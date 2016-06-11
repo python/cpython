@@ -3,9 +3,11 @@
 
 .. module:: wsgiref
    :synopsis: WSGI Utilities and Reference Implementation.
+
 .. moduleauthor:: Phillip J. Eby <pje@telecommunity.com>
 .. sectionauthor:: Phillip J. Eby <pje@telecommunity.com>
 
+--------------
 
 The Web Server Gateway Interface (WSGI) is a standard interface between web
 server software and web applications written in Python. Having a standard

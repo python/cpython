@@ -5,6 +5,7 @@
    :synopsis: Convert Python objects to streams of bytes and back (with different
               constraints).
 
+--------------
 
 This module contains functions that can read and write Python values in a binary
 format.  The format is specific to Python, but independent of machine

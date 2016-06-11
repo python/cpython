@@ -5,9 +5,13 @@
 .. module:: pathlib
    :synopsis: Object-oriented filesystem paths
 
+.. versionadded:: 3.4
+
+**Source code:** :source:`Lib/pathlib.py`
+
 .. index:: single: path; operations
 
-.. versionadded:: 3.4
+--------------
 
 This module offers classes representing filesystem paths with semantics
 appropriate for different operating systems.  Path classes are divided

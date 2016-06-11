@@ -4,6 +4,7 @@
 .. module:: cgi
    :synopsis: Helpers for running Python scripts via the Common Gateway Interface.
 
+**Source code:** :source:`Lib/cgi.py`
 
 .. index::
    pair: WWW; server
@@ -12,8 +13,6 @@
    pair: MIME; headers
    single: URL
    single: Common Gateway Interface
-
-**Source code:** :source:`Lib/cgi.py`
 
 --------------
 

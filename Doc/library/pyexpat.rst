@@ -3,8 +3,10 @@
 
 .. module:: xml.parsers.expat
    :synopsis: An interface to the Expat non-validating XML parser.
+
 .. moduleauthor:: Paul Prescod <paul@prescod.net>
 
+--------------
 
 .. Markup notes:
 

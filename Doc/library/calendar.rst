@@ -4,6 +4,7 @@
 .. module:: calendar
    :synopsis: Functions for working with calendars, including some emulation
               of the Unix cal program.
+
 .. sectionauthor:: Drew Csillag <drew_csillag@geocities.com>
 
 **Source code:** :source:`Lib/calendar.py`

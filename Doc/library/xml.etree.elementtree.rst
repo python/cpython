@@ -3,7 +3,12 @@
 
 .. module:: xml.etree.ElementTree
    :synopsis: Implementation of the ElementTree API.
+
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
+
+**Source code:** :source:`Lib/xml/etree/ElementTree.py`
+
+--------------
 
 The :mod:`xml.etree.ElementTree` module implements a simple and efficient API
 for parsing and creating XML data.

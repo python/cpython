@@ -3,6 +3,7 @@
 
 .. module:: weakref
    :synopsis: Support for weak references and weak dictionaries.
+
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. moduleauthor:: Neil Schemenauer <nas@arctrix.com>
 .. moduleauthor:: Martin von Löwis <martin@loewis.home.cs.tu-berlin.de>

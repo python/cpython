@@ -3,6 +3,7 @@
 
 .. module:: cmd
    :synopsis: Build line-oriented command interpreters.
+
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 
 **Source code:** :source:`Lib/cmd.py`

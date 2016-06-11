@@ -4,14 +4,18 @@
 .. module:: crypt
    :platform: Unix
    :synopsis: The crypt() function used to check Unix passwords.
+
 .. moduleauthor:: Steven D. Majewski <sdm7g@virginia.edu>
 .. sectionauthor:: Steven D. Majewski <sdm7g@virginia.edu>
 .. sectionauthor:: Peter Funk <pf@artcom-gmbh.de>
 
+**Source code:** :source:`Lib/crypt.py`
 
 .. index::
    single: crypt(3)
    pair: cipher; DES
+
+--------------
 
 This module implements an interface to the :manpage:`crypt(3)` routine, which is
 a one-way hash function based upon a modified DES algorithm; see the Unix man

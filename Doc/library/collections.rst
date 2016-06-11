@@ -3,16 +3,17 @@
 
 .. module:: collections
     :synopsis: Container datatypes
+
 .. moduleauthor:: Raymond Hettinger <python@rcn.com>
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
+
+**Source code:** :source:`Lib/collections/__init__.py`
 
 .. testsetup:: *
 
     from collections import *
     import itertools
     __name__ = '<doctest>'
-
-**Source code:** :source:`Lib/collections/__init__.py`
 
 --------------
 

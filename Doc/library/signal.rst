@@ -4,6 +4,7 @@
 .. module:: signal
    :synopsis: Set handlers for asynchronous events.
 
+--------------
 
 This module provides mechanisms to use signal handlers in Python.
 
