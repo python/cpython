@@ -6,6 +6,17 @@ What's New in IDLE 3.6.0?
   This matches how paste works on Windows, Mac, most modern Linux apps,
   and ttk widgets.  Original patch by Serhiy Storchaka.
 
+- Issue #24750: Switch all scrollbars in IDLE to ttk versions.
+  Where needed, minimal tests are added to cover changes.
+
+- Issue #24759: IDLE requires tk 8.5 and availability ttk widgets.
+  Delete now unneeded tk version tests and code for older versions.
+  Add test for IDLE syntax colorizer.
+
+- Issue #27239: idlelib.macosx.isXyzTk functions initialize as needed.
+
+- Issue #27262: move Aqua unbinding code, which enable context menus, to maxosx.
+
 - Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
   is a private implementation of test.test_idle and tool for maintainers.
 
