@@ -76,7 +76,7 @@ Glossary
 
    asynchronous iterable
       An object, that can be used in an :keyword:`async for` statement.
-      Must return an :term:`asyncronous iterator` from its
+      Must return an :term:`asynchronous iterator` from its
       :meth:`__aiter__` method.  Introduced by :pep:`492`.
 
    asynchronous iterator
