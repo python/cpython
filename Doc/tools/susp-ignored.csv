@@ -283,9 +283,9 @@ library/xml.etree.elementtree,301,:character,<fictional:character>Archie Leach</
 library/xml.etree.elementtree,301,:character,<fictional:character>Sir Robin</fictional:character>
 library/xml.etree.elementtree,301,:character,<fictional:character>Gunther</fictional:character>
 library/xml.etree.elementtree,301,:character,<fictional:character>Commander Clement</fictional:character>
-library/xml.etree.elementtree,332,:actor,"for actor in root.findall('real_person:actor', ns):"
-library/xml.etree.elementtree,332,:name,"name = actor.find('real_person:name', ns)"
-library/xml.etree.elementtree,332,:character,"for char in actor.findall('role:character', ns):"
+library/xml.etree.elementtree,,:actor,"for actor in root.findall('real_person:actor', ns):"
+library/xml.etree.elementtree,,:name,"name = actor.find('real_person:name', ns)"
+library/xml.etree.elementtree,,:character,"for char in actor.findall('role:character', ns):"
 library/zipapp,31,:main,"$ python -m zipapp myapp -m ""myapp:main"""
 library/zipapp,82,:fn,"argument should have the form ""pkg.mod:fn"", where ""pkg.mod"" is a"
 library/zipapp,155,:callable,"""pkg.module:callable"" and the archive will be run by importing"
