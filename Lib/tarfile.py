@@ -2150,10 +2150,10 @@ class TarFile(object):
                 for offset, size in tarinfo.sparse:
                     target.seek(offset)
                     copyfileobj(source, target, size, ReadError)
+                target.seek(tarinfo.size)
+                target.truncate()
             else:
                 copyfileobj(source, target, tarinfo.size, ReadError)
-            target.seek(tarinfo.size)
-            target.truncate()
 
     def makeunknown(self, tarinfo, targetpath):
         """Make a file from a TarInfo object with an unknown type
