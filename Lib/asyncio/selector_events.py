@@ -569,6 +569,7 @@ class _SelectorTransport(transports._FlowControlMixin,
         self._loop.remove_reader(self._sock_fd)
         if not self._buffer:
             self._conn_lost += 1
+            self._loop.remove_writer(self._sock_fd)
             self._loop.call_soon(self._call_connection_lost, None)
 
     # On Python 3.3 and older, objects with a destructor part of a reference
@@ -663,6 +664,8 @@ class _SelectorSocketTransport(_SelectorTransport):
             logger.debug("%r resumes reading", self)
 
     def _read_ready(self):
+        if self._conn_lost:
+            return
         try:
             data = self._sock.recv(self.max_size)
         except (BlockingIOError, InterruptedError):
@@ -722,6 +725,8 @@ class _SelectorSocketTransport(_SelectorTransport):
     def _write_ready(self):
         assert self._buffer, 'Data should not be empty'
 
+        if self._conn_lost:
+            return
         try:
             n = self._sock.send(self._buffer)
         except (BlockingIOError, InterruptedError):
@@ -892,6 +897,8 @@ class _SelectorSslTransport(_SelectorTransport):
             logger.debug("%r resumes reading", self)
 
     def _read_ready(self):
+        if self._conn_lost:
+            return
         if self._write_wants_read:
             self._write_wants_read = False
             self._write_ready()
@@ -924,6 +931,8 @@ class _SelectorSslTransport(_SelectorTransport):
                     self.close()
 
     def _write_ready(self):
+        if self._conn_lost:
+            return
         if self._read_wants_write:
             self._read_wants_write = False
             self._read_ready()
@@ -1001,6 +1010,8 @@ class _SelectorDatagramTransport(_SelectorTransport):
         return sum(len(data) for data, _ in self._buffer)
 
     def _read_ready(self):
+        if self._conn_lost:
+            return
         try:
             data, addr = self._sock.recvfrom(self.max_size)
         except (BlockingIOError, InterruptedError):
