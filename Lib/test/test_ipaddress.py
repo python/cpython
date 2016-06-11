@@ -1626,6 +1626,9 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(False,
                          ipaddress.ip_address('169.255.100.200').is_link_local)
 
+        self.assertTrue(ipaddress.ip_address('192.0.7.1').is_global)
+        self.assertFalse(ipaddress.ip_address('203.0.113.1').is_global)
+
         self.assertEqual(True,
                           ipaddress.ip_address('127.100.200.254').is_loopback)
         self.assertEqual(True, ipaddress.ip_address('127.42.0.0').is_loopback)
