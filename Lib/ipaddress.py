@@ -636,12 +636,12 @@ class _BaseNetwork(_IPAddressBase):
         broadcast = int(self.broadcast_address)
         if n >= 0:
             if network + n > broadcast:
-                raise IndexError
+                raise IndexError('address out of range')
             return self._address_class(network + n)
         else:
             n += 1
             if broadcast + n < network:
-                raise IndexError
+                raise IndexError('address out of range')
             return self._address_class(broadcast + n)
 
     def __lt__(self, other):
