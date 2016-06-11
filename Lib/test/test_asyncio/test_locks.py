@@ -457,6 +457,31 @@ class ConditionTests(test_utils.TestCase):
         self.assertFalse(cond._waiters)
         self.assertTrue(cond.locked())
 
+    def test_wait_cancel_contested(self):
+        cond = asyncio.Condition(loop=self.loop)
+
+        self.loop.run_until_complete(cond.acquire())
+        self.assertTrue(cond.locked())
+
+        wait_task = asyncio.Task(cond.wait(), loop=self.loop)
+        test_utils.run_briefly(self.loop)
+        self.assertFalse(cond.locked())
+
+        # Notify, but contest the lock before cancelling
+        self.loop.run_until_complete(cond.acquire())
+        self.assertTrue(cond.locked())
+        cond.notify()
+        self.loop.call_soon(wait_task.cancel)
+        self.loop.call_soon(cond.release)
+
+        try:
+            self.loop.run_until_complete(wait_task)
+        except asyncio.CancelledError:
+            # Should not happen, since no cancellation points
+            pass
+
+        self.assertTrue(cond.locked())
+
     def test_wait_unacquired(self):
         cond = asyncio.Condition(loop=self.loop)
         self.assertRaises(

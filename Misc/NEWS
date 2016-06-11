@@ -524,6 +524,9 @@ Library
   _conn_lost.
   Patch by Łukasz Langa.
 
+- Issue #22970: asyncio: Fix inconsistency cancelling Condition.wait.
+  Patch by David Coles.
+
 IDLE
 ----
 
