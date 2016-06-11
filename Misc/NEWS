@@ -92,6 +92,9 @@ Core and Builtins
 Library
 -------
 
+- Fix TLS stripping vulnerability in smptlib, CVE-2016-0772.  Reported by Team
+  Oststrom
+
 - Issue #7356: ctypes.util: Make parsing of ldconfig output independent of the
   locale.
 
