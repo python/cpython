@@ -4,10 +4,10 @@
 .. module:: stat
    :synopsis: Utilities for interpreting the results of os.stat(),
               os.lstat() and os.fstat().
+
 .. sectionauthor:: Skip Montanaro <skip@automatrix.com>
 
-**Source code:** :source:`Modules/_stat.c`
-                 :source:`Lib/stat.py`
+**Source code:** :source:`Lib/stat.py`
 
 --------------
 

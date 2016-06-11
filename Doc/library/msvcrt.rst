@@ -4,8 +4,10 @@
 .. module:: msvcrt
    :platform: Windows
    :synopsis: Miscellaneous useful routines from the MS VC++ runtime.
+
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+--------------
 
 These functions provide access to some useful capabilities on Windows platforms.
 Some higher-level modules use these functions to build the  Windows

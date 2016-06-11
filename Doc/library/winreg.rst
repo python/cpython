@@ -4,8 +4,10 @@
 .. module:: winreg
    :platform: Windows
    :synopsis: Routines and objects for manipulating the Windows registry.
+
 .. sectionauthor:: Mark Hammond <MarkH@ActiveState.com>
 
+--------------
 
 These functions expose the Windows registry API to Python.  Instead of using an
 integer as the registry handle, a :ref:`handle object <handle-object>` is used

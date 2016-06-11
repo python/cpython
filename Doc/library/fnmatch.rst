@@ -4,12 +4,11 @@
 .. module:: fnmatch
    :synopsis: Unix shell style filename pattern matching.
 
+**Source code:** :source:`Lib/fnmatch.py`
 
 .. index:: single: filenames; wildcard expansion
 
 .. index:: module: re
-
-**Source code:** :source:`Lib/fnmatch.py`
 
 --------------
 

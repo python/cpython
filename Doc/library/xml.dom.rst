@@ -3,9 +3,13 @@
 
 .. module:: xml.dom
    :synopsis: Document Object Model API for Python.
+
 .. sectionauthor:: Paul Prescod <paul@prescod.net>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
+**Source code:** :source:`Lib/xml/dom/__init__.py`
+
+--------------
 
 The Document Object Model, or "DOM," is a cross-language API from the World Wide
 Web Consortium (W3C) for accessing and modifying XML documents.  A DOM

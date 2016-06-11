@@ -3,6 +3,7 @@
 
 .. module:: abc
    :synopsis: Abstract base classes according to PEP 3119.
+
 .. moduleauthor:: Guido van Rossum
 .. sectionauthor:: Georg Brandl
 .. much of the content adapted from docstrings

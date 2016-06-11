@@ -4,12 +4,11 @@
 .. module:: quopri
    :synopsis: Encode and decode files using the MIME quoted-printable encoding.
 
+**Source code:** :source:`Lib/quopri.py`
 
 .. index::
    pair: quoted-printable; encoding
    single: MIME; quoted-printable encoding
-
-**Source code:** :source:`Lib/quopri.py`
 
 --------------
 

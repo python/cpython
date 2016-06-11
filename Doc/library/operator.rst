@@ -3,15 +3,15 @@
 
 .. module:: operator
    :synopsis: Functions corresponding to the standard operators.
+
 .. sectionauthor:: Skip Montanaro <skip@automatrix.com>
 
+**Source code:** :source:`Lib/operator.py`
 
 .. testsetup::
 
    import operator
    from operator import itemgetter, iadd
-
-**Source code:** :source:`Lib/operator.py`
 
 --------------
 

@@ -5,6 +5,7 @@
    :synopsis: Low-level interface to compression and decompression routines
               compatible with gzip.
 
+--------------
 
 For applications that require data compression, the functions in this module
 allow compression and decompression, using the zlib library. The zlib library

@@ -3,6 +3,7 @@
 
 .. module:: csv
    :synopsis: Write and read tabular data to and from delimited files.
+
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
 **Source code:** :source:`Lib/csv.py`
@@ -10,6 +11,8 @@
 .. index::
    single: csv
    pair: data; tabular
+
+--------------
 
 The so-called CSV (Comma Separated Values) format is the most common import and
 export format for spreadsheets and databases.  CSV format was used for many

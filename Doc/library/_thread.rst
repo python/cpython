@@ -4,12 +4,13 @@
 .. module:: _thread
    :synopsis: Low-level threading API.
 
-
 .. index::
    single: light-weight processes
    single: processes, light-weight
    single: binary semaphores
    single: semaphores, binary
+
+--------------
 
 This module provides low-level primitives for working with multiple threads
 (also called :dfn:`light-weight processes` or :dfn:`tasks`) --- multiple threads of

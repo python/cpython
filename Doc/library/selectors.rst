@@ -6,6 +6,9 @@
 
 .. versionadded:: 3.4
 
+**Source code:** :source:`Lib/selectors.py`
+
+--------------
 
 Introduction
 ------------

@@ -3,6 +3,7 @@
 
 .. module:: uu
    :synopsis: Encode and decode files in uuencode format.
+
 .. moduleauthor:: Lance Ellinghouse
 
 **Source code:** :source:`Lib/uu.py`

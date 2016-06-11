@@ -5,10 +5,14 @@
    :synopsis: Access the implementation of the import statement.
    :deprecated:
 
+**Source code:** :source:`Lib/imp.py`
+
 .. deprecated:: 3.4
    The :mod:`imp` package is pending deprecation in favor of :mod:`importlib`.
 
 .. index:: statement: import
+
+--------------
 
 This module provides an interface to the mechanisms used to implement the
 :keyword:`import` statement.  It defines the following constants and functions:

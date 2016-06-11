@@ -5,6 +5,7 @@
    :platform: Unix
    :synopsis: The most common POSIX system calls (normally used via module os).
 
+--------------
 
 This module provides access to operating system functionality that is
 standardized by the C Standard and the POSIX standard (a thinly disguised Unix

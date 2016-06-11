@@ -3,9 +3,13 @@
 
 .. module:: xml.sax.handler
    :synopsis: Base classes for SAX event handlers.
+
 .. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
+**Source code:** :source:`Lib/xml/sax/handler.py`
+
+--------------
 
 The SAX API defines four kinds of handlers: content handlers, DTD handlers,
 error handlers, and entity resolvers. Applications normally only need to

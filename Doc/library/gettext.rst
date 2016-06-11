@@ -3,6 +3,7 @@
 
 .. module:: gettext
    :synopsis: Multilingual internationalization services.
+
 .. moduleauthor:: Barry A. Warsaw <barry@python.org>
 .. sectionauthor:: Barry A. Warsaw <barry@python.org>
 

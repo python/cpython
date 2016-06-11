@@ -3,6 +3,7 @@
 
 .. module:: colorsys
    :synopsis: Conversion functions between RGB and other color systems.
+
 .. sectionauthor:: David Ascher <da@python.net>
 
 **Source code:** :source:`Lib/colorsys.py`

@@ -3,9 +3,11 @@
 
 .. module:: gc
    :synopsis: Interface to the cycle-detecting garbage collector.
+
 .. moduleauthor:: Neil Schemenauer <nas@arctrix.com>
 .. sectionauthor:: Neil Schemenauer <nas@arctrix.com>
 
+--------------
 
 This module provides an interface to the optional garbage collector.  It
 provides the ability to disable the collector, tune the collection frequency,

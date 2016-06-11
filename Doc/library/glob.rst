@@ -4,10 +4,9 @@
 .. module:: glob
    :synopsis: Unix shell style pathname pattern expansion.
 
+**Source code:** :source:`Lib/glob.py`
 
 .. index:: single: filenames; pathname expansion
-
-**Source code:** :source:`Lib/glob.py`
 
 --------------
 

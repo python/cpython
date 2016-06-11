@@ -3,8 +3,13 @@
 
 .. module:: codeop
    :synopsis: Compile (possibly incomplete) Python code.
+
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 .. sectionauthor:: Michael Hudson <mwh@python.net>
+
+**Source code:** :source:`Lib/codeop.py`
+
+--------------
 
 The :mod:`codeop` module provides utilities upon which the Python
 read-eval-print loop can be emulated, as is done in the :mod:`code` module.  As

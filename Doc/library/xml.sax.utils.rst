@@ -3,9 +3,13 @@
 
 .. module:: xml.sax.saxutils
    :synopsis: Convenience functions and classes for use with SAX.
+
 .. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
+**Source code:** :source:`Lib/xml/sax/saxutils.py`
+
+--------------
 
 The module :mod:`xml.sax.saxutils` contains a number of classes and functions
 that are commonly useful when creating SAX applications, either in direct use,

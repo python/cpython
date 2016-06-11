@@ -4,6 +4,9 @@
 .. module:: email.charset
    :synopsis: Character Sets
 
+**Source code:** :source:`Lib/email/charset.py`
+
+--------------
 
 This module provides a class :class:`Charset` for representing character sets
 and character set conversions in email messages, as well as a character set

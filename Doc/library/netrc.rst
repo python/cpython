@@ -4,6 +4,7 @@
 
 .. module:: netrc
    :synopsis: Loading of .netrc files.
+
 .. moduleauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 

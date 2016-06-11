@@ -8,7 +8,6 @@
 
 --------------
 
-
 This module provides some utility functions to support installing Python
 libraries.  These functions compile Python source files in a directory tree.
 This module can be used to create the cached byte-code files at library

@@ -3,9 +3,13 @@
 
 .. module:: locale
    :synopsis: Internationalization services.
+
 .. moduleauthor:: Martin von Löwis <martin@v.loewis.de>
 .. sectionauthor:: Martin von Löwis <martin@v.loewis.de>
 
+**Source code:** :source:`Lib/locale.py`
+
+--------------
 
 The :mod:`locale` module opens access to the POSIX locale database and
 functionality. The POSIX locale mechanism allows programmers to deal with
