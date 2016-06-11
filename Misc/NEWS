@@ -92,6 +92,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26556: Update expat to 2.1.1, fixes CVE-2015-1283.
+
 - Fix TLS stripping vulnerability in smptlib, CVE-2016-0772.  Reported by Team
   Oststrom
 
