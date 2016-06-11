@@ -7,6 +7,10 @@
 .. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
 .. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
 
+.. versionadded:: 3.4
+   as a :term:`provisional module <provisional package>`.
+
+**Source code:** :source:`Lib/email/contentmanager.py`
 
 .. note::
 
@@ -15,8 +19,7 @@
    changes (up to and including removal of the module) may occur if deemed
    necessary by the core developers.
 
-.. versionadded:: 3.4
-   as a :term:`provisional module <provisional package>`.
+--------------
 
 The :mod:`~email.message` module provides a class that can represent an
 arbitrary email message.  That basic message model has a useful and flexible

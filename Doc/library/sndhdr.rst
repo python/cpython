@@ -3,14 +3,15 @@
 
 .. module:: sndhdr
    :synopsis: Determine type of a sound file.
+
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. Based on comments in the module source file.
+
+**Source code:** :source:`Lib/sndhdr.py`
 
 .. index::
    single: A-LAW
    single: u-LAW
-
-**Source code:** :source:`Lib/sndhdr.py`
 
 --------------
 

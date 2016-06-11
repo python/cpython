@@ -3,8 +3,13 @@
 
 .. module:: json
    :synopsis: Encode and decode the JSON format.
+
 .. moduleauthor:: Bob Ippolito <bob@redivi.com>
 .. sectionauthor:: Bob Ippolito <bob@redivi.com>
+
+**Source code:** :source:`Lib/json/__init__.py`
+
+--------------
 
 `JSON (JavaScript Object Notation) <http://json.org>`_, specified by
 :rfc:`7159` (which obsoletes :rfc:`4627`) and by

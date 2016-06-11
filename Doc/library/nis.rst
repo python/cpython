@@ -5,9 +5,11 @@
 .. module:: nis
    :platform: Unix
    :synopsis: Interface to Sun's NIS (Yellow Pages) library.
+
 .. moduleauthor:: Fred Gansevles <Fred.Gansevles@cs.utwente.nl>
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
+--------------
 
 The :mod:`nis` module gives a thin wrapper around the NIS library, useful for
 central administration of several hosts.

@@ -4,9 +4,13 @@
 .. module:: struct
    :synopsis: Interpret bytes as packed binary data.
 
+**Source code:** :source:`Lib/struct.py`
+
 .. index::
    pair: C; structures
    triple: packing; binary; data
+
+--------------
 
 This module performs conversions between Python values and C structs represented
 as Python :class:`bytes` objects.  This can be used in handling binary data

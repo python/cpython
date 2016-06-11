@@ -23,6 +23,8 @@
    # make sure each group gets a fresh context
    setcontext(Context())
 
+--------------
+
 The :mod:`decimal` module provides support for fast correctly-rounded
 decimal floating point arithmetic. It offers several advantages over the
 :class:`float` datatype:

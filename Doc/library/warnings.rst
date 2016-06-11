@@ -1,12 +1,12 @@
 :mod:`warnings` --- Warning control
 ===================================
 
-.. index:: single: warnings
-
 .. module:: warnings
    :synopsis: Issue warning messages and control their disposition.
 
 **Source code:** :source:`Lib/warnings.py`
+
+.. index:: single: warnings
 
 --------------
 

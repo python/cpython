@@ -9,6 +9,9 @@
 
 .. versionadded:: 3.3
 
+**Source code:** :source:`Lib/email/policy.py`
+
+--------------
 
 The :mod:`email` package's prime focus is the handling of email messages as
 described by the various email and MIME RFCs.  However, the general format of

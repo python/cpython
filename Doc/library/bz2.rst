@@ -3,11 +3,15 @@
 
 .. module:: bz2
    :synopsis: Interfaces for bzip2 compression and decompression.
+
 .. moduleauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
 .. moduleauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
 .. sectionauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
 .. sectionauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
 
+**Source code:** :source:`Lib/bz2.py`
+
+--------------
 
 This module provides a comprehensive interface for compressing and
 decompressing data using the bzip2 compression algorithm.

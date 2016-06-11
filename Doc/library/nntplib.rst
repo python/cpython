@@ -4,12 +4,11 @@
 .. module:: nntplib
    :synopsis: NNTP protocol client (requires sockets).
 
+**Source code:** :source:`Lib/nntplib.py`
 
 .. index::
    pair: NNTP; protocol
    single: Network News Transfer Protocol
-
-**Source code:** :source:`Lib/nntplib.py`
 
 --------------
 

@@ -5,11 +5,12 @@
    :synopsis: Tools for converting between binary and various ASCII-encoded binary
               representations.
 
-
 .. index::
    module: uu
    module: base64
    module: binhex
+
+--------------
 
 The :mod:`binascii` module contains a number of methods to convert between
 binary and various ASCII-encoded binary representations. Normally, you will not

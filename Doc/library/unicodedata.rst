@@ -3,15 +3,17 @@
 
 .. module:: unicodedata
    :synopsis: Access the Unicode Database.
+
 .. moduleauthor:: Marc-André Lemburg <mal@lemburg.com>
 .. sectionauthor:: Marc-André Lemburg <mal@lemburg.com>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
-
 
 .. index::
    single: Unicode
    single: character
    pair: Unicode; database
+
+--------------
 
 This module provides access to the Unicode Character Database (UCD) which
 defines character properties for all Unicode characters. The data contained in

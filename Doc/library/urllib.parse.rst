@@ -4,6 +4,7 @@
 .. module:: urllib.parse
    :synopsis: Parse URLs into or assemble them from components.
 
+**Source code:** :source:`Lib/urllib/parse.py`
 
 .. index::
    single: WWW
@@ -11,8 +12,6 @@
    single: URL
    pair: URL; parsing
    pair: relative; URL
-
-**Source code:** :source:`Lib/urllib/parse.py`
 
 --------------
 

@@ -3,12 +3,12 @@
 
 .. module:: telnetlib
    :synopsis: Telnet client class.
+
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
+**Source code:** :source:`Lib/telnetlib.py`
 
 .. index:: single: protocol; Telnet
-
-**Source code:** :source:`Lib/telnetlib.py`
 
 --------------
 

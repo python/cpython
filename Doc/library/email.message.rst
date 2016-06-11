@@ -4,6 +4,9 @@
 .. module:: email.message
    :synopsis: The base class representing email messages.
 
+**Source code:** :source:`Lib/email/message.py`
+
+--------------
 
 The central class in the :mod:`email` package is the :class:`Message` class,
 imported from the :mod:`email.message` module.  It is the base class for the

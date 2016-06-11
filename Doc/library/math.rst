@@ -8,6 +8,8 @@
 
    from math import fsum
 
+--------------
+
 This module is always available.  It provides access to the mathematical
 functions defined by the C standard.
 

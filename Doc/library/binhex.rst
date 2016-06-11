@@ -4,6 +4,9 @@
 .. module:: binhex
    :synopsis: Encode and decode files in binhex4 format.
 
+**Source code:** :source:`Lib/binhex.py`
+
+--------------
 
 This module encodes and decodes files in binhex4 format, a format allowing
 representation of Macintosh files in ASCII. Only the data fork is handled.

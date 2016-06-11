@@ -5,6 +5,7 @@
    :platform: Unix
    :synopsis: The password database (getpwnam() and friends).
 
+--------------
 
 This module provides access to the Unix user account and password database.  It
 is available on all Unix versions.

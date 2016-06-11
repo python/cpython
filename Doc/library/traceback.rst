@@ -4,6 +4,9 @@
 .. module:: traceback
    :synopsis: Print or retrieve a stack traceback.
 
+**Source code:** :source:`Lib/traceback.py`
+
+--------------
 
 This module provides a standard interface to extract, format and print stack
 traces of Python programs.  It exactly mimics the behavior of the Python

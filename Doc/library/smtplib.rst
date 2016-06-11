@@ -3,14 +3,14 @@
 
 .. module:: smtplib
    :synopsis: SMTP protocol client (requires sockets).
+
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 
+**Source code:** :source:`Lib/smtplib.py`
 
 .. index::
    pair: SMTP; protocol
    single: Simple Mail Transfer Protocol
-
-**Source code:** :source:`Lib/smtplib.py`
 
 --------------
 

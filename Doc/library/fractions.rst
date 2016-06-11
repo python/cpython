@@ -3,6 +3,7 @@
 
 .. module:: fractions
    :synopsis: Rational numbers.
+
 .. moduleauthor:: Jeffrey Yasskin <jyasskin at gmail.com>
 .. sectionauthor:: Jeffrey Yasskin <jyasskin at gmail.com>
 

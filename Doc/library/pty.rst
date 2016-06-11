@@ -4,9 +4,13 @@
 .. module:: pty
    :platform: Linux
    :synopsis: Pseudo-Terminal Handling for Linux.
+
 .. moduleauthor:: Steen Lumholt
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
+**Source code:** :source:`Lib/pty.py`
+
+--------------
 
 The :mod:`pty` module defines operations for handling the pseudo-terminal
 concept: starting another process and being able to write to and read from its

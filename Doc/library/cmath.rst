@@ -4,6 +4,7 @@
 .. module:: cmath
    :synopsis: Mathematical functions for complex numbers.
 
+--------------
 
 This module is always available.  It provides access to mathematical functions
 for complex numbers.  The functions in this module accept integers,

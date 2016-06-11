@@ -3,9 +3,11 @@
 
 .. module:: chunk
    :synopsis: Module to read IFF chunks.
+
 .. moduleauthor:: Sjoerd Mullender <sjoerd@acm.org>
 .. sectionauthor:: Sjoerd Mullender <sjoerd@acm.org>
 
+**Source code:** :source:`Lib/chunk.py`
 
 .. index::
    single: Audio Interchange File Format
@@ -13,6 +15,8 @@
    single: AIFF-C
    single: Real Media File Format
    single: RMFF
+
+--------------
 
 This module provides an interface for reading files that use EA IFF 85 chunks.
 [#]_  This format is used in at least the Audio Interchange File Format

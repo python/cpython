@@ -3,6 +3,7 @@
 
 .. module:: html.entities
    :synopsis: Definitions of HTML general entities.
+
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 **Source code:** :source:`Lib/html/entities.py`

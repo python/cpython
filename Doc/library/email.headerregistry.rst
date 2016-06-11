@@ -7,6 +7,10 @@
 .. moduleauthor:: R. David Murray <rdmurray@bitdance.com>
 .. sectionauthor:: R. David Murray <rdmurray@bitdance.com>
 
+.. versionadded:: 3.3
+   as a :term:`provisional module <provisional package>`.
+
+**Source code:** :source:`Lib/email/headerregistry.py`
 
 .. note::
 
@@ -15,8 +19,7 @@
    changes (up to and including removal of the module) may occur if deemed
    necessary by the core developers.
 
-.. versionadded:: 3.3
-   as a :term:`provisional module <provisional package>`.
+--------------
 
 Headers are represented by customized subclasses of :class:`str`.  The
 particular class used to represent a given header is determined by the

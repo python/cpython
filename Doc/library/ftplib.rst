@@ -4,12 +4,11 @@
 .. module:: ftplib
    :synopsis: FTP protocol client (requires sockets).
 
+**Source code:** :source:`Lib/ftplib.py`
 
 .. index::
    pair: FTP; protocol
    single: FTP; ftplib (standard module)
-
-**Source code:** :source:`Lib/ftplib.py`
 
 --------------
 
