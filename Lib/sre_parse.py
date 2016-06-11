@@ -282,33 +282,6 @@ class Tokenizer:
     def error(self, msg, offset=0):
         return error(msg, self.string, self.tell() - offset)
 
-# The following three functions are not used in this module anymore, but we keep
-# them here (with DeprecationWarnings) for backwards compatibility.
-
-def isident(char):
-    import warnings
-    warnings.warn('sre_parse.isident() will be removed in 3.5',
-                  DeprecationWarning, stacklevel=2)
-    return "a" <= char <= "z" or "A" <= char <= "Z" or char == "_"
-
-def isdigit(char):
-    import warnings
-    warnings.warn('sre_parse.isdigit() will be removed in 3.5',
-                  DeprecationWarning, stacklevel=2)
-    return "0" <= char <= "9"
-
-def isname(name):
-    import warnings
-    warnings.warn('sre_parse.isname() will be removed in 3.5',
-                  DeprecationWarning, stacklevel=2)
-    # check that group name is a valid string
-    if not isident(name[0]):
-        return False
-    for char in name[1:]:
-        if not isident(char) and not isdigit(char):
-            return False
-    return True
-
 def _class_escape(source, escape):
     # handle escape code inside character class
     code = ESCAPES.get(escape)
@@ -351,9 +324,7 @@ def _class_escape(source, escape):
             raise ValueError
         if len(escape) == 2:
             if c in ASCIILETTERS:
-                import warnings
-                warnings.warn('bad escape %s' % escape,
-                              DeprecationWarning, stacklevel=8)
+                raise source.error('bad escape %s' % escape, len(escape))
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
@@ -418,9 +389,7 @@ def _escape(source, escape, state):
             raise source.error("invalid group reference", len(escape))
         if len(escape) == 2:
             if c in ASCIILETTERS:
-                import warnings
-                warnings.warn('bad escape %s' % escape,
-                              DeprecationWarning, stacklevel=8)
+                raise source.error("bad escape %s" % escape, len(escape))
             return LITERAL, ord(escape[1])
     except ValueError:
         pass
@@ -798,10 +767,7 @@ def fix_flags(src, flags):
     # Check and fix flags according to the type of pattern (str or bytes)
     if isinstance(src, str):
         if flags & SRE_FLAG_LOCALE:
-            import warnings
-            warnings.warn("LOCALE flag with a str pattern is deprecated. "
-                          "Will be an error in 3.6",
-                          DeprecationWarning, stacklevel=6)
+            raise ValueError("cannot use LOCALE flag with a str pattern")
         if not flags & SRE_FLAG_ASCII:
             flags |= SRE_FLAG_UNICODE
         elif flags & SRE_FLAG_UNICODE:
@@ -810,10 +776,7 @@ def fix_flags(src, flags):
         if flags & SRE_FLAG_UNICODE:
             raise ValueError("cannot use UNICODE flag with a bytes pattern")
         if flags & SRE_FLAG_LOCALE and flags & SRE_FLAG_ASCII:
-            import warnings
-            warnings.warn("ASCII and LOCALE flags are incompatible. "
-                          "Will be an error in 3.6",
-                          DeprecationWarning, stacklevel=6)
+            raise ValueError("ASCII and LOCALE flags are incompatible")
     return flags
 
 def parse(str, flags=0, pattern=None):
@@ -914,9 +877,7 @@ def parse_template(source, pattern):
                     this = chr(ESCAPES[this][1])
                 except KeyError:
                     if c in ASCIILETTERS:
-                        import warnings
-                        warnings.warn('bad escape %s' % this,
-                                      DeprecationWarning, stacklevel=4)
+                        raise s.error('bad escape %s' % this, len(this))
                 lappend(this)
         else:
             lappend(this)
