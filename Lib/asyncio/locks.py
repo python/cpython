@@ -329,7 +329,13 @@ class Condition(_ContextManagerMixin):
                 self._waiters.remove(fut)
 
         finally:
-            yield from self.acquire()
+            # Must reacquire lock even if wait is cancelled
+            while True:
+                try:
+                    yield from self.acquire()
+                    break
+                except futures.CancelledError:
+                    pass
 
     @coroutine
     def wait_for(self, predicate):
