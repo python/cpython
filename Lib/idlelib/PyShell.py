@@ -1408,6 +1408,17 @@ class PseudoInputFile(PseudoFile):
         self.shell.close()
 
 
+def fix_x11_paste(root):
+    "Make paste replace selection on x11.  See issue #5124."
+    if root._windowingsystem == 'x11':
+        for cls in 'Text', 'Entry', 'Spinbox':
+            root.bind_class(
+                cls,
+                '<<Paste>>',
+                'catch {%W delete sel.first sel.last}\n' +
+                        root.bind_class(cls, '<<Paste>>'))
+
+
 usage_msg = """\
 
 USAGE: idle  [-deins] [-t title] [file]*
@@ -1537,8 +1548,10 @@ def main():
                                     'editor-on-startup', type='bool')
     enable_edit = enable_edit or edit_start
     enable_shell = enable_shell or not enable_edit
+
     # start editor and/or shell windows:
     root = Tk(className="Idle")
+    root.withdraw()
 
     # set application icon
     icondir = os.path.join(os.path.dirname(__file__), 'Icons')
@@ -1553,7 +1566,7 @@ def main():
         root.tk.call('wm', 'iconphoto', str(root), "-default", *icons)
 
     fixwordbreaks(root)
-    root.withdraw()
+    fix_x11_paste(root)
     flist = PyShellFileList(root)
     macosxSupport.setupApp(root, flist)
 
