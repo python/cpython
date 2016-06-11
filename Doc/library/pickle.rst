@@ -1,6 +1,14 @@
 :mod:`pickle` --- Python object serialization
 =============================================
 
+.. module:: pickle
+   :synopsis: Convert Python objects to streams of bytes and back.
+
+.. sectionauthor:: Jim Kerr <jbkerr@sr.hp.com>.
+.. sectionauthor:: Barry Warsaw <barry@python.org>
+
+**Source code:** :source:`Lib/pickle.py`
+
 .. index::
    single: persistence
    pair: persistent; objects
@@ -9,11 +17,7 @@
    pair: flattening; objects
    pair: pickling; objects
 
-.. module:: pickle
-   :synopsis: Convert Python objects to streams of bytes and back.
-.. sectionauthor:: Jim Kerr <jbkerr@sr.hp.com>.
-.. sectionauthor:: Barry Warsaw <barry@python.org>
-
+--------------
 
 The :mod:`pickle` module implements binary protocols for serializing and
 de-serializing a Python object structure.  *"Pickling"* is the process

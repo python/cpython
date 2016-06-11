@@ -8,6 +8,7 @@
 .. deprecated:: 3.4
    Due to lack of usage, the formatter module has been deprecated.
 
+--------------
 
 This module supports two interface definitions, each with multiple
 implementations: The *formatter* interface, and the *writer* interface which is

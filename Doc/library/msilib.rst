@@ -4,11 +4,15 @@
 .. module:: msilib
    :platform: Windows
    :synopsis: Creation of Microsoft Installer files, and CAB files.
+
 .. moduleauthor:: Martin v. Löwis <martin@v.loewis.de>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
+**Source code:** :source:`Lib/msilib/__init__.py`
 
 .. index:: single: msi
+
+--------------
 
 The :mod:`msilib` supports the creation of Microsoft Installer (``.msi``) files.
 Because these files often contain an embedded "cabinet" file (``.cab``), it also

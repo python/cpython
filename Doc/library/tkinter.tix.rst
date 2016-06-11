@@ -3,10 +3,14 @@
 
 .. module:: tkinter.tix
    :synopsis: Tk Extension Widgets for Tkinter
+
 .. sectionauthor:: Mike Clarkson <mikeclarkson@users.sourceforge.net>
 
+**Source code:** :source:`Lib/tkinter/tix.py`
 
 .. index:: single: Tix
+
+--------------
 
 The :mod:`tkinter.tix` (Tk Interface Extension) module provides an additional
 rich set of widgets. Although the standard Tk library has many useful widgets,

@@ -3,6 +3,7 @@
 
 .. module:: pprint
    :synopsis: Data pretty printer.
+
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 

@@ -4,6 +4,10 @@
 .. module:: dbm
    :synopsis: Interfaces to various Unix "database" formats.
 
+**Source code:** :source:`Lib/dbm/__init__.py`
+
+--------------
+
 :mod:`dbm` is a generic interface to variants of the DBM database ---
 :mod:`dbm.gnu` or :mod:`dbm.ndbm`.  If none of these modules is installed, the
 slow-but-simple implementation in module :mod:`dbm.dumb` will be used.  There

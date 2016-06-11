@@ -4,8 +4,10 @@
 .. module:: readline
    :platform: Unix
    :synopsis: GNU readline support for Python.
+
 .. sectionauthor:: Skip Montanaro <skip@pobox.com>
 
+--------------
 
 The :mod:`readline` module defines a number of functions to facilitate
 completion and reading/writing of history files from the Python interpreter.

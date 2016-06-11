@@ -4,6 +4,9 @@
 .. module:: email.utils
    :synopsis: Miscellaneous email package utilities.
 
+**Source code:** :source:`Lib/email/utils.py`
+
+--------------
 
 There are several useful utilities provided in the :mod:`email.utils` module:
 

@@ -4,6 +4,7 @@
 .. module:: mmap
    :synopsis: Interface to memory-mapped files for Unix and Windows.
 
+--------------
 
 Memory-mapped file objects behave like both :class:`bytearray` and like
 :term:`file objects <file object>`.  You can use mmap objects in most places

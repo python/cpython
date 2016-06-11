@@ -4,6 +4,9 @@
 .. module:: email.parser
    :synopsis: Parse flat text email messages to produce a message object structure.
 
+**Source code:** :source:`Lib/email/parser.py`
+
+--------------
 
 Message object structures can be created in one of two ways: they can be created
 from whole cloth by instantiating :class:`~email.message.Message` objects and

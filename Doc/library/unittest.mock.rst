@@ -4,10 +4,15 @@
 
 .. module:: unittest.mock
    :synopsis: Mock object library.
+
 .. moduleauthor:: Michael Foord <michael@python.org>
 .. currentmodule:: unittest.mock
 
 .. versionadded:: 3.3
+
+**Source code:** :source:`Lib/unittest/mock.py`
+
+--------------
 
 :mod:`unittest.mock` is a library for testing in Python. It allows you to
 replace parts of your system under test with mock objects and make assertions
@@ -31,8 +36,6 @@ used by many mocking frameworks.
 
 There is a backport of :mod:`unittest.mock` for earlier versions of Python,
 available as `mock on PyPI <https://pypi.python.org/pypi/mock>`_.
-
-**Source code:** :source:`Lib/unittest/mock.py`
 
 
 Quick Guide

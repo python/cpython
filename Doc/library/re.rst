@@ -3,9 +3,13 @@
 
 .. module:: re
    :synopsis: Regular expression operations.
+
 .. moduleauthor:: Fredrik Lundh <fredrik@pythonware.com>
 .. sectionauthor:: Andrew M. Kuchling <amk@amk.ca>
 
+**Source code:** :source:`Lib/re.py`
+
+--------------
 
 This module provides regular expression matching operations similar to
 those found in Perl.

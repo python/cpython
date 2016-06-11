@@ -3,11 +3,15 @@
 
 .. module:: lzma
    :synopsis: A Python wrapper for the liblzma compression library.
+
 .. moduleauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
 .. sectionauthor:: Nadeem Vawda <nadeem.vawda@gmail.com>
 
 .. versionadded:: 3.3
 
+**Source code:** :source:`Lib/lzma.py`
+
+--------------
 
 This module provides classes and convenience functions for compressing and
 decompressing data using the LZMA compression algorithm. Also included is a file

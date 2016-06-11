@@ -3,9 +3,13 @@
 
 .. module:: mailbox
    :synopsis: Manipulate mailboxes in various formats
+
 .. moduleauthor:: Gregory K. Johnson <gkj@gregorykjohnson.com>
 .. sectionauthor:: Gregory K. Johnson <gkj@gregorykjohnson.com>
 
+**Source code:** :source:`Lib/mailbox.py`
+
+--------------
 
 This module defines two classes, :class:`Mailbox` and :class:`Message`, for
 accessing and manipulating on-disk mailboxes and the messages they contain.

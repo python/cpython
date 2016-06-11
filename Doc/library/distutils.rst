@@ -4,8 +4,10 @@
 .. module:: distutils
    :synopsis: Support for building and installing Python modules into an
               existing Python installation.
+
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+--------------
 
 The :mod:`distutils` package provides support for building and installing
 additional modules into a Python installation.  The new modules may be either

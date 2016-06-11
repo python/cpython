@@ -9,6 +9,9 @@
 
 .. versionadded:: 3.1
 
+**Source code:** :source:`Lib/importlib/__init__.py`
+
+--------------
 
 Introduction
 ------------

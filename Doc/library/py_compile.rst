@@ -3,12 +3,13 @@
 
 .. module:: py_compile
    :synopsis: Generate byte-code files from Python source files.
+
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. documentation based on module docstrings
 
-.. index:: pair: file; byte-code
-
 **Source code:** :source:`Lib/py_compile.py`
+
+.. index:: pair: file; byte-code
 
 --------------
 

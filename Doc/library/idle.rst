@@ -3,12 +3,16 @@
 IDLE
 ====
 
+.. moduleauthor:: Guido van Rossum <guido@python.org>
+
+**Source code:** :source:`Lib/idlelib/`
+
 .. index::
    single: IDLE
    single: Python Editor
    single: Integrated Development Environment
 
-.. moduleauthor:: Guido van Rossum <guido@python.org>
+--------------
 
 IDLE is Python's Integrated Development and Learning Environment.
 

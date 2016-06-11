@@ -3,6 +3,7 @@
 
 .. module:: tokenize
    :synopsis: Lexical scanner for Python source code.
+
 .. moduleauthor:: Ka Ping Yee
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 

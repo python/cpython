@@ -4,12 +4,17 @@
 
 .. module:: turtle
    :synopsis: An educational framework for simple graphics applications
+
 .. sectionauthor:: Gregor Lingl <gregor.lingl@aon.at>
+
+**Source code:** :source:`Lib/turtle.py`
 
 .. testsetup:: default
 
    from turtle import *
    turtle = Turtle()
+
+--------------
 
 Introduction
 ============

@@ -3,6 +3,7 @@
 
 .. module:: test
    :synopsis: Regression tests package containing the testing suite for Python.
+
 .. sectionauthor:: Brett Cannon <brett@python.org>
 
 .. note::
@@ -12,6 +13,7 @@
    mentioned here can change or be removed without notice between releases of
    Python.
 
+--------------
 
 The :mod:`test` package contains all regression tests for Python as well as the
 modules :mod:`test.support` and :mod:`test.regrtest`.

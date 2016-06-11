@@ -8,9 +8,9 @@
 
 **Source code:** :source:`Lib/pdb.py`
 
---------------
-
 .. index:: single: debugging
+
+--------------
 
 The module :mod:`pdb` defines an interactive source code debugger for Python
 programs.  It supports setting (conditional) breakpoints and single stepping at

@@ -4,14 +4,13 @@
 .. module:: http.client
    :synopsis: HTTP and HTTPS protocol client (requires sockets).
 
+**Source code:** :source:`Lib/http/client.py`
 
 .. index::
    pair: HTTP; protocol
    single: HTTP; http.client (standard module)
 
 .. index:: module: urllib.request
-
-**Source code:** :source:`Lib/http/client.py`
 
 --------------
 

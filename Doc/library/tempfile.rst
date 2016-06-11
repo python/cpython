@@ -1,18 +1,16 @@
 :mod:`tempfile` --- Generate temporary files and directories
 ============================================================
 
-.. sectionauthor:: Zack Weinberg <zack@codesourcery.com>
-
-
 .. module:: tempfile
    :synopsis: Generate temporary files and directories.
 
+.. sectionauthor:: Zack Weinberg <zack@codesourcery.com>
+
+**Source code:** :source:`Lib/tempfile.py`
 
 .. index::
    pair: temporary; file name
    pair: temporary; file
-
-**Source code:** :source:`Lib/tempfile.py`
 
 --------------
 

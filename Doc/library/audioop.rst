@@ -4,6 +4,7 @@
 .. module:: audioop
    :synopsis: Manipulate raw audio data.
 
+--------------
 
 The :mod:`audioop` module contains some useful operations on sound fragments.
 It operates on sound fragments consisting of signed integer samples 8, 16, 24

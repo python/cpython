@@ -3,6 +3,7 @@
 
 .. module:: symbol
    :synopsis: Constants representing internal nodes of the parse tree.
+
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
 **Source code:** :source:`Lib/symbol.py`
