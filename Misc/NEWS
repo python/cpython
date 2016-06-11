@@ -274,6 +274,11 @@ Library
 
 IDLE
 ----
+
+- Issue #5124: Paste with text selected now replaces the selection on X11.
+  This matches how paste works on Windows, Mac, most modern Linux apps,
+  and ttk widgets.  Original patch by Serhiy Storchaka.
+
 - Issue #24759: Make clear in idlelib.idle_test.__init__ that the directory
   is a private implementation of test.test_idle and tool for maintainers.
 
