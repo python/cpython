@@ -155,7 +155,7 @@ static void *opcode_targets[256] = {
     &&TARGET_BUILD_SET_UNPACK,
     &&TARGET_SETUP_ASYNC_WITH,
     &&TARGET_FORMAT_VALUE,
-    &&_unknown_opcode,
+    &&TARGET_BUILD_CONST_KEY_MAP,
     &&_unknown_opcode,
     &&_unknown_opcode,
     &&_unknown_opcode,
