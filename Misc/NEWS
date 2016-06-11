@@ -19,6 +19,9 @@ Core and Builtins
 Library
 -------
 
+- Fix TLS stripping vulnerability in smptlib, CVE-2016-0772.  Reported by Team
+  Oststrom
+
 - Issue #25939: On Windows open the cert store readonly in ssl.enum_certificates.
 
 - Issue #26012: Don't traverse into symlinks for ** pattern in
