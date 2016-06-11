@@ -3,7 +3,6 @@
 Edit modules have their own test files files
 '''
 from test.test_support import requires
-requires('gui')
 import Tkinter as tk
 import unittest
 from idlelib import PyShell
@@ -15,6 +14,7 @@ class PasteTest(unittest.TestCase):
     '''
     @classmethod
     def setUpClass(cls):
+        requires('gui')
         cls.root = root = tk.Tk()
         PyShell.fix_x11_paste(root)
         cls.text = tk.Text(root)
