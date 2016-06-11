@@ -980,6 +980,8 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return 1 - (oparg & 0xFF);
         case BUILD_MAP:
             return 1 - 2*oparg;
+        case BUILD_CONST_KEY_MAP:
+            return -oparg;
         case LOAD_ATTR:
             return 0;
         case COMPARE_OP:
@@ -1234,6 +1236,15 @@ compiler_addop_j(struct compiler *c, int opcode, basicblock *b, int absolute)
         return 0; \
 }
 
+/* Same as ADDOP_O, but steals a reference. */
+#define ADDOP_N(C, OP, O, TYPE) { \
+    if (!compiler_addop_o((C), (OP), (C)->u->u_ ## TYPE, (O))) { \
+        Py_DECREF((O)); \
+        return 0; \
+    } \
+    Py_DECREF((O)); \
+}
+
 #define ADDOP_NAME(C, OP, O, TYPE) { \
     if (!compiler_addop_name((C), (OP), (C)->u->u_ ## TYPE, (O))) \
         return 0; \
@@ -1307,6 +1318,44 @@ compiler_isdocstring(stmt_ty s)
     if (s->v.Expr.value->kind == Constant_kind)
         return PyUnicode_CheckExact(s->v.Expr.value->v.Constant.value);
     return 0;
+}
+
+static int
+is_const(expr_ty e)
+{
+    switch (e->kind) {
+    case Constant_kind:
+    case Num_kind:
+    case Str_kind:
+    case Bytes_kind:
+    case Ellipsis_kind:
+    case NameConstant_kind:
+        return 1;
+    default:
+        return 0;
+    }
+}
+
+static PyObject *
+get_const_value(expr_ty e)
+{
+    switch (e->kind) {
+    case Constant_kind:
+        return e->v.Constant.value;
+    case Num_kind:
+        return e->v.Num.n;
+    case Str_kind:
+        return e->v.Str.s;
+    case Bytes_kind:
+        return e->v.Bytes.s;
+    case Ellipsis_kind:
+        return Py_Ellipsis;
+    case NameConstant_kind:
+        return e->v.NameConstant.value;
+    default:
+        assert(!is_const(e));
+        return NULL;
+    }
 }
 
 /* Compile a sequence of statements, checking for a docstring. */
@@ -2604,19 +2653,9 @@ compiler_visit_stmt_expr(struct compiler *c, expr_ty value)
         return 1;
     }
 
-    switch (value->kind)
-    {
-    case Str_kind:
-    case Num_kind:
-    case Ellipsis_kind:
-    case Bytes_kind:
-    case NameConstant_kind:
-    case Constant_kind:
+    if (is_const(value)) {
         /* ignore constant statement */
         return 1;
-
-    default:
-        break;
     }
 
     VISIT(c, expr, value);
@@ -3096,6 +3135,49 @@ compiler_set(struct compiler *c, expr_ty e)
 }
 
 static int
+are_all_items_const(asdl_seq *seq, Py_ssize_t begin, Py_ssize_t end)
+{
+    Py_ssize_t i;
+    for (i = begin; i < end; i++) {
+        expr_ty key = (expr_ty)asdl_seq_GET(seq, i);
+        if (key == NULL || !is_const(key))
+            return 0;
+    }
+    return 1;
+}
+
+static int
+compiler_subdict(struct compiler *c, expr_ty e, Py_ssize_t begin, Py_ssize_t end)
+{
+    Py_ssize_t i, n = end - begin;
+    PyObject *keys, *key;
+    if (n > 1 && are_all_items_const(e->v.Dict.keys, begin, end)) {
+        for (i = begin; i < end; i++) {
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+        }
+        keys = PyTuple_New(n);
+        if (keys == NULL) {
+            return 0;
+        }
+        for (i = begin; i < end; i++) {
+            key = get_const_value((expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            Py_INCREF(key);
+            PyTuple_SET_ITEM(keys, i - begin, key);
+        }
+        ADDOP_N(c, LOAD_CONST, keys, consts);
+        ADDOP_I(c, BUILD_CONST_KEY_MAP, n);
+    }
+    else {
+        for (i = begin; i < end; i++) {
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
+            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
+        }
+        ADDOP_I(c, BUILD_MAP, n);
+    }
+    return 1;
+}
+
+static int
 compiler_dict(struct compiler *c, expr_ty e)
 {
     Py_ssize_t i, n, elements;
@@ -3107,7 +3189,8 @@ compiler_dict(struct compiler *c, expr_ty e)
     for (i = 0; i < n; i++) {
         is_unpacking = (expr_ty)asdl_seq_GET(e->v.Dict.keys, i) == NULL;
         if (elements == 0xFFFF || (elements && is_unpacking)) {
-            ADDOP_I(c, BUILD_MAP, elements);
+            if (!compiler_subdict(c, e, i - elements, i))
+                return 0;
             containers++;
             elements = 0;
         }
@@ -3116,13 +3199,12 @@ compiler_dict(struct compiler *c, expr_ty e)
             containers++;
         }
         else {
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.keys, i));
-            VISIT(c, expr, (expr_ty)asdl_seq_GET(e->v.Dict.values, i));
             elements++;
         }
     }
     if (elements || containers == 0) {
-        ADDOP_I(c, BUILD_MAP, elements);
+        if (!compiler_subdict(c, e, n - elements, n))
+            return 0;
         containers++;
     }
     /* If there is more than one dict, they need to be merged into a new
@@ -3266,6 +3348,42 @@ compiler_formatted_value(struct compiler *c, expr_ty e)
     return 1;
 }
 
+static int
+compiler_subkwargs(struct compiler *c, asdl_seq *keywords, Py_ssize_t begin, Py_ssize_t end)
+{
+    Py_ssize_t i, n = end - begin;
+    keyword_ty kw;
+    PyObject *keys, *key;
+    assert(n > 0);
+    if (n > 1) {
+        for (i = begin; i < end; i++) {
+            kw = asdl_seq_GET(keywords, i);
+            VISIT(c, expr, kw->value);
+        }
+        keys = PyTuple_New(n);
+        if (keys == NULL) {
+            return 0;
+        }
+        for (i = begin; i < end; i++) {
+            key = ((keyword_ty) asdl_seq_GET(keywords, i))->arg;
+            Py_INCREF(key);
+            PyTuple_SET_ITEM(keys, i - begin, key);
+        }
+        ADDOP_N(c, LOAD_CONST, keys, consts);
+        ADDOP_I(c, BUILD_CONST_KEY_MAP, n);
+    }
+    else {
+        /* a for loop only executes once */
+        for (i = begin; i < end; i++) {
+            kw = asdl_seq_GET(keywords, i);
+            ADDOP_O(c, LOAD_CONST, kw->arg, consts);
+            VISIT(c, expr, kw->value);
+        }
+        ADDOP_I(c, BUILD_MAP, n);
+    }
+    return 1;
+}
+
 /* shared code between compiler_call and compiler_class */
 static int
 compiler_call_helper(struct compiler *c,
@@ -3332,29 +3450,38 @@ compiler_call_helper(struct compiler *c,
         if (kw->arg == NULL) {
             /* A keyword argument unpacking. */
             if (nseen) {
-                ADDOP_I(c, BUILD_MAP, nseen);
+                if (nsubkwargs) {
+                    if (!compiler_subkwargs(c, keywords, i - nseen, i))
+                        return 0;
+                    nsubkwargs++;
+                }
+                else {
+                    Py_ssize_t j;
+                    for (j = 0; j < nseen; j++) {
+                        VISIT(c, keyword, asdl_seq_GET(keywords, j));
+                    }
+                    nkw = nseen;
+                }
                 nseen = 0;
-                nsubkwargs++;
             }
             VISIT(c, expr, kw->value);
             nsubkwargs++;
         }
-        else if (nsubkwargs) {
-            /* A keyword argument and we already have a dict. */
-            ADDOP_O(c, LOAD_CONST, kw->arg, consts);
-            VISIT(c, expr, kw->value);
-            nseen++;
-        }
         else {
-            /* keyword argument */
-            VISIT(c, keyword, kw)
-            nkw++;
+            nseen++;
         }
     }
     if (nseen) {
-        /* Pack up any trailing keyword arguments. */
-        ADDOP_I(c, BUILD_MAP, nseen);
-        nsubkwargs++;
+        if (nsubkwargs) {
+            /* Pack up any trailing keyword arguments. */
+            if (!compiler_subkwargs(c, keywords, nelts - nseen, nelts))
+                return 0;
+            nsubkwargs++;
+        }
+        else {
+            VISIT_SEQ(c, keyword, keywords);
+            nkw = nseen;
+        }
     }
     if (nsubkwargs) {
         code |= 2;

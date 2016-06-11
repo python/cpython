@@ -10,6 +10,8 @@ What's New in Python 3.6.0 alpha 2
 Core and Builtins
 -----------------
 
+- Issue #27140: Added BUILD_CONST_KEY_MAP opcode.
+
 - Issue #27186: Add support for os.PathLike objects to open() (part of PEP 519).
 
 - Issue #27066: Fixed SystemError if a custom opener (for open()) returns a
