@@ -7,8 +7,6 @@
 
 **Source code:** :source:`Lib/getopt.py`
 
---------------
-
 .. note::
 
    The :mod:`getopt` module is a parser for command line options whose API is
@@ -16,6 +14,8 @@
    are unfamiliar with the C :c:func:`getopt` function or who would like to write
    less code and get better help and error messages should consider using the
    :mod:`argparse` module instead.
+
+--------------
 
 This module helps scripts to parse the command line arguments in ``sys.argv``.
 It supports the same conventions as the Unix :c:func:`getopt` function (including

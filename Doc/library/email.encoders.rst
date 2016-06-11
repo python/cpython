@@ -4,6 +4,9 @@
 .. module:: email.encoders
    :synopsis: Encoders for email message payloads.
 
+**Source code:** :source:`Lib/email/encoders.py`
+
+--------------
 
 When creating :class:`~email.message.Message` objects from scratch, you often
 need to encode the payloads for transport through compliant mail servers. This

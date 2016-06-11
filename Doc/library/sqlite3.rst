@@ -3,8 +3,12 @@
 
 .. module:: sqlite3
    :synopsis: A DB-API 2.0 implementation using SQLite 3.x.
+
 .. sectionauthor:: Gerhard Häring <gh@ghaering.de>
 
+**Source code:** :source:`Lib/sqlite3/`
+
+--------------
 
 SQLite is a C library that provides a lightweight disk-based database that
 doesn't require a separate server process and allows accessing the database

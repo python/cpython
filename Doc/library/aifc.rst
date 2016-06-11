@@ -4,13 +4,12 @@
 .. module:: aifc
    :synopsis: Read and write audio files in AIFF or AIFC format.
 
+**Source code:** :source:`Lib/aifc.py`
 
 .. index::
    single: Audio Interchange File Format
    single: AIFF
    single: AIFF-C
-
-**Source code:** :source:`Lib/aifc.py`
 
 --------------
 

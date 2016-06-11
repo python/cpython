@@ -3,6 +3,7 @@
 
 .. module:: ipaddress
    :synopsis: IPv4/IPv6 manipulation library.
+
 .. moduleauthor:: Peter Moody
 
 **Source code:** :source:`Lib/ipaddress.py`

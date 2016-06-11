@@ -3,10 +3,14 @@
 
 .. module:: tkinter.ttk
    :synopsis: Tk themed widget set
+
 .. sectionauthor:: Guilherme Polo <ggpolo@gmail.com>
 
+**Source code:** :source:`Lib/tkinter/ttk.py`
 
 .. index:: single: ttk
+
+--------------
 
 The :mod:`tkinter.ttk` module provides access to the Tk themed widget set,
 introduced in Tk 8.5. If Python has not been compiled against Tk 8.5, this

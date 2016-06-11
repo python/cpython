@@ -5,10 +5,13 @@
    :synopsis: RFC 3548: Base16, Base32, Base64 Data Encodings;
               Base85 and Ascii85
 
+**Source code:** :source:`Lib/base64.py`
 
 .. index::
    pair: base64; encoding
    single: MIME; base64 encoding
+
+--------------
 
 This module provides functions for encoding binary data to printable
 ASCII characters and decoding such encodings back to binary data.

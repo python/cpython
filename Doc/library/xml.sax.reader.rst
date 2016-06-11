@@ -3,9 +3,13 @@
 
 .. module:: xml.sax.xmlreader
    :synopsis: Interface which SAX-compliant XML parsers must implement.
+
 .. moduleauthor:: Lars Marius Garshol <larsga@garshol.priv.no>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>
 
+**Source code:** :source:`Lib/xml/sax/xmlreader.py`
+
+--------------
 
 SAX parsers implement the :class:`XMLReader` interface. They are implemented in
 a Python module, which must provide a function :func:`create_parser`. This

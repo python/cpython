@@ -4,11 +4,13 @@
 .. module:: http
    :synopsis: HTTP status codes and messages
 
+**Source code:** :source:`Lib/http/__init__.py`
+
 .. index::
    pair: HTTP; protocol
    single: HTTP; http (standard module)
 
-**Source code:** :source:`Lib/http/__init__.py`
+--------------
 
 :mod:`http` is a package that collects several modules for working with the
 HyperText Transfer Protocol:

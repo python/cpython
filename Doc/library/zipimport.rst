@@ -3,8 +3,10 @@
 
 .. module:: zipimport
    :synopsis: support for importing Python modules from ZIP archives.
+
 .. moduleauthor:: Just van Rossum <just@letterror.com>
 
+--------------
 
 This module adds the ability to import Python modules (:file:`\*.py`,
 :file:`\*.py[co]`) and packages from ZIP-format archives. It is usually not

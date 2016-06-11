@@ -3,6 +3,7 @@
 
 .. module:: xml.dom.minidom
    :synopsis: Minimal Document Object Model (DOM) implementation.
+
 .. moduleauthor:: Paul Prescod <paul@prescod.net>
 .. sectionauthor:: Paul Prescod <paul@prescod.net>
 .. sectionauthor:: Martin v. Löwis <martin@v.loewis.de>

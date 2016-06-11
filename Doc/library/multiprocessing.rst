@@ -4,6 +4,9 @@
 .. module:: multiprocessing
    :synopsis: Process-based parallelism.
 
+**Source code:** :source:`Lib/multiprocessing/`
+
+--------------
 
 Introduction
 ------------

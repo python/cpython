@@ -4,6 +4,7 @@
 .. module:: pipes
    :platform: Unix
    :synopsis: A Python interface to Unix shell pipelines.
+
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
 **Source code:** :source:`Lib/pipes.py`

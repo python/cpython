@@ -3,6 +3,7 @@
 
 .. module:: argparse
    :synopsis: Command-line option and argument parsing library.
+
 .. moduleauthor:: Steven Bethard <steven.bethard@gmail.com>
 .. sectionauthor:: Steven Bethard <steven.bethard@gmail.com>
 

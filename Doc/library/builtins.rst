@@ -4,6 +4,7 @@
 .. module:: builtins
    :synopsis: The module that provides the built-in namespace.
 
+--------------
 
 This module provides direct access to all 'built-in' identifiers of Python; for
 example, ``builtins.open`` is the full name for the built-in function

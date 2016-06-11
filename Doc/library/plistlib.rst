@@ -3,15 +3,16 @@
 
 .. module:: plistlib
    :synopsis: Generate and parse Mac OS X plist files.
+
 .. moduleauthor:: Jack Jansen
 .. sectionauthor:: Georg Brandl <georg@python.org>
 .. (harvested from docstrings in the original file)
 
+**Source code:** :source:`Lib/plistlib.py`
+
 .. index::
    pair: plist; file
    single: property list
-
-**Source code:** :source:`Lib/plistlib.py`
 
 --------------
 

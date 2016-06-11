@@ -3,9 +3,14 @@
 
 .. module:: getpass
    :synopsis: Portable reading of passwords and retrieval of the userid.
+
 .. moduleauthor:: Piers Lauder <piers@cs.su.oz.au>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. Windows (& Mac?) support by Guido van Rossum.
+
+**Source code:** :source:`Lib/getpass.py`
+
+--------------
 
 The :mod:`getpass` module provides two functions:
 

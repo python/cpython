@@ -4,14 +4,13 @@
 .. module:: http.server
    :synopsis: HTTP server and request handlers.
 
+**Source code:** :source:`Lib/http/server.py`
 
 .. index::
    pair: WWW; server
    pair: HTTP; protocol
    single: URL
    single: httpd
-
-**Source code:** :source:`Lib/http/server.py`
 
 --------------
 

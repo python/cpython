@@ -4,6 +4,9 @@
 .. module:: email.header
    :synopsis: Representing non-ASCII headers
 
+**Source code:** :source:`Lib/email/header.py`
+
+--------------
 
 :rfc:`2822` is the base standard that describes the format of email messages.
 It derives from the older :rfc:`822` standard which came into widespread use at

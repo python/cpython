@@ -4,10 +4,9 @@
 .. module:: shelve
    :synopsis: Python object persistence.
 
+**Source code:** :source:`Lib/shelve.py`
 
 .. index:: module: pickle
-
-**Source code:** :source:`Lib/shelve.py`
 
 --------------
 

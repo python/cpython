@@ -4,9 +4,9 @@
 .. module:: typing
    :synopsis: Support for type hints (see PEP 484).
 
-**Source code:** :source:`Lib/typing.py`
-
 .. versionadded:: 3.5
+
+**Source code:** :source:`Lib/typing.py`
 
 --------------
 

@@ -207,6 +207,12 @@ IDLE
 
 - Issue #23977: Add more asserts to test_delegator.
 
+Documentation
+-------------
+
+- Issue #22558: Add remaining doc links to source code for Python-coded modules.
+  Patch by Yoni Lavi.
+
 Tests
 -----
 

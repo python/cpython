@@ -4,7 +4,13 @@
 .. module:: os.path
    :synopsis: Operations on pathnames.
 
+**Source code:** :source:`Lib/posixpath.py` (for POSIX),
+:source:`Lib/ntpath.py` (for Windows NT),
+and :source:`Lib/macpath.py` (for Macintosh)
+
 .. index:: single: path; operations
+
+--------------
 
 This module implements some useful functions on pathnames. To read or
 write files see :func:`open`, and for accessing the filesystem see the

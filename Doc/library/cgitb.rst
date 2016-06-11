@@ -3,15 +3,19 @@
 
 .. module:: cgitb
    :synopsis: Configurable traceback handler for CGI scripts.
+
 .. moduleauthor:: Ka-Ping Yee <ping@lfw.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 
+**Source code:** :source:`Lib/cgitb.py`
 
 .. index::
    single: CGI; exceptions
    single: CGI; tracebacks
    single: exceptions; in CGI scripts
    single: tracebacks; in CGI scripts
+
+--------------
 
 The :mod:`cgitb` module provides a special exception handler for Python scripts.
 (Its name is a bit misleading.  It was originally designed to display extensive

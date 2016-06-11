@@ -4,6 +4,9 @@
 .. module:: email.generator
    :synopsis: Generate flat text email messages from a message structure.
 
+**Source code:** :source:`Lib/email/generator.py`
+
+--------------
 
 One of the most common tasks is to generate the flat text of the email message
 represented by a message object structure.  You will need to do this if you want
