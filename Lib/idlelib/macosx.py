@@ -238,4 +238,4 @@ def setupApp(root, flist):
         hideTkConsole(root)
         overrideRootMenu(root, flist)
         addOpenEventSupport(root, flist)
-        fixb2context()
+        fixb2context(root)
