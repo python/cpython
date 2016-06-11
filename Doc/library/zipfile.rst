@@ -204,18 +204,13 @@ ZipFile Objects
    Return a list of archive members by name.
 
 
-.. index::
-   single: universal newlines; zipfile.ZipFile.open method
-
 .. method:: ZipFile.open(name, mode='r', pwd=None, *, force_zip64=False)
 
-   Access a member of the archive as a file-like object.  *name*
-   is the name of the file in the archive, or a :class:`ZipInfo` object.  The
-   *mode* parameter, if included, must be one of the following: ``'r'`` (the
-   default), ``'U'``, ``'rU'`` or ``'w'``.  Choosing ``'U'`` or  ``'rU'`` will
-   enable :term:`universal newlines` support in the read-only object.  *pwd* is
-   the password used to decrypt encrypted ZIP files.  Calling  :meth:`.open` on
-   a closed ZipFile will raise a  :exc:`RuntimeError`.
+   Access a member of the archive as a binary file-like object.  *name*
+   can be either the name of a file within the archive or a :class:`ZipInfo`
+   object.  The *mode* parameter, if included, must be ``'r'`` (the default)
+   or ``'w'``.  *pwd* is the password used to decrypt encrypted ZIP files.
+   Calling :meth:`.open` on a closed ZipFile will raise a :exc:`RuntimeError`.
 
    :meth:`~ZipFile.open` is also a context manager and therefore supports the
    :keyword:`with` statement::
@@ -224,7 +219,7 @@ ZipFile Objects
           with myzip.open('eggs.txt') as myfile:
               print(myfile.read())
 
-   With *mode* ``'r'``, ``'U'`` or ``'rU'``, the file-like object
+   With *mode* ``'r'`` the file-like object
    (``ZipExtFile``) is read-only and provides the following methods:
    :meth:`~io.BufferedIOBase.read`, :meth:`~io.IOBase.readline`,
    :meth:`~io.IOBase.readlines`, :meth:`__iter__`,
@@ -248,8 +243,8 @@ ZipFile Objects
       or a :class:`ZipInfo` object.  You will appreciate this when trying to read a
       ZIP file that contains members with duplicate names.
 
-   .. deprecated-removed:: 3.4 3.6
-      The ``'U'`` or  ``'rU'`` mode.  Use :class:`io.TextIOWrapper` for reading
+   .. versionchanged:: 3.6
+      Removed support of ``mode='U'``.  Use :class:`io.TextIOWrapper` for reading
       compressed text files in :term:`universal newlines` mode.
 
    .. versionchanged:: 3.6

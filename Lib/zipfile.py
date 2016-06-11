@@ -743,9 +743,6 @@ class ZipExtFile(io.BufferedIOBase):
     # Read from compressed files in 4k blocks.
     MIN_READ_SIZE = 4096
 
-    # Search for universal newlines or line chunks.
-    PATTERN = re.compile(br'^(?P<chunk>[^\r\n]+)|(?P<newline>\n|\r\n?)')
-
     def __init__(self, fileobj, mode, zipinfo, decrypter=None,
                  close_fileobj=False):
         self._fileobj = fileobj
@@ -762,7 +759,6 @@ class ZipExtFile(io.BufferedIOBase):
         self._readbuffer = b''
         self._offset = 0
 
-        self._universal = 'U' in mode
         self.newlines = None
 
         # Adjust read size for encrypted files since the first 12 bytes
@@ -799,7 +795,7 @@ class ZipExtFile(io.BufferedIOBase):
         If limit is specified, at most limit bytes will be read.
         """
 
-        if not self._universal and limit < 0:
+        if limit < 0:
             # Shortcut common case - newline found in buffer.
             i = self._readbuffer.find(b'\n', self._offset) + 1
             if i > 0:
@@ -807,41 +803,7 @@ class ZipExtFile(io.BufferedIOBase):
                 self._offset = i
                 return line
 
-        if not self._universal:
-            return io.BufferedIOBase.readline(self, limit)
-
-        line = b''
-        while limit < 0 or len(line) < limit:
-            readahead = self.peek(2)
-            if readahead == b'':
-                return line
-
-            #
-            # Search for universal newlines or line chunks.
-            #
-            # The pattern returns either a line chunk or a newline, but not
-            # both. Combined with peek(2), we are assured that the sequence
-            # '\r\n' is always retrieved completely and never split into
-            # separate newlines - '\r', '\n' due to coincidental readaheads.
-            #
-            match = self.PATTERN.search(readahead)
-            newline = match.group('newline')
-            if newline is not None:
-                if self.newlines is None:
-                    self.newlines = []
-                if newline not in self.newlines:
-                    self.newlines.append(newline)
-                self._offset += len(newline)
-                return line + b'\n'
-
-            chunk = match.group('chunk')
-            if limit >= 0:
-                chunk = chunk[: limit - len(line)]
-
-            self._offset += len(chunk)
-            line += chunk
-
-        return line
+        return io.BufferedIOBase.readline(self, limit)
 
     def peek(self, n=1):
         """Returns buffered bytes without advancing the position."""
@@ -1360,12 +1322,8 @@ class ZipFile:
         files.  If the size is known in advance, it is best to pass a ZipInfo
         instance for name, with zinfo.file_size set.
         """
-        if mode not in {"r", "w", "U", "rU"}:
-            raise RuntimeError('open() requires mode "r", "w", "U", or "rU"')
-        if 'U' in mode:
-            import warnings
-            warnings.warn("'U' mode is deprecated",
-                          DeprecationWarning, 2)
+        if mode not in {"r", "w"}:
+            raise RuntimeError('open() requires mode "r" or "w"')
         if pwd and not isinstance(pwd, bytes):
             raise TypeError("pwd: expected bytes, got %s" % type(pwd))
         if pwd and (mode == "w"):
