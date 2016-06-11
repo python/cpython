@@ -124,7 +124,7 @@ class ReTests(unittest.TestCase):
                          (chr(9)+chr(10)+chr(11)+chr(13)+chr(12)+chr(7)+chr(8)))
         for c in 'cdehijklmopqsuwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ':
             with self.subTest(c):
-                with self.assertWarns(DeprecationWarning):
+                with self.assertRaises(re.error):
                     self.assertEqual(re.sub('a', '\\' + c, 'a'), '\\' + c)
 
         self.assertEqual(re.sub('^\s*', 'X', 'test'), 'Xtest')
@@ -633,14 +633,10 @@ class ReTests(unittest.TestCase):
         re.purge()  # for warnings
         for c in 'ceghijklmopqyzCEFGHIJKLMNOPQRTVXY':
             with self.subTest(c):
-                with self.assertWarns(DeprecationWarning):
-                    self.assertEqual(re.fullmatch('\\%c' % c, c).group(), c)
-                    self.assertIsNone(re.match('\\%c' % c, 'a'))
+                self.assertRaises(re.error, re.compile, '\\%c' % c)
         for c in 'ceghijklmopqyzABCEFGHIJKLMNOPQRTVXYZ':
             with self.subTest(c):
-                with self.assertWarns(DeprecationWarning):
-                    self.assertEqual(re.fullmatch('[\\%c]' % c, c).group(), c)
-                    self.assertIsNone(re.match('[\\%c]' % c, 'a'))
+                self.assertRaises(re.error, re.compile, '[\\%c]' % c)
 
     def test_string_boundaries(self):
         # See http://bugs.python.org/issue10713
@@ -993,10 +989,8 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"\x%02x" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"\x%02x0" % i).encode(), bytes([i])+b"0"))
             self.assertTrue(re.match((r"\x%02xz" % i).encode(), bytes([i])+b"z"))
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match(br"\u1234", b'u1234'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match(br"\U00012345", b'U00012345'))
+        self.assertRaises(re.error, re.compile, br"\u1234")
+        self.assertRaises(re.error, re.compile, br"\U00012345")
         self.assertTrue(re.match(br"\0", b"\000"))
         self.assertTrue(re.match(br"\08", b"\0008"))
         self.assertTrue(re.match(br"\01", b"\001"))
@@ -1018,10 +1012,8 @@ class ReTests(unittest.TestCase):
             self.assertTrue(re.match((r"[\x%02x]" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"[\x%02x0]" % i).encode(), bytes([i])))
             self.assertTrue(re.match((r"[\x%02xz]" % i).encode(), bytes([i])))
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match(br"[\u1234]", b'u'))
-        with self.assertWarns(DeprecationWarning):
-            self.assertTrue(re.match(br"[\U00012345]", b'U'))
+        self.assertRaises(re.error, re.compile, br"[\u1234]")
+        self.assertRaises(re.error, re.compile, br"[\U00012345]")
         self.checkPatternError(br"[\567]",
                                r'octal escape value \567 outside of '
                                r'range 0-0o377', 1)
@@ -1363,12 +1355,12 @@ class ReTests(unittest.TestCase):
         if bletter:
             self.assertIsNone(pat.match(bletter))
         # Incompatibilities
-        self.assertWarns(DeprecationWarning, re.compile, '', re.LOCALE)
-        self.assertWarns(DeprecationWarning, re.compile, '(?L)')
-        self.assertWarns(DeprecationWarning, re.compile, b'', re.LOCALE | re.ASCII)
-        self.assertWarns(DeprecationWarning, re.compile, b'(?L)', re.ASCII)
-        self.assertWarns(DeprecationWarning, re.compile, b'(?a)', re.LOCALE)
-        self.assertWarns(DeprecationWarning, re.compile, b'(?aL)')
+        self.assertRaises(ValueError, re.compile, '', re.LOCALE)
+        self.assertRaises(ValueError, re.compile, '(?L)')
+        self.assertRaises(ValueError, re.compile, b'', re.LOCALE | re.ASCII)
+        self.assertRaises(ValueError, re.compile, b'(?L)', re.ASCII)
+        self.assertRaises(ValueError, re.compile, b'(?a)', re.LOCALE)
+        self.assertRaises(ValueError, re.compile, b'(?aL)')
 
     def test_bug_6509(self):
         # Replacement strings of both types must parse properly.
@@ -1418,13 +1410,6 @@ class ReTests(unittest.TestCase):
         self.assertIs(same_pattern, pattern)
         # Test behaviour when not given a string or pattern as parameter
         self.assertRaises(TypeError, re.compile, 0)
-
-    def test_bug_13899(self):
-        # Issue #13899: re pattern r"[\A]" should work like "A" but matches
-        # nothing. Ditto B and Z.
-        with self.assertWarns(DeprecationWarning):
-            self.assertEqual(re.findall(r'[\A\B\b\C\Z]', 'AB\bCZ'),
-                             ['A', 'B', '\b', 'C', 'Z'])
 
     @bigmemtest(size=_2G, memuse=1)
     def test_large_search(self, size):

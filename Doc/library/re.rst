@@ -317,8 +317,9 @@ The special characters are:
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
-If the ordinary character is not on the list, then the resulting RE will match
-the second character.  For example, ``\$`` matches the character ``'$'``.
+If the ordinary character is not ASCII digit or ASCII letter, then the
+resulting RE will match the second character.  For example, ``\$`` matches the
+character ``'$'``.
 
 ``\number``
    Matches the contents of the group of the same number.  Groups are numbered
@@ -438,9 +439,8 @@ three digits in length.
 .. versionchanged:: 3.3
    The ``'\u'`` and ``'\U'`` escape sequences have been added.
 
-.. deprecated-removed:: 3.5 3.6
-   Unknown escapes consist of ``'\'`` and ASCII letter now raise a
-   deprecation warning and will be forbidden in Python 3.6.
+.. versionchanged:: 3.6
+   Unknown escapes consisting of ``'\'`` and ASCII letter now are errors.
 
 
 .. seealso::
@@ -528,11 +528,11 @@ form.
    current locale. The use of this flag is discouraged as the locale mechanism
    is very unreliable, and it only handles one "culture" at a time anyway;
    you should use Unicode matching instead, which is the default in Python 3
-   for Unicode (str) patterns. This flag makes sense only with bytes patterns.
+   for Unicode (str) patterns. This flag can be used only with bytes patterns.
 
-   .. deprecated-removed:: 3.5 3.6
-      Deprecated the use of  :const:`re.LOCALE` with string patterns or
-      :const:`re.ASCII`.
+   .. versionchanged:: 3.6
+      :const:`re.LOCALE` can be used only with bytes patterns and is
+      not compatible with :const:`re.ASCII`.
 
 
 .. data:: M
@@ -738,9 +738,8 @@ form.
    .. versionchanged:: 3.5
       Unmatched groups are replaced with an empty string.
 
-   .. deprecated-removed:: 3.5 3.6
-      Unknown escapes consist of ``'\'`` and ASCII letter now raise a
-      deprecation warning and will be forbidden in Python 3.6.
+   .. versionchanged:: 3.6
+      Unknown escapes consisting of ``'\'`` and ASCII letter now are errors.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
