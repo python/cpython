@@ -41,6 +41,9 @@ Library
 - Issue #20508: Improve exception message of IPv{4,6}Network.__getitem__.
   Patch by Gareth Rees.
 
+- Fix TLS stripping vulnerability in smptlib, CVE-2016-0772.  Reported by Team
+  Oststrom
+
 - Issue #21386: Implement missing IPv4Address.is_global property.  It was
   documented since 07a5610bae9d.  Initial patch by Roger Luethi.
 
