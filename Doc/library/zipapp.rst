@@ -4,13 +4,12 @@
 .. module:: zipapp
    :synopsis: Manage executable python zip archives
 
-
-.. index::
-   single: Executable Zip Files
-
 .. versionadded:: 3.5
 
 **Source code:** :source:`Lib/zipapp.py`
+
+.. index::
+   single: Executable Zip Files
 
 --------------
 

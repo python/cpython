@@ -3,14 +3,15 @@
 
 .. module:: shutil
    :synopsis: High-level file operations, including copying.
+
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. partly based on the docstrings
+
+**Source code:** :source:`Lib/shutil.py`
 
 .. index::
    single: file; copying
    single: copying files
-
-**Source code:** :source:`Lib/shutil.py`
 
 --------------
 

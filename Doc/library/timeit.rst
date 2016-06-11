@@ -4,12 +4,11 @@
 .. module:: timeit
    :synopsis: Measure the execution time of small code snippets.
 
+**Source code:** :source:`Lib/timeit.py`
 
 .. index::
    single: Benchmarking
    single: Performance
-
-**Source code:** :source:`Lib/timeit.py`
 
 --------------
 

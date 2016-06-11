@@ -3,6 +3,7 @@
 
 .. module:: runpy
    :synopsis: Locate and run Python modules without importing them first.
+
 .. moduleauthor:: Nick Coghlan <ncoghlan@gmail.com>
 
 **Source code:** :source:`Lib/runpy.py`

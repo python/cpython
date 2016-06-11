@@ -5,6 +5,7 @@
    :platform: Unix
    :synopsis: The group database (getgrnam() and friends).
 
+--------------
 
 This module provides access to the Unix group database. It is available on all
 Unix versions.

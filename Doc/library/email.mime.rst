@@ -4,6 +4,9 @@
 .. module:: email.mime
    :synopsis: Build MIME messages.
 
+**Source code:** :source:`Lib/email/mime/`
+
+--------------
 
 Ordinarily, you get a message object structure by passing a file or some text to
 a parser, which parses the text and returns the root message object.  However

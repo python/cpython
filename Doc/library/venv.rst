@@ -3,15 +3,15 @@
 
 .. module:: venv
    :synopsis: Creation of virtual environments.
+
 .. moduleauthor:: Vinay Sajip <vinay_sajip@yahoo.co.uk>
 .. sectionauthor:: Vinay Sajip <vinay_sajip@yahoo.co.uk>
 
-
-.. index:: pair: Environments; virtual
-
 .. versionadded:: 3.3
 
-**Source code:** :source:`Lib/venv`
+**Source code:** :source:`Lib/venv/`
+
+.. index:: pair: Environments; virtual
 
 --------------
 

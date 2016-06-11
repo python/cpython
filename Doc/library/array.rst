@@ -4,8 +4,9 @@
 .. module:: array
    :synopsis: Space efficient arrays of uniformly typed numeric values.
 
-
 .. index:: single: arrays
+
+--------------
 
 This module defines an object type which can compactly represent an array of
 basic values: characters, integers, floating point numbers.  Arrays are sequence

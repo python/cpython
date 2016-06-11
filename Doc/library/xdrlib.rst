@@ -4,12 +4,11 @@
 .. module:: xdrlib
    :synopsis: Encoders and decoders for the External Data Representation (XDR).
 
+**Source code:** :source:`Lib/xdrlib.py`
 
 .. index::
    single: XDR
    single: External Data Representation
-
-**Source code:** :source:`Lib/xdrlib.py`
 
 --------------
 

@@ -4,6 +4,9 @@
 .. module:: email.iterators
    :synopsis: Iterate over a  message object tree.
 
+**Source code:** :source:`Lib/email/iterators.py`
+
+--------------
 
 Iterating over a message object tree is fairly easy with the
 :meth:`Message.walk <email.message.Message.walk>` method.  The

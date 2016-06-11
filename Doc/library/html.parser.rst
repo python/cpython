@@ -4,12 +4,11 @@
 .. module:: html.parser
    :synopsis: A simple parser that can handle HTML and XHTML.
 
+**Source code:** :source:`Lib/html/parser.py`
 
 .. index::
    single: HTML
    single: XHTML
-
-**Source code:** :source:`Lib/html/parser.py`
 
 --------------
 

@@ -5,9 +5,13 @@ XML Processing Modules
 
 .. module:: xml
    :synopsis: Package containing XML processing modules
+
 .. sectionauthor:: Christian Heimes <christian@python.org>
 .. sectionauthor:: Georg Brandl <georg@python.org>
 
+**Source code:** :source:`Lib/xml/`
+
+--------------
 
 Python's interfaces for processing XML are grouped in the ``xml`` package.
 

@@ -3,15 +3,15 @@
 
 .. module:: hashlib
    :synopsis: Secure hash and message digest algorithms.
+
 .. moduleauthor:: Gregory P. Smith <greg@krypto.org>
 .. sectionauthor:: Gregory P. Smith <greg@krypto.org>
 
+**Source code:** :source:`Lib/hashlib.py`
 
 .. index::
    single: message digest, MD5
    single: secure hash algorithm, SHA1, SHA224, SHA256, SHA384, SHA512
-
-**Source code:** :source:`Lib/hashlib.py`
 
 --------------
 

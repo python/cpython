@@ -3,11 +3,12 @@
 
 .. module:: sched
    :synopsis: General purpose event scheduler.
+
 .. sectionauthor:: Moshe Zadka <moshez@zadka.site.co.il>
 
-.. index:: single: event scheduling
-
 **Source code:** :source:`Lib/sched.py`
+
+.. index:: single: event scheduling
 
 --------------
 

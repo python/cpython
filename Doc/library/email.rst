@@ -4,10 +4,14 @@
 .. module:: email
    :synopsis: Package supporting the parsing, manipulating, and generating
               email messages, including MIME documents.
+
 .. moduleauthor:: Barry A. Warsaw <barry@python.org>
 .. sectionauthor:: Barry A. Warsaw <barry@python.org>
 .. Copyright (C) 2001-2010 Python Software Foundation
 
+**Source code:** :source:`Lib/email/__init__.py`
+
+--------------
 
 The :mod:`email` package is a library for managing email messages, including
 MIME and other :rfc:`2822`\ -based message documents.  It is specifically *not*

@@ -3,6 +3,7 @@
 
 .. module:: shlex
    :synopsis: Simple lexical analysis for Unix shell-like languages.
+
 .. moduleauthor:: Eric S. Raymond <esr@snark.thyrsus.com>
 .. moduleauthor:: Gustavo Niemeyer <niemeyer@conectiva.com>
 .. sectionauthor:: Eric S. Raymond <esr@snark.thyrsus.com>

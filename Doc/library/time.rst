@@ -4,6 +4,7 @@
 .. module:: time
    :synopsis: Time access and conversions.
 
+--------------
 
 This module provides various time-related functions. For related
 functionality, see also the :mod:`datetime` and :mod:`calendar` modules.

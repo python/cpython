@@ -3,6 +3,7 @@
 
 .. module:: asynchat
    :synopsis: Support for asynchronous command/response protocols.
+
 .. moduleauthor:: Sam Rushing <rushing@nightmare.com>
 .. sectionauthor:: Steve Holden <sholden@holdenweb.com>
 

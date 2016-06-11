@@ -3,8 +3,10 @@
 
 .. module:: ctypes
    :synopsis: A foreign function library for Python.
+
 .. moduleauthor:: Thomas Heller <theller@python.net>
 
+--------------
 
 :mod:`ctypes` is a foreign function library for Python.  It provides C compatible
 data types, and allows calling functions in DLLs or shared libraries.  It can be

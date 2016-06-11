@@ -3,6 +3,7 @@
 
 .. module:: webbrowser
    :synopsis: Easy-to-use controller for Web browsers.
+
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 

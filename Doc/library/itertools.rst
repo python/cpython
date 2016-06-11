@@ -3,14 +3,15 @@
 
 .. module:: itertools
    :synopsis: Functions creating iterators for efficient looping.
+
 .. moduleauthor:: Raymond Hettinger <python@rcn.com>
 .. sectionauthor:: Raymond Hettinger <python@rcn.com>
-
 
 .. testsetup::
 
    from itertools import *
 
+--------------
 
 This module implements a number of :term:`iterator` building blocks inspired
 by constructs from APL, Haskell, and SML.  Each has been recast in a form

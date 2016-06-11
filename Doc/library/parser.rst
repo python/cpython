@@ -3,9 +3,9 @@
 
 .. module:: parser
    :synopsis: Access parse trees for Python source code.
+
 .. moduleauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
 .. sectionauthor:: Fred L. Drake, Jr. <fdrake@acm.org>
-
 
 .. Copyright 1995 Virginia Polytechnic Institute and State University and Fred
    L. Drake, Jr.  This copyright notice must be distributed on all copies, but
@@ -15,6 +15,8 @@
    elements in a distributed package in any way.
 
 .. index:: single: parsing; Python source code
+
+--------------
 
 The :mod:`parser` module provides an interface to Python's internal parser and
 byte-code compiler.  The primary purpose for this interface is to allow Python

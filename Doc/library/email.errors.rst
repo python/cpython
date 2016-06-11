@@ -4,6 +4,9 @@
 .. module:: email.errors
    :synopsis: The exception classes used by the email package.
 
+**Source code:** :source:`Lib/email/errors.py`
+
+--------------
 
 The following exception classes are defined in the :mod:`email.errors` module:
 

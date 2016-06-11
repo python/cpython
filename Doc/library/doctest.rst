@@ -5,11 +5,15 @@
 
 .. module:: doctest
    :synopsis: Test pieces of code within docstrings.
+
 .. moduleauthor:: Tim Peters <tim@python.org>
 .. sectionauthor:: Tim Peters <tim@python.org>
 .. sectionauthor:: Moshe Zadka <moshez@debian.org>
 .. sectionauthor:: Edward Loper <edloper@users.sourceforge.net>
 
+**Source code:** :source:`Lib/doctest.py`
+
+--------------
 
 The :mod:`doctest` module searches for pieces of text that look like interactive
 Python sessions, and then executes those sessions to verify that they work
