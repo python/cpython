@@ -768,6 +768,15 @@ All of the following opcodes use their arguments.
    to hold *count* entries.
 
 
+.. opcode:: BUILD_CONST_KEY_MAP (count)
+
+   The version of :opcode:`BUILD_MAP` specialized for constant keys.  *count*
+   values are consumed from the stack.  The top element on the stack contains
+   a tuple of keys.
+
+   .. versionadded:: 3.6
+
+
 .. opcode:: LOAD_ATTR (namei)
 
    Replaces TOS with ``getattr(TOS, co_names[namei])``.
