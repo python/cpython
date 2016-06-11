@@ -695,6 +695,11 @@ class SMTP:
             self.ehlo_resp = None
             self.esmtp_features = {}
             self.does_esmtp = 0
+        else:
+            # RFC 3207:
+            # 501 Syntax error (no parameters allowed)
+            # 454 TLS not available due to temporary reason
+            raise SMTPResponseException(resp, reply)
         return (resp, reply)
 
     def sendmail(self, from_addr, to_addrs, msg, mail_options=[],
