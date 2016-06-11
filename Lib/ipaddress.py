@@ -1312,6 +1312,11 @@ class IPv4Address(_BaseV4, _BaseAddress):
         return any(self in net for net in self._constants._private_networks)
 
     @property
+    @functools.lru_cache()
+    def is_global(self):
+        return self not in self._constants._public_network and not self.is_private
+
+    @property
     def is_multicast(self):
         """Test if the address is reserved for multicast use.
 
@@ -1556,6 +1561,8 @@ class _IPv4Constants:
     _loopback_network = IPv4Network('127.0.0.0/8')
 
     _multicast_network = IPv4Network('224.0.0.0/4')
+
+    _public_network = IPv4Network('100.64.0.0/10')
 
     _private_networks = [
         IPv4Network('0.0.0.0/8'),
