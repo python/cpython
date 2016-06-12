@@ -56,7 +56,7 @@ Library
 - Issue #27029: Removed deprecated support of universal newlines mode from
   ZipFile.open().
 
-- Issue #27030: Unknown escapes consisting of ``'\'`` and ASCII letter in
+- Issue #27030: Unknown escapes consisting of ``'\'`` and an ASCII letter in
   regular expressions now are errors.  The re.LOCALE flag now can be used
   only with bytes patterns.
 
