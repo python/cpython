@@ -309,25 +309,26 @@ Connection Objects
       call :meth:`commit`. If you just close your database connection without
       calling :meth:`commit` first, your changes will be lost!
 
-   .. method:: execute(sql, [parameters])
+   .. method:: execute(sql[, parameters])
 
-      This is a nonstandard shortcut that creates an intermediate cursor object by
-      calling the cursor method, then calls the cursor's :meth:`execute
-      <Cursor.execute>` method with the parameters given.
+      This is a nonstandard shortcut that creates a cursor object by calling
+      the :meth:`~Connection.cursor` method, calls the cursor's
+      :meth:`~Cursor.execute` method with the *parameters* given, and returns
+      the cursor.
 
+   .. method:: executemany(sql[, parameters])
 
-   .. method:: executemany(sql, [parameters])
-
-      This is a nonstandard shortcut that creates an intermediate cursor object by
-      calling the cursor method, then calls the cursor's :meth:`executemany
-      <Cursor.executemany>` method with the parameters given.
+      This is a nonstandard shortcut that creates a cursor object by
+      calling the :meth:`~Connection.cursor` method, calls the cursor's
+      :meth:`~Cursor.executemany` method with the *parameters* given, and
+      returns the cursor.
 
    .. method:: executescript(sql_script)
 
-      This is a nonstandard shortcut that creates an intermediate cursor object by
-      calling the cursor method, then calls the cursor's :meth:`executescript
-      <Cursor.executescript>` method with the parameters given.
-
+      This is a nonstandard shortcut that creates a cursor object by
+      calling the :meth:`~Connection.cursor` method, calls the cursor's
+      :meth:`~Cursor.executescript` method with the given *sql_script*, and
+      returns the cursor.
 
    .. method:: create_function(name, num_params, func)
 
@@ -533,7 +534,7 @@ Cursor Objects
 
    A :class:`Cursor` instance has the following attributes and methods.
 
-   .. method:: execute(sql, [parameters])
+   .. method:: execute(sql[, parameters])
 
       Executes an SQL statement. The SQL statement may be parameterized (i. e.
       placeholders instead of SQL literals). The :mod:`sqlite3` module supports two
@@ -545,7 +546,7 @@ Cursor Objects
       .. literalinclude:: ../includes/sqlite3/execute_1.py
 
       :meth:`execute` will only execute a single SQL statement. If you try to execute
-      more than one statement with it, it will raise a Warning. Use
+      more than one statement with it, it will raise an ``sqlite3.Warning``. Use
       :meth:`executescript` if you want to execute multiple SQL statements with one
       call.
 
@@ -553,8 +554,8 @@ Cursor Objects
    .. method:: executemany(sql, seq_of_parameters)
 
       Executes an SQL command against all parameter sequences or mappings found in
-      the sequence *sql*.  The :mod:`sqlite3` module also allows using an
-      :term:`iterator` yielding parameters instead of a sequence.
+      the sequence *seq_of_parameters*.  The :mod:`sqlite3` module also allows
+      using an :term:`iterator` yielding parameters instead of a sequence.
 
       .. literalinclude:: ../includes/sqlite3/executemany_1.py
 
@@ -569,7 +570,7 @@ Cursor Objects
       at once. It issues a ``COMMIT`` statement first, then executes the SQL script it
       gets as a parameter.
 
-      *sql_script* can be an instance of :class:`str` or :class:`bytes`.
+      *sql_script* can be an instance of :class:`str`.
 
       Example:
 

@@ -250,6 +250,11 @@ class CursorTests(unittest.TestCase):
         row = self.cu.fetchone()
         self.assertEqual(row[0], "Hu\x00go")
 
+    def CheckExecuteNonIterable(self):
+        with self.assertRaises(ValueError) as cm:
+            self.cu.execute("insert into test(id) values (?)", 42)
+        self.assertEqual(str(cm.exception), 'parameters are of unsupported type')
+
     def CheckExecuteWrongNoOfArgs1(self):
         # too many parameters
         try:
@@ -724,6 +729,13 @@ class ExtensionTests(unittest.TestCase):
         except sqlite.OperationalError:
             raised = True
         self.assertEqual(raised, True, "should have raised an exception")
+
+    def CheckCursorExecutescriptAsBytes(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        with self.assertRaises(ValueError) as cm:
+            cur.executescript(b"create table test(foo); insert into test(foo) values (5);")
+        self.assertEqual(str(cm.exception), 'script argument must be unicode.')
 
     def CheckConnectionExecute(self):
         con = sqlite.connect(":memory:")
