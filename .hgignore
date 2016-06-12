@@ -2,6 +2,7 @@
 .purify
 .svn/
 ^.idea/
+^.vscode/
 .DS_Store
 Makefile$
 Makefile.pre$
