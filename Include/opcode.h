@@ -102,7 +102,6 @@ extern "C" {
 #define CALL_FUNCTION           131
 #define MAKE_FUNCTION           132
 #define BUILD_SLICE             133
-#define MAKE_CLOSURE            134
 #define LOAD_CLOSURE            135
 #define LOAD_DEREF              136
 #define STORE_DEREF             137

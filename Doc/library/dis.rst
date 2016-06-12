@@ -937,25 +937,14 @@ All of the following opcodes use their arguments.
 .. opcode:: MAKE_FUNCTION (argc)
 
    Pushes a new function object on the stack.  From bottom to top, the consumed
-   stack must consist of
+   stack must consist of values if the argument carries a specified flag value
 
-   * ``argc & 0xFF`` default argument objects in positional order
-   * ``(argc >> 8) & 0xFF`` pairs of name and default argument, with the name
-     just below the object on the stack, for keyword-only parameters
-   * ``(argc >> 16) & 0x7FFF`` parameter annotation objects
-   * a tuple listing the parameter names for the annotations (only if there are
-     ony annotation objects)
+   * ``0x01`` a tuple of default argument objects in positional order
+   * ``0x02`` a dictionary of keyword-only parameters' default values
+   * ``0x04`` an annotation dictionary
+   * ``0x08`` a tuple containing cells for free variables, making a closure
    * the code associated with the function (at TOS1)
    * the :term:`qualified name` of the function (at TOS)
-
-
-.. opcode:: MAKE_CLOSURE (argc)
-
-   Creates a new function object, sets its *__closure__* slot, and pushes it on
-   the stack.  TOS is the :term:`qualified name` of the function, TOS1 is the
-   code associated with the function, and TOS2 is the tuple containing cells for
-   the closure's free variables.  *argc* is interpreted as in ``MAKE_FUNCTION``;
-   the annotations and defaults are also in the same order below TOS2.
 
 
 .. opcode:: BUILD_SLICE (argc)
