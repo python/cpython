@@ -10,6 +10,10 @@ Release date: tba
 Core and Builtins
 -----------------
 
+- Issue #27286: Fixed compiling BUILD_MAP_UNPACK_WITH_CALL opcode.  Calling
+  function with generalized unpacking (PEP 448) and conflicting keyword names
+  could cause undefined behavior.
+
 - Issue #27066: Fixed SystemError if a custom opener (for open()) returns a
   negative number without setting an exception.
 
