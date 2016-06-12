@@ -18,7 +18,7 @@ import weakref
 
 from itertools import product
 from test import support
-from test.support import TESTFN, findfile, import_fresh_module, gc_collect
+from test.support import TESTFN, findfile, import_fresh_module, gc_collect, swap_attr
 
 # pyET is the pure-Python implementation.
 #
@@ -1864,6 +1864,12 @@ class BadElementTest(ElementTestCase, unittest.TestCase):
         e.extend([ET.Element('bar')])
         self.assertRaises(ValueError, e.remove, X('baz'))
 
+    def test_recursive_repr(self):
+        # Issue #25455
+        e = ET.Element('foo')
+        with swap_attr(e, 'tag', e):
+            with self.assertRaises(RuntimeError):
+                repr(e)  # Should not crash
 
 class MutatingElementPath(str):
     def __new__(cls, elem, *args):
