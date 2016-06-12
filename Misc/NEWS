@@ -143,6 +143,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25455: Fixed a crash in repr of ElementTree.Element with recursive tag.
+
 - Issue #26556: Update expat to 2.1.1, fixes CVE-2015-1283.
 
 - Fix TLS stripping vulnerability in smptlib, CVE-2016-0772.  Reported by Team
