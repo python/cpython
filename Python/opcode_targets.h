@@ -133,7 +133,7 @@ static void *opcode_targets[256] = {
     &&TARGET_CALL_FUNCTION,
     &&TARGET_MAKE_FUNCTION,
     &&TARGET_BUILD_SLICE,
-    &&TARGET_MAKE_CLOSURE,
+    &&_unknown_opcode,
     &&TARGET_LOAD_CLOSURE,
     &&TARGET_LOAD_DEREF,
     &&TARGET_STORE_DEREF,

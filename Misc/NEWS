@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 2
 Core and Builtins
 -----------------
 
+- Issue #27095: Simplified MAKE_FUNCTION and removed MAKE_CLOSURE opcodes.
+  Patch by Demur Rumed.
+
 - Issue #27190: Raise NotSupportedError if sqlite3 is older than 3.3.1.
   Patch by Dave Sawyer.
 

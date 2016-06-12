@@ -1030,11 +1030,10 @@ PyCompile_OpcodeStackEffect(int opcode, int oparg)
             return -NARGS(oparg)-1;
         case CALL_FUNCTION_VAR_KW:
             return -NARGS(oparg)-2;
-        case MAKE_FUNCTION:
-            return -1 -NARGS(oparg) - ((oparg >> 16) & 0xffff);
-        case MAKE_CLOSURE:
-            return -2 - NARGS(oparg) - ((oparg >> 16) & 0xffff);
 #undef NARGS
+        case MAKE_FUNCTION:
+            return -1 - ((oparg & 0x01) != 0) - ((oparg & 0x02) != 0) -
+                ((oparg & 0x04) != 0) - ((oparg & 0x08) != 0);
         case BUILD_SLICE:
             if (oparg == 3)
                 return -2;
@@ -1472,53 +1471,50 @@ compiler_lookup_arg(PyObject *dict, PyObject *name)
 }
 
 static int
-compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t args, PyObject *qualname)
+compiler_make_closure(struct compiler *c, PyCodeObject *co, Py_ssize_t flags, PyObject *qualname)
 {
     Py_ssize_t i, free = PyCode_GetNumFree(co);
     if (qualname == NULL)
         qualname = co->co_name;
 
-    if (free == 0) {
-        ADDOP_O(c, LOAD_CONST, (PyObject*)co, consts);
-        ADDOP_O(c, LOAD_CONST, qualname, consts);
-        ADDOP_I(c, MAKE_FUNCTION, args);
-        return 1;
-    }
-    for (i = 0; i < free; ++i) {
-        /* Bypass com_addop_varname because it will generate
-           LOAD_DEREF but LOAD_CLOSURE is needed.
-        */
-        PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
-        int arg, reftype;
+    if (free) {
+        for (i = 0; i < free; ++i) {
+            /* Bypass com_addop_varname because it will generate
+               LOAD_DEREF but LOAD_CLOSURE is needed.
+            */
+            PyObject *name = PyTuple_GET_ITEM(co->co_freevars, i);
+            int arg, reftype;
 
-        /* Special case: If a class contains a method with a
-           free variable that has the same name as a method,
-           the name will be considered free *and* local in the
-           class.  It should be handled by the closure, as
-           well as by the normal name loookup logic.
-        */
-        reftype = get_ref_type(c, name);
-        if (reftype == CELL)
-            arg = compiler_lookup_arg(c->u->u_cellvars, name);
-        else /* (reftype == FREE) */
-            arg = compiler_lookup_arg(c->u->u_freevars, name);
-        if (arg == -1) {
-            fprintf(stderr,
-                "lookup %s in %s %d %d\n"
-                "freevars of %s: %s\n",
-                PyUnicode_AsUTF8(PyObject_Repr(name)),
-                PyUnicode_AsUTF8(c->u->u_name),
-                reftype, arg,
-                PyUnicode_AsUTF8(co->co_name),
-                PyUnicode_AsUTF8(PyObject_Repr(co->co_freevars)));
-            Py_FatalError("compiler_make_closure()");
+            /* Special case: If a class contains a method with a
+               free variable that has the same name as a method,
+               the name will be considered free *and* local in the
+               class.  It should be handled by the closure, as
+               well as by the normal name loookup logic.
+            */
+            reftype = get_ref_type(c, name);
+            if (reftype == CELL)
+                arg = compiler_lookup_arg(c->u->u_cellvars, name);
+            else /* (reftype == FREE) */
+                arg = compiler_lookup_arg(c->u->u_freevars, name);
+            if (arg == -1) {
+                fprintf(stderr,
+                    "lookup %s in %s %d %d\n"
+                    "freevars of %s: %s\n",
+                    PyUnicode_AsUTF8(PyObject_Repr(name)),
+                    PyUnicode_AsUTF8(c->u->u_name),
+                    reftype, arg,
+                    PyUnicode_AsUTF8(co->co_name),
+                    PyUnicode_AsUTF8(PyObject_Repr(co->co_freevars)));
+                Py_FatalError("compiler_make_closure()");
+            }
+            ADDOP_I(c, LOAD_CLOSURE, arg);
         }
-        ADDOP_I(c, LOAD_CLOSURE, arg);
+        flags |= 0x08;
+        ADDOP_I(c, BUILD_TUPLE, free);
     }
-    ADDOP_I(c, BUILD_TUPLE, free);
     ADDOP_O(c, LOAD_CONST, (PyObject*)co, consts);
     ADDOP_O(c, LOAD_CONST, qualname, consts);
-    ADDOP_I(c, MAKE_CLOSURE, args);
+    ADDOP_I(c, MAKE_FUNCTION, flags);
     return 1;
 }
 
@@ -1536,27 +1532,59 @@ compiler_decorators(struct compiler *c, asdl_seq* decos)
     return 1;
 }
 
-static int
+static Py_ssize_t
 compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
                               asdl_seq *kw_defaults)
 {
-    int i, default_count = 0;
+    int i;
+    PyObject *keys = NULL;
+
     for (i = 0; i < asdl_seq_LEN(kwonlyargs); i++) {
         arg_ty arg = asdl_seq_GET(kwonlyargs, i);
         expr_ty default_ = asdl_seq_GET(kw_defaults, i);
         if (default_) {
             PyObject *mangled = _Py_Mangle(c->u->u_private, arg->arg);
-            if (!mangled)
-                return -1;
-            ADDOP_O(c, LOAD_CONST, mangled, consts);
-            Py_DECREF(mangled);
-            if (!compiler_visit_expr(c, default_)) {
-                return -1;
+            if (!mangled) {
+                goto error;
             }
-            default_count++;
+            if (keys == NULL) {
+                keys = PyList_New(1);
+                if (keys == NULL) {
+                    Py_DECREF(mangled);
+                    return -1;
+                }
+                PyList_SET_ITEM(keys, 0, mangled);
+            }
+            else {
+                int res = PyList_Append(keys, mangled);
+                Py_DECREF(mangled);
+                if (res == -1) {
+                    goto error;
+                }
+            }
+            if (!compiler_visit_expr(c, default_)) {
+                goto error;
+            }
         }
     }
-    return default_count;
+    if (keys != NULL) {
+        Py_ssize_t default_count = PyList_GET_SIZE(keys);
+        PyObject *keys_tuple = PyList_AsTuple(keys);
+        Py_DECREF(keys);
+        if (keys_tuple == NULL) {
+            return -1;
+        }
+        ADDOP_N(c, LOAD_CONST, keys_tuple, consts);
+        ADDOP_I(c, BUILD_CONST_KEY_MAP, default_count);
+        return default_count;
+    }
+    else {
+        return 0;
+    }
+
+error:
+    Py_XDECREF(keys);
+    return -1;
 }
 
 static int
@@ -1595,15 +1623,14 @@ compiler_visit_argannotations(struct compiler *c, asdl_seq* args,
     return 1;
 }
 
-static int
+static Py_ssize_t
 compiler_visit_annotations(struct compiler *c, arguments_ty args,
                            expr_ty returns)
 {
-    /* Push arg annotations and a list of the argument names. Return the #
-       of items pushed. The expressions are evaluated out-of-order wrt the
-       source code.
+    /* Push arg annotation dict.  Return # of items pushed.
+       The expressions are evaluated out-of-order wrt the source code.
 
-       More than 2^16-1 annotations is a SyntaxError. Returns -1 on error.
+       Returns -1 on error.
        */
     static identifier return_str;
     PyObject *names;
@@ -1635,36 +1662,45 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
     }
 
     len = PyList_GET_SIZE(names);
-    if (len > 65534) {
-        /* len must fit in 16 bits, and len is incremented below */
-        PyErr_SetString(PyExc_SyntaxError,
-                        "too many annotations");
-        goto error;
-    }
     if (len) {
-        /* convert names to a tuple and place on stack */
-        PyObject *elt;
-        Py_ssize_t i;
-        PyObject *s = PyTuple_New(len);
-        if (!s)
-            goto error;
-        for (i = 0; i < len; i++) {
-            elt = PyList_GET_ITEM(names, i);
-            Py_INCREF(elt);
-            PyTuple_SET_ITEM(s, i, elt);
+        PyObject *keytuple = PyList_AsTuple(names);
+        Py_DECREF(names);
+        if (keytuple == NULL) {
+            return -1;
         }
-        ADDOP_O(c, LOAD_CONST, s, consts);
-        Py_DECREF(s);
-        len++; /* include the just-pushed tuple */
+        ADDOP_N(c, LOAD_CONST, keytuple, consts);
+        ADDOP_I(c, BUILD_CONST_KEY_MAP, len);
     }
-    Py_DECREF(names);
-
-    /* We just checked that len <= 65535, see above */
-    return Py_SAFE_DOWNCAST(len, Py_ssize_t, int);
+    else {
+        Py_DECREF(names);
+    }
+    return len;
 
 error:
     Py_DECREF(names);
     return -1;
+}
+
+static Py_ssize_t
+compiler_default_arguments(struct compiler *c, arguments_ty args)
+{
+    Py_ssize_t funcflags = 0;
+    if (args->defaults && asdl_seq_LEN(args->defaults) > 0) {
+        VISIT_SEQ(c, expr, args->defaults);
+        ADDOP_I(c, BUILD_TUPLE, asdl_seq_LEN(args->defaults));
+        funcflags |= 0x01;
+    }
+    if (args->kwonlyargs) {
+        Py_ssize_t res = compiler_visit_kwonlydefaults(c, args->kwonlyargs,
+                                                args->kw_defaults);
+        if (res < 0) {
+            return -1;
+        }
+        else if (res > 0) {
+            funcflags |= 0x02;
+        }
+    }
+    return funcflags;
 }
 
 static int
@@ -1678,11 +1714,10 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     asdl_seq* decos;
     asdl_seq *body;
     stmt_ty st;
-    Py_ssize_t i, n, arglength;
-    int docstring, kw_default_count = 0;
+    Py_ssize_t i, n, funcflags;
+    int docstring;
     int num_annotations;
     int scope_type;
-
 
     if (is_async) {
         assert(s->kind == AsyncFunctionDef_kind);
@@ -1708,24 +1743,23 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
 
     if (!compiler_decorators(c, decos))
         return 0;
-    if (args->defaults)
-        VISIT_SEQ(c, expr, args->defaults);
-    if (args->kwonlyargs) {
-        int res = compiler_visit_kwonlydefaults(c, args->kwonlyargs,
-                                                args->kw_defaults);
-        if (res < 0)
-            return 0;
-        kw_default_count = res;
-    }
-    num_annotations = compiler_visit_annotations(c, args, returns);
-    if (num_annotations < 0)
-        return 0;
-    assert((num_annotations & 0xFFFF) == num_annotations);
 
-    if (!compiler_enter_scope(c, name,
-                              scope_type, (void *)s,
-                              s->lineno))
+    funcflags = compiler_default_arguments(c, args);
+    if (funcflags == -1) {
         return 0;
+    }
+
+    num_annotations = compiler_visit_annotations(c, args, returns);
+    if (num_annotations < 0) {
+        return 0;
+    }
+    else if (num_annotations > 0) {
+        funcflags |= 0x04;
+    }
+
+    if (!compiler_enter_scope(c, name, scope_type, (void *)s, s->lineno)) {
+        return 0;
+    }
 
     st = (stmt_ty)asdl_seq_GET(body, 0);
     docstring = compiler_isdocstring(st);
@@ -1758,12 +1792,9 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    arglength = asdl_seq_LEN(args->defaults);
-    arglength |= kw_default_count << 8;
-    arglength |= num_annotations << 16;
     if (is_async)
         co->co_flags |= CO_COROUTINE;
-    compiler_make_closure(c, co, arglength, qualname);
+    compiler_make_closure(c, co, funcflags, qualname);
     Py_DECREF(qualname);
     Py_DECREF(co);
 
@@ -1923,8 +1954,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
     PyCodeObject *co;
     PyObject *qualname;
     static identifier name;
-    int kw_default_count = 0;
-    Py_ssize_t arglength;
+    Py_ssize_t funcflags;
     arguments_ty args = e->v.Lambda.args;
     assert(e->kind == Lambda_kind);
 
@@ -1934,14 +1964,11 @@ compiler_lambda(struct compiler *c, expr_ty e)
             return 0;
     }
 
-    if (args->defaults)
-        VISIT_SEQ(c, expr, args->defaults);
-    if (args->kwonlyargs) {
-        int res = compiler_visit_kwonlydefaults(c, args->kwonlyargs,
-                                                args->kw_defaults);
-        if (res < 0) return 0;
-        kw_default_count = res;
+    funcflags = compiler_default_arguments(c, args);
+    if (funcflags == -1) {
+        return 0;
     }
+
     if (!compiler_enter_scope(c, name, COMPILER_SCOPE_LAMBDA,
                               (void *)e, e->lineno))
         return 0;
@@ -1967,9 +1994,7 @@ compiler_lambda(struct compiler *c, expr_ty e)
     if (co == NULL)
         return 0;
 
-    arglength = asdl_seq_LEN(args->defaults);
-    arglength |= kw_default_count << 8;
-    compiler_make_closure(c, co, arglength, qualname);
+    compiler_make_closure(c, co, funcflags, qualname);
     Py_DECREF(qualname);
     Py_DECREF(co);
 

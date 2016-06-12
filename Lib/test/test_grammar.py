@@ -345,7 +345,7 @@ class GrammarTests(unittest.TestCase):
         def f(x) -> list: pass
         self.assertEqual(f.__annotations__, {'return': list})
 
-        # test MAKE_CLOSURE with a variety of oparg's
+        # test closures with a variety of opargs
         closure = 1
         def f(): return closure
         def f(x=1): return closure
