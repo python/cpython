@@ -3040,8 +3040,8 @@ Library
   writer failed in BufferedRWPair.close().
 
 - Issue #23622: Unknown escapes in regular expressions that consist of ``'\'``
-  and ASCII letter now raise a deprecation warning and will be forbidden in
-  Python 3.6.
+  and an ASCII letter now raise a deprecation warning and will be forbidden
+  in Python 3.6.
 
 - Issue #23671: string.Template now allows specifying the "self" parameter as
   a keyword argument.  string.Formatter now allows specifying the "self" and
