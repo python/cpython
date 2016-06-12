@@ -943,6 +943,7 @@ PYTHON_HEADERS= \
 		$(srcdir)/Include/objimpl.h \
 		$(OPCODE_H) \
 		$(srcdir)/Include/osdefs.h \
+		$(srcdir)/Include/osmodule.h \
 		$(srcdir)/Include/patchlevel.h \
 		$(srcdir)/Include/pgen.h \
 		$(srcdir)/Include/pgenheaders.h \
