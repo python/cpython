@@ -2729,12 +2729,7 @@ start method.
 
 More picklability
 
-    Ensure that all arguments to :meth:`Process.__init__` are
-    picklable.  This means, in particular, that bound or unbound
-    methods cannot be used directly as the ``target`` (unless you use
-    the *fork* start method) --- just define a function and use that
-    instead.
-
+    Ensure that all arguments to :meth:`Process.__init__` are picklable.
     Also, if you subclass :class:`~multiprocessing.Process` then make sure that
     instances will be picklable when the :meth:`Process.start
     <multiprocessing.Process.start>` method is called.
