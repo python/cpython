@@ -39,8 +39,8 @@ Hash algorithms
 ---------------
 
 There is one constructor method named for each type of :dfn:`hash`.  All return
-a hash object with the same simple interface. For example: use :func:`sha1` to
-create a SHA1 hash object. You can now feed this object with :term:`bytes-like
+a hash object with the same simple interface. For example: use :func:`sha256` to
+create a SHA-256 hash object. You can now feed this object with :term:`bytes-like
 objects <bytes-like object>` (normally :class:`bytes`) using the :meth:`update` method.
 At any point you can ask it for the :dfn:`digest` of the
 concatenation of the data fed to it so far using the :meth:`digest` or
@@ -59,21 +59,23 @@ concatenation of the data fed to it so far using the :meth:`digest` or
 .. index:: single: OpenSSL; (use in module hashlib)
 
 Constructors for hash algorithms that are always present in this module are
-:func:`md5`, :func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
-and :func:`sha512`. Additional algorithms may also be available depending upon
-the OpenSSL library that Python uses on your platform.
+:func:`sha1`, :func:`sha224`, :func:`sha256`, :func:`sha384`,
+and :func:`sha512`.  :func:`md5` is normally available as well, though it
+may be missing if you are using a rare "FIPS compliant" build of Python.
+Additional algorithms may also be available depending upon the OpenSSL
+library that Python uses on your platform.
 
 For example, to obtain the digest of the byte string ``b'Nobody inspects the
 spammish repetition'``::
 
    >>> import hashlib
-   >>> m = hashlib.md5()
+   >>> m = hashlib.sha256()
    >>> m.update(b"Nobody inspects")
    >>> m.update(b" the spammish repetition")
    >>> m.digest()
-   b'\xbbd\x9c\x83\xdd\x1e\xa5\xc9\xd9\xde\xc9\xa1\x8d\xf0\xff\xe9'
+   b'\x03\x1e\xdd}Ae\x15\x93\xc5\xfe\\\x00o\xa5u+7\xfd\xdf\xf7\xbcN\x84:\xa6\xaf\x0c\x95\x0fK\x94\x06'
    >>> m.digest_size
-   16
+   32
    >>> m.block_size
    64
 
