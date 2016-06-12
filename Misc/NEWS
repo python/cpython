@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25455: Fixed a crash in repr of cElementTree.Element with recursive tag.
+
 Documentation
 -------------
 

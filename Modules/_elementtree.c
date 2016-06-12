@@ -1222,18 +1222,28 @@ element_remove(ElementObject* self, PyObject* args)
 static PyObject*
 element_repr(ElementObject* self)
 {
-    PyObject *repr, *tag;
+    int status;
 
-    tag = PyObject_Repr(self->tag);
-    if (!tag)
-        return NULL;
+    if (self->tag == NULL)
+        return PyUnicode_FromFormat("<Element at %p>", self);
 
-    repr = PyString_FromFormat("<Element %s at %p>",
-                               PyString_AS_STRING(tag), self);
+    status = Py_ReprEnter((PyObject *)self);
+    if (status == 0) {
+        PyObject *repr, *tag;
+        tag = PyObject_Repr(self->tag);
+        if (!tag)
+            return NULL;
 
-    Py_DECREF(tag);
-
-    return repr;
+        repr = PyString_FromFormat("<Element %s at %p>",
+                                   PyString_AS_STRING(tag), self);
+        Py_DECREF(tag);
+        return repr;
+    }
+    if (status > 0)
+        PyErr_Format(PyExc_RuntimeError,
+                     "reentrant call inside %s.__repr__",
+                     Py_TYPE(self)->tp_name);
+    return NULL;
 }
 
 static PyObject*
