@@ -159,9 +159,8 @@ specific C type of the *self* object.
 The :attr:`ml_flags` field is a bitfield which can include the following flags.
 The individual flags indicate either a calling convention or a binding
 convention.  Of the calling convention flags, only :const:`METH_VARARGS` and
-:const:`METH_KEYWORDS` can be combined (but note that :const:`METH_KEYWORDS`
-alone is equivalent to ``METH_VARARGS | METH_KEYWORDS``). Any of the calling
-convention flags can be combined with a binding flag.
+:const:`METH_KEYWORDS` can be combined. Any of the calling convention flags
+can be combined with a binding flag.
 
 
 .. data:: METH_VARARGS
