@@ -44,6 +44,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #25455: Fixed a crash in repr of ElementTree.Element with recursive tag.
+
 - Issue #27294: Improved repr for Tkinter event objects.
 
 - Issue #20508: Improve exception message of IPv{4,6}Network.__getitem__.
