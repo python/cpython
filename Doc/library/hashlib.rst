@@ -104,7 +104,9 @@ Hashlib provides the following constant attributes:
 .. data:: algorithms_guaranteed
 
    A set containing the names of the hash algorithms guaranteed to be supported
-   by this module on all platforms.
+   by this module on all platforms.  Note that 'md5' is in this list despite
+   some upstream vendors offering an odd "FIPS compliant" Python build that
+   excludes it.
 
    .. versionadded:: 3.2
 
