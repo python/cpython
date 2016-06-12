@@ -1423,7 +1423,7 @@ class CoroutineTest(unittest.TestCase):
 
         with warnings.catch_warnings():
             warnings.simplefilter("error")
-            # Test that __aiter__ that returns an asyncronous iterator
+            # Test that __aiter__ that returns an asynchronous iterator
             # directly does not throw any warnings.
             run_async(main())
         self.assertEqual(I, 111011)
