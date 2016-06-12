@@ -177,6 +177,9 @@
     <ClInclude Include="..\Include\osdefs.h">
       <Filter>Include</Filter>
     </ClInclude>
+    <ClInclude Include="..\Include\osmodule.h">
+      <Filter>Include</Filter>
+    </ClInclude>
     <ClInclude Include="..\Include\parsetok.h">
       <Filter>Include</Filter>
     </ClInclude>
