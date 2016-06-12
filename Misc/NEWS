@@ -10,6 +10,10 @@ What's New in Python 3.6.0 alpha 2
 Core and Builtins
 -----------------
 
+- Issue #27286: Fixed compiling BUILD_MAP_UNPACK_WITH_CALL opcode.  Calling
+  function with generalized unpacking (PEP 448) and conflicting keyword names
+  could cause undefined behavior.
+
 - Issue #27140: Added BUILD_CONST_KEY_MAP opcode.
 
 - Issue #27186: Add support for os.PathLike objects to open() (part of PEP 519).
