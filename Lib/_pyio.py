@@ -6,7 +6,6 @@ import os
 import abc
 import codecs
 import errno
-import array
 import stat
 import sys
 # Import _thread instead of threading to reduce startup cost
