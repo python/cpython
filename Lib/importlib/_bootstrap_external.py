@@ -130,10 +130,6 @@ _code_type = type(_write_atomic.__code__)
 # a .pyc file in text mode the magic number will be wrong; also, the
 # Apple MPW compiler swaps their values, botching string constants.
 #
-# The magic numbers must be spaced apart at least 2 values, as the
-# -U interpeter flag will cause MAGIC+1 being used. They have been
-# odd numbers for some time now.
-#
 # There were a variety of old schemes for setting the magic number.
 # The current working scheme is to increment the previous value by
 # 10.
