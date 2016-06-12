@@ -375,7 +375,7 @@ try:
             if len(fn)==2 and fn[1].startswith('__init__.py'):
                 if fn[0] not in yielded:
                     yielded[fn[0]] = 1
-                    yield fn[0], True
+                    yield prefix + fn[0], True
 
             if len(fn)!=1:
                 continue
