@@ -133,7 +133,7 @@ Parenthesized forms
 A parenthesized form is an optional expression list enclosed in parentheses:
 
 .. productionlist::
-   parenth_form: "(" [`expression_list`] ")"
+   parenth_form: "(" [`starred_expression`] ")"
 
 A parenthesized expression list yields whatever that expression list yields: if
 the list contains at least one comma, it yields a tuple; otherwise, it yields
@@ -202,7 +202,7 @@ A list display is a possibly empty series of expressions enclosed in square
 brackets:
 
 .. productionlist::
-   list_display: "[" [`expression_list` | `comprehension`] "]"
+   list_display: "[" [`starred_list` | `comprehension`] "]"
 
 A list display yields a new list object, the contents being specified by either
 a list of expressions or a comprehension.  When a comma-separated list of
@@ -223,7 +223,7 @@ A set display is denoted by curly braces and distinguishable from dictionary
 displays by the lack of colons separating keys and values:
 
 .. productionlist::
-   set_display: "{" (`expression_list` | `comprehension`) "}"
+   set_display: "{" (`starred_list` | `comprehension`) "}"
 
 A set display yields a new mutable set object, the contents being specified by
 either a sequence of expressions or a comprehension.  When a comma-separated
@@ -250,7 +250,7 @@ curly braces:
 .. productionlist::
    dict_display: "{" [`key_datum_list` | `dict_comprehension`] "}"
    key_datum_list: `key_datum` ("," `key_datum`)* [","]
-   key_datum: `expression` ":" `expression`
+   key_datum: `expression` ":" `expression` | "**" `or_expr`
    dict_comprehension: `expression` ":" `expression` `comp_for`
 
 A dictionary display yields a new dictionary object.
@@ -260,6 +260,16 @@ from left to right to define the entries of the dictionary: each key object is
 used as a key into the dictionary to store the corresponding datum.  This means
 that you can specify the same key multiple times in the key/datum list, and the
 final dictionary's value for that key will be the last one given.
+
+.. index:: unpacking; dictionary, **; in dictionary displays
+
+A double asterisk ``**`` denotes :dfn:`dictionary unpacking`.
+Its operand must be a :term:`mapping`.  Each mapping item is added
+to the new dictionary.  Later values replace values already set by
+earlier key/datum pairs and earlier dictionary unpackings.
+
+.. versionadded:: 3.5
+   Unpacking into dictionary displays, originally proposed by :pep:`448`.
 
 A dict comprehension, in contrast to list and set comprehensions, needs two
 expressions separated with a colon followed by the usual "for" and "if" clauses.
@@ -649,15 +659,15 @@ series of :term:`arguments <argument>`:
 
 .. productionlist::
    call: `primary` "(" [`argument_list` [","] | `comprehension`] ")"
-   argument_list: `positional_arguments` ["," `keyword_arguments`]
-                :   ["," "*" `expression`] ["," `keyword_arguments`]
-                :   ["," "**" `expression`]
-                : | `keyword_arguments` ["," "*" `expression`]
-                :   ["," `keyword_arguments`] ["," "**" `expression`]
-                : | "*" `expression` ["," `keyword_arguments`] ["," "**" `expression`]
-                : | "**" `expression`
-   positional_arguments: `expression` ("," `expression`)*
-   keyword_arguments: `keyword_item` ("," `keyword_item`)*
+   argument_list: `positional_arguments` ["," `starred_and_keywords`]
+                :   ["," `keywords_arguments`]
+                : | `starred_and_keywords` ["," `keywords_arguments`]
+                : | `keywords_arguments`
+   positional_arguments: ["*"] `expression` ("," ["*"] `expression`)*
+   starred_and_keywords: ("*" `expression` | `keyword_item`)
+                : ("," "*" `expression` | "," `keyword_item`)*
+   keywords_arguments: (`keyword_item` | "**" `expression`)
+                : ("," `keyword_item` | "**" `expression`)*
    keyword_item: `identifier` "=" `expression`
 
 An optional trailing comma may be present after the positional and keyword arguments
@@ -715,17 +725,18 @@ there were no excess keyword arguments.
 
 .. index::
    single: *; in function calls
+   single: unpacking; in function calls
 
 If the syntax ``*expression`` appears in the function call, ``expression`` must
-evaluate to an iterable.  Elements from this iterable are treated as if they
-were additional positional arguments; if there are positional arguments
-*x1*, ..., *xN*, and ``expression`` evaluates to a sequence *y1*, ..., *yM*,
-this is equivalent to a call with M+N positional arguments *x1*, ..., *xN*,
-*y1*, ..., *yM*.
+evaluate to an :term:`iterable`.  Elements from these iterables are
+treated as if they were additional positional arguments.  For the call
+``f(x1, x2, *y, x3, x4)``, if *y* evaluates to a sequence *y1*, ..., *yM*,
+this is equivalent to a call with M+4 positional arguments *x1*, *x2*,
+*y1*, ..., *yM*, *x3*, *x4*.
 
 A consequence of this is that although the ``*expression`` syntax may appear
-*after* some keyword arguments, it is processed *before* the keyword arguments
-(and the ``**expression`` argument, if any -- see below).  So::
+*after* explicit keyword arguments, it is processed *before* the
+keyword arguments (and any ``**expression`` arguments -- see below).  So::
 
    >>> def f(a, b):
    ...     print(a, b)
@@ -746,12 +757,19 @@ used in the same call, so in practice this confusion does not arise.
    single: **; in function calls
 
 If the syntax ``**expression`` appears in the function call, ``expression`` must
-evaluate to a mapping, the contents of which are treated as additional keyword
-arguments.  In the case of a keyword appearing in both ``expression`` and as an
-explicit keyword argument, a :exc:`TypeError` exception is raised.
+evaluate to a :term:`mapping`, the contents of which are treated as
+additional keyword arguments.  If a keyword is already present
+(as an explicit keyword argument, or from another unpacking),
+a :exc:`TypeError` exception is raised.
 
 Formal parameters using the syntax ``*identifier`` or ``**identifier`` cannot be
 used as positional argument slots or as keyword argument names.
+
+.. versionchanged:: 3.5
+   Function calls accept any number of ``*`` and ``**`` unpackings,
+   positional arguments may follow iterable unpackings (``*``),
+   and keyword arguments may follow dictionary unpackings (``**``).
+   Originally proposed by :pep:`448`.
 
 A call always returns some value, possibly ``None``, unless it raises an
 exception.  How this value is computed depends on the type of the callable
@@ -1407,12 +1425,28 @@ Expression lists
 
 .. productionlist::
    expression_list: `expression` ( "," `expression` )* [","]
+   starred_list: `starred_item` ( "," `starred_item` )* [","]
+   starred_expression: `expression` | ( `starred_item` "," )* [`starred_item`]
+   starred_item: `expression` | "*" `or_expr`
 
 .. index:: object: tuple
 
-An expression list containing at least one comma yields a tuple.  The length of
+Except when part of a list or set display, an expression list
+containing at least one comma yields a tuple.  The length of
 the tuple is the number of expressions in the list.  The expressions are
 evaluated from left to right.
+
+.. index::
+   pair: iterable; unpacking
+   single: *; in expression lists
+
+An asterisk ``*`` denotes :dfn:`iterable unpacking`.  Its operand must be
+an :term:`iterable`.  The iterable is expanded into a sequence of items,
+which are included in the new tuple, list, or set, at the site of
+the unpacking.
+
+.. versionadded:: 3.5
+   Iterable unpacking in expression lists, originally proposed by :pep:`448`.
 
 .. index:: pair: trailing; comma
 
