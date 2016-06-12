@@ -13,6 +13,7 @@ import unittest
 import xml.etree
 import types
 import test.test_support
+import xml.etree.ElementTree
 from collections import namedtuple
 from test.script_helper import assert_python_ok
 from test.test_support import (TESTFN, rmtree, reap_children, captured_stdout,
@@ -253,6 +254,14 @@ def get_pydoc_html(module):
         loc = "<br><a href=\"" + loc + "\">Module Docs</a>"
     return output.strip(), loc
 
+def get_pydoc_link(module):
+    "Returns a documentation web link of a module"
+    dirname = os.path.dirname
+    basedir = dirname(dirname(__file__))
+    doc = pydoc.TextDoc()
+    loc = doc.getdocloc(module, basedir=basedir)
+    return loc
+
 def get_pydoc_text(module):
     "Returns pydoc generated output as text"
     doc = pydoc.TextDoc()
@@ -330,6 +339,11 @@ class PydocDocTest(unittest.TestCase):
         if result != expected_text:
             print_diffs(expected_text, result)
             self.fail("outputs are not equal, see diff above")
+
+    def test_mixed_case_module_names_are_lower_cased(self):
+        # issue16484
+        doc_link = get_pydoc_link(xml.etree.ElementTree)
+        self.assertIn('xml.etree.elementtree', doc_link)
 
     def test_issue8225(self):
         # Test issue8225 to ensure no doc link appears for xml.etree

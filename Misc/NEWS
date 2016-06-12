@@ -13,6 +13,13 @@ Core and Builtins
 Library
 -------
 
+Documentation
+-------------
+
+- Issue #16484: Change the default PYTHONDOCS URL to "https:", and fix the
+  resulting links to use lowercase.  Patch by Sean Rodman, test by Kaushik
+  Nadikuditi.
+
 
 What's New in Python 2.7.12 release candidate 1?
 ================================================
