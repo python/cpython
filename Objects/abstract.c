@@ -2132,7 +2132,7 @@ _Py_CheckFunctionResult(PyObject *func, PyObject *result, const char *where)
                              "%s returned NULL without setting an error",
                              where);
 #ifdef Py_DEBUG
-            /* Ensure that the bug is catched in debug mode */
+            /* Ensure that the bug is caught in debug mode */
             Py_FatalError("a function returned NULL without setting an error");
 #endif
             return NULL;
