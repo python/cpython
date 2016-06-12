@@ -225,6 +225,8 @@ IDLE
 Documentation
 -------------
 
+- Issue #24136: Document the new PEP 448 unpacking syntax of 3.5.
+
 - Issue #22558: Add remaining doc links to source code for Python-coded modules.
   Patch by Yoni Lavi.
 

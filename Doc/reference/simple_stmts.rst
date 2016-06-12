@@ -45,7 +45,7 @@ expression statements are allowed and occasionally useful.  The syntax for an
 expression statement is:
 
 .. productionlist::
-   expression_stmt: `expression_list`
+   expression_stmt: `starred_expression`
 
 An expression statement evaluates the expression list (which may be a single
 expression).
@@ -81,7 +81,7 @@ Assignment statements are used to (re)bind names to values and to modify
 attributes or items of mutable objects:
 
 .. productionlist::
-   assignment_stmt: (`target_list` "=")+ (`expression_list` | `yield_expression`)
+   assignment_stmt: (`target_list` "=")+ (`starred_expression` | `yield_expression`)
    target_list: `target` ("," `target`)* [","]
    target: `identifier`
          : | "(" [`target_list`] ")"
@@ -892,7 +892,7 @@ The :keyword:`nonlocal` statement
    nonlocal_stmt: "nonlocal" `identifier` ("," `identifier`)*
 
 .. XXX add when implemented
-                : ["=" (`target_list` "=")+ expression_list]
+                : ["=" (`target_list` "=")+ starred_expression]
                 : | "nonlocal" identifier augop expression_list
 
 The :keyword:`nonlocal` statement causes the listed identifiers to refer to

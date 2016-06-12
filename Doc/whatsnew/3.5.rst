@@ -320,7 +320,7 @@ PEP 448 - Additional Unpacking Generalizations
 
 :pep:`448` extends the allowed uses of the ``*`` iterable unpacking
 operator and ``**`` dictionary unpacking operator.  It is now possible
-to use an arbitrary number of unpackings in function calls::
+to use an arbitrary number of unpackings in :ref:`function calls <calls>`::
 
     >>> print(*[1], *[2], 3, *[4, 5])
     1 2 3 4 5
@@ -333,7 +333,7 @@ to use an arbitrary number of unpackings in function calls::
     1 2 3 4
 
 Similarly, tuple, list, set, and dictionary displays allow multiple
-unpackings::
+unpackings (see :ref:`exprlists` and :ref:`dict`)::
 
     >>> *range(4), 4
     (0, 1, 2, 3, 4)
