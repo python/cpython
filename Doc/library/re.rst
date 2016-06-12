@@ -321,7 +321,7 @@ The special characters are:
 
 
 The special sequences consist of ``'\'`` and a character from the list below.
-If the ordinary character is not ASCII digit or ASCII letter, then the
+If the ordinary character is not an ASCII digit or an ASCII letter, then the
 resulting RE will match the second character.  For example, ``\$`` matches the
 character ``'$'``.
 
@@ -444,7 +444,7 @@ three digits in length.
    The ``'\u'`` and ``'\U'`` escape sequences have been added.
 
 .. versionchanged:: 3.6
-   Unknown escapes consisting of ``'\'`` and ASCII letter now are errors.
+   Unknown escapes consisting of ``'\'`` and an ASCII letter now are errors.
 
 
 .. seealso::
@@ -743,7 +743,7 @@ form.
       Unmatched groups are replaced with an empty string.
 
    .. versionchanged:: 3.6
-      Unknown escapes consisting of ``'\'`` and ASCII letter now are errors.
+      Unknown escapes consisting of ``'\'`` and an ASCII letter now are errors.
 
 
 .. function:: subn(pattern, repl, string, count=0, flags=0)
