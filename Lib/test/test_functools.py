@@ -236,6 +236,25 @@ class TestPartial(unittest.TestCase):
         self.assertEqual(r, ((1, 2), {}))
         self.assertIs(type(r[0]), tuple)
 
+    def test_recursive_pickle(self):
+        f = self.thetype(capture)
+        f.__setstate__((f, (), {}, {}))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            with self.assertRaises(RuntimeError):
+                pickle.dumps(f, proto)
+
+        f = self.thetype(capture)
+        f.__setstate__((capture, (f,), {}, {}))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f_copy = pickle.loads(pickle.dumps(f, proto))
+            self.assertIs(f_copy.args[0], f_copy)
+
+        f = self.thetype(capture)
+        f.__setstate__((capture, (), {'a': f}, {}))
+        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+            f_copy = pickle.loads(pickle.dumps(f, proto))
+            self.assertIs(f_copy.keywords['a'], f_copy)
+
     # Issue 6083: Reference counting bug
     def test_setstate_refcount(self):
         class BadSequence:
@@ -270,6 +289,7 @@ class TestPythonPartial(TestPartial):
     test_setstate_errors = None
     test_setstate_subclasses = None
     test_setstate_refcount = None
+    test_recursive_pickle = None
 
     # the python version isn't deepcopyable
     test_deepcopy = None
