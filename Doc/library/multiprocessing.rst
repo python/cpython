@@ -1016,7 +1016,7 @@ Connection objects are usually created using :func:`Pipe` -- see also
       using :meth:`recv`.
 
       The object must be picklable.  Very large pickles (approximately 32 MB+,
-      though it depends on the OS) may raise a ValueError exception.
+      though it depends on the OS) may raise a :exc:`ValueError` exception.
 
    .. method:: recv()
 
