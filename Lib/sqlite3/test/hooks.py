@@ -33,19 +33,14 @@ class CollationTests(unittest.TestCase):
 
     def CheckCreateCollationNotCallable(self):
         con = sqlite.connect(":memory:")
-        try:
+        with self.assertRaises(TypeError) as cm:
             con.create_collation("X", 42)
-            self.fail("should have raised a TypeError")
-        except TypeError as e:
-            self.assertEqual(e.args[0], "parameter must be callable")
+        self.assertEqual(str(cm.exception), 'parameter must be callable')
 
     def CheckCreateCollationNotAscii(self):
         con = sqlite.connect(":memory:")
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             con.create_collation("collä", lambda x, y: (x > y) - (x < y))
-            self.fail("should have raised a ProgrammingError")
-        except sqlite.ProgrammingError as e:
-            pass
 
     @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 1),
                      'old SQLite versions crash on this test')
@@ -70,11 +65,9 @@ class CollationTests(unittest.TestCase):
             self.fail("the expected order was not returned")
 
         con.create_collation("mycoll", None)
-        try:
+        with self.assertRaises(sqlite.OperationalError) as cm:
             result = con.execute(sql).fetchall()
-            self.fail("should have raised an OperationalError")
-        except sqlite.OperationalError as e:
-            self.assertEqual(e.args[0].lower(), "no such collation sequence: mycoll")
+        self.assertEqual(str(cm.exception), 'no such collation sequence: mycoll')
 
     def CheckCollationReturnsLargeInteger(self):
         def mycoll(x, y):
@@ -106,8 +99,8 @@ class CollationTests(unittest.TestCase):
         result = con.execute("""
             select x from (select 'a' as x union select 'b' as x) order by x collate mycoll
             """).fetchall()
-        if result[0][0] != 'b' or result[1][0] != 'a':
-            self.fail("wrong collation function is used")
+        self.assertEqual(result[0][0], 'b')
+        self.assertEqual(result[1][0], 'a')
 
     def CheckDeregisterCollation(self):
         """
@@ -117,12 +110,9 @@ class CollationTests(unittest.TestCase):
         con = sqlite.connect(":memory:")
         con.create_collation("mycoll", lambda x, y: (x > y) - (x < y))
         con.create_collation("mycoll", None)
-        try:
+        with self.assertRaises(sqlite.OperationalError) as cm:
             con.execute("select 'a' as x union select 'b' as x order by x collate mycoll")
-            self.fail("should have raised an OperationalError")
-        except sqlite.OperationalError as e:
-            if not e.args[0].startswith("no such collation sequence"):
-                self.fail("wrong OperationalError raised")
+        self.assertEqual(str(cm.exception), 'no such collation sequence: mycoll')
 
 class ProgressTests(unittest.TestCase):
     def CheckProgressHandlerUsed(self):
