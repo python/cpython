@@ -44,7 +44,8 @@ Core and Builtins
 Library
 -------
 
-- Issue #25455: Fixed a crash in repr of ElementTree.Element with recursive tag.
+- Issue #25455: Fixed crashes in repr of recursive ElementTree.Element and
+  functools.partial objects.
 
 - Issue #27294: Improved repr for Tkinter event objects.
 
