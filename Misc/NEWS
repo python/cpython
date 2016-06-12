@@ -225,6 +225,10 @@ IDLE
 Documentation
 -------------
 
+- Issue #16484: Change the default PYTHONDOCS URL to "https:", and fix the
+  resulting links to use lowercase.  Patch by Sean Rodman, test by Kaushik
+  Nadikuditi.
+
 - Issue #24136: Document the new PEP 448 unpacking syntax of 3.5.
 
 - Issue #22558: Add remaining doc links to source code for Python-coded modules.
