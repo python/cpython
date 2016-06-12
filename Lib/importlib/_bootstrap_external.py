@@ -223,6 +223,7 @@ _code_type = type(_write_atomic.__code__)
 #     Python 3.5b1  3330 (PEP 448: Additional Unpacking Generalizations)
 #     Python 3.5b2  3340 (fix dictionary display evaluation order #11205)
 #     Python 3.5b2  3350 (add GET_YIELD_FROM_ITER opcode #24400)
+#     Python 3.5.2  3351 (fix BUILD_MAP_UNPACK_WITH_CALL opcode #27286)
 #     Python 3.6a0  3360 (add FORMAT_VALUE opcode #25483
 #     Python 3.6a0  3361 (lineno delta of code.co_lnotab becomes signed)
 #     Python 3.6a0  3370 (16 bit wordcode)
