@@ -225,15 +225,24 @@ class TestPartialC(TestPartial, unittest.TestCase):
 
         f = self.partial(capture)
         f.__setstate__((f, (), {}, {}))
-        self.assertEqual(repr(f), '%s(%s(...))' % (name, name))
+        try:
+            self.assertEqual(repr(f), '%s(%s(...))' % (name, name))
+        finally:
+            f.__setstate__((capture, (), {}, {}))
 
         f = self.partial(capture)
         f.__setstate__((capture, (f,), {}, {}))
-        self.assertEqual(repr(f), '%s(%r, %s(...))' % (name, capture, name))
+        try:
+            self.assertEqual(repr(f), '%s(%r, %s(...))' % (name, capture, name))
+        finally:
+            f.__setstate__((capture, (), {}, {}))
 
         f = self.partial(capture)
         f.__setstate__((capture, (), {'a': f}, {}))
-        self.assertEqual(repr(f), '%s(%r, a=%s(...))' % (name, capture, name))
+        try:
+            self.assertEqual(repr(f), '%s(%r, a=%s(...))' % (name, capture, name))
+        finally:
+            f.__setstate__((capture, (), {}, {}))
 
     def test_pickle(self):
         f = self.partial(signature, ['asdf'], bar=[True])
@@ -318,21 +327,36 @@ class TestPartialC(TestPartial, unittest.TestCase):
     def test_recursive_pickle(self):
         f = self.partial(capture)
         f.__setstate__((f, (), {}, {}))
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            with self.assertRaises(RecursionError):
-                pickle.dumps(f, proto)
+        try:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                with self.assertRaises(RecursionError):
+                    pickle.dumps(f, proto)
+        finally:
+            f.__setstate__((capture, (), {}, {}))
 
         f = self.partial(capture)
         f.__setstate__((capture, (f,), {}, {}))
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            f_copy = pickle.loads(pickle.dumps(f, proto))
-            self.assertIs(f_copy.args[0], f_copy)
+        try:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                f_copy = pickle.loads(pickle.dumps(f, proto))
+                try:
+                    self.assertIs(f_copy.args[0], f_copy)
+                finally:
+                    f_copy.__setstate__((capture, (), {}, {}))
+        finally:
+            f.__setstate__((capture, (), {}, {}))
 
         f = self.partial(capture)
         f.__setstate__((capture, (), {'a': f}, {}))
-        for proto in range(pickle.HIGHEST_PROTOCOL + 1):
-            f_copy = pickle.loads(pickle.dumps(f, proto))
-            self.assertIs(f_copy.keywords['a'], f_copy)
+        try:
+            for proto in range(pickle.HIGHEST_PROTOCOL + 1):
+                f_copy = pickle.loads(pickle.dumps(f, proto))
+                try:
+                    self.assertIs(f_copy.keywords['a'], f_copy)
+                finally:
+                    f_copy.__setstate__((capture, (), {}, {}))
+        finally:
+            f.__setstate__((capture, (), {}, {}))
 
     # Issue 6083: Reference counting bug
     def test_setstate_refcount(self):
