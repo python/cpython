@@ -1,20 +1,24 @@
 """
 A number of functions that enhance IDLE on Mac OSX.
 """
-import sys
+from sys import platform  # Used in _init_tk_type, changed by test.
 import tkinter
 import warnings
 
+
+## Define functions that query the Mac graphics type.
+## _tk_type and its initializer are private to this section.
+
 _tk_type = None
 
-def _init_tk_type(idleroot=None):
+def _init_tk_type():
     """
     Initializes OS X Tk variant values for
     isAquaTk(), isCarbonTk(), isCocoaTk(), and isXQuartz().
     """
     global _tk_type
-    if sys.platform == 'darwin':
-        root = idleroot or tkinter.Tk()
+    if platform == 'darwin':
+        root = tkinter.Tk()
         ws = root.tk.call('tk', 'windowingsystem')
         if 'x11' in ws:
             _tk_type = "xquartz"
@@ -24,8 +28,7 @@ def _init_tk_type(idleroot=None):
             _tk_type = "cocoa"
         else:
             _tk_type = "carbon"
-        if not idleroot:
-            root.destroy
+        root.destroy()
     else:
         _tk_type = "other"
 
@@ -62,6 +65,7 @@ def isXQuartz():
         _init_tk_type()
     return _tk_type == "xquartz"
 
+
 def tkVersionWarning(root):
     """
     Returns a string warning message if the Tk version in use appears to
@@ -81,6 +85,9 @@ def tkVersionWarning(root):
                 r" for current information.".format(patchlevel))
     else:
         return False
+
+
+## Fix the menu and related functions.
 
 def addOpenEventSupport(root, flist):
     """
@@ -233,9 +240,13 @@ def setupApp(root, flist):
     isAquaTk(), isCarbonTk(), isCocoaTk(), isXQuartz() functions which
     are initialized here as well.
     """
-    _init_tk_type(root)
     if isAquaTk():
         hideTkConsole(root)
         overrideRootMenu(root, flist)
         addOpenEventSupport(root, flist)
         fixb2context(root)
+
+
+if __name__ == '__main__':
+    from unittest import main
+    main('idlelib.idle_test.test_macosx', verbosity=2)

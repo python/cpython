@@ -66,7 +66,6 @@ outwin.OutputWindow (indirectly being tested with grep test)
 '''
 
 from importlib import import_module
-from idlelib.macosx import _init_tk_type
 import tkinter as tk
 from tkinter.ttk import Scrollbar
 
@@ -338,7 +337,6 @@ def run(*tests):
     root = tk.Tk()
     root.title('IDLE htest')
     root.resizable(0, 0)
-    _init_tk_type(root)
 
     # a scrollable Label like constant width text widget.
     frameLabel = tk.Frame(root, padx=10)

@@ -1,4 +1,6 @@
-'''Test idlelib.macosx.py
+'''Test idlelib.macosx.py.
+
+Coverage: 71% on Windows.
 '''
 from idlelib import macosx
 from test.support import requires
@@ -6,8 +8,8 @@ import sys
 import tkinter as tk
 import unittest
 import unittest.mock as mock
+from idlelib.filelist import FileList
 
-MAC = sys.platform == 'darwin'
 mactypes = {'carbon', 'cocoa', 'xquartz'}
 nontypes = {'other'}
 alltypes = mactypes | nontypes
@@ -20,21 +22,23 @@ class InitTktypeTest(unittest.TestCase):
     def setUpClass(cls):
         requires('gui')
         cls.root = tk.Tk()
+        cls.orig_platform = macosx.platform
 
     @classmethod
     def tearDownClass(cls):
         cls.root.update_idletasks()
         cls.root.destroy()
         del cls.root
+        macosx.platform = cls.orig_platform
 
     def test_init_sets_tktype(self):
         "Test that _init_tk_type sets _tk_type according to platform."
-        for root in (None, self.root):
-            with self.subTest(root=root):
+        for platform, types in ('darwin', alltypes), ('other', nontypes):
+            with self.subTest(platform=platform):
+                macosx.platform = platform
                 macosx._tk_type == None
-                macosx._init_tk_type(root)
-                self.assertIn(macosx._tk_type,
-                              mactypes if MAC else nontypes)
+                macosx._init_tk_type()
+                self.assertIn(macosx._tk_type, types)
 
 
 class IsTypeTkTest(unittest.TestCase):
@@ -63,6 +67,30 @@ class IsTypeTkTest(unittest.TestCase):
                     macosx._tk_type = tktype
                     (self.assertTrue if tktype in whentrue else self.assertFalse)\
                                      (func())
+
+
+class SetupTest(unittest.TestCase):
+    "Test setupApp."
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+        cls.root = tk.Tk()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.root.update_idletasks()
+        cls.root.destroy()
+        del cls.root
+
+    def test_setupapp(self):
+        "Call setupApp with each possible graphics type."
+        root = self.root
+        flist = FileList(root)
+        for tktype in alltypes:
+            with self.subTest(tktype=tktype):
+                macosx._tk_type = tktype
+                macosx.setupApp(root, flist)
 
 
 if __name__ == '__main__':
