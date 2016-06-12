@@ -164,6 +164,10 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
 #ifdef WITH_THREAD
     self->thread_ident = PyThread_get_thread_ident();
 #endif
+    if (!check_same_thread && sqlite3_libversion_number() < 3003001) {
+        PyErr_SetString(pysqlite_NotSupportedError, "shared connections not available");
+        return -1;
+    }
     self->check_same_thread = check_same_thread;
 
     self->function_pinboard = PyDict_New();
