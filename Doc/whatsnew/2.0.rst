@@ -506,7 +506,7 @@ arguments and/or a dictionary of keyword arguments. In Python 1.5 and earlier,
 you'd use the :func:`apply` built-in function: ``apply(f, args, kw)`` calls the
 function :func:`f` with the argument tuple *args* and the keyword arguments in
 the dictionary *kw*.  :func:`apply`  is the same in 2.0, but thanks to a patch
-from Greg Ewing, ``f(*args, **kw)`` as a shorter and clearer way to achieve the
+from Greg Ewing, ``f(*args, **kw)`` is a shorter and clearer way to achieve the
 same effect.  This syntax is symmetrical with the syntax for defining
 functions::
 
