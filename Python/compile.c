@@ -3262,7 +3262,7 @@ compiler_call_helper(struct compiler *c,
         code |= 2;
         if (nsubkwargs > 1) {
             /* Pack it all up */
-            int function_pos = n + (code & 1) + nkw + 1;
+            int function_pos = n + (code & 1) + 2 * nkw + 1;
             ADDOP_I(c, BUILD_MAP_UNPACK_WITH_CALL, nsubkwargs | (function_pos << 8));
         }
     }
