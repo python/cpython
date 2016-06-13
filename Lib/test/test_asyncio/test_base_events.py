@@ -1185,14 +1185,14 @@ class BaseEventLoopWithSelectorTests(test_utils.TestCase):
             test_utils.run_briefly(self.loop)  # allow transport to close
 
         sock.family = socket.AF_INET6
-        coro = self.loop.create_connection(asyncio.Protocol, '::2', 80)
+        coro = self.loop.create_connection(asyncio.Protocol, '::1', 80)
         t, p = self.loop.run_until_complete(coro)
         try:
-            # Without inet_pton we use getaddrinfo, which transforms ('::2', 80)
-            # to ('::0.0.0.2', 80, 0, 0). The last 0s are flow info, scope id.
+            # Without inet_pton we use getaddrinfo, which transforms ('::1', 80)
+            # to ('::1', 80, 0, 0). The last 0s are flow info, scope id.
             [address] = sock.connect.call_args[0]
             host, port = address[:2]
-            self.assertRegex(host, r'::(0\.)*2')
+            self.assertRegex(host, r'::(0\.)*1')
             self.assertEqual(port, 80)
             _, kwargs = m_socket.socket.call_args
             self.assertEqual(kwargs['family'], m_socket.AF_INET6)
