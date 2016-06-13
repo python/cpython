@@ -185,24 +185,14 @@ class DeclTypesTests(unittest.TestCase):
     def CheckUnsupportedSeq(self):
         class Bar: pass
         val = Bar()
-        try:
+        with self.assertRaises(sqlite.InterfaceError):
             self.cur.execute("insert into test(f) values (?)", (val,))
-            self.fail("should have raised an InterfaceError")
-        except sqlite.InterfaceError:
-            pass
-        except:
-            self.fail("should have raised an InterfaceError")
 
     def CheckUnsupportedDict(self):
         class Bar: pass
         val = Bar()
-        try:
+        with self.assertRaises(sqlite.InterfaceError):
             self.cur.execute("insert into test(f) values (:val)", {"val": val})
-            self.fail("should have raised an InterfaceError")
-        except sqlite.InterfaceError:
-            pass
-        except:
-            self.fail("should have raised an InterfaceError")
 
     def CheckBlob(self):
         # default

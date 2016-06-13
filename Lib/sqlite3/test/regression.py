@@ -170,14 +170,8 @@ class RegressionTests(unittest.TestCase):
 
         con = sqlite.connect(":memory:")
         cur = Cursor(con)
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             cur.execute("select 4+5").fetchall()
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("should have raised ProgrammingError")
-
 
     def CheckStrSubclass(self):
         """
@@ -196,13 +190,8 @@ class RegressionTests(unittest.TestCase):
                 pass
 
         con = Connection(":memory:")
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             cur = con.cursor()
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("should have raised ProgrammingError")
 
     def CheckCursorRegistration(self):
         """
@@ -223,13 +212,8 @@ class RegressionTests(unittest.TestCase):
         cur.executemany("insert into foo(x) values (?)", [(3,), (4,), (5,)])
         cur.execute("select x from foo")
         con.rollback()
-        try:
+        with self.assertRaises(sqlite.InterfaceError):
             cur.fetchall()
-            self.fail("should have raised InterfaceError")
-        except sqlite.InterfaceError:
-            pass
-        except:
-            self.fail("should have raised InterfaceError")
 
     def CheckAutoCommit(self):
         """

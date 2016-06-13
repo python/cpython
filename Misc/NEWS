@@ -2,6 +2,18 @@
 Python News
 +++++++++++
 
+What's New in Python 3.5.3 release candidate 1?
+===============================================
+
+Release date: TBA
+
+Core and Builtins
+-----------------
+
+Library
+-------
+
+
 What's New in Python 3.5.2 final?
 =================================
 
@@ -21,6 +33,13 @@ Release date: 2016-06-12
 
 Core and Builtins
 -----------------
+
+- Issue #27190: Raise NotSupportedError if sqlite3 is older than 3.3.1.
+  Patch by Dave Sawyer.
+
+- Issue #27286: Fixed compiling BUILD_MAP_UNPACK_WITH_CALL opcode.  Calling
+  function with generalized unpacking (PEP 448) and conflicting keyword names
+  could cause undefined behavior.
 
 - Issue #27066: Fixed SystemError if a custom opener (for open()) returns a
   negative number without setting an exception.
@@ -150,6 +169,9 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #25455: Fixed crashes in repr of recursive ElementTree.Element and
+  functools.partial objects.
 
 - Issue #26556: Update expat to 2.1.1, fixes CVE-2015-1283.
 
@@ -602,6 +624,10 @@ IDLE
 
 Documentation
 -------------
+
+- Issue #16484: Change the default PYTHONDOCS URL to "https:", and fix the
+  resulting links to use lowercase.  Patch by Sean Rodman, test by Kaushik
+  Nadikuditi.
 
 - Issue #24136: Document the new PEP 448 unpacking syntax of 3.5.
 
@@ -2223,8 +2249,8 @@ Library
   writer failed in BufferedRWPair.close().
 
 - Issue #23622: Unknown escapes in regular expressions that consist of ``'\'``
-  and ASCII letter now raise a deprecation warning and will be forbidden in
-  Python 3.6.
+  and an ASCII letter now raise a deprecation warning and will be forbidden
+  in Python 3.6.
 
 - Issue #23671: string.Template now allows specifying the "self" parameter as
   a keyword argument.  string.Formatter now allows specifying the "self" and
