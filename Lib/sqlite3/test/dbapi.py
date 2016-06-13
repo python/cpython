@@ -335,8 +335,7 @@ class CursorTests(unittest.TestCase):
     def CheckTotalChanges(self):
         self.cu.execute("insert into test(name) values ('foo')")
         self.cu.execute("insert into test(name) values ('foo')")
-        if self.cx.total_changes < 2:
-            self.fail("total changes reported wrong value")
+        self.assertLess(2, self.cx.total_changes, msg='total changes reported wrong value')
 
     # Checks for executemany:
     # Sequences are required by the DB-API, iterators

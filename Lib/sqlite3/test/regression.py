@@ -134,17 +134,11 @@ class RegressionTests(unittest.TestCase):
     def CheckErrorMsgDecodeError(self):
         # When porting the module to Python 3.0, the error message about
         # decoding errors disappeared. This verifies they're back again.
-        failure = None
-        try:
+        with self.assertRaises(sqlite.OperationalError) as cm:
             self.con.execute("select 'xxx' || ? || 'yyy' colname",
                              (bytes(bytearray([250])),)).fetchone()
-            failure = "should have raised an OperationalError with detailed description"
-        except sqlite.OperationalError as e:
-            msg = e.args[0]
-            if not msg.startswith("Could not decode to UTF-8 column 'colname' with text 'xxx"):
-                failure = "OperationalError did not have expected description text"
-        if failure:
-            self.fail(failure)
+        msg = "Could not decode to UTF-8 column 'colname' with text 'xxx"
+        self.assertIn(msg, str(cm.exception))
 
     def CheckRegisterAdapter(self):
         """
