@@ -281,6 +281,16 @@ exceptions: see :func:`faulthandler.enable`. (Contributed by Victor Stinner in
 :issue:`23848`.)
 
 
+idlelib and IDLE
+----------------
+
+The idlelib package is being modernized and refactored to make IDLE look and work better and to make the code easier to understand, test, and improve. Part of making IDLE look better, especially on Linux and Mac, is using ttk widgets, mostly in the dialogs.  As a result, IDLE no longer runs with tcl/tk 8.4.  It now requires tcl/tk 8.5 or 8.6.  We recommend running the latest release of either.
+
+'Modernizing' includes renaming and consolidation of idlelib modules. The renaming of files with partial uppercase names is similar to the renaming of, for instance, Tkinter and TkFont to tkinter and tkinter.font in 3.0.  As a result, imports of idlelib files that worked in 3.5 will usually not work in 3.6.  At least a module name change will be needed (see idlelib/README.txt), sometimes more.  (Name changes contributed by Al Swiegart and Terry Reedy in :issue:`24225`.  Most idlelib patches since have been and will be part of the process.)
+
+In compensation, the eventual result with be that some idlelib classes will be easier to use, with better APIs and docstrings explaining them.  Additional useful information will be added to idlelib when available.  
+
+
 os
 --
 
