@@ -122,11 +122,8 @@ class ConnectionTests(unittest.TestCase):
 
     def CheckFailedOpen(self):
         YOU_CANNOT_OPEN_THIS = "/foo/bar/bla/23534/mydb.db"
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             con = sqlite.connect(YOU_CANNOT_OPEN_THIS)
-        except sqlite.OperationalError:
-            return
-        self.fail("should have raised an OperationalError")
 
     def CheckClose(self):
         self.cx.close()
@@ -180,6 +177,12 @@ class ConnectionTests(unittest.TestCase):
             with self.assertRaises(sqlite.OperationalError):
                 cx.execute('insert into test(id) values(1)')
 
+    def CheckSameThreadErrorOnOldVersion(self):
+        if sqlite.sqlite_version_info >= (3, 3, 1):
+            self.skipTest('test needs sqlite3 versions older than 3.3.1')
+        with self.assertRaises(sqlite.NotSupportedError) as cm:
+            sqlite.connect(':memory:', check_same_thread=False)
+        self.assertEqual(str(cm.exception), 'shared connections not available')
 
 class CursorTests(unittest.TestCase):
     def setUp(self):
@@ -196,22 +199,12 @@ class CursorTests(unittest.TestCase):
         self.cu.execute("delete from test")
 
     def CheckExecuteIllegalSql(self):
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.cu.execute("select asdf")
-            self.fail("should have raised an OperationalError")
-        except sqlite.OperationalError:
-            return
-        except:
-            self.fail("raised wrong exception")
 
     def CheckExecuteTooMuchSql(self):
-        try:
+        with self.assertRaises(sqlite.Warning):
             self.cu.execute("select 5+4; select 4+5")
-            self.fail("should have raised a Warning")
-        except sqlite.Warning:
-            return
-        except:
-            self.fail("raised wrong exception")
 
     def CheckExecuteTooMuchSql2(self):
         self.cu.execute("select 5+4; -- foo bar")
@@ -226,13 +219,8 @@ class CursorTests(unittest.TestCase):
             """)
 
     def CheckExecuteWrongSqlArg(self):
-        try:
+        with self.assertRaises(ValueError):
             self.cu.execute(42)
-            self.fail("should have raised a ValueError")
-        except ValueError:
-            return
-        except:
-            self.fail("raised wrong exception.")
 
     def CheckExecuteArgInt(self):
         self.cu.execute("insert into test(id) values (?)", (42,))
@@ -250,29 +238,25 @@ class CursorTests(unittest.TestCase):
         row = self.cu.fetchone()
         self.assertEqual(row[0], "Hu\x00go")
 
+    def CheckExecuteNonIterable(self):
+        with self.assertRaises(ValueError) as cm:
+            self.cu.execute("insert into test(id) values (?)", 42)
+        self.assertEqual(str(cm.exception), 'parameters are of unsupported type')
+
     def CheckExecuteWrongNoOfArgs1(self):
         # too many parameters
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cu.execute("insert into test(id) values (?)", (17, "Egon"))
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
 
     def CheckExecuteWrongNoOfArgs2(self):
         # too little parameters
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cu.execute("insert into test(id) values (?)")
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
 
     def CheckExecuteWrongNoOfArgs3(self):
         # no parameters, parameters are needed
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cu.execute("insert into test(id) values (?)")
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
 
     def CheckExecuteParamList(self):
         self.cu.execute("insert into test(name) values ('foo')")
@@ -311,27 +295,18 @@ class CursorTests(unittest.TestCase):
 
     def CheckExecuteDictMappingTooLittleArgs(self):
         self.cu.execute("insert into test(name) values ('foo')")
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cu.execute("select name from test where name=:name and id=:id", {"name": "foo"})
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
 
     def CheckExecuteDictMappingNoArgs(self):
         self.cu.execute("insert into test(name) values ('foo')")
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cu.execute("select name from test where name=:name")
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
 
     def CheckExecuteDictMappingUnnamed(self):
         self.cu.execute("insert into test(name) values ('foo')")
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cu.execute("select name from test where name=?", {"name": "foo"})
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
 
     def CheckClose(self):
         self.cu.close()
@@ -392,32 +367,16 @@ class CursorTests(unittest.TestCase):
         self.cu.executemany("insert into test(income) values (?)", mygen())
 
     def CheckExecuteManyWrongSqlArg(self):
-        try:
+        with self.assertRaises(ValueError):
             self.cu.executemany(42, [(3,)])
-            self.fail("should have raised a ValueError")
-        except ValueError:
-            return
-        except:
-            self.fail("raised wrong exception.")
 
     def CheckExecuteManySelect(self):
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             self.cu.executemany("select ?", [(3,)])
-            self.fail("should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            return
-        except:
-            self.fail("raised wrong exception.")
 
     def CheckExecuteManyNotIterable(self):
-        try:
+        with self.assertRaises(TypeError):
             self.cu.executemany("insert into test(income) values (?)", 42)
-            self.fail("should have raised a TypeError")
-        except TypeError:
-            return
-        except Exception as e:
-            print("raised", e.__class__)
-            self.fail("raised wrong exception.")
 
     def CheckFetchIter(self):
         # Optional DB-API extension.
@@ -494,22 +453,15 @@ class CursorTests(unittest.TestCase):
         self.assertEqual(self.cu.connection, self.cx)
 
     def CheckWrongCursorCallable(self):
-        try:
+        with self.assertRaises(TypeError):
             def f(): pass
             cur = self.cx.cursor(f)
-            self.fail("should have raised a TypeError")
-        except TypeError:
-            return
-        self.fail("should have raised a ValueError")
 
     def CheckCursorWrongClass(self):
         class Foo: pass
         foo = Foo()
-        try:
+        with self.assertRaises(TypeError):
             cur = sqlite.Cursor(foo)
-            self.fail("should have raised a ValueError")
-        except TypeError:
-            pass
 
 @unittest.skipUnless(threading, 'This test requires threading.')
 class ThreadTests(unittest.TestCase):
@@ -708,22 +660,21 @@ class ExtensionTests(unittest.TestCase):
     def CheckScriptSyntaxError(self):
         con = sqlite.connect(":memory:")
         cur = con.cursor()
-        raised = False
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             cur.executescript("create table test(x); asdf; create table test2(x)")
-        except sqlite.OperationalError:
-            raised = True
-        self.assertEqual(raised, True, "should have raised an exception")
 
     def CheckScriptErrorNormal(self):
         con = sqlite.connect(":memory:")
         cur = con.cursor()
-        raised = False
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             cur.executescript("create table test(sadfsadfdsa); select foo from hurz;")
-        except sqlite.OperationalError:
-            raised = True
-        self.assertEqual(raised, True, "should have raised an exception")
+
+    def CheckCursorExecutescriptAsBytes(self):
+        con = sqlite.connect(":memory:")
+        cur = con.cursor()
+        with self.assertRaises(ValueError) as cm:
+            cur.executescript(b"create table test(foo); insert into test(foo) values (5);")
+        self.assertEqual(str(cm.exception), 'script argument must be unicode.')
 
     def CheckConnectionExecute(self):
         con = sqlite.connect(":memory:")
@@ -754,59 +705,34 @@ class ClosedConTests(unittest.TestCase):
     def CheckClosedConCursor(self):
         con = sqlite.connect(":memory:")
         con.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             cur = con.cursor()
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedConCommit(self):
         con = sqlite.connect(":memory:")
         con.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             con.commit()
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedConRollback(self):
         con = sqlite.connect(":memory:")
         con.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             con.rollback()
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedCurExecute(self):
         con = sqlite.connect(":memory:")
         cur = con.cursor()
         con.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             cur.execute("select 4")
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedCreateFunction(self):
         con = sqlite.connect(":memory:")
         con.close()
         def f(x): return 17
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             con.create_function("foo", 1, f)
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedCreateAggregate(self):
         con = sqlite.connect(":memory:")
@@ -818,49 +744,29 @@ class ClosedConTests(unittest.TestCase):
                 pass
             def finalize(self):
                 return 17
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             con.create_aggregate("foo", 1, Agg)
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedSetAuthorizer(self):
         con = sqlite.connect(":memory:")
         con.close()
         def authorizer(*args):
             return sqlite.DENY
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             con.set_authorizer(authorizer)
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedSetProgressCallback(self):
         con = sqlite.connect(":memory:")
         con.close()
         def progress(): pass
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             con.set_progress_handler(progress, 100)
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
     def CheckClosedCall(self):
         con = sqlite.connect(":memory:")
         con.close()
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             con()
-            self.fail("Should have raised a ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("Should have raised a ProgrammingError")
 
 class ClosedCurTests(unittest.TestCase):
     def setUp(self):
@@ -882,15 +788,9 @@ class ClosedCurTests(unittest.TestCase):
             else:
                 params = []
 
-            try:
+            with self.assertRaises(sqlite.ProgrammingError):
                 method = getattr(cur, method_name)
-
                 method(*params)
-                self.fail("Should have raised a ProgrammingError: method " + method_name)
-            except sqlite.ProgrammingError:
-                pass
-            except:
-                self.fail("Should have raised a ProgrammingError: " + method_name)
 
 def suite():
     module_suite = unittest.makeSuite(ModuleTests, "Check")
