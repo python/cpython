@@ -6529,8 +6529,10 @@ PyInit__socket(void)
 #ifdef  SO_OOBINLINE
     PyModule_AddIntMacro(m, SO_OOBINLINE);
 #endif
+#ifndef __GNU__
 #ifdef  SO_REUSEPORT
     PyModule_AddIntMacro(m, SO_REUSEPORT);
+#endif
 #endif
 #ifdef  SO_SNDBUF
     PyModule_AddIntMacro(m, SO_SNDBUF);
