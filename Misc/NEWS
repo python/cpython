@@ -50,6 +50,10 @@ Core and Builtins
 Library
 -------
 
+- Comment out socket (SO_REUSEPORT) and posix (O_SHLOCK, O_EXLOCK) constants
+  exposed on the API which are not implemented on GNU/Hurd. They would not
+  work at runtime anyway.
+
 - Issue #25455: Fixed crashes in repr of recursive ElementTree.Element and
   functools.partial objects.
 
