@@ -489,6 +489,9 @@ class Misc:
 
     Base class which defines methods common for interior widgets."""
 
+    # used for generating child widget names
+    _last_child_ids = None
+
     # XXX font command?
     _tclCommands = None
     def destroy(self):
@@ -2174,7 +2177,15 @@ class BaseWidget(Misc):
             name = cnf['name']
             del cnf['name']
         if not name:
-            name = repr(id(self))
+            name = self.__class__.__name__.lower()
+            if master._last_child_ids is None:
+                master._last_child_ids = {}
+            count = master._last_child_ids.get(name, 0) + 1
+            master._last_child_ids[name] = count
+            if count == 1:
+                name = '`%s' % (name,)
+            else:
+                name = '`%s%d' % (name, count)
         self._name = name
         if master._w=='.':
             self._w = '.' + name
@@ -3392,9 +3403,6 @@ class Image:
         if not name:
             Image._last_id += 1
             name = "pyimage%r" % (Image._last_id,) # tk itself would use image<x>
-            # The following is needed for systems where id(x)
-            # can return a negative number, such as Linux/m68k:
-            if name[0] == '-': name = '_' + name[1:]
         if kw and cnf: cnf = _cnfmerge((cnf, kw))
         elif kw: cnf = kw
         options = ()
