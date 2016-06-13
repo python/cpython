@@ -288,7 +288,7 @@ The idlelib package is being modernized and refactored to make IDLE look and wor
 
 'Modernizing' includes renaming and consolidation of idlelib modules. The renaming of files with partial uppercase names is similar to the renaming of, for instance, Tkinter and TkFont to tkinter and tkinter.font in 3.0.  As a result, imports of idlelib files that worked in 3.5 will usually not work in 3.6.  At least a module name change will be needed (see idlelib/README.txt), sometimes more.  (Name changes contributed by Al Swiegart and Terry Reedy in :issue:`24225`.  Most idlelib patches since have been and will be part of the process.)
 
-In compensation, the eventual result with be that some idlelib classes will be easier to use, with better APIs and docstrings explaining them.  Additional useful information will be added to idlelib when available.  
+In compensation, the eventual result with be that some idlelib classes will be easier to use, with better APIs and docstrings explaining them.  Additional useful information will be added to idlelib when available.
 
 
 os
