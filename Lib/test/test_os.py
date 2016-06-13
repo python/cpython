@@ -2953,7 +2953,7 @@ class TestScandir(unittest.TestCase):
         entry = self.create_file_entry()
         self.assertEqual(os.fspath(entry), os.path.join(self.path, 'file.txt'))
 
-    @unittest.skipIf(sys.platform == "nt", "test requires bytes path support")
+    @unittest.skipIf(os.name == "nt", "test requires bytes path support")
     def test_fspath_protocol_bytes(self):
         bytes_filename = os.fsencode('bytesfile.txt')
         bytes_entry = self.create_file_entry(name=bytes_filename)
