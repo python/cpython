@@ -629,9 +629,16 @@ Cursor Objects
    .. attribute:: lastrowid
 
       This read-only attribute provides the rowid of the last modified row. It is
-      only set if you issued an ``INSERT`` statement using the :meth:`execute`
-      method. For operations other than ``INSERT`` or when :meth:`executemany` is
-      called, :attr:`lastrowid` is set to :const:`None`.
+      only set if you issued an ``INSERT`` or a ``REPLACE`` statement using the
+      :meth:`execute` method.  For operations other than ``INSERT`` or
+      ``REPLACE`` or when :meth:`executemany` is called, :attr:`lastrowid` is
+      set to :const:`None`.
+
+      If the ``INSERT`` or ``REPLACE`` statement failed to insert the previous
+      successful rowid is returned.
+
+      .. versionchanged:: 3.6
+         Added support for the ``REPLACE`` statement.
 
    .. attribute:: description
 

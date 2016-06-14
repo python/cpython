@@ -339,6 +339,13 @@ you may now specify file paths on top of directories (e.g. zip files).
 (Contributed by Wolfgang Langner in :issue:`26587`).
 
 
+sqlite3
+-------
+
+* :attr:`sqlite3.Cursor.lastrowid` now supports the ``REPLACE`` statement.
+  (Contributed by Alex LordThorsen in :issue:`16864`.)
+
+
 socketserver
 ------------
 
