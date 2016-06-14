@@ -418,7 +418,9 @@ _config_vars = None
 def _init_posix():
     """Initialize the module as appropriate for POSIX systems."""
     # _sysconfigdata is generated at build time, see the sysconfig module
-    from _sysconfigdata import build_time_vars
+    name = '_sysconfigdata_' + sys.abiflags
+    _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
+    build_time_vars = _temp.build_time_vars
     global _config_vars
     _config_vars = {}
     _config_vars.update(build_time_vars)
