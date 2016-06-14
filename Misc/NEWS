@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26386: Fixed ttk.TreeView selection operations with item id's
+  containing spaces.
+
 - Issue #22636: Avoid shell injection problems with
   ctypes.util.find_library().
 

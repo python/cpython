@@ -1392,7 +1392,9 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
 
     def selection(self, selop=None, items=None):
         """If selop is not specified, returns selected items."""
-        return self.tk.call(self._w, "selection", selop, items)
+        if isinstance(items, (str, bytes)):
+            items = (items,)
+        return self.tk.splitlist(self.tk.call(self._w, "selection", selop, items))
 
 
     def selection_set(self, items):
