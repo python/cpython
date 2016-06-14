@@ -695,12 +695,6 @@ class ExtensionTests(unittest.TestCase):
         self.assertEqual(result, 5, "Basic test of Connection.executescript")
 
 class ClosedConTests(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
     def CheckClosedConCursor(self):
         con = sqlite.connect(":memory:")
         con.close()
@@ -768,12 +762,6 @@ class ClosedConTests(unittest.TestCase):
             con()
 
 class ClosedCurTests(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
     def CheckClosed(self):
         con = sqlite.connect(":memory:")
         cur = con.cursor()
