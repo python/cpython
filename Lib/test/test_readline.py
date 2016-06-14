@@ -1,15 +1,23 @@
 """
 Very minimal unittests for parts of the readline module.
 """
+from contextlib import ExitStack
+from errno import EIO
 import os
+import selectors
+import subprocess
+import sys
 import tempfile
 import unittest
-from test.support import import_module, unlink
+from test.support import import_module, unlink, TESTFN
 from test.support.script_helper import assert_python_ok
 
 # Skip tests if there is no readline module
 readline = import_module('readline')
 
+@unittest.skipUnless(hasattr(readline, "clear_history"),
+                     "The history update test cannot be run because the "
+                     "clear_history method is not available.")
 class TestHistoryManipulation (unittest.TestCase):
     """
     These tests were added to check that the libedit emulation on OSX and the
@@ -17,9 +25,6 @@ class TestHistoryManipulation (unittest.TestCase):
     why the tests cover only a small subset of the interface.
     """
 
-    @unittest.skipUnless(hasattr(readline, "clear_history"),
-                         "The history update test cannot be run because the "
-                         "clear_history method is not available.")
     def testHistoryUpdates(self):
         readline.clear_history()
 
@@ -82,6 +87,21 @@ class TestHistoryManipulation (unittest.TestCase):
         # write_history_file can create the target
         readline.write_history_file(hfilename)
 
+    def test_nonascii_history(self):
+        readline.clear_history()
+        try:
+            readline.add_history("entrée 1")
+        except UnicodeEncodeError as err:
+            self.skipTest("Locale cannot encode test data: " + format(err))
+        readline.add_history("entrée 2")
+        readline.replace_history_item(1, "entrée 22")
+        readline.write_history_file(TESTFN)
+        self.addCleanup(os.remove, TESTFN)
+        readline.clear_history()
+        readline.read_history_file(TESTFN)
+        self.assertEqual(readline.get_history_item(1), "entrée 1")
+        self.assertEqual(readline.get_history_item(2), "entrée 22")
+
 
 class TestReadline(unittest.TestCase):
 
@@ -95,6 +115,119 @@ class TestReadline(unittest.TestCase):
         rc, stdout, stderr = assert_python_ok('-c', 'import readline',
                                               TERM='xterm-256color')
         self.assertEqual(stdout, b'')
+
+    def test_nonascii(self):
+        try:
+            readline.add_history("\xEB\xEF")
+        except UnicodeEncodeError as err:
+            self.skipTest("Locale cannot encode test data: " + format(err))
+
+        script = r"""import readline
+
+if readline.__doc__ and "libedit" in readline.__doc__:
+    readline.parse_and_bind(r'bind ^B ed-prev-char')
+    readline.parse_and_bind(r'bind "\t" rl_complete')
+    readline.parse_and_bind('bind -s ^A "|t\xEB[after]"')
+else:
+    readline.parse_and_bind(r'Control-b: backward-char')
+    readline.parse_and_bind(r'"\t": complete')
+    readline.parse_and_bind(r'set disable-completion off')
+    readline.parse_and_bind(r'set show-all-if-ambiguous off')
+    readline.parse_and_bind(r'set show-all-if-unmodified off')
+    readline.parse_and_bind('Control-a: "|t\xEB[after]"')
+
+def pre_input_hook():
+    readline.insert_text("[\xEFnserted]")
+    readline.redisplay()
+readline.set_pre_input_hook(pre_input_hook)
+
+def completer(text, state):
+    if text == "t\xEB":
+        if state == 0:
+            print("text", ascii(text))
+            print("line", ascii(readline.get_line_buffer()))
+            print("indexes", readline.get_begidx(), readline.get_endidx())
+            return "t\xEBnt"
+        if state == 1:
+            return "t\xEBxt"
+    if text == "t\xEBx" and state == 0:
+        return "t\xEBxt"
+    return None
+readline.set_completer(completer)
+
+def display(substitution, matches, longest_match_length):
+    print("substitution", ascii(substitution))
+    print("matches", ascii(matches))
+readline.set_completion_display_matches_hook(display)
+
+print("result", ascii(input()))
+print("history", ascii(readline.get_history_item(1)))
+"""
+
+        input = b"\x01"  # Ctrl-A, expands to "|t\xEB[after]"
+        input += b"\x02" * len("[after]")  # Move cursor back
+        input += b"\t\t"  # Display possible completions
+        input += b"x\t"  # Complete "t\xEBx" -> "t\xEBxt"
+        input += b"\r"
+        output = run_pty(script, input)
+        self.assertIn(b"text 't\\xeb'\r\n", output)
+        self.assertIn(b"line '[\\xefnserted]|t\\xeb[after]'\r\n", output)
+        self.assertIn(b"indexes 11 13\r\n", output)
+        self.assertIn(b"substitution 't\\xeb'\r\n", output)
+        self.assertIn(b"matches ['t\\xebnt', 't\\xebxt']\r\n", output)
+        expected = br"'[\xefnserted]|t\xebxt[after]'"
+        self.assertIn(b"result " + expected + b"\r\n", output)
+        self.assertIn(b"history " + expected + b"\r\n", output)
+
+
+def run_pty(script, input=b"dummy input\r"):
+    pty = import_module('pty')
+    output = bytearray()
+    [master, slave] = pty.openpty()
+    args = (sys.executable, '-c', script)
+    proc = subprocess.Popen(args, stdin=slave, stdout=slave, stderr=slave)
+    os.close(slave)
+    with ExitStack() as cleanup:
+        cleanup.enter_context(proc)
+        def terminate(proc):
+            try:
+                proc.terminate()
+            except ProcessLookupError:
+                # Workaround for Open/Net BSD bug (Issue 16762)
+                pass
+        cleanup.callback(terminate, proc)
+        cleanup.callback(os.close, master)
+        # Avoid using DefaultSelector and PollSelector. Kqueue() does not
+        # work with pseudo-terminals on OS X < 10.9 (Issue 20365) and Open
+        # BSD (Issue 20667). Poll() does not work with OS X 10.6 or 10.4
+        # either (Issue 20472). Hopefully the file descriptor is low enough
+        # to use with select().
+        sel = cleanup.enter_context(selectors.SelectSelector())
+        sel.register(master, selectors.EVENT_READ | selectors.EVENT_WRITE)
+        os.set_blocking(master, False)
+        while True:
+            for [_, events] in sel.select():
+                if events & selectors.EVENT_READ:
+                    try:
+                        chunk = os.read(master, 0x10000)
+                    except OSError as err:
+                        # Linux raises EIO when slave is closed (Issue 5380)
+                        if err.errno != EIO:
+                            raise
+                        chunk = b""
+                    if not chunk:
+                        return output
+                    output.extend(chunk)
+                if events & selectors.EVENT_WRITE:
+                    try:
+                        input = input[os.write(master, input):]
+                    except OSError as err:
+                        # Apparently EIO means the slave was closed
+                        if err.errno != EIO:
+                            raise
+                        input = b""  # Stop writing
+                    if not input:
+                        sel.modify(master, selectors.EVENT_READ)
 
 
 if __name__ == "__main__":
