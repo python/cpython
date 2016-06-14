@@ -143,7 +143,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
            to 1024 bytes */
         n = Py_MIN(size, 1024);
 #else
-        n = size;
+        n = Py_MIN(size, INT_MAX);
 #endif
 
         errno = 0;
