@@ -188,7 +188,7 @@ print("history", ascii(readline.get_history_item(1)))
         self.assertIn(b"text 't\\xeb'\r\n", output)
         self.assertIn(b"line '[\\xefnserted]|t\\xeb[after]'\r\n", output)
         self.assertIn(b"indexes 11 13\r\n", output)
-        if not is_editline:  # display() hook not called under Editline
+        if not is_editline and hasattr(readline, "set_pre_input_hook"):
             self.assertIn(b"substitution 't\\xeb'\r\n", output)
             self.assertIn(b"matches ['t\\xebnt', 't\\xebxt']\r\n", output)
         expected = br"'[\xefnserted]|t\xebxt[after]'"
