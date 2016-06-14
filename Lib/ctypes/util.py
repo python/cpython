@@ -115,10 +115,13 @@ elif os.name == "posix":
             env = dict(os.environ)
             env['LC_ALL'] = 'C'
             env['LANG'] = 'C'
-            proc = subprocess.Popen(args,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.STDOUT,
-                                    env=env)
+            try:
+                proc = subprocess.Popen(args,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT,
+                                        env=env)
+            except OSError:  # E.g. bad executable
+                return None
             with proc:
                 trace = proc.stdout.read()
         finally:
@@ -140,9 +143,12 @@ elif os.name == "posix":
             if not f:
                 return None
 
-            proc = subprocess.Popen(("/usr/ccs/bin/dump", "-Lpv", f),
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.DEVNULL)
+            try:
+                proc = subprocess.Popen(("/usr/ccs/bin/dump", "-Lpv", f),
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL)
+            except OSError:  # E.g. command not found
+                return None
             with proc:
                 data = proc.stdout.read()
             res = re.search(br'\[.*\]\sSONAME\s+([^\s]+)', data)
@@ -159,9 +165,12 @@ elif os.name == "posix":
                 # objdump is not available, give up
                 return None
 
-            proc = subprocess.Popen((objdump, '-p', '-j', '.dynamic', f),
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.DEVNULL)
+            try:
+                proc = subprocess.Popen((objdump, '-p', '-j', '.dynamic', f),
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL)
+            except OSError:  # E.g. bad executable
+                return None
             with proc:
                 dump = proc.stdout.read()
             res = re.search(br'\sSONAME\s+([^\s]+)', dump)
@@ -187,11 +196,15 @@ elif os.name == "posix":
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
             expr = os.fsencode(expr)
 
-            proc = subprocess.Popen(('/sbin/ldconfig', '-r'),
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.DEVNULL)
-            with proc:
-                data = proc.stdout.read()
+            try:
+                proc = subprocess.Popen(('/sbin/ldconfig', '-r'),
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL)
+            except OSError:  # E.g. command not found
+                data = b''
+            else:
+                with proc:
+                    data = proc.stdout.read()
 
             res = re.findall(expr, data)
             if not res:
@@ -214,10 +227,13 @@ elif os.name == "posix":
                 args = ('/usr/bin/crle',)
 
             paths = None
-            proc = subprocess.Popen(args,
-                                    stdout=subprocess.PIPE,
-                                    stderr=subprocess.DEVNULL,
-                                    env=env)
+            try:
+                proc = subprocess.Popen(args,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL,
+                                        env=env)
+            except OSError:  # E.g. bad executable
+                return None
             with proc:
                 for line in proc.stdout:
                     line = line.strip()
