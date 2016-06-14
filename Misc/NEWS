@@ -1573,7 +1573,6 @@ Tools/Demos
 
 - Issue #26316: Fix variable name typo in Argument Clinic.
 
-<<<<<<< local
 - Issue #25440: Fix output of python-config --extension-suffix.
 
 - Issue #25154: The pyvenv script has been deprecated in favour of
