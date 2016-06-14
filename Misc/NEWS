@@ -7,6 +7,13 @@ What's New in Python 3.6.0 alpha 3
 
 *Release date: XXXX-XX-XX*
 
+Library
++++++++
+
+- Issue #16182: Fix various functions in the "readline" module to use the
+  locale encoding, and fix get_begidx() and get_endidx() to return code point
+  indexes.
+
 IDLE
 ++++
 
