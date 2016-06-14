@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 3
 Library
 +++++++
 
+- Issue #22636: Avoid shell injection problems with
+  ctypes.util.find_library().
+
 - Issue #16182: Fix various functions in the "readline" module to use the
   locale encoding, and fix get_begidx() and get_endidx() to return code point
   indexes.
