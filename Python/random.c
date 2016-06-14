@@ -254,7 +254,7 @@ dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
             break;
         }
         buffer += n;
-        size -= (Py_ssize_t)n;
+        size -= n;
     }
     close(fd);
 }
