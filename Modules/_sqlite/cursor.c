@@ -698,7 +698,9 @@ PyObject* _pysqlite_query_execute(pysqlite_Cursor* self, int multiple, PyObject*
         }
 
         Py_DECREF(self->lastrowid);
-        if (!multiple && statement_type == STATEMENT_INSERT) {
+        if (!multiple &&
+            /* REPLACE is an alias for INSERT OR REPLACE */
+            (statement_type == STATEMENT_INSERT || statement_type == STATEMENT_REPLACE)) {
             sqlite_int64 lastrowid;
             Py_BEGIN_ALLOW_THREADS
             lastrowid = sqlite3_last_insert_rowid(self->connection->db);
