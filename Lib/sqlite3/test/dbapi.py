@@ -188,7 +188,10 @@ class CursorTests(unittest.TestCase):
     def setUp(self):
         self.cx = sqlite.connect(":memory:")
         self.cu = self.cx.cursor()
-        self.cu.execute("create table test(id integer primary key, name text, income number)")
+        self.cu.execute(
+            "create table test(id integer primary key, name text, "
+            "income number, unique_test text unique)"
+        )
         self.cu.execute("insert into test(name) values (?)", ("foo",))
 
     def tearDown(self):
@@ -461,6 +464,44 @@ class CursorTests(unittest.TestCase):
         foo = Foo()
         with self.assertRaises(TypeError):
             cur = sqlite.Cursor(foo)
+
+    def CheckLastRowIDOnReplace(self):
+        """
+        INSERT OR REPLACE and REPLACE INTO should produce the same behavior.
+        """
+        sql = '{} INTO test(id, unique_test) VALUES (?, ?)'
+        for statement in ('INSERT OR REPLACE', 'REPLACE'):
+            with self.subTest(statement=statement):
+                self.cu.execute(sql.format(statement), (1, 'foo'))
+                self.assertEqual(self.cu.lastrowid, 1)
+
+    def CheckLastRowIDOnIgnore(self):
+        self.cu.execute(
+            "insert or ignore into test(unique_test) values (?)",
+            ('test',))
+        self.assertEqual(self.cu.lastrowid, 2)
+        self.cu.execute(
+            "insert or ignore into test(unique_test) values (?)",
+            ('test',))
+        self.assertEqual(self.cu.lastrowid, 2)
+
+    def CheckLastRowIDInsertOR(self):
+        results = []
+        for statement in ('FAIL', 'ABORT', 'ROLLBACK'):
+            sql = 'INSERT OR {} INTO test(unique_test) VALUES (?)'
+            with self.subTest(statement='INSERT OR {}'.format(statement)):
+                self.cu.execute(sql.format(statement), (statement,))
+                results.append((statement, self.cu.lastrowid))
+                with self.assertRaises(sqlite.IntegrityError):
+                    self.cu.execute(sql.format(statement), (statement,))
+                results.append((statement, self.cu.lastrowid))
+        expected = [
+            ('FAIL', 2), ('FAIL', 2),
+            ('ABORT', 3), ('ABORT', 3),
+            ('ROLLBACK', 4), ('ROLLBACK', 4),
+        ]
+        self.assertEqual(results, expected)
+
 
 @unittest.skipUnless(threading, 'This test requires threading.')
 class ThreadTests(unittest.TestCase):
