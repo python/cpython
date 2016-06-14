@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 3
 Library
 -------
 
+- Issue #8637: Honor a pager set by the env var MANPAGER (in preference to
+  one set by the env var PAGER).
+
 - Issue #22636: Avoid shell injection problems with
   ctypes.util.find_library().
 
