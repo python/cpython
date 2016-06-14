@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 3
 Library
 -------
 
+- Issue #26386: Fixed ttk.TreeView selection operations with item id's
+  containing spaces.
+
 - Issue #8637: Honor a pager set by the env var MANPAGER (in preference to
   one set by the env var PAGER).
 
