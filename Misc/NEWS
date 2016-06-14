@@ -13,6 +13,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26386: Fixed ttk.TreeView selection operations with item id's
+  containing spaces.
+
 - Issue #25455: Fixed a crash in repr of cElementTree.Element with recursive tag.
 
 Documentation
