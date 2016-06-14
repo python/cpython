@@ -337,6 +337,8 @@ def get_makefile_filename():
         config_dir_name = 'config-%s%s' % (_PY_VERSION_SHORT, sys.abiflags)
     else:
         config_dir_name = 'config'
+    if hasattr(sys.implementation, '_multiarch'):
+        config_dir_name += '-%s' % sys.implementation._multiarch
     return os.path.join(get_path('stdlib'), config_dir_name, 'Makefile')
 
 def _generate_posix_vars():
@@ -379,7 +381,7 @@ def _generate_posix_vars():
     # _sysconfigdata module manually and populate it with the build vars.
     # This is more than sufficient for ensuring the subsequent call to
     # get_platform() succeeds.
-    name = '_sysconfigdata'
+    name = '_sysconfigdata_' + sys.abiflags
     if 'darwin' in sys.platform:
         import types
         module = types.ModuleType(name)
@@ -405,7 +407,9 @@ def _generate_posix_vars():
 def _init_posix(vars):
     """Initialize the module as appropriate for POSIX systems."""
     # _sysconfigdata is generated at build time, see _generate_posix_vars()
-    from _sysconfigdata import build_time_vars
+    name = '_sysconfigdata_' + sys.abiflags
+    _temp = __import__(name, globals(), locals(), ['build_time_vars'], 0)
+    build_time_vars = _temp.build_time_vars
     vars.update(build_time_vars)
 
 def _init_non_posix(vars):
