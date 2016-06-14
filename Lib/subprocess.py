@@ -993,7 +993,6 @@ class Popen(object):
 
             raise
 
-
     def _translate_newlines(self, data, encoding):
         data = data.decode(encoding)
         return data.replace("\r\n", "\n").replace("\r", "\n")
@@ -1018,8 +1017,10 @@ class Popen(object):
             # We didn't get to successfully create a child process.
             return
         if self.returncode is None:
-            warnings.warn("running subprocess %r" % self, ResourceWarning,
-                          source=self)
+            # Not reading subprocess exit status creates a zombi process which
+            # is only destroyed at the parent python process exit
+            warnings.warn("subprocess %s is still running" % self.pid,
+                          ResourceWarning, source=self)
         # In case the child hasn't been waited on, check if it's done.
         self._internal_poll(_deadstate=_maxsize)
         if self.returncode is None and _active is not None:
