@@ -179,7 +179,7 @@ def config_dict(filename):
             continue
         try:
             key, value = line.split("=")
-        except:
+        except ValueError:
             print("Bad line in config-file %s:\n%s" % (filename,line))
             continue
         key = key.strip()
@@ -192,7 +192,7 @@ def config_dict(filename):
                     value = float(value)
                 else:
                     value = int(value)
-            except:
+            except ValueError:
                 pass # value need not be converted
         cfgdict[key] = value
     return cfgdict
@@ -220,7 +220,7 @@ def readconfig(cfgdict):
     try:
         head, tail = split(__file__)
         cfg_file2 = join(head, default_cfg)
-    except:
+    except Exception:
         cfg_file2 = ""
     if isfile(cfg_file2):
         cfgdict2 = config_dict(cfg_file2)
@@ -229,7 +229,7 @@ def readconfig(cfgdict):
 
 try:
     readconfig(_CFG)
-except:
+except Exception:
     print ("No configfile read, reason unknown")
 
 
@@ -653,7 +653,7 @@ class TurtleScreenBase(object):
                     x, y = (self.cv.canvasx(event.x)/self.xscale,
                            -self.cv.canvasy(event.y)/self.yscale)
                     fun(x, y)
-                except:
+                except Exception:
                     pass
             self.cv.tag_bind(item, "<Button%s-Motion>" % num, eventfun, add)
 
@@ -1158,7 +1158,7 @@ class TurtleScreen(TurtleScreenBase):
                 raise TurtleGraphicsError("bad color string: %s" % str(color))
         try:
             r, g, b = color
-        except:
+        except (TypeError, ValueError):
             raise TurtleGraphicsError("bad color arguments: %s" % str(color))
         if self._colormode == 1.0:
             r, g, b = [round(255.0*x) for x in (r, g, b)]
@@ -2702,7 +2702,7 @@ class RawTurtle(TPen, TNavigator):
             return args
         try:
             r, g, b = args
-        except:
+        except (TypeError, ValueError):
             raise TurtleGraphicsError("bad color arguments: %s" % str(args))
         if self.screen._colormode == 1.0:
             r, g, b = [round(255.0*x) for x in (r, g, b)]
@@ -3865,7 +3865,7 @@ def read_docstrings(lang):
         try:
 #            eval(key).im_func.__doc__ = docsdict[key]
             eval(key).__doc__ = docsdict[key]
-        except:
+        except Exception:
             print("Bad docstring-entry: %s" % key)
 
 _LANGUAGE = _CFG["language"]
@@ -3875,7 +3875,7 @@ try:
         read_docstrings(_LANGUAGE)
 except ImportError:
     print("Cannot find docsdict for", _LANGUAGE)
-except:
+except Exception:
     print ("Unknown Error when trying to import %s-docstring-dictionary" %
                                                                   _LANGUAGE)
 
