@@ -186,7 +186,8 @@ Startup hooks
    be used as the new hook function; if omitted or ``None``, any
    function already installed is removed.  The hook is called
    with no arguments after the first prompt has been printed and just before
-   readline starts reading input characters.
+   readline starts reading input characters.  This function only exists
+   if Python was compiled for a version of the library that supports it.
 
 
 Completion
