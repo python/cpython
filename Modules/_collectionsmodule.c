@@ -301,7 +301,7 @@ deque_append(dequeobject *deque, PyObject *item)
 
 PyDoc_STRVAR(append_doc, "Add an element to the right side of the deque.");
 
-int
+static int
 deque_appendleft_internal(dequeobject *deque, PyObject *item, Py_ssize_t maxlen)
 {
     if (deque->leftindex == 0) {
