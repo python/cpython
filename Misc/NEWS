@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 3.6.0 alpha 3
+==================================
+
+*Release date: XXXX-XX-XX*
+
+IDLE
+++++
+
+- Issue #27310: Fix IDLE.app failure to launch on OS X due to vestigial import.
+
+
 What's New in Python 3.6.0 alpha 2
 ==================================
 
