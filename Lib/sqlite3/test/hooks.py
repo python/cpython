@@ -25,12 +25,6 @@ import unittest
 import sqlite3 as sqlite
 
 class CollationTests(unittest.TestCase):
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
-
     def CheckCreateCollationNotCallable(self):
         con = sqlite.connect(":memory:")
         with self.assertRaises(TypeError) as cm:
