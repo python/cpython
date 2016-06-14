@@ -15,6 +15,8 @@ from test.support.script_helper import assert_python_ok
 # Skip tests if there is no readline module
 readline = import_module('readline')
 
+is_editline = readline.__doc__ and "libedit" in readline.__doc__
+
 @unittest.skipUnless(hasattr(readline, "clear_history"),
                      "The history update test cannot be run because the "
                      "clear_history method is not available.")
@@ -99,14 +101,17 @@ class TestHistoryManipulation (unittest.TestCase):
         self.addCleanup(os.remove, TESTFN)
         readline.clear_history()
         readline.read_history_file(TESTFN)
+        if is_editline:
+            # An add_history() call seems to be required for get_history_
+            # item() to register items from the file
+            readline.add_history("dummy")
         self.assertEqual(readline.get_history_item(1), "entrée 1")
         self.assertEqual(readline.get_history_item(2), "entrée 22")
 
 
 class TestReadline(unittest.TestCase):
 
-    @unittest.skipIf(readline._READLINE_VERSION < 0x0600
-                     and "libedit" not in readline.__doc__,
+    @unittest.skipIf(readline._READLINE_VERSION < 0x0600 and not is_editline,
                      "not supported in this library version")
     def test_init(self):
         # Issue #19884: Ensure that the ANSI sequence "\033[1034h" is not
@@ -127,7 +132,9 @@ class TestReadline(unittest.TestCase):
 if readline.__doc__ and "libedit" in readline.__doc__:
     readline.parse_and_bind(r'bind ^B ed-prev-char')
     readline.parse_and_bind(r'bind "\t" rl_complete')
-    readline.parse_and_bind('bind -s ^A "|t\xEB[after]"')
+    # The insert_line() call via pre_input_hook() does nothing with Editline,
+    # so include the extra text that would have been inserted here
+    readline.parse_and_bind('bind -s ^A "[\xEFnserted]|t\xEB[after]"')
 else:
     readline.parse_and_bind(r'Control-b: backward-char')
     readline.parse_and_bind(r'"\t": complete')
@@ -173,8 +180,9 @@ print("history", ascii(readline.get_history_item(1)))
         self.assertIn(b"text 't\\xeb'\r\n", output)
         self.assertIn(b"line '[\\xefnserted]|t\\xeb[after]'\r\n", output)
         self.assertIn(b"indexes 11 13\r\n", output)
-        self.assertIn(b"substitution 't\\xeb'\r\n", output)
-        self.assertIn(b"matches ['t\\xebnt', 't\\xebxt']\r\n", output)
+        if not is_editline:  # display() hook not called under Editline
+            self.assertIn(b"substitution 't\\xeb'\r\n", output)
+            self.assertIn(b"matches ['t\\xebnt', 't\\xebxt']\r\n", output)
         expected = br"'[\xefnserted]|t\xebxt[after]'"
         self.assertIn(b"result " + expected + b"\r\n", output)
         self.assertIn(b"history " + expected + b"\r\n", output)
