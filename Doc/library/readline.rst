@@ -104,7 +104,9 @@ The following functions operate on a history file:
 
    Append the last *nelements* items of history to a file.  The default filename is
    :file:`~/.history`.  The file must already exist.  This calls
-   :c:func:`append_history` in the underlying library.
+   :c:func:`append_history` in the underlying library.  This function
+   only exists if Python was compiled for a version of the library
+   that supports it.
 
    .. versionadded:: 3.5
 
@@ -199,7 +201,8 @@ Startup hooks
    be used as the new hook function; if omitted or ``None``, any
    function already installed is removed.  The hook is called
    with no arguments after the first prompt has been printed and just before
-   readline starts reading input characters.
+   readline starts reading input characters.  This function only exists
+   if Python was compiled for a version of the library that supports it.
 
 
 Completion

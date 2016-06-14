@@ -144,24 +144,32 @@ print("History length:", readline.get_current_history_length())
 
         script = r"""import readline
 
-if readline.__doc__ and "libedit" in readline.__doc__:
-    readline.parse_and_bind(r'bind ^B ed-prev-char')
-    readline.parse_and_bind(r'bind "\t" rl_complete')
+is_editline = readline.__doc__ and "libedit" in readline.__doc__
+inserted = "[\xEFnserted]"
+macro = "|t\xEB[after]"
+set_pre_input_hook = getattr(readline, "set_pre_input_hook", None)
+if is_editline or not set_pre_input_hook:
     # The insert_line() call via pre_input_hook() does nothing with Editline,
     # so include the extra text that would have been inserted here
-    readline.parse_and_bind('bind -s ^A "[\xEFnserted]|t\xEB[after]"')
+    macro = inserted + macro
+
+if is_editline:
+    readline.parse_and_bind(r'bind ^B ed-prev-char')
+    readline.parse_and_bind(r'bind "\t" rl_complete')
+    readline.parse_and_bind(r'bind -s ^A "{}"'.format(macro))
 else:
     readline.parse_and_bind(r'Control-b: backward-char')
     readline.parse_and_bind(r'"\t": complete')
     readline.parse_and_bind(r'set disable-completion off')
     readline.parse_and_bind(r'set show-all-if-ambiguous off')
     readline.parse_and_bind(r'set show-all-if-unmodified off')
-    readline.parse_and_bind('Control-a: "|t\xEB[after]"')
+    readline.parse_and_bind(r'Control-a: "{}"'.format(macro))
 
 def pre_input_hook():
-    readline.insert_text("[\xEFnserted]")
+    readline.insert_text(inserted)
     readline.redisplay()
-readline.set_pre_input_hook(pre_input_hook)
+if set_pre_input_hook:
+    set_pre_input_hook(pre_input_hook)
 
 def completer(text, state):
     if text == "t\xEB":
