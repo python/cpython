@@ -35,6 +35,8 @@ Build
   Install the platform specifc _sysconfigdata module into the platform
   directory and rename it to include the ABIFLAGS.
 
+- Don't use largefile support for GNU/Hurd.
+
 
 What's New in Python 3.6.0 alpha 2
 ==================================

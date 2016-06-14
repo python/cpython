@@ -1986,6 +1986,11 @@ if test "$sol_lfs_bug" = "yes"; then
   use_lfs=no
 fi
 
+# Don't use largefile support for GNU/Hurd
+case $ac_sys_system in GNU*)
+  use_lfs=no
+esac
+
 if test "$use_lfs" = "yes"; then
 # Two defines needed to enable largefile support on various platforms
 # These may affect some typedefs

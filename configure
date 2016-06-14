@@ -2890,7 +2890,6 @@ ac_config_headers="$ac_config_headers pyconfig.h"
 
 
 
-
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
   if test -f "$ac_dir/install-sh"; then
@@ -8017,6 +8016,11 @@ $as_echo "$sol_lfs_bug" >&6; }
 if test "$sol_lfs_bug" = "yes"; then
   use_lfs=no
 fi
+
+# Don't use largefile support for GNU/Hurd
+case $ac_sys_system in GNU*)
+  use_lfs=no
+esac
 
 if test "$use_lfs" = "yes"; then
 # Two defines needed to enable largefile support on various platforms
