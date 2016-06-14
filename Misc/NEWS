@@ -8,7 +8,7 @@ What's New in Python 3.6.0 alpha 3
 *Release date: XXXX-XX-XX*
 
 Library
-+++++++
+-------
 
 - Issue #22636: Avoid shell injection problems with
   ctypes.util.find_library().
@@ -18,7 +18,7 @@ Library
   indexes.
 
 IDLE
-++++
+----
 
 - Issue #27310: Fix IDLE.app failure to launch on OS X due to vestigial import.
 
@@ -26,7 +26,7 @@ IDLE
 What's New in Python 3.6.0 alpha 2
 ==================================
 
-*Release date: XXXX-XX-XX*
+*Release date: 2016-06-13*
 
 Core and Builtins
 -----------------
