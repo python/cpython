@@ -47,6 +47,8 @@ IDLE
 Build
 -----
 
+- Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
+
 - Issue #23968: Rename the platform directory from plat-$(MACHDEP) to
   plat-$(PLATFORM_TRIPLET).
   Rename the config directory (LIBPL) from config-$(LDVERSION) to
