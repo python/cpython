@@ -28,6 +28,11 @@ Documentation
   resulting links to use lowercase.  Patch by Sean Rodman, test by Kaushik
   Nadikuditi.
 
+Build
+-----
+
+- Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
+
 
 What's New in Python 2.7.12 release candidate 1?
 ================================================

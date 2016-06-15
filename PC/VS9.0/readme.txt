@@ -132,7 +132,7 @@ _ssl
 
     Get the source code through
 
-    svn export http://svn.python.org/projects/external/openssl-1.0.2g
+    svn export http://svn.python.org/projects/external/openssl-1.0.2h
 
     ** NOTE: if you use the PCbuild\get_externals.bat approach for
     obtaining external sources then you don't need to manually get the source
