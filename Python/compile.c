@@ -1532,10 +1532,14 @@ compiler_decorators(struct compiler *c, asdl_seq* decos)
     return 1;
 }
 
-static Py_ssize_t
+static int
 compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
                               asdl_seq *kw_defaults)
 {
+    /* Push a dict of keyword-only default values.
+
+       Return 0 on error, -1 if no dict pushed, 1 if a dict is pushed.
+       */
     int i;
     PyObject *keys = NULL;
 
@@ -1551,7 +1555,7 @@ compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
                 keys = PyList_New(1);
                 if (keys == NULL) {
                     Py_DECREF(mangled);
-                    return -1;
+                    return 0;
                 }
                 PyList_SET_ITEM(keys, 0, mangled);
             }
@@ -1572,19 +1576,20 @@ compiler_visit_kwonlydefaults(struct compiler *c, asdl_seq *kwonlyargs,
         PyObject *keys_tuple = PyList_AsTuple(keys);
         Py_DECREF(keys);
         if (keys_tuple == NULL) {
-            return -1;
+            return 0;
         }
         ADDOP_N(c, LOAD_CONST, keys_tuple, consts);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, default_count);
-        return default_count;
+        assert(default_count > 0);
+        return 1;
     }
     else {
-        return 0;
+        return -1;
     }
 
 error:
     Py_XDECREF(keys);
-    return -1;
+    return 0;
 }
 
 static int
@@ -1623,21 +1628,21 @@ compiler_visit_argannotations(struct compiler *c, asdl_seq* args,
     return 1;
 }
 
-static Py_ssize_t
+static int
 compiler_visit_annotations(struct compiler *c, arguments_ty args,
                            expr_ty returns)
 {
-    /* Push arg annotation dict.  Return # of items pushed.
+    /* Push arg annotation dict.
        The expressions are evaluated out-of-order wrt the source code.
 
-       Returns -1 on error.
+       Return 0 on error, -1 if no dict pushed, 1 if a dict is pushed.
        */
     static identifier return_str;
     PyObject *names;
     Py_ssize_t len;
     names = PyList_New(0);
     if (!names)
-        return -1;
+        return 0;
 
     if (!compiler_visit_argannotations(c, args->args, names))
         goto error;
@@ -1666,19 +1671,28 @@ compiler_visit_annotations(struct compiler *c, arguments_ty args,
         PyObject *keytuple = PyList_AsTuple(names);
         Py_DECREF(names);
         if (keytuple == NULL) {
-            return -1;
+            return 0;
         }
         ADDOP_N(c, LOAD_CONST, keytuple, consts);
         ADDOP_I(c, BUILD_CONST_KEY_MAP, len);
+        return 1;
     }
     else {
         Py_DECREF(names);
+        return -1;
     }
-    return len;
 
 error:
     Py_DECREF(names);
-    return -1;
+    return 0;
+}
+
+static int
+compiler_visit_defaults(struct compiler *c, arguments_ty args)
+{
+    VISIT_SEQ(c, expr, args->defaults);
+    ADDOP_I(c, BUILD_TUPLE, asdl_seq_LEN(args->defaults));
+    return 1;
 }
 
 static Py_ssize_t
@@ -1686,14 +1700,14 @@ compiler_default_arguments(struct compiler *c, arguments_ty args)
 {
     Py_ssize_t funcflags = 0;
     if (args->defaults && asdl_seq_LEN(args->defaults) > 0) {
-        VISIT_SEQ(c, expr, args->defaults);
-        ADDOP_I(c, BUILD_TUPLE, asdl_seq_LEN(args->defaults));
+        if (!compiler_visit_defaults(c, args))
+            return -1;
         funcflags |= 0x01;
     }
     if (args->kwonlyargs) {
-        Py_ssize_t res = compiler_visit_kwonlydefaults(c, args->kwonlyargs,
+        int res = compiler_visit_kwonlydefaults(c, args->kwonlyargs,
                                                 args->kw_defaults);
-        if (res < 0) {
+        if (res == 0) {
             return -1;
         }
         else if (res > 0) {
@@ -1716,7 +1730,7 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
     stmt_ty st;
     Py_ssize_t i, n, funcflags;
     int docstring;
-    int num_annotations;
+    int annotations;
     int scope_type;
 
     if (is_async) {
@@ -1749,11 +1763,11 @@ compiler_function(struct compiler *c, stmt_ty s, int is_async)
         return 0;
     }
 
-    num_annotations = compiler_visit_annotations(c, args, returns);
-    if (num_annotations < 0) {
+    annotations = compiler_visit_annotations(c, args, returns);
+    if (annotations == 0) {
         return 0;
     }
-    else if (num_annotations > 0) {
+    else if (annotations > 0) {
         funcflags |= 0x04;
     }
 
@@ -2478,7 +2492,7 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
     Py_ssize_t dot = PyUnicode_FindChar(name, '.', 0,
                                         PyUnicode_GET_LENGTH(name), 1);
     if (dot == -2)
-        return -1;
+        return 0;
     if (dot != -1) {
         /* Consume the base module name to get the first attribute */
         Py_ssize_t pos = dot + 1;
@@ -2487,12 +2501,12 @@ compiler_import_as(struct compiler *c, identifier name, identifier asname)
             dot = PyUnicode_FindChar(name, '.', pos,
                                      PyUnicode_GET_LENGTH(name), 1);
             if (dot == -2)
-                return -1;
+                return 0;
             attr = PyUnicode_Substring(name, pos,
                                        (dot != -1) ? dot :
                                        PyUnicode_GET_LENGTH(name));
             if (!attr)
-                return -1;
+                return 0;
             ADDOP_O(c, LOAD_ATTR, attr, names);
             Py_DECREF(attr);
             pos = dot + 1;
