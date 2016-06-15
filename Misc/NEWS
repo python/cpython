@@ -36,6 +36,7 @@ Library
   locale encoding, and fix get_begidx() and get_endidx() to return code point
   indexes.
 
+- Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
 
 What's New in Python 3.5.2 final?
 =================================
