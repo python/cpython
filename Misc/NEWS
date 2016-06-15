@@ -10,8 +10,17 @@ Release date: 2016-06-26
 Core and Builtins
 -----------------
 
-Library
--------
+- Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
+
+Tests
+-----
+
+- Issue #26867: Ubuntu's openssl OP_NO_SSLv3 is forced on by default; fix test.
+
+IDLE
+----
+
+- Issue #27365: Allow non-ascii in idlelib/NEWS.txt - minimal part for 3.5.2.
 
 
 What's New in Python 3.5.2 release candidate 1?
