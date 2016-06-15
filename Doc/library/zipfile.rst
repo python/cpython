@@ -348,9 +348,9 @@ ZipFile Objects
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
 
-.. method:: ZipFile.writestr(zinfo_or_arcname, bytes[, compress_type])
+.. method:: ZipFile.writestr(zinfo_or_arcname, data[, compress_type])
 
-   Write the string *bytes* to the archive; *zinfo_or_arcname* is either the file
+   Write the string *data* to the archive; *zinfo_or_arcname* is either the file
    name it will be given in the archive, or a :class:`ZipInfo` instance.  If it's
    an instance, at least the filename, date, and time must be given.  If it's a
    name, the date and time is set to the current date and time.
