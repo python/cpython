@@ -1252,8 +1252,10 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
         descr = PyDescr_NewMethod(type, meth);
         if (descr == NULL)
             return -1;
-        if (PyDict_SetItemString(dict,meth->ml_name, descr) < 0)
+        if (PyDict_SetItemString(dict, meth->ml_name, descr) < 0) {
+            Py_DECREF(descr);
             return -1;
+        }
         Py_DECREF(descr);
     }
     return 0;
@@ -1268,8 +1270,10 @@ add_members(PyTypeObject *type, PyMemberDef *memb)
         descr = PyDescr_NewMember(type, memb);
         if (descr == NULL)
             return -1;
-        if (PyDict_SetItemString(dict, memb->name, descr) < 0)
+        if (PyDict_SetItemString(dict, memb->name, descr) < 0) {
+            Py_DECREF(descr);
             return -1;
+        }
         Py_DECREF(descr);
     }
     return 0;
@@ -1285,8 +1289,10 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
         descr = PyDescr_NewGetSet(type, gsp);
         if (descr == NULL)
             return -1;
-        if (PyDict_SetItemString(dict, gsp->name, descr) < 0)
+        if (PyDict_SetItemString(dict, gsp->name, descr) < 0) {
+            Py_DECREF(descr);
             return -1;
+        }
         Py_DECREF(descr);
     }
     return 0;
@@ -1778,6 +1784,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 
     newname = PyUnicode_Concat(name, suffix);
     if (newname == NULL) {
+        Py_DECREF(swapped_args);
         return NULL;
     }
 
@@ -1797,8 +1804,10 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 
     stgdict = (StgDictObject *)PyObject_CallObject(
         (PyObject *)&PyCStgDict_Type, NULL);
-    if (!stgdict) /* XXX leaks result! */
+    if (!stgdict) {
+        Py_DECREF(result);
         return NULL;
+    }
 
     stgdict->ffi_type_pointer = *fmt->pffi_type;
     stgdict->align = fmt->pffi_type->alignment;
@@ -1978,8 +1987,10 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyObject *meth;
             int x;
             meth = PyDescr_NewClassMethod(result, ml);
-            if (!meth)
+            if (!meth) {
+                Py_DECREF(result);
                 return NULL;
+            }
             x = PyDict_SetItemString(result->tp_dict,
                                      ml->ml_name,
                                      meth);
@@ -2159,8 +2170,10 @@ converters_from_argtypes(PyObject *ob)
 
     nArgs = PyTuple_GET_SIZE(ob);
     converters = PyTuple_New(nArgs);
-    if (!converters)
+    if (!converters) {
+        Py_DECREF(ob);
         return NULL;
+    }
 
     /* I have to check if this is correct. Using c_char, which has a size
        of 1, will be assumed to be pushed as only one byte!
