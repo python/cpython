@@ -162,8 +162,10 @@ _ctypes_get_errobj(int **pspace)
             return NULL;
         memset(space, 0, sizeof(int) * 2);
         errobj = CAPSULE_NEW(space, CTYPES_CAPSULE_ERROROBJ);
-        if (errobj == NULL)
+        if (errobj == NULL) {
+            PyMem_Free(space);
             return NULL;
+        }
         if (-1 == PyDict_SetItem(dict, error_object_name,
                                  errobj)) {
             Py_DECREF(errobj);
@@ -1277,7 +1279,7 @@ static PyObject *load_library(PyObject *self, PyObject *args)
     PyObject *nameobj;
     PyObject *ignored;
     HMODULE hMod;
-    if (!PyArg_ParseTuple(args, "O|O:LoadLibrary", &nameobj, &ignored))
+    if (!PyArg_ParseTuple(args, "S|O:LoadLibrary", &nameobj, &ignored))
         return NULL;
 #ifdef _UNICODE
     name = alloca((PyString_Size(nameobj) + 1) * sizeof(WCHAR));
@@ -1815,6 +1817,10 @@ POINTER(PyObject *self, PyObject *cls)
         if (result == NULL)
             return result;
         key = PyLong_FromVoidPtr(result);
+        if (key == NULL) {
+            Py_DECREF(result);
+            return NULL;
+        }
     } else if (PyType_Check(cls)) {
         typ = (PyTypeObject *)cls;
         buf = PyMem_Malloc(strlen(typ->tp_name) + 3 + 1);

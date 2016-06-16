@@ -1313,7 +1313,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
         return NULL;
     size = strlen(data);
     if (size < length) {
-        /* This will copy the leading NUL character
+        /* This will copy the trailing NUL character
          * if there is space for it.
          */
         ++size;
@@ -1508,6 +1508,7 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
     if (value) {
         Py_ssize_t size = PyUnicode_GET_SIZE(value);
         if ((unsigned) size != size) {
+            Py_DECREF(value);
             PyErr_SetString(PyExc_ValueError, "String too long for BSTR");
             return NULL;
         }
