@@ -346,6 +346,14 @@ sqlite3
   (Contributed by Alex LordThorsen in :issue:`16864`.)
 
 
+socket
+------
+
+The :func:`~socket.socket.ioctl` function now supports the :data:`~socket.SIO_LOOPBACK_FAST_PATH`
+control code.
+(Contributed by Daniel Stokes in :issue:`26536`.)
+
+
 socketserver
 ------------
 

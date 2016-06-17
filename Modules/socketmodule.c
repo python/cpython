@@ -4053,6 +4053,17 @@ sock_ioctl(PySocketSockObject *s, PyObject *arg)
             return set_error();
         }
         return PyLong_FromUnsignedLong(recv); }
+#if defined(SIO_LOOPBACK_FAST_PATH)
+    case SIO_LOOPBACK_FAST_PATH: {
+        unsigned int option;
+        if (!PyArg_ParseTuple(arg, "kI:ioctl", &cmd, &option))
+            return NULL;
+        if (WSAIoctl(s->sock_fd, cmd, &option, sizeof(option),
+                         NULL, 0, &recv, NULL, NULL) == SOCKET_ERROR) {
+            return set_error();
+        }
+        return PyLong_FromUnsignedLong(recv); }
+#endif
     default:
         PyErr_Format(PyExc_ValueError, "invalid ioctl command %d", cmd);
         return NULL;
@@ -4063,7 +4074,8 @@ PyDoc_STRVAR(sock_ioctl_doc,
 \n\
 Control the socket with WSAIoctl syscall. Currently supported 'cmd' values are\n\
 SIO_RCVALL:  'option' must be one of the socket.RCVALL_* constants.\n\
-SIO_KEEPALIVE_VALS:  'option' is a tuple of (onoff, timeout, interval).");
+SIO_KEEPALIVE_VALS:  'option' is a tuple of (onoff, timeout, interval).\n\
+SIO_LOOPBACK_FAST_PATH: 'option' is a boolean value, and is disabled by default");
 #endif
 
 #if defined(MS_WINDOWS)
@@ -7274,8 +7286,16 @@ PyInit__socket(void)
 
 #ifdef SIO_RCVALL
     {
-        DWORD codes[] = {SIO_RCVALL, SIO_KEEPALIVE_VALS};
-        const char *names[] = {"SIO_RCVALL", "SIO_KEEPALIVE_VALS"};
+        DWORD codes[] = {SIO_RCVALL, SIO_KEEPALIVE_VALS,
+#if defined(SIO_LOOPBACK_FAST_PATH)
+			SIO_LOOPBACK_FAST_PATH
+#endif
+		};
+        const char *names[] = {"SIO_RCVALL", "SIO_KEEPALIVE_VALS",
+#if defined(SIO_LOOPBACK_FAST_PATH)
+			"SIO_LOOPBACK_FAST_PATH"
+#endif
+		};
         int i;
         for(i = 0; i<Py_ARRAY_LENGTH(codes); ++i) {
             PyObject *tmp;
