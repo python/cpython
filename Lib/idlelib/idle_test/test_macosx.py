@@ -83,6 +83,7 @@ class SetupTest(unittest.TestCase):
         cls.root.destroy()
         del cls.root
 
+    @mock.patch('idlelib.macosx.overrideRootMenu')  #27312
     def test_setupapp(self):
         "Call setupApp with each possible graphics type."
         root = self.root
