@@ -745,7 +745,7 @@ _Py_DumpTracebackThreads(int fd, PyInterpreterState *interp,
     if (current_tstate == NULL) {
         /* Call _PyThreadState_UncheckedGet() instead of PyThreadState_Get()
            to not fail with a fatal error if the thread state is NULL. */
-        current_thread = _PyThreadState_UncheckedGet();
+        current_tstate = _PyThreadState_UncheckedGet();
     }
 
     if (interp == NULL) {
