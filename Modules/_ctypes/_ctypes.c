@@ -1124,7 +1124,7 @@ CharArray_get_raw(CDataObject *self)
 static PyObject *
 CharArray_get_value(CDataObject *self)
 {
-    int i;
+    Py_ssize_t i;
     char *ptr = self->b_ptr;
     for (i = 0; i < self->b_size; ++i)
         if (*ptr++ == '\0')
@@ -1180,9 +1180,9 @@ static PyGetSetDef CharArray_getsets[] = {
 static PyObject *
 WCharArray_get_value(CDataObject *self)
 {
-    unsigned int i;
+    Py_ssize_t i;
     wchar_t *ptr = (wchar_t *)self->b_ptr;
-    for (i = 0; i < self->b_size/sizeof(wchar_t); ++i)
+    for (i = 0; i < self->b_size/(Py_ssize_t)sizeof(wchar_t); ++i)
         if (*ptr++ == (wchar_t)0)
             break;
     return PyUnicode_FromWideChar((wchar_t *)self->b_ptr, i);
@@ -1211,7 +1211,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
     wstr = PyUnicode_AsUnicodeAndSize(value, &len);
     if (wstr == NULL)
         return -1;
-    if ((unsigned)len > self->b_size/sizeof(wchar_t)) {
+    if ((size_t)len > self->b_size/sizeof(wchar_t)) {
         PyErr_SetString(PyExc_ValueError,
                         "string too long");
         result = -1;
