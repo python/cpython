@@ -746,7 +746,7 @@ Py_NewInterpreter(void)
     if (!initialized)
         Py_FatalError("Py_NewInterpreter: call Py_Initialize first");
 
-#if WITH_THREAD
+#ifdef WITH_THREAD
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
     _PyGILState_check_enabled = 0;
@@ -1409,7 +1409,7 @@ exit:
 /* Clean up and exit */
 
 #ifdef WITH_THREAD
-#include "pythread.h"
+#  include "pythread.h"
 #endif
 
 static void (*pyexitfunc)(void) = NULL;
