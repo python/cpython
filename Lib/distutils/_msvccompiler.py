@@ -86,11 +86,9 @@ def _get_vc_env(plat_spec):
 
     try:
         out = subprocess.check_output(
-            '"{}" {} && set'.format(vcvarsall, plat_spec),
-            shell=True,
+            'cmd /u /c "{}" {} && set'.format(vcvarsall, plat_spec),
             stderr=subprocess.STDOUT,
-            universal_newlines=True,
-        )
+        ).decode('utf-16le', errors='replace')
     except subprocess.CalledProcessError as exc:
         log.error(exc.output)
         raise DistutilsPlatformError("Error executing {}"
