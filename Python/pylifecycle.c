@@ -746,9 +746,11 @@ Py_NewInterpreter(void)
     if (!initialized)
         Py_FatalError("Py_NewInterpreter: call Py_Initialize first");
 
+#if WITH_THREAD
     /* Issue #10915, #15751: The GIL API doesn't work with multiple
        interpreters: disable PyGILState_Check(). */
     _PyGILState_check_enabled = 0;
+#endif
 
     interp = PyInterpreterState_New();
     if (interp == NULL)

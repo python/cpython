@@ -38,12 +38,13 @@ Py_Exit(int sts)
 }
 
 #ifdef WITH_THREAD
-/* Functions needed by obmalloc.c */
+/* Needed by obmalloc.c */
 int PyGILState_Check(void)
 { return 1; }
+#endif
+
 void _PyMem_DumpTraceback(int fd, const void *ptr)
 {}
-#endif
 
 int
 main(int argc, char **argv)
