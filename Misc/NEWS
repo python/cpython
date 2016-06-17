@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 3
 Library
 -------
 
+- Issue #26536: socket.ioctl now supports SIO_LOOPBACK_FAST_PATH. Patch by
+  Daniel Stokes.
+
 - Issue #27048: Prevents distutils failing on Windows when environment
   variables contain non-ASCII characters
 

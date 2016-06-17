@@ -329,11 +329,16 @@ Constants
    .. versionadded:: 3.3
 
 
-.. data:: SIO_*
+.. data:: SIO_RCVALL
+          SIO_KEEPALIVE_VALS
+          SIO_LOOPBACK_FAST_PATH
           RCVALL_*
 
    Constants for Windows' WSAIoctl(). The constants are used as arguments to the
    :meth:`~socket.socket.ioctl` method of socket objects.
+
+   .. versionchanged:: 3.6
+      ``SIO_LOOPBACK_FAST_PATH`` was added.
 
 
 .. data:: TIPC_*
@@ -995,6 +1000,12 @@ to sockets.
 
    On other platforms, the generic :func:`fcntl.fcntl` and :func:`fcntl.ioctl`
    functions may be used; they accept a socket object as their first argument.
+
+   Currently only the following control codes are supported:
+   ``SIO_RCVALL``, ``SIO_KEEPALIVE_VALS``, and ``SIO_LOOPBACK_FAST_PATH``.
+
+   .. versionchanged:: 3.6
+      ``SIO_LOOPBACK_FAST_PATH`` was added.
 
 .. method:: socket.listen([backlog])
 
