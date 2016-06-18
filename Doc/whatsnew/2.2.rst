@@ -157,7 +157,7 @@ attributes and methods were supported by an object. There were some informal
 conventions, such as defining :attr:`__members__` and :attr:`__methods__`
 attributes that were lists of names, but often the author of an extension type
 or a class wouldn't bother to define them.  You could fall back on inspecting
-the :attr:`__dict__` of an object, but when class inheritance or an arbitrary
+the :attr:`~object.__dict__` of an object, but when class inheritance or an arbitrary
 :meth:`__getattr__` hook were in use this could still be inaccurate.
 
 The one big idea underlying the new class model is that an API for describing
@@ -169,7 +169,7 @@ possible, as well as more exotic constructs.
 Attribute descriptors are objects that live inside class objects, and have a few
 attributes of their own:
 
-* :attr:`__name__` is the attribute's name.
+* :attr:`~definition.__name__` is the attribute's name.
 
 * :attr:`__doc__` is the attribute's docstring.
 
@@ -329,7 +329,7 @@ However, Python 2.2's support for :dfn:`properties` will often be a simpler way
 to trap attribute references.  Writing a :meth:`__getattr__` method is
 complicated because to avoid recursion you can't use regular attribute accesses
 inside them, and instead have to mess around with the contents of
-:attr:`__dict__`. :meth:`__getattr__` methods also end up being called by Python
+:attr:`~object.__dict__`. :meth:`__getattr__` methods also end up being called by Python
 when it checks for other methods such as :meth:`__repr__` or :meth:`__coerce__`,
 and so have to be written with this in mind. Finally, calling a function on
 every attribute access results in a sizable performance loss.
@@ -357,15 +357,15 @@ write::
 That is certainly clearer and easier to write than a pair of
 :meth:`__getattr__`/:meth:`__setattr__` methods that check for the :attr:`size`
 attribute and handle it specially while retrieving all other attributes from the
-instance's :attr:`__dict__`.  Accesses to :attr:`size` are also the only ones
+instance's :attr:`~object.__dict__`.  Accesses to :attr:`size` are also the only ones
 which have to perform the work of calling a function, so references to other
 attributes run at their usual speed.
 
 Finally, it's possible to constrain the list of attributes that can be
-referenced on an object using the new :attr:`__slots__` class attribute. Python
+referenced on an object using the new :attr:`~object.__slots__` class attribute. Python
 objects are usually very dynamic; at any time it's possible to define a new
 attribute on an instance by just doing ``obj.new_attr=1``.   A new-style class
-can define a class attribute named :attr:`__slots__` to limit the legal
+can define a class attribute named :attr:`~object.__slots__` to limit the legal
 attributes  to a particular set of names.  An example will make this clear::
 
    >>> class C(object):
@@ -383,7 +383,7 @@ attributes  to a particular set of names.  An example will make this clear::
    AttributeError: 'C' object has no attribute 'newattr'
 
 Note how you get an :exc:`AttributeError` on the attempt to assign to an
-attribute not listed in :attr:`__slots__`.
+attribute not listed in :attr:`~object.__slots__`.
 
 
 .. _sect-rellinks:

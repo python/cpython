@@ -48,7 +48,7 @@ deemed to be restricted.
 Python code executing in restricted mode faces a number of limitations that are
 designed to prevent it from escaping from the padded cell. For instance, the
 function object attribute :attr:`func_globals` and the class and instance object
-attribute :attr:`__dict__` are unavailable.
+attribute :attr:`~object.__dict__` are unavailable.
 
 Two modules provide the framework for setting up restricted execution
 environments:

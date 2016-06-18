@@ -61,5 +61,5 @@ There are very few functions specific to instance objects.
 
    Create a new instance of a specific class without calling its constructor.
    *class* is the class of new object.  The *dict* parameter will be used as the
-   object's :attr:`__dict__`; if *NULL*, a new dictionary will be created for the
+   object's :attr:`~object.__dict__`; if *NULL*, a new dictionary will be created for the
    instance.

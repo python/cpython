@@ -481,6 +481,24 @@ Callable types
 
       .. tabularcolumns:: |l|L|l|
 
+      .. index::
+         single: __doc__ (function attribute)
+         single: __name__ (function attribute)
+         single: __module__ (function attribute)
+         single: __dict__ (function attribute)
+         single: __defaults__ (function attribute)
+         single: __code__ (function attribute)
+         single: __globals__ (function attribute)
+         single: __closure__ (function attribute)
+         single: func_doc (function attribute)
+         single: func_name (function attribute)
+         single: func_dict (function attribute)
+         single: func_defaults (function attribute)
+         single: func_code (function attribute)
+         single: func_globals (function attribute)
+         single: func_closure (function attribute)
+         pair: global; namespace
+
       +-----------------------+-------------------------------+-----------+
       | Attribute             | Meaning                       |           |
       +=======================+===============================+===========+
@@ -488,7 +506,8 @@ Callable types
       | :attr:`func_doc`      | string, or ``None`` if        |           |
       |                       | unavailable.                  |           |
       +-----------------------+-------------------------------+-----------+
-      | :attr:`__name__`      | The function's name.          | Writable  |
+      | :attr:`~definition.\  | The function's name           | Writable  |
+      | __name__`             |                               |           |
       | :attr:`func_name`     |                               |           |
       +-----------------------+-------------------------------+-----------+
       | :attr:`__module__`    | The name of the module the    | Writable  |
@@ -511,9 +530,9 @@ Callable types
       |                       | module in which the function  |           |
       |                       | was defined.                  |           |
       +-----------------------+-------------------------------+-----------+
-      | :attr:`__dict__`      | The namespace supporting      | Writable  |
-      | :attr:`func_dict`     | arbitrary function            |           |
-      |                       | attributes.                   |           |
+      | :attr:`~object.\      | The namespace supporting      | Writable  |
+      | __dict__`             | arbitrary function            |           |
+      | :attr:`func_dict`     | attributes.                   |           |
       +-----------------------+-------------------------------+-----------+
       | :attr:`__closure__`   | ``None`` or a tuple of cells  | Read-only |
       | :attr:`func_closure`  | that contain bindings for the |           |
@@ -540,24 +559,6 @@ Callable types
       Additional information about a function's definition can be retrieved from its
       code object; see the description of internal types below.
 
-      .. index::
-         single: __doc__ (function attribute)
-         single: __name__ (function attribute)
-         single: __module__ (function attribute)
-         single: __dict__ (function attribute)
-         single: __defaults__ (function attribute)
-         single: __code__ (function attribute)
-         single: __globals__ (function attribute)
-         single: __closure__ (function attribute)
-         single: func_doc (function attribute)
-         single: func_name (function attribute)
-         single: func_dict (function attribute)
-         single: func_defaults (function attribute)
-         single: func_code (function attribute)
-         single: func_globals (function attribute)
-         single: func_closure (function attribute)
-         pair: global; namespace
-
    User-defined methods
       .. index::
          object: method
@@ -571,7 +572,7 @@ Callable types
       :attr:`im_func` is the function object; :attr:`im_class` is the class of
       :attr:`im_self` for bound methods or the class that asked for the method for
       unbound methods; :attr:`__doc__` is the method's documentation (same as
-      ``im_func.__doc__``); :attr:`__name__` is the method name (same as
+      ``im_func.__doc__``); :attr:`~definition.__name__` is the method name (same as
       ``im_func.__name__``); :attr:`__module__` is the name of the module the method
       was defined in, or ``None`` if unavailable.
 
@@ -683,7 +684,7 @@ Callable types
       standard built-in module). The number and type of the arguments are
       determined by the C function. Special read-only attributes:
       :attr:`__doc__` is the function's documentation string, or ``None`` if
-      unavailable; :attr:`__name__` is the function's name; :attr:`__self__` is
+      unavailable; :attr:`~definition.__name__` is the function's name; :attr:`__self__` is
       set to ``None`` (but see the next item); :attr:`__module__` is the name of
       the module the function was defined in or ``None`` if unavailable.
 
@@ -744,7 +745,7 @@ Modules
 
    .. index:: single: __dict__ (module attribute)
 
-   Special read-only attribute: :attr:`__dict__` is the module's namespace as a
+   Special read-only attribute: :attr:`~object.__dict__` is the module's namespace as a
    dictionary object.
 
    .. impl-detail::
@@ -806,7 +807,7 @@ Classes
    static method object, it is transformed into the object wrapped by the static
    method object. See section :ref:`descriptors` for another way in which
    attributes retrieved from a class may differ from those actually contained in
-   its :attr:`__dict__` (note that only new-style classes support descriptors).
+   its :attr:`~object.__dict__` (note that only new-style classes support descriptors).
 
    .. index:: triple: class; attribute; assignment
 
@@ -824,8 +825,8 @@ Classes
       single: __bases__ (class attribute)
       single: __doc__ (class attribute)
 
-   Special attributes: :attr:`__name__` is the class name; :attr:`__module__` is
-   the module name in which the class was defined; :attr:`__dict__` is the
+   Special attributes: :attr:`~definition.__name__` is the class name; :attr:`__module__` is
+   the module name in which the class was defined; :attr:`~object.__dict__` is the
    dictionary containing the class's namespace; :attr:`~class.__bases__` is a
    tuple (possibly empty or a singleton) containing the base classes, in the
    order of their occurrence in the base class list; :attr:`__doc__` is the
@@ -851,7 +852,7 @@ Class instances
    objects are also transformed, as if they had been retrieved from class
    :class:`C`; see above under "Classes". See section :ref:`descriptors` for
    another way in which attributes of a class retrieved via its instances may
-   differ from the objects actually stored in the class's :attr:`__dict__`. If no
+   differ from the objects actually stored in the class's :attr:`~object.__dict__`. If no
    class attribute is found, and the object's class has a :meth:`__getattr__`
    method, that is called to satisfy the lookup.
 
@@ -1554,7 +1555,7 @@ method (a so-called *descriptor* class) appears in an *owner* class (the
 descriptor must be in either the owner's class dictionary or in the class
 dictionary for one of its parents).  In the examples below, "the attribute"
 refers to the attribute whose name is the key of the property in the owner
-class' :attr:`__dict__`.
+class' :attr:`~object.__dict__`.
 
 
 .. method:: object.__get__(self, instance, owner)

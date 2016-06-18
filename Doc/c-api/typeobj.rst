@@ -117,10 +117,10 @@ type objects) *must* have the :attr:`ob_size` field.
    For statically allocated type objects, the tp_name field should contain a dot.
    Everything before the last dot is made accessible as the :attr:`__module__`
    attribute, and everything after the last dot is made accessible as the
-   :attr:`__name__` attribute.
+   :attr:`~definition.__name__` attribute.
 
    If no dot is present, the entire :c:member:`~PyTypeObject.tp_name` field is made accessible as the
-   :attr:`__name__` attribute, and the :attr:`__module__` attribute is undefined
+   :attr:`~definition.__name__` attribute, and the :attr:`__module__` attribute is undefined
    (unless explicitly set in the dictionary, as explained above).  This means your
    type will be impossible to pickle.
 
