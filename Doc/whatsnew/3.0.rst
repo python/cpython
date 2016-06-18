@@ -783,8 +783,8 @@ Operators And Special Methods
   :attr:`func_closure`, :attr:`func_code`, :attr:`func_defaults`,
   :attr:`func_dict`, :attr:`func_doc`, :attr:`func_globals`,
   :attr:`func_name` were renamed to :attr:`__closure__`,
-  :attr:`__code__`, :attr:`__defaults__`, :attr:`__dict__`,
-  :attr:`__doc__`, :attr:`__globals__`, :attr:`__name__`,
+  :attr:`__code__`, :attr:`__defaults__`, :attr:`~object.__dict__`,
+  :attr:`__doc__`, :attr:`__globals__`, :attr:`~definition.__name__`,
   respectively.
 
 * :meth:`__nonzero__` is now :meth:`__bool__`.
