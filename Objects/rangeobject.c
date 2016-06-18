@@ -129,9 +129,9 @@ range_new(PyTypeObject *type, PyObject *args, PyObject *kw)
         return (PyObject *) obj;
 
     /* Failed to create object, release attributes */
-    Py_XDECREF(start);
-    Py_XDECREF(stop);
-    Py_XDECREF(step);
+    Py_DECREF(start);
+    Py_DECREF(stop);
+    Py_DECREF(step);
     return NULL;
 }
 
@@ -196,7 +196,7 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     /* if (lo >= hi), return length of 0. */
     cmp_result = PyObject_RichCompareBool(lo, hi, Py_GE);
     if (cmp_result != 0) {
-        Py_XDECREF(step);
+        Py_DECREF(step);
         if (cmp_result < 0)
             return NULL;
         return PyLong_FromLong(0);
@@ -225,9 +225,9 @@ compute_range_length(PyObject *start, PyObject *stop, PyObject *step)
     return result;
 
   Fail:
+    Py_DECREF(step);
     Py_XDECREF(tmp2);
     Py_XDECREF(diff);
-    Py_XDECREF(step);
     Py_XDECREF(tmp1);
     Py_XDECREF(one);
     return NULL;
