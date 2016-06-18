@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #26754: Some functions (compile() etc) accepted a filename argument
+  encoded as an iterable of integers. Now only strings and byte-like objects
+  are accepted.
+
 - Issue #27048: Prevents distutils failing on Windows when environment
   variables contain non-ASCII characters
 
@@ -42,6 +46,13 @@ Library
   indexes.
 
 - Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
+
+C API
+-----
+
+- Issue #26754: PyUnicode_FSDecoder() accepted a filename argument encoded as
+  an iterable of integers. Now only strings and byte-like objects are accepted.
+
 
 What's New in Python 3.5.2 final?
 =================================
