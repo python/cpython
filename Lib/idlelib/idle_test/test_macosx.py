@@ -84,7 +84,7 @@ class SetupTest(unittest.TestCase):
         del cls.root
 
     @mock.patch('idlelib.macosx.overrideRootMenu')  #27312
-    def test_setupapp(self):
+    def test_setupapp(self, overrideRootMenu):
         "Call setupApp with each possible graphics type."
         root = self.root
         flist = FileList(root)
@@ -92,6 +92,9 @@ class SetupTest(unittest.TestCase):
             with self.subTest(tktype=tktype):
                 macosx._tk_type = tktype
                 macosx.setupApp(root, flist)
+                if tktype in ('carbon', 'cocoa'):
+                    self.assertTrue(overrideRootMenu.called)
+                overrideRootMenu.reset_mock()
 
 
 if __name__ == '__main__':
