@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27079: Fixed curses.ascii functions isblank(), iscntrl() and ispunct().
+
 - Issue #22636: Avoid shell injection problems with
   ctypes.util.find_library().
 

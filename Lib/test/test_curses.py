@@ -10,6 +10,7 @@
 #
 
 import os
+import string
 import sys
 import tempfile
 import unittest
@@ -324,6 +325,53 @@ class TestCurses(unittest.TestCase):
 
 class TestAscii(unittest.TestCase):
 
+    def test_controlnames(self):
+        for name in curses.ascii.controlnames:
+            self.assertTrue(hasattr(curses.ascii, name), name)
+
+    def test_ctypes(self):
+        def check(func, expected):
+            self.assertEqual(func(i), expected)
+            self.assertEqual(func(c), expected)
+
+        for i in range(256):
+            c = b = chr(i)
+            check(curses.ascii.isalnum, b.isalnum())
+            check(curses.ascii.isalpha, b.isalpha())
+            check(curses.ascii.isdigit, b.isdigit())
+            check(curses.ascii.islower, b.islower())
+            check(curses.ascii.isspace, b.isspace())
+            check(curses.ascii.isupper, b.isupper())
+
+            check(curses.ascii.isascii, i < 128)
+            check(curses.ascii.ismeta, i >= 128)
+            check(curses.ascii.isctrl, i < 32)
+            check(curses.ascii.iscntrl, i < 32 or i == 127)
+            check(curses.ascii.isblank, c in ' \t')
+            check(curses.ascii.isgraph, 32 < i <= 126)
+            check(curses.ascii.isprint, 32 <= i <= 126)
+            check(curses.ascii.ispunct, c in string.punctuation)
+            check(curses.ascii.isxdigit, c in string.hexdigits)
+
+    def test_ascii(self):
+        ascii = curses.ascii.ascii
+        self.assertEqual(ascii('\xc1'), 'A')
+        self.assertEqual(ascii('A'), 'A')
+        self.assertEqual(ascii(ord('\xc1')), ord('A'))
+
+    def test_ctrl(self):
+        ctrl = curses.ascii.ctrl
+        self.assertEqual(ctrl('J'), '\n')
+        self.assertEqual(ctrl('\n'), '\n')
+        self.assertEqual(ctrl('@'), '\0')
+        self.assertEqual(ctrl(ord('J')), ord('\n'))
+
+    def test_alt(self):
+        alt = curses.ascii.alt
+        self.assertEqual(alt('\n'), '\x8a')
+        self.assertEqual(alt('A'), '\xc1')
+        self.assertEqual(alt(ord('A')), 0xc1)
+
     def test_unctrl(self):
         unctrl = curses.ascii.unctrl
         self.assertEqual(unctrl('a'), 'a')
@@ -333,9 +381,13 @@ class TestAscii(unittest.TestCase):
         self.assertEqual(unctrl('\x7f'), '^?')
         self.assertEqual(unctrl('\n'), '^J')
         self.assertEqual(unctrl('\0'), '^@')
+        self.assertEqual(unctrl(ord('A')), 'A')
+        self.assertEqual(unctrl(ord('\n')), '^J')
         # Meta-bit characters
         self.assertEqual(unctrl('\x8a'), '!^J')
         self.assertEqual(unctrl('\xc1'), '!A')
+        self.assertEqual(unctrl(ord('\x8a')), '!^J')
+        self.assertEqual(unctrl(ord('\xc1')), '!A')
 
 
 def test_main():

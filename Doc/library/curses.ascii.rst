@@ -116,12 +116,12 @@ C library:
 
 .. function:: isblank(c)
 
-   Checks for an ASCII whitespace character.
+   Checks for an ASCII whitespace character; space or horizontal tab.
 
 
 .. function:: iscntrl(c)
 
-   Checks for an ASCII control character (in the range 0x00 to 0x1f).
+   Checks for an ASCII control character (in the range 0x00 to 0x1f or 0x7f).
 
 
 .. function:: isdigit(c)
