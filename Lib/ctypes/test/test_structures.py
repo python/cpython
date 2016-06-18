@@ -227,10 +227,10 @@ class StructureTestCase(unittest.TestCase):
 
     def test_conflicting_initializers(self):
         class POINT(Structure):
-            _fields_ = [("x", c_int), ("y", c_int)]
+            _fields_ = [("phi", c_float), ("rho", c_float)]
         # conflicting positional and keyword args
-        self.assertRaises(TypeError, POINT, 2, 3, x=4)
-        self.assertRaises(TypeError, POINT, 2, 3, y=4)
+        self.assertRaisesRegex(TypeError, "phi", POINT, 2, 3, phi=4)
+        self.assertRaisesRegex(TypeError, "rho", POINT, 2, 3, rho=4)
 
         # too many initializers
         self.assertRaises(TypeError, POINT, 2, 3, 4)
