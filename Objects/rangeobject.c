@@ -29,17 +29,10 @@ validate_step(PyObject *step)
         return PyLong_FromLong(1);
 
     step = PyNumber_Index(step);
-    if (step) {
-        Py_ssize_t istep = PyNumber_AsSsize_t(step, NULL);
-        if (istep == -1 && PyErr_Occurred()) {
-            /* Ignore OverflowError, we know the value isn't 0. */
-            PyErr_Clear();
-        }
-        else if (istep == 0) {
-            PyErr_SetString(PyExc_ValueError,
-                            "range() arg 3 must not be zero");
-            Py_CLEAR(step);
-        }
+    if (step && _PyLong_Sign(step) == 0) {
+        PyErr_SetString(PyExc_ValueError,
+                        "range() arg 3 must not be zero");
+        Py_CLEAR(step);
     }
 
     return step;
