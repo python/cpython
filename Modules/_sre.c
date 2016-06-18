@@ -2049,8 +2049,9 @@ match_getindex(MatchObject* self, PyObject* index)
         /* Default value */
         return 0;
 
-    if (PyLong_Check(index))
-        return PyLong_AsSsize_t(index);
+    if (PyIndex_Check(index)) {
+        return PyNumber_AsSsize_t(index, NULL);
+    }
 
     i = -1;
 

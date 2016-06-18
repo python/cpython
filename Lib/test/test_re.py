@@ -414,18 +414,32 @@ class ReTests(unittest.TestCase):
         self.assertEqual(pat.match('bc').groups(), ('b', None, 'b', 'c'))
         self.assertEqual(pat.match('bc').groups(""), ('b', "", 'b', 'c'))
 
-        # A single group
-        m = re.match('(a)', 'a')
-        self.assertEqual(m.group(0), 'a')
-        self.assertEqual(m.group(0), 'a')
-        self.assertEqual(m.group(1), 'a')
-        self.assertEqual(m.group(1, 1), ('a', 'a'))
-
         pat = re.compile('(?:(?P<a1>a)|(?P<b2>b))(?P<c3>c)?')
         self.assertEqual(pat.match('a').group(1, 2, 3), ('a', None, None))
         self.assertEqual(pat.match('b').group('a1', 'b2', 'c3'),
                          (None, 'b', None))
         self.assertEqual(pat.match('ac').group(1, 'b2', 3), ('a', None, 'c'))
+
+    def test_group(self):
+        class Index:
+            def __init__(self, value):
+                self.value = value
+            def __index__(self):
+                return self.value
+        # A single group
+        m = re.match('(a)(b)', 'ab')
+        self.assertEqual(m.group(), 'ab')
+        self.assertEqual(m.group(0), 'ab')
+        self.assertEqual(m.group(1), 'a')
+        self.assertEqual(m.group(Index(1)), 'a')
+        self.assertRaises(IndexError, m.group, -1)
+        self.assertRaises(IndexError, m.group, 3)
+        self.assertRaises(IndexError, m.group, 1<<1000)
+        self.assertRaises(IndexError, m.group, Index(1<<1000))
+        self.assertRaises(IndexError, m.group, 'x')
+        # Multiple groups
+        self.assertEqual(m.group(2, 1), ('b', 'a'))
+        self.assertEqual(m.group(Index(2), Index(1)), ('b', 'a'))
 
     def test_re_fullmatch(self):
         # Issue 16203: Proposal: add re.fullmatch() method.
