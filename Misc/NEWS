@@ -10,6 +10,8 @@ What's New in Python 3.6.0 alpha 3
 Library
 -------
 
+- Issue #27079: Fixed curses.ascii functions isblank(), iscntrl() and ispunct().
+
 - Issue #27294: Numerical state in the repr for Tkinter event objects is now
   represented as a compination of known flags.
 
