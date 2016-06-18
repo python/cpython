@@ -157,6 +157,12 @@ class SymtableTest(unittest.TestCase):
                 self.fail("no SyntaxError for %r" % (brokencode,))
         checkfilename("def f(x): foo)(")  # parse-time
         checkfilename("def f(x): global x")  # symtable-build-time
+        symtable.symtable("pass", b"spam", "exec")
+        with self.assertRaises(TypeError):
+            symtable.symtable("pass", bytearray(b"spam"), "exec")
+        symtable.symtable("pass", memoryview(b"spam"), "exec")
+        with self.assertRaises(TypeError):
+            symtable.symtable("pass", list(b"spam"), "exec")
 
     def test_eval(self):
         symbols = symtable.symtable("42", "?", "eval")
