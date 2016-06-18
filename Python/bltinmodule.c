@@ -2711,10 +2711,10 @@ _PyBuiltin_Init(void)
     SETBUILTIN("zip",                   &PyZip_Type);
     debug = PyBool_FromLong(Py_OptimizeFlag == 0);
     if (PyDict_SetItemString(dict, "__debug__", debug) < 0) {
-        Py_XDECREF(debug);
+        Py_DECREF(debug);
         return NULL;
     }
-    Py_XDECREF(debug);
+    Py_DECREF(debug);
 
     return mod;
 #undef ADD_TO_ALL
