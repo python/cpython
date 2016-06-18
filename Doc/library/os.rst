@@ -1195,7 +1195,11 @@ or `the MSDN <https://msdn.microsoft.com/en-us/library/z0kc8e3z.aspx>`_ on Windo
 .. function:: writev(fd, buffers)
 
    Write the contents of *buffers* to file descriptor *fd*. *buffers* must be a
-   sequence of :term:`bytes-like objects <bytes-like object>`.
+   sequence of :term:`bytes-like objects <bytes-like object>`. Buffers are
+   processed in array order. Entire contents of first buffer is written before
+   proceeding to second, and so on. The operating system may set a limit
+   (sysconf() value SC_IOV_MAX) on the number of buffers that can be used.
+
    :func:`~os.writev` writes the contents of each object to the file descriptor
    and returns the total number of bytes written.
 
