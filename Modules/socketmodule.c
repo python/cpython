@@ -7288,14 +7288,14 @@ PyInit__socket(void)
     {
         DWORD codes[] = {SIO_RCVALL, SIO_KEEPALIVE_VALS,
 #if defined(SIO_LOOPBACK_FAST_PATH)
-			SIO_LOOPBACK_FAST_PATH
+            SIO_LOOPBACK_FAST_PATH
 #endif
-		};
+        };
         const char *names[] = {"SIO_RCVALL", "SIO_KEEPALIVE_VALS",
 #if defined(SIO_LOOPBACK_FAST_PATH)
-			"SIO_LOOPBACK_FAST_PATH"
+            "SIO_LOOPBACK_FAST_PATH"
 #endif
-		};
+        };
         int i;
         for(i = 0; i<Py_ARRAY_LENGTH(codes); ++i) {
             PyObject *tmp;
