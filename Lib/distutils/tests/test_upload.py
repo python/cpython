@@ -130,13 +130,14 @@ class uploadTestCase(PyPIRCCommandTestCase):
 
         # what did we send ?
         headers = dict(self.last_open.req.headers)
-        self.assertEqual(headers['Content-length'], '2161')
+        self.assertEqual(headers['Content-length'], '2162')
         content_type = headers['Content-type']
         self.assertTrue(content_type.startswith('multipart/form-data'))
         self.assertEqual(self.last_open.req.get_method(), 'POST')
         expected_url = 'https://pypi.python.org/pypi'
         self.assertEqual(self.last_open.req.get_full_url(), expected_url)
         self.assertTrue(b'xxx' in self.last_open.req.data)
+        self.assertIn(b'protocol_version', self.last_open.req.data)
 
         # The PyPI response body was echoed
         results = self.get_logs(INFO)
