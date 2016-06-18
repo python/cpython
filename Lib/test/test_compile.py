@@ -472,6 +472,13 @@ if 1:
         d = {f(): f(), f(): f()}
         self.assertEqual(d, {1: 2, 3: 4})
 
+    def test_compile_filename(self):
+        for filename in ('file.py', b'file.py',
+                         bytearray(b'file.py'), memoryview(b'file.py')):
+            code = compile('pass', filename, 'exec')
+            self.assertEqual(code.co_filename, 'file.py')
+        self.assertRaises(TypeError, compile, 'pass', list(b'file.py'), 'exec')
+
     @support.cpython_only
     def test_same_filename_used(self):
         s = """def f(): pass\ndef g(): pass"""
