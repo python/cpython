@@ -4065,14 +4065,9 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
         }
         val = PyTuple_GET_ITEM(args, i + index);
         if (kwds && PyDict_GetItem(kwds, name)) {
-            char *field = PyBytes_AsString(name);
-            if (field == NULL) {
-                PyErr_Clear();
-                field = "???";
-            }
             PyErr_Format(PyExc_TypeError,
-                         "duplicate values for field '%s'",
-                         field);
+                         "duplicate values for field %R",
+                         name);
             Py_DECREF(pair);
             Py_DECREF(name);
             return -1;
