@@ -1223,9 +1223,15 @@ class GeneralModuleTests(unittest.TestCase):
     def test_sio_loopback_fast_path(self):
         s = socket.socket()
         self.addCleanup(s.close)
-        s.ioctl(socket.SIO_LOOPBACK_FAST_PATH, True)
+        try:
+            s.ioctl(socket.SIO_LOOPBACK_FAST_PATH, True)
+        except OSError as exc:
+            WSAEOPNOTSUPP = 10045
+            if exc.winerror == WSAEOPNOTSUPP:
+                self.skipTest("SIO_LOOPBACK_FAST_PATH is defined but "
+                              "doesn't implemented in this Windows version")
+            raise
         self.assertRaises(TypeError, s.ioctl, socket.SIO_LOOPBACK_FAST_PATH, None)
-
 
     def testGetaddrinfo(self):
         try:
