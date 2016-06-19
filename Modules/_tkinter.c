@@ -462,7 +462,7 @@ Split(const char *list)
                 v = NULL;
                 break;
             }
-            PyTuple_SetItem(v, i, w);
+            PyTuple_SET_ITEM(v, i, w);
         }
     }
     Tcl_Free(FREECAST argv);
@@ -480,13 +480,13 @@ SplitObj(PyObject *arg)
         Py_ssize_t i, size;
         PyObject *elem, *newelem, *result;
 
-        size = PyTuple_Size(arg);
+        size = PyTuple_GET_SIZE(arg);
         result = NULL;
         /* Recursively invoke SplitObj for all tuple items.
            If this does not return a new object, no action is
            needed. */
         for(i = 0; i < size; i++) {
-            elem = PyTuple_GetItem(arg, i);
+            elem = PyTuple_GET_ITEM(arg, i);
             newelem = SplitObj(elem);
             if (!newelem) {
                 Py_XDECREF(result);
@@ -502,12 +502,12 @@ SplitObj(PyObject *arg)
                 if (!result)
                     return NULL;
                 for(k = 0; k < i; k++) {
-                    elem = PyTuple_GetItem(arg, k);
+                    elem = PyTuple_GET_ITEM(arg, k);
                     Py_INCREF(elem);
-                    PyTuple_SetItem(result, k, elem);
+                    PyTuple_SET_ITEM(result, k, elem);
                 }
             }
-            PyTuple_SetItem(result, i, newelem);
+            PyTuple_SET_ITEM(result, i, newelem);
         }
         if (result)
             return result;
@@ -529,7 +529,7 @@ SplitObj(PyObject *arg)
                 Py_XDECREF(result);
                 return NULL;
             }
-            PyTuple_SetItem(result, i, newelem);
+            PyTuple_SET_ITEM(result, i, newelem);
         }
         return result;
     }
@@ -551,7 +551,7 @@ SplitObj(PyObject *arg)
     else if (PyBytes_Check(arg)) {
         int argc;
         const char **argv;
-        char *list = PyBytes_AsString(arg);
+        char *list = PyBytes_AS_STRING(arg);
 
         if (Tcl_SplitList((Tcl_Interp *)NULL, list, &argc, &argv) != TCL_OK) {
             Py_INCREF(arg);
@@ -559,7 +559,7 @@ SplitObj(PyObject *arg)
         }
         Tcl_Free(FREECAST argv);
         if (argc > 1)
-            return Split(PyBytes_AsString(arg));
+            return Split(PyBytes_AS_STRING(arg));
         /* Fall through, returning arg. */
     }
     Py_INCREF(arg);
@@ -758,7 +758,7 @@ Tkapp_New(const char *screenName, const char *className,
                 }
                 Tcl_SetVar(v->interp,
                            "tcl_library",
-                           PyBytes_AsString(utf8_path),
+                           PyBytes_AS_STRING(utf8_path),
                            TCL_GLOBAL_ONLY);
                 Py_DECREF(utf8_path);
             }
@@ -1306,7 +1306,7 @@ FromObj(PyObject* tkapp, Tcl_Obj *value)
                 Py_DECREF(result);
                 return NULL;
             }
-            PyTuple_SetItem(result, i, elem);
+            PyTuple_SET_ITEM(result, i, elem);
         }
         return result;
     }
@@ -1517,8 +1517,8 @@ Tkapp_Call(PyObject *selfptr, PyObject *args)
     int flags = TCL_EVAL_DIRECT | TCL_EVAL_GLOBAL;
 
     /* If args is a single tuple, replace with contents of tuple */
-    if (1 == PyTuple_Size(args)){
-        PyObject* item = PyTuple_GetItem(args, 0);
+    if (PyTuple_GET_SIZE(args) == 1) {
+        PyObject *item = PyTuple_GET_ITEM(args, 0);
         if (PyTuple_Check(item))
             args = item;
     }
@@ -1728,12 +1728,12 @@ varname_converter(PyObject *in, void *_out)
     char *s;
     const char **out = (const char**)_out;
     if (PyBytes_Check(in)) {
-        if (PyBytes_Size(in) > INT_MAX) {
+        if (PyBytes_GET_SIZE(in) > INT_MAX) {
             PyErr_SetString(PyExc_OverflowError, "bytes object is too long");
             return 0;
         }
-        s = PyBytes_AsString(in);
-        if (strlen(s) != (size_t)PyBytes_Size(in)) {
+        s = PyBytes_AS_STRING(in);
+        if (strlen(s) != (size_t)PyBytes_GET_SIZE(in)) {
             PyErr_SetString(PyExc_ValueError, "embedded null byte");
             return 0;
         }
@@ -2274,10 +2274,11 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
             return NULL;
         for (i = 0; i < objc; i++) {
             PyObject *s = FromObj((PyObject*)self, objv[i]);
-            if (!s || PyTuple_SetItem(v, i, s)) {
+            if (!s) {
                 Py_DECREF(v);
                 return NULL;
             }
+            PyTuple_SET_ITEM(v, i, s);
         }
         return v;
     }
@@ -2304,11 +2305,12 @@ _tkinter_tkapp_splitlist(TkappObject *self, PyObject *arg)
 
     for (i = 0; i < argc; i++) {
         PyObject *s = unicodeFromTclString(argv[i]);
-        if (!s || PyTuple_SetItem(v, i, s)) {
+        if (!s) {
             Py_DECREF(v);
             v = NULL;
             goto finally;
         }
+        PyTuple_SET_ITEM(v, i, s);
     }
 
   finally:
@@ -2349,10 +2351,11 @@ _tkinter_tkapp_split(TkappObject *self, PyObject *arg)
             return NULL;
         for (i = 0; i < objc; i++) {
             PyObject *s = FromObj((PyObject*)self, objv[i]);
-            if (!s || PyTuple_SetItem(v, i, s)) {
+            if (!s) {
                 Py_DECREF(v);
                 return NULL;
             }
+            PyTuple_SET_ITEM(v, i, s);
         }
         return v;
     }
@@ -2410,10 +2413,11 @@ PythonCmd(ClientData clientData, Tcl_Interp *interp, int argc, const char *argv[
 
     for (i = 0; i < (argc - 1); i++) {
         PyObject *s = unicodeFromTclString(argv[i + 1]);
-        if (!s || PyTuple_SetItem(arg, i, s)) {
+        if (!s) {
             Py_DECREF(arg);
             return PythonCmd_Error(interp);
         }
+        PyTuple_SET_ITEM(arg, i, s);
     }
     res = PyEval_CallObject(func, arg);
     Py_DECREF(arg);
@@ -3622,14 +3626,14 @@ PyInit__tkinter(void)
                 }
             }
 
-            Tcl_FindExecutable(PyBytes_AsString(cexe));
+            Tcl_FindExecutable(PyBytes_AS_STRING(cexe));
 
             if (set_var) {
                 SetEnvironmentVariableW(L"TCL_LIBRARY", NULL);
                 PyMem_Free(wcs_path);
             }
 #else
-            Tcl_FindExecutable(PyBytes_AsString(cexe));
+            Tcl_FindExecutable(PyBytes_AS_STRING(cexe));
 #endif /* MS_WINDOWS */
         }
         Py_XDECREF(cexe);
