@@ -28,6 +28,8 @@ __all__ = ["Button", "Checkbutton", "Combobox", "Entry", "Frame", "Label",
 import tkinter
 from tkinter import _flatten, _join, _stringify, _splitdict
 
+_sentinel = object()
+
 # Verify if Tk is new enough to not need the Tile package
 _REQUIRE_TILE = True if tkinter.TkVersion < 8.5 else False
 
@@ -1394,31 +1396,53 @@ class Treeview(Widget, tkinter.XView, tkinter.YView):
         self.tk.call(self._w, "see", item)
 
 
-    def selection(self, selop=None, items=None):
-        """If selop is not specified, returns selected items."""
-        if isinstance(items, (str, bytes)):
-            items = (items,)
+    def selection(self, selop=_sentinel, items=None):
+        """Returns the tuple of selected items."""
+        if selop is _sentinel:
+            selop = None
+        elif selop is None:
+            import warnings
+            warnings.warn(
+                "The selop=None argument of selection() is deprecated "
+                "and will be removed in Python 3.7",
+                DeprecationWarning, 3)
+        elif selop in ('set', 'add', 'remove', 'toggle'):
+            import warnings
+            warnings.warn(
+                "The selop argument of selection() is deprecated "
+                "and will be removed in Python 3.7, "
+                "use selection_%s() instead" % (selop,),
+                DeprecationWarning, 3)
+        else:
+            raise TypeError('Unsupported operation')
         return self.tk.splitlist(self.tk.call(self._w, "selection", selop, items))
 
 
-    def selection_set(self, items):
-        """items becomes the new selection."""
-        self.selection("set", items)
+    def _selection(self, selop, items):
+        if len(items) == 1 and isinstance(items[0], (tuple, list)):
+            items = items[0]
+
+        self.tk.call(self._w, "selection", selop, items)
 
 
-    def selection_add(self, items):
-        """Add items to the selection."""
-        self.selection("add", items)
+    def selection_set(self, *items):
+        """The specified items becomes the new selection."""
+        self._selection("set", items)
 
 
-    def selection_remove(self, items):
-        """Remove items from the selection."""
-        self.selection("remove", items)
+    def selection_add(self, *items):
+        """Add all of the specified items to the selection."""
+        self._selection("add", items)
 
 
-    def selection_toggle(self, items):
-        """Toggle the selection state of each item in items."""
-        self.selection("toggle", items)
+    def selection_remove(self, *items):
+        """Remove all of the specified items from the selection."""
+        self._selection("remove", items)
+
+
+    def selection_toggle(self, *items):
+        """Toggle the selection state of each specified item."""
+        self._selection("toggle", items)
 
 
     def set(self, item, column=None, value=None):
