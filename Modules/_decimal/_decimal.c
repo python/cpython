@@ -2636,7 +2636,7 @@ dec_from_float(PyObject *type, PyObject *pyfloat)
 
     CURRENT_CONTEXT(context);
     result = PyDecType_FromFloatExact(&PyDec_Type, pyfloat, context);
-    if (!PyDec_CheckExact(type) && result != NULL) {
+    if (type != (PyObject *)&PyDec_Type && result != NULL) {
         Py_SETREF(result, PyObject_CallFunctionObjArgs(type, result, NULL));
     }
 
