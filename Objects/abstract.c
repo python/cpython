@@ -2155,7 +2155,7 @@ _Py_CheckFunctionResult(PyObject *func, PyObject *result, const char *where)
                              where);
             _PyErr_ChainExceptions(exc, val, tb);
 #ifdef Py_DEBUG
-            /* Ensure that the bug is catched in debug mode */
+            /* Ensure that the bug is caught in debug mode */
             Py_FatalError("a function returned a result with an error set");
 #endif
             return NULL;
