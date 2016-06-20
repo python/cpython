@@ -270,5 +270,5 @@ class SuspiciousVisitor(nodes.GenericNodeVisitor):
         # ignore comments -- too much false positives.
         # (although doing this could miss some errors;
         # there were two sections "commented-out" by mistake
-        # in the Python docs that would not be catched)
+        # in the Python docs that would not be caught)
         raise nodes.SkipNode
