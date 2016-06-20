@@ -16,6 +16,7 @@ PYPIRC = """\
 index-servers =
     server1
     server2
+    server3
 
 [server1]
 username:me
@@ -26,6 +27,10 @@ username:meagain
 password: secret
 realm:acme
 repository:http://another.pypi/
+
+[server3]
+username:cbiggles
+password:yh^%#rest-of-my-password
 """
 
 PYPIRC_OLD = """\
@@ -110,6 +115,20 @@ class PyPIRCCommandTestCase(support.TempdirManager,
             self.assertEqual(content, WANTED)
         finally:
             f.close()
+
+    def test_config_interpolation(self):
+        # using the % character in .pypirc should not raise an error (#20120)
+        self.write_file(self.rc, PYPIRC)
+        cmd = self._cmd(self.dist)
+        cmd.repository = 'server3'
+        config = cmd._read_pypirc()
+
+        config = list(sorted(config.items()))
+        waited = [('password', 'yh^%#rest-of-my-password'), ('realm', 'pypi'),
+                  ('repository', 'https://pypi.python.org/pypi'),
+                  ('server', 'server3'), ('username', 'cbiggles')]
+        self.assertEqual(config, waited)
+
 
 def test_suite():
     return unittest.makeSuite(PyPIRCCommandTestCase)
