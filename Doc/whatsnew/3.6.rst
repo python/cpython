@@ -113,7 +113,7 @@ See :pep:`498` and the main documentation at :ref:`f-strings`.
 PYTHONMALLOC environment variable
 ---------------------------------
 
-The new :envvar:`PYTHONMALLOC` environment variable allows to set the Python
+The new :envvar:`PYTHONMALLOC` environment variable allows setting the Python
 memory allocators and/or install debug hooks.
 
 It is now possible to install debug hooks on Python memory allocators on Python
