@@ -2491,7 +2491,8 @@ class PythonAPItests(unittest.TestCase):
         Decimal = self.decimal.Decimal
 
         class MyDecimal(Decimal):
-            pass
+            def __init__(self, _):
+                self.x = 'y'
 
         self.assertTrue(issubclass(MyDecimal, Decimal))
 
@@ -2499,6 +2500,8 @@ class PythonAPItests(unittest.TestCase):
         self.assertEqual(type(r), MyDecimal)
         self.assertEqual(str(r),
                 '0.1000000000000000055511151231257827021181583404541015625')
+        self.assertEqual(r.x, 'y')
+
         bigint = 12345678901234567890123456789
         self.assertEqual(MyDecimal.from_float(bigint), MyDecimal(bigint))
         self.assertTrue(MyDecimal.from_float(float('nan')).is_qnan())
