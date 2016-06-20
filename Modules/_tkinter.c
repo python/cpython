@@ -52,8 +52,8 @@ Copyright (C) 1994 Steen Lumholt.
      (size_t)(size) <= UINT_MAX / (size_t)(elemsize))
 
 /* Starting with Tcl 8.4, many APIs offer const-correctness.  Unfortunately,
-   making _tkinter correct for this API means to break earlier
-   versions. USE_COMPAT_CONST allows to make _tkinter work with both 8.4 and
+   making _tkinter correct for this API means breaking earlier
+   versions. USE_COMPAT_CONST allows making _tkinter work with both 8.4 and
    earlier versions. Once Tcl releases before 8.4 don't need to be supported
    anymore, this should go. */
 #define USE_COMPAT_CONST

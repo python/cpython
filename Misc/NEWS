@@ -4566,7 +4566,7 @@ Core and Builtins
 - Issue #11450: Don't truncate hg version info in Py_GetBuildInfo() when
   there are many tags (e.g. when using mq).  Patch by Nadeem Vawda.
 
-- Issue #10451: memoryview objects could allow to mutate a readable buffer.
+- Issue #10451: memoryview objects could allow mutating a readable buffer.
   Initial patch by Ross Lagerwall.
 
 - Issue #10892: Don't segfault when trying to delete __abstractmethods__ from a
@@ -4635,7 +4635,7 @@ Library
   seeking a bit forward, writing, then seeking before the previous write but
   still within buffered data, and writing again).
 
-- Issue #8498: In socket.accept(), allow to specify 0 as a backlog value in
+- Issue #8498: In socket.accept(), allow specifying 0 as a backlog value in
   order to accept exactly one connection.  Patch by Daniel Evers.
 
 - Issue #12012: ssl.PROTOCOL_SSLv2 becomes optional.
@@ -6096,8 +6096,8 @@ Extension Modules
 
 - Build the ossaudio extension on GNU/kFreeBSD.
 
-- On Windows, ctypes does no longer check the stack before and after calling a
-  foreign function.  This allows to use the unmodified libffi library.
+- On Windows, ctypes no longer checks the stack before and after calling a
+  foreign function.  This allows using the unmodified libffi library.
 
 Tests
 -----
@@ -9432,8 +9432,7 @@ Library
 - The mimetools module has been deprecated for removal in 3.0.
 
 - The ctypes.byref function now takes an optional second parameter
-  which allows to specify an offset in bytes for the constructed
-  pointer-like object.
+  which specifies an offset in bytes for the constructed pointer-like object.
 
 - Added the ast module.
 
@@ -11058,7 +11057,7 @@ Library
   -- the failure just occurred later, with a more cumbersome
   exception.
 
-- Patch #787789: allow to pass custom TestRunner instances to
+- Patch #787789: allow passing custom TestRunner instances to
   unittest's main() function.
 
 - Patches #1550273, #1550272: fix a few bugs in unittest and add a
