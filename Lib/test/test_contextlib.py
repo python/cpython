@@ -763,8 +763,9 @@ class TestExitStack(unittest.TestCase):
         self.assertIs(stack._exit_callbacks[-1], cm)
 
     def test_dont_reraise_RuntimeError(self):
-        """https://bugs.python.org/issue27122"""
+        # https://bugs.python.org/issue27122
         class UniqueException(Exception): pass
+        class UniqueRuntimeError(RuntimeError): pass
 
         @contextmanager
         def second():
@@ -780,15 +781,20 @@ class TestExitStack(unittest.TestCase):
             except Exception as exc:
                 raise exc
 
-        # The RuntimeError should be caught by second()'s exception
+        # The UniqueRuntimeError should be caught by second()'s exception
         # handler which chain raised a new UniqueException.
         with self.assertRaises(UniqueException) as err_ctx:
             with ExitStack() as es_ctx:
                 es_ctx.enter_context(second())
                 es_ctx.enter_context(first())
-                raise RuntimeError("please no infinite loop.")
+                raise UniqueRuntimeError("please no infinite loop.")
 
-        self.assertEqual(err_ctx.exception.args[0], "new exception")
+        exc = err_ctx.exception
+        self.assertIsInstance(exc, UniqueException)
+        self.assertIsInstance(exc.__context__, UniqueRuntimeError)
+        self.assertIsNone(exc.__context__.__context__)
+        self.assertIsNone(exc.__context__.__cause__)
+        self.assertIs(exc.__cause__, exc.__context__)
 
 
 class TestRedirectStream:
