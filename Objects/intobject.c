@@ -107,7 +107,7 @@ PyInt_FromLong(long ival)
     /* Inline PyObject_New */
     v = free_list;
     free_list = (PyIntObject *)Py_TYPE(v);
-    PyObject_INIT(v, &PyInt_Type);
+    (void)PyObject_INIT(v, &PyInt_Type);
     v->ob_ival = ival;
     return (PyObject *) v;
 }
@@ -1466,7 +1466,7 @@ _PyInt_Init(void)
         /* PyObject_New is inlined */
         v = free_list;
         free_list = (PyIntObject *)Py_TYPE(v);
-        PyObject_INIT(v, &PyInt_Type);
+        (void)PyObject_INIT(v, &PyInt_Type);
         v->ob_ival = ival;
         small_ints[ival + NSMALLNEGINTS] = v;
     }

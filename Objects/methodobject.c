@@ -20,7 +20,7 @@ PyCFunction_NewEx(PyMethodDef *ml, PyObject *self, PyObject *module)
     op = free_list;
     if (op != NULL) {
         free_list = (PyCFunctionObject *)(op->m_self);
-        PyObject_INIT(op, &PyCFunction_Type);
+        (void)PyObject_INIT(op, &PyCFunction_Type);
         numfree--;
     }
     else {

@@ -149,7 +149,7 @@ PyFloat_FromDouble(double fval)
     /* Inline PyObject_New */
     op = free_list;
     free_list = (PyFloatObject *)Py_TYPE(op);
-    PyObject_INIT(op, &PyFloat_Type);
+    (void)PyObject_INIT(op, &PyFloat_Type);
     op->ob_fval = fval;
     return (PyObject *) op;
 }

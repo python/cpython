@@ -26,7 +26,9 @@ static int tk_load_failed;
 int
 Tcl_AppInit(Tcl_Interp *interp)
 {
+#ifdef WITH_MOREBUTTONS
     Tk_Window main_window;
+#endif
     const char *_tkinter_skip_tk_init;
 #ifdef TKINTER_PROTECT_LOADTK
     const char *_tkinter_tk_failed;
@@ -111,7 +113,11 @@ Tcl_AppInit(Tcl_Interp *interp)
         return TCL_ERROR;
     }
 
+#ifdef WITH_MOREBUTTONS
     main_window = Tk_MainWindow(interp);
+#else
+    Tk_MainWindow(interp);
+#endif
 
 #ifdef TK_AQUA
     TkMacOSXInitAppleEvents(interp);
