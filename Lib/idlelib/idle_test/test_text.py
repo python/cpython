@@ -1,17 +1,19 @@
-# Test mock_tk.Text class against tkinter.Text class by running same tests with both.
+''' Test mock_tk.Text class against tkinter.Text class
+
+Run same tests with both by creating a mixin class.
+'''
 import unittest
 from test.support import requires
-
 from _tkinter import TclError
 
 class TextTest(object):
+    "Define items common to both sets of tests."
 
-    hw = 'hello\nworld'  # usual initial insert after initialization
+    hw = 'hello\nworld'  # Several tests insert this after after initialization.
     hwn = hw+'\n'  # \n present at initialization, before insert
 
-    Text = None
-    def setUp(self):
-        self.text = self.Text()
+    # setUpClass defines cls.Text and maybe cls.root.
+    # setUp defines self.text from Text and maybe root.
 
     def test_init(self):
         self.assertEqual(self.text.get('1.0'), '\n')
@@ -196,6 +198,10 @@ class MockTextTest(TextTest, unittest.TestCase):
         from idlelib.idle_test.mock_tk import Text
         cls.Text = Text
 
+    def setUp(self):
+        self.text = self.Text()
+
+
     def test_decode(self):
         # test endflags (-1, 0) not tested by test_index (which uses +1)
         decode = self.text._decode
@@ -221,6 +227,9 @@ class TkTextTest(TextTest, unittest.TestCase):
     def tearDownClass(cls):
         cls.root.destroy()
         del cls.root
+
+    def setUp(self):
+        self.text = self.Text(self.root)
 
 
 if __name__ == '__main__':

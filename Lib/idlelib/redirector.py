@@ -151,14 +151,14 @@ class OriginalCommand:
 
 
 def _widget_redirector(parent):  # htest #
-    from tkinter import Tk, Text
+    from tkinter import Toplevel, Text
     import re
 
-    root = Tk()
-    root.title("Test WidgetRedirector")
+    top = Toplevel(parent)
+    top.title("Test WidgetRedirector")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
-    text = Text(root)
+    top.geometry("+%d+%d"%(x, y + 150))
+    text = Text(top)
     text.pack()
     text.focus_set()
     redir = WidgetRedirector(text)
@@ -166,11 +166,10 @@ def _widget_redirector(parent):  # htest #
         print("insert", args)
         original_insert(*args)
     original_insert = redir.register("insert", my_insert)
-    root.mainloop()
 
 if __name__ == "__main__":
     import unittest
-    unittest.main('idlelib.idle_test.test_widgetredir',
+    unittest.main('idlelib.idle_test.test_redirector',
                   verbosity=2, exit=False)
     from idlelib.idle_test.htest import run
     run(_widget_redirector)

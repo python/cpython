@@ -68,6 +68,7 @@ outwin.OutputWindow (indirectly being tested with grep test)
 from importlib import import_module
 import tkinter as tk
 from tkinter.ttk import Scrollbar
+tk.NoDefaultRoot()
 
 AboutDialog_spec = {
     'file': 'help_about',
@@ -364,7 +365,7 @@ def run(*tests):
                 test = getattr(mod, test_name)
                 test_list.append((test_spec, test))
 
-    test_name = tk.StringVar('')
+    test_name = tk.StringVar(root)
     callable_object = None
     test_kwds = None
 

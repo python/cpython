@@ -467,31 +467,29 @@ class TabbedPageSet(Frame):
 
         self._tab_set.set_selected_tab(page_name)
 
-def _tabbed_pages(parent):
-    # test dialog
-    root=Tk()
+def _tabbed_pages(parent):  # htest #
+    import re
+    top=Toplevel(parent)
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 175))
-    root.title("Test tabbed pages")
-    tabPage=TabbedPageSet(root, page_names=['Foobar','Baz'], n_rows=0,
+    top.geometry("+%d+%d"%(x, y + 175))
+    top.title("Test tabbed pages")
+    tabPage=TabbedPageSet(top, page_names=['Foobar','Baz'], n_rows=0,
                           expand_tabs=False,
                           )
     tabPage.pack(side=TOP, expand=TRUE, fill=BOTH)
     Label(tabPage.pages['Foobar'].frame, text='Foo', pady=20).pack()
     Label(tabPage.pages['Foobar'].frame, text='Bar', pady=20).pack()
     Label(tabPage.pages['Baz'].frame, text='Baz').pack()
-    entryPgName=Entry(root)
-    buttonAdd=Button(root, text='Add Page',
+    entryPgName=Entry(top)
+    buttonAdd=Button(top, text='Add Page',
             command=lambda:tabPage.add_page(entryPgName.get()))
-    buttonRemove=Button(root, text='Remove Page',
+    buttonRemove=Button(top, text='Remove Page',
             command=lambda:tabPage.remove_page(entryPgName.get()))
-    labelPgName=Label(root, text='name of page to add/remove:')
+    labelPgName=Label(top, text='name of page to add/remove:')
     buttonAdd.pack(padx=5, pady=5)
     buttonRemove.pack(padx=5, pady=5)
     labelPgName.pack(padx=5)
     entryPgName.pack(padx=5)
-    root.mainloop()
-
 
 if __name__ == '__main__':
     from idlelib.idle_test.htest import run

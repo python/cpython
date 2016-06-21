@@ -1,7 +1,7 @@
 import string
-from tkinter import *
-
 from idlelib.delegator import Delegator
+# tkintter import not needed because module does not create widgets,
+# although many methods operate on text widget arguments.
 
 #$ event <<redo>>
 #$ win <Control-y>
@@ -339,12 +339,12 @@ class CommandSequence(Command):
 
 def _undo_delegator(parent):  # htest #
     import re
-    import tkinter as tk
+    from tkinter import Toplevel, Text, Button
     from idlelib.percolator import Percolator
-    undowin = tk.Toplevel()
+    undowin = Toplevel(parent)
     undowin.title("Test UndoDelegator")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    undowin.geometry("+%d+%d"%(x, y + 150))
+    undowin.geometry("+%d+%d"%(x, y + 175))
 
     text = Text(undowin, height=10)
     text.pack()
@@ -362,7 +362,7 @@ def _undo_delegator(parent):  # htest #
 
 if __name__ == "__main__":
     import unittest
-    unittest.main('idlelib.idle_test.test_undodelegator', verbosity=2,
+    unittest.main('idlelib.idle_test.test_undo', verbosity=2,
                   exit=False)
     from idlelib.idle_test.htest import run
     run(_undo_delegator)

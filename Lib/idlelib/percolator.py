@@ -89,10 +89,10 @@ def _percolator(parent):  # htest #
         (pin if var2.get() else pout)(t2)
 
     text.pack()
-    var1 = tk.IntVar()
+    var1 = tk.IntVar(parent)
     cb1 = tk.Checkbutton(box, text="Tracer1", command=toggle1, variable=var1)
     cb1.pack()
-    var2 = tk.IntVar()
+    var2 = tk.IntVar(parent)
     cb2 = tk.Checkbutton(box, text="Tracer2", command=toggle2, variable=var2)
     cb2.pack()
 

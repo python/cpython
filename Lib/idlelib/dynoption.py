@@ -34,9 +34,9 @@ class DynOptionMenu(OptionMenu):
             self.variable.set(value)
 
 def _dyn_option_menu(parent):  # htest #
-    from tkinter import Toplevel
+    from tkinter import Toplevel # + StringVar, Button
 
-    top = Toplevel()
+    top = Toplevel(parent)
     top.title("Tets dynamic option menu")
     top.geometry("200x100+%d+%d" % (parent.winfo_rootx() + 200,
                   parent.winfo_rooty() + 150))
