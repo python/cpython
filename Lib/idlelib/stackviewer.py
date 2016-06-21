@@ -121,11 +121,11 @@ class VariablesTreeItem(ObjectTreeItem):
         return sublist
 
 def _stack_viewer(parent):
-    root = tk.Tk()
-    root.title("Test StackViewer")
+    top = tk.Toplevel(parent)
+    top.title("Test StackViewer")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
-    flist = PyShellFileList(root)
+    top.geometry("+%d+%d"%(x, y + 150))
+    flist = PyShellFileList(top)
     try: # to obtain a traceback object
         intentional_name_error
     except NameError:
@@ -136,7 +136,7 @@ def _stack_viewer(parent):
     sys.last_value = exc_value
     sys.last_traceback = exc_tb
 
-    StackBrowser(root, flist=flist, top=root, tb=exc_tb)
+    StackBrowser(top, flist=flist, top=top, tb=exc_tb)
 
     # restore sys to original state
     del sys.last_type
