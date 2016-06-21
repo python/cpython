@@ -1547,7 +1547,9 @@ def main():
     enable_edit = enable_edit or edit_start
     enable_shell = enable_shell or not enable_edit
 
-    # start editor and/or shell windows:
+    # Setup root.
+    if use_subprocess:  # Don't break user code run in IDLE process
+        NoDefaultRoot()
     root = Tk(className="Idle")
     root.withdraw()
 
@@ -1563,6 +1565,7 @@ def main():
         icons = [PhotoImage(file=iconfile) for iconfile in iconfiles]
         root.wm_iconphoto(True, *icons)
 
+    # start editor and/or shell windows:
     fixwordbreaks(root)
     fix_x11_paste(root)
     flist = PyShellFileList(root)

@@ -3,7 +3,6 @@ import fnmatch
 import re  # for htest
 import sys
 from tkinter import StringVar, BooleanVar, Checkbutton  # for GrepDialog
-from tkinter import Tk, Text, Button, SEL, END  # for htest
 from idlelib import searchengine
 from idlelib.searchbase import SearchDialogBase
 # Importing OutputWindow fails due to import loop
@@ -132,13 +131,14 @@ class GrepDialog(SearchDialogBase):
 
 def _grep_dialog(parent):  # htest #
     from idlelib.pyshell import PyShellFileList
-    root = Tk()
-    root.title("Test GrepDialog")
+    from tkinter import Toplevel, Text, Button, SEL, END
+    top = Toplevel(parent)
+    top.title("Test GrepDialog")
     width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
+    top.geometry("+%d+%d"%(x, y + 150))
 
-    flist = PyShellFileList(root)
-    text = Text(root, height=5)
+    flist = PyShellFileList(top)
+    text = Text(top, height=5)
     text.pack()
 
     def show_grep_dialog():
@@ -146,9 +146,8 @@ def _grep_dialog(parent):  # htest #
         grep(text, flist=flist)
         text.tag_remove(SEL, "1.0", END)
 
-    button = Button(root, text="Show GrepDialog", command=show_grep_dialog)
+    button = Button(top, text="Show GrepDialog", command=show_grep_dialog)
     button.pack()
-    root.mainloop()
 
 if __name__ == "__main__":
     import unittest
