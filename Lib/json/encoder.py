@@ -101,7 +101,7 @@ class JSONEncoder(object):
     """
     item_separator = ', '
     key_separator = ': '
-    def __init__(self, skipkeys=False, ensure_ascii=True,
+    def __init__(self, *, skipkeys=False, ensure_ascii=True,
             check_circular=True, allow_nan=True, sort_keys=False,
             indent=None, separators=None, default=None):
         """Constructor for JSONEncoder, with sensible defaults.

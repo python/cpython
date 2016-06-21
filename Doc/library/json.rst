@@ -126,7 +126,7 @@ See :ref:`json-commandline` for detailed documentation.
 Basic Usage
 -----------
 
-.. function:: dump(obj, fp, skipkeys=False, ensure_ascii=True, \
+.. function:: dump(obj, fp, *, skipkeys=False, ensure_ascii=True, \
                    check_circular=True, allow_nan=True, cls=None, \
                    indent=None, separators=None, default=None, \
                    sort_keys=False, **kw)
@@ -184,8 +184,11 @@ Basic Usage
    :meth:`default` method to serialize additional types), specify it with the
    *cls* kwarg; otherwise :class:`JSONEncoder` is used.
 
+   .. versionchanged:: 3.6
+      All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
-.. function:: dumps(obj, skipkeys=False, ensure_ascii=True, \
+
+.. function:: dumps(obj, *, skipkeys=False, ensure_ascii=True, \
                     check_circular=True, allow_nan=True, cls=None, \
                     indent=None, separators=None, default=None, \
                     sort_keys=False, **kw)
@@ -209,7 +212,7 @@ Basic Usage
       the original one. That is, ``loads(dumps(x)) != x`` if x has non-string
       keys.
 
-.. function:: load(fp, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+.. function:: load(fp, *, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *fp* (a ``.read()``-supporting :term:`file-like object`
    containing a JSON document) to a Python object using this :ref:`conversion
@@ -257,7 +260,10 @@ Basic Usage
    If the data being deserialized is not a valid JSON document, a
    :exc:`JSONDecodeError` will be raised.
 
-.. function:: loads(s, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
+   .. versionchanged:: 3.6
+      All optional parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+
+.. function:: loads(s, *, encoding=None, cls=None, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, object_pairs_hook=None, **kw)
 
    Deserialize *s* (a :class:`str` instance containing a JSON document) to a
    Python object using this :ref:`conversion table <json-to-py-table>`.
@@ -271,7 +277,7 @@ Basic Usage
 Encoders and Decoders
 ---------------------
 
-.. class:: JSONDecoder(object_hook=None, parse_float=None, parse_int=None, parse_constant=None, strict=True, object_pairs_hook=None)
+.. class:: JSONDecoder(*, object_hook=None, parse_float=None, parse_int=None, parse_constant=None, strict=True, object_pairs_hook=None)
 
    Simple JSON decoder.
 
@@ -341,6 +347,9 @@ Encoders and Decoders
    If the data being deserialized is not a valid JSON document, a
    :exc:`JSONDecodeError` will be raised.
 
+   .. versionchanged:: 3.6
+      All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
+
    .. method:: decode(s)
 
       Return the Python representation of *s* (a :class:`str` instance
@@ -359,7 +368,7 @@ Encoders and Decoders
       extraneous data at the end.
 
 
-.. class:: JSONEncoder(skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None)
+.. class:: JSONEncoder(*, skipkeys=False, ensure_ascii=True, check_circular=True, allow_nan=True, sort_keys=False, indent=None, separators=None, default=None)
 
    Extensible JSON encoder for Python data structures.
 
@@ -437,6 +446,9 @@ Encoders and Decoders
    If specified, *default* is a function that gets called for objects that can't
    otherwise be serialized.  It should return a JSON encodable version of the
    object or raise a :exc:`TypeError`.
+
+   .. versionchanged:: 3.6
+      All parameters are now :ref:`keyword-only <keyword-only_parameter>`.
 
 
    .. method:: default(o)

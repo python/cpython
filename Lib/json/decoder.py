@@ -280,7 +280,7 @@ class JSONDecoder(object):
 
     """
 
-    def __init__(self, object_hook=None, parse_float=None,
+    def __init__(self, *, object_hook=None, parse_float=None,
             parse_int=None, parse_constant=None, strict=True,
             object_pairs_hook=None):
         """``object_hook``, if specified, will be called with the result
