@@ -12,8 +12,10 @@
 #include "ctypes.h"
 
 
-#define CTYPES_CAPSULE_WCHAR_T "_ctypes/cfield.c wchar_t buffer from unicode"
+#if defined(CTYPES_UNICODE) && !defined(HAVE_USABLE_WCHAR_T)
+#   define CTYPES_CAPSULE_WCHAR_T "_ctypes/cfield.c wchar_t buffer from unicode"
 CTYPES_CAPSULE_INSTANTIATE_DESTRUCTOR(CTYPES_CAPSULE_WCHAR_T)
+#endif
 
 
 /******************************************************************/
