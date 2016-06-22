@@ -818,6 +818,7 @@ on_completion_display_matches_hook(char **matches,
 #endif
 }
 
+#endif
 
 #ifdef HAVE_RL_RESIZE_TERMINAL
 static volatile sig_atomic_t sigwinch_received;
@@ -876,7 +877,6 @@ on_completion(const char *text, int state)
     }
     return result;
 }
-#endif
 
 
 /* A more flexible constructor that saves the "begidx" and "endidx"
