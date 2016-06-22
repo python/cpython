@@ -10,6 +10,11 @@ Build
 
 - Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
 
+IDLE
+----
+
+- Issue #27365: Fix about dialog.
+
 
 What's New in Python 2.7.12 release candidate 1?
 ================================================
