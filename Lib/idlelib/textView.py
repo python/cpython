@@ -4,7 +4,7 @@
 
 from tkinter import *
 from tkinter.ttk import Scrollbar
-import tkinter.messagebox as tkMessageBox
+from tkinter.messagebox import showerror
 
 class TextViewer(Toplevel):
     """A simple text viewer dialog for IDLE
@@ -73,10 +73,14 @@ def view_file(parent, title, filename, encoding=None, modal=True):
     try:
         with open(filename, 'r', encoding=encoding) as file:
             contents = file.read()
-    except IOError:
-        tkMessageBox.showerror(title='File Load Error',
-                               message='Unable to load file %r .' % filename,
-                               parent=parent)
+    except OSError:
+        showerror(title='File Load Error',
+                  message='Unable to load file %r .' % filename,
+                  parent=parent)
+    except UnicodeDecodeError as err:
+        showerror(title='Unicode Decode Error',
+                  message=str(err),
+                  parent=parent)
     else:
         return view_text(parent, title, contents, modal)
 
