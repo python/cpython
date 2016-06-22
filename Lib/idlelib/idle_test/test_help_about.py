@@ -2,10 +2,10 @@
 
 Coverage:
 '''
-from idlelib import aboutDialog as help_about
-from idlelib import textView as textview
+from idlelib import help_about
+from idlelib import textview
 from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Mbox
+from idlelib.idle_test.mock_tk import Mbox_func
 import unittest
 
 About = help_about.AboutDialog
@@ -19,33 +19,33 @@ class Dummy_about_dialog():
 
 
 class DisplayFileTest(unittest.TestCase):
-    "Test that .txt files are found and properly decoded."
     dialog = Dummy_about_dialog()
 
     @classmethod
     def setUpClass(cls):
-        cls.orig_mbox = textview.tkMessageBox
+        cls.orig_error = textview.showerror
         cls.orig_view = textview.view_text
-        cls.mbox = Mbox()
+        cls.error = Mbox_func()
         cls.view = Func()
-        textview.tkMessageBox = cls.mbox
+        textview.showerror = cls.error
         textview.view_text = cls.view
         cls.About = Dummy_about_dialog()
 
     @classmethod
     def tearDownClass(cls):
-        textview.tkMessageBox = cls.orig_mbox
+        textview.showerror = cls.orig_error
         textview.view_text = cls.orig_view
 
     def test_file_isplay(self):
         for handler in (self.dialog.idle_credits,
                         self.dialog.idle_readme,
                         self.dialog.idle_news):
-            self.mbox.showerror.message = ''
+            self.error.message = ''
             self.view.called = False
-            handler()
-            self.assertEqual(self.mbox.showerror.message, '')
-            self.assertEqual(self.view.called, True)
+            with self.subTest(handler=handler):
+                handler()
+                self.assertEqual(self.error.message, '')
+                self.assertEqual(self.view.called, True)
 
 
 if __name__ == '__main__':
