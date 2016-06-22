@@ -130,7 +130,7 @@ class AboutDialog(Toplevel):
         self.display_file_text('About - Readme', 'README.txt', 'ascii')
 
     def ShowIDLENEWS(self):
-        self.display_file_text('About - NEWS', 'NEWS.txt', 'ascii')
+        self.display_file_text('About - NEWS', 'NEWS.txt', 'utf-8')
 
     def display_printer_text(self, title, printer):
         printer._Printer__setup()

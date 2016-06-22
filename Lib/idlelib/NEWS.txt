@@ -30,7 +30,7 @@ What's New in IDLE 3.5.2?
   Original patch by Saimadhav Heblikar.
 
 - Issue #18410: Add test for IDLE's search dialog.
-  Original patch by Westley Martínez.
+  Original patch by Westley MartÃ­nez.
 
 - Issue #21703: Add test for undo delegator.
   Original patch by Saimadhav Heblikar .
@@ -48,7 +48,7 @@ What's New in IDLE 3.5.2?
 - Issue #25507: fix incorrect change in IOBinding that prevented printing.
   Augment IOBinding htest to include all major IOBinding functions.
 
-- Issue #25905: Revert unwanted conversion of ' to ’ RIGHT SINGLE QUOTATION
+- Issue #25905: Revert unwanted conversion of ' to â€™ RIGHT SINGLE QUOTATION
   MARK in README.txt and open this and NEWS.txt with 'ascii'.
   Re-encode CREDITS.txt to utf-8 and open it with 'utf-8'.
 
