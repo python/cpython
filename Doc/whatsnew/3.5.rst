@@ -356,8 +356,8 @@ unpackings (see :ref:`exprlists` and :ref:`dict`)::
 
 .. _whatsnew-pep-461:
 
-PEP 461 - % formatting support for bytes and bytearray
-------------------------------------------------------
+PEP 461 - percent formatting support for bytes and bytearray
+------------------------------------------------------------
 
 :pep:`461` adds support for the ``%``
 :ref:`interpolation operator <bytes-formatting>` to :class:`bytes`
