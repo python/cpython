@@ -5,7 +5,7 @@ is a widget containing multiple widgets, all tests must be gui tests.
 Using mock Text would not change this.  Other mocks are used to retrieve
 information about calls.
 
-The coverage is essentially 100%.
+Coverage: 94%.
 '''
 from idlelib import textview as tv
 from test.support import requires
@@ -15,7 +15,7 @@ import unittest
 import os
 from tkinter import Tk
 from idlelib.idle_test.mock_idle import Func
-from idlelib.idle_test.mock_tk import Mbox
+from idlelib.idle_test.mock_tk import Mbox_func
 
 def setUpModule():
     global root
@@ -64,17 +64,17 @@ class TextViewTest(unittest.TestCase):
         view.destroy
 
 
-class textviewTest(unittest.TestCase):
+class ViewFunctionTest(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.orig_mbox = tv.tkMessageBox
-        tv.tkMessageBox = Mbox
+        cls.orig_error = tv.showerror
+        tv.showerror = Mbox_func()
 
     @classmethod
     def tearDownClass(cls):
-        tv.tkMessageBox = cls.orig_mbox
-        del cls.orig_mbox
+        tv.showerror = cls.orig_error
+        del cls.orig_error
 
     def test_view_text(self):
         # If modal True, tkinter will error with 'can't invoke "event" command'
@@ -89,7 +89,7 @@ class textviewTest(unittest.TestCase):
         self.assertIn('Test', view.textView.get('1.0', '1.end'))
         view.Ok()
 
-        # Mock messagebox will be used and view_file will not return anything
+        # Mock showerror will be used and view_file will return None
         testfile = os.path.join(test_dir, '../notthere.py')
         view = tv.view_file(root, 'Title', testfile, modal=False)
         self.assertIsNone(view)
