@@ -1670,8 +1670,8 @@ an arbitrary object):
 | ``s.append(x)``              | same as ``s[len(s):len(s)] =   | \(2)                |
 |                              | [x]``                          |                     |
 +------------------------------+--------------------------------+---------------------+
-| ``s.extend(x)`` or           | for the most part the same as  | \(3)                |
-| ``s += t``                   | ``s[len(s):len(s)] = x``       |                     |
+| ``s.extend(t)`` or           | for the most part the same as  | \(3)                |
+| ``s += t``                   | ``s[len(s):len(s)] = t``       |                     |
 +------------------------------+--------------------------------+---------------------+
 | ``s *= n``                   | updates *s* with its contents  | \(11)               |
 |                              | repeated *n* times             |                     |
@@ -1708,7 +1708,7 @@ Notes:
    this misfeature has been deprecated since Python 1.4.
 
 (3)
-   *x* can be any iterable object.
+   *t* can be any iterable object.
 
 (4)
    Raises :exc:`ValueError` when *x* is not found in *s*. When a negative index is
