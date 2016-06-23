@@ -211,6 +211,11 @@ Functions
 .. module:: importlib.abc
     :synopsis: Abstract base classes related to import
 
+**Source code:** :source:`Lib/importlib/abc.py`
+
+--------------
+
+
 The :mod:`importlib.abc` module contains all of the core abstract base classes
 used by :keyword:`import`. Some subclasses of the core abstract base classes
 are also provided to help in implementing the core ABCs.
@@ -700,6 +705,10 @@ ABC hierarchy::
 .. module:: importlib.machinery
     :synopsis: Importers and path hooks
 
+**Source code:** :source:`Lib/importlib/machinery.py`
+
+--------------
+
 This module contains the various objects that help :keyword:`import`
 find and load modules.
 
@@ -1089,6 +1098,11 @@ find and load modules.
 
 .. module:: importlib.util
     :synopsis: Utility code for importers
+
+
+**Source code:** :source:`Lib/importlib/util.py`
+
+--------------
 
 This module contains the various objects that help in the construction of
 an :term:`importer`.
