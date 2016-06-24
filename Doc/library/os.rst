@@ -179,7 +179,8 @@ process and user.
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.6
-      Support added to accept objects implementing :class:`os.PathLike`.
+      Support added to accept objects implementing the :class:`os.PathLike`
+      interface.
 
 
 .. function:: fsdecode(filename)
@@ -192,17 +193,18 @@ process and user.
    .. versionadded:: 3.2
 
    .. versionchanged:: 3.6
-      Support added to accept objects implementing :class:`os.PathLike`.
+      Support added to accept objects implementing the :class:`os.PathLike`
+      interface.
 
 
 .. function:: fspath(path)
 
    Return the file system representation of the path.
 
-   If :class:`str` or :class:`bytes` is passed in, it is returned unchanged;
-   otherwise, the result of calling ``type(path).__fspath__`` is returned
-   (which is represented by :class:`os.PathLike`). All other types raise a
-   :exc:`TypeError`.
+   If :class:`str` or :class:`bytes` is passed in, it is returned unchanged.
+   Otherwise :meth:`~os.PathLike.__fspath__` is called and its value is
+   returned as long as it is a :class:`str` or :class:`bytes` object.
+   In all other cases, :exc:`TypeError` is raised.
 
    .. versionadded:: 3.6
 

@@ -12317,12 +12317,21 @@ PyOS_FSPath(PyObject *path)
     if (NULL == func) {
         return PyErr_Format(PyExc_TypeError,
                             "expected str, bytes or os.PathLike object, "
-                            "not %S",
-                            path->ob_type);
+                            "not %.200s",
+                            Py_TYPE(path)->tp_name);
     }
 
     path_repr = PyObject_CallFunctionObjArgs(func, NULL);
     Py_DECREF(func);
+    if (!(PyUnicode_Check(path_repr) || PyBytes_Check(path_repr))) {
+        PyErr_Format(PyExc_TypeError,
+                     "expected %.200s.__fspath__() to return str or bytes, "
+                     "not %.200s", Py_TYPE(path)->tp_name,
+                     Py_TYPE(path_repr)->tp_name);
+        Py_DECREF(path_repr);
+        return NULL;
+    }
+
     return path_repr;
 }
 
