@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+    <PropertyGroup>
+        <ProjectGuid>{6BA7092C-0093-47F0-9ED2-282AEE981E14}</ProjectGuid>
+        <OutputName>python2</OutputName>
+        <OutputName Condition="$(Platform) == 'x86' or $(Platform) == 'Win32' or $(Platform) == ''">$(OutputName)x86</OutputName>
+        <OutputPath Condition="$(OutputPath) == ''">$(MSBuildThisFileDirectory)</OutputPath>
+        <OutputSuffix></OutputSuffix>
+        <SupportSigning>false</SupportSigning>
+    </PropertyGroup>
+
+    <Import Project="..\..\PCBuild\python.props" />
+
+    <PropertyGroup>
+        <NuspecVersion>$(MajorVersionNumber).$(MinorVersionNumber).$(MicroVersionNumber)</NuspecVersion>
+        <SignOutput>false</SignOutput>
+        <TargetName>$(OutputName).$(NuspecVersion)</TargetName>
+        <TargetExt>.nupkg</TargetExt>
+        <TargetPath>$(OutputPath)\$(TargetName)$(TargetExt)</TargetPath>
+        <IntermediateOutputPath>$(MSBuildThisFileDirectory)\obj_$(ArchName)</IntermediateOutputPath>
+        
+        <CleanCommand>rmdir /q/s "$(IntermediateOutputPath)"</CleanCommand>
+        
+        <Python Condition="$(Python) == ''">py</Python>
+        <PythonArguments>"$(Python)" "$(MSBuildThisFileDirectory)\make_zip.py"</PythonArguments>
+        <PythonArguments>$(PythonArguments) -s "$(PySourcePath.Trim('\'))" -t "$(IntermediateOutputPath)" -a $(ArchName)</PythonArguments>
+        
+        <PipArguments>"$(IntermediateOutputPath)\python.exe" -B -c "import sys; sys.path.append(r'$(PySourcePath)\Lib'); import ensurepip; ensurepip._main()"</PipArguments>
+        
+        <NugetArguments>"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).nuspec"</NugetArguments>
+        <NugetArguments>$(NugetArguments) -BasePath "$(IntermediateOutputPath)"</NugetArguments>
+        <NugetArguments>$(NugetArguments) -OutputDirectory "$(OutputPath.Trim('\'))"</NugetArguments>
+        <NugetArguments>$(NugetArguments) -Version "$(NuspecVersion)"</NugetArguments>
+        <NugetArguments>$(NugetArguments) -NoPackageAnalysis -NonInteractive</NugetArguments>
+    </PropertyGroup>
+
+    <Target Name="_NugetMissing" BeforeTargets="_Build" Condition="!Exists($(Nuget))">
+        <Error Text="$$(Nuget) could not be found. Specify a valid path on the command line." />
+    </Target>
+
+    <Target Name="_Build">
+        <Exec Command="$(CleanCommand)" />
+        <Exec Command="$(PythonArguments)" />
+        <Exec Command="$(PipArguments)" />
+        <Exec Command="$(NugetArguments)" />
+    </Target>
+
+    <Target Name="AfterBuild" />
+    <Target Name="Build" DependsOnTargets="_Build;AfterBuild" />
+</Project>
