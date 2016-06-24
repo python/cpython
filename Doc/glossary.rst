@@ -778,6 +778,16 @@ Glossary
       One of the default :term:`meta path finders <meta path finder>` which
       searches an :term:`import path` for modules.
 
+   path-like object
+      An object representing a file system path. A path-like object is either
+      a :class:`str` or :class:`bytes` object representing a path, or an object
+      implementing the :class:`os.PathLike` protocol. An object that supports
+      the :class:`os.PathLike` protocol can be converted to a :class:`str` or
+      :class:`bytes` file system path by calling the :func:`os.fspath` function;
+      :func:`os.fsdecode` and :func:`os.fsencode` can be used to guarantee a
+      :class:`str` or :class:`bytes` result instead, respectively. Introduced
+      by :pep:`519`.
+
    portion
       A set of files in a single directory (possibly stored in a zip file)
       that contribute to a namespace package, as defined in :pep:`420`.
