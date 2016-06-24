@@ -2854,6 +2854,7 @@ class TestScandir(unittest.TestCase):
             self.assertEqual(stat1, stat2)
 
     def check_entry(self, entry, name, is_dir, is_file, is_symlink):
+        self.assertIsInstance(entry, os.DirEntry)
         self.assertEqual(entry.name, name)
         self.assertEqual(entry.path, os.path.join(self.path, name))
         self.assertEqual(entry.inode(),
