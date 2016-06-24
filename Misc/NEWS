@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 3
 Library
 -------
 
+- Issue #27038: Expose the DirEntry type as os.DirEntry. Code patch by
+  Jelle Zijlstra.
+
 - Issue #27186: Update os.fspath()/PyOS_FSPath() to check the return value of
   __fspath__() to be either str or bytes.
 

@@ -13320,6 +13320,7 @@ INITFUNC(void)
         Py_DECREF(unicode);
     }
     PyModule_AddObject(m, "_have_functions", list);
+    PyModule_AddObject(m, "DirEntry", (PyObject *)&DirEntryType);
 
     initialized = 1;
 

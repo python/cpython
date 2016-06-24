@@ -1920,25 +1920,26 @@ features:
 
 .. function:: scandir(path='.')
 
-   Return an iterator of :class:`DirEntry` objects corresponding to the entries
-   in the directory given by *path*. The entries are yielded in arbitrary
-   order, and the special entries ``'.'`` and ``'..'`` are not included.
+   Return an iterator of :class:`os.DirEntry` objects corresponding to the
+   entries in the directory given by *path*. The entries are yielded in
+   arbitrary order, and the special entries ``'.'`` and ``'..'`` are not
+   included.
 
    Using :func:`scandir` instead of :func:`listdir` can significantly
    increase the performance of code that also needs file type or file
-   attribute information, because :class:`DirEntry` objects expose this
+   attribute information, because :class:`os.DirEntry` objects expose this
    information if the operating system provides it when scanning a directory.
-   All :class:`DirEntry` methods may perform a system call, but
-   :func:`~DirEntry.is_dir` and :func:`~DirEntry.is_file` usually only
-   require a system call for symbolic links; :func:`DirEntry.stat`
+   All :class:`os.DirEntry` methods may perform a system call, but
+   :func:`~os.DirEntry.is_dir` and :func:`~os.DirEntry.is_file` usually only
+   require a system call for symbolic links; :func:`os.DirEntry.stat`
    always requires a system call on Unix but only requires one for
    symbolic links on Windows.
 
    On Unix, *path* can be of type :class:`str` or :class:`bytes` (use
    :func:`~os.fsencode` and :func:`~os.fsdecode` to encode and decode
    :class:`bytes` paths). On Windows, *path* must be of type :class:`str`.
-   On both sytems, the type of the :attr:`~DirEntry.name` and
-   :attr:`~DirEntry.path` attributes of each :class:`DirEntry` will be of
+   On both sytems, the type of the :attr:`~os.DirEntry.name` and
+   :attr:`~os.DirEntry.path` attributes of each :class:`os.DirEntry` will be of
    the same type as *path*.
 
    The :func:`scandir` iterator supports the :term:`context manager` protocol
@@ -1993,22 +1994,22 @@ features:
 
    :func:`scandir` will provide as much of this information as possible without
    making additional system calls. When a ``stat()`` or ``lstat()`` system call
-   is made, the ``DirEntry`` object will cache the result.
+   is made, the ``os.DirEntry`` object will cache the result.
 
-   ``DirEntry`` instances are not intended to be stored in long-lived data
+   ``os.DirEntry`` instances are not intended to be stored in long-lived data
    structures; if you know the file metadata has changed or if a long time has
    elapsed since calling :func:`scandir`, call ``os.stat(entry.path)`` to fetch
    up-to-date information.
 
-   Because the ``DirEntry`` methods can make operating system calls, they may
+   Because the ``os.DirEntry`` methods can make operating system calls, they may
    also raise :exc:`OSError`. If you need very fine-grained
    control over errors, you can catch :exc:`OSError` when calling one of the
-   ``DirEntry`` methods and handle as appropriate.
+   ``os.DirEntry`` methods and handle as appropriate.
 
-   To be directly usable as a :term:`path-like object`, ``DirEntry`` implements
-   the :class:`os.PathLike` interface.
+   To be directly usable as a :term:`path-like object`, ``os.DirEntry``
+   implements the :class:`os.PathLike` interface.
 
-   Attributes and methods on a ``DirEntry`` instance are as follows:
+   Attributes and methods on a ``os.DirEntry`` instance are as follows:
 
    .. attribute:: name
 
@@ -2034,8 +2035,9 @@ features:
 
       Return the inode number of the entry.
 
-      The result is cached on the ``DirEntry`` object. Use ``os.stat(entry.path,
-      follow_symlinks=False).st_ino`` to fetch up-to-date information.
+      The result is cached on the ``os.DirEntry`` object. Use
+      ``os.stat(entry.path, follow_symlinks=False).st_ino`` to fetch up-to-date
+      information.
 
       On the first, uncached call, a system call is required on Windows but
       not on Unix.
@@ -2050,7 +2052,7 @@ features:
       is a directory (without following symlinks); return ``False`` if the
       entry is any other kind of file or if it doesn't exist anymore.
 
-      The result is cached on the ``DirEntry`` object, with a separate cache
+      The result is cached on the ``os.DirEntry`` object, with a separate cache
       for *follow_symlinks* ``True`` and ``False``. Call :func:`os.stat` along
       with :func:`stat.S_ISDIR` to fetch up-to-date information.
 
@@ -2074,8 +2076,8 @@ features:
       is a file (without following symlinks); return ``False`` if the entry is
       a directory or other non-file entry, or if it doesn't exist anymore.
 
-      The result is cached on the ``DirEntry`` object. Caching, system calls
-      made, and exceptions raised are as per :func:`~DirEntry.is_dir`.
+      The result is cached on the ``os.DirEntry`` object. Caching, system calls
+      made, and exceptions raised are as per :func:`~os.DirEntry.is_dir`.
 
    .. method:: is_symlink()
 
@@ -2083,7 +2085,7 @@ features:
       return ``False`` if the entry points to a directory or any kind of file,
       or if it doesn't exist anymore.
 
-      The result is cached on the ``DirEntry`` object. Call
+      The result is cached on the ``os.DirEntry`` object. Call
       :func:`os.path.islink` to fetch up-to-date information.
 
       On the first, uncached call, no system call is required in most cases.
@@ -2108,12 +2110,12 @@ features:
       :class:`stat_result` are always set to zero. Call :func:`os.stat` to
       get these attributes.
 
-      The result is cached on the ``DirEntry`` object, with a separate cache
+      The result is cached on the ``os.DirEntry`` object, with a separate cache
       for *follow_symlinks* ``True`` and ``False``. Call :func:`os.stat` to
       fetch up-to-date information.
 
    Note that there is a nice correspondence between several attributes
-   and methods of ``DirEntry`` and of :class:`pathlib.Path`.  In
+   and methods of ``os.DirEntry`` and of :class:`pathlib.Path`.  In
    particular, the ``name`` attribute has the same
    meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``
    and ``stat()`` methods.
