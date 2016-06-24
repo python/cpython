@@ -24,6 +24,8 @@
         <PythonArguments>"$(PythonExe)" "$(MSBuildThisFileDirectory)\..\msi\make_zip.py"</PythonArguments>
         <PythonArguments>$(PythonArguments) -t "$(IntermediateOutputPath)" -a $(ArchName)</PythonArguments>
         
+        <PipArguments>"$(IntermediateOutputPath)\python.exe" -B -c "import sys; sys.path.append('$(PySourcePath)\Lib'); import ensurepip; ensurepip._main()"</PipArguments>
+        
         <NugetArguments>"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).nuspec"</NugetArguments>
         <NugetArguments>$(NugetArguments) -BasePath "$(IntermediateOutputPath)"</NugetArguments>
         <NugetArguments>$(NugetArguments) -OutputDirectory "$(OutputPath)\en-us"</NugetArguments>
@@ -40,9 +42,10 @@ set VCREDIST_PATH=$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.
     </Target>
 
     <Target Name="_Build">
+        <Exec Command="$(CleanCommand)" />
         <Exec Command="$(Environment)
-$(CleanCommand)
 $(PythonArguments)" />
+        <Exec Command="$(PipArguments)" />
         <Exec Command="$(NugetArguments)" />
     </Target>
 
