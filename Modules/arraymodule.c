@@ -1080,7 +1080,7 @@ array_buffer_info(arrayobject *self, PyObject *unused)
     }
     PyTuple_SET_ITEM(retval, 0, v);
 
-    v = PyLong_FromSsize_t(Py_SIZE(self));
+    v = PyInt_FromSsize_t(Py_SIZE(self));
     if (v == NULL) {
         Py_DECREF(retval);
         return NULL;
