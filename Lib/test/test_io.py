@@ -879,7 +879,7 @@ class IOTest(unittest.TestCase):
         check_path_succeeds(PathLike(support.TESTFN.encode('utf-8')))
 
         bad_path = PathLike(TypeError)
-        with self.assertRaisesRegex(TypeError, 'invalid file'):
+        with self.assertRaises(TypeError):
             self.open(bad_path, 'w')
 
         # ensure that refcounting is correct with some error conditions
