@@ -12,7 +12,7 @@ from distutils.core import Distribution
 from distutils.errors import DistutilsError
 from distutils.log import ERROR, INFO
 
-from distutils.tests.test_config import PYPIRC, PyPIRCCommandTestCase
+from distutils.tests.test_config import PYPIRC, BasePyPIRCCommandTestCase
 
 PYPIRC_LONG_PASSWORD = """\
 [distutils]
@@ -66,7 +66,7 @@ class FakeOpen(object):
         return self.code
 
 
-class uploadTestCase(PyPIRCCommandTestCase):
+class uploadTestCase(BasePyPIRCCommandTestCase):
 
     def setUp(self):
         super(uploadTestCase, self).setUp()

@@ -50,14 +50,14 @@ password:xxx
 """
 
 
-class PyPIRCCommandTestCase(support.TempdirManager,
+class BasePyPIRCCommandTestCase(support.TempdirManager,
                             support.LoggingSilencer,
                             support.EnvironGuard,
                             unittest.TestCase):
 
     def setUp(self):
         """Patches the environment."""
-        super(PyPIRCCommandTestCase, self).setUp()
+        super(BasePyPIRCCommandTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
         os.environ['HOME'] = self.tmp_dir
         self.rc = os.path.join(self.tmp_dir, '.pypirc')
@@ -76,7 +76,10 @@ class PyPIRCCommandTestCase(support.TempdirManager,
     def tearDown(self):
         """Removes the patch."""
         set_threshold(self.old_threshold)
-        super(PyPIRCCommandTestCase, self).tearDown()
+        super(BasePyPIRCCommandTestCase, self).tearDown()
+
+
+class PyPIRCCommandTestCase(BasePyPIRCCommandTestCase):
 
     def test_server_registration(self):
         # This test makes sure PyPIRCCommand knows how to:
