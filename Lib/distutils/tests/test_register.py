@@ -12,7 +12,7 @@ from distutils.command.register import register
 from distutils.errors import DistutilsSetupError
 from distutils.log import INFO
 
-from distutils.tests.test_config import PyPIRCCommandTestCase
+from distutils.tests.test_config import BasePyPIRCCommandTestCase
 
 try:
     import docutils
@@ -72,7 +72,7 @@ class FakeOpener(object):
             }.get(name.lower(), default)
 
 
-class RegisterTestCase(PyPIRCCommandTestCase):
+class RegisterTestCase(BasePyPIRCCommandTestCase):
 
     def setUp(self):
         super(RegisterTestCase, self).setUp()
