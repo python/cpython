@@ -171,8 +171,9 @@ process and user.
 
 .. function:: fsencode(filename)
 
-   Encode *filename* to the filesystem encoding with ``'surrogateescape'``
-   error handler, or ``'strict'`` on Windows; return :class:`bytes` unchanged.
+   Encode :term:`path-like <path-like object>` *filename* to the filesystem
+   encoding with ``'surrogateescape'`` error handler, or ``'strict'`` on
+   Windows; return :class:`bytes` unchanged.
 
    :func:`fsdecode` is the reverse function.
 
@@ -185,8 +186,9 @@ process and user.
 
 .. function:: fsdecode(filename)
 
-   Decode *filename* from the filesystem encoding with ``'surrogateescape'``
-   error handler, or ``'strict'`` on Windows; return :class:`str` unchanged.
+   Decode the :term:`path-like <path-like object>` *filename* from the
+   filesystem encoding with ``'surrogateescape'`` error handler, or ``'strict'``
+   on Windows; return :class:`str` unchanged.
 
    :func:`fsencode` is the reverse function.
 
@@ -2003,8 +2005,8 @@ features:
    control over errors, you can catch :exc:`OSError` when calling one of the
    ``DirEntry`` methods and handle as appropriate.
 
-   To be directly usable as a path-like object, ``DirEntry`` implements the
-   :class:`os.PathLike` interface.
+   To be directly usable as a :term:`path-like object`, ``DirEntry`` implements
+   the :class:`os.PathLike` interface.
 
    Attributes and methods on a ``DirEntry`` instance are as follows:
 
@@ -2112,7 +2114,7 @@ features:
 
    Note that there is a nice correspondence between several attributes
    and methods of ``DirEntry`` and of :class:`pathlib.Path`.  In
-   particular, the ``name`` and ``path`` attributes have the same
+   particular, the ``name`` attribute has the same
    meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``
    and ``stat()`` methods.
 
