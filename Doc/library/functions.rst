@@ -1469,7 +1469,7 @@ are always available.  They are listed here in alphabetical order.
    Objects such as modules and instances have an updateable :attr:`~object.__dict__`
    attribute; however, other objects may have write restrictions on their
    :attr:`~object.__dict__` attributes (for example, classes use a
-   dictproxy to prevent direct dictionary updates).
+   :class:`types.MappingProxyType` to prevent direct dictionary updates).
 
    Without an argument, :func:`vars` acts like :func:`locals`.  Note, the
    locals dictionary is only useful for reads since updates to the locals
