@@ -23,7 +23,7 @@ except ImportError:
 
 from distutils.command.sdist import sdist, show_formats
 from distutils.core import Distribution
-from distutils.tests.test_config import PyPIRCCommandTestCase
+from distutils.tests.test_config import BasePyPIRCCommandTestCase
 from distutils.errors import DistutilsOptionError
 from distutils.spawn import find_executable
 from distutils.log import WARN
@@ -52,7 +52,7 @@ somecode%(sep)sdoc.dat
 somecode%(sep)sdoc.txt
 """
 
-class SDistTestCase(PyPIRCCommandTestCase):
+class SDistTestCase(BasePyPIRCCommandTestCase):
 
     def setUp(self):
         # PyPIRCCommandTestCase creates a temp dir already
