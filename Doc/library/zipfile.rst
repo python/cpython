@@ -250,7 +250,7 @@ ZipFile Objects
 .. method:: ZipFile.extract(member, path=None, pwd=None)
 
    Extract a member from the archive to the current working directory; *member*
-   must be its full name or a :class:`ZipInfo` object).  Its file information is
+   must be its full name or a :class:`ZipInfo` object.  Its file information is
    extracted as accurately as possible.  *path* specifies a different directory
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
    *pwd* is the password used for encrypted files.
