@@ -2053,9 +2053,8 @@ features:
 
    Note that there is a nice correspondence between several attributes
    and methods of ``DirEntry`` and of :class:`pathlib.Path`.  In
-   particular, the ``name`` and ``path`` attributes have the same
-   meaning, as do the ``is_dir()``, ``is_file()``, ``is_symlink()``
-   and ``stat()`` methods.
+   particular, the ``name`` attribute has the same meaning, as do the
+   ``is_dir()``, ``is_file()``, ``is_symlink()`` and ``stat()`` methods.
 
    .. versionadded:: 3.5
 
