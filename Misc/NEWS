@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 3
 Library
 -------
 
+- Issue #27186: Update os.fspath()/PyOS_FSPath() to check the return value of
+  __fspath__() to be either str or bytes.
+
 - Issue #18726: All optional parameters of the dump(), dumps(),
   load() and loads() functions and JSONEncoder and JSONDecoder class
   constructors in the json module are now keyword-only.

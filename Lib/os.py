@@ -881,14 +881,11 @@ def _fscodec():
         On Windows, use 'strict' error handler if the file system encoding is
         'mbcs' (which is the default encoding).
         """
-        filename = fspath(filename)
-        if isinstance(filename, bytes):
-            return filename
-        elif isinstance(filename, str):
+        filename = fspath(filename)  # Does type-checking of `filename`.
+        if isinstance(filename, str):
             return filename.encode(encoding, errors)
         else:
-            raise TypeError("expected str, bytes or os.PathLike object, not "
-                            + type(filename).__name__)
+            return filename
 
     def fsdecode(filename):
         """Decode filename (an os.PathLike, bytes, or str) from the filesystem
@@ -896,14 +893,11 @@ def _fscodec():
         Windows, use 'strict' error handler if the file system encoding is
         'mbcs' (which is the default encoding).
         """
-        filename = fspath(filename)
-        if isinstance(filename, str):
-            return filename
-        elif isinstance(filename, bytes):
+        filename = fspath(filename)  # Does type-checking of `filename`.
+        if isinstance(filename, bytes):
             return filename.decode(encoding, errors)
         else:
-            raise TypeError("expected str, bytes or os.PathLike object, not "
-                            + type(filename).__name__)
+            return filename
 
     return fsencode, fsdecode
 
@@ -1102,27 +1096,44 @@ def fdopen(fd, *args, **kwargs):
     import io
     return io.open(fd, *args, **kwargs)
 
-# Supply os.fspath() if not defined in C
+
+# For testing purposes, make sure the function is available when the C
+# implementation exists.
+def _fspath(path):
+    """Return the path representation of a path-like object.
+
+    If str or bytes is passed in, it is returned unchanged. Otherwise the
+    os.PathLike interface is used to get the path representation. If the
+    path representation is not str or bytes, TypeError is raised. If the
+    provided path is not str, bytes, or os.PathLike, TypeError is raised.
+    """
+    if isinstance(path, (str, bytes)):
+        return path
+
+    # Work from the object's type to match method resolution of other magic
+    # methods.
+    path_type = type(path)
+    try:
+        path_repr = path_type.__fspath__(path)
+    except AttributeError:
+        if hasattr(path_type, '__fspath__'):
+            raise
+        else:
+            raise TypeError("expected str, bytes or os.PathLike object, "
+                            "not " + path_type.__name__)
+    if isinstance(path_repr, (str, bytes)):
+        return path_repr
+    else:
+        raise TypeError("expected {}.__fspath__() to return str or bytes, "
+                        "not {}".format(path_type.__name__,
+                                        type(path_repr).__name__))
+
+# If there is no C implementation, make the pure Python version the
+# implementation as transparently as possible.
 if not _exists('fspath'):
-    def fspath(path):
-        """Return the string representation of the path.
+    fspath = _fspath
+    fspath.__name__ = "fspath"
 
-        If str or bytes is passed in, it is returned unchanged.
-        """
-        if isinstance(path, (str, bytes)):
-            return path
-
-        # Work from the object's type to match method resolution of other magic
-        # methods.
-        path_type = type(path)
-        try:
-            return path_type.__fspath__(path)
-        except AttributeError:
-            if hasattr(path_type, '__fspath__'):
-                raise
-
-            raise TypeError("expected str, bytes or os.PathLike object, not "
-                            + path_type.__name__)
 
 class PathLike(abc.ABC):
 
