@@ -291,6 +291,16 @@ The idlelib package is being modernized and refactored to make IDLE look and wor
 In compensation, the eventual result with be that some idlelib classes will be easier to use, with better APIs and docstrings explaining them.  Additional useful information will be added to idlelib when available.
 
 
+importlib
+---------
+
+:class:`importlib.util.LazyLoader` now calls
+:meth:`~importlib.abc.Loader.create_module` on the wrapped loader, removing the
+restriction that :class:`importlib.machinery.BuiltinImporter` and
+:class:`importlib.machinery.ExtensionFileLoader` couldn't be used with
+:class:`importlib.util.LazyLoader`.
+
+
 os
 --
 
@@ -619,6 +629,9 @@ that may require changes to your code.
 
 Changes in the Python API
 -------------------------
+
+* When :meth:`importlib.abc.Loader.exec_module` is defined,
+  :meth:`importlib.abc.Loader.create_module` must also be defined.
 
 * The format of the ``co_lnotab`` attribute of code objects changed to support
   negative line number delta. By default, Python does not emit bytecode with
