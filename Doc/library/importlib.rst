@@ -379,9 +379,13 @@ ABC hierarchy::
 
        An abstract method that executes the module in its own namespace
        when a module is imported or reloaded.  The module should already
-       be initialized when exec_module() is called.
+       be initialized when ``exec_module()`` is called. When this method exists,
+       :meth:`~importlib.abc.Loader.create_module` must be defined.
 
        .. versionadded:: 3.4
+
+       .. versionchanged:: 3.6
+          :meth:`~importlib.abc.Loader.create_module` must also be defined.
 
     .. method:: load_module(fullname)
 
@@ -1200,12 +1204,13 @@ an :term:`importer`.
 
 .. function:: module_from_spec(spec)
 
-   Create a new module based on **spec** and ``spec.loader.create_module()``.
+   Create a new module based on **spec** and
+   :meth:`spec.loader.create_module <importlib.abc.Loader.create_module>`.
 
-   If ``spec.loader.create_module()`` does not return ``None``, then any
-   pre-existing attributes will not be reset. Also, no :exc:`AttributeError`
-   will be raised if triggered while accessing **spec** or setting an attribute
-   on the module.
+   If :meth:`spec.loader.create_module <importlib.abc.Loader.create_module>`
+   does not return ``None``, then any pre-existing attributes will not be reset.
+   Also, no :exc:`AttributeError` will be raised if triggered while accessing
+   **spec** or setting an attribute on the module.
 
    This function is preferred over using :class:`types.ModuleType` to create a
    new module as **spec** is used to set as many import-controlled attributes on
@@ -1267,7 +1272,8 @@ an :term:`importer`.
 
 .. decorator:: set_package
 
-   A :term:`decorator` for :meth:`importlib.abc.Loader.load_module` to set the :attr:`__package__` attribute on the returned module. If :attr:`__package__`
+   A :term:`decorator` for :meth:`importlib.abc.Loader.load_module` to set the
+   :attr:`__package__` attribute on the returned module. If :attr:`__package__`
    is set and has a value other than ``None`` it will not be changed.
 
    .. deprecated:: 3.4
@@ -1300,13 +1306,12 @@ an :term:`importer`.
    This class **only** works with loaders that define
    :meth:`~importlib.abc.Loader.exec_module` as control over what module type
    is used for the module is required. For those same reasons, the loader's
-   :meth:`~importlib.abc.Loader.create_module` method will be ignored (i.e., the
-   loader's method should only return ``None``; this excludes
-   :class:`BuiltinImporter` and :class:`ExtensionFileLoader`). Finally,
-   modules which substitute the object placed into :attr:`sys.modules` will
-   not work as there is no way to properly replace the module references
-   throughout the interpreter safely; :exc:`ValueError` is raised if such a
-   substitution is detected.
+   :meth:`~importlib.abc.Loader.create_module` method must return ``None`` or a
+   type for which its ``__class__`` attribute can be mutated along with not
+   using :term:`slots <__slots__>`. Finally, modules which substitute the object
+   placed into :attr:`sys.modules` will not work as there is no way to properly
+   replace the module references throughout the interpreter safely;
+   :exc:`ValueError` is raised if such a substitution is detected.
 
    .. note::
       For projects where startup time is critical, this class allows for
@@ -1316,6 +1321,11 @@ an :term:`importer`.
       postponed and thus occurring out of context.
 
    .. versionadded:: 3.5
+
+   .. versionchanged:: 3.6
+      Began calling :meth:`~importlib.abc.Loader.create_module`, removing the
+      compatibility warning for :class:`importlib.machinery.BuiltinImporter` and
+      :class:`importlib.machinery.ExtensionFileLoader`.
 
    .. classmethod:: factory(loader)
 
