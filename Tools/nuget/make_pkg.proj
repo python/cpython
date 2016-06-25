@@ -6,6 +6,7 @@
         <OutputName Condition="$(Platform) == 'x86'">$(OutputName)x86</OutputName>
         <OutputSuffix></OutputSuffix>
         <SupportSigning>false</SupportSigning>
+        <BuildForRelease Condition="$(BuildForRelease) == ''">true</BuildForRelease>
     </PropertyGroup>
 
     <Import Project="..\msi\msi.props" />
@@ -24,7 +25,7 @@
         <PythonArguments>"$(PythonExe)" "$(MSBuildThisFileDirectory)\..\msi\make_zip.py"</PythonArguments>
         <PythonArguments>$(PythonArguments) -t "$(IntermediateOutputPath)" -a $(ArchName)</PythonArguments>
         
-        <PipArguments>"$(IntermediateOutputPath)\python.exe" -B -c "import sys; sys.path.append('$(PySourcePath)\Lib'); import ensurepip; ensurepip._main()"</PipArguments>
+        <PipArguments>"$(IntermediateOutputPath)\python.exe" -B -c "import sys; sys.path.append(r'$(PySourcePath)\Lib'); import ensurepip; ensurepip._main()"</PipArguments>
         
         <NugetArguments>"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).nuspec"</NugetArguments>
         <NugetArguments>$(NugetArguments) -BasePath "$(IntermediateOutputPath)"</NugetArguments>
