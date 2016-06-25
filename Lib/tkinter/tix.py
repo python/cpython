@@ -1106,7 +1106,7 @@ class ListNoteBook(TixWidget):
 
     def pages(self):
         # Can't call subwidgets_all directly because we don't want .nbframe
-        names = self.tk.split(self.tk.call(self._w, 'pages'))
+        names = self.tk.splitlist(self.tk.call(self._w, 'pages'))
         ret = []
         for x in names:
             ret.append(self.subwidget(x))
@@ -1152,7 +1152,7 @@ class NoteBook(TixWidget):
 
     def pages(self):
         # Can't call subwidgets_all directly because we don't want .nbframe
-        names = self.tk.split(self.tk.call(self._w, 'pages'))
+        names = self.tk.splitlist(self.tk.call(self._w, 'pages'))
         ret = []
         for x in names:
             ret.append(self.subwidget(x))
@@ -1575,8 +1575,7 @@ class CheckList(TixWidget):
         '''Returns a list of items whose status matches status. If status is
      not specified, the list of items in the "on" status will be returned.
      Mode can be on, off, default'''
-        c = self.tk.split(self.tk.call(self._w, 'getselection', mode))
-        return self.tk.splitlist(c)
+        return self.tk.splitlist(self.tk.call(self._w, 'getselection', mode))
 
     def getstatus(self, entrypath):
         '''Returns the current status of entryPath.'''
@@ -1897,7 +1896,7 @@ class Grid(TixWidget, XView, YView):
                      or a real number following by the word chars
                      (e.g. 3.4chars) that sets the width of the column to the
                      given number of characters."""
-        return self.tk.split(self.tk.call(self._w, 'size', 'column', index,
+        return self.tk.splitlist(self.tk.call(self._w, 'size', 'column', index,
                              *self._options({}, kw)))
 
     def size_row(self, index, **kw):
@@ -1922,7 +1921,7 @@ class Grid(TixWidget, XView, YView):
                      or a real number following by the word chars
                      (e.g. 3.4chars) that sets the height of the row to the
                      given number of characters."""
-        return self.tk.split(self.tk.call(
+        return self.tk.splitlist(self.tk.call(
                     self, 'size', 'row', index, *self._options({}, kw)))
 
     def unset(self, x, y):

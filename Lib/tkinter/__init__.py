@@ -383,7 +383,7 @@ class Variable:
             pass
     def trace_vinfo(self):
         """Return all trace callback information."""
-        return [self._tk.split(x) for x in self._tk.splitlist(
+        return [self._tk.splitlist(x) for x in self._tk.splitlist(
             self._tk.call("trace", "vinfo", self._name))]
     def __eq__(self, other):
         """Comparison for equality (==).
@@ -1043,18 +1043,16 @@ class Misc:
     def winfo_visualid(self):
         """Return the X identifier for the visual for this widget."""
         return self.tk.call('winfo', 'visualid', self._w)
-    def winfo_visualsavailable(self, includeids=0):
+    def winfo_visualsavailable(self, includeids=False):
         """Return a list of all visuals available for the screen
         of this widget.
 
         Each item in the list consists of a visual name (see winfo_visual), a
-        depth and if INCLUDEIDS=1 is given also the X identifier."""
-        data = self.tk.split(
-            self.tk.call('winfo', 'visualsavailable', self._w,
-                     includeids and 'includeids' or None))
-        if isinstance(data, str):
-            data = [self.tk.split(data)]
-        return [self.__winfo_parseitem(x) for x in  data]
+        depth and if includeids is true is given also the X identifier."""
+        data = self.tk.call('winfo', 'visualsavailable', self._w,
+                            'includeids' if includeids else None)
+        data = [self.tk.splitlist(x) for x in self.tk.splitlist(data)]
+        return [self.__winfo_parseitem(x) for x in data]
     def __winfo_parseitem(self, t):
         """Internal function."""
         return t[:1] + tuple(map(self.__winfo_getint, t[1:]))
