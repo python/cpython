@@ -3,7 +3,7 @@ preserve
 [clinic start generated code]*/
 
 PyDoc_STRVAR(zlib_compress__doc__,
-"compress($module, /, data, level=Z_DEFAULT_COMPRESSION)\n"
+"compress($module, data, /, level=Z_DEFAULT_COMPRESSION)\n"
 "--\n"
 "\n"
 "Returns a bytes object containing compressed data.\n"
@@ -23,7 +23,7 @@ static PyObject *
 zlib_compress(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
-    static char *_keywords[] = {"data", "level", NULL};
+    static char *_keywords[] = {"", "level", NULL};
     Py_buffer data = {NULL, NULL};
     int level = Z_DEFAULT_COMPRESSION;
 
@@ -460,4 +460,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=9bd8a093baa653b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ba904dec30cc1a1a input=a9049054013a1b77]*/

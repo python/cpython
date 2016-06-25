@@ -143,6 +143,7 @@ zlib.compress
 
     data: Py_buffer
         Binary data to be compressed.
+    /
     level: int(c_default="Z_DEFAULT_COMPRESSION") = Z_DEFAULT_COMPRESSION
         Compression level, in 0-9 or -1.
 
@@ -151,7 +152,7 @@ Returns a bytes object containing compressed data.
 
 static PyObject *
 zlib_compress_impl(PyModuleDef *module, Py_buffer *data, int level)
-/*[clinic end generated code: output=1b97589132b203b4 input=abed30f4fa14e213]*/
+/*[clinic end generated code: output=1b97589132b203b4 input=638d54b6315dbed3]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;
