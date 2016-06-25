@@ -163,8 +163,10 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
         self.assertEqual(zlib.decompress(x), HAMLET_SCENE)
 
     def test_keywords(self):
-        x = zlib.compress(data=HAMLET_SCENE, level=3)
+        x = zlib.compress(HAMLET_SCENE, level=3)
         self.assertEqual(zlib.decompress(x), HAMLET_SCENE)
+        with self.assertRaises(TypeError):
+            zlib.compress(data=HAMLET_SCENE, level=3)
 
     def test_speech128(self):
         # compress more data
