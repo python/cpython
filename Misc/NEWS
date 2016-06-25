@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Fix a scoping issue in importlib.util.LazyLoader which triggered an
+  UnboundLocalError when lazy-loading a module that was already put into
+  sys.modules.
+
 - Issue #27079: Fixed curses.ascii functions isblank(), iscntrl() and ispunct().
 
 - Issue #26754: Some functions (compile() etc) accepted a filename argument
