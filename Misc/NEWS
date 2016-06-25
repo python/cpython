@@ -2,6 +2,17 @@
 Python News
 +++++++++++
 
+What's New in Python 3.4.5?
+===========================
+
+Release date: 2016-06-26
+
+Tests
+-----
+
+- Issue #26867: Ubuntu's openssl OP_NO_SSLv3 is forced on by default; fix test.
+
+
 What's New in Python 3.4.5rc1?
 ==============================
 
