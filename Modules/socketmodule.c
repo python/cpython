@@ -6247,9 +6247,6 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, AF_UNSPEC);
 #endif
     PyModule_AddIntMacro(m, AF_INET);
-#ifdef AF_INET6
-    PyModule_AddIntMacro(m, AF_INET6);
-#endif /* AF_INET6 */
 #if defined(AF_UNIX)
     PyModule_AddIntMacro(m, AF_UNIX);
 #endif /* AF_UNIX */
