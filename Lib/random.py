@@ -606,11 +606,11 @@ class Random(_random.Random):
 
         # This version due to Janne Sinkkonen, and matches all the std
         # texts (e.g., Knuth Vol 2 Ed 3 pg 134 "the beta distribution").
-        y = self.gammavariate(alpha, 1.)
+        y = self.gammavariate(alpha, 1.0)
         if y == 0:
             return 0.0
         else:
-            return y / (y + self.gammavariate(beta, 1.))
+            return y / (y + self.gammavariate(beta, 1.0))
 
 ## -------------------- Pareto --------------------
 
