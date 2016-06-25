@@ -58,7 +58,7 @@ The available exception and functions in this module are:
    Raises the :exc:`error` exception if any error occurs.
 
    .. versionchanged:: 3.6
-      *level* is now supported as keyword arguments.
+      *level* can now be used as a keyword parameter.
 
 
 .. function:: compressobj(level=-1, method=DEFLATED, wbits=15, memLevel=8, strategy=Z_DEFAULT_STRATEGY[, zdict])
