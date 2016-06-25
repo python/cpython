@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 3
 Library
 -------
 
+- Issue #26243: Only the level argument to zlib.compress() is keyword argument
+  now.  The first argument is positional-only.
+
 - Issue #27038: Expose the DirEntry type as os.DirEntry. Code patch by
   Jelle Zijlstra.
 
