@@ -57,6 +57,15 @@ Library
 
 - Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
 
+IDLE
+----
+
+- Issue #27365: Allow non-ascii chars in IDLE NEWS.txt, for contributor names.
+
+- Issue #27245: IDLE: Cleanly delete custom themes and key bindings.
+  Previously, when IDLE was started from a console or by import, a cascade
+  of warnings was emitted.  Patch by Serhiy Storchaka.
+
 C API
 -----
 
