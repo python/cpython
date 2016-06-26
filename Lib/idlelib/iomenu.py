@@ -10,57 +10,60 @@ import tkinter.filedialog as tkFileDialog
 import tkinter.messagebox as tkMessageBox
 from tkinter.simpledialog import askstring
 
+import idlelib
 from idlelib.config import idleConf
 
-
-# Try setting the locale, so that we can find out
-# what encoding to use
-try:
-    import locale
-    locale.setlocale(locale.LC_CTYPE, "")
-except (ImportError, locale.Error):
-    pass
-
-# Encoding for file names
-filesystemencoding = sys.getfilesystemencoding()  ### currently unused
-
-locale_encoding = 'ascii'
-if sys.platform == 'win32':
-    # On Windows, we could use "mbcs". However, to give the user
-    # a portable encoding name, we need to find the code page
-    try:
-        locale_encoding = locale.getdefaultlocale()[1]
-        codecs.lookup(locale_encoding)
-    except LookupError:
-        pass
+if idlelib.testing:  # Set True by test.test_idle to avoid setlocale.
+    encoding = 'utf-8'
 else:
+    # Try setting the locale, so that we can find out
+    # what encoding to use
     try:
-        # Different things can fail here: the locale module may not be
-        # loaded, it may not offer nl_langinfo, or CODESET, or the
-        # resulting codeset may be unknown to Python. We ignore all
-        # these problems, falling back to ASCII
-        locale_encoding = locale.nl_langinfo(locale.CODESET)
-        if locale_encoding is None or locale_encoding is '':
-            # situation occurs on Mac OS X
-            locale_encoding = 'ascii'
-        codecs.lookup(locale_encoding)
-    except (NameError, AttributeError, LookupError):
-        # Try getdefaultlocale: it parses environment variables,
-        # which may give a clue. Unfortunately, getdefaultlocale has
-        # bugs that can cause ValueError.
+        import locale
+        locale.setlocale(locale.LC_CTYPE, "")
+    except (ImportError, locale.Error):
+        pass
+
+    locale_decode = 'ascii'
+    if sys.platform == 'win32':
+        # On Windows, we could use "mbcs". However, to give the user
+        # a portable encoding name, we need to find the code page
         try:
             locale_encoding = locale.getdefaultlocale()[1]
+            codecs.lookup(locale_encoding)
+        except LookupError:
+            pass
+    else:
+        try:
+            # Different things can fail here: the locale module may not be
+            # loaded, it may not offer nl_langinfo, or CODESET, or the
+            # resulting codeset may be unknown to Python. We ignore all
+            # these problems, falling back to ASCII
+            locale_encoding = locale.nl_langinfo(locale.CODESET)
             if locale_encoding is None or locale_encoding is '':
                 # situation occurs on Mac OS X
                 locale_encoding = 'ascii'
             codecs.lookup(locale_encoding)
-        except (ValueError, LookupError):
-            pass
+        except (NameError, AttributeError, LookupError):
+            # Try getdefaultlocale: it parses environment variables,
+            # which may give a clue. Unfortunately, getdefaultlocale has
+            # bugs that can cause ValueError.
+            try:
+                locale_encoding = locale.getdefaultlocale()[1]
+                if locale_encoding is None or locale_encoding is '':
+                    # situation occurs on Mac OS X
+                    locale_encoding = 'ascii'
+                codecs.lookup(locale_encoding)
+            except (ValueError, LookupError):
+                pass
 
-locale_encoding = locale_encoding.lower()
+    locale_encoding = locale_encoding.lower()
 
-encoding = locale_encoding  ### KBK 07Sep07  This is used all over IDLE, check!
-                            ### 'encoding' is used below in encode(), check!
+    encoding = locale_encoding
+    # Encoding is used in multiple files; locale_encoding nowhere.
+    # The only use of 'encoding' below is in _decode as initial value
+    # of deprecated block asking user for encoding.
+    # Perhaps use elsewhere should be reviewed.
 
 coding_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(r'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -304,7 +307,7 @@ class IOBinding:
                 "The file's encoding is invalid for Python 3.x.\n"
                 "IDLE will convert it to UTF-8.\n"
                 "What is the current encoding of the file?",
-                initialvalue = locale_encoding,
+                initialvalue = encoding,
                 parent = self.editwin.text)
 
             if enc:
@@ -564,5 +567,8 @@ def _io_binding(parent):  # htest #
     IOBinding(editwin)
 
 if __name__ == "__main__":
+    import unittest
+    unittest.main('idlelib.idle_test.test_iomenu', verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_io_binding)
