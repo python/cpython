@@ -89,7 +89,7 @@ class TestVariable(TestBase):
 
     def test_trace_old(self):
         # Old interface
-        v = Var(self.root)
+        v = Variable(self.root)
         vname = str(v)
         trace = []
         def read_tracer(*args):
@@ -138,7 +138,7 @@ class TestVariable(TestBase):
         self.assertEqual(trace, [('write', vname, '', 'u')])
 
     def test_trace(self):
-        v = Var(self.root)
+        v = Variable(self.root)
         vname = str(v)
         trace = []
         def read_tracer(*args):
