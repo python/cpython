@@ -465,24 +465,24 @@ class ConfigDialog(Toplevel):
         return frame
 
     def AttachVarCallbacks(self):
-        self.fontSize.trace_variable('w', self.VarChanged_font)
-        self.fontName.trace_variable('w', self.VarChanged_font)
-        self.fontBold.trace_variable('w', self.VarChanged_font)
-        self.spaceNum.trace_variable('w', self.VarChanged_spaceNum)
-        self.colour.trace_variable('w', self.VarChanged_colour)
-        self.builtinTheme.trace_variable('w', self.VarChanged_builtinTheme)
-        self.customTheme.trace_variable('w', self.VarChanged_customTheme)
-        self.themeIsBuiltin.trace_variable('w', self.VarChanged_themeIsBuiltin)
-        self.highlightTarget.trace_variable('w', self.VarChanged_highlightTarget)
-        self.keyBinding.trace_variable('w', self.VarChanged_keyBinding)
-        self.builtinKeys.trace_variable('w', self.VarChanged_builtinKeys)
-        self.customKeys.trace_variable('w', self.VarChanged_customKeys)
-        self.keysAreBuiltin.trace_variable('w', self.VarChanged_keysAreBuiltin)
-        self.winWidth.trace_variable('w', self.VarChanged_winWidth)
-        self.winHeight.trace_variable('w', self.VarChanged_winHeight)
-        self.startupEdit.trace_variable('w', self.VarChanged_startupEdit)
-        self.autoSave.trace_variable('w', self.VarChanged_autoSave)
-        self.encoding.trace_variable('w', self.VarChanged_encoding)
+        self.fontSize.trace_add('write', self.VarChanged_font)
+        self.fontName.trace_add('write', self.VarChanged_font)
+        self.fontBold.trace_add('write', self.VarChanged_font)
+        self.spaceNum.trace_add('write', self.VarChanged_spaceNum)
+        self.colour.trace_add('write', self.VarChanged_colour)
+        self.builtinTheme.trace_add('write', self.VarChanged_builtinTheme)
+        self.customTheme.trace_add('write', self.VarChanged_customTheme)
+        self.themeIsBuiltin.trace_add('write', self.VarChanged_themeIsBuiltin)
+        self.highlightTarget.trace_add('write', self.VarChanged_highlightTarget)
+        self.keyBinding.trace_add('write', self.VarChanged_keyBinding)
+        self.builtinKeys.trace_add('write', self.VarChanged_builtinKeys)
+        self.customKeys.trace_add('write', self.VarChanged_customKeys)
+        self.keysAreBuiltin.trace_add('write', self.VarChanged_keysAreBuiltin)
+        self.winWidth.trace_add('write', self.VarChanged_winWidth)
+        self.winHeight.trace_add('write', self.VarChanged_winHeight)
+        self.startupEdit.trace_add('write', self.VarChanged_startupEdit)
+        self.autoSave.trace_add('write', self.VarChanged_autoSave)
+        self.encoding.trace_add('write', self.VarChanged_encoding)
 
     def remove_var_callbacks(self):
         "Remove callbacks to prevent memory leaks."
@@ -493,7 +493,7 @@ class ConfigDialog(Toplevel):
                 self.keyBinding, self.builtinKeys, self.customKeys,
                 self.keysAreBuiltin, self.winWidth, self.winHeight,
                 self.startupEdit, self.autoSave, self.encoding,):
-            var.trace_vdelete('w', var.trace_vinfo()[0][1])
+            var.trace_remove('write', var.trace_info()[0][1])
 
     def VarChanged_font(self, *params):
         '''When one font attribute changes, save them all, as they are
