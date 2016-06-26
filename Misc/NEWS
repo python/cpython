@@ -87,6 +87,18 @@ Library
 IDLE
 ----
 
+- Issue #27372: Test_idle no longer changes the locale.
+
+- Issue #27365: Allow non-ascii chars in IDLE NEWS.txt, for contributor names.
+
+- Issue #27245: IDLE: Cleanly delete custom themes and key bindings.
+  Previously, when IDLE was started from a console or by import, a cascade
+  of warnings was emitted.  Patch by Serhiy Storchaka.
+
+- Issue #24137: Run IDLE, test_idle, and htest with tkinter default root disabled.
+  Fix code and tests that fail with this restriction.
+  Fix htests to not create a second and redundant root and mainloop.
+
 - Issue #27310: Fix IDLE.app failure to launch on OS X due to vestigial import.
 
 C API
