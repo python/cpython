@@ -343,16 +343,9 @@ class Variable:
     def get(self):
         """Return value of variable."""
         return self._tk.globalgetvar(self._name)
-    def trace_variable(self, mode, callback):
-        """Define a trace callback for the variable.
 
-        MODE is one of "r", "w", "u" for read, write, undefine.
-        CALLBACK must be a function which is called when
-        the variable is read, written or undefined.
-
-        Return the name of the callback.
-        """
-        f = CallWrapper(callback, None, self).__call__
+    def _register(self, callback):
+        f = CallWrapper(callback, None, self._root).__call__
         cbname = repr(id(f))
         try:
             callback = callback.__func__
@@ -366,25 +359,99 @@ class Variable:
         if self._tclCommands is None:
             self._tclCommands = []
         self._tclCommands.append(cbname)
+        return cbname
+
+    def trace_add(self, mode, callback):
+        """Define a trace callback for the variable.
+
+        Mode is one of "read", "write", "unset", or a list or tuple of
+        such strings.
+        Callback must be a function which is called when the variable is
+        read, written or unset.
+
+        Return the name of the callback.
+        """
+        cbname = self._register(callback)
+        self._tk.call('trace', 'add', 'variable',
+                      self._name, mode, (cbname,))
+        return cbname
+
+    def trace_remove(self, mode, cbname):
+        """Delete the trace callback for a variable.
+
+        Mode is one of "read", "write", "unset" or a list or tuple of
+        such strings.  Must be same as were specified in trace_add().
+        cbname is the name of the callback returned from trace_add().
+        """
+        self._tk.call('trace', 'remove', 'variable',
+                      self._name, mode, cbname)
+        for m, ca in self.trace_info():
+            if self._tk.splitlist(ca)[0] == cbname:
+                break
+        else:
+            self._tk.deletecommand(cbname)
+            try:
+                self._tclCommands.remove(cbname)
+            except ValueError:
+                pass
+
+    def trace_info(self):
+        """Return all trace callback information."""
+        splitlist = self._tk.splitlist
+        return [(splitlist(k), v) for k, v in map(splitlist,
+            splitlist(self._tk.call('trace', 'info', 'variable', self._name)))]
+
+    def trace_variable(self, mode, callback):
+        """Define a trace callback for the variable.
+
+        MODE is one of "r", "w", "u" for read, write, undefine.
+        CALLBACK must be a function which is called when
+        the variable is read, written or undefined.
+
+        Return the name of the callback.
+
+        This deprecated method wraps a deprecated Tcl method that will
+        likely be removed in the future.  Use trace_add() instead.
+        """
+        # TODO: Add deprecation warning
+        cbname = self._register(callback)
         self._tk.call("trace", "variable", self._name, mode, cbname)
         return cbname
+
     trace = trace_variable
+
     def trace_vdelete(self, mode, cbname):
         """Delete the trace callback for a variable.
 
         MODE is one of "r", "w", "u" for read, write, undefine.
         CBNAME is the name of the callback returned from trace_variable or trace.
+
+        This deprecated method wraps a deprecated Tcl method that will
+        likely be removed in the future.  Use trace_remove() instead.
         """
+        # TODO: Add deprecation warning
         self._tk.call("trace", "vdelete", self._name, mode, cbname)
-        self._tk.deletecommand(cbname)
-        try:
-            self._tclCommands.remove(cbname)
-        except ValueError:
-            pass
+        cbname = self._tk.splitlist(cbname)[0]
+        for m, ca in self.trace_info():
+            if self._tk.splitlist(ca)[0] == cbname:
+                break
+        else:
+            self._tk.deletecommand(cbname)
+            try:
+                self._tclCommands.remove(cbname)
+            except ValueError:
+                pass
+
     def trace_vinfo(self):
-        """Return all trace callback information."""
+        """Return all trace callback information.
+
+        This deprecated method wraps a deprecated Tcl method that will
+        likely be removed in the future.  Use trace_info() instead.
+        """
+        # TODO: Add deprecation warning
         return [self._tk.splitlist(x) for x in self._tk.splitlist(
             self._tk.call("trace", "vinfo", self._name))]
+
     def __eq__(self, other):
         """Comparison for equality (==).
 

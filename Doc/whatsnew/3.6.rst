@@ -391,6 +391,19 @@ telnetlib
 Stéphane Wirtel in :issue:`25485`).
 
 
+tkinter
+-------
+
+Added methods :meth:`~tkinter.Variable.trace_add`,
+:meth:`~tkinter.Variable.trace_remove` and :meth:`~tkinter.Variable.trace_info`
+in the :class:`tkinter.Variable` class.  They replace old methods
+:meth:`~tkinter.Variable.trace_variable`, :meth:`~tkinter.Variable.trace`,
+:meth:`~tkinter.Variable.trace_vdelete` and
+:meth:`~tkinter.Variable.trace_vinfo` that use obsolete Tcl commands and might
+not work in future versions of Tcl.
+(Contributed by Serhiy Storchaka in :issue:`22115`).
+
+
 typing
 ------
 
