@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22115: Fixed tracing Tkinter variables: trace_vdelete() with wrong
+  mode no longer break tracing, trace_vinfo() now always returns a list of
+  pairs of strings.
+
 - Issue #27079: Fixed curses.ascii functions isblank(), iscntrl() and ispunct().
 
 - Issue #22636: Avoid shell injection problems with

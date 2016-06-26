@@ -1,5 +1,5 @@
 import unittest
-
+import gc
 from Tkinter import (Variable, StringVar, IntVar, DoubleVar, BooleanVar, Tcl,
                      TclError)
 
@@ -66,6 +66,55 @@ class TestVariable(TestBase):
             self.root.globalsetvar('var\x00name', "value")
         with self.assertRaises(ValueError):
             self.root.setvar('var\x00name', "value")
+
+    def test_trace(self):
+        v = Variable(self.root)
+        vname = str(v)
+        trace = []
+        def read_tracer(*args):
+            trace.append(('read',) + args)
+        def write_tracer(*args):
+            trace.append(('write',) + args)
+        cb1 = v.trace_variable('r', read_tracer)
+        cb2 = v.trace_variable('wu', write_tracer)
+        self.assertEqual(sorted(v.trace_vinfo()), [('r', cb1), ('wu', cb2)])
+        self.assertEqual(trace, [])
+
+        v.set('spam')
+        self.assertEqual(trace, [('write', vname, '', 'w')])
+
+        trace = []
+        v.get()
+        self.assertEqual(trace, [('read', vname, '', 'r')])
+
+        trace = []
+        info = sorted(v.trace_vinfo())
+        v.trace_vdelete('w', cb1)  # Wrong mode
+        self.assertEqual(sorted(v.trace_vinfo()), info)
+        with self.assertRaises(TclError):
+            v.trace_vdelete('r', 'spam')  # Wrong command name
+        self.assertEqual(sorted(v.trace_vinfo()), info)
+        v.trace_vdelete('r', (cb1, 43)) # Wrong arguments
+        self.assertEqual(sorted(v.trace_vinfo()), info)
+        v.get()
+        self.assertEqual(trace, [('read', vname, '', 'r')])
+
+        trace = []
+        v.trace_vdelete('r', cb1)
+        self.assertEqual(v.trace_vinfo(), [('wu', cb2)])
+        v.get()
+        self.assertEqual(trace, [])
+
+        trace = []
+        del write_tracer
+        gc.collect()
+        v.set('eggs')
+        self.assertEqual(trace, [('write', vname, '', 'w')])
+
+        #trace = []
+        #del v
+        #gc.collect()
+        #self.assertEqual(trace, [('write', vname, '', 'u')])
 
 
 class TestStringVar(TestBase):
