@@ -1,6 +1,17 @@
+What's New in IDLE 2.7.13?
+==========================
+*Release date: 2017-01-01?*
+
+- Issue #27365: Allow non-ascii chars in IDLE NEWS.txt, for contributor names.
+
+- Issue #27245: IDLE: Cleanly delete custom themes and key bindings.
+  Previously, when IDLE was started from a console or by import, a cascade
+  of warnings was emitted.  Patch by Serhiy Storchaka.
+
+
 What's New in IDLE 2.7.12?
 ==========================
-*Release date: 2015-06-30?*
+*Release date: 2015-06-25*
 
 - Issue #5124: Paste with text selected now replaces the selection on X11.
   This matches how paste works on Windows, Mac, most modern Linux apps,
