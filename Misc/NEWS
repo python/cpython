@@ -13,6 +13,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #22115: Fixed tracing Tkinter variables: trace_vdelete() with wrong
+  mode no longer break tracing, trace_vinfo() now always returns a list of
+  pairs of strings, tracing in the "u" mode now works.
+
 - Fix a scoping issue in importlib.util.LazyLoader which triggered an
   UnboundLocalError when lazy-loading a module that was already put into
   sys.modules.
