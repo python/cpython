@@ -1000,8 +1000,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
 /* OpCode prediction macros
     Some opcodes tend to come in pairs thus making it possible to
     predict the second code when the first is run.  For example,
-    COMPARE_OP is often followed by JUMP_IF_FALSE or JUMP_IF_TRUE.  And,
-    those opcodes are often followed by a POP_TOP.
+    COMPARE_OP is often followed by POP_JUMP_IF_FALSE or POP_JUMP_IF_TRUE.
 
     Verifying the prediction costs a single high-speed test of a register
     variable against a constant.  If the pairing was good, then the
@@ -1379,6 +1378,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             FAST_DISPATCH();
         }
 
+        PREDICTED(LOAD_CONST);
         TARGET(LOAD_CONST) {
             PyObject *value = GETITEM(consts, oparg);
             Py_INCREF(value);
@@ -2008,6 +2008,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             }
 
             SET_TOP(awaitable);
+            PREDICT(LOAD_CONST);
             DISPATCH();
         }
 
@@ -2050,9 +2051,11 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 Py_DECREF(next_iter);
 
             PUSH(awaitable);
+            PREDICT(LOAD_CONST);
             DISPATCH();
         }
 
+        PREDICTED(GET_AWAITABLE);
         TARGET(GET_AWAITABLE) {
             PyObject *iterable = TOP();
             PyObject *iter = _PyCoro_GetAwaitableIter(iterable);
@@ -2080,6 +2083,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 goto error;
             }
 
+            PREDICT(LOAD_CONST);
             DISPATCH();
         }
 
@@ -2135,6 +2139,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        PREDICTED(POP_BLOCK);
         TARGET(POP_BLOCK) {
             PyTryBlock *b = PyFrame_BlockPop(f);
             UNWIND_BLOCK(b);
@@ -3015,6 +3020,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             if (iter == NULL)
                 goto error;
             PREDICT(FOR_ITER);
+            PREDICT(CALL_FUNCTION);
             DISPATCH();
         }
 
@@ -3043,6 +3049,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 if (iter == NULL)
                     goto error;
             }
+            PREDICT(LOAD_CONST);
             DISPATCH();
         }
 
@@ -3068,6 +3075,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             STACKADJ(-1);
             Py_DECREF(iter);
             JUMPBY(oparg);
+            PREDICT(POP_BLOCK);
             DISPATCH();
         }
 
@@ -3117,6 +3125,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             if (res == NULL)
                 goto error;
             PUSH(res);
+            PREDICT(GET_AWAITABLE);
             DISPATCH();
         }
 
@@ -3265,6 +3274,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             DISPATCH();
         }
 
+        PREDICTED(CALL_FUNCTION);
         TARGET(CALL_FUNCTION) {
             PyObject **sp, *res;
             PCALL(PCALL_ALL);
