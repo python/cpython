@@ -2820,21 +2820,13 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             Py_INCREF(func);
             from = POP();
             level = TOP();
-            if (PyLong_AsLong(level) != -1 || PyErr_Occurred())
-                args = PyTuple_Pack(5,
+            args = PyTuple_Pack(5,
                             name,
                             f->f_globals,
                             f->f_locals == NULL ?
                                   Py_None : f->f_locals,
                             from,
                             level);
-            else
-                args = PyTuple_Pack(4,
-                            name,
-                            f->f_globals,
-                            f->f_locals == NULL ?
-                                  Py_None : f->f_locals,
-                            from);
             Py_DECREF(level);
             Py_DECREF(from);
             if (args == NULL) {
