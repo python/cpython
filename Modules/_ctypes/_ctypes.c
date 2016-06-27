@@ -1124,7 +1124,7 @@ CharArray_get_raw(CDataObject *self)
 static PyObject *
 CharArray_get_value(CDataObject *self)
 {
-    int i;
+    Py_ssize_t i;
     char *ptr = self->b_ptr;
     for (i = 0; i < self->b_size; ++i)
         if (*ptr++ == '\0')
@@ -1180,9 +1180,9 @@ static PyGetSetDef CharArray_getsets[] = {
 static PyObject *
 WCharArray_get_value(CDataObject *self)
 {
-    unsigned int i;
+    Py_ssize_t i;
     wchar_t *ptr = (wchar_t *)self->b_ptr;
-    for (i = 0; i < self->b_size/sizeof(wchar_t); ++i)
+    for (i = 0; i < self->b_size/(Py_ssize_t)sizeof(wchar_t); ++i)
         if (*ptr++ == (wchar_t)0)
             break;
     return PyUnicode_FromWideChar((wchar_t *)self->b_ptr, i);
@@ -1211,7 +1211,7 @@ WCharArray_set_value(CDataObject *self, PyObject *value)
     wstr = PyUnicode_AsUnicodeAndSize(value, &len);
     if (wstr == NULL)
         return -1;
-    if ((unsigned)len > self->b_size/sizeof(wchar_t)) {
+    if ((size_t)len > self->b_size/sizeof(wchar_t)) {
         PyErr_SetString(PyExc_ValueError,
                         "string too long");
         result = -1;
@@ -1252,8 +1252,10 @@ add_methods(PyTypeObject *type, PyMethodDef *meth)
         descr = PyDescr_NewMethod(type, meth);
         if (descr == NULL)
             return -1;
-        if (PyDict_SetItemString(dict,meth->ml_name, descr) < 0)
+        if (PyDict_SetItemString(dict, meth->ml_name, descr) < 0) {
+            Py_DECREF(descr);
             return -1;
+        }
         Py_DECREF(descr);
     }
     return 0;
@@ -1268,8 +1270,10 @@ add_members(PyTypeObject *type, PyMemberDef *memb)
         descr = PyDescr_NewMember(type, memb);
         if (descr == NULL)
             return -1;
-        if (PyDict_SetItemString(dict, memb->name, descr) < 0)
+        if (PyDict_SetItemString(dict, memb->name, descr) < 0) {
+            Py_DECREF(descr);
             return -1;
+        }
         Py_DECREF(descr);
     }
     return 0;
@@ -1285,8 +1289,10 @@ add_getset(PyTypeObject *type, PyGetSetDef *gsp)
         descr = PyDescr_NewGetSet(type, gsp);
         if (descr == NULL)
             return -1;
-        if (PyDict_SetItemString(dict, gsp->name, descr) < 0)
+        if (PyDict_SetItemString(dict, gsp->name, descr) < 0) {
+            Py_DECREF(descr);
             return -1;
+        }
         Py_DECREF(descr);
     }
     return 0;
@@ -1778,6 +1784,7 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 
     newname = PyUnicode_Concat(name, suffix);
     if (newname == NULL) {
+        Py_DECREF(swapped_args);
         return NULL;
     }
 
@@ -1797,8 +1804,10 @@ static PyObject *CreateSwappedType(PyTypeObject *type, PyObject *args, PyObject 
 
     stgdict = (StgDictObject *)PyObject_CallObject(
         (PyObject *)&PyCStgDict_Type, NULL);
-    if (!stgdict) /* XXX leaks result! */
+    if (!stgdict) {
+        Py_DECREF(result);
         return NULL;
+    }
 
     stgdict->ffi_type_pointer = *fmt->pffi_type;
     stgdict->align = fmt->pffi_type->alignment;
@@ -1978,8 +1987,10 @@ PyCSimpleType_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
             PyObject *meth;
             int x;
             meth = PyDescr_NewClassMethod(result, ml);
-            if (!meth)
+            if (!meth) {
+                Py_DECREF(result);
                 return NULL;
+            }
             x = PyDict_SetItemString(result->tp_dict,
                                      ml->ml_name,
                                      meth);
@@ -2159,8 +2170,10 @@ converters_from_argtypes(PyObject *ob)
 
     nArgs = PyTuple_GET_SIZE(ob);
     converters = PyTuple_New(nArgs);
-    if (!converters)
+    if (!converters) {
+        Py_DECREF(ob);
         return NULL;
+    }
 
     /* I have to check if this is correct. Using c_char, which has a size
        of 1, will be assumed to be pushed as only one byte!
@@ -4052,14 +4065,9 @@ _init_pos_args(PyObject *self, PyTypeObject *type,
         }
         val = PyTuple_GET_ITEM(args, i + index);
         if (kwds && PyDict_GetItem(kwds, name)) {
-            char *field = PyBytes_AsString(name);
-            if (field == NULL) {
-                PyErr_Clear();
-                field = "???";
-            }
             PyErr_Format(PyExc_TypeError,
-                         "duplicate values for field '%s'",
-                         field);
+                         "duplicate values for field %R",
+                         name);
             Py_DECREF(pair);
             Py_DECREF(name);
             return -1;

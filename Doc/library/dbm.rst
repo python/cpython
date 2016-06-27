@@ -128,6 +128,9 @@ The individual submodules are described in the following sections.
    :platform: Unix
    :synopsis: GNU's reinterpretation of dbm.
 
+**Source code:** :source:`Lib/dbm/gnu.py`
+
+--------------
 
 This module is quite similar to the :mod:`dbm` module, but uses the GNU library
 ``gdbm`` instead to provide some additional functionality.  Please note that the
@@ -237,6 +240,9 @@ supported.
    :platform: Unix
    :synopsis: The standard "database" interface, based on ndbm.
 
+**Source code:** :source:`Lib/dbm/ndbm.py`
+
+--------------
 
 The :mod:`dbm.ndbm` module provides an interface to the Unix "(n)dbm" library.
 Dbm objects behave like mappings (dictionaries), except that keys and values are
@@ -299,6 +305,8 @@ to locate the appropriate header file to simplify building this module.
 .. module:: dbm.dumb
    :synopsis: Portable implementation of the simple DBM interface.
 
+**Source code:** :source:`Lib/dbm/dumb.py`
+
 .. index:: single: databases
 
 .. note::
@@ -307,6 +315,8 @@ to locate the appropriate header file to simplify building this module.
    :mod:`dbm` module when a more robust module is not available. The :mod:`dbm.dumb`
    module is not written for speed and is not nearly as heavily used as the other
    database modules.
+
+--------------
 
 The :mod:`dbm.dumb` module provides a persistent dictionary-like interface which
 is written entirely in Python.  Unlike other modules such as :mod:`dbm.gnu` no

@@ -751,6 +751,7 @@ class ConfigDialog(Toplevel):
         if not tkMessageBox.askyesno(
                 'Delete Key Set',  delmsg % keySetName, parent=self):
             return
+        self.DeactivateCurrentConfig()
         #remove key set from config
         idleConf.userCfg['keys'].remove_section(keySetName)
         if keySetName in self.changedItems['keys']:
@@ -769,7 +770,8 @@ class ConfigDialog(Toplevel):
         self.keysAreBuiltin.set(idleConf.defaultCfg['main'].Get('Keys', 'default'))
         self.builtinKeys.set(idleConf.defaultCfg['main'].Get('Keys', 'name'))
         #user can't back out of these changes, they must be applied now
-        self.Apply()
+        self.SaveAllChangedConfigs()
+        self.ActivateConfigChanges()
         self.SetKeysType()
 
     def DeleteCustomTheme(self):
@@ -778,6 +780,7 @@ class ConfigDialog(Toplevel):
         if not tkMessageBox.askyesno(
                 'Delete Theme',  delmsg % themeName, parent=self):
             return
+        self.DeactivateCurrentConfig()
         #remove theme from config
         idleConf.userCfg['highlight'].remove_section(themeName)
         if themeName in self.changedItems['highlight']:
@@ -796,7 +799,8 @@ class ConfigDialog(Toplevel):
         self.themeIsBuiltin.set(idleConf.defaultCfg['main'].Get('Theme', 'default'))
         self.builtinTheme.set(idleConf.defaultCfg['main'].Get('Theme', 'name'))
         #user can't back out of these changes, they must be applied now
-        self.Apply()
+        self.SaveAllChangedConfigs()
+        self.ActivateConfigChanges()
         self.SetThemeType()
 
     def GetColour(self):

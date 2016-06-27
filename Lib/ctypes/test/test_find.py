@@ -1,5 +1,5 @@
 import unittest
-import os
+import os, os.path
 import sys
 import test.support
 from ctypes import *
@@ -63,6 +63,11 @@ class Test_OpenGL_libs(unittest.TestCase):
         if self.gle is None:
             self.skipTest('lib_gle not available')
         self.gle.gleGetJoinStyle
+
+    def test_shell_injection(self):
+        result = find_library('; echo Hello shell > ' + test.support.TESTFN)
+        self.assertFalse(os.path.lexists(test.support.TESTFN))
+        self.assertIsNone(result)
 
 # On platforms where the default shared library suffix is '.so',
 # at least some libraries can be loaded as attributes of the cdll

@@ -59,10 +59,10 @@ Module Objects
    .. index:: single: __dict__ (module attribute)
 
    Return the dictionary object that implements *module*'s namespace; this object
-   is the same as the :attr:`__dict__` attribute of the module object.  This
+   is the same as the :attr:`~object.__dict__` attribute of the module object.  This
    function never fails.  It is recommended extensions use other
    :c:func:`PyModule_\*` and :c:func:`PyObject_\*` functions rather than directly
-   manipulate a module's :attr:`__dict__`.
+   manipulate a module's :attr:`~object.__dict__`.
 
 
 .. c:function:: PyObject* PyModule_GetNameObject(PyObject *module)

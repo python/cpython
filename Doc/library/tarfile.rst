@@ -64,19 +64,19 @@ Some facts and figures:
    | ``'x'`` or       | Create a tarfile exclusively without        |
    | ``'x:'``         | compression.                                |
    |                  | Raise an :exc:`FileExistsError` exception   |
-   |                  | if it is already exists.                    |
+   |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:gz'``       | Create a tarfile with gzip compression.     |
    |                  | Raise an :exc:`FileExistsError` exception   |
-   |                  | if it is already exists.                    |
+   |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:bz2'``      | Create a tarfile with bzip2 compression.    |
    |                  | Raise an :exc:`FileExistsError` exception   |
-   |                  | if it is already exists.                    |
+   |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'x:xz'``       | Create a tarfile with lzma compression.     |
    |                  | Raise an :exc:`FileExistsError` exception   |
-   |                  | if it is already exists.                    |
+   |                  | if it already exists.                       |
    +------------------+---------------------------------------------+
    | ``'a' or 'a:'``  | Open for appending with no compression. The |
    |                  | file is created if it does not exist.       |
@@ -148,8 +148,8 @@ Some facts and figures:
 
 .. class:: TarFile
 
-   Class for reading and writing tar archives. Do not use this class directly,
-   better use :func:`tarfile.open` instead. See :ref:`tarfile-objects`.
+   Class for reading and writing tar archives. Do not use this class directly:
+   use :func:`tarfile.open` instead. See :ref:`tarfile-objects`.
 
 
 .. function:: is_tarfile(name)
@@ -271,7 +271,7 @@ be finalized; only the internally used file object will be closed. See the
 
    *mode* is either ``'r'`` to read from an existing archive, ``'a'`` to append
    data to an existing file, ``'w'`` to create a new file overwriting an existing
-   one or ``'x'`` to create a new file only if it's not exists.
+   one, or ``'x'`` to create a new file only if it does not already exist.
 
    If *fileobj* is given, it is used for reading or writing data. If it can be
    determined, *mode* is overridden by *fileobj*'s mode. *fileobj* will be used

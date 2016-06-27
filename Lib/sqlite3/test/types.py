@@ -185,24 +185,14 @@ class DeclTypesTests(unittest.TestCase):
     def CheckUnsupportedSeq(self):
         class Bar: pass
         val = Bar()
-        try:
+        with self.assertRaises(sqlite.InterfaceError):
             self.cur.execute("insert into test(f) values (?)", (val,))
-            self.fail("should have raised an InterfaceError")
-        except sqlite.InterfaceError:
-            pass
-        except:
-            self.fail("should have raised an InterfaceError")
 
     def CheckUnsupportedDict(self):
         class Bar: pass
         val = Bar()
-        try:
+        with self.assertRaises(sqlite.InterfaceError):
             self.cur.execute("insert into test(f) values (:val)", {"val": val})
-            self.fail("should have raised an InterfaceError")
-        except sqlite.InterfaceError:
-            pass
-        except:
-            self.fail("should have raised an InterfaceError")
 
     def CheckBlob(self):
         # default
@@ -350,11 +340,9 @@ class DateTimeTests(unittest.TestCase):
         ts2 = self.cur.fetchone()[0]
         self.assertEqual(ts, ts2)
 
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 1),
+                     'the date functions are available on 3.1 or later')
     def CheckSqlTimestamp(self):
-        # The date functions are only available in SQLite version 3.1 or later
-        if sqlite.sqlite_version_info < (3, 1):
-            return
-
         # SQLite's current_timestamp uses UTC time, while datetime.datetime.now() uses local time.
         now = datetime.datetime.now()
         self.cur.execute("insert into test(ts) values (current_timestamp)")

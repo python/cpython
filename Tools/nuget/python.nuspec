@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>python</id>
+    <title>Python</title>
+    <version>0.0.0.0</version>
+    <authors>Python Software Foundation</authors>
+    <licenseUrl>https://docs.python.org/3/license.html</licenseUrl>
+    <projectUrl>https://www.python.org/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Installs 64-bit Python for use in build scenarios.</description>
+    <iconUrl>https://www.python.org/static/favicon.ico</iconUrl>
+    <tags>python</tags>
+  </metadata>
+  <files>
+    <file src="**\*" target="tools" />
+  </files>
+</package>

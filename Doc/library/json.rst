@@ -629,12 +629,18 @@ when serializing instances of "exotic" numerical types such as
 :class:`decimal.Decimal`.
 
 .. highlight:: bash
-.. module:: json.tool
 
 .. _json-commandline:
 
 Command Line Interface
 ----------------------
+
+.. module:: json.tool
+    :synopsis: A command line to validate and pretty-print JSON.
+
+**Source code:** :source:`Lib/json/tool.py`
+
+--------------
 
 The :mod:`json.tool` module provides a simple command line interface to validate
 and pretty-print JSON objects.
