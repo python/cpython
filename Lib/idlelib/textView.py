@@ -76,6 +76,10 @@ def view_file(parent, title, filename, encoding=None, modal=True):
         tkMessageBox.showerror(title='File Load Error',
                                message='Unable to load file %r .' % filename,
                                parent=parent)
+    except UnicodeDecodeError as err:
+        tkMessageBox.showerror(title='Unicode Decode Error',
+                               message=str(err),
+                               parent=parent)
     else:
         return view_text(parent, title, contents, modal)
 

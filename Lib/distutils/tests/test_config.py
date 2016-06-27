@@ -18,6 +18,7 @@ PYPIRC = """\
 index-servers =
     server1
     server2
+    server3
 
 [server1]
 username:me
@@ -28,6 +29,10 @@ username:meagain
 password: secret
 realm:acme
 repository:http://another.pypi/
+
+[server3]
+username:cbiggles
+password:yh^%#rest-of-my-password
 """
 
 PYPIRC_OLD = """\
@@ -47,14 +52,14 @@ password:xxx
 """
 
 
-class PyPIRCCommandTestCase(support.TempdirManager,
+class BasePyPIRCCommandTestCase(support.TempdirManager,
                             support.LoggingSilencer,
                             support.EnvironGuard,
                             unittest.TestCase):
 
     def setUp(self):
         """Patches the environment."""
-        super(PyPIRCCommandTestCase, self).setUp()
+        super(BasePyPIRCCommandTestCase, self).setUp()
         self.tmp_dir = self.mkdtemp()
         os.environ['HOME'] = self.tmp_dir
         self.rc = os.path.join(self.tmp_dir, '.pypirc')
@@ -73,7 +78,10 @@ class PyPIRCCommandTestCase(support.TempdirManager,
     def tearDown(self):
         """Removes the patch."""
         set_threshold(self.old_threshold)
-        super(PyPIRCCommandTestCase, self).tearDown()
+        super(BasePyPIRCCommandTestCase, self).tearDown()
+
+
+class PyPIRCCommandTestCase(BasePyPIRCCommandTestCase):
 
     def test_server_registration(self):
         # This test makes sure PyPIRCCommand knows how to:
@@ -112,6 +120,20 @@ class PyPIRCCommandTestCase(support.TempdirManager,
             self.assertEqual(content, WANTED)
         finally:
             f.close()
+
+    def test_config_interpolation(self):
+        # using the % character in .pypirc should not raise an error (#20120)
+        self.write_file(self.rc, PYPIRC)
+        cmd = self._cmd(self.dist)
+        cmd.repository = 'server3'
+        config = cmd._read_pypirc()
+
+        config = list(sorted(config.items()))
+        waited = [('password', 'yh^%#rest-of-my-password'), ('realm', 'pypi'),
+                  ('repository', 'https://pypi.python.org/pypi'),
+                  ('server', 'server3'), ('username', 'cbiggles')]
+        self.assertEqual(config, waited)
+
 
 def test_suite():
     return unittest.makeSuite(PyPIRCCommandTestCase)

@@ -271,7 +271,7 @@ class Variable:
 
         Return the name of the callback.
         """
-        f = CallWrapper(callback, None, self).__call__
+        f = CallWrapper(callback, None, self._root).__call__
         cbname = repr(id(f))
         try:
             callback = callback.__func__
@@ -295,14 +295,19 @@ class Variable:
         CBNAME is the name of the callback returned from trace_variable or trace.
         """
         self._tk.call("trace", "vdelete", self._name, mode, cbname)
-        self._tk.deletecommand(cbname)
-        try:
-            self._tclCommands.remove(cbname)
-        except ValueError:
-            pass
+        cbname = self._tk.splitlist(cbname)[0]
+        for m, ca in self.trace_vinfo():
+            if self._tk.splitlist(ca)[0] == cbname:
+                break
+        else:
+            self._tk.deletecommand(cbname)
+            try:
+                self._tclCommands.remove(cbname)
+            except ValueError:
+                pass
     def trace_vinfo(self):
         """Return all trace callback information."""
-        return [self._tk.split(x) for x in self._tk.splitlist(
+        return [self._tk.splitlist(x) for x in self._tk.splitlist(
             self._tk.call("trace", "vinfo", self._name))]
     def __eq__(self, other):
         """Comparison for equality (==).

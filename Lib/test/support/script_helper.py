@@ -73,6 +73,10 @@ def run_python_until_end(*args, **env_vars):
     # Need to preserve the original environment, for in-place testing of
     # shared library builds.
     env = os.environ.copy()
+    # set TERM='' unless the TERM environment variable is passed explicitly
+    # see issues #11390 and #18300
+    if 'TERM' not in env_vars:
+        env['TERM'] = ''
     # But a special flag that can be set to override -- in this case, the
     # caller is responsible to pass the full environment.
     if env_vars.pop('__cleanenv', None):

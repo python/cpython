@@ -84,9 +84,8 @@ class RegressionTests(unittest.TestCase):
             cur.execute("select 1 x union select " + str(i))
         con.close()
 
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 2), 'needs sqlite 3.2.2 or newer')
     def CheckOnConflictRollback(self):
-        if sqlite.sqlite_version_info < (3, 2, 2):
-            return
         con = sqlite.connect(":memory:")
         con.execute("create table foo(x, unique(x) on conflict rollback)")
         con.execute("insert into foo(x) values (1)")
@@ -134,17 +133,11 @@ class RegressionTests(unittest.TestCase):
     def CheckErrorMsgDecodeError(self):
         # When porting the module to Python 3.0, the error message about
         # decoding errors disappeared. This verifies they're back again.
-        failure = None
-        try:
+        with self.assertRaises(sqlite.OperationalError) as cm:
             self.con.execute("select 'xxx' || ? || 'yyy' colname",
                              (bytes(bytearray([250])),)).fetchone()
-            failure = "should have raised an OperationalError with detailed description"
-        except sqlite.OperationalError as e:
-            msg = e.args[0]
-            if not msg.startswith("Could not decode to UTF-8 column 'colname' with text 'xxx"):
-                failure = "OperationalError did not have expected description text"
-        if failure:
-            self.fail(failure)
+        msg = "Could not decode to UTF-8 column 'colname' with text 'xxx"
+        self.assertIn(msg, str(cm.exception))
 
     def CheckRegisterAdapter(self):
         """
@@ -170,14 +163,8 @@ class RegressionTests(unittest.TestCase):
 
         con = sqlite.connect(":memory:")
         cur = Cursor(con)
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             cur.execute("select 4+5").fetchall()
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("should have raised ProgrammingError")
-
 
     def CheckStrSubclass(self):
         """
@@ -196,13 +183,8 @@ class RegressionTests(unittest.TestCase):
                 pass
 
         con = Connection(":memory:")
-        try:
+        with self.assertRaises(sqlite.ProgrammingError):
             cur = con.cursor()
-            self.fail("should have raised ProgrammingError")
-        except sqlite.ProgrammingError:
-            pass
-        except:
-            self.fail("should have raised ProgrammingError")
 
     def CheckCursorRegistration(self):
         """
@@ -223,13 +205,8 @@ class RegressionTests(unittest.TestCase):
         cur.executemany("insert into foo(x) values (?)", [(3,), (4,), (5,)])
         cur.execute("select x from foo")
         con.rollback()
-        try:
+        with self.assertRaises(sqlite.InterfaceError):
             cur.fetchall()
-            self.fail("should have raised InterfaceError")
-        except sqlite.InterfaceError:
-            pass
-        except:
-            self.fail("should have raised InterfaceError")
 
     def CheckAutoCommit(self):
         """

@@ -111,39 +111,25 @@ class TransactionTests(unittest.TestCase):
         res = self.cur2.fetchall()
         self.assertEqual(len(res), 1)
 
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 2),
+                     'test hangs on sqlite versions older than 3.2.2')
     def CheckRaiseTimeout(self):
-        if sqlite.sqlite_version_info < (3, 2, 2):
-            # This will fail (hang) on earlier versions of sqlite.
-            # Determine exact version it was fixed. 3.2.1 hangs.
-            return
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.cur2.execute("insert into test(i) values (5)")
-            self.fail("should have raised an OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except:
-            self.fail("should have raised an OperationalError")
 
+    @unittest.skipIf(sqlite.sqlite_version_info < (3, 2, 2),
+                     'test hangs on sqlite versions older than 3.2.2')
     def CheckLocking(self):
         """
         This tests the improved concurrency with pysqlite 2.3.4. You needed
         to roll back con2 before you could commit con1.
         """
-        if sqlite.sqlite_version_info < (3, 2, 2):
-            # This will fail (hang) on earlier versions of sqlite.
-            # Determine exact version it was fixed. 3.2.1 hangs.
-            return
         self.cur1.execute("create table test(i)")
         self.cur1.execute("insert into test(i) values (5)")
-        try:
+        with self.assertRaises(sqlite.OperationalError):
             self.cur2.execute("insert into test(i) values (5)")
-            self.fail("should have raised an OperationalError")
-        except sqlite.OperationalError:
-            pass
-        except:
-            self.fail("should have raised an OperationalError")
         # NO self.con2.rollback() HERE!!!
         self.con1.commit()
 
@@ -159,13 +145,8 @@ class TransactionTests(unittest.TestCase):
         cur.execute("select 1 union select 2 union select 3")
 
         con.rollback()
-        try:
+        with self.assertRaises(sqlite.InterfaceError):
             cur.fetchall()
-            self.fail("InterfaceError should have been raised")
-        except sqlite.InterfaceError as e:
-            pass
-        except:
-            self.fail("InterfaceError should have been raised")
 
 class SpecialCommandTests(unittest.TestCase):
     def setUp(self):

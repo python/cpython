@@ -438,7 +438,7 @@ remember the methods for a list, they can do something like this::
    >>> L
    [1]
 
-With the interpreter, documentation is never far from the student as he's
+With the interpreter, documentation is never far from the student as they are
 programming.
 
 There are also good IDEs for Python.  IDLE is a cross-platform IDE for Python

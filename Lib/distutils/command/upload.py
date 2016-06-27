@@ -91,7 +91,7 @@ class upload(PyPIRCCommand):
         data = {
             # action
             ':action': 'file_upload',
-            'protcol_version': '1',
+            'protocol_version': '1',
 
             # identify release
             'name': meta.get_name(),

@@ -250,7 +250,7 @@ ZipFile Objects
 .. method:: ZipFile.extract(member, path=None, pwd=None)
 
    Extract a member from the archive to the current working directory; *member*
-   must be its full name or a :class:`ZipInfo` object).  Its file information is
+   must be its full name or a :class:`ZipInfo` object.  Its file information is
    extracted as accurately as possible.  *path* specifies a different directory
    to extract to.  *member* can be a filename or a :class:`ZipInfo` object.
    *pwd* is the password used for encrypted files.
@@ -343,9 +343,9 @@ ZipFile Objects
       If ``arcname`` (or ``filename``, if ``arcname`` is  not given) contains a null
       byte, the name of the file in the archive will be truncated at the null byte.
 
-.. method:: ZipFile.writestr(zinfo_or_arcname, bytes[, compress_type])
+.. method:: ZipFile.writestr(zinfo_or_arcname, data[, compress_type])
 
-   Write the string *bytes* to the archive; *zinfo_or_arcname* is either the file
+   Write the string *data* to the archive; *zinfo_or_arcname* is either the file
    name it will be given in the archive, or a :class:`ZipInfo` instance.  If it's
    an instance, at least the filename, date, and time must be given.  If it's a
    name, the date and time is set to the current date and time.

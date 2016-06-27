@@ -132,7 +132,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
      * see https://bugs.python.org/issue26839. To avoid this, use the
      * GRND_NONBLOCK flag. */
     const int flags = GRND_NONBLOCK;
-    int n;
+    long n;
 
     if (!getrandom_works)
         return 0;
@@ -143,7 +143,7 @@ py_getrandom(void *buffer, Py_ssize_t size, int raise)
            to 1024 bytes */
         n = Py_MIN(size, 1024);
 #else
-        n = size;
+        n = Py_MIN(size, LONG_MAX);
 #endif
 
         errno = 0;
@@ -251,7 +251,7 @@ dev_urandom_noraise(unsigned char *buffer, Py_ssize_t size)
             break;
         }
         buffer += n;
-        size -= (Py_ssize_t)n;
+        size -= n;
     }
     close(fd);
 }

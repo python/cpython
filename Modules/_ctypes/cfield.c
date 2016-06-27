@@ -1246,8 +1246,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
                         "unicode string expected instead of %s instance",
                         value->ob_type->tp_name);
         return NULL;
-    } else
-        Py_INCREF(value);
+    }
 
     wstr = PyUnicode_AsUnicodeAndSize(value, &size);
     if (wstr == NULL)
@@ -1256,7 +1255,6 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
         PyErr_Format(PyExc_ValueError,
                      "string too long (%zd, maximum length %zd)",
                      size, length);
-        Py_DECREF(value);
         return NULL;
     } else if (size < length-1)
         /* copy terminating NUL character if there is space */
@@ -1266,6 +1264,7 @@ U_set(void *ptr, PyObject *value, Py_ssize_t length)
         return NULL;
     }
 
+    Py_INCREF(value);
     return value;
 }
 
@@ -1292,9 +1291,7 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     char *data;
     Py_ssize_t size;
 
-    if(PyBytes_Check(value)) {
-        Py_INCREF(value);
-    } else {
+    if(!PyBytes_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                      "expected bytes, %s found",
                      value->ob_type->tp_name);
@@ -1302,11 +1299,9 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
     }
 
     data = PyBytes_AS_STRING(value);
-    if (!data)
-        return NULL;
     size = strlen(data); /* XXX Why not Py_SIZE(value)? */
     if (size < length) {
-        /* This will copy the leading NUL character
+        /* This will copy the terminating NUL character
          * if there is space for it.
          */
         ++size;
@@ -1314,13 +1309,11 @@ s_set(void *ptr, PyObject *value, Py_ssize_t length)
         PyErr_Format(PyExc_ValueError,
                      "bytes too long (%zd, maximum length %zd)",
                      size, length);
-        Py_DECREF(value);
         return NULL;
     }
     /* Also copy the terminating NUL character if there is space */
     memcpy((char *)ptr, data, size);
 
-    Py_DECREF(value);
     _RET(value);
 }
 
@@ -1428,9 +1421,7 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
     /* convert value into a PyUnicodeObject or NULL */
     if (Py_None == value) {
         value = NULL;
-    } else if (PyUnicode_Check(value)) {
-        Py_INCREF(value); /* for the descref below */
-    } else {
+    } else if (!PyUnicode_Check(value)) {
         PyErr_Format(PyExc_TypeError,
                         "unicode string expected instead of %s instance",
                         value->ob_type->tp_name);
@@ -1449,7 +1440,6 @@ BSTR_set(void *ptr, PyObject *value, Py_ssize_t size)
             return NULL;
         }
         bstr = SysAllocStringLen(wvalue, (unsigned)wsize);
-        Py_DECREF(value);
     } else
         bstr = NULL;
 
