@@ -14,8 +14,18 @@ from zipfile import ZipFile, ZIP_DEFLATED
 import subprocess
 
 TKTCL_RE = re.compile(r'^(_?tk|tcl).+\.(pyd|dll)', re.IGNORECASE)
-DEBUG_RE = re.compile(r'_d\.(pyd|dll|exe)$', re.IGNORECASE)
+DEBUG_RE = re.compile(r'_d\.(pyd|dll|exe|pdb|lib)$', re.IGNORECASE)
 PYTHON_DLL_RE = re.compile(r'python\d\d?\.dll$', re.IGNORECASE)
+
+DEBUG_FILES = {
+    '_ctypes_test',
+    '_testbuffer',
+    '_testcapi',
+    '_testimportmultiple',
+    '_testmultiphase',
+    'xxlimited',
+    'python3_dstub',
+}
 
 EXCLUDE_FROM_LIBRARY = {
     '__pycache__',
@@ -25,10 +35,17 @@ EXCLUDE_FROM_LIBRARY = {
     'site-packages',
     'tkinter',
     'turtledemo',
+    'venv',
 }
 
 EXCLUDE_FILE_FROM_LIBRARY = {
     'bdist_wininst.py',
+}
+
+EXCLUDE_FILE_FROM_LIBS = {
+    'ssleay',
+    'libeay',
+    'python3stub',
 }
 
 def is_not_debug(p):
@@ -38,14 +55,7 @@ def is_not_debug(p):
     if TKTCL_RE.search(p.name):
         return False
 
-    return p.name.lower() not in {
-        '_ctypes_test.pyd',
-        '_testbuffer.pyd',
-        '_testcapi.pyd',
-        '_testimportmultiple.pyd',
-        '_testmultiphase.pyd',
-        'xxlimited.pyd',
-    }
+    return p.stem.lower() not in DEBUG_FILES
 
 def is_not_debug_or_python(p):
     return is_not_debug(p) and not PYTHON_DLL_RE.search(p.name)
@@ -69,6 +79,12 @@ def include_in_lib(p):
     suffix = p.suffix.lower()
     return suffix not in {'.pyc', '.pyo', '.exe'}
 
+def include_in_libs(p):
+    if not is_not_debug(p):
+        return False
+
+    return p.stem.lower() not in EXCLUDE_FILE_FROM_LIBS
+
 def include_in_tools(p):
     if p.is_dir() and p.name.lower() in {'scripts', 'i18n', 'pynche', 'demo', 'parser'}:
         return True
@@ -84,6 +100,7 @@ FULL_LAYOUT = [
     ('include/', 'include', '*.h', None),
     ('include/', 'PC', 'pyconfig.h', None),
     ('Lib/', 'Lib', '**/*', include_in_lib),
+    ('libs/', 'PCBuild/$arch', '*.lib', include_in_libs),
     ('Tools/', 'Tools', '**/*', include_in_tools),
 ]
 
@@ -160,7 +177,7 @@ def main():
 
     source = ns.source or (Path(__file__).resolve().parent.parent.parent)
     out = ns.out
-    arch = "" if ns.arch == "win32" else ns.arch
+    arch = '' if ns.arch == 'win32' else ns.arch
     assert isinstance(source, Path)
     assert not out or isinstance(out, Path)
     assert isinstance(arch, str)

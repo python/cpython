@@ -7,6 +7,7 @@
         <OutputPath Condition="$(OutputPath) == ''">$(MSBuildThisFileDirectory)</OutputPath>
         <OutputSuffix></OutputSuffix>
         <SupportSigning>false</SupportSigning>
+        <BuildForRelease Condition="$(BuildForRelease) == ''">true</BuildForRelease>
     </PropertyGroup>
 
     <Import Project="..\..\PCBuild\python.props" />
@@ -26,10 +27,11 @@
         <PythonArguments>$(PythonArguments) -s "$(PySourcePath.Trim('\'))" -t "$(IntermediateOutputPath)" -a $(ArchName)</PythonArguments>
         
         <PipArguments>"$(IntermediateOutputPath)\python.exe" -B -c "import sys; sys.path.append(r'$(PySourcePath)\Lib'); import ensurepip; ensurepip._main()"</PipArguments>
+        <PackageArguments Condition="$(Packages) != ''">"$(IntermediateOutputPath)\python.exe" -B -m pip install -U $(Packages)</PackageArguments>
         
         <NugetArguments>"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).nuspec"</NugetArguments>
         <NugetArguments>$(NugetArguments) -BasePath "$(IntermediateOutputPath)"</NugetArguments>
-        <NugetArguments>$(NugetArguments) -OutputDirectory "$(OutputPath.Trim('\'))"</NugetArguments>
+        <NugetArguments>$(NugetArguments) -OutputDirectory "$(OutputPath.Trim(`\`))"</NugetArguments>
         <NugetArguments>$(NugetArguments) -Version "$(NuspecVersion)"</NugetArguments>
         <NugetArguments>$(NugetArguments) -NoPackageAnalysis -NonInteractive</NugetArguments>
     </PropertyGroup>
@@ -42,6 +44,7 @@
         <Exec Command="$(CleanCommand)" />
         <Exec Command="$(PythonArguments)" />
         <Exec Command="$(PipArguments)" />
+        <Exec Command="$(PackageArguments)" Condition="$(PackageArguments) != ''" />
         <Exec Command="$(NugetArguments)" />
     </Target>
 
