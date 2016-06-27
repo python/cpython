@@ -28,7 +28,7 @@ to a file named "<name>.html".
 
 Module docs for core modules are assumed to be in
 
-    http://docs.python.org/X.Y/library/
+    https://docs.python.org/X.Y/library/
 
 This can be overridden by setting the PYTHONDOCS environment variable
 to a different URL or to a local directory containing the Library
@@ -395,6 +395,7 @@ class Doc:
 
         docloc = os.environ.get("PYTHONDOCS", self.PYTHONDOCS)
 
+        basedir = os.path.normcase(basedir)
         if (isinstance(object, type(os)) and
             (object.__name__ in ('errno', 'exceptions', 'gc', 'imp',
                                  'marshal', 'posix', 'signal', 'sys',
@@ -402,7 +403,7 @@ class Doc:
              (file.startswith(basedir) and
               not file.startswith(os.path.join(basedir, 'site-packages')))) and
             object.__name__ not in ('xml.etree', 'test.pydoc_mod')):
-            if docloc.startswith("http://"):
+            if docloc.startswith(("http://", "https://")):
                 docloc = "%s/%s" % (docloc.rstrip("/"), object.__name__.lower())
             else:
                 docloc = os.path.join(docloc, object.__name__.lower() + ".html")

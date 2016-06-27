@@ -2,8 +2,8 @@
 Python News
 +++++++++++
 
-What's New in Python 3.5.3rc1?
-==============================
+What's New in Python 3.5.3 release candidate 1?
+===============================================
 
 Release date: TBA
 
@@ -12,6 +12,65 @@ Core and Builtins
 
 Library
 -------
+
+- Issue #22115: Fixed tracing Tkinter variables: trace_vdelete() with wrong
+  mode no longer break tracing, trace_vinfo() now always returns a list of
+  pairs of strings, tracing in the "u" mode now works.
+
+- Fix a scoping issue in importlib.util.LazyLoader which triggered an
+  UnboundLocalError when lazy-loading a module that was already put into
+  sys.modules.
+
+- Issue #27079: Fixed curses.ascii functions isblank(), iscntrl() and ispunct().
+
+- Issue #26754: Some functions (compile() etc) accepted a filename argument
+  encoded as an iterable of integers. Now only strings and byte-like objects
+  are accepted.
+
+- Issue #27048: Prevents distutils failing on Windows when environment
+  variables contain non-ASCII characters
+
+- Issue #27330: Fixed possible leaks in the ctypes module.
+
+- Issue #27238: Got rid of bare excepts in the turtle module.  Original patch
+  by Jelle Zijlstra.
+
+- Issue #27122: When an exception is raised within the context being managed
+  by a contextlib.ExitStack() and one of the exit stack generators
+  catches and raises it in a chain, do not re-raise the original exception
+  when exiting, let the new chained one through.  This avoids the PEP 479
+  bug described in issue25782.
+
+- Issue #27278: Fix os.urandom() implementation using getrandom() on Linux.
+  Truncate size to INT_MAX and loop until we collected enough random bytes,
+  instead of casting a directly Py_ssize_t to int.
+
+- Issue #26386: Fixed ttk.TreeView selection operations with item id's
+  containing spaces.
+
+- Issue #22636: Avoid shell injection problems with
+  ctypes.util.find_library().
+
+- Issue #16182: Fix various functions in the "readline" module to use the
+  locale encoding, and fix get_begidx() and get_endidx() to return code point
+  indexes.
+
+- Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
+
+IDLE
+----
+
+- Issue #27365: Allow non-ascii chars in IDLE NEWS.txt, for contributor names.
+
+- Issue #27245: IDLE: Cleanly delete custom themes and key bindings.
+  Previously, when IDLE was started from a console or by import, a cascade
+  of warnings was emitted.  Patch by Serhiy Storchaka.
+
+C API
+-----
+
+- Issue #26754: PyUnicode_FSDecoder() accepted a filename argument encoded as
+  an iterable of integers. Now only strings and bytes-like objects are accepted.
 
 
 What's New in Python 3.5.2?

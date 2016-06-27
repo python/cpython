@@ -1,6 +1,7 @@
-import sys, os
-import contextlib
+import os
+import shutil
 import subprocess
+import sys
 
 # find_library(name) returns the pathname of a library, or None.
 if os.name == "nt":
@@ -94,28 +95,46 @@ elif os.name == "posix":
     import re, tempfile
 
     def _findLib_gcc(name):
-        expr = r'[^\(\)\s]*lib%s\.[^\(\)\s]*' % re.escape(name)
-        fdout, ccout = tempfile.mkstemp()
-        os.close(fdout)
-        cmd = 'if type gcc >/dev/null 2>&1; then CC=gcc; elif type cc >/dev/null 2>&1; then CC=cc;else exit 10; fi;' \
-              'LANG=C LC_ALL=C $CC -Wl,-t -o ' + ccout + ' 2>&1 -l' + name
+        # Run GCC's linker with the -t (aka --trace) option and examine the
+        # library name it prints out. The GCC command will fail because we
+        # haven't supplied a proper program with main(), but that does not
+        # matter.
+        expr = os.fsencode(r'[^\(\)\s]*lib%s\.[^\(\)\s]*' % re.escape(name))
+
+        c_compiler = shutil.which('gcc')
+        if not c_compiler:
+            c_compiler = shutil.which('cc')
+        if not c_compiler:
+            # No C compiler available, give up
+            return None
+
+        temp = tempfile.NamedTemporaryFile()
         try:
-            f = os.popen(cmd)
+            args = [c_compiler, '-Wl,-t', '-o', temp.name, '-l' + name]
+
+            env = dict(os.environ)
+            env['LC_ALL'] = 'C'
+            env['LANG'] = 'C'
             try:
-                trace = f.read()
-            finally:
-                rv = f.close()
+                proc = subprocess.Popen(args,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.STDOUT,
+                                        env=env)
+            except OSError:  # E.g. bad executable
+                return None
+            with proc:
+                trace = proc.stdout.read()
         finally:
             try:
-                os.unlink(ccout)
+                temp.close()
             except FileNotFoundError:
+                # Raised if the file was already removed, which is the normal
+                # behaviour of GCC if linking fails
                 pass
-        if rv == 10:
-            raise OSError('gcc or cc command not found')
         res = re.search(expr, trace)
         if not res:
             return None
-        return res.group(0)
+        return os.fsdecode(res.group(0))
 
 
     if sys.platform == "sunos5":
@@ -123,55 +142,75 @@ elif os.name == "posix":
         def _get_soname(f):
             if not f:
                 return None
-            cmd = "/usr/ccs/bin/dump -Lpv 2>/dev/null " + f
-            with contextlib.closing(os.popen(cmd)) as f:
-                data = f.read()
-            res = re.search(r'\[.*\]\sSONAME\s+([^\s]+)', data)
+
+            try:
+                proc = subprocess.Popen(("/usr/ccs/bin/dump", "-Lpv", f),
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL)
+            except OSError:  # E.g. command not found
+                return None
+            with proc:
+                data = proc.stdout.read()
+            res = re.search(br'\[.*\]\sSONAME\s+([^\s]+)', data)
             if not res:
                 return None
-            return res.group(1)
+            return os.fsdecode(res.group(1))
     else:
         def _get_soname(f):
             # assuming GNU binutils / ELF
             if not f:
                 return None
-            cmd = 'if ! type objdump >/dev/null 2>&1; then exit 10; fi;' \
-                  "objdump -p -j .dynamic 2>/dev/null " + f
-            f = os.popen(cmd)
+            objdump = shutil.which('objdump')
+            if not objdump:
+                # objdump is not available, give up
+                return None
+
             try:
-                dump = f.read()
-            finally:
-                rv = f.close()
-            if rv == 10:
-                raise OSError('objdump command not found')
-            res = re.search(r'\sSONAME\s+([^\s]+)', dump)
+                proc = subprocess.Popen((objdump, '-p', '-j', '.dynamic', f),
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL)
+            except OSError:  # E.g. bad executable
+                return None
+            with proc:
+                dump = proc.stdout.read()
+            res = re.search(br'\sSONAME\s+([^\s]+)', dump)
             if not res:
                 return None
-            return res.group(1)
+            return os.fsdecode(res.group(1))
 
     if sys.platform.startswith(("freebsd", "openbsd", "dragonfly")):
 
         def _num_version(libname):
             # "libxyz.so.MAJOR.MINOR" => [ MAJOR, MINOR ]
-            parts = libname.split(".")
+            parts = libname.split(b".")
             nums = []
             try:
                 while parts:
                     nums.insert(0, int(parts.pop()))
             except ValueError:
                 pass
-            return nums or [ sys.maxsize ]
+            return nums or [sys.maxsize]
 
         def find_library(name):
             ename = re.escape(name)
             expr = r':-l%s\.\S+ => \S*/(lib%s\.\S+)' % (ename, ename)
-            with contextlib.closing(os.popen('/sbin/ldconfig -r 2>/dev/null')) as f:
-                data = f.read()
+            expr = os.fsencode(expr)
+
+            try:
+                proc = subprocess.Popen(('/sbin/ldconfig', '-r'),
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL)
+            except OSError:  # E.g. command not found
+                data = b''
+            else:
+                with proc:
+                    data = proc.stdout.read()
+
             res = re.findall(expr, data)
             if not res:
                 return _get_soname(_findLib_gcc(name))
             res.sort(key=_num_version)
-            return res[-1]
+            return os.fsdecode(res[-1])
 
     elif sys.platform == "sunos5":
 
@@ -179,17 +218,27 @@ elif os.name == "posix":
             if not os.path.exists('/usr/bin/crle'):
                 return None
 
+            env = dict(os.environ)
+            env['LC_ALL'] = 'C'
+
             if is64:
-                cmd = 'env LC_ALL=C /usr/bin/crle -64 2>/dev/null'
+                args = ('/usr/bin/crle', '-64')
             else:
-                cmd = 'env LC_ALL=C /usr/bin/crle 2>/dev/null'
+                args = ('/usr/bin/crle',)
 
             paths = None
-            with contextlib.closing(os.popen(cmd)) as f:
-                for line in f.readlines():
+            try:
+                proc = subprocess.Popen(args,
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.DEVNULL,
+                                        env=env)
+            except OSError:  # E.g. bad executable
+                return None
+            with proc:
+                for line in proc.stdout:
                     line = line.strip()
-                    if line.startswith('Default Library Path (ELF):'):
-                        paths = line.split()[4]
+                    if line.startswith(b'Default Library Path (ELF):'):
+                        paths = os.fsdecode(line).split()[4]
 
             if not paths:
                 return None

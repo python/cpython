@@ -627,6 +627,22 @@ class CompileTestCase(unittest.TestCase):
         code2 = parser.compilest(st)
         self.assertEqual(eval(code2), -3)
 
+    def test_compile_filename(self):
+        st = parser.expr('a + 5')
+        code = parser.compilest(st)
+        self.assertEqual(code.co_filename, '<syntax-tree>')
+        code = st.compile()
+        self.assertEqual(code.co_filename, '<syntax-tree>')
+        for filename in ('file.py', b'file.py',
+                         bytearray(b'file.py'), memoryview(b'file.py')):
+            code = parser.compilest(st, filename)
+            self.assertEqual(code.co_filename, 'file.py')
+            code = st.compile(filename)
+            self.assertEqual(code.co_filename, 'file.py')
+        self.assertRaises(TypeError, parser.compilest, st, list(b'file.py'))
+        self.assertRaises(TypeError, st.compile, list(b'file.py'))
+
+
 class ParserStackLimitTestCase(unittest.TestCase):
     """try to push the parser to/over its limits.
     see http://bugs.python.org/issue1881 for a discussion

@@ -443,7 +443,7 @@ three digits in length.
    The ``'\u'`` and ``'\U'`` escape sequences have been added.
 
 .. deprecated-removed:: 3.5 3.6
-   Unknown escapes consist of ``'\'`` and ASCII letter now raise a
+   Unknown escapes consisting of ``'\'`` and ASCII letter now raise a
    deprecation warning and will be forbidden in Python 3.6.
 
 

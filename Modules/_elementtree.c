@@ -1582,10 +1582,23 @@ _elementtree_Element_remove_impl(ElementObject *self, PyObject *subelement)
 static PyObject*
 element_repr(ElementObject* self)
 {
-    if (self->tag)
-        return PyUnicode_FromFormat("<Element %R at %p>", self->tag, self);
-    else
+    int status;
+
+    if (self->tag == NULL)
         return PyUnicode_FromFormat("<Element at %p>", self);
+
+    status = Py_ReprEnter((PyObject *)self);
+    if (status == 0) {
+        PyObject *res;
+        res = PyUnicode_FromFormat("<Element %R at %p>", self->tag, self);
+        Py_ReprLeave((PyObject *)self);
+        return res;
+    }
+    if (status > 0)
+        PyErr_Format(PyExc_RuntimeError,
+                     "reentrant call inside %s.__repr__",
+                     Py_TYPE(self)->tp_name);
+    return NULL;
 }
 
 /*[clinic input]
