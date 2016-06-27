@@ -17,7 +17,7 @@
         <SignOutput>false</SignOutput>
         <TargetName>$(OutputName).$(NuspecVersion)</TargetName>
         <TargetExt>.nupkg</TargetExt>
-        <TargetPath>$(OutputPath)\en-us\$(TargetName)$(TargetExt)</TargetPath>
+        <TargetPath>$(OutputPath)\$(TargetName)$(TargetExt)</TargetPath>
         <IntermediateOutputPath>$(IntermediateOutputPath)\nuget_$(ArchName)</IntermediateOutputPath>
         
         <CleanCommand>rmdir /q/s "$(IntermediateOutputPath)"</CleanCommand>
@@ -26,10 +26,11 @@
         <PythonArguments>$(PythonArguments) -t "$(IntermediateOutputPath)" -a $(ArchName)</PythonArguments>
         
         <PipArguments>"$(IntermediateOutputPath)\python.exe" -B -c "import sys; sys.path.append(r'$(PySourcePath)\Lib'); import ensurepip; ensurepip._main()"</PipArguments>
+        <PackageArguments Condition="$(Packages) != ''">"$(IntermediateOutputPath)\python.exe" -B -m pip install -U $(Packages)</PackageArguments>
         
         <NugetArguments>"$(Nuget)" pack "$(MSBuildThisFileDirectory)\$(OutputName).nuspec"</NugetArguments>
         <NugetArguments>$(NugetArguments) -BasePath "$(IntermediateOutputPath)"</NugetArguments>
-        <NugetArguments>$(NugetArguments) -OutputDirectory "$(OutputPath)\en-us"</NugetArguments>
+        <NugetArguments>$(NugetArguments) -OutputDirectory "$(OutputPath.Trim(`\`))"</NugetArguments>
         <NugetArguments>$(NugetArguments) -Version "$(NuspecVersion)"</NugetArguments>
         <NugetArguments>$(NugetArguments) -NoPackageAnalysis -NonInteractive</NugetArguments>
         
@@ -47,6 +48,7 @@ set VCREDIST_PATH=$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.
         <Exec Command="$(Environment)
 $(PythonArguments)" />
         <Exec Command="$(PipArguments)" />
+        <Exec Command="$(PackageArguments)" Condition="$(PackageArguments) != ''" />
         <Exec Command="$(NugetArguments)" />
     </Target>
 
