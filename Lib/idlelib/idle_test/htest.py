@@ -137,18 +137,6 @@ _editor_window_spec = {
            "Best to close editor first."
     }
 
-GetCfgSectionNameDialog_spec = {
-    'file': 'config_sec',
-    'kwds': {'title':'Get Name',
-             'message':'Enter something',
-             'used_names': {'abc'},
-             '_htest': True},
-    'msg': "After the text entered with [Ok] is stripped, <nothing>, "
-           "'abc', or more that 30 chars are errors.\n"
-           "Close 'Get Name' with a valid entry (printed to Shell), "
-           "[Cancel], or [X]",
-    }
-
 GetHelpSourceDialog_spec = {
     'file': 'config_help',
     'kwds': {'title': 'Get helpsource',
@@ -244,6 +232,17 @@ _percolator_spec = {
            "was switched 'on' later, should be printed first\n"
            "Test for actions like text entry, and removal."
     }
+
+Query_spec = {
+    'file': 'query',
+    'kwds': {'title':'Query',
+             'message':'Enter something',
+             '_htest': True},
+    'msg': "Enter with <Return> or [Ok].  Print valid entry to Shell\n"
+           "Blank line, after stripping, is ignored\n"
+           "Close dialog with valid entry, [Cancel] or [X]",
+    }
+
 
 _replace_dialog_spec = {
     'file': 'replace',

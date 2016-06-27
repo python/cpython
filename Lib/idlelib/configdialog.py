@@ -18,7 +18,7 @@ import tkinter.font as tkFont
 from idlelib.config import idleConf
 from idlelib.dynoption import DynOptionMenu
 from idlelib.config_key import GetKeysDialog
-from idlelib.config_sec import GetCfgSectionNameDialog
+from idlelib.query import SectionName
 from idlelib.config_help import GetHelpSourceDialog
 from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
@@ -684,7 +684,7 @@ class ConfigDialog(Toplevel):
     def GetNewKeysName(self, message):
         usedNames = (idleConf.GetSectionList('user', 'keys') +
                 idleConf.GetSectionList('default', 'keys'))
-        newKeySet = GetCfgSectionNameDialog(
+        newKeySet = SectionName(
                 self, 'New Custom Key Set', message, usedNames).result
         return newKeySet
 
@@ -837,7 +837,7 @@ class ConfigDialog(Toplevel):
     def GetNewThemeName(self, message):
         usedNames = (idleConf.GetSectionList('user', 'highlight') +
                 idleConf.GetSectionList('default', 'highlight'))
-        newTheme = GetCfgSectionNameDialog(
+        newTheme = SectionName(
                 self, 'New Custom Theme', message, usedNames).result
         return newTheme
 
