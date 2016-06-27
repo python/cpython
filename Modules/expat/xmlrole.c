@@ -2,6 +2,8 @@
    See the file COPYING for copying permission.
 */
 
+#include <stddef.h>
+
 #ifdef COMPILED_FROM_DSP
 #include "winconfig.h"
 #elif defined(MACOS_CLASSIC)
@@ -15,8 +17,6 @@
 #include <expat_config.h>
 #endif
 #endif /* ndef COMPILED_FROM_DSP */
-
-#include <stddef.h>
 
 #include "expat_external.h"
 #include "internal.h"
