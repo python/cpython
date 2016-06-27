@@ -754,7 +754,7 @@ class ASTValidatorTests(unittest.TestCase):
 
     def test_importfrom(self):
         imp = ast.ImportFrom(None, [ast.alias("x", None)], -42)
-        self.stmt(imp, "level less than -1")
+        self.stmt(imp, "Negative ImportFrom level")
         self.stmt(ast.ImportFrom(None, [], 0), "empty names on ImportFrom")
 
     def test_global(self):
