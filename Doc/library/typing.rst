@@ -427,8 +427,8 @@ The module defines the following classes, functions and decorators:
       def vec2(x: T, y: T) -> List[T]:
           return [x, y]
 
-      def slice__to_4(vector: Sequence[T]) -> List[T]:
-          return vector[0:4]
+      def keep_positives(vector: Sequence[T]) -> List[T]:
+          return [item for item in vector if item > 0]
 
 .. class:: Set(set, MutableSet[T])
 
