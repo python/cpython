@@ -394,7 +394,8 @@ class BaseSelectorEventLoop(base_events.BaseEventLoop):
         if hasattr(socket, 'AF_UNIX') and sock.family == socket.AF_UNIX:
             self._sock_connect(fut, sock, address)
         else:
-            resolved = base_events._ensure_resolved(address, loop=self)
+            resolved = base_events._ensure_resolved(
+                address, family=sock.family, proto=sock.proto, loop=self)
             resolved.add_done_callback(
                 lambda resolved: self._on_resolved(fut, sock, resolved))
 

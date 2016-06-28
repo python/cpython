@@ -373,6 +373,17 @@ class BaseSelectorEventLoopTests(test_utils.TestCase):
             self.loop.run_until_complete(fut)
         self.assertTrue(self.loop.remove_writer.called)
 
+    def test_sock_connect_resolve_using_socket_params(self):
+        addr = ('need-resolution.com', 8080)
+        sock = test_utils.mock_nonblocking_socket()
+        self.loop.getaddrinfo = mock.Mock()
+        self.loop.sock_connect(sock, addr)
+        while not self.loop.getaddrinfo.called:
+            self.loop._run_once()
+        self.loop.getaddrinfo.assert_called_with(
+            *addr, type=sock.type, family=sock.family, proto=sock.proto,
+            flags=0)
+
     def test__sock_connect(self):
         f = asyncio.Future(loop=self.loop)
 
