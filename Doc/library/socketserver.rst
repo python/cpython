@@ -409,6 +409,15 @@ Request Handler Objects
    read or written, respectively, to get the request data or return data
    to the client.
 
+   The :attr:`rfile` attributes of both classes support the
+   :class:`io.BufferedIOBase` readable interface, and
+   :attr:`DatagramRequestHandler.wfile` supports the
+   :class:`io.BufferedIOBase` writable interface.
+
+   .. versionchanged:: 3.6
+      :attr:`StreamRequestHandler.wfile` also supports the
+      :class:`io.BufferedIOBase` writable interface.
+
 
 Examples
 --------
