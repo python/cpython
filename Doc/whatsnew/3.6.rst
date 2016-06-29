@@ -373,6 +373,12 @@ defined in :mod:`http.server`, :mod:`xmlrpc.server` and
 protocol.
 (Contributed by Aviv Palivoda in :issue:`26404`.)
 
+The :attr:`~socketserver.StreamRequestHandler.wfile` attribute of
+:class:`~socketserver.StreamRequestHandler` classes now implements
+the :class:`io.BufferedIOBase` writable interface.  In particular,
+calling :meth:`~io.BufferedIOBase.write` is now guaranteed to send the
+data in full.  (Contributed by Martin Panter in :issue:`26721`.)
+
 
 subprocess
 ----------

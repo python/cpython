@@ -11,7 +11,6 @@ module.  See also the BaseHTTPServer module docs for other API information.
 """
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from io import BufferedWriter
 import sys
 import urllib.parse
 from wsgiref.handlers import SimpleHandler
@@ -127,17 +126,11 @@ class WSGIRequestHandler(BaseHTTPRequestHandler):
         if not self.parse_request(): # An error code has been sent, just exit
             return
 
-        # Avoid passing the raw file object wfile, which can do partial
-        # writes (Issue 24291)
-        stdout = BufferedWriter(self.wfile)
-        try:
-            handler = ServerHandler(
-                self.rfile, stdout, self.get_stderr(), self.get_environ()
-            )
-            handler.request_handler = self      # backpointer for logging
-            handler.run(self.server.get_app())
-        finally:
-            stdout.detach()
+        handler = ServerHandler(
+            self.rfile, self.wfile, self.get_stderr(), self.get_environ()
+        )
+        handler.request_handler = self      # backpointer for logging
+        handler.run(self.server.get_app())
 
 
 

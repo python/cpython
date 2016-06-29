@@ -98,14 +98,17 @@ of which this module provides three different variants:
 
    .. attribute:: rfile
 
-      Contains an input stream, positioned at the start of the optional input
-      data.
+      An :class:`io.BufferedIOBase` input stream, ready to read from
+      the start of the optional input data.
 
    .. attribute:: wfile
 
       Contains the output stream for writing a response back to the
       client. Proper adherence to the HTTP protocol must be used when writing to
       this stream.
+
+      .. versionchanged:: 3.6
+         This is an :class:`io.BufferedIOBase` stream.
 
    :class:`BaseHTTPRequestHandler` has the following attributes:
 
