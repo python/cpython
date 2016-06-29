@@ -132,6 +132,7 @@ try:
     import threading
 except ImportError:
     import dummy_threading as threading
+from io import BufferedIOBase
 from time import monotonic as time
 
 __all__ = ["BaseServer", "TCPServer", "UDPServer",
@@ -743,7 +744,10 @@ class StreamRequestHandler(BaseRequestHandler):
             self.connection.setsockopt(socket.IPPROTO_TCP,
                                        socket.TCP_NODELAY, True)
         self.rfile = self.connection.makefile('rb', self.rbufsize)
-        self.wfile = self.connection.makefile('wb', self.wbufsize)
+        if self.wbufsize == 0:
+            self.wfile = _SocketWriter(self.connection)
+        else:
+            self.wfile = self.connection.makefile('wb', self.wbufsize)
 
     def finish(self):
         if not self.wfile.closed:
@@ -756,6 +760,24 @@ class StreamRequestHandler(BaseRequestHandler):
         self.wfile.close()
         self.rfile.close()
 
+class _SocketWriter(BufferedIOBase):
+    """Simple writable BufferedIOBase implementation for a socket
+
+    Does not hold data in a buffer, avoiding any need to call flush()."""
+
+    def __init__(self, sock):
+        self._sock = sock
+
+    def writable(self):
+        return True
+
+    def write(self, b):
+        self._sock.sendall(b)
+        with memoryview(b) as view:
+            return view.nbytes
+
+    def fileno(self):
+        return self._sock.fileno()
 
 class DatagramRequestHandler(BaseRequestHandler):
 
