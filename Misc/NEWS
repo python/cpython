@@ -13,6 +13,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #26664: Fix activate.fish by removing mis-use of ``$``.
+
 - Issue #22115: Fixed tracing Tkinter variables: trace_vdelete() with wrong
   mode no longer break tracing, trace_vinfo() now always returns a list of
   pairs of strings, tracing in the "u" mode now works.
