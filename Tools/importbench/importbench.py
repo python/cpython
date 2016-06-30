@@ -5,7 +5,6 @@ thus has no external changes made to import-related attributes in sys.
 
 """
 from test.test_importlib import util
-from test.test_importlib.source import util as source_util
 import decimal
 import imp
 import importlib
@@ -65,11 +64,11 @@ def source_wo_bytecode(seconds, repeat):
     try:
         name = '__importlib_test_benchmark__'
         # Clears out sys.modules and puts an entry at the front of sys.path.
-        with source_util.create_modules(name) as mapping:
+        with util.create_modules(name) as mapping:
             assert not os.path.exists(imp.cache_from_source(mapping[name]))
             sys.meta_path.append(importlib.machinery.PathFinder)
             loader = (importlib.machinery.SourceFileLoader,
-                      importlib.machinery.SOURCE_SUFFIXES, True)
+                      importlib.machinery.SOURCE_SUFFIXES)
             sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
             yield from bench(name, lambda: sys.modules.pop(name), repeat=repeat,
                              seconds=seconds)
@@ -102,10 +101,10 @@ def source_writing_bytecode(seconds, repeat):
     """Source writing bytecode: small"""
     assert not sys.dont_write_bytecode
     name = '__importlib_test_benchmark__'
-    with source_util.create_modules(name) as mapping:
+    with util.create_modules(name) as mapping:
         sys.meta_path.append(importlib.machinery.PathFinder)
         loader = (importlib.machinery.SourceFileLoader,
-                  importlib.machinery.SOURCE_SUFFIXES, True)
+                  importlib.machinery.SOURCE_SUFFIXES)
         sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
         def cleanup():
             sys.modules.pop(name)
@@ -136,10 +135,10 @@ decimal_writing_bytecode = _writing_bytecode(decimal)
 def source_using_bytecode(seconds, repeat):
     """Source w/ bytecode: small"""
     name = '__importlib_test_benchmark__'
-    with source_util.create_modules(name) as mapping:
+    with util.create_modules(name) as mapping:
         sys.meta_path.append(importlib.machinery.PathFinder)
         loader = (importlib.machinery.SourceFileLoader,
-                importlib.machinery.SOURCE_SUFFIXES, True)
+                  importlib.machinery.SOURCE_SUFFIXES)
         sys.path_hooks.append(importlib.machinery.FileFinder.path_hook(loader))
         py_compile.compile(mapping[name])
         assert os.path.exists(imp.cache_from_source(mapping[name]))
