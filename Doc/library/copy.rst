@@ -44,7 +44,7 @@ copy operations:
   reference to themselves) may cause a recursive loop.
 
 * Because deep copy copies *everything* it may copy too much, e.g.,
-  administrative data structures that should be shared even between copies.
+  even administrative data structures that should be shared even between copies.
 
 The :func:`deepcopy` function avoids these problems by:
 
