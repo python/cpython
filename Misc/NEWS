@@ -125,6 +125,11 @@ Build
 
 - Don't use largefile support for GNU/Hurd.
 
+Tools/Demos
+-----------
+
+- Issue #27418: Fixed Tools/importbench/importbench.py.
+
 
 What's New in Python 3.6.0 alpha 2
 ==================================
