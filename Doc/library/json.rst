@@ -99,9 +99,9 @@ Extending :class:`JSONEncoder`::
 
 .. highlight:: none
 
-Using json.tool from the shell to validate and pretty-print::
+Using :mod:`json.tool` from the shell to validate and pretty-print::
 
-    $ echo '{"json":"obj"}' | python -mjson.tool
+    $ echo '{"json":"obj"}' | python -m json.tool
     {
         "json": "obj"
     }
@@ -130,28 +130,29 @@ Basic Usage
    :term:`file-like object`) using this :ref:`conversion table
    <py-to-json-table>`.
 
-   If *skipkeys* is ``True`` (default: ``False``), then dict keys that are not
+   If *skipkeys* is true (default: ``False``), then dict keys that are not
    of a basic type (:class:`str`, :class:`unicode`, :class:`int`, :class:`long`,
    :class:`float`, :class:`bool`, ``None``) will be skipped instead of raising a
    :exc:`TypeError`.
 
-   If *ensure_ascii* is ``True`` (the default), all non-ASCII characters in the
+   If *ensure_ascii* is true (the default), all non-ASCII characters in the
    output are escaped with ``\uXXXX`` sequences, and the result is a
    :class:`str` instance consisting of ASCII characters only.  If
-   *ensure_ascii* is ``False``, some chunks written to *fp* may be
+   *ensure_ascii* is false, some chunks written to *fp* may be
    :class:`unicode` instances.  This usually happens because the input contains
    unicode strings or the *encoding* parameter is used.  Unless ``fp.write()``
    explicitly understands :class:`unicode` (as in :func:`codecs.getwriter`)
    this is likely to cause an error.
 
-   If *check_circular* is ``False`` (default: ``True``), then the circular
+   If *check_circular* is false (default: ``True``), then the circular
    reference check for container types will be skipped and a circular reference
    will result in an :exc:`OverflowError` (or worse).
 
-   If *allow_nan* is ``False`` (default: ``True``), then it will be a
+   If *allow_nan* is false (default: ``True``), then it will be a
    :exc:`ValueError` to serialize out of range :class:`float` values (``nan``,
-   ``inf``, ``-inf``) in strict compliance of the JSON specification, instead of
-   using the JavaScript equivalents (``NaN``, ``Infinity``, ``-Infinity``).
+   ``inf``, ``-inf``) in strict compliance of the JSON specification.
+   If *allow_nan* is true, their JavaScript equivalents (``NaN``,
+   ``Infinity``, ``-Infinity``) will be used.
 
    If *indent* is a non-negative integer, then JSON array elements and object
    members will be pretty-printed with that indent level.  An indent level of 0,
@@ -164,16 +165,18 @@ Basic Usage
       trailing whitespace when *indent* is specified.  You can use
       ``separators=(',', ': ')`` to avoid this.
 
-   If *separators* is an ``(item_separator, dict_separator)`` tuple, then it
-   will be used instead of the default ``(', ', ': ')`` separators.  ``(',',
-   ':')`` is the most compact JSON representation.
+   If specified, *separators* should be an ``(item_separator, key_separator)``
+   tuple.  By default, ``(', ', ': ')`` are used.  To get the most compact JSON
+   representation, you should specify ``(',', ':')`` to eliminate whitespace.
 
    *encoding* is the character encoding for str instances, default is UTF-8.
 
-   *default(obj)* is a function that should return a serializable version of
-   *obj* or raise :exc:`TypeError`.  The default simply raises :exc:`TypeError`.
+   If specified, *default* should be a function that gets called for objects that
+   can't otherwise be serialized.  It should return a JSON encodable version of
+   the object or raise a :exc:`TypeError`.  If not specified, :exc:`TypeError`
+   is raised.
 
-   If *sort_keys* is ``True`` (default: ``False``), then the output of
+   If *sort_keys* is true (default: ``False``), then the output of
    dictionaries will be sorted by key.
 
    To use a custom :class:`JSONEncoder` subclass (e.g. one that overrides the
@@ -192,7 +195,7 @@ Basic Usage
                     default=None, sort_keys=False, **kw)
 
    Serialize *obj* to a JSON formatted :class:`str` using this :ref:`conversion
-   table <py-to-json-table>`.  If *ensure_ascii* is ``False``, the result may
+   table <py-to-json-table>`.  If *ensure_ascii* is false, the result may
    contain non-ASCII characters and the return value may be a :class:`unicode`
    instance.
 
@@ -345,7 +348,7 @@ Encoders and Decoders
    ``'false'``.  This can be used to raise an exception if invalid JSON numbers
    are encountered.
 
-   If *strict* is ``False`` (``True`` is the default), then control characters
+   If *strict* is false (``True`` is the default), then control characters
    will be allowed inside strings.  Control characters in this context are
    those with character codes in the 0-31 range, including ``'\t'`` (tab),
    ``'\n'``, ``'\r'`` and ``'\0'``.
@@ -399,29 +402,29 @@ Encoders and Decoders
    for ``o`` if possible, otherwise it should call the superclass implementation
    (to raise :exc:`TypeError`).
 
-   If *skipkeys* is ``False`` (the default), then it is a :exc:`TypeError` to
+   If *skipkeys* is false (the default), then it is a :exc:`TypeError` to
    attempt encoding of keys that are not str, int, long, float or None.  If
-   *skipkeys* is ``True``, such items are simply skipped.
+   *skipkeys* is true, such items are simply skipped.
 
-   If *ensure_ascii* is ``True`` (the default), all non-ASCII characters in the
+   If *ensure_ascii* is true (the default), all non-ASCII characters in the
    output are escaped with ``\uXXXX`` sequences, and the results are
    :class:`str` instances consisting of ASCII characters only. If
-   *ensure_ascii* is ``False``, a result may be a :class:`unicode`
+   *ensure_ascii* is false, a result may be a :class:`unicode`
    instance. This usually happens if the input contains unicode strings or the
    *encoding* parameter is used.
 
-   If *check_circular* is ``True`` (the default), then lists, dicts, and custom
+   If *check_circular* is true (the default), then lists, dicts, and custom
    encoded objects will be checked for circular references during encoding to
    prevent an infinite recursion (which would cause an :exc:`OverflowError`).
    Otherwise, no such check takes place.
 
-   If *allow_nan* is ``True`` (the default), then ``NaN``, ``Infinity``, and
+   If *allow_nan* is true (the default), then ``NaN``, ``Infinity``, and
    ``-Infinity`` will be encoded as such.  This behavior is not JSON
    specification compliant, but is consistent with most JavaScript based
    encoders and decoders.  Otherwise, it will be a :exc:`ValueError` to encode
    such floats.
 
-   If *sort_keys* is ``True`` (default ``False``), then the output of dictionaries
+   If *sort_keys* is true (default: ``False``), then the output of dictionaries
    will be sorted by key; this is useful for regression tests to ensure that
    JSON serializations can be compared on a day-to-day basis.
 
@@ -437,12 +440,13 @@ Encoders and Decoders
       ``separators=(',', ': ')`` to avoid this.
 
    If specified, *separators* should be an ``(item_separator, key_separator)``
-   tuple.  The default is ``(', ', ': ')``.  To get the most compact JSON
+   tuple.  By default, ``(', ', ': ')`` are used.  To get the most compact JSON
    representation, you should specify ``(',', ':')`` to eliminate whitespace.
 
-   If specified, *default* is a function that gets called for objects that can't
-   otherwise be serialized.  It should return a JSON encodable version of the
-   object or raise a :exc:`TypeError`.
+   If specified, *default* should be a function that gets called for objects that
+   can't otherwise be serialized.  It should return a JSON encodable version of
+   the object or raise a :exc:`TypeError`.  If not specified, :exc:`TypeError`
+   is raised.
 
    If *encoding* is not ``None``, then all input strings will be transformed
    into unicode using that encoding prior to JSON-encoding.  The default is

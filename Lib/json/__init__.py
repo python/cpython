@@ -132,7 +132,7 @@ def dump(obj, fp, skipkeys=False, ensure_ascii=True, check_circular=True,
     If ``ensure_ascii`` is true (the default), all non-ASCII characters in the
     output are escaped with ``\uXXXX`` sequences, and the result is a ``str``
     instance consisting of ASCII characters only.  If ``ensure_ascii`` is
-    ``False``, some chunks written to ``fp`` may be ``unicode`` instances.
+    false, some chunks written to ``fp`` may be ``unicode`` instances.
     This usually happens because the input contains unicode strings or the
     ``encoding`` parameter is used. Unless ``fp.write()`` explicitly
     understands ``unicode`` (as in ``codecs.getwriter``) this is likely to
@@ -163,7 +163,7 @@ def dump(obj, fp, skipkeys=False, ensure_ascii=True, check_circular=True,
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.
 
-    If *sort_keys* is ``True`` (default: ``False``), then the output of
+    If *sort_keys* is true (default: ``False``), then the output of
     dictionaries will be sorted by key.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
@@ -228,7 +228,7 @@ def dumps(obj, skipkeys=False, ensure_ascii=True, check_circular=True,
     ``default(obj)`` is a function that should return a serializable version
     of obj or raise TypeError. The default simply raises TypeError.
 
-    If *sort_keys* is ``True`` (default: ``False``), then the output of
+    If *sort_keys* is true (default: ``False``), then the output of
     dictionaries will be sorted by key.
 
     To use a custom ``JSONEncoder`` subclass (e.g. one that overrides the
