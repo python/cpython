@@ -7,6 +7,12 @@ What's New in Python 3.6.0 alpha 3
 
 *Release date: XXXX-XX-XX*
 
+Core and Builtins
+-----------------
+
+- Issue #27007: The fromhex() class methods of bytes and bytearray subclasses
+  now return an instance of corresponding subclass.
+
 Library
 -------
 
