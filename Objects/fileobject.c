@@ -2394,7 +2394,8 @@ file_init(PyObject *self, PyObject *args, PyObject *kwds)
 
 #ifdef MS_WINDOWS
     if (PyArg_ParseTupleAndKeywords(args, kwds, "U|si:file",
-                                    kwlist, &po, &mode, &bufsize)) {
+                                    kwlist, &po, &mode, &bufsize) &&
+        wcslen(PyUnicode_AS_UNICODE(po)) == (size_t)PyUnicode_GET_SIZE(po)) {
         wideargument = 1;
         if (fill_file_fields(foself, NULL, po, mode,
                              fclose) == NULL)

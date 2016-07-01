@@ -577,6 +577,44 @@ class PosixTester(unittest.TestCase):
                 set([int(x) for x in groups.split()]),
                 set(posix.getgroups() + [posix.getegid()]))
 
+    @test_support.requires_unicode
+    def test_path_with_null_unicode(self):
+        fn = test_support.TESTFN_UNICODE
+        fn_with_NUL = fn + u'\0'
+        self.addCleanup(test_support.unlink, fn)
+        test_support.unlink(fn)
+        fd = None
+        try:
+            with self.assertRaises(TypeError):
+                fd = os.open(fn_with_NUL, os.O_WRONLY | os.O_CREAT) # raises
+        finally:
+            if fd is not None:
+                os.close(fd)
+        self.assertFalse(os.path.exists(fn))
+        self.assertRaises(TypeError, os.mkdir, fn_with_NUL)
+        self.assertFalse(os.path.exists(fn))
+        open(fn, 'wb').close()
+        self.assertRaises(TypeError, os.stat, fn_with_NUL)
+
+    def test_path_with_null_byte(self):
+        fn = test_support.TESTFN
+        fn_with_NUL = fn + '\0'
+        self.addCleanup(test_support.unlink, fn)
+        test_support.unlink(fn)
+        fd = None
+        try:
+            with self.assertRaises(TypeError):
+                fd = os.open(fn_with_NUL, os.O_WRONLY | os.O_CREAT) # raises
+        finally:
+            if fd is not None:
+                os.close(fd)
+        self.assertFalse(os.path.exists(fn))
+        self.assertRaises(TypeError, os.mkdir, fn_with_NUL)
+        self.assertFalse(os.path.exists(fn))
+        open(fn, 'wb').close()
+        self.assertRaises(TypeError, os.stat, fn_with_NUL)
+
+
 class PosixGroupsTester(unittest.TestCase):
 
     def setUp(self):

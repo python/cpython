@@ -779,7 +779,7 @@ class Unicode_TestCase(unittest.TestCase):
     def test_u(self):
         from _testcapi import getargs_u
         self.assertEqual(getargs_u(u'abc\xe9'), u'abc\xe9')
-        self.assertEqual(getargs_u(u'nul:\0'), u'nul:')
+        self.assertRaises(TypeError, getargs_u, u'nul:\0')
         self.assertRaises(TypeError, getargs_u, 'bytes')
         self.assertRaises(TypeError, getargs_u, bytearray('bytearray'))
         self.assertRaises(TypeError, getargs_u, memoryview('memoryview'))

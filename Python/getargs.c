@@ -576,6 +576,17 @@ float_argument_error(PyObject *arg)
         return 0;
 }
 
+#ifdef Py_USING_UNICODE
+static size_t
+_ustrlen(Py_UNICODE *u)
+{
+    size_t i = 0;
+    Py_UNICODE *v = u;
+    while (*v != 0) { i++; v++; }
+    return i;
+}
+#endif
+
 /* Convert a non-tuple argument.  Return NULL if conversion went OK,
    or a string with a message describing the failure.  The message is
    formatted as "must be <desired type>, not <actual type>".
@@ -1202,8 +1213,14 @@ convertsimple(PyObject *arg, const char **p_format, va_list *p_va, int flags,
             format++;
         } else {
             Py_UNICODE **p = va_arg(*p_va, Py_UNICODE **);
-            if (PyUnicode_Check(arg))
+            if (PyUnicode_Check(arg)) {
                 *p = PyUnicode_AS_UNICODE(arg);
+                if (_ustrlen(*p) != (size_t)PyUnicode_GET_SIZE(arg)) {
+                    return converterr(
+                        "unicode without null characters",
+                        arg, msgbuf, bufsize);
+                }
+            }
             else
                 return converterr("unicode", arg, msgbuf, bufsize);
         }

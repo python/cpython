@@ -10,6 +10,10 @@ What's New in Python 2.7.13?
 Core and Builtins
 -----------------
 
+- Issue #23908: os functions, open() and the io.FileIO constructor now reject
+  unicode paths with embedded null character on Windows instead of silently
+  truncate them.
+
 Library
 -------
 
