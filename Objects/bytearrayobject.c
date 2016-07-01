@@ -1968,7 +1968,6 @@ bytearray_splitlines_impl(PyByteArrayObject *self, int keepends)
 @classmethod
 bytearray.fromhex
 
-    cls: self(type="PyObject*")
     string: unicode
     /
 
@@ -1979,10 +1978,15 @@ Example: bytearray.fromhex('B9 01EF') -> bytearray(b'\\xb9\\x01\\xef')
 [clinic start generated code]*/
 
 static PyObject *
-bytearray_fromhex_impl(PyObject*cls, PyObject *string)
-/*[clinic end generated code: output=df3da60129b3700c input=907bbd2d34d9367a]*/
+bytearray_fromhex_impl(PyTypeObject *type, PyObject *string)
+/*[clinic end generated code: output=8f0f0b6d30fb3ba0 input=f033a16d1fb21f48]*/
 {
-    return _PyBytes_FromHex(string, 1);
+    PyObject *result = _PyBytes_FromHex(string, type == &PyByteArray_Type);
+    if (type != &PyByteArray_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type,
+                                                       result, NULL));
+    }
+    return result;
 }
 
 PyDoc_STRVAR(hex__doc__,

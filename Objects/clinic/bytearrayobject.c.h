@@ -636,10 +636,10 @@ PyDoc_STRVAR(bytearray_fromhex__doc__,
     {"fromhex", (PyCFunction)bytearray_fromhex, METH_O|METH_CLASS, bytearray_fromhex__doc__},
 
 static PyObject *
-bytearray_fromhex_impl(PyObject*cls, PyObject *string);
+bytearray_fromhex_impl(PyTypeObject *type, PyObject *string);
 
 static PyObject *
-bytearray_fromhex(PyTypeObject *cls, PyObject *arg)
+bytearray_fromhex(PyTypeObject *type, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *string;
@@ -647,7 +647,7 @@ bytearray_fromhex(PyTypeObject *cls, PyObject *arg)
     if (!PyArg_Parse(arg, "U:fromhex", &string)) {
         goto exit;
     }
-    return_value = bytearray_fromhex_impl((PyObject*)cls, string);
+    return_value = bytearray_fromhex_impl(type, string);
 
 exit:
     return return_value;
@@ -716,4 +716,4 @@ bytearray_sizeof(PyByteArrayObject *self, PyObject *Py_UNUSED(ignored))
 {
     return bytearray_sizeof_impl(self);
 }
-/*[clinic end generated code: output=044a6c26a836bcfe input=a9049054013a1b77]*/
+/*[clinic end generated code: output=a32f183ebef159cc input=a9049054013a1b77]*/
