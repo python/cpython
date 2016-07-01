@@ -2666,7 +2666,7 @@ require changes to your code:
 
 * The :class:`xml.etree.ElementTree` class now raises an
   :exc:`xml.etree.ElementTree.ParseError` when a parse fails. Previously it
-  raised a :exc:`xml.parsers.expat.ExpatError`.
+  raised an :exc:`xml.parsers.expat.ExpatError`.
 
 * The new, longer :func:`str` value on floats may break doctests which rely on
   the old output format.
