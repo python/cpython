@@ -2,6 +2,60 @@
 # error "transmogrify.h only compatible with byte-wise strings"
 #endif
 
+Py_LOCAL(PyObject *)
+stringlib_method_find(PyObject *self, PyObject *args)
+{
+    return _Py_bytes_find(STRINGLIB_STR(self), STRINGLIB_LEN(self), args);
+}
+
+Py_LOCAL(PyObject *)
+stringlib_index(PyObject *self, PyObject *args)
+{
+    return _Py_bytes_index(STRINGLIB_STR(self), STRINGLIB_LEN(self), args);
+}
+
+Py_LOCAL(PyObject *)
+stringlib_method_rfind(PyObject *self, PyObject *args)
+{
+    return _Py_bytes_rfind(STRINGLIB_STR(self), STRINGLIB_LEN(self), args);
+}
+
+Py_LOCAL(PyObject *)
+stringlib_rindex(PyObject *self, PyObject *args)
+{
+    return _Py_bytes_rindex(STRINGLIB_STR(self), STRINGLIB_LEN(self), args);
+}
+
+Py_LOCAL(PyObject *)
+stringlib_method_count(PyObject *self, PyObject *args)
+{
+    return _Py_bytes_count(STRINGLIB_STR(self), STRINGLIB_LEN(self), args);
+}
+
+Py_LOCAL(int)
+stringlib_contains(PyObject *self, PyObject *arg)
+{
+    return _Py_bytes_contains(STRINGLIB_STR(self), STRINGLIB_LEN(self), arg);
+}
+
+Py_LOCAL(PyObject *)
+stringlib_startswith(PyObject *self, PyObject *args)
+{
+    return _Py_bytes_startswith(STRINGLIB_STR(self), STRINGLIB_LEN(self), args);
+}
+
+Py_LOCAL(PyObject *)
+stringlib_endswith(PyObject *self, PyObject *args)
+{
+    return _Py_bytes_endswith(STRINGLIB_STR(self), STRINGLIB_LEN(self), args);
+}
+
+Py_LOCAL(PyObject *)
+stringlib_hex(PyObject *self)
+{
+    return _Py_strhex(STRINGLIB_STR(self), STRINGLIB_LEN(self));
+}
+
 /* the more complicated methods.  parts of these should be pulled out into the
    shared code in bytes_methods.c to cut down on duplicate code bloat.  */
 
