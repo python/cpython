@@ -2303,7 +2303,12 @@ static PyObject *
 bytes_fromhex_impl(PyTypeObject *type, PyObject *string)
 /*[clinic end generated code: output=0973acc63661bb2e input=bf4d1c361670acd3]*/
 {
-    return _PyBytes_FromHex(string, 0);
+    PyObject *result = _PyBytes_FromHex(string, 0);
+    if (type != &PyBytes_Type && result != NULL) {
+        Py_SETREF(result, PyObject_CallFunctionObjArgs((PyObject *)type,
+                                                       result, NULL));
+    }
+    return result;
 }
 
 PyObject*
