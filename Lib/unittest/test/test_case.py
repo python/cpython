@@ -339,7 +339,7 @@ class Test_TestCase(unittest.TestCase, TestEquality, TestHashing):
         self._check_call_order__subtests(result, events, expected)
 
     def test_run_call_order__subtests_legacy(self):
-        # With a legacy result object (without a addSubTest method),
+        # With a legacy result object (without an addSubTest method),
         # text execution stops after the first subtest failure.
         events = []
         result = LegacyLoggingResult(events)
