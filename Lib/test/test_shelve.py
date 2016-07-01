@@ -162,6 +162,10 @@ class TestCase(unittest.TestCase):
         else:
             self.fail('Closed shelf should not find a key')
 
+    def test_default_protocol(self):
+        with shelve.Shelf({}) as s:
+            self.assertEqual(s._protocol, 3)
+
 from test import mapping_tests
 
 class TestShelveBase(mapping_tests.BasicTestMappingProtocol):
