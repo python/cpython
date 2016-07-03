@@ -14,6 +14,7 @@ import traceback
 import webbrowser
 
 from idlelib.multicall import MultiCallCreator
+from idlelib import query
 from idlelib import windows
 from idlelib import search
 from idlelib import grep
@@ -573,46 +574,27 @@ class EditorWindow(object):
         text.see("insert")
 
     def open_module(self, event=None):
-        # XXX Shouldn't this be in IOBinding?
+        """Get module name from user and open it.
+
+        Return module path or None for calls by open_class_browser
+        when latter is not invoked in named editor window.
+        """
+        # XXX This, open_class_browser, and open_path_browser
+        # would fit better in iomenu.IOBinding.
         try:
-            name = self.text.get("sel.first", "sel.last")
+            name = self.text.get("sel.first", "sel.last").strip()
         except TclError:
-            name = ""
-        else:
-            name = name.strip()
-        name = tkSimpleDialog.askstring("Module",
-                 "Enter the name of a Python module\n"
-                 "to search on sys.path and open:",
-                 parent=self.text, initialvalue=name)
-        if name:
-            name = name.strip()
-        if not name:
-            return
-        # XXX Ought to insert current file's directory in front of path
-        try:
-            spec = importlib.util.find_spec(name)
-        except (ValueError, ImportError) as msg:
-            tkMessageBox.showerror("Import error", str(msg), parent=self.text)
-            return
-        if spec is None:
-            tkMessageBox.showerror("Import error", "module not found",
-                                   parent=self.text)
-            return
-        if not isinstance(spec.loader, importlib.abc.SourceLoader):
-            tkMessageBox.showerror("Import error", "not a source-based module",
-                                   parent=self.text)
-            return
-        try:
-            file_path = spec.loader.get_filename(name)
-        except AttributeError:
-            tkMessageBox.showerror("Import error",
-                                   "loader does not support get_filename",
-                                   parent=self.text)
-            return
-        if self.flist:
-            self.flist.open(file_path)
-        else:
-            self.io.loadfile(file_path)
+            name = ''
+        file_path = query.ModuleName(
+                self.text, "Open Module",
+                "Enter the name of a Python module\n"
+                "to search on sys.path and open:",
+                name).result
+        if file_path is not None:
+            if self.flist:
+                self.flist.open(file_path)
+            else:
+                self.io.loadfile(file_path)
         return file_path
 
     def open_class_browser(self, event=None):

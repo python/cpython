@@ -235,8 +235,9 @@ _percolator_spec = {
 
 Query_spec = {
     'file': 'query',
-    'kwds': {'title':'Query',
-             'message':'Enter something',
+    'kwds': {'title': 'Query',
+             'message': 'Enter something',
+             'text0': 'Go',
              '_htest': True},
     'msg': "Enter with <Return> or [Ok].  Print valid entry to Shell\n"
            "Blank line, after stripping, is ignored\n"

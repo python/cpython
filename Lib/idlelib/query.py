@@ -15,7 +15,8 @@ Configdialog uses it for new highlight theme and keybinding set names.
 # of configSectionNameDialog.py (temporarily config_sec.py) into
 # generic and specific parts.
 
-from tkinter import FALSE, TRUE, Toplevel
+import importlib
+from tkinter import Toplevel, StringVar
 from tkinter.messagebox import showerror
 from tkinter.ttk import Frame, Button, Entry, Label
 
@@ -24,20 +25,22 @@ class Query(Toplevel):
 
     For this base class, accept any non-blank string.
     """
-    def __init__(self, parent, title, message,
-                 *, _htest=False, _utest=False):  # Call from override.
+    def __init__(self, parent, title, message, text0='',
+                 *, _htest=False, _utest=False):
         """Create popup, do not return until tk widget destroyed.
 
-        Additional subclass init must be done before calling this.
+        Additional subclass init must be done before calling this
+        unless  _utest=True is passed to suppress wait_window().
 
         title - string, title of popup dialog
         message - string, informational message to display
+        text0 - initial value for entry
         _htest - bool, change box location when running htest
         _utest - bool, leave window hidden and not modal
         """
         Toplevel.__init__(self, parent)
         self.configure(borderwidth=5)
-        self.resizable(height=FALSE, width=FALSE)
+        self.resizable(height=False, width=False)
         self.title(title)
         self.transient(parent)
         self.grab_set()
@@ -45,6 +48,7 @@ class Query(Toplevel):
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.parent = parent
         self.message = message
+        self.text0 = text0
         self.create_widgets()
         self.update_idletasks()
         #needs to be done here so that the winfo_reqwidth is valid
@@ -62,31 +66,34 @@ class Query(Toplevel):
             self.wait_window()
 
     def create_widgets(self):  # Call from override, if any.
+        # Bind widgets needed for entry_ok or unittest to self.
         frame = Frame(self, borderwidth=2, relief='sunken', )
         label = Label(frame, anchor='w', justify='left',
                     text=self.message)
-        self.entry = Entry(frame, width=30)  # Bind name for entry_ok.
+        self.entryvar = StringVar(self, self.text0)
+        self.entry = Entry(frame, width=30, textvariable=self.entryvar)
         self.entry.focus_set()
 
-        buttons = Frame(self)  # Bind buttons for invoke in unittest.
+        buttons = Frame(self)
         self.button_ok = Button(buttons, text='Ok',
                 width=8, command=self.ok)
         self.button_cancel = Button(buttons, text='Cancel',
                 width=8, command=self.cancel)
 
-        frame.pack(side='top', expand=TRUE, fill='both')
+        frame.pack(side='top', expand=True, fill='both')
         label.pack(padx=5, pady=5)
         self.entry.pack(padx=5, pady=5)
         buttons.pack(side='bottom')
         self.button_ok.pack(side='left', padx=5)
         self.button_cancel.pack(side='right', padx=5)
 
-    def entry_ok(self):  # Usually replace.
-        "Check that entry not blank."
+    def entry_ok(self):  # Example: usually replace.
+        "Return non-blank entry or None."
         entry = self.entry.get().strip()
         if not entry:
             showerror(title='Entry Error',
                     message='Blank line.', parent=self)
+            return
         return entry
 
     def ok(self, event=None):  # Do not replace.
@@ -95,7 +102,7 @@ class Query(Toplevel):
         Otherwise leave dialog open for user to correct entry or cancel.
         '''
         entry = self.entry_ok()
-        if entry:
+        if entry is not None:
             self.result = entry
             self.destroy()
         else:
@@ -114,30 +121,70 @@ class SectionName(Query):
     def __init__(self, parent, title, message, used_names,
                  *, _htest=False, _utest=False):
         "used_names - collection of strings already in use"
-
         self.used_names = used_names
         Query.__init__(self, parent, title, message,
                  _htest=_htest, _utest=_utest)
-        # This call does ot return until tk widget is destroyed.
 
     def entry_ok(self):
-        '''Stripping entered name, check that it is a  sensible
-        ConfigParser file section name. Return it if it is, '' if not.
-        '''
+        "Return sensible ConfigParser section name or None."
         name = self.entry.get().strip()
         if not name:
             showerror(title='Name Error',
                     message='No name specified.', parent=self)
+            return
         elif len(name)>30:
             showerror(title='Name Error',
                     message='Name too long. It should be no more than '+
                     '30 characters.', parent=self)
-            name = ''
+            return
         elif name in self.used_names:
             showerror(title='Name Error',
                     message='This name is already in use.', parent=self)
-            name = ''
+            return
         return name
+
+
+class ModuleName(Query):
+    "Get a module name for Open Module menu entry."
+    # Used in open_module (editor.EditorWindow until move to iobinding).
+
+    def __init__(self, parent, title, message, text0='',
+                 *, _htest=False, _utest=False):
+        """text0 - name selected in text before Open Module invoked"
+        """
+        Query.__init__(self, parent, title, message, text0=text0,
+                 _htest=_htest, _utest=_utest)
+
+    def entry_ok(self):
+        "Return entered module name as file path or None."
+        # Moved here from Editor_Window.load_module 2016 July.
+        name = self.entry.get().strip()
+        if not name:
+            showerror(title='Name Error',
+                    message='No name specified.', parent=self)
+            return
+        # XXX Ought to insert current file's directory in front of path
+        try:
+            spec = importlib.util.find_spec(name)
+        except (ValueError, ImportError) as msg:
+            showerror("Import Error", str(msg), parent=self)
+            return
+        if spec is None:
+            showerror("Import Error", "module not found",
+                      parent=self)
+            return
+        if not isinstance(spec.loader, importlib.abc.SourceLoader):
+            showerror("Import Error", "not a source-based module",
+                      parent=self)
+            return
+        try:
+            file_path = spec.loader.get_filename(name)
+        except AttributeError:
+            showerror("Import Error",
+                      "loader does not support get_filename",
+                      parent=self)
+            return
+        return file_path
 
 
 if __name__ == '__main__':
