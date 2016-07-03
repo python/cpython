@@ -763,6 +763,9 @@ class ArgsTestCase(BaseTestCase):
 
         with open(filename) as fp:
             reflog = fp.read()
+            if hasattr(sys, 'getcounts'):
+                # Types are immportal if COUNT_ALLOCS is defined
+                reflog = reflog.splitlines(True)[-1]
             self.assertEqual(reflog, line2)
 
     def test_list_tests(self):

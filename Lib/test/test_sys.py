@@ -803,6 +803,7 @@ class SysModuleTest(unittest.TestCase):
         c = sys.getallocatedblocks()
         self.assertIn(c, range(b - 50, b + 50))
 
+    @test.support.requires_type_collecting
     def test_is_finalizing(self):
         self.assertIs(sys.is_finalizing(), False)
         # Don't use the atexit module because _Py_Finalizing is only set
@@ -1083,9 +1084,12 @@ class SizeofTest(unittest.TestCase):
         check((1,2,3), vsize('') + 3*self.P)
         # type
         # static type: PyTypeObject
-        s = vsize('P2n15Pl4Pn9Pn11PIP')
+        fmt = 'P2n15Pl4Pn9Pn11PIP'
+        if hasattr(sys, 'getcounts'):
+            fmt += '3n2P'
+        s = vsize(fmt)
         check(int, s)
-        s = vsize('P2n15Pl4Pn9Pn11PIP'  # PyTypeObject
+        s = vsize(fmt +                 # PyTypeObject
                   '3P'                  # PyAsyncMethods
                   '36P'                 # PyNumberMethods
                   '3P'                  # PyMappingMethods
