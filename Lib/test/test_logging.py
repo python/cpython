@@ -3389,6 +3389,7 @@ class ModuleLevelMiscTest(BaseTest):
         logging.setLoggerClass(logging.Logger)
         self.assertEqual(logging.getLoggerClass(), logging.Logger)
 
+    @support.requires_type_collecting
     def test_logging_at_shutdown(self):
         # Issue #20037
         code = """if 1:
