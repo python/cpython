@@ -1,7 +1,7 @@
 # Very rudimentary test of threading module
 
 import test.test_support
-from test.test_support import verbose, cpython_only
+from test.support import verbose, cpython_only, requires_type_collecting
 from test.script_helper import assert_python_ok
 
 import random
@@ -812,6 +812,7 @@ class ThreadingExceptionTests(BaseTestCase):
         self.assertIn("ZeroDivisionError", err)
         self.assertNotIn("Unhandled exception", err)
 
+    @requires_type_collecting
     def test_print_exception_stderr_is_none_1(self):
         script = r"""if 1:
             import sys
