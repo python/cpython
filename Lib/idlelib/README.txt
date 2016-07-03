@@ -41,7 +41,6 @@ config.py         # Load, fetch, and save configuration (nim).
 configdialog.py   # Display user configuration dialogs.
 config_help.py    # Specify help source in configdialog.
 config_key.py     # Change keybindings.
-config_sec.py     # Spefify user config section name
 dynoption.py      # Define mutable OptionMenu widget (nim).
 debugobj.py       # Define class used in stackviewer.
 debugobj_r.py     # Communicate objects between processes with rpc (nim).
@@ -66,6 +65,7 @@ pathbrowser.py    # Create path browser window.
 percolator.py     # Manage delegator stack (nim).
 pyparse.py        # Give information on code indentation
 pyshell.py        # Start IDLE, manage shell, complete editor window
+query.py          # Query user for informtion
 redirector.py     # Intercept widget subcommands (for percolator) (nim).
 replace.py        # Search and replace pattern in text.
 rpc.py            # Commuicate between idle and user processes (nim).
@@ -192,8 +192,8 @@ Options
   Configure IDLE   # eEW.config_dialog, configdialog
     (tabs in the dialog)
     Font tab       # config-main.def
-    Highlight tab  # config_sec, config-highlight.def
-    Keys tab       # config_key, configconfig_secg-keus.def
+    Highlight tab  # query, config-highlight.def
+    Keys tab       # query, config_key, config_keys.def
     General tab    # config_help, config-main.def
     Extensions tab # config-extensions.def, corresponding .py
   ---

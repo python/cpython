@@ -8,8 +8,8 @@ import unittest
 from unittest import mock
 from idlelib.idle_test.mock_tk import Var, Mbox_func
 from idlelib import query
-Query, SectionName = query.Query, query.SectionName
 
+Query = query.Query
 class Dummy_Query:
     # Mock for testing the following methods Query
     entry_ok = Query.entry_ok
@@ -23,7 +23,7 @@ class Dummy_Query:
         self.destroyed = True
 
 # entry_ok calls modal messagebox.showerror if entry is not ok.
-# Mock showerrer returns, so don't need to click to continue.
+# Mock showerrer so don't need to click to continue.
 orig_showerror = query.showerror
 showerror = Mbox_func()  # Instance has __call__ method.
 
@@ -46,7 +46,7 @@ class QueryTest(unittest.TestCase):
         dialog = self.dialog
         Equal = self.assertEqual
         dialog.entry.set(' ')
-        Equal(dialog.entry_ok(), '')
+        Equal(dialog.entry_ok(), None)
         Equal((dialog.result, dialog.destroyed), (None, False))
         Equal(showerror.title, 'Entry Error')
         self.assertIn('Blank', showerror.message)
@@ -74,48 +74,88 @@ class QueryTest(unittest.TestCase):
 
 
 class Dummy_SectionName:
-    # Mock for testing the following method of Section_Name
-    entry_ok = SectionName.entry_ok
-    # Attributes, constant or variable, needed for tests
+    entry_ok = query.SectionName.entry_ok  # Test override.
     used_names = ['used']
     entry = Var()
 
 class SectionNameTest(unittest.TestCase):
     dialog = Dummy_SectionName()
 
-
     def setUp(self):
         showerror.title = None
 
-    def test_blank_name(self):
+    def test_blank_section_name(self):
         dialog = self.dialog
         Equal = self.assertEqual
         dialog.entry.set(' ')
-        Equal(dialog.entry_ok(), '')
+        Equal(dialog.entry_ok(), None)
         Equal(showerror.title, 'Name Error')
         self.assertIn('No', showerror.message)
 
-    def test_used_name(self):
+    def test_used_section_name(self):
         dialog = self.dialog
         Equal = self.assertEqual
         dialog.entry.set('used')
-        Equal(self.dialog.entry_ok(), '')
+        Equal(self.dialog.entry_ok(), None)
         Equal(showerror.title, 'Name Error')
         self.assertIn('use', showerror.message)
 
-    def test_long_name(self):
+    def test_long_section_name(self):
         dialog = self.dialog
         Equal = self.assertEqual
         dialog.entry.set('good'*8)
-        Equal(self.dialog.entry_ok(), '')
+        Equal(self.dialog.entry_ok(), None)
         Equal(showerror.title, 'Name Error')
         self.assertIn('too long', showerror.message)
 
-    def test_good_entry(self):
+    def test_good_section_name(self):
         dialog = self.dialog
         Equal = self.assertEqual
         dialog.entry.set('  good ')
         Equal(dialog.entry_ok(), 'good')
+        Equal(showerror.title, None)
+
+
+class Dummy_ModuleName:
+    entry_ok = query.ModuleName.entry_ok  # Test override
+    text0 = ''
+    entry = Var()
+
+class ModuleNameTest(unittest.TestCase):
+    dialog = Dummy_ModuleName()
+
+    def setUp(self):
+        showerror.title = None
+
+    def test_blank_module_name(self):
+        dialog = self.dialog
+        Equal = self.assertEqual
+        dialog.entry.set(' ')
+        Equal(dialog.entry_ok(), None)
+        Equal(showerror.title, 'Name Error')
+        self.assertIn('No', showerror.message)
+
+    def test_bogus_module_name(self):
+        dialog = self.dialog
+        Equal = self.assertEqual
+        dialog.entry.set('__name_xyz123_should_not_exist__')
+        Equal(self.dialog.entry_ok(), None)
+        Equal(showerror.title, 'Import Error')
+        self.assertIn('not found', showerror.message)
+
+    def test_c_source_name(self):
+        dialog = self.dialog
+        Equal = self.assertEqual
+        dialog.entry.set('itertools')
+        Equal(self.dialog.entry_ok(), None)
+        Equal(showerror.title, 'Import Error')
+        self.assertIn('source-based', showerror.message)
+
+    def test_good_module_name(self):
+        dialog = self.dialog
+        Equal = self.assertEqual
+        dialog.entry.set('idlelib')
+        self.assertTrue(dialog.entry_ok().endswith('__init__.py'))
         Equal(showerror.title, None)
 
 
@@ -124,8 +164,8 @@ class QueryGuiTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         requires('gui')
-        cls.root = Tk()
-        cls.dialog = Query(cls.root, 'TEST', 'test', _utest=True)
+        cls.root = root = Tk()
+        cls.dialog = Query(root, 'TEST', 'test', _utest=True)
         cls.dialog.destroy = mock.Mock()
 
     @classmethod
@@ -158,6 +198,44 @@ class QueryGuiTest(unittest.TestCase):
         dialog.button_cancel.invoke()
         self.assertEqual(dialog.result, None)
         self.assertTrue(dialog.destroy.called)
+
+
+class SectionnameGuiTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+
+    def test_click_section_name(self):
+        root = Tk()
+        dialog =  query.SectionName(root, 'T', 't', {'abc'}, _utest=True)
+        Equal = self.assertEqual
+        Equal(dialog.used_names, {'abc'})
+        dialog.entry.insert(0, 'okay')
+        dialog.button_ok.invoke()
+        Equal(dialog.result, 'okay')
+        del dialog
+        root.destroy()
+        del root
+
+
+class ModulenameGuiTest(unittest.TestCase):
+
+    @classmethod
+    def setUpClass(cls):
+        requires('gui')
+
+    def test_click_module_name(self):
+        root = Tk()
+        dialog =  query.ModuleName(root, 'T', 't', 'idlelib', _utest=True)
+        Equal = self.assertEqual
+        Equal(dialog.text0, 'idlelib')
+        Equal(dialog.entry.get(), 'idlelib')
+        dialog.button_ok.invoke()
+        self.assertTrue(dialog.result.endswith('__init__.py'))
+        del dialog
+        root.destroy()
+        del root
 
 
 if __name__ == '__main__':
