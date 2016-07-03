@@ -580,6 +580,10 @@ class PosixTester(unittest.TestCase):
     @test_support.requires_unicode
     def test_path_with_null_unicode(self):
         fn = test_support.TESTFN_UNICODE
+        try:
+            fn.encode(test_support.TESTFN_ENCODING)
+        except (UnicodeError, TypeError):
+            self.skipTest("Requires unicode filenames support")
         fn_with_NUL = fn + u'\0'
         self.addCleanup(test_support.unlink, fn)
         test_support.unlink(fn)
