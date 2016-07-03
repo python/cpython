@@ -3192,8 +3192,12 @@ static PyObject *
 bytearrayiter_length_hint(bytesiterobject *it)
 {
     Py_ssize_t len = 0;
-    if (it->it_seq)
+    if (it->it_seq) {
         len = PyByteArray_GET_SIZE(it->it_seq) - it->it_index;
+        if (len < 0) {
+            len = 0;
+        }
+    }
     return PyLong_FromSsize_t(len);
 }
 
