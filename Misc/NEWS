@@ -10,6 +10,9 @@ What's New in Python 3.6.0 alpha 3
 Core and Builtins
 -----------------
 
+- Issue #27443: __length_hint__() of bytearray itearator no longer return
+  negative integer for resized bytearray.
+
 - Issue #27007: The fromhex() class methods of bytes and bytearray subclasses
   now return an instance of corresponding subclass.
 
