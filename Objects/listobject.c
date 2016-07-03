@@ -82,6 +82,16 @@ static size_t count_reuse = 0;
 static void
 show_alloc(void)
 {
+    PyObject *xoptions, *value;
+    _Py_IDENTIFIER(showalloccount);
+
+    xoptions = PySys_GetXOptions();
+    if (xoptions == NULL)
+        return;
+    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
+    if (value != Py_True)
+        return;
+
     fprintf(stderr, "List allocations: %" PY_FORMAT_SIZE_T "d\n",
         count_alloc);
     fprintf(stderr, "List reuse through freelist: %" PY_FORMAT_SIZE_T

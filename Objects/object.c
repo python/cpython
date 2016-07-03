@@ -109,6 +109,15 @@ void
 dump_counts(FILE* f)
 {
     PyTypeObject *tp;
+    PyObject *xoptions, *value;
+    _Py_IDENTIFIER(showalloccount);
+
+    xoptions = PySys_GetXOptions();
+    if (xoptions == NULL)
+        return;
+    value = _PyDict_GetItemId(xoptions, &PyId_showalloccount);
+    if (value != Py_True)
+        return;
 
     for (tp = type_list; tp; tp = tp->tp_next)
         fprintf(f, "%s alloc'd: %" PY_FORMAT_SIZE_T "d, "

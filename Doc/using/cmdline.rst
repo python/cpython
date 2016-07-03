@@ -397,6 +397,8 @@ Miscellaneous options
      stored in a traceback of a trace. Use ``-X tracemalloc=NFRAME`` to start
      tracing with a traceback limit of *NFRAME* frames. See the
      :func:`tracemalloc.start` for more information.
+   * ``-X showalloccount`` to enable the output of the total count of allocated
+     objects for each type (only works when built with ``COUNT_ALLOCS`` defined);
 
    It also allows passing arbitrary values and retrieving them through the
    :data:`sys._xoptions` dictionary.
@@ -409,6 +411,9 @@ Miscellaneous options
 
    .. versionadded:: 3.4
       The ``-X showrefcount`` and ``-X tracemalloc`` options.
+
+   .. versionadded:: 3.6
+      The ``-X showalloccount`` option.
 
 
 Options you shouldn't use
