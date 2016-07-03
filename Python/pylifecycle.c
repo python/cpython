@@ -626,7 +626,7 @@ Py_FinalizeEx(void)
 
     /* Debugging stuff */
 #ifdef COUNT_ALLOCS
-    dump_counts(stdout);
+    dump_counts(stderr);
 #endif
     /* dump hash stats */
     _PyHash_Fini();

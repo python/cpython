@@ -10,6 +10,11 @@ What's New in Python 3.6.0 alpha 3
 Core and Builtins
 -----------------
 
+- Issue #23034: The output of a special Python build with defined COUNT_ALLOCS,
+  SHOW_ALLOC_COUNT or SHOW_TRACK_COUNT macros is now off by  default.  It can
+  be re-enabled using the "-X showalloccount" option.  It now outputs to stderr
+  instead of stdout.
+
 - Issue #27443: __length_hint__() of bytearray itearator no longer return
   negative integer for resized bytearray.
 
