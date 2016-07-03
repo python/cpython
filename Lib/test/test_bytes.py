@@ -1233,6 +1233,16 @@ class ByteArrayTest(BaseBytesTest, unittest.TestCase):
 
     test_exhausted_iterator = test.list_tests.CommonTest.test_exhausted_iterator
 
+    def test_iterator_length_hint(self):
+        # Issue 27443: __length_hint__ can return negative integer
+        ba = bytearray(b'ab')
+        it = iter(ba)
+        next(it)
+        ba.clear()
+        # Shouldn't raise an error
+        self.assertEqual(list(it), [])
+
+
 class AssortedBytesTest(unittest.TestCase):
     #
     # Test various combinations of bytes and bytearray
