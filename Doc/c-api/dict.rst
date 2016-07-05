@@ -118,6 +118,7 @@ Dictionary Objects
    is returned.  This function evaluates the hash function of *key* only once,
    instead of evaluating it independently for the lookup and the insertion.
 
+   .. versionadded:: 3.4
 
 .. c:function:: PyObject* PyDict_Items(PyObject *p)
 
