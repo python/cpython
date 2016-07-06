@@ -2624,7 +2624,7 @@ fail:
                                                                             \
         for (i = 0; i < Py_SIZE(x); i++) {                                  \
             item = GET_ITEM((x), i);                                        \
-            value = PyNumber_AsSsize_t(item, PyExc_ValueError);             \
+            value = PyNumber_AsSsize_t(item, NULL);                         \
             if (value == -1 && PyErr_Occurred())                            \
                 goto error;                                                 \
                                                                             \
@@ -2687,7 +2687,7 @@ _PyBytes_FromIterator(PyObject *it, PyObject *x)
         }
 
         /* Interpret it as an int (__index__) */
-        value = PyNumber_AsSsize_t(item, PyExc_ValueError);
+        value = PyNumber_AsSsize_t(item, NULL);
         Py_DECREF(item);
         if (value == -1 && PyErr_Occurred())
             goto error;
