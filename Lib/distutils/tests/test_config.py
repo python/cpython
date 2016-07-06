@@ -89,7 +89,7 @@ class PyPIRCCommandTestCase(support.TempdirManager,
         config = config.items()
         config.sort()
         waited = [('password', 'secret'), ('realm', 'pypi'),
-                  ('repository', 'https://pypi.python.org/pypi'),
+                  ('repository', 'https://upload.pypi.io/legacy/'),
                   ('server', 'server1'), ('username', 'me')]
         self.assertEqual(config, waited)
 
@@ -99,7 +99,7 @@ class PyPIRCCommandTestCase(support.TempdirManager,
         config = config.items()
         config.sort()
         waited = [('password', 'secret'), ('realm', 'pypi'),
-                  ('repository', 'https://pypi.python.org/pypi'),
+                  ('repository', 'https://upload.pypi.io/legacy/'),
                   ('server', 'server-login'), ('username', 'tarek')]
         self.assertEqual(config, waited)
 
