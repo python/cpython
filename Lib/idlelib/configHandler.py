@@ -741,21 +741,32 @@ class IdleConf:
 idleConf = IdleConf()
 
 # TODO Revise test output, write expanded unittest
-### module test
+#
 if __name__ == '__main__':
+    from zlib import crc32
+    line, crc = 0, 0
+
+    def sprint(obj):
+        global line, crc
+        txt = str(obj)
+        line += 1
+        crc = crc32(txt.encode(encoding='utf-8'), crc)
+        print(txt)
+        #print('***', line, crc, '***')  # uncomment for diagnosis
+
     def dumpCfg(cfg):
-        print('\n', cfg, '\n')
-        for key in cfg:
+        print('\n', cfg, '\n')  # has variable '0xnnnnnnnn' addresses
+        for key in sorted(cfg.keys()):
             sections = cfg[key].sections()
-            print(key)
-            print(sections)
+            sprint(key)
+            sprint(sections)
             for section in sections:
                 options = cfg[key].options(section)
-                print(section)
-                print(options)
+                sprint(section)
+                sprint(options)
                 for option in options:
-                    print(option, '=', cfg[key].Get(section, option))
+                    sprint(option + ' = ' + cfg[key].Get(section, option))
+
     dumpCfg(idleConf.defaultCfg)
     dumpCfg(idleConf.userCfg)
-    print(idleConf.userCfg['main'].Get('Theme', 'name'))
-    #print(idleConf.userCfg['highlight'].GetDefHighlight('Foo','normal'))
+    print('\nlines = ', line, ', crc = ', crc, sep='')
