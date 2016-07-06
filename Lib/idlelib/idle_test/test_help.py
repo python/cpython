@@ -16,7 +16,7 @@ class HelpFrameTest(unittest.TestCase):
         "By itself, this tests that file parsed without exception."
         cls.root = root = Tk()
         root.withdraw()
-        helpfile = join(abspath(dirname(dirname(__file__))), 'help.html')
+        helpfile = join(dirname(dirname(abspath(__file__))), 'help.html')
         cls.frame = help.HelpFrame(root, helpfile)
 
     @classmethod
