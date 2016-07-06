@@ -127,7 +127,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         self.assertTrue(headers['Content-type'].startswith('multipart/form-data'))
         self.assertEqual(self.last_open.req.get_method(), 'POST')
         self.assertEqual(self.last_open.req.get_full_url(),
-                         'https://pypi.python.org/pypi')
+                         'https://upload.pypi.io/legacy/')
         self.assertIn(b'xxx', self.last_open.req.data)
 
         # The PyPI response body was echoed
