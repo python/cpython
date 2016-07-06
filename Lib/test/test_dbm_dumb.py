@@ -6,6 +6,7 @@ import io
 import operator
 import os
 import unittest
+import warnings
 import dbm.dumb as dumbdbm
 from test import support
 from functools import partial
@@ -78,6 +79,12 @@ class DumbDBMTestCase(unittest.TestCase):
         self.init_db()
         f = dumbdbm.open(_fname, 'r')
         self.read_helper(f)
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   'The database is opened for reading only'):
+            f[b'g'] = b'x'
+        with self.assertWarnsRegex(DeprecationWarning,
+                                   'The database is opened for reading only'):
+            del f[b'a']
         f.close()
 
     def test_dumbdbm_keys(self):
@@ -148,7 +155,7 @@ class DumbDBMTestCase(unittest.TestCase):
             self.assertEqual(self._dict[key], f[key])
 
     def init_db(self):
-        f = dumbdbm.open(_fname, 'w')
+        f = dumbdbm.open(_fname, 'n')
         for k in self._dict:
             f[k] = self._dict[k]
         f.close()
@@ -233,6 +240,24 @@ class DumbDBMTestCase(unittest.TestCase):
                 with dumbdbm.open(_fname) as f:
                     pass
             self.assertEqual(stdout.getvalue(), '')
+
+    def test_warn_on_ignored_flags(self):
+        for value in ('r', 'w'):
+            _delete_files()
+            with self.assertWarnsRegex(DeprecationWarning,
+                                       "The database file is missing, the "
+                                       "semantics of the 'c' flag will "
+                                       "be used."):
+                f = dumbdbm.open(_fname, value)
+            f.close()
+
+    def test_invalid_flag(self):
+        for flag in ('x', 'rf', None):
+            with self.assertWarnsRegex(DeprecationWarning,
+                                       "Flag must be one of "
+                                       "'r', 'w', 'c', or 'n'"):
+                f = dumbdbm.open(_fname, flag)
+            f.close()
 
     def tearDown(self):
         _delete_files()

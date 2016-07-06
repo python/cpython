@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #21708: Deprecated dbm.dumb behavior that differs from common dbm
+  behavior: creating a database in 'r' and 'w' modes and modifying a database
+  in 'r' mode.
+
 - Issue #26721: Change the socketserver.StreamRequestHandler.wfile attribute
   to implement BufferedIOBase. In particular, the write() method no longer
   does partial writes.
