@@ -95,7 +95,7 @@ class PyPIRCCommandTestCase(BasePyPIRCCommandTestCase):
 
         config = list(sorted(config.items()))
         waited = [('password', 'secret'), ('realm', 'pypi'),
-                  ('repository', 'https://pypi.python.org/pypi'),
+                  ('repository', 'https://upload.pypi.io/legacy/'),
                   ('server', 'server1'), ('username', 'me')]
         self.assertEqual(config, waited)
 
@@ -104,7 +104,7 @@ class PyPIRCCommandTestCase(BasePyPIRCCommandTestCase):
         config = cmd._read_pypirc()
         config = list(sorted(config.items()))
         waited = [('password', 'secret'), ('realm', 'pypi'),
-                  ('repository', 'https://pypi.python.org/pypi'),
+                  ('repository', 'https://upload.pypi.io/legacy/'),
                   ('server', 'server-login'), ('username', 'tarek')]
         self.assertEqual(config, waited)
 
