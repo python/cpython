@@ -130,7 +130,7 @@ class PyPIRCCommandTestCase(BasePyPIRCCommandTestCase):
 
         config = list(sorted(config.items()))
         waited = [('password', 'yh^%#rest-of-my-password'), ('realm', 'pypi'),
-                  ('repository', 'https://pypi.python.org/pypi'),
+                  ('repository', 'https://upload.pypi.io/legacy/'),
                   ('server', 'server3'), ('username', 'cbiggles')]
         self.assertEqual(config, waited)
 
