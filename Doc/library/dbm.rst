@@ -351,6 +351,10 @@ The module defines the following:
       :func:`.open` always creates a new database when the flag has the value
       ``'n'``.
 
+   .. deprecated-removed:: 3.6 3.8
+      Creating database in ``'r'`` and ``'w'`` modes.  Modifying database in
+      ``'r'`` mode.
+
    In addition to the methods provided by the
    :class:`collections.abc.MutableMapping` class, :class:`dumbdbm` objects
    provide the following methods:
