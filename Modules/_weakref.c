@@ -22,8 +22,8 @@ Return the number of weak references to 'object'.
 [clinic start generated code]*/
 
 static Py_ssize_t
-_weakref_getweakrefcount_impl(PyModuleDef *module, PyObject *object)
-/*[clinic end generated code: output=6a6ad0b98285e468 input=cedb69711b6a2507]*/
+_weakref_getweakrefcount_impl(PyObject *module, PyObject *object)
+/*[clinic end generated code: output=301806d59558ff3e input=cedb69711b6a2507]*/
 {
     PyWeakReference **list;
 

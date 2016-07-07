@@ -1321,8 +1321,8 @@ _ssl._test_decode_cert
 [clinic start generated code]*/
 
 static PyObject *
-_ssl__test_decode_cert_impl(PyModuleDef *module, PyObject *path)
-/*[clinic end generated code: output=679e01db282804e9 input=cdeaaf02d4346628]*/
+_ssl__test_decode_cert_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=96becb9abb23c091 input=cdeaaf02d4346628]*/
 {
     PyObject *retval = NULL;
     X509 *x=NULL;
@@ -3832,8 +3832,8 @@ string.  See RFC 1750.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_RAND_add_impl(PyModuleDef *module, Py_buffer *view, double entropy)
-/*[clinic end generated code: output=0f8d5c8cce328958 input=580c85e6a3a4fe29]*/
+_ssl_RAND_add_impl(PyObject *module, Py_buffer *view, double entropy)
+/*[clinic end generated code: output=e6dd48df9c9024e9 input=580c85e6a3a4fe29]*/
 {
     const char *buf;
     Py_ssize_t len, written;
@@ -3898,8 +3898,8 @@ Generate n cryptographically strong pseudo-random bytes.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_RAND_bytes_impl(PyModuleDef *module, int n)
-/*[clinic end generated code: output=7d8741bdc1d435f3 input=678ddf2872dfebfc]*/
+_ssl_RAND_bytes_impl(PyObject *module, int n)
+/*[clinic end generated code: output=977da635e4838bc7 input=678ddf2872dfebfc]*/
 {
     return PySSL_RAND(n, 0);
 }
@@ -3916,8 +3916,8 @@ if the bytes generated are cryptographically strong.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_RAND_pseudo_bytes_impl(PyModuleDef *module, int n)
-/*[clinic end generated code: output=dd673813107f3875 input=58312bd53f9bbdd0]*/
+_ssl_RAND_pseudo_bytes_impl(PyObject *module, int n)
+/*[clinic end generated code: output=b1509e937000e52d input=58312bd53f9bbdd0]*/
 {
     return PySSL_RAND(n, 1);
 }
@@ -3932,8 +3932,8 @@ using the ssl() function.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_RAND_status_impl(PyModuleDef *module)
-/*[clinic end generated code: output=7f7ef57bc7dd1d1c input=8a774b02d1dc81f3]*/
+_ssl_RAND_status_impl(PyObject *module)
+/*[clinic end generated code: output=7e0aaa2d39fdc1ad input=8a774b02d1dc81f3]*/
 {
     return PyLong_FromLong(RAND_status());
 }
@@ -3951,8 +3951,8 @@ fails or if it does not provide enough data to seed PRNG.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_RAND_egd_impl(PyModuleDef *module, PyObject *path)
-/*[clinic end generated code: output=8e728e501e28541b input=1aeb7eb948312195]*/
+_ssl_RAND_egd_impl(PyObject *module, PyObject *path)
+/*[clinic end generated code: output=02a67c7c367f52fa input=1aeb7eb948312195]*/
 {
     int bytes = RAND_egd(PyBytes_AsString(path));
     Py_DECREF(path);
@@ -3977,8 +3977,8 @@ The values are 'cert_file_env', 'cert_file', 'cert_dir_env', 'cert_dir'.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_get_default_verify_paths_impl(PyModuleDef *module)
-/*[clinic end generated code: output=5a2820ce7e3304d3 input=5210c953d98c3eb5]*/
+_ssl_get_default_verify_paths_impl(PyObject *module)
+/*[clinic end generated code: output=e5b62a466271928b input=5210c953d98c3eb5]*/
 {
     PyObject *ofile_env = NULL;
     PyObject *ofile = NULL;
@@ -4049,8 +4049,8 @@ long name are also matched.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_txt2obj_impl(PyModuleDef *module, const char *txt, int name)
-/*[clinic end generated code: output=2ae2c30531b8809f input=1c1e7d0aa7c48602]*/
+_ssl_txt2obj_impl(PyObject *module, const char *txt, int name)
+/*[clinic end generated code: output=c38e3991347079c1 input=1c1e7d0aa7c48602]*/
 {
     PyObject *result = NULL;
     ASN1_OBJECT *obj;
@@ -4074,8 +4074,8 @@ Lookup NID, short name, long name and OID of an ASN1_OBJECT by NID.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_nid2obj_impl(PyModuleDef *module, int nid)
-/*[clinic end generated code: output=8db1df89e44badb8 input=51787a3bee7d8f98]*/
+_ssl_nid2obj_impl(PyObject *module, int nid)
+/*[clinic end generated code: output=4a98ab691cd4f84a input=51787a3bee7d8f98]*/
 {
     PyObject *result = NULL;
     ASN1_OBJECT *obj;
@@ -4193,8 +4193,8 @@ a set of OIDs or the boolean True.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_enum_certificates_impl(PyModuleDef *module, const char *store_name)
-/*[clinic end generated code: output=cc4ebc10b8adacfc input=915f60d70461ea4e]*/
+_ssl_enum_certificates_impl(PyObject *module, const char *store_name)
+/*[clinic end generated code: output=5134dc8bb3a3c893 input=915f60d70461ea4e]*/
 {
     HCERTSTORE hStore = NULL;
     PCCERT_CONTEXT pCertCtx = NULL;
@@ -4281,8 +4281,8 @@ X509_ASN_ENCODING or PKCS_7_ASN_ENCODING.
 [clinic start generated code]*/
 
 static PyObject *
-_ssl_enum_crls_impl(PyModuleDef *module, const char *store_name)
-/*[clinic end generated code: output=763490a2aa1c50d5 input=a1f1d7629f1c5d3d]*/
+_ssl_enum_crls_impl(PyObject *module, const char *store_name)
+/*[clinic end generated code: output=bce467f60ccd03b6 input=a1f1d7629f1c5d3d]*/
 {
     HCERTSTORE hStore = NULL;
     PCCRL_CONTEXT pCrlCtx = NULL;

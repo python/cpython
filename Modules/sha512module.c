@@ -678,8 +678,8 @@ Return a new SHA-512 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha512_sha512_impl(PyModuleDef *module, PyObject *string)
-/*[clinic end generated code: output=da13bc0a94da6de3 input=e69bad9ae9b6a308]*/
+_sha512_sha512_impl(PyObject *module, PyObject *string)
+/*[clinic end generated code: output=8b865a2df73bd387 input=e69bad9ae9b6a308]*/
 {
     SHAobject *new;
     Py_buffer buf;
@@ -718,8 +718,8 @@ Return a new SHA-384 hash object; optionally initialized with a string.
 [clinic start generated code]*/
 
 static PyObject *
-_sha512_sha384_impl(PyModuleDef *module, PyObject *string)
-/*[clinic end generated code: output=ac731aea5509174d input=c9327788d4ea4545]*/
+_sha512_sha384_impl(PyObject *module, PyObject *string)
+/*[clinic end generated code: output=ae4b2e26decf81e8 input=c9327788d4ea4545]*/
 {
     SHAobject *new;
     Py_buffer buf;

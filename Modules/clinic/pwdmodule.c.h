@@ -25,10 +25,10 @@ PyDoc_STRVAR(pwd_getpwnam__doc__,
     {"getpwnam", (PyCFunction)pwd_getpwnam, METH_O, pwd_getpwnam__doc__},
 
 static PyObject *
-pwd_getpwnam_impl(PyModuleDef *module, PyObject *arg);
+pwd_getpwnam_impl(PyObject *module, PyObject *arg);
 
 static PyObject *
-pwd_getpwnam(PyModuleDef *module, PyObject *arg_)
+pwd_getpwnam(PyObject *module, PyObject *arg_)
 {
     PyObject *return_value = NULL;
     PyObject *arg;
@@ -55,10 +55,10 @@ PyDoc_STRVAR(pwd_getpwall__doc__,
     {"getpwall", (PyCFunction)pwd_getpwall, METH_NOARGS, pwd_getpwall__doc__},
 
 static PyObject *
-pwd_getpwall_impl(PyModuleDef *module);
+pwd_getpwall_impl(PyObject *module);
 
 static PyObject *
-pwd_getpwall(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+pwd_getpwall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return pwd_getpwall_impl(module);
 }
@@ -68,4 +68,4 @@ pwd_getpwall(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 #ifndef PWD_GETPWALL_METHODDEF
     #define PWD_GETPWALL_METHODDEF
 #endif /* !defined(PWD_GETPWALL_METHODDEF) */
-/*[clinic end generated code: output=2ed0ecf34fd3f98f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d0ea1c5c832f0c1a input=a9049054013a1b77]*/

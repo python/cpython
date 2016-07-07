@@ -6961,9 +6961,9 @@ to map the new Python 3 names to the old module names used in Python
 [clinic start generated code]*/
 
 static PyObject *
-_pickle_dump_impl(PyModuleDef *module, PyObject *obj, PyObject *file,
+_pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports)
-/*[clinic end generated code: output=0de7dff89c406816 input=830f8a64cef6f042]*/
+/*[clinic end generated code: output=a4774d5fde7d34de input=830f8a64cef6f042]*/
 {
     PicklerObject *pickler = _Pickler_New();
 
@@ -7015,9 +7015,9 @@ Python 2, so that the pickle data stream is readable with Python 2.
 [clinic start generated code]*/
 
 static PyObject *
-_pickle_dumps_impl(PyModuleDef *module, PyObject *obj, PyObject *protocol,
+_pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports)
-/*[clinic end generated code: output=daa380db56fe07b9 input=293dbeda181580b7]*/
+/*[clinic end generated code: output=d75d5cda456fd261 input=293dbeda181580b7]*/
 {
     PyObject *result;
     PicklerObject *pickler = _Pickler_New();
@@ -7076,9 +7076,9 @@ string instances as bytes objects.
 [clinic start generated code]*/
 
 static PyObject *
-_pickle_load_impl(PyModuleDef *module, PyObject *file, int fix_imports,
+_pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
                   const char *encoding, const char *errors)
-/*[clinic end generated code: output=798f1c57cb2b4eb1 input=01b44dd3fc07afa7]*/
+/*[clinic end generated code: output=69e298160285199e input=01b44dd3fc07afa7]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();
@@ -7130,9 +7130,9 @@ string instances as bytes objects.
 [clinic start generated code]*/
 
 static PyObject *
-_pickle_loads_impl(PyModuleDef *module, PyObject *data, int fix_imports,
+_pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
                    const char *encoding, const char *errors)
-/*[clinic end generated code: output=61e9cdb01e36a736 input=70605948a719feb9]*/
+/*[clinic end generated code: output=1e7cb2343f2c440f input=70605948a719feb9]*/
 {
     PyObject *result;
     UnpicklerObject *unpickler = _Unpickler_New();

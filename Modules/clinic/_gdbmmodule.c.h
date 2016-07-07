@@ -231,11 +231,10 @@ PyDoc_STRVAR(dbmopen__doc__,
     {"open", (PyCFunction)dbmopen, METH_VARARGS, dbmopen__doc__},
 
 static PyObject *
-dbmopen_impl(PyModuleDef *module, const char *name, const char *flags,
-             int mode);
+dbmopen_impl(PyObject *module, const char *name, const char *flags, int mode);
 
 static PyObject *
-dbmopen(PyModuleDef *module, PyObject *args)
+dbmopen(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     const char *name;
@@ -250,4 +249,4 @@ dbmopen(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d3d8d871bcccb68a input=a9049054013a1b77]*/
+/*[clinic end generated code: output=9ac7a89858a9765f input=a9049054013a1b77]*/

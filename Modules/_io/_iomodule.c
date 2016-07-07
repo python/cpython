@@ -227,10 +227,10 @@ opened in a binary mode.
 [clinic start generated code]*/
 
 static PyObject *
-_io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
+_io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener)
-/*[clinic end generated code: output=7615d0d746eb14d2 input=f4e1ca75223987bc]*/
+/*[clinic end generated code: output=aefafc4ce2b46dc0 input=f4e1ca75223987bc]*/
 {
     unsigned i;
 

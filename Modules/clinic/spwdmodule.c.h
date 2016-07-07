@@ -16,10 +16,10 @@ PyDoc_STRVAR(spwd_getspnam__doc__,
     {"getspnam", (PyCFunction)spwd_getspnam, METH_O, spwd_getspnam__doc__},
 
 static PyObject *
-spwd_getspnam_impl(PyModuleDef *module, PyObject *arg);
+spwd_getspnam_impl(PyObject *module, PyObject *arg);
 
 static PyObject *
-spwd_getspnam(PyModuleDef *module, PyObject *arg_)
+spwd_getspnam(PyObject *module, PyObject *arg_)
 {
     PyObject *return_value = NULL;
     PyObject *arg;
@@ -48,10 +48,10 @@ PyDoc_STRVAR(spwd_getspall__doc__,
     {"getspall", (PyCFunction)spwd_getspall, METH_NOARGS, spwd_getspall__doc__},
 
 static PyObject *
-spwd_getspall_impl(PyModuleDef *module);
+spwd_getspall_impl(PyObject *module);
 
 static PyObject *
-spwd_getspall(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+spwd_getspall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return spwd_getspall_impl(module);
 }
@@ -65,4 +65,4 @@ spwd_getspall(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
 #ifndef SPWD_GETSPALL_METHODDEF
     #define SPWD_GETSPALL_METHODDEF
 #endif /* !defined(SPWD_GETSPALL_METHODDEF) */
-/*[clinic end generated code: output=6c178830413f7763 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=510f681b36f54c30 input=a9049054013a1b77]*/

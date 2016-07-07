@@ -1938,11 +1938,11 @@ Internal. Used for pickling support.
 [clinic start generated code]*/
 
 static PyObject *
-array__array_reconstructor_impl(PyModuleDef *module, PyTypeObject *arraytype,
+array__array_reconstructor_impl(PyObject *module, PyTypeObject *arraytype,
                                 int typecode,
                                 enum machine_format_code mformat_code,
                                 PyObject *items)
-/*[clinic end generated code: output=6ecbf0e8e4d92ab9 input=2464dc8f4c7736b5]*/
+/*[clinic end generated code: output=e05263141ba28365 input=2464dc8f4c7736b5]*/
 {
     PyObject *converted_items;
     PyObject *result;

@@ -253,8 +253,8 @@ Decode a line of uuencoded data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_uu_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=5779f39b0b48459f input=7cafeaf73df63d1c]*/
+binascii_a2b_uu_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=e027f8e0b0598742 input=7cafeaf73df63d1c]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
@@ -339,8 +339,8 @@ Uuencode line of data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_uu_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=181021b69bb9a414 input=00fdf458ce8b465b]*/
+binascii_b2a_uu_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=0070670e52e4aa6b input=00fdf458ce8b465b]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
@@ -426,8 +426,8 @@ Decode a line of base64 data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_base64_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=3e351b702bed56d2 input=5872acf6e1cac243]*/
+binascii_a2b_base64_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=0628223f19fd3f9b input=5872acf6e1cac243]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
@@ -534,8 +534,8 @@ Base64-code line of data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_base64_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=3cd61fbee2913285 input=14ec4e47371174a9]*/
+binascii_b2a_base64_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=4d96663170778dc3 input=14ec4e47371174a9]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
@@ -601,8 +601,8 @@ Decode .hqx coding.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_hqx_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=60bcdbbd28b105cd input=0d914c680e0eed55]*/
+binascii_a2b_hqx_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=4d6d8c54d54ea1c1 input=0d914c680e0eed55]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
@@ -684,8 +684,8 @@ Binhex RLE-code binary data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_rlecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=0905da344dbf0648 input=e1f1712447a82b09]*/
+binascii_rlecode_hqx_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=393d79338f5f5629 input=e1f1712447a82b09]*/
 {
     unsigned char *in_data, *out_data;
     PyObject *rv;
@@ -748,8 +748,8 @@ Encode .hqx data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_hqx_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=5a987810d5e3cdbb input=9596ebe019fe12ba]*/
+binascii_b2a_hqx_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=d0aa5a704bc9f7de input=9596ebe019fe12ba]*/
 {
     unsigned char *ascii_data, *bin_data;
     int leftbits = 0;
@@ -805,8 +805,8 @@ Decode hexbin RLE-coded string.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_rledecode_hqx_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=f7afd89b789946ab input=54cdd49fc014402c]*/
+binascii_rledecode_hqx_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=9826619565de1c6c input=54cdd49fc014402c]*/
 {
     unsigned char *in_data, *out_data;
     unsigned char in_byte, in_repeat;
@@ -919,8 +919,8 @@ Compute hqx CRC incrementally.
 [clinic start generated code]*/
 
 static unsigned int
-binascii_crc_hqx_impl(PyModuleDef *module, Py_buffer *data, unsigned int crc)
-/*[clinic end generated code: output=167c2dac62625717 input=add8c53712ccceda]*/
+binascii_crc_hqx_impl(PyObject *module, Py_buffer *data, unsigned int crc)
+/*[clinic end generated code: output=8ec2a78590d19170 input=add8c53712ccceda]*/
 {
     unsigned char *bin_data;
     Py_ssize_t len;
@@ -1067,8 +1067,8 @@ Compute CRC-32 incrementally.
 [clinic start generated code]*/
 
 static unsigned int
-binascii_crc32_impl(PyModuleDef *module, Py_buffer *data, unsigned int crc)
-/*[clinic end generated code: output=620a961643393c4f input=bbe340bc99d25aa8]*/
+binascii_crc32_impl(PyObject *module, Py_buffer *data, unsigned int crc)
+/*[clinic end generated code: output=52cf59056a78593b input=bbe340bc99d25aa8]*/
 
 #ifdef USE_ZLIB_CRC32
 /* This was taken from zlibmodule.c PyZlib_crc32 (but is PY_SSIZE_T_CLEAN) */
@@ -1115,8 +1115,8 @@ available as "hexlify()".
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_hex_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=179318922c2f8fda input=96423cfa299ff3b1]*/
+binascii_b2a_hex_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=92fec1a95c9897a0 input=96423cfa299ff3b1]*/
 {
     return _Py_strhex_bytes((const char *)data->buf, data->len);
 }
@@ -1130,8 +1130,8 @@ The return value is a bytes object.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_hexlify_impl(PyModuleDef *module, Py_buffer *data)
-/*[clinic end generated code: output=6098440091fb61dc input=2e3afae7f083f061]*/
+binascii_hexlify_impl(PyObject *module, Py_buffer *data)
+/*[clinic end generated code: output=749e95e53c14880c input=2e3afae7f083f061]*/
 {
     return _Py_strhex_bytes((const char *)data->buf, data->len);
 }
@@ -1164,8 +1164,8 @@ This function is also available as "unhexlify()".
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_hex_impl(PyModuleDef *module, Py_buffer *hexstr)
-/*[clinic end generated code: output=d61da452b5c6d290 input=9e1e7f2f94db24fd]*/
+binascii_a2b_hex_impl(PyObject *module, Py_buffer *hexstr)
+/*[clinic end generated code: output=0cc1a139af0eeecb input=9e1e7f2f94db24fd]*/
 {
     char* argbuf;
     Py_ssize_t arglen;
@@ -1218,8 +1218,8 @@ hexstr must contain an even number of hex digits (upper or lower case).
 [clinic start generated code]*/
 
 static PyObject *
-binascii_unhexlify_impl(PyModuleDef *module, Py_buffer *hexstr)
-/*[clinic end generated code: output=17cec7544499803e input=dd8c012725f462da]*/
+binascii_unhexlify_impl(PyObject *module, Py_buffer *hexstr)
+/*[clinic end generated code: output=51a64c06c79629e3 input=dd8c012725f462da]*/
 {
     return binascii_a2b_hex_impl(module, hexstr);
 }
@@ -1250,8 +1250,8 @@ Decode a string of qp-encoded data.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_a2b_qp_impl(PyModuleDef *module, Py_buffer *data, int header)
-/*[clinic end generated code: output=a44ef88270352114 input=5187a0d3d8e54f3b]*/
+binascii_a2b_qp_impl(PyObject *module, Py_buffer *data, int header)
+/*[clinic end generated code: output=e99f7846cfb9bc53 input=5187a0d3d8e54f3b]*/
 {
     Py_ssize_t in, out;
     char ch;
@@ -1356,9 +1356,9 @@ are both encoded.  When quotetabs is set, space and tabs are encoded.
 [clinic start generated code]*/
 
 static PyObject *
-binascii_b2a_qp_impl(PyModuleDef *module, Py_buffer *data, int quotetabs,
+binascii_b2a_qp_impl(PyObject *module, Py_buffer *data, int quotetabs,
                      int istext, int header)
-/*[clinic end generated code: output=a87ca9ccb94e2a9f input=7f2a9aaa008e92b2]*/
+/*[clinic end generated code: output=e9884472ebb1a94c input=7f2a9aaa008e92b2]*/
 {
     Py_ssize_t in, out;
     unsigned char *databuf, *odata;

@@ -74,8 +74,8 @@ A wrapper around the Windows PlaySound API.
 [clinic start generated code]*/
 
 static PyObject *
-winsound_PlaySound_impl(PyModuleDef *module, Py_UNICODE *sound, int flags)
-/*[clinic end generated code: output=614273784bf59e5c input=3411b1b7c1f36d93]*/
+winsound_PlaySound_impl(PyObject *module, Py_UNICODE *sound, int flags)
+/*[clinic end generated code: output=ec24b3a2b4368378 input=3411b1b7c1f36d93]*/
 {
     int ok;
 
@@ -111,8 +111,8 @@ A wrapper around the Windows Beep API.
 [clinic start generated code]*/
 
 static PyObject *
-winsound_Beep_impl(PyModuleDef *module, int frequency, int duration)
-/*[clinic end generated code: output=c75f282035a872bd input=628a99d2ddf73798]*/
+winsound_Beep_impl(PyObject *module, int frequency, int duration)
+/*[clinic end generated code: output=f32382e52ee9b2fb input=628a99d2ddf73798]*/
 {
     BOOL ok;
 
@@ -145,8 +145,8 @@ x defaults to MB_OK.
 [clinic start generated code]*/
 
 static PyObject *
-winsound_MessageBeep_impl(PyModuleDef *module, int x)
-/*[clinic end generated code: output=92aa6a822bdc66ad input=a776c8a85c9853f6]*/
+winsound_MessageBeep_impl(PyObject *module, int x)
+/*[clinic end generated code: output=1ad89e4d8d30a957 input=a776c8a85c9853f6]*/
 {
     MessageBeep(x);
     Py_RETURN_NONE;

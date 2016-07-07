@@ -532,13 +532,13 @@ PyDoc_STRVAR(_tkinter_create__doc__,
     {"create", (PyCFunction)_tkinter_create, METH_VARARGS, _tkinter_create__doc__},
 
 static PyObject *
-_tkinter_create_impl(PyModuleDef *module, const char *screenName,
+_tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use);
 
 static PyObject *
-_tkinter_create(PyModuleDef *module, PyObject *args)
+_tkinter_create(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     const char *screenName = NULL;
@@ -571,10 +571,10 @@ PyDoc_STRVAR(_tkinter_setbusywaitinterval__doc__,
     {"setbusywaitinterval", (PyCFunction)_tkinter_setbusywaitinterval, METH_O, _tkinter_setbusywaitinterval__doc__},
 
 static PyObject *
-_tkinter_setbusywaitinterval_impl(PyModuleDef *module, int new_val);
+_tkinter_setbusywaitinterval_impl(PyObject *module, int new_val);
 
 static PyObject *
-_tkinter_setbusywaitinterval(PyModuleDef *module, PyObject *arg)
+_tkinter_setbusywaitinterval(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int new_val;
@@ -597,10 +597,10 @@ PyDoc_STRVAR(_tkinter_getbusywaitinterval__doc__,
     {"getbusywaitinterval", (PyCFunction)_tkinter_getbusywaitinterval, METH_NOARGS, _tkinter_getbusywaitinterval__doc__},
 
 static int
-_tkinter_getbusywaitinterval_impl(PyModuleDef *module);
+_tkinter_getbusywaitinterval_impl(PyObject *module);
 
 static PyObject *
-_tkinter_getbusywaitinterval(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_tkinter_getbusywaitinterval(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -621,4 +621,4 @@ exit:
 #ifndef _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
     #define _TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF
 #endif /* !defined(_TKINTER_TKAPP_DELETEFILEHANDLER_METHODDEF) */
-/*[clinic end generated code: output=6dd667b91cf8addd input=a9049054013a1b77]*/
+/*[clinic end generated code: output=f9057c8bf288633d input=a9049054013a1b77]*/

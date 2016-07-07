@@ -14,10 +14,10 @@ PyDoc_STRVAR(signal_alarm__doc__,
     {"alarm", (PyCFunction)signal_alarm, METH_O, signal_alarm__doc__},
 
 static long
-signal_alarm_impl(PyModuleDef *module, int seconds);
+signal_alarm_impl(PyObject *module, int seconds);
 
 static PyObject *
-signal_alarm(PyModuleDef *module, PyObject *arg)
+signal_alarm(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int seconds;
@@ -48,10 +48,10 @@ PyDoc_STRVAR(signal_pause__doc__,
     {"pause", (PyCFunction)signal_pause, METH_NOARGS, signal_pause__doc__},
 
 static PyObject *
-signal_pause_impl(PyModuleDef *module);
+signal_pause_impl(PyObject *module);
 
 static PyObject *
-signal_pause(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+signal_pause(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return signal_pause_impl(module);
 }
@@ -75,10 +75,10 @@ PyDoc_STRVAR(signal_signal__doc__,
     {"signal", (PyCFunction)signal_signal, METH_VARARGS, signal_signal__doc__},
 
 static PyObject *
-signal_signal_impl(PyModuleDef *module, int signalnum, PyObject *handler);
+signal_signal_impl(PyObject *module, int signalnum, PyObject *handler);
 
 static PyObject *
-signal_signal(PyModuleDef *module, PyObject *args)
+signal_signal(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int signalnum;
@@ -109,10 +109,10 @@ PyDoc_STRVAR(signal_getsignal__doc__,
     {"getsignal", (PyCFunction)signal_getsignal, METH_O, signal_getsignal__doc__},
 
 static PyObject *
-signal_getsignal_impl(PyModuleDef *module, int signalnum);
+signal_getsignal_impl(PyObject *module, int signalnum);
 
 static PyObject *
-signal_getsignal(PyModuleDef *module, PyObject *arg)
+signal_getsignal(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int signalnum;
@@ -140,10 +140,10 @@ PyDoc_STRVAR(signal_siginterrupt__doc__,
     {"siginterrupt", (PyCFunction)signal_siginterrupt, METH_VARARGS, signal_siginterrupt__doc__},
 
 static PyObject *
-signal_siginterrupt_impl(PyModuleDef *module, int signalnum, int flag);
+signal_siginterrupt_impl(PyObject *module, int signalnum, int flag);
 
 static PyObject *
-signal_siginterrupt(PyModuleDef *module, PyObject *args)
+signal_siginterrupt(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int signalnum;
@@ -177,11 +177,11 @@ PyDoc_STRVAR(signal_setitimer__doc__,
     {"setitimer", (PyCFunction)signal_setitimer, METH_VARARGS, signal_setitimer__doc__},
 
 static PyObject *
-signal_setitimer_impl(PyModuleDef *module, int which, double seconds,
+signal_setitimer_impl(PyObject *module, int which, double seconds,
                       double interval);
 
 static PyObject *
-signal_setitimer(PyModuleDef *module, PyObject *args)
+signal_setitimer(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int which;
@@ -211,10 +211,10 @@ PyDoc_STRVAR(signal_getitimer__doc__,
     {"getitimer", (PyCFunction)signal_getitimer, METH_O, signal_getitimer__doc__},
 
 static PyObject *
-signal_getitimer_impl(PyModuleDef *module, int which);
+signal_getitimer_impl(PyObject *module, int which);
 
 static PyObject *
-signal_getitimer(PyModuleDef *module, PyObject *arg)
+signal_getitimer(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int which;
@@ -241,10 +241,10 @@ PyDoc_STRVAR(signal_pthread_sigmask__doc__,
     {"pthread_sigmask", (PyCFunction)signal_pthread_sigmask, METH_VARARGS, signal_pthread_sigmask__doc__},
 
 static PyObject *
-signal_pthread_sigmask_impl(PyModuleDef *module, int how, PyObject *mask);
+signal_pthread_sigmask_impl(PyObject *module, int how, PyObject *mask);
 
 static PyObject *
-signal_pthread_sigmask(PyModuleDef *module, PyObject *args)
+signal_pthread_sigmask(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int how;
@@ -276,10 +276,10 @@ PyDoc_STRVAR(signal_sigpending__doc__,
     {"sigpending", (PyCFunction)signal_sigpending, METH_NOARGS, signal_sigpending__doc__},
 
 static PyObject *
-signal_sigpending_impl(PyModuleDef *module);
+signal_sigpending_impl(PyObject *module);
 
 static PyObject *
-signal_sigpending(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+signal_sigpending(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return signal_sigpending_impl(module);
 }
@@ -332,11 +332,11 @@ PyDoc_STRVAR(signal_sigtimedwait__doc__,
     {"sigtimedwait", (PyCFunction)signal_sigtimedwait, METH_VARARGS, signal_sigtimedwait__doc__},
 
 static PyObject *
-signal_sigtimedwait_impl(PyModuleDef *module, PyObject *sigset,
+signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
                          PyObject *timeout_obj);
 
 static PyObject *
-signal_sigtimedwait(PyModuleDef *module, PyObject *args)
+signal_sigtimedwait(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *sigset;
@@ -366,10 +366,10 @@ PyDoc_STRVAR(signal_pthread_kill__doc__,
     {"pthread_kill", (PyCFunction)signal_pthread_kill, METH_VARARGS, signal_pthread_kill__doc__},
 
 static PyObject *
-signal_pthread_kill_impl(PyModuleDef *module, long thread_id, int signalnum);
+signal_pthread_kill_impl(PyObject *module, long thread_id, int signalnum);
 
 static PyObject *
-signal_pthread_kill(PyModuleDef *module, PyObject *args)
+signal_pthread_kill(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     long thread_id;
@@ -429,4 +429,4 @@ exit:
 #ifndef SIGNAL_PTHREAD_KILL_METHODDEF
     #define SIGNAL_PTHREAD_KILL_METHODDEF
 #endif /* !defined(SIGNAL_PTHREAD_KILL_METHODDEF) */
-/*[clinic end generated code: output=b99278c16c40ea43 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=dafa598412bfb8d2 input=a9049054013a1b77]*/
