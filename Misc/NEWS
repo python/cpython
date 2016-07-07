@@ -132,6 +132,9 @@ C API
 Build
 -----
 
+- Issue #27434: The interpreter that runs the cross-build, found in PATH, must
+  now be of the same feature version (e.g. 3.6) as the source being built.
+
 - Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
 
 - Issue #23968: Rename the platform directory from plat-$(MACHDEP) to
