@@ -780,7 +780,7 @@ internal_select(PySocketSockObject *s, int writing)
 */
 #define BEGIN_SELECT_LOOP(s) \
     { \
-        double deadline, interval = s->sock_timeout; \
+        double deadline = 0, interval = s->sock_timeout; \
         int has_timeout = s->sock_timeout > 0.0; \
         if (has_timeout) { \
             deadline = _PyTime_FloatTime() + s->sock_timeout; \
