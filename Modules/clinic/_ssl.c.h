@@ -921,7 +921,7 @@ _ssl_RAND_status(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
     return _ssl_RAND_status_impl(module);
 }
 
-#if defined(HAVE_RAND_EGD)
+#if !defined(OPENSSL_NO_EGD)
 
 PyDoc_STRVAR(_ssl_RAND_egd__doc__,
 "RAND_egd($module, path, /)\n"
@@ -953,7 +953,7 @@ exit:
     return return_value;
 }
 
-#endif /* defined(HAVE_RAND_EGD) */
+#endif /* !defined(OPENSSL_NO_EGD) */
 
 PyDoc_STRVAR(_ssl_get_default_verify_paths__doc__,
 "get_default_verify_paths($module, /)\n"
@@ -1135,4 +1135,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=c6fe203099a5aa89 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=df99659ec790e573 input=a9049054013a1b77]*/
