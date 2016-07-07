@@ -168,10 +168,10 @@ PyDoc_STRVAR(_lzma_is_check_supported__doc__,
     {"is_check_supported", (PyCFunction)_lzma_is_check_supported, METH_O, _lzma_is_check_supported__doc__},
 
 static PyObject *
-_lzma_is_check_supported_impl(PyModuleDef *module, int check_id);
+_lzma_is_check_supported_impl(PyObject *module, int check_id);
 
 static PyObject *
-_lzma_is_check_supported(PyModuleDef *module, PyObject *arg)
+_lzma_is_check_supported(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int check_id;
@@ -197,10 +197,10 @@ PyDoc_STRVAR(_lzma__encode_filter_properties__doc__,
     {"_encode_filter_properties", (PyCFunction)_lzma__encode_filter_properties, METH_O, _lzma__encode_filter_properties__doc__},
 
 static PyObject *
-_lzma__encode_filter_properties_impl(PyModuleDef *module, lzma_filter filter);
+_lzma__encode_filter_properties_impl(PyObject *module, lzma_filter filter);
 
 static PyObject *
-_lzma__encode_filter_properties(PyModuleDef *module, PyObject *arg)
+_lzma__encode_filter_properties(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     lzma_filter filter = {LZMA_VLI_UNKNOWN, NULL};
@@ -230,11 +230,11 @@ PyDoc_STRVAR(_lzma__decode_filter_properties__doc__,
     {"_decode_filter_properties", (PyCFunction)_lzma__decode_filter_properties, METH_VARARGS, _lzma__decode_filter_properties__doc__},
 
 static PyObject *
-_lzma__decode_filter_properties_impl(PyModuleDef *module, lzma_vli filter_id,
+_lzma__decode_filter_properties_impl(PyObject *module, lzma_vli filter_id,
                                      Py_buffer *encoded_props);
 
 static PyObject *
-_lzma__decode_filter_properties(PyModuleDef *module, PyObject *args)
+_lzma__decode_filter_properties(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     lzma_vli filter_id;
@@ -254,4 +254,4 @@ exit:
 
     return return_value;
 }
-/*[clinic end generated code: output=804aed7d196ba52e input=a9049054013a1b77]*/
+/*[clinic end generated code: output=25bf57a0845d147a input=a9049054013a1b77]*/

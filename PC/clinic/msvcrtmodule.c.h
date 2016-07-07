@@ -15,10 +15,10 @@ PyDoc_STRVAR(msvcrt_heapmin__doc__,
     {"heapmin", (PyCFunction)msvcrt_heapmin, METH_NOARGS, msvcrt_heapmin__doc__},
 
 static PyObject *
-msvcrt_heapmin_impl(PyModuleDef *module);
+msvcrt_heapmin_impl(PyObject *module);
 
 static PyObject *
-msvcrt_heapmin(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+msvcrt_heapmin(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return msvcrt_heapmin_impl(module);
 }
@@ -40,10 +40,10 @@ PyDoc_STRVAR(msvcrt_locking__doc__,
     {"locking", (PyCFunction)msvcrt_locking, METH_VARARGS, msvcrt_locking__doc__},
 
 static PyObject *
-msvcrt_locking_impl(PyModuleDef *module, int fd, int mode, long nbytes);
+msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes);
 
 static PyObject *
-msvcrt_locking(PyModuleDef *module, PyObject *args)
+msvcrt_locking(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -75,10 +75,10 @@ PyDoc_STRVAR(msvcrt_setmode__doc__,
     {"setmode", (PyCFunction)msvcrt_setmode, METH_VARARGS, msvcrt_setmode__doc__},
 
 static long
-msvcrt_setmode_impl(PyModuleDef *module, int fd, int flags);
+msvcrt_setmode_impl(PyObject *module, int fd, int flags);
 
 static PyObject *
-msvcrt_setmode(PyModuleDef *module, PyObject *args)
+msvcrt_setmode(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -113,11 +113,10 @@ PyDoc_STRVAR(msvcrt_open_osfhandle__doc__,
     {"open_osfhandle", (PyCFunction)msvcrt_open_osfhandle, METH_VARARGS, msvcrt_open_osfhandle__doc__},
 
 static long
-msvcrt_open_osfhandle_impl(PyModuleDef *module, Py_intptr_t handle,
-                           int flags);
+msvcrt_open_osfhandle_impl(PyObject *module, Py_intptr_t handle, int flags);
 
 static PyObject *
-msvcrt_open_osfhandle(PyModuleDef *module, PyObject *args)
+msvcrt_open_osfhandle(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_intptr_t handle;
@@ -150,10 +149,10 @@ PyDoc_STRVAR(msvcrt_get_osfhandle__doc__,
     {"get_osfhandle", (PyCFunction)msvcrt_get_osfhandle, METH_O, msvcrt_get_osfhandle__doc__},
 
 static Py_intptr_t
-msvcrt_get_osfhandle_impl(PyModuleDef *module, int fd);
+msvcrt_get_osfhandle_impl(PyObject *module, int fd);
 
 static PyObject *
-msvcrt_get_osfhandle(PyModuleDef *module, PyObject *arg)
+msvcrt_get_osfhandle(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -182,10 +181,10 @@ PyDoc_STRVAR(msvcrt_kbhit__doc__,
     {"kbhit", (PyCFunction)msvcrt_kbhit, METH_NOARGS, msvcrt_kbhit__doc__},
 
 static long
-msvcrt_kbhit_impl(PyModuleDef *module);
+msvcrt_kbhit_impl(PyObject *module);
 
 static PyObject *
-msvcrt_kbhit(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+msvcrt_kbhit(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     long _return_value;
@@ -216,10 +215,10 @@ PyDoc_STRVAR(msvcrt_getch__doc__,
     {"getch", (PyCFunction)msvcrt_getch, METH_NOARGS, msvcrt_getch__doc__},
 
 static int
-msvcrt_getch_impl(PyModuleDef *module);
+msvcrt_getch_impl(PyObject *module);
 
 static PyObject *
-msvcrt_getch(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+msvcrt_getch(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     char s[1];
@@ -240,10 +239,10 @@ PyDoc_STRVAR(msvcrt_getwch__doc__,
     {"getwch", (PyCFunction)msvcrt_getwch, METH_NOARGS, msvcrt_getwch__doc__},
 
 static wchar_t
-msvcrt_getwch_impl(PyModuleDef *module);
+msvcrt_getwch_impl(PyObject *module);
 
 static PyObject *
-msvcrt_getwch(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+msvcrt_getwch(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     wchar_t _return_value;
@@ -264,10 +263,10 @@ PyDoc_STRVAR(msvcrt_getche__doc__,
     {"getche", (PyCFunction)msvcrt_getche, METH_NOARGS, msvcrt_getche__doc__},
 
 static int
-msvcrt_getche_impl(PyModuleDef *module);
+msvcrt_getche_impl(PyObject *module);
 
 static PyObject *
-msvcrt_getche(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+msvcrt_getche(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     char s[1];
@@ -288,10 +287,10 @@ PyDoc_STRVAR(msvcrt_getwche__doc__,
     {"getwche", (PyCFunction)msvcrt_getwche, METH_NOARGS, msvcrt_getwche__doc__},
 
 static wchar_t
-msvcrt_getwche_impl(PyModuleDef *module);
+msvcrt_getwche_impl(PyObject *module);
 
 static PyObject *
-msvcrt_getwche(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+msvcrt_getwche(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     wchar_t _return_value;
@@ -312,10 +311,10 @@ PyDoc_STRVAR(msvcrt_putch__doc__,
     {"putch", (PyCFunction)msvcrt_putch, METH_O, msvcrt_putch__doc__},
 
 static PyObject *
-msvcrt_putch_impl(PyModuleDef *module, char char_value);
+msvcrt_putch_impl(PyObject *module, char char_value);
 
 static PyObject *
-msvcrt_putch(PyModuleDef *module, PyObject *arg)
+msvcrt_putch(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     char char_value;
@@ -339,10 +338,10 @@ PyDoc_STRVAR(msvcrt_putwch__doc__,
     {"putwch", (PyCFunction)msvcrt_putwch, METH_O, msvcrt_putwch__doc__},
 
 static PyObject *
-msvcrt_putwch_impl(PyModuleDef *module, int unicode_char);
+msvcrt_putwch_impl(PyObject *module, int unicode_char);
 
 static PyObject *
-msvcrt_putwch(PyModuleDef *module, PyObject *arg)
+msvcrt_putwch(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int unicode_char;
@@ -370,10 +369,10 @@ PyDoc_STRVAR(msvcrt_ungetch__doc__,
     {"ungetch", (PyCFunction)msvcrt_ungetch, METH_O, msvcrt_ungetch__doc__},
 
 static PyObject *
-msvcrt_ungetch_impl(PyModuleDef *module, char char_value);
+msvcrt_ungetch_impl(PyObject *module, char char_value);
 
 static PyObject *
-msvcrt_ungetch(PyModuleDef *module, PyObject *arg)
+msvcrt_ungetch(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     char char_value;
@@ -397,10 +396,10 @@ PyDoc_STRVAR(msvcrt_ungetwch__doc__,
     {"ungetwch", (PyCFunction)msvcrt_ungetwch, METH_O, msvcrt_ungetwch__doc__},
 
 static PyObject *
-msvcrt_ungetwch_impl(PyModuleDef *module, int unicode_char);
+msvcrt_ungetwch_impl(PyObject *module, int unicode_char);
 
 static PyObject *
-msvcrt_ungetwch(PyModuleDef *module, PyObject *arg)
+msvcrt_ungetwch(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int unicode_char;
@@ -428,10 +427,10 @@ PyDoc_STRVAR(msvcrt_CrtSetReportFile__doc__,
     {"CrtSetReportFile", (PyCFunction)msvcrt_CrtSetReportFile, METH_VARARGS, msvcrt_CrtSetReportFile__doc__},
 
 static long
-msvcrt_CrtSetReportFile_impl(PyModuleDef *module, int type, int file);
+msvcrt_CrtSetReportFile_impl(PyObject *module, int type, int file);
 
 static PyObject *
-msvcrt_CrtSetReportFile(PyModuleDef *module, PyObject *args)
+msvcrt_CrtSetReportFile(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int type;
@@ -468,10 +467,10 @@ PyDoc_STRVAR(msvcrt_CrtSetReportMode__doc__,
     {"CrtSetReportMode", (PyCFunction)msvcrt_CrtSetReportMode, METH_VARARGS, msvcrt_CrtSetReportMode__doc__},
 
 static long
-msvcrt_CrtSetReportMode_impl(PyModuleDef *module, int type, int mode);
+msvcrt_CrtSetReportMode_impl(PyObject *module, int type, int mode);
 
 static PyObject *
-msvcrt_CrtSetReportMode(PyModuleDef *module, PyObject *args)
+msvcrt_CrtSetReportMode(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int type;
@@ -508,10 +507,10 @@ PyDoc_STRVAR(msvcrt_set_error_mode__doc__,
     {"set_error_mode", (PyCFunction)msvcrt_set_error_mode, METH_O, msvcrt_set_error_mode__doc__},
 
 static long
-msvcrt_set_error_mode_impl(PyModuleDef *module, int mode);
+msvcrt_set_error_mode_impl(PyObject *module, int mode);
 
 static PyObject *
-msvcrt_set_error_mode(PyModuleDef *module, PyObject *arg)
+msvcrt_set_error_mode(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int mode;
@@ -542,10 +541,10 @@ PyDoc_STRVAR(msvcrt_SetErrorMode__doc__,
     {"SetErrorMode", (PyCFunction)msvcrt_SetErrorMode, METH_O, msvcrt_SetErrorMode__doc__},
 
 static PyObject *
-msvcrt_SetErrorMode_impl(PyModuleDef *module, unsigned int mode);
+msvcrt_SetErrorMode_impl(PyObject *module, unsigned int mode);
 
 static PyObject *
-msvcrt_SetErrorMode(PyModuleDef *module, PyObject *arg)
+msvcrt_SetErrorMode(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     unsigned int mode;
@@ -570,4 +569,4 @@ exit:
 #ifndef MSVCRT_SET_ERROR_MODE_METHODDEF
     #define MSVCRT_SET_ERROR_MODE_METHODDEF
 #endif /* !defined(MSVCRT_SET_ERROR_MODE_METHODDEF) */
-/*[clinic end generated code: output=636de3460aecbca7 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ece8106c0592ff1f input=a9049054013a1b77]*/

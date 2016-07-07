@@ -22,10 +22,10 @@ PyDoc_STRVAR(fcntl_fcntl__doc__,
     {"fcntl", (PyCFunction)fcntl_fcntl, METH_VARARGS, fcntl_fcntl__doc__},
 
 static PyObject *
-fcntl_fcntl_impl(PyModuleDef *module, int fd, int code, PyObject *arg);
+fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg);
 
 static PyObject *
-fcntl_fcntl(PyModuleDef *module, PyObject *args)
+fcntl_fcntl(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -79,11 +79,11 @@ PyDoc_STRVAR(fcntl_ioctl__doc__,
     {"ioctl", (PyCFunction)fcntl_ioctl, METH_VARARGS, fcntl_ioctl__doc__},
 
 static PyObject *
-fcntl_ioctl_impl(PyModuleDef *module, int fd, unsigned int code,
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                  PyObject *ob_arg, int mutate_arg);
 
 static PyObject *
-fcntl_ioctl(PyModuleDef *module, PyObject *args)
+fcntl_ioctl(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -114,10 +114,10 @@ PyDoc_STRVAR(fcntl_flock__doc__,
     {"flock", (PyCFunction)fcntl_flock, METH_VARARGS, fcntl_flock__doc__},
 
 static PyObject *
-fcntl_flock_impl(PyModuleDef *module, int fd, int code);
+fcntl_flock_impl(PyObject *module, int fd, int code);
 
 static PyObject *
-fcntl_flock(PyModuleDef *module, PyObject *args)
+fcntl_flock(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -164,11 +164,11 @@ PyDoc_STRVAR(fcntl_lockf__doc__,
     {"lockf", (PyCFunction)fcntl_lockf, METH_VARARGS, fcntl_lockf__doc__},
 
 static PyObject *
-fcntl_lockf_impl(PyModuleDef *module, int fd, int code, PyObject *lenobj,
+fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence);
 
 static PyObject *
-fcntl_lockf(PyModuleDef *module, PyObject *args)
+fcntl_lockf(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int fd;
@@ -186,4 +186,4 @@ fcntl_lockf(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=b08537e9adc04ca2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=36cff76a8fb2c9a6 input=a9049054013a1b77]*/

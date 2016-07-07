@@ -130,12 +130,12 @@ PyDoc_STRVAR(_io_open__doc__,
     {"open", (PyCFunction)_io_open, METH_VARARGS|METH_KEYWORDS, _io_open__doc__},
 
 static PyObject *
-_io_open_impl(PyModuleDef *module, PyObject *file, const char *mode,
+_io_open_impl(PyObject *module, PyObject *file, const char *mode,
               int buffering, const char *encoding, const char *errors,
               const char *newline, int closefd, PyObject *opener);
 
 static PyObject *
-_io_open(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_io_open(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"file", "mode", "buffering", "encoding", "errors", "newline", "closefd", "opener", NULL};
@@ -157,4 +157,4 @@ _io_open(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=079f597e71e9f0c6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=ae2facf262cf464e input=a9049054013a1b77]*/

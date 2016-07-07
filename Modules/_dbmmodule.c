@@ -430,9 +430,9 @@ Return a database object.
 [clinic start generated code]*/
 
 static PyObject *
-dbmopen_impl(PyModuleDef *module, const char *filename, const char *flags,
+dbmopen_impl(PyObject *module, const char *filename, const char *flags,
              int mode)
-/*[clinic end generated code: output=e8d4b36f25c733fd input=226334bade5764e6]*/
+/*[clinic end generated code: output=5fade8cf16e0755f input=226334bade5764e6]*/
 {
     int iflags;
 
