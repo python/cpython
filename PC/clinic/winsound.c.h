@@ -17,10 +17,10 @@ PyDoc_STRVAR(winsound_PlaySound__doc__,
     {"PlaySound", (PyCFunction)winsound_PlaySound, METH_VARARGS, winsound_PlaySound__doc__},
 
 static PyObject *
-winsound_PlaySound_impl(PyModuleDef *module, Py_UNICODE *sound, int flags);
+winsound_PlaySound_impl(PyObject *module, Py_UNICODE *sound, int flags);
 
 static PyObject *
-winsound_PlaySound(PyModuleDef *module, PyObject *args)
+winsound_PlaySound(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_UNICODE *sound;
@@ -51,10 +51,10 @@ PyDoc_STRVAR(winsound_Beep__doc__,
     {"Beep", (PyCFunction)winsound_Beep, METH_VARARGS, winsound_Beep__doc__},
 
 static PyObject *
-winsound_Beep_impl(PyModuleDef *module, int frequency, int duration);
+winsound_Beep_impl(PyObject *module, int frequency, int duration);
 
 static PyObject *
-winsound_Beep(PyModuleDef *module, PyObject *args)
+winsound_Beep(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int frequency;
@@ -81,10 +81,10 @@ PyDoc_STRVAR(winsound_MessageBeep__doc__,
     {"MessageBeep", (PyCFunction)winsound_MessageBeep, METH_VARARGS, winsound_MessageBeep__doc__},
 
 static PyObject *
-winsound_MessageBeep_impl(PyModuleDef *module, int x);
+winsound_MessageBeep_impl(PyObject *module, int x);
 
 static PyObject *
-winsound_MessageBeep(PyModuleDef *module, PyObject *args)
+winsound_MessageBeep(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int x = MB_OK;
@@ -97,4 +97,4 @@ winsound_MessageBeep(PyModuleDef *module, PyObject *args)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=c5b018ac9dc1f500 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c0b290daf2330dc9 input=a9049054013a1b77]*/

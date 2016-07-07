@@ -2793,7 +2793,7 @@ def correct_name_for_self(f):
     if f.kind in (CALLABLE, METHOD_INIT):
         if f.cls:
             return "PyObject *", "self"
-        return "PyModuleDef *", "module"
+        return "PyObject *", "module"
     if f.kind == STATIC_METHOD:
         return "void *", "null"
     if f.kind in (CLASS_METHOD, METHOD_NEW):

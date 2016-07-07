@@ -75,10 +75,10 @@ PyDoc_STRVAR(_sha256_sha256__doc__,
     {"sha256", (PyCFunction)_sha256_sha256, METH_VARARGS|METH_KEYWORDS, _sha256_sha256__doc__},
 
 static PyObject *
-_sha256_sha256_impl(PyModuleDef *module, PyObject *string);
+_sha256_sha256_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha256_sha256(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_sha256_sha256(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"string", NULL};
@@ -103,10 +103,10 @@ PyDoc_STRVAR(_sha256_sha224__doc__,
     {"sha224", (PyCFunction)_sha256_sha224, METH_VARARGS|METH_KEYWORDS, _sha256_sha224__doc__},
 
 static PyObject *
-_sha256_sha224_impl(PyModuleDef *module, PyObject *string);
+_sha256_sha224_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha256_sha224(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_sha256_sha224(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"string", NULL};
@@ -120,4 +120,4 @@ _sha256_sha224(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=354cedf3b632c7b2 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5a1fc5480e399f95 input=a9049054013a1b77]*/
