@@ -136,11 +136,11 @@ PyDoc_STRVAR(winreg_ConnectRegistry__doc__,
     {"ConnectRegistry", (PyCFunction)winreg_ConnectRegistry, METH_VARARGS, winreg_ConnectRegistry__doc__},
 
 static HKEY
-winreg_ConnectRegistry_impl(PyModuleDef *module, Py_UNICODE *computer_name,
+winreg_ConnectRegistry_impl(PyObject *module, Py_UNICODE *computer_name,
                             HKEY key);
 
 static PyObject *
-winreg_ConnectRegistry(PyModuleDef *module, PyObject *args)
+winreg_ConnectRegistry(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_UNICODE *computer_name;
@@ -184,10 +184,10 @@ PyDoc_STRVAR(winreg_CreateKey__doc__,
     {"CreateKey", (PyCFunction)winreg_CreateKey, METH_VARARGS, winreg_CreateKey__doc__},
 
 static HKEY
-winreg_CreateKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key);
+winreg_CreateKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key);
 
 static PyObject *
-winreg_CreateKey(PyModuleDef *module, PyObject *args)
+winreg_CreateKey(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -237,11 +237,11 @@ PyDoc_STRVAR(winreg_CreateKeyEx__doc__,
     {"CreateKeyEx", (PyCFunction)winreg_CreateKeyEx, METH_VARARGS|METH_KEYWORDS, winreg_CreateKeyEx__doc__},
 
 static HKEY
-winreg_CreateKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+winreg_CreateKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                         int reserved, REGSAM access);
 
 static PyObject *
-winreg_CreateKeyEx(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+winreg_CreateKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"key", "sub_key", "reserved", "access", NULL};
@@ -287,10 +287,10 @@ PyDoc_STRVAR(winreg_DeleteKey__doc__,
     {"DeleteKey", (PyCFunction)winreg_DeleteKey, METH_VARARGS, winreg_DeleteKey__doc__},
 
 static PyObject *
-winreg_DeleteKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key);
+winreg_DeleteKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key);
 
 static PyObject *
-winreg_DeleteKey(PyModuleDef *module, PyObject *args)
+winreg_DeleteKey(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -335,11 +335,11 @@ PyDoc_STRVAR(winreg_DeleteKeyEx__doc__,
     {"DeleteKeyEx", (PyCFunction)winreg_DeleteKeyEx, METH_VARARGS|METH_KEYWORDS, winreg_DeleteKeyEx__doc__},
 
 static PyObject *
-winreg_DeleteKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+winreg_DeleteKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                         REGSAM access, int reserved);
 
 static PyObject *
-winreg_DeleteKeyEx(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+winreg_DeleteKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"key", "sub_key", "access", "reserved", NULL};
@@ -373,10 +373,10 @@ PyDoc_STRVAR(winreg_DeleteValue__doc__,
     {"DeleteValue", (PyCFunction)winreg_DeleteValue, METH_VARARGS, winreg_DeleteValue__doc__},
 
 static PyObject *
-winreg_DeleteValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *value);
+winreg_DeleteValue_impl(PyObject *module, HKEY key, Py_UNICODE *value);
 
 static PyObject *
-winreg_DeleteValue(PyModuleDef *module, PyObject *args)
+winreg_DeleteValue(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -411,10 +411,10 @@ PyDoc_STRVAR(winreg_EnumKey__doc__,
     {"EnumKey", (PyCFunction)winreg_EnumKey, METH_VARARGS, winreg_EnumKey__doc__},
 
 static PyObject *
-winreg_EnumKey_impl(PyModuleDef *module, HKEY key, int index);
+winreg_EnumKey_impl(PyObject *module, HKEY key, int index);
 
 static PyObject *
-winreg_EnumKey(PyModuleDef *module, PyObject *args)
+winreg_EnumKey(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -458,10 +458,10 @@ PyDoc_STRVAR(winreg_EnumValue__doc__,
     {"EnumValue", (PyCFunction)winreg_EnumValue, METH_VARARGS, winreg_EnumValue__doc__},
 
 static PyObject *
-winreg_EnumValue_impl(PyModuleDef *module, HKEY key, int index);
+winreg_EnumValue_impl(PyObject *module, HKEY key, int index);
 
 static PyObject *
-winreg_EnumValue(PyModuleDef *module, PyObject *args)
+winreg_EnumValue(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -487,10 +487,10 @@ PyDoc_STRVAR(winreg_ExpandEnvironmentStrings__doc__,
     {"ExpandEnvironmentStrings", (PyCFunction)winreg_ExpandEnvironmentStrings, METH_O, winreg_ExpandEnvironmentStrings__doc__},
 
 static PyObject *
-winreg_ExpandEnvironmentStrings_impl(PyModuleDef *module, Py_UNICODE *string);
+winreg_ExpandEnvironmentStrings_impl(PyObject *module, Py_UNICODE *string);
 
 static PyObject *
-winreg_ExpandEnvironmentStrings(PyModuleDef *module, PyObject *arg)
+winreg_ExpandEnvironmentStrings(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_UNICODE *string;
@@ -527,10 +527,10 @@ PyDoc_STRVAR(winreg_FlushKey__doc__,
     {"FlushKey", (PyCFunction)winreg_FlushKey, METH_O, winreg_FlushKey__doc__},
 
 static PyObject *
-winreg_FlushKey_impl(PyModuleDef *module, HKEY key);
+winreg_FlushKey_impl(PyObject *module, HKEY key);
 
 static PyObject *
-winreg_FlushKey(PyModuleDef *module, PyObject *arg)
+winreg_FlushKey(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -576,11 +576,11 @@ PyDoc_STRVAR(winreg_LoadKey__doc__,
     {"LoadKey", (PyCFunction)winreg_LoadKey, METH_VARARGS, winreg_LoadKey__doc__},
 
 static PyObject *
-winreg_LoadKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+winreg_LoadKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                     Py_UNICODE *file_name);
 
 static PyObject *
-winreg_LoadKey(PyModuleDef *module, PyObject *args)
+winreg_LoadKey(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -620,11 +620,11 @@ PyDoc_STRVAR(winreg_OpenKey__doc__,
     {"OpenKey", (PyCFunction)winreg_OpenKey, METH_VARARGS|METH_KEYWORDS, winreg_OpenKey__doc__},
 
 static HKEY
-winreg_OpenKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+winreg_OpenKey_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                     int reserved, REGSAM access);
 
 static PyObject *
-winreg_OpenKey(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+winreg_OpenKey(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"key", "sub_key", "reserved", "access", NULL};
@@ -671,11 +671,11 @@ PyDoc_STRVAR(winreg_OpenKeyEx__doc__,
     {"OpenKeyEx", (PyCFunction)winreg_OpenKeyEx, METH_VARARGS|METH_KEYWORDS, winreg_OpenKeyEx__doc__},
 
 static HKEY
-winreg_OpenKeyEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+winreg_OpenKeyEx_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                       int reserved, REGSAM access);
 
 static PyObject *
-winreg_OpenKeyEx(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+winreg_OpenKeyEx(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"key", "sub_key", "reserved", "access", NULL};
@@ -718,10 +718,10 @@ PyDoc_STRVAR(winreg_QueryInfoKey__doc__,
     {"QueryInfoKey", (PyCFunction)winreg_QueryInfoKey, METH_O, winreg_QueryInfoKey__doc__},
 
 static PyObject *
-winreg_QueryInfoKey_impl(PyModuleDef *module, HKEY key);
+winreg_QueryInfoKey_impl(PyObject *module, HKEY key);
 
 static PyObject *
-winreg_QueryInfoKey(PyModuleDef *module, PyObject *arg)
+winreg_QueryInfoKey(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -759,10 +759,10 @@ PyDoc_STRVAR(winreg_QueryValue__doc__,
     {"QueryValue", (PyCFunction)winreg_QueryValue, METH_VARARGS, winreg_QueryValue__doc__},
 
 static PyObject *
-winreg_QueryValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key);
+winreg_QueryValue_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key);
 
 static PyObject *
-winreg_QueryValue(PyModuleDef *module, PyObject *args)
+winreg_QueryValue(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -798,10 +798,10 @@ PyDoc_STRVAR(winreg_QueryValueEx__doc__,
     {"QueryValueEx", (PyCFunction)winreg_QueryValueEx, METH_VARARGS, winreg_QueryValueEx__doc__},
 
 static PyObject *
-winreg_QueryValueEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *name);
+winreg_QueryValueEx_impl(PyObject *module, HKEY key, Py_UNICODE *name);
 
 static PyObject *
-winreg_QueryValueEx(PyModuleDef *module, PyObject *args)
+winreg_QueryValueEx(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -842,10 +842,10 @@ PyDoc_STRVAR(winreg_SaveKey__doc__,
     {"SaveKey", (PyCFunction)winreg_SaveKey, METH_VARARGS, winreg_SaveKey__doc__},
 
 static PyObject *
-winreg_SaveKey_impl(PyModuleDef *module, HKEY key, Py_UNICODE *file_name);
+winreg_SaveKey_impl(PyObject *module, HKEY key, Py_UNICODE *file_name);
 
 static PyObject *
-winreg_SaveKey(PyModuleDef *module, PyObject *args)
+winreg_SaveKey(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -891,12 +891,12 @@ PyDoc_STRVAR(winreg_SetValue__doc__,
     {"SetValue", (PyCFunction)winreg_SetValue, METH_VARARGS, winreg_SetValue__doc__},
 
 static PyObject *
-winreg_SetValue_impl(PyModuleDef *module, HKEY key, Py_UNICODE *sub_key,
+winreg_SetValue_impl(PyObject *module, HKEY key, Py_UNICODE *sub_key,
                      DWORD type, Py_UNICODE *value,
                      Py_ssize_clean_t value_length);
 
 static PyObject *
-winreg_SetValue(PyModuleDef *module, PyObject *args)
+winreg_SetValue(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -962,11 +962,11 @@ PyDoc_STRVAR(winreg_SetValueEx__doc__,
     {"SetValueEx", (PyCFunction)winreg_SetValueEx, METH_VARARGS, winreg_SetValueEx__doc__},
 
 static PyObject *
-winreg_SetValueEx_impl(PyModuleDef *module, HKEY key, Py_UNICODE *value_name,
+winreg_SetValueEx_impl(PyObject *module, HKEY key, Py_UNICODE *value_name,
                        PyObject *reserved, DWORD type, PyObject *value);
 
 static PyObject *
-winreg_SetValueEx(PyModuleDef *module, PyObject *args)
+winreg_SetValueEx(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -1004,10 +1004,10 @@ PyDoc_STRVAR(winreg_DisableReflectionKey__doc__,
     {"DisableReflectionKey", (PyCFunction)winreg_DisableReflectionKey, METH_O, winreg_DisableReflectionKey__doc__},
 
 static PyObject *
-winreg_DisableReflectionKey_impl(PyModuleDef *module, HKEY key);
+winreg_DisableReflectionKey_impl(PyObject *module, HKEY key);
 
 static PyObject *
-winreg_DisableReflectionKey(PyModuleDef *module, PyObject *arg)
+winreg_DisableReflectionKey(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -1038,10 +1038,10 @@ PyDoc_STRVAR(winreg_EnableReflectionKey__doc__,
     {"EnableReflectionKey", (PyCFunction)winreg_EnableReflectionKey, METH_O, winreg_EnableReflectionKey__doc__},
 
 static PyObject *
-winreg_EnableReflectionKey_impl(PyModuleDef *module, HKEY key);
+winreg_EnableReflectionKey_impl(PyObject *module, HKEY key);
 
 static PyObject *
-winreg_EnableReflectionKey(PyModuleDef *module, PyObject *arg)
+winreg_EnableReflectionKey(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -1070,10 +1070,10 @@ PyDoc_STRVAR(winreg_QueryReflectionKey__doc__,
     {"QueryReflectionKey", (PyCFunction)winreg_QueryReflectionKey, METH_O, winreg_QueryReflectionKey__doc__},
 
 static PyObject *
-winreg_QueryReflectionKey_impl(PyModuleDef *module, HKEY key);
+winreg_QueryReflectionKey_impl(PyObject *module, HKEY key);
 
 static PyObject *
-winreg_QueryReflectionKey(PyModuleDef *module, PyObject *arg)
+winreg_QueryReflectionKey(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HKEY key;
@@ -1086,4 +1086,4 @@ winreg_QueryReflectionKey(PyModuleDef *module, PyObject *arg)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=ca128bfa212d8d1f input=a9049054013a1b77]*/
+/*[clinic end generated code: output=c35ce71f825424d1 input=a9049054013a1b77]*/

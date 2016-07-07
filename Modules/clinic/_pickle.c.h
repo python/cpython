@@ -385,11 +385,11 @@ PyDoc_STRVAR(_pickle_dump__doc__,
     {"dump", (PyCFunction)_pickle_dump, METH_VARARGS|METH_KEYWORDS, _pickle_dump__doc__},
 
 static PyObject *
-_pickle_dump_impl(PyModuleDef *module, PyObject *obj, PyObject *file,
+_pickle_dump_impl(PyObject *module, PyObject *obj, PyObject *file,
                   PyObject *protocol, int fix_imports);
 
 static PyObject *
-_pickle_dump(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_pickle_dump(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"obj", "file", "protocol", "fix_imports", NULL};
@@ -430,11 +430,11 @@ PyDoc_STRVAR(_pickle_dumps__doc__,
     {"dumps", (PyCFunction)_pickle_dumps, METH_VARARGS|METH_KEYWORDS, _pickle_dumps__doc__},
 
 static PyObject *
-_pickle_dumps_impl(PyModuleDef *module, PyObject *obj, PyObject *protocol,
+_pickle_dumps_impl(PyObject *module, PyObject *obj, PyObject *protocol,
                    int fix_imports);
 
 static PyObject *
-_pickle_dumps(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_pickle_dumps(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"obj", "protocol", "fix_imports", NULL};
@@ -485,11 +485,11 @@ PyDoc_STRVAR(_pickle_load__doc__,
     {"load", (PyCFunction)_pickle_load, METH_VARARGS|METH_KEYWORDS, _pickle_load__doc__},
 
 static PyObject *
-_pickle_load_impl(PyModuleDef *module, PyObject *file, int fix_imports,
+_pickle_load_impl(PyObject *module, PyObject *file, int fix_imports,
                   const char *encoding, const char *errors);
 
 static PyObject *
-_pickle_load(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_pickle_load(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"file", "fix_imports", "encoding", "errors", NULL};
@@ -532,11 +532,11 @@ PyDoc_STRVAR(_pickle_loads__doc__,
     {"loads", (PyCFunction)_pickle_loads, METH_VARARGS|METH_KEYWORDS, _pickle_loads__doc__},
 
 static PyObject *
-_pickle_loads_impl(PyModuleDef *module, PyObject *data, int fix_imports,
+_pickle_loads_impl(PyObject *module, PyObject *data, int fix_imports,
                    const char *encoding, const char *errors);
 
 static PyObject *
-_pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_pickle_loads(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"data", "fix_imports", "encoding", "errors", NULL};
@@ -554,4 +554,4 @@ _pickle_loads(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=5e972f339d197760 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=5c5f9149df292ce4 input=a9049054013a1b77]*/

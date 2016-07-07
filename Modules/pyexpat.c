@@ -1555,9 +1555,9 @@ Return a new XML parser object.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_ParserCreate_impl(PyModuleDef *module, const char *encoding,
+pyexpat_ParserCreate_impl(PyObject *module, const char *encoding,
                           const char *namespace_separator, PyObject *intern)
-/*[clinic end generated code: output=81fccd233e1743a8 input=23d29704acad385d]*/
+/*[clinic end generated code: output=295c0cf01ab1146c input=23d29704acad385d]*/
 {
     PyObject *result;
     int intern_decref = 0;
@@ -1601,8 +1601,8 @@ Returns string error for given number.
 [clinic start generated code]*/
 
 static PyObject *
-pyexpat_ErrorString_impl(PyModuleDef *module, long code)
-/*[clinic end generated code: output=d87668108b6868e5 input=cc67de010d9e62b3]*/
+pyexpat_ErrorString_impl(PyObject *module, long code)
+/*[clinic end generated code: output=2feae50d166f2174 input=cc67de010d9e62b3]*/
 {
     return Py_BuildValue("z", XML_ErrorString((int)code));
 }

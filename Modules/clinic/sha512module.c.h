@@ -93,10 +93,10 @@ PyDoc_STRVAR(_sha512_sha512__doc__,
     {"sha512", (PyCFunction)_sha512_sha512, METH_VARARGS|METH_KEYWORDS, _sha512_sha512__doc__},
 
 static PyObject *
-_sha512_sha512_impl(PyModuleDef *module, PyObject *string);
+_sha512_sha512_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha512(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_sha512_sha512(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"string", NULL};
@@ -126,10 +126,10 @@ PyDoc_STRVAR(_sha512_sha384__doc__,
     {"sha384", (PyCFunction)_sha512_sha384, METH_VARARGS|METH_KEYWORDS, _sha512_sha384__doc__},
 
 static PyObject *
-_sha512_sha384_impl(PyModuleDef *module, PyObject *string);
+_sha512_sha384_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_sha512_sha384(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_sha512_sha384(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"string", NULL};
@@ -170,4 +170,4 @@ exit:
 #ifndef _SHA512_SHA384_METHODDEF
     #define _SHA512_SHA384_METHODDEF
 #endif /* !defined(_SHA512_SHA384_METHODDEF) */
-/*[clinic end generated code: output=845af47cea22e2a1 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=e314c0f773abd5d7 input=a9049054013a1b77]*/

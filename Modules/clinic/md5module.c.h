@@ -75,10 +75,10 @@ PyDoc_STRVAR(_md5_md5__doc__,
     {"md5", (PyCFunction)_md5_md5, METH_VARARGS|METH_KEYWORDS, _md5_md5__doc__},
 
 static PyObject *
-_md5_md5_impl(PyModuleDef *module, PyObject *string);
+_md5_md5_impl(PyObject *module, PyObject *string);
 
 static PyObject *
-_md5_md5(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_md5_md5(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"string", NULL};
@@ -93,4 +93,4 @@ _md5_md5(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d701d041d387b081 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8f640a98761daffe input=a9049054013a1b77]*/

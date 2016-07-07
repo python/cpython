@@ -56,8 +56,8 @@ corresponding to the return value of the fcntl call in the C code.
 [clinic start generated code]*/
 
 static PyObject *
-fcntl_fcntl_impl(PyModuleDef *module, int fd, int code, PyObject *arg)
-/*[clinic end generated code: output=afc5bfa74a03ef0d input=8cefbe59b29efbe2]*/
+fcntl_fcntl_impl(PyObject *module, int fd, int code, PyObject *arg)
+/*[clinic end generated code: output=888fc93b51c295bd input=8cefbe59b29efbe2]*/
 {
     unsigned int int_arg = 0;
     int ret;
@@ -146,9 +146,9 @@ code.
 [clinic start generated code]*/
 
 static PyObject *
-fcntl_ioctl_impl(PyModuleDef *module, int fd, unsigned int code,
+fcntl_ioctl_impl(PyObject *module, int fd, unsigned int code,
                  PyObject *ob_arg, int mutate_arg)
-/*[clinic end generated code: output=102faa0f7ebe2210 input=ede70c433cccbbb2]*/
+/*[clinic end generated code: output=7f7f5840c65991be input=ede70c433cccbbb2]*/
 {
 #define IOCTL_BUFSZ 1024
     /* We use the unsigned non-checked 'I' format for the 'code' parameter
@@ -279,8 +279,8 @@ function is emulated using fcntl()).
 [clinic start generated code]*/
 
 static PyObject *
-fcntl_flock_impl(PyModuleDef *module, int fd, int code)
-/*[clinic end generated code: output=c9035133a7dbfc96 input=b70a0a41ca22a8a0]*/
+fcntl_flock_impl(PyObject *module, int fd, int code)
+/*[clinic end generated code: output=84059e2b37d2fc64 input=b70a0a41ca22a8a0]*/
 {
     int ret;
 
@@ -358,9 +358,9 @@ starts.  `whence` is as with fileobj.seek(), specifically:
 [clinic start generated code]*/
 
 static PyObject *
-fcntl_lockf_impl(PyModuleDef *module, int fd, int code, PyObject *lenobj,
+fcntl_lockf_impl(PyObject *module, int fd, int code, PyObject *lenobj,
                  PyObject *startobj, int whence)
-/*[clinic end generated code: output=31af35eba08b9af7 input=3a5dc01b04371f1a]*/
+/*[clinic end generated code: output=4985e7a172e7461a input=3a5dc01b04371f1a]*/
 {
     int ret;
 

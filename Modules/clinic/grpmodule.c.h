@@ -14,10 +14,10 @@ PyDoc_STRVAR(grp_getgrgid__doc__,
     {"getgrgid", (PyCFunction)grp_getgrgid, METH_VARARGS|METH_KEYWORDS, grp_getgrgid__doc__},
 
 static PyObject *
-grp_getgrgid_impl(PyModuleDef *module, PyObject *id);
+grp_getgrgid_impl(PyObject *module, PyObject *id);
 
 static PyObject *
-grp_getgrgid(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+grp_getgrgid(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"id", NULL};
@@ -45,10 +45,10 @@ PyDoc_STRVAR(grp_getgrnam__doc__,
     {"getgrnam", (PyCFunction)grp_getgrnam, METH_VARARGS|METH_KEYWORDS, grp_getgrnam__doc__},
 
 static PyObject *
-grp_getgrnam_impl(PyModuleDef *module, PyObject *name);
+grp_getgrnam_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-grp_getgrnam(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+grp_getgrnam(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"name", NULL};
@@ -77,11 +77,11 @@ PyDoc_STRVAR(grp_getgrall__doc__,
     {"getgrall", (PyCFunction)grp_getgrall, METH_NOARGS, grp_getgrall__doc__},
 
 static PyObject *
-grp_getgrall_impl(PyModuleDef *module);
+grp_getgrall_impl(PyObject *module);
 
 static PyObject *
-grp_getgrall(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+grp_getgrall(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return grp_getgrall_impl(module);
 }
-/*[clinic end generated code: output=a8a097520206ccd6 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8b7502970a29e7f1 input=a9049054013a1b77]*/

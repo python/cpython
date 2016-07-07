@@ -125,8 +125,8 @@ See `help(spwd)` for more on shadow password database entries.
 [clinic start generated code]*/
 
 static PyObject *
-spwd_getspnam_impl(PyModuleDef *module, PyObject *arg)
-/*[clinic end generated code: output=9f6bbe51a4eb3b21 input=dd89429e6167a00f]*/
+spwd_getspnam_impl(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=701250cf57dc6ebe input=dd89429e6167a00f]*/
 {
     char *name;
     struct spwd *p;
@@ -162,8 +162,8 @@ See `help(spwd)` for more on shadow password database entries.
 [clinic start generated code]*/
 
 static PyObject *
-spwd_getspall_impl(PyModuleDef *module)
-/*[clinic end generated code: output=b12d8ec7bdb29612 input=b2c84b7857d622bd]*/
+spwd_getspall_impl(PyObject *module)
+/*[clinic end generated code: output=4fda298d6bf6d057 input=b2c84b7857d622bd]*/
 {
     PyObject *d;
     struct spwd *p;

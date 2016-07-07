@@ -82,12 +82,12 @@ else {
 #define CM_SCALE_DOWN (-(CM_SCALE_UP+1)/2)
 
 /* forward declarations */
-static Py_complex cmath_asinh_impl(PyModuleDef *, Py_complex);
-static Py_complex cmath_atanh_impl(PyModuleDef *, Py_complex);
-static Py_complex cmath_cosh_impl(PyModuleDef *, Py_complex);
-static Py_complex cmath_sinh_impl(PyModuleDef *, Py_complex);
-static Py_complex cmath_sqrt_impl(PyModuleDef *, Py_complex);
-static Py_complex cmath_tanh_impl(PyModuleDef *, Py_complex);
+static Py_complex cmath_asinh_impl(PyObject *, Py_complex);
+static Py_complex cmath_atanh_impl(PyObject *, Py_complex);
+static Py_complex cmath_cosh_impl(PyObject *, Py_complex);
+static Py_complex cmath_sinh_impl(PyObject *, Py_complex);
+static Py_complex cmath_sqrt_impl(PyObject *, Py_complex);
+static Py_complex cmath_tanh_impl(PyObject *, Py_complex);
 static PyObject * math_error(void);
 
 /* Code to deal with special values (infinities, NaNs, etc.). */
@@ -167,8 +167,8 @@ Return the arc cosine of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_acos_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=7c1dd21ff818db6b input=bd6cbd78ae851927]*/
+cmath_acos_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=40bd42853fd460ae input=bd6cbd78ae851927]*/
 {
     Py_complex s1, s2, r;
 
@@ -210,8 +210,8 @@ Return the inverse hyperbolic cosine of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_acosh_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=c23c776429def981 input=3f61bee7d703e53c]*/
+cmath_acosh_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=3e2454d4fcf404ca input=3f61bee7d703e53c]*/
 {
     Py_complex s1, s2, r;
 
@@ -242,8 +242,8 @@ Return the arc sine of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_asin_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=42d2346d46690826 input=be0bf0cfdd5239c5]*/
+cmath_asin_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=3b264cd1b16bf4e1 input=be0bf0cfdd5239c5]*/
 {
     /* asin(z) = -i asinh(iz) */
     Py_complex s, r;
@@ -265,8 +265,8 @@ Return the inverse hyperbolic sine of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_asinh_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=0c6664823c7b1b35 input=5c09448fcfc89a79]*/
+cmath_asinh_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=733d8107841a7599 input=5c09448fcfc89a79]*/
 {
     Py_complex s1, s2, r;
 
@@ -303,8 +303,8 @@ Return the arc tangent of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_atan_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=b7d44f02c6a5c3b5 input=3b21ff7d5eac632a]*/
+cmath_atan_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=b6bfc497058acba4 input=3b21ff7d5eac632a]*/
 {
     /* atan(z) = -i atanh(iz) */
     Py_complex s, r;
@@ -356,8 +356,8 @@ Return the inverse hyperbolic tangent of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_atanh_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=279e0b9fefc8da7c input=2b3fdb82fb34487b]*/
+cmath_atanh_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=e83355f93a989c9e input=2b3fdb82fb34487b]*/
 {
     Py_complex r;
     double ay, h;
@@ -411,8 +411,8 @@ Return the cosine of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_cos_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=9d1cdc1b5e761667 input=6022e39b77127ac7]*/
+cmath_cos_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=fd64918d5b3186db input=6022e39b77127ac7]*/
 {
     /* cos(z) = cosh(iz) */
     Py_complex r;
@@ -433,8 +433,8 @@ Return the hyperbolic cosine of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_cosh_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=f3b5d3282b3024d3 input=d6b66339e9cc332b]*/
+cmath_cosh_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=2e969047da601bdb input=d6b66339e9cc332b]*/
 {
     Py_complex r;
     double x_minus_one;
@@ -495,8 +495,8 @@ Return the exponential value e**z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_exp_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=6f8825eb2bcad9ba input=8b9e6cf8a92174c3]*/
+cmath_exp_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=edcec61fb9dfda6c input=8b9e6cf8a92174c3]*/
 {
     Py_complex r;
     double l;
@@ -624,8 +624,8 @@ Return the base-10 logarithm of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_log10_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=c7c426ca0e782341 input=cff5644f73c1519c]*/
+cmath_log10_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=2922779a7c38cbe1 input=cff5644f73c1519c]*/
 {
     Py_complex r;
     int errno_save;
@@ -646,8 +646,8 @@ Return the sine of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_sin_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=e7f5e2b253825ac7 input=2d3519842a8b4b85]*/
+cmath_sin_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=980370d2ff0bb5aa input=2d3519842a8b4b85]*/
 {
     /* sin(z) = -i sin(iz) */
     Py_complex s, r;
@@ -670,8 +670,8 @@ Return the hyperbolic sine of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_sinh_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=d71fff8298043a95 input=d2d3fc8c1ddfd2dd]*/
+cmath_sinh_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=38b0a6cce26f3536 input=d2d3fc8c1ddfd2dd]*/
 {
     Py_complex r;
     double x_minus_one;
@@ -729,8 +729,8 @@ Return the square root of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_sqrt_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=b6bda283d0c5a7b4 input=7088b166fc9a58c7]*/
+cmath_sqrt_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=b6507b3029c339fc input=7088b166fc9a58c7]*/
 {
     /*
        Method: use symmetries to reduce to the case when x = z.real and y
@@ -804,8 +804,8 @@ Return the tangent of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_tan_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=df374bacf36d99b4 input=fc167e528767888e]*/
+cmath_tan_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=7c5f13158a72eb13 input=fc167e528767888e]*/
 {
     /* tan(z) = -i tanh(iz) */
     Py_complex s, r;
@@ -828,8 +828,8 @@ Return the hyperbolic tangent of z.
 [clinic start generated code]*/
 
 static Py_complex
-cmath_tanh_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=f578773d27a18e96 input=22f67f9dc6d29685]*/
+cmath_tanh_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=36d547ef7aca116c input=22f67f9dc6d29685]*/
 {
     /* Formula:
 
@@ -906,8 +906,8 @@ If the base not specified, returns the natural logarithm (base e) of z.
 [clinic start generated code]*/
 
 static PyObject *
-cmath_log_impl(PyModuleDef *module, Py_complex x, PyObject *y_obj)
-/*[clinic end generated code: output=35e2a1e5229b5a46 input=ee0e823a7c6e68ea]*/
+cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj)
+/*[clinic end generated code: output=4effdb7d258e0d94 input=ee0e823a7c6e68ea]*/
 {
     Py_complex y;
 
@@ -954,8 +954,8 @@ Return argument, also known as the phase angle, of a complex.
 [clinic start generated code]*/
 
 static PyObject *
-cmath_phase_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=e09eaf373cb624c3 input=5cf75228ba94b69d]*/
+cmath_phase_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=50725086a7bfd253 input=5cf75228ba94b69d]*/
 {
     double phi;
 
@@ -981,8 +981,8 @@ r is the distance from 0 and phi the phase angle.
 [clinic start generated code]*/
 
 static PyObject *
-cmath_polar_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=07d41b16c877875a input=26c353574fd1a861]*/
+cmath_polar_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=d0a8147c41dbb654 input=26c353574fd1a861]*/
 {
     double r, phi;
 
@@ -1021,8 +1021,8 @@ Convert from polar coordinates to rectangular coordinates.
 [clinic start generated code]*/
 
 static PyObject *
-cmath_rect_impl(PyModuleDef *module, double r, double phi)
-/*[clinic end generated code: output=d97a8749bd63e9d5 input=24c5646d147efd69]*/
+cmath_rect_impl(PyObject *module, double r, double phi)
+/*[clinic end generated code: output=385a0690925df2d5 input=24c5646d147efd69]*/
 {
     Py_complex z;
     errno = 0;
@@ -1082,8 +1082,8 @@ Return True if both the real and imaginary parts of z are finite, else False.
 [clinic start generated code]*/
 
 static PyObject *
-cmath_isfinite_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=8f6682fa93de45d6 input=848e7ee701895815]*/
+cmath_isfinite_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=ac76611e2c774a36 input=848e7ee701895815]*/
 {
     return PyBool_FromLong(Py_IS_FINITE(z.real) && Py_IS_FINITE(z.imag));
 }
@@ -1095,8 +1095,8 @@ Checks if the real or imaginary part of z not a number (NaN).
 [clinic start generated code]*/
 
 static PyObject *
-cmath_isnan_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=b85fe8c2047718ee input=71799f5d284c9baf]*/
+cmath_isnan_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=e7abf6e0b28beab7 input=71799f5d284c9baf]*/
 {
     return PyBool_FromLong(Py_IS_NAN(z.real) || Py_IS_NAN(z.imag));
 }
@@ -1108,8 +1108,8 @@ Checks if the real or imaginary part of z is infinite.
 [clinic start generated code]*/
 
 static PyObject *
-cmath_isinf_impl(PyModuleDef *module, Py_complex z)
-/*[clinic end generated code: output=8ca9c6109e468bf4 input=363df155c7181329]*/
+cmath_isinf_impl(PyObject *module, Py_complex z)
+/*[clinic end generated code: output=502a75a79c773469 input=363df155c7181329]*/
 {
     return PyBool_FromLong(Py_IS_INFINITY(z.real) ||
                            Py_IS_INFINITY(z.imag));
@@ -1140,9 +1140,9 @@ not close to anything, even itself. inf and -inf are only close to themselves.
 [clinic start generated code]*/
 
 static int
-cmath_isclose_impl(PyModuleDef *module, Py_complex a, Py_complex b,
+cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
                    double rel_tol, double abs_tol)
-/*[clinic end generated code: output=da0c535fb54e2310 input=df9636d7de1d4ac3]*/
+/*[clinic end generated code: output=8a2486cc6e0014d1 input=df9636d7de1d4ac3]*/
 {
     double diff;
 
