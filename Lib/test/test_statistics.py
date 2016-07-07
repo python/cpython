@@ -1600,6 +1600,22 @@ class TestMedianGrouped(TestMedian):
         data = [220, 220, 240, 260, 260, 260, 260, 280, 280, 300, 320, 340]
         self.assertEqual(self.func(data, 20), 265.0)
 
+    def test_data_type_error(self):
+        # Test median_grouped with str, bytes data types for data and interval
+        data = ["", "", ""]
+        self.assertRaises(TypeError, self.func, data)
+        #---
+        data = [b"", b"", b""]
+        self.assertRaises(TypeError, self.func, data)
+        #---
+        data = [1, 2, 3]
+        interval = ""
+        self.assertRaises(TypeError, self.func, data, interval)
+        #---
+        data = [1, 2, 3]
+        interval = b""
+        self.assertRaises(TypeError, self.func, data, interval)
+
 
 class TestMode(NumericTestCase, AverageMixin, UnivariateTypeMixin):
     # Test cases for the discrete version of mode.
