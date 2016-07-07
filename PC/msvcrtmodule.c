@@ -78,8 +78,8 @@ to the operating system. On failure, this raises OSError.
 [clinic start generated code]*/
 
 static PyObject *
-msvcrt_heapmin_impl(PyModuleDef *module)
-/*[clinic end generated code: output=464f866feb57c436 input=82e1771d21bde2d8]*/
+msvcrt_heapmin_impl(PyObject *module)
+/*[clinic end generated code: output=1ba00f344782dc19 input=82e1771d21bde2d8]*/
 {
     if (_heapmin() != 0)
         return PyErr_SetFromErrno(PyExc_IOError);
@@ -105,8 +105,8 @@ individually.
 [clinic start generated code]*/
 
 static PyObject *
-msvcrt_locking_impl(PyModuleDef *module, int fd, int mode, long nbytes)
-/*[clinic end generated code: output=dff41e5e76d544de input=d9f13f0f6a713ba7]*/
+msvcrt_locking_impl(PyObject *module, int fd, int mode, long nbytes)
+/*[clinic end generated code: output=a4a90deca9785a03 input=d9f13f0f6a713ba7]*/
 {
     int err;
 
@@ -135,8 +135,8 @@ Return value is the previous mode.
 [clinic start generated code]*/
 
 static long
-msvcrt_setmode_impl(PyModuleDef *module, int fd, int flags)
-/*[clinic end generated code: output=8c84e5b37c586d0d input=76e7c01f6b137f75]*/
+msvcrt_setmode_impl(PyObject *module, int fd, int flags)
+/*[clinic end generated code: output=24a9be5ea07ccb9b input=76e7c01f6b137f75]*/
 {
     flags = _setmode(fd, flags);
     if (flags == -1)
@@ -160,9 +160,8 @@ to os.fdopen() to create a file object.
 [clinic start generated code]*/
 
 static long
-msvcrt_open_osfhandle_impl(PyModuleDef *module, Py_intptr_t handle,
-                           int flags)
-/*[clinic end generated code: output=86bce32582c49c06 input=4d8516ed32db8f65]*/
+msvcrt_open_osfhandle_impl(PyObject *module, Py_intptr_t handle, int flags)
+/*[clinic end generated code: output=bf65e422243a39f9 input=4d8516ed32db8f65]*/
 {
     int fd;
 
@@ -185,8 +184,8 @@ Raises IOError if fd is not recognized.
 [clinic start generated code]*/
 
 static Py_intptr_t
-msvcrt_get_osfhandle_impl(PyModuleDef *module, int fd)
-/*[clinic end generated code: output=376bff52586b55a6 input=c7d18d02c8017ec1]*/
+msvcrt_get_osfhandle_impl(PyObject *module, int fd)
+/*[clinic end generated code: output=eac47643338c0baa input=c7d18d02c8017ec1]*/
 {
     Py_intptr_t handle = -1;
 
@@ -212,8 +211,8 @@ Return true if a keypress is waiting to be read.
 [clinic start generated code]*/
 
 static long
-msvcrt_kbhit_impl(PyModuleDef *module)
-/*[clinic end generated code: output=2b7293fcbe5cb24e input=e70d678a5c2f6acc]*/
+msvcrt_kbhit_impl(PyObject *module)
+/*[clinic end generated code: output=940dfce6587c1890 input=e70d678a5c2f6acc]*/
 {
     return _kbhit();
 }
@@ -231,8 +230,8 @@ cannot be read with this function.
 [clinic start generated code]*/
 
 static int
-msvcrt_getch_impl(PyModuleDef *module)
-/*[clinic end generated code: output=199e3d89f49c166a input=37a40cf0ed0d1153]*/
+msvcrt_getch_impl(PyObject *module)
+/*[clinic end generated code: output=a4e51f0565064a7d input=37a40cf0ed0d1153]*/
 {
     int ch;
 
@@ -249,8 +248,8 @@ Wide char variant of getch(), returning a Unicode value.
 [clinic start generated code]*/
 
 static wchar_t
-msvcrt_getwch_impl(PyModuleDef *module)
-/*[clinic end generated code: output=9d3762861328b1fe input=27b3dec8ad823d7c]*/
+msvcrt_getwch_impl(PyObject *module)
+/*[clinic end generated code: output=be9937494e22f007 input=27b3dec8ad823d7c]*/
 {
     wchar_t ch;
 
@@ -267,8 +266,8 @@ Similar to getch(), but the keypress will be echoed if possible.
 [clinic start generated code]*/
 
 static int
-msvcrt_getche_impl(PyModuleDef *module)
-/*[clinic end generated code: output=8aa369be6550068e input=43311ade9ed4a9c0]*/
+msvcrt_getche_impl(PyObject *module)
+/*[clinic end generated code: output=d8f7db4fd2990401 input=43311ade9ed4a9c0]*/
 {
     int ch;
 
@@ -285,8 +284,8 @@ Wide char variant of getche(), returning a Unicode value.
 [clinic start generated code]*/
 
 static wchar_t
-msvcrt_getwche_impl(PyModuleDef *module)
-/*[clinic end generated code: output=3693cf78e3ea0cf6 input=49337d59d1a591f8]*/
+msvcrt_getwche_impl(PyObject *module)
+/*[clinic end generated code: output=d0dae5ba3829d596 input=49337d59d1a591f8]*/
 {
     wchar_t ch;
 
@@ -306,8 +305,8 @@ Print the byte string char to the console without buffering.
 [clinic start generated code]*/
 
 static PyObject *
-msvcrt_putch_impl(PyModuleDef *module, char char_value)
-/*[clinic end generated code: output=c05548b11554f36f input=ec078dd10cb054d6]*/
+msvcrt_putch_impl(PyObject *module, char char_value)
+/*[clinic end generated code: output=92ec9b81012d8f60 input=ec078dd10cb054d6]*/
 {
     _putch(char_value);
     Py_RETURN_NONE;
@@ -323,8 +322,8 @@ Wide char variant of putch(), accepting a Unicode value.
 [clinic start generated code]*/
 
 static PyObject *
-msvcrt_putwch_impl(PyModuleDef *module, int unicode_char)
-/*[clinic end generated code: output=c216a73694ca73dd input=996ccd0bbcbac4c3]*/
+msvcrt_putwch_impl(PyObject *module, int unicode_char)
+/*[clinic end generated code: output=a3bd1a8951d28eee input=996ccd0bbcbac4c3]*/
 {
     _putwch(unicode_char);
     Py_RETURN_NONE;
@@ -345,8 +344,8 @@ getch() or getche().
 [clinic start generated code]*/
 
 static PyObject *
-msvcrt_ungetch_impl(PyModuleDef *module, char char_value)
-/*[clinic end generated code: output=19a4cd3249709ec9 input=22f07ee9001bbf0f]*/
+msvcrt_ungetch_impl(PyObject *module, char char_value)
+/*[clinic end generated code: output=c6942a0efa119000 input=22f07ee9001bbf0f]*/
 {
     if (_ungetch(char_value) == EOF)
         return PyErr_SetFromErrno(PyExc_IOError);
@@ -363,8 +362,8 @@ Wide char variant of ungetch(), accepting a Unicode value.
 [clinic start generated code]*/
 
 static PyObject *
-msvcrt_ungetwch_impl(PyModuleDef *module, int unicode_char)
-/*[clinic end generated code: output=1ee7674710322bd1 input=83ec0492be04d564]*/
+msvcrt_ungetwch_impl(PyObject *module, int unicode_char)
+/*[clinic end generated code: output=e63af05438b8ba3d input=83ec0492be04d564]*/
 {
     if (_ungetwch(unicode_char) == WEOF)
         return PyErr_SetFromErrno(PyExc_IOError);
@@ -385,8 +384,8 @@ Only available on Debug builds.
 [clinic start generated code]*/
 
 static long
-msvcrt_CrtSetReportFile_impl(PyModuleDef *module, int type, int file)
-/*[clinic end generated code: output=8c3644fb2edfa808 input=bb8f721a604fcc45]*/
+msvcrt_CrtSetReportFile_impl(PyObject *module, int type, int file)
+/*[clinic end generated code: output=df291c7fe032eb68 input=bb8f721a604fcc45]*/
 {
     return (long)_CrtSetReportFile(type, (_HFILE)file);
 }
@@ -404,8 +403,8 @@ Only available on Debug builds.
 [clinic start generated code]*/
 
 static long
-msvcrt_CrtSetReportMode_impl(PyModuleDef *module, int type, int mode)
-/*[clinic end generated code: output=b407fbf8716a52b9 input=9319d29b4319426b]*/
+msvcrt_CrtSetReportMode_impl(PyObject *module, int type, int mode)
+/*[clinic end generated code: output=b2863761523de317 input=9319d29b4319426b]*/
 {
     int res;
 
@@ -427,8 +426,8 @@ Only available on Debug builds.
 [clinic start generated code]*/
 
 static long
-msvcrt_set_error_mode_impl(PyModuleDef *module, int mode)
-/*[clinic end generated code: output=62148adffa90867d input=046fca59c0f20872]*/
+msvcrt_set_error_mode_impl(PyObject *module, int mode)
+/*[clinic end generated code: output=ac4a09040d8ac4e3 input=046fca59c0f20872]*/
 {
     return _set_error_mode(mode);
 }
@@ -444,8 +443,8 @@ Wrapper around SetErrorMode.
 [clinic start generated code]*/
 
 static PyObject *
-msvcrt_SetErrorMode_impl(PyModuleDef *module, unsigned int mode)
-/*[clinic end generated code: output=544c60b085be79c6 input=d8b167258d32d907]*/
+msvcrt_SetErrorMode_impl(PyObject *module, unsigned int mode)
+/*[clinic end generated code: output=01d529293f00da8f input=d8b167258d32d907]*/
 {
     unsigned int res;
 

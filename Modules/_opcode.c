@@ -20,8 +20,8 @@ Compute the stack effect of the opcode.
 [clinic start generated code]*/
 
 static int
-_opcode_stack_effect_impl(PyModuleDef *module, int opcode, PyObject *oparg)
-/*[clinic end generated code: output=1fcafd5596c6b050 input=2d0a9ee53c0418f5]*/
+_opcode_stack_effect_impl(PyObject *module, int opcode, PyObject *oparg)
+/*[clinic end generated code: output=ad39467fa3ad22ce input=2d0a9ee53c0418f5]*/
 {
     int effect;
     int oparg_int = 0;

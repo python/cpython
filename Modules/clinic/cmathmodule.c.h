@@ -12,10 +12,10 @@ PyDoc_STRVAR(cmath_acos__doc__,
     {"acos", (PyCFunction)cmath_acos, METH_O, cmath_acos__doc__},
 
 static Py_complex
-cmath_acos_impl(PyModuleDef *module, Py_complex z);
+cmath_acos_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_acos(PyModuleDef *module, PyObject *arg)
+cmath_acos(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -53,10 +53,10 @@ PyDoc_STRVAR(cmath_acosh__doc__,
     {"acosh", (PyCFunction)cmath_acosh, METH_O, cmath_acosh__doc__},
 
 static Py_complex
-cmath_acosh_impl(PyModuleDef *module, Py_complex z);
+cmath_acosh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_acosh(PyModuleDef *module, PyObject *arg)
+cmath_acosh(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -94,10 +94,10 @@ PyDoc_STRVAR(cmath_asin__doc__,
     {"asin", (PyCFunction)cmath_asin, METH_O, cmath_asin__doc__},
 
 static Py_complex
-cmath_asin_impl(PyModuleDef *module, Py_complex z);
+cmath_asin_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_asin(PyModuleDef *module, PyObject *arg)
+cmath_asin(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -135,10 +135,10 @@ PyDoc_STRVAR(cmath_asinh__doc__,
     {"asinh", (PyCFunction)cmath_asinh, METH_O, cmath_asinh__doc__},
 
 static Py_complex
-cmath_asinh_impl(PyModuleDef *module, Py_complex z);
+cmath_asinh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_asinh(PyModuleDef *module, PyObject *arg)
+cmath_asinh(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -176,10 +176,10 @@ PyDoc_STRVAR(cmath_atan__doc__,
     {"atan", (PyCFunction)cmath_atan, METH_O, cmath_atan__doc__},
 
 static Py_complex
-cmath_atan_impl(PyModuleDef *module, Py_complex z);
+cmath_atan_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_atan(PyModuleDef *module, PyObject *arg)
+cmath_atan(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -217,10 +217,10 @@ PyDoc_STRVAR(cmath_atanh__doc__,
     {"atanh", (PyCFunction)cmath_atanh, METH_O, cmath_atanh__doc__},
 
 static Py_complex
-cmath_atanh_impl(PyModuleDef *module, Py_complex z);
+cmath_atanh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_atanh(PyModuleDef *module, PyObject *arg)
+cmath_atanh(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -258,10 +258,10 @@ PyDoc_STRVAR(cmath_cos__doc__,
     {"cos", (PyCFunction)cmath_cos, METH_O, cmath_cos__doc__},
 
 static Py_complex
-cmath_cos_impl(PyModuleDef *module, Py_complex z);
+cmath_cos_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_cos(PyModuleDef *module, PyObject *arg)
+cmath_cos(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -299,10 +299,10 @@ PyDoc_STRVAR(cmath_cosh__doc__,
     {"cosh", (PyCFunction)cmath_cosh, METH_O, cmath_cosh__doc__},
 
 static Py_complex
-cmath_cosh_impl(PyModuleDef *module, Py_complex z);
+cmath_cosh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_cosh(PyModuleDef *module, PyObject *arg)
+cmath_cosh(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -340,10 +340,10 @@ PyDoc_STRVAR(cmath_exp__doc__,
     {"exp", (PyCFunction)cmath_exp, METH_O, cmath_exp__doc__},
 
 static Py_complex
-cmath_exp_impl(PyModuleDef *module, Py_complex z);
+cmath_exp_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_exp(PyModuleDef *module, PyObject *arg)
+cmath_exp(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -381,10 +381,10 @@ PyDoc_STRVAR(cmath_log10__doc__,
     {"log10", (PyCFunction)cmath_log10, METH_O, cmath_log10__doc__},
 
 static Py_complex
-cmath_log10_impl(PyModuleDef *module, Py_complex z);
+cmath_log10_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_log10(PyModuleDef *module, PyObject *arg)
+cmath_log10(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -422,10 +422,10 @@ PyDoc_STRVAR(cmath_sin__doc__,
     {"sin", (PyCFunction)cmath_sin, METH_O, cmath_sin__doc__},
 
 static Py_complex
-cmath_sin_impl(PyModuleDef *module, Py_complex z);
+cmath_sin_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_sin(PyModuleDef *module, PyObject *arg)
+cmath_sin(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -463,10 +463,10 @@ PyDoc_STRVAR(cmath_sinh__doc__,
     {"sinh", (PyCFunction)cmath_sinh, METH_O, cmath_sinh__doc__},
 
 static Py_complex
-cmath_sinh_impl(PyModuleDef *module, Py_complex z);
+cmath_sinh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_sinh(PyModuleDef *module, PyObject *arg)
+cmath_sinh(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -504,10 +504,10 @@ PyDoc_STRVAR(cmath_sqrt__doc__,
     {"sqrt", (PyCFunction)cmath_sqrt, METH_O, cmath_sqrt__doc__},
 
 static Py_complex
-cmath_sqrt_impl(PyModuleDef *module, Py_complex z);
+cmath_sqrt_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_sqrt(PyModuleDef *module, PyObject *arg)
+cmath_sqrt(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -545,10 +545,10 @@ PyDoc_STRVAR(cmath_tan__doc__,
     {"tan", (PyCFunction)cmath_tan, METH_O, cmath_tan__doc__},
 
 static Py_complex
-cmath_tan_impl(PyModuleDef *module, Py_complex z);
+cmath_tan_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_tan(PyModuleDef *module, PyObject *arg)
+cmath_tan(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -586,10 +586,10 @@ PyDoc_STRVAR(cmath_tanh__doc__,
     {"tanh", (PyCFunction)cmath_tanh, METH_O, cmath_tanh__doc__},
 
 static Py_complex
-cmath_tanh_impl(PyModuleDef *module, Py_complex z);
+cmath_tanh_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_tanh(PyModuleDef *module, PyObject *arg)
+cmath_tanh(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -629,10 +629,10 @@ PyDoc_STRVAR(cmath_log__doc__,
     {"log", (PyCFunction)cmath_log, METH_VARARGS, cmath_log__doc__},
 
 static PyObject *
-cmath_log_impl(PyModuleDef *module, Py_complex x, PyObject *y_obj);
+cmath_log_impl(PyObject *module, Py_complex x, PyObject *y_obj);
 
 static PyObject *
-cmath_log(PyModuleDef *module, PyObject *args)
+cmath_log(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_complex x;
@@ -657,10 +657,10 @@ PyDoc_STRVAR(cmath_phase__doc__,
     {"phase", (PyCFunction)cmath_phase, METH_O, cmath_phase__doc__},
 
 static PyObject *
-cmath_phase_impl(PyModuleDef *module, Py_complex z);
+cmath_phase_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_phase(PyModuleDef *module, PyObject *arg)
+cmath_phase(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -685,10 +685,10 @@ PyDoc_STRVAR(cmath_polar__doc__,
     {"polar", (PyCFunction)cmath_polar, METH_O, cmath_polar__doc__},
 
 static PyObject *
-cmath_polar_impl(PyModuleDef *module, Py_complex z);
+cmath_polar_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_polar(PyModuleDef *module, PyObject *arg)
+cmath_polar(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -711,10 +711,10 @@ PyDoc_STRVAR(cmath_rect__doc__,
     {"rect", (PyCFunction)cmath_rect, METH_VARARGS, cmath_rect__doc__},
 
 static PyObject *
-cmath_rect_impl(PyModuleDef *module, double r, double phi);
+cmath_rect_impl(PyObject *module, double r, double phi);
 
 static PyObject *
-cmath_rect(PyModuleDef *module, PyObject *args)
+cmath_rect(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     double r;
@@ -739,10 +739,10 @@ PyDoc_STRVAR(cmath_isfinite__doc__,
     {"isfinite", (PyCFunction)cmath_isfinite, METH_O, cmath_isfinite__doc__},
 
 static PyObject *
-cmath_isfinite_impl(PyModuleDef *module, Py_complex z);
+cmath_isfinite_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_isfinite(PyModuleDef *module, PyObject *arg)
+cmath_isfinite(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -765,10 +765,10 @@ PyDoc_STRVAR(cmath_isnan__doc__,
     {"isnan", (PyCFunction)cmath_isnan, METH_O, cmath_isnan__doc__},
 
 static PyObject *
-cmath_isnan_impl(PyModuleDef *module, Py_complex z);
+cmath_isnan_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_isnan(PyModuleDef *module, PyObject *arg)
+cmath_isnan(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -791,10 +791,10 @@ PyDoc_STRVAR(cmath_isinf__doc__,
     {"isinf", (PyCFunction)cmath_isinf, METH_O, cmath_isinf__doc__},
 
 static PyObject *
-cmath_isinf_impl(PyModuleDef *module, Py_complex z);
+cmath_isinf_impl(PyObject *module, Py_complex z);
 
 static PyObject *
-cmath_isinf(PyModuleDef *module, PyObject *arg)
+cmath_isinf(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     Py_complex z;
@@ -832,11 +832,11 @@ PyDoc_STRVAR(cmath_isclose__doc__,
     {"isclose", (PyCFunction)cmath_isclose, METH_VARARGS|METH_KEYWORDS, cmath_isclose__doc__},
 
 static int
-cmath_isclose_impl(PyModuleDef *module, Py_complex a, Py_complex b,
+cmath_isclose_impl(PyObject *module, Py_complex a, Py_complex b,
                    double rel_tol, double abs_tol);
 
 static PyObject *
-cmath_isclose(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+cmath_isclose(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"a", "b", "rel_tol", "abs_tol", NULL};
@@ -857,4 +857,4 @@ cmath_isclose(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=229e9c48c9d27362 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=732194029b7fb1e7 input=a9049054013a1b77]*/

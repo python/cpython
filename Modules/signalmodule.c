@@ -340,8 +340,8 @@ Arrange for SIGALRM to arrive after the given number of seconds.
 [clinic start generated code]*/
 
 static long
-signal_alarm_impl(PyModuleDef *module, int seconds)
-/*[clinic end generated code: output=f5f9badaab25d3e7 input=0d5e97e0e6f39e86]*/
+signal_alarm_impl(PyObject *module, int seconds)
+/*[clinic end generated code: output=144232290814c298 input=0d5e97e0e6f39e86]*/
 {
     /* alarm() returns the number of seconds remaining */
     return (long)alarm(seconds);
@@ -358,8 +358,8 @@ Wait until a signal arrives.
 [clinic start generated code]*/
 
 static PyObject *
-signal_pause_impl(PyModuleDef *module)
-/*[clinic end generated code: output=9245704caa63bbe9 input=f03de0f875752062]*/
+signal_pause_impl(PyObject *module)
+/*[clinic end generated code: output=391656788b3c3929 input=f03de0f875752062]*/
 {
     Py_BEGIN_ALLOW_THREADS
     (void)pause();
@@ -394,8 +394,8 @@ the first is the signal number, the second is the interrupted stack frame.
 [clinic start generated code]*/
 
 static PyObject *
-signal_signal_impl(PyModuleDef *module, int signalnum, PyObject *handler)
-/*[clinic end generated code: output=622d7d0beebea546 input=deee84af5fa0432c]*/
+signal_signal_impl(PyObject *module, int signalnum, PyObject *handler)
+/*[clinic end generated code: output=b44cfda43780f3a1 input=deee84af5fa0432c]*/
 {
     PyObject *old_handler;
     void (*func)(int);
@@ -472,8 +472,8 @@ The return value can be:
 [clinic start generated code]*/
 
 static PyObject *
-signal_getsignal_impl(PyModuleDef *module, int signalnum)
-/*[clinic end generated code: output=d50ec355757e360c input=ac23a00f19dfa509]*/
+signal_getsignal_impl(PyObject *module, int signalnum)
+/*[clinic end generated code: output=35b3e0e796fd555e input=ac23a00f19dfa509]*/
 {
     PyObject *old_handler;
     if (signalnum < 1 || signalnum >= NSIG) {
@@ -507,8 +507,8 @@ signal sig, else system calls will be interrupted.
 [clinic start generated code]*/
 
 static PyObject *
-signal_siginterrupt_impl(PyModuleDef *module, int signalnum, int flag)
-/*[clinic end generated code: output=5dcf8b031b0e8044 input=4160acacca3e2099]*/
+signal_siginterrupt_impl(PyObject *module, int signalnum, int flag)
+/*[clinic end generated code: output=063816243d85dd19 input=4160acacca3e2099]*/
 {
     if (signalnum < 1 || signalnum >= NSIG) {
         PyErr_SetString(PyExc_ValueError,
@@ -682,9 +682,9 @@ Returns old values as a tuple: (delay, interval).
 [clinic start generated code]*/
 
 static PyObject *
-signal_setitimer_impl(PyModuleDef *module, int which, double seconds,
+signal_setitimer_impl(PyObject *module, int which, double seconds,
                       double interval)
-/*[clinic end generated code: output=9a9227a27bd05988 input=0d27d417cfcbd51a]*/
+/*[clinic end generated code: output=6f51da0fe0787f2c input=0d27d417cfcbd51a]*/
 {
     struct itimerval new, old;
 
@@ -714,8 +714,8 @@ Returns current value of given itimer.
 [clinic start generated code]*/
 
 static PyObject *
-signal_getitimer_impl(PyModuleDef *module, int which)
-/*[clinic end generated code: output=d1349ab18aadc569 input=f7d21d38f3490627]*/
+signal_getitimer_impl(PyObject *module, int which)
+/*[clinic end generated code: output=9e053175d517db40 input=f7d21d38f3490627]*/
 {
     struct itimerval old;
 
@@ -829,8 +829,8 @@ Fetch and/or change the signal mask of the calling thread.
 [clinic start generated code]*/
 
 static PyObject *
-signal_pthread_sigmask_impl(PyModuleDef *module, int how, PyObject *mask)
-/*[clinic end generated code: output=b043a9f0eeb1e075 input=f3b7d7a61b7b8283]*/
+signal_pthread_sigmask_impl(PyObject *module, int how, PyObject *mask)
+/*[clinic end generated code: output=ff640fe092bc9181 input=f3b7d7a61b7b8283]*/
 {
     sigset_t newmask, previous;
     int err;
@@ -867,8 +867,8 @@ the calling thread.
 [clinic start generated code]*/
 
 static PyObject *
-signal_sigpending_impl(PyModuleDef *module)
-/*[clinic end generated code: output=bf4ced803e7e51dd input=e0036c016f874e29]*/
+signal_sigpending_impl(PyObject *module)
+/*[clinic end generated code: output=53375ffe89325022 input=e0036c016f874e29]*/
 {
     int err;
     sigset_t mask;
@@ -897,8 +897,8 @@ and returns the signal number.
 [clinic start generated code]*/
 
 static PyObject *
-signal_sigwait(PyModuleDef *module, PyObject *sigset)
-/*[clinic end generated code: output=dae53048b0336a5c input=11af2d82d83c2e94]*/
+signal_sigwait(PyObject *module, PyObject *sigset)
+/*[clinic end generated code: output=557173647424f6e4 input=11af2d82d83c2e94]*/
 {
     sigset_t set;
     int err, signum;
@@ -986,8 +986,8 @@ Returns a struct_siginfo containing information about the signal.
 [clinic start generated code]*/
 
 static PyObject *
-signal_sigwaitinfo(PyModuleDef *module, PyObject *sigset)
-/*[clinic end generated code: output=0bb53b07e5e926b5 input=f3779a74a991e171]*/
+signal_sigwaitinfo(PyObject *module, PyObject *sigset)
+/*[clinic end generated code: output=c40f27b269cd2309 input=f3779a74a991e171]*/
 {
     sigset_t set;
     siginfo_t si;
@@ -1026,9 +1026,9 @@ The timeout is specified in seconds, with floating point numbers allowed.
 [clinic start generated code]*/
 
 static PyObject *
-signal_sigtimedwait_impl(PyModuleDef *module, PyObject *sigset,
+signal_sigtimedwait_impl(PyObject *module, PyObject *sigset,
                          PyObject *timeout_obj)
-/*[clinic end generated code: output=c1960b5cea139929 input=53fd4ea3e3724eb8]*/
+/*[clinic end generated code: output=f7eff31e679f4312 input=53fd4ea3e3724eb8]*/
 {
     struct timespec ts;
     sigset_t set;
@@ -1097,8 +1097,8 @@ Send a signal to a thread.
 [clinic start generated code]*/
 
 static PyObject *
-signal_pthread_kill_impl(PyModuleDef *module, long thread_id, int signalnum)
-/*[clinic end generated code: output=35aed2713c756d7a input=77ed6a3b6f2a8122]*/
+signal_pthread_kill_impl(PyObject *module, long thread_id, int signalnum)
+/*[clinic end generated code: output=2a09ce41f1c4228a input=77ed6a3b6f2a8122]*/
 {
     int err;
 
