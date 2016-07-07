@@ -3386,7 +3386,7 @@ using the ssl() function.");
 #endif /* HAVE_OPENSSL_RAND */
 
 
-#ifdef HAVE_RAND_EGD
+#ifndef OPENSSL_NO_EGD
 
 static PyObject *
 PySSL_RAND_egd(PyObject *self, PyObject *arg)
@@ -3414,7 +3414,7 @@ Queries the entropy gather daemon (EGD) on the socket named by 'path'.\n\
 Returns number of bytes read.  Raises SSLError if connection to EGD\n\
 fails or if it does not provide enough data to seed PRNG.");
 
-#endif /* HAVE_RAND_EGD */
+#endif /* !OPENSSL_NO_EGD */
 
 
 PyDoc_STRVAR(PySSL_get_default_verify_paths_doc,
@@ -3814,7 +3814,7 @@ static PyMethodDef PySSL_methods[] = {
     {"RAND_status",         (PyCFunction)PySSL_RAND_status, METH_NOARGS,
      PySSL_RAND_status_doc},
 #endif
-#ifdef HAVE_RAND_EGD
+#ifndef OPENSSL_NO_EGD
     {"RAND_egd",            PySSL_RAND_egd, METH_VARARGS,
      PySSL_RAND_egd_doc},
 #endif
