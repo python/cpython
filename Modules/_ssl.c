@@ -3938,7 +3938,7 @@ _ssl_RAND_status_impl(PyModuleDef *module)
     return PyLong_FromLong(RAND_status());
 }
 
-#ifdef HAVE_RAND_EGD
+#ifndef OPENSSL_NO_EGD
 /*[clinic input]
 _ssl.RAND_egd
     path: object(converter="PyUnicode_FSConverter")
@@ -3964,7 +3964,7 @@ _ssl_RAND_egd_impl(PyModuleDef *module, PyObject *path)
     }
     return PyLong_FromLong(bytes);
 }
-#endif /* HAVE_RAND_EGD */
+#endif /* OPENSSL_NO_EGD */
 
 
 
