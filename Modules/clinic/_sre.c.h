@@ -11,10 +11,10 @@ PyDoc_STRVAR(_sre_getcodesize__doc__,
     {"getcodesize", (PyCFunction)_sre_getcodesize, METH_NOARGS, _sre_getcodesize__doc__},
 
 static int
-_sre_getcodesize_impl(PyModuleDef *module);
+_sre_getcodesize_impl(PyObject *module);
 
 static PyObject *
-_sre_getcodesize(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_sre_getcodesize(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -38,10 +38,10 @@ PyDoc_STRVAR(_sre_getlower__doc__,
     {"getlower", (PyCFunction)_sre_getlower, METH_VARARGS, _sre_getlower__doc__},
 
 static int
-_sre_getlower_impl(PyModuleDef *module, int character, int flags);
+_sre_getlower_impl(PyObject *module, int character, int flags);
 
 static PyObject *
-_sre_getlower(PyModuleDef *module, PyObject *args)
+_sre_getlower(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     int character;
@@ -419,12 +419,12 @@ PyDoc_STRVAR(_sre_compile__doc__,
     {"compile", (PyCFunction)_sre_compile, METH_VARARGS|METH_KEYWORDS, _sre_compile__doc__},
 
 static PyObject *
-_sre_compile_impl(PyModuleDef *module, PyObject *pattern, int flags,
+_sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
                   PyObject *code, Py_ssize_t groups, PyObject *groupindex,
                   PyObject *indexgroup);
 
 static PyObject *
-_sre_compile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_sre_compile(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"pattern", "flags", "code", "groups", "groupindex", "indexgroup", NULL};
@@ -713,4 +713,4 @@ _sre_SRE_Scanner_search(ScannerObject *self, PyObject *Py_UNUSED(ignored))
 {
     return _sre_SRE_Scanner_search_impl(self);
 }
-/*[clinic end generated code: output=00f7bf869b3283bc input=a9049054013a1b77]*/
+/*[clinic end generated code: output=af9455cb54b2a907 input=a9049054013a1b77]*/

@@ -28,10 +28,10 @@ PyDoc_STRVAR(_ssl__test_decode_cert__doc__,
     {"_test_decode_cert", (PyCFunction)_ssl__test_decode_cert, METH_O, _ssl__test_decode_cert__doc__},
 
 static PyObject *
-_ssl__test_decode_cert_impl(PyModuleDef *module, PyObject *path);
+_ssl__test_decode_cert_impl(PyObject *module, PyObject *path);
 
 static PyObject *
-_ssl__test_decode_cert(PyModuleDef *module, PyObject *arg)
+_ssl__test_decode_cert(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *path;
@@ -819,10 +819,10 @@ PyDoc_STRVAR(_ssl_RAND_add__doc__,
     {"RAND_add", (PyCFunction)_ssl_RAND_add, METH_VARARGS, _ssl_RAND_add__doc__},
 
 static PyObject *
-_ssl_RAND_add_impl(PyModuleDef *module, Py_buffer *view, double entropy);
+_ssl_RAND_add_impl(PyObject *module, Py_buffer *view, double entropy);
 
 static PyObject *
-_ssl_RAND_add(PyModuleDef *module, PyObject *args)
+_ssl_RAND_add(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_buffer view = {NULL, NULL};
@@ -853,10 +853,10 @@ PyDoc_STRVAR(_ssl_RAND_bytes__doc__,
     {"RAND_bytes", (PyCFunction)_ssl_RAND_bytes, METH_O, _ssl_RAND_bytes__doc__},
 
 static PyObject *
-_ssl_RAND_bytes_impl(PyModuleDef *module, int n);
+_ssl_RAND_bytes_impl(PyObject *module, int n);
 
 static PyObject *
-_ssl_RAND_bytes(PyModuleDef *module, PyObject *arg)
+_ssl_RAND_bytes(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int n;
@@ -883,10 +883,10 @@ PyDoc_STRVAR(_ssl_RAND_pseudo_bytes__doc__,
     {"RAND_pseudo_bytes", (PyCFunction)_ssl_RAND_pseudo_bytes, METH_O, _ssl_RAND_pseudo_bytes__doc__},
 
 static PyObject *
-_ssl_RAND_pseudo_bytes_impl(PyModuleDef *module, int n);
+_ssl_RAND_pseudo_bytes_impl(PyObject *module, int n);
 
 static PyObject *
-_ssl_RAND_pseudo_bytes(PyModuleDef *module, PyObject *arg)
+_ssl_RAND_pseudo_bytes(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int n;
@@ -913,10 +913,10 @@ PyDoc_STRVAR(_ssl_RAND_status__doc__,
     {"RAND_status", (PyCFunction)_ssl_RAND_status, METH_NOARGS, _ssl_RAND_status__doc__},
 
 static PyObject *
-_ssl_RAND_status_impl(PyModuleDef *module);
+_ssl_RAND_status_impl(PyObject *module);
 
 static PyObject *
-_ssl_RAND_status(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_ssl_RAND_status(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_RAND_status_impl(module);
 }
@@ -936,10 +936,10 @@ PyDoc_STRVAR(_ssl_RAND_egd__doc__,
     {"RAND_egd", (PyCFunction)_ssl_RAND_egd, METH_O, _ssl_RAND_egd__doc__},
 
 static PyObject *
-_ssl_RAND_egd_impl(PyModuleDef *module, PyObject *path);
+_ssl_RAND_egd_impl(PyObject *module, PyObject *path);
 
 static PyObject *
-_ssl_RAND_egd(PyModuleDef *module, PyObject *arg)
+_ssl_RAND_egd(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *path;
@@ -967,10 +967,10 @@ PyDoc_STRVAR(_ssl_get_default_verify_paths__doc__,
     {"get_default_verify_paths", (PyCFunction)_ssl_get_default_verify_paths, METH_NOARGS, _ssl_get_default_verify_paths__doc__},
 
 static PyObject *
-_ssl_get_default_verify_paths_impl(PyModuleDef *module);
+_ssl_get_default_verify_paths_impl(PyObject *module);
 
 static PyObject *
-_ssl_get_default_verify_paths(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_ssl_get_default_verify_paths(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _ssl_get_default_verify_paths_impl(module);
 }
@@ -988,10 +988,10 @@ PyDoc_STRVAR(_ssl_txt2obj__doc__,
     {"txt2obj", (PyCFunction)_ssl_txt2obj, METH_VARARGS|METH_KEYWORDS, _ssl_txt2obj__doc__},
 
 static PyObject *
-_ssl_txt2obj_impl(PyModuleDef *module, const char *txt, int name);
+_ssl_txt2obj_impl(PyObject *module, const char *txt, int name);
 
 static PyObject *
-_ssl_txt2obj(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_ssl_txt2obj(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"txt", "name", NULL};
@@ -1018,10 +1018,10 @@ PyDoc_STRVAR(_ssl_nid2obj__doc__,
     {"nid2obj", (PyCFunction)_ssl_nid2obj, METH_O, _ssl_nid2obj__doc__},
 
 static PyObject *
-_ssl_nid2obj_impl(PyModuleDef *module, int nid);
+_ssl_nid2obj_impl(PyObject *module, int nid);
 
 static PyObject *
-_ssl_nid2obj(PyModuleDef *module, PyObject *arg)
+_ssl_nid2obj(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     int nid;
@@ -1053,10 +1053,10 @@ PyDoc_STRVAR(_ssl_enum_certificates__doc__,
     {"enum_certificates", (PyCFunction)_ssl_enum_certificates, METH_VARARGS|METH_KEYWORDS, _ssl_enum_certificates__doc__},
 
 static PyObject *
-_ssl_enum_certificates_impl(PyModuleDef *module, const char *store_name);
+_ssl_enum_certificates_impl(PyObject *module, const char *store_name);
 
 static PyObject *
-_ssl_enum_certificates(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_ssl_enum_certificates(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"store_name", NULL};
@@ -1091,10 +1091,10 @@ PyDoc_STRVAR(_ssl_enum_crls__doc__,
     {"enum_crls", (PyCFunction)_ssl_enum_crls, METH_VARARGS|METH_KEYWORDS, _ssl_enum_crls__doc__},
 
 static PyObject *
-_ssl_enum_crls_impl(PyModuleDef *module, const char *store_name);
+_ssl_enum_crls_impl(PyObject *module, const char *store_name);
 
 static PyObject *
-_ssl_enum_crls(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_ssl_enum_crls(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"store_name", NULL};
@@ -1135,4 +1135,4 @@ exit:
 #ifndef _SSL_ENUM_CRLS_METHODDEF
     #define _SSL_ENUM_CRLS_METHODDEF
 #endif /* !defined(_SSL_ENUM_CRLS_METHODDEF) */
-/*[clinic end generated code: output=df99659ec790e573 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=02444732c19722b3 input=a9049054013a1b77]*/

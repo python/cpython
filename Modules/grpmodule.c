@@ -93,8 +93,8 @@ If id is not valid, raise KeyError.
 [clinic start generated code]*/
 
 static PyObject *
-grp_getgrgid_impl(PyModuleDef *module, PyObject *id)
-/*[clinic end generated code: output=8a11f5fdeb8c78a0 input=15fa0e2ccf5cda25]*/
+grp_getgrgid_impl(PyObject *module, PyObject *id)
+/*[clinic end generated code: output=30797c289504a1ba input=15fa0e2ccf5cda25]*/
 {
     PyObject *py_int_id;
     gid_t gid;
@@ -142,8 +142,8 @@ If name is not valid, raise KeyError.
 [clinic start generated code]*/
 
 static PyObject *
-grp_getgrnam_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=cd47511f4854da8e input=08ded29affa3c863]*/
+grp_getgrnam_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=67905086f403c21c input=08ded29affa3c863]*/
 {
     char *name_chars;
     struct group *p;
@@ -174,8 +174,8 @@ to use YP/NIS and may not be accessible via getgrnam or getgrgid.
 [clinic start generated code]*/
 
 static PyObject *
-grp_getgrall_impl(PyModuleDef *module)
-/*[clinic end generated code: output=add9037a20c202de input=d7df76c825c367df]*/
+grp_getgrall_impl(PyObject *module)
+/*[clinic end generated code: output=585dad35e2e763d7 input=d7df76c825c367df]*/
 {
     PyObject *d;
     struct group *p;

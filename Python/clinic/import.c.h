@@ -14,10 +14,10 @@ PyDoc_STRVAR(_imp_lock_held__doc__,
     {"lock_held", (PyCFunction)_imp_lock_held, METH_NOARGS, _imp_lock_held__doc__},
 
 static PyObject *
-_imp_lock_held_impl(PyModuleDef *module);
+_imp_lock_held_impl(PyObject *module);
 
 static PyObject *
-_imp_lock_held(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_imp_lock_held(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _imp_lock_held_impl(module);
 }
@@ -35,10 +35,10 @@ PyDoc_STRVAR(_imp_acquire_lock__doc__,
     {"acquire_lock", (PyCFunction)_imp_acquire_lock, METH_NOARGS, _imp_acquire_lock__doc__},
 
 static PyObject *
-_imp_acquire_lock_impl(PyModuleDef *module);
+_imp_acquire_lock_impl(PyObject *module);
 
 static PyObject *
-_imp_acquire_lock(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_imp_acquire_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _imp_acquire_lock_impl(module);
 }
@@ -55,10 +55,10 @@ PyDoc_STRVAR(_imp_release_lock__doc__,
     {"release_lock", (PyCFunction)_imp_release_lock, METH_NOARGS, _imp_release_lock__doc__},
 
 static PyObject *
-_imp_release_lock_impl(PyModuleDef *module);
+_imp_release_lock_impl(PyObject *module);
 
 static PyObject *
-_imp_release_lock(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_imp_release_lock(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _imp_release_lock_impl(module);
 }
@@ -78,11 +78,11 @@ PyDoc_STRVAR(_imp__fix_co_filename__doc__,
     {"_fix_co_filename", (PyCFunction)_imp__fix_co_filename, METH_VARARGS, _imp__fix_co_filename__doc__},
 
 static PyObject *
-_imp__fix_co_filename_impl(PyModuleDef *module, PyCodeObject *code,
+_imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
                            PyObject *path);
 
 static PyObject *
-_imp__fix_co_filename(PyModuleDef *module, PyObject *args)
+_imp__fix_co_filename(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyCodeObject *code;
@@ -117,10 +117,10 @@ PyDoc_STRVAR(_imp_extension_suffixes__doc__,
     {"extension_suffixes", (PyCFunction)_imp_extension_suffixes, METH_NOARGS, _imp_extension_suffixes__doc__},
 
 static PyObject *
-_imp_extension_suffixes_impl(PyModuleDef *module);
+_imp_extension_suffixes_impl(PyObject *module);
 
 static PyObject *
-_imp_extension_suffixes(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_imp_extension_suffixes(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     return _imp_extension_suffixes_impl(module);
 }
@@ -135,10 +135,10 @@ PyDoc_STRVAR(_imp_init_frozen__doc__,
     {"init_frozen", (PyCFunction)_imp_init_frozen, METH_O, _imp_init_frozen__doc__},
 
 static PyObject *
-_imp_init_frozen_impl(PyModuleDef *module, PyObject *name);
+_imp_init_frozen_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-_imp_init_frozen(PyModuleDef *module, PyObject *arg)
+_imp_init_frozen(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
@@ -162,10 +162,10 @@ PyDoc_STRVAR(_imp_get_frozen_object__doc__,
     {"get_frozen_object", (PyCFunction)_imp_get_frozen_object, METH_O, _imp_get_frozen_object__doc__},
 
 static PyObject *
-_imp_get_frozen_object_impl(PyModuleDef *module, PyObject *name);
+_imp_get_frozen_object_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-_imp_get_frozen_object(PyModuleDef *module, PyObject *arg)
+_imp_get_frozen_object(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
@@ -189,10 +189,10 @@ PyDoc_STRVAR(_imp_is_frozen_package__doc__,
     {"is_frozen_package", (PyCFunction)_imp_is_frozen_package, METH_O, _imp_is_frozen_package__doc__},
 
 static PyObject *
-_imp_is_frozen_package_impl(PyModuleDef *module, PyObject *name);
+_imp_is_frozen_package_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-_imp_is_frozen_package(PyModuleDef *module, PyObject *arg)
+_imp_is_frozen_package(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
@@ -216,10 +216,10 @@ PyDoc_STRVAR(_imp_is_builtin__doc__,
     {"is_builtin", (PyCFunction)_imp_is_builtin, METH_O, _imp_is_builtin__doc__},
 
 static PyObject *
-_imp_is_builtin_impl(PyModuleDef *module, PyObject *name);
+_imp_is_builtin_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-_imp_is_builtin(PyModuleDef *module, PyObject *arg)
+_imp_is_builtin(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
@@ -243,10 +243,10 @@ PyDoc_STRVAR(_imp_is_frozen__doc__,
     {"is_frozen", (PyCFunction)_imp_is_frozen, METH_O, _imp_is_frozen__doc__},
 
 static PyObject *
-_imp_is_frozen_impl(PyModuleDef *module, PyObject *name);
+_imp_is_frozen_impl(PyObject *module, PyObject *name);
 
 static PyObject *
-_imp_is_frozen(PyModuleDef *module, PyObject *arg)
+_imp_is_frozen(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     PyObject *name;
@@ -272,10 +272,10 @@ PyDoc_STRVAR(_imp_create_dynamic__doc__,
     {"create_dynamic", (PyCFunction)_imp_create_dynamic, METH_VARARGS, _imp_create_dynamic__doc__},
 
 static PyObject *
-_imp_create_dynamic_impl(PyModuleDef *module, PyObject *spec, PyObject *file);
+_imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file);
 
 static PyObject *
-_imp_create_dynamic(PyModuleDef *module, PyObject *args)
+_imp_create_dynamic(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *spec;
@@ -306,10 +306,10 @@ PyDoc_STRVAR(_imp_exec_dynamic__doc__,
     {"exec_dynamic", (PyCFunction)_imp_exec_dynamic, METH_O, _imp_exec_dynamic__doc__},
 
 static int
-_imp_exec_dynamic_impl(PyModuleDef *module, PyObject *mod);
+_imp_exec_dynamic_impl(PyObject *module, PyObject *mod);
 
 static PyObject *
-_imp_exec_dynamic(PyModuleDef *module, PyObject *mod)
+_imp_exec_dynamic(PyObject *module, PyObject *mod)
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -336,10 +336,10 @@ PyDoc_STRVAR(_imp_exec_builtin__doc__,
     {"exec_builtin", (PyCFunction)_imp_exec_builtin, METH_O, _imp_exec_builtin__doc__},
 
 static int
-_imp_exec_builtin_impl(PyModuleDef *module, PyObject *mod);
+_imp_exec_builtin_impl(PyObject *module, PyObject *mod);
 
 static PyObject *
-_imp_exec_builtin(PyModuleDef *module, PyObject *mod)
+_imp_exec_builtin(PyObject *module, PyObject *mod)
 {
     PyObject *return_value = NULL;
     int _return_value;
@@ -361,4 +361,4 @@ exit:
 #ifndef _IMP_EXEC_DYNAMIC_METHODDEF
     #define _IMP_EXEC_DYNAMIC_METHODDEF
 #endif /* !defined(_IMP_EXEC_DYNAMIC_METHODDEF) */
-/*[clinic end generated code: output=22a7225925755674 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=d24d7f73702a907f input=a9049054013a1b77]*/

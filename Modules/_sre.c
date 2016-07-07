@@ -275,8 +275,8 @@ _sre.getcodesize -> int
 [clinic start generated code]*/
 
 static int
-_sre_getcodesize_impl(PyModuleDef *module)
-/*[clinic end generated code: output=794f1f98ef4883e5 input=bd6f6ecf4916bb2b]*/
+_sre_getcodesize_impl(PyObject *module)
+/*[clinic end generated code: output=e0db7ce34a6dd7b1 input=bd6f6ecf4916bb2b]*/
 {
     return sizeof(SRE_CODE);
 }
@@ -291,8 +291,8 @@ _sre.getlower -> int
 [clinic start generated code]*/
 
 static int
-_sre_getlower_impl(PyModuleDef *module, int character, int flags)
-/*[clinic end generated code: output=5fc3616ae2a4c306 input=087d2f1c44bbca6f]*/
+_sre_getlower_impl(PyObject *module, int character, int flags)
+/*[clinic end generated code: output=47eebc4c1214feb5 input=087d2f1c44bbca6f]*/
 {
     if (flags & SRE_FLAG_LOCALE)
         return sre_lower_locale(character);
@@ -1451,10 +1451,10 @@ _sre.compile
 [clinic start generated code]*/
 
 static PyObject *
-_sre_compile_impl(PyModuleDef *module, PyObject *pattern, int flags,
+_sre_compile_impl(PyObject *module, PyObject *pattern, int flags,
                   PyObject *code, Py_ssize_t groups, PyObject *groupindex,
                   PyObject *indexgroup)
-/*[clinic end generated code: output=3004b293730bf309 input=7d059ec8ae1edb85]*/
+/*[clinic end generated code: output=ef9c2b3693776404 input=7d059ec8ae1edb85]*/
 {
     /* "compile" pattern descriptor to pattern object */
 

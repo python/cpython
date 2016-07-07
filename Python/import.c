@@ -234,8 +234,8 @@ On platforms without threads, return False.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_lock_held_impl(PyModuleDef *module)
-/*[clinic end generated code: output=d7a8cc3a5169081a input=9b088f9b217d9bdf]*/
+_imp_lock_held_impl(PyObject *module)
+/*[clinic end generated code: output=8b89384b5e1963fc input=9b088f9b217d9bdf]*/
 {
 #ifdef WITH_THREAD
     return PyBool_FromLong(import_lock_thread != -1);
@@ -254,8 +254,8 @@ modules. On platforms without threads, this function does nothing.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_acquire_lock_impl(PyModuleDef *module)
-/*[clinic end generated code: output=cc143b1d16422cae input=4a2d4381866d5fdc]*/
+_imp_acquire_lock_impl(PyObject *module)
+/*[clinic end generated code: output=1aff58cb0ee1b026 input=4a2d4381866d5fdc]*/
 {
 #ifdef WITH_THREAD
     _PyImport_AcquireLock();
@@ -273,8 +273,8 @@ On platforms without threads, this function does nothing.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_release_lock_impl(PyModuleDef *module)
-/*[clinic end generated code: output=74d28e38ebe2b224 input=934fb11516dd778b]*/
+_imp_release_lock_impl(PyObject *module)
+/*[clinic end generated code: output=7faab6d0be178b0a input=934fb11516dd778b]*/
 {
 #ifdef WITH_THREAD
     if (_PyImport_ReleaseLock() < 0) {
@@ -916,9 +916,9 @@ Changes code.co_filename to specify the passed-in file path.
 [clinic start generated code]*/
 
 static PyObject *
-_imp__fix_co_filename_impl(PyModuleDef *module, PyCodeObject *code,
+_imp__fix_co_filename_impl(PyObject *module, PyCodeObject *code,
                            PyObject *path)
-/*[clinic end generated code: output=f4db56aac0a1327f input=895ba50e78b82f05]*/
+/*[clinic end generated code: output=1d002f100235587d input=895ba50e78b82f05]*/
 
 {
     update_compiled_module(code, path);
@@ -1030,8 +1030,8 @@ Create an extension module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_create_builtin(PyModuleDef *module, PyObject *spec)
-/*[clinic end generated code: output=5038f467617226bd input=37f966f890384e47]*/
+_imp_create_builtin(PyObject *module, PyObject *spec)
+/*[clinic end generated code: output=ace7ff22271e6f39 input=37f966f890384e47]*/
 {
     struct _inittab *p;
     PyObject *name;
@@ -1846,8 +1846,8 @@ Returns the list of file suffixes used to identify extension modules.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_extension_suffixes_impl(PyModuleDef *module)
-/*[clinic end generated code: output=d44c1566ef362229 input=ecdeeecfcb6f839e]*/
+_imp_extension_suffixes_impl(PyObject *module)
+/*[clinic end generated code: output=0bf346e25a8f0cd3 input=ecdeeecfcb6f839e]*/
 {
     PyObject *list;
     const char *suffix;
@@ -1885,8 +1885,8 @@ Initializes a frozen module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_init_frozen_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=a9de493bdd711878 input=13019adfc04f3fb3]*/
+_imp_init_frozen_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=fc0511ed869fd69c input=13019adfc04f3fb3]*/
 {
     int ret;
     PyObject *m;
@@ -1913,8 +1913,8 @@ Create a code object for a frozen module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_get_frozen_object_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=3114c970a47f2e3c input=ed689bc05358fdbd]*/
+_imp_get_frozen_object_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=2568cc5b7aa0da63 input=ed689bc05358fdbd]*/
 {
     return get_frozen_object(name);
 }
@@ -1929,8 +1929,8 @@ Returns True if the module name is of a frozen package.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_is_frozen_package_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=3e4cab802b56d649 input=81b6cdecd080fbb8]*/
+_imp_is_frozen_package_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=e70cbdb45784a1c9 input=81b6cdecd080fbb8]*/
 {
     return is_frozen_package(name);
 }
@@ -1945,8 +1945,8 @@ Returns True if the module name corresponds to a built-in module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_is_builtin_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=2deec9cac6fb9a7e input=86befdac021dd1c7]*/
+_imp_is_builtin_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=3bfd1162e2d3be82 input=86befdac021dd1c7]*/
 {
     return PyLong_FromLong(is_builtin(name));
 }
@@ -1961,8 +1961,8 @@ Returns True if the module name corresponds to a frozen module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_is_frozen_impl(PyModuleDef *module, PyObject *name)
-/*[clinic end generated code: output=7de8e260c8e36aed input=7301dbca1897d66b]*/
+_imp_is_frozen_impl(PyObject *module, PyObject *name)
+/*[clinic end generated code: output=01f408f5ec0f2577 input=7301dbca1897d66b]*/
 {
     const struct _frozen *p;
 
@@ -2011,8 +2011,8 @@ Create an extension module.
 [clinic start generated code]*/
 
 static PyObject *
-_imp_create_dynamic_impl(PyModuleDef *module, PyObject *spec, PyObject *file)
-/*[clinic end generated code: output=935cde5b3872d56d input=c31b954f4cf4e09d]*/
+_imp_create_dynamic_impl(PyObject *module, PyObject *spec, PyObject *file)
+/*[clinic end generated code: output=83249b827a4fde77 input=c31b954f4cf4e09d]*/
 {
     PyObject *mod, *name, *path;
     FILE *fp;
@@ -2066,8 +2066,8 @@ Initialize an extension module.
 [clinic start generated code]*/
 
 static int
-_imp_exec_dynamic_impl(PyModuleDef *module, PyObject *mod)
-/*[clinic end generated code: output=4b84f1301b22d4bd input=9fdbfcb250280d3a]*/
+_imp_exec_dynamic_impl(PyObject *module, PyObject *mod)
+/*[clinic end generated code: output=f5720ac7b465877d input=9fdbfcb250280d3a]*/
 {
     return exec_builtin_or_dynamic(mod);
 }
@@ -2085,8 +2085,8 @@ Initialize a built-in module.
 [clinic start generated code]*/
 
 static int
-_imp_exec_builtin_impl(PyModuleDef *module, PyObject *mod)
-/*[clinic end generated code: output=215e99876a27e284 input=7beed5a2f12a60ca]*/
+_imp_exec_builtin_impl(PyObject *module, PyObject *mod)
+/*[clinic end generated code: output=0262447b240c038e input=7beed5a2f12a60ca]*/
 {
     return exec_builtin_or_dynamic(mod);
 }

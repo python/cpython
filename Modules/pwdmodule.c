@@ -113,8 +113,8 @@ See `help(pwd)` for more on password database entries.
 [clinic start generated code]*/
 
 static PyObject *
-pwd_getpwuid(PyModuleDef *module, PyObject *uidobj)
-/*[clinic end generated code: output=cba29ae4c2bcb8e1 input=ae64d507a1c6d3e8]*/
+pwd_getpwuid(PyObject *module, PyObject *uidobj)
+/*[clinic end generated code: output=c4ee1d4d429b86c4 input=ae64d507a1c6d3e8]*/
 {
     uid_t uid;
     struct passwd *p;
@@ -149,8 +149,8 @@ See `help(pwd)` for more on password database entries.
 [clinic start generated code]*/
 
 static PyObject *
-pwd_getpwnam_impl(PyModuleDef *module, PyObject *arg)
-/*[clinic end generated code: output=66848d42d386fca3 input=d5f7e700919b02d3]*/
+pwd_getpwnam_impl(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=6abeee92430e43d2 input=d5f7e700919b02d3]*/
 {
     char *name;
     struct passwd *p;
@@ -181,8 +181,8 @@ See help(pwd) for more on password database entries.
 [clinic start generated code]*/
 
 static PyObject *
-pwd_getpwall_impl(PyModuleDef *module)
-/*[clinic end generated code: output=ab30e37bf26d431d input=d7ecebfd90219b85]*/
+pwd_getpwall_impl(PyObject *module)
+/*[clinic end generated code: output=4853d2f5a0afac8a input=d7ecebfd90219b85]*/
 {
     PyObject *d;
     struct passwd *p;

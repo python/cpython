@@ -1847,8 +1847,8 @@ _multibytecodec.__create_codec
 [clinic start generated code]*/
 
 static PyObject *
-_multibytecodec___create_codec(PyModuleDef *module, PyObject *arg)
-/*[clinic end generated code: output=fbe74f6510640163 input=6840b2a6b183fcfa]*/
+_multibytecodec___create_codec(PyObject *module, PyObject *arg)
+/*[clinic end generated code: output=cfa3dce8260e809d input=6840b2a6b183fcfa]*/
 {
     MultibyteCodecObject *self;
     MultibyteCodec *codec;

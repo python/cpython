@@ -3172,8 +3172,8 @@ _tkinter._flatten
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter__flatten(PyModuleDef *module, PyObject *item)
-/*[clinic end generated code: output=9505049ec74c3480 input=6b9c12260aa1157f]*/
+_tkinter__flatten(PyObject *module, PyObject *item)
+/*[clinic end generated code: output=cad02a3f97f29862 input=6b9c12260aa1157f]*/
 {
     FlattenContext context;
 
@@ -3217,11 +3217,11 @@ _tkinter.create
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_create_impl(PyModuleDef *module, const char *screenName,
+_tkinter_create_impl(PyObject *module, const char *screenName,
                      const char *baseName, const char *className,
                      int interactive, int wantobjects, int wantTk, int sync,
                      const char *use)
-/*[clinic end generated code: output=b8847800fc3b27eb input=0d522aad1cb0ca0e]*/
+/*[clinic end generated code: output=e3315607648e6bb4 input=0d522aad1cb0ca0e]*/
 {
     /* XXX baseName is not used anymore;
      * try getting rid of it. */
@@ -3247,8 +3247,8 @@ It should be set to a divisor of the maximum time between frames in an animation
 [clinic start generated code]*/
 
 static PyObject *
-_tkinter_setbusywaitinterval_impl(PyModuleDef *module, int new_val)
-/*[clinic end generated code: output=0b9d7ef7940461ea input=deca1d6f9e6dae47]*/
+_tkinter_setbusywaitinterval_impl(PyObject *module, int new_val)
+/*[clinic end generated code: output=42bf7757dc2d0ab6 input=deca1d6f9e6dae47]*/
 {
     if (new_val < 0) {
         PyErr_SetString(PyExc_ValueError,
@@ -3266,8 +3266,8 @@ Return the current busy-wait interval between successive calls to Tcl_DoOneEvent
 [clinic start generated code]*/
 
 static int
-_tkinter_getbusywaitinterval_impl(PyModuleDef *module)
-/*[clinic end generated code: output=9d09eee026e96971 input=a695878d2d576a84]*/
+_tkinter_getbusywaitinterval_impl(PyObject *module)
+/*[clinic end generated code: output=23b72d552001f5c7 input=a695878d2d576a84]*/
 {
     return Tkinter_busywaitinterval;
 }

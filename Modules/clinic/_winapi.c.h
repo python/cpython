@@ -72,10 +72,10 @@ PyDoc_STRVAR(_winapi_CloseHandle__doc__,
     {"CloseHandle", (PyCFunction)_winapi_CloseHandle, METH_O, _winapi_CloseHandle__doc__},
 
 static PyObject *
-_winapi_CloseHandle_impl(PyModuleDef *module, HANDLE handle);
+_winapi_CloseHandle_impl(PyObject *module, HANDLE handle);
 
 static PyObject *
-_winapi_CloseHandle(PyModuleDef *module, PyObject *arg)
+_winapi_CloseHandle(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -98,11 +98,11 @@ PyDoc_STRVAR(_winapi_ConnectNamedPipe__doc__,
     {"ConnectNamedPipe", (PyCFunction)_winapi_ConnectNamedPipe, METH_VARARGS|METH_KEYWORDS, _winapi_ConnectNamedPipe__doc__},
 
 static PyObject *
-_winapi_ConnectNamedPipe_impl(PyModuleDef *module, HANDLE handle,
+_winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
                               int use_overlapped);
 
 static PyObject *
-_winapi_ConnectNamedPipe(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_winapi_ConnectNamedPipe(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"handle", "overlapped", NULL};
@@ -130,14 +130,14 @@ PyDoc_STRVAR(_winapi_CreateFile__doc__,
     {"CreateFile", (PyCFunction)_winapi_CreateFile, METH_VARARGS, _winapi_CreateFile__doc__},
 
 static HANDLE
-_winapi_CreateFile_impl(PyModuleDef *module, LPCTSTR file_name,
+_winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
                         DWORD desired_access, DWORD share_mode,
                         LPSECURITY_ATTRIBUTES security_attributes,
                         DWORD creation_disposition,
                         DWORD flags_and_attributes, HANDLE template_file);
 
 static PyObject *
-_winapi_CreateFile(PyModuleDef *module, PyObject *args)
+_winapi_CreateFile(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     LPCTSTR file_name;
@@ -175,11 +175,11 @@ PyDoc_STRVAR(_winapi_CreateJunction__doc__,
     {"CreateJunction", (PyCFunction)_winapi_CreateJunction, METH_VARARGS, _winapi_CreateJunction__doc__},
 
 static PyObject *
-_winapi_CreateJunction_impl(PyModuleDef *module, LPWSTR src_path,
+_winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
                             LPWSTR dst_path);
 
 static PyObject *
-_winapi_CreateJunction(PyModuleDef *module, PyObject *args)
+_winapi_CreateJunction(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     LPWSTR src_path;
@@ -206,14 +206,14 @@ PyDoc_STRVAR(_winapi_CreateNamedPipe__doc__,
     {"CreateNamedPipe", (PyCFunction)_winapi_CreateNamedPipe, METH_VARARGS, _winapi_CreateNamedPipe__doc__},
 
 static HANDLE
-_winapi_CreateNamedPipe_impl(PyModuleDef *module, LPCTSTR name,
-                             DWORD open_mode, DWORD pipe_mode,
-                             DWORD max_instances, DWORD out_buffer_size,
-                             DWORD in_buffer_size, DWORD default_timeout,
+_winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
+                             DWORD pipe_mode, DWORD max_instances,
+                             DWORD out_buffer_size, DWORD in_buffer_size,
+                             DWORD default_timeout,
                              LPSECURITY_ATTRIBUTES security_attributes);
 
 static PyObject *
-_winapi_CreateNamedPipe(PyModuleDef *module, PyObject *args)
+_winapi_CreateNamedPipe(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     LPCTSTR name;
@@ -258,11 +258,10 @@ PyDoc_STRVAR(_winapi_CreatePipe__doc__,
     {"CreatePipe", (PyCFunction)_winapi_CreatePipe, METH_VARARGS, _winapi_CreatePipe__doc__},
 
 static PyObject *
-_winapi_CreatePipe_impl(PyModuleDef *module, PyObject *pipe_attrs,
-                        DWORD size);
+_winapi_CreatePipe_impl(PyObject *module, PyObject *pipe_attrs, DWORD size);
 
 static PyObject *
-_winapi_CreatePipe(PyModuleDef *module, PyObject *args)
+_winapi_CreatePipe(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *pipe_attrs;
@@ -298,7 +297,7 @@ PyDoc_STRVAR(_winapi_CreateProcess__doc__,
     {"CreateProcess", (PyCFunction)_winapi_CreateProcess, METH_VARARGS, _winapi_CreateProcess__doc__},
 
 static PyObject *
-_winapi_CreateProcess_impl(PyModuleDef *module, Py_UNICODE *application_name,
+_winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
                            Py_UNICODE *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
@@ -306,7 +305,7 @@ _winapi_CreateProcess_impl(PyModuleDef *module, Py_UNICODE *application_name,
                            PyObject *startup_info);
 
 static PyObject *
-_winapi_CreateProcess(PyModuleDef *module, PyObject *args)
+_winapi_CreateProcess(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_UNICODE *application_name;
@@ -345,15 +344,14 @@ PyDoc_STRVAR(_winapi_DuplicateHandle__doc__,
     {"DuplicateHandle", (PyCFunction)_winapi_DuplicateHandle, METH_VARARGS, _winapi_DuplicateHandle__doc__},
 
 static HANDLE
-_winapi_DuplicateHandle_impl(PyModuleDef *module,
-                             HANDLE source_process_handle,
+_winapi_DuplicateHandle_impl(PyObject *module, HANDLE source_process_handle,
                              HANDLE source_handle,
                              HANDLE target_process_handle,
                              DWORD desired_access, BOOL inherit_handle,
                              DWORD options);
 
 static PyObject *
-_winapi_DuplicateHandle(PyModuleDef *module, PyObject *args)
+_winapi_DuplicateHandle(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HANDLE source_process_handle;
@@ -390,10 +388,10 @@ PyDoc_STRVAR(_winapi_ExitProcess__doc__,
     {"ExitProcess", (PyCFunction)_winapi_ExitProcess, METH_O, _winapi_ExitProcess__doc__},
 
 static PyObject *
-_winapi_ExitProcess_impl(PyModuleDef *module, UINT ExitCode);
+_winapi_ExitProcess_impl(PyObject *module, UINT ExitCode);
 
 static PyObject *
-_winapi_ExitProcess(PyModuleDef *module, PyObject *arg)
+_winapi_ExitProcess(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     UINT ExitCode;
@@ -417,10 +415,10 @@ PyDoc_STRVAR(_winapi_GetCurrentProcess__doc__,
     {"GetCurrentProcess", (PyCFunction)_winapi_GetCurrentProcess, METH_NOARGS, _winapi_GetCurrentProcess__doc__},
 
 static HANDLE
-_winapi_GetCurrentProcess_impl(PyModuleDef *module);
+_winapi_GetCurrentProcess_impl(PyObject *module);
 
 static PyObject *
-_winapi_GetCurrentProcess(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_winapi_GetCurrentProcess(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     HANDLE _return_value;
@@ -448,10 +446,10 @@ PyDoc_STRVAR(_winapi_GetExitCodeProcess__doc__,
     {"GetExitCodeProcess", (PyCFunction)_winapi_GetExitCodeProcess, METH_O, _winapi_GetExitCodeProcess__doc__},
 
 static DWORD
-_winapi_GetExitCodeProcess_impl(PyModuleDef *module, HANDLE process);
+_winapi_GetExitCodeProcess_impl(PyObject *module, HANDLE process);
 
 static PyObject *
-_winapi_GetExitCodeProcess(PyModuleDef *module, PyObject *arg)
+_winapi_GetExitCodeProcess(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HANDLE process;
@@ -479,10 +477,10 @@ PyDoc_STRVAR(_winapi_GetLastError__doc__,
     {"GetLastError", (PyCFunction)_winapi_GetLastError, METH_NOARGS, _winapi_GetLastError__doc__},
 
 static DWORD
-_winapi_GetLastError_impl(PyModuleDef *module);
+_winapi_GetLastError_impl(PyObject *module);
 
 static PyObject *
-_winapi_GetLastError(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_winapi_GetLastError(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     DWORD _return_value;
@@ -514,10 +512,10 @@ PyDoc_STRVAR(_winapi_GetModuleFileName__doc__,
     {"GetModuleFileName", (PyCFunction)_winapi_GetModuleFileName, METH_O, _winapi_GetModuleFileName__doc__},
 
 static PyObject *
-_winapi_GetModuleFileName_impl(PyModuleDef *module, HMODULE module_handle);
+_winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle);
 
 static PyObject *
-_winapi_GetModuleFileName(PyModuleDef *module, PyObject *arg)
+_winapi_GetModuleFileName(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     HMODULE module_handle;
@@ -546,10 +544,10 @@ PyDoc_STRVAR(_winapi_GetStdHandle__doc__,
     {"GetStdHandle", (PyCFunction)_winapi_GetStdHandle, METH_O, _winapi_GetStdHandle__doc__},
 
 static HANDLE
-_winapi_GetStdHandle_impl(PyModuleDef *module, DWORD std_handle);
+_winapi_GetStdHandle_impl(PyObject *module, DWORD std_handle);
 
 static PyObject *
-_winapi_GetStdHandle(PyModuleDef *module, PyObject *arg)
+_winapi_GetStdHandle(PyObject *module, PyObject *arg)
 {
     PyObject *return_value = NULL;
     DWORD std_handle;
@@ -581,10 +579,10 @@ PyDoc_STRVAR(_winapi_GetVersion__doc__,
     {"GetVersion", (PyCFunction)_winapi_GetVersion, METH_NOARGS, _winapi_GetVersion__doc__},
 
 static long
-_winapi_GetVersion_impl(PyModuleDef *module);
+_winapi_GetVersion_impl(PyObject *module);
 
 static PyObject *
-_winapi_GetVersion(PyModuleDef *module, PyObject *Py_UNUSED(ignored))
+_winapi_GetVersion(PyObject *module, PyObject *Py_UNUSED(ignored))
 {
     PyObject *return_value = NULL;
     long _return_value;
@@ -608,11 +606,11 @@ PyDoc_STRVAR(_winapi_OpenProcess__doc__,
     {"OpenProcess", (PyCFunction)_winapi_OpenProcess, METH_VARARGS, _winapi_OpenProcess__doc__},
 
 static HANDLE
-_winapi_OpenProcess_impl(PyModuleDef *module, DWORD desired_access,
+_winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
                          BOOL inherit_handle, DWORD process_id);
 
 static PyObject *
-_winapi_OpenProcess(PyModuleDef *module, PyObject *args)
+_winapi_OpenProcess(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     DWORD desired_access;
@@ -646,10 +644,10 @@ PyDoc_STRVAR(_winapi_PeekNamedPipe__doc__,
     {"PeekNamedPipe", (PyCFunction)_winapi_PeekNamedPipe, METH_VARARGS, _winapi_PeekNamedPipe__doc__},
 
 static PyObject *
-_winapi_PeekNamedPipe_impl(PyModuleDef *module, HANDLE handle, int size);
+_winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size);
 
 static PyObject *
-_winapi_PeekNamedPipe(PyModuleDef *module, PyObject *args)
+_winapi_PeekNamedPipe(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -674,11 +672,11 @@ PyDoc_STRVAR(_winapi_ReadFile__doc__,
     {"ReadFile", (PyCFunction)_winapi_ReadFile, METH_VARARGS|METH_KEYWORDS, _winapi_ReadFile__doc__},
 
 static PyObject *
-_winapi_ReadFile_impl(PyModuleDef *module, HANDLE handle, int size,
+_winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                       int use_overlapped);
 
 static PyObject *
-_winapi_ReadFile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_winapi_ReadFile(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"handle", "size", "overlapped", NULL};
@@ -706,13 +704,13 @@ PyDoc_STRVAR(_winapi_SetNamedPipeHandleState__doc__,
     {"SetNamedPipeHandleState", (PyCFunction)_winapi_SetNamedPipeHandleState, METH_VARARGS, _winapi_SetNamedPipeHandleState__doc__},
 
 static PyObject *
-_winapi_SetNamedPipeHandleState_impl(PyModuleDef *module, HANDLE named_pipe,
+_winapi_SetNamedPipeHandleState_impl(PyObject *module, HANDLE named_pipe,
                                      PyObject *mode,
                                      PyObject *max_collection_count,
                                      PyObject *collect_data_timeout);
 
 static PyObject *
-_winapi_SetNamedPipeHandleState(PyModuleDef *module, PyObject *args)
+_winapi_SetNamedPipeHandleState(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HANDLE named_pipe;
@@ -740,11 +738,11 @@ PyDoc_STRVAR(_winapi_TerminateProcess__doc__,
     {"TerminateProcess", (PyCFunction)_winapi_TerminateProcess, METH_VARARGS, _winapi_TerminateProcess__doc__},
 
 static PyObject *
-_winapi_TerminateProcess_impl(PyModuleDef *module, HANDLE handle,
+_winapi_TerminateProcess_impl(PyObject *module, HANDLE handle,
                               UINT exit_code);
 
 static PyObject *
-_winapi_TerminateProcess(PyModuleDef *module, PyObject *args)
+_winapi_TerminateProcess(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -769,10 +767,10 @@ PyDoc_STRVAR(_winapi_WaitNamedPipe__doc__,
     {"WaitNamedPipe", (PyCFunction)_winapi_WaitNamedPipe, METH_VARARGS, _winapi_WaitNamedPipe__doc__},
 
 static PyObject *
-_winapi_WaitNamedPipe_impl(PyModuleDef *module, LPCTSTR name, DWORD timeout);
+_winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout);
 
 static PyObject *
-_winapi_WaitNamedPipe(PyModuleDef *module, PyObject *args)
+_winapi_WaitNamedPipe(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     LPCTSTR name;
@@ -798,12 +796,11 @@ PyDoc_STRVAR(_winapi_WaitForMultipleObjects__doc__,
     {"WaitForMultipleObjects", (PyCFunction)_winapi_WaitForMultipleObjects, METH_VARARGS, _winapi_WaitForMultipleObjects__doc__},
 
 static PyObject *
-_winapi_WaitForMultipleObjects_impl(PyModuleDef *module,
-                                    PyObject *handle_seq, BOOL wait_flag,
-                                    DWORD milliseconds);
+_winapi_WaitForMultipleObjects_impl(PyObject *module, PyObject *handle_seq,
+                                    BOOL wait_flag, DWORD milliseconds);
 
 static PyObject *
-_winapi_WaitForMultipleObjects(PyModuleDef *module, PyObject *args)
+_winapi_WaitForMultipleObjects(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     PyObject *handle_seq;
@@ -834,11 +831,11 @@ PyDoc_STRVAR(_winapi_WaitForSingleObject__doc__,
     {"WaitForSingleObject", (PyCFunction)_winapi_WaitForSingleObject, METH_VARARGS, _winapi_WaitForSingleObject__doc__},
 
 static long
-_winapi_WaitForSingleObject_impl(PyModuleDef *module, HANDLE handle,
+_winapi_WaitForSingleObject_impl(PyObject *module, HANDLE handle,
                                  DWORD milliseconds);
 
 static PyObject *
-_winapi_WaitForSingleObject(PyModuleDef *module, PyObject *args)
+_winapi_WaitForSingleObject(PyObject *module, PyObject *args)
 {
     PyObject *return_value = NULL;
     HANDLE handle;
@@ -868,11 +865,11 @@ PyDoc_STRVAR(_winapi_WriteFile__doc__,
     {"WriteFile", (PyCFunction)_winapi_WriteFile, METH_VARARGS|METH_KEYWORDS, _winapi_WriteFile__doc__},
 
 static PyObject *
-_winapi_WriteFile_impl(PyModuleDef *module, HANDLE handle, PyObject *buffer,
+_winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                        int use_overlapped);
 
 static PyObject *
-_winapi_WriteFile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
+_winapi_WriteFile(PyObject *module, PyObject *args, PyObject *kwargs)
 {
     PyObject *return_value = NULL;
     static char *_keywords[] = {"handle", "buffer", "overlapped", NULL};
@@ -889,4 +886,4 @@ _winapi_WriteFile(PyModuleDef *module, PyObject *args, PyObject *kwargs)
 exit:
     return return_value;
 }
-/*[clinic end generated code: output=d099ee4fbcdd5bc0 input=a9049054013a1b77]*/
+/*[clinic end generated code: output=8032f3371c14749e input=a9049054013a1b77]*/

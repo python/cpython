@@ -368,8 +368,8 @@ Close handle.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CloseHandle_impl(PyModuleDef *module, HANDLE handle)
-/*[clinic end generated code: output=0548595c71cb4bf7 input=7f0e4ac36e0352b8]*/
+_winapi_CloseHandle_impl(PyObject *module, HANDLE handle)
+/*[clinic end generated code: output=7ad37345f07bd782 input=7f0e4ac36e0352b8]*/
 {
     BOOL success;
 
@@ -391,9 +391,9 @@ _winapi.ConnectNamedPipe
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_ConnectNamedPipe_impl(PyModuleDef *module, HANDLE handle,
+_winapi_ConnectNamedPipe_impl(PyObject *module, HANDLE handle,
                               int use_overlapped)
-/*[clinic end generated code: output=fed3b165d1bca95a input=edc83da007ebf3be]*/
+/*[clinic end generated code: output=335a0e7086800671 input=edc83da007ebf3be]*/
 {
     BOOL success;
     OverlappedObject *overlapped = NULL;
@@ -443,12 +443,12 @@ _winapi.CreateFile -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateFile_impl(PyModuleDef *module, LPCTSTR file_name,
+_winapi_CreateFile_impl(PyObject *module, LPCTSTR file_name,
                         DWORD desired_access, DWORD share_mode,
                         LPSECURITY_ATTRIBUTES security_attributes,
                         DWORD creation_disposition,
                         DWORD flags_and_attributes, HANDLE template_file)
-/*[clinic end generated code: output=c6e1d78f8affd10c input=6423c3e40372dbd5]*/
+/*[clinic end generated code: output=417ddcebfc5a3d53 input=6423c3e40372dbd5]*/
 {
     HANDLE handle;
 
@@ -474,9 +474,9 @@ _winapi.CreateJunction
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreateJunction_impl(PyModuleDef *module, LPWSTR src_path,
+_winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
                             LPWSTR dst_path)
-/*[clinic end generated code: output=eccae9364e46f6da input=8cd1f9964b6e3d36]*/
+/*[clinic end generated code: output=66b7eb746e1dfa25 input=8cd1f9964b6e3d36]*/
 {
     /* Privilege adjustment */
     HANDLE token = NULL;
@@ -617,12 +617,12 @@ _winapi.CreateNamedPipe -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_CreateNamedPipe_impl(PyModuleDef *module, LPCTSTR name,
-                             DWORD open_mode, DWORD pipe_mode,
-                             DWORD max_instances, DWORD out_buffer_size,
-                             DWORD in_buffer_size, DWORD default_timeout,
+_winapi_CreateNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD open_mode,
+                             DWORD pipe_mode, DWORD max_instances,
+                             DWORD out_buffer_size, DWORD in_buffer_size,
+                             DWORD default_timeout,
                              LPSECURITY_ATTRIBUTES security_attributes)
-/*[clinic end generated code: output=44ca2a06a219b523 input=5a73530b84d8bc37]*/
+/*[clinic end generated code: output=80f8c07346a94fbc input=5a73530b84d8bc37]*/
 {
     HANDLE handle;
 
@@ -653,9 +653,8 @@ Returns a 2-tuple of handles, to the read and write ends of the pipe.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreatePipe_impl(PyModuleDef *module, PyObject *pipe_attrs,
-                        DWORD size)
-/*[clinic end generated code: output=fef99f3b4222bc78 input=c4f2cfa56ef68d90]*/
+_winapi_CreatePipe_impl(PyObject *module, PyObject *pipe_attrs, DWORD size)
+/*[clinic end generated code: output=1c4411d8699f0925 input=c4f2cfa56ef68d90]*/
 {
     HANDLE read_pipe;
     HANDLE write_pipe;
@@ -814,13 +813,13 @@ process ID, and thread ID.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_CreateProcess_impl(PyModuleDef *module, Py_UNICODE *application_name,
+_winapi_CreateProcess_impl(PyObject *module, Py_UNICODE *application_name,
                            Py_UNICODE *command_line, PyObject *proc_attrs,
                            PyObject *thread_attrs, BOOL inherit_handles,
                            DWORD creation_flags, PyObject *env_mapping,
                            Py_UNICODE *current_directory,
                            PyObject *startup_info)
-/*[clinic end generated code: output=874bb350ff9ed4ef input=4a43b05038d639bb]*/
+/*[clinic end generated code: output=4652a33aff4b0ae1 input=4a43b05038d639bb]*/
 {
     BOOL result;
     PROCESS_INFORMATION pi;
@@ -900,13 +899,12 @@ through both handles.
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_DuplicateHandle_impl(PyModuleDef *module,
-                             HANDLE source_process_handle,
+_winapi_DuplicateHandle_impl(PyObject *module, HANDLE source_process_handle,
                              HANDLE source_handle,
                              HANDLE target_process_handle,
                              DWORD desired_access, BOOL inherit_handle,
                              DWORD options)
-/*[clinic end generated code: output=0799515b68b5237b input=b933e3f2356a8c12]*/
+/*[clinic end generated code: output=ad9711397b5dcd4e input=b933e3f2356a8c12]*/
 {
     HANDLE target_handle;
     BOOL result;
@@ -940,8 +938,8 @@ _winapi.ExitProcess
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_ExitProcess_impl(PyModuleDef *module, UINT ExitCode)
-/*[clinic end generated code: output=25f3b499c24cedc8 input=4f05466a9406c558]*/
+_winapi_ExitProcess_impl(PyObject *module, UINT ExitCode)
+/*[clinic end generated code: output=a387deb651175301 input=4f05466a9406c558]*/
 {
     #if defined(Py_DEBUG)
         SetErrorMode(SEM_FAILCRITICALERRORS|SEM_NOALIGNMENTFAULTEXCEPT|
@@ -961,8 +959,8 @@ Return a handle object for the current process.
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_GetCurrentProcess_impl(PyModuleDef *module)
-/*[clinic end generated code: output=be29ac3ad5f8291e input=b213403fd4b96b41]*/
+_winapi_GetCurrentProcess_impl(PyObject *module)
+/*[clinic end generated code: output=ddeb4dd2ffadf344 input=b213403fd4b96b41]*/
 {
     return GetCurrentProcess();
 }
@@ -977,8 +975,8 @@ Return the termination status of the specified process.
 [clinic start generated code]*/
 
 static DWORD
-_winapi_GetExitCodeProcess_impl(PyModuleDef *module, HANDLE process)
-/*[clinic end generated code: output=0b10f0848a410f65 input=61b6bfc7dc2ee374]*/
+_winapi_GetExitCodeProcess_impl(PyObject *module, HANDLE process)
+/*[clinic end generated code: output=b4620bdf2bccf36b input=61b6bfc7dc2ee374]*/
 {
     DWORD exit_code;
     BOOL result;
@@ -998,8 +996,8 @@ _winapi.GetLastError -> DWORD
 [clinic start generated code]*/
 
 static DWORD
-_winapi_GetLastError_impl(PyModuleDef *module)
-/*[clinic end generated code: output=0ea00d8e67bdd056 input=62d47fb9bce038ba]*/
+_winapi_GetLastError_impl(PyObject *module)
+/*[clinic end generated code: output=8585b827cb1a92c5 input=62d47fb9bce038ba]*/
 {
     return GetLastError();
 }
@@ -1021,8 +1019,8 @@ of the current process.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_GetModuleFileName_impl(PyModuleDef *module, HMODULE module_handle)
-/*[clinic end generated code: output=90063dc63bdbfa18 input=6d66ff7deca5d11f]*/
+_winapi_GetModuleFileName_impl(PyObject *module, HMODULE module_handle)
+/*[clinic end generated code: output=85b4b728c5160306 input=6d66ff7deca5d11f]*/
 {
     BOOL result;
     WCHAR filename[MAX_PATH];
@@ -1049,8 +1047,8 @@ The integer associated with the handle object is returned.
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_GetStdHandle_impl(PyModuleDef *module, DWORD std_handle)
-/*[clinic end generated code: output=5f5ca28b28c6fad2 input=07016b06a2fc8826]*/
+_winapi_GetStdHandle_impl(PyObject *module, DWORD std_handle)
+/*[clinic end generated code: output=0e613001e73ab614 input=07016b06a2fc8826]*/
 {
     HANDLE handle;
 
@@ -1071,8 +1069,8 @@ Return the version number of the current operating system.
 [clinic start generated code]*/
 
 static long
-_winapi_GetVersion_impl(PyModuleDef *module)
-/*[clinic end generated code: output=95a2f8ad3b948ca8 input=e21dff8d0baeded2]*/
+_winapi_GetVersion_impl(PyObject *module)
+/*[clinic end generated code: output=e41f0db5a3b82682 input=e21dff8d0baeded2]*/
 /* Disable deprecation warnings about GetVersionEx as the result is
    being passed straight through to the caller, who is responsible for
    using it correctly. */
@@ -1095,9 +1093,9 @@ _winapi.OpenProcess -> HANDLE
 [clinic start generated code]*/
 
 static HANDLE
-_winapi_OpenProcess_impl(PyModuleDef *module, DWORD desired_access,
+_winapi_OpenProcess_impl(PyObject *module, DWORD desired_access,
                          BOOL inherit_handle, DWORD process_id)
-/*[clinic end generated code: output=6bc52eda82a3d226 input=ec98c4cf4ea2ec36]*/
+/*[clinic end generated code: output=b42b6b81ea5a0fc3 input=ec98c4cf4ea2ec36]*/
 {
     HANDLE handle;
 
@@ -1119,8 +1117,8 @@ _winapi.PeekNamedPipe
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_PeekNamedPipe_impl(PyModuleDef *module, HANDLE handle, int size)
-/*[clinic end generated code: output=e6c908e2fb63c798 input=c7aa53bfbce69d70]*/
+_winapi_PeekNamedPipe_impl(PyObject *module, HANDLE handle, int size)
+/*[clinic end generated code: output=d0c3e29e49d323dd input=c7aa53bfbce69d70]*/
 {
     PyObject *buf = NULL;
     DWORD nread, navail, nleft;
@@ -1167,9 +1165,9 @@ _winapi.ReadFile
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_ReadFile_impl(PyModuleDef *module, HANDLE handle, int size,
+_winapi_ReadFile_impl(PyObject *module, HANDLE handle, int size,
                       int use_overlapped)
-/*[clinic end generated code: output=d7695db4db97b135 input=8dd810194e86ac7d]*/
+/*[clinic end generated code: output=492029ca98161d84 input=8dd810194e86ac7d]*/
 {
     DWORD nread;
     PyObject *buf;
@@ -1229,11 +1227,11 @@ _winapi.SetNamedPipeHandleState
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_SetNamedPipeHandleState_impl(PyModuleDef *module, HANDLE named_pipe,
+_winapi_SetNamedPipeHandleState_impl(PyObject *module, HANDLE named_pipe,
                                      PyObject *mode,
                                      PyObject *max_collection_count,
                                      PyObject *collect_data_timeout)
-/*[clinic end generated code: output=25aa3c28dee223ce input=9142d72163d0faa6]*/
+/*[clinic end generated code: output=f2129d222cbfa095 input=9142d72163d0faa6]*/
 {
     PyObject *oArgs[3] = {mode, max_collection_count, collect_data_timeout};
     DWORD dwArgs[3], *pArgs[3] = {NULL, NULL, NULL};
@@ -1268,9 +1266,9 @@ Terminate the specified process and all of its threads.
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_TerminateProcess_impl(PyModuleDef *module, HANDLE handle,
+_winapi_TerminateProcess_impl(PyObject *module, HANDLE handle,
                               UINT exit_code)
-/*[clinic end generated code: output=937c1bb6219aca8b input=d6bc0aa1ee3bb4df]*/
+/*[clinic end generated code: output=f4e99ac3f0b1f34a input=d6bc0aa1ee3bb4df]*/
 {
     BOOL result;
 
@@ -1291,8 +1289,8 @@ _winapi.WaitNamedPipe
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_WaitNamedPipe_impl(PyModuleDef *module, LPCTSTR name, DWORD timeout)
-/*[clinic end generated code: output=5bca5e02f448c9d7 input=36fc781291b1862c]*/
+_winapi_WaitNamedPipe_impl(PyObject *module, LPCTSTR name, DWORD timeout)
+/*[clinic end generated code: output=c2866f4439b1fe38 input=36fc781291b1862c]*/
 {
     BOOL success;
 
@@ -1316,10 +1314,9 @@ _winapi.WaitForMultipleObjects
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_WaitForMultipleObjects_impl(PyModuleDef *module,
-                                    PyObject *handle_seq, BOOL wait_flag,
-                                    DWORD milliseconds)
-/*[clinic end generated code: output=acb440728d06d130 input=36f76ca057cd28a0]*/
+_winapi_WaitForMultipleObjects_impl(PyObject *module, PyObject *handle_seq,
+                                    BOOL wait_flag, DWORD milliseconds)
+/*[clinic end generated code: output=295e3f00b8e45899 input=36f76ca057cd28a0]*/
 {
     DWORD result;
     HANDLE handles[MAXIMUM_WAIT_OBJECTS];
@@ -1393,9 +1390,9 @@ in milliseconds.
 [clinic start generated code]*/
 
 static long
-_winapi_WaitForSingleObject_impl(PyModuleDef *module, HANDLE handle,
+_winapi_WaitForSingleObject_impl(PyObject *module, HANDLE handle,
                                  DWORD milliseconds)
-/*[clinic end generated code: output=34ae40c269749c48 input=443d1ab076edc7b1]*/
+/*[clinic end generated code: output=3c4715d8f1b39859 input=443d1ab076edc7b1]*/
 {
     DWORD result;
 
@@ -1420,9 +1417,9 @@ _winapi.WriteFile
 [clinic start generated code]*/
 
 static PyObject *
-_winapi_WriteFile_impl(PyModuleDef *module, HANDLE handle, PyObject *buffer,
+_winapi_WriteFile_impl(PyObject *module, HANDLE handle, PyObject *buffer,
                        int use_overlapped)
-/*[clinic end generated code: output=65e70ea41f4d2a1d input=51846a5af52053fd]*/
+/*[clinic end generated code: output=2ca80f6bf3fa92e3 input=51846a5af52053fd]*/
 {
     Py_buffer _buf, *buf;
     DWORD len, written;

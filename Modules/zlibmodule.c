@@ -151,8 +151,8 @@ Returns a bytes object containing compressed data.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_compress_impl(PyModuleDef *module, Py_buffer *data, int level)
-/*[clinic end generated code: output=1b97589132b203b4 input=638d54b6315dbed3]*/
+zlib_compress_impl(PyObject *module, Py_buffer *data, int level)
+/*[clinic end generated code: output=d80906d73f6294c8 input=638d54b6315dbed3]*/
 {
     PyObject *ReturnVal = NULL;
     Byte *input, *output = NULL;
@@ -284,9 +284,9 @@ Returns a bytes object containing the uncompressed data.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_decompress_impl(PyModuleDef *module, Py_buffer *data, int wbits,
+zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
                      unsigned int bufsize)
-/*[clinic end generated code: output=444d0987f3429574 input=75123b0d4ff0541d]*/
+/*[clinic end generated code: output=475b36ead58b243d input=75123b0d4ff0541d]*/
 {
     PyObject *result_str = NULL;
     Byte *input;
@@ -419,9 +419,9 @@ Return a compressor object.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_compressobj_impl(PyModuleDef *module, int level, int method, int wbits,
+zlib_compressobj_impl(PyObject *module, int level, int method, int wbits,
                       int memLevel, int strategy, Py_buffer *zdict)
-/*[clinic end generated code: output=2949bbb9a5723ccd input=2fa3d026f90ab8d5]*/
+/*[clinic end generated code: output=8b5bed9c8fc3814d input=2fa3d026f90ab8d5]*/
 {
     compobject *self = NULL;
     int err;
@@ -516,8 +516,8 @@ Return a decompressor object.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_decompressobj_impl(PyModuleDef *module, int wbits, PyObject *zdict)
-/*[clinic end generated code: output=8ccd583fbd631798 input=d3832b8511fc977b]*/
+zlib_decompressobj_impl(PyObject *module, int wbits, PyObject *zdict)
+/*[clinic end generated code: output=3069b99994f36906 input=d3832b8511fc977b]*/
 {
     int err;
     compobject *self;
@@ -1206,8 +1206,8 @@ The returned checksum is an integer.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_adler32_impl(PyModuleDef *module, Py_buffer *data, unsigned int value)
-/*[clinic end generated code: output=51d6d75ee655c78a input=6ff4557872160e88]*/
+zlib_adler32_impl(PyObject *module, Py_buffer *data, unsigned int value)
+/*[clinic end generated code: output=422106f5ca8c92c0 input=6ff4557872160e88]*/
 {
     /* Releasing the GIL for very small buffers is inefficient
        and may lower performance */
@@ -1245,8 +1245,8 @@ The returned checksum is an integer.
 [clinic start generated code]*/
 
 static PyObject *
-zlib_crc32_impl(PyModuleDef *module, Py_buffer *data, unsigned int value)
-/*[clinic end generated code: output=c1e986e74fe7b623 input=26c3ed430fa00b4c]*/
+zlib_crc32_impl(PyObject *module, Py_buffer *data, unsigned int value)
+/*[clinic end generated code: output=63499fa20af7ea25 input=26c3ed430fa00b4c]*/
 {
     int signed_val;
 
