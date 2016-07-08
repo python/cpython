@@ -196,7 +196,7 @@ class HelpsourceBrowsefileTest(unittest.TestCase):
 
     class Dummy_HelpSource:
         browse_file = query.HelpSource.browse_file
-        pathvar = Var()  
+        pathvar = Var()
 
     dialog = Dummy_HelpSource()
 
