@@ -270,7 +270,7 @@ def _load_module_shim(self, fullname):
 # Module specifications #######################################################
 
 def _module_repr(module):
-    # The implementation of ModuleType__repr__().
+    # The implementation of ModuleType.__repr__().
     loader = getattr(module, '__loader__', None)
     if hasattr(loader, 'module_repr'):
         # As soon as BuiltinImporter, FrozenImporter, and NamespaceLoader
@@ -603,7 +603,7 @@ def _module_repr_from_spec(spec):
 
 # Used by importlib.reload() and _load_module_shim().
 def _exec(spec, module):
-    """Execute the spec in an existing module's namespace."""
+    """Execute the spec's specified module in an existing module's namespace."""
     name = spec.name
     _imp.acquire_lock()
     with _ModuleLockManager(name):
@@ -877,7 +877,7 @@ def _find_spec_legacy(finder, name, path):
 
 
 def _find_spec(name, path, target=None):
-    """Find a module's loader."""
+    """Find a module's spec."""
     meta_path = sys.meta_path
     if meta_path is None:
         # PyImport_Cleanup() is running or has been called.
