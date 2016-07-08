@@ -1048,11 +1048,7 @@ class PathFinder:
 
     @classmethod
     def _path_hooks(cls, path):
-        """Search sequence of hooks for a finder for 'path'.
-
-        If 'hooks' is false then use sys.path_hooks.
-
-        """
+        """Search sys.path_hooks for a finder for 'path'."""
         if sys.path_hooks is not None and not sys.path_hooks:
             _warnings.warn('sys.path_hooks is empty', ImportWarning)
         for hook in sys.path_hooks:
@@ -1134,8 +1130,10 @@ class PathFinder:
 
     @classmethod
     def find_spec(cls, fullname, path=None, target=None):
-        """find the module on sys.path or 'path' based on sys.path_hooks and
-        sys.path_importer_cache."""
+        """Try to find a spec for 'fullname' on sys.path or 'path'.
+
+        The search is based on sys.path_hooks and sys.path_importer_cache.
+        """
         if path is None:
             path = sys.path
         spec = cls._get_spec(fullname, path, target)
@@ -1215,8 +1213,10 @@ class FileFinder:
                                        submodule_search_locations=smsl)
 
     def find_spec(self, fullname, target=None):
-        """Try to find a spec for the specified module.  Returns the
-        matching spec, or None if not found."""
+        """Try to find a spec for the specified module.
+
+        Returns the matching spec, or None if not found.
+        """
         is_namespace = False
         tail_module = fullname.rpartition('.')[2]
         try:
