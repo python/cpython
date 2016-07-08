@@ -1034,6 +1034,7 @@ py_process_time(_Py_clock_info_t *info)
     }
 #endif
 
+    /* Currently, Python 3 requires clock() to build: see issue #22624 */
     return floatclock(info);
 #endif
 }
