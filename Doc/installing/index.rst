@@ -2,9 +2,9 @@
 
 .. _installing-index:
 
-*****************************
-  Installing Python Modules
-*****************************
+*************************
+Installing Python Modules
+*************************
 
 :Email: distutils-sig@python.org
 
@@ -34,24 +34,24 @@ Key terms
 
 * ``pip`` is the preferred installer program. Starting with Python 3.4, it
   is included by default with the Python binary installers.
-* a virtual environment is a semi-isolated Python environment that allows
+* A *virtual environment* is a semi-isolated Python environment that allows
   packages to be installed for use by a particular application, rather than
-  being installed system wide
-* ``pyvenv`` is the standard tool for creating virtual environments, and has
+  being installed system wide.
+* ``venv`` is the standard tool for creating virtual environments, and has
   been part of Python since Python 3.3. Starting with Python 3.4, it
-  defaults to installing ``pip`` into all created virtual environments
+  defaults to installing ``pip`` into all created virtual environments.
 * ``virtualenv`` is a third party alternative (and predecessor) to
-  ``pyvenv``. It allows virtual environments to be used on versions of
-  Python prior to 3.4, which either don't provide ``pyvenv`` at all, or
+  ``venv``. It allows virtual environments to be used on versions of
+  Python prior to 3.4, which either don't provide ``venv`` at all, or
   aren't able to automatically install ``pip`` into created environments.
-* the `Python Packaging Index <https://pypi.python.org/pypi>`__ is a public
+* The `Python Packaging Index <https://pypi.python.org/pypi>`__ is a public
   repository of open source licensed packages made available for use by
-  other Python users
+  other Python users.
 * the `Python Packaging Authority
   <https://www.pypa.io/en/latest/>`__ are the group of
   developers and documentation authors responsible for the maintenance and
   evolution of the standard packaging tools and the associated metadata and
-  file format standards. They maintain a variety of tools, documentation
+  file format standards. They maintain a variety of tools, documentation,
   and issue trackers on both `GitHub <https://github.com/pypa>`__ and
   `BitBucket <https://bitbucket.org/pypa/>`__.
 * ``distutils`` is the original build and distribution system first added to
@@ -61,6 +61,19 @@ Key terms
   standard library, but its name lives on in other ways (such as the name
   of the mailing list used to coordinate Python packaging standards
   development).
+
+.. deprecated:: 3.6
+   ``pyvenv`` was the recommended tool for creating virtual environments for
+   Python 3.3 and 3.4, and is `deprecated in Python 3.6
+   <https://docs.python.org/dev/whatsnew/3.6.html#deprecated-features>`_.
+
+.. versionchanged:: 3.5
+   The use of ``venv`` is now recommended for creating virtual environments.
+
+.. seealso::
+
+   `Python Packaging User Guide: Creating and using virtual environments
+   <https://packaging.python.org/installing/#creating-virtual-environments>`__
 
 
 Basic usage
@@ -100,13 +113,14 @@ explicitly::
 More information and resources regarding ``pip`` and its capabilities can be
 found in the `Python Packaging User Guide <https://packaging.python.org>`__.
 
-``pyvenv`` has its own documentation at :ref:`scripts-pyvenv`. Installing
-into an active virtual environment uses the commands shown above.
+Creation of virtual environments is done through the :mod:`venv` module.
+Installing packages into an active virtual environment uses the commands shown
+above.
 
 .. seealso::
 
     `Python Packaging User Guide: Installing Python Distribution Packages
-    <https://packaging.python.org/en/latest/installing/>`__
+    <https://packaging.python.org/installing/>`__
 
 
 How do I ...?
@@ -124,7 +138,7 @@ User Guide.
 .. seealso::
 
    `Python Packaging User Guide: Requirements for Installing Packages
-   <https://packaging.python.org/en/latest/installing/#requirements-for-installing-packages>`__
+   <https://packaging.python.org/installing/#requirements-for-installing-packages>`__
 
 
 .. installing-per-user-installation:
@@ -142,20 +156,19 @@ package just for the current user, rather than for all users of the system.
 A number of scientific Python packages have complex binary dependencies, and
 aren't currently easy to install using ``pip`` directly. At this point in
 time, it will often be easier for users to install these packages by
-`other means
-<https://packaging.python.org/en/latest/science/>`__
+`other means <https://packaging.python.org/science/>`__
 rather than attempting to install them with ``pip``.
 
 .. seealso::
 
    `Python Packaging User Guide: Installing Scientific Packages
-   <https://packaging.python.org/en/latest/science/>`__
+   <https://packaging.python.org/science/>`__
 
 
 ... work with multiple versions of Python installed in parallel?
 ----------------------------------------------------------------
 
-On Linux, Mac OS X and other POSIX systems, use the versioned Python commands
+On Linux, Mac OS X, and other POSIX systems, use the versioned Python commands
 in combination with the ``-m`` switch to run the appropriate copy of
 ``pip``::
 
@@ -164,7 +177,7 @@ in combination with the ``-m`` switch to run the appropriate copy of
    python3   -m pip install SomePackage  # default Python 3
    python3.4 -m pip install SomePackage  # specifically Python 3.4
 
-(appropriately versioned ``pip`` commands may also be available)
+Appropriately versioned ``pip`` commands may also be available.
 
 On Windows, use the ``py`` Python launcher in combination with the ``-m``
 switch::
@@ -212,11 +225,11 @@ as users are more regularly able to install pre-built extensions rather
 than needing to build them themselves.
 
 Some of the solutions for installing `scientific software
-<https://packaging.python.org/en/latest/science/>`__
-that is not yet available as pre-built ``wheel`` files may also help with
+<https://packaging.python.org/science/>`__
+that are not yet available as pre-built ``wheel`` files may also help with
 obtaining other binary extensions without needing to build them locally.
 
 .. seealso::
 
    `Python Packaging User Guide: Binary Extensions
-   <https://packaging.python.org/en/latest/extensions/>`__
+   <https://packaging.python.org/extensions/>`__

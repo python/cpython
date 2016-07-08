@@ -970,7 +970,7 @@ Glossary
       without interfering with the behaviour of other Python applications
       running on the same system.
 
-      See also :ref:`scripts-pyvenv`.
+      See also :mod:`venv`.
 
    virtual machine
       A computer defined entirely in software.  Python's virtual machine

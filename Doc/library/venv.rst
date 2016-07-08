@@ -31,44 +31,50 @@ Creating virtual environments
 
 .. _venv-def:
 
-.. note:: A virtual environment (also called a ``venv``) is a Python
-   environment such that the Python interpreter, libraries and scripts
-   installed into it are isolated from those installed in other virtual
-   environments, and (by default) any libraries installed in a "system" Python,
-   i.e. one which is installed as part of your operating system.
+.. note:: A virtual environment is a Python environment such that the Python
+   interpreter, libraries and scripts installed into it are isolated from those
+   installed in other virtual environments, and (by default) any libraries
+   installed in a "system" Python, i.e., one which is installed as part of your
+   operating system.
 
-   A venv is a directory tree which contains Python executable files and
-   other files which indicate that it is a venv.
+   A virtual environment is a directory tree which contains Python executable
+   files and other files which indicate that it is a virtual environment.
 
    Common installation tools such as ``Setuptools`` and ``pip`` work as
-   expected with venvs - i.e. when a venv is active, they install Python
-   packages into the venv without needing to be told to do so explicitly.
+   expected with virtual environments. In other words, when a virtual
+   environment is active, they install Python packages into the virtual
+   environment without needing to be told to do so explicitly.
 
-   When a venv is active (i.e. the venv's Python interpreter is running), the
-   attributes :attr:`sys.prefix` and :attr:`sys.exec_prefix` point to the base
-   directory of the venv, whereas :attr:`sys.base_prefix` and
-   :attr:`sys.base_exec_prefix` point to the non-venv Python installation
-   which was used to create the venv. If a venv is not active, then
-   :attr:`sys.prefix` is the same as :attr:`sys.base_prefix` and
-   :attr:`sys.exec_prefix` is the same as :attr:`sys.base_exec_prefix` (they
-   all point to a non-venv Python installation).
+   When a virtual environment is active (i.e., the virtual environment's Python
+   interpreter is running), the attributes :attr:`sys.prefix` and
+   :attr:`sys.exec_prefix` point to the base directory of the virtual
+   environment, whereas :attr:`sys.base_prefix` and
+   :attr:`sys.base_exec_prefix` point to the non-virtual environment Python
+   installation which was used to create the virtual environment. If a virtual
+   environment is not active, then :attr:`sys.prefix` is the same as
+   :attr:`sys.base_prefix` and :attr:`sys.exec_prefix` is the same as
+   :attr:`sys.base_exec_prefix` (they all point to a non-virtual environment
+   Python installation).
 
-   When a venv is active, any options that change the installation path will be
-   ignored from all distutils configuration files to prevent projects being
-   inadvertently installed outside of the virtual environment.
+   When a virtual environment is active, any options that change the
+   installation path will be ignored from all distutils configuration files to
+   prevent projects being inadvertently installed outside of the virtual
+   environment.
 
-   When working in a command shell, users can make a venv active by running an
-   ``activate`` script in the venv's executables directory (the precise filename
-   is shell-dependent), which prepends the venv's directory for executables to
-   the ``PATH`` environment variable for the running shell. There should be no
-   need in other circumstances to activate a venv -- scripts installed into
-   venvs have a shebang line which points to the venv's Python interpreter. This
-   means that the script will run with that interpreter regardless of the value
-   of ``PATH``. On Windows, shebang line processing is supported if you have the
-   Python Launcher for Windows installed (this was added to Python in 3.3 - see
-   :pep:`397` for more details). Thus, double-clicking an installed script in
-   a Windows Explorer window should run the script with the correct interpreter
-   without there needing to be any reference to its venv in ``PATH``.
+   When working in a command shell, users can make a virtual environment active
+   by running an ``activate`` script in the virtual environment's executables
+   directory (the precise filename is shell-dependent), which prepends the
+   virtual environment's directory for executables to the ``PATH`` environment
+   variable for the running shell. There should be no need in other
+   circumstances to activate a virtual environment—scripts installed into
+   virtual environments have a "shebang" line which points to the virtual
+   environment's Python interpreter. This means that the script will run with
+   that interpreter regardless of the value of ``PATH``. On Windows, "shebang"
+   line processing is supported if you have the Python Launcher for Windows
+   installed (this was added to Python in 3.3 - see :pep:`397` for more
+   details). Thus, double-clicking an installed script in a Windows Explorer
+   window should run the script with the correct interpreter without there
+   needing to be any reference to its virtual environment in ``PATH``.
 
 
 .. _venv-api:
@@ -219,7 +225,7 @@ An example of extending ``EnvBuilder``
 --------------------------------------
 
 The following script shows how to extend :class:`EnvBuilder` by implementing a
-subclass which installs setuptools and pip into a created venv::
+subclass which installs setuptools and pip into a created virtual environment::
 
     import os
     import os.path
@@ -233,12 +239,12 @@ subclass which installs setuptools and pip into a created venv::
     class ExtendedEnvBuilder(venv.EnvBuilder):
         """
         This builder installs setuptools and pip so that you can pip or
-        easy_install other packages into the created environment.
+        easy_install other packages into the created virtual environment.
 
         :param nodist: If True, setuptools and pip are not installed into the
-                       created environment.
+                       created virtual environment.
         :param nopip: If True, pip is not installed into the created
-                      environment.
+                      virtual environment.
         :param progress: If setuptools or pip are installed, the progress of the
                          installation can be monitored by passing a progress
                          callable. If specified, it is called with two
@@ -264,10 +270,10 @@ subclass which installs setuptools and pip into a created venv::
         def post_setup(self, context):
             """
             Set up any packages which need to be pre-installed into the
-            environment being created.
+            virtual environment being created.
 
-            :param context: The information for the environment creation request
-                            being processed.
+            :param context: The information for the virtual environment
+                            creation request being processed.
             """
             os.environ['VIRTUAL_ENV'] = context.env_dir
             if not self.nodist:
@@ -301,7 +307,7 @@ subclass which installs setuptools and pip into a created venv::
             fn = os.path.split(path)[-1]
             binpath = context.bin_path
             distpath = os.path.join(binpath, fn)
-            # Download script into the env's binaries folder
+            # Download script into the virtual environment's binaries folder
             urlretrieve(url, distpath)
             progress = self.progress
             if self.verbose:
@@ -313,7 +319,7 @@ subclass which installs setuptools and pip into a created venv::
             else:
                 sys.stderr.write('Installing %s ...%s' % (name, term))
                 sys.stderr.flush()
-            # Install in the env
+            # Install in the virtual environment
             args = [context.env_exe, fn]
             p = Popen(args, stdout=PIPE, stderr=PIPE, cwd=binpath)
             t1 = Thread(target=self.reader, args=(p.stdout, 'stdout'))
@@ -332,10 +338,10 @@ subclass which installs setuptools and pip into a created venv::
 
         def install_setuptools(self, context):
             """
-            Install setuptools in the environment.
+            Install setuptools in the virtual environment.
 
-            :param context: The information for the environment creation request
-                            being processed.
+            :param context: The information for the virtual environment
+                            creation request being processed.
             """
             url = 'https://bitbucket.org/pypa/setuptools/downloads/ez_setup.py'
             self.install_script(context, 'setuptools', url)
@@ -348,10 +354,10 @@ subclass which installs setuptools and pip into a created venv::
 
         def install_pip(self, context):
             """
-            Install pip in the environment.
+            Install pip in the virtual environment.
 
-            :param context: The information for the environment creation request
-                            being processed.
+            :param context: The information for the virtual environment
+                            creation request being processed.
             """
             url = 'https://raw.github.com/pypa/pip/master/contrib/get-pip.py'
             self.install_script(context, 'pip', url)
@@ -374,7 +380,8 @@ subclass which installs setuptools and pip into a created venv::
                                                          'more target '
                                                          'directories.')
             parser.add_argument('dirs', metavar='ENV_DIR', nargs='+',
-                                help='A directory to create the environment in.')
+                                help='A directory in which to create the
+                                     'virtual environment.')
             parser.add_argument('--no-setuptools', default=False,
                                 action='store_true', dest='nodist',
                                 help="Don't install setuptools or pip in the "
@@ -398,14 +405,17 @@ subclass which installs setuptools and pip into a created venv::
                                      'the platform.')
             parser.add_argument('--clear', default=False, action='store_true',
                                 dest='clear', help='Delete the contents of the '
-                                                   'environment directory if it '
-                                                   'already exists, before '
+                                                   'virtual environment '
+                                                   'directory if it already '
+                                                   'exists, before virtual '
                                                    'environment creation.')
             parser.add_argument('--upgrade', default=False, action='store_true',
-                                dest='upgrade', help='Upgrade the environment '
-                                                   'directory to use this version '
-                                                   'of Python, assuming Python '
-                                                   'has been upgraded in-place.')
+                                dest='upgrade', help='Upgrade the virtual '
+                                                     'environment directory to '
+                                                     'use this version of '
+                                                     'Python, assuming Python '
+                                                     'has been upgraded '
+                                                     'in-place.')
             parser.add_argument('--verbose', default=False, action='store_true',
                                 dest='verbose', help='Display the output '
                                                    'from the scripts which '
