@@ -76,7 +76,6 @@ class CallSignature:
                 self.__import__(mod_name)
                 assert len(log) == 1
                 args = log[0][0]
-                kwargs = log[0][1]
                 # Assuming all arguments are positional.
                 self.assertEqual(args[0], mod_name)
                 self.assertIsNone(args[1])

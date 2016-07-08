@@ -266,7 +266,6 @@ class mock_spec(_ImporterMock):
             module = self.modules[fullname]
         except KeyError:
             return None
-        is_package = hasattr(module, '__path__')
         spec = util.spec_from_file_location(
                 fullname, module.__file__, loader=self,
                 submodule_search_locations=getattr(module, '__path__', None))

@@ -205,7 +205,7 @@ class PkgutilPEP302Tests(unittest.TestCase):
         del sys.meta_path[0]
 
     def test_getdata_pep302(self):
-        # Use a dummy importer/loader
+        # Use a dummy finder/loader
         self.assertEqual(pkgutil.get_data('foo', 'dummy'), "Hello, world!")
         del sys.modules['foo']
 
