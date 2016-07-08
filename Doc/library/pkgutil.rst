@@ -46,10 +46,10 @@ support.
 
 .. class:: ImpImporter(dirname=None)
 
-   :pep:`302` Importer that wraps Python's "classic" import algorithm.
+   :pep:`302` Finder that wraps Python's "classic" import algorithm.
 
-   If *dirname* is a string, a :pep:`302` importer is created that searches that
-   directory.  If *dirname* is ``None``, a :pep:`302` importer is created that
+   If *dirname* is a string, a :pep:`302` finder is created that searches that
+   directory.  If *dirname* is ``None``, a :pep:`302` finder is created that
    searches the current :data:`sys.path`, plus any modules that are frozen or
    built-in.
 
@@ -88,9 +88,9 @@ support.
 
 .. function:: get_importer(path_item)
 
-   Retrieve a :pep:`302` importer for the given *path_item*.
+   Retrieve a :pep:`302` finder for the given *path_item*.
 
-   The returned importer is cached in :data:`sys.path_importer_cache` if it was
+   The returned finder is cached in :data:`sys.path_importer_cache` if it was
    newly created by a path hook.
 
    The cache (or part of it) can be cleared manually if a rescan of
@@ -121,16 +121,16 @@ support.
 
 .. function:: iter_importers(fullname='')
 
-   Yield :pep:`302` importers for the given module name.
+   Yield :pep:`302` finders for the given module name.
 
-   If fullname contains a '.', the importers will be for the package
+   If fullname contains a '.', the finders will be for the package
    containing fullname, otherwise they will be all registered top level
-   importers (i.e. those on both sys.meta_path and sys.path_hooks).
+   finders (i.e. those on both sys.meta_path and sys.path_hooks).
 
    If the named module is in a package, that package is imported as a side
    effect of invoking this function.
 
-   If no module name is specified, all top level importers are produced.
+   If no module name is specified, all top level finders are produced.
 
    .. versionchanged:: 3.3
       Updated to be based directly on :mod:`importlib` rather than relying
