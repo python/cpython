@@ -137,18 +137,6 @@ _editor_window_spec = {
            "Best to close editor first."
     }
 
-GetHelpSourceDialog_spec = {
-    'file': 'config_help',
-    'kwds': {'title': 'Get helpsource',
-             '_htest': True},
-    'msg': "Enter menu item name and help file path\n "
-           "<nothing> and more than 30 chars are invalid menu item names.\n"
-           "<nothing>, file does not exist are invalid path items.\n"
-           "Test for incomplete web address for help file path.\n"
-           "A valid entry will be printed to shell with [0k].\n"
-           "[Cancel] will print None to shell",
-    }
-
 # Update once issue21519 is resolved.
 GetKeysDialog_spec = {
     'file': 'config_key',
@@ -173,6 +161,22 @@ _grep_dialog_spec = {
            "The results should be displayed in a new '*Output*' window.\n"
            "'Right-click'->'Goto file/line' anywhere in the search results "
            "should open that file \nin a new EditorWindow."
+    }
+
+HelpSource_spec = {
+    'file': 'query',
+    'kwds': {'title': 'Help name and source',
+             'menuitem': 'test',
+             'filepath': __file__,
+             'used_names': {'abc'},
+             '_htest': True},
+    'msg': "Enter menu item name and help file path\n"
+           "'', > than 30 chars, and 'abc' are invalid menu item names.\n"
+           "'' and file does not exist are invalid path items.\n"
+           "Any url ('www...', 'http...') is accepted.\n"
+           "Test Browse with and without path, as cannot unittest.\n"
+           "A valid entry will be printed to shell with [0k]\n"
+           "or <return>.  [Cancel] will print None to shell"
     }
 
 _io_binding_spec = {
@@ -241,7 +245,7 @@ Query_spec = {
              '_htest': True},
     'msg': "Enter with <Return> or [Ok].  Print valid entry to Shell\n"
            "Blank line, after stripping, is ignored\n"
-           "Close dialog with valid entry, [Cancel] or [X]",
+           "Close dialog with valid entry, [Cancel] or [X]"
     }
 
 
