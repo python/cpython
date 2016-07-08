@@ -18,8 +18,7 @@ import tkinter.font as tkFont
 from idlelib.config import idleConf
 from idlelib.dynoption import DynOptionMenu
 from idlelib.config_key import GetKeysDialog
-from idlelib.query import SectionName
-from idlelib.config_help import GetHelpSourceDialog
+from idlelib.query import SectionName, HelpSource
 from idlelib.tabbedpages import TabbedPageSet
 from idlelib.textview import view_text
 from idlelib import macosx
@@ -940,7 +939,8 @@ class ConfigDialog(Toplevel):
                 self.buttonHelpListRemove.config(state=DISABLED)
 
     def HelpListItemAdd(self):
-        helpSource = GetHelpSourceDialog(self, 'New Help Source').result
+        helpSource = HelpSource(self, 'New Help Source',
+                                ).result
         if helpSource:
             self.userHelpList.append((helpSource[0], helpSource[1]))
             self.listHelp.insert(END, helpSource[0])
@@ -950,16 +950,17 @@ class ConfigDialog(Toplevel):
     def HelpListItemEdit(self):
         itemIndex = self.listHelp.index(ANCHOR)
         helpSource = self.userHelpList[itemIndex]
-        newHelpSource = GetHelpSourceDialog(
-                self, 'Edit Help Source', menuItem=helpSource[0],
-                filePath=helpSource[1]).result
-        if (not newHelpSource) or (newHelpSource == helpSource):
-            return #no changes
-        self.userHelpList[itemIndex] = newHelpSource
-        self.listHelp.delete(itemIndex)
-        self.listHelp.insert(itemIndex, newHelpSource[0])
-        self.UpdateUserHelpChangedItems()
-        self.SetHelpListButtonStates()
+        newHelpSource = HelpSource(
+                self, 'Edit Help Source',
+                menuitem=helpSource[0],
+                filepath=helpSource[1],
+                ).result
+        if newHelpSource and newHelpSource != helpSource:
+            self.userHelpList[itemIndex] = newHelpSource
+            self.listHelp.delete(itemIndex)
+            self.listHelp.insert(itemIndex, newHelpSource[0])
+            self.UpdateUserHelpChangedItems()
+            self.SetHelpListButtonStates()
 
     def HelpListItemRemove(self):
         itemIndex = self.listHelp.index(ANCHOR)
