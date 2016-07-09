@@ -12,6 +12,9 @@
    support for AIX C++ shared extension modules. */
 #undef AIX_GENUINE_CPLUSPLUS
 
+/* The Android API level. */
+#undef ANDROID_API_LEVEL
+
 /* Define if C doubles are 64-bit IEEE 754 binary format, stored in ARM
    mixed-endian order (byte order 45670123) */
 #undef DOUBLE_IS_ARM_MIXED_ENDIAN_IEEE754
