@@ -16,6 +16,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #27466: Change time format returned by http.cookie.time2netscape,
+  confirming the netscape cookie format and making it consistent with
+  documentation.
+
 - Issue #26664: Fix activate.fish by removing mis-use of ``$``.
 
 - Issue #22115: Fixed tracing Tkinter variables: trace_vdelete() with wrong
