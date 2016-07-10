@@ -10,6 +10,9 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #27473: Fixed possible integer overflow in bytes and bytearray
+  concatenations.  Patch by Xiang Zhang.
+
 - Issue #27443: __length_hint__() of bytearray itearator no longer return
   negative integer for resized bytearray.
 
