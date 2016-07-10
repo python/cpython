@@ -24,6 +24,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #27466: Change time format returned by http.cookie.time2netscape,
+  confirming the netscape cookie format and making it consistent with
+  documentation.
+
 - Issue #21708: Deprecated dbm.dumb behavior that differs from common dbm
   behavior: creating a database in 'r' and 'w' modes and modifying a database
   in 'r' mode.
