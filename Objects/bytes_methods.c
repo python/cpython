@@ -645,7 +645,7 @@ _Py_bytes_count(const char *str, Py_ssize_t len, PyObject *args)
 int
 _Py_bytes_contains(const char *str, Py_ssize_t len, PyObject *arg)
 {
-    Py_ssize_t ival = PyNumber_AsSsize_t(arg, PyExc_ValueError);
+    Py_ssize_t ival = PyNumber_AsSsize_t(arg, NULL);
     if (ival == -1 && PyErr_Occurred()) {
         Py_buffer varg;
         Py_ssize_t pos;
