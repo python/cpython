@@ -9,8 +9,6 @@
 # XXX TO DO:
 # - for classes/modules, add "open source" to object browser
 
-import re
-
 from idlelib.tree import TreeItem, TreeNode, ScrolledCanvas
 
 from reprlib import Repr
@@ -127,8 +125,8 @@ def _object_browser(parent):  # htest #
     from tkinter import Toplevel
     top = Toplevel(parent)
     top.title("Test debug object browser")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    top.geometry("+%d+%d"%(x + 100, y + 175))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("+%d+%d" % (x + 100, y + 175))
     top.configure(bd=0, bg="yellow")
     top.focus_set()
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0, takefocus=1)

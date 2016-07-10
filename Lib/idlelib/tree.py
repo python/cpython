@@ -451,8 +451,8 @@ class ScrolledCanvas:
 
 def _tree_widget(parent):  # htest #
     top = Toplevel(parent)
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    top.geometry("+%d+%d"%(x+50, y+175))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("+%d+%d" % (x+50, y+175))
     sc = ScrolledCanvas(top, bg="white", highlightthickness=0, takefocus=1)
     sc.frame.pack(expand=1, fill="both", side=LEFT)
     item = FileTreeItem(ICONDIR)

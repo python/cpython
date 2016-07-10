@@ -1,6 +1,5 @@
 import os
 import fnmatch
-import re  # for htest
 import sys
 from tkinter import StringVar, BooleanVar, Checkbutton  # for GrepDialog
 from idlelib import searchengine
@@ -134,8 +133,8 @@ def _grep_dialog(parent):  # htest #
     from tkinter import Toplevel, Text, Button, SEL, END
     top = Toplevel(parent)
     top.title("Test GrepDialog")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    top.geometry("+%d+%d"%(x, y + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("+%d+%d" % (x, y + 175))
 
     flist = PyShellFileList(top)
     text = Text(top, height=5)
