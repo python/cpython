@@ -341,6 +341,7 @@ class ConfigDialog(Toplevel):
         buttonSaveCustomKeys = Button(
                 frames[1], text='Save as New Custom Key Set',
                 command=self.SaveAsNewKeySet)
+        self.new_custom_keys = Label(frames[0], bd=2)
 
         ##widget packing
         #body
@@ -361,6 +362,7 @@ class ConfigDialog(Toplevel):
         self.radioKeysCustom.grid(row=1, column=0, sticky=W+NS)
         self.optMenuKeysBuiltin.grid(row=0, column=1, sticky=NSEW)
         self.optMenuKeysCustom.grid(row=1, column=1, sticky=NSEW)
+        self.new_custom_keys.grid(row=0, column=2, sticky=NSEW, padx=5, pady=5)
         self.buttonDeleteCustomKeys.pack(side=LEFT, fill=X, expand=True, padx=2)
         buttonSaveCustomKeys.pack(side=LEFT, fill=X, expand=True, padx=2)
         frames[0].pack(side=TOP, fill=BOTH, expand=True)
@@ -514,10 +516,11 @@ class ConfigDialog(Toplevel):
         self.OnNewColourSet()
 
     def VarChanged_builtinTheme(self, *params):
+        oldthemes = ('IDLE Classic', 'IDLE New')
         value = self.builtinTheme.get()
-        if value == 'IDLE Dark':
-            if idleConf.GetOption('main', 'Theme', 'name') != 'IDLE New':
-                self.AddChangedItem('main', 'Theme', 'name', 'IDLE Classic')
+        if value not in oldthemes:
+            if idleConf.GetOption('main', 'Theme', 'name') not in oldthemes:
+                self.AddChangedItem('main', 'Theme', 'name', oldthemes[0])
             self.AddChangedItem('main', 'Theme', 'name2', value)
             self.new_custom_theme.config(text='New theme, see Help',
                                          fg='#500000')
@@ -557,8 +560,23 @@ class ConfigDialog(Toplevel):
             self.AddChangedItem('extensions', extKeybindSection, event, value)
 
     def VarChanged_builtinKeys(self, *params):
+        oldkeys = (
+            'IDLE Classic Windows',
+            'IDLE Classic Unix',
+            'IDLE Classic Mac',
+            'IDLE Classic OSX',
+        )
         value = self.builtinKeys.get()
-        self.AddChangedItem('main', 'Keys', 'name', value)
+        if value not in oldkeys:
+            if idleConf.GetOption('main', 'Keys', 'name') not in oldkeys:
+                self.AddChangedItem('main', 'Keys', 'name', oldkeys[0])
+            self.AddChangedItem('main', 'Keys', 'name2', value)
+            self.new_custom_keys.config(text='New key set, see Help',
+                                        fg='#500000')
+        else:
+            self.AddChangedItem('main', 'Keys', 'name', value)
+            self.AddChangedItem('main', 'Keys', 'name2', '')
+            self.new_custom_keys.config(text='', fg='black')
         self.LoadKeysList(value)
 
     def VarChanged_customKeys(self, *params):
@@ -767,8 +785,10 @@ class ConfigDialog(Toplevel):
         else:
             self.optMenuKeysCustom.SetMenu(itemList, itemList[0])
         #revert to default key set
-        self.keysAreBuiltin.set(idleConf.defaultCfg['main'].Get('Keys', 'default'))
-        self.builtinKeys.set(idleConf.defaultCfg['main'].Get('Keys', 'name'))
+        self.keysAreBuiltin.set(idleConf.defaultCfg['main']
+                                .Get('Keys', 'default'))
+        self.builtinKeys.set(idleConf.defaultCfg['main'].Get('Keys', 'name')
+                             or idleConf.default_keys())
         #user can't back out of these changes, they must be applied now
         self.SaveAllChangedConfigs()
         self.ActivateConfigChanges()
@@ -1067,7 +1087,7 @@ class ConfigDialog(Toplevel):
             self.optMenuKeysCustom.SetMenu(itemList, currentOption)
             itemList = idleConf.GetSectionList('default', 'keys')
             itemList.sort()
-            self.optMenuKeysBuiltin.SetMenu(itemList, itemList[0])
+            self.optMenuKeysBuiltin.SetMenu(itemList, idleConf.default_keys())
         self.SetKeysType()
         ##load keyset element list
         keySetName = idleConf.CurrentKeys()
@@ -1369,12 +1389,18 @@ machine. Some do not take affect until IDLE is restarted.
 [Cancel] only cancels changes made since the last save.
 '''
 help_pages = {
-    'Highlighting':'''
+    'Highlighting': '''
 Highlighting:
 The IDLE Dark color theme is new in October 2015.  It can only
 be used with older IDLE releases if it is saved as a custom
 theme, with a different name.
-'''
+''',
+    'Keys': '''
+Keys:
+The IDLE Modern Unix key set is new in June 2016.  It can only
+be used with older IDLE releases if it is saved as a custom
+key set, with a different name.
+''',
 }
 
 
