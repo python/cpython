@@ -1265,7 +1265,6 @@ bytes_length(PyBytesObject *a)
 static PyObject *
 bytes_concat(PyObject *a, PyObject *b)
 {
-    Py_ssize_t size;
     Py_buffer va, vb;
     PyObject *result = NULL;
 
@@ -1290,13 +1289,12 @@ bytes_concat(PyObject *a, PyObject *b)
         goto done;
     }
 
-    size = va.len + vb.len;
-    if (size < 0) {
+    if (va.len > PY_SSIZE_T_MAX - vb.len) {
         PyErr_NoMemory();
         goto done;
     }
 
-    result = PyBytes_FromStringAndSize(NULL, size);
+    result = PyBytes_FromStringAndSize(NULL, va.len + vb.len);
     if (result != NULL) {
         memcpy(PyBytes_AS_STRING(result), va.buf, va.len);
         memcpy(PyBytes_AS_STRING(result) + va.len, vb.buf, vb.len);
