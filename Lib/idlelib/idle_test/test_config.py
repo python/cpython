@@ -24,7 +24,7 @@ def setUpModule():
     idleConf.userCfg = testcfg
 
 def tearDownModule():
-    idleConf.userCfg = testcfg
+    idleConf.userCfg = usercfg
 
 
 class CurrentColorKeysTest(unittest.TestCase):
