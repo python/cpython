@@ -138,8 +138,8 @@ def _calltip_window(parent):  # htest #
 
     top = Toplevel(parent)
     top.title("Test calltips")
-    top.geometry("200x100+%d+%d" % (parent.winfo_rootx() + 200,
-                  parent.winfo_rooty() + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("200x100+%d+%d" % (x + 250, y + 175))
     text = Text(top)
     text.pack(side=LEFT, fill=BOTH, expand=1)
     text.insert("insert", "string.split")

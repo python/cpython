@@ -17,15 +17,14 @@ class MultiStatusBar(Frame):
             label.config(width=width)
         label.config(text=text)
 
-def _multistatus_bar(parent):
-    import re
+def _multistatus_bar(parent):  # htest #
     from tkinter import Toplevel, Frame, Text, Button
     top = Toplevel(parent)
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    top.geometry("+%d+%d" %(x, y + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("+%d+%d" %(x, y + 175))
     top.title("Test multistatus bar")
     frame = Frame(top)
-    text = Text(frame)
+    text = Text(frame, height=5, width=40)
     text.pack()
     msb = MultiStatusBar(frame)
     msb.set_label("one", "hello")

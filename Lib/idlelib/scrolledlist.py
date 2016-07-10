@@ -127,8 +127,8 @@ class ScrolledList:
 
 def _scrolled_list(parent):  # htest #
     top = Toplevel(parent)
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    top.geometry("+%d+%d"%(x+200, y + 175))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("+%d+%d" % (x+200, y + 175))
     class MyScrolledList(ScrolledList):
         def fill_menu(self): self.menu.add_command(label="right click")
         def on_select(self, index): print("select", self.get(index))

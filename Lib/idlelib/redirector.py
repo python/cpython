@@ -152,12 +152,11 @@ class OriginalCommand:
 
 def _widget_redirector(parent):  # htest #
     from tkinter import Toplevel, Text
-    import re
 
     top = Toplevel(parent)
     top.title("Test WidgetRedirector")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    top.geometry("+%d+%d"%(x, y + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("+%d+%d" % (x, y + 175))
     text = Text(top)
     text.pack()
     text.focus_set()
@@ -171,5 +170,6 @@ if __name__ == "__main__":
     import unittest
     unittest.main('idlelib.idle_test.test_redirector',
                   verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_widget_redirector)

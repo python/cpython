@@ -535,8 +535,8 @@ def _io_binding(parent):  # htest #
 
     root = Toplevel(parent)
     root.title("Test IOBinding")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    root.geometry("+%d+%d"%(x, y + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    root.geometry("+%d+%d" % (x, y + 175))
     class MyEditWin:
         def __init__(self, text):
             self.text = text

@@ -57,7 +57,6 @@ class Percolator:
 
 def _percolator(parent):  # htest #
     import tkinter as tk
-    import re
 
     class Tracer(Delegator):
         def __init__(self, name):
@@ -74,8 +73,8 @@ def _percolator(parent):  # htest #
 
     box = tk.Toplevel(parent)
     box.title("Test Percolator")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    box.geometry("+%d+%d" % (x, y + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    box.geometry("+%d+%d" % (x, y + 175))
     text = tk.Text(box)
     p = Percolator(text)
     pin = p.insertfilter

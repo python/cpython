@@ -207,8 +207,8 @@ def _replace_dialog(parent):  # htest #
     """htest wrapper function"""
     box = Toplevel(parent)
     box.title("Test ReplaceDialog")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    box.geometry("+%d+%d"%(x, y + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    box.geometry("+%d+%d" % (x, y + 175))
 
     # mock undo delegator methods
     def undo_block_start():
@@ -234,7 +234,7 @@ def _replace_dialog(parent):  # htest #
 
 if __name__ == '__main__':
     import unittest
-    unittest.main('idlelib.idle_test.test_replacedialog',
+    unittest.main('idlelib.idle_test.test_replace',
                 verbosity=2, exit=False)
 
     from idlelib.idle_test.htest import run
