@@ -9,9 +9,9 @@ from email.utils import make_msgid
 # Create the base text message.
 msg = EmailMessage()
 msg['Subject'] = "Ayons asperges pour le déjeuner"
-msg['From'] = Address("Pepé Le Pew", "pepe@example.com")
-msg['To'] = (Address("Penelope Pussycat", "penelope@example.com"),
-             Address("Fabrette Pussycat", "fabrette@example.com"))
+msg['From'] = Address("Pepé Le Pew", "pepe", "example.com")
+msg['To'] = (Address("Penelope Pussycat", "penelope", "example.com"),
+             Address("Fabrette Pussycat", "fabrette", "example.com"))
 msg.set_content("""\
 Salut!
 
