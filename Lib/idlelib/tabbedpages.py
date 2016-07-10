@@ -468,10 +468,9 @@ class TabbedPageSet(Frame):
         self._tab_set.set_selected_tab(page_name)
 
 def _tabbed_pages(parent):  # htest #
-    import re
     top=Toplevel(parent)
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    top.geometry("+%d+%d"%(x, y + 175))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("+%d+%d" % (x, y + 175))
     top.title("Test tabbed pages")
     tabPage=TabbedPageSet(top, page_names=['Foobar','Baz'], n_rows=0,
                           expand_tabs=False,

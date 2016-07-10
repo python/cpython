@@ -417,8 +417,8 @@ def MultiCallCreator(widget):
 def _multi_call(parent):  # htest #
     top = tkinter.Toplevel(parent)
     top.title("Test MultiCall")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    top.geometry("+%d+%d"%(x, y + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("+%d+%d" % (x, y + 175))
     text = MultiCallCreator(tkinter.Text)(top)
     text.pack()
     def bindseq(seq, n=[0]):

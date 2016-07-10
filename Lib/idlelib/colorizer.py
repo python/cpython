@@ -259,8 +259,8 @@ def _color_delegator(parent):  # htest #
 
     top = Toplevel(parent)
     top.title("Test ColorDelegator")
-    top.geometry("200x100+%d+%d" % (parent.winfo_rootx() + 200,
-                  parent.winfo_rooty() + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    top.geometry("200x100+%d+%d" % (x + 250, y + 175))
     source = "if somename: x = 'abc' # comment\nprint\n"
     text = Text(top, background="white")
     text.pack(expand=1, fill="both")
@@ -276,5 +276,6 @@ if __name__ == "__main__":
     import unittest
     unittest.main('idlelib.idle_test.test_colorizer',
                   verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_color_delegator)

@@ -75,8 +75,8 @@ def _search_dialog(parent):  # htest #
     '''Display search test box.'''
     box = Toplevel(parent)
     box.title("Test SearchDialog")
-    width, height, x, y = list(map(int, re.split('[x+]', parent.geometry())))
-    box.geometry("+%d+%d"%(x, y + 150))
+    x, y = map(int, parent.geometry().split('+')[1:])
+    box.geometry("+%d+%d" % (x, y + 175))
     text = Text(box, inactiveselectbackground='gray')
     text.pack()
     text.insert("insert","This is a sample string.\n"*5)
@@ -91,7 +91,8 @@ def _search_dialog(parent):  # htest #
 
 if __name__ == '__main__':
     import unittest
-    unittest.main('idlelib.idle_test.test_searchdialog',
+    unittest.main('idlelib.idle_test.test_search',
                   verbosity=2, exit=False)
+
     from idlelib.idle_test.htest import run
     run(_search_dialog)
