@@ -28,6 +28,9 @@ Tests
   self-signed.pythontest.net.  This avoids relying on svn.python.org, which
   recently changed root certificate.
 
+- Issue #22758: Fix a regression that no longer allowed secure and httponly
+  cookies to be parsed.
+
 
 What's New in Python 3.2.6?
 ===========================
