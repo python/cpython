@@ -120,7 +120,7 @@ def time2netscape(t=None):
         dt = datetime.datetime.utcnow()
     else:
         dt = datetime.datetime.utcfromtimestamp(t)
-    return "%s %02d-%s-%04d %02d:%02d:%02d GMT" % (
+    return "%s, %02d-%s-%04d %02d:%02d:%02d GMT" % (
         DAYS[dt.weekday()], dt.day, MONTHS[dt.month-1],
         dt.year, dt.hour, dt.minute, dt.second)
 
