@@ -234,10 +234,7 @@ class IdleConf:
                        ' from section %r: %r' %
                        (type, option, section,
                        self.userCfg[configType].Get(section, option, raw=raw)))
-            try:
-                print(warning, file=sys.stderr)
-            except OSError:
-                pass
+            _warn(warning, configType, section, option)
         try:
             if self.defaultCfg[configType].has_option(section,option):
                 return self.defaultCfg[configType].Get(
@@ -251,10 +248,7 @@ class IdleConf:
                        ' from section %r.\n'
                        ' returning default value: %r' %
                        (option, section, default))
-            try:
-                print(warning, file=sys.stderr)
-            except OSError:
-                pass
+            _warn(warning, configType, section, option)
         return default
 
     def SetOption(self, configType, section, option, value):
@@ -362,47 +356,68 @@ class IdleConf:
                            '\n from theme %r.\n'
                            ' returning default color: %r' %
                            (element, themeName, theme[element]))
-                try:
-                    print(warning, file=sys.stderr)
-                except OSError:
-                    pass
+                _warn(warning, 'highlight', themeName, element)
             theme[element] = cfgParser.Get(
                     themeName, element, default=theme[element])
         return theme
 
     def CurrentTheme(self):
-        """Return the name of the currently active text color theme.
+        "Return the name of the currently active text color theme."
+        return self.current_colors_and_keys('Theme')
 
-        idlelib.config-main.def includes this section
+    def CurrentKeys(self):
+        """Return the name of the currently active key set."""
+        return self.current_colors_and_keys('Keys')
+
+    def current_colors_and_keys(self, section):
+        """Return the currently active name for Theme or Keys section.
+
+        idlelib.config-main.def ('default') includes these sections
+
         [Theme]
         default= 1
         name= IDLE Classic
         name2=
-        # name2 set in user config-main.cfg for themes added after 2015 Oct 1
 
-        Item name2 is needed because setting name to a new builtin
-        causes older IDLEs to display multiple error messages or quit.
+        [Keys]
+        default= 1
+        name=
+        name2=
+
+        Item 'name2', is used for built-in ('default') themes and keys
+        added after 2015 Oct 1 and 2016 July 1.  This kludge is needed
+        because setting 'name' to a builtin not defined in older IDLEs
+        to display multiple error messages or quit.
         See https://bugs.python.org/issue25313.
-        When default = True, name2 takes precedence over name,
-        while older IDLEs will just use name.
+        When default = True, 'name2' takes precedence over 'name',
+        while older IDLEs will just use name.  When default = False,
+        'name2' may still be set, but it is ignored.
         """
+        cfgname = 'highlight' if section == 'Theme' else 'keys'
         default = self.GetOption('main', 'Theme', 'default',
                                  type='bool', default=True)
+        name = ''
         if default:
-            theme = self.GetOption('main', 'Theme', 'name2', default='')
-        if default and not theme or not default:
-            theme = self.GetOption('main', 'Theme', 'name', default='')
-        source = self.defaultCfg if default else self.userCfg
-        if source['highlight'].has_section(theme):
-            return theme
+            name = self.GetOption('main', section, 'name2', default='')
+        if not name:
+            name = self.GetOption('main', section, 'name', default='')
+        if name:
+            source = self.defaultCfg if default else self.userCfg
+            if source[cfgname].has_section(name):
+                return name
+        return "IDLE Classic" if section == 'Theme' else self.default_keys()
+
+    @staticmethod
+    def default_keys():
+        if sys.platform[:3] == 'win':
+            return 'IDLE Classic Windows'
+        elif sys.platform == 'darwin':
+            return 'IDLE Classic OSX'
         else:
-            return "IDLE Classic"
+            return 'IDLE Modern Unix'
 
-    def CurrentKeys(self):
-        "Return the name of the currently active key set."
-        return self.GetOption('main', 'Keys', 'name', default='')
-
-    def GetExtensions(self, active_only=True, editor_only=False, shell_only=False):
+    def GetExtensions(self, active_only=True,
+                      editor_only=False, shell_only=False):
         """Return extensions in default and user config-extensions files.
 
         If active_only True, only return active (enabled) extensions
@@ -422,7 +437,7 @@ class IdleConf:
                 if self.GetOption('extensions', extn, 'enable', default=True,
                                   type='bool'):
                     #the extension is enabled
-                    if editor_only or shell_only:  # TODO if both, contradictory
+                    if editor_only or shell_only:  # TODO both True contradict
                         if editor_only:
                             option = "enable_editor"
                         else:
@@ -527,7 +542,8 @@ class IdleConf:
         eventStr - virtual event, including brackets, as in '<<event>>'.
         """
         eventName = eventStr[2:-2] #trim off the angle brackets
-        binding = self.GetOption('keys', keySetName, eventName, default='').split()
+        binding = self.GetOption('keys', keySetName, eventName, default='',
+                                 warn_on_default=False).split()
         return binding
 
     def GetCurrentKeySet(self):
@@ -638,20 +654,28 @@ class IdleConf:
             '<<del-word-right>>': ['<Control-Key-Delete>']
             }
         if keySetName:
-            for event in keyBindings:
-                binding = self.GetKeyBinding(keySetName, event)
-                if binding:
-                    keyBindings[event] = binding
-                else: #we are going to return a default, print warning
-                    warning=('\n Warning: config.py - IdleConf.GetCoreKeys'
-                               ' -\n problem retrieving key binding for event %r'
-                               '\n from key set %r.\n'
-                               ' returning default value: %r' %
-                               (event, keySetName, keyBindings[event]))
-                    try:
-                        print(warning, file=sys.stderr)
-                    except OSError:
-                        pass
+            if not (self.userCfg['keys'].has_section(keySetName) or
+                    self.defaultCfg['keys'].has_section(keySetName)):
+                warning = (
+                    '\n Warning: config.py - IdleConf.GetCoreKeys -\n'
+                    ' key set %r is not defined, using default bindings.' %
+                    (keySetName,)
+                )
+                _warn(warning, 'keys', keySetName)
+            else:
+                for event in keyBindings:
+                    binding = self.GetKeyBinding(keySetName, event)
+                    if binding:
+                        keyBindings[event] = binding
+                    else: #we are going to return a default, print warning
+                        warning = (
+                            '\n Warning: config.py - IdleConf.GetCoreKeys -\n'
+                            ' problem retrieving key binding for event %r\n'
+                            ' from key set %r.\n'
+                            ' returning default value: %r' %
+                            (event, keySetName, keyBindings[event])
+                        )
+                        _warn(warning, 'keys', keySetName, event)
         return keyBindings
 
     def GetExtraHelpSourceList(self, configSet):
@@ -734,6 +758,18 @@ class IdleConf:
 
 
 idleConf = IdleConf()
+
+
+_warned = set()
+def _warn(msg, *key):
+    key = (msg,) + key
+    if key not in _warned:
+        try:
+            print(msg, file=sys.stderr)
+        except OSError:
+            pass
+        _warned.add(key)
+
 
 # TODO Revise test output, write expanded unittest
 #
