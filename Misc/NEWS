@@ -167,6 +167,12 @@ Documentation
 - Issue #27285: Update documentation to reflect the deprecation of ``pyvenv``
   and normalize on the term "virtual environment". Patch by Steve Piercy.
 
+Tests
+-----
+
+- Issue #27027: Added test.support.is_android that is True when this is an
+  Android build.
+
 
 What's New in Python 3.6.0 alpha 2
 ==================================
