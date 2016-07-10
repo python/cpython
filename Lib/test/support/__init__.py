@@ -92,7 +92,7 @@ __all__ = [
     "anticipate_failure", "load_package_tests", "detect_api_mismatch",
     "check__all__",
     # sys
-    "is_jython", "check_impl_detail",
+    "is_jython", "is_android", "check_impl_detail",
     # network
     "HOST", "IPV6_ENABLED", "find_unused_port", "bind_port", "open_urlresource",
     # processes
@@ -733,6 +733,8 @@ requires_bz2 = unittest.skipUnless(bz2, 'requires bz2')
 requires_lzma = unittest.skipUnless(lzma, 'requires lzma')
 
 is_jython = sys.platform.startswith('java')
+
+is_android = bool(sysconfig.get_config_var('ANDROID_API_LEVEL'))
 
 # Filename used for testing
 if os.name == 'java':
