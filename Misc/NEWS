@@ -17,6 +17,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #27466: Change time format returned by http.cookie.time2netscape,
+  confirming the netscape cookie format and making it consistent with
+  documentation.
+
 - Issue #22115: Fixed tracing Tkinter variables: trace_vdelete() with wrong
   mode no longer break tracing, trace_vinfo() now always returns a list of
   pairs of strings.

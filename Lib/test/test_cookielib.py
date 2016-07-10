@@ -6,6 +6,7 @@ import os
 import re
 import time
 
+from cookielib import http2time, time2isoz, time2netscape
 from unittest import TestCase
 
 from test import test_support
@@ -14,8 +15,6 @@ from test import test_support
 class DateTimeTests(TestCase):
 
     def test_time2isoz(self):
-        from cookielib import time2isoz
-
         base = 1019227000
         day = 24*3600
         self.assertEqual(time2isoz(base), "2002-04-19 14:36:40Z")
@@ -30,9 +29,29 @@ class DateTimeTests(TestCase):
                                      r"^\d{4}-\d\d-\d\d \d\d:\d\d:\d\dZ$",
                                      "bad time2isoz format: %s %s" % (az, bz))
 
-    def test_http2time(self):
-        from cookielib import http2time
+    def test_time2netscape(self):
+        base = 1019227000
+        day = 24*3600
+        self.assertEqual(time2netscape(base), "Fri, 19-Apr-2002 14:36:40 GMT")
+        self.assertEqual(time2netscape(base+day),
+                         "Sat, 20-Apr-2002 14:36:40 GMT")
 
+        self.assertEqual(time2netscape(base+2*day),
+                         "Sun, 21-Apr-2002 14:36:40 GMT")
+
+        self.assertEqual(time2netscape(base+3*day),
+                         "Mon, 22-Apr-2002 14:36:40 GMT")
+
+        az = time2netscape()
+        bz = time2netscape(500000)
+        for text in (az, bz):
+            # Format "%s, %02d-%s-%04d %02d:%02d:%02d GMT"
+            self.assertRegexpMatches(
+                text,
+                r"[a-zA-Z]{3}, \d{2}-[a-zA-Z]{3}-\d{4} \d{2}:\d{2}:\d{2} GMT$",
+                "bad time2netscape format: %s %s" % (az, bz))
+
+    def test_http2time(self):
         def parse_date(text):
             return time.gmtime(http2time(text))[:6]
 
@@ -45,7 +64,7 @@ class DateTimeTests(TestCase):
         self.assertEqual(parse_date("03-Feb-98"), (1998, 2, 3, 0, 0, 0.0))
 
     def test_http2time_formats(self):
-        from cookielib import http2time, time2isoz
+
 
         # test http2time for supported dates.  Test cases with 2 digit year
         # will probably break in year 2044.
@@ -81,8 +100,6 @@ class DateTimeTests(TestCase):
             self.assertEqual(http2time(s.upper()), test_t, s.upper())
 
     def test_http2time_garbage(self):
-        from cookielib import http2time
-
         for test in [
             '',
             'Garbage',

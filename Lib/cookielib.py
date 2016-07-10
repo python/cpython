@@ -113,7 +113,7 @@ def time2netscape(t=None):
     """
     if t is None: t = time.time()
     year, mon, mday, hour, min, sec, wday = time.gmtime(t)[:7]
-    return "%s %02d-%s-%04d %02d:%02d:%02d GMT" % (
+    return "%s, %02d-%s-%04d %02d:%02d:%02d GMT" % (
         DAYS[wday], mday, MONTHS[mon-1], year, hour, min, sec)
 
 
