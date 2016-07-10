@@ -70,7 +70,9 @@ name2=
 
 [Keys]
 default= 1
-name= IDLE Classic Windows
+name=
+name2=
+# name2 set in user config-main.cfg for keys added after 2016 July 1
 
 [History]
 cyclic=1
