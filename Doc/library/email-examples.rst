@@ -61,7 +61,7 @@ way we could process it:
 
 Up to the prompt, the output from the above is::
 
-    To: Penelope Pussycat <"penelope@example.com">, Fabrette Pussycat <"fabrette@example.com">
+    To: Penelope Pussycat <penelope@example.com>, Fabrette Pussycat <fabrette@example.com>
     From: Pepé Le Pew <pepe@example.com>
     Subject: Ayons asperges pour le déjeuner
 
