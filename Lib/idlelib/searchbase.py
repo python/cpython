@@ -1,7 +1,7 @@
 '''Define SearchDialogBase used by Search, Replace, and Grep dialogs.'''
 
-from tkinter import (Toplevel, Frame, Entry, Label, Button,
-                     Checkbutton, Radiobutton)
+from tkinter import Toplevel, Frame
+from tkinter.ttk import Entry, Label, Button, Checkbutton, Radiobutton
 
 class SearchDialogBase:
     '''Create most of a 3 or 4 row, 3 column search dialog.
@@ -137,10 +137,8 @@ class SearchDialogBase:
         if self.needwrapbutton:
             options.append((engine.wrapvar, "Wrap around"))
         for var, label in options:
-            btn = Checkbutton(frame, anchor="w", variable=var, text=label)
+            btn = Checkbutton(frame, variable=var, text=label)
             btn.pack(side="left", fill="both")
-            if var.get():
-                btn.select()
         return frame, options
 
     def create_other_buttons(self):
@@ -153,11 +151,8 @@ class SearchDialogBase:
         var = self.engine.backvar
         others = [(1, 'Up'), (0, 'Down')]
         for val, label in others:
-            btn = Radiobutton(frame, anchor="w",
-                              variable=var, value=val, text=label)
+            btn = Radiobutton(frame, variable=var, value=val, text=label)
             btn.pack(side="left", fill="both")
-            if var.get() == val:
-                btn.select()
         return frame, others
 
     def make_button(self, label, command, isdef=0):
@@ -178,7 +173,26 @@ class SearchDialogBase:
         b = self.make_button("close", self.close)
         b.lower()
 
+
+class _searchbase(SearchDialogBase):  # htest #
+    "Create auto-opening dialog with no text connection."
+
+    def __init__(self, parent):
+        import re
+        from idlelib import searchengine
+
+        self.root = parent
+        self.engine = searchengine.get(parent)
+        self.create_widgets()
+        print(parent.geometry())
+        width,height, x,y = list(map(int, re.split('[x+]', parent.geometry())))
+        self.top.geometry("+%d+%d" % (x + 40, y + 175))
+
+    def default_command(self): pass
+
 if __name__ == '__main__':
     import unittest
-    unittest.main(
-        'idlelib.idle_test.test_searchdialogbase', verbosity=2)
+    unittest.main('idlelib.idle_test.test_searchbase', verbosity=2, exit=False)
+
+    from idlelib.idle_test.htest import run
+    run(_searchbase)
