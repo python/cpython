@@ -2,6 +2,24 @@ What's New in IDLE 3.6.0?
 ===========================
 *Release date: 2016-09-??*
 
+- Issue #27477: IDLE search dialogs now use ttk widgets.
+
+- Issue #27173: Add 'IDLE Modern Unix' to the built-in key sets.
+  Make the default key set depend on the platform.
+  Add tests for the changes to the config module.
+
+- Issue #27452: make command line "idle-test> python test_help.py" work.
+  __file__ is relative when python is started in the file's directory.
+
+- Issue #27452: add line counter and crc to IDLE configHandler test dump.
+
+- Issue #27380: IDLE: add query.py with base Query dialog and ttk widgets.
+  Module had subclasses SectionName, ModuleName, and HelpSource, which are
+  used to get information from users by configdialog and file =>Load Module.
+  Each subclass has itw own validity checks.  Using ModuleName allows users
+  to edit bad module names instead of starting over.
+  Add tests and delete the two files combined into the new one.
+
 - Issue #27372: Test_idle no longer changes the locale.
 
 - Issue #27365: Allow non-ascii chars in IDLE NEWS.txt, for contributor names.
