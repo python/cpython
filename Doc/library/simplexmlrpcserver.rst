@@ -273,7 +273,7 @@ requests sent to Python CGI scripts.
 
 .. method:: CGIXMLRPCRequestHandler.handle_request([request_text = None])
 
-   Handle a XML-RPC request. If *request_text* is given, it  should be the POST
+   Handle an XML-RPC request. If *request_text* is given, it should be the POST
    data provided by the HTTP server,  otherwise the contents of stdin will be used.
 
 Example::

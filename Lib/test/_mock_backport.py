@@ -740,7 +740,7 @@ class NonCallableMock(Base):
 
     def _call_matcher(self, _call):
         """
-        Given a call (or simply a (args, kwargs) tuple), return a
+        Given a call (or simply an (args, kwargs) tuple), return a
         comparison key suitable for matching with other calls.
         This is a best effort method which relies on the spec's signature,
         if available, or falls back on the arguments themselves.

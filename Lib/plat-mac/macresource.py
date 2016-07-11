@@ -78,7 +78,7 @@ def open_pathname(pathname, verbose=0):
     """Open a resource file given by pathname, possibly decoding an
     AppleSingle file"""
     # No resource fork. We may be on OSX, and this may be either
-    # a data-fork based resource file or a AppleSingle file
+    # a data-fork based resource file or an AppleSingle file
     # from the CVS repository.
     try:
         refno = Res.FSOpenResourceFile(pathname, u'', 1)
@@ -97,7 +97,7 @@ def resource_pathname(pathname, verbose=0):
     If the pathname given already refers to such a file simply return it,
     otherwise first decode it."""
     # No resource fork. We may be on OSX, and this may be either
-    # a data-fork based resource file or a AppleSingle file
+    # a data-fork based resource file or an AppleSingle file
     # from the CVS repository.
     try:
         refno = Res.FSOpenResourceFile(pathname, u'', 1)

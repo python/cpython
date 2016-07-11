@@ -99,7 +99,7 @@ typedef struct
     /* a dictionary of registered collation name => collation callable mappings */
     PyObject* collations;
 
-    /* if our connection was created from a APSW connection, we keep a
+    /* if our connection was created from an APSW connection, we keep a
      * reference to the APSW connection around and get rid of it in our
      * destructor */
     PyObject* apsw_connection;

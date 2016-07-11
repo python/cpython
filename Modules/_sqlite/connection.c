@@ -116,7 +116,7 @@ int pysqlite_connection_init(pysqlite_Connection* self, PyObject* args, PyObject
             return -1;
         }
     } else {
-        /* Create a pysqlite connection from a APSW connection */
+        /* Create a pysqlite connection from an APSW connection */
         class_attr = PyObject_GetAttrString(database, "__class__");
         if (class_attr) {
             class_attr_str = PyObject_Str(class_attr);

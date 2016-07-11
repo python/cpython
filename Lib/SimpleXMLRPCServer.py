@@ -188,7 +188,7 @@ class SimpleXMLRPCDispatcher:
         are considered private and will not be called by
         SimpleXMLRPCServer.
 
-        If a registered function matches a XML-RPC request, then it
+        If a registered function matches an XML-RPC request, then it
         will be called instead of the registered instance.
 
         If the optional allow_dotted_names argument is true and the

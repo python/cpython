@@ -580,7 +580,7 @@ def _seticon(object_alias, icondata):
 
 def mountvolume(volume, server=None, username=None, password=None):
     """mount a volume, local or on a server on AppleTalk.
-    Note: mounting a ASIP server requires a different operation.
+    Note: mounting an ASIP server requires a different operation.
     server is the name of the server where the volume belongs
     username, password belong to a registered user of the volume."""
     finder = _getfinder()

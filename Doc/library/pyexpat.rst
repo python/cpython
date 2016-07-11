@@ -270,7 +270,7 @@ XMLParser Objects
 
 The following attributes contain values relating to the most recent error
 encountered by an :class:`xmlparser` object, and will only have correct values
-once a call to :meth:`Parse` or :meth:`ParseFile` has raised a
+once a call to :meth:`Parse` or :meth:`ParseFile` has raised an
 :exc:`xml.parsers.expat.ExpatError` exception.
 
 

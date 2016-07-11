@@ -19,7 +19,7 @@ etc. For OSA types that have no direct Python counterpart this module declares
 classes. Packing and unpacking instances of these classes is handled
 automatically by :mod:`aepack`.
 
-An object specifier is essentially an address of an object implemented in a
+An object specifier is essentially an address of an object implemented in an
 Apple Event server. An Apple Event specifier is used as the direct object for an
 Apple Event or as the argument of an optional parameter. The :mod:`aetypes`
 module contains the base classes for OSA classes and properties, which are used
