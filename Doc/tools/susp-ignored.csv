@@ -205,7 +205,7 @@ library/uuid,,:uuid,urn:uuid:12345678-1234-5678-1234-567812345678
 library/venv,,:param,":param nodist: If True, setuptools and pip are not installed into the"
 library/venv,,:param,":param progress: If setuptools or pip are installed, the progress of the"
 library/venv,,:param,":param nopip: If True, pip is not installed into the created"
-library/venv,,:param,:param context: The information for the environment creation request
+library/venv,,:param,:param context: The information for the virtual environment
 library/xmlrpc.client,,:pass,http://user:pass@host:port/path
 library/xmlrpc.client,,:pass,user:pass
 library/xmlrpc.client,,:port,http://user:pass@host:port/path
