@@ -197,7 +197,7 @@ will also be installed. On other platforms, the system wide unversioned
 ``pip`` command typically refers to the separately installed Python 2
 version.
 
-The :ref:`pyvenv <scripts-pyvenv>` command line utility and the :mod:`venv`
+The ``pyvenv`` command line utility and the :mod:`venv`
 module make use of the :mod:`ensurepip` module to make ``pip`` readily
 available in virtual environments. When using the command line utility,
 ``pip`` is installed by default, while when using the :mod:`venv` module
@@ -1989,11 +1989,11 @@ Other Improvements
   Stinner using his :pep:`445`-based ``pyfailmalloc`` tool (:issue:`18408`,
   :issue:`18520`).
 
-* The :ref:`pyvenv <scripts-pyvenv>` command now accepts a ``--copies`` option
+* The ``pyvenv`` command now accepts a ``--copies`` option
   to use copies rather than symlinks even on systems where symlinks are the
   default.  (Contributed by Vinay Sajip in :issue:`18807`.)
 
-* The :ref:`pyvenv <scripts-pyvenv>` command also accepts a ``--without-pip``
+* The ``pyvenv`` command also accepts a ``--without-pip``
   option to suppress the otherwise-automatic bootstrapping of pip into
   the virtual environment.  (Contributed by Nick Coghlan in :issue:`19552`
   as part of the :pep:`453` implementation.)
@@ -2459,7 +2459,7 @@ Changes in the Python API
   stream in :mod:`~io.TextIOWrapper` to use its *newline* argument
   (:issue:`15204`).
 
-* If you use :ref:`pyvenv <scripts-pyvenv>` in a script and desire that pip
+* If you use ``pyvenv`` in a script and desire that pip
   *not* be installed, you must add ``--without-pip`` to your command
   invocation.
 
