@@ -3,7 +3,7 @@ Uses idlelib.SearchEngine for search capability.
 Defines various replace related functions like replace, replace all,
 replace+find.
 """
-from tkinter import *
+from tkinter import StringVar, TclError
 
 from idlelib import searchengine
 from idlelib.searchbase import SearchDialogBase
@@ -204,7 +204,9 @@ class ReplaceDialog(SearchDialogBase):
 
 
 def _replace_dialog(parent):  # htest #
-    """htest wrapper function"""
+    from tkinter import Toplevel, Text
+    from tkiter.ttk import Button
+
     box = Toplevel(parent)
     box.title("Test ReplaceDialog")
     x, y = map(int, parent.geometry().split('+')[1:])
