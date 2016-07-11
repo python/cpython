@@ -1913,6 +1913,10 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
         dest = PyBytes_FromStringAndSize(NULL, len);
         if (dest == NULL)
             goto error;
+        if (len == 0) {
+            Py_XDECREF(sock);
+            return dest;
+        }
         mem = PyBytes_AS_STRING(dest);
     }
     else {
@@ -1923,6 +1927,10 @@ _ssl__SSLSocket_read_impl(PySSLSocket *self, int len, int group_right_1,
                 PyErr_SetString(PyExc_OverflowError,
                                 "maximum length can't fit in a C 'int'");
                 goto error;
+            }
+            if (len == 0) {
+                count = 0;
+                goto done;
             }
         }
     }
