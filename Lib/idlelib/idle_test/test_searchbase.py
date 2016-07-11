@@ -1,8 +1,7 @@
-'''Unittests for idlelib/searchbase.py
+'''tests idlelib.searchbase.
 
 Coverage: 99%. The only thing not covered is inconsequential --
 testing skipping of suite when self.needwrapbutton is false.
-
 '''
 import unittest
 from test.support import requires
@@ -120,11 +119,6 @@ class SearchDialogBaseTest(unittest.TestCase):
                 var, label = spec
                 self.assertEqual(button['text'], label)
                 self.assertEqual(var.get(), state)
-                if state == 1:
-                    button.deselect()
-                else:
-                    button.select()
-                self.assertEqual(var.get(), 1 - state)
 
     def test_create_other_buttons(self):
         for state in (False, True):
@@ -139,10 +133,6 @@ class SearchDialogBaseTest(unittest.TestCase):
                 if val == state:
                     # hit other button, then this one
                     # indexes depend on button order
-                    self.assertEqual(var.get(), state)
-                    buttons[val].select()
-                    self.assertEqual(var.get(), 1 - state)
-                    buttons[1-val].select()
                     self.assertEqual(var.get(), state)
 
     def test_make_button(self):
@@ -160,7 +150,6 @@ class SearchDialogBaseTest(unittest.TestCase):
             if child['text'] == 'close':
                 closebuttoncommand = child['command']
         self.assertIn('close', closebuttoncommand)
-
 
 
 if __name__ == '__main__':

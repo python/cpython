@@ -1,7 +1,8 @@
 import os
 import fnmatch
 import sys
-from tkinter import StringVar, BooleanVar, Checkbutton  # for GrepDialog
+from tkinter import StringVar, BooleanVar
+from tkinter.ttk import Checkbutton
 from idlelib import searchengine
 from idlelib.searchbase import SearchDialogBase
 # Importing OutputWindow fails due to import loop
@@ -45,13 +46,10 @@ class GrepDialog(SearchDialogBase):
         self.globent = self.make_entry("In files:", self.globvar)[0]
 
     def create_other_buttons(self):
-        f = self.make_frame()[0]
-
-        btn = Checkbutton(f, anchor="w",
-                variable=self.recvar,
+        btn = Checkbutton(
+                self.make_frame()[0], variable=self.recvar,
                 text="Recurse down subdirectories")
         btn.pack(side="top", fill="both")
-        btn.select()
 
     def create_command_buttons(self):
         SearchDialogBase.create_command_buttons(self)
@@ -130,7 +128,8 @@ class GrepDialog(SearchDialogBase):
 
 def _grep_dialog(parent):  # htest #
     from idlelib.pyshell import PyShellFileList
-    from tkinter import Toplevel, Text, Button, SEL, END
+    from tkinter import Toplevel, Text, SEL, END
+    from tkinter.ttk import Button
     top = Toplevel(parent)
     top.title("Test GrepDialog")
     x, y = map(int, parent.geometry().split('+')[1:])
