@@ -1138,7 +1138,7 @@ the returned bytes object to string once it determines or guesses
 the appropriate encoding.
 
 The following W3C document, https://www.w3.org/International/O-charset\ , lists
-the various ways in which a (X)HTML or a XML document could have specified its
+the various ways in which an (X)HTML or an XML document could have specified its
 encoding information.
 
 As the python.org website uses *utf-8* encoding as specified in its meta tag, we
