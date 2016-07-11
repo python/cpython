@@ -734,7 +734,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual("IPv6Interface('::1/128')",
                          repr(ipaddress.IPv6Interface('::1')))
 
-    # issue #16531: constructing IPv4Network from a (address, mask) tuple
+    # issue #16531: constructing IPv4Network from an (address, mask) tuple
     def testIPv4Tuple(self):
         # /32
         ip = ipaddress.IPv4Address('192.0.2.1')
@@ -797,7 +797,7 @@ class IpaddrUnitTest(unittest.TestCase):
         self.assertEqual(ipaddress.IPv4Interface((3221225985, 24)),
                          ipaddress.IPv4Interface('192.0.2.1/24'))
 
-    # issue #16531: constructing IPv6Network from a (address, mask) tuple
+    # issue #16531: constructing IPv6Network from an (address, mask) tuple
     def testIPv6Tuple(self):
         # /128
         ip = ipaddress.IPv6Address('2001:db8::')
