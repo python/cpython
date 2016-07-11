@@ -242,7 +242,7 @@ class BuildExtTestCase(TempdirManager,
         self.assertRaises(DistutilsSetupError, cmd.check_extensions_list, exts)
 
         # second element of each tuple in 'ext_modules'
-        # must be a ary (build info)
+        # must be a dictionary (build info)
         exts = [('foo.bar', '')]
         self.assertRaises(DistutilsSetupError, cmd.check_extensions_list, exts)
 

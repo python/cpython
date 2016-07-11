@@ -18,8 +18,8 @@ Core and Builtins
   be re-enabled using the "-X showalloccount" option.  It now outputs to stderr
   instead of stdout.
 
-- Issue #27443: __length_hint__() of bytearray itearator no longer return
-  negative integer for resized bytearray.
+- Issue #27443: __length_hint__() of bytearray iterators no longer return a
+  negative integer for a resized bytearray.
 
 - Issue #27007: The fromhex() class methods of bytes and bytearray subclasses
   now return an instance of corresponding subclass.
@@ -2891,7 +2891,7 @@ Library
   JoinableQueue was merged with Queue).
 
 - Issue #23908: os functions now reject paths with embedded null character
-  on Windows instead of silently truncate them.
+  on Windows instead of silently truncating them.
 
 - Issue #23728: binascii.crc_hqx() could return an integer outside of the range
   0-0xffff for empty data.
@@ -4144,6 +4144,12 @@ Library
 - Issue #20218: Added convenience methods read_text/write_text and read_bytes/
   write_bytes to pathlib.Path objects.
 
+- Issue #22396: On 32-bit AIX platform, don't expose os.posix_fadvise() nor
+  os.posix_fallocate() because their prototypes in system headers are wrong.
+
+- Issue #22517: When an io.BufferedRWPair object is deallocated, clear its
+  weakrefs.
+
 - Issue #22437: Number of capturing groups in regular expression is no longer
   limited by 100.
 
@@ -4221,7 +4227,7 @@ Library
 - Issue #22168: Prevent turtle AttributeError with non-default Canvas on OS X.
 
 - Issue #21147: sqlite3 now raises an exception if the request contains a null
-  character instead of truncate it.  Based on patch by Victor Stinner.
+  character instead of truncating it.  Based on patch by Victor Stinner.
 
 - Issue #13968: The glob module now supports recursive search in
   subdirectories using the "**" pattern.
@@ -5073,7 +5079,7 @@ Build
   an explicit runtime library dependency.
 
 - Issue #17861: Tools/scripts/generate_opcode_h.py automatically regenerates
-  Include/opcode.h from Lib/opcode.py if the later gets any change.
+  Include/opcode.h from Lib/opcode.py if the latter gets any change.
 
 - Issue #20644: OS X installer build support for documentation build changes
   in 3.4.1: assume externally supplied sphinx-build is available in /usr/bin.
