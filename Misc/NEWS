@@ -17,6 +17,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #23804: Fix SSL zero-length recv() calls to not block and not raise
+  an error about unclean EOF.
+
 - Issue #27466: Change time format returned by http.cookie.time2netscape,
   confirming the netscape cookie format and making it consistent with
   documentation.

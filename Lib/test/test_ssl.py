@@ -2622,19 +2622,12 @@ else:
                         # consume data
                         s.read()
 
-                data = b"data"
-
                 # read(-1, buffer) is supported, even though read(-1) is not
+                data = b"data"
                 s.send(data)
                 buffer = bytearray(len(data))
                 self.assertEqual(s.read(-1, buffer), len(data))
                 self.assertEqual(buffer, data)
-
-                # recv/read(0) should return no data
-                s.send(data)
-                self.assertEqual(s.recv(0), b"")
-                self.assertEqual(s.read(0), b"")
-                self.assertEqual(s.read(), data)
 
                 s.write(b"over\n")
 
@@ -2642,6 +2635,26 @@ else:
                 self.assertRaises(ValueError, s.read, -1)
 
                 s.close()
+
+        def test_recv_zero(self):
+            server = ThreadedEchoServer(CERTFILE)
+            server.__enter__()
+            self.addCleanup(server.__exit__, None, None)
+            s = socket.create_connection((HOST, server.port))
+            self.addCleanup(s.close)
+            s = ssl.wrap_socket(s, suppress_ragged_eofs=False)
+            self.addCleanup(s.close)
+
+            # recv/read(0) should return no data
+            s.send(b"data")
+            self.assertEqual(s.recv(0), b"")
+            self.assertEqual(s.read(0), b"")
+            self.assertEqual(s.read(), b"data")
+
+            # Should not block if the other end sends no data
+            s.setblocking(False)
+            self.assertEqual(s.recv(0), b"")
+            self.assertEqual(s.recv_into(bytearray()), 0)
 
         def test_handshake_timeout(self):
             # Issue #5103: SSL handshake must respect the socket timeout

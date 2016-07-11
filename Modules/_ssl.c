@@ -1702,6 +1702,10 @@ static PyObject *PySSL_SSLread(PySSLSocket *self, PyObject *args)
         dest = PyBytes_FromStringAndSize(NULL, len);
         if (dest == NULL)
             goto error;
+        if (len == 0) {
+            Py_XDECREF(sock);
+            return dest;
+        }
         mem = PyBytes_AS_STRING(dest);
     }
     else {
@@ -1713,6 +1717,10 @@ static PyObject *PySSL_SSLread(PySSLSocket *self, PyObject *args)
                 PyErr_SetString(PyExc_OverflowError,
                                 "maximum length can't fit in a C 'int'");
                 goto error;
+            }
+            if (len == 0) {
+                count = 0;
+                goto done;
             }
         }
     }
