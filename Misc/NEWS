@@ -3218,6 +3218,12 @@ Library
 - Issue #20218: Added convenience methods read_text/write_text and read_bytes/
   write_bytes to pathlib.Path objects.
 
+- Issue #22396: On 32-bit AIX platform, don't expose os.posix_fadvise() nor
+  os.posix_fallocate() because their prototypes in system headers are wrong.
+
+- Issue #22517: When a io.BufferedRWPair object is deallocated, clear its
+  weakrefs.
+
 - Issue #22437: Number of capturing groups in regular expression is no longer
   limited by 100.
 
