@@ -72,6 +72,9 @@ Library
 
 - Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
 
+- Issue #27392: Add loop.connect_accepted_socket().
+  Patch by Jim Fulton.
+
 IDLE
 ----
 
