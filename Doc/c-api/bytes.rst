@@ -158,7 +158,7 @@ called with a non-bytes parameter.
 
    If *length* is *NULL*, the bytes object
    may not contain embedded null bytes;
-   if it does, the function returns ``-1`` and a :exc:`TypeError` is raised.
+   if it does, the function returns ``-1`` and a :exc:`ValueError` is raised.
 
    The buffer refers to an internal buffer of *obj*, which includes an
    additional null byte at the end (not counted in *length*).  The data
@@ -166,6 +166,10 @@ called with a non-bytes parameter.
    ``PyBytes_FromStringAndSize(NULL, size)``.  It must not be deallocated.  If
    *obj* is not a bytes object at all, :c:func:`PyBytes_AsStringAndSize`
    returns ``-1`` and raises :exc:`TypeError`.
+
+   .. versionchanged:: 3.5
+      Previously, :exc:`TypeError` was raised when embedded null bytes were
+      encountered in the bytes object.
 
 
 .. c:function:: void PyBytes_Concat(PyObject **bytes, PyObject *newpart)
