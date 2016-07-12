@@ -707,8 +707,6 @@ class BaseEventLoop(events.AbstractEventLoop):
             raise ValueError(
                 'host and port was not specified and no sock specified')
 
-        sock.setblocking(False)
-
         transport, protocol = yield from self._create_connection_transport(
             sock, protocol_factory, ssl, server_hostname)
         if self._debug:
@@ -721,14 +719,17 @@ class BaseEventLoop(events.AbstractEventLoop):
 
     @coroutine
     def _create_connection_transport(self, sock, protocol_factory, ssl,
-                                     server_hostname):
+                                     server_hostname, server_side=False):
+
+        sock.setblocking(False)
+
         protocol = protocol_factory()
         waiter = self.create_future()
         if ssl:
             sslcontext = None if isinstance(ssl, bool) else ssl
             transport = self._make_ssl_transport(
                 sock, protocol, sslcontext, waiter,
-                server_side=False, server_hostname=server_hostname)
+                server_side=server_side, server_hostname=server_hostname)
         else:
             transport = self._make_socket_transport(sock, protocol, waiter)
 
@@ -978,6 +979,25 @@ class BaseEventLoop(events.AbstractEventLoop):
         if self._debug:
             logger.info("%r is serving", server)
         return server
+
+    @coroutine
+    def connect_accepted_socket(self, protocol_factory, sock, *, ssl=None):
+        """Handle an accepted connection.
+
+        This is used by servers that accept connections outside of
+        asyncio but that use asyncio to handle connections.
+
+        This method is a coroutine.  When completed, the coroutine
+        returns a (transport, protocol) pair.
+        """
+        transport, protocol = yield from self._create_connection_transport(
+            sock, protocol_factory, ssl, '', server_side=True)
+        if self._debug:
+            # Get the socket from the transport because SSL transport closes
+            # the old socket and creates a new SSL socket
+            sock = transport.get_extra_info('socket')
+            logger.debug("%r handled: (%r, %r)", sock, transport, protocol)
+        return transport, protocol
 
     @coroutine
     def connect_read_pipe(self, protocol_factory, pipe):
