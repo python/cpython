@@ -59,8 +59,8 @@ Unless otherwise stated, buffers are not NUL-terminated.
    Convert a Unicode object to a C pointer to a character string.
    A pointer to an existing string is stored in the character pointer
    variable whose address you pass.  The C string is NUL-terminated.
-   The Python string must not contain embedded NUL bytes; if it does,
-   a :exc:`TypeError` exception is raised. Unicode objects are converted
+   The Python string must not contain embedded null characters; if it does,
+   a :exc:`ValueError` exception is raised. Unicode objects are converted
    to C strings using ``'utf-8'`` encoding. If this conversion fails, a
    :exc:`UnicodeError` is raised.
 
@@ -70,6 +70,10 @@ Unless otherwise stated, buffers are not NUL-terminated.
       filesystem paths and convert them to C character strings, it is
       preferable to use the ``O&`` format with :c:func:`PyUnicode_FSConverter`
       as *converter*.
+
+   .. versionchanged:: 3.5
+      Previously, :exc:`TypeError` was raised when embedded null characters
+      were encountered in the Python string.
 
 ``s*`` (:class:`str` or :term:`bytes-like object`) [Py_buffer]
    This format accepts Unicode objects as well as bytes-like objects.
@@ -99,8 +103,12 @@ Unless otherwise stated, buffers are not NUL-terminated.
 ``y`` (read-only :term:`bytes-like object`) [const char \*]
    This format converts a bytes-like object to a C pointer to a character
    string; it does not accept Unicode objects.  The bytes buffer must not
-   contain embedded NUL bytes; if it does, a :exc:`TypeError`
+   contain embedded null bytes; if it does, a :exc:`ValueError`
    exception is raised.
+
+   .. versionchanged:: 3.5
+      Previously, :exc:`TypeError` was raised when embedded null bytes were
+      encountered in the bytes buffer.
 
 ``y*`` (:term:`bytes-like object`) [Py_buffer]
    This variant on ``s*`` doesn't accept Unicode objects, only
@@ -127,13 +135,17 @@ Unless otherwise stated, buffers are not NUL-terminated.
    pointer variable, which will be filled with the pointer to an existing
    Unicode buffer.  Please note that the width of a :c:type:`Py_UNICODE`
    character depends on compilation options (it is either 16 or 32 bits).
-   The Python string must not contain embedded NUL characters; if it does,
-   a :exc:`TypeError` exception is raised.
+   The Python string must not contain embedded null characters; if it does,
+   a :exc:`ValueError` exception is raised.
 
    .. note::
       Since ``u`` doesn't give you back the length of the string, and it
       may contain embedded NUL characters, it is recommended to use ``u#``
       or ``U`` instead.
+
+   .. versionchanged:: 3.5
+      Previously, :exc:`TypeError` was raised when embedded null characters
+      were encountered in the Python string.
 
 ``u#`` (:class:`str`) [Py_UNICODE \*, int]
    This variant on ``u`` stores into two C variables, the first one a pointer to a
