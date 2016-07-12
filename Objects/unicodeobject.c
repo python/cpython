@@ -6378,6 +6378,12 @@ PyObject *PyUnicode_Concat(PyObject *left,
         return (PyObject *)v;
     }
 
+    if (u->length > PY_SSIZE_T_MAX - v->length) {
+        PyErr_SetString(PyExc_OverflowError,
+                        "strings are too large to concat");
+        goto onError;
+    }
+
     /* Concat the two Unicode strings */
     w = _PyUnicode_New(u->length + v->length);
     if (w == NULL)
@@ -7223,17 +7229,17 @@ unicode_repeat(PyUnicodeObject *str, Py_ssize_t len)
         return (PyObject*) str;
     }
 
-    /* ensure # of chars needed doesn't overflow int and # of bytes
+    /* ensure # of chars needed doesn't overflow Py_ssize_t and # of bytes
      * needed doesn't overflow size_t
      */
-    nchars = len * str->length;
-    if (len && nchars / len != str->length) {
+    if (len && str->length > PY_SSIZE_T_MAX / len) {
         PyErr_SetString(PyExc_OverflowError,
                         "repeated string is too long");
         return NULL;
     }
-    nbytes = (nchars + 1) * sizeof(Py_UNICODE);
-    if (nbytes / sizeof(Py_UNICODE) != (size_t)(nchars + 1)) {
+    nchars = len * str->length;
+    nbytes = ((size_t)nchars + 1u) * sizeof(Py_UNICODE);
+    if (nbytes / sizeof(Py_UNICODE) != ((size_t)nchars + 1u)) {
         PyErr_SetString(PyExc_OverflowError,
                         "repeated string is too long");
         return NULL;

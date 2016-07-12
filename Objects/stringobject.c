@@ -1040,7 +1040,6 @@ string_concat(register PyStringObject *a, register PyObject *bb)
         Py_INCREF(a);
         return (PyObject *)a;
     }
-    size = Py_SIZE(a) + Py_SIZE(b);
     /* Check that string sizes are not negative, to prevent an
        overflow in cases where we are passed incorrectly-created
        strings with negative lengths (due to a bug in other code).
@@ -1051,6 +1050,7 @@ string_concat(register PyStringObject *a, register PyObject *bb)
                         "strings are too large to concat");
         return NULL;
     }
+    size = Py_SIZE(a) + Py_SIZE(b);
 
     /* Inline PyObject_NewVar */
     if (size > PY_SSIZE_T_MAX - PyStringObject_SIZE) {
@@ -1081,15 +1081,15 @@ string_repeat(register PyStringObject *a, register Py_ssize_t n)
     size_t nbytes;
     if (n < 0)
         n = 0;
-    /* watch out for overflows:  the size can overflow int,
+    /* watch out for overflows:  the size can overflow Py_ssize_t,
      * and the # of bytes needed can overflow size_t
      */
-    size = Py_SIZE(a) * n;
-    if (n && size / n != Py_SIZE(a)) {
+    if (n && Py_SIZE(a) > PY_SSIZE_T_MAX / n) {
         PyErr_SetString(PyExc_OverflowError,
             "repeated string is too long");
         return NULL;
     }
+    size = Py_SIZE(a) * n;
     if (size == Py_SIZE(a) && PyString_CheckExact(a)) {
         Py_INCREF(a);
         return (PyObject *)a;
