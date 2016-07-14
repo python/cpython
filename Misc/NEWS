@@ -90,6 +90,12 @@ C API
 - Issue #26754: PyUnicode_FSDecoder() accepted a filename argument encoded as
   an iterable of integers. Now only strings and bytes-like objects are accepted.
 
+Tests
+-----
+
+- Issue #27369: In test_pyexpat, avoid testing an error message detail that
+  changed in Expat 2.2.0.
+
 Tools/Demos
 -----------
 
