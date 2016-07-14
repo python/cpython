@@ -848,11 +848,12 @@ bytearray(b'\\x00\\x01\\x02\\x03'
 
     def test_default_dict(self):
         d = collections.defaultdict(int)
-        self.assertRegex(pprint.pformat(d, width=1), r"defaultdict\(<class 'int' at 0x.+>, {}\)")
+        self.assertEqual(pprint.pformat(d, width=1), "defaultdict(<class 'int'>, {})")
         words = 'the quick brown fox jumped over a lazy dog'.split()
         d = collections.defaultdict(int, zip(words, itertools.count()))
-        self.assertRegex(pprint.pformat(d),
-r"""defaultdict\(<class 'int' at 0x.+>,
+        self.assertEqual(pprint.pformat(d),
+"""\
+defaultdict(<class 'int'>,
             {'a': 6,
              'brown': 2,
              'dog': 8,
@@ -861,7 +862,7 @@ r"""defaultdict\(<class 'int' at 0x.+>,
              'lazy': 7,
              'over': 5,
              'quick': 1,
-             'the': 0}\)""")
+             'the': 0})""")
 
     def test_counter(self):
         d = collections.Counter()
