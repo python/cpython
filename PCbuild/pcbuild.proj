@@ -33,8 +33,6 @@
     <Projects Include="pythoncore.vcxproj">
       <BuildInParallel>false</BuildInParallel>
     </Projects>
-    <!-- python[w].exe -->
-    <Projects Include="python.vcxproj;pythonw.vcxproj" />
     <!-- python3.dll -->
     <Projects Include="python3dll.vcxproj" />
     <!-- py[w].exe -->
@@ -58,12 +56,18 @@
       <!-- Disable parallel build for test modules -->
       <BuildInParallel>false</BuildInParallel>
     </Projects>
+    
+    <!-- python[w].exe -->
+    <Projects Include="python.vcxproj;pythonw.vcxproj">
+      <BuildInParallel>false</BuildInParallel>
+    </Projects>
   </ItemGroup>
 
   <Target Name="Build">
     <MSBuild Projects="@(Projects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="true"
              Targets="%(BuildTarget)" />
   </Target>
 
