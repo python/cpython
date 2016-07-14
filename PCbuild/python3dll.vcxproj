@@ -58,6 +58,7 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <_Machine>X86</_Machine>
     <_Machine Condition="$(Platform) == 'x64'">X64</_Machine>
+    <ExtensionsToDeleteOnClean>$(ExtensionsToDeleteOnClean);$(IntDir)python3_d.def;$(IntDir)python3stub.def</ExtensionsToDeleteOnClean>
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
@@ -132,10 +133,5 @@
     </ItemGroup>
     <MakeDir Directories="$(IntDir)" />
     <WriteLinesToFile File="$(IntDir)python3stub.def" Lines="@(_Lines)" Overwrite="true" />
-  </Target>
-  <Target Name="_CleanStubDef" BeforeTargets="CoreClean">
-    <ItemGroup>
-      <Clean Include="$(IntDir)python3stub.def" />
-    </ItemGroup>
   </Target>
 </Project>
