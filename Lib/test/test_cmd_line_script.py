@@ -127,10 +127,7 @@ class CmdLineTest(unittest.TestCase):
             print(printed_package)
             print(printed_argv0)
             print(printed_cwd)
-        expected = printed_loader.encode('utf-8')
-        idx = expected.find(b"at 0x")
-        expected = expected[:idx]
-        self.assertIn(expected, data)
+        self.assertIn(printed_loader.encode('utf-8'), data)
         self.assertIn(printed_file.encode('utf-8'), data)
         self.assertIn(printed_package.encode('utf-8'), data)
         self.assertIn(printed_argv0.encode('utf-8'), data)
@@ -161,8 +158,6 @@ class CmdLineTest(unittest.TestCase):
     def test_dash_c_loader(self):
         rc, out, err = assert_python_ok("-c", "print(__loader__)")
         expected = repr(importlib.machinery.BuiltinImporter).encode("utf-8")
-        idx = expected.find(b"at 0x")
-        expected = expected[:idx]
         self.assertIn(expected, out)
 
     def test_stdin_loader(self):
@@ -176,8 +171,6 @@ class CmdLineTest(unittest.TestCase):
         finally:
             out = kill_python(p)
         expected = repr(importlib.machinery.BuiltinImporter).encode("utf-8")
-        idx = expected.find(b"at 0x")
-        expected = expected[:idx]
         self.assertIn(expected, out)
 
     @contextlib.contextmanager
