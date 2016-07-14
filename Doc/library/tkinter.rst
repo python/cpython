@@ -199,19 +199,19 @@ A Simple Hello World Program
 
     class Application(tk.Frame):
         def __init__(self, master=None):
-            tk.Frame.__init__(self, master)
+            super().__init__(master)
             self.pack()
-            self.createWidgets()
+            self.create_widgets()
 
-        def createWidgets(self):
+        def create_widgets(self):
             self.hi_there = tk.Button(self)
             self.hi_there["text"] = "Hello World\n(click me)"
             self.hi_there["command"] = self.say_hi
             self.hi_there.pack(side="top")
 
-            self.QUIT = tk.Button(self, text="QUIT", fg="red",
+            self.quit = tk.Button(self, text="QUIT", fg="red",
                                   command=root.destroy)
-            self.QUIT.pack(side="bottom")
+            self.quit.pack(side="bottom")
 
         def say_hi(self):
             print("hi there, everyone!")
@@ -536,7 +536,7 @@ For example::
 
    class App(Frame):
        def __init__(self, master=None):
-           Frame.__init__(self, master)
+           super().__init__(master)
            self.pack()
 
            self.entrythingy = Entry()
@@ -581,12 +581,12 @@ part of the implementation, and not an interface to Tk functionality.
 
 Here are some examples of typical usage::
 
-   from tkinter import *
-   class App(Frame):
-       def __init__(self, master=None):
-           Frame.__init__(self, master)
-           self.pack()
+   import tkinter as tk
 
+   class App(tk.Frame):
+       def __init__(self, master=None):
+           super().__init__(master)
+           self.pack()
 
    # create the application
    myapp = App()
@@ -708,13 +708,13 @@ add
 
 For example::
 
-   def turnRed(self, event):
+   def turn_red(self, event):
        event.widget["activeforeground"] = "red"
 
-   self.button.bind("<Enter>", self.turnRed)
+   self.button.bind("<Enter>", self.turn_red)
 
 Notice how the widget field of the event is being accessed in the
-:meth:`turnRed` callback.  This field contains the widget that caught the X
+``turn_red()`` callback.  This field contains the widget that caught the X
 event.  The following table lists the other event fields you can access, and how
 they are denoted in Tk, which can be useful when referring to the Tk man pages.
 
