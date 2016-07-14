@@ -610,11 +610,9 @@ class MalformedInputText(unittest.TestCase):
     def test2(self):
         xml = "<?xml version\xc2\x85='1.0'?>\r\n"
         parser = expat.ParserCreate()
-        try:
+        err_pattern = r'XML declaration not well-formed: line 1, column \d+'
+        with self.assertRaisesRegexp(expat.ExpatError, err_pattern):
             parser.Parse(xml, True)
-            self.fail()
-        except expat.ExpatError as e:
-            self.assertEqual(str(e), 'XML declaration not well-formed: line 1, column 14')
 
 class ForeignDTDTests(unittest.TestCase):
     """

@@ -62,6 +62,12 @@ Documentation
   resulting links to use lowercase.  Patch by Sean Rodman, test by Kaushik
   Nadikuditi.
 
+Tests
+-----
+
+- Issue #27369: In test_pyexpat, avoid testing an error message detail that
+  changed in Expat 2.2.0.
+
 What's New in Python 2.7.12?
 ============================
 
