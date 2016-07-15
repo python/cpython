@@ -3122,7 +3122,10 @@ class TestPEP519(unittest.TestCase):
         def __init__(self, path=''):
             self.path = path
         def __fspath__(self):
-            return self.path
+            if isinstance(self.path, BaseException):
+                raise self.path
+            else:
+                return self.path
 
     def test_return_bytes(self):
         for b in b'hello', b'goodbye', b'some/path/and/file':
@@ -3145,18 +3148,25 @@ class TestPEP519(unittest.TestCase):
         self.assertTrue(issubclass(self.PathLike, os.PathLike))
         self.assertTrue(isinstance(self.PathLike(), os.PathLike))
 
-        with self.assertRaises(TypeError):
-            self.fspath(self.PathLike(42))
-
     def test_garbage_in_exception_out(self):
         vapor = type('blah', (), {})
         for o in int, type, os, vapor():
             self.assertRaises(TypeError, self.fspath, o)
 
     def test_argument_required(self):
-        with self.assertRaises(TypeError):
-            self.fspath()
+        self.assertRaises(TypeError, self.fspath)
 
+    def test_bad_pathlike(self):
+        # __fspath__ returns a value other than str or bytes.
+        self.assertRaises(TypeError, self.fspath, self.PathLike(42))
+        # __fspath__ attribute that is not callable.
+        c = type('foo', (), {})
+        c.__fspath__ = 1
+        self.assertRaises(TypeError, self.fspath, c())
+        # __fspath__ raises an exception.
+        c.__fspath__ = lambda self: self.__not_exist
+        self.assertRaises(ZeroDivisionError, self.fspath,
+                          self.PathLike(ZeroDivisionError))
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.
