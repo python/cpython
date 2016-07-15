@@ -334,7 +334,9 @@ isn't, there should be a syntax error.
      ...
    SyntaxError: 'break' outside loop
 
-This should probably raise a better error than a SystemError (or none at all).
+This raises a SyntaxError, it used to raise a SystemError.
+Context for this change can be found on issue #27514
+
 In 2.5 there was a missing exception and an assert was triggered in a debug
 build.  The number of blocks must be greater than CO_MAXBLOCKS.  SF #1565514
 
@@ -362,7 +364,7 @@ build.  The number of blocks must be greater than CO_MAXBLOCKS.  SF #1565514
    ...                      break
    Traceback (most recent call last):
      ...
-   SystemError: too many statically nested blocks
+   SyntaxError: too many statically nested blocks
 
 Misuse of the nonlocal statement can lead to a few unique syntax errors.
 
