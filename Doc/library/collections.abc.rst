@@ -56,6 +56,9 @@ ABC                        Inherits from          Abstract Methods        Mixin 
                                                   ``__len__``,
                                                   ``insert``
 
+:class:`ByteString`        :class:`Sequence`      ``__getitem__``,        Inherited :class:`Sequence` methods
+                                                  ``__len__``
+
 :class:`Set`               :class:`Sized`,        ``__contains__``,       ``__le__``, ``__lt__``, ``__eq__``, ``__ne__``,
                            :class:`Iterable`,     ``__iter__``,           ``__gt__``, ``__ge__``, ``__and__``, ``__or__``,
                            :class:`Container`     ``__len__``             ``__sub__``, ``__xor__``, and ``isdisjoint``
@@ -126,6 +129,7 @@ ABC                        Inherits from          Abstract Methods        Mixin 
 
 .. class:: Sequence
            MutableSequence
+           ByteString
 
    ABCs for read-only and mutable :term:`sequences <sequence>`.
 
@@ -141,7 +145,6 @@ ABC                        Inherits from          Abstract Methods        Mixin 
    .. versionchanged:: 3.5
       The index() method added support for *stop* and *start*
       arguments.
-
 
 .. class:: Set
            MutableSet
