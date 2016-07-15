@@ -12319,6 +12319,10 @@ PyOS_FSPath(PyObject *path)
 
     path_repr = PyObject_CallFunctionObjArgs(func, NULL);
     Py_DECREF(func);
+    if (NULL == path_repr) {
+        return NULL;
+    }
+
     if (!(PyUnicode_Check(path_repr) || PyBytes_Check(path_repr))) {
         PyErr_Format(PyExc_TypeError,
                      "expected %.200s.__fspath__() to return str or bytes, "
