@@ -266,8 +266,8 @@ def find_module(name, path=None):
         raise TypeError("'name' must be a str, not {}".format(type(name)))
     elif not isinstance(path, (type(None), list)):
         # Backwards-compatibility
-        raise RuntimeError("'list' must be None or a list, "
-                           "not {}".format(type(name)))
+        raise RuntimeError("'path' must be None or a list, "
+                           "not {}".format(type(path)))
 
     if path is None:
         if is_builtin(name):
