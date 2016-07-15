@@ -89,4 +89,6 @@ nmake /nologo -f makefile.vc MACHINE=$(TclMachine) $(DebugFlags) $(TclShortVersi
     <RemoveDir Directories="$(OutDir)" />
     <RemoveDir Directories="$(IntDir)" />
   </Target>
+  
+  <Target Name="ResolveAssemblyReferences" />
 </Project>
