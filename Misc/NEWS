@@ -17,6 +17,9 @@ Core and Builtins
   unicode paths with embedded null character on Windows instead of silently
   truncating them.
 
+- Issue #27514: Make having too many statically nested blocks a SyntaxError
+  instead of SystemError.
+
 Library
 -------
 
