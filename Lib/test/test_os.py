@@ -3164,9 +3164,8 @@ class TestPEP519(unittest.TestCase):
         c.__fspath__ = 1
         self.assertRaises(TypeError, self.fspath, c())
         # __fspath__ raises an exception.
-        c.__fspath__ = lambda self: self.__not_exist
         self.assertRaises(ZeroDivisionError, self.fspath,
-                          self.PathLike(ZeroDivisionError))
+                          self.PathLike(ZeroDivisionError()))
 
 # Only test if the C version is provided, otherwise TestPEP519 already tested
 # the pure Python implementation.
