@@ -25,7 +25,6 @@ import sys
 import threading
 import time
 import tokenize
-import io
 
 import linecache
 from code import InteractiveInterpreter
@@ -37,6 +36,7 @@ from idlelib.colorizer import ColorDelegator
 from idlelib.undo import UndoDelegator
 from idlelib.outwin import OutputWindow
 from idlelib.config import idleConf
+from idlelib.run import idle_formatwarning, PseudoInputFile, PseudoOutputFile
 from idlelib import rpc
 from idlelib import debugger
 from idlelib import debugger_r
@@ -51,19 +51,6 @@ PORT = 0  # someday pass in host, port for remote debug capability
 # checking user's code.
 warning_stream = sys.__stderr__  # None, at least on Windows, if no console.
 import warnings
-
-def idle_formatwarning(message, category, filename, lineno, line=None):
-    """Format warnings the IDLE way."""
-
-    s = "\nWarning (from warnings module):\n"
-    s += '  File \"%s\", line %s\n' % (filename, lineno)
-    if line is None:
-        line = linecache.getline(filename, lineno)
-    line = line.strip()
-    if line:
-        s += "    %s\n" % line
-    s += "%s: %s\n" % (category.__name__, message)
-    return s
 
 def idle_showwarning(
         message, category, filename, lineno, file=None, line=None):
@@ -1315,92 +1302,6 @@ class PyShell(OutputWindow):
         if self.text.compare('insert','<','iomark'):
             return 'disabled'
         return super().rmenu_check_paste()
-
-class PseudoFile(io.TextIOBase):
-
-    def __init__(self, shell, tags, encoding=None):
-        self.shell = shell
-        self.tags = tags
-        self._encoding = encoding
-
-    @property
-    def encoding(self):
-        return self._encoding
-
-    @property
-    def name(self):
-        return '<%s>' % self.tags
-
-    def isatty(self):
-        return True
-
-
-class PseudoOutputFile(PseudoFile):
-
-    def writable(self):
-        return True
-
-    def write(self, s):
-        if self.closed:
-            raise ValueError("write to closed file")
-        if type(s) is not str:
-            if not isinstance(s, str):
-                raise TypeError('must be str, not ' + type(s).__name__)
-            # See issue #19481
-            s = str.__str__(s)
-        return self.shell.write(s, self.tags)
-
-
-class PseudoInputFile(PseudoFile):
-
-    def __init__(self, shell, tags, encoding=None):
-        PseudoFile.__init__(self, shell, tags, encoding)
-        self._line_buffer = ''
-
-    def readable(self):
-        return True
-
-    def read(self, size=-1):
-        if self.closed:
-            raise ValueError("read from closed file")
-        if size is None:
-            size = -1
-        elif not isinstance(size, int):
-            raise TypeError('must be int, not ' + type(size).__name__)
-        result = self._line_buffer
-        self._line_buffer = ''
-        if size < 0:
-            while True:
-                line = self.shell.readline()
-                if not line: break
-                result += line
-        else:
-            while len(result) < size:
-                line = self.shell.readline()
-                if not line: break
-                result += line
-            self._line_buffer = result[size:]
-            result = result[:size]
-        return result
-
-    def readline(self, size=-1):
-        if self.closed:
-            raise ValueError("read from closed file")
-        if size is None:
-            size = -1
-        elif not isinstance(size, int):
-            raise TypeError('must be int, not ' + type(size).__name__)
-        line = self._line_buffer or self.shell.readline()
-        if size < 0:
-            size = len(line)
-        eol = line.find('\n', 0, size)
-        if eol >= 0:
-            size = eol + 1
-        self._line_buffer = line[size:]
-        return line[:size]
-
-    def close(self):
-        self.shell.close()
 
 
 def fix_x11_paste(root):

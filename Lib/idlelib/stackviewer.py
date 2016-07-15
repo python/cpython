@@ -6,7 +6,6 @@ import tkinter as tk
 
 from idlelib.tree import TreeNode, TreeItem, ScrolledCanvas
 from idlelib.debugobj import ObjectTreeItem, make_objecttreeitem
-from idlelib.pyshell import PyShellFileList
 
 def StackBrowser(root, flist=None, tb=None, top=None):
     if top is None:
@@ -121,6 +120,7 @@ class VariablesTreeItem(ObjectTreeItem):
         return sublist
 
 def _stack_viewer(parent):  # htest #
+    from idlelib.pyshell import PyShellFileList
     top = tk.Toplevel(parent)
     top.title("Test StackViewer")
     x, y = map(int, parent.geometry().split('+')[1:])
