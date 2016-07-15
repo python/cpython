@@ -88,4 +88,6 @@ nmake -f makefile.vc MACHINE=$(TclMachine) OPTS=$(TclOpts) $(TclDirs) $(DebugFla
     <Delete Files="$(TargetPath);$(BuildPath)$(tclDLLName)" />
     <RemoveDir Directories="$(IntDir)" />
   </Target>
+  
+  <Target Name="ResolveAssemblyReferences" />
 </Project>

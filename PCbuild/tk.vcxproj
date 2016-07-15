@@ -92,4 +92,6 @@ nmake /nologo -f makefile.vc RC=rc MACHINE=$(TclMachine) OPTS=$(TkOpts) $(TkDirs
     <Delete Files="$(TargetPath);$(BuildPath)$(tkDLLName)" />
     <RemoveDir Directories="$(IntDir)" />
   </Target>
+  
+  <Target Name="ResolveAssemblyReferences" />
 </Project>
