@@ -22,6 +22,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26844: Fix error message for imp.find_module() to refer to 'path'
+  instead of 'name'. Patch by Lev Maximov.
+
 - Issue #23804: Fix SSL zero-length recv() calls to not block and not raise
   an error about unclean EOF.
 
