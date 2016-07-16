@@ -11,7 +11,7 @@ import unittest
 
 
 @util.case_insensitive_tests
-class CaseSensitivityTest:
+class CaseSensitivityTest(util.CASEOKTestBase):
 
     """PEP 235 dictates that on case-preserving, case-insensitive file systems
     that imports are case-sensitive unless the PYTHONCASEOK environment
@@ -39,17 +39,10 @@ class CaseSensitivityTest:
             insensitive_finder = self.finder(insensitive_path)
             return self.find(sensitive_finder), self.find(insensitive_finder)
 
-    def env_changed(self, *, should_exist):
-        possibilities = b'PYTHONCASEOK', 'PYTHONCASEOK'
-        if any(x in self.importlib._bootstrap_external._os.environ
-                   for x in possibilities) == should_exist:
-            self.skipTest('os.environ changes not reflected in '
-                              '_os.environ')
-
     def test_sensitive(self):
         with test_support.EnvironmentVarGuard() as env:
             env.unset('PYTHONCASEOK')
-            self.env_changed(should_exist=False)
+            self.caseok_env_changed(should_exist=False)
             sensitive, insensitive = self.sensitivity_test()
             self.assertIsNotNone(sensitive)
             self.assertIn(self.name, sensitive.get_filename(self.name))
@@ -58,7 +51,7 @@ class CaseSensitivityTest:
     def test_insensitive(self):
         with test_support.EnvironmentVarGuard() as env:
             env.set('PYTHONCASEOK', '1')
-            self.env_changed(should_exist=True)
+            self.caseok_env_changed(should_exist=True)
             sensitive, insensitive = self.sensitivity_test()
             self.assertIsNotNone(sensitive)
             self.assertIn(self.name, sensitive.get_filename(self.name))
