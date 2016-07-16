@@ -32,8 +32,13 @@
     <PySourcePath Condition="!HasTrailingSlash($(PySourcePath))">$(PySourcePath)\</PySourcePath>
     
     <!-- Directory where build outputs are put -->
-    <BuildPath Condition="'$(PyBuildPath)' == ''">$(PySourcePath)PCBuild\$(ArchName)\</BuildPath>
-    <BuildPath Condition="'$(PyBuildPath)' != ''">$(PyBuildPath)</BuildPath>
+    <BuildPath32 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCBuild\win32\</BuildPath32>
+    <BuildPath32 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\win32\</BuildPath32>
+    <BuildPath64 Condition="'$(Py_OutDir)' == ''">$(PySourcePath)PCBuild\amd64\</BuildPath64>
+    <BuildPath64 Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)\amd64\</BuildPath64>
+    <BuildPath Condition="'$(ArchName)' == 'win32'">$(BuildPath32)</BuildPath>
+    <BuildPath Condition="'$(ArchName)' == 'amd64'">$(BuildPath64)</BuildPath>
+    <BuildPath Condition="'$(BuildPath)' == ''">$(PySourcePath)PCBuild\$(ArchName)\</BuildPath>
     <BuildPath Condition="!HasTrailingSlash($(BuildPath))">$(BuildPath)\</BuildPath>
     
     <!-- Directories of external projects. tcltk is handled in tcltk.props -->

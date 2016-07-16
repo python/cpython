@@ -47,7 +47,7 @@
     </ItemGroup>
 
     <PropertyGroup>
-        <IntermediateOutputPath>$(PySourcePath)PCBuild\obj\$(Configuration)_$(Platform)_Setup\$(OutputName)</IntermediateOutputPath>
+        <IntermediateOutputPath>$(Py_IntDir)\$(Configuration)_$(Platform)_Setup\$(OutputName)</IntermediateOutputPath>
         <IntermediateOutputPath Condition="'$(OutputSuffix)' != ''">$(IntermediateOutputPath)_$(OutputSuffix)</IntermediateOutputPath>
         <OutputPath Condition="'$(OutputPath)' == ''">$(BuildPath)</OutputPath>
         <OutputPath Condition="!HasTrailingSlash($(OutputPath))">$(OutputPath)\</OutputPath>
@@ -123,6 +123,12 @@
         </LinkerBindInputPaths>
         <LinkerBindInputPaths Include="$(VS140COMNTOOLS)\..\..\VC\redist\$(Platform)\Microsoft.VC140.CRT">
             <BindName>redist</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPath32)">
+            <BindName>build32</BindName>
+        </LinkerBindInputPaths>
+        <LinkerBindInputPaths Include="$(BuildPath64)">
+            <BindName>build64</BindName>
         </LinkerBindInputPaths>
     </ItemGroup>
 
