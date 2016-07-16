@@ -145,7 +145,7 @@ class FeedParser:
 
         """
         self.policy = policy
-        self._factory_kwds = lambda: {'policy': self.policy}
+        self._old_style_factory = False
         if _factory is None:
             # What this should be:
             #self._factory = policy.default_message_factory
@@ -160,7 +160,7 @@ class FeedParser:
                 _factory(policy=self.policy)
             except TypeError:
                 # Assume this is an old-style factory
-                self._factory_kwds = lambda: {}
+                self._old_style_factory = True
         self._input = BufferedSubFile()
         self._msgstack = []
         self._parse = self._parsegen().__next__
@@ -197,7 +197,10 @@ class FeedParser:
         return root
 
     def _new_message(self):
-        msg = self._factory(**self._factory_kwds())
+        if self._old_style_factory:
+            msg = self._factory()
+        else:
+            msg = self._factory(policy=self.policy)
         if self._cur and self._cur.get_content_type() == 'multipart/digest':
             msg.set_default_type('message/rfc822')
         if self._msgstack:
