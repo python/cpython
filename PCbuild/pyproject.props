@@ -4,10 +4,8 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <OutDir>$(BuildPath)</OutDir>
-    <OutDir Condition="'$(Py_OutDir)' != ''">$(Py_OutDir)</OutDir>
     <OutDir Condition="!HasTrailingSlash($(OutDir))">$(OutDir)\</OutDir>
-    <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(SolutionDir)obj\</Py_IntDir>
-    <IntDir Condition="!HasTrailingSlash($(IntDir))">$(IntDir)\</IntDir>
+    <Py_IntDir Condition="'$(PyIntDir)' == ''">$(SolutionDir)obj\</Py_IntDir>
     <IntDir>$(Py_IntDir)\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir Condition="$(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate'">$(Py_IntDir)\$(ArchName)_PGO\$(ProjectName)\</IntDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
@@ -29,7 +27,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)PC;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PySourcePath)Include;$(PySourcePath)PC;$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;$(_PlatformPreprocessorDefinition)$(_DebugPreprocessorDefinition)$(_PydPreprocessorDefinition)%(PreprocessorDefinitions)</PreprocessorDefinitions>
       
       <Optimization>MaxSpeed</Optimization>
@@ -85,9 +83,8 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
       <TargetEnvironment Condition="'$(Platform)' == 'x64'">X64</TargetEnvironment>
-      <TypeLibraryName>$(OutDir)wininst.tlb</TypeLibraryName>
-      <HeaderFileName>
-      </HeaderFileName>
+      <TypeLibraryName>$(OutDir)%(Filename).tlb</TypeLibraryName>
+      <HeaderFileName>$(IntDir)%(Filename)_h.h</HeaderFileName>
     </Midl>
   </ItemDefinitionGroup>
 
