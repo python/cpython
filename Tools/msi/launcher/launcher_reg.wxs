@@ -10,14 +10,14 @@
                         <Verb Id="open" TargetFile="py.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
                 </ProgId>
-                <RegistryValue Root="HKCR" Key="Python.File\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
+                <RegistryValue Root="HKCR" Key="Python.File\shellex\DropHandler" Value="{BEA218D2-6950-497B-9434-61683EC065FE}" Type="string" />
                 
                 <ProgId Id="Python.NoConFile" Description="!(loc.PythonNoConFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
                     <Extension Id="pyw" ContentType="text/plain">
                         <Verb Id="open" TargetFile="pyw.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
                 </ProgId>
-                <RegistryValue Root="HKCR" Key="Python.NoConFile\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
+                <RegistryValue Root="HKCR" Key="Python.NoConFile\shellex\DropHandler" Value="{BEA218D2-6950-497B-9434-61683EC065FE}" Type="string" />
                 
                 <ProgId Id="Python.CompiledFile" Description="!(loc.PythonCompiledFileDescription)" Advertise="no" Icon="py.exe" IconIndex="2">
                     <Extension Id="pyc">
@@ -25,21 +25,21 @@
                     </Extension>
                     <Extension Id="pyo" />
                 </ProgId>
-                <RegistryValue Root="HKCR" Key="Python.CompiledFile\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
+                <RegistryValue Root="HKCR" Key="Python.CompiledFile\shellex\DropHandler" Value="{BEA218D2-6950-497B-9434-61683EC065FE}" Type="string" />
 
                 <ProgId Id="Python.ArchiveFile" Description="!(loc.PythonArchiveFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
                     <Extension Id="pyz" ContentType="application/x-zip-compressed">
                         <Verb Id="open" TargetFile="py.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
                 </ProgId>
-                <RegistryValue Root="HKCR" Key="Python.ArchiveFile\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
+                <RegistryValue Root="HKCR" Key="Python.ArchiveFile\shellex\DropHandler" Value="{BEA218D2-6950-497B-9434-61683EC065FE}" Type="string" />
                 
                 <ProgId Id="Python.NoConArchiveFile" Description="!(loc.PythonNoConArchiveFileDescription)" Advertise="no" Icon="py.exe" IconIndex="1">
                     <Extension Id="pyzw" ContentType="application/x-zip-compressed">
                         <Verb Id="open" TargetFile="pyw.exe" Argument="&quot;%L&quot; %*" />
                     </Extension>
                 </ProgId>
-                <RegistryValue Root="HKCR" Key="Python.NoConArchiveFile\shellex\DropHandler" Value="{60254CA5-953B-11CF-8C96-00AA00B8708C}" Type="string" />
+                <RegistryValue Root="HKCR" Key="Python.NoConArchiveFile\shellex\DropHandler" Value="{BEA218D2-6950-497B-9434-61683EC065FE}" Type="string" />
             </Component>
         </ComponentGroup>
     </Fragment>
