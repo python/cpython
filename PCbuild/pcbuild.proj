@@ -21,6 +21,15 @@
       <CleanAllTarget>CleanAll</CleanAllTarget>
       <BuildInParallel>true</BuildInParallel>
     </Projects>
+    <Projects2>
+      <Platform>$(Platform)</Platform>
+      <Configuration>$(Configuration)</Configuration>
+      <Properties></Properties>
+      <BuildTarget>Build</BuildTarget>
+      <CleanTarget>Clean</CleanTarget>
+      <CleanAllTarget>CleanAll</CleanAllTarget>
+      <BuildInParallel>true</BuildInParallel>
+    </Projects2>
   </ItemDefinitionGroup>
   <ItemGroup>
     <!-- pythonXY.dll -->
@@ -35,6 +44,8 @@
     </Projects>
     <!-- python3.dll -->
     <Projects Include="python3dll.vcxproj" />
+    <!-- pyshellext.dll -->
+    <Projects Include="pyshellext.vcxproj" />
     <!-- py[w].exe -->
     <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
     <!-- _freeze_importlib -->
@@ -58,9 +69,9 @@
     </Projects>
     
     <!-- python[w].exe -->
-    <Projects Include="python.vcxproj;pythonw.vcxproj">
+    <Projects2 Include="python.vcxproj;pythonw.vcxproj">
       <BuildInParallel>false</BuildInParallel>
-    </Projects>
+    </Projects2>
   </ItemGroup>
 
   <Target Name="Build">
@@ -69,9 +80,20 @@
              BuildInParallel="%(BuildInParallel)"
              StopOnFirstFailure="true"
              Targets="%(BuildTarget)" />
+    <MSBuild Projects="@(Projects2)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="true"
+             Targets="%(BuildTarget)" />
   </Target>
 
   <Target Name="Clean">
+    <MSBuild Projects="@(Projects2)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanTarget) != ''"
+             Targets="%(CleanTarget)" />
     <MSBuild Projects="@(Projects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"
@@ -81,6 +103,12 @@
   </Target>
 
   <Target Name="CleanAll">
+    <MSBuild Projects="@(Projects2)"
+             Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
+             BuildInParallel="%(BuildInParallel)"
+             StopOnFirstFailure="false"
+             Condition="%(CleanAllTarget) != ''"
+             Targets="%(CleanAllTarget)" />
     <MSBuild Projects="@(Projects)"
              Properties="Configuration=%(Configuration);Platform=%(Platform);%(Properties)"
              BuildInParallel="%(BuildInParallel)"
