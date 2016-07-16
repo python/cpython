@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.22823.1
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{553EC33E-9816-4996-A660-5D6186A0B0B3}"
 	ProjectSection(SolutionItems) = preProject
@@ -63,8 +63,14 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_testbuffer", "_testbuffer.vcxproj", "{A2697BD3-28C1-4AEC-9106-8B748639FD16}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pylauncher", "pylauncher.vcxproj", "{7B2727B5-5A3F-40EE-A866-43A13CD31446}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782} = {0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pywlauncher", "pywlauncher.vcxproj", "{1D4B18D3-7C12-4ECB-9179-8531FF876CE6}"
+	ProjectSection(ProjectDependencies) = postProject
+		{7B2727B5-5A3F-40EE-A866-43A13CD31446} = {7B2727B5-5A3F-40EE-A866-43A13CD31446}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_freeze_importlib", "_freeze_importlib.vcxproj", "{19C0C13F-47CA-4432-AFF3-799A296A4DDC}"
 EndProject
@@ -83,6 +89,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libeay", "libeay.vcxproj", "{E5B04CC0-EB4C-42AB-B4DC-18EF95F864B0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ssleay", "ssleay.vcxproj", "{10615B24-73BF-4EFA-93AA-236916321317}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pyshellext", "pyshellext.vcxproj", "{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -684,6 +692,22 @@ Global
 		{10615B24-73BF-4EFA-93AA-236916321317}.Release|Win32.Build.0 = Release|Win32
 		{10615B24-73BF-4EFA-93AA-236916321317}.Release|x64.ActiveCfg = Release|x64
 		{10615B24-73BF-4EFA-93AA-236916321317}.Release|x64.Build.0 = Release|x64
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.Debug|Win32.Build.0 = Debug|Win32
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.Debug|x64.ActiveCfg = Debug|x64
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.Debug|x64.Build.0 = Debug|x64
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.PGInstrument|Win32.ActiveCfg = PGInstrument|Win32
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.PGInstrument|Win32.Build.0 = PGInstrument|Win32
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.PGInstrument|x64.ActiveCfg = PGInstrument|x64
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.PGInstrument|x64.Build.0 = PGInstrument|x64
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.PGUpdate|Win32.ActiveCfg = PGUpdate|Win32
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.PGUpdate|Win32.Build.0 = PGUpdate|Win32
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.PGUpdate|x64.ActiveCfg = PGUpdate|x64
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.PGUpdate|x64.Build.0 = PGUpdate|x64
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.Release|Win32.ActiveCfg = Release|Win32
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.Release|Win32.Build.0 = Release|Win32
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.Release|x64.ActiveCfg = Release|x64
+		{0F6EE4A4-C75F-4578-B4B3-2D64F4B9B782}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

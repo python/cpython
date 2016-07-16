@@ -83,8 +83,9 @@
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <TargetEnvironment>Win32</TargetEnvironment>
       <TargetEnvironment Condition="'$(Platform)' == 'x64'">X64</TargetEnvironment>
-      <TypeLibraryName>$(OutDir)%(Filename).tlb</TypeLibraryName>
-      <HeaderFileName>$(IntDir)%(Filename)_h.h</HeaderFileName>
+      <OutputDirectory>$(IntDir)</OutputDirectory>
+      <InterfaceIdentifierFileName>$(MSBuildProjectName)_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>$(MSBuildProjectName)_p.c</ProxyFileName>
     </Midl>
   </ItemDefinitionGroup>
 
