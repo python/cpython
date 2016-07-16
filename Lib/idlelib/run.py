@@ -19,6 +19,12 @@ from idlelib import IOBinding
 
 import __main__
 
+for mod in ('simpledialog', 'messagebox', 'font',
+            'dialog', 'filedialog', 'commondialog',
+            'colorchooser'):
+    delattr(tkinter, mod)
+    del sys.modules['tkinter.' + mod]
+
 LOCALHOST = '127.0.0.1'
 
 import warnings
