@@ -24,6 +24,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27522: Avoid an unintentional reference cycle in email.feedparser.
+
 - Issue #26844: Fix error message for imp.find_module() to refer to 'path'
   instead of 'name'. Patch by Lev Maximov.
 
