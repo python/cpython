@@ -21,16 +21,22 @@ work. One should use importlib as the public-facing version of this module.
 # anything specified at the class level.
 
 # Bootstrap-related code ######################################################
-
-_CASE_INSENSITIVE_PLATFORMS = 'win', 'cygwin', 'darwin'
+_CASE_INSENSITIVE_PLATFORMS_STR_KEY = 'win',
+_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY = 'cygwin', 'darwin'
+_CASE_INSENSITIVE_PLATFORMS =  (_CASE_INSENSITIVE_PLATFORMS_BYTES_KEY
+                                + _CASE_INSENSITIVE_PLATFORMS_STR_KEY)
 
 
 def _make_relax_case():
     if sys.platform.startswith(_CASE_INSENSITIVE_PLATFORMS):
+        if sys.platform.startswith(_CASE_INSENSITIVE_PLATFORMS_STR_KEY):
+            key = 'PYTHONCASEOK'
+        else:
+            key = b'PYTHONCASEOK'
+
         def _relax_case():
             """True if filenames must be checked case-insensitively."""
-            return (b'PYTHONCASEOK' in _os.environ
-                    or 'PYTHONCASEOK' in _os.environ)
+            return key in _os.environ
     else:
         def _relax_case():
             """True if filenames must be checked case-insensitively."""
