@@ -10,6 +10,10 @@ Release date: TBA
 Core and Builtins
 -----------------
 
+- Issue #27419: Standard __import__() no longer look up "__import__" in globals
+  or builtins for importing submodules or "from import".  Fixed handling an
+  error of non-string package name.
+
 - Issue #27083: Respect the PYTHONCASEOK environment variable under Windows.
 
 - Issue #27514: Make having too many statically nested blocks a SyntaxError
