@@ -352,7 +352,7 @@ the *new_callable* argument to :func:`patch`.
             >>> calls = [call(4), call(2), call(3)]
             >>> mock.assert_has_calls(calls, any_order=True)
 
-    .. method:: assert_not_called(*args, **kwargs)
+    .. method:: assert_not_called()
 
         Assert the mock was never called.
 
