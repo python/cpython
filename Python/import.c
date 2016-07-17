@@ -1526,7 +1526,10 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     _PyImport_AcquireLock();
 #endif
    /* From this point forward, goto error_with_unlock! */
-    builtins_import = _PyDict_GetItemId(interp->builtins_copy, &PyId___import__);
+    /* XXX interp->builtins_copy is NULL in subinterpreter! */
+    builtins_import = _PyDict_GetItemId(interp->builtins_copy ?
+                                        interp->builtins_copy :
+                                        interp->builtins, &PyId___import__);
     if (builtins_import == NULL) {
         PyErr_SetString(PyExc_ImportError, "__import__ not found");
         goto error_with_unlock;
