@@ -439,7 +439,7 @@ class UnstructuredTokenList(TokenList):
                 if folded.append_if_fits(part):
                     continue
             if part.has_fws:
-                part.fold(folded)
+                part._fold(folded)
                 continue
             # It can't be split...we just have to put it on its own line.
             folded.append(tstr)
@@ -460,7 +460,7 @@ class UnstructuredTokenList(TokenList):
                     last_ew = len(res)
                 else:
                     tl = get_unstructured(''.join(res[last_ew:] + [spart]))
-                    res.append(tl.as_encoded_word())
+                    res.append(tl.as_encoded_word(charset))
         return ''.join(res)
 
 
