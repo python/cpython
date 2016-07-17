@@ -3406,26 +3406,30 @@ save_pers(PicklerObject *self, PyObject *obj, PyObject *func)
                 goto error;
         }
         else {
-            PyObject *pid_str = NULL;
-            char *pid_ascii_bytes;
-            Py_ssize_t size;
+            PyObject *pid_str;
 
             pid_str = PyObject_Str(pid);
             if (pid_str == NULL)
                 goto error;
 
-            /* XXX: Should it check whether the persistent id only contains
-               ASCII characters? And what if the pid contains embedded
+            /* XXX: Should it check whether the pid contains embedded
                newlines? */
-            pid_ascii_bytes = _PyUnicode_AsStringAndSize(pid_str, &size);
-            Py_DECREF(pid_str);
-            if (pid_ascii_bytes == NULL)
+            if (!PyUnicode_IS_ASCII(pid_str)) {
+                PyErr_SetString(_Pickle_GetGlobalState()->PicklingError,
+                                "persistent IDs in protocol 0 must be "
+                                "ASCII strings");
+                Py_DECREF(pid_str);
                 goto error;
+            }
 
             if (_Pickler_Write(self, &persid_op, 1) < 0 ||
-                _Pickler_Write(self, pid_ascii_bytes, size) < 0 ||
-                _Pickler_Write(self, "\n", 1) < 0)
+                _Pickler_Write(self, PyUnicode_DATA(pid_str),
+                               PyUnicode_GET_LENGTH(pid_str)) < 0 ||
+                _Pickler_Write(self, "\n", 1) < 0) {
+                Py_DECREF(pid_str);
                 goto error;
+            }
+            Py_DECREF(pid_str);
         }
         status = 1;
     }
@@ -5389,9 +5393,15 @@ load_persid(UnpicklerObject *self)
         if (len < 1)
             return bad_readline();
 
-        pid = PyBytes_FromStringAndSize(s, len - 1);
-        if (pid == NULL)
+        pid = PyUnicode_DecodeASCII(s, len - 1, "strict");
+        if (pid == NULL) {
+            if (PyErr_ExceptionMatches(PyExc_UnicodeDecodeError)) {
+                PyErr_SetString(_Pickle_GetGlobalState()->UnpicklingError,
+                                "persistent IDs in protocol 0 must be "
+                                "ASCII strings");
+            }
             return -1;
+        }
 
         /* This does not leak since _Pickle_FastCall() steals the reference
            to pid first. */
