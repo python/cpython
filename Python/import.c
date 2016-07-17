@@ -1452,6 +1452,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
             }
         }
         else {
+            package = NULL;
             if (PyErr_WarnEx(PyExc_ImportWarning,
                         "can't resolve package from __spec__ or __package__, "
                         "falling back on __name__ and __path__", 1) < 0) {
@@ -1556,15 +1557,10 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *given_globals,
     _PyImport_AcquireLock();
 #endif
    /* From this point forward, goto error_with_unlock! */
-    if (PyDict_Check(globals)) {
-        builtins_import = _PyDict_GetItemId(globals, &PyId___import__);
-    }
+    builtins_import = _PyDict_GetItemId(interp->builtins_copy, &PyId___import__);
     if (builtins_import == NULL) {
-        builtins_import = _PyDict_GetItemId(interp->builtins, &PyId___import__);
-        if (builtins_import == NULL) {
-            PyErr_SetString(PyExc_ImportError, "__import__ not found");
-            goto error_with_unlock;
-        }
+        PyErr_SetString(PyExc_ImportError, "__import__ not found");
+        goto error_with_unlock;
     }
     Py_INCREF(builtins_import);
 
