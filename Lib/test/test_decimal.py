@@ -5398,6 +5398,34 @@ class CWhitebox(unittest.TestCase):
             y = Decimal(10**(9*25)).__sizeof__()
             self.assertEqual(y, x+4)
 
+    def test_internal_use_of_overridden_methods(self):
+        Decimal = C.Decimal
+
+        # Unsound subtyping
+        class X(float):
+            def as_integer_ratio(self):
+                return 1
+            def __abs__(self):
+                return self
+
+        class Y(float):
+            def __abs__(self):
+                return [1]*200
+
+        class I(int):
+            def bit_length(self):
+                return [1]*200
+
+        class Z(float):
+            def as_integer_ratio(self):
+                return (I(1), I(1))
+            def __abs__(self):
+                return self
+
+        for cls in X, Y, Z:
+            self.assertEqual(Decimal.from_float(cls(101.1)),
+                             Decimal.from_float(101.1))
+
 @requires_docstrings
 @unittest.skipUnless(C, "test requires C version")
 class SignatureTest(unittest.TestCase):
