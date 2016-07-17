@@ -2629,6 +2629,35 @@ class AbstractPersistentPicklerTests(unittest.TestCase):
             self.assertEqual(self.load_false_count, 1)
 
 
+class AbstractIdentityPersistentPicklerTests(unittest.TestCase):
+
+    def persistent_id(self, obj):
+        return obj
+
+    def persistent_load(self, pid):
+        return pid
+
+    def _check_return_correct_type(self, obj, proto):
+        unpickled = self.loads(self.dumps(obj, proto))
+        self.assertIsInstance(unpickled, type(obj))
+        self.assertEqual(unpickled, obj)
+
+    def test_return_correct_type(self):
+        for proto in protocols:
+            # Protocol 0 supports only ASCII strings.
+            if proto == 0:
+                self._check_return_correct_type("abc", 0)
+            else:
+                for obj in [b"abc\n", "abc\n", -1, -1.1 * 0.1, str]:
+                    self._check_return_correct_type(obj, proto)
+
+    def test_protocol0_is_ascii_only(self):
+        non_ascii_str = "\N{EMPTY SET}"
+        self.assertRaises(pickle.PicklingError, self.dumps, non_ascii_str, 0)
+        pickled = pickle.PERSID + non_ascii_str.encode('utf-8') + b'\n.'
+        self.assertRaises(pickle.UnpicklingError, self.loads, pickled)
+
+
 class AbstractPicklerUnpicklerObjectTests(unittest.TestCase):
 
     pickler_class = None

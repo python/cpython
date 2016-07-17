@@ -529,7 +529,11 @@ class _Pickler:
             self.save(pid, save_persistent_id=False)
             self.write(BINPERSID)
         else:
-            self.write(PERSID + str(pid).encode("ascii") + b'\n')
+            try:
+                self.write(PERSID + str(pid).encode("ascii") + b'\n')
+            except UnicodeEncodeError:
+                raise PicklingError(
+                    "persistent IDs in protocol 0 must be ASCII strings")
 
     def save_reduce(self, func, args, state=None, listitems=None,
                     dictitems=None, obj=None):
@@ -1075,7 +1079,11 @@ class _Unpickler:
     dispatch[FRAME[0]] = load_frame
 
     def load_persid(self):
-        pid = self.readline()[:-1].decode("ascii")
+        try:
+            pid = self.readline()[:-1].decode("ascii")
+        except UnicodeDecodeError:
+            raise UnpicklingError(
+                "persistent IDs in protocol 0 must be ASCII strings")
         self.append(self.persistent_load(pid))
     dispatch[PERSID[0]] = load_persid
 
