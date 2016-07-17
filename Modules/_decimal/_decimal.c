@@ -2207,6 +2207,14 @@ PyDecType_FromLongExact(PyTypeObject *type, const PyObject *pylong,
     return dec;
 }
 
+/* External C-API functions */
+static binaryfunc _py_long_multiply;
+static binaryfunc _py_long_floor_divide;
+static ternaryfunc _py_long_power;
+static unaryfunc _py_float_abs;
+static PyCFunction _py_long_bit_length;
+static PyCFunction _py_float_as_integer_ratio;
+
 /* Return a PyDecObject or a subtype from a PyFloatObject.
    Conversion is exact. */
 static PyObject *
@@ -2257,13 +2265,13 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     }
 
     /* absolute value of the float */
-    tmp = PyObject_CallMethod(v, "__abs__", NULL);
+    tmp = _py_float_abs(v);
     if (tmp == NULL) {
         return NULL;
     }
 
     /* float as integer ratio: numerator/denominator */
-    n_d = PyObject_CallMethod(tmp, "as_integer_ratio", NULL);
+    n_d = _py_float_as_integer_ratio(tmp, NULL);
     Py_DECREF(tmp);
     if (n_d == NULL) {
         return NULL;
@@ -2271,7 +2279,7 @@ PyDecType_FromFloatExact(PyTypeObject *type, PyObject *v,
     n = PyTuple_GET_ITEM(n_d, 0);
     d = PyTuple_GET_ITEM(n_d, 1);
 
-    tmp = PyObject_CallMethod(d, "bit_length", NULL);
+    tmp = _py_long_bit_length(d, NULL);
     if (tmp == NULL) {
         Py_DECREF(n_d);
         return NULL;
@@ -3397,7 +3405,6 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
     mpd_ssize_t exp;
     PyObject *context;
     uint32_t status = 0;
-    PyNumberMethods *long_methods = PyLong_Type.tp_as_number;
 
     if (mpd_isspecial(MPD(self))) {
         if (mpd_isnan(MPD(self))) {
@@ -3444,14 +3451,14 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
         goto error;
     }
 
-    Py_SETREF(exponent, long_methods->nb_power(tmp, exponent, Py_None));
+    Py_SETREF(exponent, _py_long_power(tmp, exponent, Py_None));
     Py_DECREF(tmp);
     if (exponent == NULL) {
         goto error;
     }
 
     if (exp >= 0) {
-        Py_SETREF(numerator, long_methods->nb_multiply(numerator, exponent));
+        Py_SETREF(numerator, _py_long_multiply(numerator, exponent));
         if (numerator == NULL) {
             goto error;
         }
@@ -3467,8 +3474,8 @@ dec_as_integer_ratio(PyObject *self, PyObject *args UNUSED)
         if (tmp == NULL) {
             goto error;
         }
-        Py_SETREF(numerator, long_methods->nb_floor_divide(numerator, tmp));
-        Py_SETREF(denominator, long_methods->nb_floor_divide(denominator, tmp));
+        Py_SETREF(numerator, _py_long_floor_divide(numerator, tmp));
+        Py_SETREF(denominator, _py_long_floor_divide(denominator, tmp));
         Py_DECREF(tmp);
         if (numerator == NULL || denominator == NULL) {
             goto error;
@@ -5611,6 +5618,32 @@ static struct int_constmap int_constants [] = {
 #define CHECK_PTR(expr) \
     do { if ((expr) == NULL) goto error; } while (0)
 
+
+static PyCFunction
+cfunc_noargs(PyTypeObject *t, const char *name)
+{
+    struct PyMethodDef *m;
+
+    if (t->tp_methods == NULL) {
+        goto error;
+    }
+
+    for (m = t->tp_methods; m->ml_name != NULL; m++) {
+        if (strcmp(name, m->ml_name) == 0) {
+            if (!(m->ml_flags & METH_NOARGS)) {
+                goto error;
+            }
+            return m->ml_meth;
+        }
+    }
+
+error:
+    PyErr_Format(PyExc_RuntimeError,
+        "internal error: could not find method %s", name);
+    return NULL;
+}
+
+
 PyMODINIT_FUNC
 PyInit__decimal(void)
 {
@@ -5633,6 +5666,16 @@ PyInit__decimal(void)
     mpd_callocfunc = mpd_callocfunc_em;
     mpd_free = PyMem_Free;
     mpd_setminalloc(_Py_DEC_MINALLOC);
+
+
+    /* Init external C-API functions */
+    _py_long_multiply = PyLong_Type.tp_as_number->nb_multiply;
+    _py_long_floor_divide = PyLong_Type.tp_as_number->nb_floor_divide;
+    _py_long_power = PyLong_Type.tp_as_number->nb_power;
+    _py_float_abs = PyFloat_Type.tp_as_number->nb_absolute;
+    ASSIGN_PTR(_py_float_as_integer_ratio, cfunc_noargs(&PyFloat_Type,
+                                                        "as_integer_ratio"));
+    ASSIGN_PTR(_py_long_bit_length, cfunc_noargs(&PyLong_Type, "bit_length"));
 
 
     /* Init types */
