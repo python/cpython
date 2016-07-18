@@ -44,8 +44,6 @@
     </Projects>
     <!-- python3.dll -->
     <Projects Include="python3dll.vcxproj" />
-    <!-- pyshellext.dll -->
-    <Projects Include="pyshellext.vcxproj" />
     <!-- py[w].exe -->
     <Projects Include="pylauncher.vcxproj;pywlauncher.vcxproj" />
     <!-- _freeze_importlib -->
