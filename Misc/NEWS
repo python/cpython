@@ -13,6 +13,9 @@ Core and Builtins
 - Issue #27473: Fixed possible integer overflow in str, unicode and bytearray
   concatenations and repetitions.  Based on patch by Xiang Zhang.
 
+- Issue #27507: Add integer overflow check in bytearray.extend().  Patch by
+  Xiang Zhang.
+
 - Issue #23908: os functions, open() and the io.FileIO constructor now reject
   unicode paths with embedded null character on Windows instead of silently
   truncating them.
