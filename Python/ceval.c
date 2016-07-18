@@ -1563,7 +1563,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             if (PyUnicode_CheckExact(left) &&
                      PyUnicode_CheckExact(right)) {
                 sum = unicode_concatenate(left, right, f, next_instr);
-                /* unicode_concatenate consumed the ref to v */
+                /* unicode_concatenate consumed the ref to left */
             }
             else {
                 sum = PyNumber_Add(left, right);
@@ -1762,7 +1762,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             PyObject *sum;
             if (PyUnicode_CheckExact(left) && PyUnicode_CheckExact(right)) {
                 sum = unicode_concatenate(left, right, f, next_instr);
-                /* unicode_concatenate consumed the ref to v */
+                /* unicode_concatenate consumed the ref to left */
             }
             else {
                 sum = PyNumber_InPlaceAdd(left, right);
@@ -1853,7 +1853,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             PyObject *v = THIRD();
             int err;
             STACKADJ(-3);
-            /* v[w] = u */
+            /* container[sub] = v */
             err = PyObject_SetItem(container, sub, v);
             Py_DECREF(v);
             Py_DECREF(container);
@@ -1868,7 +1868,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             PyObject *container = SECOND();
             int err;
             STACKADJ(-2);
-            /* del v[w] */
+            /* del container[sub] */
             err = PyObject_DelItem(container, sub);
             Py_DECREF(container);
             Py_DECREF(sub);
@@ -2107,7 +2107,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
                 SET_TOP(val);
                 DISPATCH();
             }
-            /* x remains on stack, retval is value to be yielded */
+            /* receiver remains on stack, retval is value to be yielded */
             f->f_stacktop = stack_pointer;
             why = WHY_YIELD;
             /* and repeat... */
@@ -2728,7 +2728,7 @@ PyEval_EvalFrameEx(PyFrameObject *f, int throwflag)
             STACKADJ(-2);
             map = stack_pointer[-oparg];  /* dict */
             assert(PyDict_CheckExact(map));
-            err = PyDict_SetItem(map, key, value);  /* v[w] = u */
+            err = PyDict_SetItem(map, key, value);  /* map[key] = value */
             Py_DECREF(value);
             Py_DECREF(key);
             if (err != 0)
