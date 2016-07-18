@@ -123,6 +123,11 @@ Tools/Demos
 
 - Issue #27418: Fixed Tools/importbench/importbench.py.
 
+Windows
+-------
+
+- Issue #27309: Enabled proper Windows styles in python[w].exe manifest.
+
 
 What's New in Python 3.5.2?
 ===========================
