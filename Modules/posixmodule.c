@@ -3878,10 +3878,12 @@ os__isdir_impl(PyObject *module, path_t *path)
 {
     DWORD attributes;
 
+    Py_BEGIN_ALLOW_THREADS
     if (!path->narrow)
         attributes = GetFileAttributesW(path->wide);
     else
         attributes = GetFileAttributesA(path->narrow);
+    Py_END_ALLOW_THREADS
 
     if (attributes == INVALID_FILE_ATTRIBUTES)
         Py_RETURN_FALSE;
