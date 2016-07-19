@@ -125,8 +125,7 @@ platform.
 
 .. data:: RLIMIT_FSIZE
 
-   The maximum size of a file which the process may create.  This only affects the
-   stack of the main thread in a multi-threaded process.
+   The maximum size of a file which the process may create.
 
 
 .. data:: RLIMIT_DATA
@@ -136,7 +135,8 @@ platform.
 
 .. data:: RLIMIT_STACK
 
-   The maximum size (in bytes) of the call stack for the current process.
+   The maximum size (in bytes) of the call stack for the current process.  This only
+   affects the stack of the main thread in a multi-threaded process.
 
 
 .. data:: RLIMIT_RSS
