@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #27567: Expose the EPOLLRDHUP constant in the select module.
+
 - Issue #1621: Avoid signed int negation overflow in the "audioop" module.
 
 - Issue #27533: Release GIL in nt._isdir
