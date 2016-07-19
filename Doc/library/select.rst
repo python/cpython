@@ -391,6 +391,9 @@ linearly scanned again. :c:func:`select` is O(highest file descriptor), while
    +-------------------+------------------------------------------+
    | :const:`POLLHUP`  | Hung up                                  |
    +-------------------+------------------------------------------+
+   | :const:`POLLRDHUP`| Stream socket peer closed connection, or |
+   |                   | shut down writing half of connection     |
+   +-------------------+------------------------------------------+
    | :const:`POLLNVAL` | Invalid request: descriptor not open     |
    +-------------------+------------------------------------------+
 

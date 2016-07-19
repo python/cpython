@@ -4,6 +4,10 @@
    have any value except INVALID_SOCKET.
 */
 
+#if defined(HAVE_POLL_H) && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE
+#endif
+
 #include "Python.h"
 #include <structmember.h>
 
@@ -2451,6 +2455,10 @@ PyInit_select(void)
 #endif
 #ifdef POLLMSG
         PyModule_AddIntMacro(m, POLLMSG);
+#endif
+#ifdef POLLRDHUP
+        /* Kernel 2.6.17+ */
+        PyModule_AddIntMacro(m, POLLRDHUP);
 #endif
     }
 #endif /* HAVE_POLL */
