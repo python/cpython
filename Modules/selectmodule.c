@@ -2473,12 +2473,12 @@ PyInit_select(void)
     PyModule_AddIntMacro(m, EPOLLPRI);
     PyModule_AddIntMacro(m, EPOLLERR);
     PyModule_AddIntMacro(m, EPOLLHUP);
+    PyModule_AddIntMacro(m, EPOLLRDHUP);
     PyModule_AddIntMacro(m, EPOLLET);
 #ifdef EPOLLONESHOT
     /* Kernel 2.6.2+ */
     PyModule_AddIntMacro(m, EPOLLONESHOT);
 #endif
-    /* PyModule_AddIntConstant(m, "EPOLL_RDHUP", EPOLLRDHUP); */
 
 #ifdef EPOLLRDNORM
     PyModule_AddIntMacro(m, EPOLLRDNORM);

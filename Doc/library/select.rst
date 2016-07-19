@@ -285,6 +285,9 @@ Edge and Level Trigger Polling (epoll) Objects
    | :const:`EPOLLONESHOT` | Set one-shot behavior. After one event is     |
    |                       | pulled out, the fd is internally disabled     |
    +-----------------------+-----------------------------------------------+
+   | :const:`EPOLLRDHUP`   | Stream socket peer closed connection or shut  |
+   |                       | down writing half of connection.              |
+   +-----------------------+-----------------------------------------------+
    | :const:`EPOLLRDNORM`  | Equivalent to :const:`EPOLLIN`                |
    +-----------------------+-----------------------------------------------+
    | :const:`EPOLLRDBAND`  | Priority data band can be read.               |
