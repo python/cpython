@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Expose the EPOLLEXCLUSIVE (when it is defined) in the select module.
+
 - Issue #27567: Expose the EPOLLRDHUP constant in the select module.
 
 - Issue #1621: Avoid signed int negation overflow in the "audioop" module.
