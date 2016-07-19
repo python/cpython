@@ -446,7 +446,9 @@ audioop_max_impl(PyObject *module, Py_buffer *fragment, int width)
         return NULL;
     for (i = 0; i < fragment->len; i += width) {
         int val = GETRAWSAMPLE(width, fragment->buf, i);
-        if (val < 0) absval = (-val);
+        /* Cast to unsigned before negating. Unsigned overflow is well-
+        defined, but signed overflow is not. */
+        if (val < 0) absval = -(unsigned int)val;
         else absval = val;
         if (absval > max) max = absval;
     }
