@@ -26,6 +26,8 @@ Core and Builtins
 Library
 -------
 
+- Issue #1621: Avoid signed int negation overflow in the "audioop" module.
+
 - Issue #27533: Release GIL in nt._isdir
 
 - Issue #17711: Fixed unpickling by the persistent ID with protocol 0.
