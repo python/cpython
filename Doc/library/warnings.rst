@@ -140,14 +140,15 @@ the disposition of the match.  Each entry is a tuple of the form (*action*,
   |               | warnings, regardless of location             |
   +---------------+----------------------------------------------+
 
-* *message* is a string containing a regular expression that the warning message
-  must match (the match is compiled to always be case-insensitive).
+* *message* is a string containing a regular expression that the start of
+  the warning message must match.  The expression is compiled to always be
+  case-insensitive.
 
 * *category* is a class (a subclass of :exc:`Warning`) of which the warning
   category must be a subclass in order to match.
 
 * *module* is a string containing a regular expression that the module name must
-  match (the match is compiled to be case-sensitive).
+  match.  The expression is compiled to be case-sensitive.
 
 * *lineno* is an integer that the line number where the warning occurred must
   match, or ``0`` to match all line numbers.

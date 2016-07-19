@@ -205,6 +205,18 @@ class FilterTests(object):
             self.assertEqual(str(w[-1].message), text)
             self.assertTrue(w[-1].category is UserWarning)
 
+    def test_message_matching(self):
+        with original_warnings.catch_warnings(record=True,
+                module=self.module) as w:
+            self.module.simplefilter("ignore", UserWarning)
+            self.module.filterwarnings("error", "match", UserWarning)
+            self.assertRaises(UserWarning, self.module.warn, "match")
+            self.assertRaises(UserWarning, self.module.warn, "match prefix")
+            self.module.warn("suffix match")
+            self.assertEqual(w, [])
+            self.module.warn("something completely different")
+            self.assertEqual(w, [])
+
 class CFilterTests(BaseTest, FilterTests):
     module = c_warnings
 
