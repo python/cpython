@@ -2479,6 +2479,9 @@ PyInit_select(void)
     /* Kernel 2.6.2+ */
     PyModule_AddIntMacro(m, EPOLLONESHOT);
 #endif
+#ifdef EPOLLEXCLUSIVE
+    PyModule_AddIntMacro(m, EPOLLEXCLUSIVE);
+#endif
 
 #ifdef EPOLLRDNORM
     PyModule_AddIntMacro(m, EPOLLRDNORM);
