@@ -1,7 +1,8 @@
 """Tests for distutils.spawn."""
 import unittest
+import sys
 import os
-from test.support import run_unittest
+from test.support import run_unittest, unix_shell
 
 from distutils.spawn import _nt_quote_args
 from distutils.spawn import spawn
@@ -29,9 +30,9 @@ class SpawnTestCase(support.TempdirManager,
 
         # creating something executable
         # through the shell that returns 1
-        if os.name == 'posix':
+        if sys.platform != 'win32':
             exe = os.path.join(tmpdir, 'foo.sh')
-            self.write_file(exe, '#!/bin/sh\nexit 1')
+            self.write_file(exe, '#!%s\nexit 1' % unix_shell)
         else:
             exe = os.path.join(tmpdir, 'foo.bat')
             self.write_file(exe, 'exit 1')
@@ -40,9 +41,9 @@ class SpawnTestCase(support.TempdirManager,
         self.assertRaises(DistutilsExecError, spawn, [exe])
 
         # now something that works
-        if os.name == 'posix':
+        if sys.platform != 'win32':
             exe = os.path.join(tmpdir, 'foo.sh')
-            self.write_file(exe, '#!/bin/sh\nexit 0')
+            self.write_file(exe, '#!%s\nexit 0' % unix_shell)
         else:
             exe = os.path.join(tmpdir, 'foo.bat')
             self.write_file(exe, 'exit 0')

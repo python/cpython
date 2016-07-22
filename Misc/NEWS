@@ -46,6 +46,8 @@ Library
 Tests
 -----
 
+- Issue #27472: Add test.support.unix_shell as the path to the default shell.
+
 - Issue #27369: In test_pyexpat, avoid testing an error message detail that
   changed in Expat 2.2.0.
 
