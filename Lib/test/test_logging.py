@@ -26,6 +26,7 @@ import logging.config
 import codecs
 import configparser
 import datetime
+import pathlib
 import pickle
 import io
 import gc
@@ -574,6 +575,29 @@ class HandlerTest(BaseTest):
         h = logging.handlers.BufferingHandler(1)
         self.assertFalse(h.shouldFlush(r))
         h.close()
+
+    def test_path_objects(self):
+        """
+        Test that Path objects are accepted as filename arguments to handlers.
+
+        See Issue #27493.
+        """
+        fd, fn = tempfile.mkstemp()
+        os.close(fd)
+        os.unlink(fn)
+        pfn = pathlib.Path(fn)
+        cases = (
+                    (logging.FileHandler, (pfn, 'w')),
+                    (logging.handlers.RotatingFileHandler, (pfn, 'a')),
+                    (logging.handlers.TimedRotatingFileHandler, (pfn, 'h')),
+                )
+        if sys.platform in ('linux', 'darwin'):
+            cases += ((logging.handlers.WatchedFileHandler, (pfn, 'w')),)
+        for cls, args in cases:
+            h = cls(*args)
+            self.assertTrue(os.path.exists(fn))
+            os.unlink(fn)
+            h.close()
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
     @unittest.skipUnless(threading, 'Threading required for this test.')

@@ -84,6 +84,9 @@ sends logging output to a disk file.  It inherits the output functionality from
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`. By default, the file grows indefinitely.
 
+   .. versionchanged:: 3.6
+      As well as string values, :class:`~pathlib.Path` objects are also accepted
+      for the *filename* argument.
 
    .. method:: close()
 
@@ -160,6 +163,9 @@ for this value.
    with that encoding.  If *delay* is true, then file opening is deferred until the
    first call to :meth:`emit`.  By default, the file grows indefinitely.
 
+   .. versionchanged:: 3.6
+      As well as string values, :class:`~pathlib.Path` objects are also accepted
+      for the *filename* argument.
 
    .. method:: reopenIfNeeded()
 
@@ -287,6 +293,9 @@ module, supports rotation of disk log files.
    :file:`app.log.2`, etc.  exist, then they are renamed to :file:`app.log.2`,
    :file:`app.log.3` etc.  respectively.
 
+   .. versionchanged:: 3.6
+      As well as string values, :class:`~pathlib.Path` objects are also accepted
+      for the *filename* argument.
 
    .. method:: doRollover()
 
@@ -364,6 +373,10 @@ timed intervals.
 
    .. versionchanged:: 3.4
       *atTime* parameter was added.
+
+   .. versionchanged:: 3.6
+      As well as string values, :class:`~pathlib.Path` objects are also accepted
+      for the *filename* argument.
 
    .. method:: doRollover()
 
