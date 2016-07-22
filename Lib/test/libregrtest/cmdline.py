@@ -112,6 +112,8 @@ resources to test.  Currently only the following are defined:
 
     gui -       Run tests that require a running GUI.
 
+    tzdata -    Run tests that require timezone data.
+
 To enable all resources except one, use '-uall,-<resource>'.  For
 example, to run all the tests except for the gui tests, give the
 option '-uall,-gui'.
@@ -119,7 +121,7 @@ option '-uall,-gui'.
 
 
 RESOURCE_NAMES = ('audio', 'curses', 'largefile', 'network',
-                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui')
+                  'decimal', 'cpu', 'subprocess', 'urlfetch', 'gui', 'tzdata')
 
 class _ArgParser(argparse.ArgumentParser):
 
