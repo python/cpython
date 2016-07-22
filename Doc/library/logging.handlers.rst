@@ -806,12 +806,18 @@ should, then :meth:`flush` is expected to do the flushing.
       overridden to implement custom flushing strategies.
 
 
-.. class:: MemoryHandler(capacity, flushLevel=ERROR, target=None)
+.. class:: MemoryHandler(capacity, flushLevel=ERROR, target=None, flushOnClose=True)
 
    Returns a new instance of the :class:`MemoryHandler` class. The instance is
    initialized with a buffer size of *capacity*. If *flushLevel* is not specified,
    :const:`ERROR` is used. If no *target* is specified, the target will need to be
-   set using :meth:`setTarget` before this handler does anything useful.
+   set using :meth:`setTarget` before this handler does anything useful. If
+   *flushOnClose* is specified as ``False``, then the buffer is *not* flushed when
+   the handler is closed. If not specified or specified as ``True``, the previous
+   behaviour of flushing the buffer will occur when the handler is closed.
+
+   .. versionchanged:: 3.6
+      The *flushOnClose* parameter was added.
 
 
    .. method:: close()

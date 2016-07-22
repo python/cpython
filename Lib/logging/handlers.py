@@ -1,4 +1,4 @@
-# Copyright 2001-2015 by Vinay Sajip. All Rights Reserved.
+# Copyright 2001-2016 by Vinay Sajip. All Rights Reserved.
 #
 # Permission to use, copy, modify, and distribute this software and its
 # documentation for any purpose and without fee is hereby granted,
@@ -18,7 +18,7 @@
 Additional handlers for the logging package for Python. The core package is
 based on PEP 282 and comments thereto in comp.lang.python.
 
-Copyright (C) 2001-2015 Vinay Sajip. All Rights Reserved.
+Copyright (C) 2001-2016 Vinay Sajip. All Rights Reserved.
 
 To use, simply 'import logging.handlers' and log away!
 """
@@ -1238,17 +1238,25 @@ class MemoryHandler(BufferingHandler):
     flushing them to a target handler. Flushing occurs whenever the buffer
     is full, or when an event of a certain severity or greater is seen.
     """
-    def __init__(self, capacity, flushLevel=logging.ERROR, target=None):
+    def __init__(self, capacity, flushLevel=logging.ERROR, target=None,
+                 flushOnClose=True):
         """
         Initialize the handler with the buffer size, the level at which
         flushing should occur and an optional target.
 
         Note that without a target being set either here or via setTarget(),
         a MemoryHandler is no use to anyone!
+
+        The ``flushOnClose`` argument is ``True`` for backward compatibility
+        reasons - the old behaviour is that when the handler is closed, the
+        buffer is flushed, even if the flush level hasn't been exceeded nor the
+        capacity exceeded. To prevent this, set ``flushOnClose`` to ``False``.
         """
         BufferingHandler.__init__(self, capacity)
         self.flushLevel = flushLevel
         self.target = target
+        # See Issue #26559 for why this has been added
+        self.flushOnClose = flushOnClose
 
     def shouldFlush(self, record):
         """
@@ -1282,10 +1290,12 @@ class MemoryHandler(BufferingHandler):
 
     def close(self):
         """
-        Flush, set the target to None and lose the buffer.
+        Flush, if appropriately configured, set the target to None and lose the
+        buffer.
         """
         try:
-            self.flush()
+            if self.flushOnClose:
+                self.flush()
         finally:
             self.acquire()
             try:
