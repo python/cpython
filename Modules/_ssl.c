@@ -113,6 +113,10 @@ struct py_ssl_library_code {
 # define HAVE_ALPN
 #endif
 
+#ifndef INVALID_SOCKET /* MS defines this */
+#define INVALID_SOCKET (-1)
+#endif
+
 enum py_ssl_error {
     /* these mirror ssl.h */
     PY_SSL_ERROR_NONE,
@@ -1699,7 +1703,7 @@ PySSL_select(PySocketSockObject *s, int writing, _PyTime_t timeout)
     }
 
     /* Guard against closed socket */
-    if (s->sock_fd < 0)
+    if (s->sock_fd == INVALID_SOCKET)
         return SOCKET_HAS_BEEN_CLOSED;
 
     /* Prefer poll, if available, since you can poll() any fd
@@ -2023,7 +2027,7 @@ _ssl__SSLSocket_shutdown_impl(PySSLSocket *self)
 
     if (sock != NULL) {
         /* Guard against closed socket */
-        if ((((PyObject*)sock) == Py_None) || (sock->sock_fd < 0)) {
+        if ((((PyObject*)sock) == Py_None) || (sock->sock_fd == INVALID_SOCKET)) {
             _setSSLError("Underlying socket connection gone",
                          PY_SSL_ERROR_NO_SOCKET, __FILE__, __LINE__);
             return NULL;
