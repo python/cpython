@@ -2568,8 +2568,9 @@ sock_close(PySocketSockObject *s)
      * and http://linux.derkeiler.com/Mailing-Lists/Kernel/2005-09/3000.html
      * for more details.
      */
-    if ((fd = s->sock_fd) != -1) {
-        s->sock_fd = -1;
+    fd = s->sock_fd;
+    if (fd != INVALID_SOCKET) {
+        s->sock_fd = INVALID_SOCKET;
         Py_BEGIN_ALLOW_THREADS
         (void) SOCKETCLOSE(fd);
         Py_END_ALLOW_THREADS
@@ -2587,7 +2588,7 @@ static PyObject *
 sock_detach(PySocketSockObject *s)
 {
     SOCKET_T fd = s->sock_fd;
-    s->sock_fd = -1;
+    s->sock_fd = INVALID_SOCKET;
     return PyLong_FromSocket_t(fd);
 }
 
@@ -4165,7 +4166,7 @@ static PyGetSetDef sock_getsetlist[] = {
 static void
 sock_dealloc(PySocketSockObject *s)
 {
-    if (s->sock_fd != -1) {
+    if (s->sock_fd != INVALID_SOCKET) {
         PyObject *exc, *val, *tb;
         Py_ssize_t old_refcount = Py_REFCNT(s);
         ++Py_REFCNT(s);
@@ -4221,7 +4222,7 @@ sock_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 
     new = type->tp_alloc(type, 0);
     if (new != NULL) {
-        ((PySocketSockObject *)new)->sock_fd = -1;
+        ((PySocketSockObject *)new)->sock_fd = INVALID_SOCKET;
         ((PySocketSockObject *)new)->sock_timeout = _PyTime_FromSeconds(-1);
         ((PySocketSockObject *)new)->errorhandler = &set_error;
     }
