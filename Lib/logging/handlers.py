@@ -246,6 +246,9 @@ class TimedRotatingFileHandler(BaseRotatingHandler):
 
         self.extMatch = re.compile(self.extMatch, re.ASCII)
         self.interval = self.interval * interval # multiply by units requested
+        # The following line added because the filename passed in could be a
+        # path object (see Issue #27493), but self.baseFilename will be a string
+        filename = self.baseFilename
         if os.path.exists(filename):
             t = os.stat(filename)[ST_MTIME]
         else:
