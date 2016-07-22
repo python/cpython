@@ -652,7 +652,7 @@ internal_select(PySocketSockObject *s, int writing, _PyTime_t interval,
     assert(!(connect && !writing));
 
     /* Guard against closed socket */
-    if (s->sock_fd < 0)
+    if (s->sock_fd == INVALID_SOCKET)
         return 0;
 
     /* Prefer poll, if available, since you can poll() any fd
