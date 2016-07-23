@@ -114,6 +114,9 @@ semlock_acquire(SemLockObject *self, PyObject *args, PyObject *kwds)
         assert(sigint_event != NULL);
         handles[nhandles++] = sigint_event;
     }
+    else {
+        sigint_event = NULL;
+    }
 
     /* do the wait */
     Py_BEGIN_ALLOW_THREADS
