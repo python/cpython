@@ -1,0 +1,12 @@
+import "ocidl.idl";
+
+[uuid(44039A76-3BDD-41C1-A31B-71C00202CE81), version(1.0)]
+library PyShellExtLib
+{
+    [uuid(BEA218D2-6950-497B-9434-61683EC065FE), version(1.0)]
+    coclass PyShellExt
+    {
+        [default] interface IDropTarget;
+        interface IPersistFile;
+    }
+};
