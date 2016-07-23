@@ -26,6 +26,11 @@ Core and Builtins
 Library
 -------
 
+- Issue #27130: In the "zlib" module, fix handling of large buffers
+  (typically 2 or 4 GiB).  Previously, inputs were limited to 2 GiB, and
+  compression and decompression operations did not properly handle results of
+  2 or 4 GiB.
+
 - Issue #23804: Fix SSL zero-length recv() calls to not block and not raise
   an error about unclean EOF.
 
