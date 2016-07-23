@@ -28,7 +28,7 @@
 
             <RemoveExistingProducts After="InstallValidate">UPGRADE or REMOVE_350_LAUNCHER</RemoveExistingProducts>
         </InstallExecuteSequence>
-        
+
         <!-- Python 3.5.0 shipped with a different UpgradeCode -->
         <Upgrade Id="A71530B9-E89D-53DB-9C2D-C6D7551876D8">
             <UpgradeVersion Minimum="0.0.0.0" Property="REMOVE_350_LAUNCHER" />
