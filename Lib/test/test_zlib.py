@@ -122,6 +122,8 @@ class ExceptionTestCase(unittest.TestCase):
         with self.assertRaisesRegex(OverflowError, 'int too large'):
             zlib.decompress(b'', 15, sys.maxsize + 1)
         with self.assertRaisesRegex(OverflowError, 'int too large'):
+            zlib.decompressobj().decompress(b'', sys.maxsize + 1)
+        with self.assertRaisesRegex(OverflowError, 'int too large'):
             zlib.decompressobj().flush(sys.maxsize + 1)
 
 
@@ -188,15 +190,6 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
     def test_big_decompress_buffer(self, size):
         self.check_big_decompress_buffer(size, zlib.decompress)
 
-    @bigmemtest(size=_4G + 100, memuse=1, dry_run=False)
-    def test_length_overflow(self, size):
-        data = b'x' * size
-        try:
-            self.assertRaises(OverflowError, zlib.compress, data, 1)
-            self.assertRaises(OverflowError, zlib.decompress, data)
-        finally:
-            data = None
-
     @bigmemtest(size=_4G, memuse=1)
     def test_large_bufsize(self, size):
         # Test decompress(bufsize) parameter greater than the internal limit
@@ -208,6 +201,16 @@ class CompressTestCase(BaseCompressTestCase, unittest.TestCase):
         data = HAMLET_SCENE * 10
         compressed = zlib.compress(data, 1)
         self.assertEqual(zlib.decompress(compressed, 15, CustomInt()), data)
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=_4G + 100, memuse=4)
+    def test_64bit_compress(self, size):
+        data = b'x' * size
+        try:
+            comp = zlib.compress(data, 0)
+            self.assertEqual(zlib.decompress(comp), data)
+        finally:
+            comp = data = None
 
 
 class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
@@ -678,16 +681,45 @@ class CompressObjectTestCase(BaseCompressTestCase, unittest.TestCase):
         decompress = lambda s: d.decompress(s) + d.flush()
         self.check_big_decompress_buffer(size, decompress)
 
-    @bigmemtest(size=_4G + 100, memuse=1, dry_run=False)
-    def test_length_overflow(self, size):
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=_4G + 100, memuse=4)
+    def test_64bit_compress(self, size):
         data = b'x' * size
-        c = zlib.compressobj(1)
-        d = zlib.decompressobj()
+        co = zlib.compressobj(0)
+        do = zlib.decompressobj()
         try:
-            self.assertRaises(OverflowError, c.compress, data)
-            self.assertRaises(OverflowError, d.decompress, data)
+            comp = co.compress(data) + co.flush()
+            uncomp = do.decompress(comp) + do.flush()
+            self.assertEqual(uncomp, data)
         finally:
-            data = None
+            comp = uncomp = data = None
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=_4G + 100, memuse=3)
+    def test_large_unused_data(self, size):
+        data = b'abcdefghijklmnop'
+        unused = b'x' * size
+        comp = zlib.compress(data) + unused
+        do = zlib.decompressobj()
+        try:
+            uncomp = do.decompress(comp) + do.flush()
+            self.assertEqual(unused, do.unused_data)
+            self.assertEqual(uncomp, data)
+        finally:
+            unused = comp = do = None
+
+    @unittest.skipUnless(sys.maxsize > 2**32, 'requires 64bit platform')
+    @bigmemtest(size=_4G + 100, memuse=5)
+    def test_large_unconsumed_tail(self, size):
+        data = b'x' * size
+        do = zlib.decompressobj()
+        try:
+            comp = zlib.compress(data, 0)
+            uncomp = do.decompress(comp, 1) + do.flush()
+            self.assertEqual(uncomp, data)
+            self.assertEqual(do.unconsumed_tail, b'')
+        finally:
+            comp = uncomp = data = None
 
     def test_wbits(self):
         # wbits=0 only supported since zlib v1.2.3.5

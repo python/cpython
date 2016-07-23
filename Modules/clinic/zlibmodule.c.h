@@ -57,7 +57,7 @@ PyDoc_STRVAR(zlib_decompress__doc__,
 
 static PyObject *
 zlib_decompress_impl(PyObject *module, Py_buffer *data, int wbits,
-                     unsigned int bufsize);
+                     Py_ssize_t bufsize);
 
 static PyObject *
 zlib_decompress(PyObject *module, PyObject *args)
@@ -65,10 +65,10 @@ zlib_decompress(PyObject *module, PyObject *args)
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
     int wbits = MAX_WBITS;
-    unsigned int bufsize = DEF_BUF_SIZE;
+    Py_ssize_t bufsize = DEF_BUF_SIZE;
 
     if (!PyArg_ParseTuple(args, "y*|iO&:decompress",
-        &data, &wbits, capped_uint_converter, &bufsize))
+        &data, &wbits, ssize_t_converter, &bufsize))
         goto exit;
     return_value = zlib_decompress_impl(module, &data, wbits, bufsize);
 
@@ -236,17 +236,17 @@ PyDoc_STRVAR(zlib_Decompress_decompress__doc__,
 
 static PyObject *
 zlib_Decompress_decompress_impl(compobject *self, Py_buffer *data,
-                                unsigned int max_length);
+                                Py_ssize_t max_length);
 
 static PyObject *
 zlib_Decompress_decompress(compobject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
     Py_buffer data = {NULL, NULL};
-    unsigned int max_length = 0;
+    Py_ssize_t max_length = 0;
 
     if (!PyArg_ParseTuple(args, "y*|O&:decompress",
-        &data, capped_uint_converter, &max_length))
+        &data, ssize_t_converter, &max_length))
         goto exit;
     return_value = zlib_Decompress_decompress_impl(self, &data, max_length);
 
@@ -348,16 +348,16 @@ PyDoc_STRVAR(zlib_Decompress_flush__doc__,
     {"flush", (PyCFunction)zlib_Decompress_flush, METH_VARARGS, zlib_Decompress_flush__doc__},
 
 static PyObject *
-zlib_Decompress_flush_impl(compobject *self, unsigned int length);
+zlib_Decompress_flush_impl(compobject *self, Py_ssize_t length);
 
 static PyObject *
 zlib_Decompress_flush(compobject *self, PyObject *args)
 {
     PyObject *return_value = NULL;
-    unsigned int length = DEF_BUF_SIZE;
+    Py_ssize_t length = DEF_BUF_SIZE;
 
     if (!PyArg_ParseTuple(args, "|O&:flush",
-        capped_uint_converter, &length))
+        ssize_t_converter, &length))
         goto exit;
     return_value = zlib_Decompress_flush_impl(self, length);
 
@@ -442,4 +442,4 @@ exit:
 #ifndef ZLIB_COMPRESS_COPY_METHODDEF
     #define ZLIB_COMPRESS_COPY_METHODDEF
 #endif /* !defined(ZLIB_COMPRESS_COPY_METHODDEF) */
-/*[clinic end generated code: output=8545565b1a1822de input=a9049054013a1b77]*/
+/*[clinic end generated code: output=7711ef02d1d5776c input=a9049054013a1b77]*/
