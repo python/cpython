@@ -596,8 +596,8 @@ class HandlerTest(BaseTest):
         for cls, args in cases:
             h = cls(*args)
             self.assertTrue(os.path.exists(fn))
-            os.unlink(fn)
             h.close()
+            os.unlink(fn)
 
     @unittest.skipIf(os.name == 'nt', 'WatchedFileHandler not appropriate for Windows.')
     @unittest.skipUnless(threading, 'Threading required for this test.')
