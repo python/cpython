@@ -61,6 +61,9 @@ Tests
 Windows
 -------
 
+- Issue #27469: Adds a shell extension to the launcher so that drag and drop
+  works correctly.
+
 - Issue #27309: Enables proper Windows styles in python[w].exe manifest.
 
 What's New in Python 3.6.0 alpha 3
@@ -243,12 +246,6 @@ Build
   directory and rename it to include the ABIFLAGS.
 
 - Don't use largefile support for GNU/Hurd.
-
-Windows
--------
-
-- Issue #27469: Adds a shell extension to the launcher so that drag and drop
-  works correctly.
 
 Tools/Demos
 -----------
