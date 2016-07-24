@@ -1726,7 +1726,7 @@ class TestDateTime(TestDate):
         # Positional fold:
         self.assertRaises(TypeError, self.theclass,
                           2000, 1, 31, 23, 59, 59, 0, None, 1)
-        
+
     def test_hash_equality(self):
         d = self.theclass(2000, 12, 31, 23, 30, 17)
         e = self.theclass(2000, 12, 31, 23, 30, 17)
@@ -4254,7 +4254,7 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
             t.replace(1, 1, 1, None, 1)
         with self.assertRaises(TypeError):
             dt.replace(1, 1, 1, 1, 1, 1, 1, None, 1)
-        
+
     def test_comparison(self):
         t = time(0)
         dt = datetime(1, 1, 1)
