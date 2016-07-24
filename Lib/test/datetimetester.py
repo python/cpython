@@ -2,7 +2,7 @@
 
 See http://www.zope.org/Members/fdrake/DateTimeWiki/TestCases
 """
-from test.support import requires
+from test.support import is_resource_enabled
 
 import itertools
 import bisect
@@ -1726,7 +1726,7 @@ class TestDateTime(TestDate):
         # Positional fold:
         self.assertRaises(TypeError, self.theclass,
                           2000, 1, 31, 23, 59, 59, 0, None, 1)
-
+        
     def test_hash_equality(self):
         d = self.theclass(2000, 12, 31, 23, 30, 17)
         e = self.theclass(2000, 12, 31, 23, 30, 17)
@@ -4254,7 +4254,7 @@ class TestLocalTimeDisambiguation(unittest.TestCase):
             t.replace(1, 1, 1, None, 1)
         with self.assertRaises(TypeError):
             dt.replace(1, 1, 1, 1, 1, 1, 1, None, 1)
-
+        
     def test_comparison(self):
         t = time(0)
         dt = datetime(1, 1, 1)
@@ -4677,10 +4677,7 @@ class ZoneInfoTest(unittest.TestCase):
     def setUp(self):
         if sys.platform == "win32":
             self.skipTest("Skipping zoneinfo tests on Windows")
-        try:
-            self.tz = ZoneInfo.fromname(self.zonename)
-        except FileNotFoundError as err:
-            self.skipTest("Skipping %s: %s" % (self.zonename, err))
+        self.tz = ZoneInfo.fromname(self.zonename)
 
     def assertEquivDatetimes(self, a, b):
         self.assertEqual((a.replace(tzinfo=None), a.fold, id(a.tzinfo)),
@@ -4741,7 +4738,7 @@ class ZoneInfoTest(unittest.TestCase):
             # civil time was generally not solar time in those years.
                 self.zonename.startswith('right/')):
             self.skipTest("Skipping %s" % self.zonename)
-        tz = self.tz
+        tz = ZoneInfo.fromname(self.zonename)
         TZ = os.environ.get('TZ')
         os.environ['TZ'] = self.zonename
         try:
@@ -4775,20 +4772,26 @@ class ZoneInfoTest(unittest.TestCase):
             _time.tzset()
 
 
-class ZoneInfoCompleteTest(unittest.TestCase):
-    def test_all(self):
-        requires('tzdata', 'test requires tzdata and a long time to run')
-        for name in ZoneInfo.zonenames():
-            class Test(ZoneInfoTest):
-                zonename = name
-            for suffix in ['folds', 'gaps', 'system_transitions']:
-                test = Test('test_' + suffix)
-                result = test.run()
-                self.assertTrue(result.wasSuccessful(), name + ' ' + suffix)
+class ZoneInfoCompleteTest(unittest.TestSuite):
+    def __init__(self):
+        tests = []
+        if is_resource_enabled('tzdata'):
+            for name in ZoneInfo.zonenames():
+                Test = type('ZoneInfoTest[%s]' % name, (ZoneInfoTest,), {})
+                Test.zonename = name
+                for method in dir(Test):
+                    if method.startswith('test_'):
+                        tests.append(Test(method))
+        super().__init__(tests)
 
 # Iran had a sub-minute UTC offset before 1946.
 class IranTest(ZoneInfoTest):
     zonename = 'Iran'
+
+def load_tests(loader, standard_tests, pattern):
+    standard_tests.addTest(ZoneInfoCompleteTest())
+    return standard_tests
+
 
 if __name__ == "__main__":
     unittest.main()
