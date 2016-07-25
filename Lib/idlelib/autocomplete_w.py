@@ -216,6 +216,7 @@ class AutoCompleteWindow:
         self.winconfigid = acw.bind(WINCONFIG_SEQUENCE, self.winconfig_event)
         self.doubleclickid = listbox.bind(DOUBLECLICK_SEQUENCE,
                                           self.doubleclick_event)
+        return None
 
     def winconfig_event(self, event):
         if not self.is_active():
@@ -244,11 +245,10 @@ class AutoCompleteWindow:
         self.hide_window()
 
     def listselect_event(self, event):
-        if not self.is_active():
-            return
-        self.userwantswindow = True
-        cursel = int(self.listbox.curselection()[0])
-        self._change_start(self.completions[cursel])
+        if self.is_active():
+            self.userwantswindow = True
+            cursel = int(self.listbox.curselection()[0])
+            self._change_start(self.completions[cursel])
 
     def doubleclick_event(self, event):
         # Put the selected completion in the text, and close the list
@@ -258,7 +258,7 @@ class AutoCompleteWindow:
 
     def keypress_event(self, event):
         if not self.is_active():
-            return
+            return None
         keysym = event.keysym
         if hasattr(event, "mc_state"):
             state = event.mc_state
@@ -283,7 +283,7 @@ class AutoCompleteWindow:
                 # keysym == "BackSpace"
                 if len(self.start) == 0:
                     self.hide_window()
-                    return
+                    return None
                 self._change_start(self.start[:-1])
             self.lasttypedstart = self.start
             self.listbox.select_clear(0, int(self.listbox.curselection()[0]))
@@ -293,7 +293,7 @@ class AutoCompleteWindow:
 
         elif keysym == "Return":
             self.hide_window()
-            return
+            return None
 
         elif (self.mode == COMPLETE_ATTRIBUTES and keysym in
               ("period", "space", "parenleft", "parenright", "bracketleft",
@@ -309,7 +309,7 @@ class AutoCompleteWindow:
                and (self.mode == COMPLETE_ATTRIBUTES or self.start):
                 self._change_start(self.completions[cursel])
             self.hide_window()
-            return
+            return None
 
         elif keysym in ("Home", "End", "Prior", "Next", "Up", "Down") and \
              not state:
@@ -350,12 +350,12 @@ class AutoCompleteWindow:
                 # first tab; let AutoComplete handle the completion
                 self.userwantswindow = True
                 self.lastkey_was_tab = True
-                return
+                return None
 
         elif any(s in keysym for s in ("Shift", "Control", "Alt",
                                        "Meta", "Command", "Option")):
             # A modifier key, so ignore
-            return
+            return None
 
         elif event.char and event.char >= ' ':
             # Regular character with a non-length-1 keycode
@@ -369,7 +369,7 @@ class AutoCompleteWindow:
         else:
             # Unknown event, close the window and let it through.
             self.hide_window()
-            return
+            return None
 
     def keyrelease_event(self, event):
         if not self.is_active():

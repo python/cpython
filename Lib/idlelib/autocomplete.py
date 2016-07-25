@@ -37,16 +37,14 @@ class AutoComplete:
 
     def __init__(self, editwin=None):
         self.editwin = editwin
-        if editwin is None:  # subprocess and test
-            return
-        self.text = editwin.text
-        self.autocompletewindow = None
-
-        # id of delayed call, and the index of the text insert when the delayed
-        # call was issued. If _delayed_completion_id is None, there is no
-        # delayed call.
-        self._delayed_completion_id = None
-        self._delayed_completion_index = None
+        if editwin is not None:  # not in subprocess or test
+            self.text = editwin.text
+            self.autocompletewindow = None
+            # id of delayed call, and the index of the text insert when
+            # the delayed call was issued. If _delayed_completion_id is
+            # None, there is no delayed call.
+            self._delayed_completion_id = None
+            self._delayed_completion_index = None
 
     def _make_autocomplete_window(self):
         return autocomplete_w.AutoCompleteWindow(self.text)
@@ -82,7 +80,7 @@ class AutoComplete:
         """
         if hasattr(event, "mc_state") and event.mc_state:
             # A modifier was pressed along with the tab, continue as usual.
-            return
+            return None
         if self.autocompletewindow and self.autocompletewindow.is_active():
             self.autocompletewindow.complete()
             return "break"
@@ -101,9 +99,8 @@ class AutoComplete:
 
     def _delayed_open_completions(self, *args):
         self._delayed_completion_id = None
-        if self.text.index("insert") != self._delayed_completion_index:
-            return
-        self.open_completions(*args)
+        if self.text.index("insert") == self._delayed_completion_index:
+            self.open_completions(*args)
 
     def open_completions(self, evalfuncs, complete, userWantsWin, mode=None):
         """Find the completions and create the AutoCompleteWindow.
@@ -148,17 +145,17 @@ class AutoComplete:
                 comp_what = hp.get_expression()
                 if not comp_what or \
                    (not evalfuncs and comp_what.find('(') != -1):
-                    return
+                    return None
             else:
                 comp_what = ""
         else:
-            return
+            return None
 
         if complete and not comp_what and not comp_start:
-            return
+            return None
         comp_lists = self.fetch_completions(comp_what, mode)
         if not comp_lists[0]:
-            return
+            return None
         self.autocompletewindow = self._make_autocomplete_window()
         return not self.autocompletewindow.show_window(
                 comp_lists, "insert-%dc" % len(comp_start),
