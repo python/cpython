@@ -9,6 +9,7 @@
         
         <Feature Id="DefaultFeature" AllowAdvertise="no" Title="!(loc.Title)" Description="!(loc.Description)">
             <ComponentGroupRef Id="exe_python" Primary="yes" />
+            <ComponentGroupRef Id="exe_reg" Primary="yes" />
             <ComponentGroupRef Id="exe_txt" />
             <ComponentGroupRef Id="exe_icons" />
             <ComponentRef Id="OptionalFeature" />
@@ -24,7 +25,6 @@
                           WorkingDirectory="InstallDirectory" />
                 <RemoveFolder Id="Remove_MenuDir" Directory="MenuDir" On="uninstall" />
                 <RegistryKey Root="HKMU" Key="[REGISTRYKEY]">
-                    <RegistryValue Key="InstallPath\InstallGroup" Type="string" Value="!(loc.ProductName)" KeyPath="yes" />
                     <RegistryValue Key="InstalledFeatures" Name="Shortcuts" Type="string" Value="$(var.Version)" />
                 </RegistryKey>
             </Component>

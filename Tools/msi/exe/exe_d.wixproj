@@ -10,6 +10,7 @@
     <ItemGroup>
         <Compile Include="exe_d.wxs" />
         <Compile Include="exe_files.wxs" />
+        <Compile Include="exe_reg.wxs" />
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="*.wxl" />
