@@ -4677,7 +4677,10 @@ class ZoneInfoTest(unittest.TestCase):
     def setUp(self):
         if sys.platform == "win32":
             self.skipTest("Skipping zoneinfo tests on Windows")
-        self.tz = ZoneInfo.fromname(self.zonename)
+        try:
+            self.tz = ZoneInfo.fromname(self.zonename)
+        except FileNotFoundError as err:
+            self.skipTest("Skipping %s: %s" % (self.zonename, err))
 
     def assertEquivDatetimes(self, a, b):
         self.assertEqual((a.replace(tzinfo=None), a.fold, id(a.tzinfo)),
@@ -4738,7 +4741,7 @@ class ZoneInfoTest(unittest.TestCase):
             # civil time was generally not solar time in those years.
                 self.zonename.startswith('right/')):
             self.skipTest("Skipping %s" % self.zonename)
-        tz = ZoneInfo.fromname(self.zonename)
+        tz = self.tz
         TZ = os.environ.get('TZ')
         os.environ['TZ'] = self.zonename
         try:
