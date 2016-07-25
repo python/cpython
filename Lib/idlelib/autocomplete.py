@@ -78,16 +78,17 @@ class AutoComplete:
         open a completion list after that (if there is more than one
         completion)
         """
-        if hasattr(event, "mc_state") and event.mc_state:
-            # A modifier was pressed along with the tab, continue as usual.
+        if hasattr(event, "mc_state") and event.mc_state or\
+                not self.text.get("insert linestart", "insert").strip():
+            # A modifier was pressed along with the tab or
+            # there is only previous whitespace on this line, so tab.
             return None
         if self.autocompletewindow and self.autocompletewindow.is_active():
             self.autocompletewindow.complete()
             return "break"
         else:
             opened = self.open_completions(False, True, True)
-            if opened:
-                return "break"
+            return "break" if opened else None
 
     def _open_completions_later(self, *args):
         self._delayed_completion_index = self.text.index("insert")

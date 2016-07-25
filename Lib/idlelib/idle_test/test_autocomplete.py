@@ -97,6 +97,11 @@ class AutoCompleteTest(unittest.TestCase):
         self.assertIsNone(autocomplete.autocomplete_event(ev))
         del ev.mc_state
 
+        # Test that tab after whitespace is ignored.
+        self.text.insert('1.0', '        """Docstring.\n    ')
+        self.assertIsNone(autocomplete.autocomplete_event(ev))
+        self.text.delete('1.0', 'end')
+
         # If autocomplete window is open, complete() method is called
         self.text.insert('1.0', 're.')
         # This must call autocomplete._make_autocomplete_window()
