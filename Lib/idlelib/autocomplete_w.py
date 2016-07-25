@@ -240,9 +240,8 @@ class AutoCompleteWindow:
         acw.wm_geometry("+%d+%d" % (new_x, new_y))
 
     def hide_event(self, event):
-        if not self.is_active():
-            return
-        self.hide_window()
+        if self.is_active():
+            self.hide_window()
 
     def listselect_event(self, event):
         if self.is_active():
