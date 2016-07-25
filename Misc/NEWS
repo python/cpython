@@ -16,6 +16,9 @@ Core and Builtins
 - Issue #27581: Don't rely on wrapping for overflow check in
   PySequence_Tuple().  Patch by Xiang Zhang.
 
+- Issue #1621: Avoid signed integer overflow in list and tuple operations.
+  Patch by Xiang Zhang.
+
 - Issue #27419: Standard __import__() no longer look up "__import__" in globals
   or builtins for importing submodules or "from import".  Fixed a crash if
   raise a warning about unabling to resolve package from __spec__ or
