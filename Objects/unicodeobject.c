@@ -15039,26 +15039,18 @@ PyUnicode_InternInPlace(PyObject **p)
             return;
         }
     }
-    /* It might be that the GetItem call fails even
-       though the key is present in the dictionary,
-       namely when this happens during a stack overflow. */
     Py_ALLOW_RECURSION
-    t = PyDict_GetItem(interned, s);
+    t = PyDict_SetDefault(interned, s, s);
     Py_END_ALLOW_RECURSION
-
-    if (t) {
+    if (t == NULL) {
+        PyErr_Clear();
+        return;
+    }
+    if (t != s) {
         Py_INCREF(t);
         Py_SETREF(*p, t);
         return;
     }
-
-    PyThreadState_GET()->recursion_critical = 1;
-    if (PyDict_SetItem(interned, s, s) < 0) {
-        PyErr_Clear();
-        PyThreadState_GET()->recursion_critical = 0;
-        return;
-    }
-    PyThreadState_GET()->recursion_critical = 0;
     /* The two references in interned are not counted by refcnt.
        The deallocator will take care of this */
     Py_REFCNT(s) -= 2;
