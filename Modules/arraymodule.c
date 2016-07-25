@@ -846,37 +846,10 @@ array_repeat(arrayobject *a, Py_ssize_t n)
 }
 
 static int
-array_ass_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
+array_del_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh)
 {
     char *item;
-    Py_ssize_t n; /* Size of replacement array */
     Py_ssize_t d; /* Change in size */
-#define b ((arrayobject *)v)
-    if (v == NULL)
-        n = 0;
-    else if (array_Check(v)) {
-        n = Py_SIZE(b);
-        if (a == b) {
-            /* Special case "a[i:j] = a" -- copy b first */
-            int ret;
-            v = array_slice(b, 0, n);
-            if (!v)
-                return -1;
-            ret = array_ass_slice(a, ilow, ihigh, v);
-            Py_DECREF(v);
-            return ret;
-        }
-        if (b->ob_descr != a->ob_descr) {
-            PyErr_BadArgument();
-            return -1;
-        }
-    }
-    else {
-        PyErr_Format(PyExc_TypeError,
-         "can only assign array (not \"%.200s\") to array slice",
-                         Py_TYPE(v)->tp_name);
-        return -1;
-    }
     if (ilow < 0)
         ilow = 0;
     else if (ilow > Py_SIZE(a))
@@ -888,7 +861,7 @@ array_ass_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
     else if (ihigh > Py_SIZE(a))
         ihigh = Py_SIZE(a);
     item = a->ob_item;
-    d = n - (ihigh-ilow);
+    d = ihigh-ilow;
     /* Issue #4509: If the array has exported buffers and the slice
        assignment would change the size of the array, fail early to make
        sure we don't modify it. */
@@ -897,25 +870,14 @@ array_ass_slice(arrayobject *a, Py_ssize_t ilow, Py_ssize_t ihigh, PyObject *v)
             "cannot resize an array that is exporting buffers");
         return -1;
     }
-    if (d < 0) { /* Delete -d items */
-        memmove(item + (ihigh+d)*a->ob_descr->itemsize,
+    if (d > 0) { /* Delete d items */
+        memmove(item + (ihigh-d)*a->ob_descr->itemsize,
             item + ihigh*a->ob_descr->itemsize,
             (Py_SIZE(a)-ihigh)*a->ob_descr->itemsize);
-        if (array_resize(a, Py_SIZE(a) + d) == -1)
+        if (array_resize(a, Py_SIZE(a) - d) == -1)
             return -1;
     }
-    else if (d > 0) { /* Insert d items */
-        if (array_resize(a, Py_SIZE(a) + d))
-            return -1;
-        memmove(item + (ihigh+d)*a->ob_descr->itemsize,
-            item + ihigh*a->ob_descr->itemsize,
-            (Py_SIZE(a)-ihigh)*a->ob_descr->itemsize);
-    }
-    if (n > 0)
-        memcpy(item + ilow*a->ob_descr->itemsize, b->ob_item,
-               n*b->ob_descr->itemsize);
     return 0;
-#undef b
 }
 
 static int
@@ -927,7 +889,7 @@ array_ass_item(arrayobject *a, Py_ssize_t i, PyObject *v)
         return -1;
     }
     if (v == NULL)
-        return array_ass_slice(a, i, i+1, v);
+        return array_del_slice(a, i, i+1);
     return (*a->ob_descr->setitem)(a, i, v);
 }
 
@@ -1155,8 +1117,7 @@ array_array_remove(arrayobject *self, PyObject *v)
         cmp = PyObject_RichCompareBool(selfi, v, Py_EQ);
         Py_DECREF(selfi);
         if (cmp > 0) {
-            if (array_ass_slice(self, i, i+1,
-                               (PyObject *)NULL) != 0)
+            if (array_del_slice(self, i, i+1) != 0)
                 return NULL;
             Py_INCREF(Py_None);
             return Py_None;
@@ -1199,7 +1160,7 @@ array_array_pop_impl(arrayobject *self, Py_ssize_t i)
     v = getarrayitem((PyObject *)self, i);
     if (v == NULL)
         return NULL;
-    if (array_ass_slice(self, i, i+1, (PyObject *)NULL) != 0) {
+    if (array_del_slice(self, i, i+1) != 0) {
         Py_DECREF(v);
         return NULL;
     }
