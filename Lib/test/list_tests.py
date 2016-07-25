@@ -266,8 +266,20 @@ class CommonTest(seq_tests.CommonTest):
         self.assertEqual(a, list("spameggs"))
 
         self.assertRaises(TypeError, a.extend, None)
-
         self.assertRaises(TypeError, a.extend)
+
+        # overflow test. issue1621
+        class CustomIter:
+            def __iter__(self):
+                return self
+            def __next__(self):
+                raise StopIteration
+            def __length_hint__(self):
+                return sys.maxsize
+        a = self.type2test([1,2,3,4])
+        a.extend(CustomIter())
+        self.assertEqual(a, [1,2,3,4])
+
 
     def test_insert(self):
         a = self.type2test([0, 1, 2])

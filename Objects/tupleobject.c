@@ -453,9 +453,9 @@ tupleconcat(PyTupleObject *a, PyObject *bb)
         return NULL;
     }
 #define b ((PyTupleObject *)bb)
-    size = Py_SIZE(a) + Py_SIZE(b);
-    if (size < 0)
+    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
         return PyErr_NoMemory();
+    size = Py_SIZE(a) + Py_SIZE(b);
     np = (PyTupleObject *) PyTuple_New(size);
     if (np == NULL) {
         return NULL;

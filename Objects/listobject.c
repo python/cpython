@@ -488,9 +488,9 @@ list_concat(PyListObject *a, PyObject *bb)
         return NULL;
     }
 #define b ((PyListObject *)bb)
-    size = Py_SIZE(a) + Py_SIZE(b);
-    if (size < 0)
+    if (Py_SIZE(a) > PY_SSIZE_T_MAX - Py_SIZE(b))
         return PyErr_NoMemory();
+    size = Py_SIZE(a) + Py_SIZE(b);
     np = (PyListObject *) PyList_New(size);
     if (np == NULL) {
         return NULL;
@@ -841,18 +841,20 @@ listextend(PyListObject *self, PyObject *b)
         return NULL;
     }
     m = Py_SIZE(self);
-    mn = m + n;
-    if (mn >= m) {
+    if (m > PY_SSIZE_T_MAX - n) {
+        /* m + n overflowed; on the chance that n lied, and there really
+         * is enough room, ignore it.  If n was telling the truth, we'll
+         * eventually run out of memory during the loop.
+         */
+    }
+    else {
+        mn = m + n;
         /* Make room. */
         if (list_resize(self, mn) < 0)
             goto error;
         /* Make the list sane again. */
         Py_SIZE(self) = m;
     }
-    /* Else m + n overflowed; on the chance that n lied, and there really
-     * is enough room, ignore it.  If n was telling the truth, we'll
-     * eventually run out of memory during the loop.
-     */
 
     /* Run iterator to exhaustion. */
     for (;;) {
