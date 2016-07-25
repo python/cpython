@@ -61,6 +61,8 @@ Tests
 Windows
 -------
 
+- Issue #27610: Adds PEP 514 metadata to Windows installer
+
 - Issue #27469: Adds a shell extension to the launcher so that drag and drop
   works correctly.
 
