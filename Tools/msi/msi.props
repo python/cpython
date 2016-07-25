@@ -69,6 +69,8 @@
     <PropertyGroup>
         <Bitness>32-bit</Bitness>
         <Bitness Condition="$(Platform) == 'x64'">64-bit</Bitness>
+        <PlatformArchitecture>32bit</PlatformArchitecture>
+        <PlatformArchitecture Condition="$(Platform) == 'x64'">64bit</PlatformArchitecture>
         <DefineConstants>
             $(DefineConstants);
             Version=$(InstallerVersion);
@@ -79,6 +81,7 @@
             UpgradeMinimumVersion=$(MajorVersionNumber).$(MinorVersionNumber).0.0;
             NextMajorVersionNumber=$(MajorVersionNumber).$([msbuild]::Add($(MinorVersionNumber), 1)).0.0;
             Bitness=$(Bitness);
+            PlatformArchitecture=$(PlatformArchitecture);
             PyDebugExt=$(PyDebugExt);
             PyArchExt=$(PyArchExt);
             PyTestExt=$(PyTestExt);
@@ -154,6 +157,12 @@
         </_Uuid>
         <_Uuid Include="RemoveLib2to3PickleComponentGuid">
             <Uri>lib2to3/pickles</Uri>
+        </_Uuid>
+        <_Uuid Include="CommonPythonRegComponentGuid">
+            <Uri>registry</Uri>
+        </_Uuid>
+        <_Uuid Include="PythonRegComponentGuid">
+            <Uri>registry/$(OutputName)</Uri>
         </_Uuid>
     </ItemGroup>
     <Target Name="_GenerateGuids" AfterTargets="PrepareForBuild" Condition="$(TargetName) != 'launcher'">
