@@ -19,3 +19,5 @@ from idlelib.idle_test import load_tests
 
 if __name__ == '__main__':
     unittest.main(verbosity=2, exit=False)
+    tk._support_default_root = 1
+    tk._default_root = None
