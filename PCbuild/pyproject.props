@@ -5,7 +5,7 @@
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
     <OutDir>$(BuildPath)</OutDir>
     <OutDir Condition="!HasTrailingSlash($(OutDir))">$(OutDir)\</OutDir>
-    <Py_IntDir Condition="'$(PyIntDir)' == ''">$(SolutionDir)obj\</Py_IntDir>
+    <Py_IntDir Condition="'$(Py_IntDir)' == ''">$(MSBuildThisFileDirectory)obj\</Py_IntDir>
     <IntDir>$(Py_IntDir)\$(ArchName)_$(Configuration)\$(ProjectName)\</IntDir>
     <IntDir Condition="$(Configuration) == 'PGInstrument' or $(Configuration) == 'PGUpdate'">$(Py_IntDir)\$(ArchName)_PGO\$(ProjectName)\</IntDir>
     <TargetName Condition="'$(TargetName)' == ''">$(ProjectName)</TargetName>
