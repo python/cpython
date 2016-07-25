@@ -4207,7 +4207,14 @@ static PY_LONG_LONG
 local(PY_LONG_LONG u)
 {
     struct tm local_time;
-    time_t t = u - epoch;
+    time_t t;
+    u -= epoch;
+    t = u;
+    if (t != u) {
+        PyErr_SetString(PyExc_OverflowError,
+        "timestamp out of range for platform time_t");
+        return -1;
+    }
     /* XXX: add bounds checking */
     if (localtime_r(&t, &local_time) == NULL) {
         PyErr_SetFromErrno(PyExc_OSError);
