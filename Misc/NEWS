@@ -16,6 +16,9 @@ Core and Builtins
 - Issue #27507: Add integer overflow check in bytearray.extend().  Patch by
   Xiang Zhang.
 
+- Issue #27581: Don't rely on wrapping for overflow check in
+  PySequence_Tuple().  Patch by Xiang Zhang.
+
 - Issue #23908: os functions, open() and the io.FileIO constructor now reject
   unicode paths with embedded null character on Windows instead of silently
   truncating them.
