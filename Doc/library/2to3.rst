@@ -55,7 +55,7 @@ After transformation, :file:`example.py` looks like this::
 Comments and exact indentation are preserved throughout the translation process.
 
 By default, 2to3 runs a set of :ref:`predefined fixers <2to3-fixers>`.  The
-:option:`-l` flag lists all available fixers.  An explicit set of fixers to run
+:option:`!-l` flag lists all available fixers.  An explicit set of fixers to run
 can be given with :option:`-f`.  Likewise the :option:`!-x` explicitly disables a
 fixer.  The following example runs only the ``imports`` and ``has_key`` fixers::
 
