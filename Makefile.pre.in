@@ -222,6 +222,7 @@ PYTHON=		python$(EXE)
 BUILDPYTHON=	python$(BUILDEXE)
 
 cross_compiling=@cross_compiling@
+PYTHON_FOR_GEN=@PYTHON_FOR_GEN@
 PYTHON_FOR_BUILD=@PYTHON_FOR_BUILD@
 _PYTHON_HOST_PLATFORM=@_PYTHON_HOST_PLATFORM@
 BUILD_GNU_TYPE=	@build@
@@ -339,7 +340,7 @@ PGENOBJS=	$(POBJS) $(PGOBJS)
 OPCODE_H_DIR= 	$(srcdir)/Include
 OPCODE_H_SCRIPT= $(srcdir)/Tools/scripts/generate_opcode_h.py
 OPCODE_H=	$(OPCODE_H_DIR)/opcode.h
-OPCODE_H_GEN=	@OPCODEHGEN@  $(OPCODE_H_SCRIPT) $(srcdir)/Lib/opcode.py $(OPCODE_H)
+OPCODE_H_GEN=	$(PYTHON_FOR_GEN) $(OPCODE_H_SCRIPT) $(srcdir)/Lib/opcode.py $(OPCODE_H)
 #
 ##########################################################################
 # AST
@@ -352,7 +353,7 @@ AST_ASDL=	$(srcdir)/Parser/Python.asdl
 ASDLGEN_FILES=	$(srcdir)/Parser/asdl.py $(srcdir)/Parser/asdl_c.py
 # Note that a build now requires Python to exist before the build starts.
 # Use "hg touch" to fix up screwed up file mtimes in a checkout.
-ASDLGEN=	@ASDLGEN@ $(srcdir)/Parser/asdl_c.py
+ASDLGEN=	$(PYTHON_FOR_GEN) $(srcdir)/Parser/asdl_c.py
 
 ##########################################################################
 # Python
@@ -880,7 +881,7 @@ Objects/dictobject.o: $(srcdir)/Objects/stringlib/eq.h
 Objects/setobject.o: $(srcdir)/Objects/stringlib/eq.h
 
 $(OPCODETARGETS_H): $(OPCODETARGETGEN_FILES)
-	$(OPCODETARGETGEN) $(OPCODETARGETS_H)
+	$(PYTHON_FOR_GEN) $(OPCODETARGETGEN) $(OPCODETARGETS_H)
 
 Python/ceval.o: $(OPCODETARGETS_H) $(srcdir)/Python/ceval_gil.h
 
@@ -888,7 +889,7 @@ Python/frozen.o: Python/importlib.h Python/importlib_external.h
 
 Objects/typeobject.o: Objects/typeslots.inc
 Objects/typeslots.inc: $(srcdir)/Include/typeslots.h $(srcdir)/Objects/typeslots.py
-	$(PYTHON) $(srcdir)/Objects/typeslots.py < $(srcdir)/Include/typeslots.h > Objects/typeslots.inc
+	$(PYTHON_FOR_GEN) $(srcdir)/Objects/typeslots.py < $(srcdir)/Include/typeslots.h Objects/typeslots.inc
 
 ############################################################################
 # Header files
