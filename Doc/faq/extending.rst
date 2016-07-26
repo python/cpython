@@ -146,7 +146,9 @@ this object to :data:`sys.stdout` and :data:`sys.stderr`.  Call print_error, or
 just allow the standard traceback mechanism to work. Then, the output will go
 wherever your ``write()`` method sends it.
 
-The easiest way to do this is to use the :class:`io.StringIO` class::
+The easiest way to do this is to use the :class:`io.StringIO` class:
+
+.. code-block:: pycon
 
    >>> import io, sys
    >>> sys.stdout = io.StringIO()
@@ -156,7 +158,9 @@ The easiest way to do this is to use the :class:`io.StringIO` class::
    foo
    hello world!
 
-A custom object to do the same would look like this::
+A custom object to do the same would look like this:
+
+.. code-block:: pycon
 
    >>> import io, sys
    >>> class StdoutCatcher(io.TextIOBase):
@@ -222,11 +226,15 @@ How do I debug an extension?
 When using GDB with dynamically loaded extensions, you can't set a breakpoint in
 your extension until your extension is loaded.
 
-In your ``.gdbinit`` file (or interactively), add the command::
+In your ``.gdbinit`` file (or interactively), add the command:
+
+.. code-block:: none
 
    br _PyImport_LoadDynamicModule
 
-Then, when you run GDB::
+Then, when you run GDB:
+
+.. code-block:: shell-session
 
    $ gdb /local/bin/python
    gdb) run myscript.py

@@ -229,7 +229,9 @@ Other functions
 Using :mod:`sysconfig` as a script
 ----------------------------------
 
-You can use :mod:`sysconfig` as a script with Python's *-m* option::
+You can use :mod:`sysconfig` as a script with Python's *-m* option:
+
+.. code-block:: shell-session
 
     $ python -m sysconfig
     Platform: "macosx-10.4-i386"

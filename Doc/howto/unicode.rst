@@ -613,7 +613,9 @@ program::
    print(os.listdir(b'.'))
    print(os.listdir('.'))
 
-will produce the following output::
+will produce the following output:
+
+.. code-block:: shell-session
 
    amk:~$ python t.py
    [b'filename\xe4\x94\x80abc', ...]
