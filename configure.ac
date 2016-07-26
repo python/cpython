@@ -57,6 +57,14 @@ AC_SUBST(host)
 # pybuilddir.txt will be created by --generate-posix-vars in the Makefile
 rm -f pybuilddir.txt
 
+AC_CHECK_PROGS(PYTHON_FOR_GEN, python$PACKAGE_VERSION python3 python, not-found)
+if test "$PYTHON_FOR_GEN" = not-found; then
+    PYTHON_FOR_GEN='@echo "Cannot generate $@, python not found !" && \
+    echo "To skip re-generation of $@ run <make touch> or <make -t $@>." && \
+    echo "Otherwise, set python in PATH and run configure or run <make PYTHON_FOR_GEN=python>." && false &&'
+fi
+AC_SUBST(PYTHON_FOR_GEN)
+
 if test "$cross_compiling" = yes; then
     AC_MSG_CHECKING([for python interpreter for cross build])
     if test -z "$PYTHON_FOR_BUILD"; then
@@ -1177,23 +1185,6 @@ if test "$cross_compiling" = yes; then
     esac
 fi
 AC_SUBST(READELF)
-
-AC_SUBST(ASDLGEN)
-AC_CHECK_PROGS(PYTHON, python$PACKAGE_VERSION python3 python, not-found)
-if test "$PYTHON" = not-found; then
-    ASDLGEN="@echo python: $PYTHON! cannot run \$(srcdir)/Parser/asdl_c.py #"
-else
-    ASDLGEN="$PYTHON"
-fi
-
-AC_SUBST(OPCODEHGEN)
-AC_CHECK_PROGS(PYTHON, python$PACKAGE_VERSION python3 python, not-found)
-if test "$PYTHON" = not-found; then
-    OPCODEHGEN="@echo python: $PYTHON! cannot run Tools/scripts/generate_opcode_h.py"
-else
-    OPCODEHGEN="$PYTHON"
-fi
-
 
 
 case $MACHDEP in
