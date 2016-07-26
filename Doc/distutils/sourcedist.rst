@@ -133,7 +133,9 @@ described above does not apply in this case.
 
 The manifest template has one command per line, where each command specifies a
 set of files to include or exclude from the source distribution.  For an
-example, again we turn to the Distutils' own manifest template::
+example, again we turn to the Distutils' own manifest template:
+
+.. code-block:: none
 
    include *.txt
    recursive-include examples *.txt *.py

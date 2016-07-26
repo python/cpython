@@ -321,14 +321,18 @@ operations::
     print("Pending tasks at exit: %s" % asyncio.Task.all_tasks(loop))
     loop.close()
 
-Expected output::
+Expected output:
+
+.. code-block:: none
 
     (1) create file
     (2) write into file
     (3) close file
     Pending tasks at exit: set()
 
-Actual output::
+Actual output:
+
+.. code-block:: none
 
     (3) close file
     (2) write into file
@@ -369,13 +373,17 @@ Pending task destroyed
 If a pending task is destroyed, the execution of its wrapped :ref:`coroutine
 <coroutine>` did not complete. It is probably a bug and so a warning is logged.
 
-Example of log::
+Example of log:
+
+.. code-block:: none
 
     Task was destroyed but it is pending!
     task: <Task pending coro=<kill_me() done, defined at test.py:5> wait_for=<Future pending cb=[Task._wakeup()]>>
 
 :ref:`Enable the debug mode of asyncio <asyncio-debug-mode>` to get the
-traceback where the task was created. Example of log in debug mode::
+traceback where the task was created. Example of log in debug mode:
+
+.. code-block:: none
 
     Task was destroyed but it is pending!
     source_traceback: Object created at (most recent call last):

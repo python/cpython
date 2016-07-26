@@ -314,7 +314,9 @@ immediate playback::
 
 
 Here is a sample session with the turtle shell showing the help functions, using
-blank lines to repeat commands, and the simple record and playback facility::
+blank lines to repeat commands, and the simple record and playback facility:
+
+.. code-block:: none
 
     Welcome to the turtle shell.   Type help or ? to list commands.
 
@@ -373,4 +375,3 @@ blank lines to repeat commands, and the simple record and playback facility::
 
     (turtle) bye
     Thank you for using Turtle
-

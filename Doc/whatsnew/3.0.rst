@@ -117,7 +117,9 @@ You can also customize the separator between items, e.g.::
 
   print("There are <", 2**32, "> possibilities!", sep="")
 
-which produces::
+which produces:
+
+.. code-block:: none
 
   There are <4294967296> possibilities!
 
