@@ -15,6 +15,7 @@ import pickle
 import random
 import struct
 import unittest
+import sysconfig
 
 from array import array
 
@@ -4675,6 +4676,7 @@ class ZoneInfoTest(unittest.TestCase):
     zonename = 'America/New_York'
 
     def setUp(self):
+        self.sizeof_time_t = sysconfig.get_config_var('SIZEOF_TIME_T')
         if sys.platform == "win32":
             self.skipTest("Skipping zoneinfo tests on Windows")
         try:
@@ -4749,6 +4751,9 @@ class ZoneInfoTest(unittest.TestCase):
             for udt, shift in tz.transitions():
                 if self.zonename == 'Europe/Tallinn' and udt.date() == date(1999, 10, 31):
                     print("Skip %s %s transition" % (self.zonename, udt))
+                    continue
+                if self.sizeof_time_t == 4 and udt.year >= 2037:
+                    print("Skip %s %s transition for 32-bit time_t" % (self.zonename, udt))
                     continue
                 s0 = (udt - datetime(1970, 1, 1)) // SEC
                 ss = shift // SEC   # shift seconds
