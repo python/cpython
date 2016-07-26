@@ -77,6 +77,12 @@ Windows
 
 - Issue #27309: Enables proper Windows styles in python[w].exe manifest.
 
+Build
+-----
+
+- Issue #26662: Set PYTHON_FOR_GEN in configure as the Python program to be
+  used for file generation during the build.
+
 What's New in Python 3.6.0 alpha 3
 ==================================
 
