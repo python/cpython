@@ -175,8 +175,8 @@ HelpSource_spec = {
            "'' and file does not exist are invalid path items.\n"
            "Any url ('www...', 'http...') is accepted.\n"
            "Test Browse with and without path, as cannot unittest.\n"
-           "A valid entry will be printed to shell with [0k]\n"
-           "or <return>.  [Cancel] will print None to shell"
+           "[Ok] or <Return> prints valid entry to shell\n"
+           "[Cancel] or <Escape> prints None to shell"
     }
 
 _io_binding_spec = {
@@ -245,7 +245,7 @@ Query_spec = {
              '_htest': True},
     'msg': "Enter with <Return> or [Ok].  Print valid entry to Shell\n"
            "Blank line, after stripping, is ignored\n"
-           "Close dialog with valid entry, [Cancel] or [X]"
+           "Close dialog with valid entry, <Escape>, [Cancel], [X]"
     }
 
 
