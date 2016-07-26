@@ -33,14 +33,18 @@ Here is a sample Python 2.x source file, :file:`example.py`::
    name = raw_input()
    greet(name)
 
-It can be converted to Python 3.x code via 2to3 on the command line::
+It can be converted to Python 3.x code via 2to3 on the command line:
+
+.. code-block:: shell-session
 
    $ 2to3 example.py
 
 A diff against the original source file is printed.  2to3 can also write the
 needed modifications right back to the source file.  (A backup of the original
 file is made unless :option:`-n` is also given.)  Writing the changes back is
-enabled with the :option:`-w` flag::
+enabled with the :option:`-w` flag:
+
+.. code-block:: shell-session
 
    $ 2to3 -w example.py
 
@@ -57,17 +61,23 @@ Comments and exact indentation are preserved throughout the translation process.
 By default, 2to3 runs a set of :ref:`predefined fixers <2to3-fixers>`.  The
 :option:`-l` flag lists all available fixers.  An explicit set of fixers to run
 can be given with :option:`-f`.  Likewise the :option:`!-x` explicitly disables a
-fixer.  The following example runs only the ``imports`` and ``has_key`` fixers::
+fixer.  The following example runs only the ``imports`` and ``has_key`` fixers:
+
+.. code-block:: shell-session
 
    $ 2to3 -f imports -f has_key example.py
 
-This command runs every fixer except the ``apply`` fixer::
+This command runs every fixer except the ``apply`` fixer:
+
+.. code-block:: shell-session
 
    $ 2to3 -x apply example.py
 
 Some fixers are *explicit*, meaning they aren't run by default and must be
 listed on the command line to be run.  Here, in addition to the default fixers,
-the ``idioms`` fixer is run::
+the ``idioms`` fixer is run:
+
+.. code-block:: shell-session
 
    $ 2to3 -f all -f idioms example.py
 
@@ -113,7 +123,9 @@ This option implies the :option:`-w` flag as it would not make sense otherwise.
 
 The :option:`--add-suffix` option specifies a string to append to all output
 filenames.  The :option:`-n` flag is required when specifying this as backups
-are not necessary when writing to different filenames.  Example::
+are not necessary when writing to different filenames.  Example:
+
+.. code-block:: shell-session
 
    $ 2to3 -n -W --add-suffix=3 example.py
 
@@ -122,7 +134,9 @@ Will cause a converted file named ``example.py3`` to be written.
 .. versionadded:: 2.7.3
    The :option:`--add-suffix` option was added.
 
-To translate an entire project from one directory tree to another use::
+To translate an entire project from one directory tree to another use:
+
+.. code-block:: shell-session
 
    $ 2to3 --output-dir=python3-version/mycode -W -n python2-version/mycode
 

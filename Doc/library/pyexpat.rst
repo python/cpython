@@ -87,7 +87,9 @@ The :mod:`xml.parsers.expat` module contains two functions:
    separator.
 
    For example, if *namespace_separator* is set to a space character (``' '``) and
-   the following document is parsed::
+   the following document is parsed:
+
+   .. code-block:: xml
 
       <?xml version="1.0"?>
       <root xmlns    = "http://default-namespace.org/"

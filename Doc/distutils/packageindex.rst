@@ -235,7 +235,9 @@ in the root of the package besides :file:`setup.py`.
 
 To prevent registering broken reStructuredText content, you can use the
 :program:`rst2html` program that is provided by the :mod:`docutils` package and
-check the ``long_description`` from the command line::
+check the ``long_description`` from the command line:
+
+.. code-block:: shell-session
 
     $ python setup.py --long-description | rst2html.py > output.html
 

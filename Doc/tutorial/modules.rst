@@ -135,7 +135,9 @@ the end of your module::
 
 you can make the file usable as a script as well as an importable module,
 because the code that parses the command line only runs if the module is
-executed as the "main" file::
+executed as the "main" file:
+
+.. code-block:: shell-session
 
    $ python fibo.py 50
    1 1 2 3 5 8 13 21 34

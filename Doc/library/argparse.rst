@@ -44,7 +44,9 @@ produces either the sum or the max::
    print args.accumulate(args.integers)
 
 Assuming the Python code above is saved into a file called ``prog.py``, it can
-be run at the command line and provides useful help messages::
+be run at the command line and provides useful help messages:
+
+.. code-block:: shell-session
 
    $ python prog.py -h
    usage: prog.py [-h] [--sum] N [N ...]
@@ -59,7 +61,9 @@ be run at the command line and provides useful help messages::
     --sum       sum the integers (default: find the max)
 
 When run with the appropriate arguments, it prints either the sum or the max of
-the command-line integers::
+the command-line integers:
+
+.. code-block:: shell-session
 
    $ python prog.py 1 2 3 4
    4
@@ -67,7 +71,9 @@ the command-line integers::
    $ python prog.py 1 2 3 4 --sum
    10
 
-If invalid arguments are passed in, it will issue an error::
+If invalid arguments are passed in, it will issue an error:
+
+.. code-block:: shell-session
 
    $ python prog.py a b c
    usage: prog.py [-h] [--sum] N [N ...]
@@ -187,7 +193,9 @@ invoked on the command line.  For example, consider a file named
    args = parser.parse_args()
 
 The help for this program will display ``myprogram.py`` as the program name
-(regardless of where the program was invoked from)::
+(regardless of where the program was invoked from):
+
+.. code-block:: shell-session
 
    $ python myprogram.py --help
    usage: myprogram.py [-h] [--foo FOO]
@@ -550,7 +558,9 @@ the parser's help message. For example, consider a file named
    args = parser.parse_args()
 
 If ``-h`` or ``--help`` is supplied at the command line, the ArgumentParser
-help will be printed::
+help will be printed:
+
+.. code-block:: shell-session
 
    $ python myprogram.py --help
    usage: myprogram.py [-h] [--foo FOO]

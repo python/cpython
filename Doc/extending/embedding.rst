@@ -151,7 +151,9 @@ array.  If you compile and link this program (let's call the finished executable
            c = c + b
        return c
 
-then the result should be::
+then the result should be:
+
+.. code-block:: shell-session
 
    $ call multiply multiply 3 2
    Will compute 3 times 2
@@ -274,16 +276,20 @@ available).  This script has several options, of which the following will
 be directly useful to you:
 
 * ``pythonX.Y-config --cflags`` will give you the recommended flags when
-  compiling::
+  compiling:
 
-   $ /opt/bin/python2.7-config --cflags
-   -I/opt/include/python2.7 -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
+  .. code-block:: shell-session
+
+     $ /opt/bin/python2.7-config --cflags
+     -I/opt/include/python2.7 -fno-strict-aliasing -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
 
 * ``pythonX.Y-config --ldflags`` will give you the recommended flags when
-  linking::
+  linking:
 
-   $ /opt/bin/python2.7-config --ldflags
-   -L/opt/lib/python2.7/config -lpthread -ldl -lutil -lm -lpython2.7 -Xlinker -export-dynamic
+  .. code-block:: shell-session
+
+     $ /opt/bin/python2.7-config --ldflags
+     -L/opt/lib/python2.7/config -lpthread -ldl -lutil -lm -lpython2.7 -Xlinker -export-dynamic
 
 .. note::
    To avoid confusion between several Python installations (and especially

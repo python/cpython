@@ -91,14 +91,18 @@ Here's a complete but small example module::
        doctest.testmod()
 
 If you run :file:`example.py` directly from the command line, :mod:`doctest`
-works its magic::
+works its magic:
+
+.. code-block:: shell-session
 
    $ python example.py
    $
 
 There's no output!  That's normal, and it means all the examples worked.  Pass
 ``-v`` to the script, and :mod:`doctest` prints a detailed log of what
-it's trying, and prints a summary at the end::
+it's trying, and prints a summary at the end:
+
+.. code-block:: shell-session
 
    $ python example.py -v
    Trying:
@@ -117,7 +121,9 @@ it's trying, and prints a summary at the end::
        [1, 1, 2, 6, 24, 120]
    ok
 
-And so on, eventually ending with::
+And so on, eventually ending with:
+
+.. code-block:: none
 
    Trying:
        factorial(1e100)
@@ -205,7 +211,9 @@ file.  This can be done with the :func:`testfile` function::
 That short script executes and verifies any interactive Python examples
 contained in the file :file:`example.txt`.  The file content is treated as if it
 were a single giant docstring; the file doesn't need to contain a Python
-program!   For example, perhaps :file:`example.txt` contains this::
+program!   For example, perhaps :file:`example.txt` contains this:
+
+.. code-block:: none
 
    The ``example`` module
    ======================

@@ -2266,7 +2266,9 @@ There is an existing data type already used for this,
 written in pure Python could cause a segmentation fault by taking a
 :c:type:`PyCObject` from module A and somehow substituting it for the
 :c:type:`PyCObject` in module B.   Capsules know their own name,
-and getting the pointer requires providing the name::
+and getting the pointer requires providing the name:
+
+.. code-block:: c
 
    void *vtable;
 
@@ -2705,4 +2707,3 @@ The author would like to thank the following people for offering
 suggestions, corrections and assistance with various drafts of this
 article: Nick Coghlan, Philip Jenvey, Ryan Lovett, R. David Murray,
 Hugh Secker-Walker.
-

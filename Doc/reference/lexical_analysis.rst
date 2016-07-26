@@ -715,7 +715,10 @@ Operators
 
 .. index:: single: operators
 
-The following tokens are operators::
+The following tokens are operators:
+
+.. code-block:: none
+
 
    +       -       *       **      /       //      %
    <<      >>      &       |       ^       ~
@@ -732,7 +735,9 @@ Delimiters
 
 .. index:: single: delimiters
 
-The following tokens serve as delimiters in the grammar::
+The following tokens serve as delimiters in the grammar:
+
+.. code-block:: none
 
    (       )       [       ]       {       }      @
    ,       :       .       `       =       ;
@@ -745,14 +750,18 @@ of the list, the augmented assignment operators, serve lexically as delimiters,
 but also perform an operation.
 
 The following printing ASCII characters have special meaning as part of other
-tokens or are otherwise significant to the lexical analyzer::
+tokens or are otherwise significant to the lexical analyzer:
+
+.. code-block:: none
 
    '       "       #       \
 
 .. index:: single: ASCII@ASCII
 
 The following printing ASCII characters are not used in Python.  Their
-occurrence outside string literals and comments is an unconditional error::
+occurrence outside string literals and comments is an unconditional error:
+
+.. code-block:: none
 
    $       ?
 

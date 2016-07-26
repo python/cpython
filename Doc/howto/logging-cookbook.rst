@@ -998,7 +998,9 @@ script, ``chowntest.py``::
     logger = logging.getLogger('mylogger')
     logger.debug('A debug message')
 
-To run this, you will probably need to run as ``root``::
+To run this, you will probably need to run as ``root``:
+
+.. code-block:: shell-session
 
     $ sudo python3.3 chowntest.py
     $ cat chowntest.log
@@ -1500,7 +1502,9 @@ via ``stderr`` and once via ``stdout``). After the ``with`` statement's
 completion, the status is as it was before so message #6 appears (like message
 #1) whereas message #7 doesn't (just like message #2).
 
-If we run the resulting script, the result is as follows::
+If we run the resulting script, the result is as follows:
+
+.. code-block:: shell-session
 
     $ python logctx.py
     1. This should appear just once on stderr.
@@ -1510,12 +1514,16 @@ If we run the resulting script, the result is as follows::
     6. This should appear just once on stderr.
 
 If we run it again, but pipe ``stderr`` to ``/dev/null``, we see the following,
-which is the only message written to ``stdout``::
+which is the only message written to ``stdout``:
+
+.. code-block:: shell-session
 
     $ python logctx.py 2>/dev/null
     5. This should appear twice - once on stderr and once on stdout.
 
-Once again, but piping ``stdout`` to ``/dev/null``, we get::
+Once again, but piping ``stdout`` to ``/dev/null``, we get:
+
+.. code-block:: shell-session
 
     $ python logctx.py >/dev/null
     1. This should appear just once on stderr.

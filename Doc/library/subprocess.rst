@@ -706,20 +706,23 @@ been imported from the :mod:`subprocess` module.
 Replacing /bin/sh shell backquote
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: bash
 
    output=`mycmd myarg`
-   # becomes
-   output = check_output(["mycmd", "myarg"])
 
+becomes::
+
+   output = check_output(["mycmd", "myarg"])
 
 Replacing shell pipeline
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: bash
 
    output=`dmesg | grep hda`
-   # becomes
+
+becomes::
+
    p1 = Popen(["dmesg"], stdout=PIPE)
    p2 = Popen(["grep", "hda"], stdin=p1.stdout, stdout=PIPE)
    p1.stdout.close()  # Allow p1 to receive a SIGPIPE if p2 exits.
@@ -729,10 +732,14 @@ The p1.stdout.close() call after starting the p2 is important in order for p1
 to receive a SIGPIPE if p2 exits before p1.
 
 Alternatively, for trusted input, the shell's own pipeline support may still
-be used directly::
+be used directly:
+
+.. code-block:: bash
 
    output=`dmesg | grep hda`
-   # becomes
+
+becomes::
+
    output=check_output("dmesg | grep hda", shell=True)
 
 

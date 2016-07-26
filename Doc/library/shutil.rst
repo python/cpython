@@ -342,7 +342,9 @@ found in the :file:`.ssh` directory of the user::
     >>> make_archive(archive_name, 'gztar', root_dir)
     '/Users/tarek/myarchive.tar.gz'
 
-The resulting archive contains::
+The resulting archive contains:
+
+.. code-block:: shell-session
 
     $ tar -tzvf /Users/tarek/myarchive.tar.gz
     drwx------ tarek/staff       0 2010-02-01 16:23:40 ./

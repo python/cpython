@@ -520,7 +520,7 @@ functions to be used from IDLE's Python shell.
 Command line usage
 ^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: none
 
    idle.py [-c command] [-d] [-e] [-h] [-i] [-r file] [-s] [-t title] [-] [arg] ...
 

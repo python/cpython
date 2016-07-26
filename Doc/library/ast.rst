@@ -113,6 +113,7 @@ Subversion revision number of the file shown below.
 The abstract grammar is currently defined as follows:
 
 .. literalinclude:: ../../Parser/Python.asdl
+   :language: none
 
 
 :mod:`ast` Helpers

@@ -619,7 +619,9 @@ default filesystem encoding is UTF-8, running the following program::
    print os.listdir('.')
    print os.listdir(u'.')
 
-will produce the following output::
+will produce the following output:
+
+.. code-block:: shell-session
 
    amk:~$ python t.py
    ['.svn', 'filename\xe4\x94\x80abc', ...]

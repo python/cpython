@@ -473,7 +473,9 @@ It could be called like this::
               client="John Cleese",
               sketch="Cheese Shop Sketch")
 
-and of course it would print::
+and of course it would print:
+
+.. code-block:: none
 
    -- Do you have any Limburger ?
    -- I'm sorry, we're all out of Limburger

@@ -78,7 +78,9 @@ as they are encountered::
    parser.feed('<html><head><title>Test</title></head>'
                '<body><h1>Parse me!</h1></body></html>')
 
-The output will then be::
+The output will then be:
+
+.. code-block:: none
 
    Encountered a start tag: html
    Encountered a start tag: head

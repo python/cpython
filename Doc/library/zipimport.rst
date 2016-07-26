@@ -149,7 +149,9 @@ Examples
 --------
 
 Here is an example that imports a module from a ZIP archive - note that the
-:mod:`zipimport` module is not explicitly used. ::
+:mod:`zipimport` module is not explicitly used.
+
+.. code-block:: shell-session
 
    $ unzip -l example.zip
    Archive:  example.zip

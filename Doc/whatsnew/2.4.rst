@@ -1425,7 +1425,9 @@ specifying the :const:`doctest.REPORT_UDIFF` (unified diffs),
            print word
 
 Running the above function's tests with :const:`doctest.REPORT_UDIFF` specified,
-you get the following output::
+you get the following output:
+
+.. code-block:: none
 
    **********************************************************************
    File "t.py", line 15, in g

@@ -680,7 +680,9 @@ automatically adds a ``--version`` option to your parser. If it encounters
 this option on the command line, it expands your ``version`` string (by
 replacing ``%prog``), prints it to stdout, and exits.
 
-For example, if your script is called ``/usr/bin/foo``::
+For example, if your script is called ``/usr/bin/foo``:
+
+.. code-block:: shell-session
 
    $ /usr/bin/foo --version
    foo 1.0
@@ -730,14 +732,18 @@ program's usage message and an error message to standard error and exits with
 error status 2.
 
 Consider the first example above, where the user passes ``4x`` to an option
-that takes an integer::
+that takes an integer:
+
+.. code-block:: shell-session
 
    $ /usr/bin/foo -n 4x
    Usage: foo [options]
 
    foo: error: option -n: invalid integer value: '4x'
 
-Or, where the user fails to pass a value at all::
+Or, where the user fails to pass a value at all:
+
+.. code-block:: shell-session
 
    $ /usr/bin/foo -n
    Usage: foo [options]

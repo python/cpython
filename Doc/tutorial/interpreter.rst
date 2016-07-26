@@ -93,7 +93,9 @@ mode*.  In this mode it prompts for the next command with the *primary prompt*,
 usually three greater-than signs (``>>>``); for continuation lines it prompts
 with the *secondary prompt*, by default three dots (``...``). The interpreter
 prints a welcome message stating its version number and a copyright notice
-before printing the first prompt::
+before printing the first prompt:
+
+.. code-block:: shell-session
 
    python
    Python 2.7 (#1, Feb 28 2010, 00:02:06)

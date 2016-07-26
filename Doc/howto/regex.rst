@@ -79,7 +79,9 @@ of the RE by repeating them or changing their meaning.  Much of this document is
 devoted to discussing various metacharacters and what they do.
 
 Here's a complete list of the metacharacters; their meanings will be discussed
-in the rest of this HOWTO. ::
+in the rest of this HOWTO.
+
+.. code-block:: none
 
    . ^ $ * + ? { } [ ] \ | ( )
 

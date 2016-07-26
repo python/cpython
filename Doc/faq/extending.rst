@@ -156,6 +156,8 @@ The easiest way to do this is to use the StringIO class in the standard library.
 
 Sample code and use for catching stdout:
 
+.. code-block:: pycon
+
    >>> class StdoutCatcher:
    ...     def __init__(self):
    ...         self.data = ''
@@ -219,11 +221,15 @@ How do I debug an extension?
 When using GDB with dynamically loaded extensions, you can't set a breakpoint in
 your extension until your extension is loaded.
 
-In your ``.gdbinit`` file (or interactively), add the command::
+In your ``.gdbinit`` file (or interactively), add the command:
+
+.. code-block:: none
 
    br _PyImport_LoadDynamicModule
 
-Then, when you run GDB::
+Then, when you run GDB:
+
+.. code-block:: shell-session
 
    $ gdb /local/bin/python
    gdb) run myscript.py
@@ -468,6 +474,8 @@ parameter specifications for :c:func:`PyArg_ParseTuple`.
 
 You can check the size of the Unicode character a Python interpreter is using by
 checking the value of sys.maxunicode:
+
+.. code-block:: pycon
 
    >>> import sys
    >>> if sys.maxunicode > 65535:

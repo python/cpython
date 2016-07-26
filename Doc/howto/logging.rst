@@ -106,7 +106,9 @@ A very simple example is::
    logging.warning('Watch out!')  # will print a message to the console
    logging.info('I told you so')  # will not print anything
 
-If you type these lines into a script and run it, you'll see::
+If you type these lines into a script and run it, you'll see:
+
+.. code-block:: none
 
    WARNING:root:Watch out!
 
@@ -230,7 +232,9 @@ append the variable data as arguments. For example::
    import logging
    logging.warning('%s before you %s', 'Look', 'leap!')
 
-will display::
+will display:
+
+.. code-block:: none
 
    WARNING:root:Look before you leap!
 
@@ -585,7 +589,9 @@ logger, a console handler, and a simple formatter using Python code::
     logger.error('error message')
     logger.critical('critical message')
 
-Running this module from the command line produces the following output::
+Running this module from the command line produces the following output:
+
+.. code-block:: shell-session
 
     $ python simple_logging_module.py
     2005-03-19 15:10:26,618 - simple_example - DEBUG - debug message
@@ -644,7 +650,9 @@ Here is the logging.conf file::
     format=%(asctime)s - %(name)s - %(levelname)s - %(message)s
     datefmt=
 
-The output is nearly identical to that of the non-config-file-based example::
+The output is nearly identical to that of the non-config-file-based example:
+
+.. code-block:: shell-session
 
     $ python simple_logging_config.py
     2005-03-19 15:38:55,977 - simpleExample - DEBUG - debug message
@@ -1041,4 +1049,3 @@ take up any memory.
       Useful handlers included with the logging module.
 
    :ref:`A logging cookbook <logging-cookbook>`
-

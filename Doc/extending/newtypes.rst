@@ -223,7 +223,9 @@ That's it!  All that remains is to build it; put the above code in a file called
    setup(name="noddy", version="1.0",
          ext_modules=[Extension("noddy", ["noddy.c"])])
 
-in a file called :file:`setup.py`; then typing ::
+in a file called :file:`setup.py`; then typing
+
+.. code-block:: shell-session
 
    $ python setup.py build
 
@@ -1580,4 +1582,3 @@ might be something like the following::
 .. [#] Even in the third version, we aren't guaranteed to avoid cycles.  Instances of
    string subclasses are allowed and string subclasses could allow cycles even if
    normal strings don't.
-
