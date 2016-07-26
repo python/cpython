@@ -160,6 +160,8 @@ each with their own argument patterns and help displays::
     parser_m.add_argument('-c', '--course', type=int, required=True)
     parser_m.add_argument('-s', '--speed', type=int, default=0)
 
+.. code-block:: shell-session
+
     $ ./helm.py --help                         # top level help (launch and move)
     $ ./helm.py launch --help                  # help for launch options
     $ ./helm.py launch --missiles              # set missiles=True and torpedos=False
@@ -478,7 +480,9 @@ Some smaller changes made to the core Python language are:
 
 * The interpreter can now be started with a quiet option, ``-q``, to prevent
   the copyright and version information from being displayed in the interactive
-  mode.  The option can be introspected using the :attr:`sys.flags` attribute::
+  mode.  The option can be introspected using the :attr:`sys.flags` attribute:
+
+  .. code-block:: shell-session
 
     $ python -q
     >>> sys.flags
@@ -573,7 +577,9 @@ Some smaller changes made to the core Python language are:
   by Benjamin Peterson in :issue:`8413`.)
 
 * Warnings are now easier to control using the :envvar:`PYTHONWARNINGS`
-  environment variable as an alternative to using ``-W`` at the command line::
+  environment variable as an alternative to using ``-W`` at the command line:
+
+  .. code-block:: shell-session
 
     $ export PYTHONWARNINGS='ignore::RuntimeWarning::,once::UnicodeWarning::'
 
@@ -595,7 +601,9 @@ Some smaller changes made to the core Python language are:
   object ensures it closes the underlying operating system resource
   (usually, a file descriptor), the delay in deallocating the object could
   produce various issues, especially under Windows.  Here is an example
-  of enabling the warning from the command line::
+  of enabling the warning from the command line:
+
+  .. code-block:: shell-session
 
       $ python -q -Wdefault
       >>> f = open("foo", "wb")
@@ -1720,7 +1728,9 @@ names.
   test discovery can find tests within packages, locating any test importable
   from the top-level directory.  The top-level directory can be specified with
   the `-t` option, a pattern for matching files with ``-p``, and a directory to
-  start discovery with ``-s``::
+  start discovery with ``-s``:
+
+  .. code-block:: shell-session
 
     $ python -m unittest discover -s my_proj_dir -p _test.py
 
@@ -1895,7 +1905,9 @@ pydoc
 
 The :mod:`pydoc` module now provides a much-improved Web server interface, as
 well as a new command-line option ``-b`` to automatically open a browser window
-to display that server::
+to display that server:
+
+.. code-block:: shell-session
 
     $ pydoc3.2 -b
 
@@ -1998,7 +2010,9 @@ details of a given Python installation.
     '/Users/raymondhettinger/Library/Python/3.2/lib/python/site-packages'
 
 Conveniently, some of site's functionality is accessible directly from the
-command-line::
+command-line:
+
+.. code-block:: shell-session
 
     $ python -m site --user-base
     /Users/raymondhettinger/.local
@@ -2031,7 +2045,9 @@ seven named schemes used by :mod:`distutils`.  Those include *posix_prefix*,
 * :func:`~sysconfig.get_config_vars` returns a dictionary of platform specific
   variables.
 
-There is also a convenient command-line interface::
+There is also a convenient command-line interface:
+
+.. code-block:: doscon
 
   C:\Python32>python -m sysconfig
   Platform: "win32"
@@ -2265,7 +2281,9 @@ turtledemo
 The demonstration code for the :mod:`turtle` module was moved from the *Demo*
 directory to main library.  It includes over a dozen sample scripts with
 lively displays.  Being on :attr:`sys.path`, it can now be run directly
-from the command-line::
+from the command-line:
+
+.. code-block:: shell-session
 
     $ python -m turtledemo
 
@@ -2701,4 +2719,3 @@ require changes to your code:
 
 * Due to the new :term:`GIL` implementation, :c:func:`PyEval_InitThreads()`
   cannot be called before :c:func:`Py_Initialize()` anymore.
-

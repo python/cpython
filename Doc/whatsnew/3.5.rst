@@ -742,7 +742,9 @@ publicized, either at the time or since.
 
 With the new module, bundling your application is as simple as putting all
 the files, including a ``__main__.py`` file, into a directory ``myapp``
-and running::
+and running:
+
+.. code-block:: shell-session
 
     $ python -m zipapp myapp
     $ python myapp.pyz

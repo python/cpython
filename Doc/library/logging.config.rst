@@ -243,7 +243,9 @@ otherwise, the context is used to determine what to instantiate.
     handler.
 
   All *other* keys are passed through as keyword arguments to the
-  handler's constructor.  For example, given the snippet::
+  handler's constructor.  For example, given the snippet:
+
+  .. code-block:: yaml
 
       handlers:
         console:
@@ -352,7 +354,9 @@ it unambiguously, and then using the id in the source object's
 configuration to indicate that a connection exists between the source
 and the destination object with that id.
 
-So, for example, consider the following YAML snippet::
+So, for example, consider the following YAML snippet:
+
+.. code-block:: yaml
 
     formatters:
       brief:
@@ -409,7 +413,9 @@ to provide a 'factory' - a callable which is called with a
 configuration dictionary and which returns the instantiated object.
 This is signalled by an absolute import path to the factory being
 made available under the special key ``'()'``.  Here's a concrete
-example::
+example:
+
+.. code-block:: yaml
 
     formatters:
       brief:
@@ -626,7 +632,9 @@ configuration must be specified in a section called ``[logger_root]``.
    :func:`dictConfig`, so it's worth considering transitioning to this newer
    API when it's convenient to do so.
 
-Examples of these sections in the file are given below. ::
+Examples of these sections in the file are given below.
+
+.. code-block:: ini
 
    [loggers]
    keys=root,log02,log03,log04,log05,log06,log07
@@ -638,7 +646,9 @@ Examples of these sections in the file are given below. ::
    keys=form01,form02,form03,form04,form05,form06,form07,form08,form09
 
 The root logger must specify a level and a list of handlers. An example of a
-root logger section is given below. ::
+root logger section is given below.
+
+.. code-block:: ini
 
    [logger_root]
    level=NOTSET
@@ -655,7 +665,9 @@ appear in the ``[handlers]`` section. These names must appear in the
 file.
 
 For loggers other than the root logger, some additional information is required.
-This is illustrated by the following example. ::
+This is illustrated by the following example.
+
+.. code-block:: ini
 
    [logger_parser]
    level=DEBUG
@@ -673,7 +685,8 @@ indicate that messages are **not** propagated to handlers up the hierarchy. The
 say the name used by the application to get the logger.
 
 Sections which specify handler configuration are exemplified by the following.
-::
+
+.. code-block:: ini
 
    [handler_hand01]
    class=StreamHandler
@@ -693,7 +706,9 @@ a corresponding section in the configuration file.
 The ``args`` entry, when :func:`eval`\ uated in the context of the ``logging``
 package's namespace, is the list of arguments to the constructor for the handler
 class. Refer to the constructors for the relevant handlers, or to the examples
-below, to see how typical entries are constructed. ::
+below, to see how typical entries are constructed.
+
+.. code-block:: ini
 
    [handler_hand02]
    class=FileHandler
@@ -744,7 +759,9 @@ below, to see how typical entries are constructed. ::
    formatter=form09
    args=('localhost:9022', '/log', 'GET')
 
-Sections which specify formatter configuration are typified by the following. ::
+Sections which specify formatter configuration are typified by the following.
+
+.. code-block:: ini
 
    [formatter_form01]
    format=F1 %(asctime)s %(levelname)s %(message)s
@@ -780,5 +797,3 @@ condensed format.
 
    Module :mod:`logging.handlers`
       Useful handlers included with the logging module.
-
-

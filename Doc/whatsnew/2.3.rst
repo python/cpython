@@ -291,7 +291,9 @@ PEP 273: Importing Modules from ZIP Archives
 The new :mod:`zipimport` module adds support for importing modules from a ZIP-
 format archive.  You don't need to import the module explicitly; it will be
 automatically imported if a ZIP archive's filename is added to ``sys.path``.
-For example::
+For example:
+
+.. code-block:: shell-session
 
    amk@nyman:~/src/python$ unzip -l /tmp/example.zip
    Archive:  /tmp/example.zip
@@ -1761,7 +1763,9 @@ This returns an object containing all of the option values, and a list of
 strings containing the remaining arguments.
 
 Invoking the script with the various arguments now works as you'd expect it to.
-Note that the length argument is automatically converted to an integer. ::
+Note that the length argument is automatically converted to an integer.
+
+.. code-block:: shell-session
 
    $ ./python opt.py -i data arg1
    <Values at 0x400cad4c: {'input': 'data', 'length': None}>
@@ -1771,7 +1775,9 @@ Note that the length argument is automatically converted to an integer. ::
    []
    $
 
-The help message is automatically generated for you::
+The help message is automatically generated for you:
+
+.. code-block:: shell-session
 
    $ ./python opt.py --help
    usage: opt.py [options]
@@ -2078,4 +2084,3 @@ Michael Hudson, Chris Lambert, Detlef Lannert, Martin von Löwis, Andrew
 MacIntyre, Lalo Martins, Chad Netzer, Gustavo Niemeyer, Neal Norwitz, Hans
 Nowak, Chris Reedy, Francesco Ricciardi, Vinay Sajip, Neil Schemenauer, Roman
 Suzi, Jason Tishler, Just van Rossum.
-
