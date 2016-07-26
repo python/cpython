@@ -53,6 +53,7 @@ class Query(Toplevel):
         self.transient(parent)
         self.grab_set()
         self.bind('<Key-Return>', self.ok)
+        self.bind('<Key-Escape>', self.cancel)
         self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.parent = parent
         self.message = message
