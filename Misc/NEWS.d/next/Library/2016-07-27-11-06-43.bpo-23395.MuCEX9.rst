@@ -1,0 +1,3 @@
+``_thread.interrupt_main()`` now raises an exception if the 
+``SIGINT`` signal is ignored or not handled by Python.
+Patch by Viktor Stinner

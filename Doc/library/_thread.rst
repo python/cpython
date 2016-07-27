@@ -53,8 +53,15 @@ This module defines the following constants and functions:
 
 .. function:: interrupt_main()
 
-   Raise a :exc:`KeyboardInterrupt` exception in the main thread.  A subthread can
-   use this function to interrupt the main thread.
+   Simulate the effect of a :data:`signal.SIGINT` signal arriving in the main
+   thread. A thread can use this function to interrupt the main thread.
+
+   The :data:`signal.SIGINT` signal must be handled by Python, otherwise
+   an exception is raised.
+
+   .. versionchanged:: 3.6
+      The function now raises an exception if the signal is ignored or not
+      handled by Python.
 
 
 .. function:: exit()
