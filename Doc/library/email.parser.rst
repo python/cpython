@@ -250,7 +250,7 @@ in the top-level :mod:`email` package namespace.
    and *policy* are interpreted as with the :class:`~email.parser.Parser` class
    constructor.
 
-   .. versionchanged::
+   .. versionchanged:: 3.3
       Removed the *strict* argument.  Added the *policy* keyword.
 
 .. function:: message_from_binary_file(fp, _class=email.message.Message, *, \
