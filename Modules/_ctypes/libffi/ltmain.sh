@@ -1438,7 +1438,7 @@ func_run_hooks ()
 
     case " $hookable_fns " in
       *" $1 "*) ;;
-      *) func_fatal_error "'$1' does not support hook funcions.n" ;;
+      *) func_fatal_error "'$1' does not support hook functions." ;;
     esac
 
     eval _G_hook_fns=\$$1_hooks; shift

@@ -3985,7 +3985,7 @@ PyCFuncPtr_call(PyCFuncPtrObject *self, PyObject *inargs, PyObject *kwds)
                                                    self,
                                                    callargs,
                                                    NULL);
-        /* If the errcheck funtion failed, return NULL.
+        /* If the errcheck function failed, return NULL.
            If the errcheck function returned callargs unchanged,
            continue normal processing.
            If the errcheck function returned something else,

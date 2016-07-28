@@ -778,7 +778,7 @@ PyAPI_FUNC(void) _Py_AddToAllObjects(PyObject *, int force);
     } while (0)
 
 /* Safely decref `op` and set `op` to NULL, especially useful in tp_clear
- * and tp_dealloc implementatons.
+ * and tp_dealloc implementations.
  *
  * Note that "the obvious" code can be deadly:
  *

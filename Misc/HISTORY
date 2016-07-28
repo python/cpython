@@ -10633,7 +10633,7 @@ Thu Feb 18 20:51:50 1999  Fred Drake  <fdrake@eric.cnri.reston.va.us>
 	Bow to font-lock at the end of the docstring, since it throws stuff
 	off.
 
-	Make sure the path paramter to readmodule() is a list before adding it
+	Make sure the path parameter to readmodule() is a list before adding it
 	with sys.path, or the addition could fail.
 
 
@@ -12685,7 +12685,7 @@ an underscore and used to initialize the pointer.
 - The warning about a thread still having a frame now only happens in
 verbose mode.
 
-- Change the signal finialization so that it also resets the signal
+- Change the signal finalization so that it also resets the signal
 handlers.  After this has been called, our signal handlers are no
 longer active!
 
@@ -14537,7 +14537,7 @@ some more documentation.
 fixed.
 
 - The test of negative number to the float power has been moved from the 
-built-in pow() functin to floatobject.c (so complex numbers can yield the 
+built-in pow() function to floatobject.c (so complex numbers can yield the
 correct result).
 
 - The bug introduced in beta2 where shared libraries loaded (using 

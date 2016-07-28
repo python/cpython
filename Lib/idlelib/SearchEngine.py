@@ -107,7 +107,7 @@ class SearchEngine:
         It directly return the result of that call.
 
         Text is a text widget. Prog is a precompiled pattern.
-        The ok parameteris a bit complicated as it has two effects.
+        The ok parameter is a bit complicated as it has two effects.
 
         If there is a selection, the search begin at either end,
         depending on the direction setting and ok, with ok meaning that

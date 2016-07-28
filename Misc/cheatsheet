@@ -975,7 +975,7 @@ hex(x)              Converts a number x to a hexadecimal string.
 id(object)          Returns a unique 'identity' integer for an object.
 input([prompt])     Prints prompt if given. Reads input and evaluates it.
                     Converts a number or a string to a plain integer. Optional
-int(x[, base])      base paramenter specifies base from which to convert string
+int(x[, base])      base parameter specifies base from which to convert string
                     values.
 intern(aString)     Enters aString in the table of "interned strings"
                     andreturns the string. Interned strings are 'immortals'.
@@ -991,7 +991,7 @@ list(sequence)      Converts sequence into a list. If already a list,returns a
                     copy of it.
 locals()            Returns a dictionary containing current local variables.
                     Converts a number or a string to a long integer. Optional
-long(x[, base])     base paramenter specifies base from which to convert string
+long(x[, base])     base parameter specifies base from which to convert string
                     values.
                     Applies function to every item of list and returns a listof
 map(function, list, the results. If additional arguments are passed,function

@@ -1,6 +1,6 @@
 """Classes that replace tkinter gui objects used by an object being tested.
 
-A gui object is anything with a master or parent paramenter, which is
+A gui object is anything with a master or parent parameter, which is
 typically required in spite of what the doc strings say.
 """
 

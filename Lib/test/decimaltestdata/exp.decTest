@@ -19,7 +19,7 @@
 ------------------------------------------------------------------------
 version: 2.59
 
--- Tests of the exponential funtion.  Currently all testcases here
+-- Tests of the exponential function.  Currently all testcases here
 -- show results which are correctly rounded (within <= 0.5 ulp).
 
 extended:    1

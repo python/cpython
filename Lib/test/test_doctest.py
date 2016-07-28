@@ -2113,7 +2113,7 @@ def test_DocTestSuite():
          ...
          AttributeError: 'module' object has no attribute 'sillySetup'
 
-       The setUp and tearDown funtions are passed test objects. Here
+       The setUp and tearDown functions are passed test objects. Here
        we'll use the setUp function to supply the missing variable y:
 
          >>> def setUp(test):
@@ -2259,7 +2259,7 @@ def test_DocFileSuite():
          ...
          AttributeError: 'module' object has no attribute 'sillySetup'
 
-       The setUp and tearDown funtions are passed test objects.
+       The setUp and tearDown functions are passed test objects.
        Here, we'll use a setUp function to set the favorite color in
        test_doctest.txt:
 
