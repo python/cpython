@@ -299,7 +299,7 @@ class GeneralModuleTests(unittest.TestCase):
                               "Error raising socket exception.")
 
     def testSendtoErrors(self):
-        # Testing that sendto doesn't masks failures. See #10169.
+        # Testing that sendto doesn't mask failures. See #10169.
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.addCleanup(s.close)
         s.bind(('', 0))

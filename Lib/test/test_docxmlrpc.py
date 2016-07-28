@@ -153,7 +153,7 @@ class DocXMLRPCHTTPGETServer(unittest.TestCase):
     @make_request_and_skipIf(sys.flags.optimize >= 2,
                      "Docstrings are omitted with -O2 and above")
     def test_system_methods(self):
-        """Test the precense of three consecutive system.* methods.
+        """Test the presence of three consecutive system.* methods.
 
         This also tests their use of parameter type recognition and the
         systems related to that process.

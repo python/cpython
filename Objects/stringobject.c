@@ -901,7 +901,7 @@ string_print(PyStringObject *op, FILE *fp, int flags)
     fputc(quote, fp);
     for (i = 0; i < str_len; i++) {
         /* Since strings are immutable and the caller should have a
-        reference, accessing the interal buffer should not be an issue
+        reference, accessing the internal buffer should not be an issue
         with the GIL released. */
         c = op->ob_sval[i];
         if (c == quote || c == '\\')

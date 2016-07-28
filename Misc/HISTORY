@@ -13058,7 +13058,7 @@ in Python.  An example completer, rlcompleter.py, is provided.
 
 - The traceback.py module has a new function tb_lineno() by Marc-Andre
 Lemburg which extracts the line number from the linenumber table in
-the code object.  Apparently the traceback object doesn't contains the
+the code object.  Apparently the traceback object doesn't contain the
 right linenumber when -O is used.  Rather than guessing whether -O is
 on or off, the module itself uses tb_lineno() unconditionally.
 

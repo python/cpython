@@ -1138,7 +1138,7 @@ PyAPI_FUNC(int) PyUnicode_EncodeDecimal(
 
    These are capable of handling Unicode objects and strings on input
    (we refer to them as strings in the descriptions) and return
-   Unicode objects or integers as apporpriate. */
+   Unicode objects or integers as appropriate. */
 
 /* Concat two strings giving a new Unicode string. */
 
@@ -1288,7 +1288,7 @@ PyAPI_FUNC(int) PyUnicode_Compare(
 /* Rich compare two strings and return one of the following:
 
    - NULL in case an exception was raised
-   - Py_True or Py_False for successfuly comparisons
+   - Py_True or Py_False for successful comparisons
    - Py_NotImplemented in case the type combination is unknown
 
    Note that Py_EQ and Py_NE comparisons can cause a UnicodeWarning in
