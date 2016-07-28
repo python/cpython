@@ -1583,7 +1583,7 @@ called ``preserve``::
 
     preserve
 
-This tells Clinic that the current contents of the output should be kept, unmodifed.
+This tells Clinic that the current contents of the output should be kept, unmodified.
 This is used internally by Clinic when dumping output into ``file`` files; wrapping
 it in a Clinic block lets Clinic use its existing checksum functionality to ensure
 the file was not modified by hand before it gets overwritten.
