@@ -372,7 +372,7 @@ class SignalEINTRTest(EINTRBaseTest):
     @unittest.skipUnless(hasattr(signal, 'sigwaitinfo'),
                          'need signal.sigwaitinfo()')
     def test_sigwaitinfo(self):
-        # Issue #25277, #25868: give a few miliseconds to the parent process
+        # Issue #25277, #25868: give a few milliseconds to the parent process
         # between os.write() and signal.sigwaitinfo() to works around a race
         # condition
         self.sleep_time = 0.100

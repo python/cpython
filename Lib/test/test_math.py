@@ -1254,8 +1254,8 @@ class IsCloseTests(unittest.TestCase):
                                              (1.0e200, .999999999999999e200)]
         self.assertAllNotClose(zero_tolerance_not_close_examples, rel_tol=0.0)
 
-    def test_assymetry(self):
-        # test the assymetry example from PEP 485
+    def test_asymmetry(self):
+        # test the asymmetry example from PEP 485
         self.assertAllClose([(9, 10), (10, 9)], rel_tol=0.1)
 
     def test_integers(self):
