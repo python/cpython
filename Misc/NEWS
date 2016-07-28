@@ -7975,7 +7975,7 @@ Library
   mailbox.MH.get_message().
 
 - Issue #5585: Add the ability to call an initializer to
-  mulitiprocessing.manager so that users can install custom handlers/etc.
+  multiprocessing.manager so that users can install custom handlers/etc.
 
 - Issue #3551: Patch multiprocessing to raise a proper exception if the size of
   the object when writefile is called causes an ERROR_NO_SYSTEM_RESOURCES.  Added
@@ -10173,7 +10173,7 @@ Core and builtins
   module is:
     from future_builtins import hex, oct
 
-- Issue #1600: Modifed PyOS_ascii_formatd to use at most 2 digit
+- Issue #1600: Modified PyOS_ascii_formatd to use at most 2 digit
   exponents for exponents with absolute value < 100.  Follows C99
   standard.  This is a change on Windows, which would use 3 digits.
   Also, added 'n' to the formats that PyOS_ascii_formatd understands,

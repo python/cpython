@@ -556,10 +556,10 @@ _PyLong_FromByteArray(const unsigned char* bytes, size_t n,
         size_t i;
         const unsigned char* p = pendbyte;
         const int pincr = -incr;  /* search MSB to LSB */
-        const unsigned char insignficant = is_signed ? 0xff : 0x00;
+        const unsigned char insignificant = is_signed ? 0xff : 0x00;
 
         for (i = 0; i < n; ++i, p += pincr) {
-            if (*p != insignficant)
+            if (*p != insignificant)
                 break;
         }
         numsignificantbytes = n - i;

@@ -76,7 +76,7 @@ class NumberTestCase(unittest.TestCase):
             self.assertEqual(t(v).value, truth(v))
 
     def test_typeerror(self):
-        # Only numbers are allowed in the contructor,
+        # Only numbers are allowed in the constructor,
         # otherwise TypeError is raised
         for t in signed_types + unsigned_types + float_types:
             self.assertRaises(TypeError, t, "")

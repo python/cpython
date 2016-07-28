@@ -3,7 +3,7 @@
 
      tdemo-I_dont_like_tiltdemo.py
 
-Demostrates
+Demonstrates
   (a) use of a tilted ellipse as
       turtle shape
   (b) stamping that shape

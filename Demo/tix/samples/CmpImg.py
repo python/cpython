@@ -2,7 +2,7 @@
 #
 # $Id$
 #
-# Tix Demostration Program
+# Tix Demonstration Program
 #
 # This sample program is structured in such a way so that it can be
 # executed from the Tix demo program "tixwidgets.py": it must have a

@@ -110,7 +110,7 @@ PyAPI_FUNC(PyObject *) _PyLong_FromByteArray(
      example, if is_signed is 0 and there are more digits in the v than
      fit in n; or if is_signed is 1, v < 0, and n is just 1 bit shy of
      being large enough to hold a sign bit.  OverflowError is set in this
-     case, but bytes holds the least-signficant n bytes of the true value.
+     case, but bytes holds the least-significant n bytes of the true value.
 */
 PyAPI_FUNC(int) _PyLong_AsByteArray(PyLongObject* v,
 	unsigned char* bytes, size_t n,

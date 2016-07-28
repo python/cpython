@@ -110,7 +110,7 @@ mainloop of the web server::
 There's actually 3 general ways in which this loop could work - dispatching a
 thread to handle ``clientsocket``, create a new process to handle
 ``clientsocket``, or restructure this app to use non-blocking sockets, and
-mulitplex between our "server" socket and any active ``clientsocket``\ s using
+multiplex between our "server" socket and any active ``clientsocket``\ s using
 ``select``. More about that later. The important thing to understand now is
 this: this is *all* a "server" socket does. It doesn't send any data. It doesn't
 receive any data. It just produces "client" sockets. Each ``clientsocket`` is

@@ -329,7 +329,7 @@ class TestBasic(unittest.TestCase):
         d.clear()
         self.assertEqual(len(d), 0)
         self.assertEqual(list(d), [])
-        d.clear()               # clear an emtpy deque
+        d.clear()               # clear an empty deque
         self.assertEqual(list(d), [])
 
     def test_remove(self):

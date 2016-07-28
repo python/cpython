@@ -434,7 +434,7 @@ d.setdefault(k,defaultval) the item of d with key k                 (5)
     defaultVal, and adds k to map with value defaultVal. defaultVal is
     optional. When not provided and k is not in the map, None is returned and
     added to map.
-      (6) Raises a KeyError if the dictionary is emtpy.
+      (6) Raises a KeyError if the dictionary is empty.
       (7) While iterating over a dictionary, the values may be updated but
           the keys cannot be changed.
 

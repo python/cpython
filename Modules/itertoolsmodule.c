@@ -1747,7 +1747,7 @@ iterable, until all of the iterables are exhausted.");
 PyDoc_STRVAR(chain_from_iterable_doc,
 "chain.from_iterable(iterable) --> chain object\n\
 \n\
-Alternate chain() contructor taking a single iterable argument\n\
+Alternate chain() constructor taking a single iterable argument\n\
 that evaluates lazily.");
 
 static PyMethodDef chain_methods[] = {

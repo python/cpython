@@ -346,7 +346,7 @@ class CookieTests(TestCase):
 ##   comma-separated list, it'll be a headache to parse (at least my head
 ##   starts hurting every time I think of that code).
 ## - Expires: You'll get all sorts of date formats in the expires,
-##   including emtpy expires attributes ("expires="). Be as flexible as you
+##   including empty expires attributes ("expires="). Be as flexible as you
 ##   can, and certainly don't expect the weekday to be there; if you can't
 ##   parse it, just ignore it and pretend it's a session cookie.
 ## - Domain-matching: Netscape uses the 2-dot rule for _all_ domains, not
