@@ -633,7 +633,7 @@ ABC hierarchy::
     .. method:: path_stats(path)
 
         Optional abstract method which returns a :class:`dict` containing
-        metadata about the specifed path.  Supported dictionary keys are:
+        metadata about the specified path.  Supported dictionary keys are:
 
         - ``'mtime'`` (mandatory): an integer or floating-point number
           representing the modification time of the source code;

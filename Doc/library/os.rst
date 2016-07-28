@@ -1938,7 +1938,7 @@ features:
    On Unix, *path* can be of type :class:`str` or :class:`bytes` (use
    :func:`~os.fsencode` and :func:`~os.fsdecode` to encode and decode
    :class:`bytes` paths). On Windows, *path* must be of type :class:`str`.
-   On both sytems, the type of the :attr:`~os.DirEntry.name` and
+   On both systems, the type of the :attr:`~os.DirEntry.name` and
    :attr:`~os.DirEntry.path` attributes of each :class:`os.DirEntry` will be of
    the same type as *path*.
 
