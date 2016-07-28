@@ -146,7 +146,7 @@ class ModuleNameTest(unittest.TestCase):
     "Test ModuleName subclass of Query."
 
     class Dummy_ModuleName:
-        entry_ok = query.ModuleName.entry_ok  # Funtion being tested.
+        entry_ok = query.ModuleName.entry_ok  # Function being tested.
         text0 = ''
         entry = Var()
 
