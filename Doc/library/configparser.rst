@@ -66,7 +66,7 @@ The structure of INI files is described `in the following section
 <#supported-ini-file-structure>`_.  Essentially, the file
 consists of sections, each of which contains keys with values.
 :mod:`configparser` classes can read and write such files.  Let's start by
-creating the above configuration file programatically.
+creating the above configuration file programmatically.
 
 .. doctest::
 

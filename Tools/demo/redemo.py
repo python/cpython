@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-"""Basic regular expression demostration facility (Perl style syntax)."""
+"""Basic regular expression demonstration facility (Perl style syntax)."""
 
 from tkinter import *
 import re

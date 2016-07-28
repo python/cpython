@@ -677,7 +677,7 @@ class TestEnum(unittest.TestCase):
                  self.Season.SPRING]
                 )
 
-    def test_programatic_function_string(self):
+    def test_programmatic_function_string(self):
         SummerMonth = Enum('SummerMonth', 'june july august')
         lst = list(SummerMonth)
         self.assertEqual(len(lst), len(SummerMonth))
@@ -694,7 +694,7 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
-    def test_programatic_function_string_with_start(self):
+    def test_programmatic_function_string_with_start(self):
         SummerMonth = Enum('SummerMonth', 'june july august', start=10)
         lst = list(SummerMonth)
         self.assertEqual(len(lst), len(SummerMonth))
@@ -711,7 +711,7 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
-    def test_programatic_function_string_list(self):
+    def test_programmatic_function_string_list(self):
         SummerMonth = Enum('SummerMonth', ['june', 'july', 'august'])
         lst = list(SummerMonth)
         self.assertEqual(len(lst), len(SummerMonth))
@@ -728,7 +728,7 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
-    def test_programatic_function_string_list_with_start(self):
+    def test_programmatic_function_string_list_with_start(self):
         SummerMonth = Enum('SummerMonth', ['june', 'july', 'august'], start=20)
         lst = list(SummerMonth)
         self.assertEqual(len(lst), len(SummerMonth))
@@ -745,7 +745,7 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
-    def test_programatic_function_iterable(self):
+    def test_programmatic_function_iterable(self):
         SummerMonth = Enum(
                 'SummerMonth',
                 (('june', 1), ('july', 2), ('august', 3))
@@ -765,7 +765,7 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
-    def test_programatic_function_from_dict(self):
+    def test_programmatic_function_from_dict(self):
         SummerMonth = Enum(
                 'SummerMonth',
                 OrderedDict((('june', 1), ('july', 2), ('august', 3)))
@@ -785,7 +785,7 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
-    def test_programatic_function_type(self):
+    def test_programmatic_function_type(self):
         SummerMonth = Enum('SummerMonth', 'june july august', type=int)
         lst = list(SummerMonth)
         self.assertEqual(len(lst), len(SummerMonth))
@@ -801,7 +801,7 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
-    def test_programatic_function_type_with_start(self):
+    def test_programmatic_function_type_with_start(self):
         SummerMonth = Enum('SummerMonth', 'june july august', type=int, start=30)
         lst = list(SummerMonth)
         self.assertEqual(len(lst), len(SummerMonth))
@@ -817,7 +817,7 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
-    def test_programatic_function_type_from_subclass(self):
+    def test_programmatic_function_type_from_subclass(self):
         SummerMonth = IntEnum('SummerMonth', 'june july august')
         lst = list(SummerMonth)
         self.assertEqual(len(lst), len(SummerMonth))
@@ -833,7 +833,7 @@ class TestEnum(unittest.TestCase):
             self.assertIn(e, SummerMonth)
             self.assertIs(type(e), SummerMonth)
 
-    def test_programatic_function_type_from_subclass_with_start(self):
+    def test_programmatic_function_type_from_subclass_with_start(self):
         SummerMonth = IntEnum('SummerMonth', 'june july august', start=40)
         lst = list(SummerMonth)
         self.assertEqual(len(lst), len(SummerMonth))
