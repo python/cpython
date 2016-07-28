@@ -380,7 +380,7 @@ def run(*tests):
     callable_object = None
     test_kwds = None
 
-    def next():
+    def next_test():
 
         nonlocal test_name, callable_object, test_kwds
         if len(test_list) == 1:
@@ -395,20 +395,26 @@ def run(*tests):
         text.insert("1.0",test_spec['msg'])
         text.configure(state='disabled') # preserve read-only property
 
-    def run_test():
+    def run_test(_=None):
         widget = callable_object(**test_kwds)
         try:
             print(widget.result)
         except AttributeError:
             pass
 
-    button = tk.Button(root, textvariable=test_name, command=run_test)
+    def close(_=None):
+        root.destroy()
+
+    button = tk.Button(root, textvariable=test_name,
+                       default='active', command=run_test)
+    next_button = tk.Button(root, text="Next", command=next_test)
     button.pack()
-    next_button = tk.Button(root, text="Next", command=next)
     next_button.pack()
+    next_button.focus_set()
+    root.bind('<Key-Return>', run_test)
+    root.bind('<Key-Escape>', close)
 
-    next()
-
+    next_test()
     root.mainloop()
 
 if __name__ == '__main__':
