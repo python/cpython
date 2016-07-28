@@ -90,6 +90,9 @@ What's New in Python 2.7.12?
 Build
 -----
 
+- Issue #27490: Do not build pgen when cross-compiling.  Patch by Thomas
+  Perl.
+
 - Issue #26930: Update Windows builds to use OpenSSL 1.0.2h.
 
 IDLE

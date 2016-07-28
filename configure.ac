@@ -36,12 +36,15 @@ if test "$cross_compiling" = yes; then
         AC_MSG_RESULT($interp)
 	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib:$(srcdir)/Lib/$(PLATDIR) '$interp
     fi
+    PGEN_DEPENDENCY=''
 elif test "$cross_compiling" = maybe; then
     AC_MSG_ERROR([Cross compiling required --host=HOST-TUPLE and --build=ARCH])
 else
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
+    PGEN_DEPENDENCY='$(PGEN)'
 fi
 AC_SUBST(PYTHON_FOR_BUILD)
+AC_SUBST(PGEN_DEPENDENCY)
 
 dnl Ensure that if prefix is specified, it does not end in a slash. If
 dnl it does, we get path names containing '//' which is both ugly and

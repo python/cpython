@@ -680,7 +680,7 @@ Modules/grpmodule.o: $(srcdir)/Modules/grpmodule.c $(srcdir)/Modules/posixmodule
 
 Modules/pwdmodule.o: $(srcdir)/Modules/pwdmodule.c $(srcdir)/Modules/posixmodule.h
 
-$(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGEN)
+$(GRAMMAR_H): $(GRAMMAR_INPUT) @PGEN_DEPENDENCY@
 	@$(MKDIR_P) Include
 	# Avoid copying the file onto itself for an in-tree build
 	if test "$(cross_compiling)" != "yes"; then \
