@@ -789,7 +789,7 @@ Python/sysmodule.o: $(srcdir)/Python/sysmodule.c Makefile
 
 $(IO_OBJS): $(IO_H)
 
-$(GRAMMAR_H): $(GRAMMAR_INPUT) $(PGEN)
+$(GRAMMAR_H): $(GRAMMAR_INPUT) @PGEN_DEPENDENCY@
 	@$(MKDIR_P) Include
 	# Avoid copying the file onto itself for an in-tree build
 	if test "$(cross_compiling)" != "yes"; then \
