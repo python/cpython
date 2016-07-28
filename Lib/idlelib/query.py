@@ -83,7 +83,7 @@ class Query(Toplevel):
         self.entry.focus_set()
 
         buttons = Frame(self)
-        self.button_ok = Button(buttons, text='Ok',
+        self.button_ok = Button(buttons, text='Ok', default='active',
                 width=8, command=self.ok)
         self.button_cancel = Button(buttons, text='Cancel',
                 width=8, command=self.cancel)
