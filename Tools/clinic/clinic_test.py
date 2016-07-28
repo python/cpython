@@ -90,7 +90,7 @@ class ClinicWholeFileTest(TestCase):
         # the "end line" for the block if it
         # didn't end in "\n" (as in, the last)
         # byte of the file was '/'.
-        # so it woudl spit out an end line for you.
+        # so it would spit out an end line for you.
         # and since you really already had one,
         # the last line of the block got corrupted.
         c = clinic.Clinic(clinic.CLanguage(None))

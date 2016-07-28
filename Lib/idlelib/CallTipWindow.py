@@ -9,7 +9,7 @@ HIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-hide>>"
 HIDE_SEQUENCES = ("<Key-Escape>", "<FocusOut>")
 CHECKHIDE_VIRTUAL_EVENT_NAME = "<<calltipwindow-checkhide>>"
 CHECKHIDE_SEQUENCES = ("<KeyRelease>", "<ButtonRelease>")
-CHECKHIDE_TIME = 100 # miliseconds
+CHECKHIDE_TIME = 100 # milliseconds
 
 MARK_RIGHT = "calltipwindowregion_right"
 
