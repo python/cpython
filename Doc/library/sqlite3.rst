@@ -521,6 +521,34 @@ Connection Objects
                  f.write('%s\n' % line)
 
 
+   .. method:: backup(filename[, pages, progress])
+
+      This method exposes the `API`__ that allows to make a backup of a SQLite
+      database into the mandatory argument *filename*, even while it's being accessed
+      by other clients, or concurrently by the same connection.
+
+      By default, or when *pages* is either ``0`` or a negative integer, the entire
+      database is copied in a single step; otherwise the method performs a loop
+      copying up to the specified *pages* at a time.
+
+      If *progress* is specified, it must either ``None`` or a callable object that
+      will be executed at each iteration with two integer arguments, respectively the
+      *remaining* number of pages still to be copied and the *total* number of pages.
+
+      Example::
+
+         # Copy an existing database into another file
+         import sqlite3
+
+         def progress(remaining, total):
+             print("Copied %d of %d pages..." % (total-remaining, total))
+
+         con = sqlite3.connect('existing_db.db')
+         con.backup('copy_of_existing_db.db', 1, progress)
+
+__ http://sqlite.org/backup.html
+
+
 .. _sqlite3-cursor-objects:
 
 Cursor Objects
