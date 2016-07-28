@@ -183,7 +183,7 @@ Library
   when exiting, let the new chained one through.  This avoids the PEP 479
   bug described in issue25782.
 
-- Issue #27278: Fix os.urandom() implementation using getrandom() on Linux.
+- [Security] Issue #27278: Fix os.urandom() implementation using getrandom() on Linux.
   Truncate size to INT_MAX and loop until we collected enough random bytes,
   instead of casting a directly Py_ssize_t to int.
 
@@ -196,7 +196,7 @@ Library
 - Issue #8637: Honor a pager set by the env var MANPAGER (in preference to
   one set by the env var PAGER).
 
-- Issue #22636: Avoid shell injection problems with
+- [Security] Issue #22636: Avoid shell injection problems with
   ctypes.util.find_library().
 
 - Issue #16182: Fix various functions in the "readline" module to use the
@@ -348,9 +348,9 @@ Library
 - Issue #20508: Improve exception message of IPv{4,6}Network.__getitem__.
   Patch by Gareth Rees.
 
-- Issue #26556: Update expat to 2.1.1, fixes CVE-2015-1283.
+- [Security] Issue #26556: Update expat to 2.1.1, fixes CVE-2015-1283.
 
-- Fix TLS stripping vulnerability in smtplib, CVE-2016-0772.  Reported by Team
+- [Security] Fix TLS stripping vulnerability in smtplib, CVE-2016-0772.  Reported by Team
   Oststrom
 
 - Issue #21386: Implement missing IPv4Address.is_global property.  It was
@@ -393,7 +393,7 @@ Library
 - Issue #21313: Fix the "platform" module to tolerate when sys.version
   contains truncated build information.
 
-- Issue #26839: On Linux, :func:`os.urandom` now calls ``getrandom()`` with
+- [Security] Issue #26839: On Linux, :func:`os.urandom` now calls ``getrandom()`` with
   ``GRND_NONBLOCK`` to fall back on reading ``/dev/urandom`` if the urandom
   entropy pool is not initialized yet. Patch written by Colm Buckley.
 
@@ -988,7 +988,7 @@ Library
 - Issue #24838: tarfile's ustar and gnu formats now correctly calculate name
   and link field limits for multibyte character encodings like utf-8.
 
-- Issue #26657: Fix directory traversal vulnerability with http.server on
+- [Security] Issue #26657: Fix directory traversal vulnerability with http.server on
   Windows.  This fixes a regression that was introduced in 3.3.4rc1 and
   3.4.0rc1.  Based on patch by Philipp Hagemeister.
 
@@ -1094,7 +1094,7 @@ Library
   :class:`warnings.WarningMessage`. Add warnings._showwarnmsg() which uses
   tracemalloc to get the traceback where source object was allocated.
 
-- Issue #26313: ssl.py _load_windows_store_certs fails if windows cert store
+- [Security] Issue #26313: ssl.py _load_windows_store_certs fails if windows cert store
   is empty. Patch by Baji.
 
 - Issue #26569: Fix :func:`pyclbr.readmodule` and :func:`pyclbr.readmodule_ex`
@@ -1177,7 +1177,7 @@ Library
   trigger the handle_error() method, and will now to stop a single-threaded
   server.
 
-- Issue #25939: On Windows open the cert store readonly in ssl.enum_certificates.
+- [Security] Issue #25939: On Windows open the cert store readonly in ssl.enum_certificates.
 
 - Issue #25995: os.walk() no longer uses FDs proportional to the tree depth.
 
