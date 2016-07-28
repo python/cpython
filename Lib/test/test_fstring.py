@@ -250,7 +250,7 @@ f'{a * x()}'"""
                              ])
 
         self.assertAllRaise(SyntaxError, "invalid syntax",
-                            [# Invalid sytax inside a nested spec.
+                            [# Invalid syntax inside a nested spec.
                              "f'{4:{/5}}'",
                              ])
 
