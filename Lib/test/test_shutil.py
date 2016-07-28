@@ -1257,7 +1257,7 @@ class TestShutil(unittest.TestCase):
         self.assertRaises(shutil.ReadError, unpack_archive, TESTFN)
         self.assertRaises(ValueError, unpack_archive, TESTFN, format='xxx')
 
-    def test_unpack_registery(self):
+    def test_unpack_registry(self):
 
         formats = get_unpack_formats()
 

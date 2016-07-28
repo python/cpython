@@ -9,7 +9,7 @@ from idlelib.hyperparser import HyperParser
 from idlelib.config import idleConf
 
 _openers = {')':'(',']':'[','}':'{'}
-CHECK_DELAY = 100 # miliseconds
+CHECK_DELAY = 100 # milliseconds
 
 class ParenMatch:
     """Highlight matching parentheses
