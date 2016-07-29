@@ -54,7 +54,7 @@ If you select "Install Now":
   users)
 * Python will be installed into your user directory
 * The :ref:`launcher` will be installed according to the option at the bottom
-  of the first pace
+  of the first page
 * The standard library, test suite, launcher and pip will be installed
 * If selected, the install directory will be added to your :envvar:`PATH`
 * Shortcuts will only be visible for the current user
