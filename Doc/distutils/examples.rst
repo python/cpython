@@ -245,7 +245,9 @@ Let's take an example with a simple script::
 
     setup(name='foobar')
 
-Running the ``check`` command will display some warnings::
+Running the ``check`` command will display some warnings:
+
+.. code-block:: shell-session
 
     $ python setup.py check
     running check
@@ -274,7 +276,9 @@ For example, if the :file:`setup.py` script is changed like this::
         url='http://example.com', long_description=desc)
 
 Where the long description is broken, ``check`` will be able to detect it
-by using the :mod:`docutils` parser::
+by using the :mod:`docutils` parser:
+
+.. code-block:: shell-session
 
     $ python setup.py check --restructuredtext
     running check
@@ -286,7 +290,9 @@ Reading the metadata
 
 The :func:`distutils.core.setup` function provides a command-line interface
 that allows you to query the metadata fields of a project through the
-``setup.py`` script of a given project::
+``setup.py`` script of a given project:
+
+.. code-block:: shell-session
 
     $ python setup.py --name
     distribute
