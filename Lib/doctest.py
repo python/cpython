@@ -578,18 +578,23 @@ class DocTestParser:
     # (including leading indentation and prompts); `indent` is the
     # indentation of the first (PS1) line of the source code; and
     # `want` is the expected output (including leading indentation).
-    _EXAMPLE_RE = re.compile(r'''
+    _EXAMPLE_RE_TPL = r'''
         # Source consists of a PS1 line followed by zero or more PS2 lines.
         (?P<source>
-            (?:^(?P<indent> [ ]*) >>>    .*)    # PS1 line
-            (?:\n           [ ]*  \.\.\. .*)*)  # PS2 lines
+            (?:^(?P<indent> [ ]*) (?P<ps1> %s) .*)    # PS1 line
+            (?:\n           [ ]*  (?P<ps2> %s) .*)*)  # PS2 lines
         \n?
         # Want consists of any non-blank lines that do not start with PS1.
         (?P<want> (?:(?![ ]*$)    # Not a blank line
-                     (?![ ]*>>>)  # Not a line starting with PS1
-                     .+$\n?       # But any other line
+                     (?![ ]*%s)   # Not a line starting with PS1
+                     .*$\n?       # But any other line
                   )*)
-        ''', re.MULTILINE | re.VERBOSE)
+                  '''
+
+    def __init__(self, ps1=r'>>>', ps2=r'\.\.\.', pout=''):
+        self.pout = pout
+        self._EXAMPLE_RE = re.compile(self._EXAMPLE_RE_TPL % (ps1, ps2, ps1),
+                                      re.MULTILINE | re.VERBOSE)
 
     # A regular expression for handling `want` strings that contain
     # expected exceptions.  It divides `want` into three pieces:
@@ -696,12 +701,18 @@ class DocTestParser:
         # Get the example's indentation level.
         indent = len(m.group('indent'))
 
+        # We're using variable-length input prompts
+        ps1, ps2 = m.group('ps1'), m.group('ps2')
+        ps1_len = len(ps1)
+
         # Divide source into lines; check that they're properly
         # indented; and then strip their indentation & prompts.
         source_lines = m.group('source').split('\n')
-        self._check_prompt_blank(source_lines, indent, name, lineno)
-        self._check_prefix(source_lines[1:], ' '*indent + '.', name, lineno)
-        source = '\n'.join([sl[indent+4:] for sl in source_lines])
+
+        self._check_prompt_blank(source_lines, indent, name, lineno, ps1_len)
+        if ps2:
+            self._check_prefix(source_lines[1:], ' '*indent + ps2, name, lineno)
+        source = '\n'.join([sl[indent + ps1_len + 1:] for sl in source_lines])
 
         # Divide want into lines; check that it's properly indented; and
         # then strip the indentation.  Spaces before the last newline should
@@ -712,6 +723,10 @@ class DocTestParser:
             del want_lines[-1]  # forget final newline & spaces after it
         self._check_prefix(want_lines, ' '*indent, name,
                            lineno + len(source_lines))
+
+        # Remove ipython output prompt that might be present in the first line
+        want_lines[0] = re.sub(self.pout, '', want_lines[0])
+
         want = '\n'.join([wl[indent:] for wl in want_lines])
 
         # If `want` contains a traceback message, then extract it.
@@ -774,19 +789,21 @@ class DocTestParser:
         else:
             return 0
 
-    def _check_prompt_blank(self, lines, indent, name, lineno):
+    def _check_prompt_blank(self, lines, indent, name, lineno, ps1_len):
         """
         Given the lines of a source string (including prompts and
         leading indentation), check to make sure that every prompt is
         followed by a space character.  If any line is not followed by
         a space character, then raise ValueError.
         """
+        space_idx = indent + ps1_len
+        min_len = space_idx + 1
         for i, line in enumerate(lines):
-            if len(line) >= indent+4 and line[indent+3] != ' ':
+            if len(line) >=  min_len and line[space_idx] != ' ':
                 raise ValueError('line %r of the docstring for %s '
                                  'lacks blank after %s: %r' %
                                  (lineno+i+1, name,
-                                  line[indent:indent+3], line))
+                                  line[indent:space_idx], line))
 
     def _check_prefix(self, lines, prefix, name, lineno):
         """

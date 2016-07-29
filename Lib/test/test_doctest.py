@@ -734,6 +734,43 @@ text:
     Example: ('x+y\n', '5\n', 9)
        Text: ''
 
+`ps1` and `ps2` arguments override primary and secondary prompts, `pout`
+argument change default output prefix.  For example, to parse IPython-like
+input and output:
+
+    >>> s2 = '''
+    ...     In [1]: 1
+    ...     Out[1]: 1
+    ...
+    ...     In [2]: a = 42  # no output expected
+    ...
+    ...     In [3]: for i in range(3):
+    ...        ...:     print(i)
+    ...        ...:
+    ...     0
+    ...     1
+    ...     2
+    ...
+    ...     In [4]: print(4)
+    ...     4
+    ...     '''
+    >>> parser2 = doctest.DocTestParser(ps1=r'In\ \[\d+\]:', ps2=r'\ \ \ \.\.\.+:',
+    ...                                 pout=r'Out\[\d+\]: \s*?\n?')
+    >>> for piece in parser2.parse(s2):
+    ...     if isinstance(piece, doctest.Example):
+    ...         print('Example:', (piece.source, piece.want, piece.lineno))
+    ...     else:
+    ...         print('   Text:', repr(piece))
+       Text: '\n'
+    Example: ('1\n', '1\n', 1)
+       Text: '\n'
+    Example: ('a = 42  # no output expected\n', '', 4)
+       Text: '\n'
+    Example: ('for i in range(3):\n    print(i)\n', '0\n1\n2\n', 6)
+       Text: '\n'
+    Example: ('print(4)\n', '4\n', 13)
+       Text: ''
+
 The `get_examples` method returns just the examples:
 
     >>> for piece in parser.get_examples(s):
