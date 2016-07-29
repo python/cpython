@@ -68,7 +68,7 @@ Use the ``NewType`` helper function to create distinct types::
 
    UserId = NewType('UserId', int)
    some_id = UserId(524313)
-    
+
 The static type checker will treat the new type as if it were a subclass
 of the original type. This is useful in helping catch logical errors::
 
