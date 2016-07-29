@@ -1,6 +1,9 @@
 #include "Python.h"
 #ifdef MS_WINDOWS
 #  include <windows.h>
+/* All sample MSDN wincrypt programs include the header below. It is at least
+ * required with Min GW. */
+#  include <wincrypt.h>
 #else
 #  include <fcntl.h>
 #  ifdef HAVE_SYS_STAT_H
