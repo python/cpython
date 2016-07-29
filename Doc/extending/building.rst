@@ -55,7 +55,9 @@ Since distutils also supports creation of binary packages, users don't
 necessarily need a compiler and distutils to install the extension.
 
 A distutils package contains a driver script, :file:`setup.py`. This is a plain
-Python file, which, in the most simple case, could look like this::
+Python file, which, in the most simple case, could look like this:
+
+.. code-block:: python3
 
    from distutils.core import setup, Extension
 
@@ -96,7 +98,9 @@ file, :file:`demo.c`.
 
 In many cases, building an extension is more complex, since additional
 preprocessor defines and libraries may be needed. This is demonstrated in the
-example below. ::
+example below.
+
+.. code-block:: python3
 
    from distutils.core import setup, Extension
 
@@ -161,4 +165,3 @@ commands can be used to do so. ::
    python setup.py bdist_wininst
    python setup.py bdist_rpm
    python setup.py bdist_dumb
-
