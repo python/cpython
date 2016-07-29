@@ -499,7 +499,9 @@ This is the client side::
 
 The output of the example should look something like this:
 
-Server::
+Server:
+
+.. code-block:: shell-session
 
    $ python TCPServer.py
    127.0.0.1 wrote:
@@ -507,7 +509,9 @@ Server::
    127.0.0.1 wrote:
    b'python is nice'
 
-Client::
+Client:
+
+.. code-block:: shell-session
 
    $ python TCPClient.py hello world with TCP
    Sent:     hello world with TCP
@@ -619,7 +623,9 @@ An example for the :class:`ThreadingMixIn` class::
            server.shutdown()
 
 
-The output of the example should look something like this::
+The output of the example should look something like this:
+
+.. code-block:: shell-session
 
    $ python ThreadedTCPServer.py
    Server loop running in thread: Thread-1

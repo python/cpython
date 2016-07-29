@@ -163,7 +163,7 @@ an exception::
    >>> c.traps[FloatOperation] = True
    >>> Decimal(3.14)
    Traceback (most recent call last):
-   File "<stdin>", line 1, in <module>
+     File "<stdin>", line 1, in <module>
    decimal.FloatOperation: [<class 'decimal.FloatOperation'>]
    >>> Decimal('3.5') < 3.7
    Traceback (most recent call last):

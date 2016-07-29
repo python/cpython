@@ -157,7 +157,9 @@ script, such as:
            c = c + b
        return c
 
-then the result should be::
+then the result should be:
+
+.. code-block:: shell-session
 
    $ call multiply multiply 3 2
    Will compute 3 times 2
@@ -291,16 +293,20 @@ available).  This script has several options, of which the following will
 be directly useful to you:
 
 * ``pythonX.Y-config --cflags`` will give you the recommended flags when
-  compiling::
+  compiling:
 
-   $ /opt/bin/python3.4-config --cflags
-   -I/opt/include/python3.4m -I/opt/include/python3.4m -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
+  .. code-block:: shell-session
+
+     $ /opt/bin/python3.4-config --cflags
+     -I/opt/include/python3.4m -I/opt/include/python3.4m -DNDEBUG -g -fwrapv -O3 -Wall -Wstrict-prototypes
 
 * ``pythonX.Y-config --ldflags`` will give you the recommended flags when
-  linking::
+  linking:
 
-   $ /opt/bin/python3.4-config --ldflags
-   -L/opt/lib/python3.4/config-3.4m -lpthread -ldl -lutil -lm -lpython3.4m -Xlinker -export-dynamic
+  .. code-block:: shell-session
+
+     $ /opt/bin/python3.4-config --ldflags
+     -L/opt/lib/python3.4/config-3.4m -lpthread -ldl -lutil -lm -lpython3.4m -Xlinker -export-dynamic
 
 .. note::
    To avoid confusion between several Python installations (and especially

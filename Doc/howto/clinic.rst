@@ -152,7 +152,9 @@ Let's dive in!
    For my example I'm using ``_pickle.Pickler.dump()``.
 
 2. If the call to the ``PyArg_Parse`` function uses any of the
-   following format units::
+   following format units:
+
+   .. code-block:: none
 
        O&
        O!

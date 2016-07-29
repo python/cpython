@@ -654,25 +654,35 @@ The :mod:`tarfile` module provides a simple command line interface to interact
 with tar archives.
 
 If you want to create a new tar archive, specify its name after the :option:`-c`
-option and then list the filename(s) that should be included::
+option and then list the filename(s) that should be included:
+
+.. code-block:: shell-session
 
     $ python -m tarfile -c monty.tar  spam.txt eggs.txt
 
-Passing a directory is also acceptable::
+Passing a directory is also acceptable:
+
+.. code-block:: shell-session
 
     $ python -m tarfile -c monty.tar life-of-brian_1979/
 
 If you want to extract a tar archive into the current directory, use
-the :option:`-e` option::
+the :option:`-e` option:
+
+.. code-block:: shell-session
 
     $ python -m tarfile -e monty.tar
 
 You can also extract a tar archive into a different directory by passing the
-directory's name::
+directory's name:
+
+.. code-block:: shell-session
 
     $ python -m tarfile -e monty.tar  other-dir/
 
-For a list of the files in a tar archive, use the :option:`-l` option::
+For a list of the files in a tar archive, use the :option:`-l` option:
+
+.. code-block:: shell-session
 
     $ python -m tarfile -l monty.tar
 
