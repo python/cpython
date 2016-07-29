@@ -5,6 +5,7 @@
 # push_source() and pop_source() made explicit by ESR, January 2001.
 # Posix compliance, split(), string arguments, and
 # iterator interface by Gustavo Niemeyer, April 2003.
+# changes to tokenize more like Posix shells by Vinay Sajip, July 2016.
 
 import os
 import re
@@ -17,7 +18,8 @@ __all__ = ["shlex", "split", "quote"]
 
 class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
-    def __init__(self, instream=None, infile=None, posix=False):
+    def __init__(self, instream=None, infile=None, posix=False,
+                 punctuation_chars=False):
         if isinstance(instream, str):
             instream = StringIO(instream)
         if instream is not None:
@@ -49,6 +51,19 @@ class shlex:
         self.token = ''
         self.filestack = deque()
         self.source = None
+        if not punctuation_chars:
+            punctuation_chars = ''
+        elif punctuation_chars is True:
+            punctuation_chars = '();<>|&'
+        self.punctuation_chars = punctuation_chars
+        if punctuation_chars:
+            # _pushback_chars is a push back queue used by lookahead logic
+            self._pushback_chars = deque()
+            # these chars added because allowed in file names, args, wildcards
+            self.wordchars += '~-./*?='
+            #remove any punctuation chars from wordchars
+            t = self.wordchars.maketrans(dict.fromkeys(punctuation_chars))
+            self.wordchars = self.wordchars.translate(t)
 
     def push_token(self, tok):
         "Push a token onto the stack popped by the get_token method"
@@ -115,12 +130,15 @@ class shlex:
         quoted = False
         escapedstate = ' '
         while True:
-            nextchar = self.instream.read(1)
+            if self.punctuation_chars and self._pushback_chars:
+                nextchar = self._pushback_chars.pop()
+            else:
+                nextchar = self.instream.read(1)
             if nextchar == '\n':
-                self.lineno = self.lineno + 1
+                self.lineno += 1
             if self.debug >= 3:
-                print("shlex: in state", repr(self.state), \
-                      "I see character:", repr(nextchar))
+                print("shlex: in state %r I see character: %r" % (self.state,
+                                                                  nextchar))
             if self.state is None:
                 self.token = ''        # past end of file
                 break
@@ -137,13 +155,16 @@ class shlex:
                         continue
                 elif nextchar in self.commenters:
                     self.instream.readline()
-                    self.lineno = self.lineno + 1
+                    self.lineno += 1
                 elif self.posix and nextchar in self.escape:
                     escapedstate = 'a'
                     self.state = nextchar
                 elif nextchar in self.wordchars:
                     self.token = nextchar
                     self.state = 'a'
+                elif nextchar in self.punctuation_chars:
+                    self.token = nextchar
+                    self.state = 'c'
                 elif nextchar in self.quotes:
                     if not self.posix:
                         self.token = nextchar
@@ -166,17 +187,17 @@ class shlex:
                     raise ValueError("No closing quotation")
                 if nextchar == self.state:
                     if not self.posix:
-                        self.token = self.token + nextchar
+                        self.token += nextchar
                         self.state = ' '
                         break
                     else:
                         self.state = 'a'
-                elif self.posix and nextchar in self.escape and \
-                     self.state in self.escapedquotes:
+                elif (self.posix and nextchar in self.escape and self.state
+                      in self.escapedquotes):
                     escapedstate = self.state
                     self.state = nextchar
                 else:
-                    self.token = self.token + nextchar
+                    self.token += nextchar
             elif self.state in self.escape:
                 if not nextchar:      # end of file
                     if self.debug >= 2:
@@ -185,12 +206,12 @@ class shlex:
                     raise ValueError("No escaped character")
                 # In posix shells, only the quote itself or the escape
                 # character may be escaped within quotes.
-                if escapedstate in self.quotes and \
-                   nextchar != self.state and nextchar != escapedstate:
-                    self.token = self.token + self.state
-                self.token = self.token + nextchar
+                if (escapedstate in self.quotes and
+                        nextchar != self.state and nextchar != escapedstate):
+                    self.token += self.state
+                self.token += nextchar
                 self.state = escapedstate
-            elif self.state == 'a':
+            elif self.state in ('a', 'c'):
                 if not nextchar:
                     self.state = None   # end of file
                     break
@@ -204,7 +225,7 @@ class shlex:
                         continue
                 elif nextchar in self.commenters:
                     self.instream.readline()
-                    self.lineno = self.lineno + 1
+                    self.lineno += 1
                     if self.posix:
                         self.state = ' '
                         if self.token or (self.posix and quoted):
@@ -216,15 +237,26 @@ class shlex:
                 elif self.posix and nextchar in self.escape:
                     escapedstate = 'a'
                     self.state = nextchar
-                elif nextchar in self.wordchars or nextchar in self.quotes \
-                    or self.whitespace_split:
-                    self.token = self.token + nextchar
+                elif self.state == 'c':
+                    if nextchar in self.punctuation_chars:
+                        self.token += nextchar
+                    else:
+                        if nextchar not in self.whitespace:
+                            self._pushback_chars.append(nextchar)
+                        self.state = ' '
+                        break
+                elif (nextchar in self.wordchars or nextchar in self.quotes
+                      or self.whitespace_split):
+                    self.token += nextchar
                 else:
-                    self.pushback.appendleft(nextchar)
+                    if self.punctuation_chars:
+                        self._pushback_chars.append(nextchar)
+                    else:
+                        self.pushback.appendleft(nextchar)
                     if self.debug >= 2:
                         print("shlex: I see punctuation in word state")
                     self.state = ' '
-                    if self.token:
+                    if self.token or (self.posix and quoted):
                         break   # emit current token
                     else:
                         continue
