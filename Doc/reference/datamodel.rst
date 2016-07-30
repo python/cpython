@@ -1497,6 +1497,8 @@ class' :attr:`~object.__dict__`.
    Called at the time the owning class *owner* is created. The
    descriptor has been assigned to *name*.
 
+   .. versionadded:: 3.6
+
 
 The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
 as specifying the class where this object was defined (setting this
@@ -1648,6 +1650,7 @@ applied to, ``__init_subclass__`` solely applies to future subclasses of the
 class defining the method.
 
 .. classmethod:: object.__init_subclass__(cls)
+
    This method is called whenever the containing class is subclassed.
    *cls* is then the new subclass. If defined as a normal instance method,
    this method is implicitly converted to a class method.
@@ -1668,6 +1671,8 @@ class defining the method.
 
    The default implementation ``object.__init_subclass__`` does
    nothing, but raises an error if it is called with any arguments.
+
+   .. versionadded:: 3.6
 
 
 .. _metaclasses:

@@ -1,11 +1,11 @@
-from unittest import TestCase, main
 import sys
 import types
+import unittest
 
 
-class Test(TestCase):
+class Test(unittest.TestCase):
     def test_init_subclass(self):
-        class A(object):
+        class A:
             initialized = False
 
             def __init_subclass__(cls):
@@ -19,7 +19,7 @@ class Test(TestCase):
         self.assertTrue(B.initialized)
 
     def test_init_subclass_dict(self):
-        class A(dict, object):
+        class A(dict):
             initialized = False
 
             def __init_subclass__(cls):
@@ -33,7 +33,7 @@ class Test(TestCase):
         self.assertTrue(B.initialized)
 
     def test_init_subclass_kwargs(self):
-        class A(object):
+        class A:
             def __init_subclass__(cls, **kwargs):
                 cls.kwargs = kwargs
 
@@ -43,7 +43,7 @@ class Test(TestCase):
         self.assertEqual(B.kwargs, dict(x=3))
 
     def test_init_subclass_error(self):
-        class A(object):
+        class A:
             def __init_subclass__(cls):
                 raise RuntimeError
 
@@ -52,7 +52,7 @@ class Test(TestCase):
                 pass
 
     def test_init_subclass_wrong(self):
-        class A(object):
+        class A:
             def __init_subclass__(cls, whatever):
                 pass
 
@@ -61,7 +61,7 @@ class Test(TestCase):
                 pass
 
     def test_init_subclass_skipped(self):
-        class BaseWithInit(object):
+        class BaseWithInit:
             def __init_subclass__(cls, **kwargs):
                 super().__init_subclass__(**kwargs)
                 cls.initialized = cls
@@ -76,7 +76,7 @@ class Test(TestCase):
         self.assertIs(BaseWithoutInit.initialized, BaseWithoutInit)
 
     def test_init_subclass_diamond(self):
-        class Base(object):
+        class Base:
             def __init_subclass__(cls, **kwargs):
                 super().__init_subclass__(**kwargs)
                 cls.calls = []
@@ -84,7 +84,7 @@ class Test(TestCase):
         class Left(Base):
             pass
 
-        class Middle(object):
+        class Middle:
             def __init_subclass__(cls, middle, **kwargs):
                 super().__init_subclass__(**kwargs)
                 cls.calls += [middle]
@@ -107,7 +107,7 @@ class Test(TestCase):
                 self.owner = owner
                 self.name = name
 
-        class A(object):
+        class A:
             d = Descriptor()
 
         self.assertEqual(A.d.name, "d")
@@ -121,12 +121,12 @@ class Test(TestCase):
                 self.assertIs(ret.d.owner, ret)
                 return 0
 
-        class Descriptor(object):
+        class Descriptor:
             def __set_name__(self, owner, name):
                 self.owner = owner
                 self.name = name
 
-        class A(object, metaclass=Meta):
+        class A(metaclass=Meta):
             d = Descriptor()
         self.assertEqual(A, 0)
 
@@ -136,7 +136,7 @@ class Test(TestCase):
                 raise RuntimeError
 
         with self.assertRaises(RuntimeError):
-            class A(object):
+            class A:
                 d = Descriptor()
 
     def test_set_name_wrong(self):
@@ -145,7 +145,7 @@ class Test(TestCase):
                 pass
 
         with self.assertRaises(TypeError):
-            class A(object):
+            class A:
                 d = Descriptor()
 
     def test_set_name_init_subclass(self):
@@ -161,7 +161,7 @@ class Test(TestCase):
                 self.meta_name = self.name
                 return self
 
-        class A(object):
+        class A:
             def __init_subclass__(cls):
                 cls.owner = cls.d.owner
                 cls.name = cls.d.name
@@ -179,7 +179,7 @@ class Test(TestCase):
             pass
 
         with self.assertRaises(TypeError):
-            class MyClass(object, metaclass=MyMeta, otherarg=1):
+            class MyClass(metaclass=MyMeta, otherarg=1):
                 pass
 
         with self.assertRaises(TypeError):
@@ -193,7 +193,7 @@ class Test(TestCase):
                 super().__init__(name, bases, namespace)
 
         with self.assertRaises(TypeError):
-            class MyClass(object, metaclass=MyMeta, otherarg=1):
+            class MyClass(metaclass=MyMeta, otherarg=1):
                 pass
 
         class MyMeta(type):
@@ -204,7 +204,7 @@ class Test(TestCase):
                 super().__init__(name, bases, namespace)
                 self.otherarg = otherarg
 
-        class MyClass(object, metaclass=MyMeta, otherarg=1):
+        class MyClass(metaclass=MyMeta, otherarg=1):
             pass
 
         self.assertEqual(MyClass.otherarg, 1)
@@ -217,7 +217,7 @@ class Test(TestCase):
                                        dict=namespace)
 
         with self.assertRaises(TypeError):
-            class MyClass(object, metaclass=MyMeta):
+            class MyClass(metaclass=MyMeta):
                 pass
 
         class MyMeta(type):
@@ -226,7 +226,7 @@ class Test(TestCase):
                 self.otherarg = otherarg
                 return self
 
-        class MyClass(object, metaclass=MyMeta, otherarg=1):
+        class MyClass(metaclass=MyMeta, otherarg=1):
             pass
 
         self.assertEqual(MyClass.otherarg, 1)
@@ -241,4 +241,4 @@ class Test(TestCase):
 
 
 if __name__ == "__main__":
-    main()
+    unittest.main()

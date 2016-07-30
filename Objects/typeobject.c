@@ -4341,11 +4341,10 @@ object_init_subclass(PyObject *cls, PyObject *arg)
 }
 
 PyDoc_STRVAR(object_init_subclass_doc,
-"This method is called when a class is subclassed\n"
+"This method is called when a class is subclassed.\n"
 "\n"
-"Whenever a class is subclassed, this method is called. The default\n"
-"implementation does nothing. It may be overridden to extend\n"
-"subclasses.\n");
+"The default implementation does nothing. It may be\n"
+"overridden to extend subclasses.\n");
 
 /*
    from PEP 3101, this code implements:
