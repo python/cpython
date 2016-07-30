@@ -29,6 +29,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #27568: Prevent HTTPoxy attack (CVE-2016-1000110). Ignore the
+  HTTP_PROXY variable when REQUEST_METHOD environment is set, which indicates
+  that the script is in CGI mode.
+
 - Issue #27130: In the "zlib" module, fix handling of large buffers
   (typically 2 or 4 GiB).  Previously, inputs were limited to 2 GiB, and
   compression and decompression operations did not properly handle results of

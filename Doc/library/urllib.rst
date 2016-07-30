@@ -295,6 +295,16 @@ Utility functions
    If both lowercase and uppercase environment variables exist (and disagree),
    lowercase is preferred.
 
+    .. note::
+
+        If the environment variable ``REQUEST_METHOD`` is set, which usually
+        indicates your script is running in a CGI environment, the environment
+        variable ``HTTP_PROXY`` (uppercase ``_PROXY``) will be ignored. This is
+        because that variable can be injected by a client using the "Proxy:"
+        HTTP header. If you need to use an HTTP proxy in a CGI environment,
+        either use ``ProxyHandler`` explicitly, or make sure the variable name
+        is in lowercase (or at least the ``_proxy`` suffix).
+
 .. note::
     urllib also exposes certain utility functions like splittype, splithost and
     others parsing URL into various components. But it is recommended to use
