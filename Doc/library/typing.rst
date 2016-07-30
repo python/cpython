@@ -86,7 +86,7 @@ but the result will always be of type ``int``. This lets you pass in a
 ``UserId`` wherever an ``int`` might be expected, but will prevent you from
 accidentally creating a ``UserId`` in an invalid way::
 
-   # `output` is of type `int`, not `UserId`
+   # 'output' is of type 'int', not 'UserId'
    output = UserId(23413) + UserId(54341)
 
 Note that these checks are enforced only by the static type checker. At runtime
