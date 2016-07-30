@@ -53,10 +53,12 @@ _Py_IDENTIFIER(__doc__);
 _Py_IDENTIFIER(__getattribute__);
 _Py_IDENTIFIER(__getitem__);
 _Py_IDENTIFIER(__hash__);
+_Py_IDENTIFIER(__init_subclass__);
 _Py_IDENTIFIER(__len__);
 _Py_IDENTIFIER(__module__);
 _Py_IDENTIFIER(__name__);
 _Py_IDENTIFIER(__new__);
+_Py_IDENTIFIER(__set_name__);
 _Py_IDENTIFIER(__setitem__);
 _Py_IDENTIFIER(builtins);
 
@@ -2027,6 +2029,8 @@ static void object_dealloc(PyObject *);
 static int object_init(PyObject *, PyObject *, PyObject *);
 static int update_slot(PyTypeObject *, PyObject *);
 static void fixup_slot_dispatchers(PyTypeObject *);
+static int set_names(PyTypeObject *);
+static int init_subclass(PyTypeObject *, PyObject *);
 
 /*
  * Helpers for  __dict__ descriptor.  We don't want to expose the dicts
@@ -2202,7 +2206,8 @@ type_init(PyObject *cls, PyObject *args, PyObject *kwds)
     assert(args != NULL && PyTuple_Check(args));
     assert(kwds == NULL || PyDict_Check(kwds));
 
-    if (kwds != NULL && PyDict_Check(kwds) && PyDict_Size(kwds) != 0) {
+    if (kwds != NULL && PyTuple_Check(args) && PyTuple_GET_SIZE(args) == 1 &&
+        PyDict_Check(kwds) && PyDict_Size(kwds) != 0) {
         PyErr_SetString(PyExc_TypeError,
                         "type.__init__() takes no keyword arguments");
         return -1;
@@ -2269,7 +2274,6 @@ static PyObject *
 type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
 {
     PyObject *name, *bases = NULL, *orig_dict, *dict = NULL;
-    static char *kwlist[] = {"name", "bases", "dict", 0};
     PyObject *qualname, *slots = NULL, *tmp, *newslots;
     PyTypeObject *type = NULL, *base, *tmptype, *winner;
     PyHeapTypeObject *et;
@@ -2296,7 +2300,7 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         /* SF bug 475327 -- if that didn't trigger, we need 3
            arguments. but PyArg_ParseTupleAndKeywords below may give
            a msg saying type() needs exactly 3. */
-        if (nargs + nkwds != 3) {
+        if (nargs != 3) {
             PyErr_SetString(PyExc_TypeError,
                             "type() takes 1 or 3 arguments");
             return NULL;
@@ -2304,10 +2308,8 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     }
 
     /* Check arguments: (name, bases, dict) */
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "UO!O!:type", kwlist,
-                                     &name,
-                                     &PyTuple_Type, &bases,
-                                     &PyDict_Type, &orig_dict))
+    if (!PyArg_ParseTuple(args, "UO!O!:type", &name, &PyTuple_Type, &bases,
+                          &PyDict_Type, &orig_dict))
         return NULL;
 
     /* Determine the proper metatype to deal with this: */
@@ -2587,6 +2589,20 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
         Py_DECREF(tmp);
     }
 
+    /* Special-case __init_subclass__: if it's a plain function,
+       make it a classmethod */
+    tmp = _PyDict_GetItemId(dict, &PyId___init_subclass__);
+    if (tmp != NULL && PyFunction_Check(tmp)) {
+        tmp = PyClassMethod_New(tmp);
+        if (tmp == NULL)
+            goto error;
+        if (_PyDict_SetItemId(dict, &PyId___init_subclass__, tmp) < 0) {
+            Py_DECREF(tmp);
+            goto error;
+        }
+        Py_DECREF(tmp);
+    }
+
     /* Add descriptors for custom slots from __slots__, or for __dict__ */
     mp = PyHeapType_GET_MEMBERS(et);
     slotoffset = base->tp_basicsize;
@@ -2666,6 +2682,12 @@ type_new(PyTypeObject *metatype, PyObject *args, PyObject *kwds)
     if (type->tp_dictoffset) {
         et->ht_cached_keys = _PyDict_NewKeysForClass();
     }
+
+    if (set_names(type) < 0)
+        goto error;
+
+    if (init_subclass(type, kwds) < 0)
+        goto error;
 
     Py_DECREF(dict);
     return (PyObject *)type;
@@ -4312,6 +4334,19 @@ PyDoc_STRVAR(object_subclasshook_doc,
 "NotImplemented, the normal algorithm is used.  Otherwise, it\n"
 "overrides the normal algorithm (and the outcome is cached).\n");
 
+static PyObject *
+object_init_subclass(PyObject *cls, PyObject *arg)
+{
+    Py_RETURN_NONE;
+}
+
+PyDoc_STRVAR(object_init_subclass_doc,
+"This method is called when a class is subclassed\n"
+"\n"
+"Whenever a class is subclassed, this method is called. The default\n"
+"implementation does nothing. It may be overridden to extend\n"
+"subclasses.\n");
+
 /*
    from PEP 3101, this code implements:
 
@@ -4416,6 +4451,8 @@ static PyMethodDef object_methods[] = {
      PyDoc_STR("helper for pickle")},
     {"__subclasshook__", object_subclasshook, METH_CLASS | METH_VARARGS,
      object_subclasshook_doc},
+    {"__init_subclass__", object_init_subclass, METH_CLASS | METH_NOARGS,
+     object_init_subclass_doc},
     {"__format__", object_format, METH_VARARGS,
      PyDoc_STR("default object formatter")},
     {"__sizeof__", object_sizeof, METH_NOARGS,
@@ -6923,6 +6960,54 @@ update_all_slots(PyTypeObject* type)
         /* update_slot returns int but can't actually fail */
         update_slot(type, p->name_strobj);
     }
+}
+
+/* Call __set_name__ on all descriptors in a newly generated type */
+static int
+set_names(PyTypeObject *type)
+{
+    PyObject *key, *value, *tmp;
+    Py_ssize_t i = 0;
+
+    while (PyDict_Next(type->tp_dict, &i, &key, &value)) {
+        if (PyObject_HasAttr(value, _PyUnicode_FromId(&PyId___set_name__))) {
+            tmp = PyObject_CallMethodObjArgs(
+                value, _PyUnicode_FromId(&PyId___set_name__),
+                type, key, NULL);
+            if (tmp == NULL)
+                return -1;
+            else
+                Py_DECREF(tmp);
+        }
+    }
+
+    return 0;
+}
+
+/* Call __init_subclass__ on the parent of a newly generated type */
+static int
+init_subclass(PyTypeObject *type, PyObject *kwds)
+{
+    PyObject *super, *func, *tmp, *tuple;
+
+    super = PyObject_CallFunctionObjArgs((PyObject *) &PySuper_Type,
+                                         type, type, NULL);
+    func = _PyObject_GetAttrId(super, &PyId___init_subclass__);
+    Py_DECREF(super);
+
+    if (func == NULL)
+        return -1;
+
+    tuple = PyTuple_New(0);
+    tmp = PyObject_Call(func, tuple, kwds);
+    Py_DECREF(tuple);
+    Py_DECREF(func);
+
+    if (tmp == NULL)
+        return -1;
+
+    Py_DECREF(tmp);
+    return 0;
 }
 
 /* recurse_down_subclasses() and update_subclasses() are mutually

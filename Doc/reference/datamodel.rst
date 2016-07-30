@@ -1492,6 +1492,12 @@ class' :attr:`~object.__dict__`.
    Called to delete the attribute on an instance *instance* of the owner class.
 
 
+.. method:: object.__set_name__(self, owner, name)
+
+   Called at the time the owning class *owner* is created. The
+   descriptor has been assigned to *name*.
+
+
 The attribute :attr:`__objclass__` is interpreted by the :mod:`inspect` module
 as specifying the class where this object was defined (setting this
 appropriately can assist in runtime introspection of dynamic class attributes).
@@ -1629,10 +1635,45 @@ Notes on using *__slots__*
 * *__class__* assignment works only if both classes have the same *__slots__*.
 
 
-.. _metaclasses:
+.. _class-customization:
 
 Customizing class creation
 --------------------------
+
+Whenever a class inherits from another class, *__init_subclass__* is
+called on that class. This way, it is possible to write classes which
+change the behavior of subclasses. This is closely related to class
+decorators, but where class decorators only affect the specific class they're
+applied to, ``__init_subclass__`` solely applies to future subclasses of the
+class defining the method.
+
+.. classmethod:: object.__init_subclass__(cls)
+   This method is called whenever the containing class is subclassed.
+   *cls* is then the new subclass. If defined as a normal instance method,
+   this method is implicitly converted to a class method.
+
+   Keyword arguments which are given to a new class are passed to
+   the parent's class ``__init_subclass__``. For compatibility with
+   other classes using ``__init_subclass__``, one should take out the
+   needed keyword arguments and pass the others over to the base
+   class, as in::
+
+       class Philosopher:
+           def __init_subclass__(cls, default_name, **kwargs):
+               super().__init_subclass__(**kwargs)
+               cls.default_name = default_name
+
+       class AustralianPhilosopher(Philosopher, default_name="Bruce"):
+           pass
+
+   The default implementation ``object.__init_subclass__`` does
+   nothing, but raises an error if it is called with any arguments.
+
+
+.. _metaclasses:
+
+Metaclasses
+^^^^^^^^^^^
 
 By default, classes are constructed using :func:`type`. The class body is
 executed in a new namespace and the class name is bound locally to the
