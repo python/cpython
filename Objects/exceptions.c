@@ -2604,7 +2604,9 @@ _PyExc_Init(PyObject *bltinmod)
     ADD_ERRNO(BlockingIOError, EWOULDBLOCK);
     POST_INIT(BrokenPipeError);
     ADD_ERRNO(BrokenPipeError, EPIPE);
+#ifdef ESHUTDOWN
     ADD_ERRNO(BrokenPipeError, ESHUTDOWN);
+#endif
     POST_INIT(ChildProcessError);
     ADD_ERRNO(ChildProcessError, ECHILD);
     POST_INIT(ConnectionAbortedError);
