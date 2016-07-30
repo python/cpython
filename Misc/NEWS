@@ -88,6 +88,9 @@ Windows
 Build
 -----
 
+- Issue #27453: CPP invocation in configure must use CPPFLAGS. Patch by
+  Chi Hsuan Yen.
+
 - Issue #27490: Do not build pgen when cross-compiling.  Patch by Thomas
   Perl.
 
