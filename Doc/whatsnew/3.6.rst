@@ -110,6 +110,26 @@ evaluated at run time, and then formatted using the :func:`format` protocol.
 See :pep:`498` and the main documentation at :ref:`f-strings`.
 
 
+PEP 487: Simpler customization of class creation
+------------------------------------------------
+
+Upon subclassing a class, the ``__init_subclass__`` classmethod (if defined) is
+called on the base class. This makes it straightforward to write classes that
+customize initialization of future subclasses without introducing the
+complexity of a full custom metaclass.
+
+The descriptor protocol has also been expanded to include a new optional method,
+``__set_name__``. Whenever a new class is defined, the new method will be called
+on all descriptors included in the definition, providing them with a reference
+to the class being defined and the name given to the descriptor within the
+class namespace.
+
+Also see :pep:`487` and the updated class customization documentation at
+:ref:`class-customization` and :ref:`descriptors`.
+
+(Contributed by Martin Teichmann in :issue:`27366`)
+
+
 PYTHONMALLOC environment variable
 ---------------------------------
 

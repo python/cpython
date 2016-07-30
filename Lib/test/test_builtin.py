@@ -1699,21 +1699,11 @@ class TestType(unittest.TestCase):
         self.assertEqual(x.spam(), 'spam42')
         self.assertEqual(x.to_bytes(2, 'little'), b'\x2a\x00')
 
-    def test_type_new_keywords(self):
-        class B:
-            def ham(self):
-                return 'ham%d' % self
-        C = type.__new__(type,
-                         name='C',
-                         bases=(B, int),
-                         dict={'spam': lambda self: 'spam%s' % self})
-        self.assertEqual(C.__name__, 'C')
-        self.assertEqual(C.__qualname__, 'C')
-        self.assertEqual(C.__module__, __name__)
-        self.assertEqual(C.__bases__, (B, int))
-        self.assertIs(C.__base__, int)
-        self.assertIn('spam', C.__dict__)
-        self.assertNotIn('ham', C.__dict__)
+    def test_type_nokwargs(self):
+        with self.assertRaises(TypeError):
+            type('a', (), {}, x=5)
+        with self.assertRaises(TypeError):
+            type('a', (), dict={})
 
     def test_type_name(self):
         for name in 'A', '\xc4', '\U0001f40d', 'B.A', '42', '':
