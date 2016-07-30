@@ -4794,7 +4794,7 @@ class ZoneInfoCompleteTest(unittest.TestSuite):
 
 # Iran had a sub-minute UTC offset before 1946.
 class IranTest(ZoneInfoTest):
-    zonename = 'Iran'
+    zonename = 'Asia/Tehran'
 
 def load_tests(loader, standard_tests, pattern):
     standard_tests.addTest(ZoneInfoCompleteTest())
