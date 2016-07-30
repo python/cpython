@@ -99,7 +99,7 @@ The :mod:`shlex` module defines the following class:
    :ref:`improved-shell-compatibility` for more information.
 
    .. versionchanged:: 3.6
-      The `punctuation_chars` parameter was added.
+      The *punctuation_chars* parameter was added.
 
 .. seealso::
 
