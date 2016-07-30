@@ -870,7 +870,7 @@ cat >> conftest.c <<EOF
 
 EOF
 
-if $CPP conftest.c >conftest.out 2>/dev/null; then
+if $CPP $CPPFLAGS conftest.c >conftest.out 2>/dev/null; then
   PLATFORM_TRIPLET=`grep -v '^#' conftest.out | grep -v '^ *$' | tr -d ' 	'`
   AC_MSG_RESULT([$PLATFORM_TRIPLET])
 else
