@@ -12750,9 +12750,15 @@ all_ins(PyObject *m)
 #endif
 
 #ifdef HAVE_SCHED_H
+#ifdef SCHED_OTHER
     if (PyModule_AddIntMacro(m, SCHED_OTHER)) return -1;
+#endif
+#ifdef SCHED_FIFO
     if (PyModule_AddIntMacro(m, SCHED_FIFO)) return -1;
+#endif
+#ifdef SCHED_RR
     if (PyModule_AddIntMacro(m, SCHED_RR)) return -1;
+#endif
 #ifdef SCHED_SPORADIC
     if (PyModule_AddIntMacro(m, SCHED_SPORADIC) return -1;
 #endif
