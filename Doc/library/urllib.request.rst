@@ -173,6 +173,16 @@ The :mod:`urllib.request` module defines the following functions:
    If both lowercase and uppercase environment variables exist (and disagree),
    lowercase is preferred.
 
+    .. note::
+
+       If the environment variable ``REQUEST_METHOD`` is set, which usually
+       indicates your script is running in a CGI environment, the environment
+       variable ``HTTP_PROXY`` (uppercase ``_PROXY``) will be ignored. This is
+       because that variable can be injected by a client using the "Proxy:" HTTP
+       header. If you need to use an HTTP proxy in a CGI environment, either use
+       ``ProxyHandler`` explicitly, or make sure the variable name is in
+       lowercase (or at least the ``_proxy`` suffix).
+
 
 The following classes are provided:
 
@@ -279,6 +289,11 @@ The following classes are provided:
    which shouldn't be reached via proxy; if set, it should be a comma-separated
    list of hostname suffixes, optionally with ``:port`` appended, for example
    ``cern.ch,ncsa.uiuc.edu,some.host:8080``.
+
+    .. note::
+
+       ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
+       see the documentation on :func:`~urllib.request.getproxies`.
 
 
 .. class:: HTTPPasswordMgr()
