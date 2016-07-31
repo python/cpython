@@ -1672,6 +1672,13 @@ class defining the method.
    The default implementation ``object.__init_subclass__`` does
    nothing, but raises an error if it is called with any arguments.
 
+   .. note::
+
+      The metaclass hint ``metaclass`` is consumed by the rest of the type
+      machinery, and is never passed to ``__init_subclass__`` implementations.
+      The actual metaclass (rather than the explicit hint) can be accessed as
+      ``type(cls)``.
+
    .. versionadded:: 3.6
 
 

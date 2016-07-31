@@ -759,6 +759,15 @@ Changes in the Python API
   <keyword-only_parameter>`.
   (Contributed by Serhiy Storchaka in :issue:`18726`.)
 
+* As part of :pep:`487`, the handling of keyword arguments passed to
+  :class:`type` (other than the metaclass hint, ``metaclass``) is now
+  consistently delegated to :meth:`object.__init_subclass__`. This means that
+  :meth:`type.__new__` and :meth:`type.__init__` both now accept arbitrary
+  keyword arguments, but :meth:`object.__init_subclass__` (which is called from
+  :meth:`type.__new__`) will reject them by default. Custom metaclasses
+  accepting additional keyword arguments will need to adjust their calls to
+  :meth:`type.__new__` (whether direct or via :class:`super`) accordingly.
+
 
 Changes in the C API
 --------------------
