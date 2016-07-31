@@ -41,6 +41,8 @@ Library
 - Issue #7063: Remove dead code from the "array" module's slice handling.
   Patch by Chuck.
 
+- Issue #27656: Do not assume sched.h defines any SCHED_* constants.
+
 - Issue #27130: In the "zlib" module, fix handling of large buffers
   (typically 4 GiB) when compressing and decompressing.  Previously, inputs
   were limited to 4 GiB, and compression and decompression operations did not
