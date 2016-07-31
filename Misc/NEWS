@@ -29,6 +29,10 @@ Core and Builtins
 Library
 -------
 
+- Issue #27568: Prevent HTTPoxy attack (CVE-2016-1000110). Ignore the
+  HTTP_PROXY variable when REQUEST_METHOD environment is set, which indicates
+  that the script is in CGI mode.
+
 - Issue #24521: Fix possible integer overflows in the pickle module.
 
 - Issue #22931: Allow '[' and ']' in cookie values.

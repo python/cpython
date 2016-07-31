@@ -161,6 +161,14 @@ The :mod:`urllib.request` module defines the following functions:
    cannot find it, looks for proxy information from Mac OSX System
    Configuration for Mac OS X and Windows Systems Registry for Windows.
 
+   .. note::
+
+      If the environment variable ``REQUEST_METHOD`` is set, which usually
+      indicates your script is running in a CGI environment, the environment
+      variable ``HTTP_PROXY`` (uppercase ``_PROXY``) will be ignored. This is
+      because that variable can be injected by a client using the "Proxy:" HTTP
+      header. If you need to use an HTTP proxy in a CGI environment use
+      ``ProxyHandler`` explicitly.
 
 The following classes are provided:
 
@@ -264,6 +272,11 @@ The following classes are provided:
    is retrieved from the OS X System Configuration Framework.
 
    To disable autodetected proxy pass an empty dictionary.
+
+   .. note::
+
+      ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set;
+      see the documentation on :func:`~urllib.request.getproxies`.
 
 
 .. class:: HTTPPasswordMgr()
