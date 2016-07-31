@@ -538,6 +538,11 @@ setting up a `Basic Authentication`_ handler: ::
     through a proxy.  However, this can be enabled by extending urllib.request as
     shown in the recipe [#]_.
 
+.. note::
+
+    ``HTTP_PROXY`` will be ignored if a variable ``REQUEST_METHOD`` is set; see
+    the documentation on :func:`~urllib.request.getproxies`.
+
 
 Sockets and Layers
 ==================
