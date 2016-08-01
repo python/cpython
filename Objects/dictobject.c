@@ -3965,7 +3965,6 @@ _PyDictView_Intersect(PyObject* self, PyObject *other)
     }
 
     /* at this point, self should be bigger than other */
-
     result = PySet_New(NULL);
     if (result == NULL)
         return NULL;
