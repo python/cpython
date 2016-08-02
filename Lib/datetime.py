@@ -1479,15 +1479,17 @@ class datetime(date):
         return cls.utcfromtimestamp(t)
 
     @classmethod
-    def combine(cls, date, time):
+    def combine(cls, date, time, tzinfo=True):
         "Construct a datetime from a given date and a given time."
         if not isinstance(date, _date_class):
             raise TypeError("date argument must be a date instance")
         if not isinstance(time, _time_class):
             raise TypeError("time argument must be a time instance")
+        if tzinfo is True:
+            tzinfo = time.tzinfo
         return cls(date.year, date.month, date.day,
                    time.hour, time.minute, time.second, time.microsecond,
-                   time.tzinfo, fold=time.fold)
+                   tzinfo, fold=time.fold)
 
     def timetuple(self):
         "Return local time tuple compatible with time.localtime()."
