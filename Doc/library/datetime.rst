@@ -794,15 +794,22 @@ Other constructors, all class methods:
    microsecond of the result are all 0, and :attr:`.tzinfo` is ``None``.
 
 
-.. classmethod:: datetime.combine(date, time)
+.. classmethod:: datetime.combine(date, time[, tzinfo])
 
    Return a new :class:`.datetime` object whose date components are equal to the
-   given :class:`date` object's, and whose time components and :attr:`.tzinfo`
-   attributes are equal to the given :class:`.time` object's. For any
-   :class:`.datetime` object *d*,
-   ``d == datetime.combine(d.date(), d.timetz())``.  If date is a
+   given :class:`date` object's, and whose time components
+   are equal to the given :class:`.time` object's.  If the *tzinfo*
+   argument is provided, its value is used to set the :attr:`.tzinfo` attribute
+   of the result, otherwise the :attr:`~.time.tzinfo` attribute of the *time* argument
+   is used.
+
+   For any :class:`.datetime` object *d*,
+   ``d == datetime.combine(d.date(), d.time(), d.tzinfo)``.  If date is a
    :class:`.datetime` object, its time components and :attr:`.tzinfo` attributes
    are ignored.
+
+   .. versionchanged:: 3.6
+      Added the *tzinfo* argument.
 
 
 .. classmethod:: datetime.strptime(date_string, format)

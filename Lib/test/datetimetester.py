@@ -2117,10 +2117,21 @@ class TestDateTime(TestDate):
         self.assertRaises(TypeError, combine) # need an arg
         self.assertRaises(TypeError, combine, d) # need two args
         self.assertRaises(TypeError, combine, t, d) # args reversed
-        self.assertRaises(TypeError, combine, d, t, 1) # too many args
+        self.assertRaises(TypeError, combine, d, t, 1) # wrong tzinfo type
+        self.assertRaises(TypeError, combine, d, t, 1, 2)  # too many args
         self.assertRaises(TypeError, combine, "date", "time") # wrong types
         self.assertRaises(TypeError, combine, d, "time") # wrong type
         self.assertRaises(TypeError, combine, "date", t) # wrong type
+
+        # tzinfo= argument
+        dt = combine(d, t, timezone.utc)
+        self.assertIs(dt.tzinfo, timezone.utc)
+        dt = combine(d, t, tzinfo=timezone.utc)
+        self.assertIs(dt.tzinfo, timezone.utc)
+        t = time()
+        dt = combine(dt, t)
+        self.assertEqual(dt.date(), d)
+        self.assertEqual(dt.time(), t)
 
     def test_replace(self):
         cls = self.theclass

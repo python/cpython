@@ -4430,28 +4430,32 @@ datetime_strptime(PyObject *cls, PyObject *args)
 static PyObject *
 datetime_combine(PyObject *cls, PyObject *args, PyObject *kw)
 {
-    static char *keywords[] = {"date", "time", NULL};
+    static char *keywords[] = {"date", "time", "tzinfo", NULL};
     PyObject *date;
     PyObject *time;
+    PyObject *tzinfo = NULL;
     PyObject *result = NULL;
 
-    if (PyArg_ParseTupleAndKeywords(args, kw, "O!O!:combine", keywords,
+    if (PyArg_ParseTupleAndKeywords(args, kw, "O!O!|O:combine", keywords,
                                     &PyDateTime_DateType, &date,
-                                    &PyDateTime_TimeType, &time)) {
-        PyObject *tzinfo = Py_None;
-
-        if (HASTZINFO(time))
-            tzinfo = ((PyDateTime_Time *)time)->tzinfo;
+                                    &PyDateTime_TimeType, &time, &tzinfo)) {
+        if (tzinfo == NULL) {
+            if (HASTZINFO(time))
+                tzinfo = ((PyDateTime_Time *)time)->tzinfo;
+            else
+                tzinfo = Py_None;
+        }
         result = PyObject_CallFunction(cls, "iiiiiiiO",
-                                        GET_YEAR(date),
-                                        GET_MONTH(date),
-                                        GET_DAY(date),
-                                        TIME_GET_HOUR(time),
-                                        TIME_GET_MINUTE(time),
-                                        TIME_GET_SECOND(time),
-                                        TIME_GET_MICROSECOND(time),
-                                        tzinfo);
-        DATE_SET_FOLD(result, TIME_GET_FOLD(time));
+                                       GET_YEAR(date),
+                                       GET_MONTH(date),
+                                       GET_DAY(date),
+                                       TIME_GET_HOUR(time),
+                                       TIME_GET_MINUTE(time),
+                                       TIME_GET_SECOND(time),
+                                       TIME_GET_MICROSECOND(time),
+                                       tzinfo);
+        if (result)
+            DATE_SET_FOLD(result, TIME_GET_FOLD(time));
     }
     return result;
 }
