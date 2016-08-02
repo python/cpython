@@ -254,6 +254,11 @@ import_init(PyInterpreterState *interp, PyObject *sysmod)
     interp->importlib = importlib;
     Py_INCREF(interp->importlib);
 
+    interp->import_func = PyDict_GetItemString(interp->builtins, "__import__");
+    if (interp->import_func == NULL)
+        Py_FatalError("Py_Initialize: __import__ not found");
+    Py_INCREF(interp->import_func);
+
     /* Import the _imp module */
     impmod = PyInit_imp();
     if (impmod == NULL) {
