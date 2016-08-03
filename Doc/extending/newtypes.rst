@@ -52,11 +52,15 @@ The first bit that will be new is::
    } noddy_NoddyObject;
 
 This is what a Noddy object will contain---in this case, nothing more than what
-every Python object contains---a refcount and a pointer to a type object.
-These are the fields the ``PyObject_HEAD`` macro brings in.  The reason for the
-macro is to standardize the layout and to enable special debugging fields in
-debug builds.  Note that there is no semicolon after the ``PyObject_HEAD``
-macro; one is included in the macro definition.  Be wary of adding one by
+every Python object contains---a field called ``ob_base`` of type
+:c:type:`PyObject`.  :c:type:`PyObject` in turn, contains an ``ob_refcnt``
+field and a pointer to a type object.  These can be accessed using the macros
+:c:macro:`Py_REFCNT` and :c:macro:`Py_TYPE` respectively.  These are the fields
+the :c:macro:`PyObject_HEAD` macro brings in.  The reason for the macro is to
+standardize the layout and to enable special debugging fields in debug builds.
+
+Note that there is no semicolon after the :c:macro:`PyObject_HEAD` macro;
+one is included in the macro definition.  Be wary of adding one by
 accident; it's easy to do from habit, and your compiler might not complain,
 but someone else's probably will!  (On Windows, MSVC is known to call this an
 error and refuse to compile the code.)
