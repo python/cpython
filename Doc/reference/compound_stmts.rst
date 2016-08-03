@@ -503,10 +503,12 @@ are applied in nested fashion. For example, the following code ::
    @f2
    def func(): pass
 
-is equivalent to ::
+is roughly equivalent to ::
 
    def func(): pass
    func = f1(arg)(f2(func))
+
+except that the original function is not temporarily bound to the name ``func``.
 
 .. index::
    triple: default; parameter; value
@@ -638,14 +640,13 @@ Classes can also be decorated: just like when decorating functions, ::
    @f2
    class Foo: pass
 
-is equivalent to ::
+is roughly equivalent to ::
 
    class Foo: pass
    Foo = f1(arg)(f2(Foo))
 
 The evaluation rules for the decorator expressions are the same as for function
-decorators.  The result must be a class object, which is then bound to the class
-name.
+decorators.  The result is then bound to the class name.
 
 **Programmer's note:** Variables defined in the class definition are class
 attributes; they are shared by instances.  Instance attributes can be set in a
