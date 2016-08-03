@@ -82,7 +82,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         cmd.finalize_options()
         for attr, waited in (('username', 'me'), ('password', 'secret'),
                              ('realm', 'pypi'),
-                             ('repository', 'https://upload.pypi.io/legacy/')):
+                             ('repository', 'https://upload.pypi.org/legacy/')):
             self.assertEqual(getattr(cmd, attr), waited)
 
     def test_saved_password(self):
@@ -123,7 +123,7 @@ class uploadTestCase(PyPIRCCommandTestCase):
         self.assertTrue(headers['Content-type'].startswith('multipart/form-data'))
         self.assertEqual(self.last_open.req.get_method(), 'POST')
         self.assertEqual(self.last_open.req.get_full_url(),
-                         'https://upload.pypi.io/legacy/')
+                         'https://upload.pypi.org/legacy/')
         self.assertIn('xxx', self.last_open.req.data)
         auth = self.last_open.req.headers['Authorization']
         self.assertNotIn('\n', auth)
