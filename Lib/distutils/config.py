@@ -21,7 +21,7 @@ password:%s
 class PyPIRCCommand(Command):
     """Base command that knows how to handle the .pypirc file
     """
-    DEFAULT_REPOSITORY = 'https://upload.pypi.io/legacy/'
+    DEFAULT_REPOSITORY = 'https://upload.pypi.org/legacy/'
     DEFAULT_REALM = 'pypi'
     repository = None
     realm = None
