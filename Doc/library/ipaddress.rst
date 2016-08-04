@@ -24,6 +24,10 @@ This is the full module API reference—for an overview and introduction, see
 
 .. versionadded:: 3.3
 
+.. testsetup::
+   >>> import ipaddress
+   >>> from ipaddress import (ip_network, IPv4Address, IPv4Interface,
+   ...                        IPv4Network)
 
 Convenience factory functions
 -----------------------------
@@ -38,13 +42,6 @@ IP addresses, networks and interfaces:
    supplied; integers less than 2**32 will be considered to be IPv4 by default.
    A :exc:`ValueError` is raised if *address* does not represent a valid IPv4
    or IPv6 address.
-
-.. testsetup::
-   >>> import ipaddress
-   >>> from ipaddress import (ip_network, IPv4Address, IPv4Interface,
-   ...                        IPv4Network)
-
-::
 
    >>> ipaddress.ip_address('192.168.0.1')
    IPv4Address('192.168.0.1')
