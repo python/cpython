@@ -740,7 +740,7 @@ UNIVERSALSDK
 CONFIG_ARGS
 SOVERSION
 VERSION
-PGEN_DEPENDENCY
+GENERATED_COMMENT
 PYTHON_FOR_BUILD
 PYTHON_FOR_GEN
 host_os
@@ -751,7 +751,6 @@ build_os
 build_vendor
 build_cpu
 build
-cross_compiling
 HAS_HG
 HGBRANCH
 HGTAG
@@ -2876,7 +2875,6 @@ fi
 ac_config_headers="$ac_config_headers pyconfig.h"
 
 
-
 ac_aux_dir=
 for ac_dir in "$srcdir" "$srcdir/.." "$srcdir/../.."; do
   if test -f "$ac_dir/install-sh"; then
@@ -3051,12 +3049,13 @@ $as_echo_n "checking for python interpreter for cross build... " >&6; }
 $as_echo "$interp" >&6; }
 	PYTHON_FOR_BUILD='_PYTHON_PROJECT_BASE=$(abs_builddir) _PYTHON_HOST_PLATFORM=$(_PYTHON_HOST_PLATFORM) PYTHONPATH=$(shell test -f pybuilddir.txt && echo $(abs_builddir)/`cat pybuilddir.txt`:)$(srcdir)/Lib:$(srcdir)/Lib/$(PLATDIR) '$interp
     fi
-    PGEN_DEPENDENCY=''
+    # Used to comment out stuff for rebuilding generated files
+    GENERATED_COMMENT='#'
 elif test "$cross_compiling" = maybe; then
     as_fn_error $? "Cross compiling required --host=HOST-TUPLE and --build=ARCH" "$LINENO" 5
 else
     PYTHON_FOR_BUILD='./$(BUILDPYTHON) -E'
-    PGEN_DEPENDENCY='$(PGEN)'
+    GENERATED_COMMENT=''
 fi
 
 

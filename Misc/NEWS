@@ -101,8 +101,9 @@ Build
 - Issue #27453: CPP invocation in configure must use CPPFLAGS. Patch by
   Chi Hsuan Yen.
 
-- Issue #27490: Do not build pgen when cross-compiling.  Patch by Thomas
-  Perl.
+- Issue #27641: The configure script now inserts comments into the makefile
+  to prevent the pgen and _freeze_importlib executables from being cross-
+  compiled.
 
 - Issue #26662: Set PYTHON_FOR_GEN in configure as the Python program to be
   used for file generation during the build.
