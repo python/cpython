@@ -465,7 +465,7 @@ class CmdLineTest(unittest.TestCase):
         rc, out, err = assert_python_ok('-I', '-c',
             'from sys import flags as f; '
             'print(f.no_user_site, f.ignore_environment, f.isolated)',
-            # dummyvar to prevent extranous -E
+            # dummyvar to prevent extraneous -E
             dummyvar="")
         self.assertEqual(out.strip(), b'1 1 1')
         with test.support.temp_cwd() as tmpdir:
