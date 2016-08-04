@@ -14,6 +14,9 @@ Core and Builtins
 
 - Issue #17596: Include <wincrypt.h> to help with Min GW building.
 
+- Issue #17599: On Windows, rename the privately defined REPARSE_DATA_BUFFER
+  structure to avoid conflicting with the definition from Min GW.
+
 - Issue #27507: Add integer overflow check in bytearray.extend().  Patch by
   Xiang Zhang.
 
