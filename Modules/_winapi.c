@@ -486,7 +486,7 @@ _winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
     const USHORT prefix_len = 4;
     USHORT print_len = 0;
     USHORT rdb_size = 0;
-    PREPARSE_DATA_BUFFER rdb = NULL;
+    _Py_PREPARSE_DATA_BUFFER rdb = NULL;
 
     /* Junction point creation */
     HANDLE junction = NULL;
@@ -542,18 +542,18 @@ _winapi_CreateJunction_impl(PyObject *module, LPWSTR src_path,
          - the size of the print name in bytes
          - the size of the substitute name in bytes
          - the size of two NUL terminators in bytes */
-    rdb_size = REPARSE_DATA_BUFFER_HEADER_SIZE +
+    rdb_size = _Py_REPARSE_DATA_BUFFER_HEADER_SIZE +
         sizeof(rdb->MountPointReparseBuffer) -
         sizeof(rdb->MountPointReparseBuffer.PathBuffer) +
         /* Two +1's for NUL terminators. */
         (prefix_len + print_len + 1 + print_len + 1) * sizeof(WCHAR);
-    rdb = (PREPARSE_DATA_BUFFER)PyMem_RawMalloc(rdb_size);
+    rdb = (_Py_PREPARSE_DATA_BUFFER)PyMem_RawMalloc(rdb_size);
     if (rdb == NULL)
         goto cleanup;
 
     memset(rdb, 0, rdb_size);
     rdb->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
-    rdb->ReparseDataLength = rdb_size - REPARSE_DATA_BUFFER_HEADER_SIZE;
+    rdb->ReparseDataLength = rdb_size - _Py_REPARSE_DATA_BUFFER_HEADER_SIZE;
     rdb->MountPointReparseBuffer.SubstituteNameOffset = 0;
     rdb->MountPointReparseBuffer.SubstituteNameLength =
         (prefix_len + print_len) * sizeof(WCHAR);
