@@ -382,7 +382,7 @@ On the first page of the installer, an option labelled "Add Python 3.5 to
 PATH" can be selected to have the installer add the install location into the
 :envvar:`PATH`.  The location of the :file:`Scripts\\` folder is also added.
 This allows you to type :command:`python` to run the interpreter, and
-:command:`pip` or . Thus, you can also execute your
+:command:`pip` for the package installer. Thus, you can also execute your
 scripts with command line options, see :ref:`using-on-cmdline` documentation.
 
 If you don't enable this option at install time, you can always re-run the
