@@ -194,7 +194,7 @@ the concrete API.
 Here are some ways to address this challenge:
 
 1. Change the relevant usage of the concrete API in CPython and add
-   PyDict_CheckExact() calls to each of the concrete API funcions.
+   PyDict_CheckExact() calls to each of the concrete API functions.
 2. Adjust the relevant concrete API functions to explicitly accommodate
    OrderedDict.
 3. As with #1, add the checks, but improve the abstract API with smart fast
