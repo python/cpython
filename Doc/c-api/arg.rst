@@ -32,8 +32,12 @@ Strings and buffers
 
 These formats allow accessing an object as a contiguous chunk of memory.
 You don't have to provide raw storage for the returned unicode or bytes
-area.  Also, you won't have to release any memory yourself, except with the
-``es``, ``es#``, ``et`` and ``et#`` formats.
+area.
+
+In general, when a format sets a pointer to a buffer, the buffer is
+managed by the corresponding Python object, and the buffer shares
+the lifetime of this object.  You won't have to release any memory yourself.
+The only exceptions are ``es``, ``es#``, ``et`` and ``et#``.
 
 However, when a :c:type:`Py_buffer` structure gets filled, the underlying
 buffer is locked so that the caller can subsequently use the buffer even
@@ -43,6 +47,11 @@ being resized or destroyed.  As a result, **you have to call**
 in any early abort case).
 
 Unless otherwise stated, buffers are not NUL-terminated.
+
+Some formats require a read-only :term:`bytes-like object`, and set a
+pointer instead of a buffer structure.  They work by checking that
+the object's :c:member:`PyBufferProcs.bf_releasebuffer` field is *NULL*,
+which disallows mutable objects such as :class:`bytearray`.
 
 .. note::
 
@@ -59,7 +68,7 @@ Unless otherwise stated, buffers are not NUL-terminated.
    Convert a Unicode object to a C pointer to a character string.
    A pointer to an existing string is stored in the character pointer
    variable whose address you pass.  The C string is NUL-terminated.
-   The Python string must not contain embedded null characters; if it does,
+   The Python string must not contain embedded null code points; if it does,
    a :exc:`ValueError` exception is raised. Unicode objects are converted
    to C strings using ``'utf-8'`` encoding. If this conversion fails, a
    :exc:`UnicodeError` is raised.
@@ -72,7 +81,7 @@ Unless otherwise stated, buffers are not NUL-terminated.
       as *converter*.
 
    .. versionchanged:: 3.5
-      Previously, :exc:`TypeError` was raised when embedded null characters
+      Previously, :exc:`TypeError` was raised when embedded null code points
       were encountered in the Python string.
 
 ``s*`` (:class:`str` or :term:`bytes-like object`) [Py_buffer]
@@ -82,8 +91,8 @@ Unless otherwise stated, buffers are not NUL-terminated.
    Unicode objects are converted to C strings using ``'utf-8'`` encoding.
 
 ``s#`` (:class:`str`, read-only :term:`bytes-like object`) [const char \*, int or :c:type:`Py_ssize_t`]
-   Like ``s*``, except that it doesn't accept mutable bytes-like objects
-   such as :class:`bytearray`.  The result is stored into two C variables,
+   Like ``s*``, except that it doesn't accept mutable objects.
+   The result is stored into two C variables,
    the first one a pointer to a C string, the second one its length.
    The string may contain embedded null bytes. Unicode objects are converted
    to C strings using ``'utf-8'`` encoding.
@@ -135,21 +144,17 @@ Unless otherwise stated, buffers are not NUL-terminated.
    pointer variable, which will be filled with the pointer to an existing
    Unicode buffer.  Please note that the width of a :c:type:`Py_UNICODE`
    character depends on compilation options (it is either 16 or 32 bits).
-   The Python string must not contain embedded null characters; if it does,
+   The Python string must not contain embedded null code points; if it does,
    a :exc:`ValueError` exception is raised.
 
-   .. note::
-      Since ``u`` doesn't give you back the length of the string, and it
-      may contain embedded NUL characters, it is recommended to use ``u#``
-      or ``U`` instead.
-
    .. versionchanged:: 3.5
-      Previously, :exc:`TypeError` was raised when embedded null characters
+      Previously, :exc:`TypeError` was raised when embedded null code points
       were encountered in the Python string.
 
 ``u#`` (:class:`str`) [Py_UNICODE \*, int]
    This variant on ``u`` stores into two C variables, the first one a pointer to a
-   Unicode data buffer, the second one its length.
+   Unicode data buffer, the second one its length.  This variant allows
+   null code points.
 
 ``Z`` (:class:`str` or ``None``) [Py_UNICODE \*]
    Like ``u``, but the Python object may also be ``None``, in which case the
