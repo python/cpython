@@ -156,7 +156,7 @@ write code that handles both IP versions correctly.
       This is the name that could be used for performing a PTR lookup, not the
       resolved hostname itself.
 
-   .. versionadded:: 3.5
+      .. versionadded:: 3.5
 
    .. attribute:: is_multicast
 
