@@ -449,7 +449,7 @@ by the local file.
 
 .. pdbcommand:: interact
 
-   Start an interative interpreter (using the :mod:`code` module) whose global
+   Start an interactive interpreter (using the :mod:`code` module) whose global
    namespace contains all the (global and local) names found in the current
    scope.
 

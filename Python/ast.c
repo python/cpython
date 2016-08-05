@@ -2852,7 +2852,7 @@ ast_for_expr_stmt(struct compiling *c, const node *n)
        testlist_star_expr: (test|star_expr) (',' test|star_expr)* [',']
        augassign: '+=' | '-=' | '*=' | '@=' | '/=' | '%=' | '&=' | '|=' | '^='
                 | '<<=' | '>>=' | '**=' | '//='
-       test: ... here starts the operator precendence dance
+       test: ... here starts the operator precedence dance
      */
 
     if (NCH(n) == 1) {

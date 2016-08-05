@@ -30,7 +30,7 @@ typedef struct {} DIR;
 typedef struct {} RFILE;
 
 /* Python/pythonrun.c
- * resourece leak false positive */
+ * resource leak false positive */
 
 void Py_FatalError(const char *msg) {
     __coverity_panic__();
