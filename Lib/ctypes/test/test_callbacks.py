@@ -1,3 +1,4 @@
+import functools
 import unittest
 from ctypes import *
 from ctypes.test import need_symbol
@@ -240,6 +241,40 @@ class SampleCallbacksTestCase(unittest.TestCase):
         self.assertEqual(result,
                          callback(1.1*1.1, 2.2*2.2, 3.3*3.3, 4.4*4.4, 5.5*5.5))
 
+    def test_callback_large_struct(self):
+        class Check: pass
+
+        class X(Structure):
+            _fields_ = [
+                ('first', c_ulong),
+                ('second', c_ulong),
+                ('third', c_ulong),
+            ]
+
+        def callback(check, s):
+            check.first = s.first
+            check.second = s.second
+            check.third = s.third
+
+        check = Check()
+        s = X()
+        s.first = 0xdeadbeef
+        s.second = 0xcafebabe
+        s.third = 0x0bad1dea
+
+        CALLBACK = CFUNCTYPE(None, X)
+        dll = CDLL(_ctypes_test.__file__)
+        func = dll._testfunc_cbk_large_struct
+        func.argtypes = (X, CALLBACK)
+        func.restype = None
+        # the function just calls the callback with the passed structure
+        func(s, CALLBACK(functools.partial(callback, check)))
+        self.assertEqual(check.first, s.first)
+        self.assertEqual(check.second, s.second)
+        self.assertEqual(check.third, s.third)
+        self.assertEqual(check.first, 0xdeadbeef)
+        self.assertEqual(check.second, 0xcafebabe)
+        self.assertEqual(check.third, 0x0bad1dea)
 
 ################################################################
 
