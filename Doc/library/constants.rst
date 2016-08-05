@@ -33,16 +33,22 @@ A small number of constants live in the built-in namespace.  They are:
    (e.g. :meth:`__imul__`, :meth:`__iand__`, etc.) for the same purpose.
    Its truth value is true.
 
-.. note::
+   .. note::
 
-   When ``NotImplemented`` is returned, the interpreter will then try the
-   reflected operation on the other type, or some other fallback, depending
-   on the operator.  If all attempted operations return ``NotImplemented``, the
-   interpreter will raise an appropriate exception.
+      When a binary (or in-place) method returns ``NotImplemented`` the
+      interpreter will try the reflected operation on the other type (or some
+      other fallback, depending on the operator).  If all attempts return
+      ``NotImplemented``, the interpreter will raise an appropriate exception.
+      Incorrectly returning ``NotImplemented`` will result in a misleading
+      error message or the ``NotImplemented`` value being returned to Python code.
 
-   See
-   :ref:`implementing-the-arithmetic-operations`
-   for more details.
+      See :ref:`implementing-the-arithmetic-operations` for examples.
+
+   .. note::
+
+      ``NotImplentedError`` and ``NotImplemented`` are not interchangeable,
+      even though they have similar names and purposes.
+      See :exc:`NotImplementedError` for details on when to use it.
 
 
 .. data:: Ellipsis
