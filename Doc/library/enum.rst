@@ -37,6 +37,13 @@ one decorator, :func:`unique`.
     Base class for creating enumerated constants that are also
     subclasses of :class:`int`.
 
+.. class:: AutoEnum
+
+    Base class for creating automatically numbered members (may
+    be combined with IntEnum if desired).
+
+    .. versionadded:: 3.6
+
 .. function:: unique
 
     Enum class decorator that ensures only one name is bound to any one value.
@@ -47,14 +54,14 @@ Creating an Enum
 
 Enumerations are created using the :keyword:`class` syntax, which makes them
 easy to read and write.  An alternative creation method is described in
-`Functional API`_.  To define an enumeration, subclass :class:`Enum` as
-follows::
+`Functional API`_.  To define a simple enumeration, subclass :class:`AutoEnum`
+as follows::
 
-    >>> from enum import Enum
-    >>> class Color(Enum):
-    ...     red = 1
-    ...     green = 2
-    ...     blue = 3
+    >>> from enum import AutoEnum
+    >>> class Color(AutoEnum):
+    ...     red
+    ...     green
+    ...     blue
     ...
 
 .. note:: Nomenclature
@@ -71,6 +78,33 @@ follows::
     Even though we use the :keyword:`class` syntax to create Enums, Enums
     are not normal Python classes.  See `How are Enums different?`_ for
     more details.
+
+To create your own automatic :class:`Enum` classes, you need to add a
+:meth:`_generate_next_value_` method; it will be used to create missing values
+for any members after its definition.
+
+.. versionadded:: 3.6
+
+If you need full control of the member values, use :class:`Enum` as the base
+class and specify the values manually::
+
+    >>> from enum import Enum
+    >>> class Color(Enum):
+    ...     red = 19
+    ...     green = 7.9182
+    ...     blue = 'periwinkle'
+    ...
+
+We'll use the following Enum for the examples below::
+
+    >>> class Color(Enum):
+    ...     red = 1
+    ...     green = 2
+    ...     blue = 3
+    ...
+
+Enum Details
+------------
 
 Enumeration members have human readable string representations::
 
@@ -235,7 +269,11 @@ aliases::
 The ``__members__`` attribute can be used for detailed programmatic access to
 the enumeration members.  For example, finding all the aliases::
 
-    >>> [name for name, member in Shape.__members__.items() if member.name != name]
+    >>> [
+    ...   name
+    ...   for name, member in Shape.__members__.items()
+    ...   if member.name != name
+    ...   ]
     ['alias_for_square']
 
 
@@ -257,7 +295,7 @@ members are not integers (but see `IntEnum`_ below)::
     >>> Color.red < Color.blue
     Traceback (most recent call last):
       File "<stdin>", line 1, in <module>
-    TypeError: unorderable types: Color() < Color()
+    TypeError: '<' not supported between instances of 'Color' and 'Color'
 
 Equality comparisons are defined though::
 
@@ -280,10 +318,10 @@ Allowed members and attributes of enumerations
 ----------------------------------------------
 
 The examples above use integers for enumeration values.  Using integers is
-short and handy (and provided by default by the `Functional API`_), but not
-strictly enforced.  In the vast majority of use-cases, one doesn't care what
-the actual value of an enumeration is.  But if the value *is* important,
-enumerations can have arbitrary values.
+short and handy (and provided by default by :class:`AutoEnum` and the
+`Functional API`_), but not strictly enforced.  In the vast majority of
+use-cases, one doesn't care what the actual value of an enumeration is.
+But if the value *is* important, enumerations can have arbitrary values.
 
 Enumerations are Python classes, and can have methods and special methods as
 usual.  If we have this enumeration::
@@ -393,17 +431,21 @@ The :class:`Enum` class is callable, providing the following functional API::
     >>> list(Animal)
     [<Animal.ant: 1>, <Animal.bee: 2>, <Animal.cat: 3>, <Animal.dog: 4>]
 
-The semantics of this API resemble :class:`~collections.namedtuple`. The first
-argument of the call to :class:`Enum` is the name of the enumeration.
+The semantics of this API resemble :class:`~collections.namedtuple`.
 
-The second argument is the *source* of enumeration member names.  It can be a
-whitespace-separated string of names, a sequence of names, a sequence of
-2-tuples with key/value pairs, or a mapping (e.g. dictionary) of names to
-values.  The last two options enable assigning arbitrary values to
-enumerations; the others auto-assign increasing integers starting with 1 (use
-the ``start`` parameter to specify a different starting value).  A
-new class derived from :class:`Enum` is returned.  In other words, the above
-assignment to :class:`Animal` is equivalent to::
+- the first argument of the call to :class:`Enum` is the name of the
+  enumeration;
+
+- the second argument is the *source* of enumeration member names.  It can be a
+  whitespace-separated string of names, a sequence of names, a sequence of
+  2-tuples with key/value pairs, or a mapping (e.g. dictionary) of names to
+  values;
+
+- the last two options enable assigning arbitrary values to enumerations; the
+  others auto-assign increasing integers starting with 1 (use the ``start``
+  parameter to specify a different starting value).  A new class derived from
+  :class:`Enum` is returned.  In other words, the above assignment to
+  :class:`Animal` is equivalent to::
 
     >>> class Animal(Enum):
     ...     ant = 1
@@ -419,7 +461,7 @@ to ``True``.
 Pickling enums created with the functional API can be tricky as frame stack
 implementation details are used to try and figure out which module the
 enumeration is being created in (e.g. it will fail if you use a utility
-function in separate module, and also may not work on IronPython or Jython).
+function in a separate module, and also may not work on IronPython or Jython).
 The solution is to specify the module name explicitly as follows::
 
     >>> Animal = Enum('Animal', 'ant bee cat dog', module=__name__)
@@ -439,7 +481,15 @@ SomeData in the global scope::
 
 The complete signature is::
 
-    Enum(value='NewEnumName', names=<...>, *, module='...', qualname='...', type=<mixed-in class>, start=1)
+    Enum(
+        value='NewEnumName',
+        names=<...>,
+        *,
+        module='...',
+        qualname='...',
+        type=<mixed-in class>,
+        start=1,
+        )
 
 :value: What the new Enum class will record as its name.
 
@@ -475,10 +525,41 @@ The complete signature is::
 Derived Enumerations
 --------------------
 
+AutoEnum
+^^^^^^^^
+
+This version of :class:`Enum` automatically assigns numbers as the values
+for the enumeration members, while still allowing values to be specified
+when needed::
+
+    >>> from enum import AutoEnum
+    >>> class Color(AutoEnum):
+    ...     red
+    ...     green = 5
+    ...     blue
+    ...
+    >>> list(Color)
+    [<Color.red: 1>, <Color.green: 5>, <Color.blue: 6>]
+
+.. note:: Name Lookup
+
+    By default the names :func:`property`, :func:`classmethod`, and
+    :func:`staticmethod` are shielded from becoming members.  To enable
+    them, or to specify a different set of shielded names, specify the
+    ignore parameter::
+
+        >>> class AddressType(AutoEnum, ignore='classmethod staticmethod'):
+        ...     pobox
+        ...     mailbox
+        ...     property
+        ...
+
+.. versionadded:: 3.6
+
 IntEnum
 ^^^^^^^
 
-A variation of :class:`Enum` is provided which is also a subclass of
+Another variation of :class:`Enum` which is also a subclass of
 :class:`int`.  Members of an :class:`IntEnum` can be compared to integers;
 by extension, integer enumerations of different types can also be compared
 to each other::
@@ -521,14 +602,13 @@ However, they still can't be compared to standard :class:`Enum` enumerations::
     >>> [i for i in range(Shape.square)]
     [0, 1]
 
-For the vast majority of code, :class:`Enum` is strongly recommended,
-since :class:`IntEnum` breaks some semantic promises of an enumeration (by
-being comparable to integers, and thus by transitivity to other
-unrelated enumerations).  It should be used only in special cases where
-there's no other choice; for example, when integer constants are
-replaced with enumerations and backwards compatibility is required with code
-that still expects integers.
-
+For the vast majority of code, :class:`Enum` and :class:`AutoEnum` are strongly
+recommended, since :class:`IntEnum` breaks some semantic promises of an
+enumeration (by being comparable to integers, and thus by transitivity to other
+unrelated ``IntEnum`` enumerations).  It should be used only in special cases
+where there's no other choice; for example, when integer constants are replaced
+with enumerations and backwards compatibility is required with code that still
+expects integers.
 
 Others
 ^^^^^^
@@ -540,7 +620,9 @@ simple to implement independently::
         pass
 
 This demonstrates how similar derived enumerations can be defined; for example
-a :class:`StrEnum` that mixes in :class:`str` instead of :class:`int`.
+an :class:`AutoIntEnum` that mixes in :class:`int` with :class:`AutoEnum`
+to get members that are :class:`int` (but keep in mind the warnings for
+:class:`IntEnum`).
 
 Some rules:
 
@@ -567,37 +649,58 @@ Some rules:
 Interesting examples
 --------------------
 
-While :class:`Enum` and :class:`IntEnum` are expected to cover the majority of
-use-cases, they cannot cover them all.  Here are recipes for some different
-types of enumerations that can be used directly, or as examples for creating
-one's own.
+While :class:`Enum`, :class:`AutoEnum`, and :class:`IntEnum` are expected
+to cover the majority of use-cases, they cannot cover them all.  Here are
+recipes for some different types of enumerations that can be used directly,
+or as examples for creating one's own.
 
 
-AutoNumber
-^^^^^^^^^^
+AutoDocEnum
+^^^^^^^^^^^
 
-Avoids having to specify the value for each enumeration member::
+Automatically numbers the members, and uses the given value as the
+:attr:`__doc__` string::
 
-    >>> class AutoNumber(Enum):
-    ...     def __new__(cls):
+    >>> class AutoDocEnum(Enum):
+    ...     def __new__(cls, doc):
     ...         value = len(cls.__members__) + 1
     ...         obj = object.__new__(cls)
     ...         obj._value_ = value
+    ...         obj.__doc__ = doc
     ...         return obj
     ...
-    >>> class Color(AutoNumber):
-    ...     red = ()
-    ...     green = ()
-    ...     blue = ()
+    >>> class Color(AutoDocEnum):
+    ...     red = 'stop'
+    ...     green = 'go'
+    ...     blue = 'what?'
     ...
     >>> Color.green.value == 2
     True
+    >>> Color.green.__doc__
+    'go'
 
 .. note::
 
     The :meth:`__new__` method, if defined, is used during creation of the Enum
     members; it is then replaced by Enum's :meth:`__new__` which is used after
     class creation for lookup of existing members.
+
+AutoNameEnum
+^^^^^^^^^^^^
+
+Automatically sets the member's value to its name::
+
+    >>> class AutoNameEnum(Enum):
+    ...     def _generate_next_value_(name, start, count, last_value):
+    ...         return name
+    ...
+    >>> class Color(AutoNameEnum):
+    ...     red
+    ...     green
+    ...     blue
+    ...
+    >>> Color.green.value == 'green'
+    True
 
 
 OrderedEnum
@@ -731,10 +834,61 @@ member instances.
 Finer Points
 ^^^^^^^^^^^^
 
-:class:`Enum` members are instances of an :class:`Enum` class, and even
-though they are accessible as `EnumClass.member`, they should not be accessed
+Enum class signature
+~~~~~~~~~~~~~~~~~~~~
+
+    ``class SomeName(
+            AnEnum,
+            start=None,
+            ignore='staticmethod classmethod property',
+            ):``
+
+``start`` can be used by a :meth:`_generate_next_value_` method to specify a
+starting value.
+
+``ignore`` specifies which names, if any, will not attempt to auto-generate
+a new value (they will also be removed from the class body).
+
+
+Supported ``__dunder__`` names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The :attr:`__members__` attribute is only available on the class.
+
+:meth:`__new__`, if specified, must create and return the enum members; it is
+also a very good idea to set the member's :attr:`_value_` appropriately.  Once
+all the members are created it is no longer used.
+
+
+Supported ``_sunder_`` names
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- ``_order_`` -- used in Python 2/3 code to ensure member order is consistent [class attribute]
+
+- ``_name_`` -- name of the member (but use ``name`` for normal access)
+- ``_value_`` -- value of the member; can be set / modified in ``__new__`` (see ``_name_``)
+- ``_missing_`` -- a lookup function used when a value is not found (only after class creation)
+- ``_generate_next_value_`` -- a function to generate missing values (only during class creation)
+
+
+:meth:`_generate_next_value_` signature
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+    ``def _generate_next_value_(name, start, count, last_value):``
+
+- ``name`` is the name of the member
+- ``start`` is the initital start value (if any) or None
+- ``count`` is the number of existing members in the enumeration
+- ``last_value`` is the value of the last enum member (if any) or None
+
+
+Enum member type
+~~~~~~~~~~~~~~~~
+
+``Enum`` members are instances of an ``Enum`` class, and even
+though they are accessible as ``EnumClass.member``, they should not be accessed
 directly from the member as that lookup may fail or, worse, return something
-besides the :class:`Enum` member you looking for::
+besides the ``Enum`` member you are looking for::
 
     >>> class FieldTypes(Enum):
     ...     name = 0
@@ -748,18 +902,24 @@ besides the :class:`Enum` member you looking for::
 
 .. versionchanged:: 3.5
 
-Boolean evaluation: Enum classes that are mixed with non-Enum types (such as
+
+Boolean value of ``Enum`` classes and members
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Enum classes that are mixed with non-Enum types (such as
 :class:`int`, :class:`str`, etc.) are evaluated according to the mixed-in
-type's rules; otherwise, all members evaluate as ``True``.  To make your own
+type's rules; otherwise, all members evaluate as :data:`True`.  To make your own
 Enum's boolean evaluation depend on the member's value add the following to
 your class::
 
     def __bool__(self):
         return bool(self.value)
 
-The :attr:`__members__` attribute is only available on the class.
 
-If you give your :class:`Enum` subclass extra methods, like the `Planet`_
+Enum classes with methods
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you give your ``Enum`` subclass extra methods, like the `Planet`_
 class above, those methods will show up in a :func:`dir` of the member,
 but not of the class::
 
@@ -767,12 +927,3 @@ but not of the class::
     ['EARTH', 'JUPITER', 'MARS', 'MERCURY', 'NEPTUNE', 'SATURN', 'URANUS', 'VENUS', '__class__', '__doc__', '__members__', '__module__']
     >>> dir(Planet.EARTH)
     ['__class__', '__doc__', '__module__', 'name', 'surface_gravity', 'value']
-
-The :meth:`__new__` method will only be used for the creation of the
-:class:`Enum` members -- after that it is replaced.  Any custom :meth:`__new__`
-method must create the object and set the :attr:`_value_` attribute
-appropriately.
-
-If you wish to change how :class:`Enum` members are looked up you should either
-write a helper function or a :func:`classmethod` for the :class:`Enum`
-subclass.
