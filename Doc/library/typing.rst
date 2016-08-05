@@ -561,6 +561,35 @@ The module defines the following classes, functions and decorators:
 
 .. class:: Generator(Iterator[T_co], Generic[T_co, T_contra, V_co])
 
+   A generator can be annotated by the generic type
+   ``Generator[YieldType, SendType, ReturnType]``. For example::
+
+      def echo_round() -> Generator[int, float, str]:
+          sent = yield 0
+          while sent >= 0:
+              sent = yield round(sent)
+          return 'Done'
+
+   Note that unlike many other generics in the typing module, the ``SendType``
+   of :class:`Generator` behaves contravariantly, not covariantly or
+   invariantly.
+
+   If your generator will only yield values, set the ``SendType`` and
+   ``ReturnType`` to ``None``::
+
+      def infinite_stream(start: int) -> Generator[int, None, None]:
+          while True:
+              yield start
+              start += 1
+
+   Alternatively, annotate your generator as having a return type of
+   ``Iterator[YieldType]``::
+
+      def infinite_stream(start: int) -> Iterator[int]:
+          while True:
+              yield start
+              start += 1
+
 .. class:: io
 
    Wrapper namespace for I/O stream types.
