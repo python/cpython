@@ -837,16 +837,18 @@ Finer Points
 Enum class signature
 ~~~~~~~~~~~~~~~~~~~~
 
-    ``class SomeName(
-            AnEnum,
-            start=None,
-            ignore='staticmethod classmethod property',
-            ):``
+::
 
-``start`` can be used by a :meth:`_generate_next_value_` method to specify a
+    class SomeName(
+        AnEnum,
+        start=None,
+        ignore='staticmethod classmethod property',
+    ):
+
+*start* can be used by a :meth:`_generate_next_value_` method to specify a
 starting value.
 
-``ignore`` specifies which names, if any, will not attempt to auto-generate
+*ignore* specifies which names, if any, will not attempt to auto-generate
 a new value (they will also be removed from the class body).
 
 
