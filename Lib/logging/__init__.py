@@ -935,6 +935,10 @@ class Handler(Filterer):
             finally:
                 del t, v, tb
 
+    def __repr__(self):
+        level = getLevelName(self.level)
+        return '<%s (%s)>' % (self.__class__.__name__, level)
+
 class StreamHandler(Handler):
     """
     A handler class which writes logging records, appropriately formatted,
@@ -985,6 +989,14 @@ class StreamHandler(Handler):
             self.flush()
         except Exception:
             self.handleError(record)
+
+    def __repr__(self):
+        level = getLevelName(self.level)
+        name = getattr(self.stream, 'name', '')
+        if name:
+            name += ' '
+        return '<%s %s(%s)>' % (self.__class__.__name__, name, level)
+
 
 class FileHandler(StreamHandler):
     """
@@ -1049,6 +1061,11 @@ class FileHandler(StreamHandler):
         if self.stream is None:
             self.stream = self._open()
         StreamHandler.emit(self, record)
+
+    def __repr__(self):
+        level = getLevelName(self.level)
+        return '<%s %s (%s)>' % (self.__class__.__name__, self.baseFilename, level)
+
 
 class _StderrHandler(StreamHandler):
     """
@@ -1542,6 +1559,11 @@ class Logger(Filterer):
             suffix = '.'.join((self.name, suffix))
         return self.manager.getLogger(suffix)
 
+    def __repr__(self):
+        level = getLevelName(self.getEffectiveLevel())
+        return '<%s %s (%s)>' % (self.__class__.__name__, self.name, level)
+
+
 class RootLogger(Logger):
     """
     A root logger is not that different to any other logger, except that
@@ -1667,6 +1689,11 @@ class LoggerAdapter(object):
         See if the underlying logger has any handlers.
         """
         return self.logger.hasHandlers()
+
+    def __repr__(self):
+        logger = self.logger
+        level = getLevelName(logger.getEffectiveLevel())
+        return '<%s %s (%s)>' % (self.__class__.__name__, logger.name, level)
 
 root = RootLogger(WARNING)
 Logger.root = root
