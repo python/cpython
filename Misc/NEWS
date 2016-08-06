@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26754: Undocumented support of general bytes-like objects
+  as path in compile() and similar functions is now deprecated.
+
 - Issue #26800: Undocumented support of general bytes-like objects
   as paths in os functions is now deprecated.
 

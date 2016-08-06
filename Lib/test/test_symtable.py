@@ -158,9 +158,11 @@ class SymtableTest(unittest.TestCase):
         checkfilename("def f(x): foo)(")  # parse-time
         checkfilename("def f(x): global x")  # symtable-build-time
         symtable.symtable("pass", b"spam", "exec")
-        with self.assertRaises(TypeError):
+        with self.assertWarns(DeprecationWarning), \
+             self.assertRaises(TypeError):
             symtable.symtable("pass", bytearray(b"spam"), "exec")
-        symtable.symtable("pass", memoryview(b"spam"), "exec")
+        with self.assertWarns(DeprecationWarning):
+            symtable.symtable("pass", memoryview(b"spam"), "exec")
         with self.assertRaises(TypeError):
             symtable.symtable("pass", list(b"spam"), "exec")
 
