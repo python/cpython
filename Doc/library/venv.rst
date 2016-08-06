@@ -89,7 +89,8 @@ mechanisms for third-party virtual environment creators to customize environment
 creation according to their needs, the :class:`EnvBuilder` class.
 
 .. class:: EnvBuilder(system_site_packages=False, clear=False, \
-                      symlinks=False, upgrade=False, with_pip=False)
+                      symlinks=False, upgrade=False, with_pip=False, \
+                      prompt=None)
 
     The :class:`EnvBuilder` class accepts the following keyword arguments on
     instantiation:
@@ -113,8 +114,15 @@ creation according to their needs, the :class:`EnvBuilder` class.
       installed in the virtual environment. This uses :mod:`ensurepip` with
       the ``--default-pip`` option.
 
+    * ``prompt`` -- a String to be used after virtual environment is activated
+      (defaults to ``None`` which means directory name of the environment would
+      be used).
+
     .. versionchanged:: 3.4
        Added the ``with_pip`` parameter
+
+    .. versionadded:: 3.6
+       Added the ``prompt`` parameter
 
 
     Creators of third-party virtual environment tools will be free to use the
