@@ -2626,6 +2626,7 @@ class OSErrorTests(unittest.TestCase):
         else:
             encoded = os.fsencode(support.TESTFN)
         self.bytes_filenames.append(encoded)
+        self.bytes_filenames.append(bytearray(encoded))
         self.bytes_filenames.append(memoryview(encoded))
 
         self.filenames = self.bytes_filenames + self.unicode_filenames
@@ -2699,8 +2700,14 @@ class OSErrorTests(unittest.TestCase):
         for filenames, func, *func_args in funcs:
             for name in filenames:
                 try:
-                    with bytes_filename_warn(False):
+                    if isinstance(name, str):
                         func(name, *func_args)
+                    elif isinstance(name, bytes):
+                        with bytes_filename_warn(False):
+                            func(name, *func_args)
+                    else:
+                        with self.assertWarnsRegex(DeprecationWarning, 'should be'):
+                            func(name, *func_args)
                 except OSError as err:
                     self.assertIs(err.filename, name)
                 else:

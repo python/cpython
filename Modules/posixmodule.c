@@ -891,7 +891,28 @@ path_converter(PyObject *o, void *p)
         }
 #endif
     }
+    else if (PyBytes_Check(o)) {
+#ifdef MS_WINDOWS
+        if (win32_warn_bytes_api()) {
+            return 0;
+        }
+#endif
+        bytes = o;
+        Py_INCREF(bytes);
+    }
     else if (PyObject_CheckBuffer(o)) {
+        if (PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "%s%s%s should be %s, not %.200s",
+            path->function_name ? path->function_name : "",
+            path->function_name ? ": "                : "",
+            path->argument_name ? path->argument_name : "path",
+            path->allow_fd && path->nullable ? "string, bytes, integer or None" :
+            path->allow_fd ? "string, bytes or integer" :
+            path->nullable ? "string, bytes or None" :
+                             "string or bytes",
+            Py_TYPE(o)->tp_name)) {
+            return 0;
+        }
 #ifdef MS_WINDOWS
         if (win32_warn_bytes_api()) {
             return 0;
@@ -946,8 +967,14 @@ path_converter(PyObject *o, void *p)
     path->length = length;
     path->object = o;
     path->fd = -1;
-    path->cleanup = bytes;
-    return Py_CLEANUP_SUPPORTED;
+    if (bytes == o) {
+        Py_DECREF(bytes);
+        return 1;
+    }
+    else {
+        path->cleanup = bytes;
+        return Py_CLEANUP_SUPPORTED;
+    }
 }
 
 static void
