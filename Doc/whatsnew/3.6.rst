@@ -284,6 +284,14 @@ class has been added to the :mod:`typing` module as
 (Contributed by Brett Cannon in :issue:`25609`.)
 
 
+venv
+----
+
+:mod:`venv` accepts a new parameter ``--prompt``. This parameter provides an
+alternative prefix for the virtual environment. (Proposed by Łukasz.Balcerzak
+and ported to 3.6 by Stéphane Wirtel in :issue:`22829`.)
+
+
 datetime
 --------
 

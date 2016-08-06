@@ -114,6 +114,17 @@ class BasicTest(BaseTest):
             print('    %r' % os.listdir(bd))
         self.assertTrue(os.path.exists(fn), 'File %r should exist.' % fn)
 
+    def test_prompt(self):
+        env_name = os.path.split(self.env_dir)[1]
+
+        builder = venv.EnvBuilder()
+        context = builder.ensure_directories(self.env_dir)
+        self.assertEqual(context.prompt, '(%s) ' % env_name)
+
+        builder = venv.EnvBuilder(prompt='My prompt')
+        context = builder.ensure_directories(self.env_dir)
+        self.assertEqual(context.prompt, '(My prompt) ')
+
     @skipInVenv
     def test_prefixes(self):
         """

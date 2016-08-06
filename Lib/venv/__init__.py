@@ -36,15 +36,17 @@ class EnvBuilder:
     :param upgrade: If True, upgrade an existing virtual environment.
     :param with_pip: If True, ensure pip is installed in the virtual
                      environment
+    :param prompt: Alternative terminal prefix for the environment.
     """
 
     def __init__(self, system_site_packages=False, clear=False,
-                 symlinks=False, upgrade=False, with_pip=False):
+                 symlinks=False, upgrade=False, with_pip=False, prompt=None):
         self.system_site_packages = system_site_packages
         self.clear = clear
         self.symlinks = symlinks
         self.upgrade = upgrade
         self.with_pip = with_pip
+        self.prompt = prompt
 
     def create(self, env_dir):
         """
@@ -90,7 +92,8 @@ class EnvBuilder:
         context = types.SimpleNamespace()
         context.env_dir = env_dir
         context.env_name = os.path.split(env_dir)[1]
-        context.prompt = '(%s) ' % context.env_name
+        prompt = self.prompt if self.prompt is not None else context.env_name
+        context.prompt = '(%s) ' % prompt
         create_if_needed(env_dir)
         env = os.environ
         if sys.platform == 'darwin' and '__PYVENV_LAUNCHER__' in env:
@@ -326,10 +329,11 @@ class EnvBuilder:
 
 
 def create(env_dir, system_site_packages=False, clear=False,
-                    symlinks=False, with_pip=False):
+                    symlinks=False, with_pip=False, prompt=None):
     """Create a virtual environment in a directory."""
     builder = EnvBuilder(system_site_packages=system_site_packages,
-                         clear=clear, symlinks=symlinks, with_pip=with_pip)
+                         clear=clear, symlinks=symlinks, with_pip=with_pip,
+                         prompt=prompt)
     builder.create(env_dir)
 
 def main(args=None):
@@ -389,6 +393,9 @@ def main(args=None):
                             help='Skips installing or upgrading pip in the '
                                  'virtual environment (pip is bootstrapped '
                                  'by default)')
+        parser.add_argument('--prompt',
+                            help='Provides an alternative prompt prefix for '
+                                 'this environment.')
         options = parser.parse_args(args)
         if options.upgrade and options.clear:
             raise ValueError('you cannot supply --upgrade and --clear together.')
@@ -396,7 +403,8 @@ def main(args=None):
                              clear=options.clear,
                              symlinks=options.symlinks,
                              upgrade=options.upgrade,
-                             with_pip=options.with_pip)
+                             with_pip=options.with_pip,
+                             prompt=options.prompt)
         for d in options.dirs:
             builder.create(d)
 
