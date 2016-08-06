@@ -279,17 +279,79 @@ conflict.  Generic metaclasses are not supported.
 The :class:`Any` type
 ---------------------
 
-A special kind of type is :class:`Any`. Every type is a subtype of
-:class:`Any`. This is also true for the builtin type object. However, to the
-static type checker these are completely different.
+A special kind of type is :class:`Any`. A static type checker will treat
+every type as being compatible with :class:`Any` and :class:`Any` as being
+compatible with every type.
 
-When the type of a value is :class:`object`, the type checker will reject
-almost all operations on it, and assigning it to a variable (or using it as a
-return value) of a more specialized type is a type error. On the other hand,
-when a value has type :class:`Any`, the type checker will allow all operations
-on it, and a value of type :class:`Any` can be assigned to a variable (or used
-as a return value) of a more constrained type.
+This means that it is possible to perform any operation or method call on a
+value of type on :class:`Any` and assign it to any variable::
 
+   from typing import Any
+
+   a = None    # type: Any
+   a = []      # OK
+   a = 2       # OK
+
+   s = ''      # type: str
+   s = a       # OK
+
+   def foo(item: Any) -> int:
+       # Typechecks; `item` could be any type,
+       # and that type might have a `bar` method
+       item.bar()
+       ...
+
+Notice that no typechecking is performed when assigning a value of type
+:class:`Any` to a more precise type. For example, the static type checker did
+not report an error when assigning ``a`` to ``s`` even though ``s`` was
+declared to be of type :class:`str` and receives an :class:`int` value at
+runtime!
+
+Furthermore, all functions without a return type or parameter types will
+implicitly default to using :class:`Any`::
+
+   def legacy_parser(text):
+       ...
+       return data
+
+   # A static type checker will treat the above
+   # as having the same signature as:
+   def legacy_parser(text: Any) -> Any:
+       ...
+       return data
+
+This behavior allows :class:`Any` to be used as an *escape hatch* when you
+need to mix dynamically and statically typed code.
+
+Contrast the behavior of :class:`Any` with the behavior of :class:`object`.
+Similar to :class:`Any`, every type is a subtype of :class:`object`. However,
+unlike :class:`Any`, the reverse is not true: :class:`object` is *not* a
+subtype of every other type.
+
+That means when the type of a value is :class:`object`, a type checker will
+reject almost all operations on it, and assigning it to a variable (or using
+it as a return value) of a more specialized type is a type error. For example::
+
+   def hash_a(item: object) -> int:
+       # Fails; an object does not have a `magic` method.
+       item.magic()
+       ...
+
+   def hash_b(item: Any) -> int:
+       # Typechecks
+       item.magic()
+       ...
+
+   # Typechecks, since ints and strs are subclasses of object
+   hash_a(42)
+   hash_a("foo")
+
+   # Typechecks, since Any is compatible with all types
+   hash_b(42)
+   hash_b("foo")
+
+Use :class:`object` to indicate that a value could be any type in a typesafe
+manner. Use :class:`Any` to indicate that a value is dynamically typed.
 
 Classes, functions, and decorators
 ----------------------------------
