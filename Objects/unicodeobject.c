@@ -3837,7 +3837,13 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
         output = arg;
         Py_INCREF(output);
     }
-    else if (PyObject_CheckBuffer(arg)) {
+    else if (PyBytes_Check(arg) || PyObject_CheckBuffer(arg)) {
+        if (!PyBytes_Check(arg) &&
+            PyErr_WarnFormat(PyExc_DeprecationWarning, 1,
+            "path should be string or bytes, not %.200s",
+            Py_TYPE(arg)->tp_name)) {
+            return 0;
+        }
         arg = PyBytes_FromObject(arg);
         if (!arg)
             return 0;
@@ -3846,11 +3852,6 @@ PyUnicode_FSDecoder(PyObject* arg, void* addr)
         Py_DECREF(arg);
         if (!output)
             return 0;
-        if (!PyUnicode_Check(output)) {
-            Py_DECREF(output);
-            PyErr_SetString(PyExc_TypeError, "decoder failed to return unicode");
-            return 0;
-        }
     }
     else {
         PyErr_Format(PyExc_TypeError,
