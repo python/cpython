@@ -407,8 +407,10 @@ class PosixTester(unittest.TestCase):
     def test_stat(self):
         self.assertTrue(posix.stat(support.TESTFN))
         self.assertTrue(posix.stat(os.fsencode(support.TESTFN)))
-        self.assertTrue(posix.stat(bytearray(os.fsencode(support.TESTFN))))
 
+        self.assertWarnsRegex(DeprecationWarning,
+                'should be string, bytes or integer, not',
+                posix.stat, bytearray(os.fsencode(support.TESTFN)))
         self.assertRaisesRegex(TypeError,
                 'should be string, bytes or integer, not',
                 posix.stat, None)

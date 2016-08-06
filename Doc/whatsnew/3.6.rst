@@ -638,6 +638,11 @@ Deprecated features
   and will be removed in 3.8.
   (Contributed by Serhiy Storchaka in :issue:`21708`.)
 
+* Undocumented support of general :term:`bytes-like objects <bytes-like object>`
+  as paths in :mod:`os` functions is now deprecated.
+  (Contributed by Serhiy Storchaka in :issue:`25791`.)
+
+
 Deprecated Python behavior
 --------------------------
 

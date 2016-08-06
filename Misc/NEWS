@@ -43,6 +43,9 @@ Core and Builtins
 Library
 -------
 
+- Issue #26800: Undocumented support of general bytes-like objects
+  as paths in os functions is now deprecated.
+
 - Issue #27661: Added tzinfo keyword argument to datetime.combine.
 
 - Issue #27568: Prevent HTTPoxy attack (CVE-2016-1000110). Ignore the
