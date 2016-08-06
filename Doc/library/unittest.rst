@@ -352,7 +352,7 @@ call for every single test we run::
 
    import unittest
 
-   class SimpleWidgetTestCase(unittest.TestCase):
+   class WidgetTestCase(unittest.TestCase):
        def setUp(self):
            self.widget = Widget('The widget')
 
@@ -379,7 +379,7 @@ after the test method has been run::
 
    import unittest
 
-   class SimpleWidgetTestCase(unittest.TestCase):
+   class WidgetTestCase(unittest.TestCase):
        def setUp(self):
            self.widget = Widget('The widget')
 
