@@ -629,8 +629,10 @@ class UncompressedZipImportTestCase(ImportHooksBaseTestCase):
 
         zipimport.zipimporter(filename)
         zipimport.zipimporter(os.fsencode(filename))
-        zipimport.zipimporter(bytearray(os.fsencode(filename)))
-        zipimport.zipimporter(memoryview(os.fsencode(filename)))
+        with self.assertWarns(DeprecationWarning):
+            zipimport.zipimporter(bytearray(os.fsencode(filename)))
+        with self.assertWarns(DeprecationWarning):
+            zipimport.zipimporter(memoryview(os.fsencode(filename)))
 
 
 @support.requires_zlib

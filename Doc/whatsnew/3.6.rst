@@ -639,8 +639,9 @@ Deprecated features
   (Contributed by Serhiy Storchaka in :issue:`21708`.)
 
 * Undocumented support of general :term:`bytes-like objects <bytes-like object>`
-  as paths in :mod:`os` functions is now deprecated.
-  (Contributed by Serhiy Storchaka in :issue:`25791`.)
+  as paths in :mod:`os` functions, :func:`compile` and similar functions is
+  now deprecated.
+  (Contributed by Serhiy Storchaka in :issue:`25791` and :issue:`26754`.)
 
 
 Deprecated Python behavior

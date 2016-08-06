@@ -632,11 +632,17 @@ class CompileTestCase(unittest.TestCase):
         self.assertEqual(code.co_filename, '<syntax-tree>')
         code = st.compile()
         self.assertEqual(code.co_filename, '<syntax-tree>')
-        for filename in ('file.py', b'file.py',
-                         bytearray(b'file.py'), memoryview(b'file.py')):
+        for filename in 'file.py', b'file.py':
             code = parser.compilest(st, filename)
             self.assertEqual(code.co_filename, 'file.py')
             code = st.compile(filename)
+            self.assertEqual(code.co_filename, 'file.py')
+        for filename in bytearray(b'file.py'), memoryview(b'file.py'):
+            with self.assertWarns(DeprecationWarning):
+                code = parser.compilest(st, filename)
+            self.assertEqual(code.co_filename, 'file.py')
+            with self.assertWarns(DeprecationWarning):
+                code = st.compile(filename)
             self.assertEqual(code.co_filename, 'file.py')
         self.assertRaises(TypeError, parser.compilest, st, list(b'file.py'))
         self.assertRaises(TypeError, st.compile, list(b'file.py'))
