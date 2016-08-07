@@ -154,6 +154,30 @@ class ThreadPoolShutdownTest(ThreadPoolMixin, ExecutorShutdownTest, unittest.Tes
         for t in threads:
             t.join()
 
+    def test_thread_names_assigned(self):
+        executor = futures.ThreadPoolExecutor(
+            max_workers=5, thread_name_prefix='SpecialPool')
+        executor.map(abs, range(-5, 5))
+        threads = executor._threads
+        del executor
+
+        for t in threads:
+            self.assertRegex(t.name, r'^SpecialPool_[0-4]$')
+            t.join()
+
+    def test_thread_names_default(self):
+        executor = futures.ThreadPoolExecutor(max_workers=5)
+        executor.map(abs, range(-5, 5))
+        threads = executor._threads
+        del executor
+
+        for t in threads:
+            # We don't particularly care what the default name is, just that
+            # it has a default name implying that it is a ThreadPoolExecutor
+            # followed by what looks like a thread number.
+            self.assertRegex(t.name, r'^.*ThreadPoolExecutor.*_[0-4]$')
+            t.join()
+
 
 class ProcessPoolShutdownTest(ProcessPoolMixin, ExecutorShutdownTest, unittest.TestCase):
     def _prime_executor(self):
