@@ -802,35 +802,53 @@ class SpecSignatureTest(unittest.TestCase):
         a.f.assert_called_with(self=10)
 
 
-    def test_autospec_property(self):
+    def test_autospec_data_descriptor(self):
+        class Descriptor(object):
+            def __init__(self, value):
+                self.value = value
+
+            def __get__(self, obj, cls=None):
+                if obj is None:
+                    return self
+                return self.value
+
+            def __set__(self, obj, value):
+                pass
+
+        class MyProperty(property):
+            pass
+
         class Foo(object):
+            __slots__ = ['slot']
+
             @property
-            def foo(self):
+            def prop(self):
                 return 3
 
-        foo = create_autospec(Foo)
-        mock_property = foo.foo
+            @MyProperty
+            def subprop(self):
+                return 4
 
-        # no spec on properties
-        self.assertIsInstance(mock_property, MagicMock)
-        mock_property(1, 2, 3)
-        mock_property.abc(4, 5, 6)
-        mock_property.assert_called_once_with(1, 2, 3)
-        mock_property.abc.assert_called_once_with(4, 5, 6)
-
-
-    def test_autospec_slots(self):
-        class Foo(object):
-            __slots__ = ['a']
+            desc = Descriptor(42)
 
         foo = create_autospec(Foo)
-        mock_slot = foo.a
 
-        # no spec on slots
-        mock_slot(1, 2, 3)
-        mock_slot.abc(4, 5, 6)
-        mock_slot.assert_called_once_with(1, 2, 3)
-        mock_slot.abc.assert_called_once_with(4, 5, 6)
+        def check_data_descriptor(mock_attr):
+            # Data descriptors don't have a spec.
+            self.assertIsInstance(mock_attr, MagicMock)
+            mock_attr(1, 2, 3)
+            mock_attr.abc(4, 5, 6)
+            mock_attr.assert_called_once_with(1, 2, 3)
+            mock_attr.abc.assert_called_once_with(4, 5, 6)
+
+        # property
+        check_data_descriptor(foo.prop)
+        # property subclass
+        check_data_descriptor(foo.subprop)
+        # class __slot__
+        check_data_descriptor(foo.slot)
+        # plain data descriptor
+        check_data_descriptor(foo.desc)
 
 
 class TestCallList(unittest.TestCase):
