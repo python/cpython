@@ -124,7 +124,7 @@ And::
    executor.submit(wait_on_future)
 
 
-.. class:: ThreadPoolExecutor(max_workers=None)
+.. class:: ThreadPoolExecutor(max_workers=None, thread_name_prefix='')
 
    An :class:`Executor` subclass that uses a pool of at most *max_workers*
    threads to execute calls asynchronously.
@@ -137,6 +137,10 @@ And::
       should be higher than the number of workers
       for :class:`ProcessPoolExecutor`.
 
+   .. versionadded:: 3.6
+      The *thread_name_prefix* argument was added to allow users to
+      control the threading.Thread names for worker threads created by
+      the pool for easier debugging.
 
 .. _threadpoolexecutor-example:
 
