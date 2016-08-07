@@ -60,14 +60,10 @@ def _is_exception(obj):
     )
 
 
-class _slotted(object):
-    __slots__ = ['a']
-
-
-DescriptorTypes = (
-    type(_slotted.a),
-    property,
-)
+def _is_data_descriptor(obj):
+    # Data descriptors are Properties, slots, getsets and C data members.
+    return ((hasattr(obj, '__set__') or hasattr(obj, '__del__')) and
+            hasattr(obj, '__get__'))
 
 
 def _get_signature_object(func, as_instance, eat_self):
@@ -2153,7 +2149,7 @@ def create_autospec(spec, spec_set=False, instance=False, _parent=None,
     _kwargs.update(kwargs)
 
     Klass = MagicMock
-    if type(spec) in DescriptorTypes:
+    if _is_data_descriptor(spec):
         # descriptors don't have a spec
         # because we don't know what type they return
         _kwargs = {}
