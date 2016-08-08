@@ -6495,7 +6495,10 @@ PyInit__socket(void)
     PyModule_AddIntMacro(m, SOCK_STREAM);
     PyModule_AddIntMacro(m, SOCK_DGRAM);
 /* We have incomplete socket support. */
+#ifdef SOCK_RAW
+    /* SOCK_RAW is marked as optional in the POSIX specification */
     PyModule_AddIntMacro(m, SOCK_RAW);
+#endif
     PyModule_AddIntMacro(m, SOCK_SEQPACKET);
 #if defined(SOCK_RDM)
     PyModule_AddIntMacro(m, SOCK_RDM);
