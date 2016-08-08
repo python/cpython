@@ -288,7 +288,7 @@ def _check_date_fields(year, month, day):
         raise ValueError('day must be in 1..%d' % dim, day)
     return year, month, day
 
-def _check_time_fields(hour, minute, second, microsecond):
+def _check_time_fields(hour, minute, second, microsecond, fold):
     hour = _check_int_field(hour)
     minute = _check_int_field(minute)
     second = _check_int_field(second)
@@ -301,7 +301,9 @@ def _check_time_fields(hour, minute, second, microsecond):
         raise ValueError('second must be in 0..59', second)
     if not 0 <= microsecond <= 999999:
         raise ValueError('microsecond must be in 0..999999', microsecond)
-    return hour, minute, second, microsecond
+    if fold not in (0, 1):
+        raise ValueError('fold must be either 0 or 1', fold)
+    return hour, minute, second, microsecond, fold
 
 def _check_tzinfo_arg(tz):
     if tz is not None and not isinstance(tz, tzinfo):
@@ -1059,8 +1061,8 @@ class time:
             self.__setstate(hour, minute or None)
             self._hashcode = -1
             return self
-        hour, minute, second, microsecond = _check_time_fields(
-            hour, minute, second, microsecond)
+        hour, minute, second, microsecond, fold = _check_time_fields(
+            hour, minute, second, microsecond, fold)
         _check_tzinfo_arg(tzinfo)
         self = object.__new__(cls)
         self._hour = hour
@@ -1369,8 +1371,8 @@ class datetime(date):
             self._hashcode = -1
             return self
         year, month, day = _check_date_fields(year, month, day)
-        hour, minute, second, microsecond = _check_time_fields(
-            hour, minute, second, microsecond)
+        hour, minute, second, microsecond, fold = _check_time_fields(
+            hour, minute, second, microsecond, fold)
         _check_tzinfo_arg(tzinfo)
         self = object.__new__(cls)
         self._year = year

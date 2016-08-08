@@ -1724,6 +1724,11 @@ class TestDateTime(TestDate):
         self.assertRaises(ValueError, self.theclass,
                           2000, 1, 31, 23, 59, 59,
                           1000000)
+        # bad fold
+        self.assertRaises(ValueError, self.theclass,
+                          2000, 1, 31, fold=-1)
+        self.assertRaises(ValueError, self.theclass,
+                          2000, 1, 31, fold=2)
         # Positional fold:
         self.assertRaises(TypeError, self.theclass,
                           2000, 1, 31, 23, 59, 59, 0, None, 1)

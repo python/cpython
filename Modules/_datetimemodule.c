@@ -427,7 +427,7 @@ check_date_args(int year, int month, int day)
  * aren't, raise ValueError and return -1.
  */
 static int
-check_time_args(int h, int m, int s, int us)
+check_time_args(int h, int m, int s, int us, int fold)
 {
     if (h < 0 || h > 23) {
         PyErr_SetString(PyExc_ValueError,
@@ -447,6 +447,11 @@ check_time_args(int h, int m, int s, int us)
     if (us < 0 || us > 999999) {
         PyErr_SetString(PyExc_ValueError,
                         "microsecond must be in 0..999999");
+        return -1;
+    }
+    if (fold != 0 && fold != 1) {
+        PyErr_SetString(PyExc_ValueError,
+                        "fold must be either 0 or 1");
         return -1;
     }
     return 0;
@@ -3598,7 +3603,7 @@ time_new(PyTypeObject *type, PyObject *args, PyObject *kw)
     if (PyArg_ParseTupleAndKeywords(args, kw, "|iiiiO$i", time_kws,
                                     &hour, &minute, &second, &usecond,
                                     &tzinfo, &fold)) {
-        if (check_time_args(hour, minute, second, usecond) < 0)
+        if (check_time_args(hour, minute, second, usecond, fold) < 0)
             return NULL;
         if (check_tzinfo_subclass(tzinfo) < 0)
             return NULL;
@@ -3926,8 +3931,14 @@ time_replace(PyDateTime_Time *self, PyObject *args, PyObject *kw)
     if (tuple == NULL)
         return NULL;
     clone = time_new(Py_TYPE(self), tuple, NULL);
-    if (clone != NULL)
+    if (clone != NULL) {
+        if (fold != 0 && fold != 1) {
+            PyErr_SetString(PyExc_ValueError,
+                            "fold must be either 0 or 1");
+            return NULL;
+        }
         TIME_SET_FOLD(clone, fold);
+    }
     Py_DECREF(tuple);
     return clone;
 }
@@ -4175,7 +4186,7 @@ datetime_new(PyTypeObject *type, PyObject *args, PyObject *kw)
                                     &second, &usecond, &tzinfo, &fold)) {
         if (check_date_args(year, month, day) < 0)
             return NULL;
-        if (check_time_args(hour, minute, second, usecond) < 0)
+        if (check_time_args(hour, minute, second, usecond, fold) < 0)
             return NULL;
         if (check_tzinfo_subclass(tzinfo) < 0)
             return NULL;
@@ -5006,8 +5017,15 @@ datetime_replace(PyDateTime_DateTime *self, PyObject *args, PyObject *kw)
     if (tuple == NULL)
         return NULL;
     clone = datetime_new(Py_TYPE(self), tuple, NULL);
-    if (clone != NULL)
+
+    if (clone != NULL) {
+        if (fold != 0 && fold != 1) {
+            PyErr_SetString(PyExc_ValueError,
+                            "fold must be either 0 or 1");
+            return NULL;
+        }
         DATE_SET_FOLD(clone, fold);
+    }
     Py_DECREF(tuple);
     return clone;
 }
