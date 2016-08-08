@@ -638,22 +638,17 @@ PyCode_Optimize(PyObject *code, PyObject* consts, PyObject *names,
 
                 j = codestr[tgt];
                 if (CONDITIONAL_JUMP(j)) {
-                    /* NOTE: all possible jumps here are
-                       absolute! */
+                    /* NOTE: all possible jumps here are absolute. */
                     if (JUMPS_ON_TRUE(j) == JUMPS_ON_TRUE(opcode)) {
-                        /* The second jump will be
-                           taken iff the first is.
-                           The current opcode inherits
-                           its target's stack effect */
+                        /* The second jump will be taken iff the first is.
+                           The current opcode inherits its target's
+                           stack effect */
                         h = set_arg(codestr, i, get_arg(codestr, tgt));
                     } else {
-                        /* The second jump is not taken
-                           if the first is (so jump past
-                           it), and all conditional
-                           jumps pop their argument when
-                           they're not taken (so change
-                           the first jump to pop its
-                           argument when it's taken). */
+                        /* The second jump is not taken if the first is (so
+                           jump past it), and all conditional jumps pop their
+                           argument when they're not taken (so change the
+                           first jump to pop its argument when it's taken). */
                         h = set_arg(codestr, i, tgt + 2);
                         j = opcode == JUMP_IF_TRUE_OR_POP ?
                             POP_JUMP_IF_TRUE : POP_JUMP_IF_FALSE;
