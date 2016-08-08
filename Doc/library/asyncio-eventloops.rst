@@ -35,7 +35,7 @@ asyncio currently provides two implementations of event loops:
 .. class:: SelectorEventLoop
 
    Event loop based on the :mod:`selectors` module. Subclass of
-   :class:`BaseEventLoop`.
+   :class:`AbstractEventLoop`.
 
    Use the most efficient selector available on the platform.
 
@@ -46,7 +46,7 @@ asyncio currently provides two implementations of event loops:
 .. class:: ProactorEventLoop
 
    Proactor event loop for Windows using "I/O Completion Ports" aka IOCP.
-   Subclass of :class:`BaseEventLoop`.
+   Subclass of :class:`AbstractEventLoop`.
 
    Availability: Windows.
 
@@ -76,11 +76,11 @@ Windows
 
 Common limits of Windows event loops:
 
-- :meth:`~BaseEventLoop.create_unix_connection` and
-  :meth:`~BaseEventLoop.create_unix_server` are not supported: the socket
+- :meth:`~AbstractEventLoop.create_unix_connection` and
+  :meth:`~AbstractEventLoop.create_unix_server` are not supported: the socket
   family :data:`socket.AF_UNIX` is specific to UNIX
-- :meth:`~BaseEventLoop.add_signal_handler` and
-  :meth:`~BaseEventLoop.remove_signal_handler` are not supported
+- :meth:`~AbstractEventLoop.add_signal_handler` and
+  :meth:`~AbstractEventLoop.remove_signal_handler` are not supported
 - :meth:`EventLoopPolicy.set_child_watcher` is not supported.
   :class:`ProactorEventLoop` supports subprocesses. It has only one
   implementation to watch child processes, there is no need to configure it.
@@ -89,19 +89,19 @@ Common limits of Windows event loops:
 
 - :class:`~selectors.SelectSelector` is used which only supports sockets
   and is limited to 512 sockets.
-- :meth:`~BaseEventLoop.add_reader` and :meth:`~BaseEventLoop.add_writer` only
+- :meth:`~AbstractEventLoop.add_reader` and :meth:`~AbstractEventLoop.add_writer` only
   accept file descriptors of sockets
 - Pipes are not supported
-  (ex: :meth:`~BaseEventLoop.connect_read_pipe`,
-  :meth:`~BaseEventLoop.connect_write_pipe`)
+  (ex: :meth:`~AbstractEventLoop.connect_read_pipe`,
+  :meth:`~AbstractEventLoop.connect_write_pipe`)
 - :ref:`Subprocesses <asyncio-subprocess>` are not supported
-  (ex: :meth:`~BaseEventLoop.subprocess_exec`,
-  :meth:`~BaseEventLoop.subprocess_shell`)
+  (ex: :meth:`~AbstractEventLoop.subprocess_exec`,
+  :meth:`~AbstractEventLoop.subprocess_shell`)
 
 :class:`ProactorEventLoop` specific limits:
 
-- :meth:`~BaseEventLoop.create_datagram_endpoint` (UDP) is not supported
-- :meth:`~BaseEventLoop.add_reader` and :meth:`~BaseEventLoop.add_writer` are
+- :meth:`~AbstractEventLoop.create_datagram_endpoint` (UDP) is not supported
+- :meth:`~AbstractEventLoop.add_reader` and :meth:`~AbstractEventLoop.add_writer` are
   not supported
 
 The resolution of the monotonic clock on Windows is usually around 15.6 msec.
@@ -167,7 +167,7 @@ An event loop policy must implement the following interface:
 
       Get the event loop for the current context.
 
-      Returns an event loop object implementing the :class:`BaseEventLoop`
+      Returns an event loop object implementing the :class:`AbstractEventLoop`
       interface.
 
       Raises an exception in case no event loop has been set for the current
