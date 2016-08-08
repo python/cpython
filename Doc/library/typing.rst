@@ -296,8 +296,8 @@ value of type on :class:`Any` and assign it to any variable::
    s = a       # OK
 
    def foo(item: Any) -> int:
-       # Typechecks; `item` could be any type,
-       # and that type might have a `bar` method
+       # Typechecks; 'item' could be any type,
+       # and that type might have a 'bar' method
        item.bar()
        ...
 
@@ -333,7 +333,7 @@ reject almost all operations on it, and assigning it to a variable (or using
 it as a return value) of a more specialized type is a type error. For example::
 
    def hash_a(item: object) -> int:
-       # Fails; an object does not have a `magic` method.
+       # Fails; an object does not have a 'magic' method.
        item.magic()
        ...
 
