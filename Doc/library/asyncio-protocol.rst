@@ -11,7 +11,7 @@ Transports
 
 Transports are classes provided by :mod:`asyncio` in order to abstract
 various kinds of communication channels.  You generally won't instantiate
-a transport yourself; instead, you will call a :class:`BaseEventLoop` method
+a transport yourself; instead, you will call a :class:`AbstractEventLoop` method
 which will create the transport and try to initiate the underlying
 communication channel, calling you back when it succeeds.
 
@@ -475,7 +475,7 @@ Protocol examples
 TCP echo client protocol
 ------------------------
 
-TCP echo client  using the :meth:`BaseEventLoop.create_connection` method, send
+TCP echo client  using the :meth:`AbstractEventLoop.create_connection` method, send
 data and wait until the connection is closed::
 
     import asyncio
@@ -506,10 +506,10 @@ data and wait until the connection is closed::
     loop.close()
 
 The event loop is running twice. The
-:meth:`~BaseEventLoop.run_until_complete` method is preferred in this short
+:meth:`~AbstractEventLoop.run_until_complete` method is preferred in this short
 example to raise an exception if the server is not listening, instead of
 having to write a short coroutine to handle the exception and stop the
-running loop. At :meth:`~BaseEventLoop.run_until_complete` exit, the loop is
+running loop. At :meth:`~AbstractEventLoop.run_until_complete` exit, the loop is
 no longer running, so there is no need to stop the loop in case of an error.
 
 .. seealso::
@@ -523,7 +523,7 @@ no longer running, so there is no need to stop the loop in case of an error.
 TCP echo server protocol
 ------------------------
 
-TCP echo server using the :meth:`BaseEventLoop.create_server` method, send back
+TCP echo server using the :meth:`AbstractEventLoop.create_server` method, send back
 received data and close the connection::
 
     import asyncio
@@ -577,7 +577,7 @@ methods are not coroutines.
 UDP echo client protocol
 ------------------------
 
-UDP echo client using the :meth:`BaseEventLoop.create_datagram_endpoint`
+UDP echo client using the :meth:`AbstractEventLoop.create_datagram_endpoint`
 method, send data and close the transport when we received the answer::
 
     import asyncio
@@ -623,7 +623,7 @@ method, send data and close the transport when we received the answer::
 UDP echo server protocol
 ------------------------
 
-UDP echo server using the :meth:`BaseEventLoop.create_datagram_endpoint`
+UDP echo server using the :meth:`AbstractEventLoop.create_datagram_endpoint`
 method, send back received data::
 
     import asyncio
@@ -660,7 +660,7 @@ Register an open socket to wait for data using a protocol
 ---------------------------------------------------------
 
 Wait until a socket receives data using the
-:meth:`BaseEventLoop.create_connection` method with a protocol, and then close
+:meth:`AbstractEventLoop.create_connection` method with a protocol, and then close
 the event loop ::
 
     import asyncio
@@ -708,7 +708,7 @@ the event loop ::
 
    The :ref:`watch a file descriptor for read events
    <asyncio-watch-read-event>` example uses the low-level
-   :meth:`BaseEventLoop.add_reader` method to register the file descriptor of a
+   :meth:`AbstractEventLoop.add_reader` method to register the file descriptor of a
    socket.
 
    The :ref:`register an open socket to wait for data using streams

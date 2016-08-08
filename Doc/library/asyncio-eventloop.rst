@@ -20,14 +20,23 @@ It provides multiple facilities, including:
 
 .. class:: BaseEventLoop
 
-   Base class of event loops.
+   This class is an implementation detail.  It is a subclass of
+   :class:`AbstractEventLoop` and may be a base class of concrete
+   event loop implementations found in :mod:`asyncio`.  It should not
+   be used directly; use :class:`AbstractEventLoop` instead.
+   ``BaseEventLoop`` should not be subclassed by third-party code; the
+   internal interface is not stable.
+
+.. class:: AbstractEventLoop
+
+   Abstract base class of event loops.
 
    This class is :ref:`not thread safe <asyncio-multithreading>`.
 
 Run an event loop
 -----------------
 
-.. method:: BaseEventLoop.run_forever()
+.. method:: AbstractEventLoop.run_forever()
 
    Run until :meth:`stop` is called.  If :meth:`stop` is called before
    :meth:`run_forever()` is called, this polls the I/O selector once
@@ -40,7 +49,7 @@ Run an event loop
 
    .. versionchanged:: 3.5.1
 
-.. method:: BaseEventLoop.run_until_complete(future)
+.. method:: AbstractEventLoop.run_until_complete(future)
 
    Run until the :class:`Future` is done.
 
@@ -49,11 +58,11 @@ Run an event loop
 
    Return the Future's result, or raise its exception.
 
-.. method:: BaseEventLoop.is_running()
+.. method:: AbstractEventLoop.is_running()
 
    Returns running status of event loop.
 
-.. method:: BaseEventLoop.stop()
+.. method:: AbstractEventLoop.stop()
 
    Stop running the event loop.
 
@@ -62,13 +71,13 @@ Run an event loop
 
    .. versionchanged:: 3.5.1
 
-.. method:: BaseEventLoop.is_closed()
+.. method:: AbstractEventLoop.is_closed()
 
    Returns ``True`` if the event loop was closed.
 
    .. versionadded:: 3.4.2
 
-.. method:: BaseEventLoop.close()
+.. method:: AbstractEventLoop.close()
 
    Close the event loop. The loop must not be running.  Pending
    callbacks will be lost.
@@ -95,7 +104,7 @@ keywords to your callback, use :func:`functools.partial`. For example,
    parameters in debug mode, whereas ``lambda`` functions have a poor
    representation.
 
-.. method:: BaseEventLoop.call_soon(callback, \*args)
+.. method:: AbstractEventLoop.call_soon(callback, \*args)
 
    Arrange for a callback to be called as soon as possible.  The callback is
    called after :meth:`call_soon` returns, when control returns to the event
@@ -114,7 +123,7 @@ keywords to your callback, use :func:`functools.partial`. For example,
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: BaseEventLoop.call_soon_threadsafe(callback, \*args)
+.. method:: AbstractEventLoop.call_soon_threadsafe(callback, \*args)
 
    Like :meth:`call_soon`, but thread safe.
 
@@ -137,7 +146,7 @@ a different clock than :func:`time.time`.
    Timeouts (relative *delay* or absolute *when*) should not exceed one day.
 
 
-.. method:: BaseEventLoop.call_later(delay, callback, *args)
+.. method:: AbstractEventLoop.call_later(delay, callback, *args)
 
    Arrange for the *callback* to be called after the given *delay*
    seconds (either an int or float).
@@ -156,11 +165,11 @@ a different clock than :func:`time.time`.
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: BaseEventLoop.call_at(when, callback, *args)
+.. method:: AbstractEventLoop.call_at(when, callback, *args)
 
    Arrange for the *callback* to be called at the given absolute timestamp
    *when* (an int or float), using the same time reference as
-   :meth:`BaseEventLoop.time`.
+   :meth:`AbstractEventLoop.time`.
 
    This method's behavior is the same as :meth:`call_later`.
 
@@ -170,7 +179,7 @@ a different clock than :func:`time.time`.
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: BaseEventLoop.time()
+.. method:: AbstractEventLoop.time()
 
    Return the current time, as a :class:`float` value, according to the
    event loop's internal clock.
@@ -183,7 +192,7 @@ a different clock than :func:`time.time`.
 Futures
 -------
 
-.. method:: BaseEventLoop.create_future()
+.. method:: AbstractEventLoop.create_future()
 
    Create an :class:`asyncio.Future` object attached to the loop.
 
@@ -197,7 +206,7 @@ Futures
 Tasks
 -----
 
-.. method:: BaseEventLoop.create_task(coro)
+.. method:: AbstractEventLoop.create_task(coro)
 
    Schedule the execution of a :ref:`coroutine object <coroutine>`: wrap it in
    a future. Return a :class:`Task` object.
@@ -211,10 +220,10 @@ Tasks
 
    .. versionadded:: 3.4.2
 
-.. method:: BaseEventLoop.set_task_factory(factory)
+.. method:: AbstractEventLoop.set_task_factory(factory)
 
    Set a task factory that will be used by
-   :meth:`BaseEventLoop.create_task`.
+   :meth:`AbstractEventLoop.create_task`.
 
    If *factory* is ``None`` the default task factory will be set.
 
@@ -225,7 +234,7 @@ Tasks
 
    .. versionadded:: 3.4.4
 
-.. method:: BaseEventLoop.get_task_factory()
+.. method:: AbstractEventLoop.get_task_factory()
 
    Return a task factory, or ``None`` if the default one is in use.
 
@@ -235,7 +244,7 @@ Tasks
 Creating connections
 --------------------
 
-.. coroutinemethod:: BaseEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None)
+.. coroutinemethod:: AbstractEventLoop.create_connection(protocol_factory, host=None, port=None, \*, ssl=None, family=0, proto=0, flags=0, sock=None, local_addr=None, server_hostname=None)
 
    Create a streaming transport connection to a given Internet *host* and
    *port*: socket family :py:data:`~socket.AF_INET` or
@@ -310,7 +319,7 @@ Creating connections
       (:class:`StreamReader`, :class:`StreamWriter`) instead of a protocol.
 
 
-.. coroutinemethod:: BaseEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0, reuse_address=None, reuse_port=None, allow_broadcast=None, sock=None)
+.. coroutinemethod:: AbstractEventLoop.create_datagram_endpoint(protocol_factory, local_addr=None, remote_addr=None, \*, family=0, proto=0, flags=0, reuse_address=None, reuse_port=None, allow_broadcast=None, sock=None)
 
    Create datagram connection: socket family :py:data:`~socket.AF_INET` or
    :py:data:`~socket.AF_INET6` depending on *host* (or *family* if specified),
@@ -361,7 +370,7 @@ Creating connections
    :ref:`UDP echo server protocol <asyncio-udp-echo-server-protocol>` examples.
 
 
-.. coroutinemethod:: BaseEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_connection(protocol_factory, path, \*, ssl=None, sock=None, server_hostname=None)
 
    Create UNIX connection: socket family :py:data:`~socket.AF_UNIX`, socket
    type :py:data:`~socket.SOCK_STREAM`. The :py:data:`~socket.AF_UNIX` socket
@@ -372,7 +381,7 @@ Creating connections
    establish the connection in the background.  When successful, the
    coroutine returns a ``(transport, protocol)`` pair.
 
-   See the :meth:`BaseEventLoop.create_connection` method for parameters.
+   See the :meth:`AbstractEventLoop.create_connection` method for parameters.
 
    Availability: UNIX.
 
@@ -380,7 +389,7 @@ Creating connections
 Creating listening connections
 ------------------------------
 
-.. coroutinemethod:: BaseEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None)
+.. coroutinemethod:: AbstractEventLoop.create_server(protocol_factory, host=None, port=None, \*, family=socket.AF_UNSPEC, flags=socket.AI_PASSIVE, sock=None, backlog=100, ssl=None, reuse_address=None, reuse_port=None)
 
    Create a TCP server (socket type :data:`~socket.SOCK_STREAM`) bound to
    *host* and *port*.
@@ -440,9 +449,9 @@ Creating listening connections
       The *host* parameter can now be a sequence of strings.
 
 
-.. coroutinemethod:: BaseEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None)
+.. coroutinemethod:: AbstractEventLoop.create_unix_server(protocol_factory, path=None, \*, sock=None, backlog=100, ssl=None)
 
-   Similar to :meth:`BaseEventLoop.create_server`, but specific to the
+   Similar to :meth:`AbstractEventLoop.create_server`, but specific to the
    socket family :py:data:`~socket.AF_UNIX`.
 
    This method is a :ref:`coroutine <coroutine>`.
@@ -458,7 +467,7 @@ On Windows with :class:`SelectorEventLoop`, only socket handles are supported
 
 On Windows with :class:`ProactorEventLoop`, these methods are not supported.
 
-.. method:: BaseEventLoop.add_reader(fd, callback, \*args)
+.. method:: AbstractEventLoop.add_reader(fd, callback, \*args)
 
    Start watching the file descriptor for read availability and then call the
    *callback* with specified arguments.
@@ -466,11 +475,11 @@ On Windows with :class:`ProactorEventLoop`, these methods are not supported.
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: BaseEventLoop.remove_reader(fd)
+.. method:: AbstractEventLoop.remove_reader(fd)
 
    Stop watching the file descriptor for read availability.
 
-.. method:: BaseEventLoop.add_writer(fd, callback, \*args)
+.. method:: AbstractEventLoop.add_writer(fd, callback, \*args)
 
    Start watching the file descriptor for write availability and then call the
    *callback* with specified arguments.
@@ -478,19 +487,19 @@ On Windows with :class:`ProactorEventLoop`, these methods are not supported.
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: BaseEventLoop.remove_writer(fd)
+.. method:: AbstractEventLoop.remove_writer(fd)
 
    Stop watching the file descriptor for write availability.
 
 The :ref:`watch a file descriptor for read events <asyncio-watch-read-event>`
-example uses the low-level :meth:`BaseEventLoop.add_reader` method to register
+example uses the low-level :meth:`AbstractEventLoop.add_reader` method to register
 the file descriptor of a socket.
 
 
 Low-level socket operations
 ---------------------------
 
-.. coroutinemethod:: BaseEventLoop.sock_recv(sock, nbytes)
+.. coroutinemethod:: AbstractEventLoop.sock_recv(sock, nbytes)
 
    Receive data from the socket.  Modeled after blocking
    :meth:`socket.socket.recv` method.
@@ -504,7 +513,7 @@ Low-level socket operations
 
    This method is a :ref:`coroutine <coroutine>`.
 
-.. coroutinemethod:: BaseEventLoop.sock_sendall(sock, data)
+.. coroutinemethod:: AbstractEventLoop.sock_sendall(sock, data)
 
    Send data to the socket.  Modeled after blocking
    :meth:`socket.socket.sendall` method.
@@ -520,7 +529,7 @@ Low-level socket operations
 
    This method is a :ref:`coroutine <coroutine>`.
 
-.. coroutinemethod:: BaseEventLoop.sock_connect(sock, address)
+.. coroutinemethod:: AbstractEventLoop.sock_connect(sock, address)
 
    Connect to a remote socket at *address*.  Modeled after
    blocking :meth:`socket.socket.connect` method.
@@ -534,16 +543,16 @@ Low-level socket operations
       ``address`` no longer needs to be resolved.  ``sock_connect``
       will try to check if the *address* is already resolved by calling
       :func:`socket.inet_pton`.  If not,
-      :meth:`BaseEventLoop.getaddrinfo` will be used to resolve the
+      :meth:`AbstractEventLoop.getaddrinfo` will be used to resolve the
       *address*.
 
    .. seealso::
 
-      :meth:`BaseEventLoop.create_connection`
+      :meth:`AbstractEventLoop.create_connection`
       and  :func:`asyncio.open_connection() <open_connection>`.
 
 
-.. coroutinemethod:: BaseEventLoop.sock_accept(sock)
+.. coroutinemethod:: AbstractEventLoop.sock_accept(sock)
 
    Accept a connection.  Modeled after blocking
    :meth:`socket.socket.accept`.
@@ -560,18 +569,18 @@ Low-level socket operations
 
    .. seealso::
 
-      :meth:`BaseEventLoop.create_server` and :func:`start_server`.
+      :meth:`AbstractEventLoop.create_server` and :func:`start_server`.
 
 
 Resolve host name
 -----------------
 
-.. coroutinemethod:: BaseEventLoop.getaddrinfo(host, port, \*, family=0, type=0, proto=0, flags=0)
+.. coroutinemethod:: AbstractEventLoop.getaddrinfo(host, port, \*, family=0, type=0, proto=0, flags=0)
 
    This method is a :ref:`coroutine <coroutine>`, similar to
    :meth:`socket.getaddrinfo` function but non-blocking.
 
-.. coroutinemethod:: BaseEventLoop.getnameinfo(sockaddr, flags=0)
+.. coroutinemethod:: AbstractEventLoop.getnameinfo(sockaddr, flags=0)
 
    This method is a :ref:`coroutine <coroutine>`, similar to
    :meth:`socket.getnameinfo` function but non-blocking.
@@ -583,7 +592,7 @@ Connect pipes
 On Windows with :class:`SelectorEventLoop`, these methods are not supported.
 Use :class:`ProactorEventLoop` to support pipes on Windows.
 
-.. coroutinemethod:: BaseEventLoop.connect_read_pipe(protocol_factory, pipe)
+.. coroutinemethod:: AbstractEventLoop.connect_read_pipe(protocol_factory, pipe)
 
    Register read pipe in eventloop.
 
@@ -597,7 +606,7 @@ Use :class:`ProactorEventLoop` to support pipes on Windows.
 
    This method is a :ref:`coroutine <coroutine>`.
 
-.. coroutinemethod:: BaseEventLoop.connect_write_pipe(protocol_factory, pipe)
+.. coroutinemethod:: AbstractEventLoop.connect_write_pipe(protocol_factory, pipe)
 
    Register write pipe in eventloop.
 
@@ -613,8 +622,8 @@ Use :class:`ProactorEventLoop` to support pipes on Windows.
 
 .. seealso::
 
-   The :meth:`BaseEventLoop.subprocess_exec` and
-   :meth:`BaseEventLoop.subprocess_shell` methods.
+   The :meth:`AbstractEventLoop.subprocess_exec` and
+   :meth:`AbstractEventLoop.subprocess_shell` methods.
 
 
 UNIX signals
@@ -622,7 +631,7 @@ UNIX signals
 
 Availability: UNIX only.
 
-.. method:: BaseEventLoop.add_signal_handler(signum, callback, \*args)
+.. method:: AbstractEventLoop.add_signal_handler(signum, callback, \*args)
 
    Add a handler for a signal.
 
@@ -632,7 +641,7 @@ Availability: UNIX only.
    :ref:`Use functools.partial to pass keywords to the callback
    <asyncio-pass-keywords>`.
 
-.. method:: BaseEventLoop.remove_signal_handler(sig)
+.. method:: AbstractEventLoop.remove_signal_handler(sig)
 
    Remove a handler for a signal.
 
@@ -650,7 +659,7 @@ Call a function in an :class:`~concurrent.futures.Executor` (pool of threads or
 pool of processes). By default, an event loop uses a thread pool executor
 (:class:`~concurrent.futures.ThreadPoolExecutor`).
 
-.. coroutinemethod:: BaseEventLoop.run_in_executor(executor, func, \*args)
+.. coroutinemethod:: AbstractEventLoop.run_in_executor(executor, func, \*args)
 
    Arrange for a *func* to be called in the specified executor.
 
@@ -662,7 +671,7 @@ pool of processes). By default, an event loop uses a thread pool executor
 
    This method is a :ref:`coroutine <coroutine>`.
 
-.. method:: BaseEventLoop.set_default_executor(executor)
+.. method:: AbstractEventLoop.set_default_executor(executor)
 
    Set the default executor used by :meth:`run_in_executor`.
 
@@ -672,7 +681,7 @@ Error Handling API
 
 Allows customizing how exceptions are handled in the event loop.
 
-.. method:: BaseEventLoop.set_exception_handler(handler)
+.. method:: AbstractEventLoop.set_exception_handler(handler)
 
    Set *handler* as the new event loop exception handler.
 
@@ -685,14 +694,14 @@ Allows customizing how exceptions are handled in the event loop.
    will be a ``dict`` object (see :meth:`call_exception_handler`
    documentation for details about context).
 
-.. method:: BaseEventLoop.get_exception_handler()
+.. method:: AbstractEventLoop.get_exception_handler()
 
    Return the exception handler, or ``None`` if the default one
    is in use.
 
    .. versionadded:: 3.5.2
 
-.. method:: BaseEventLoop.default_exception_handler(context)
+.. method:: AbstractEventLoop.default_exception_handler(context)
 
    Default exception handler.
 
@@ -703,7 +712,7 @@ Allows customizing how exceptions are handled in the event loop.
    *context* parameter has the same meaning as in
    :meth:`call_exception_handler`.
 
-.. method:: BaseEventLoop.call_exception_handler(context)
+.. method:: AbstractEventLoop.call_exception_handler(context)
 
    Call the current event loop exception handler.
 
@@ -727,7 +736,7 @@ Allows customizing how exceptions are handled in the event loop.
 Debug mode
 ----------
 
-.. method:: BaseEventLoop.get_debug()
+.. method:: AbstractEventLoop.get_debug()
 
    Get the debug mode (:class:`bool`) of the event loop.
 
@@ -737,7 +746,7 @@ Debug mode
 
    .. versionadded:: 3.4.2
 
-.. method:: BaseEventLoop.set_debug(enabled: bool)
+.. method:: AbstractEventLoop.set_debug(enabled: bool)
 
    Set the debug mode of the event loop.
 
@@ -754,7 +763,7 @@ Server
 
    Server listening on sockets.
 
-   Object created by the :meth:`BaseEventLoop.create_server` method and the
+   Object created by the :meth:`AbstractEventLoop.create_server` method and the
    :func:`start_server` function. Don't instantiate the class directly.
 
    .. method:: close()
@@ -785,9 +794,9 @@ Handle
 
 .. class:: Handle
 
-   A callback wrapper object returned by :func:`BaseEventLoop.call_soon`,
-   :func:`BaseEventLoop.call_soon_threadsafe`, :func:`BaseEventLoop.call_later`,
-   and :func:`BaseEventLoop.call_at`.
+   A callback wrapper object returned by :func:`AbstractEventLoop.call_soon`,
+   :func:`AbstractEventLoop.call_soon_threadsafe`, :func:`AbstractEventLoop.call_later`,
+   and :func:`AbstractEventLoop.call_at`.
 
    .. method:: cancel()
 
@@ -803,7 +812,7 @@ Event loop examples
 Hello World with call_soon()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Example using the :meth:`BaseEventLoop.call_soon` method to schedule a
+Example using the :meth:`AbstractEventLoop.call_soon` method to schedule a
 callback. The callback displays ``"Hello World"`` and then stops the event
 loop::
 
@@ -834,7 +843,7 @@ Display the current date with call_later()
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Example of callback displaying the current date every second. The callback uses
-the :meth:`BaseEventLoop.call_later` method to reschedule itself during 5
+the :meth:`AbstractEventLoop.call_later` method to reschedule itself during 5
 seconds, and then stops the event loop::
 
     import asyncio
@@ -870,7 +879,7 @@ Watch a file descriptor for read events
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Wait until a file descriptor received some data using the
-:meth:`BaseEventLoop.add_reader` method and then close the event loop::
+:meth:`AbstractEventLoop.add_reader` method and then close the event loop::
 
     import asyncio
     try:
@@ -908,7 +917,7 @@ Wait until a file descriptor received some data using the
 
    The :ref:`register an open socket to wait for data using a protocol
    <asyncio-register-socket>` example uses a low-level protocol created by the
-   :meth:`BaseEventLoop.create_connection` method.
+   :meth:`AbstractEventLoop.create_connection` method.
 
    The :ref:`register an open socket to wait for data using streams
    <asyncio-register-socket-streams>` example uses high-level streams
@@ -919,7 +928,7 @@ Set signal handlers for SIGINT and SIGTERM
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Register handlers for signals :py:data:`SIGINT` and :py:data:`SIGTERM` using
-the :meth:`BaseEventLoop.add_signal_handler` method::
+the :meth:`AbstractEventLoop.add_signal_handler` method::
 
     import asyncio
     import functools
