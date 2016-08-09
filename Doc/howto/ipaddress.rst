@@ -1,3 +1,7 @@
+.. testsetup::
+
+   import ipaddress
+
 .. _ipaddress-howto:
 
 ***************************************
@@ -48,11 +52,6 @@ when working with IP addressing. The simplest way to create addresses is
 to use the :func:`ipaddress.ip_address` factory function, which automatically
 determines whether to create an IPv4 or IPv6 address based on the passed in
 value:
-
-.. testsetup::
-   >>> import ipaddress
-
-::
 
    >>> ipaddress.ip_address('192.0.2.1')
    IPv4Address('192.0.2.1')
