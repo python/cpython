@@ -263,7 +263,7 @@ For example::
         is less than one, :meth:`elements` will ignore it.
 
             >>> c = Counter(a=4, b=2, c=0, d=-2)
-            >>> list(c.elements())
+            >>> sorted(c.elements())
             ['a', 'a', 'a', 'a', 'b', 'b']
 
     .. method:: most_common([n])
@@ -273,7 +273,7 @@ For example::
         :func:`most_common` returns *all* elements in the counter.
         Elements with equal counts are ordered arbitrarily:
 
-            >>> Counter('abracadabra').most_common(3)
+            >>> Counter('abracadabra').most_common(3)  # doctest: +SKIP
             [('a', 5), ('r', 2), ('b', 2)]
 
     .. method:: subtract([iterable-or-mapping])
@@ -329,7 +329,7 @@ counts, but the output will exclude results with counts of zero or less.
     Counter({'a': 4, 'b': 3})
     >>> c - d                       # subtract (keeping only positive counts)
     Counter({'a': 2})
-    >>> c & d                       # intersection:  min(c[x], d[x])
+    >>> c & d                       # intersection:  min(c[x], d[x]) # doctest: +SKIP
     Counter({'a': 1, 'b': 1})
     >>> c | d                       # union:  max(c[x], d[x])
     Counter({'a': 3, 'b': 2})
@@ -698,7 +698,7 @@ sequence of key-value pairs into a dictionary of lists:
     >>> for k, v in s:
     ...     d[k].append(v)
     ...
-    >>> list(d.items())
+    >>> sorted(d.items())
     [('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
 
 When each key is encountered for the first time, it is not already in the
@@ -713,7 +713,7 @@ simpler and faster than an equivalent technique using :meth:`dict.setdefault`:
     >>> for k, v in s:
     ...     d.setdefault(k, []).append(v)
     ...
-    >>> list(d.items())
+    >>> sorted(d.items())
     [('blue', [2, 4]), ('red', [1]), ('yellow', [1, 3])]
 
 Setting the :attr:`default_factory` to :class:`int` makes the
@@ -725,8 +725,8 @@ languages):
     >>> for k in s:
     ...     d[k] += 1
     ...
-    >>> list(d.items())
-    [('i', 4), ('p', 2), ('s', 4), ('m', 1)]
+    >>> sorted(d.items())
+    [('i', 4), ('m', 1), ('p', 2), ('s', 4)]
 
 When a letter is first encountered, it is missing from the mapping, so the
 :attr:`default_factory` function calls :func:`int` to supply a default count of
@@ -752,7 +752,7 @@ Setting the :attr:`default_factory` to :class:`set` makes the
     >>> for k, v in s:
     ...     d[k].add(v)
     ...
-    >>> list(d.items())
+    >>> sorted(d.items())
     [('blue', {2, 4}), ('red', {1, 3})]
 
 
@@ -914,15 +914,15 @@ functionality with a subclass.  Here is how to add a calculated field and
 a fixed-width print format:
 
     >>> class Point(namedtuple('Point', 'x y')):
-            __slots__ = ()
-            @property
-            def hypot(self):
-                return (self.x ** 2 + self.y ** 2) ** 0.5
-            def __str__(self):
-                return 'Point: x=%6.3f  y=%6.3f  hypot=%6.3f' % (self.x, self.y, self.hypot)
+    ...     __slots__ = ()
+    ...     @property
+    ...     def hypot(self):
+    ...         return (self.x ** 2 + self.y ** 2) ** 0.5
+    ...     def __str__(self):
+    ...         return 'Point: x=%6.3f  y=%6.3f  hypot=%6.3f' % (self.x, self.y, self.hypot)
 
     >>> for p in Point(3, 4), Point(14, 5/7):
-            print(p)
+    ...     print(p)
     Point: x= 3.000  y= 4.000  hypot= 5.000
     Point: x=14.000  y= 0.714  hypot=14.018
 
