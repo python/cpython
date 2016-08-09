@@ -1040,7 +1040,7 @@ If you use :func:`operator.add` with :func:`functools.reduce`, you'll add up all
 elements of the iterable.  This case is so common that there's a special
 built-in called :func:`sum` to compute it:
 
-    >>> import functools
+    >>> import functools, operator
     >>> functools.reduce(operator.add, [1,2,3,4], 0)
     10
     >>> sum([1,2,3,4])
