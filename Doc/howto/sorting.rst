@@ -59,28 +59,28 @@ A common pattern is to sort complex objects using some of the object's indices
 as keys. For example:
 
     >>> student_tuples = [
-        ('john', 'A', 15),
-        ('jane', 'B', 12),
-        ('dave', 'B', 10),
-    ]
+    ...     ('john', 'A', 15),
+    ...     ('jane', 'B', 12),
+    ...     ('dave', 'B', 10),
+    ... ]
     >>> sorted(student_tuples, key=lambda student: student[2])   # sort by age
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
 The same technique works for objects with named attributes. For example:
 
     >>> class Student:
-            def __init__(self, name, grade, age):
-                self.name = name
-                self.grade = grade
-                self.age = age
-            def __repr__(self):
-                return repr((self.name, self.grade, self.age))
+    ...     def __init__(self, name, grade, age):
+    ...         self.name = name
+    ...         self.grade = grade
+    ...         self.age = age
+    ...     def __repr__(self):
+    ...         return repr((self.name, self.grade, self.age))
 
     >>> student_objects = [
-        Student('john', 'A', 15),
-        Student('jane', 'B', 12),
-        Student('dave', 'B', 10),
-    ]
+    ...     Student('john', 'A', 15),
+    ...     Student('jane', 'B', 12),
+    ...     Student('dave', 'B', 10),
+    ... ]
     >>> sorted(student_objects, key=lambda student: student.age)   # sort by age
     [('dave', 'B', 10), ('jane', 'B', 12), ('john', 'A', 15)]
 
@@ -116,6 +116,7 @@ parameters for each object being sorted.  For example, the :meth:`str.count`
 method could be used to compute message priority by counting the
 number of exclamation marks in a message:
 
+    >>> from operator import methodcaller
     >>> messages = ['critical!!!', 'hurry!', 'standby', 'immediate!!']
     >>> sorted(messages, key=methodcaller('count', '!'))
     ['standby', 'hurry!', 'immediate!!', 'critical!!!']
@@ -220,15 +221,15 @@ return a negative value for less-than, return zero if they are equal, or return
 a positive value for greater-than. For example, we can do:
 
     >>> def numeric_compare(x, y):
-            return x - y
-    >>> sorted([5, 2, 4, 1, 3], cmp=numeric_compare)
+    ...     return x - y
+    >>> sorted([5, 2, 4, 1, 3], cmp=numeric_compare) # doctest: +SKIP
     [1, 2, 3, 4, 5]
 
 Or you can reverse the order of comparison with:
 
     >>> def reverse_numeric(x, y):
-            return y - x
-    >>> sorted([5, 2, 4, 1, 3], cmp=reverse_numeric)
+    ...     return y - x
+    >>> sorted([5, 2, 4, 1, 3], cmp=reverse_numeric) # doctest: +SKIP
     [5, 4, 3, 2, 1]
 
 When porting code from Python 2.x to 3.x, the situation can arise when you have
@@ -255,6 +256,12 @@ function. The following wrapper makes that easy to do::
         return K
 
 To convert to a key function, just wrap the old comparison function:
+
+.. testsetup::
+
+    from functools import cmp_to_key
+
+.. doctest::
 
     >>> sorted([5, 2, 4, 1, 3], key=cmp_to_key(reverse_numeric))
     [5, 4, 3, 2, 1]
