@@ -1469,10 +1469,7 @@ class TestHarmonicMean(NumericTestCase, AverageMixin, UnivariateTypeMixin):
     def test_singleton_lists(self):
         # Test that harmonic mean([x]) returns (approximately) x.
         for x in range(1, 101):
-            if x in (49, 93, 98, 99):
-                self.assertApproxEqual(self.func([x]), x, tol=2e-14)
-            else:
-                self.assertEqual(self.func([x]), x)
+            self.assertEqual(self.func([x]), x)
 
     def test_decimals_exact(self):
         # Test harmonic mean with some carefully chosen Decimals.
