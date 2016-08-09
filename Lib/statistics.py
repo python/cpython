@@ -28,6 +28,7 @@ Calculating averages
 Function            Description
 ==================  =============================================
 mean                Arithmetic mean (average) of data.
+harmonic_mean       Harmonic mean of data.
 median              Median (middle value) of data.
 median_low          Low median of data.
 median_high         High median of data.
@@ -95,16 +96,17 @@ A single exception is defined: StatisticsError is a subclass of ValueError.
 __all__ = [ 'StatisticsError',
             'pstdev', 'pvariance', 'stdev', 'variance',
             'median',  'median_low', 'median_high', 'median_grouped',
-            'mean', 'mode',
+            'mean', 'mode', 'harmonic_mean',
           ]
 
-
 import collections
+import decimal
 import math
+import numbers
 
 from fractions import Fraction
 from decimal import Decimal
-from itertools import groupby
+from itertools import groupby, chain
 from bisect import bisect_left, bisect_right
 
 
@@ -135,7 +137,8 @@ def _sum(data, start=0):
 
     Some sources of round-off error will be avoided:
 
-    >>> _sum([1e50, 1, -1e50] * 1000)  # Built-in sum returns zero.
+    # Built-in sum returns zero.
+    >>> _sum([1e50, 1, -1e50] * 1000)
     (<class 'float'>, Fraction(1000, 1), 3000)
 
     Fractions and Decimals are also supported:
@@ -291,6 +294,15 @@ def _find_rteq(a, l, x):
         return i-1
     raise ValueError
 
+
+def _fail_neg(values, errmsg='negative value'):
+    """Iterate over values, failing if any are less than zero."""
+    for x in values:
+        if x < 0:
+            raise StatisticsError(errmsg)
+        yield x
+
+
 # === Measures of central tendency (averages) ===
 
 def mean(data):
@@ -317,6 +329,52 @@ def mean(data):
     T, total, count = _sum(data)
     assert count == n
     return _convert(total/n, T)
+
+
+def harmonic_mean(data):
+    """Return the harmonic mean of data.
+
+    The harmonic mean, sometimes called the subcontrary mean, is the
+    reciprocal of the arithmetic mean of the reciprocals of the data,
+    and is often appropriate when averaging quantities which are rates
+    or ratios, for example speeds. Example:
+
+    Suppose an investor purchases an equal value of shares in each of
+    three companies, with P/E (price/earning) ratios of 2.5, 3 and 10.
+    What is the average P/E ratio for the investor's portfolio?
+
+    >>> harmonic_mean([2.5, 3, 10])  # For an equal investment portfolio.
+    3.6
+
+    Using the arithmetic mean would give an average of about 5.167, which
+    is too high.
+
+    If ``data`` is empty, or any element is less than zero,
+    ``harmonic_mean`` will raise ``StatisticsError``.
+    """
+    # For a justification for using harmonic mean for P/E ratios, see
+    # http://fixthepitch.pellucid.com/comps-analysis-the-missing-harmony-of-summary-statistics/
+    # http://papers.ssrn.com/sol3/papers.cfm?abstract_id=2621087
+    if iter(data) is data:
+        data = list(data)
+    errmsg = 'harmonic mean does not support negative values'
+    n = len(data)
+    if n < 1:
+        raise StatisticsError('harmonic_mean requires at least one data point')
+    elif n == 1:
+        x = data[0]
+        if isinstance(x, (numbers.Real, Decimal)):
+            if x < 0:
+                raise StatisticsError(errmsg)
+            return x
+        else:
+            raise TypeError('unsupported type')
+    try:
+        T, total, count = _sum(1/x for x in _fail_neg(data, errmsg))
+    except ZeroDivisionError:
+        return 0
+    assert count == n
+    return _convert(n/total, T)
 
 
 # FIXME: investigate ways to calculate medians without sorting? Quickselect?
