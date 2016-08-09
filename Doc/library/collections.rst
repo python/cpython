@@ -608,7 +608,7 @@ Example:
        _fields = ('x', 'y')
    <BLANKLINE>
        def __new__(_cls, x, y):
-           'Create a new instance of Point(x, y)'
+           'Create new instance of Point(x, y)'
            return _tuple.__new__(_cls, (x, y))
    <BLANKLINE>
        @classmethod
@@ -635,7 +635,7 @@ Example:
            return result
    <BLANKLINE>
        def __getnewargs__(self):
-           'Return self as a plain tuple.   Used by copy and pickle.'
+           'Return self as a plain tuple.  Used by copy and pickle.'
            return tuple(self)
    <BLANKLINE>
        __dict__ = _property(_asdict)
@@ -647,6 +647,7 @@ Example:
        x = _property(_itemgetter(0), doc='Alias for field number 0')
    <BLANKLINE>
        y = _property(_itemgetter(1), doc='Alias for field number 1')
+   <BLANKLINE>
    <BLANKLINE>
 
    >>> p = Point(11, y=22)     # instantiate with positional or keyword arguments
@@ -712,7 +713,7 @@ field names, the method and attribute names start with an underscore.
       Point(x=33, y=22)
 
       >>> for partnum, record in inventory.items():
-              inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
+      ...     inventory[partnum] = record._replace(price=newprices[partnum], timestamp=time.now())
 
 .. attribute:: somenamedtuple._fields
 
@@ -747,15 +748,15 @@ functionality with a subclass.  Here is how to add a calculated field and
 a fixed-width print format:
 
     >>> class Point(namedtuple('Point', 'x y')):
-            __slots__ = ()
-            @property
-            def hypot(self):
-                return (self.x ** 2 + self.y ** 2) ** 0.5
-            def __str__(self):
-                return 'Point: x=%6.3f  y=%6.3f  hypot=%6.3f' % (self.x, self.y, self.hypot)
-
+    ...     __slots__ = ()
+    ...     @property
+    ...     def hypot(self):
+    ...         return (self.x ** 2 + self.y ** 2) ** 0.5
+    ...     def __str__(self):
+    ...         return 'Point: x=%6.3f  y=%6.3f  hypot=%6.3f' % (self.x, self.y, self.hypot)
+    ...
     >>> for p in Point(3, 4), Point(14, 5/7.):
-            print p
+    ...     print p
     Point: x= 3.000  y= 4.000  hypot= 5.000
     Point: x=14.000  y= 0.714  hypot=14.018
 
@@ -781,7 +782,7 @@ and more efficient to use a simple class declaration:
     >>> Status.open, Status.pending, Status.closed
     (0, 1, 2)
     >>> class Status:
-            open, pending, closed = range(3)
+    ...     open, pending, closed = range(3)
 
 .. seealso::
 
