@@ -989,7 +989,7 @@ call fails (for example because the path doesn't exist):
       of :func:`os.symlink`'s.
 
 
-.. method:: Path.touch(mode=0o777, exist_ok=True)
+.. method:: Path.touch(mode=0o666, exist_ok=True)
 
    Create a file at this given path.  If *mode* is given, it is combined
    with the process' ``umask`` value to determine the file mode and access
