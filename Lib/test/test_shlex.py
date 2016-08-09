@@ -178,6 +178,19 @@ class ShlexTest(unittest.TestCase):
                              "%s: %s != %s" %
                              (self.data[i][0], l, self.data[i][1:]))
 
+    def testEmptyStringHandling(self):
+        """Test that parsing of empty strings is correctly handled."""
+        # see Issue #21999
+        expected = ['', ')', 'abc']
+
+        s = shlex.shlex("'')abc", posix=True)
+        slist = list(s)
+        self.assertEqual(slist, expected)
+        expected = ["''", ')', 'abc']
+        s = shlex.shlex("'')abc")
+        self.assertEqual(list(s), expected)
+
+
 # Allow this test to be used with old shlex.py
 if not getattr(shlex, "split", None):
     for methname in dir(ShlexTest):

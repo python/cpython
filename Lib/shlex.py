@@ -230,7 +230,7 @@ class shlex:
                     if self.debug >= 2:
                         print "shlex: I see punctuation in word state"
                     self.state = ' '
-                    if self.token:
+                    if self.token or (self.posix and quoted):
                         break   # emit current token
                     else:
                         continue
