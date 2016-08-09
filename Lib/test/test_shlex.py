@@ -173,6 +173,18 @@ class ShlexTest(unittest.TestCase):
                              "%s: %s != %s" %
                              (self.data[i][0], l, self.data[i][1:]))
 
+    def testEmptyStringHandling(self):
+        """Test that parsing of empty strings is correctly handled."""
+        # see Issue #21999
+        expected = ['', ')', 'abc']
+
+        s = shlex.shlex("'')abc", posix=True)
+        slist = list(s)
+        self.assertEqual(slist, expected)
+        expected = ["''", ')', 'abc']
+        s = shlex.shlex("'')abc")
+        self.assertEqual(list(s), expected)
+
     def testQuote(self):
         safeunquoted = string.ascii_letters + string.digits + '@%_-+=:,./'
         unicode_sample = '\xe9\xe0\xdf'  # e + acute accent, a + grave, sharp s
