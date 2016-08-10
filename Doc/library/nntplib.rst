@@ -75,7 +75,7 @@ The module itself defines the following classes:
     >>> from nntplib import NNTP
     >>> with NNTP('news.gmane.org') as n:
     ...     n.group('gmane.comp.python.committers')
-    ...
+    ... # doctest: +SKIP
     ('211 1755 1 1755 gmane.comp.python.committers', 1755, 1, 1755, 'gmane.comp.python.committers')
     >>>
 
@@ -261,9 +261,9 @@ tuples or objects that the method normally returns will be empty.
 
       >>> from datetime import date, timedelta
       >>> resp, groups = s.newgroups(date.today() - timedelta(days=3))
-      >>> len(groups)
+      >>> len(groups) # doctest: +SKIP
       85
-      >>> groups[0]
+      >>> groups[0] # doctest: +SKIP
       GroupInfo(group='gmane.network.tor.devel', last='4', first='1', flag='m')
 
 
@@ -312,9 +312,9 @@ tuples or objects that the method normally returns will be empty.
    is a dictionary mapping group names to textual descriptions.
 
       >>> resp, descs = s.descriptions('gmane.comp.python.*')
-      >>> len(descs)
+      >>> len(descs) # doctest: +SKIP
       295
-      >>> descs.popitem()
+      >>> descs.popitem() # doctest: +SKIP
       ('gmane.comp.python.bio.general', 'BioPython discussion list (Moderated)')
 
 
