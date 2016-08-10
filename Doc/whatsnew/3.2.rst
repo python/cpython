@@ -313,14 +313,14 @@ aspects that are visible to the programmer:
   of the actual file that was imported:
 
    >>> import collections
-   >>> collections.__cached__
+   >>> collections.__cached__ # doctest: +SKIP
    'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
 
 * The tag that is unique to each interpreter is accessible from the :mod:`imp`
   module:
 
    >>> import imp
-   >>> imp.get_tag()
+   >>> imp.get_tag() # doctest: +SKIP
    'cpython-32'
 
 * Scripts that try to deduce source filename from the imported file now need to
@@ -329,7 +329,7 @@ aspects that are visible to the programmer:
 
   >>> imp.source_from_cache('c:/py32/lib/__pycache__/collections.cpython-32.pyc')
   'c:/py32/lib/collections.py'
-  >>> imp.cache_from_source('c:/py32/lib/collections.py')
+  >>> imp.cache_from_source('c:/py32/lib/collections.py') # doctest: +SKIP
   'c:/py32/lib/__pycache__/collections.cpython-32.pyc'
 
 * The :mod:`py_compile` and :mod:`compileall` modules have been updated to
@@ -532,7 +532,7 @@ Some smaller changes made to the core Python language are:
   original object.
 
   >>> with memoryview(b'abcdefgh') as v:
-          print(v.tolist())
+  ...     print(v.tolist())
   [97, 98, 99, 100, 101, 102, 103, 104]
 
   (Added by Antoine Pitrou; :issue:`9757`.)
@@ -568,9 +568,10 @@ Some smaller changes made to the core Python language are:
   expect a tuple as an argument.  This is a big step forward in making the C
   structures as flexible as their pure Python counterparts:
 
+  >>> import sys
   >>> isinstance(sys.version_info, tuple)
   True
-  >>> 'Version %d.%d.%d %s(%d)' % sys.version_info
+  >>> 'Version %d.%d.%d %s(%d)' % sys.version_info # doctest: +SKIP
   'Version 3.2.0 final(0)'
 
   (Suggested by Arfrever Frehtes Taifersar Arahesis and implemented
@@ -757,18 +758,18 @@ functools
 
   >>> import functools
   >>> @functools.lru_cache(maxsize=300)
-  >>> def get_phone_number(name):
-          c = conn.cursor()
-          c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
-          return c.fetchone()[0]
+  ... def get_phone_number(name):
+  ...     c = conn.cursor()
+  ...     c.execute('SELECT phonenumber FROM phonelist WHERE name=?', (name,))
+  ...     return c.fetchone()[0]
 
-  >>> for name in user_requests:
-          get_phone_number(name)        # cached lookup
+  >>> for name in user_requests:        # doctest: +SKIP
+  ...     get_phone_number(name)        # cached lookup
 
   To help with choosing an effective cache size, the wrapped function is
   instrumented for tracking cache statistics:
 
-  >>> get_phone_number.cache_info()
+  >>> get_phone_number.cache_info()     # doctest: +SKIP
   CacheInfo(hits=4805, misses=980, maxsize=300, currsize=300)
 
   If the phonelist table gets updated, the outdated contents of the cache can be
@@ -823,7 +824,7 @@ functools
   modern :term:`key function`:
 
   >>> # locale-aware sort order
-  >>> sorted(iterable, key=cmp_to_key(locale.strcoll))
+  >>> sorted(iterable, key=cmp_to_key(locale.strcoll)) # doctest: +SKIP
 
   For sorting examples and a brief sorting tutorial, see the `Sorting HowTo
   <https://wiki.python.org/moin/HowTo/Sorting/>`_ tutorial.
@@ -861,7 +862,8 @@ collections
   which only have positive counts, and the latter is more suitable for use cases
   that allow negative counts:
 
-  >>> tally = Counter(dogs=5, cat=3)
+  >>> from collections import Counter
+  >>> tally = Counter(dogs=5, cats=3)
   >>> tally -= Counter(dogs=2, cats=8)    # saturating subtraction
   >>> tally
   Counter({'dogs': 3})
@@ -884,6 +886,7 @@ collections
   an ordered dictionary can be used to track order of access by aging entries
   from the oldest to the most recently accessed.
 
+  >>> from collections import OrderedDict
   >>> d = OrderedDict.fromkeys(['a', 'b', 'X', 'd', 'e'])
   >>> list(d)
   ['a', 'b', 'X', 'd', 'e']
@@ -897,6 +900,7 @@ collections
   :meth:`~collections.deque.count` and :meth:`~collections.deque.reverse` that
   make them more substitutable for :class:`list` objects:
 
+  >>> from collections import deque
   >>> d = deque('simsalabim')
   >>> d.count('s')
   2
@@ -1042,6 +1046,7 @@ The :func:`~math.isfinite` function provides a reliable and fast way to detect
 special values.  It returns *True* for regular numbers and *False* for *Nan* or
 *Infinity*:
 
+>>> from math import isfinite
 >>> [isfinite(x) for x in (123, 4.56, float('Nan'), float('Inf'))]
 [True, True, False, False]
 
@@ -1049,6 +1054,7 @@ The :func:`~math.expm1` function computes ``e**x-1`` for small values of *x*
 without incurring the loss of precision that usually accompanies the subtraction
 of nearly equal quantities:
 
+>>> from math import expm1
 >>> expm1(0.013671875)   # more accurate way to compute e**x-1 for a small x
 0.013765762467652909
 
@@ -1056,6 +1062,7 @@ The :func:`~math.erf` function computes a probability integral or `Gaussian
 error function <https://en.wikipedia.org/wiki/Error_function>`_.  The
 complementary error function, :func:`~math.erfc`, is ``1 - erf(x)``:
 
+>>> from math import erf, erfc, sqrt
 >>> erf(1.0/sqrt(2.0))   # portion of normal distribution within 1 standard deviation
 0.682689492137086
 >>> erfc(1.0/sqrt(2.0))  # portion of normal distribution outside 1 standard deviation
@@ -1069,6 +1076,7 @@ the function is related to factorials, it grows large even for small values of
 *x*, so there is also a :func:`~math.lgamma` function for computing the natural
 logarithm of the gamma function:
 
+>>> from math import gamma, lgamma
 >>> gamma(7.0)           # six factorial
 720.0
 >>> lgamma(801.0)        # log(800 factorial)
@@ -1287,7 +1295,7 @@ Some of the hashing details are exposed through a new attribute,
 prime modulus, the hash values for *infinity* and *nan*, and the multiplier
 used for the imaginary part of a number:
 
->>> sys.hash_info
+>>> sys.hash_info # doctest: +SKIP
 sys.hash_info(width=64, modulus=2305843009213693951, inf=314159, nan=0, imag=1000003)
 
 An early decision to limit the inter-operability of various numeric types has
@@ -1310,6 +1318,8 @@ Similar changes were made to :class:`fractions.Fraction` so that the
 :meth:`~fractions.Fraction.from_float()` and :meth:`~fractions.Fraction.from_decimal`
 methods are no longer needed (:issue:`8294`):
 
+>>> from decimal import Decimal
+>>> from fractions import Fraction
 >>> Decimal(1.1)
 Decimal('1.100000000000000088817841970012523233890533447265625')
 >>> Fraction(1.1)
@@ -1392,6 +1402,7 @@ The :mod:`gzip` module also gains the :func:`~gzip.compress` and
 decompression.  Keep in mind that text needs to be encoded as :class:`bytes`
 before compressing and decompressing:
 
+>>> import gzip
 >>> s = 'Three shall be the number thou shalt count, '
 >>> s += 'and the number of the counting shall be three'
 >>> b = s.encode()                        # convert to utf-8
@@ -1401,7 +1412,7 @@ before compressing and decompressing:
 >>> len(c)
 77
 >>> gzip.decompress(c).decode()[:42]      # decompress and convert to text
-'Three shall be the number thou shalt count,'
+'Three shall be the number thou shalt count'
 
 (Contributed by Anand B. Pillai in :issue:`3488`; and by Antoine Pitrou, Nir
 Aides and Brian Curtin in :issue:`9962`, :issue:`1675951`, :issue:`7471` and
@@ -1503,6 +1514,7 @@ variables.  The :mod:`os` module provides two new functions,
 :func:`~os.fsencode` and :func:`~os.fsdecode`, for encoding and decoding
 filenames:
 
+>>> import os
 >>> filename = 'Sehenswürdigkeiten'
 >>> os.fsencode(filename)
 b'Sehensw\xc3\xbcrdigkeiten'
@@ -1740,6 +1752,7 @@ names.
   :class:`unittest.case.TestCase` class can now be instantiated without
   arguments:
 
+  >>> from unittest import TestCase
   >>> TestCase().assertEqual(pow(2, 3), 8)
 
   (Contributed by Michael Foord.)
@@ -2201,7 +2214,7 @@ The :func:`~urllib.parse.urlparse` function now supports `IPv6
 <https://en.wikipedia.org/wiki/IPv6>`_ addresses as described in :rfc:`2732`:
 
     >>> import urllib.parse
-    >>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/')
+    >>> urllib.parse.urlparse('http://[dead:beef:cafe:5417:affe:8FA3:deaf:feed]/foo/') # doctest: +NORMALIZE_WHITESPACE
     ParseResult(scheme='http',
                 netloc='[dead:beef:cafe:5417:affe:8FA3:deaf:feed]',
                 path='/foo/',
@@ -2235,7 +2248,7 @@ functions now accept ASCII-encoded byte strings as input, so long as they are
 not mixed with regular strings.  If ASCII-encoded byte strings are given as
 parameters, the return types will also be an ASCII-encoded byte strings:
 
-    >>> urllib.parse.urlparse(b'http://www.python.org:80/about/')
+    >>> urllib.parse.urlparse(b'http://www.python.org:80/about/') # doctest: +NORMALIZE_WHITESPACE
     ParseResultBytes(scheme=b'http', netloc=b'www.python.org:80',
                      path=b'/about/', params=b'', query=b'', fragment=b'')
 
