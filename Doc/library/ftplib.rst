@@ -57,7 +57,7 @@ The module defines the following items:
     >>> with FTP("ftp1.at.proftpd.org") as ftp:
     ...     ftp.login()
     ...     ftp.dir()
-    ...
+    ... # doctest: +SKIP
     '230 Anonymous login ok, restrictions apply.'
     dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 .
     dr-xr-xr-x   9 ftp      ftp           154 May  6 10:43 ..
