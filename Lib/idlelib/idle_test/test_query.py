@@ -13,6 +13,7 @@ Coverage: 94% (100% for Query and SectionName).
 6 of 8 missing are ModuleName exceptions I don't know how to trigger.
 """
 from test.support import requires
+import sys
 from tkinter import Tk
 import unittest
 from unittest import mock
@@ -337,7 +338,8 @@ class HelpsourceGuiTest(unittest.TestCase):
         Equal(dialog.entry.get(), '__test__')
         Equal(dialog.path.get(), __file__)
         dialog.button_ok.invoke()
-        Equal(dialog.result, ('__test__', __file__))
+        prefix = "file://" if sys.platform == 'darwin' else ''
+        Equal(dialog.result, ('__test__', prefix + __file__))
         del dialog
         root.destroy()
         del root
