@@ -13,6 +13,11 @@
    single: message digest, MD5
    single: secure hash algorithm, SHA1, SHA224, SHA256, SHA384, SHA512
 
+.. testsetup::
+
+   import hashlib
+
+
 --------------
 
 This module implements a common interface to many different secure hash and
