@@ -166,7 +166,7 @@ def decode(s, convert_eols=None):
     decoding a text attachment.
 
     This function does not parse a full MIME header value encoded with
-    base64 (like =?iso-8895-1?b?bmloISBuaWgh?=) -- please use the high
+    base64 (like =?iso-8859-1?b?bmloISBuaWgh?=) -- please use the high
     level email.header class for that functionality.
     """
     if not s:
