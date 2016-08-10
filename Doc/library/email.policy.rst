@@ -63,16 +63,15 @@ file on disk and pass it to the system ``sendmail`` program on a Unix system:
 
 .. testsetup::
 
-   >>> from unittest import mock
-   >>> mocker = mock.patch('subprocess.Popen')
-   >>> m = mocker.start()
-   >>> proc = mock.MagicMock()
-   >>> m.return_value = proc
-   >>> proc.stdin.close.return_value = None
-   >>> mymsg = open('mymsg.txt', 'w')
-   >>> mymsg.write('To: abc@xyz.com\n\n')
-   17
-   >>> mymsg.flush()
+   from unittest import mock
+   mocker = mock.patch('subprocess.Popen')
+   m = mocker.start()
+   proc = mock.MagicMock()
+   m.return_value = proc
+   proc.stdin.close.return_value = None
+   mymsg = open('mymsg.txt', 'w')
+   mymsg.write('To: abc@xyz.com\n\n')
+   mymsg.flush()
 
 .. doctest::
 
@@ -88,12 +87,12 @@ file on disk and pass it to the system ``sendmail`` program on a Unix system:
    >>> p.stdin.close()
    >>> rc = p.wait()
 
-.. testsetup::
+.. testcleanup::
 
-   >>> mymsg.close()
-   >>> mocker.stop()
-   >>> import os
-   >>> os.remove('mymsg.txt')
+   mymsg.close()
+   mocker.stop()
+   import os
+   os.remove('mymsg.txt')
 
 Here we are telling :class:`~email.generator.BytesGenerator` to use the RFC
 correct line separator characters when creating the binary string to feed into

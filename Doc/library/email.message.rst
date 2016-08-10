@@ -602,10 +602,10 @@ Here are the methods of the :class:`Message` class:
 
       .. testsetup::
 
-         >>> from email import message_from_binary_file
-         >>> with open('Lib/test/test_email/data/msg_16.txt', 'rb') as f:
-         ...     msg = message_from_binary_file(f)
-         >>> from email.iterators import _structure
+         from email import message_from_binary_file
+         with open('../Lib/test/test_email/data/msg_16.txt', 'rb') as f:
+             msg = message_from_binary_file(f)
+         from email.iterators import _structure
 
       .. doctest::
 
@@ -628,7 +628,7 @@ Here are the methods of the :class:`Message` class:
       .. doctest::
 
          >>> for part in msg.walk():
-         ...     print(part.get_content_maintype() == 'multipart'),
+         ...     print(part.get_content_maintype() == 'multipart',
          ...           part.is_multipart())
          True True
          False False
@@ -640,11 +640,11 @@ Here are the methods of the :class:`Message` class:
          >>> _structure(msg)
          multipart/report
              text/plain
-         message/delivery-status
-             text/plain
-             text/plain
-         message/rfc822
-             text/plain
+             message/delivery-status
+                 text/plain
+                 text/plain
+             message/rfc822
+                 text/plain
 
       Here the ``message`` parts are not ``multiparts``, but they do contain
       subparts. ``is_multipart()`` returns ``True`` and ``walk`` descends
