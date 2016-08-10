@@ -361,7 +361,7 @@ exception and traceback:
        traceback.print_exception(exc_type, exc_value, exc_traceback,
                                  limit=2, file=sys.stdout)
        print("*** print_exc:")
-       traceback.print_exc()
+       traceback.print_exc(limit=2, file=sys.stdout)
        print("*** format_exc, first and last line:")
        formatted_lines = traceback.format_exc().splitlines()
        print(formatted_lines[0])
@@ -407,9 +407,9 @@ The output for the example would look similar to this:
     '  File "<doctest...>", line 7, in bright_side_of_death\n    return tuple()[0]\n',
     'IndexError: tuple index out of range\n']
    *** extract_tb:
-   [('<doctest...>', 10, '<module>', 'lumberjack()'),
-    ('<doctest...>', 4, 'lumberjack', 'bright_side_of_death()'),
-    ('<doctest...>', 7, 'bright_side_of_death', 'return tuple()[0]')]
+   [<FrameSummary file <doctest...>, line 10 in <module>>,
+    <FrameSummary file <doctest...>, line 4 in lumberjack>,
+    <FrameSummary file <doctest...>, line 7 in bright_side_of_death>]
    *** format_tb:
    ['  File "<doctest...>", line 10, in <module>\n    lumberjack()\n',
     '  File "<doctest...>", line 4, in lumberjack\n    bright_side_of_death()\n',
