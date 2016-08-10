@@ -227,12 +227,12 @@ HTTPConnection Objects
    If *body* is specified, the specified data is sent after the headers are
    finished.  It may be a string, a :term:`bytes-like object`, an open
    :term:`file object`, or an iterable of :term:`bytes-like object`\s.  If
-   *body* is a string, it is encoded as ISO-8851-1, the default for HTTP.  If
+   *body* is a string, it is encoded as ISO-8859-1, the default for HTTP.  If
    it is a bytes-like object the bytes are sent as is.  If it is a :term:`file
    object`, the contents of the file is sent; this file object should support
    at least the ``read()`` method.  If the file object has a ``mode``
    attribute, the data returned by the ``read()`` method will be encoded as
-   ISO-8851-1 unless the ``mode`` attribute contains the substring ``b``,
+   ISO-8859-1 unless the ``mode`` attribute contains the substring ``b``,
    otherwise the data returned by ``read()`` is sent as is.  If *body* is an
    iterable, the elements of the iterable are sent as is until the iterable is
    exhausted.
