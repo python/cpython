@@ -170,8 +170,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
       >>> s1 = ['bacon\n', 'eggs\n', 'ham\n', 'guido\n']
       >>> s2 = ['python\n', 'eggy\n', 'hamster\n', 'guido\n']
-      >>> for line in context_diff(s1, s2, fromfile='before.py', tofile='after.py'):
-      ...     sys.stdout.write(line)  # doctest: +NORMALIZE_WHITESPACE
+      >>> sys.stdout.writelines(context_diff(s1, s2, fromfile='before.py', tofile='after.py'))
       *** before.py
       --- after.py
       ***************
@@ -209,7 +208,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
       >>> import keyword
       >>> get_close_matches('wheel', keyword.kwlist)
       ['while']
-      >>> get_close_matches('apple', keyword.kwlist)
+      >>> get_close_matches('pineapple', keyword.kwlist)
       []
       >>> get_close_matches('accept', keyword.kwlist)
       ['except']
@@ -303,8 +302,7 @@ diffs. For comparing directories and files, see also, the :mod:`filecmp` module.
 
       >>> s1 = ['bacon\n', 'eggs\n', 'ham\n', 'guido\n']
       >>> s2 = ['python\n', 'eggy\n', 'hamster\n', 'guido\n']
-      >>> for line in unified_diff(s1, s2, fromfile='before.py', tofile='after.py'):
-      ...     sys.stdout.write(line)   # doctest: +NORMALIZE_WHITESPACE
+      >>> sys.stdout.writelines(unified_diff(s1, s2, fromfile='before.py', tofile='after.py'))
       --- before.py
       +++ after.py
       @@ -1,4 +1,4 @@
