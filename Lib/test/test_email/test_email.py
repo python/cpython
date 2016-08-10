@@ -2302,9 +2302,9 @@ Re: =?mac-iceland?q?r=8Aksm=9Arg=8Cs?= baz foo bar =?mac-iceland?q?r=8Aksm?=
 
     def test_rfc2047_Q_invalid_digits(self):
         # issue 10004.
-        s = '=?iso-8659-1?Q?andr=e9=zz?='
+        s = '=?iso-8859-1?Q?andr=e9=zz?='
         self.assertEqual(decode_header(s),
-                        [(b'andr\xe9=zz', 'iso-8659-1')])
+                        [(b'andr\xe9=zz', 'iso-8859-1')])
 
     def test_rfc2047_rfc2047_1(self):
         # 1st testcase at end of rfc2047
