@@ -10,6 +10,8 @@ The 'return value' is .result set to either a valid answer or None.
 
 Subclass SectionName gets a name for a new config file section.
 Configdialog uses it for new highlight theme and keybinding set names.
+Subclass ModuleName gets a name for File => Open Module.
+Subclass HelpSource gets menu item and path for additions to Help menu.
 """
 # Query and Section name result from splitting GetCfgSectionNameDialog
 # of configSectionNameDialog.py (temporarily config_sec.py) into
@@ -21,10 +23,10 @@ Configdialog uses it for new highlight theme and keybinding set names.
 import importlib
 import os
 from sys import executable, platform  # Platform is set for one test.
-from tkinter import Toplevel, StringVar
+from tkinter import Toplevel, StringVar, W, E, N, S
 from tkinter import filedialog
-from tkinter.messagebox import showerror
 from tkinter.ttk import Frame, Button, Entry, Label
+from tkinter.font import Font
 
 class Query(Toplevel):
     """Base class for getting verified answer from a user.
@@ -47,18 +49,26 @@ class Query(Toplevel):
         """
         Toplevel.__init__(self, parent)
         self.withdraw()  # Hide while configuring, especially geometry.
-        self.configure(borderwidth=5)
-        self.resizable(height=False, width=False)
-        self.title(title)
-        self.transient(parent)
-        self.grab_set()
-        self.bind('<Key-Return>', self.ok)
-        self.bind('<Key-Escape>', self.cancel)
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
         self.parent = parent
+        self.title(title)
         self.message = message
         self.text0 = text0
         self.used_names = used_names
+        self.transient(parent)
+        self.grab_set()
+        windowingsystem = self.tk.call('tk', 'windowingsystem')
+        if windowingsystem == 'aqua':
+            try:
+                self.tk.call('::tk::unsupported::MacWindowStyle', 'style',
+                             self._w, 'moveableModal', '')
+            except:
+                pass
+            self.bind("<Command-.>", self.cancel)
+        self.bind('<Key-Escape>', self.cancel)
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        self.bind('<Key-Return>', self.ok)
+        self.bind("<KP_Enter>", self.ok)
+        self.resizable(height=False, width=False)
         self.create_widgets()
         self.update_idletasks()  # Needed here for winfo_reqwidth below.
         self.geometry(  # Center dialog over parent (or below htest box).
@@ -75,32 +85,42 @@ class Query(Toplevel):
 
     def create_widgets(self):  # Call from override, if any.
         # Bind to self widgets needed for entry_ok or unittest.
-        self.frame = frame = Frame(self, borderwidth=2, relief='sunken', )
+        self.frame = frame = Frame(self, padding=10)
+        frame.grid(column=0, row=0, sticky='news')
+        frame.grid_columnconfigure(0, weight=1)
+
         entrylabel = Label(frame, anchor='w', justify='left',
                            text=self.message)
         self.entryvar = StringVar(self, self.text0)
         self.entry = Entry(frame, width=30, textvariable=self.entryvar)
         self.entry.focus_set()
+        self.error_font = Font(name='TkCaptionFont',
+                               exists=True, root=self.parent)
+        self.entry_error = Label(frame, text=' ', foreground='red',
+                                 font=self.error_font)
+        self.button_ok = Button(
+                frame, text='OK', default='active', command=self.ok)
+        self.button_cancel = Button(
+                frame, text='Cancel', command=self.cancel)
 
-        buttons = Frame(self)
-        self.button_ok = Button(buttons, text='Ok', default='active',
-                width=8, command=self.ok)
-        self.button_cancel = Button(buttons, text='Cancel',
-                width=8, command=self.cancel)
+        entrylabel.grid(column=0, row=0, columnspan=3, padx=5, sticky=W)
+        self.entry.grid(column=0, row=1, columnspan=3, padx=5, sticky=W+E,
+                        pady=[10,0])
+        self.entry_error.grid(column=0, row=2, columnspan=3, padx=5,
+                              sticky=W+E)
+        self.button_ok.grid(column=1, row=99, padx=5)
+        self.button_cancel.grid(column=2, row=99, padx=5)
 
-        frame.pack(side='top', expand=True, fill='both')
-        entrylabel.pack(padx=5, pady=5)
-        self.entry.pack(padx=5, pady=5)
-        buttons.pack(side='bottom')
-        self.button_ok.pack(side='left', padx=5)
-        self.button_cancel.pack(side='right', padx=5)
+    def showerror(self, message, widget=None):
+        #self.bell(displayof=self)
+        (widget or self.entry_error)['text'] = 'ERROR: ' + message
 
     def entry_ok(self):  # Example: usually replace.
         "Return non-blank entry or None."
+        self.entry_error['text'] = ''
         entry = self.entry.get().strip()
         if not entry:
-            showerror(title='Entry Error',
-                    message='Blank line.', parent=self)
+            self.showerror('blank line.')
             return None
         return entry
 
@@ -134,19 +154,16 @@ class SectionName(Query):
 
     def entry_ok(self):
         "Return sensible ConfigParser section name or None."
+        self.entry_error['text'] = ''
         name = self.entry.get().strip()
         if not name:
-            showerror(title='Name Error',
-                    message='No name specified.', parent=self)
+            self.showerror('no name specified.')
             return None
         elif len(name)>30:
-            showerror(title='Name Error',
-                    message='Name too long. It should be no more than '+
-                    '30 characters.', parent=self)
+            self.showerror('name is longer than 30 characters.')
             return None
         elif name in self.used_names:
-            showerror(title='Name Error',
-                    message='This name is already in use.', parent=self)
+            self.showerror('name is already in use.')
             return None
         return name
 
@@ -162,30 +179,27 @@ class ModuleName(Query):
 
     def entry_ok(self):
         "Return entered module name as file path or None."
+        self.entry_error['text'] = ''
         name = self.entry.get().strip()
         if not name:
-            showerror(title='Name Error',
-                    message='No name specified.', parent=self)
+            self.showerror('no name specified.')
             return None
         # XXX Ought to insert current file's directory in front of path.
         try:
             spec = importlib.util.find_spec(name)
         except (ValueError, ImportError) as msg:
-            showerror("Import Error", str(msg), parent=self)
+            self.showerror(str(msg))
             return None
         if spec is None:
-            showerror("Import Error", "module not found",
-                      parent=self)
+            self.showerror("module not found")
             return None
         if not isinstance(spec.loader, importlib.abc.SourceLoader):
-            showerror("Import Error", "not a source-based module",
-                      parent=self)
+            self.showerror("not a source-based module")
             return None
         try:
             file_path = spec.loader.get_filename(name)
         except AttributeError:
-            showerror("Import Error",
-                      "loader does not support get_filename",
+            self.showerror("loader does not support get_filename",
                       parent=self)
             return None
         return file_path
@@ -204,8 +218,9 @@ class HelpSource(Query):
         """
         self.filepath = filepath
         message = 'Name for item on Help menu:'
-        super().__init__(parent, title, message, text0=menuitem,
-                 used_names=used_names, _htest=_htest, _utest=_utest)
+        super().__init__(
+                parent, title, message, text0=menuitem,
+                used_names=used_names, _htest=_htest, _utest=_utest)
 
     def create_widgets(self):
         super().create_widgets()
@@ -216,10 +231,16 @@ class HelpSource(Query):
         self.path = Entry(frame, textvariable=self.pathvar, width=40)
         browse = Button(frame, text='Browse', width=8,
                         command=self.browse_file)
+        self.path_error = Label(frame, text=' ', foreground='red',
+                                font=self.error_font)
 
-        pathlabel.pack(anchor='w', padx=5, pady=3)
-        self.path.pack(anchor='w', padx=5, pady=3)
-        browse.pack(pady=3)
+        pathlabel.grid(column=0, row=10, columnspan=3, padx=5, pady=[10,0],
+                       sticky=W)
+        self.path.grid(column=0, row=11, columnspan=2, padx=5, sticky=W+E,
+                       pady=[10,0])
+        browse.grid(column=2, row=11, padx=5, sticky=W+S)
+        self.path_error.grid(column=0, row=12, columnspan=3, padx=5,
+                             sticky=W+E)
 
     def askfilename(self, filetypes, initdir, initfile):  # htest #
         # Extracted from browse_file so can mock for unittests.
@@ -256,17 +277,14 @@ class HelpSource(Query):
         "Simple validity check for menu file path"
         path = self.path.get().strip()
         if not path: #no path specified
-            showerror(title='File Path Error',
-                      message='No help file path specified.',
-                      parent=self)
+            self.showerror('no help file path specified.', self.path_error)
             return None
         elif not path.startswith(('www.', 'http')):
             if path[:5] == 'file:':
                 path = path[5:]
             if not os.path.exists(path):
-                showerror(title='File Path Error',
-                          message='Help file path does not exist.',
-                          parent=self)
+                self.showerror('help file path does not exist.',
+                               self.path_error)
                 return None
             if platform == 'darwin':  # for Mac Safari
                 path =  "file://" + path
@@ -274,6 +292,8 @@ class HelpSource(Query):
 
     def entry_ok(self):
         "Return apparently valid (name, path) or None"
+        self.entry_error['text'] = ''
+        self.path_error['text'] = ''
         name = self.item_ok()
         path = self.path_ok()
         return None if name is None or path is None else (name, path)
