@@ -1,6 +1,6 @@
 ''' Test idlelib.config_key.
 
-Coverage: 56%
+Coverage: 56% from creating and closing dialog.
 '''
 from idlelib import config_key
 from test.support import requires
@@ -17,6 +17,7 @@ class GetKeysTest(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
+        cls.root.update()  # Stop "can't run event command" warning.
         cls.root.destroy()
         del cls.root
 
