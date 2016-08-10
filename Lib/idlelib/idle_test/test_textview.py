@@ -22,8 +22,7 @@ def setUpModule():
     root = Tk()
 
 def tearDownModule():
-    global root, TV
-    del TV
+    global root
     root.update_idletasks()
     root.destroy()  # pyflakes falsely sees root as undefined
     del root
